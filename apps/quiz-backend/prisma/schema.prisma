@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  stem        String
+  explanation String?  // 答题解析
+  tags        Json?    // JSON array of tags
+  options     Option[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId Int
+  text       String
+  isCorrect  Boolean  @default(false)
+}
+
+// AnswerAttempt 保留但 MVP 不启用
+model AnswerAttempt {
+  id              Int      @id @default(autoincrement())
+  questionId      Int
+  selectedOption  Int
+  correct         Boolean
+  elapsedMs       Int?
+  createdAt       DateTime @default(now())
+}
