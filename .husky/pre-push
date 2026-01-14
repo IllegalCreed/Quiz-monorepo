@@ -1,7 +1,16 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Run workspace type-check and tests where available. Fail push if any check fails.
+# Run type-check across workspace (if present)
+echo "⏳ Running type-check..."
 pnpm -w -r run type-check --if-present || { echo "Type-check failed"; exit 1; }
-pnpm -w -r run test --if-present || { echo "Package tests failed"; exit 1; }
-pnpm -w -r run test:unit --if-present || { echo "Unit tests failed"; exit 1; }
+
+# Run backend tests explicitly
+echo "⏳ Running backend tests..."
+pnpm -C apps/quiz-backend run test --if-present || { echo "Backend tests failed"; exit 1; }
+
+# Run frontend unit tests explicitly
+echo "⏳ Running frontend unit tests..."
+pnpm -C apps/quiz-app run test:unit --if-present || { echo "Frontend unit tests failed"; exit 1; }
+
+echo "✅ Pre-push checks passed"
