@@ -1,7 +1,25 @@
+import path from "path";
+import dotenv from "dotenv";
+// Load env files if present
+dotenv.config();
+if (!process.env.DATABASE_URL) {
+  dotenv.config({
+    path: path.resolve(
+      process.cwd(),
+      "apps/quiz-backend/.env.development.local",
+    ),
+  });
+  dotenv.config({
+    path: path.resolve(process.cwd(), "apps/quiz-backend/.env.local"),
+  });
+}
+
 import { PrismaClient } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import fs from "fs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? "");
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const data = JSON.parse(
