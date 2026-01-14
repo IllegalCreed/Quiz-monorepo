@@ -157,11 +157,11 @@ pnpm -C apps/quiz-backend run db:seed
 - E2E 测试：`cypress`（运行于无头 Electron，`test:e2e` 会启动 preview 并执行测试）。
 
 - 如果你想让 E2E 直接使用后端和真实 DB（非 mock），可以：
-  1. 在 `apps/quiz-backend/.env.test.local` 中配置好 `DATABASE_URL` 指向你的 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`。
-  2. 启动后端：`pnpm -C apps/quiz-backend run dev`（确保 `NODE_ENV=test` 或 `ENABLE_TEST_ENDPOINT=true`）。
-  3. 运行 E2E：`pnpm -C apps/quiz-app run test:e2e`。
+  1. 在 `apps/quiz-backend/.env.test.local` 中配置好 `DATABASE_URL` 指向你的 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`（参考 `apps/quiz-backend/.env.test.example`）。
+  2. 启动后端（test 模式）：`pnpm -C apps/quiz-backend run start:test`（或直接执行下一步让 `test:e2e` 自动启动后端）。
+  3. 前端会以 test 模式先编译一份（`pnpm -C apps/quiz-app run build:test`），以避免与 production 的 `dist` 混淆；然后运行 E2E：`pnpm -C apps/quiz-app run test:e2e`（这会尝试自动启动后端的 `start:test`）。
 
-  测试过程中会调用 `POST /test/reset` 重置 test DB，保证每个用例运行前数据可复现。
+  测试过程中会调用 `POST /api/test/reset` 重置 test DB，保证每个用例运行前数据可复现。
 
 - 为了避免 pre-push 在 `vitest` watch 模式下等待按键，我们在 pre-push 中使用了非交互式的 `vitest run`（`test:unit:ci`）。
 
