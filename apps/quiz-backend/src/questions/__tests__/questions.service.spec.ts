@@ -1,5 +1,4 @@
 import { QuestionsService } from "../questions.service";
-import { PrismaService } from "../../prisma/prisma.service";
 
 describe("QuestionsService (unit)", () => {
   it("checkAnswer should return correct boolean for mocked option", async () => {

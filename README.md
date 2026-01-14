@@ -123,9 +123,9 @@ pnpm -C apps/quiz-backend run db:seed
 如需我把 README 的某处再精简或加入样例命令（例如把 `POST /test/reset` 的 curl 示例写进 README），告诉我具体位置，我会补上。
 
 - 新增可用于分环境的数据脚本：
-  - `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。
-  - `db:seed:test`：写入测试数据（用于 CI / E2E，便于还原）。
-  - `db:reset`：清空测试数据并重新运行 `db:seed:test`（仅用于 test/dev，不会在生产上运行，脚本在运行前会进行安全检查）。
+- `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。此脚本现在以 TypeScript 实现（`ts-node prisma/seed-system.ts`）。
+- `db:seed:test`：写入测试数据（用于 CI / E2E，便于还原）。当前以 TypeScript 实现（`ts-node prisma/seed-test.ts`）。
+- `db:reset`：清空测试数据并重新运行 `db:seed:test`（仅用于 test/dev，不会在生产上运行，脚本在运行前会进行安全检查）。当前以 TypeScript 实现（`ts-node prisma/reset-test.ts`）。
 
 - 后端提供一个受保护的测试接口：`POST /test/reset`，仅在 `ENABLE_TEST_ENDPOINT=true` 时启用，调用它会对 test DB 进行重置（适合 E2E 在每个用例前重置数据以保证可复现性）。
 - `type-check` 使用了一个包内 wrapper 脚本（避免 pnpm 递归运行时额外 flags 影响 `tsc`）。

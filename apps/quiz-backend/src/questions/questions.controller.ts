@@ -25,8 +25,7 @@ export class QuestionsController {
       body.questionId,
       body.selectedOptionId,
     );
-    // Optionally include explanation
-    const question = await this.service.getRandom(1);
+    // Optionally include explanation (not used currently)
     return { ...res };
   }
 }
