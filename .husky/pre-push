@@ -7,10 +7,18 @@ pnpm -w -r run type-check --if-present || { echo "Type-check failed"; exit 1; }
 
 # Run backend tests explicitly
 echo "⏳ Running backend tests..."
-pnpm -C apps/quiz-backend run test --if-present || { echo "Backend tests failed"; exit 1; }
+if grep -q "\"test\"" apps/quiz-backend/package.json; then
+  pnpm -C apps/quiz-backend run test || { echo "Backend tests failed"; exit 1; }
+else
+  echo "No backend test script found, skipping"
+fi
 
 # Run frontend unit tests explicitly
 echo "⏳ Running frontend unit tests..."
-pnpm -C apps/quiz-app run test:unit --if-present || { echo "Frontend unit tests failed"; exit 1; }
+if grep -q "\"test:unit\"" apps/quiz-app/package.json; then
+  pnpm -C apps/quiz-app run test:unit || { echo "Frontend unit tests failed"; exit 1; }
+else
+  echo "No frontend unit test script found, skipping"
+fi
 
 echo "✅ Pre-push checks passed"
