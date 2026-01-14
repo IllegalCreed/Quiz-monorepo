@@ -13,5 +13,6 @@ Nest-like backend for Quiz project (minimal scaffold for MVP)
 7. Start dev server: `pnpm --filter apps/quiz-backend run dev`
 
 Notes:
+
 - For production, use `.env.production.local` for secrets and a managed DB.
 - This scaffold includes Prisma schema, sample seed data, and a small Questions controller with `GET /api/questions` and `POST /api/questions/check` endpoints.

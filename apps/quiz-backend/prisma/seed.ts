@@ -1,10 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const data = JSON.parse(fs.readFileSync(new URL('./data/seed.json', import.meta.url), 'utf-8'));
+  const data = JSON.parse(
+    fs.readFileSync(new URL("./data/seed.json", import.meta.url), "utf-8")
+  );
 
   for (const q of data) {
     const created = await prisma.question.create({
@@ -13,11 +15,14 @@ async function main() {
         explanation: q.explanation,
         tags: q.tags,
         options: {
-          create: q.options.map((o: any) => ({ text: o.text, isCorrect: o.isCorrect }))
-        }
-      }
+          create: q.options.map((o: any) => ({
+            text: o.text,
+            isCorrect: o.isCorrect,
+          })),
+        },
+      },
     });
-    console.log('Inserted question', created.id);
+    console.log("Inserted question", created.id);
   }
 }
 

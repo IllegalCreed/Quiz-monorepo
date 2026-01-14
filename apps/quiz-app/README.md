@@ -72,6 +72,6 @@ pnpm lint
 ---
 
 Notes for this project:
+
 - Follows view → composable → store → api pattern. `src/pages/QuizPage.vue` uses `src/pages/composables/useQuiz.ts`, which relies on `src/stores/useMockStore.ts` (toggle `VITE_MOCK=true`) and `src/api/questions.ts` for API calls.
 - Default dev API base: `VITE_API_BASE` (set in `.env.development.local`).
-

@@ -24,10 +24,7 @@ export default defineConfigWithVueTs(
 
   {
     ...pluginCypress.configs.recommended,
-    files: [
-      'cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-      'cypress/support/**/*.{js,ts,jsx,tsx}',
-    ],
+    files: ['cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}', 'cypress/support/**/*.{js,ts,jsx,tsx}'],
   },
 
   {
@@ -37,5 +34,5 @@ export default defineConfigWithVueTs(
 
   skipFormatting,
 
-  ...pluginOxlint.configs['flat/recommended'],
+  ...pluginOxlint.configs['flat/recommended']
 )

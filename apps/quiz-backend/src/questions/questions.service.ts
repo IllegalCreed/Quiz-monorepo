@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class QuestionsService {
@@ -17,24 +17,39 @@ export class QuestionsService {
     // For each question get options
     const results = [] as any[];
     for (const row of q) {
-      const options = await this.prisma.option.findMany({ where: { questionId: row.id } });
+      const options = await this.prisma.option.findMany({
+        where: { questionId: row.id },
+      });
       const publicOptions = options.map((o) => ({ id: o.id, text: o.text }));
-      results.push({ id: row.id, stem: row.stem, explanation: row.explanation, tags: row.tags, options: publicOptions });
+      results.push({
+        id: row.id,
+        stem: row.stem,
+        explanation: row.explanation,
+        tags: row.tags,
+        options: publicOptions,
+      });
     }
     return results;
   }
 
   async checkAnswer(questionId: number, selectedOptionId: number) {
-    const option = await this.prisma.option.findUnique({ where: { id: selectedOptionId } });
+    const option = await this.prisma.option.findUnique({
+      where: { id: selectedOptionId },
+    });
     if (!option) {
-      throw new Error('Option not found');
+      throw new Error("Option not found");
     }
-    const correctOption = await this.prisma.option.findFirst({ where: { questionId, isCorrect: true } });
+    const correctOption = await this.prisma.option.findFirst({
+      where: { questionId, isCorrect: true },
+    });
     const correct = option.isCorrect;
     return { correct, correctOptionId: correctOption?.id ?? null };
   }
 
   async findQuestionById(id: number) {
-    return this.prisma.question.findUnique({ where: { id }, include: { options: true } });
+    return this.prisma.question.findUnique({
+      where: { id },
+      include: { options: true },
+    });
   }
 }

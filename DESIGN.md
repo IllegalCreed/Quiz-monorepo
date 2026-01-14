@@ -1,9 +1,11 @@
 # Quiz 项目设计文档（DESIGN.md）
 
 ## 一、项目与目标概述 ✅
+
 这是一个用于复习技术知识的选择题网站（单题练习为主）。核心体验：页面中间显示一道选择题，用户选项后立即显示正确或错误反馈；答对后 1s 自动进入下一题；答错则高亮正确答案并显示解析，用户也可以手动点击“下一题”。
 
 MVP 目标：
+
 - 后端（NestJS + Prisma + MySQL）提供题目读取与答题判定接口
 - 前端（Vue 3 + Vite + TypeScript setup 语法 + SCSS + UnoCSS）实现答题页面、选项交互、反馈逻辑与自动/手动翻题
 - 简洁可复用的组件库放在 `packages/ui`（Shadcn 风格、UnoCSS + SCSS）
@@ -14,6 +16,7 @@ MVP 目标：
 ---
 
 ## 二、MVP 功能清单（优先级）
+
 1. GET /api/questions?limit=1（返回一道题）
 2. POST /api/answers（提交答案，返回是否正确与解析）
 3. 前端 Quiz 页面：展示题干、选项、选择后反馈，高亮正确答案；答对 1s 自动下题；手动下一题按钮
@@ -23,10 +26,12 @@ MVP 目标：
 ---
 
 ## 三、后端设计（NestJS + Prisma + MySQL） 🔧
+
 - 项目目录：`apps/backend`
 - 技术：NestJS、Prisma（schema 与 migrate）、MySQL（docker-compose）、Jest（测试）
 
 ### 数据模型（草案，Prisma schema）
+
 ```prisma
 model Question {
   id          Int      @id @default(autoincrement())
@@ -60,30 +65,37 @@ model AnswerAttempt {
 > 说明：MVP 不强制持久化用户做题记录，`AnswerAttempt` 暂时可不启用，但 schema 中保留草案便于后续扩展。
 
 ### API 设计
+
 - GET /api/questions?limit=1
+
   - Response example:
+
   ```json
   {
     "id": 1,
     "stem": "下面哪个是 JavaScript 的原始类型？",
     "options": [
-      {"id": 1, "text": "Object"},
-      {"id": 2, "text": "Number"},
-      {"id": 3, "text": "Array"}
+      { "id": 1, "text": "Object" },
+      { "id": 2, "text": "Number" },
+      { "id": 3, "text": "Array" }
     ],
     "explanation": "Number 是原始类型之一...",
-    "tags": ["javascript","基础"]
+    "tags": ["javascript", "基础"]
   }
   ```
 
 - POST /api/answers
   - Request body:
   ```json
-  {"questionId": 1, "selectedOptionId": 2, "elapsedMs": 1234}
+  { "questionId": 1, "selectedOptionId": 2, "elapsedMs": 1234 }
   ```
   - Response example:
   ```json
-  {"correct": true, "correctOptionId": 2, "explanation": "Number 是原始类型之一..."}
+  {
+    "correct": true,
+    "correctOptionId": 2,
+    "explanation": "Number 是原始类型之一..."
+  }
   ```
 
 > 业务规则：后端根据 `questionId` 查出对应题目与选项，判断选中选项对应的 `isCorrect` 字段并返回结果。
@@ -91,6 +103,7 @@ model AnswerAttempt {
 ---
 
 ## 四、前端设计（Vue 3 + Pinia 可选 + fetch） 🎨
+
 - 项目位置：`apps/quiz-app`
 - 组件库：`packages/ui`（极简 shadcn 风格）；使用 UnoCSS + SCSS
 - 页面结构建议：
@@ -100,6 +113,7 @@ model AnswerAttempt {
   - `src/components/QuizCard.vue`, `RadioList.vue`, `NextButton.vue`
 
 交互与行为：
+
 - 用户选择选项后立即禁用选项并显示正确/错误状态
 - 答对时显示成功动画/样式，1s 后自动请求下一题
 - 答错时高亮正确答案并显示解析，显示 `下一题` 按钮供用户手动翻题
@@ -112,6 +126,7 @@ model AnswerAttempt {
 ---
 
 ## 五、开发 & 部署细节
+
 - Database: 使用 `docker-compose` 启动 MySQL（开发默认：user=root, password=password, db=quiz_dev）。
 - Prisma: 使用 `prisma migrate` 管理迁移；提供 seed 脚本从 JSON 导入题库
 - Nest: 采用模块化结构（QuestionsModule、AnswersModule），控制器、服务、DTO 与管道（ValidationPipe）
@@ -119,6 +134,7 @@ model AnswerAttempt {
 - CI: 在后续阶段添加（lint、test、build）
 
 ### 环境与配置（Environment & Secrets 管理）
+
 为了避免将秘密直接提交仓库，并方便开发与生产环境的区分，建议采用以下 `.env` 策略：
 
 - `.env` — 存放通用默认配置，仓库中提交为 `.env.example`（不要提交真实凭据）。
@@ -126,6 +142,7 @@ model AnswerAttempt {
 - `.env.local` / `.env.development.local` / `.env.production.local` — 本地开发或临时覆盖的 secrets（**绝对不提交**，应加入 `.gitignore`）。
 
 实现细节：
+
 - 在每个包（`apps/quiz-backend`, `apps/quiz-app`）放置对应的 `.env.example`，说明必须的变量（例如 `DATABASE_*`，`VITE_API_BASE` 等）。前端仅使用 `VITE_` 前缀的变量，不要在前端暴露数据库凭据。
 - 后端使用配置模块（例如 `@nestjs/config` + Dotenv）加载环境变量并在生产环境建议使用云端 Secret Manager 存储真实凭据。
 - 我会在仓库根目录和后端、前端的 `README` 中写明如何准备 `.env` 文件与运行迁移/seed 的步骤。
@@ -135,15 +152,16 @@ model AnswerAttempt {
 ---
 
 ## 六、示例数据（用于 seed 或本地 mock）
+
 ```json
 [
   {
     "id": 1,
     "stem": "下面哪个是 JavaScript 的原始类型？",
     "options": [
-      {"id": 11, "text": "Object"},
-      {"id": 12, "text": "Number", "isCorrect": true},
-      {"id": 13, "text": "Array"}
+      { "id": 11, "text": "Object" },
+      { "id": 12, "text": "Number", "isCorrect": true },
+      { "id": 13, "text": "Array" }
     ],
     "explanation": "Number 是 JS 的原始类型之一",
     "tags": ["javascript"]
@@ -154,6 +172,7 @@ model AnswerAttempt {
 ---
 
 ## 七、验收标准（MVP）✅
+
 - 后端：实现 `GET /api/questions` 与 `POST /api/answers`，并通过 Jest 单元测试验证核心判定逻辑
 - 前端：实现 Quiz 页面并与后端通信，完成自动 1s 下题与手动下一题的 UX；包含 Vitest 与 Cypress 覆盖主要交互
 - 项目可通过 `pnpm install` 后使用 `pnpm --filter apps/backend dev`、`pnpm --filter apps/quiz-app dev` 启动（或通过 docker-compose 启动 DB）并能进行完整的答题流程
@@ -161,6 +180,7 @@ model AnswerAttempt {
 ---
 
 ## 八、下一步计划（我将要做的事）
+
 1. 在 `apps/backend` 初始化 NestJS 项目并添加 Prisma schema 与 migration
 2. 写好 `GET /questions` 与 `POST /answers` 的实现与 Jest 测试
 3. 在 `apps/quiz-app` 实现基础 `Quiz` 页面与 `packages/ui` 的基本组件
@@ -168,9 +188,11 @@ model AnswerAttempt {
 ---
 
 ## 九、长期愿景（Roadmap） 🌱
+
 为防止遗忘，我把你提到的后续畅想集中记录在这里，按主题分组以便后续拆分为可交付的任务：
 
 - 核心功能扩展
+
   - 题库管理：构建管理后台（CMS），支持导入/导出（CSV/JSON/XLSX）、批量编辑、题目审核与版本化
   - 多种题型：多选题、判断题、填空题、代码运行题（需要沙箱）、主观题（人工评阅）
   - 分类与标签：多维标签、难度、技能点、题目元信息与过滤
@@ -178,17 +200,20 @@ model AnswerAttempt {
   - 答题统计：用户或题目维度的正确率、用时分布与趋势分析
 
 - 学习与推荐
+
   - 错题复习功能：自动收录错题并构建复习计划
   - 推荐算法：基于错题、做题历史与间隔重复（SRS）的推荐，后续可接入 ML 模型
   - 多种练习模式：按标签练习、随机练习、限时/计时模式与模拟测验
 
 - 平台与体验
+
   - 管理端权限与审计日志、题目审核流程、题目历史版本回滚
   - PWA 与离线支持：允许离线做题并在恢复网络时同步
   - 国际化（i18n）和主题（暗黑模式）支持
   - 可视化仪表盘：关键指标展示（活跃用户、题目通过率、TOP 错题）
 
 - 技术架构与扩展
+
   - 性能与缓存：Redis 缓存热点题目与统计，优化查询（分页/游标）
   - 异步任务：使用队列（BullMQ）处理导入、导出、模型训练等后台任务
   - 搜索与语义：向量数据库支持相似题搜索与语义检索（Milvus/Weaviate）
@@ -196,6 +221,7 @@ model AnswerAttempt {
   - CI/CD：自动化测试、构建、镜像发布与部署策略（蓝绿/滚动）
 
 - 数据安全与合规
+
   - RBAC 权限、输入验证、防刷与限流、隐私与数据保留策略
   - 备份与迁移策略、生产环境监控与恢复流程
 

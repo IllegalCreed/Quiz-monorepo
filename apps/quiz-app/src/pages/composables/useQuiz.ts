@@ -7,7 +7,7 @@ export function useQuiz() {
   const question = ref<Question | null>(null)
   const loading = ref(false)
   const selected = ref<number | null>(null)
-  const status = ref<'idle' | 'correct' | 'wrong' | 'answered'>("idle")
+  const status = ref<'idle' | 'correct' | 'wrong' | 'answered'>('idle')
   const error = ref<string | null>(null)
 
   const { isMock } = useMockStore()
@@ -54,7 +54,11 @@ export function useQuiz() {
       const correct = second !== undefined && optionId === second.id
       status.value = correct ? 'correct' : 'wrong'
       if (correct) setTimeout(() => loadNext(), 1000)
-      return { correct, correctOptionId: q.options.find((o) => o.text === '成功')?.id ?? null, explanation: q.explanation }
+      return {
+        correct,
+        correctOptionId: q.options.find((o) => o.text === '成功')?.id ?? null,
+        explanation: q.explanation,
+      }
     }
 
     // submit answer
