@@ -68,6 +68,13 @@ pnpm -C apps/quiz-backend run db:seed
 
 - `dev`、`build`、`test`（Jest）。
 - `prisma:generate` / `prisma:migrate` / `db:seed`。
+
+- 新增可用于分环境的数据脚本：
+  - `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。
+  - `db:seed:test`：写入测试数据（用于 CI / E2E，便于还原）。
+  - `db:reset`：清空测试数据并重新运行 `db:seed:test`（仅用于 test/dev，不会在生产上运行，脚本在运行前会进行安全检查）。
+
+- 后端提供一个受保护的测试接口：`POST /test/reset`，仅在 `ENABLE_TEST_ENDPOINT=true` 时启用，调用它会对 test DB 进行重置（适合 E2E 在每个用例前重置数据以保证可复现性）。
 - `type-check` 使用了一个包内 wrapper 脚本（避免 pnpm 递归运行时额外 flags 影响 `tsc`）。
 
 ---
@@ -89,6 +96,14 @@ pnpm -C apps/quiz-backend run db:seed
 
 - 单元测试：`vitest`（前端），`jest`（后端）。
 - E2E 测试：`cypress`（运行于无头 Electron，`test:e2e` 会启动 preview 并执行测试）。
+
+- 如果你想让 E2E 直接使用后端和真实 DB（非 mock），可以：
+  1. 在 `apps/quiz-backend/.env.test.local` 中配置好 `DATABASE_URL` 指向你的 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`。
+  2. 启动后端：`pnpm -C apps/quiz-backend run dev`（确保 `NODE_ENV=test` 或 `ENABLE_TEST_ENDPOINT=true`）。
+  3. 运行 E2E：`pnpm -C apps/quiz-app run test:e2e`。
+
+  测试过程中会调用 `POST /test/reset` 重置 test DB，保证每个用例运行前数据可复现。
+
 - 为了避免 pre-push 在 `vitest` watch 模式下等待按键，我们在 pre-push 中使用了非交互式的 `vitest run`（`test:unit:ci`）。
 
 ---
