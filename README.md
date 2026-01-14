@@ -151,19 +151,48 @@ pnpm -C apps/quiz-backend run db:seed
 
 ---
 
-## 测试策略 & 实践
+## 环境 & 运行模式（开发 / 测试 / 生产）
 
-- 单元测试：`vitest`（前端），`jest`（后端）。
-- E2E 测试：`cypress`（运行于无头 Electron，`test:e2e` 会启动 preview 并执行测试）。
+项目按三种常见运行模式组织，下面说明每种模式下的约定与启动步骤。
 
-- 如果你想让 E2E 直接使用后端和真实 DB（非 mock），可以：
-  1. 在 `apps/quiz-backend/.env.test.local` 中配置好 `DATABASE_URL` 指向你的 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`（参考 `apps/quiz-backend/.env.test.example`）。
-  2. 启动后端（test 模式）：`pnpm -C apps/quiz-backend run start:test`（或直接执行下一步让 `test:e2e` 自动启动后端）。
-  3. 前端会以 test 模式先编译一份（`pnpm -C apps/quiz-app run build:test`），以避免与 production 的 `dist` 混淆；然后运行 E2E：`pnpm -C apps/quiz-app run test:e2e`（这会尝试自动启动后端的 `start:test`）。
+### 1) 开发（development）
 
-  测试过程中会调用 `POST /api/test/reset` 重置 test DB，保证每个用例运行前数据可复现。
+- 目的：本地快速开发、热重载。
+- 前端（apps/quiz-app）
+  - 使用 `pnpm -C apps/quiz-app run dev`（vite dev，默认端口 5173）。
+  - 本地 env: `apps/quiz-app/.env.development.local`（可从 `.env.development.example` 复制并填写）。
+  - 推荐在本地使用 `VITE_MOCK=true` 加快迭代（可在 `.env.development.local` 覆盖）。
+- 后端（apps/quiz-backend）
+  - 使用 `pnpm -C apps/quiz-backend run dev`（ts-node-dev，默认端口 3000）。
+  - 本地 env: `apps/quiz-backend/.env.development.local`（可从 `.env.development.example` 复制）。
 
-- 为了避免 pre-push 在 `vitest` watch 模式下等待按键，我们在 pre-push 中使用了非交互式的 `vitest run`（`test:unit:ci`）。
+### 2) 测试（test / CI / E2E）
+
+- 目的：在接近 CI 的环境中运行构建与测试（包括 E2E）。
+- 约定：
+  - 后端 test 服务使用 `PORT=3001`（避免与 dev/preview 端口冲突）。
+  - 前端 test 构建使用 `vite build --mode test`，并通过 `VITE_API_BASE` 指向测试后端（`http://localhost:3001/api`）。
+- 操作（本地）：
+  1. 在 `apps/quiz-backend/.env.test.local` 中配置 `DATABASE_URL` 指向 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`（参考 `.env.test.example`）。
+  2. 使用根脚本运行完整测试：`pnpm run test`（Turbo 会负责按序构建并执行测试）；若单独跑 E2E，请先确保 test 后端已启动：`pnpm -C apps/quiz-backend run start:test`，然后在前端运行 `pnpm -C apps/quiz-app run test:e2e`。
+  3. E2E 会调用 `POST /api/test/reset` 来重置 test DB，保证每个用例运行前数据一致。
+
+### 3) 生产（production）
+
+- 目的：部署到生产环境。
+- 前端：`pnpm -C apps/quiz-app run build`（生产构建，使用 `.env.production.local` 覆盖生产的 VITE\_\* 变量）。
+- 后端：`pnpm -C apps/quiz-backend run build` && `pnpm -C apps/quiz-backend run start:prod`（生产运行默认端口 3000）。
+- 注意：CI 中注入 secrets（例如 DATABASE_URL）时请通过 CI 环境变量，不要把 `.local` 文件提交到仓库。
+
+---
+
+## 编辑器 / 本地便利配置
+
+- 后端工作区已包含 `.vscode/settings.json`（见 `apps/quiz-backend/.vscode`）：默认会把 `.env*` 及其示例从 Explorer 隐藏以减少误操作（需要查看或编辑时，请启用显示隐藏文件或在 VS Code 设置中临时取消隐藏）。
+
+---
+
+如果你希望我把 README 的这部分放到单独的 CONTRIBUTING 或 CI 文档中（便于新成员快速上手），我可以继续分拆并提交。
 
 ---
 
