@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-// Create multiple databases and users on a MySQL-compatible server (e.g., RDS)
+// Simple script: create dev/test/prod databases and users on a MySQL-compatible server (e.g., RDS)
 // Usage:
 //  - copy .env.create-db.example -> .env.create-db.local and set root credentials
-//  - set CONFIRM_CREATE_PROD=true to allow creating a production DB
 //  - run: node scripts/create-multi-db.js
 
 const mysql = require("mysql2/promise");
@@ -20,14 +19,10 @@ const rootUser =
 const rootPassword =
   process.env.DB_ROOT_PASSWORD || process.env.DATABASE_PASSWORD || "";
 
-const createProd =
-  process.env.CREATE_PROD === "true" ||
-  process.env.CONFIRM_CREATE_PROD === "true";
-
-const prodDb = process.env.PROD_DATABASE_NAME || "quiz_prod";
-const prodUser = process.env.PROD_DATABASE_USER || "quiz_prod_user";
-const prodPwd =
-  process.env.PROD_DATABASE_PASSWORD ||
+const devDb = process.env.DEV_DATABASE_NAME || "quiz_dev";
+const devUser = process.env.DEV_DATABASE_USER || "quiz_dev_user";
+const devPwd =
+  process.env.DEV_DATABASE_PASSWORD ||
   crypto.randomBytes(12).toString("base64");
 
 const testDb = process.env.TEST_DATABASE_NAME || "quiz_test";
@@ -35,6 +30,24 @@ const testUser = process.env.TEST_DATABASE_USER || "quiz_test_user";
 const testPwd =
   process.env.TEST_DATABASE_PASSWORD ||
   crypto.randomBytes(12).toString("base64");
+
+const prodDb = process.env.PROD_DATABASE_NAME || "quiz_prod";
+const prodUser = process.env.PROD_DATABASE_USER || "quiz_prod_user";
+const prodPwd =
+  process.env.PROD_DATABASE_PASSWORD ||
+  crypto.randomBytes(12).toString("base64");
+
+async function ensure(conn, db, user, pwd) {
+  console.log(`Ensuring database ${db}...`);
+  await conn.query(`CREATE DATABASE IF NOT EXISTS \`${db}\`;`);
+  console.log(`Ensuring user ${user}...`);
+  await conn.query(
+    `CREATE USER IF NOT EXISTS \`${user}\`@'%' IDENTIFIED BY ?;`,
+    [pwd],
+  );
+  await conn.query(`GRANT ALL PRIVILEGES ON \`${db}\`.* TO \`${user}\`@'%';`);
+  console.log(`Ensured ${db} / ${user}`);
+}
 
 async function main() {
   if (!rootPassword) {
@@ -53,53 +66,25 @@ async function main() {
   console.log(`Connected to ${host}:${port} as ${rootUser}`);
 
   try {
-    // Ensure test DB
-    console.log(`Ensuring test database ${testDb}...`);
-    await conn.query(`CREATE DATABASE IF NOT EXISTS \`${testDb}\`;`);
-    console.log(`Ensuring test user ${testUser}...`);
-    await conn.query(
-      `CREATE USER IF NOT EXISTS \`${testUser}\`@'%' IDENTIFIED BY ?;`,
-      [testPwd],
-    );
-    await conn.query(
-      `GRANT ALL PRIVILEGES ON \`${testDb}\`.* TO \`${testUser}\`@'%';`,
-    );
-    console.log(`Test DB ${testDb} and user ${testUser} ensured.`);
-
-    if (createProd) {
-      console.log(`Ensuring prod database ${prodDb}...`);
-      await conn.query(`CREATE DATABASE IF NOT EXISTS \`${prodDb}\`;`);
-      console.log(`Ensuring prod user ${prodUser}...`);
-      await conn.query(
-        `CREATE USER IF NOT EXISTS \`${prodUser}\`@'%' IDENTIFIED BY ?;`,
-        [prodPwd],
-      );
-      await conn.query(
-        `GRANT ALL PRIVILEGES ON \`${prodDb}\`.* TO \`${prodUser}\`@'%';`,
-      );
-      console.log(`Prod DB ${prodDb} and user ${prodUser} ensured.`);
-    } else {
-      console.log(
-        "Prod creation skipped. To create prod DB set CONFIRM_CREATE_PROD=true and re-run.",
-      );
-    }
+    await ensure(conn, devDb, devUser, devPwd);
+    await ensure(conn, testDb, testUser, testPwd);
+    await ensure(conn, prodDb, prodUser, prodPwd);
 
     await conn.query("FLUSH PRIVILEGES;");
 
     console.log("\nSummary (store these secrets safely):");
+    console.log(`DEV DB: ${devDb}`);
+    console.log(`DEV USER: ${devUser}`);
+    console.log(`DEV PASSWORD: ${devPwd}`);
     console.log(`TEST DB: ${testDb}`);
     console.log(`TEST USER: ${testUser}`);
     console.log(`TEST PASSWORD: ${testPwd}`);
-    if (createProd) {
-      console.log(`PROD DB: ${prodDb}`);
-      console.log(`PROD USER: ${prodUser}`);
-      console.log(`PROD PASSWORD: ${prodPwd}`);
-    } else {
-      console.log("PROD DB not created in this run");
-    }
+    console.log(`PROD DB: ${prodDb}`);
+    console.log(`PROD USER: ${prodUser}`);
+    console.log(`PROD PASSWORD: ${prodPwd}`);
 
     console.log(
-      "\nNow copy these values into your .env.test.local / .env.production.local as appropriate.",
+      "\nCopy these to apps/quiz-backend/.env.*.local as appropriate and keep them secure.",
     );
   } finally {
     await conn.end();
