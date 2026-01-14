@@ -1,7 +1,5 @@
 import { Controller, Post, ForbiddenException } from "@nestjs/common";
-
-// db-utils is CommonJS; require it to keep interop simple
-const db = require("../../prisma/db-utils");
+import { resetTest } from "../../prisma/db-utils";
 
 @Controller("test")
 export class TestController {
@@ -18,7 +16,7 @@ export class TestController {
       throw new ForbiddenException("Refuse to reset production database");
     }
 
-    await db.resetTest();
+    await resetTest();
 
     return { ok: true };
   }
