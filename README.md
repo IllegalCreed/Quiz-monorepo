@@ -69,14 +69,58 @@ pnpm -C apps/quiz-backend run db:seed
 - `dev`、`build`、`test`（Jest）。
 - `prisma:generate` / `prisma:migrate` / `db:seed`。
 
-- 如果你希望脚本在 RDS 上创建 dev/test/prod DB 与用户：
-  - 复制 `apps/quiz-backend/.env.create-db.example` → `apps/quiz-backend/.env.create-db.local`，填写能创建数据库/用户的账号（例如 root）。
-  - 执行以下命令会在 RDS 上创建 `quiz_dev`、`quiz_test` 与 `quiz_prod`（以及对应用户），并打印生成的密码（如果你在 env 中未指定的话）：
-    ```bash
-    pnpm -C apps/quiz-backend run db:create:all
-    ```
-  - 脚本会打印生成的密码（如未显式提供），请把这些值保存到 `apps/quiz-backend/.env.*.local` 并妥善保管。
-  - 注意：我无法直接替你在阿里云上运行脚本——你需要在有权限的环境中执行上述命令（CLI 或者通过有权限的同事）。
+### 数据库与 Seed 策略（清晰说明） 🔧
+
+本项目建议在云环境（例如阿里云 RDS）上为不同用途准备不同的数据库：
+
+- **prod（生产）** — 生产数据，绝对禁止自动化脚本/CI 在其上执行破坏性操作（如 reset/seed）。
+- **dev（开发）** — 团队/个人日常开发使用的数据库，可以包含更多数据、调试用账号等。
+- **test（测试 / CI）** — 专门用于自动化测试（CI / E2E），**必须可被重置**以保证每次测试的数据确定性。
+
+为什么要区分：测试需要完全可控、可重置的数据集；生产数据会不断变化且敏感，**任何自动化 reset/seed 操作都不应在 production 上默认运行**。
+
+#### Seed 的两类（system vs test）
+
+- **system seed（基础系统数据）**：写入系统必须的、长期存在的数据（例如管理员账号、基础角色、配置项）。应当是**幂等**的（重复运行不产生重复条目）。脚本：`pnpm -C apps/quiz-backend run db:seed:system`。
+- **test seed（测试数据）**：写入用于测试的数据集合（固定题目、示例用户等），脚本会在运行前 **清空相关表** 再插入数据，保证每次运行后数据一致。脚本：`pnpm -C apps/quiz-backend run db:seed:test`。
+- **组合（初始化 test）**：`pnpm -C apps/quiz-backend run db:setup:test` 会执行迁移 + system seed + test seed，适合 CI 或初次准备 test 环境。
+
+#### db:reset（用于测试）
+
+- `pnpm -C apps/quiz-backend run db:reset`：会**清空测试数据并重新运行 test seed**（脚本内部含安全检查，会拒绝对生产库执行）。
+- 我们也提供了后端 HTTP 接口 `POST /test/reset`（仅在 `ENABLE_TEST_ENDPOINT=true` 时启用），E2E 测试可以在每个用例前调用此接口以保证每个用例从确定性数据开始。
+
+> 安全注意：脚本在执行前会检查数据库名与 `NODE_ENV`，若命中 **production** 特征（例如数据库名包含 `prod` 或 NODE_ENV=production），会拒绝执行，除非你显式设置覆盖变量（不建议在常规流程中使用）。
+
+#### 如何在 RDS 上创建数据库 / 用户
+
+- 使用仓库提供的 `create-db` 脚本（需要具有建库权限的账号，例如 root）：
+
+  ```bash
+  # 将示例 env 复制并填入有权限的账号
+  cp apps/quiz-backend/.env.create-db.example apps/quiz-backend/.env.create-db.local
+  # 编辑 .env.create-db.local，设置 DB_ROOT_USERNAME / DB_ROOT_PASSWORD / DATABASE_HOST 等
+
+  # 在有权限的环境（可访问 RDS 且用有权限账号）运行：
+  pnpm -C apps/quiz-backend run db:create
+  ```
+
+- 脚本会创建 `quiz_dev`、`quiz_test`、`quiz_prod`（及对应用户），并在输出中打印随机生成的密码（如果你没有在 env 中提供）。
+- 运行后，请把输出的密码手动保存到：
+  - `apps/quiz-backend/.env.test.local`（测试库）
+  - `apps/quiz-backend/.env.production.local`（生产库）
+
+#### E2E 测试建议
+
+- 若你要在本地或 CI 用真实后端跑 E2E：
+  1. 确保 `apps/quiz-backend/.env.test.local` 配置了正确的 `DATABASE_URL`（指向 test DB）并且 `ENABLE_TEST_ENDPOINT=true`。
+  2. 启动后端：`pnpm -C apps/quiz-backend run dev`（或 production 模式时不要启用 test endpoint）。
+  3. 运行 E2E：`pnpm -C apps/quiz-app run test:e2e`。
+  4. 测试会在每个用例前调用 `POST /test/reset`（示例见 `apps/quiz-app/cypress/e2e/real.cy.ts`），确保每个用例的前置数据一致性。
+
+---
+
+如需我把 README 的某处再精简或加入样例命令（例如把 `POST /test/reset` 的 curl 示例写进 README），告诉我具体位置，我会补上。
 
 - 新增可用于分环境的数据脚本：
   - `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。
