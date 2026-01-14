@@ -69,6 +69,19 @@ pnpm -C apps/quiz-backend run db:seed
 - `dev`、`build`、`test`（Jest）。
 - `prisma:generate` / `prisma:migrate` / `db:seed`。
 
+- 如果你希望脚本在 RDS 上创建 test/prod DB 与用户：
+  - 复制 `apps/quiz-backend/.env.create-db.example` → `apps/quiz-backend/.env.create-db.local`，填写能创建数据库/用户的账号（例如 root）。
+  - 默认执行以下命令会在 RDS 上 **只创建 test DB + user**（并打印密码）：
+    ```bash
+    pnpm -C apps/quiz-backend run db:create:all
+    ```
+  - 若确实要同时创建 prod DB，请在运行前设置确认变量以避免误操作：
+    ```bash
+    CONFIRM_CREATE_PROD=true pnpm -C apps/quiz-backend run db:create:all
+    ```
+  - 脚本会打印生成的密码（如未显式提供），请把这些值保存到 `apps/quiz-backend/.env.test.local` 与 `apps/quiz-backend/.env.production.local` 并妥善保管。
+  - 注意：我无法直接替你在阿里云上运行脚本——你需要在有权限的环境中执行上述命令（CLI 或者通过有权限的同事）。
+
 - 新增可用于分环境的数据脚本：
   - `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。
   - `db:seed:test`：写入测试数据（用于 CI / E2E，便于还原）。
