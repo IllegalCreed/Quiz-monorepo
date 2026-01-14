@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const data = JSON.parse(
-    fs.readFileSync(new URL("./data/seed.json", import.meta.url), "utf-8")
+    fs.readFileSync(new URL("./data/seed.json", import.meta.url), "utf-8"),
   );
 
   for (const q of data) {

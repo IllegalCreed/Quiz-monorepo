@@ -19,11 +19,11 @@ export class QuestionsController {
       questionId: number;
       selectedOptionId: number;
       elapsedMs?: number;
-    }
+    },
   ) {
     const res = await this.service.checkAnswer(
       body.questionId,
-      body.selectedOptionId
+      body.selectedOptionId,
     );
     // Optionally include explanation
     const question = await this.service.getRandom(1);

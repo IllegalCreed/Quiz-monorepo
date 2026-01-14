@@ -18,7 +18,7 @@ export async function fetchQuestions(limit = 1): Promise<Question[]> {
 export async function submitAnswer(
   questionId: number,
   selectedOptionId: number,
-  elapsedMs?: number
+  elapsedMs?: number,
 ) {
   const res = await fetch(`${BASE}/answers`, {
     method: 'POST',

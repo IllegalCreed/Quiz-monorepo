@@ -34,5 +34,5 @@ export default defineConfigWithVueTs(
 
   skipFormatting,
 
-  ...pluginOxlint.configs['flat/recommended']
+  ...pluginOxlint.configs['flat/recommended'],
 )

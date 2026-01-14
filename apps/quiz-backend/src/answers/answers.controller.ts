@@ -10,7 +10,7 @@ export class AnswersController {
   async submit(@Body() body: CheckAnswerDto) {
     const res = await this.questionsService.checkAnswer(
       body.questionId,
-      body.selectedOptionId
+      body.selectedOptionId,
     );
     // fetch explanation
     const q = await this.questionsService.findQuestionById(body.questionId);
