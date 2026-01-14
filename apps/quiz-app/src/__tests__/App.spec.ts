@@ -5,7 +5,8 @@ import App from '../App.vue'
 
 describe('App', () => {
   it('mounts renders properly', () => {
-    const wrapper = mount(App)
-    expect(wrapper.text()).toContain('You did it!')
+    const wrapper = mount(App, { global: { stubs: ['router-view'] } })
+    // Ensure header / basic layout renders
+    expect(wrapper.text()).toContain('Quiz')
   })
 })
