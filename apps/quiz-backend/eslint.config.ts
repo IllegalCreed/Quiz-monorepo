@@ -36,7 +36,7 @@ const config = [
   },
   {
     // Only lint source and scripts TypeScript files with project-aware rules
-    files: ["src/**/*.ts", "scripts/**/*.ts", "**/*.js"],
+    files: ["src/**/*.ts", "scripts/**/*.ts"],
     languageOptions: {
       parser: tsParser as any,
       parserOptions: {
