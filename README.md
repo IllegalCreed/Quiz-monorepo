@@ -130,6 +130,12 @@ pnpm -C apps/quiz-backend run db:seed
 - 后端提供一个受保护的测试接口：`POST /test/reset`，仅在 `ENABLE_TEST_ENDPOINT=true` 时启用，调用它会对 test DB 进行重置（适合 E2E 在每个用例前重置数据以保证可复现性）。
 - `type-check` 使用了一个包内 wrapper 脚本（避免 pnpm 递归运行时额外 flags 影响 `tsc`）。
 
+- 后端：添加了 **ESLint**（TypeScript 支持），可通过下面命令运行：
+  - `pnpm -C apps/quiz-backend run lint` — 检查后端代码中的 lint 警告/错误。
+  - `pnpm -C apps/quiz-backend run lint:fix` — 自动尝试修复可修复的问题。
+
+  我已添加 `apps/quiz-backend/.eslintrc.js` 与兼容的 `eslint.config.cjs`，并把相关 devDependencies 安装到 `apps/quiz-backend`。
+
 ---
 
 ## Husky 钩子与工作流
