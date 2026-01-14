@@ -47,22 +47,28 @@ function ensureNotProd() {
 async function seedSystem() {
   ensureNotProd();
   console.log("seedSystem: beginning (idempotent)");
-  // Insert a single 'Hello World' base question via upsert so it exists exactly once
-  await prisma.question.upsert({
+  // Insert a single 'Hello World' base question if its stem not present
+  const exists = await prisma.question.findFirst({
     where: { stem: "Hello World - 基础题" },
-    update: {},
-    create: {
-      stem: "Hello World - 基础题",
-      explanation: "这是一个基础题目，所有环境都会包含这条数据。",
-      tags: ["基础"],
-      options: {
-        create: [
-          { text: "Hello", isCorrect: false },
-          { text: "World", isCorrect: true },
-        ],
-      },
-    },
   });
+  if (!exists) {
+    await prisma.question.create({
+      data: {
+        stem: "Hello World - 基础题",
+        explanation: "这是一个基础题目，所有环境都会包含这条数据。",
+        tags: ["基础"],
+        options: {
+          create: [
+            { text: "Hello", isCorrect: false },
+            { text: "World", isCorrect: true },
+          ],
+        },
+      },
+    });
+    console.log("seedSystem: created base question");
+  } else {
+    console.log("seedSystem: base question already exists");
+  }
   console.log("seedSystem: finished");
 }
 
@@ -74,26 +80,42 @@ async function seedTest() {
   const data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
 
   for (const q of data) {
-    // Use upsert by stem to avoid duplicates if run twice unintentionally
-    await prisma.question.upsert({
+    const existing = await prisma.question.findFirst({
       where: { stem: q.stem },
-      update: {
-        explanation: q.explanation,
-        tags: q.tags,
-      },
-      create: {
-        stem: q.stem,
-        explanation: q.explanation,
-        tags: q.tags,
-        options: {
-          create: q.options.map((o) => ({
-            text: o.text,
-            isCorrect: o.isCorrect,
-          })),
-        },
-      },
     });
-    console.log("Upserted test question", q.stem);
+    if (existing) {
+      // replace options to match the test data
+      await prisma.option.deleteMany({ where: { questionId: existing.id } });
+      await prisma.question.update({
+        where: { id: existing.id },
+        data: {
+          explanation: q.explanation,
+          tags: q.tags,
+          options: {
+            create: q.options.map((o) => ({
+              text: o.text,
+              isCorrect: o.isCorrect,
+            })),
+          },
+        },
+      });
+      console.log("Updated test question", q.stem);
+    } else {
+      await prisma.question.create({
+        data: {
+          stem: q.stem,
+          explanation: q.explanation,
+          tags: q.tags,
+          options: {
+            create: q.options.map((o) => ({
+              text: o.text,
+              isCorrect: o.isCorrect,
+            })),
+          },
+        },
+      });
+      console.log("Inserted test question", q.stem);
+    }
   }
 
   console.log("seedTest: finished");
