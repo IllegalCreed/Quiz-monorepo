@@ -3,10 +3,10 @@ describe('Quiz flow (real backend)', () => {
     // Reset test DB via protected test endpoint (backend must be running and ENABLE_TEST_ENDPOINT=true)
     cy.request({
       method: 'POST',
-      url: 'http://localhost:3000/test/reset',
+      url: 'http://localhost:3000/api/test/reset',
       failOnStatusCode: false,
     }).then((res) => {
-      if (res.status !== 200) {
+      if (res.status < 200 || res.status >= 300) {
         throw new Error(
           'Test reset endpoint failed. Ensure backend is running and ENABLE_TEST_ENDPOINT=true. Response: ' +
             res.status,
