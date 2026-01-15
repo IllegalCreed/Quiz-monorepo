@@ -1,14 +1,15 @@
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 
-// `__dirname` isn't available in some editor TS server ESM modes; fall back to process.cwd()
+// Keep a minimal, clear config: ignore build and node modules, handle Prisma with its
+// own tsconfig, and apply project-aware rules to source and scripts.
 const tsconfigRootDir =
   typeof __dirname !== "undefined" ? __dirname : process.cwd();
 
-const config = [
+export default [
   { ignores: ["**/dist/**", "**/node_modules/**"] },
-  // Prisma-specific files use their own tsconfig so eslint's type-aware rules
-  // can resolve types. This avoids the "file not included in tsconfig" error.
+
+  // Prisma files use their own tsconfig so type-aware rules work correctly
   {
     files: ["prisma/**/*.ts"],
     languageOptions: {
@@ -19,23 +20,15 @@ const config = [
         sourceType: "module",
       },
     },
-    plugins: {
-      "@typescript-eslint": tsPlugin as any,
-    },
-    rules: {},
     settings: {
-      "import/parsers": {
-        "@typescript-eslint/parser": [".ts"],
-      },
       "import/resolver": {
-        typescript: {
-          project: "./prisma/tsconfig.prisma.json",
-        },
+        typescript: { project: "./prisma/tsconfig.prisma.json" },
       },
     },
   },
+
+  // Source and scripts: project-aware rules + Prettier integration
   {
-    // Only lint source and scripts TypeScript files with project-aware rules
     files: ["src/**/*.ts", "scripts/**/*.ts"],
     languageOptions: {
       parser: tsParser as any,
@@ -50,24 +43,13 @@ const config = [
       prettier: require("eslint-plugin-prettier") as any,
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
     settings: {
-      "import/parsers": {
-        "@typescript-eslint/parser": [".ts"],
-      },
-      "import/resolver": {
-        typescript: {
-          project: "./tsconfig.json",
-        },
-      },
+      "import/parsers": { "@typescript-eslint/parser": [".ts"] },
+      "import/resolver": { typescript: { project: "./tsconfig.json" } },
     },
   },
 ];
-
-export default config;
