@@ -12,7 +12,7 @@ Nest-like backend for Quiz project (minimal scaffold for MVP)
 6. Seed (dev): `pnpm --filter apps/quiz-backend run db:seed` (alias for `db:seed:dev`)
 
 - `db:seed:dev` — idempotent system seed (creates base system data if missing)
-- `db:seed:test` — **reset** test DB and seed both system and test data (clears previous test data then inserts a deterministic dataset). This is the script intended for E2E/CI preparation.
+- `db:seed:test` — **reset** test DB and seed both system and test data (clears previous test data then inserts a deterministic dataset). This is the script intended for E2E/CI preparation. The older `db:reset` and `db:setup:test` scripts have been removed; use `db:seed:test` to prepare a clean test DB and `db:seed:system` for idempotent system-only seed.
 - `db:seed:prod` — seeds system data to production **only** when explicitly allowed (requires `QUIZ_ALLOW_PROD_SEED=true` and, if you want the script to load `.env.production.local`, `QUIZ_ALLOW_READ_PROD_ENV=true`).
 
 7. Start dev server: `pnpm --filter apps/quiz-backend run dev`
