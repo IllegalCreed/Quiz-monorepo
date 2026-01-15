@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 
 async function main() {
@@ -8,33 +9,49 @@ async function main() {
     process.exit(1);
   }
 
-  // Optionally load production env only when explicitly allowed to read it
-  if (mode === "prod" && process.env.QUIZ_ALLOW_READ_PROD_ENV === "true") {
+  // For test mode: explicitly load test env file
+  if (mode === "test") {
+    const p = path.resolve(__dirname, "../.env.test.local");
+    if (!fs.existsSync(p)) {
+      throw new Error(`Test env file not found at ${p}`);
+    }
+    dotenv.config({ path: p, override: true });
+    console.log(`Loaded env from ${p}`);
+  }
+
+  // For dev mode: explicitly load dev env
+  if (mode === "dev") {
+    const p = path.resolve(__dirname, "../.env.development.local");
+    if (!fs.existsSync(p)) {
+      throw new Error(`Development env file not found at ${p}`);
+    }
+    dotenv.config({ path: p, override: true });
+    console.log(`Loaded dev env from ${p}`);
+  }
+
+  // For prod: require explicit confirmation and then load prod env (single guard)
+  if (mode === "prod") {
+    if (process.env.QUIZ_ALLOW_PROD_SEED !== "true") {
+      console.error(
+        "Refusing to seed production: set QUIZ_ALLOW_PROD_SEED=true to confirm. This will load .env.production.local."
+      );
+      process.exit(1);
+    }
     const p = path.resolve(__dirname, "../.env.production.local");
+    if (!fs.existsSync(p)) {
+      throw new Error(`Production env file not found at ${p}`);
+    }
     dotenv.config({ path: p, override: true });
     console.log(`Loaded production env from ${p}`);
-  }
-
-  // For test mode ensure NODE_ENV=test so db-utils will pick up test env files
-  if (mode === "test") {
-    process.env.NODE_ENV = "test";
-  }
-
-  // Safety guard for prod: require explicit confirmation var
-  if (mode === "prod" && process.env.QUIZ_ALLOW_PROD_SEED !== "true") {
-    console.error(
-      "Refusing to seed production: set QUIZ_ALLOW_PROD_SEED=true to confirm and optionally QUIZ_ALLOW_READ_PROD_ENV=true to load .env.production.local",
-    );
-    process.exit(1);
   }
 
   // Import seeds (they will resolve DATABASE_URL using existing logic)
   let db: any;
   try {
     // Try commonjs require first (works with ts-node/register in CJS mode)
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
+
     db = require("../prisma/db-utils");
-  } catch (err) {
+  } catch {
     // Fallback to dynamic import (supports ESM runtime)
     db = await import(path.join(__dirname, "../prisma/db-utils.ts"));
   }
