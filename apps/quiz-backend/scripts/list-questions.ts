@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-(async () => {
+void (async () => {
   const url = process.argv[2];
   if (!url) {
     console.error("Usage: node list-questions.js <DATABASE_URL>");
@@ -13,8 +13,9 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
       select: { id: true, stem: true },
     });
     console.log(qs);
-  } catch (e: any) {
-    console.error(e.message ?? e);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(msg);
   } finally {
     await prisma.$disconnect();
   }

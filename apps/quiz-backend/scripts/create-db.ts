@@ -62,7 +62,7 @@ async function ensure(
   console.log(`Ensured ${db} / ${user}`);
 }
 
-(async function main() {
+void (async function main() {
   if (!rootPassword) {
     console.error(
       "DB root password is required. Set DB_ROOT_PASSWORD or DATABASE_PASSWORD in your .env.create-db.local.",

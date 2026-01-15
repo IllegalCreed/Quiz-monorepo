@@ -46,33 +46,37 @@ async function main() {
   }
 
   // Import seeds (they will resolve DATABASE_URL using existing logic)
-  let db: any;
-  try {
-    // Try commonjs require first (works with ts-node/register in CJS mode)
+  type SeedModule = {
+    seedSystem?: () => Promise<void>;
+    resetTest?: () => Promise<void>;
+  };
 
-    db = require("../prisma/db-utils");
-  } catch {
-    // Fallback to dynamic import (supports ESM runtime)
-    db = await import(path.join(__dirname, "../prisma/db-utils.ts"));
-  }
+  const dbModule = (await import(
+    path.join(__dirname, "../prisma/db-utils")
+  )) as unknown;
+  const db = dbModule as SeedModule;
 
   try {
     if (mode === "dev") {
       console.log("Seeding system data (dev)...");
+      if (!db.seedSystem) throw new Error("seedSystem not available");
       await db.seedSystem();
       console.log("Done.");
     } else if (mode === "test") {
       console.log("Resetting and seeding test database (test)...");
       // Use resetTest to ensure deterministic test DB (clears then seeds)
+      if (!db.resetTest) throw new Error("resetTest not available");
       await db.resetTest();
       console.log("Done.");
     } else {
       console.log("Seeding system data (prod)...");
+      if (!db.seedSystem) throw new Error("seedSystem not available");
       await db.seedSystem();
       console.log("Done.");
     }
-  } catch (e) {
-    console.error("Seed failed:", e);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("Seed failed:", msg);
     process.exit(1);
   } finally {
     // exit explicitly to avoid hanging prisma client
@@ -80,4 +84,4 @@ async function main() {
   }
 }
 
-main();
+void main();
