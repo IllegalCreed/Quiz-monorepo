@@ -1,6 +1,11 @@
 export default {
   preset: "ts-jest",
   testEnvironment: "node",
-  coverageDirectory: "./coverage",
-  testPathIgnorePatterns: ["<rootDir>/dist/"],
+  rootDir: "src",
+  testRegex: ".*\\.spec\\.ts$",
+  transform: {
+    "^.+\\.(t|j)s$": "ts-jest",
+  },
+  collectCoverageFrom: ["**/*.(t|j)s"],
+  coverageDirectory: "../coverage",
 };
