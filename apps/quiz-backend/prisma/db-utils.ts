@@ -155,6 +155,15 @@ export async function seedTest() {
 
 export async function resetTest() {
   ensureNotProd();
+
+  // Safety: refuse to reset unless the database name looks like a test database.
+  const dbName = _getDatabaseName();
+  if (!dbName.toLowerCase().includes("test")) {
+    throw new Error(
+      "Refusing to run resetTest against non-test database (database name must include 'test')",
+    );
+  }
+
   console.log("resetTest: wiping and reseeding test data");
 
   try {
