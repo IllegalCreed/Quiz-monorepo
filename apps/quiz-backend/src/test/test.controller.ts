@@ -73,11 +73,12 @@ export class TestController {
         mod = await import("../../prisma/db-utils.js");
       } catch (e1) {
         try {
-          mod = await import("../../prisma/db-utils.ts");
+          // Try import without extension (works for ts-node and when package exports .ts)
+          mod = await import("../../prisma/db-utils");
         } catch (e2) {
           // Log both errors for debugging
           console.error("Failed to import db-utils (js):", e1);
-          console.error("Failed to import db-utils (ts):", e2);
+          console.error("Failed to import db-utils (no ext):", e2);
           throw new InternalServerErrorException("Unable to load resetTest helper");
         }
       }
