@@ -1,5 +1,6 @@
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 // Keep a minimal, clear config: ignore build and node modules, handle Prisma with its
 // own tsconfig, and apply project-aware rules to source and scripts.
@@ -8,6 +9,7 @@ const tsconfigRootDir =
 
 export default [
   { ignores: ["**/dist/**", "**/node_modules/**"] },
+  eslintPluginPrettierRecommended,
 
   // Prisma files use their own tsconfig so type-aware rules work correctly
   {
@@ -40,10 +42,12 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tsPlugin as any,
-      prettier: require("eslint-plugin-prettier") as any,
     },
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_" },
+      ],
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
