@@ -42,9 +42,20 @@ if (
   process.env.DATABASE_URL = `mysql://${user}:${pass}@${host}:${port}/${db}`;
 }
 
+function _maskDatabaseUrl(raw?: string) {
+  if (!raw) return "(not set)";
+  try {
+    const u = new URL(raw);
+    const user = u.username ? `${u.username}:***@` : "";
+    return `${u.protocol}//${user}${u.host}${u.pathname}`;
+  } catch {
+    return "(invalid url)";
+  }
+}
+
 console.log(
   "Resolved DATABASE_URL for Prisma adapter:",
-  process.env.DATABASE_URL,
+  _maskDatabaseUrl(process.env.DATABASE_URL),
 );
 
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? "");
