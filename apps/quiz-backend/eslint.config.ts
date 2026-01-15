@@ -47,6 +47,7 @@ const config = [
     },
     plugins: {
       "@typescript-eslint": tsPlugin as any,
+      prettier: require("eslint-plugin-prettier") as any,
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [
@@ -54,6 +55,7 @@ const config = [
         { argsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/explicit-module-boundary-types": "off",
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
     settings: {
       "import/parsers": {
