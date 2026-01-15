@@ -52,25 +52,27 @@ async function main() {
   };
 
   // Import prisma seed helpers with fallback for compiled JS and ts-node (.ts)
-  async function importDbUtils() {
-    const candidates = [
-      path.join(__dirname, "../prisma/db-utils.js"),
-      path.join(__dirname, "../prisma/db-utils.ts"),
-      path.join(__dirname, "../prisma/db-utils"),
-    ];
-    let lastErr: unknown;
-    for (const p of candidates) {
+  async function importDbUtils(): Promise<SeedModule> {
+    const jsPath = path.join(__dirname, "../prisma/db-utils.js");
+    try {
+      const mod = (await import(jsPath)) as SeedModule;
+      return mod;
+    } catch (e1) {
       try {
-        return (await import(p)) as unknown;
-      } catch (e) {
-        lastErr = e;
+        // @ts-expect-error dynamic resolution at runtime (may resolve to .ts or .js)
+        const mod = (await import(
+          path.join(__dirname, "../prisma/db-utils")
+        )) as SeedModule;
+        return mod;
+      } catch (e2) {
+        console.error("Failed to import db-utils (js):", e1);
+        console.error("Failed to import db-utils (no ext):", e2);
+        throw new Error("Unable to import prisma db-utils");
       }
     }
-    throw lastErr ?? new Error('Unable to import prisma db-utils');
   }
 
-  const dbModule = (await importDbUtils()) as unknown;
-  const db = dbModule as SeedModule;
+  const db = await importDbUtils();
 
   try {
     if (mode === "dev") {
