@@ -33,7 +33,7 @@ async function main() {
   if (mode === "prod") {
     if (process.env.QUIZ_ALLOW_PROD_SEED !== "true") {
       console.error(
-        "Refusing to seed production: set QUIZ_ALLOW_PROD_SEED=true to confirm. This will load .env.production.local."
+        "Refusing to seed production: set QUIZ_ALLOW_PROD_SEED=true to confirm. This will load .env.production.local.",
       );
       process.exit(1);
     }
