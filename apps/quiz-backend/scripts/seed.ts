@@ -45,9 +45,9 @@ async function main() {
       await db.seedSystem();
       console.log("Done.");
     } else if (mode === "test") {
-      console.log("Seeding system + test data (test)...");
-      await db.seedSystem();
-      await db.seedTest();
+      console.log("Resetting and seeding test database (test)...");
+      // Use resetTest to ensure deterministic test DB (clears then seeds)
+      await db.resetTest();
       console.log("Done.");
     } else {
       console.log("Seeding system data (prod)...");
