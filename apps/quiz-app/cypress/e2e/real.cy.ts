@@ -5,6 +5,9 @@ describe('Quiz flow (real backend)', () => {
       method: 'POST',
       url: 'http://localhost:3000/api/test/reset',
       failOnStatusCode: false,
+      headers: {
+        'x-reset-secret': Cypress.env('TEST_RESET_SECRET') || 's3cr3t',
+      },
     }).then((res) => {
       if (res.status < 200 || res.status >= 300) {
         throw new Error(

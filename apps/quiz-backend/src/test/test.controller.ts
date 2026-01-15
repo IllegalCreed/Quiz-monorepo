@@ -68,13 +68,13 @@ export class TestController {
     let resetTest: (() => Promise<void>) | undefined;
     try {
       // Try compiled JS first (when running from dist), then TS (when running via ts-node)
-      let mod: any;
+      let mod: unknown;
       try {
         mod = await import("../../prisma/db-utils.js");
       } catch (e1) {
         try {
           // Try import without extension (works for ts-node and when package exports .ts)
-          // @ts-ignore: dynamic resolution at runtime (may resolve to .ts or .js)
+          // @ts-expect-error: dynamic resolution at runtime (may resolve to .ts or .js)
           mod = await import("../../prisma/db-utils");
         } catch (e2) {
           // Log both errors for debugging
@@ -85,7 +85,7 @@ export class TestController {
           );
         }
       }
-      resetTest = mod?.resetTest;
+      resetTest = (mod as { resetTest?: () => Promise<void> })?.resetTest;
     } catch (e) {
       // Surface the error for easier diagnosis
       console.error("Error loading resetTest helper:", e);

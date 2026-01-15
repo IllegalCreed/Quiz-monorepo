@@ -120,7 +120,32 @@ export async function seedTest() {
     options: SeedOption[];
   };
 
-  const dataPath = path.join(__dirname, "data", "seed-test.json");
+  // Locate `prisma/data/seed-test.json`.
+  // Prefer the path next to this module (works when running from source or compiled
+  // package), but fall back to the repo-local path for cases where the runtime
+  // resolves modules from a different layout (e.g., start:test using compiled/dist
+  // layout). This keeps reset/seed working in CI and local test runs without
+  // requiring special build-time copy steps.
+  const candidatePaths = [
+    path.join(__dirname, "data", "seed-test.json"),
+    path.join(__dirname, "..", "prisma", "data", "seed-test.json"),
+    path.resolve(process.cwd(), "prisma", "data", "seed-test.json"),
+  ];
+
+  let dataPath: string | undefined;
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      dataPath = p;
+      break;
+    }
+  }
+
+  if (!dataPath) {
+    throw new Error(
+      `seed-test.json not found. Checked: ${candidatePaths.join(", ")}`,
+    );
+  }
+
   const data = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as SeedQuestion[];
 
   for (const q of data) {

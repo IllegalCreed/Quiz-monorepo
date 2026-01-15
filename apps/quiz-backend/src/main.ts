@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import * as dotenv from "dotenv";
+import path from "path";
 
 async function bootstrap() {
   // Load environment files with precedence: .env.<NODE_ENV>.local -> .env -> process.env
@@ -9,12 +10,13 @@ async function bootstrap() {
 
   // Attempt to load env files from both the current process cwd and the package directory
   // so that start scripts invoked from the monorepo root still pick up package-local .env files.
-  const path = require("path");
   const packageDirLocal = path.resolve(__dirname, "..", "..");
   const localEnvPath = path.join(packageDirLocal, `.env.${env}.local`);
   const packageEnvPath = path.join(packageDirLocal, `.env`);
 
-  console.log(`[main] loading env from: cwd .env.${env}.local and package ${localEnvPath}`);
+  console.log(
+    `[main] loading env from: cwd .env.${env}.local and package ${localEnvPath}`,
+  );
 
   // Load package-local env first, then fallback to cwd env.
   dotenv.config({ path: localEnvPath });
