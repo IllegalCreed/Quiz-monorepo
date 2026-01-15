@@ -67,10 +67,24 @@ export class TestController {
     // Lazy import to avoid loading db-utils at module init (it expects caller to set env)
     let resetTest: (() => Promise<void>) | undefined;
     try {
-      // import dynamically so missing DATABASE_URL doesn't break app boot
-      const mod = await import("../../prisma/db-utils.js");
-      resetTest = mod.resetTest;
-    } catch {
+      // Try compiled JS first (when running from dist), then TS (when running via ts-node)
+      let mod: any;
+      try {
+        mod = await import("../../prisma/db-utils.js");
+      } catch (e1) {
+        try {
+          mod = await import("../../prisma/db-utils.ts");
+        } catch (e2) {
+          // Log both errors for debugging
+          console.error("Failed to import db-utils (js):", e1);
+          console.error("Failed to import db-utils (ts):", e2);
+          throw new InternalServerErrorException("Unable to load resetTest helper");
+        }
+      }
+      resetTest = mod?.resetTest;
+    } catch (e) {
+      // Surface the error for easier diagnosis
+      console.error('Error loading resetTest helper:', e);
       throw new InternalServerErrorException("Unable to load resetTest helper");
     }
 

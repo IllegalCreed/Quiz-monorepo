@@ -51,9 +51,25 @@ async function main() {
     resetTest?: () => Promise<void>;
   };
 
-  const dbModule = (await import(
-    path.join(__dirname, "../prisma/db-utils")
-  )) as unknown;
+  // Import prisma seed helpers with fallback for compiled JS and ts-node (.ts)
+  async function importDbUtils() {
+    const candidates = [
+      path.join(__dirname, "../prisma/db-utils.js"),
+      path.join(__dirname, "../prisma/db-utils.ts"),
+      path.join(__dirname, "../prisma/db-utils"),
+    ];
+    let lastErr: unknown;
+    for (const p of candidates) {
+      try {
+        return (await import(p)) as unknown;
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr ?? new Error('Unable to import prisma db-utils');
+  }
+
+  const dbModule = (await importDbUtils()) as unknown;
   const db = dbModule as SeedModule;
 
   try {
