@@ -7,7 +7,13 @@ export class QuestionsService {
 
   async getRandom(limit = 1) {
     // Simple implementation: fetch random questions using ORDER BY RAND()
-    const q: any = await this.prisma.$queryRaw`
+    type QuestionRow = {
+      id: number;
+      stem: string;
+      explanation: string | null;
+      tags: string | null;
+    };
+    const q = await this.prisma.$queryRaw<QuestionRow[]>`
       SELECT q.id as id, q.stem as stem, q.explanation as explanation, q.tags as tags
       FROM Question q
       ORDER BY RAND()
@@ -15,12 +21,23 @@ export class QuestionsService {
     `;
 
     // For each question get options
-    const results = [] as any[];
+    type OptionPublic = { id: number; text: string };
+    const results: Array<{
+      id: number;
+      stem: string;
+      explanation: string | null;
+      tags: string | null;
+      options: OptionPublic[];
+    }> = [];
+
     for (const row of q) {
       const options = await this.prisma.option.findMany({
         where: { questionId: row.id },
       });
-      const publicOptions = options.map((o) => ({ id: o.id, text: o.text }));
+      const publicOptions: OptionPublic[] = options.map((o) => ({
+        id: o.id,
+        text: o.text,
+      }));
       results.push({
         id: row.id,
         stem: row.stem,
