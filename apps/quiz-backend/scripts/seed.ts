@@ -59,7 +59,6 @@ async function main() {
       return mod;
     } catch (e1) {
       try {
-        // @ts-expect-error dynamic resolution at runtime (may resolve to .ts or .js)
         const mod = (await import(
           path.join(__dirname, "../prisma/db-utils")
         )) as SeedModule;
