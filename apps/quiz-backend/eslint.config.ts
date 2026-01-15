@@ -2,7 +2,6 @@ import eslint from "@eslint/js";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import tseslint from "typescript-eslint";
 import globals from "globals";
-import tsParser from "@typescript-eslint/parser";
 
 const tsconfigRootDir =
   typeof __dirname !== "undefined" ? __dirname : process.cwd();
@@ -13,7 +12,6 @@ export default tseslint.config(
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
 
-  // Global language options similar to backend-template but using ESM
   {
     languageOptions: {
       globals: {
@@ -26,63 +24,10 @@ export default tseslint.config(
         tsconfigRootDir,
       },
     },
-  },
-
-  // Prisma files: use a separate tsconfig for type-aware rules
-  {
-    files: ["prisma/**/*.ts"],
-    languageOptions: {
-      parser: tsParser as any,
-      parserOptions: {
-        tsconfigRootDir,
-        sourceType: "module",
-      },
-    },
-    settings: {
-      "import/resolver": {
-        typescript: { project: "./prisma/tsconfig.prisma.json" },
-      },
-    },
-  },
-
-  // Source & scripts: project-aware rules + Prettier
-  {
-    files: ["src/**/*.ts", "scripts/**/*.ts"],
-    languageOptions: {
-      parser: tsParser as any,
-      parserOptions: {
-        tsconfigRootDir,
-        sourceType: "module",
-      },
-    },
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-floating-promises": "warn",
       "@typescript-eslint/no-unsafe-argument": "warn",
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
-    },
-    settings: {
-      "import/parsers": { "@typescript-eslint/parser": [".ts"] },
-      "import/resolver": { typescript: { project: "./tsconfig.json" } },
-    },
-  },
-
-  // Tests: relax certain strict rules for test files
-  {
-    files: ["test/**/*.ts", "src/**/__tests__/**/*.ts"],
-    languageOptions: {
-      parser: tsParser as any,
-      parserOptions: {
-        tsconfigRootDir,
-        sourceType: "module",
-      },
-    },
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-floating-promises": "off",
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
