@@ -1,39 +1,28 @@
 import path from "path";
 import fs from "fs";
-import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-// Load env files (allow running from repo root)
-dotenv.config();
+// db-utils focuses only on data operations; caller must load dotenv or set DATABASE_URL.
+// If DATABASE_URL isn't set, allow constructing from discrete parts; otherwise, throw.
 if (!process.env.DATABASE_URL) {
-  const envPaths = [
-    path.resolve(__dirname, "../.env.test.local"),
-    path.resolve(__dirname, "../.env.development.local"),
-    path.resolve(__dirname, "../.env.local"),
-  ];
-  for (const p of envPaths) {
-    try {
-      // Try normal config first (override true)
-      dotenv.config({ path: p, override: true });
-      // If DATABASE_URL still missing, parse file manually and assign
-      if (!process.env.DATABASE_URL && fs.existsSync(p)) {
-        const parsed = dotenv.parse(fs.readFileSync(p));
-        for (const k of Object.keys(parsed)) {
-          if (!process.env[k]) process.env[k] = parsed[k];
-        }
-        // Fallback: try to extract DATABASE_URL directly from file in case parse didn't populate it
-        if (!process.env.DATABASE_URL) {
-          const content = fs.readFileSync(p, "utf-8");
-          const m = content.match(/^\s*DATABASE_URL\s*=\s*(.+)\s*$/m);
-          if (m) {
-            process.env.DATABASE_URL = m[1].trim();
-          }
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
+  // If user provided discrete connection parts, construct DATABASE_URL as convenience
+  if (
+    process.env.DATABASE_HOST &&
+    process.env.DATABASE_USERNAME &&
+    process.env.DATABASE_PASSWORD &&
+    process.env.DATABASE_NAME
+  ) {
+    const host = process.env.DATABASE_HOST;
+    const port = process.env.DATABASE_PORT || "3306";
+    const user = encodeURIComponent(process.env.DATABASE_USERNAME);
+    const pass = encodeURIComponent(process.env.DATABASE_PASSWORD);
+    const db = process.env.DATABASE_NAME;
+    process.env.DATABASE_URL = `mysql://${user}:${pass}@${host}:${port}/${db}`;
+  } else {
+    throw new Error(
+      "DATABASE_URL not set. Please load your dotenv file in the caller (e.g. set ENV_FILE and call dotenv.config) or set DATABASE_URL directly.",
+    );
   }
 }
 
@@ -66,7 +55,7 @@ function _getDatabaseName(): string {
   try {
     const u = new URL(process.env.DATABASE_URL as string);
     return u.pathname.replace("/", "");
-  } catch (e) {
+  } catch {
     return "";
   }
 }
@@ -112,8 +101,16 @@ export async function seedTest() {
   ensureNotProd();
   console.log("seedTest: beginning (inserting test dataset)");
 
+  type SeedOption = { text: string; isCorrect: boolean };
+  type SeedQuestion = {
+    stem: string;
+    explanation?: string | null;
+    tags?: string[] | null;
+    options: SeedOption[];
+  };
+
   const dataPath = path.join(__dirname, "data", "seed-test.json");
-  const data = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as any[];
+  const data = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as SeedQuestion[];
 
   for (const q of data) {
     const existing = await prisma.question.findFirst({
@@ -124,10 +121,10 @@ export async function seedTest() {
       await prisma.question.update({
         where: { id: existing.id },
         data: {
-          explanation: q.explanation,
-          tags: q.tags,
+          explanation: q.explanation ?? undefined,
+          tags: q.tags ?? undefined,
           options: {
-            create: q.options.map((o: any) => ({
+            create: q.options.map((o) => ({
               text: o.text,
               isCorrect: o.isCorrect,
             })),
@@ -139,10 +136,10 @@ export async function seedTest() {
       await prisma.question.create({
         data: {
           stem: q.stem,
-          explanation: q.explanation,
-          tags: q.tags,
+          explanation: q.explanation ?? undefined,
+          tags: q.tags ?? undefined,
           options: {
-            create: q.options.map((o: any) => ({
+            create: q.options.map((o) => ({
               text: o.text,
               isCorrect: o.isCorrect,
             })),
@@ -162,7 +159,7 @@ export async function resetTest() {
 
   try {
     await prisma.answerAttempt?.deleteMany();
-  } catch (e) {
+  } catch {
     // ignore if model not present
   }
   await prisma.option.deleteMany();
