@@ -1,23 +1,39 @@
-import tsParser from "@typescript-eslint/parser";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
+import eslint from "@eslint/js";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import tseslint from "typescript-eslint";
+import globals from "globals";
+import tsParser from "@typescript-eslint/parser";
 
-// Keep a minimal, clear config: ignore build and node modules, handle Prisma with its
-// own tsconfig, and apply project-aware rules to source and scripts.
 const tsconfigRootDir =
   typeof __dirname !== "undefined" ? __dirname : process.cwd();
 
-export default [
+export default tseslint.config(
   { ignores: ["**/dist/**", "**/node_modules/**"] },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
 
-  // Prisma files use their own tsconfig so type-aware rules work correctly
+  // Global language options similar to backend-template but using ESM
+  {
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
+      sourceType: "module",
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir,
+      },
+    },
+  },
+
+  // Prisma files: use a separate tsconfig for type-aware rules
   {
     files: ["prisma/**/*.ts"],
     languageOptions: {
       parser: tsParser as any,
       parserOptions: {
-        project: ["./prisma/tsconfig.prisma.json"],
         tsconfigRootDir,
         sourceType: "module",
       },
@@ -29,26 +45,20 @@ export default [
     },
   },
 
-  // Source and scripts: project-aware rules + Prettier integration
+  // Source & scripts: project-aware rules + Prettier
   {
     files: ["src/**/*.ts", "scripts/**/*.ts"],
     languageOptions: {
       parser: tsParser as any,
       parserOptions: {
-        project: ["./tsconfig.json"],
         tsconfigRootDir,
         sourceType: "module",
       },
     },
-    plugins: {
-      "@typescript-eslint": tsPlugin as any,
-    },
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_" },
-      ],
-      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-unsafe-argument": "warn",
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
     settings: {
@@ -56,4 +66,4 @@ export default [
       "import/resolver": { typescript: { project: "./tsconfig.json" } },
     },
   },
-];
+);
