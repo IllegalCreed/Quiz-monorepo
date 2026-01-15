@@ -11,7 +11,6 @@ if (fs.existsSync(p)) {
   // This is intentional: if you want to run e2e locally, create .env.test.local
   // pointing to a working test database and re-run `pnpm -C apps/quiz-backend run test:e2e`.
   // We set a flag accessible by tests.
-  // eslint-disable-next-line no-process-env
   process.env.SKIP_E2E = "true";
   console.warn(
     "No apps/quiz-backend/.env.test.local found — E2E tests will be skipped.",
@@ -20,6 +19,5 @@ if (fs.existsSync(p)) {
 
 // Ensure test endpoint is enabled during e2e runs
 if (!process.env.ENABLE_TEST_ENDPOINT) {
-  // eslint-disable-next-line no-process-env
   process.env.ENABLE_TEST_ENDPOINT = "true";
 }

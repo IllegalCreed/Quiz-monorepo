@@ -21,7 +21,8 @@ const runE2E = process.env.SKIP_E2E !== "true";
   });
 
   it("POST /api/test/reset should respond (not 404)", async () => {
-    const res = await request(app.getHttpServer()).post("/test/reset");
+    const server = app.getHttpServer() as unknown as any;
+    const res = await request(server).post("/test/reset");
     // Accept any response other than 404 — tests should not fail the pipeline when DB isn't present.
     expect(res.status).not.toBe(404);
   });
