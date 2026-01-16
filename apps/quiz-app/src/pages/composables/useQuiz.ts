@@ -72,6 +72,11 @@ export function useQuiz() {
       return res
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e)
+      // 如果提交出现错误（如网络/后端错误），将状态置为 'wrong'，
+      // 这样组件会渲染出 .explanation 元素，而不是继续保持 'idle'（导致 Cypress 超时因找不到元素）
+      status.value = 'wrong'
+      // 同时在控制台记录错误，方便后续排查具体原因
+      console.error('submitAnswer failed', e)
       return { correct: false, correctOptionId: null, explanation: null }
     }
   }
