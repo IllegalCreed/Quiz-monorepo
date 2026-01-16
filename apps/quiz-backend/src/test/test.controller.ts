@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   ForbiddenException,
   InternalServerErrorException,
   Req,
@@ -98,6 +99,33 @@ export class TestController {
 
     await resetTest();
 
+    return { ok: true };
+  }
+
+  // Lightweight readiness endpoint that does NOT touch the database.
+  // Used by preview/test orchestration to ensure the backend process is running and
+  // the test endpoints are enabled without triggering DB queries that might fail
+  // during transient DB connectivity issues.
+  @Get("ready")
+  ready() {
+    if (process.env.ENABLE_TEST_ENDPOINT !== "true") {
+      throw new ForbiddenException(
+        "Test endpoint disabled (ENABLE_TEST_ENDPOINT not set)",
+      );
+    }
+    if (!process.env.TEST_RESET_SECRET) {
+      throw new InternalServerErrorException(
+        "Test reset secret not configured on server",
+      );
+    }
+    return { ok: true };
+  }
+
+  // Lightweight unconditional health check used by orchestration scripts to
+  // verify the HTTP server is running. Intentionally does NOT access the DB
+  // or require any environment variables.
+  @Get("hello")
+  hello() {
     return { ok: true };
   }
 }
