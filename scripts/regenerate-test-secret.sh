@@ -65,12 +65,11 @@ if [ ! -f "$BACK_ENV" ]; then
     fi
   fi
 else
-  # backup existing file before modifying
+  # Do NOT keep backups — overwrite existing file directly per user request
   if [ "$DRY_RUN" -eq 1 ]; then
-    log "DRY-RUN: would backup existing $BACK_ENV to ${BACK_ENV}.bak.TIMESTAMP"
+    log "DRY-RUN: would overwrite existing $BACK_ENV without creating backups"
   else
-    cp "$BACK_ENV" "${BACK_ENV}.bak.$(date +%Y%m%d%H%M%S)" || true
-    log "Backed up existing $BACK_ENV"
+    log "Overwriting existing $BACK_ENV (no backups will be created)"
   fi
 fi
 
