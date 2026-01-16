@@ -1,213 +1,127 @@
-# Quiz Monorepo 🧠
+# Quiz Monorepo — 运行模式与命令速查 🧠
 
-这是一个简单的题目复习网站的 monorepo（pnpm + Turborepo），包含前端（Vue 3 + Vite + Vitest + Cypress）和后端（NestJS + Prisma + MySQL）的实现。
-
----
-
-## 目录结构（简要）
-
-- package.json — 根级脚本与配置（dev/build/test/type-check 等）
-- apps/
-  - quiz-app/ — 前端应用（Vite + Vue 3）
-    - package.json — 前端脚本（dev/build/test/test:unit/test:e2e 等）
-    - src/ — 源代码（页面、composables、stores）
-    - cypress/ — e2e 测试
-  - quiz-backend/ — 后端服务（NestJS）
-    - package.json — 后端脚本（dev/build/prisma/db:seed/test 等）
-    - prisma/ — Prisma schema & seed
-- packages/ — （可放共享组件/库，例如 UI）
+此文档基于当前仓库的真实 `package.json` 脚本（根、`apps/quiz-app`、`apps/quiz-backend`），只列出三种常用运行模式（Development / Test / Production）下的**实际命令**与简要说明，便于快速查阅。
 
 ---
 
-## 快速开始（本地开发）
+## 1) 开发（Development） ✅
 
-1. 安装依赖：
+用途：本地开发、热重载。
 
-```bash
-pnpm install
-```
+常用命令：
 
-2. 启动开发环境（在 monorepo 根目录并行启动前后端）：
-
-```bash
-pnpm run dev
-# 或者分别启动
-pnpm -C apps/quiz-app run dev
-pnpm -C apps/quiz-backend run dev
-```
-
-3. 如果需要运行数据库迁移/生成 client：
-
-```bash
-# 配置 DATABASE_URL（或使用 apps/quiz-backend/.env.development.local）
-pnpm -C apps/quiz-backend run prisma:generate
-pnpm -C apps/quiz-backend run prisma:migrate
-pnpm -C apps/quiz-backend run db:seed
-```
-
-注意：Prisma 已迁移至 v7，数据源 URL 已移到 `prisma/prisma.config.ts`，运行时需要为 PrismaClient 提供一个适配器（本项目使用 `@prisma/adapter-mariadb`）。
-
----
-
-## 脚本说明（根目录）
-
-- `pnpm run dev` — 并行启动所有包的 dev（通过 turbo）。
-- `pnpm run build` — 并行运行各包的构建。
-- `pnpm run test` — 运行各包的 `test`（由 turbo 协调）。
-- `pnpm run type-check` — 运行各包的类型检查（前端用 `vue-tsc`，后端用 `tsc`）。
-- `pnpm run format` — 运行 Prettier。
-
-前端（apps/quiz-app）脚本要点：
-
-- `test`（默认） => 会运行 `test:all`（先执行 `test:unit:ci`，再执行 `test:e2e`）。
-- `test:unit` => 本地 watch 模式下运行单元测试（`vitest`）。
-- `test:unit:ci` => 非交互式运行单元测试（`vitest run`，适合 CI/pre-push）。
-- `test:e2e` => 使用 `start-server-and-test` 启动 preview 并执行 `cypress run --e2e`（**无头运行**）。
-
-后端（apps/quiz-backend）脚本要点：
-
-- `dev`、`build`、`test`（Jest）。
-- `prisma:generate` / `prisma:migrate` / `db:seed`。
-
-### 数据库与 Seed 策略（清晰说明） 🔧
-
-本项目建议在云环境（例如阿里云 RDS）上为不同用途准备不同的数据库：
-
-- **prod（生产）** — 生产数据，绝对禁止自动化脚本/CI 在其上执行破坏性操作（如 reset/seed）。
-- **dev（开发）** — 团队/个人日常开发使用的数据库，可以包含更多数据、调试用账号等。
-- **test（测试 / CI）** — 专门用于自动化测试（CI / E2E），**必须可被重置**以保证每次测试的数据确定性。
-
-为什么要区分：测试需要完全可控、可重置的数据集；生产数据会不断变化且敏感，**任何自动化 reset/seed 操作都不应在 production 上默认运行**。
-
-#### Seed 的两类（system vs test）
-
-- **system seed（基础系统数据）**：写入系统必须的、长期存在的数据（例如管理员账号、基础角色、配置项）。应当是**幂等**的（重复运行不产生重复条目）。脚本：`pnpm -C apps/quiz-backend run db:seed:system`。
-- **test seed（测试数据）**：写入用于测试的数据集合（固定题目、示例用户等），脚本会在运行前 **清空相关表** 再插入数据，保证每次运行后数据一致。脚本：`pnpm -C apps/quiz-backend run db:seed:test`。
-- **组合（初始化 test）**：`pnpm -C apps/quiz-backend run db:setup:test` 会执行迁移 + system seed + test seed，适合 CI 或初次准备 test 环境。
-
-#### db:reset（用于测试）
-
-- `pnpm -C apps/quiz-backend run db:reset`：会**清空测试数据并重新运行 test seed**（脚本内部含安全检查，会拒绝对生产库执行）。
-- 我们也提供了后端 HTTP 接口 `POST /test/reset`（仅在 `ENABLE_TEST_ENDPOINT=true` 时启用），E2E 测试可以在每个用例前调用此接口以保证每个用例从确定性数据开始。
-
-> 安全注意：脚本在执行前会检查数据库名与 `NODE_ENV`，若命中 **production** 特征（例如数据库名包含 `prod` 或 NODE_ENV=production），会拒绝执行，除非你显式设置覆盖变量（不建议在常规流程中使用）。
-
-#### 如何在 RDS 上创建数据库 / 用户
-
-- 使用仓库提供的 `create-db` 脚本（需要具有建库权限的账号，例如 root）：
+- 安装依赖：
 
   ```bash
-  # 将示例 env 复制并填入有权限的账号
-  cp apps/quiz-backend/.env.create-db.example apps/quiz-backend/.env.create-db.local
-  # 编辑 .env.create-db.local，设置 DB_ROOT_USERNAME / DB_ROOT_PASSWORD / DATABASE_HOST 等
-
-  # 在有权限的环境（可访问 RDS 且用有权限账号）运行：
-  pnpm -C apps/quiz-backend run db:create
+  pnpm install
   ```
 
-- 脚本会创建 `quiz_dev`、`quiz_test`、`quiz_prod`（及对应用户），并在输出中打印随机生成的密码（如果你没有在 env 中提供）。
-- 运行后，请把输出的密码手动保存到：
-  - `apps/quiz-backend/.env.test.local`（测试库）
-  - `apps/quiz-backend/.env.production.local`（生产库）
+- 并行启动前后端（根目录，使用 Turborepo）：
 
-#### E2E 测试建议
+  ```bash
+  pnpm run dev
+  ```
 
-- 若你要在本地或 CI 用真实后端跑 E2E：
-  1. 确保 `apps/quiz-backend/.env.test.local` 配置了正确的 `DATABASE_URL`（指向 test DB）并且 `ENABLE_TEST_ENDPOINT=true`。
-  2. 启动后端：`pnpm -C apps/quiz-backend run dev`（或 production 模式时不要启用 test endpoint）。
-  3. 运行 E2E：`pnpm -C apps/quiz-app run test:e2e`。
-  4. 测试会在每个用例前调用 `POST /test/reset`（示例见 `apps/quiz-app/cypress/e2e/real.cy.ts`），确保每个用例的前置数据一致性。
+- 单独启动前端：
 
----
+  ```bash
+  pnpm run dev:frontend
+  # 等价于: pnpm -C apps/quiz-app run dev
+  ```
 
-如需我把 README 的某处再精简或加入样例命令（例如把 `POST /test/reset` 的 curl 示例写进 README），告诉我具体位置，我会补上。
+- 单独启动后端：
 
-- 新增可用于分环境的数据脚本：
-- `db:seed:system`：写入基础系统必需的数据（幂等，适合角色/配置/管理员用户等）。此脚本现在以 TypeScript 实现（`ts-node prisma/seed-system.ts`）。
-- `db:seed:test`：写入测试数据（用于 CI / E2E，便于还原）。当前以 TypeScript 实现（`ts-node prisma/seed-test.ts`）。
-- `db:reset`：清空测试数据并重新运行 `db:seed:test`（仅用于 test/dev，不会在生产上运行，脚本在运行前会进行安全检查）。当前以 TypeScript 实现（`ts-node prisma/reset-test.ts`）。
+  ```bash
+  pnpm run dev:backend
+  # 等价于: pnpm -C apps/quiz-backend run dev
+  ```
 
-- 后端提供一个受保护的测试接口：`POST /test/reset`，仅在 `ENABLE_TEST_ENDPOINT=true` 时启用，调用它会对 test DB 进行重置（适合 E2E 在每个用例前重置数据以保证可复现性）。
-- `type-check` 使用了一个包内 wrapper 脚本（避免 pnpm 递归运行时额外 flags 影响 `tsc`）。
-
-- 后端：添加了 **ESLint**（TypeScript 支持），可通过下面命令运行：
-  - `pnpm -C apps/quiz-backend run lint` — 检查后端代码中的 lint 警告/错误。
-  - `pnpm -C apps/quiz-backend run lint:fix` — 自动尝试修复可修复的问题。
-
-  我已添加 `apps/quiz-backend/.eslintrc.js` 与兼容的 `eslint.config.cjs`，并把相关 devDependencies 安装到 `apps/quiz-backend`。
+说明：前端使用 Vite（默认端口 5173）；后端使用 Nest（dev -> `pnpm -C apps/quiz-backend run dev`）。开发时可使用 `apps/*/.env.development.local` 覆盖环境变量，前端可启用 `VITE_MOCK=true` 加速开发。
 
 ---
 
-## Husky 钩子与工作流
+## 2) 测试（Test / CI / E2E） 🧪
 
-- `.husky/pre-commit` — 运行 `lint-staged`（格式化 & ESLint 自动修复）。
-- `.husky/pre-push` — 现在会执行：
-  1. `pnpm run type-check`（根脚本，分别检查前/后端）
-  2. `pnpm run test`（根脚本，由 turbo 运行每个包的 `test`，前端会先做单元测试再做 e2e）
+用途：CI、单元测试与 E2E（需要可重置的测试数据库）。
 
-→ 这是为了确保 PR/推送前保持类型与测试的健康状态。
+准备与常用命令（以仓库内脚本为准）：
 
-提示：如果希望在本地跳过耗时的 e2e，可直接只运行单元测试：`pnpm -C apps/quiz-app run test:unit:ci`。
+- 配置测试 env（示例）：
+  - `apps/quiz-backend/.env.test.local`（设置 `DATABASE_URL` 指向测试库并 `ENABLE_TEST_ENDPOINT=true`）
 
----
+- 重置并 seed 测试 DB（**注意：`db:seed:test` 会清空并重建测试数据，适用于 CI/E2E**）：
 
-## 环境 & 运行模式（开发 / 测试 / 生产）
+  ```bash
+  pnpm -C apps/quiz-backend run db:seed:test
+  ```
 
-项目按三种常见运行模式组织，下面说明每种模式下的约定与启动步骤。
+  （`db:seed` 在本地相当于 `db:seed:dev`；不要在生产库上运行 `db:seed:test`）
 
-### 1) 开发（development）
+- 启动后端以供 E2E 使用（建议端口 3001）：
 
-- 目的：本地快速开发、热重载。
-- 前端（apps/quiz-app）
-  - 使用 `pnpm -C apps/quiz-app run dev`（vite dev，默认端口 5173）。
-  - 本地 env: `apps/quiz-app/.env.development.local`（可从 `.env.development.example` 复制并填写）。
-  - 推荐在本地使用 `VITE_MOCK=true` 加快迭代（可在 `.env.development.local` 覆盖）。
-- 后端（apps/quiz-backend）
-  - 使用 `pnpm -C apps/quiz-backend run dev`（ts-node-dev，默认端口 3000）。
-  - 本地 env: `apps/quiz-backend/.env.development.local`（可从 `.env.development.example` 复制）。
+  ```bash
+  PORT=3001 pnpm -C apps/quiz-backend run start:test
+  ```
 
-### 2) 测试（test / CI / E2E）
+- 运行所有测试（根目录，Turbo 管理：会调用各包的 test 脚本）：
 
-- 目的：在接近 CI 的环境中运行构建与测试（包括 E2E）。
-- 约定：
-  - 后端 test 服务使用 `PORT=3001`（避免与 dev/preview 端口冲突）。
-  - 前端 test 构建使用 `vite build --mode test`，并通过 `VITE_API_BASE` 指向测试后端（`http://localhost:3001/api`）。
-- 操作（本地）：
-  1. 在 `apps/quiz-backend/.env.test.local` 中配置 `DATABASE_URL` 指向 `quiz_test` 数据库，并设置 `ENABLE_TEST_ENDPOINT=true`（参考 `.env.test.example`）。
-  2. 使用根脚本运行完整测试：`pnpm run test`（Turbo 会负责按序构建并执行测试）；若单独跑 E2E，请先确保 test 后端已启动：`pnpm -C apps/quiz-backend run start:test`，然后在前端运行 `pnpm -C apps/quiz-app run test:e2e`。
-  3. E2E 会调用 `POST /api/test/reset` 来重置 test DB，保证每个用例运行前数据一致。
+  ```bash
+  pnpm run test
+  ```
 
-### 3) 生产（production）
+  根仓库有 `pretest` 钩子（`scripts/regenerate-test-secret.sh`），CI 本地运行时会触发它以生成测试 secret。
 
-- 目的：部署到生产环境。
-- 前端：`pnpm -C apps/quiz-app run build`（生产构建，使用 `.env.production.local` 覆盖生产的 VITE\_\* 变量）。
-- 后端：`pnpm -C apps/quiz-backend run build` && `pnpm -C apps/quiz-backend run start:prod`（生产运行默认端口 3000）。
-- 注意：CI 中注入 secrets（例如 DATABASE_URL）时请通过 CI 环境变量，不要把 `.local` 文件提交到仓库。
+- 前端单元测试 / E2E（前端脚本）：
+
+  ```bash
+  pnpm -C apps/quiz-app run test:unit       # 本地/CI 单元测试
+  pnpm -C apps/quiz-app run test:e2e        # 无头 E2E（会先执行 build:test）
+  ```
+
+说明：E2E 测试在运行时可能会调用后端的 `POST /api/test/reset`（该接口仅在 `ENABLE_TEST_ENDPOINT=true` 时启用），并假定测试 DB 可被 `db:seed:test` 重置以保证每次测试的数据确定性。
 
 ---
 
-## 编辑器 / 本地便利配置
+## 3) 生产（Production） 🚀
 
-- 后端工作区已包含 `.vscode/settings.json`（见 `apps/quiz-backend/.vscode`）：默认会把 `.env*` 及其示例从 Explorer 隐藏以减少误操作（需要查看或编辑时，请启用显示隐藏文件或在 VS Code 设置中临时取消隐藏）。
+用途：构建与运行生产版本。
+
+常用命令：
+
+- 构建所有（根）：
+
+  ```bash
+  pnpm run build
+  ```
+
+- 单独构建前端：
+
+  ```bash
+  pnpm run build:frontend
+  # 等价于: pnpm -C apps/quiz-app run build
+  ```
+
+- 构建后端并以生产模式启动：
+
+  ```bash
+  pnpm run build:backend
+  pnpm -C apps/quiz-backend run start:prod
+  ```
+
+说明：生产环境请通过 CI/部署系统注入 secrets（例如 `DATABASE_URL`），不要把 `.env.production.local` 等敏感文件提交到仓库。
 
 ---
 
-如果你希望我把 README 的这部分放到单独的 CONTRIBUTING 或 CI 文档中（便于新成员快速上手），我可以继续分拆并提交。
+## 常用脚本速查 🔎
+
+- 安装依赖：`pnpm install`
+- 并行启动（开发）：`pnpm run dev`
+- 并行构建：`pnpm run build`
+- 运行所有测试（Turbo）：`pnpm run test`
+- 后端重置并 seed 测试 DB：`pnpm -C apps/quiz-backend run db:seed:test`
+- 启动后端（test env）：`PORT=3001 pnpm -C apps/quiz-backend run start:test`
+- 前端无头 E2E：`pnpm -C apps/quiz-app run test:e2e`
 
 ---
 
-## 贡献 & 提交规范
-
-- 在提交前会自动运行 `lint-staged`（格式化 & lint）。
-- 请保持小的、可审查的提交；feature 放到单独分支并发 PR。
-
----
-
-## 其它说明
-
-- Prisma v7 迁移说明：datasource URL 从 `schema.prisma` 移除，放到 `prisma/prisma.config.ts`；运行时需要给 PrismaClient 提供驱动 adapter（例如 `PrismaMariaDb`）。
-- 如果你在 CI 中遇到问题（例如 e2e 不稳定），建议把 e2e 单独运行或通过环境变量控制是否执行。
-
----
-
-如需我把 README 推送并把所有本地未提交变动一并提交并推到远端，请确认，我会执行提交与推送（并运行一次 pre-push 验证）。
+需要我把这份精简版搬到 `CONTRIBUTING.md` 或 `docs/` 下以便新成员查看吗？告诉我目标路径，我会把改动提交并创建一个 commit。
