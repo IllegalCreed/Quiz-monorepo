@@ -165,9 +165,9 @@ check_url() {
 }
 
 # ---------------------
-# 等待前端与后端就绪（可通过环境变量 PREVIEW_TEST_WAIT 调整超时时间，默认为 120s）
+# 等待前端与后端就绪（可通过环境变量 PREVIEW_TEST_WAIT 调整超时时间，默认为 60s）
 # ---------------------
-PREVIEW_TEST_WAIT=${PREVIEW_TEST_WAIT:-120}
+PREVIEW_TEST_WAIT=${PREVIEW_TEST_WAIT:-60}
 # 给前端 PREVIEW_TEST_WAIT 秒时间启动并响应根路径（http://localhost:4173/）
 log "Waiting for frontend to respond on http://localhost:4173/..."
 if ! check_url "http://localhost:4173/" "$PREVIEW_TEST_WAIT"; then
@@ -182,14 +182,16 @@ log "Frontend is up."
 
 # 给后端 PREVIEW_TEST_WAIT 秒时间启动并响应 /api/questions（以代表 API 已就绪）
 log "Waiting for backend to respond on http://localhost:3000/api/questions..."
-if ! check_url "http://localhost:3000/api/questions" "$PREVIEW_TEST_WAIT"; then
-  log_error "Backend did not start in time; see .logs/backend.log"
-  kill "$FRONTEND_PID" "$BACKEND_PID" 2>/dev/null || true
-  wait "$FRONTEND_PID" "$BACKEND_PID" 2>/dev/null || true
-  exit 2
+# Prefer checking a lightweight readiness endpoint that does NOT depend on DB
+# This avoids triggering Prisma queries during transient DB instability.
+if ! check_url "http://localhost:3000/api/test/ready" "$PREVIEW_TEST_WAIT"; then
+  log_error "Backend ready endpoint did not respond in time; dumping last 300 lines of .logs/backend.log to assist debugging"
+  tail -n 300 .logs/backend.log >&2 || true
+  log_error "Initiating cleanup due to backend readiness failure"
+  cleanup 2
 fi
 
-log "Backend is up."
+log "Backend is up (ready endpoint responded)."
 
 # 超时 watcher 已移除；由调用方（例如 run-e2e）负责在测试完成后发送 SIGTERM/退出请求以停止服务
 
