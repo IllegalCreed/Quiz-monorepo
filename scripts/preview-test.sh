@@ -165,11 +165,12 @@ check_url() {
 }
 
 # ---------------------
-# 等待前端就绪
+# 等待前端与后端就绪（可通过环境变量 PREVIEW_TEST_WAIT 调整超时时间，默认为 120s）
 # ---------------------
-# 给前端 60s 时间启动并响应根路径（http://localhost:4173/）
+PREVIEW_TEST_WAIT=${PREVIEW_TEST_WAIT:-120}
+# 给前端 PREVIEW_TEST_WAIT 秒时间启动并响应根路径（http://localhost:4173/）
 log "Waiting for frontend to respond on http://localhost:4173/..."
-if ! check_url "http://localhost:4173/" 60; then
+if ! check_url "http://localhost:4173/" "$PREVIEW_TEST_WAIT"; then
   # 超时则提示日志位置并尝试清理已启动的进程，然后以 2 失败退出
   log_error "Frontend did not start in time; see .logs/frontend.log"
   kill "$FRONTEND_PID" "$BACKEND_PID" 2>/dev/null || true
@@ -179,12 +180,9 @@ fi
 
 log "Frontend is up."
 
-# ---------------------
-# 等待后端就绪
-# ---------------------
-# 给后端 60s 时间启动并响应 /api/questions（以代表 API 已就绪）
+# 给后端 PREVIEW_TEST_WAIT 秒时间启动并响应 /api/questions（以代表 API 已就绪）
 log "Waiting for backend to respond on http://localhost:3000/api/questions..."
-if ! check_url "http://localhost:3000/api/questions" 60; then
+if ! check_url "http://localhost:3000/api/questions" "$PREVIEW_TEST_WAIT"; then
   log_error "Backend did not start in time; see .logs/backend.log"
   kill "$FRONTEND_PID" "$BACKEND_PID" 2>/dev/null || true
   wait "$FRONTEND_PID" "$BACKEND_PID" 2>/dev/null || true
