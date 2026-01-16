@@ -25,6 +25,23 @@ export default defineConfigWithVueTs(
   {
     ...pluginCypress.configs.recommended,
     files: ['cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}', 'cypress/support/**/*.{js,ts,jsx,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        // 指定这个包下的 tsconfig，以免在 monorepo 中出现多个候选目录导致解析器报错
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.app.json', './tsconfig.cypress.json'],
+      },
+    },
+  },
+
+  {
+    files: ['cypress.config.ts', 'cypress.config.*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.app.json', './tsconfig.cypress.json'],
+      },
+    },
   },
 
   {

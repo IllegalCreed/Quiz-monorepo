@@ -161,16 +161,16 @@ wait_for() {
 }
 
 # 等待前端
-log "Waiting up to ${PREVIEW_TIMEOUT}s for frontend (http://localhost:4173/)..."
-if ! wait_for "http://localhost:4173/" "$PREVIEW_TIMEOUT"; then
+log "Waiting up to ${PREVIEW_TIMEOUT}s for frontend (http://localhost:10010/)..."
+if ! wait_for "http://localhost:10010/" "$PREVIEW_TIMEOUT"; then
   log_error "Frontend did not become ready within ${PREVIEW_TIMEOUT}s; see .logs/frontend.log"
   cleanup 2
 fi
 log "Frontend is up."
 
 # 等待后端（使用 test/hello 作为健康检查端点）
-log "Waiting up to ${PREVIEW_TIMEOUT}s for backend (http://localhost:3000/api/test/hello)..."
-if ! wait_for "http://localhost:3000/api/test/hello" "$PREVIEW_TIMEOUT"; then
+log "Waiting up to ${PREVIEW_TIMEOUT}s for backend (http://localhost:10020/api/test/hello)..."
+if ! wait_for "http://localhost:10020/api/test/hello" "$PREVIEW_TIMEOUT"; then
   log_error "Backend did not become ready within ${PREVIEW_TIMEOUT}s; see .logs/backend.log"
   cleanup 3
 fi

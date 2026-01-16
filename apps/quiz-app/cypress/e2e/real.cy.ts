@@ -1,9 +1,10 @@
 describe('Quiz flow (real backend)', () => {
   beforeEach(() => {
     // Reset test DB via protected test endpoint (backend must be running and ENABLE_TEST_ENDPOINT=true)
+    const apiBaseUrl = Cypress.env('apiBaseUrl') || 'http://localhost:10020'
     cy.request({
       method: 'POST',
-      url: 'http://localhost:3000/api/test/reset',
+      url: `${apiBaseUrl}/api/test/reset`,
       failOnStatusCode: false,
       headers: {
         'x-reset-secret': Cypress.env('TEST_RESET_SECRET') || 's3cr3t',

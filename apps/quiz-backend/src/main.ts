@@ -26,19 +26,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix("api");
 
-  // Enable CORS for the frontend origin (default to localhost:5173)
+  // Enable CORS for the frontend origin (default to localhost:10000)
   // Allow configuring one or multiple frontend origins (comma-separated). Default to common dev/preview ports.
   const frontendOrigin: string | string[] = process.env.FRONTEND_ORIGIN
     ? process.env.FRONTEND_ORIGIN.split(",")
-    : ["http://localhost:5173", "http://localhost:4173"];
+    : ["http://localhost:10000", "http://localhost:10010"];
   app.enableCors({ origin: frontendOrigin, credentials: true });
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 10020);
   const frontendDisplay = Array.isArray(frontendOrigin)
     ? frontendOrigin.join(",")
     : frontendOrigin;
   console.log(
-    `Server running on port ${process.env.PORT || 3000} (CORS allowed: ${frontendDisplay})`,
+    `Server running on port ${process.env.PORT || 10020} (CORS allowed: ${frontendDisplay})`,
   );
 }
 void bootstrap();

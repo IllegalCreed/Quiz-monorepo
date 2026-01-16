@@ -36,7 +36,7 @@
   # 等价于: pnpm -C apps/quiz-backend run dev
   ```
 
-说明：前端使用 Vite（默认端口 5173）；后端使用 Nest（dev -> `pnpm -C apps/quiz-backend run dev`）。开发时可使用 `apps/*/.env.development.local` 覆盖环境变量，前端可启用 `VITE_MOCK=true` 加速开发。
+说明：前端使用 Vite（开发默认端口 10000，预览端口 10010）；后端使用 Nest（默认端口 10020）。开发时可使用 `apps/*/.env.development.local` 覆盖环境变量，前端可启用 `VITE_MOCK=true` 加速开发。
 
 ---
 
@@ -57,10 +57,10 @@
 
   （`db:seed` 在本地相当于 `db:seed:dev`；不要在生产库上运行 `db:seed:test`）
 
-- 启动后端以供 E2E 使用（建议端口 3001）：
+- 启动后端以供 E2E 使用（默认端口 10020）：
 
   ```bash
-  PORT=3001 pnpm -C apps/quiz-backend run start:test
+  pnpm -C apps/quiz-backend run start:test
   ```
 
 - 运行所有测试（根目录，Turbo 管理：会调用各包的 test 脚本）：
@@ -119,7 +119,7 @@
 - 并行构建：`pnpm run build`
 - 运行所有测试（Turbo）：`pnpm run test`
 - 后端重置并 seed 测试 DB：`pnpm -C apps/quiz-backend run db:seed:test`
-- 启动后端（test env）：`PORT=3001 pnpm -C apps/quiz-backend run start:test`
+- 启动后端（test env）：`pnpm -C apps/quiz-backend run start:test`
 - 前端无头 E2E：`pnpm -C apps/quiz-app run test:e2e`
 
 ---

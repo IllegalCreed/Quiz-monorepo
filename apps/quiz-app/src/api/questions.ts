@@ -7,7 +7,7 @@ export type Question = {
   tags?: string[]
 }
 
-const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api'
+const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:10020/api'
 
 export async function fetchQuestions(limit = 1): Promise<Question[]> {
   const res = await fetch(`${BASE}/questions?limit=${limit}`)

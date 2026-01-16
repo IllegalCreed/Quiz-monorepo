@@ -67,8 +67,8 @@ trap 'cleanup 1' INT TERM
 # -------------------------------
 
 # 清理端口（避免残留进程占用）
-kill_port 3000
-kill_port 4173
+kill_port 10020
+kill_port 10010
 
 # 启动共享的 preview-test（位于仓库根），并把其 PID 保存在 PREVIEW_PID
 log "Starting preview-test (scripts/preview-test.sh)"
@@ -76,7 +76,7 @@ sh ../../scripts/preview-test.sh &
 PREVIEW_PID=$!
 
 # 等待服务就绪（持续轮询，直至就绪或 preview 进程退出）
-log "Waiting for frontend (http://localhost:4173/) and backend (http://localhost:3000/api/test/hello) to become available"
+log "Waiting for frontend (http://localhost:10010/) and backend (http://localhost:10020/api/test/hello) to become available"
 while true; do
   # 如果 preview-test 进程已经退出，说明启动失败或超时（preview-test 本身会记录原因到 .logs），中止并返回非 0
   if ! kill -0 "$PREVIEW_PID" 2>/dev/null; then
@@ -85,7 +85,7 @@ while true; do
     cleanup 1
   fi
 
-  if curl -sSf "http://localhost:4173/" >/dev/null 2>&1 && curl -sSf "http://localhost:3000/api/test/hello" >/dev/null 2>&1; then
+  if curl -sSf "http://localhost:10010/" >/dev/null 2>&1 && curl -sSf "http://localhost:10020/api/test/hello" >/dev/null 2>&1; then
     log "Servers ready"
     break
   fi
