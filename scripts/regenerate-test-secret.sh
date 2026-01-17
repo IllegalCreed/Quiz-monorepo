@@ -1,103 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# regenerate-test-secret.sh
-# - generate a per-run TEST_RESET_SECRET for test runs
-# - write it to apps/quiz-backend/.env.test.local and apps/quiz-app/cypress.env.json
-# - safety: do NOT overwrite existing DB credentials; only create from example when target missing
-# - supports: --dry-run  (show masked values, do not write files)
-#             --yes      (allow writes; without --yes script will still write but --dry-run will prevent writes)
+# regenerate-test-secret.sh (简化版)
+# 本脚本用途（中文说明）🔧
+#  - 为测试运行生成一个随机的 TEST_RESET_SECRET（32 字符 hex）
+#  - 将该密钥写入两个位置：
+#      1) 后端配置：apps/quiz-backend/.env.test.local（替换或添加 TEST_RESET_SECRET）
+#      2) 前端（Cypress）：apps/quiz-app/cypress.env.json（覆盖写入 JSON）
+#  - 安全性与简单性：
+#      • 如果后端的 .env.test.local 不存在，会优先从 .env.test.example 复制（若存在），否则创建空文件；
+#      • 将目标文件权限设置为 600（仅限拥有者可读写）；
+#  - 设计原则：保持简单、可预测、在 CI 中可直接运行。
 
+# 工作目录：保证相对路径从仓库根开始
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
 log() { printf "[regen-test-secret] %s\n" "$*"; }
 mask() { local s="$1"; if [ -z "$s" ]; then echo "(not set)"; return; fi; echo "${s:0:4}***${s: -4}"; }
 
-DRY_RUN=0
-YES=0
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    --dry-run)
-      DRY_RUN=1; shift;;
-    --yes)
-      YES=1; shift;;
-    -h|--help)
-      cat <<'USAGE'
-Usage: regenerate-test-secret.sh [--dry-run] [--yes] [--help]
-  --dry-run   : Show masked secret and planned changes; do not write files
-  --yes       : Apply changes (writes files). Without --yes you still write files unless --dry-run is set.
-  --help      : Show this help
-USAGE
-      exit 0;;
-    *)
-      echo "Unknown arg: $1"; exit 2;;
-  esac
-done
-
-# Generate a 32-char hex secret
+# 生成 32 字符 hex（16 字节）
+# 说明：使用 node 的 crypto 保证跨平台一致性（CI 环境通常有 node）
 SECRET=$(node -e "console.log(require('crypto').randomBytes(16).toString('hex'))")
 MSECRET=$(mask "$SECRET")
 log "Generated secret: ${MSECRET} (masked)"
 
-# Files
+# 目标文件
 BACK_ENV="$ROOT_DIR/apps/quiz-backend/.env.test.local"
 BACK_EXAMPLE="$ROOT_DIR/apps/quiz-backend/.env.test.example"
 CYP_JSON="$ROOT_DIR/apps/quiz-app/cypress.env.json"
 
-# Backend: ensure file exists (create from example only if target does not exist)
+# 确保后端 .env 文件存在：若不存在优先从 example 复制，否则创建空文件
 if [ ! -f "$BACK_ENV" ]; then
   if [ -f "$BACK_EXAMPLE" ]; then
-    if [ "$DRY_RUN" -eq 1 ]; then
-      log "DRY-RUN: would create $BACK_ENV from example"
-    else
-      cp "$BACK_EXAMPLE" "$BACK_ENV" 2>/dev/null || true
-      chmod 600 "$BACK_ENV" || true
-      log "Created $BACK_ENV from example (did not overwrite existing file)"
-    fi
+    cp "$BACK_EXAMPLE" "$BACK_ENV" 2>/dev/null || true
+    log "Created $BACK_ENV from example"
   else
-    if [ "$DRY_RUN" -eq 1 ]; then
-      log "DRY-RUN: would create empty $BACK_ENV"
-    else
-      touch "$BACK_ENV"
-      chmod 600 "$BACK_ENV" || true
-      log "Created empty $BACK_ENV"
-    fi
+    touch "$BACK_ENV"
+    log "Created empty $BACK_ENV"
   fi
-else
-  # Do NOT keep backups — overwrite existing file directly per user request
-  if [ "$DRY_RUN" -eq 1 ]; then
-    log "DRY-RUN: would overwrite existing $BACK_ENV without creating backups"
-  else
-    log "Overwriting existing $BACK_ENV (no backups will be created)"
-  fi
+  chmod 600 "$BACK_ENV" || true
 fi
 
-# Replace or append TEST_RESET_SECRET
+# 在文件中替换或追加 TEST_RESET_SECRET（跨平台 sed 操作：写到临时文件再移动）
 if grep -q '^TEST_RESET_SECRET=' "$BACK_ENV" 2>/dev/null; then
-  if [ "$DRY_RUN" -eq 1 ]; then
-    log "DRY-RUN: would replace existing TEST_RESET_SECRET in $BACK_ENV with ${MSECRET}"
-  else
-    sed "s/^TEST_RESET_SECRET=.*/TEST_RESET_SECRET=${SECRET}/" "$BACK_ENV" > "${BACK_ENV}.tmp" && mv "${BACK_ENV}.tmp" "$BACK_ENV"
-    log "Updated TEST_RESET_SECRET in $BACK_ENV"
-  fi
+  sed "s/^TEST_RESET_SECRET=.*/TEST_RESET_SECRET=${SECRET}/" "$BACK_ENV" > "${BACK_ENV}.tmp" && mv "${BACK_ENV}.tmp" "$BACK_ENV"
+  log "Replaced TEST_RESET_SECRET in $BACK_ENV"
 else
-  if [ "$DRY_RUN" -eq 1 ]; then
-    log "DRY-RUN: would append TEST_RESET_SECRET=${MSECRET} to $BACK_ENV"
-  else
-    echo "TEST_RESET_SECRET=${SECRET}" >> "$BACK_ENV"
-    log "Appended TEST_RESET_SECRET to $BACK_ENV"
-  fi
+  echo "TEST_RESET_SECRET=${SECRET}" >> "$BACK_ENV"
+  log "Appended TEST_RESET_SECRET to $BACK_ENV"
 fi
 
-# Frontend (Cypress): write JSON
-if [ "$DRY_RUN" -eq 1 ]; then
-  log "DRY-RUN: would write TEST_RESET_SECRET=${MSECRET} to $CYP_JSON"
-else
-  printf '{\n  "TEST_RESET_SECRET": "%s"\n}\n' "$SECRET" > "$CYP_JSON"
-  log "Wrote TEST_RESET_SECRET to $CYP_JSON"
-fi
+# 写入 Cypress 配置（覆盖写入 JSON）
+printf '{\n  "TEST_RESET_SECRET": "%s"\n}\n' "$SECRET" > "$CYP_JSON"
+chmod 600 "$CYP_JSON" || true
+log "Wrote TEST_RESET_SECRET to $CYP_JSON"
 
-log "Done. ${DRY_RUN:+(DRY-RUN)}"
-
+log "Done."
 exit 0
