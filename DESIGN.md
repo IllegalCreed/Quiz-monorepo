@@ -108,6 +108,15 @@ model AnswerAttempt {
 
 - 项目位置：`apps/quiz-app`
 - 组件库：`packages/ui`（极简 shadcn 风格）；使用 UnoCSS + SCSS
+
+### 组件库约定（`packages/ui`）
+
+- 使用 Vue 3.5 的 `defineModel` 来声明和实现 `v-model`，组件应在 `script setup` 中使用 `defineModel`（参照 Vue 3.5 文档）。
+- 类名与样式约定：最多 5 个 Tailwind/UnoCSS 原子类可以直接写在模板元素上；若需要更多类名或复合样式，应在组件的 SCSS 中定义独立 `class` 并通过 `@apply` 使用 Tailwind/UnoCSS 类。项目使用 UnoCSS，并启用 Tailwind4 预设（Tailwind-like 语法）。
+- 可访问性（A11y）：基础组件应支持键盘导航与 ARIA：例如 `role="radiogroup"` / `role="radio"`，`aria-checked` 与 `tabindex` 管理。
+- 组件 API 约定：优先提供简洁、可组合的 Props（例如 `RadioGroup` 提供 `modelValue/name/disabled`，`Radio` 提供 `value/label/description/disabled/invalid`），并导出 TypeScript 类型注解。
+- Docs & Stories：为每个组件加 Storybook stories（默认、disabled、error、带描述、键盘交互演示）并为关键交互添加 Vitest 单元测试。
+
 - 页面结构建议：
   - `src/pages/QuizPage.vue`（使用 `<script setup lang="ts">`）
   - `src/pages/composables/useQuiz.ts`（页面级 composable）

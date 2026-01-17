@@ -15,6 +15,23 @@ export default defineConfigWithVueTs(
   {
     name: 'app/files-to-lint',
     files: ['**/*.{vue,ts,mts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        // type-aware rules are enabled for TS files via an override below
+      },
+    },
+  },
+
+  // enable type-aware rules only for TypeScript sources
+  {
+    files: ['**/*.ts', '**/*.mts', '**/*.tsx', 'src/**/*.spec.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.eslint.json'],
+      },
+    },
   },
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
