@@ -23,17 +23,6 @@ export default defineConfigWithVueTs(
     },
   },
 
-  // enable type-aware rules only for TypeScript sources
-  {
-    files: ['**/*.ts', '**/*.mts', '**/*.tsx', 'src/**/*.spec.ts'],
-    languageOptions: {
-      parserOptions: {
-        tsconfigRootDir: __dirname,
-        project: ['./tsconfig.eslint.json'],
-      },
-    },
-  },
-
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
 
   ...pluginVue.configs['flat/essential'],
