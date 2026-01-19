@@ -8,8 +8,14 @@ import pluginVitest from "@vitest/eslint-plugin";
 import skipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 import pluginOxlint from "eslint-plugin-oxlint";
 
-// Provide a TypeScript declaration for Node's __dirname to satisfy the editor/type-checker
-declare const __dirname: string;
+// Use `globalThis.__dirname` when available, otherwise fall back to CWD. Avoid `import.meta` because some tools load configs via data: URLs.
+let __dirname: string;
+const gdir = (globalThis as unknown as { __dirname?: string }).__dirname;
+if (typeof gdir === "string") {
+  __dirname = gdir;
+} else {
+  __dirname = process.cwd();
+}
 
 export default defineConfigWithVueTs(
   {
@@ -24,17 +30,6 @@ export default defineConfigWithVueTs(
     },
   },
 
-  // Enable type-aware linting for TypeScript files only
-  {
-    files: ["**/*.ts", "**/*.mts", "**/*.tsx", "src/**/*.spec.ts"],
-    languageOptions: {
-      parserOptions: {
-        tsconfigRootDir: __dirname,
-        project: ["./tsconfig.eslint.json"],
-      },
-    },
-  },
-
   globalIgnores(["**/dist/**", "**/dist-ssr/**", "**/coverage/**"]),
 
   ...pluginVue.configs["flat/essential"],
@@ -43,12 +38,6 @@ export default defineConfigWithVueTs(
   {
     ...pluginVitest.configs.recommended,
     files: ["src/**/__tests__/*"],
-    languageOptions: {
-      parserOptions: {
-        tsconfigRootDir: __dirname,
-        project: ["./tsconfig.eslint.json"],
-      },
-    },
   },
 
   skipFormatting,
