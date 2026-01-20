@@ -1,4 +1,3 @@
-import { mergeConfig } from "vite";
 import UnoCSS from "@unocss/vite";
 import type { StorybookConfig } from "@storybook/vue3-vite";
 
@@ -9,11 +8,9 @@ const config: StorybookConfig = {
     name: "@storybook/vue3-vite",
     options: {},
   },
-  async viteFinal(config_, { configType }) {
-    return mergeConfig(config_, {
-      plugins: [UnoCSS()],
-      ssr: { noExternal: ["@quiz/ui"] },
-    });
+  async viteFinal(config) {
+    config.plugins?.push(UnoCSS());
+    return config;
   },
 };
 
