@@ -124,4 +124,22 @@
 
 ---
 
-需要我把这份精简版搬到 `CONTRIBUTING.md` 或 `docs/` 下以便新成员查看吗？告诉我目标路径，我会把改动提交并创建一个 commit。
+## 注意：Prisma（后端） 🔧
+
+- 初次 clone、安装依赖 或 在修改 `prisma/schema.prisma` 后，请在后端目录运行：
+
+  ```bash
+  pnpm -C apps/quiz-backend run prisma:generate
+  ```
+
+  该命令会生成 Prisma Client（类型和查询 API），确保本地的 `@prisma/client` 与 schema 同步，避免运行时或类型错误。
+
+- 常见问题与解决：
+  - 找不到 `@prisma/client` 或 类型不匹配：先运行 `pnpm install`，再执行 `pnpm -C apps/quiz-backend run prisma:generate`。
+  - Query Engine 二进制缺失或平台不匹配：删除 `node_modules/.prisma`（或 `pnpm -C apps/quiz-backend run prisma:generate --force`）后重试。
+  - E2E 报错数据库不可用：确保已运行 `pnpm -C apps/quiz-backend run db:seed:test` 并用 `pnpm -C apps/quiz-backend run start:test` 启动后端。
+
+- 可选自动化：如果想减少手动步骤，可以在后端 `package.json` 添加 `postinstall` 钩子：
+  ```json
+  "postinstall": "prisma generate"
+  ```
