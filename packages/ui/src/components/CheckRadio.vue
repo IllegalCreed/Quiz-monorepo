@@ -1,45 +1,32 @@
 <template>
+  <!-- 外层 label 包裹整个单选按钮，方便点击任意位置都能触发 select -->
   <label
     :class="[
       'radio',
       {
-        'radio--checked': checked,
-        'radio--disabled': disabled || groupDisabled,
-        'radio--invalid': invalid,
-        'radio--correct': effectiveStatus === 'correct',
-        'radio--incorrect': effectiveStatus === 'incorrect',
+        'radio--disabled': disabled, // 仅由 prop 控制的禁用样式
+        'radio--correct': (props.status ?? 'none') === 'correct',
+        'radio--incorrect': (props.status ?? 'none') === 'incorrect',
       },
     ]"
   >
-    <input
-      class="sr-only"
-      type="radio"
-      :name="name"
-      :value="value"
-      :checked="checked"
-      :disabled="disabled || groupDisabled"
-      @change="onChange"
-      aria-hidden="true"
-    />
+    <!-- 视觉按钮：职责单一，点击只发出 select 事件 -->
     <button
       type="button"
-      ref="btn"
-      :role="'radio'"
-      :aria-checked="checked"
-      :tabindex="tabindex"
-      :data-value="String(value)"
-      :disabled="disabled || groupDisabled"
+      :disabled="disabled"
       :class="[
         'radio__control',
         {
-          'radio--correct': effectiveStatus === 'correct',
-          'radio--incorrect': effectiveStatus === 'incorrect',
+          'radio--correct': (props.status ?? 'none') === 'correct',
+          'radio--incorrect': (props.status ?? 'none') === 'incorrect',
         },
       ]"
       @click="onActivate"
     >
       <span class="radio__dot" aria-hidden="true" />
     </button>
+
+    <!-- 单选按钮的文本内容区域 -->
     <div class="radio__content">
       <div class="radio__label">{{ label }}</div>
       <div v-if="description" class="radio__desc">{{ description }}</div>
@@ -48,104 +35,54 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, onBeforeUnmount, ref, computed, watch } from "vue";
-import type { PropType } from "vue";
-
-// component name (multi-word) and v-model declaration
-// defineOptions macro (handled by Vue compiler)
+/**
+ * CheckRadio（哑组件）
+ *
+ * @remarks
+ * - 仅负责展示状态并在被点击时发出 `select` 事件。
+ * - 视觉由 `status` ("none" | "correct" | "incorrect") 决定。
+ * - 不维护选中状态（`checked`），由父级（例如 `CheckRadioGroup`）通过 `status` 或 `v-model` 管理。
+ */
 defineOptions({ name: "CheckRadio" });
-// declare v-model type for standalone usage
-// defineModel macro (handled by Vue compiler)
-defineModel<string | number | null>();
 
-interface RadioGroupContext {
-  name: string;
-  selected: { value: string | number | null };
-  disabled: { value: boolean };
-  register: (el: HTMLButtonElement) => void;
-  unregister: (el: HTMLButtonElement) => void;
-  setValue: (v: string | number) => void;
-  getStatus: (v: string | number) => "none" | "correct" | "incorrect";
+const emit = defineEmits<{ (e: "select", v: string | number): void }>();
+
+/**
+ * Props for `CheckRadio`.
+ *
+ * @property value - 选项的唯一标识值（必填）。
+ * @property label - 用于显示的主标签文本。
+ * @property description - 可选的描述文本，显示在标签下方。
+ * @property disabled - 是否禁用当前选项，禁用时不响应点击。
+ * @property status - 答题/展示状态：'none' | 'correct' | 'incorrect'（默认为 'none'）。
+ */
+export interface Props {
+  value: string | number;
+  label?: string;
+  description?: string;
+  disabled?: boolean;
+  status?: "none" | "correct" | "incorrect" | null;
 }
-
-const props = defineProps({
-  value: {
-    type: [String, Number] as PropType<string | number>,
-    required: true,
-  },
-  label: { type: String, default: "" },
-  description: { type: String, default: "" },
-  disabled: { type: Boolean, default: false },
-  invalid: { type: Boolean, default: false },
-  modelValue: { type: [String, Number] as PropType<string | number | null> },
-  name: { type: String, default: "" },
-  // optional controlled status (受控)
-  status: {
-    type: String as PropType<"none" | "correct" | "incorrect">,
-    default: null,
-  },
-});
-const emit = defineEmits(["update:modelValue"]);
-
-const group = inject<RadioGroupContext | null>("radioGroup", null);
-const internalSelected = ref(props.modelValue);
-// standalone internal status; typically unused for quiz, but supports internal mode
-const internalStatus = ref<"none" | "correct" | "incorrect">("none");
-
-const checked = computed(() => {
-  if (group) return group.selected.value === props.value;
-  return internalSelected.value === props.value;
+const props = withDefaults(defineProps<Props>(), {
+  label: "",
+  description: "",
+  disabled: false,
+  status: "none",
 });
 
-const effectiveStatus = computed<"none" | "correct" | "incorrect">(() => {
-  if (props.status != null)
-    return props.status as "none" | "correct" | "incorrect";
-  if (group) return group.getStatus(props.value);
-  return internalStatus.value;
-});
-
-const name = computed(() =>
-  group
-    ? group.name
-    : props.name || `radio-${Math.random().toString(36).slice(2, 8)}`,
-);
-const groupDisabled = computed(() => (group ? group.disabled.value : false));
-
-const btn = ref<HTMLElement | null>(null);
-onMounted(() => {
-  if (group && btn.value)
-    group.register(btn.value as unknown as HTMLButtonElement);
-});
-onBeforeUnmount(() => {
-  if (group && btn.value)
-    group.unregister(btn.value as unknown as HTMLButtonElement);
-});
-
+/**
+ * 响应用户点击，发出 `select` 事件。
+ *
+ * @remarks
+ * - 不在组件内部维护选中状态；由上层（例如 `CheckRadioGroup`）监听该事件并更新 `v-model`。
+ * - 当 `disabled` 为 true 时忽略点击。
+ *
+ * @emits select - 负载为被点击选项的 `value`
+ */
 function onActivate() {
-  if (props.disabled || groupDisabled.value) return;
-  if (group) group.setValue(props.value);
-  else {
-    emit("update:modelValue", props.value);
-    internalSelected.value = props.value;
-  }
+  if (props.disabled) return;
+  emit("select", props.value);
 }
-
-function onChange() {
-  // keep for native input compatibility
-  onActivate();
-}
-
-const tabindex = computed(() => {
-  if (group) {
-    return checked.value ? 0 : -1;
-  }
-  return 0;
-});
-
-watch(
-  () => props.modelValue,
-  (v) => (internalSelected.value = v),
-);
 </script>
 
 <style lang="scss" scoped>

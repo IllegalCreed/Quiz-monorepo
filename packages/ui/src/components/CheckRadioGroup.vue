@@ -1,218 +1,102 @@
 <template>
-  <div
-    class="radio-group"
-    role="radiogroup"
-    :aria-label="ariaLabel || name"
-    @keydown="onKeydown"
-  >
-    <slot />
-    <p v-if="answered" class="sr-only" aria-live="polite">{{ ariaMessage }}</p>
+  <div class="radio-group">
+    <CheckRadio
+      v-for="opt in options"
+      :key="String(opt.value)"
+      :value="opt.value"
+      :label="opt.label"
+      :description="opt.description"
+      :status="computeStatus(opt.value)"
+      :disabled="disabled"
+      @select="onSelect"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, provide, computed } from "vue";
-import type { PropType } from "vue";
+import CheckRadio from "./CheckRadio.vue";
 
-// component name and v-model declaration
-// defineOptions macro (handled by Vue compiler)
+/**
+ * CheckRadioGroup - 数据驱动的单选组组件。
+ *
+ * @remarks
+ * - 使用 data-driven 的 API：通过 `options` prop 提供选项数组并由组件内渲染 `CheckRadio` 列表。
+ * - 通过 `defineModel` 暴露 `v-model`：读写 `selected.value` 即为获取/设置当前选中项。
+ * - 当传入 `correctValue` 且 `selected` 有值时，会在子项上显示正确/错误样式（只读展示）。
+ * - 组件为“单次答题”模式：一旦 `selected` 非 null，后续点击不会改变选择（除非外部将 `v-model` 清空为 null）。
+ *
+ * @example
+ * <CheckRadioGroup v-model="value" :options="[{value:'a',label:'A'},{value:'b',label:'B'}]" :correctValue="'b'" />
+ *
+ * @prop {Option[]} options - 要渲染的选项数组，顺序即为展示顺序。
+ * @prop {string|number|null} [correctValue] - 可选的正确答案值（用于展示正确/错误样式）。
+ * @prop {boolean} [disabled=false] - 若为 true，则禁用整个组的交互。
+ *
+ * @emits update:modelValue - v-model 自动同步（由 `defineModel` 管理）。
+ */
+
+// 组件名称
 defineOptions({ name: "CheckRadioGroup" });
-// declare v-model type (Vue 3.5 defineModel macro)
-// defineModel macro (handled by Vue compiler)
-defineModel<string | number | null>();
 
-const props = defineProps({
-  modelValue: {
-    type: [String, Number] as PropType<string | number | null>,
-    default: null,
-  },
-  name: {
-    type: String,
-    default: () => `radio-${Math.random().toString(36).slice(2, 8)}`,
-  },
-  disabled: { type: Boolean, default: false },
-  ariaLabel: { type: String, default: "" },
-  // quiz behavior
-  correctValue: {
-    type: [String, Number] as PropType<string | number | null>,
-    default: null,
-  },
-  disableAfterAnswer: { type: Boolean, default: true },
-  allowRetry: { type: Boolean, default: false },
-});
+// 使用 defineModel 管理选中的值
+const selected = defineModel<string | number | null>();
 
-const emit = defineEmits(["update:modelValue", "answered"]);
-const selected = ref(props.modelValue);
-
-// reactive state containers must be declared before any immediate watchers
-const radios = ref<HTMLButtonElement[]>([]);
-const statuses = ref<Record<string, "none" | "correct" | "incorrect">>({});
-const answered = ref(false);
-
-watch(
-  () => props.modelValue,
-  (v) => (selected.value = v),
-);
-// keep v-model in sync
-watch(selected, (v) => emit("update:modelValue", v));
-
-// react to external changes to selected (including initial modelValue)
-watch(
-  selected,
-  (v) => {
-    // if cleared, reset statuses
-    if (v == null) {
-      statuses.value = {};
-      answered.value = false;
-      return;
-    }
-
-    // if a correctValue is provided, derive status for the current selection
-    if (props.correctValue != null) {
-      statuses.value = {};
-      const key = String(v);
-      const correct = String(props.correctValue);
-      if (key === correct) {
-        statuses.value[correct] = "correct";
-      } else {
-        statuses.value[key] = "incorrect";
-        statuses.value[correct] = "correct";
-      }
-      answered.value = true;
-      const index = radios.value.findIndex(
-        (r) => r.getAttribute("data-value") === String(v),
-      );
-      emit("answered", {
-        value: v,
-        isCorrect: String(v) === String(props.correctValue),
-        correctValue: props.correctValue,
-        index,
-      });
-    }
-  },
-  { immediate: true },
-);
-
-function register(el: HTMLButtonElement) {
-  if (!radios.value.includes(el)) radios.value.push(el);
+// Props: options 数组 + 可选的 correctValue 与 disabled
+/**
+ * 单个选项的描述对象
+ *
+ * @property value - 选项的唯一标识（必填）。
+ * @property label - 选项的展示文本（可选）。
+ * @property description - 选项的附加描述（可选）。
+ */
+export interface Option {
+  value: string | number;
+  label?: string;
+  description?: string;
 }
-function unregister(el: HTMLButtonElement) {
-  radios.value = radios.value.filter((r) => r !== el);
-}
-function getStatus(v: string | number) {
-  return (
-    (statuses.value[String(v)] as "none" | "correct" | "incorrect") || "none"
-  );
-}
-function reset() {
-  statuses.value = {};
-  answered.value = false;
-}
-function setValue(v: string | number) {
-  if (props.disabled) return;
-  if (answered.value && props.disableAfterAnswer) return;
-  selected.value = v;
+const props = defineProps<{
+  options: Option[];
+  correctValue?: string | number | null;
+  disabled?: boolean;
+}>();
 
-  // compute statuses
-  statuses.value = {};
+/**
+ * 计算给定选项的显示状态（用于子 `CheckRadio` 的 `status` prop）。
+ *
+ * 规则：
+ * - 若没有传入 `correctValue` 或尚未选中（`selected.value == null`），返回 `'none'`。
+ * - 若选项值等于 `correctValue`，返回 `'correct'`。
+ * - 若选项值等于当前 `selected.value`（且不等于 correct），返回 `'incorrect'`。
+ *
+ * @param v - 要计算状态的选项值
+ * @returns {'none'|'correct'|'incorrect'}
+ */
+function computeStatus(v: string | number) {
+  if (props.correctValue == null || selected.value == null)
+    return "none" as const;
   const key = String(v);
-  if (props.correctValue != null) {
-    const correct = String(props.correctValue);
-    if (key === correct) {
-      statuses.value[correct] = "correct";
-    } else {
-      statuses.value[key] = "incorrect";
-      statuses.value[correct] = "correct";
-    }
-  }
-
-  answered.value = true;
-
-  const index = radios.value.findIndex(
-    (r) => r.getAttribute("data-value") === String(v),
-  );
-  emit("answered", {
-    value: v,
-    isCorrect:
-      props.correctValue != null && String(v) === String(props.correctValue),
-    correctValue: props.correctValue,
-    index,
-  });
+  const correct = String(props.correctValue);
+  if (key === correct) return "correct" as const;
+  if (String(selected.value) === key) return "incorrect" as const;
+  return "none" as const;
 }
 
-const ariaMessage = computed(() => {
-  if (!answered.value) return "";
-  const v = selected.value;
-  const isCorrect =
-    props.correctValue != null && String(v) === String(props.correctValue);
-  if (isCorrect) return "Correct answer selected.";
-  return `Incorrect. Correct answer is ${props.correctValue}`;
-});
-
-provide("radioGroup", {
-  name: props.name,
-  selected,
-  disabled: computed(() => props.disabled),
-  register,
-  unregister,
-  setValue,
-  getStatus,
-  reset,
-  answered,
-});
-
-function onKeydown(e: KeyboardEvent) {
-  const keys = [
-    "ArrowRight",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowUp",
-    "Home",
-    "End",
-    " ",
-    "Enter",
-  ];
-  if (!keys.includes(e.key)) return;
-  e.preventDefault();
-  const enabled = radios.value.filter(
-    (r) => !(r as HTMLButtonElement).hasAttribute("disabled"),
-  );
-  if (!enabled.length) return;
-  let index = enabled.indexOf(document.activeElement as HTMLButtonElement);
-  // if nothing focused, fall back to the currently selected value
-  if (index === -1 && selected.value != null) {
-    const sel = String(selected.value);
-    index = enabled.findIndex((r) => r.getAttribute("data-value") === sel);
-  }
-
-  if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-    const next = enabled[(index + 1) % enabled.length];
-    next?.focus();
-    next?.click();
-  } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-    const prev = enabled[(index - 1 + enabled.length) % enabled.length];
-    prev?.focus();
-    prev?.click();
-  } else if (e.key === "Home") {
-    const first = enabled[0];
-    if (first) {
-      first.focus();
-      first.click();
-    }
-  } else if (e.key === "End") {
-    const last = enabled[enabled.length - 1];
-    if (last) {
-      last.focus();
-      last.click();
-    }
-  } else if (e.key === " " || e.key === "Enter") {
-    (document.activeElement as HTMLButtonElement)?.click();
-  }
+/**
+ * 处理子项的选择事件。
+ *
+ * 行为说明：
+ * - 若 `props.disabled` 为 true 或 `selected` 已有值（单次答题模式），则忽略该选择。
+ * - 否则更新 `selected.value`（`defineModel` 会同步 v-model）。
+ *
+ * @param v - 被选择的选项值
+ */
+function onSelect(v: string | number) {
+  if (props.disabled || selected.value !== null) return;
+  selected.value = v;
 }
 </script>
 
 <style lang="scss" scoped>
-@use "./check-radio.scss" as *;
 .radio-group {
   @apply flex flex-col gap-2;
 }
