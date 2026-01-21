@@ -28,37 +28,36 @@ import CheckRadio from "./CheckRadio.vue";
  * @example
  * <CheckRadioGroup v-model="value" :options="[{value:'a',label:'A'},{value:'b',label:'B'}]" :correctValue="'b'" />
  *
- * @prop {Option[]} options - 要渲染的选项数组，顺序即为展示顺序。
- * @prop {string|number|null} [correctValue] - 可选的正确答案值（用于展示正确/错误样式）。
- * @prop {boolean} [disabled=false] - 若为 true，则禁用整个组的交互。
- *
  * @emits update:modelValue - v-model 自动同步（由 `defineModel` 管理）。
  */
 
+/** 单个选项的描述对象 */
+export interface Option {
+  /** 选项的唯一标识（必填）。 */
+  value: string | number;
+  /** 选项的展示文本（可选）。 */
+  label?: string;
+  /** 选项的附加描述（可选）。 */
+  description?: string;
+}
+
+/**
+ * Props for CheckRadioGroup
+ */
+export interface GroupProps {
+  /** 要渲染的选项数组，顺序即为展示顺序。 */
+  options: Option[];
+  /** 可选的正确答案值（用于展示正确/错误样式）。 */
+  correctValue?: string | number | null;
+  /** 若为 true，则禁用整个组的交互。 */
+  disabled?: boolean;
+}
+const props = defineProps<GroupProps>();
 // 组件名称
 defineOptions({ name: "CheckRadioGroup" });
 
 // 使用 defineModel 管理选中的值
 const selected = defineModel<string | number | null>();
-
-// Props: options 数组 + 可选的 correctValue 与 disabled
-/**
- * 单个选项的描述对象
- *
- * @property value - 选项的唯一标识（必填）。
- * @property label - 选项的展示文本（可选）。
- * @property description - 选项的附加描述（可选）。
- */
-export interface Option {
-  value: string | number;
-  label?: string;
-  description?: string;
-}
-const props = defineProps<{
-  options: Option[];
-  correctValue?: string | number | null;
-  disabled?: boolean;
-}>();
 
 /**
  * 计算给定选项的显示状态（用于子 `CheckRadio` 的 `status` prop）。

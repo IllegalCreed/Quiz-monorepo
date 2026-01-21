@@ -49,18 +49,17 @@ const emit = defineEmits<{ (e: "select", v: string | number): void }>();
 
 /**
  * Props for `CheckRadio`.
- *
- * @property value - 选项的唯一标识值（必填）。
- * @property label - 用于显示的主标签文本。
- * @property description - 可选的描述文本，显示在标签下方。
- * @property disabled - 是否禁用当前选项，禁用时不响应点击。
- * @property status - 答题/展示状态：'none' | 'correct' | 'incorrect'（默认为 'none'）。
  */
 export interface Props {
+  /** 选项的唯一标识值（必填）。 */
   value: string | number;
+  /** 用于显示的主标签文本。 */
   label?: string;
+  /** 可选的描述文本，显示在标签下方。 */
   description?: string;
+  /** 是否禁用当前选项，禁用时不响应点击。 */
   disabled?: boolean;
+  /** 答题/展示状态：'none' | 'correct' | 'incorrect'（默认为 'none'）。 */
   status?: "none" | "correct" | "incorrect" | null;
 }
 const props = withDefaults(defineProps<Props>(), {
