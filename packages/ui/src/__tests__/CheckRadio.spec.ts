@@ -45,7 +45,9 @@ describe("CheckRadio components", () => {
     await wrapper.vm.$nextTick();
     expect(radios[0].classes()).toContain("radio--incorrect");
     expect(radios[1].classes()).toContain("radio--correct");
-    const ev = wrapper.emitted("answered")?.[0][0];
+    const ev = wrapper
+      .findComponent(CheckRadioGroup)
+      .emitted("answered")?.[0][0];
     expect(ev).toMatchObject({
       value: "a",
       isCorrect: false,
