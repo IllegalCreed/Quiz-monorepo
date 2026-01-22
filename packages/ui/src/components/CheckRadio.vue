@@ -47,9 +47,6 @@ defineOptions({ name: "CheckRadio" });
 
 const emit = defineEmits<{ (e: "select", v: string | number): void }>();
 
-/**
- * Props for `CheckRadio`.
- */
 export interface Props {
   /** 选项的唯一标识值（必填）。 */
   value: string | number;

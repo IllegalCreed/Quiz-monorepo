@@ -11,13 +11,6 @@ export default {
       },
     },
   },
-  argTypes: {
-    options: {
-      description: "要渲染的选项数组，例如 { value, label, description }。",
-    },
-    correctValue: { description: "可选的正确答案值（用于展示正确/错误样式）" },
-    disabled: { description: "若为 true，则禁用整个组的交互" },
-  },
 };
 
 const baseOptions = [

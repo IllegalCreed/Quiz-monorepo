@@ -11,13 +11,6 @@ export default {
       },
     },
   },
-  argTypes: {
-    value: { description: "选项的唯一标识值（必填）" },
-    label: { description: "用于显示的主标签文本" },
-    description: { description: "可选的描述文本，显示在标签下方" },
-    disabled: { description: "是否禁用当前选项" },
-    status: { description: "展示状态：'none' | 'correct' | 'incorrect'" },
-  },
 };
 
 export const StandaloneUnselected = {

@@ -41,9 +41,6 @@ export interface Option {
   description?: string;
 }
 
-/**
- * Props for CheckRadioGroup
- */
 export interface GroupProps {
   /** 要渲染的选项数组，顺序即为展示顺序。 */
   options: Option[];
