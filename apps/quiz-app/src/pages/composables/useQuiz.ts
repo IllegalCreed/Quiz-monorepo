@@ -8,6 +8,7 @@ export function useQuiz() {
   const loading = ref(false);
   const selected = ref<number | null>(null);
   const status = ref<"idle" | "correct" | "wrong" | "answered">("idle");
+  const correctOptionId = ref<number | null>(null);
   const error = ref<string | null>(null);
 
   const { isMock } = useMockStore();
@@ -16,6 +17,7 @@ export function useQuiz() {
     loading.value = true;
     selected.value = null;
     status.value = "idle";
+    correctOptionId.value = null;
     error.value = null;
     if (isMock.value) {
       // return a simple mocked question
@@ -48,15 +50,16 @@ export function useQuiz() {
     selected.value = optionId;
 
     if (isMock.value) {
-      // local mocked check: assume first option is wrong, second is correct
       const q = question.value!;
       const second = q.options[1];
       const correct = second !== undefined && optionId === second.id;
+      const correctId = second?.id ?? null;
+      correctOptionId.value = correctId;
       status.value = correct ? "correct" : "wrong";
       if (correct) setTimeout(() => loadNext(), 1000);
       return {
         correct,
-        correctOptionId: q.options.find((o) => o.text === "成功")?.id ?? null,
+        correctOptionId: correctId,
         explanation: q.explanation,
       };
     }
@@ -64,6 +67,7 @@ export function useQuiz() {
     // submit answer
     try {
       const res = await submitAnswer(question.value.id, optionId);
+      correctOptionId.value = res.correctOptionId ?? null;
       status.value = res.correct ? "correct" : "wrong";
       // if correct: auto next after 1s
       if (res.correct) {
@@ -75,11 +79,12 @@ export function useQuiz() {
       // 如果提交出现错误（如网络/后端错误），将状态置为 'wrong'，
       // 这样组件会渲染出 .explanation 元素，而不是继续保持 'idle'（导致 Cypress 超时因找不到元素）
       status.value = "wrong";
+      correctOptionId.value = null;
       // 同时在控制台记录错误，方便后续排查具体原因
       console.error("submitAnswer failed", e);
       return { correct: false, correctOptionId: null, explanation: null };
     }
   }
 
-  return { question, loading, selected, status, loadNext, choose, error };
+  return { question, loading, selected, status, loadNext, choose, error, correctOptionId };
 }

@@ -22,11 +22,12 @@ describe("Quiz flow (real backend)", () => {
 
   it("loads question from backend and shows options", () => {
     cy.get(".stem").should("exist");
-    cy.get(".options .option").should("have.length.greaterThan", 0);
+    // CheckRadioGroup renders .radio-group with .radio children
+    cy.get(".radio-group .radio").should("have.length.greaterThan", 0);
   });
 
   it("can select correct option and show explanation", () => {
-    cy.get(".options .option").first().click();
+    cy.get(".radio-group .radio").first().click();
 
     // Either an explanation is shown for a wrong choice, or the correct option is highlighted.
     cy.get("body").then(() => {
@@ -34,7 +35,7 @@ describe("Quiz flow (real backend)", () => {
         if ($exp.length) {
           // explanation shown — pass
         } else {
-          cy.get(".option.correct", { timeout: 10000 }).should("exist");
+          cy.get(".radio.radio--correct", { timeout: 10000 }).should("exist");
         }
       });
     });

@@ -34,21 +34,22 @@ describe("Quiz flow (mocked)", () => {
 
   it("shows question and allows selecting correct option", () => {
     cy.contains(".stem", "HTTP 状态码 200");
-    cy.get(".options .option").should("have.length", 2);
+    // CheckRadioGroup renders .radio-group with .radio children
+    cy.get(".radio-group .radio").should("have.length", 2);
 
     // select correct option (id 12 -> text '成功')
-    cy.contains(".option", "成功").click();
+    cy.contains(".radio", "成功").click();
 
-    // correct selection should get .correct class
-    cy.contains(".option", "成功").should("have.class", "correct");
+    // correct selection should get .radio--correct class
+    cy.contains(".radio", "成功").should("have.class", "radio--correct");
   });
 
   it("shows wrong selection and explanation", () => {
     cy.contains(".stem", "HTTP 状态码 200");
-    cy.contains(".option", "未找到").click();
+    cy.contains(".radio", "未找到").click();
 
-    // wrong selection should show wrong class and explanation element should appear
-    cy.contains(".option", "未找到").should("have.class", "wrong");
+    // wrong selection should show radio--incorrect class and explanation element should appear
+    cy.contains(".radio", "未找到").should("have.class", "radio--incorrect");
     cy.get(".explanation").should("exist").and("contain", "正确答案");
   });
 });
