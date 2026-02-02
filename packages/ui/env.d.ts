@@ -10,6 +10,7 @@ declare module "*.jpg";
 
 declare module "*.vue" {
   import type { DefineComponent } from "vue";
-  const component: DefineComponent<{}, {}, any>;
+  // Use stricter types to avoid `{} / any` lint errors
+  const component: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>;
   export default component;
 }
