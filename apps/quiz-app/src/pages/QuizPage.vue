@@ -35,15 +35,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useQuiz } from './composables/useQuiz'
+import { onMounted } from "vue";
+import { useQuiz } from "./composables/useQuiz";
 
-const { question, loading, selected, status, loadNext, choose, error } = useQuiz()
+const { question, loading, selected, status, loadNext, choose, error } = useQuiz();
 
-onMounted(() => loadNext())
+onMounted(() => loadNext());
 
 function onChoose(optId: number) {
-  choose(optId)
+  choose(optId);
 }
 </script>
 
