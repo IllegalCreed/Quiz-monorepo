@@ -37,6 +37,47 @@ export default defineConfigWithVueTs(
     files: ["src/**/__tests__/*"],
   },
 
+  // Treat `scripts/` as Node scripts where CommonJS `require()` usage is allowed.
+  {
+    files: ["scripts/**/*.{js,cjs}"],
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "script",
+        tsconfigRootDir: fileURLToPath(new URL(".", import.meta.url)),
+      },
+      globals: {
+        process: "readonly",
+        module: "readonly",
+        require: "readonly",
+        __dirname: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-var-requires": "off",
+    },
+  },
+
+  // Treat `scripts/` ESM (`.mjs`) as Node ESM scripts.
+  {
+    files: ["scripts/**/*.{mjs}"],
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        tsconfigRootDir: fileURLToPath(new URL(".", import.meta.url)),
+      },
+      globals: {
+        process: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-var-requires": "off",
+    },
+  },
+
   skipFormatting,
 
   ...pluginOxlint.configs["flat/recommended"],
