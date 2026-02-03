@@ -30,6 +30,7 @@ pnpm run type-check
 ## 3. Commit 与 PR 规范
 
 - 使用 Conventional Commits（例如 `feat:`, `fix:`, `chore:`）。
+- Git 操作：请直接在终端使用 `git` 命令（branch / commit / push / pull / rebase / stash 等）；不要使用 MCP（例如 GitKraken 的 MCP 工具）来执行仓库变更，以免跳过本地钩子或自动化检查。
 - PR 模板应包括：描述、复现步骤、影响范围、测试说明（单元/E2E）、相关 issue/任务。
 - 至少一位 reviewer，通过 CI（lint/test/type-check）后再合并。
 - 对外暴露的 API/行为变更需在 PR 中标注 BREAKING CHANGE 并更新文档。
