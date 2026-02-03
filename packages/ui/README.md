@@ -28,7 +28,7 @@ pnpm install
 
 ```bash
 pnpm --filter @quiz/ui run storybook
-# 打开浏览器访问 Storybook（通常为 http://localhost:6006）
+# 打开浏览器访问 Storybook（通常为 http://localhost:10030）
 ```
 
 3. 运行单元测试
