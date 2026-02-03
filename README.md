@@ -1,145 +1,109 @@
-# Quiz Monorepo — 运行模式与命令速查 🧠
+# Quiz Monorepo — 项目说明与快速上手 🧠
 
-此文档基于当前仓库的真实 `package.json` 脚本（根、`apps/quiz-app`、`apps/quiz-backend`），只列出三种常用运行模式（Development / Test / Production）下的**实际命令**与简要说明，便于快速查阅。
-
----
-
-## 1) 开发（Development） ✅
-
-用途：本地开发、热重载。
-
-常用命令：
-
-- 安装依赖：
-
-  ```bash
-  pnpm install
-  ```
-
-- 并行启动前后端（根目录，使用 Turborepo）：
-
-  ```bash
-  pnpm run dev
-  ```
-
-- 单独启动前端：
-
-  ```bash
-  pnpm run dev:frontend
-  # 等价于: pnpm -C apps/quiz-app run dev
-  ```
-
-- 单独启动后端：
-
-  ```bash
-  pnpm run dev:backend
-  # 等价于: pnpm -C apps/quiz-backend run dev
-  ```
-
-说明：前端使用 Vite（开发默认端口 10000，预览端口 10010）；后端使用 Nest（默认端口 10020）。开发时可使用 `apps/*/.env.development.local` 覆盖环境变量，前端可启用 `VITE_MOCK=true` 加速开发。
+**一句话简介：** 本仓库包含一个基于 Vue + Vite 的前端 (`apps/quiz-app`)、使用 NestJS + Prisma 的后端 (`apps/quiz-backend`)，以及共享的 UI 包 (`packages/ui`)。该项目是一个可测、可部署的问答/测验小应用，适合用于学习示例与 CI/E2E 流程演示。
 
 ---
 
-## 2) 测试（Test / CI / E2E） 🧪
+## 🚀 快速开始
 
-用途：CI、单元测试与 E2E（需要可重置的测试数据库）。
+前提：Node 版本建议使用与仓库一致的 LTS（使用 `pnpm` 管理包）。
 
-准备与常用命令（以仓库内脚本为准）：
+1. 安装依赖：
 
-- 配置测试 env（示例）：
-  - `apps/quiz-backend/.env.test.local`（设置 `DATABASE_URL` 指向测试库并 `ENABLE_TEST_ENDPOINT=true`）
+```bash
+pnpm install
+```
 
-- 重置并 seed 测试 DB（**注意：`db:seed:test` 会清空并重建测试数据，适用于 CI/E2E**）：
+2. 本地开发（同时启动前后端）:
 
-  ```bash
-  pnpm -C apps/quiz-backend run db:seed:test
-  ```
+```bash
+pnpm run dev            # 使用 Turborepo 并行启动 frontend & backend
+pnpm run dev:frontend   # 仅启动前端（Vite，默认端口 10000）
+pnpm run dev:backend    # 仅启动后端（Nest，默认端口 10020）
+pnpm run dev:ui         # 启动 UI 库的 Storybook（packages/ui，默认端口 10030）
+```
 
-  （`db:seed` 在本地相当于 `db:seed:dev`；不要在生产库上运行 `db:seed:test`）
+3. 可选：在前端启用 mock 数据加速开发：
 
-- 启动后端以供 E2E 使用（默认端口 10020）：
-
-  ```bash
-  pnpm -C apps/quiz-backend run start:test
-  ```
-
-- 运行所有测试（根目录，Turbo 管理：会调用各包的 test 脚本）：
-
-  ```bash
-  pnpm run test
-  ```
-
-  根仓库有 `pretest` 钩子（`scripts/regenerate-test-secret.sh`），CI 本地运行时会触发它以生成测试 secret。
-
-- 前端单元测试 / E2E（前端脚本）：
-
-  ```bash
-  pnpm -C apps/quiz-app run test:unit       # 本地/CI 单元测试
-  pnpm -C apps/quiz-app run test:e2e        # 无头 E2E（会先执行 build:test）
-  ```
-
-说明：E2E 测试在运行时可能会调用后端的 `POST /api/test/reset`（该接口仅在 `ENABLE_TEST_ENDPOINT=true` 时启用），并假定测试 DB 可被 `db:seed:test` 重置以保证每次测试的数据确定性。
+```bash
+export VITE_MOCK=true
+pnpm run dev:frontend
+```
 
 ---
 
-## 3) 生产（Production） 🚀
+## 📁 项目结构（概要）
 
-用途：构建与运行生产版本。
+- `apps/quiz-app` — 前端（Vue + Vite + Vitest + Cypress）
+- `apps/quiz-backend` — 后端（NestJS + Prisma + Jest）
+- `packages/ui` — 共享 UI 组件、样式
+- `scripts/` — 便捷脚本（例如 DB seed、测试 secret 生成）
 
-常用命令：
-
-- 构建所有（根）：
-
-  ```bash
-  pnpm run build
-  ```
-
-- 单独构建前端：
-
-  ```bash
-  pnpm run build:frontend
-  # 等价于: pnpm -C apps/quiz-app run build
-  ```
-
-- 构建后端并以生产模式启动：
-
-  ```bash
-  pnpm run build:backend
-  pnpm -C apps/quiz-backend run start:prod
-  ```
-
-说明：生产环境请通过 CI/部署系统注入 secrets（例如 `DATABASE_URL`），不要把 `.env.production.local` 等敏感文件提交到仓库。
+> 详见仓库根目录与各 `package.json` 脚本。
 
 ---
 
-## 常用脚本速查 🔎
+## 🛠 常用脚本（速查）
 
 - 安装依赖：`pnpm install`
-- 并行启动（开发）：`pnpm run dev`
-- 并行构建：`pnpm run build`
-- 运行所有测试（Turbo）：`pnpm run test`
-- 后端重置并 seed 测试 DB：`pnpm -C apps/quiz-backend run db:seed:test`
-- 启动后端（test env）：`pnpm -C apps/quiz-backend run start:test`
-- 前端无头 E2E：`pnpm -C apps/quiz-app run test:e2e`
+- 开发（前后端并行）：`pnpm run dev`
+- 构建（全部）：`pnpm run build`
+- 运行测试（全部）：`pnpm run test`
 
 ---
 
-## 注意：Prisma（后端） 🔧
+## 🧪 测试与 CI
 
-- 初次 clone、安装依赖 或 在修改 `prisma/schema.prisma` 后，请在后端目录运行：
+- 单元测试：前端使用 Vitest，后端使用 Jest。运行 `pnpm run test` 会触发 repo 内各包的测试脚本（Turbo 管理）。
+- E2E：参考 `apps/quiz-app` 下的 Cypress 配置。E2E 依赖可重置的测试 DB（使用 `db:seed:test`），且后端需启用 `ENABLE_TEST_ENDPOINT=true` 来暴露测试接口（如 `POST /api/test/reset`）。
+- CI 注意：根仓库的 `pretest` 钩子会执行 `scripts/regenerate-test-secret.sh`，确保测试 secret 可用。
 
-  ```bash
-  pnpm -C apps/quiz-backend run prisma:generate
-  ```
+---
 
-  该命令会生成 Prisma Client（类型和查询 API），确保本地的 `@prisma/client` 与 schema 同步，避免运行时或类型错误。
+## 🔧 Prisma / 数据库
 
-- 常见问题与解决：
-  - 找不到 `@prisma/client` 或 类型不匹配：先运行 `pnpm install`，再执行 `pnpm -C apps/quiz-backend run prisma:generate`。
-  - Query Engine 二进制缺失或平台不匹配：删除 `node_modules/.prisma`（或 `pnpm -C apps/quiz-backend run prisma:generate --force`）后重试。
-  - E2E 报错数据库不可用：确保已运行 `pnpm -C apps/quiz-backend run db:seed:test` 并用 `pnpm -C apps/quiz-backend run start:test` 启动后端。
+- 在首次安装或修改 `prisma/schema.prisma` 后运行：
 
-- 可选自动化：如果想减少手动步骤，可以在后端 `package.json` 添加 `postinstall` 钩子：
-  ```json
-  "postinstall": "prisma generate"
-  ```
+```bash
+pnpm -C apps/quiz-backend run prisma:generate
+```
+
+- 常见问题：
+  - 找不到 `@prisma/client` 或类型不匹配 → 先 `pnpm install`，再 `prisma:generate`。
+  - Query Engine 二进制问题 → 删除 `node_modules/.prisma` 后重试或使用 `--force`。
+
+---
+
+## 📦 部署（要点）
+
+- 构建（推荐，按依赖顺序构建所有包）：`pnpm run build`（使用 Turbo，会先构建 `packages/ui` 等依赖）
+- 单独构建前端（若你只构建前端，请先构建 UI 包）：
+  - 构建 UI：`pnpm -C packages/ui run build`
+  - 构建前端：`pnpm -C apps/quiz-app run build`
+- 单独构建后端：`pnpm -C apps/quiz-backend run build`，生产启动 `pnpm -C apps/quiz-backend run start:prod`
+- Secrets 与环境变量应该由 CI/CD 或运行平台注入（不要提交 `.env.production.local` 等到仓库）。
+
+---
+
+## 🧰 开发流程与约定
+
+- 代码风格：遵循仓库的 ESLint / Prettier 配置。
+- 分支策略：feature 分支、PR、至少一位 reviewer、CI 通过后合并。
+- PR 检查重点：功能、类型、测试覆盖、E2E 影响、变更说明。
+
+---
+
+## ❓ 常见问题与排查（简短）
+
+- “E2E 报错数据库不可用”：确认已运行 `pnpm -C apps/quiz-backend run db:seed:test`，并用 `start:test` 启动后端。
+- “Prisma client 缺失”：运行 `pnpm -C apps/quiz-backend run prisma:generate`。
+
+---
+
+## 🙌 贡献 & 联系
+
+欢迎提交 PR。请在 PR 描述中包含复现步骤、相关测试以及变更影响范围。
+
+---
+
+> 该 README 侧重于快速上手与常用命令。更详细的维护规约请参见 `DEV_GUIDELINES.md`（仓库根目录）。
