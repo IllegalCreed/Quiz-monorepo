@@ -66,6 +66,10 @@ const props = withDefaults(defineProps<Props>(), {
   status: "none",
 });
 
+// Export prop and payload types for consumers
+export type CheckRadioProps = Props;
+export type CheckRadioSelectPayload = string | number;
+
 /**
  * 响应用户点击，发出 `select` 事件。
  *

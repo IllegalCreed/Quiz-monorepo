@@ -4,3 +4,9 @@ import "./styles/main.scss";
 
 export { default as CheckRadio } from "./components/CheckRadio.vue";
 export { default as CheckRadioGroup } from "./components/CheckRadioGroup.vue";
+
+export type {
+  CheckRadioProps,
+  CheckRadioSelectPayload,
+} from "./components/CheckRadio.vue";
+export type { Option, GroupProps } from "./components/CheckRadioGroup.vue";
