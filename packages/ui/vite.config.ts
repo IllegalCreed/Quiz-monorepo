@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import UnoCSS from "@unocss/vite";
 import unpluginDts from "unplugin-dts/vite";
+import { execSync } from "child_process";
 
 export default defineConfig({
   plugins: [
@@ -12,6 +13,11 @@ export default defineConfig({
       bundleTypes: true,
       insertTypesEntry: true,
       processor: "vue",
+      // Run d.ts validation after the plugin finishes emitting declaration files
+      afterBuild: () => {
+        // Run tsc directly after d.ts files are emitted to validate the declarations
+        execSync("tsc -p tsconfig.dtscheck.json", { stdio: "inherit" });
+      },
     }),
   ],
   build: {

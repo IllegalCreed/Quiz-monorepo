@@ -30,14 +30,14 @@ describe("Quiz flow (real backend)", () => {
     cy.get(".radio-group .radio").first().click();
 
     // Either an explanation is shown for a wrong choice, or the correct option is highlighted.
-    cy.get("body").then(() => {
-      cy.get(".explanation", { timeout: 10000 }).then(($exp) => {
-        if ($exp.length) {
-          // explanation shown — pass
-        } else {
-          cy.get(".radio.radio--correct", { timeout: 10000 }).should("exist");
-        }
-      });
+    cy.document().then(() => {
+      const $exp = Cypress.$(".explanation");
+      if ($exp.length) {
+        // explanation shown — pass
+        return;
+      }
+      // If no explanation is present, wait for the correct highlight to appear
+      return cy.get(".radio.radio--correct", { timeout: 10000 }).should("exist");
     });
   });
 });
