@@ -32,7 +32,7 @@ import CheckRadio from "./CheckRadio.vue";
  */
 
 /** 单个选项的描述对象 */
-export interface Option {
+export interface CheckRadioGroupOption {
   /** 选项的唯一标识（必填）。 */
   value: string | number;
   /** 选项的展示文本（可选）。 */
@@ -41,15 +41,15 @@ export interface Option {
   description?: string;
 }
 
-export interface GroupProps {
+export interface CheckRadioGroupProps {
   /** 要渲染的选项数组，顺序即为展示顺序。 */
-  options: Option[];
+  options: CheckRadioGroupOption[];
   /** 可选的正确答案值（用于展示正确/错误样式）。 */
   correctValue?: string | number | null;
   /** 若为 true，则禁用整个组的交互。 */
   disabled?: boolean;
 }
-const props = defineProps<GroupProps>();
+const props = defineProps<CheckRadioGroupProps>();
 // 组件名称
 defineOptions({ name: "CheckRadioGroup" });
 

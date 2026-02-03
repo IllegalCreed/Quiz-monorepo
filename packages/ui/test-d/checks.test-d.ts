@@ -1,13 +1,9 @@
 import { expectAssignable } from "tsd";
-import type {
-  CheckRadioProps,
-  CheckRadioSelectPayload,
-  Option,
-} from "../dist/index.d.ts";
+import type { CheckRadioProps, CheckRadioGroupProps } from "../dist/index.d.ts";
 
-// Props shape
+// Check that CheckRadio props are assignable
 expectAssignable<CheckRadioProps>({ value: "a" });
-expectAssignable<CheckRadioSelectPayload>("a");
+expectAssignable<CheckRadioProps>({ value: "a", status: "correct" });
 
-// Option type
-expectAssignable<Option>({ value: "a" });
+// CheckRadioGroup props
+expectAssignable<CheckRadioGroupProps>({ options: [{ value: "a" }] });

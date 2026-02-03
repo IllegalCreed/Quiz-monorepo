@@ -47,7 +47,7 @@ defineOptions({ name: "CheckRadio" });
 
 const emit = defineEmits<{ (e: "select", v: string | number): void }>();
 
-export interface Props {
+export interface CheckRadioProps {
   /** 选项的唯一标识值（必填）。 */
   value: string | number;
   /** 用于显示的主标签文本。 */
@@ -59,16 +59,12 @@ export interface Props {
   /** 答题/展示状态：'none' | 'correct' | 'incorrect'（默认为 'none'）。 */
   status?: "none" | "correct" | "incorrect" | null;
 }
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<CheckRadioProps>(), {
   label: "",
   description: "",
   disabled: false,
   status: "none",
 });
-
-// Export prop and payload types for consumers
-export type CheckRadioProps = Props;
-export type CheckRadioSelectPayload = string | number;
 
 /**
  * 响应用户点击，发出 `select` 事件。
