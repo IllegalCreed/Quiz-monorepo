@@ -16,6 +16,16 @@ export default mergeConfig(
       globals: true,
       exclude: [...configDefaults.exclude],
       root: fileURLToPath(new URL("./", import.meta.url)),
+      // Coverage configuration (applies at top-level; run --coverage to collect)
+      coverage: {
+        provider: "v8",
+        enabled: true,
+        reporter: [
+          ["html", {}],
+          ["text", {}],
+        ],
+        reportsDirectory: "./coverage",
+      },
       // Per the Storybook docs: define a project for Storybook tests
       projects: [
         {
@@ -37,20 +47,11 @@ export default mergeConfig(
               provider: playwright({}),
               headless: true,
               instances: [{ browser: "chromium" }],
-            }, // Coverage configuration for Storybook tests
-            coverage: {
-              provider: "v8",
-              enabled: true,
-              reporter: [
-                ["html", {}],
-                ["text", {}],
-              ],
-              reportsDirectory: "./coverage",
             }, // ensure Storybook preview annotations are applied in tests
             setupFiles: ["./.storybook/vitest.setup.ts"],
           },
         },
       ],
-    } as any,
+    },
   }),
 );
