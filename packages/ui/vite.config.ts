@@ -2,8 +2,16 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import UnoCSS from "@unocss/vite";
 
-// This config is used for Storybook dev server and other dev tooling.
-// Production library build is handled by tsdown (see tsdown.config.ts).
+/*
+ * Vite 开发配置（面向本包的本地开发）
+ *
+ * 说明：
+ * - 该配置主要用于 Storybook 的开发服务器和本地开发体验（热重载、UnoCSS 等）。
+ * - 若需要在本地调试组件，运行：pnpm -C packages/ui run storybook
+ * - 生产包的构建由 tsdown 负责（请查看 tsdown.config.ts）。
+ */
+// 该配置用于 Storybook 的开发服务器及其他开发工具。
+// 生产环境下库的构建由 tsdown 负责（参见 tsdown.config.ts）。
 export default defineConfig({
   plugins: [vue(), UnoCSS()],
 });

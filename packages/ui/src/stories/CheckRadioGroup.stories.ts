@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
 import { expect } from "storybook/test";
 
-// interaction tests
+// 交互测试（Story 的 play 用例）
 
 const baseOptions = [
   { value: "a", label: "选项 A" },
@@ -46,7 +46,7 @@ export const GroupUnselected: Story = {
   },
   name: "分组：未选择",
   play: async ({ canvas }) => {
-    // ensure group renders four radio items
+    // 断言：分组渲染为四个单选控件
     const items = canvas.getAllByRole("button");
     expect(items).toHaveLength(4);
   },
@@ -61,7 +61,7 @@ export const GroupWithDesc: Story = {
   },
   name: "分组：带描述",
   play: async ({ canvas }) => {
-    // descriptions are present for each option
+    // 断言：每个选项的描述文本存在
     expect(canvas.getByText("A 的补充描述")).toBeInTheDocument();
     expect(canvas.getByText("B 是正确答案的说明")).toBeInTheDocument();
   },
@@ -76,7 +76,7 @@ export const GroupSelectedCorrect: Story = {
   },
   name: "分组：已选（正确）",
   play: async ({ canvas }) => {
-    // the correct option should carry the correct class
+    // 断言：正确选项应有正确状态的类名
     const label = canvas.getByText("选项 B");
     const radio = label.closest(".radio");
     expect(radio).toHaveClass("radio--correct");

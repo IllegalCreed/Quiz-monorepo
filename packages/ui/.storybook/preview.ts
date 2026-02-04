@@ -2,6 +2,16 @@ import type { Preview } from "@storybook/vue3-vite";
 import "virtual:uno.css";
 import "../src/styles/main.scss";
 
+/*
+ * Storybook preview 配置
+ *
+ * 说明（针对初学者）：
+ * - globalTypes 定义了 Storybook toolbar 上的主题开关（Light / Dark）。
+ * - 我们在 decorator 中只同步 .dark class，以与 VueUse 的 useDark 保持一致（useDark 默认切换 .dark）。
+ * - 如果上层应用使用 useDark 或其他方式切换主题，这里与其一致即可，不需要额外的 data-theme/data-color-scheme 属性。
+ *
+ * 在 Story 中选择 toolbar 的 Theme 会把该值放到 context.globals.theme，decorator 会据此切换 DOM class。
+ */
 export const globalTypes = {
   theme: {
     name: "Theme",
@@ -22,12 +32,9 @@ export const decorators = [
     Story: () => unknown,
     context: { globals?: { theme?: "light" | "dark" } },
   ): unknown => {
-    const theme = context.globals?.theme ?? "light";
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
-    root.setAttribute("data-color-scheme", theme === "dark" ? "dark" : "light");
-    if (theme === "dark") root.setAttribute("data-theme", "dark");
-    else root.removeAttribute("data-theme");
+    // 仅设置 dark class，与 VueUse useDark 默认行为一致
+    const isDark = context.globals?.theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
     return Story();
   },
 ];
