@@ -113,7 +113,7 @@ export const GroupDisabled: Story = {
       expect(btn).toBeDisabled();
     }
     // 尝试点击禁用的按钮（测试 disabled 分支）
-    await userEvent.click(buttons[0]);
+    await userEvent.click(buttons[0]!);
   },
 };
 
@@ -127,7 +127,7 @@ export const GroupNoCorrectValue: Story = {
   name: "分组：无正确答案",
   play: async ({ canvas, userEvent }) => {
     // 点击选择一个选项
-    const btn = canvas.getAllByRole("button")[0];
+    const btn = canvas.getAllByRole("button")[0]!;
     await userEvent.click(btn);
     // 没有 correctValue 时，所有选项都不应有 correct/incorrect 样式
     const radios = canvas
@@ -150,7 +150,7 @@ export const GroupAlreadySelected: Story = {
   name: "分组：已选后再点击",
   play: async ({ canvas, userEvent }) => {
     // 已经选了 A，再点击 C，应该不会改变选择（单次答题模式）
-    const btnC = canvas.getAllByRole("button")[2];
+    const btnC = canvas.getAllByRole("button")[2]!;
     await userEvent.click(btnC);
     // A 仍然是 incorrect（说明选择没变）
     const labelA = canvas.getByText("选项 A");
