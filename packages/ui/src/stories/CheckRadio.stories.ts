@@ -102,3 +102,27 @@ export const StandaloneStatusNull: Story = {
     expect(radio).not.toHaveClass("radio--incorrect");
   },
 };
+
+export const StandaloneWithSlots: Story = {
+  name: "独立：使用 Slot 自定义内容",
+  args: {
+    value: "slot-test",
+  },
+  render: () => ({
+    components: { CheckRadio },
+    template: `
+      <CheckRadio value="slot-test">
+        <template #label><strong>自定义标签</strong></template>
+        <template #description><em>自定义描述内容</em></template>
+      </CheckRadio>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    // 验证 slot 内容正确渲染
+    expect(canvas.getByText("自定义标签")).toBeInTheDocument();
+    expect(canvas.getByText("自定义描述内容")).toBeInTheDocument();
+    // 验证描述区域存在（$slots.description 分支被覆盖）
+    const descEl = canvas.getByText("自定义描述内容").closest(".radio__desc");
+    expect(descEl).toBeInTheDocument();
+  },
+};

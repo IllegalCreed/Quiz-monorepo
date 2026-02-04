@@ -84,6 +84,42 @@ describe("CheckRadio 单选按钮组件", () => {
     expect(desc.exists()).toBe(true);
     expect(desc.text()).toBe("这是一段描述文字");
   });
+
+  it("Slot：使用 label 和 description 插槽自定义内容", () => {
+    // 准备：挂载使用 slot 的 CheckRadio
+    const wrapper = mount(CheckRadio, {
+      props: { value: "slot-test" },
+      slots: {
+        label: "<strong>自定义标签</strong>",
+        description: "<em>自定义描述内容</em>",
+      },
+    });
+
+    // 断言：slot 内容正确渲染
+    expect(wrapper.find(".radio__label strong").exists()).toBe(true);
+    expect(wrapper.find(".radio__label").text()).toBe("自定义标签");
+
+    // 断言：description slot 存在时，描述区域应该渲染（覆盖 $slots.description 分支）
+    const desc = wrapper.find(".radio__desc");
+    expect(desc.exists()).toBe(true);
+    expect(desc.find("em").exists()).toBe(true);
+    expect(desc.text()).toBe("自定义描述内容");
+  });
+
+  it("Slot：仅使用 description 插槽（无 description prop）", () => {
+    // 准备：只传 description slot，不传 description prop
+    const wrapper = mount(CheckRadio, {
+      props: { value: "slot-only", label: "普通标签" },
+      slots: {
+        description: "通过 slot 提供的描述",
+      },
+    });
+
+    // 断言：$slots.description 分支被覆盖
+    const desc = wrapper.find(".radio__desc");
+    expect(desc.exists()).toBe(true);
+    expect(desc.text()).toBe("通过 slot 提供的描述");
+  });
 });
 
 describe("CheckRadioGroup 单选组组件", () => {

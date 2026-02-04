@@ -106,7 +106,7 @@ function onKeydown(e: KeyboardEvent) {
 
   // 找到当前聚焦的选项索引（使用暴露的 rootEl 而非 $el）
   const active = document.activeElement;
-  const idx = list.findIndex((c) => c?.rootEl?.contains(active));
+  const idx = list.findIndex((c) => c.rootEl?.contains(active));
   if (idx === -1) return;
 
   if (
@@ -123,7 +123,7 @@ function onKeydown(e: KeyboardEvent) {
     }
     e.preventDefault();
     // 聚焦到下一个选项的 button
-    const nextEl = list[next]?.rootEl?.querySelector("button");
+    const nextEl = list[next]!.rootEl?.querySelector("button");
     nextEl?.focus();
     return;
   }
