@@ -1,34 +1,29 @@
-@quiz/ui — 组件库（Radio / RadioGroup）
+@quiz/ui — 组件库（重构版）
 
-说明
+简介
 
-- 这是一个小型的组件库，包含 `CheckRadio`、`CheckRadioGroup` 等组件，主要用于项目内表单/选择类交互。
-- 以 **Storybook** 作为主要的展示与调试环境，stories 同时作为组件使用示例与手工测试用例。
+这是项目内的轻量组件库，包含表单与选择类组件（例如 Radio/RadioGroup、CheckRadio 等）。重构后关注以下目标：小而可组合的组件、严格的 TypeScript 类型、在 Storybook 中可复现的示例和易于本地联调的 monorepo 使用体验。
 
-技术栈
+主要特性
 
-- **框架**：Vue 3 + Composition API + TypeScript
-- **构建工具**：Vite
-- **样式**：UnoCSS（Tailwind 4 预设）+ SCSS（可使用 `@apply` 复用 UnoCSS/Tailwind 类）
-- **组件展示/调试**：Storybook
-- **单元测试**：Vitest
-- **代码检查**：ESLint（+ TypeScript 支持）
-- **代码格式化**：Prettier / stylelint（如适用）
-- **类型声明**：`tsconfig.app.json` 开启 `declaration: true`，构建产出声明文件
+- 基于 Vue 3 + Composition API + TypeScript
+- Vite 构建与 Storybook 展示
+- UnoCSS 原子类优先，支持 SCSS 和 `@apply` 复用
+- Vitest 单元测试、ESLint + Prettier 校验
+- 导出完整类型声明，方便在 monorepo 中引用
 
-快速开始 🚀
+快速开始
 
-1. 安装依赖
+1. 安装依赖（在仓库根目录运行）
 
 ```bash
 pnpm install
 ```
 
-2. 启动 Storybook（开发 & 调试）
+2. 本地启动 Storybook（用于开发与交互验证）
 
 ```bash
 pnpm --filter @quiz/ui run storybook
-# 打开浏览器访问 Storybook（通常为 http://localhost:10030）
 ```
 
 3. 运行单元测试
@@ -45,26 +40,43 @@ pnpm --filter @quiz/ui run lint
 pnpm --filter @quiz/ui run format
 ```
 
-开发与调试流程 🔧
+常用脚本（概览）
 
-- 在 `src/components` 中实现组件，组件应保持小而单一、带清晰的 props/事件定义。
-- 在 `src/stories`（或与组件同目录）添加对应的 `*.stories.ts`，覆盖常见使用场景与边界条件（正常/禁用/异常输入等）。
-- 使用 Storybook 的 Controls、Actions 快速调试 props 与事件；同时打开 Vue Devtools 查看组件内部状态。
-- 如需在真实上下文中联调，使用 monorepo 的局部依赖（pnpm workspace）直接在上层应用中引入 `@quiz/ui`。
-- 编辑样式时，优先使用 UnoCSS 的原子类或 `@apply` 以保持风格一致。
-- 运行测试时可使用 `--watch` 模式快速回归检查。
+- `storybook` — 启动 Storybook 开发服务器
+- `build` — 构建组件包与类型声明
+- `test` — 运行 Vitest
+- `type-check` — 运行 `vue-tsc --noEmit`
+- `lint` / `format` — 代码检查与格式化
 
-TSConfig 约定
+开发与调试建议
 
-- `tsconfig.json` (根)：使用 project references 引用子配置（`tsconfig.app.json`、`tsconfig.storybook.json`、`tsconfig.node.json`），便于独立构建与 IDE 支持。
-- `tsconfig.app.json`：用于组件源码、类型声明与构建（开启 `declaration: true`，输出到 `dist/types`），`extends` 自 `@vue/tsconfig/tsconfig.dom.json` 以获得 Browser/DOM 相关的默认配置。
-- `tsconfig.storybook.json`：用于 Storybook 环境（包含 `.storybook` 的文件），继承 `tsconfig.app.json` 并在编译选项中额外声明 Storybook 所需的 `types` 与 `composite` 设置。
-- `tsconfig.node.json`：用于工具链/Node 相关的配置（Vite、Vitest、Cypress、ESLint 配置文件等），`extends` 自 `@tsconfig/node24/tsconfig.json`。
+- 组件源码放在 `src/components`，stories 放在 `src/stories` 或与组件同目录（以示例驱动为主）。
+- Story 中编写可交互的 cases（Controls / Actions），便于手工回归与 UI review。
+- 在 monorepo 中直接以 workspace 依赖使用该包进行联调（`pnpm --filter` 或 workspace path）。
 
-注意：本包并未包含 `tsconfig.dom.json` 或 `tsconfig.base.json` 的本地副本；如果需要本地化配置，可通过复制并修改相应的 `@vue/tsconfig`/`@tsconfig` 文件来实现。
+TypeScript 与构建约定
 
-常见问题与排查建议 ⚠️
+- `tsconfig.app.json`：用于源码与声明文件生成（`declaration: true`），输出到构建目录。
+- `tsconfig.storybook.json`：为 Storybook 环境定制，确保 stories 与 `.storybook` 中的文件被包含。
+- `tsconfig.node.json`：工具链与脚本的 Node 配置（Vite / Vitest / ESLint 等）。
 
-- Storybook 无法显示组件：检查 `tsconfig.storybook.json` 是否包含 stories 的路径；重启 Storybook，清理 Vite 缓存。
-- 样式未生效：确认 UnoCSS 已在 Storybook 配置中被引入（`.storybook/preview.*`），并检查是否有样式隔离问题。
-- 类型报错（TS）：优先运行 `pnpm --filter @quiz/ui run type-check`，并确认 `tsconfig` 的 `paths`/`types` 配置是否正确。
+常见问题与排查
+
+- Storybook 无法加载组件：检查 `tsconfig.storybook.json` 中的 include/paths，删除 Storybook 缓存后重启。
+- 样式不生效：确认 UnoCSS 插件/配置已在 Storybook 的 preview 中引入；如使用 SCSS，确认构建器已正确处理样式加载。
+- 类型错误：先运行 `pnpm --filter @quiz/ui run type-check` 定位问题，确认 `paths` 与 `types` 设置无误。
+
+贡献与发布
+
+- 新增组件请同时添加 `*.stories.ts` 与单元测试用例。
+- 提交前运行 `pnpm --filter @quiz/ui run type-check && pnpm --filter @quiz/ui run test`。
+
+文件
+
+- 组件源码：src/components
+- Stories：src/stories 或组件目录内的 `*.stories.ts`
+- Storybook 配置：.storybook/
+
+更多帮助
+
+如需我为 README 加上示例代码片段、CI 工作流或发布步骤（pnpm publish/打包配置），告诉我你的优先项，我可以继续补充。
