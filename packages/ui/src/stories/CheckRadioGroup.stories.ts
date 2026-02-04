@@ -97,3 +97,64 @@ export const GroupSelectedIncorrect: Story = {
     expect(radio).toHaveClass("radio--incorrect");
   },
 };
+
+export const GroupDisabled: Story = {
+  args: {
+    modelValue: null,
+    options: baseOptions,
+    correctValue: "b",
+    disabled: true,
+  },
+  name: "分组：禁用",
+  play: async ({ canvas, userEvent }) => {
+    const buttons = canvas.getAllByRole("button");
+    // 验证所有按钮都被禁用
+    for (const btn of buttons) {
+      expect(btn).toBeDisabled();
+    }
+    // 尝试点击禁用的按钮（测试 disabled 分支）
+    await userEvent.click(buttons[0]);
+  },
+};
+
+export const GroupNoCorrectValue: Story = {
+  args: {
+    modelValue: null,
+    options: baseOptions,
+    correctValue: null,
+    disabled: false,
+  },
+  name: "分组：无正确答案",
+  play: async ({ canvas, userEvent }) => {
+    // 点击选择一个选项
+    const btn = canvas.getAllByRole("button")[0];
+    await userEvent.click(btn);
+    // 没有 correctValue 时，所有选项都不应有 correct/incorrect 样式
+    const radios = canvas
+      .getAllByRole("button")
+      .map((b) => b.closest(".radio"));
+    for (const radio of radios) {
+      expect(radio).not.toHaveClass("radio--correct");
+      expect(radio).not.toHaveClass("radio--incorrect");
+    }
+  },
+};
+
+export const GroupAlreadySelected: Story = {
+  args: {
+    modelValue: "a",
+    options: baseOptions,
+    correctValue: "b",
+    disabled: false,
+  },
+  name: "分组：已选后再点击",
+  play: async ({ canvas, userEvent }) => {
+    // 已经选了 A，再点击 C，应该不会改变选择（单次答题模式）
+    const btnC = canvas.getAllByRole("button")[2];
+    await userEvent.click(btnC);
+    // A 仍然是 incorrect（说明选择没变）
+    const labelA = canvas.getByText("选项 A");
+    const radioA = labelA.closest(".radio");
+    expect(radioA).toHaveClass("radio--incorrect");
+  },
+};

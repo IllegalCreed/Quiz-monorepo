@@ -66,3 +66,39 @@ export const StandaloneWithDesc: Story = {
     ).toBeInTheDocument();
   },
 };
+
+export const StandaloneDisabled: Story = {
+  args: {
+    value: "a",
+    label: "禁用选项",
+    disabled: true,
+    status: "none",
+  },
+  name: "独立：禁用",
+  play: async ({ canvas, userEvent }) => {
+    const btn = canvas.getByRole("button");
+    // 验证按钮处于禁用状态
+    expect(btn).toBeDisabled();
+    // 点击禁用按钮（测试 disabled 分支）
+    await userEvent.click(btn);
+    // 验证禁用样式
+    const radio = btn.closest(".radio");
+    expect(radio).toHaveClass("radio--disabled");
+  },
+};
+
+export const StandaloneStatusNull: Story = {
+  args: {
+    value: "a",
+    label: "状态为 null",
+    status: null,
+  },
+  name: "独立：status 为 null",
+  play: async ({ canvas }) => {
+    const labelEl = canvas.getByText("状态为 null");
+    const radio = labelEl.closest(".radio");
+    // status 为 null 时应该没有 correct/incorrect 样式
+    expect(radio).not.toHaveClass("radio--correct");
+    expect(radio).not.toHaveClass("radio--incorrect");
+  },
+};

@@ -71,12 +71,11 @@ const props = withDefaults(defineProps<CheckRadioProps>(), {
  *
  * @remarks
  * - 不在组件内部维护选中状态；由上层（例如 `CheckRadioGroup`）监听该事件并更新 `v-model`。
- * - 当 `disabled` 为 true 时忽略点击。
+ * - 禁用状态由 `<button disabled>` 原生属性控制，点击时不会触发此函数。
  *
  * @emits select - 负载为被点击选项的 `value`
  */
 function onActivate() {
-  if (props.disabled) return;
   emit("select", props.value);
 }
 </script>

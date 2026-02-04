@@ -43,15 +43,7 @@ describe("CheckRadio 单选按钮组件", () => {
     // 执行：尝试点击（由于 button 的 disabled 属性，浏览器会阻止点击）
     await wrapper.find("button").trigger("click");
 
-    // 断言：不触发 select 事件
-    expect(wrapper.emitted("select")).toBeUndefined();
-
-    // 额外覆盖：直接调用内部 onActivate 函数以覆盖 disabled 早返回分支
-    type SetupState = { onActivate?: () => void };
-    const setupState = (
-      wrapper.vm as unknown as { $?: { setupState?: SetupState } }
-    ).$?.setupState;
-    setupState?.onActivate?.();
+    // 断言：不触发 select 事件（disabled button 原生阻止 click 事件）
     expect(wrapper.emitted("select")).toBeUndefined();
   });
 
