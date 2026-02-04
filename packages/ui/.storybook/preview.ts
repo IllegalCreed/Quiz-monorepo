@@ -41,6 +41,11 @@ export const decorators = [
 
 const preview: Preview = {
   tags: ["autodocs"],
+  parameters: {
+    // 启用 a11y 测试：违规时在 Vitest 中报错
+    // 'error' - 测试失败；'todo' - 显示警告；'off' - 禁用
+    a11y: { test: "error" },
+  },
   argTypes: {
     key: { table: { disable: true } },
     ref: { table: { disable: true } },

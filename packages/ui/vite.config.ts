@@ -14,4 +14,8 @@ import UnoCSS from "@unocss/vite";
 // 生产环境下库的构建由 tsdown 负责（参见 tsdown.config.ts）。
 export default defineConfig({
   plugins: [vue(), UnoCSS()],
+  // 预优化 Storybook a11y addon 依赖，避免测试时动态优化导致重载
+  optimizeDeps: {
+    include: ["@storybook/addon-a11y/preview"],
+  },
 });
