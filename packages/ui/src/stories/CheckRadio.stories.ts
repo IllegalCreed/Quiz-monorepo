@@ -1,6 +1,7 @@
+import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import CheckRadio from "../components/CheckRadio.vue";
 
-export default {
+const meta = {
   title: "组件/单选/CheckRadio",
   component: CheckRadio,
   parameters: {
@@ -11,52 +12,30 @@ export default {
       },
     },
   },
-};
+  decorators: [
+    () => ({ template: '<div style="padding:12px"><story /></div>' }),
+  ],
+} satisfies Meta<typeof CheckRadio>;
 
-export const StandaloneUnselected = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadio },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadio v-bind="args" /></div>`,
-  }),
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const StandaloneUnselected: Story = {
   args: { value: "a", label: "示例选项 A", status: "none" },
   name: "独立：未选择",
 };
 
-export const StandaloneCorrect = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadio },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadio v-bind="args" /></div>`,
-  }),
+export const StandaloneCorrect: Story = {
   args: { value: "a", label: "正确选项", status: "correct" },
   name: "独立：正确",
 };
 
-export const StandaloneIncorrect = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadio },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadio v-bind="args" /></div>`,
-  }),
+export const StandaloneIncorrect: Story = {
   args: { value: "a", label: "错误选项", status: "incorrect" },
   name: "独立：错误",
 };
 
-export const StandaloneWithDesc = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadio },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadio v-bind="args" /></div>`,
-  }),
+export const StandaloneWithDesc: Story = {
   args: {
     value: "a",
     label: "示例选项（含描述）",

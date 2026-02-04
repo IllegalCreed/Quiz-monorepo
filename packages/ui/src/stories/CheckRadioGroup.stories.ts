@@ -1,17 +1,5 @@
+import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
-
-export default {
-  title: "组件/单选/CheckRadioGroup",
-  component: CheckRadioGroup,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          "CheckRadioGroup — 数据驱动的单选组，通过 `options` 渲染多个 `CheckRadio`，支持 v-model 与 correctValue 显示。",
-      },
-    },
-  },
-};
 
 const baseOptions = [
   { value: "a", label: "选项 A" },
@@ -27,14 +15,26 @@ const withDescOptions = [
   { value: "d", label: "选项 D", description: "D 的简短提示" },
 ];
 
-export const GroupUnselected = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadioGroup },
-    setup() {
-      return { args };
+const meta = {
+  title: "组件/单选/CheckRadioGroup",
+  component: CheckRadioGroup,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "CheckRadioGroup — 数据驱动的单选组，通过 `options` 渲染多个 `CheckRadio`，支持 v-model 与 correctValue 显示。",
+      },
     },
-    template: `<div style="padding:12px"><CheckRadioGroup v-model="args.modelValue" :options="args.options" :correctValue="args.correctValue" :disabled="args.disabled"/></div>`,
-  }),
+  },
+  decorators: [
+    () => ({ template: '<div style="padding:12px"><story /></div>' }),
+  ],
+} satisfies Meta<typeof CheckRadioGroup>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const GroupUnselected: Story = {
   args: {
     modelValue: null,
     options: baseOptions,
@@ -44,14 +44,7 @@ export const GroupUnselected = {
   name: "分组：未选择",
 };
 
-export const GroupWithDesc = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadioGroup },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadioGroup v-model="args.modelValue" :options="args.options" :correctValue="args.correctValue" :disabled="args.disabled"/></div>`,
-  }),
+export const GroupWithDesc: Story = {
   args: {
     modelValue: null,
     options: withDescOptions,
@@ -61,14 +54,7 @@ export const GroupWithDesc = {
   name: "分组：带描述",
 };
 
-export const GroupSelectedCorrect = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadioGroup },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadioGroup v-model="args.modelValue" :options="args.options" :correctValue="args.correctValue" :disabled="args.disabled"/></div>`,
-  }),
+export const GroupSelectedCorrect: Story = {
   args: {
     modelValue: "b",
     options: baseOptions,
@@ -78,14 +64,7 @@ export const GroupSelectedCorrect = {
   name: "分组：已选（正确）",
 };
 
-export const GroupSelectedIncorrect = {
-  render: (args: Record<string, unknown>) => ({
-    components: { CheckRadioGroup },
-    setup() {
-      return { args };
-    },
-    template: `<div style="padding:12px"><CheckRadioGroup v-model="args.modelValue" :options="args.options" :correctValue="args.correctValue" :disabled="args.disabled"/></div>`,
-  }),
+export const GroupSelectedIncorrect: Story = {
   args: {
     modelValue: "a",
     options: baseOptions,
