@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
+import { expect } from "storybook/test";
+
+// interaction tests
 
 const baseOptions = [
   { value: "a", label: "选项 A" },
@@ -42,6 +45,11 @@ export const GroupUnselected: Story = {
     disabled: false,
   },
   name: "分组：未选择",
+  play: async ({ canvas }) => {
+    // ensure group renders four radio items
+    const items = canvas.getAllByRole("button");
+    expect(items).toHaveLength(4);
+  },
 };
 
 export const GroupWithDesc: Story = {
@@ -52,6 +60,11 @@ export const GroupWithDesc: Story = {
     disabled: false,
   },
   name: "分组：带描述",
+  play: async ({ canvas }) => {
+    // descriptions are present for each option
+    expect(canvas.getByText("A 的补充描述")).toBeInTheDocument();
+    expect(canvas.getByText("B 是正确答案的说明")).toBeInTheDocument();
+  },
 };
 
 export const GroupSelectedCorrect: Story = {
@@ -62,6 +75,12 @@ export const GroupSelectedCorrect: Story = {
     disabled: false,
   },
   name: "分组：已选（正确）",
+  play: async ({ canvas }) => {
+    // the correct option should carry the correct class
+    const label = canvas.getByText("选项 B");
+    const radio = label.closest(".radio");
+    expect(radio).toHaveClass("radio--correct");
+  },
 };
 
 export const GroupSelectedIncorrect: Story = {
@@ -72,4 +91,9 @@ export const GroupSelectedIncorrect: Story = {
     disabled: false,
   },
   name: "分组：已选（错误）",
+  play: async ({ canvas }) => {
+    const label = canvas.getByText("选项 A");
+    const radio = label.closest(".radio");
+    expect(radio).toHaveClass("radio--incorrect");
+  },
 };
