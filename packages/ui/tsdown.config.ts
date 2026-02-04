@@ -7,6 +7,7 @@ import type { Plugin } from "rolldown";
 import { createGenerator } from "@unocss/core";
 import presetWind4 from "@unocss/preset-wind4";
 import transformerDirectives from "@unocss/transformer-directives";
+import MagicString from "magic-string";
 
 // Create UnoCSS generator for processing @apply directives
 const uno = await createGenerator({
@@ -16,11 +17,11 @@ const uno = await createGenerator({
 
 // Process CSS with UnoCSS to expand @apply directives
 async function processUnoCSS(css: string, id: string): Promise<string> {
-  const result = await uno.applyExtractors(css, id);
   // Use the transformer to process @apply
-  const s = new (await import("magic-string")).default(css);
+  const s = new MagicString(css);
   for (const transformer of uno.config.transformers || []) {
-    await transformer.transform(s, id, { uno, tokens: new Set() } as any);
+    // @ts-expect-error - transformer context type mismatch with UnoCSS internal types
+    await transformer.transform(s, id, { uno, tokens: new Set() });
   }
   return s.toString();
 }
