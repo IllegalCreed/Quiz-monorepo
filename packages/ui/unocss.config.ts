@@ -11,6 +11,8 @@ import {
 import { FileSystemIconLoader } from "@iconify/utils/lib/loader/node-loaders";
 
 export default defineConfig({
+  // 确保动态类名被包含（用于组件库的状态样式）
+  safelist: ["radio--correct", "radio--incorrect", "radio--disabled"],
   shortcuts: [
     // Add your shortcuts here
   ],

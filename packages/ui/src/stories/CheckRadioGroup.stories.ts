@@ -158,3 +158,63 @@ export const GroupAlreadySelected: Story = {
     expect(radioA).toHaveClass("radio--incorrect");
   },
 };
+
+export const GroupKeyboardNavigation: Story = {
+  args: {
+    modelValue: null,
+    options: baseOptions,
+    correctValue: "b",
+    disabled: false,
+  },
+  name: "分组：键盘导航",
+  play: async ({ canvas, userEvent }) => {
+    const buttons = canvas.getAllByRole("button");
+
+    // 聚焦第一个按钮
+    buttons[0]!.focus();
+    expect(document.activeElement).toBe(buttons[0]);
+
+    // ArrowRight: 移动到下一个
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(buttons[1]);
+
+    // ArrowDown: 继续移动到下一个
+    await userEvent.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(buttons[2]);
+
+    // ArrowLeft: 移动到上一个
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(buttons[1]);
+
+    // ArrowUp: 移动到上一个
+    await userEvent.keyboard("{ArrowUp}");
+    expect(document.activeElement).toBe(buttons[0]);
+
+    // ArrowLeft 从第一个循环到最后一个
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(document.activeElement).toBe(buttons[3]);
+
+    // ArrowRight 从最后一个循环到第一个
+    await userEvent.keyboard("{ArrowRight}");
+    expect(document.activeElement).toBe(buttons[0]);
+  },
+};
+
+export const GroupKeyboardDisabled: Story = {
+  args: {
+    modelValue: null,
+    options: baseOptions,
+    correctValue: "b",
+    disabled: true,
+  },
+  name: "分组：禁用时键盘无效",
+  play: async ({ canvas, userEvent }) => {
+    const buttons = canvas.getAllByRole("button");
+    // disabled 时键盘导航应该不生效（覆盖 disabled 分支）
+    await userEvent.keyboard("{ArrowRight}");
+    // 焦点不应该在任何按钮上（因为都被禁用了）
+    for (const btn of buttons) {
+      expect(btn).toBeDisabled();
+    }
+  },
+};

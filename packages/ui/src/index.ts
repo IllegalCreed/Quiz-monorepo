@@ -10,9 +10,18 @@
 // createApp(App).use(CheckRadio).mount('#app');
 
 import "./styles/main.scss";
+import type { App } from "vue";
+import CheckRadioComp from "./components/CheckRadio.vue";
+import CheckRadioGroupComp from "./components/CheckRadioGroup.vue";
 
-export { default as CheckRadio } from "./components/CheckRadio.vue";
-export { default as CheckRadioGroup } from "./components/CheckRadioGroup.vue";
+export { CheckRadioComp as CheckRadio, CheckRadioGroupComp as CheckRadioGroup };
+
+export default {
+  install(app: App) {
+    app.component("CheckRadio", CheckRadioComp);
+    app.component("CheckRadioGroup", CheckRadioGroupComp);
+  },
+};
 
 export type { CheckRadioProps } from "./components/CheckRadio.vue";
 export type {

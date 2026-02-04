@@ -1,5 +1,5 @@
 <template>
-  <div class="radio-group">
+  <div class="radio-group" role="radiogroup" @keydown="onKeydown">
     <CheckRadio
       v-for="opt in options"
       :key="String(opt.value)"
@@ -8,6 +8,7 @@
       :description="opt.description"
       :status="computeStatus(opt.value)"
       :disabled="disabled"
+      ref="radioRefs"
       @select="onSelect"
     />
   </div>
@@ -15,6 +16,7 @@
 
 <script setup lang="ts">
 import CheckRadio from "./CheckRadio.vue";
+import { ref } from "vue";
 
 /**
  * CheckRadioGroup - 数据驱动的单选组组件。
@@ -89,6 +91,44 @@ function computeStatus(v: string | number) {
 function onSelect(v: string | number) {
   if (props.disabled || selected.value !== null) return;
   selected.value = v;
+}
+
+// 用于存放子组件引用，以便进行 focus 操作
+const radioRefs = ref<InstanceType<typeof CheckRadio>[]>([]);
+
+/**
+ * 处理方向键在 Radio 组内的导航（左右/上下切换），以及 Space/Enter 触发选择
+ */
+function onKeydown(e: KeyboardEvent) {
+  if (props.disabled) return;
+  const list = radioRefs.value || [];
+  if (list.length === 0) return;
+
+  // 找到当前聚焦的选项索引（使用暴露的 rootEl 而非 $el）
+  const active = document.activeElement;
+  const idx = list.findIndex((c) => c?.rootEl?.contains(active));
+  if (idx === -1) return;
+
+  if (
+    e.key === "ArrowRight" ||
+    e.key === "ArrowDown" ||
+    e.key === "ArrowLeft" ||
+    e.key === "ArrowUp"
+  ) {
+    let next = idx;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      next = (idx + 1) % list.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      next = (idx - 1 + list.length) % list.length;
+    }
+    e.preventDefault();
+    // 聚焦到下一个选项的 button
+    const nextEl = list[next]?.rootEl?.querySelector("button");
+    nextEl?.focus();
+    return;
+  }
+
+  // Space / Enter 在 button 上会自动触发 click，无需额外处理
 }
 </script>
 

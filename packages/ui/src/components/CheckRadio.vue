@@ -1,6 +1,7 @@
 <template>
   <!-- 外层 label 包裹整个单选按钮，方便点击任意位置都能触发 select -->
   <label
+    ref="rootEl"
     :class="[
       'radio',
       {
@@ -28,13 +29,18 @@
 
     <!-- 单选按钮的文本内容区域 -->
     <div class="radio__content">
-      <div class="radio__label">{{ label }}</div>
-      <div v-if="description" class="radio__desc">{{ description }}</div>
+      <div class="radio__label">
+        <slot name="label">{{ label }}</slot>
+      </div>
+      <div v-if="$slots.description || description" class="radio__desc">
+        <slot name="description">{{ description }}</slot>
+      </div>
     </div>
   </label>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 /**
  * CheckRadio（哑组件）
  *
@@ -44,6 +50,16 @@
  * - 不维护选中状态（`checked`），由父级（例如 `CheckRadioGroup`）通过 `status` 或 `v-model` 管理。
  */
 defineOptions({ name: "CheckRadio" });
+
+/**
+ * Slot 类型声明（支持自定义 label 和 description 内容）
+ */
+defineSlots<{
+  /** 自定义标签内容 */
+  label?: () => unknown;
+  /** 自定义描述内容 */
+  description?: () => unknown;
+}>();
 
 const emit = defineEmits<{ (e: "select", v: string | number): void }>();
 
@@ -65,6 +81,10 @@ const props = withDefaults(defineProps<CheckRadioProps>(), {
   disabled: false,
   status: "none",
 });
+
+// 暴露根元素引用，便于父组件进行焦点管理
+const rootEl = ref<HTMLElement | null>(null);
+defineExpose({ rootEl });
 
 /**
  * 响应用户点击，发出 `select` 事件。

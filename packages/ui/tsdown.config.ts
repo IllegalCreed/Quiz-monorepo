@@ -75,6 +75,9 @@ export default defineConfig({
   format: ["esm", "cjs"],
   platform: "neutral",
   clean: true,
+  // CI 环境下启用包验证（确保 exports 正确）
+  publint: "ci-only",
+  attw: "ci-only",
   plugins: [
     // Handle standalone .scss files
     scssPlugin(),

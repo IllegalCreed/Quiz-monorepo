@@ -37,6 +37,13 @@ export default mergeConfig(
           ["text", {}],
         ],
         reportsDirectory: "./coverage",
+        // 覆盖率阈值（防止回归）
+        thresholds: {
+          statements: 50,
+          branches: 35,
+          functions: 60,
+          lines: 50,
+        },
       },
       // 按 Storybook 文档：为 Storybook 测试定义单独的项目（用于浏览器级的 story 测试）
       projects: [
