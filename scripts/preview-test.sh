@@ -40,10 +40,27 @@ BACKEND_CMD="sh -c \"trap 'exit 0' TERM; exec ${BACKEND_CMD_RAW}\""
 # 创建日志目录（如果不存在），用来保存服务的输出，便于排查问题。
 mkdir -p .logs
 
+# --------------------- 配置参数（可通过环境变量覆盖） ---------------------
+# 前端和后端的端口与健康检查路径
+FRONTEND_PORT=${FRONTEND_PORT:-10010}
+BACKEND_PORT=${BACKEND_PORT:-10020}
+BACKEND_HEALTH_PATH=${BACKEND_HEALTH_PATH:-/api/test/hello}
+# 优雅关闭的宽限期（秒）
+GRACEFUL_SHUTDOWN_TIMEOUT=${GRACEFUL_SHUTDOWN_TIMEOUT:-5}
+# 就绪检测超时（秒）
+PREVIEW_TIMEOUT=${PREVIEW_TIMEOUT:-10}
+
 # --------------------- 日志与实用函数 ---------------------
 # 简单日志函数：用于统一前缀，便于在 CI / 本地终端中快速识别输出来源。
 log() { printf "[preview-test] %s\n" "$*"; }
 log_error() { printf "[preview-test] ERROR: %s\n" "$*" >&2; }
+
+# is_process_alive <pid>
+# 检查给定 PID 的进程是否存活
+is_process_alive() {
+  local pid="$1"
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
 
 # start_service <name> <cmd> <logfile>
 # - 在后台启动服务并把 stdout/stderr 重定向到日志文件。
@@ -83,6 +100,17 @@ kill_process_tree() {
   kill -TERM "${_pid}" 2>/dev/null || true
 }
 
+# force_kill_process_tree <pid>
+# 强制终止进程树（先杀子进程，再杀父进程）
+force_kill_process_tree() {
+  local pid="$1"
+  log "Forcing kill process tree (PID: $pid)"
+  for c in $(pgrep -P "$pid" 2>/dev/null || true); do
+    kill -KILL "$c" 2>/dev/null || true
+  done
+  kill -KILL "$pid" 2>/dev/null || true
+}
+
 # --------------------- 清理与信号处理（优雅退出） ---------------------
 cleanup() {
   # 防止重复执行（重入保护）：如果 cleanup 已经开始则立即返回
@@ -97,37 +125,32 @@ cleanup() {
   log "Shutdown requested — terminating servers (code=${code})"
 
   # 如果进程存在且可见，先尝试优雅终止它们的进程树
-  if [ -n "${FRONTEND_PID:-}" ] && kill -0 "$FRONTEND_PID" 2>/dev/null; then
+  if is_process_alive "${FRONTEND_PID:-}"; then
     log "Terminating frontend process tree (root PID: $FRONTEND_PID)"
     kill_process_tree "$FRONTEND_PID"
   fi
-  if [ -n "${BACKEND_PID:-}" ] && kill -0 "$BACKEND_PID" 2>/dev/null; then
+  if is_process_alive "${BACKEND_PID:-}"; then
     log "Terminating backend process tree (root PID: $BACKEND_PID)"
     kill_process_tree "$BACKEND_PID"
   fi
 
   # 等待一个短的宽限期（grace），给进程机会退出
-  local grace=5
   local i=0
-  while [ "$i" -lt "$grace" ]; do
+  while [ "$i" -lt "$GRACEFUL_SHUTDOWN_TIMEOUT" ]; do
     sleep 1
     i=$((i + 1))
     local any=0
-    if [ -n "${FRONTEND_PID:-}" ] && kill -0 "$FRONTEND_PID" 2>/dev/null; then any=1; fi
-    if [ -n "${BACKEND_PID:-}" ] && kill -0 "$BACKEND_PID" 2>/dev/null; then any=1; fi
+    if is_process_alive "${FRONTEND_PID:-}"; then any=1; fi
+    if is_process_alive "${BACKEND_PID:-}"; then any=1; fi
     [ $any -eq 0 ] && break
   done
 
   # 如果仍然存活则强制结束
-  if [ -n "${FRONTEND_PID:-}" ] && kill -0 "$FRONTEND_PID" 2>/dev/null; then
-    log "Forcing kill frontend process tree"
-    for c in $(pgrep -P "$FRONTEND_PID" 2>/dev/null || true); do kill -KILL "$c" 2>/dev/null || true; done
-    kill -KILL "$FRONTEND_PID" 2>/dev/null || true
+  if is_process_alive "${FRONTEND_PID:-}"; then
+    force_kill_process_tree "$FRONTEND_PID"
   fi
-  if [ -n "${BACKEND_PID:-}" ] && kill -0 "$BACKEND_PID" 2>/dev/null; then
-    log "Forcing kill backend process tree"
-    for c in $(pgrep -P "$BACKEND_PID" 2>/dev/null || true); do kill -KILL "$c" 2>/dev/null || true; done
-    kill -KILL "$BACKEND_PID" 2>/dev/null || true
+  if is_process_alive "${BACKEND_PID:-}"; then
+    force_kill_process_tree "$BACKEND_PID"
   fi
 
   # 等待子进程退出并返回指定退出码
@@ -145,9 +168,6 @@ log "Backend PID: ${BACKEND_PID}"
 FRONTEND_PID=$(start_service "frontend" "$FRONTEND_CMD" ".logs/frontend.log")
 log "Frontend PID: ${FRONTEND_PID}"
 
-# 就绪检测超时（秒），可以通过环境变量 PREVIEW_TIMEOUT 覆盖（例如 CI 中设置更长时间）
-PREVIEW_TIMEOUT=${PREVIEW_TIMEOUT:-10}
-
 # wait_for <url> <timeout>
 # - 尝试通过 curl 访问指定 URL，直到成功或超时
 wait_for() {
@@ -161,16 +181,16 @@ wait_for() {
 }
 
 # 等待前端
-log "Waiting up to ${PREVIEW_TIMEOUT}s for frontend (http://localhost:10010/)..."
-if ! wait_for "http://localhost:10010/" "$PREVIEW_TIMEOUT"; then
+log "Waiting up to ${PREVIEW_TIMEOUT}s for frontend (http://localhost:${FRONTEND_PORT}/)..."
+if ! wait_for "http://localhost:${FRONTEND_PORT}/" "$PREVIEW_TIMEOUT"; then
   log_error "Frontend did not become ready within ${PREVIEW_TIMEOUT}s; see .logs/frontend.log"
   cleanup 2
 fi
 log "Frontend is up."
 
 # 等待后端（使用 test/hello 作为健康检查端点）
-log "Waiting up to ${PREVIEW_TIMEOUT}s for backend (http://localhost:10020/api/test/hello)..."
-if ! wait_for "http://localhost:10020/api/test/hello" "$PREVIEW_TIMEOUT"; then
+log "Waiting up to ${PREVIEW_TIMEOUT}s for backend (http://localhost:${BACKEND_PORT}${BACKEND_HEALTH_PATH})..."
+if ! wait_for "http://localhost:${BACKEND_PORT}${BACKEND_HEALTH_PATH}" "$PREVIEW_TIMEOUT"; then
   log_error "Backend did not become ready within ${PREVIEW_TIMEOUT}s; see .logs/backend.log"
   cleanup 3
 fi
@@ -183,11 +203,11 @@ while true; do
     break
   fi
 
-  if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+  if ! is_process_alive "$FRONTEND_PID"; then
     log_error "Frontend process exited unexpectedly; see .logs/frontend.log"
     cleanup 1
   fi
-  if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+  if ! is_process_alive "$BACKEND_PID"; then
     log_error "Backend process exited unexpectedly; see .logs/backend.log"
     cleanup 1
   fi

@@ -7,7 +7,7 @@ const tsconfigRootDir =
   typeof __dirname !== "undefined" ? __dirname : process.cwd();
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**"] },
+  { ignores: ["**/dist/**", "**/node_modules/**", "**/coverage/**"] },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,

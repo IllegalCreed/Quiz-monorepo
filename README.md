@@ -53,12 +53,16 @@ VITE_MOCK=true pnpm dev:frontend
 ## 测试
 
 ```bash
-# 运行所有测试
+# 快速测试（只运行单元测试，推荐日常使用）
+pnpm test:unit
+
+# 完整测试（包括 E2E，提交前建议运行）
 pnpm test
 
 # 单独运行
-pnpm test:frontend    # 前端单元测试 (Vitest)
-pnpm test:backend     # 后端单元测试 (Jest)
+pnpm test:frontend    # 前端测试（Vitest + Cypress E2E）
+pnpm test:backend     # 后端单元测试（Jest）
+pnpm test:ui          # UI 包测试（Vitest）
 ```
 
 ### E2E 测试

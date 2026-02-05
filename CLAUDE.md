@@ -124,10 +124,11 @@ pnpm dev:ui           # Storybook (10030)
 pnpm build            # 构建全部（turbo 自动处理依赖）
 
 # 测试
-pnpm test             # 运行全部测试
+pnpm test             # 运行全部测试（包括 E2E，较慢，5+ 分钟）
+pnpm test:unit        # 只运行单元测试（快速，推荐日常使用，1-2 分钟）
 pnpm test:frontend    # 前端测试 (Vitest + Cypress)
 pnpm test:backend     # 后端测试 (Jest)
-pnpm -C packages/ui run test  # UI 测试 (Vitest + Playwright)
+pnpm test:ui          # UI 包测试 (Vitest + Playwright)
 
 # 代码质量
 pnpm lint             # ESLint 检查
@@ -166,6 +167,16 @@ chore: 构建/工具变更
 - 描述变更内容和原因
 - 通过 CI（lint/test/type-check）
 - 至少一位 reviewer 审核
+
+### Git Hooks
+
+项目使用 Husky 配置了以下 Git Hooks：
+
+- **pre-commit**: 运行 lint-staged（对暂存文件进行格式化和 lint）
+- **pre-push**: 运行 type-check + test:unit（类型检查和单元测试，1-2 分钟）
+  - 注意：pre-push 不运行 E2E 测试以提高开发效率
+  - 建议在提交 PR 前手动运行完整的 `pnpm test` 确保所有测试通过
+  - E2E 测试应由 CI 环境执行
 
 ## 常见问题
 
