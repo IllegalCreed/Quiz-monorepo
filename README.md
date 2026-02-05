@@ -42,13 +42,14 @@ VITE_MOCK=true pnpm dev:frontend
 
 ## 常用命令
 
-| 命令              | 说明         |
-| ----------------- | ------------ |
-| `pnpm dev`        | 启动开发环境 |
-| `pnpm build`      | 构建所有包   |
-| `pnpm test`       | 运行所有测试 |
-| `pnpm lint`       | 代码检查     |
-| `pnpm type-check` | 类型检查     |
+| 命令              | 说明                     |
+| ----------------- | ------------------------ |
+| `pnpm dev`        | 启动开发环境             |
+| `pnpm build`      | 构建所有包               |
+| `pnpm preview`    | 预览构建结果（自动清理） |
+| `pnpm test`       | 运行所有测试             |
+| `pnpm lint`       | 代码检查                 |
+| `pnpm type-check` | 类型检查                 |
 
 ## 测试
 

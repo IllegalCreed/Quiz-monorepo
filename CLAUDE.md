@@ -123,6 +123,12 @@ pnpm dev:ui           # Storybook (10030)
 # 构建
 pnpm build            # 构建全部（turbo 自动处理依赖）
 
+# 预览（Preview）
+pnpm preview          # 预览构建结果（自动清理占用端口，前端 10010，后端 10020，UI 10040）
+pnpm preview:frontend # 仅预览前端 (10010)
+pnpm preview:clean    # 清理占用的 preview 端口（10010/10020/10040）
+pnpm preview:test     # 预览测试环境（用于 E2E 测试）
+
 # 测试
 pnpm test             # 运行全部测试（包括 E2E，较慢，5+ 分钟）
 pnpm test:unit        # 只运行单元测试（快速，推荐日常使用，1-2 分钟）
@@ -180,6 +186,20 @@ chore: 构建/工具变更
 
 ## 常见问题
 
+### 端口占用
+
+如果遇到端口占用错误（如 "Port already in use"）：
+
+```bash
+# 清理 preview 端口（10010/10020/10040）
+pnpm preview:clean
+
+# 手动清理特定端口
+sh ./scripts/cleanup-ports.sh "端口号"
+```
+
+`pnpm preview` 命令会自动清理端口，但如果需要手动清理可以使用上述命令。
+
 ### Prisma Client 缺失
 
 ```bash
@@ -235,6 +255,9 @@ quiz-monorepo/
 │       ├── unocss.config.ts
 │       └── tsdown.config.ts
 ├── scripts/                # 工具脚本
+│   ├── cleanup-ports.sh    # 清理占用端口的进程
+│   ├── preview-test.sh     # 启动预览测试环境
+│   └── ...
 ├── turbo.json              # Turborepo 配置
 └── pnpm-workspace.yaml     # pnpm workspace 配置
 ```

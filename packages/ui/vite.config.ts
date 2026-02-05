@@ -18,4 +18,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@storybook/addon-a11y/preview"],
   },
+  // Preview 服务器配置
+  preview: {
+    port: 10040,
+    strictPort: true, // 如果端口被占用则失败，而不是自动尝试下一个端口
+  },
 });

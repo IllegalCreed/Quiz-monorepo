@@ -161,6 +161,11 @@ cleanup() {
 # 捕获中断与终止信号（例如 Ctrl+C、CI 取消），并调用 cleanup。也会在脚本正常退出时触发 EXIT。
 trap 'cleanup 0' INT TERM EXIT
 
+# --------------------- 清理占用的端口 ---------------------
+# 在启动服务前清理可能占用的端口，避免端口冲突
+log "Cleaning up ports before starting services..."
+sh "$(dirname "$0")/cleanup-ports.sh" "10010 10020" || true
+
 # --------------------- 启动并检测就绪 ---------------------
 # 启动后端与前端，并把它们的 PID 写入变量，方便后续管理
 BACKEND_PID=$(start_service "backend" "$BACKEND_CMD" ".logs/backend.log")
