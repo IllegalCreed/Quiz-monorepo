@@ -8,7 +8,6 @@ import {
   transformerDirectives,
   transformerVariantGroup,
 } from "unocss";
-import { FileSystemIconLoader } from "@iconify/utils/lib/loader/node-loaders";
 
 export default defineConfig({
   // 确保动态类名被包含（用于组件库的状态样式）
@@ -25,9 +24,9 @@ export default defineConfig({
     presetWind4(),
     presetAttributify(),
     presetIcons({
-      collections: {
-        custom: FileSystemIconLoader("./src/assets/icons"),
-      },
+      // 启用所有 iconify 集合（包括 carbon）
+      scale: 1.2,
+      warn: true,
     }),
     presetTypography(),
     presetWebFonts({

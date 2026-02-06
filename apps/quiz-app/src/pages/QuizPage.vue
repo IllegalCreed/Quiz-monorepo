@@ -4,20 +4,24 @@
 
     <div v-if="loading">加载中…</div>
     <template v-else-if="question">
-      <div class="card">
-        <h2 class="stem">{{ question.stem }}</h2>
-        <CheckRadioGroup
-          v-model="selected"
-          :options="radioOptions"
-          :correct-value="status !== 'idle' ? correctOptionId : null"
-        />
+      <Card>
+        <CardHeader divided>
+          <h2 class="stem">{{ question.stem }}</h2>
+        </CardHeader>
+        <CardContent>
+          <CheckRadioGroup
+            v-model="selected"
+            :options="radioOptions"
+            :correct-value="status !== 'idle' ? correctOptionId : null"
+          />
 
-        <div v-if="error" class="error">{{ error }}</div>
-      </div>
+          <div v-if="error" class="error">{{ error }}</div>
+        </CardContent>
+      </Card>
 
       <!-- 答错时显示"下一题"按钮，答对时自动跳转所以隐藏 - 放在卡片外面 -->
       <div v-if="status === 'wrong'" class="actions">
-        <button @click="loadNext">下一题</button>
+        <Button @click="loadNext">下一题</Button>
       </div>
     </template>
     <div v-else>暂无题目</div>
@@ -26,7 +30,7 @@
 
 <script setup lang="ts">
 import { onMounted, watch, computed } from "vue";
-import { CheckRadioGroup } from "@quiz/ui";
+import { Card, CardHeader, CardContent, Button, CheckRadioGroup } from "@quiz/ui";
 import { useQuiz } from "./composables/useQuiz";
 
 const {
@@ -93,47 +97,19 @@ const radioOptions = computed(() => {
   }
 }
 
-.card {
-  width: 100%;
-  max-width: 720px;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  background-color: var(--quiz-ui-control-bg);
-
-  // 题干样式和间距
-  .stem {
-    margin: 0 0 1.5rem 0; // 题干和选项之间 24px 间距
-    font-size: 1.125rem; // 18px
-    font-weight: 600;
-    line-height: 1.6;
-    color: var(--quiz-ui-text, #111827);
-  }
+// 题干样式（在 CardHeader 内使用）
+.stem {
+  margin: 0;
+  font-size: 1.125rem; // 18px
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--quiz-ui-text, #111827);
 }
 
 .actions {
   margin-top: 24px;
   display: flex;
   justify-content: center;
-
-  button {
-    @apply px-6 py-3 rounded-lg font-medium cursor-pointer;
-    background-color: var(--quiz-ui-primary);
-    color: white;
-    border: none;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-
-    &:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
 }
 
 .error {
@@ -153,10 +129,6 @@ const radioOptions = computed(() => {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-
-  .card {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
 }
 
 /* 响应式：移动端 */
@@ -167,15 +139,6 @@ const radioOptions = computed(() => {
 
   .page-title {
     margin-bottom: 1.5rem;
-  }
-
-  .card {
-    padding: 20px;
-  }
-
-  .actions button {
-    @apply px-5 py-2.5;
-    font-size: 0.9375rem;
   }
 }
 </style>
