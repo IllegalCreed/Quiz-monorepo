@@ -7,7 +7,6 @@
         v-model="selected"
         :options="radioOptions"
         :correct-value="status !== 'idle' ? correctOptionId : null"
-        :disabled="status !== 'idle'"
       />
 
       <div v-if="error" class="error">{{ error }}</div>
@@ -49,14 +48,14 @@ watch(selected, (v, old) => {
 
 /**
  * 将题目选项映射为 CheckRadioGroup 需要的格式
- * 答题前不显示 description，答题后才展示选项解析
+ * 只在答错时显示 description（选项解析），答对不显示
  */
 const radioOptions = computed(() => {
   if (!question.value) return [];
   return question.value.options.map((o) => ({
     value: o.id,
     label: o.text,
-    description: status.value !== "idle" ? optionDescriptions.value[o.id] : undefined,
+    description: status.value === "wrong" ? optionDescriptions.value[o.id] : undefined,
   }));
 });
 </script>
