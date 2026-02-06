@@ -11,7 +11,14 @@ import {
 
 export default defineConfig({
   // 确保动态类名被包含（用于组件库的状态样式）
-  safelist: ["radio--correct", "radio--incorrect", "radio--disabled"],
+  safelist: [
+    "radio--correct",
+    "radio--incorrect",
+    "radio--disabled",
+    "i-carbon-add",
+    "i-carbon-edit",
+    "i-carbon-trash-can",
+  ],
   shortcuts: [
     // Add your shortcuts here
   ],
