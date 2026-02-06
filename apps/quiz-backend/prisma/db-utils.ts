@@ -95,8 +95,16 @@ export async function seedSystem() {
         tags: ["基础"],
         options: {
           create: [
-            { text: "Hello", isCorrect: false },
-            { text: "World", isCorrect: true },
+            {
+              text: "Hello",
+              isCorrect: false,
+              description: "Hello 只是一个问候词，不是正确答案。",
+            },
+            {
+              text: "World",
+              isCorrect: true,
+              description: "World 是正确答案，代表完整的 Hello World 程序。",
+            },
           ],
         },
       },
@@ -112,7 +120,7 @@ export async function seedTest() {
   ensureNotProd();
   console.log("seedTest: beginning (inserting test dataset)");
 
-  type SeedOption = { text: string; isCorrect: boolean };
+  type SeedOption = { text: string; isCorrect: boolean; description?: string };
   type SeedQuestion = {
     stem: string;
     explanation?: string | null;
@@ -163,6 +171,7 @@ export async function seedTest() {
             create: q.options.map((o) => ({
               text: o.text,
               isCorrect: o.isCorrect,
+              description: o.description ?? undefined,
             })),
           },
         },
@@ -178,6 +187,7 @@ export async function seedTest() {
             create: q.options.map((o) => ({
               text: o.text,
               isCorrect: o.isCorrect,
+              description: o.description ?? undefined,
             })),
           },
         },

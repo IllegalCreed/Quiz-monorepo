@@ -5,11 +5,25 @@ describe("Quiz flow (mocked)", () => {
     id: 1,
     stem: "（E2E）下面哪个是 HTTP 状态码 200 的含义？",
     options: [
-      { id: 11, text: "未找到" },
-      { id: 12, text: "成功" },
+      { id: 11, text: "未找到", description: "「未找到」对应 404 状态码，不是 200。" },
+      { id: 12, text: "成功", description: "200 表示请求成功，服务器正常返回了数据。" },
     ],
     explanation: "200 表示请求成功",
   };
+
+  /** 构建 answers 接口的 mock 响应（包含选项解析） */
+  function buildAnswerResponse(selectedOptionId: number) {
+    const correct = selectedOptionId === 12;
+    return {
+      correct,
+      correctOptionId: 12,
+      explanation: question.explanation,
+      options: question.options.map((o) => ({
+        ...o,
+        isCorrect: o.id === 12,
+      })),
+    };
+  }
 
   beforeEach(() => {
     // stub questions endpoint
@@ -21,10 +35,9 @@ describe("Quiz flow (mocked)", () => {
     // stub answers endpoint (accept any POST)
     cy.intercept("POST", "**/answers", (req) => {
       const selected = req.body?.selectedOptionId;
-      const correct = selected === 12;
       req.reply({
         statusCode: 200,
-        body: { correct, correctOptionId: 12, explanation: question.explanation },
+        body: buildAnswerResponse(selected),
       });
     }).as("postAnswer");
 
@@ -44,12 +57,38 @@ describe("Quiz flow (mocked)", () => {
     cy.contains(".radio", "成功").should("have.class", "radio--correct");
   });
 
-  it("shows wrong selection and explanation", () => {
-    cy.contains(".stem", "HTTP 状态码 200");
-    cy.contains(".radio", "未找到").click();
+  it("答对后应展示选项解析描述", () => {
+    cy.contains(".radio", "成功").click();
+    cy.wait("@postAnswer");
 
-    // wrong selection should show radio--incorrect class and explanation element should appear
+    // 验证正确选项的解析出现
+    cy.get(".radio__desc").should("exist");
+    cy.contains(".radio__desc", "200 表示请求成功");
+  });
+
+  it("答错后应展示所有选项解析描述和下一题按钮", () => {
+    cy.contains(".radio", "未找到").click();
+    cy.wait("@postAnswer");
+
+    // wrong selection should show radio--incorrect class
     cy.contains(".radio", "未找到").should("have.class", "radio--incorrect");
-    cy.get(".explanation").should("exist").and("contain", "正确答案");
+    // correct option should be highlighted
+    cy.contains(".radio", "成功").should("have.class", "radio--correct");
+
+    // 验证选项解析描述出现
+    cy.get(".radio__desc").should("have.length", 2);
+    cy.contains(".radio__desc", "404 状态码");
+    cy.contains(".radio__desc", "200 表示请求成功");
+
+    // 验证"下一题"按钮可见
+    cy.contains("button", "下一题").should("be.visible");
+  });
+
+  it("答对后不显示下一题按钮（自动跳转）", () => {
+    cy.contains(".radio", "成功").click();
+    cy.wait("@postAnswer");
+
+    // 答对时"下一题"按钮不应出现
+    cy.contains("button", "下一题").should("not.exist");
   });
 });

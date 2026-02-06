@@ -21,7 +21,11 @@ export class QuestionsService {
     `;
 
     // For each question get options
-    type OptionPublic = { id: number; text: string };
+    type OptionPublic = {
+      id: number;
+      text: string;
+      description: string | null;
+    };
     const results: Array<{
       id: number;
       stem: string;
@@ -37,6 +41,7 @@ export class QuestionsService {
       const publicOptions: OptionPublic[] = options.map((o) => ({
         id: o.id,
         text: o.text,
+        description: o.description,
       }));
       results.push({
         id: row.id,

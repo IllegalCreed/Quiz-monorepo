@@ -26,18 +26,17 @@ describe("Quiz flow (real backend)", () => {
     cy.get(".radio-group .radio").should("have.length.greaterThan", 0);
   });
 
-  it("can select correct option and show explanation", () => {
+  it("can select option and show description after answering", () => {
     cy.get(".radio-group .radio").first().click();
 
-    // Either an explanation is shown for a wrong choice, or the correct option is highlighted.
-    cy.document().then(() => {
-      const $exp = Cypress.$(".explanation");
-      if ($exp.length) {
-        // explanation shown — pass
-        return;
-      }
-      // If no explanation is present, wait for the correct highlight to appear
-      return cy.get(".radio.radio--correct", { timeout: 10000 }).should("exist");
-    });
+    // 答题后应出现选项解析描述（.radio__desc）或正确高亮
+    cy.get(".radio__desc, .radio.radio--correct", { timeout: 10000 }).should("exist");
+  });
+
+  it("答题后选项解析描述应展示在选项下方", () => {
+    cy.get(".radio-group .radio").first().click();
+
+    // 等待答题结果返回后，至少一个 .radio__desc 应该出现
+    cy.get(".radio__desc", { timeout: 10000 }).should("have.length.greaterThan", 0);
   });
 });

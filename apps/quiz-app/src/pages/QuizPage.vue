@@ -5,16 +5,15 @@
       <h2 class="stem">{{ question.stem }}</h2>
       <CheckRadioGroup
         v-model="selected"
-        :options="question.options.map((o) => ({ value: o.id, label: o.text }))"
+        :options="radioOptions"
         :correct-value="status !== 'idle' ? correctOptionId : null"
         :disabled="status !== 'idle'"
       />
 
-      <div v-if="status === 'wrong'" class="explanation">正确答案会高亮并显示解析</div>
-
       <div v-if="error" class="error">{{ error }}</div>
 
-      <div class="actions">
+      <!-- 答错时显示"下一题"按钮，答对时自动跳转所以隐藏 -->
+      <div v-if="status === 'wrong'" class="actions">
         <button @click="loadNext">下一题</button>
       </div>
     </div>
@@ -23,11 +22,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
+import { onMounted, watch, computed } from "vue";
 import { CheckRadioGroup } from "@quiz/ui";
 import { useQuiz } from "./composables/useQuiz";
 
-const { question, loading, selected, status, loadNext, choose, error, correctOptionId } = useQuiz();
+const {
+  question,
+  loading,
+  selected,
+  status,
+  loadNext,
+  choose,
+  error,
+  correctOptionId,
+  optionDescriptions,
+} = useQuiz();
 
 onMounted(() => loadNext());
 
@@ -36,6 +45,19 @@ watch(selected, (v, old) => {
     // submit answer when user selects an option
     choose(v as number);
   }
+});
+
+/**
+ * 将题目选项映射为 CheckRadioGroup 需要的格式
+ * 答题前不显示 description，答题后才展示选项解析
+ */
+const radioOptions = computed(() => {
+  if (!question.value) return [];
+  return question.value.options.map((o) => ({
+    value: o.id,
+    label: o.text,
+    description: status.value !== "idle" ? optionDescriptions.value[o.id] : undefined,
+  }));
 });
 </script>
 
@@ -54,10 +76,6 @@ watch(selected, (v, old) => {
 }
 .actions {
   margin-top: 12px;
-}
-.explanation {
-  margin-top: 12px;
-  color: #374151;
 }
 .error {
   margin-top: 12px;
