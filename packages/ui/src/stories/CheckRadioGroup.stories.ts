@@ -19,7 +19,7 @@ const withDescOptions = [
 ];
 
 const meta = {
-  title: "组件/单选/CheckRadioGroup",
+  title: "组件/CheckRadio/CheckRadioGroup",
   component: CheckRadioGroup,
   parameters: {
     docs: {

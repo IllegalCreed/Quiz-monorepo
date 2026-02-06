@@ -3,7 +3,7 @@ import CheckRadio from "../components/CheckRadio.vue";
 import { expect } from "storybook/test";
 
 const meta = {
-  title: "组件/单选/CheckRadio",
+  title: "组件/CheckRadio/CheckRadio",
   component: CheckRadio,
   parameters: {
     docs: {
