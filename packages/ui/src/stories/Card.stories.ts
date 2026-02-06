@@ -2,9 +2,9 @@
  * Card 组件 Storybook 故事
  */
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
-import Card from "../components/Card.vue";
-import CardHeader from "../components/CardHeader.vue";
-import CardContent from "../components/CardContent.vue";
+import Card from "../components/BaseCard.vue";
+import CardHeader from "../components/BaseCardHeader.vue";
+import CardContent from "../components/BaseCardContent.vue";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
 
 const meta = {
@@ -34,11 +34,11 @@ export const Basic: Story = {
   render: () => ({
     components: { Card, CardContent },
     template: `
-      <Card>
-        <CardContent>
+      <BaseCard>
+        <BaseCardContent>
           <p style="margin: 0; color: var(--quiz-ui-text);">这是一个基础卡片，只有内容区域。</p>
-        </CardContent>
-      </Card>
+        </BaseCardContent>
+      </BaseCard>
     `,
   }),
   name: "基础卡片",
@@ -49,18 +49,18 @@ export const WithHeader: Story = {
   render: () => ({
     components: { Card, CardHeader, CardContent },
     template: `
-      <Card>
+      <BaseCard>
         <CardHeader>
           <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--quiz-ui-text);">
             卡片标题
           </h2>
-        </CardHeader>
-        <CardContent>
+        </BaseCardHeader>
+        <BaseCardContent>
           <p style="margin: 0; color: var(--quiz-ui-muted);">
             这是卡片的内容区域。可以放置任意内容，如文本、表单、列表等。
           </p>
-        </CardContent>
-      </Card>
+        </BaseCardContent>
+      </BaseCard>
     `,
   }),
   name: "带标题和内容",
@@ -71,18 +71,18 @@ export const WithDivider: Story = {
   render: () => ({
     components: { Card, CardHeader, CardContent },
     template: `
-      <Card>
-        <CardHeader divided>
+      <BaseCard>
+        <BaseCardHeader divided>
           <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--quiz-ui-text);">
             带虚线分割的卡片
           </h2>
-        </CardHeader>
-        <CardContent>
+        </BaseCardHeader>
+        <BaseCardContent>
           <p style="margin: 0; color: var(--quiz-ui-muted);">
             CardHeader 的 <code>divided</code> prop 设置为 true 时，会在底部显示虚线分割。
           </p>
-        </CardContent>
-      </Card>
+        </BaseCardContent>
+      </BaseCard>
     `,
   }),
   name: "带虚线分割",
@@ -103,19 +103,19 @@ export const QuizCard: Story = {
       return { selected, options };
     },
     template: `
-      <Card>
-        <CardHeader divided>
+      <BaseCard>
+        <BaseCardHeader divided>
           <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.6; color: var(--quiz-ui-text);">
             Vue 3 使用什么语言编写？
           </h2>
-        </CardHeader>
-        <CardContent>
+        </BaseCardHeader>
+        <BaseCardContent>
           <CheckRadioGroup
             v-model="selected"
             :options="options"
           />
-        </CardContent>
-      </Card>
+        </BaseCardContent>
+      </BaseCard>
     `,
   }),
   name: "题目卡片示例",
@@ -127,44 +127,44 @@ export const Multiple: Story = {
     components: { Card, CardHeader, CardContent },
     template: `
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <Card>
-          <CardHeader divided>
+        <BaseCard>
+          <BaseCardHeader divided>
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--quiz-ui-text);">
               卡片 1
             </h3>
-          </CardHeader>
-          <CardContent>
+          </BaseCardHeader>
+          <BaseCardContent>
             <p style="margin: 0; color: var(--quiz-ui-muted); font-size: 0.875rem;">
               第一张卡片的内容。
             </p>
-          </CardContent>
-        </Card>
+          </BaseCardContent>
+        </BaseCard>
 
-        <Card>
-          <CardHeader divided>
+        <BaseCard>
+          <BaseCardHeader divided>
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--quiz-ui-text);">
               卡片 2
             </h3>
-          </CardHeader>
-          <CardContent>
+          </BaseCardHeader>
+          <BaseCardContent>
             <p style="margin: 0; color: var(--quiz-ui-muted); font-size: 0.875rem;">
               第二张卡片的内容。
             </p>
-          </CardContent>
-        </Card>
+          </BaseCardContent>
+        </BaseCard>
 
-        <Card>
-          <CardHeader divided>
+        <BaseCard>
+          <BaseCardHeader divided>
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--quiz-ui-text);">
               卡片 3
             </h3>
-          </CardHeader>
-          <CardContent>
+          </BaseCardHeader>
+          <BaseCardContent>
             <p style="margin: 0; color: var(--quiz-ui-muted); font-size: 0.875rem;">
               第三张卡片的内容。
             </p>
-          </CardContent>
-        </Card>
+          </BaseCardContent>
+        </BaseCard>
       </div>
     `,
   }),

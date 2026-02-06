@@ -3,7 +3,7 @@
  *
  * 测试目标：
  * - 基础渲染
- * - Button 组件复用
+ * - BaseButton 组件复用
  * - 点击事件
  * - 组件名称
  * - 无障碍属性
@@ -11,25 +11,25 @@
 import { mount } from "@vue/test-utils";
 import { describe, it, expect } from "vitest";
 import ThemeToggle from "../components/ThemeToggle.vue";
-import Button from "../components/Button.vue";
+import BaseButton from "../components/BaseButton.vue";
 
 describe("ThemeToggle 主题切换组件", () => {
   it("正确渲染基础结构", () => {
     const wrapper = mount(ThemeToggle);
 
-    // 断言：使用 Button 组件
-    expect(wrapper.findComponent(Button).exists()).toBe(true);
+    // 断言：使用 BaseButton 组件
+    expect(wrapper.findComponent(BaseButton).exists()).toBe(true);
 
-    // 断言：Button 使用 ghost 变体
-    const button = wrapper.findComponent(Button);
+    // 断言：BaseButton 使用 ghost 变体
+    const button = wrapper.findComponent(BaseButton);
     expect(button.props("variant")).toBe("ghost");
   });
 
-  it("Button size 为 default", () => {
+  it("BaseButton size 为 md", () => {
     const wrapper = mount(ThemeToggle);
 
-    const button = wrapper.findComponent(Button);
-    expect(button.props("size")).toBe("default");
+    const button = wrapper.findComponent(BaseButton);
+    expect(button.props("size")).toBe("md");
   });
 
   it("点击按钮触发切换功能", async () => {

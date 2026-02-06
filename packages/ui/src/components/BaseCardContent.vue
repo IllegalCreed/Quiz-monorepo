@@ -7,13 +7,13 @@
 
 <script setup lang="ts">
 /**
- * CardContent 组件
+ * BaseCardContent 组件
  *
  * @remarks
  * - 卡片内容区，简单容器
  * - 默认无特殊样式，用于包裹主要内容
  */
-defineOptions({ name: "CardContent" });
+defineOptions({ name: "BaseCardContent" });
 
 /**
  * Slot 类型声明

@@ -7,13 +7,13 @@
 
 <script setup lang="ts">
 /**
- * CardHeader 组件
+ * BaseCardHeader 组件
  *
  * @remarks
  * - 卡片头部，通常包含标题
  * - 支持 `divided` prop 显示底部虚线分割
  */
-defineOptions({ name: "CardHeader" });
+defineOptions({ name: "BaseCardHeader" });
 
 /**
  * Slot 类型声明
@@ -23,12 +23,12 @@ defineSlots<{
   default?: () => unknown;
 }>();
 
-export interface CardHeaderProps {
+export interface BaseCardHeaderProps {
   /** 是否显示底部虚线分割 */
   divided?: boolean;
 }
 
-withDefaults(defineProps<CardHeaderProps>(), {
+withDefaults(defineProps<BaseCardHeaderProps>(), {
   divided: false,
 });
 </script>

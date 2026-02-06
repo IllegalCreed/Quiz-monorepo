@@ -1,28 +1,38 @@
 <template>
   <!-- 深色模式切换按钮 -->
-  <Button
+  <BaseButton
     variant="ghost"
-    size="default"
+    size="md"
     :class="props.class"
     @click="toggleDark()"
     :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
     :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
   >
-    <i v-if="isDark" class="i-carbon-sun w-5 h-5" aria-hidden="true" />
-    <i v-else class="i-carbon-moon w-5 h-5" aria-hidden="true" />
-  </Button>
+    <i
+      v-if="isDark"
+      class="i-carbon-sun inline-block w-5 h-5 text-current"
+      aria-hidden="true"
+    />
+    <i
+      v-else
+      class="i-carbon-moon inline-block w-5 h-5 text-current"
+      aria-hidden="true"
+    />
+  </BaseButton>
 </template>
 
 <script setup lang="ts">
+import BaseButton from "./BaseButton.vue";
+
 /**
  * ThemeToggle 组件
  *
  * @remarks
  * - 深色/浅色模式切换按钮
- * - 复用 Button 组件（variant="ghost"）
+ * - 复用 BaseButton 组件（variant="ghost"）
  * - 使用 VueUse 的 useDark + useToggle 管理主题
  * - 图标：carbon:sun（浅色模式）/ carbon:moon（深色模式）
- * - useDark, useToggle, Button 组件均通过自动导入提供
+ * - useDark, useToggle 通过自动导入提供
  */
 defineOptions({ name: "ThemeToggle" });
 

@@ -22,13 +22,28 @@ import * as fs from "fs";
 import type { Plugin } from "rolldown";
 import { createGenerator } from "@unocss/core";
 import presetWind4 from "@unocss/preset-wind4";
+import presetIcons from "@unocss/preset-icons";
 import transformerDirectives from "@unocss/transformer-directives";
 import MagicString from "magic-string";
 
-// 为 UnoCSS 创建生成器，用于处理 @apply 指令
+// 为 UnoCSS 创建生成器，用于处理 @apply 指令和图标
 const uno = await createGenerator({
-  presets: [presetWind4()],
+  presets: [
+    presetWind4(),
+    presetIcons({
+      // 启用所有 iconify 集合（包括 carbon）
+      scale: 1.2,
+      warn: true,
+    }),
+  ],
   transformers: [transformerDirectives()],
+  // safelist: 只包含组件特定的动态状态类（无法通过 @apply 定义的类）
+  safelist: [
+    // CheckRadio 组件的动态状态类
+    "radio--correct",
+    "radio--incorrect",
+    "radio--disabled",
+  ],
 });
 
 // 使用 UnoCSS 处理 CSS，将 @apply 展开为最终的 CSS
@@ -40,17 +55,34 @@ async function processUnoCSS(css: string, id: string): Promise<string> {
     await transformer.transform(s, id, { uno, tokens: new Set() });
   }
 
-  // 如果是 main.scss，生成并添加 UnoCSS 的基础 CSS（包括 CSS 变量定义）
+  // 如果是 main.scss，生成并添加 UnoCSS 的基础 CSS（包括 CSS 变量定义）和 safelist 类
   if (id.includes("main.scss")) {
-    // 生成一个空的 HTML 来触发 preflight 生成
+    // 生成 preflight CSS
     const { css: preflightCss } = await uno.generate("", {
       preflights: true,
       safelist: false,
     });
-    // 将 preflight CSS 添加到处理后的 CSS 前面
+
+    // 生成 safelist 中的类的 CSS（过滤出字符串类型）
+    const safelistClasses = (uno.config.safelist || []).filter(
+      (item): item is string => typeof item === "string",
+    );
+    const { css: safelistCss } = await uno.generate(safelistClasses, {
+      preflights: false,
+      safelist: true,
+    });
+
+    // 组合所有 CSS：preflight + safelist + 原始 CSS
+    let finalCss = "";
     if (preflightCss) {
-      return preflightCss + "\n" + s.toString();
+      finalCss += preflightCss + "\n";
     }
+    if (safelistCss) {
+      finalCss += safelistCss + "\n";
+    }
+    finalCss += s.toString();
+
+    return finalCss;
   }
 
   return s.toString();

@@ -85,12 +85,7 @@ export default defineConfigWithVueTs(
   // UI 库基础组件命名规则（遵循 shadcn/ui 命名习惯）
   {
     files: ["src/components/**/*.vue", "src/index.ts"],
-    rules: {
-      // 允许单词组件名（Card, Button 等）
-      "vue/multi-word-component-names": "off",
-      // 允许使用 HTML 保留名称（Button）
-      "vue/no-reserved-component-names": "off",
-    },
+    rules: {},
   },
 
   skipFormatting,

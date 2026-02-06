@@ -3,18 +3,18 @@
  *
  * 测试目标：
  * - variant 变体：default、outline、ghost
- * - size 尺寸：default、sm、lg
+ * - size 尺寸：md、sm、lg
  * - disabled 禁用状态
  * - type 按钮类型
  * - slot 内容渲染
  */
 import { mount } from "@vue/test-utils";
 import { describe, it, expect } from "vitest";
-import Button from "../components/Button.vue";
+import BaseButton from "../components/BaseButton.vue";
 
-describe("Button 按钮组件", () => {
+describe("BaseButton 按钮组件", () => {
   it("正确渲染基础结构和 slot 内容", () => {
-    const wrapper = mount(Button, {
+    const wrapper = mount(BaseButton, {
       slots: {
         default: "点击我",
       },
@@ -35,7 +35,7 @@ describe("Button 按钮组件", () => {
 
   describe("variant 变体", () => {
     it("default 变体：显示主按钮样式", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { variant: "default" },
       });
 
@@ -43,7 +43,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("outline 变体：显示次要按钮样式", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { variant: "outline" },
       });
 
@@ -51,7 +51,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("ghost 变体：显示幽灵按钮样式", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { variant: "ghost" },
       });
 
@@ -59,7 +59,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("默认 variant 为 default", () => {
-      const wrapper = mount(Button);
+      const wrapper = mount(BaseButton);
 
       expect(wrapper.find("button").classes()).toContain("btn--default");
     });
@@ -67,40 +67,40 @@ describe("Button 按钮组件", () => {
 
   describe("size 尺寸", () => {
     it("sm 尺寸：显示小按钮样式", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { size: "sm" },
       });
 
       expect(wrapper.find("button").classes()).toContain("btn--sm");
     });
 
-    it("default 尺寸：显示默认按钮样式", () => {
-      const wrapper = mount(Button, {
-        props: { size: "default" },
+    it("md 尺寸：显示默认按钮样式", () => {
+      const wrapper = mount(BaseButton, {
+        props: { size: "md" },
       });
 
-      expect(wrapper.find("button").classes()).toContain("btn--default");
+      expect(wrapper.find("button").classes()).toContain("btn--md");
     });
 
     it("lg 尺寸：显示大按钮样式", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { size: "lg" },
       });
 
       expect(wrapper.find("button").classes()).toContain("btn--lg");
     });
 
-    it("默认 size 为 default", () => {
-      const wrapper = mount(Button);
+    it("默认 size 为 md", () => {
+      const wrapper = mount(BaseButton);
 
-      // 注意：size default 和 variant default 都会添加 btn--default 类
-      expect(wrapper.find("button").classes()).toContain("btn--default");
+      // 断言：默认有 btn--md 类
+      expect(wrapper.find("button").classes()).toContain("btn--md");
     });
   });
 
   describe("disabled 禁用状态", () => {
     it("disabled=true 时按钮不可点击", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { disabled: true },
         slots: { default: "禁用按钮" },
       });
@@ -112,7 +112,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("disabled=false 时按钮可点击", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { disabled: false },
       });
 
@@ -121,7 +121,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("默认 disabled 为 false", () => {
-      const wrapper = mount(Button);
+      const wrapper = mount(BaseButton);
 
       expect(wrapper.find("button").attributes("disabled")).toBeUndefined();
     });
@@ -129,7 +129,7 @@ describe("Button 按钮组件", () => {
 
   describe("type 按钮类型", () => {
     it("type=button 设置正确", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { type: "button" },
       });
 
@@ -137,7 +137,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("type=submit 设置正确", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { type: "submit" },
       });
 
@@ -145,7 +145,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("type=reset 设置正确", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: { type: "reset" },
       });
 
@@ -153,7 +153,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("默认 type 为 button", () => {
-      const wrapper = mount(Button);
+      const wrapper = mount(BaseButton);
 
       expect(wrapper.find("button").attributes("type")).toBe("button");
     });
@@ -161,7 +161,7 @@ describe("Button 按钮组件", () => {
 
   describe("组合测试", () => {
     it("variant + size 组合：outline + lg", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: {
           variant: "outline",
           size: "lg",
@@ -174,7 +174,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("variant + size + disabled 组合", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         props: {
           variant: "ghost",
           size: "sm",
@@ -191,7 +191,7 @@ describe("Button 按钮组件", () => {
 
   describe("slot 内容", () => {
     it("支持文本内容", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         slots: { default: "按钮文字" },
       });
 
@@ -199,7 +199,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("支持 HTML 内容", () => {
-      const wrapper = mount(Button, {
+      const wrapper = mount(BaseButton, {
         slots: {
           default: '<span class="icon">图标</span> 文字',
         },
@@ -211,7 +211,7 @@ describe("Button 按钮组件", () => {
     });
 
     it("支持空内容", () => {
-      const wrapper = mount(Button);
+      const wrapper = mount(BaseButton);
 
       expect(wrapper.text()).toBe("");
     });

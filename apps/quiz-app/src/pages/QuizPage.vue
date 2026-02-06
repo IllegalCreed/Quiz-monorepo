@@ -4,11 +4,11 @@
 
     <div v-if="loading">加载中…</div>
     <template v-else-if="question">
-      <Card>
-        <CardHeader divided>
+      <BaseCard>
+        <BaseCardHeader divided>
           <h2 class="stem">{{ question.stem }}</h2>
-        </CardHeader>
-        <CardContent>
+        </BaseCardHeader>
+        <BaseCardContent>
           <CheckRadioGroup
             v-model="selected"
             :options="radioOptions"
@@ -16,12 +16,12 @@
           />
 
           <div v-if="error" class="error">{{ error }}</div>
-        </CardContent>
-      </Card>
+        </BaseCardContent>
+      </BaseCard>
 
       <!-- 答错时显示"下一题"按钮，答对时自动跳转所以隐藏 - 放在卡片外面 -->
       <div v-if="status === 'wrong'" class="actions">
-        <Button @click="loadNext">下一题</Button>
+        <BaseButton @click="loadNext">下一题</BaseButton>
       </div>
     </template>
     <div v-else>暂无题目</div>
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { onMounted, watch, computed } from "vue";
-import { Card, CardHeader, CardContent, Button, CheckRadioGroup } from "@quiz/ui";
+import { BaseCard, BaseCardHeader, BaseCardContent, BaseButton, CheckRadioGroup } from "@quiz/ui";
 import { useQuiz } from "./composables/useQuiz";
 
 const {
