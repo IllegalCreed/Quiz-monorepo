@@ -100,6 +100,15 @@ const radioOptions = computed(() => {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   background-color: var(--quiz-ui-control-bg);
+
+  // 题干样式和间距
+  .stem {
+    margin: 0 0 1.5rem 0; // 题干和选项之间 24px 间距
+    font-size: 1.125rem; // 18px
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--quiz-ui-text, #111827);
+  }
 }
 
 .actions {

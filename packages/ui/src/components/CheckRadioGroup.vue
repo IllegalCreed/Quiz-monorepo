@@ -133,7 +133,5 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <style lang="scss" scoped>
-.radio-group {
-  @apply flex flex-col gap-2;
-}
+@use "./check-radio-group.scss" as *;
 </style>
