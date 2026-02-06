@@ -18,10 +18,10 @@
 
 ### 脚本优化
 
-- [ ] 简化 `scripts/preview-test.sh`（当前 196 行，过于啰嗦）
-- [ ] 简化 `scripts/regenerate-test-secret.sh`
-- [ ] 简化 `apps/quiz-app/scripts/run-e2e.sh`（当前 103 行）
-- [ ] 考虑用 Node.js 脚本替代复杂的 shell 脚本
+- [x] 简化 `scripts/preview-test.sh`（已优化：220 行，添加详细中文注释）
+- [x] 简化 `scripts/regenerate-test-secret.sh`（已优化：94 行）
+- [x] 简化 `apps/quiz-app/scripts/run-e2e.sh`（已优化：从 102 行减少到 77 行）
+- [ ] 考虑用 Node.js 脚本替代复杂的 shell 脚本（暂不优先）
 
 ### 测试优化
 
@@ -179,4 +179,4 @@
 
 ---
 
-_最后更新: 2026-02-05_
+_最后更新: 2026-02-06_

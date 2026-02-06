@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # regenerate-test-secret.sh (简化版)
-# 本脚本用途（中文说明）🔧
+# 本脚本用途
 #  - 为测试运行生成一个随机的 TEST_RESET_SECRET（32 字符 hex）
 #  - 将该密钥写入两个位置：
 #      1) 后端配置：apps/quiz-backend/.env.test.local（替换或添加 TEST_RESET_SECRET）
