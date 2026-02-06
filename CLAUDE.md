@@ -52,36 +52,87 @@ pnpm dev              # 启动全部 (前端 10000, 后端 10020, UI 10030)
 pnpm dev:frontend     # 仅前端
 pnpm dev:backend      # 仅后端
 
-# 测试（推荐日常使用）
+# 代码质量检查
+pnpm run check        # 快速检查：lint + type-check + test:unit (~5s)
+pnpm run check:all    # 完整检查：包含 E2E 测试 (~5min)
+pnpm lint:fix         # 自动修复代码格式问题
+
+# 数据库管理（后端）
+pnpm -C apps/quiz-backend run migrate:deploy:dev   # 应用迁移到开发库
+pnpm -C apps/quiz-backend run migrate:status       # 查看所有环境迁移状态
+pnpm -C apps/quiz-backend run db:studio            # 打开数据库可视化工具
+pnpm -C apps/quiz-backend run db:seed:dev          # 插入开发数据
+pnpm -C apps/quiz-backend run db:reset:test        # 重置测试数据
+
+# 测试
 pnpm test:unit        # 单元测试 (~56 tests, ~5s)
-pnpm lint && pnpm type-check  # 代码检查
+pnpm test             # 完整测试（包括 E2E，~5 分钟）
+```
 
-# 数据库
-pnpm -C apps/quiz-backend run prisma:generate  # 生成 Prisma Client
-pnpm -C apps/quiz-backend run db:seed:test     # 重置测试数据
+### 后端脚本详解
 
-# 完整测试（提交 PR 前）
-pnpm test             # 包括 E2E (~5 分钟)
+所有后端脚本自动加载对应环境的 `.env.*.local` 文件，无需手动指定环境变量。
+
+**数据库迁移**：
+
+```bash
+pnpm run migrate:deploy:dev    # 开发库
+pnpm run migrate:deploy:test   # 测试库
+pnpm run migrate:deploy:prod   # 生产库
+pnpm run migrate:status         # 查看所有环境状态
+```
+
+**数据库管理**：
+
+```bash
+pnpm run db:studio:dev          # 打开开发库可视化界面
+pnpm run db:seed:dev            # 插入基础数据
+pnpm run db:reset:test          # 重置测试库（清空+插入）
+```
+
+**代码检查**：
+
+```bash
+pnpm run check                  # 快速检查（日常使用）
+pnpm run check:all              # 完整检查（提交 PR 前）
+```
+
+更多脚本说明见 [apps/quiz-backend/scripts/README.md](apps/quiz-backend/scripts/README.md)
+
 ```
 
 ## Prisma 7 特殊说明
 
 - **配置文件**：`apps/quiz-backend/prisma.config.ts`（不再在 schema.prisma 中配置 url）
+- **Placeholder URL**：配置使用 `process.env.DATABASE_URL ?? "placeholder"` 确保 `prisma generate` 不依赖真实数据库
+- **环境变量管理**：所有 Prisma CLI 命令通过 `dotenv-cli` 自动加载对应环境的 `.env.*.local` 文件
 - **迁移限制**：`prisma migrate dev` 需要 shadow database 权限，RDS 用户通常没有
 - **变通方案**：手动创建 migration SQL，使用 `prisma migrate deploy`（无需 shadow DB）
-- **generate 兼容**：配置中用 `process.env.DATABASE_URL ?? "placeholder"` 确保 `prisma generate` 不依赖真实 DB
+
+### 环境变量文件
+
+| 文件 | 用途 |
+|------|------|
+| `.env.development.local` | 开发环境数据库配置 |
+| `.env.test.local` | 测试环境数据库配置 |
+| `.env.production.local` | 生产环境数据库配置 |
+| `.env.create-db.local` | 数据库初始化脚本配置 |
+
+所有 `.env.*.local` 文件已加入 `.gitignore`，不会提交到版本控制。
 
 ## Git 规范
 
 ### Commit 格式（Conventional Commits）
 
 ```
+
 feat: 新功能
 fix: 修复 bug
 docs: 文档更新
 refactor: 重构
 test: 测试相关
 chore: 构建/工具变更
+
 ```
 
 ### Git Hooks
@@ -97,31 +148,33 @@ chore: 构建/工具变更
 ## 项目结构
 
 ```
+
 quiz-monorepo/
 ├── apps/
-│   ├── quiz-app/          # 前端 (Vue 3)
-│   │   ├── src/
-│   │   │   ├── pages/     # 页面组件
-│   │   │   ├── api/       # API 调用
-│   │   │   └── stores/    # Pinia stores
-│   │   └── cypress/       # E2E 测试
-│   └── quiz-backend/      # 后端 (NestJS)
-│       ├── src/
-│       │   ├── questions/ # 题目模块
-│       │   └── answers/   # 答案模块
-│       ├── prisma/
-│       │   ├── schema.prisma
-│       │   └── data/seed-test.json
-│       └── prisma.config.ts  # Prisma 7 配置
-├── packages/ui/           # 共享 UI 库
-│   ├── src/components/
-│   │   ├── CheckRadio.vue
-│   │   └── CheckRadioGroup.vue
-│   └── .storybook/
-├── docs/                  # 产品文档
-│   └── quiz-app-requirements.md
-└── scripts/               # 工具脚本
-```
+│ ├── quiz-app/ # 前端 (Vue 3)
+│ │ ├── src/
+│ │ │ ├── pages/ # 页面组件
+│ │ │ ├── api/ # API 调用
+│ │ │ └── stores/ # Pinia stores
+│ │ └── cypress/ # E2E 测试
+│ └── quiz-backend/ # 后端 (NestJS)
+│ ├── src/
+│ │ ├── questions/ # 题目模块
+│ │ └── answers/ # 答案模块
+│ ├── prisma/
+│ │ ├── schema.prisma
+│ │ └── data/seed-test.json
+│ └── prisma.config.ts # Prisma 7 配置
+├── packages/ui/ # 共享 UI 库
+│ ├── src/components/
+│ │ ├── CheckRadio.vue
+│ │ └── CheckRadioGroup.vue
+│ └── .storybook/
+├── docs/ # 产品文档
+│ └── quiz-app-requirements.md
+└── scripts/ # 工具脚本
+
+````
 
 ## 常见问题
 
@@ -129,7 +182,7 @@ quiz-monorepo/
 
 ```bash
 pnpm preview:clean  # 清理 10010/10020/10040
-```
+````
 
 ### Prisma Client 缺失
 
