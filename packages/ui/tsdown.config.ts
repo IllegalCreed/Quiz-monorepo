@@ -39,6 +39,20 @@ async function processUnoCSS(css: string, id: string): Promise<string> {
     // @ts-expect-error - transformer 上下文类型与 UnoCSS 内部类型存在不完全一致
     await transformer.transform(s, id, { uno, tokens: new Set() });
   }
+
+  // 如果是 main.scss，生成并添加 UnoCSS 的基础 CSS（包括 CSS 变量定义）
+  if (id.includes("main.scss")) {
+    // 生成一个空的 HTML 来触发 preflight 生成
+    const { css: preflightCss } = await uno.generate("", {
+      preflights: true,
+      safelist: false,
+    });
+    // 将 preflight CSS 添加到处理后的 CSS 前面
+    if (preflightCss) {
+      return preflightCss + "\n" + s.toString();
+    }
+  }
+
   return s.toString();
 }
 
