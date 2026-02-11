@@ -145,10 +145,10 @@ export default defineConfig({
   },
   // Use the build-specific tsconfig (with noEmit: false)
   tsconfig: "./tsconfig.build.json",
-  // Externalize vue - 保持为 peer dependency（Vue 不会被打包进产物）
-  // 说明：发布的包不会包含 Vue，使用者需要在他们的项目中安装对应的 Vue 版本。
+  // Externalize vue 和 @vueuse/core - 保持为 peer dependency（不会被打包进产物）
+  // 说明：发布的包不会包含 Vue 和 VueUse，使用者需要在他们的项目中安装对应版本。
   // 这样可以避免出现多个 Vue 实例导致的运行时问题，并让最终包更轻量。
-  external: ["vue"],
+  external: ["vue", "@vueuse/core"],
 
   /*
    * SCSS 处理说明（为何将 .scss 标记为空）
