@@ -66,6 +66,16 @@
 
 新增独立的管理后台应用 (`apps/quiz-admin`)，用于内容和系统管理。
 
+### 管理后台基础框架 ✅
+
+- [x] 项目搭建（Vue 3 + Vite + Element Plus + UnoCSS + 紫色主题）
+- [x] Mock 登录 + Token 持久化（刷新不丢失）
+- [x] 权限系统（菜单权限 + API 权限 + 动态路由）
+- [x] 主布局（Header + Sidebar 折叠 + Tab 历史 + keep-alive）
+- [x] 深色模式（Element Plus CSS 变量覆盖 + slate 系配色）
+- [x] 用户/管理员模块分离（App 用户 vs Admin 管理员）
+- [x] 超级管理员保护（不可删除、不可修改权限）
+
 ### 题目管理
 
 - [ ] 题目列表（分页、搜索、筛选）
@@ -143,8 +153,9 @@
 ### 管理后台技术选型
 
 - 框架: Vue 3 + Vite（与主 App 保持一致）
-- UI: Element Plus 或 Naive UI
-- 图表: ECharts 或 Chart.js
+- UI: Element Plus（已集成）
+- 样式: UnoCSS + SCSS（与 quiz-app 一致）
+- 图表: ECharts 或 Chart.js（待选）
 
 ### 数据库扩展
 
@@ -187,7 +198,7 @@
   - ✅ 前端重构（100% 完成，QuizPage CSS 重构完成）
   - ✅ UI 美化（100% 完成，标题泛光效果 + Grid 布局优化）
   - ⚠️ 后端重构（0% 完成，可与新功能并行）
-- [ ] **M1**: 管理后台 MVP（题目/分类管理 + 基础统计）
+- [ ] **M1**: 管理后台 MVP（~~基础框架~~ ✅ + 题目/分类管理 + 基础统计）
 - [ ] **M2**: 用户系统 MVP（登录 + 做题历史）
 - [ ] **M3**: 完整用户功能（偏好 + 错题本 + 收藏）
 - [ ] **M4**: 数据分析功能

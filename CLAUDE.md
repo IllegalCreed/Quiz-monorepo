@@ -7,18 +7,20 @@
 Quiz Monorepo - 开发者技术问答应用，前后端分离架构：
 
 - **前端** (`apps/quiz-app`): Vue 3 + Vite + TypeScript
+- **管理后台** (`apps/quiz-admin`): Vue 3 + Element Plus + UnoCSS
 - **后端** (`apps/quiz-backend`): NestJS + Prisma 7 + MySQL
 - **UI 库** (`packages/ui`): 共享组件 + Storybook
 
 ## 技术栈速查
 
-| 层级   | 技术                                        |
-| ------ | ------------------------------------------- |
-| 前端   | Vue 3 Composition API + Vite + Pinia        |
-| 后端   | NestJS + Prisma 7 + MySQL (MariaDB adapter) |
-| 样式   | SCSS + UnoCSS (Tailwind 4)                  |
-| 测试   | Vitest/Jest (单元) + Cypress (E2E)          |
-| 包管理 | pnpm workspace + Turborepo                  |
+| 层级     | 技术                                        |
+| -------- | ------------------------------------------- |
+| 前端     | Vue 3 Composition API + Vite + Pinia        |
+| 管理后台 | Vue 3 + Element Plus + UnoCSS + Pinia       |
+| 后端     | NestJS + Prisma 7 + MySQL (MariaDB adapter) |
+| 样式     | SCSS + UnoCSS (Tailwind 4)                  |
+| 测试     | Vitest/Jest (单元) + Cypress (E2E)          |
+| 包管理   | pnpm workspace + Turborepo                  |
 
 ## 核心规范
 
@@ -89,6 +91,7 @@ Quiz Monorepo - 开发者技术问答应用，前后端分离架构：
 pnpm dev              # 启动全部 (前端 10000, 后端 10020, UI 10030)
 pnpm dev:frontend     # 仅前端
 pnpm dev:backend      # 仅后端
+pnpm -C apps/quiz-admin dev  # 管理后台 (10050)
 
 # 代码质量检查
 pnpm run check        # 快速检查：lint + type-check + test:unit (~5s)
@@ -195,6 +198,14 @@ quiz-monorepo/
 │ │ │ ├── api/ # API 调用
 │ │ │ └── stores/ # Pinia stores
 │ │ └── cypress/ # E2E 测试
+│ ├── quiz-admin/ # 管理后台 (Vue 3 + Element Plus)
+│ │ ├── src/
+│ │ │ ├── views/ # 页面（login/dashboard/users/admins/system）
+│ │ │ ├── api/mock/ # Mock API（account/users/admins）
+│ │ │ ├── stores/ # Pinia stores
+│ │ │ ├── router/ # 动态路由 + 权限
+│ │ │ └── styles/ # SCSS 主题 + Element Plus 覆盖
+│ │ └── IMPLEMENTATION.md # 详细实施指南
 │ └── quiz-backend/ # 后端 (NestJS)
 │ ├── src/
 │ │ ├── questions/ # 题目模块
@@ -240,6 +251,7 @@ pnpm -C apps/quiz-backend run build  # 如需重新构建后端
 | 包           | 单元测试           | E2E 测试                        |
 | ------------ | ------------------ | ------------------------------- |
 | quiz-app     | Vitest (~6 tests)  | Cypress (mocked + real backend) |
+| quiz-admin   | -                  | Cypress (计划中)                |
 | quiz-backend | Jest (~12 tests)   | -                               |
 | ui           | Vitest (~38 tests) | Playwright (Storybook 交互测试) |
 

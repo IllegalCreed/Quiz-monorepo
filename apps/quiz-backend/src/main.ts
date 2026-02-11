@@ -30,7 +30,12 @@ async function bootstrap() {
   // Allow configuring one or multiple frontend origins (comma-separated). Default to common dev/preview ports.
   const frontendOrigin: string | string[] = process.env.FRONTEND_ORIGIN
     ? process.env.FRONTEND_ORIGIN.split(",")
-    : ["http://localhost:10000", "http://localhost:10010"];
+    : [
+        "http://localhost:10000",
+        "http://localhost:10010",
+        "http://localhost:10050",
+        "http://localhost:10060",
+      ];
   app.enableCors({ origin: frontendOrigin, credentials: true });
 
   await app.listen(process.env.PORT || 10020);
