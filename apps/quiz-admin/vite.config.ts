@@ -14,6 +14,9 @@ export default defineConfig({
   server: {
     port: 10050,
   },
+  preview: {
+    port: 10060,
+  },
   plugins: [
     vue(),
     vueDevTools(),
