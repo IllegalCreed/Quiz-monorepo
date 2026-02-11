@@ -40,7 +40,8 @@ log "Generated secret: ${MSECRET} (masked)"
 # 目标文件
 BACK_ENV="$ROOT_DIR/apps/quiz-backend/.env.test.local"
 BACK_EXAMPLE="$ROOT_DIR/apps/quiz-backend/.env.test.example"
-CYP_JSON="$ROOT_DIR/apps/quiz-app/cypress.env.json"
+CYP_APP_JSON="$ROOT_DIR/apps/quiz-app/cypress.env.json"
+CYP_ADMIN_JSON="$ROOT_DIR/apps/quiz-admin/cypress.env.json"
 
 # 确保后端 .env 文件存在：若不存在优先从 example 复制，否则创建空文件
 if [ ! -f "$BACK_ENV" ]; then
@@ -78,17 +79,19 @@ else
   fi
 fi
 
-# 写入 Cypress 配置（覆盖写入 JSON）
-if printf '{\n  "TEST_RESET_SECRET": "%s"\n}\n' "$SECRET" > "$CYP_JSON"; then
-  log "Wrote TEST_RESET_SECRET to $CYP_JSON"
-else
-  log_error "Failed to write TEST_RESET_SECRET to $CYP_JSON"
-  exit 1
-fi
+# 写入 Cypress 配置（quiz-app + quiz-admin 共享同一 secret）
+for cyp_json in "$CYP_APP_JSON" "$CYP_ADMIN_JSON"; do
+  if printf '{\n  "TEST_RESET_SECRET": "%s"\n}\n' "$SECRET" > "$cyp_json"; then
+    log "Wrote TEST_RESET_SECRET to $cyp_json"
+  else
+    log_error "Failed to write TEST_RESET_SECRET to $cyp_json"
+    exit 1
+  fi
 
-if ! chmod 600 "$CYP_JSON" 2>/dev/null; then
-  log_warn "Failed to set permissions (600) on $CYP_JSON"
-fi
+  if ! chmod 600 "$cyp_json" 2>/dev/null; then
+    log_warn "Failed to set permissions (600) on $cyp_json"
+  fi
+done
 
 log "Done."
 exit 0
