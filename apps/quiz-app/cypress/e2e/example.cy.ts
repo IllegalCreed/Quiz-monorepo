@@ -57,13 +57,12 @@ describe("Quiz flow (mocked)", () => {
     cy.contains(".radio", "成功").should("have.class", "radio--correct");
   });
 
-  it("答对后应展示选项解析描述", () => {
+  it("答对后不显示选项解析描述（快速跳题）", () => {
     cy.contains(".radio", "成功").click();
     cy.wait("@postAnswer");
 
-    // 验证正确选项的解析出现
-    cy.get(".radio__desc").should("exist");
-    cy.contains(".radio__desc", "200 表示请求成功");
+    // 验证答对时 description 不显示（用户可快速跳到下一题）
+    cy.get(".radio__desc").should("not.exist");
   });
 
   it("答错后应展示所有选项解析描述和下一题按钮", () => {

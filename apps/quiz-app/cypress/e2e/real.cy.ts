@@ -33,10 +33,21 @@ describe("Quiz flow (real backend)", () => {
     cy.get(".radio__desc, .radio.radio--correct", { timeout: 10000 }).should("exist");
   });
 
-  it("答题后选项解析描述应展示在选项下方", () => {
+  it("答题后根据结果显示 UI（答对无描述，答错有描述）", () => {
     cy.get(".radio-group .radio").first().click();
 
-    // 等待答题结果返回后，至少一个 .radio__desc 应该出现
-    cy.get(".radio__desc", { timeout: 10000 }).should("have.length.greaterThan", 0);
+    // 答题后应该出现正确/错误高亮
+    cy.get(".radio.radio--correct, .radio.radio--incorrect", { timeout: 10000 }).should("exist");
+
+    // 如果答错了（有红色高亮），则应该显示选项解析
+    cy.get("body").then(($body) => {
+      if ($body.find(".radio.radio--incorrect").length > 0) {
+        // 答错：应该有 description
+        cy.get(".radio__desc").should("have.length.greaterThan", 0);
+      } else {
+        // 答对：不应该有 description（快速跳题）
+        cy.get(".radio__desc").should("not.exist");
+      }
+    });
   });
 });
