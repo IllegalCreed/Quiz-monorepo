@@ -29,7 +29,8 @@
 
 ### 环境配置（2026-02-11 完成）
 
-- ✅ **环境变量文件**：`.env.example`（模板）、`.env.development.local`（开发）、`.env.test.local`（测试）、`.env.production.local`（生产）
+- ✅ **环境变量模板**：按环境拆分 `.env.{development,test,production}.example`（参考 quiz-app）
+- ✅ **Mock 策略**：开发环境 `VITE_MOCK=true`，测试/生产环境 `VITE_MOCK=false`（连接真实后端）
 - ✅ **配置项**：`VITE_API_BASE`（API 地址）、`VITE_MOCK`（Mock 开关）、`VITE_PORT`（端口）
 
 ### Bug 修复（2026-02-11 完成）
@@ -43,7 +44,9 @@
 
 ```
 apps/quiz-admin/
-├── .env.example              # 环境变量模板
+├── .env.development.example   # 开发环境模板（VITE_MOCK=true）
+├── .env.test.example          # 测试环境模板（VITE_MOCK=false，连接真实后端）
+├── .env.production.example    # 生产环境模板（VITE_MOCK=false）
 ├── .env.development.local    # 开发环境配置（git ignored）
 ├── .env.test.local           # 测试环境配置（git ignored）
 ├── .env.production.local     # 生产环境配置（git ignored）
@@ -196,7 +199,9 @@ import 'virtual:uno.css' // UnoCSS（最后导入，最高优先级）
 1. **复制环境变量模板**：
 
    ```bash
-   cp .env.example .env.development.local
+   cp .env.development.example .env.development.local  # 开发（Mock 模式）
+   cp .env.test.example .env.test.local                # 测试（连接真实后端）
+   cp .env.production.example .env.production.local    # 生产
    ```
 
 2. **修改配置**（可选）：
