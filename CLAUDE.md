@@ -44,6 +44,44 @@ Quiz Monorepo - 开发者技术问答应用，前后端分离架构：
 }
 ```
 
+**CSS 布局最佳实践**：
+
+- **全屏高度布局**：使用 flex 链式传递
+
+  ```scss
+  #app {
+    @apply min-h-screen flex flex-col;
+  }
+  main {
+    @apply flex-1 flex flex-col;
+  }
+  // 让子组件撑满 main
+  :deep(> *) {
+    @apply flex-1 flex flex-col;
+  }
+  ```
+
+- **Grid 布局**：精确控制行列比例
+
+  ```scss
+  .page {
+    @apply grid;
+    grid-template-rows: 1fr 2fr; // 标题 1/3，内容 2/3
+    grid-template-columns: 1fr;
+  }
+  .title {
+    place-self: center;
+  } // 水平垂直居中
+  .content {
+    align-self: start;
+  } // 顶对齐
+  ```
+
+- **视觉效果技巧**：
+  - 渐变文字：`background: linear-gradient(...)` + `-webkit-background-clip: text`
+  - 泛光效果：伪元素 + `radial-gradient` + `filter: blur(40-50px)`（GPU 加速）
+  - 深浅模式区分：浅色用 Tailwind 300 级，深色用 500 级，确保对比度
+
 ## 常用命令
 
 ```bash
