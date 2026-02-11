@@ -61,8 +61,9 @@ const { isCollapse } = useMenuCollapse()
     border-left: 3px solid var(--el-color-primary);
   }
 
+  /* 统一 hover 颜色（与 Header 按钮一致） */
   &:hover {
-    background-color: rgba(99, 102, 241, 0.06);
+    @apply bg-slate-100;
   }
 }
 </style>
@@ -72,7 +73,6 @@ const { isCollapse } = useMenuCollapse()
 html.dark .sidebar-menu {
   --el-menu-bg-color: #1e293b;
   --el-menu-text-color: #cbd5e1;
-  --el-menu-hover-bg-color: rgba(99, 102, 241, 0.15);
   --el-menu-active-color: #a5b4fc;
 
   .el-menu-item {
@@ -81,8 +81,9 @@ html.dark .sidebar-menu {
       background-color: rgba(99, 102, 241, 0.15);
     }
 
+    /* 统一 hover 颜色（与 Header 按钮一致） */
     &:hover {
-      background-color: rgba(99, 102, 241, 0.1);
+      @apply bg-slate-700;
     }
   }
 }

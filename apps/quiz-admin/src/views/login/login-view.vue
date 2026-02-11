@@ -59,8 +59,8 @@ const handleLogin = async () => {
 
       ElMessage.success('登录成功')
 
-      // 跳转到原路由或首页
-      const redirect = (route.query.redirect as string) || '/home'
+      // 跳转到原路由或默认打开欢迎页
+      const redirect = (route.query.redirect as string) || '/home/dashboard'
       router.push(redirect)
     } catch (error) {
       const message = error instanceof Error ? error.message : '登录失败'

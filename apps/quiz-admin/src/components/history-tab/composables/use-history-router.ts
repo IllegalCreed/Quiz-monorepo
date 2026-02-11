@@ -41,6 +41,7 @@ export function useHistoryRouter() {
   /**
    * 关闭 Tab
    * 如果关闭的是当前激活的 Tab，则跳转到最后一个 Tab
+   * 如果没有其他 Tab 了，跳转到 /home（不带子路由）
    * @param view 要关闭的路由
    */
   function close(view: RouteLike) {
@@ -50,8 +51,8 @@ export function useHistoryRouter() {
       if (latestView) {
         return router.push(latestView.fullPath)
       }
-      // 没有其他 Tab 了，跳转到首页
-      return router.push('/home/dashboard')
+      // 没有其他 Tab 了，跳转到 /home（空白状态）
+      return router.push('/home')
     }
   }
 

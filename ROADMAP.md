@@ -75,6 +75,8 @@
 - [x] 深色模式（Element Plus CSS 变量覆盖 + slate 系配色）
 - [x] 用户/管理员模块分离（App 用户 vs Admin 管理员）
 - [x] 超级管理员保护（不可删除、不可修改权限）
+- [x] 样式优化（移除 Tailwind reset，统一 hover 颜色，优化 Tab 历史）✅ 2026-02-11
+- [x] 环境配置（.env.example/.env.\*.local 文件 + 单元测试覆盖）✅ 2026-02-11
 
 ### 题目管理
 
@@ -206,6 +208,30 @@
 ---
 
 ## 最近完成
+
+### 2026-02-11: Quiz Admin 样式优化 + 环境配置
+
+完成管理后台的样式修复和环境配置完善：
+
+**样式优化**：
+
+- ✅ **Element Plus 样式修复**：移除 Tailwind reset，使用 Wind4 内置 reset
+- ✅ **CSS 导入顺序优化**：参考 beitou-survey-admin，调整为正确顺序（Element Plus → 全局样式 → UnoCSS）
+- ✅ **菜单 hover 统一**：与 Header 按钮一致，使用 slate 灰色系（`bg-slate-100` / `bg-slate-700`）
+- ✅ **Tab 历史优化**：关闭所有 Tab 后停留在 `/home` 空白状态，移除自动重定向到 dashboard
+- ✅ **登录跳转优化**：登录成功后默认跳转 `/home/dashboard` 而不是空白的 `/home`
+
+**环境配置**：
+
+- ✅ **环境变量文件**：新增 `.env.example`（模板）、`.env.test.local`（测试）、`.env.production.local`（生产）
+- ✅ **配置项**：`VITE_API_BASE`（API 地址）、`VITE_MOCK`（Mock 开关）、`VITE_PORT`（端口）
+- ✅ **单元测试**：移除 `passWithNoTests` 配置，添加 `use-token` composable 单元测试（4 个测试用例）
+
+**技术细节**：
+
+- Element Plus 深色模式通过 `@use` 导入，确保 SCSS 变量正确传递
+- 按需引入机制自动处理组件 SCSS，无需手动导入 base.scss
+- Tab 历史关闭逻辑通过调试日志发现路由重定向问题，移除 `dynamic-routes.ts` 中的自动重定向
 
 ### 2026-02-11: QuizPage CSS 重构 + App 布局优化
 

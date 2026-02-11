@@ -42,15 +42,6 @@ export const updateHomeRoutes = (router: Router, menuPermissions: string[]) => {
     router.addRoute('home', route)
   })
 
-  // 设置默认重定向到第一个子路由
-  const firstRoute = filteredRoutes[0]
-  if (firstRoute) {
-    router.addRoute('home', {
-      path: '',
-      redirect: { name: firstRoute.name as string },
-    })
-  }
-
   // 标记已初始化
   isRoutesInitialized = true
 }
