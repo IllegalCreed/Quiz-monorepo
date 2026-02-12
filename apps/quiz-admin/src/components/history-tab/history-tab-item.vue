@@ -3,32 +3,32 @@
  * 单个历史 Tab 项
  * 显示页面标题，支持点击切换和关闭
  */
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useRouterStore } from '@/stores/modules/router'
-import type { RouteLike } from '@/types/router'
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useRouterStore } from "@/stores/modules/router";
+import type { RouteLike } from "@/types/router";
 
-const { deleteView } = useRouterStore()
-const router = useRouter()
-const route = useRoute()
+const { deleteView } = useRouterStore();
+const router = useRouter();
+const route = useRoute();
 
 const props = defineProps<{
   /** Tab 对应的路由数据 */
-  data: RouteLike
-}>()
+  data: RouteLike;
+}>();
 
 const emit = defineEmits<{
   /** 关闭事件 */
-  close: [view: RouteLike]
-}>()
+  close: [view: RouteLike];
+}>();
 
 /** 是否为当前激活的 Tab */
-const isActive = computed(() => route.path === props.data.path)
+const isActive = computed(() => route.path === props.data.path);
 
 /** 关闭当前 Tab */
 function close() {
-  deleteView(props.data)
-  emit('close', props.data)
+  deleteView(props.data);
+  emit("close", props.data);
 }
 
 /** 点击切换到对应页面 */
@@ -36,7 +36,7 @@ function change() {
   router.push({
     path: props.data.path,
     query: props.data.query,
-  })
+  });
 }
 </script>
 

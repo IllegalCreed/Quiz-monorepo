@@ -2,16 +2,16 @@
 /**
  * 顶部 Header 组件
  */
-import { useDark, useToggle } from '@vueuse/core'
-import { useMenuCollapse } from '../home/composables/use-menu-collapse'
-import UserMenu from './user-menu.vue'
+import { useDark, useToggle } from "@vueuse/core";
+import { useMenuCollapse } from "../home/composables/use-menu-collapse";
+import UserMenu from "./user-menu.vue";
 
 /** 深浅色模式 */
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const isDark = useDark();
+const toggleDark = useToggle(isDark);
 
 /** 菜单折叠 */
-const { isCollapse, toggleCollapse } = useMenuCollapse()
+const { isCollapse, toggleCollapse } = useMenuCollapse();
 </script>
 
 <template>

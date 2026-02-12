@@ -3,14 +3,14 @@
  * 主布局页面
  * Header + Sidebar + Tab 历史 + Main
  */
-import HeaderView from '../header/header-view.vue'
-import HomeMenu from './home-menu.vue'
-import HistoryTabPanel from '@/components/history-tab/history-tab-panel.vue'
-import { useMenuCollapse } from './composables/use-menu-collapse'
-import { useRouterStore } from '@/stores/modules/router'
+import HeaderView from "../header/header-view.vue";
+import HomeMenu from "./home-menu.vue";
+import HistoryTabPanel from "@/components/history-tab/history-tab-panel.vue";
+import { useMenuCollapse } from "./composables/use-menu-collapse";
+import { useRouterStore } from "@/stores/modules/router";
 
-const { isCollapse } = useMenuCollapse()
-const routerStore = useRouterStore()
+const { isCollapse } = useMenuCollapse();
+const routerStore = useRouterStore();
 </script>
 
 <template>

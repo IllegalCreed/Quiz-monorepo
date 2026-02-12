@@ -2,82 +2,82 @@
  * 路由主文件 + 守卫
  * 实现登录验证和动态路由加载
  */
-import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/login/login-view.vue'
-import HomeView from '@/views/master/home/home-view.vue'
-import { useToken } from '@/composables/use-token'
-import { useAccountStore } from '@/stores/modules/account'
-import { updateHomeRoutes } from './dynamic-routes'
+import { createRouter, createWebHistory } from "vue-router";
+import LoginView from "@/views/login/login-view.vue";
+import HomeView from "@/views/master/home/home-view.vue";
+import { useToken } from "@/composables/use-token";
+import { useAccountStore } from "@/stores/modules/account";
+import { updateHomeRoutes } from "./dynamic-routes";
 
 /** 创建路由实例 */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      redirect: '/home',
+      path: "/",
+      redirect: "/home",
     },
     {
-      path: '/login',
-      name: 'login',
+      path: "/login",
+      name: "login",
       component: LoginView,
-      meta: { title: '登录' },
+      meta: { title: "登录" },
     },
     {
-      path: '/home',
-      name: 'home',
+      path: "/home",
+      name: "home",
       component: HomeView,
-      meta: { title: '首页', requiresAuth: true },
+      meta: { title: "首页", requiresAuth: true },
       children: [], // 子路由将动态添加
     },
   ],
-})
+});
 
 /**
  * 路由守卫
  * 验证登录状态 + 动态加载路由
  */
 router.beforeEach(async (to, from, next) => {
-  const { token, needToRefreshRouter } = useToken()
-  const accountStore = useAccountStore()
+  const { token, needToRefreshRouter } = useToken();
+  const accountStore = useAccountStore();
 
   // 1. 如果访问登录页,直接放行
-  if (to.path === '/login') {
-    next()
-    return
+  if (to.path === "/login") {
+    next();
+    return;
   }
 
   // 2. 未登录,跳转登录页
   if (!token.value) {
-    next({ path: '/login', query: { redirect: to.fullPath } })
-    return
+    next({ path: "/login", query: { redirect: to.fullPath } });
+    return;
   }
 
   // 3. 已登录,检查是否需要刷新路由
   if (needToRefreshRouter.value) {
     try {
       // 先设置为 false,避免死循环
-      needToRefreshRouter.value = false
+      needToRefreshRouter.value = false;
 
       // 加载用户信息
-      const userInfo = await accountStore.getInfo()
+      const userInfo = await accountStore.getInfo();
 
       // 根据权限动态更新路由
-      updateHomeRoutes(router, userInfo.menuPermissions)
+      updateHomeRoutes(router, userInfo.menuPermissions);
 
       // 重新导航到目标路由（确保动态路由已生效）
-      next({ ...to, replace: true })
+      next({ ...to, replace: true });
     } catch (error) {
-      console.error('获取用户信息失败:', error)
+      console.error("获取用户信息失败:", error);
       // 清除 token 并跳转登录页
-      token.value = ''
-      next({ path: '/login', query: { redirect: to.fullPath } })
+      token.value = "";
+      next({ path: "/login", query: { redirect: to.fullPath } });
     }
-    return
+    return;
   }
 
   // 4. 正常放行
-  next()
-})
+  next();
+});
 
-export default router
+export default router;

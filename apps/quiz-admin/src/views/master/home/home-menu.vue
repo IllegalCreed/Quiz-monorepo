@@ -3,18 +3,18 @@
  * 侧边菜单组件
  * 支持动态图标、折叠、深浅色模式
  */
-import { useMenuStore } from '@/stores/modules/menu'
-import { useMenuNavigation } from './composables/use-menu-navigation'
-import { useMenuCollapse } from './composables/use-menu-collapse'
+import { useMenuStore } from "@/stores/modules/menu";
+import { useMenuNavigation } from "./composables/use-menu-navigation";
+import { useMenuCollapse } from "./composables/use-menu-collapse";
 
 /** 菜单数据 */
-const menuStore = useMenuStore()
+const menuStore = useMenuStore();
 
 /** 菜单导航 */
-const { activeIndex, handleSelect } = useMenuNavigation()
+const { activeIndex, handleSelect } = useMenuNavigation();
 
 /** 菜单折叠 */
-const { isCollapse } = useMenuCollapse()
+const { isCollapse } = useMenuCollapse();
 </script>
 
 <template>

@@ -3,58 +3,58 @@
  * 权限管理页面
  * 只读展示所有权限信息，包括菜单权限和 API 权限
  */
-import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from "vue";
+import { ElMessage } from "element-plus";
 import {
   getMenuPermissions,
   getApiPermissions,
   getPermissionRouteMapping,
-} from '@/api/mock/permissions'
-import type { ApiPermissionGroup, MenuPermission } from '@/types/permission'
+} from "@/api/mock/permissions";
+import type { ApiPermissionGroup, MenuPermission } from "@/types/permission";
 
 /** 菜单权限列表 */
-const menuPermissions = ref<MenuPermission[]>([])
+const menuPermissions = ref<MenuPermission[]>([]);
 
 /** API 权限列表（分组） */
-const apiPermissionGroups = ref<ApiPermissionGroup[]>([])
+const apiPermissionGroups = ref<ApiPermissionGroup[]>([]);
 
 /** 权限-路由映射 */
-const permissionRouteMapping = ref<Record<string, string[]>>({})
+const permissionRouteMapping = ref<Record<string, string[]>>({});
 
 /** 加载中状态 */
-const loading = ref(false)
+const loading = ref(false);
 
 /** 当前激活的 Tab */
-const activeTab = ref('menu')
+const activeTab = ref("menu");
 
 /**
  * 加载所有数据
  */
 const loadData = async () => {
   try {
-    loading.value = true
+    loading.value = true;
     const [menus, apis, mapping] = await Promise.all([
       getMenuPermissions(),
       getApiPermissions(),
       getPermissionRouteMapping(),
-    ])
-    menuPermissions.value = menus
-    apiPermissionGroups.value = apis
-    permissionRouteMapping.value = mapping
+    ]);
+    menuPermissions.value = menus;
+    apiPermissionGroups.value = apis;
+    permissionRouteMapping.value = mapping;
   } catch (error) {
-    const message = error instanceof Error ? error.message : '加载权限数据失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "加载权限数据失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 统计 API 权限总数
  */
 const totalApiPermissions = () => {
-  return apiPermissionGroups.value.reduce((sum, group) => sum + group.permissions.length, 0)
-}
+  return apiPermissionGroups.value.reduce((sum, group) => sum + group.permissions.length, 0);
+};
 
 /**
  * 合并菜单权限和路由映射数据
@@ -63,12 +63,12 @@ const menuPermissionsWithRoutes = () => {
   return menuPermissions.value.map((perm) => ({
     ...perm,
     routes: permissionRouteMapping.value[perm.key] || [],
-  }))
-}
+  }));
+};
 
 onMounted(() => {
-  loadData()
-})
+  loadData();
+});
 </script>
 
 <template>
@@ -85,7 +85,9 @@ onMounted(() => {
       <el-tab-pane label="菜单权限" name="menu">
         <div class="tab-content">
           <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            共 <strong>{{ menuPermissions.length }}</strong> 个菜单权限，控制侧边栏菜单和路由的访问
+            共
+            <strong>{{ menuPermissions.length }}</strong>
+            个菜单权限，控制侧边栏菜单和路由的访问
           </div>
           <el-table :data="menuPermissionsWithRoutes()" stripe>
             <el-table-column prop="key" label="权限 Key" width="160">
@@ -105,7 +107,8 @@ onMounted(() => {
             <el-table-column label="说明" min-width="200">
               <template #default="{ row }">
                 <span class="text-sm text-gray-500">
-                  拥有此权限的用户可以访问 {{ row.routes.join('、') || '相关' }} 页面
+                  拥有此权限的用户可以访问
+                  {{ row.routes.join("、") || "相关" }} 页面
                 </span>
               </template>
             </el-table-column>
@@ -118,7 +121,8 @@ onMounted(() => {
         <div class="tab-content">
           <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
             共 <strong>{{ totalApiPermissions() }}</strong> 个 API 权限，分为
-            <strong>{{ apiPermissionGroups.length }}</strong> 个模块，控制按钮和接口的访问
+            <strong>{{ apiPermissionGroups.length }}</strong>
+            个模块，控制按钮和接口的访问
           </div>
           <div class="space-y-4">
             <el-card v-for="group in apiPermissionGroups" :key="group.module" shadow="never">

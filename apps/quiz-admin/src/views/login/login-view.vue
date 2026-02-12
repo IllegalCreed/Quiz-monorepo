@@ -3,73 +3,73 @@
  * 登录页面
  * 紫色渐变背景 + Element Plus 表单
  */
-import { reactive, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useDark, useToggle } from '@vueuse/core'
-import { ElMessage } from 'element-plus'
-import { useAccountStore } from '@/stores/modules/account'
-import { useToken } from '@/composables/use-token'
-import type { FormInstance } from 'element-plus'
-import type { LoginForm } from '@/types/account'
+import { reactive, ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useDark, useToggle } from "@vueuse/core";
+import { ElMessage } from "element-plus";
+import { useAccountStore } from "@/stores/modules/account";
+import { useToken } from "@/composables/use-token";
+import type { FormInstance } from "element-plus";
+import type { LoginForm } from "@/types/account";
 
-const router = useRouter()
-const route = useRoute()
-const accountStore = useAccountStore()
-const { setToken } = useToken()
+const router = useRouter();
+const route = useRoute();
+const accountStore = useAccountStore();
+const { setToken } = useToken();
 
 /** 深浅色模式 */
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const isDark = useDark();
+const toggleDark = useToggle(isDark);
 
 /** 登录表单引用 */
-const loginFormRef = ref<FormInstance>()
+const loginFormRef = ref<FormInstance>();
 
 /** 登录表单数据 */
 const loginForm = reactive<LoginForm>({
-  username: '',
-  password: '',
-})
+  username: "",
+  password: "",
+});
 
 /** 表单验证规则 */
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
+  username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
+  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+};
 
 /** 登录中状态 */
-const loading = ref(false)
+const loading = ref(false);
 
 /**
  * 处理登录
  */
 const handleLogin = async () => {
-  if (!loginFormRef.value) return
+  if (!loginFormRef.value) return;
 
   await loginFormRef.value.validate(async (valid) => {
-    if (!valid) return
+    if (!valid) return;
 
     try {
-      loading.value = true
+      loading.value = true;
 
       // 调用登录 API
-      const token = await accountStore.login(loginForm)
+      const token = await accountStore.login(loginForm);
 
       // 保存 token
-      setToken(token)
+      setToken(token);
 
-      ElMessage.success('登录成功')
+      ElMessage.success("登录成功");
 
       // 跳转到原路由或默认打开欢迎页
-      const redirect = (route.query.redirect as string) || '/home/dashboard'
-      router.push(redirect)
+      const redirect = (route.query.redirect as string) || "/home/dashboard";
+      router.push(redirect);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '登录失败'
-      ElMessage.error(message)
+      const message = error instanceof Error ? error.message : "登录失败";
+      ElMessage.error(message);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  })
-}
+  });
+};
 </script>
 
 <template>

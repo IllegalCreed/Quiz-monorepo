@@ -2,21 +2,21 @@
 /**
  * 欢迎页/仪表盘
  */
-import { ref } from 'vue'
-import { useAccountStore } from '@/stores/modules/account'
+import { ref } from "vue";
+import { useAccountStore } from "@/stores/modules/account";
 
-const accountStore = useAccountStore()
+const accountStore = useAccountStore();
 
 /**
  * 统计数据
  * @unocss-include
  */
 const stats = ref([
-  { title: '总用户数', value: 1256, icon: 'i-carbon-user-multiple' },
-  { title: '今日访问', value: 328, icon: 'i-carbon-analytics' },
-  { title: '活跃用户', value: 856, icon: 'i-carbon-user-activity' },
-  { title: '系统消息', value: 12, icon: 'i-carbon-email' },
-])
+  { title: "总用户数", value: 1256, icon: "i-carbon-user-multiple" },
+  { title: "今日访问", value: 328, icon: "i-carbon-analytics" },
+  { title: "活跃用户", value: 856, icon: "i-carbon-user-activity" },
+  { title: "系统消息", value: 12, icon: "i-carbon-email" },
+]);
 </script>
 
 <template>

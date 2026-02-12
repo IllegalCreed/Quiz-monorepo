@@ -3,131 +3,131 @@
  * 用户管理页面
  * 管理 Quiz App 的普通用户（非管理员）
  */
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAppUsers, createAppUser, updateAppUserStatus, deleteAppUser } from '@/api/mock/users'
-import type { AppUser } from '@/types/account'
+import { ref, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { getAppUsers, createAppUser, updateAppUserStatus, deleteAppUser } from "@/api/mock/users";
+import type { AppUser } from "@/types/account";
 
 /** 用户列表 */
-const users = ref<AppUser[]>([])
+const users = ref<AppUser[]>([]);
 
 /** 加载中状态 */
-const loading = ref(false)
+const loading = ref(false);
 
 /** 新增用户对话框可见性 */
-const createDialogVisible = ref(false)
+const createDialogVisible = ref(false);
 
 /** 新增用户表单 */
 const createForm = ref({
-  username: '',
-  nickname: '',
-  email: '',
-})
+  username: "",
+  nickname: "",
+  email: "",
+});
 
 /**
  * 加载用户列表
  */
 const loadUsers = async () => {
   try {
-    loading.value = true
-    users.value = await getAppUsers()
+    loading.value = true;
+    users.value = await getAppUsers();
   } catch (error) {
-    const message = error instanceof Error ? error.message : '加载用户列表失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "加载用户列表失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 打开新增用户对话框
  */
 const openCreateDialog = () => {
-  createForm.value = { username: '', nickname: '', email: '' }
-  createDialogVisible.value = true
-}
+  createForm.value = { username: "", nickname: "", email: "" };
+  createDialogVisible.value = true;
+};
 
 /**
  * 创建用户
  */
 const handleCreate = async () => {
   if (!createForm.value.username || !createForm.value.nickname) {
-    ElMessage.warning('请填写用户名和昵称')
-    return
+    ElMessage.warning("请填写用户名和昵称");
+    return;
   }
 
   try {
-    loading.value = true
-    await createAppUser(createForm.value)
-    ElMessage.success('创建成功')
-    createDialogVisible.value = false
-    await loadUsers()
+    loading.value = true;
+    await createAppUser(createForm.value);
+    ElMessage.success("创建成功");
+    createDialogVisible.value = false;
+    await loadUsers();
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建用户失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "创建用户失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 切换用户状态（启用/禁用）
  */
 const toggleStatus = async (user: AppUser) => {
-  const newStatus = user.status === 'active' ? 'disabled' : 'active'
-  const action = newStatus === 'active' ? '启用' : '禁用'
+  const newStatus = user.status === "active" ? "disabled" : "active";
+  const action = newStatus === "active" ? "启用" : "禁用";
 
   try {
-    await ElMessageBox.confirm(`确定要${action}用户 "${user.nickname}" 吗？`, '提示', {
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(`确定要${action}用户 "${user.nickname}" 吗？`, "提示", {
+      type: "warning",
+    });
 
-    loading.value = true
-    await updateAppUserStatus(user.id, newStatus)
-    ElMessage.success(`${action}成功`)
-    await loadUsers()
+    loading.value = true;
+    await updateAppUserStatus(user.id, newStatus);
+    ElMessage.success(`${action}成功`);
+    await loadUsers();
   } catch (error) {
     // 用户取消操作不报错
-    if (error === 'cancel') return
-    const message = error instanceof Error ? error.message : `${action}失败`
-    ElMessage.error(message)
+    if (error === "cancel") return;
+    const message = error instanceof Error ? error.message : `${action}失败`;
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 删除用户
  */
 const handleDelete = async (user: AppUser) => {
   try {
-    await ElMessageBox.confirm(`确定要删除用户 "${user.nickname}" 吗？此操作不可恢复。`, '警告', {
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(`确定要删除用户 "${user.nickname}" 吗？此操作不可恢复。`, "警告", {
+      type: "warning",
+    });
 
-    loading.value = true
-    await deleteAppUser(user.id)
-    ElMessage.success('删除成功')
-    await loadUsers()
+    loading.value = true;
+    await deleteAppUser(user.id);
+    ElMessage.success("删除成功");
+    await loadUsers();
   } catch (error) {
-    if (error === 'cancel') return
-    const message = error instanceof Error ? error.message : '删除失败'
-    ElMessage.error(message)
+    if (error === "cancel") return;
+    const message = error instanceof Error ? error.message : "删除失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 格式化日期
  */
 const formatDate = (dateStr: string): string => {
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
+  return new Date(dateStr).toLocaleDateString("zh-CN");
+};
 
 onMounted(() => {
-  loadUsers()
-})
+  loadUsers();
+});
 </script>
 
 <template>
@@ -149,7 +149,7 @@ onMounted(() => {
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'danger'" size="small">
-            {{ row.status === 'active' ? '正常' : '禁用' }}
+            {{ row.status === "active" ? "正常" : "禁用" }}
           </el-tag>
         </template>
       </el-table-column>
@@ -166,7 +166,7 @@ onMounted(() => {
             :type="row.status === 'active' ? 'warning' : 'success'"
             @click="toggleStatus(row)"
           >
-            {{ row.status === 'active' ? '禁用' : '启用' }}
+            {{ row.status === "active" ? "禁用" : "启用" }}
           </el-button>
           <el-button v-permission="'users:delete'" link type="danger" @click="handleDelete(row)">
             删除

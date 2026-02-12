@@ -3,14 +3,14 @@
  * 历史 Tab 面板
  * 显示所有访问过的页面 Tab，支持横向滚动
  */
-import { ref } from 'vue'
-import HistoryTabItem from './history-tab-item.vue'
-import { useHistoryRouter } from './composables/use-history-router'
+import { ref } from "vue";
+import HistoryTabItem from "./history-tab-item.vue";
+import { useHistoryRouter } from "./composables/use-history-router";
 
-const { visitedViews, close } = useHistoryRouter()
+const { visitedViews, close } = useHistoryRouter();
 
 /** 滚动容器引用 */
-const scrollContainer = ref<HTMLDivElement | null>(null)
+const scrollContainer = ref<HTMLDivElement | null>(null);
 
 /**
  * 处理鼠标滚轮横向滚动
@@ -18,10 +18,10 @@ const scrollContainer = ref<HTMLDivElement | null>(null)
  */
 const handleWheel = (event: WheelEvent) => {
   if (scrollContainer.value) {
-    event.preventDefault()
-    scrollContainer.value.scrollLeft += event.deltaY
+    event.preventDefault();
+    scrollContainer.value.scrollLeft += event.deltaY;
   }
-}
+};
 </script>
 
 <template>

@@ -7,27 +7,27 @@
  */
 export interface Role {
   /** 角色 ID */
-  id: number
+  id: number;
   /** 角色名称 */
-  name: string
+  name: string;
   /** 角色描述 */
-  description: string
+  description: string;
   /** 是否系统内置角色（super_admin 角色，不可删除/修改） */
-  isSystem: boolean
+  isSystem: boolean;
   /** 菜单权限数组 */
-  menuPermissions: string[]
+  menuPermissions: string[];
   /** API 权限数组 */
-  apiPermissions: string[]
+  apiPermissions: string[];
   /** 使用该角色的管理员数量 */
-  adminCount?: number
+  adminCount?: number;
   /** 创建时间 */
-  createdAt: string
+  createdAt: string;
   /** 更新时间 */
-  updatedAt: string
+  updatedAt: string;
   /** 内部字段：管理员数量统计 */
   _count?: {
-    admins: number
-  }
+    admins: number;
+  };
 }
 
 /**
@@ -35,13 +35,13 @@ export interface Role {
  */
 export interface CreateRoleForm {
   /** 角色名称 */
-  name: string
+  name: string;
   /** 角色描述 */
-  description: string
+  description: string;
   /** 菜单权限数组 */
-  menuPermissions: string[]
+  menuPermissions: string[];
   /** API 权限数组 */
-  apiPermissions: string[]
+  apiPermissions: string[];
 }
 
 /**
@@ -49,11 +49,11 @@ export interface CreateRoleForm {
  */
 export interface UpdateRoleForm {
   /** 角色名称 */
-  name?: string
+  name?: string;
   /** 角色描述 */
-  description?: string
+  description?: string;
   /** 菜单权限数组 */
-  menuPermissions?: string[]
+  menuPermissions?: string[];
   /** API 权限数组 */
-  apiPermissions?: string[]
+  apiPermissions?: string[];
 }

@@ -8,281 +8,281 @@
  * - 删除角色前检查是否有管理员使用
  * - 角色名称唯一性校验
  */
-import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRoles, createRole, updateRole, deleteRole } from '@/api/roles'
-import { getAdminUsers } from '@/api/admins'
+import { ref, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { getRoles, createRole, updateRole, deleteRole } from "@/api/roles";
+import { getAdminUsers } from "@/api/admins";
 import {
   getRoles as getRolesMock,
   createRole as createRoleMock,
   updateRole as updateRoleMock,
   deleteRole as deleteRoleMock,
-} from '@/api/mock/roles'
-import { getAdminUsers as getAdminUsersMock } from '@/api/mock/admins'
-import { useMockStore } from '@/composables/use-mock-store'
+} from "@/api/mock/roles";
+import { getAdminUsers as getAdminUsersMock } from "@/api/mock/admins";
+import { useMockStore } from "@/composables/use-mock-store";
 import {
   ALL_MENU_PERMISSIONS,
   ALL_API_PERMISSION_GROUPS,
   type ApiPermissionGroup,
-} from '@/types/permission'
-import type { Role, CreateRoleForm } from '@/types/role'
+} from "@/types/permission";
+import type { Role, CreateRoleForm } from "@/types/role";
 
-const { isMock } = useMockStore()
+const { isMock } = useMockStore();
 
 /** 角色列表 */
-const roles = ref<Role[]>([])
+const roles = ref<Role[]>([]);
 
 /** 加载中状态 */
-const loading = ref(false)
+const loading = ref(false);
 
 /** 新增角色对话框 */
-const createDialogVisible = ref(false)
+const createDialogVisible = ref(false);
 
 /** 编辑角色对话框 */
-const editDialogVisible = ref(false)
+const editDialogVisible = ref(false);
 
 /** 权限配置对话框 */
-const permissionDialogVisible = ref(false)
+const permissionDialogVisible = ref(false);
 
 /** 当前编辑的角色 */
-const currentRole = ref<Role | null>(null)
+const currentRole = ref<Role | null>(null);
 
 /** 新增角色表单 */
 const createForm = ref<CreateRoleForm>({
-  name: '',
-  description: '',
+  name: "",
+  description: "",
   menuPermissions: [],
   apiPermissions: [],
-})
+});
 
 /** 编辑角色表单 */
 const editForm = ref({
-  name: '',
-  description: '',
-})
+  name: "",
+  description: "",
+});
 
 /** 选中的菜单权限 */
-const selectedMenuPermissions = ref<string[]>([])
+const selectedMenuPermissions = ref<string[]>([]);
 
 /** 选中的 API 权限 */
-const selectedApiPermissions = ref<string[]>([])
+const selectedApiPermissions = ref<string[]>([]);
 
 /** API 权限折叠面板的激活项 */
-const activeCollapseNames = ref<string[]>([])
+const activeCollapseNames = ref<string[]>([]);
 
 /**
  * 加载角色列表
  */
 const loadRoles = async () => {
   try {
-    loading.value = true
+    loading.value = true;
 
     // 并行加载角色和管理员数据
     const [rolesData, admins] = await Promise.all([
       isMock.value ? getRolesMock() : getRoles(),
       isMock.value ? getAdminUsersMock() : getAdminUsers(),
-    ])
+    ]);
 
     // 为每个角色计算 adminCount
     roles.value = rolesData.map((role) => ({
       ...role,
       adminCount: admins.filter((admin) => admin.roleId === role.id).length,
-    }))
+    }));
   } catch (error) {
-    const message = error instanceof Error ? error.message : '加载角色列表失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "加载角色列表失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 判断是否为系统角色（受保护，不可删除/修改）
  */
 const isSystemRole = (role: Role): boolean => {
-  return role.isSystem
-}
+  return role.isSystem;
+};
 
 /**
  * 获取每个 API 权限组已选中的数量
  */
 const getSelectedCountInGroup = (group: ApiPermissionGroup): number => {
-  return group.permissions.filter((p) => selectedApiPermissions.value.includes(p.key)).length
-}
+  return group.permissions.filter((p) => selectedApiPermissions.value.includes(p.key)).length;
+};
 
 /**
  * 打开新增角色对话框
  */
 const openCreateDialog = () => {
   createForm.value = {
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     menuPermissions: [],
     apiPermissions: [],
-  }
-  createDialogVisible.value = true
-}
+  };
+  createDialogVisible.value = true;
+};
 
 /**
  * 创建角色
  */
 const handleCreate = async () => {
   if (!createForm.value.name || !createForm.value.description) {
-    ElMessage.warning('请填写角色名称和描述')
-    return
+    ElMessage.warning("请填写角色名称和描述");
+    return;
   }
 
   try {
-    loading.value = true
+    loading.value = true;
     if (isMock.value) {
-      await createRoleMock(createForm.value)
+      await createRoleMock(createForm.value);
     } else {
-      await createRole(createForm.value)
+      await createRole(createForm.value);
     }
-    ElMessage.success('创建成功')
-    createDialogVisible.value = false
-    await loadRoles()
+    ElMessage.success("创建成功");
+    createDialogVisible.value = false;
+    await loadRoles();
   } catch (error) {
-    const message = error instanceof Error ? error.message : '创建角色失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "创建角色失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 打开编辑角色对话框
  */
 const openEditDialog = (role: Role) => {
   if (isSystemRole(role)) {
-    ElMessage.warning('系统内置角色不可编辑')
-    return
+    ElMessage.warning("系统内置角色不可编辑");
+    return;
   }
 
-  currentRole.value = role
+  currentRole.value = role;
   editForm.value = {
     name: role.name,
     description: role.description,
-  }
-  editDialogVisible.value = true
-}
+  };
+  editDialogVisible.value = true;
+};
 
 /**
  * 保存编辑
  */
 const handleEdit = async () => {
-  if (!currentRole.value) return
+  if (!currentRole.value) return;
   if (!editForm.value.name || !editForm.value.description) {
-    ElMessage.warning('请填写角色名称和描述')
-    return
+    ElMessage.warning("请填写角色名称和描述");
+    return;
   }
 
   try {
-    loading.value = true
+    loading.value = true;
     if (isMock.value) {
-      await updateRoleMock(currentRole.value.id, editForm.value)
+      await updateRoleMock(currentRole.value.id, editForm.value);
     } else {
-      await updateRole(currentRole.value.id, editForm.value)
+      await updateRole(currentRole.value.id, editForm.value);
     }
-    ElMessage.success('更新成功')
-    editDialogVisible.value = false
-    await loadRoles()
+    ElMessage.success("更新成功");
+    editDialogVisible.value = false;
+    await loadRoles();
   } catch (error) {
-    const message = error instanceof Error ? error.message : '更新角色失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "更新角色失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 打开权限配置对话框
  */
 const openPermissionDialog = (role: Role) => {
   if (isSystemRole(role)) {
-    ElMessage.warning('系统内置角色的权限不可修改')
-    return
+    ElMessage.warning("系统内置角色的权限不可修改");
+    return;
   }
 
-  currentRole.value = role
-  selectedMenuPermissions.value = [...role.menuPermissions]
-  selectedApiPermissions.value = [...role.apiPermissions]
+  currentRole.value = role;
+  selectedMenuPermissions.value = [...role.menuPermissions];
+  selectedApiPermissions.value = [...role.apiPermissions];
   // 默认展开所有模块
-  activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module)
-  permissionDialogVisible.value = true
-}
+  activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module);
+  permissionDialogVisible.value = true;
+};
 
 /**
  * 保存权限
  */
 const savePermissions = async () => {
-  if (!currentRole.value) return
+  if (!currentRole.value) return;
 
   try {
-    loading.value = true
+    loading.value = true;
     if (isMock.value) {
       await updateRoleMock(currentRole.value.id, {
         menuPermissions: selectedMenuPermissions.value,
         apiPermissions: selectedApiPermissions.value,
-      })
+      });
     } else {
       await updateRole(currentRole.value.id, {
         menuPermissions: selectedMenuPermissions.value,
         apiPermissions: selectedApiPermissions.value,
-      })
+      });
     }
-    ElMessage.success('权限更新成功')
-    permissionDialogVisible.value = false
-    await loadRoles()
+    ElMessage.success("权限更新成功");
+    permissionDialogVisible.value = false;
+    await loadRoles();
   } catch (error) {
-    const message = error instanceof Error ? error.message : '权限更新失败'
-    ElMessage.error(message)
+    const message = error instanceof Error ? error.message : "权限更新失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 删除角色
  */
 const handleDelete = async (role: Role) => {
   if (isSystemRole(role)) {
-    ElMessage.warning('系统内置角色不可删除')
-    return
+    ElMessage.warning("系统内置角色不可删除");
+    return;
   }
 
   try {
-    await ElMessageBox.confirm(`确定要删除角色 "${role.name}" 吗？此操作不可恢复。`, '警告', {
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(`确定要删除角色 "${role.name}" 吗？此操作不可恢复。`, "警告", {
+      type: "warning",
+    });
 
-    loading.value = true
+    loading.value = true;
     if (isMock.value) {
-      await deleteRoleMock(role.id)
+      await deleteRoleMock(role.id);
     } else {
-      await deleteRole(role.id)
+      await deleteRole(role.id);
     }
-    ElMessage.success('删除成功')
-    await loadRoles()
+    ElMessage.success("删除成功");
+    await loadRoles();
   } catch (error) {
-    if (error === 'cancel') return
-    const message = error instanceof Error ? error.message : '删除失败'
-    ElMessage.error(message)
+    if (error === "cancel") return;
+    const message = error instanceof Error ? error.message : "删除失败";
+    ElMessage.error(message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 /**
  * 格式化日期
  */
 const formatDate = (dateStr: string): string => {
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
+  return new Date(dateStr).toLocaleDateString("zh-CN");
+};
 
 onMounted(() => {
-  loadRoles()
-})
+  loadRoles();
+});
 </script>
 
 <template>
@@ -434,7 +434,8 @@ onMounted(() => {
                 <div class="collapse-title">
                   <span>{{ group.label }}</span>
                   <el-tag size="small" type="info">
-                    {{ getSelectedCountInGroup(group) }} / {{ group.permissions.length }}
+                    {{ getSelectedCountInGroup(group) }} /
+                    {{ group.permissions.length }}
                   </el-tag>
                 </div>
               </template>

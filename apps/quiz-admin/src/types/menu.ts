@@ -4,9 +4,9 @@
 
 /** 菜单项 */
 export interface MenuItem {
-  index: string
-  name: string
-  title: string
-  icon?: string
-  children?: MenuItem[]
+  index: string;
+  name: string;
+  title: string;
+  icon?: string;
+  children?: MenuItem[];
 }
