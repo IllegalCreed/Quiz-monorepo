@@ -9,13 +9,14 @@ import {
   getInfo as getInfoMockAPI,
   logout as logoutMockAPI,
 } from '@/api/mock/account'
+import { login as loginAPI, getInfo as getInfoAPI, logout as logoutAPI } from '@/api/account'
 import { useMockStore } from '@/composables/use-mock-store'
 import { useToken } from '@/composables/use-token'
 import type { LoginForm, AdminUser } from '@/types/account'
 
 export const useAccountStore = defineStore('account', () => {
   const { isMock } = useMockStore()
-  const { token } = useToken()
+  const { token, setToken, clearToken } = useToken()
   const userInfo = ref<AdminUser>()
 
   /**
@@ -25,10 +26,17 @@ export const useAccountStore = defineStore('account', () => {
    */
   const login = async (loginForm: LoginForm): Promise<string> => {
     if (isMock.value) {
-      return await loginMockAPI(loginForm)
+      const mockToken = await loginMockAPI(loginForm)
+      setToken(mockToken)
+      return mockToken
     }
-    // return await loginAPI(loginForm); // 真实 API(后续启用)
-    throw new Error('真实 API 尚未实现')
+    // 真实 API：返回 { token, admin }
+    const response = await loginAPI(loginForm)
+    // 保存 token 到 localStorage
+    setToken(response.token)
+    // 保存用户信息到 store
+    userInfo.value = response.admin
+    return response.token
   }
 
   /**
@@ -47,10 +55,10 @@ export const useAccountStore = defineStore('account', () => {
       return info
     }
 
-    // const info = await getInfoAPI(); // 真实 API(后续启用)
-    // userInfo.value = info;
-    // return info;
-    throw new Error('真实 API 尚未实现')
+    // 真实 API
+    const info = await getInfoAPI()
+    userInfo.value = info
+    return info
   }
 
   /**
@@ -60,8 +68,9 @@ export const useAccountStore = defineStore('account', () => {
     if (isMock.value) {
       await logoutMockAPI(token.value)
     } else {
-      // await logoutAPI(); // 真实 API(后续启用)
+      await logoutAPI()
     }
+    clearToken()
     userInfo.value = undefined
   }
 

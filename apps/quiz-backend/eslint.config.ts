@@ -31,4 +31,12 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+
+  // 测试文件专用规则
+  {
+    files: ["**/__tests__/**/*.spec.ts", "**/*.spec.ts"],
+    rules: {
+      "@typescript-eslint/unbound-method": "off", // Jest 测试中允许 expect(service.method).toHaveBeenCalled()
+    },
+  },
 );

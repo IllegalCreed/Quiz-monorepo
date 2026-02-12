@@ -10,19 +10,24 @@
  */
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getRoles, createRole, updateRole, deleteRole } from '@/api/roles'
+import { getAdminUsers } from '@/api/admins'
 import {
-  getRoles,
-  createRole,
-  updateRole,
-  deleteRole,
+  getRoles as getRolesMock,
+  createRole as createRoleMock,
+  updateRole as updateRoleMock,
+  deleteRole as deleteRoleMock,
 } from '@/api/mock/roles'
-import { getAdminUsers } from '@/api/mock/admins'
+import { getAdminUsers as getAdminUsersMock } from '@/api/mock/admins'
+import { useMockStore } from '@/composables/use-mock-store'
 import {
   ALL_MENU_PERMISSIONS,
   ALL_API_PERMISSION_GROUPS,
   type ApiPermissionGroup,
 } from '@/types/permission'
 import type { Role, CreateRoleForm } from '@/types/role'
+
+const { isMock } = useMockStore()
 
 /** 角色列表 */
 const roles = ref<Role[]>([])
@@ -74,21 +79,19 @@ const loadRoles = async () => {
 
     // 并行加载角色和管理员数据
     const [rolesData, admins] = await Promise.all([
-      getRoles(),
-      getAdminUsers(),
+      isMock.value ? getRolesMock() : getRoles(),
+      isMock.value ? getAdminUsersMock() : getAdminUsers(),
     ])
 
     // 为每个角色计算 adminCount
-    roles.value = rolesData.map(role => ({
+    roles.value = rolesData.map((role) => ({
       ...role,
-      adminCount: admins.filter(admin => admin.roleId === role.id).length,
+      adminCount: admins.filter((admin) => admin.roleId === role.id).length,
     }))
-  }
-  catch (error) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : '加载角色列表失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -104,9 +107,7 @@ const isSystemRole = (role: Role): boolean => {
  * 获取每个 API 权限组已选中的数量
  */
 const getSelectedCountInGroup = (group: ApiPermissionGroup): number => {
-  return group.permissions.filter(p =>
-    selectedApiPermissions.value.includes(p.key),
-  ).length
+  return group.permissions.filter((p) => selectedApiPermissions.value.includes(p.key)).length
 }
 
 /**
@@ -133,16 +134,18 @@ const handleCreate = async () => {
 
   try {
     loading.value = true
-    await createRole(createForm.value)
+    if (isMock.value) {
+      await createRoleMock(createForm.value)
+    } else {
+      await createRole(createForm.value)
+    }
     ElMessage.success('创建成功')
     createDialogVisible.value = false
     await loadRoles()
-  }
-  catch (error) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : '创建角色失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -176,16 +179,18 @@ const handleEdit = async () => {
 
   try {
     loading.value = true
-    await updateRole(currentRole.value.id, editForm.value)
+    if (isMock.value) {
+      await updateRoleMock(currentRole.value.id, editForm.value)
+    } else {
+      await updateRole(currentRole.value.id, editForm.value)
+    }
     ElMessage.success('更新成功')
     editDialogVisible.value = false
     await loadRoles()
-  }
-  catch (error) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : '更新角色失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -203,7 +208,7 @@ const openPermissionDialog = (role: Role) => {
   selectedMenuPermissions.value = [...role.menuPermissions]
   selectedApiPermissions.value = [...role.apiPermissions]
   // 默认展开所有模块
-  activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map(g => g.module)
+  activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module)
   permissionDialogVisible.value = true
 }
 
@@ -215,19 +220,24 @@ const savePermissions = async () => {
 
   try {
     loading.value = true
-    await updateRole(currentRole.value.id, {
-      menuPermissions: selectedMenuPermissions.value,
-      apiPermissions: selectedApiPermissions.value,
-    })
+    if (isMock.value) {
+      await updateRoleMock(currentRole.value.id, {
+        menuPermissions: selectedMenuPermissions.value,
+        apiPermissions: selectedApiPermissions.value,
+      })
+    } else {
+      await updateRole(currentRole.value.id, {
+        menuPermissions: selectedMenuPermissions.value,
+        apiPermissions: selectedApiPermissions.value,
+      })
+    }
     ElMessage.success('权限更新成功')
     permissionDialogVisible.value = false
     await loadRoles()
-  }
-  catch (error) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : '权限更新失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -242,23 +252,23 @@ const handleDelete = async (role: Role) => {
   }
 
   try {
-    await ElMessageBox.confirm(
-      `确定要删除角色 "${role.name}" 吗？此操作不可恢复。`,
-      '警告',
-      { type: 'warning' },
-    )
+    await ElMessageBox.confirm(`确定要删除角色 "${role.name}" 吗？此操作不可恢复。`, '警告', {
+      type: 'warning',
+    })
 
     loading.value = true
-    await deleteRole(role.id)
+    if (isMock.value) {
+      await deleteRoleMock(role.id)
+    } else {
+      await deleteRole(role.id)
+    }
     ElMessage.success('删除成功')
     await loadRoles()
-  }
-  catch (error) {
+  } catch (error) {
     if (error === 'cancel') return
     const message = error instanceof Error ? error.message : '删除失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -279,12 +289,8 @@ onMounted(() => {
   <div class="roles-page">
     <!-- 页头 -->
     <div class="page-header">
-      <h1 class="page-title">
-        角色管理
-      </h1>
-      <el-button type="primary" @click="openCreateDialog">
-        新增角色
-      </el-button>
+      <h1 class="page-title">角色管理</h1>
+      <el-button type="primary" @click="openCreateDialog"> 新增角色 </el-button>
     </div>
 
     <!-- 角色列表 -->
@@ -294,9 +300,7 @@ onMounted(() => {
         <template #default="{ row }">
           <div class="flex items-center gap-2">
             <span>{{ row.name }}</span>
-            <el-tag v-if="isSystemRole(row)" type="danger" size="small">
-              系统角色
-            </el-tag>
+            <el-tag v-if="isSystemRole(row)" type="danger" size="small"> 系统角色 </el-tag>
           </div>
         </template>
       </el-table-column>
@@ -333,12 +337,7 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="操作" width="240" fixed="right">
         <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            :disabled="isSystemRole(row)"
-            @click="openEditDialog(row)"
-          >
+          <el-button link type="primary" :disabled="isSystemRole(row)" @click="openEditDialog(row)">
             编辑
           </el-button>
           <el-button
@@ -349,12 +348,7 @@ onMounted(() => {
           >
             配置权限
           </el-button>
-          <el-button
-            link
-            type="danger"
-            :disabled="isSystemRole(row)"
-            @click="handleDelete(row)"
-          >
+          <el-button link type="danger" :disabled="isSystemRole(row)" @click="handleDelete(row)">
             删除
           </el-button>
         </template>
@@ -378,12 +372,8 @@ onMounted(() => {
       </el-form>
 
       <template #footer>
-        <el-button @click="createDialogVisible = false">
-          取消
-        </el-button>
-        <el-button type="primary" :loading="loading" @click="handleCreate">
-          创建
-        </el-button>
+        <el-button @click="createDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="loading" @click="handleCreate"> 创建 </el-button>
       </template>
     </el-dialog>
 
@@ -404,12 +394,8 @@ onMounted(() => {
       </el-form>
 
       <template #footer>
-        <el-button @click="editDialogVisible = false">
-          取消
-        </el-button>
-        <el-button type="primary" :loading="loading" @click="handleEdit">
-          保存
-        </el-button>
+        <el-button @click="editDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="loading" @click="handleEdit"> 保存 </el-button>
       </template>
     </el-dialog>
 
@@ -427,15 +413,9 @@ onMounted(() => {
 
         <!-- 菜单权限 -->
         <div class="mb-6">
-          <h3 class="section-title">
-            菜单权限
-          </h3>
+          <h3 class="section-title">菜单权限</h3>
           <el-checkbox-group v-model="selectedMenuPermissions">
-            <el-checkbox
-              v-for="perm in ALL_MENU_PERMISSIONS"
-              :key="perm.key"
-              :value="perm.key"
-            >
+            <el-checkbox v-for="perm in ALL_MENU_PERMISSIONS" :key="perm.key" :value="perm.key">
               {{ perm.label }}
             </el-checkbox>
           </el-checkbox-group>
@@ -443,9 +423,7 @@ onMounted(() => {
 
         <!-- API 权限（折叠面板） -->
         <div>
-          <h3 class="section-title">
-            API 权限
-          </h3>
+          <h3 class="section-title">API 权限</h3>
           <el-collapse v-model="activeCollapseNames">
             <el-collapse-item
               v-for="group in ALL_API_PERMISSION_GROUPS"
@@ -476,12 +454,8 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <el-button @click="permissionDialogVisible = false">
-          取消
-        </el-button>
-        <el-button type="primary" :loading="loading" @click="savePermissions">
-          保存
-        </el-button>
+        <el-button @click="permissionDialogVisible = false"> 取消 </el-button>
+        <el-button type="primary" :loading="loading" @click="savePermissions"> 保存 </el-button>
       </template>
     </el-dialog>
   </div>

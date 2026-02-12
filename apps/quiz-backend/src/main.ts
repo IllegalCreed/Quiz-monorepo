@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import * as dotenv from "dotenv";
 import path from "path";
@@ -25,6 +26,15 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix("api");
+
+  // Enable global validation pipe for DTO validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // 自动移除非白名单属性
+      forbidNonWhitelisted: false, // 允许非白名单属性（不报错）
+      transform: true, // 自动转换类型
+    }),
+  );
 
   // Enable CORS for the frontend origin (default to localhost:10000)
   // Allow configuring one or multiple frontend origins (comma-separated). Default to common dev/preview ports.

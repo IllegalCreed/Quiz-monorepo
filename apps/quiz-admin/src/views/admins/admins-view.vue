@@ -13,13 +13,29 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAdminUsers, createAdmin, updateAdminRole, deleteAdmin } from '@/api/mock/admins'
-import { getRoles } from '@/api/mock/roles'
+import {
+  getAdminUsers,
+  createAdmin,
+  updateAdminRole,
+  deleteAdmin,
+  type AdminUserItem,
+} from '@/api/admins'
+import { getRoles } from '@/api/roles'
+import {
+  getAdminUsers as getAdminUsersMock,
+  createAdmin as createAdminMock,
+  updateAdminRole as updateAdminRoleMock,
+  deleteAdmin as deleteAdminMock,
+} from '@/api/mock/admins'
+import { getRoles as getRolesMock } from '@/api/mock/roles'
+import { useMockStore } from '@/composables/use-mock-store'
 import type { AdminUser } from '@/types/account'
 import type { Role } from '@/types/role'
 
-/** 管理员列表 */
-const admins = ref<AdminUser[]>([])
+const { isMock } = useMockStore()
+
+/** 管理员列表（支持 Mock 和真实 API 的类型） */
+const admins = ref<(AdminUserItem | AdminUser)[]>([])
 
 /** 角色列表 */
 const roles = ref<Role[]>([])
@@ -34,7 +50,7 @@ const createDialogVisible = ref(false)
 const roleDialogVisible = ref(false)
 
 /** 当前编辑的管理员 */
-const currentAdmin = ref<AdminUser | null>(null)
+const currentAdmin = ref<AdminUserItem | null>(null)
 
 /** 选中的角色 ID */
 const selectedRoleId = ref<number | string>('')
@@ -42,6 +58,7 @@ const selectedRoleId = ref<number | string>('')
 /** 新增管理员表单 */
 const createForm = ref({
   username: '',
+  password: '',
   nickname: '',
   roleId: '' as number | string,
 })
@@ -50,16 +67,36 @@ const createForm = ref({
  * 可分配的角色列表（排除超级管理员角色）
  * 超级管理员角色仅系统内置，不可分配给新建管理员
  */
-const assignableRoles = computed(() =>
-  roles.value.filter((r) => !r.isSystem),
-)
+const assignableRoles = computed(() => roles.value.filter((r) => !r.isSystem))
+
+/**
+ * 当前管理员的角色（用于显示权限）
+ */
+const currentAdminRole = computed(() => {
+  if (!currentAdmin.value) return null
+  return roles.value.find((r) => r.id === currentAdmin.value!.roleId)
+})
+
+/**
+ * 当前管理员的菜单权限（从角色继承）
+ */
+const currentAdminMenuPermissions = computed(() => {
+  return currentAdminRole.value?.menuPermissions || []
+})
+
+/**
+ * 当前管理员的API权限（从角色继承）
+ */
+const currentAdminApiPermissions = computed(() => {
+  return currentAdminRole.value?.apiPermissions || []
+})
 
 /**
  * 加载角色列表
  */
 const loadRoles = async () => {
   try {
-    roles.value = await getRoles()
+    roles.value = isMock.value ? await getRolesMock() : await getRoles()
   } catch (error) {
     const message = error instanceof Error ? error.message : '加载角色列表失败'
     ElMessage.error(message)
@@ -72,7 +109,7 @@ const loadRoles = async () => {
 const loadAdmins = async () => {
   try {
     loading.value = true
-    admins.value = await getAdminUsers()
+    admins.value = isMock.value ? await getAdminUsersMock() : await getAdminUsers()
   } catch (error) {
     const message = error instanceof Error ? error.message : '加载管理员列表失败'
     ElMessage.error(message)
@@ -84,8 +121,8 @@ const loadAdmins = async () => {
 /**
  * 判断是否为超级管理员（受保护，不可删除/修改角色）
  */
-const isSuperAdmin = (admin: AdminUser): boolean => {
-  return admin.role === 'super_admin'
+const isSuperAdmin = (admin: AdminUserItem): boolean => {
+  return admin.roleId === 1 // 角色 ID 为 1 的是超级管理员
 }
 
 /**
@@ -94,6 +131,7 @@ const isSuperAdmin = (admin: AdminUser): boolean => {
 const openCreateDialog = () => {
   createForm.value = {
     username: '',
+    password: '',
     nickname: '',
     roleId: assignableRoles.value[0]?.id || '',
   }
@@ -104,8 +142,8 @@ const openCreateDialog = () => {
  * 创建管理员
  */
 const handleCreate = async () => {
-  if (!createForm.value.username || !createForm.value.nickname) {
-    ElMessage.warning('请填写用户名和昵称')
+  if (!createForm.value.username || !createForm.value.password || !createForm.value.nickname) {
+    ElMessage.warning('请填写完整信息')
     return
   }
 
@@ -116,7 +154,17 @@ const handleCreate = async () => {
 
   try {
     loading.value = true
-    await createAdmin(createForm.value)
+    if (isMock.value) {
+      await createAdminMock({
+        ...createForm.value,
+        roleId: Number(createForm.value.roleId),
+      })
+    } else {
+      await createAdmin({
+        ...createForm.value,
+        roleId: Number(createForm.value.roleId),
+      })
+    }
     ElMessage.success('创建成功')
     createDialogVisible.value = false
     await loadAdmins()
@@ -131,7 +179,7 @@ const handleCreate = async () => {
 /**
  * 打开角色分配对话框
  */
-const openRoleDialog = (admin: AdminUser) => {
+const openRoleDialog = (admin: AdminUserItem) => {
   if (isSuperAdmin(admin)) {
     ElMessage.warning('超级管理员的角色不可修改')
     return
@@ -155,7 +203,11 @@ const saveRole = async () => {
 
   try {
     loading.value = true
-    await updateAdminRole(currentAdmin.value.id, selectedRoleId.value)
+    if (isMock.value) {
+      await updateAdminRoleMock(currentAdmin.value.id, Number(selectedRoleId.value))
+    } else {
+      await updateAdminRole(currentAdmin.value.id, { roleId: Number(selectedRoleId.value) })
+    }
     ElMessage.success('角色更新成功')
     roleDialogVisible.value = false
     await loadAdmins()
@@ -170,7 +222,7 @@ const saveRole = async () => {
 /**
  * 删除管理员
  */
-const handleDelete = async (admin: AdminUser) => {
+const handleDelete = async (admin: AdminUserItem) => {
   if (isSuperAdmin(admin)) {
     ElMessage.warning('超级管理员不可被删除')
     return
@@ -184,7 +236,11 @@ const handleDelete = async (admin: AdminUser) => {
     )
 
     loading.value = true
-    await deleteAdmin(admin.id)
+    if (isMock.value) {
+      await deleteAdminMock(admin.id)
+    } else {
+      await deleteAdmin(admin.id)
+    }
     ElMessage.success('删除成功')
     await loadAdmins()
   } catch (error) {
@@ -242,12 +298,7 @@ onMounted(async () => {
       </el-table-column>
       <el-table-column label="操作" width="180">
         <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            :disabled="isSuperAdmin(row)"
-            @click="openRoleDialog(row)"
-          >
+          <el-button link type="primary" :disabled="isSuperAdmin(row)" @click="openRoleDialog(row)">
             分配角色
           </el-button>
           <el-button link type="danger" :disabled="isSuperAdmin(row)" @click="handleDelete(row)">
@@ -330,7 +381,7 @@ onMounted(async () => {
               <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
               <div class="mt-1">
                 <el-tag
-                  v-for="perm in currentAdmin.menuPermissions"
+                  v-for="perm in currentAdminMenuPermissions"
                   :key="perm"
                   size="small"
                   class="mr-1 mb-1"
@@ -341,11 +392,11 @@ onMounted(async () => {
             </div>
             <div>
               <span class="text-xs text-gray-500 dark:text-gray-400">
-                API 权限（{{ currentAdmin.apiPermissions.length }} 个）：
+                API 权限（{{ currentAdminApiPermissions.length }} 个）：
               </span>
               <div class="mt-1 max-h-40 overflow-y-auto">
                 <el-tag
-                  v-for="perm in currentAdmin.apiPermissions"
+                  v-for="perm in currentAdminApiPermissions"
                   :key="perm"
                   size="small"
                   class="mr-1 mb-1"

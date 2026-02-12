@@ -2,6 +2,7 @@ import path from "path";
 import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { seedAdmin } from "./data/seed-admin";
 
 // db-utils focuses only on data operations; caller must load dotenv or set DATABASE_URL.
 // If DATABASE_URL isn't set, allow constructing from discrete parts; otherwise, throw.
@@ -84,6 +85,10 @@ export async function seedSystem() {
   ensureNotProd();
   console.log("seedSystem: beginning (idempotent)");
 
+  // 1. 插入管理员系统种子数据
+  await seedAdmin(prisma);
+
+  // 2. 插入基础题目数据
   const exists = await prisma.question.findFirst({
     where: { stem: "Hello World - 基础题" },
   });
@@ -212,6 +217,19 @@ export async function resetTest() {
 
   console.log("resetTest: wiping and reseeding test data");
 
+  // 1. 清除管理员系统数据
+  try {
+    await prisma.admin?.deleteMany();
+  } catch {
+    // ignore if model not present
+  }
+  try {
+    await prisma.role?.deleteMany();
+  } catch {
+    // ignore if model not present
+  }
+
+  // 2. 清除题目数据
   try {
     await prisma.answerAttempt?.deleteMany();
   } catch {
@@ -220,6 +238,7 @@ export async function resetTest() {
   await prisma.option.deleteMany();
   await prisma.question.deleteMany();
 
+  // 3. 重新插入种子数据
   await seedSystem();
   await seedTest();
   console.log("resetTest: finished");

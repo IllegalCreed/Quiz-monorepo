@@ -12,6 +12,84 @@
 
 ## 已完成功能
 
+### 后端 API 实施（2026-02-12 完成）
+
+**✅ Phase 1: 数据库基础**
+
+- Admin/Role 数据模型设计与实现（分表策略）
+- 完整迁移 SQL（DROP + CREATE，支持开发阶段快速迭代）
+- 种子数据脚本（3 角色 + 2 管理员，bcrypt 加密，支持密码更新）
+
+**✅ Phase 2: 认证体系**
+
+- JWT 认证完整实现（7 天过期，Passport Strategy）
+- Guards 系统（JwtAuthGuard + PermissionGuard，支持通配符）
+- 装饰器系统（@CurrentAdmin, @RequirePermission, @Public）
+- 全局过滤器和拦截器（统一响应格式 + 异常处理）
+
+**✅ Phase 3: 业务模块**
+
+- **Permissions 模块**：静态权限查询（6 个菜单权限 + 完整 API 权限列表）
+- **Roles 模块**：完整 CRUD + 保护规则（超管角色/系统角色/使用中角色保护）
+- **Admins 模块**：完整 CRUD + 保护规则（超管账号保护 + 密码加密 + 密码字段移除）
+
+**✅ Phase 4: 后端单元测试（2026-02-12 完成）**
+
+- **测试文件**：10 个测试文件，90 个测试用例全部通过
+- **覆盖率**：Admins 86%，Roles 84%，Auth Guards 95%，Permissions 76%
+- **测试覆盖**：
+  - Auth 模块：登录逻辑、JWT 验证、权限守卫（通配符支持）
+  - 业务模块：完整 CRUD + 业务规则（超管保护、系统角色保护）
+  - 密码处理：bcrypt 加密、字段移除、角色兼容性
+
+**✅ Phase 5: E2E 测试（2026-02-12 完成）**
+
+- **测试文件**：4 个按模块组织的 Cypress 测试文件
+  - `login.cy.ts` - 登录流程（9 个测试场景）
+  - `admins.cy.ts` - 管理员管理（8 个测试场景）
+  - `roles.cy.ts` - 角色管理（10 个测试场景）
+  - `permissions.cy.ts` - 权限查询（9 个测试场景）
+- **测试策略**：
+  - 连接真实后端 API（http://localhost:10020）
+  - 每个测试前自动重置数据库（调用 /api/test/reset）
+  - 测试完整用户流程（登录 → CRUD → 权限验证 → 登出）
+- **测试覆盖**：
+  - 登录成功/失败、权限加载、菜单过滤、登出
+  - 管理员 CRUD、超管保护、权限验证
+  - 角色 CRUD、系统角色保护、使用中角色检查
+  - 权限查询、API 权限结构验证、权限选择器
+
+**已实现的后端接口（15 个）**：
+
+| 模块            | 端点                           | 方法   | 权限               | 状态 |
+| --------------- | ------------------------------ | ------ | ------------------ | ---- |
+| **Auth**        | `/api/admin/auth/login`        | POST   | Public             | ✅   |
+|                 | `/api/admin/auth/info`         | GET    | JWT                | ✅   |
+|                 | `/api/admin/auth/logout`       | POST   | JWT                | ✅   |
+| **Admins**      | `/api/admin/admins`            | GET    | `admins:list`      | ✅   |
+|                 | `/api/admin/admins/:id`        | GET    | `admins:list`      | ✅   |
+|                 | `/api/admin/admins`            | POST   | `admins:create`    | ✅   |
+|                 | `/api/admin/admins/:id/role`   | PATCH  | `admins:update`    | ✅   |
+|                 | `/api/admin/admins/:id`        | DELETE | `admins:delete`    | ✅   |
+| **Roles**       | `/api/admin/roles`             | GET    | `roles:list`       | ✅   |
+|                 | `/api/admin/roles/:id`         | GET    | `roles:list`       | ✅   |
+|                 | `/api/admin/roles`             | POST   | `roles:create`     | ✅   |
+|                 | `/api/admin/roles/:id`         | PUT    | `roles:update`     | ✅   |
+|                 | `/api/admin/roles/:id`         | DELETE | `roles:delete`     | ✅   |
+| **Permissions** | `/api/admin/permissions/menus` | GET    | `permissions:list` | ✅   |
+|                 | `/api/admin/permissions/apis`  | GET    | `permissions:list` | ✅   |
+
+**测试账号（已更新）**：
+
+- 超级管理员：`super_admin` / `super_admin`（全部权限）
+- 普通管理员：`admin` / `admin123`（仅 users:\* 权限）
+
+**测试验证**：
+
+- ✅ 所有接口手动测试通过（认证、权限控制、CRUD、业务规则保护）
+- ✅ 代码质量检查通过（ESLint + TypeScript + Lint）
+- ✅ 权限控制验证（超管全权限、普通管理员权限隔离、403/401 错误处理）
+
 ### 核心架构（2026-02-11 前完成）
 
 - ✅ Vite/UnoCSS/Element Plus 配置，SCSS + 紫色主题
@@ -143,26 +221,16 @@ import 'virtual:uno.css' // UnoCSS（最后导入，最高优先级）
 
 ---
 
-### P2: 真实 API 对接 ⭐⭐
+### P2: 前端对接真实 API ⭐⭐
 
-将 Mock API 替换为真实后端接口。
+**✅ 后端接口已完成**（2026-02-12）：
 
-**需要新增的后端接口**：
+- Auth: 登录、获取信息、登出
+- Admins: 列表、详情、创建、更新角色、删除
+- Roles: 列表、详情、创建、更新、删除
+- Permissions: 菜单权限、API 权限
 
-| 接口                                | 方法       | 功能                                |
-| ----------------------------------- | ---------- | ----------------------------------- |
-| `/api/admin/login`                  | POST       | 管理员登录，返回 token              |
-| `/api/admin/info`                   | GET        | 获取当前管理员信息 + 权限           |
-| `/api/admin/logout`                 | POST       | 登出                                |
-| `/api/admin/users`                  | GET/POST   | App 用户列表/创建                   |
-| `/api/admin/users/:id`              | PUT/DELETE | 更新/删除 App 用户                  |
-| `/api/admin/admins`                 | GET/POST   | 管理员列表/创建（super_admin only） |
-| `/api/admin/admins/:id`             | PUT/DELETE | 更新/删除管理员                     |
-| `/api/admin/admins/:id/permissions` | PUT        | 更新管理员权限                      |
-| `/api/admin/questions`              | GET/POST   | 题目列表/创建                       |
-| `/api/admin/questions/:id`          | PUT/DELETE | 更新/删除题目                       |
-
-**前端改造**：
+**⏳ 前端对接（待完成）**：
 
 - 新增 `src/api/` 真实 API 调用（account.ts/users.ts/admins.ts/questions.ts）
 - 配置 axios 实例（baseURL/timeout/interceptors）
@@ -170,25 +238,12 @@ import 'virtual:uno.css' // UnoCSS（最后导入，最高优先级）
 - 响应拦截器：401 自动跳转登录，统一错误处理
 - 根据 `VITE_MOCK` 环境变量切换 mock/真实 API
 
----
+**已完成的 E2E 测试可用于验证对接**：
 
-### P3: E2E 测试补充 ⭐
-
-为 admin 添加完整的 E2E 测试覆盖。
-
-**测试场景**：
-
-- 登录流程（正确/错误密码）
-- 权限验证（普通管理员访问 admins 页面应被拦截）
-- 用户管理 CRUD
-- 管理员管理 CRUD（超级管理员）
-- Tab 历史功能（打开/关闭/切换）
-
-**技术方案**：
-
-- 使用 Cypress（已安装）
-- 参考 quiz-app 的 E2E 测试结构
-- 测试端口：10060（`.env.test.local`）
+- `cypress/e2e/login.cy.ts` - 登录流程验证
+- `cypress/e2e/admins.cy.ts` - 管理员管理验证
+- `cypress/e2e/roles.cy.ts` - 角色管理验证
+- `cypress/e2e/permissions.cy.ts` - 权限查询验证
 
 ---
 

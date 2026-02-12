@@ -7,7 +7,7 @@
  */
 export interface Role {
   /** 角色 ID */
-  id: number | string
+  id: number
   /** 角色名称 */
   name: string
   /** 角色描述 */
@@ -24,6 +24,10 @@ export interface Role {
   createdAt: string
   /** 更新时间 */
   updatedAt: string
+  /** 内部字段：管理员数量统计 */
+  _count?: {
+    admins: number
+  }
 }
 
 /**

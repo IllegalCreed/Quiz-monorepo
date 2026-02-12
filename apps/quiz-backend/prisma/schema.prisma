@@ -6,6 +6,50 @@ datasource db {
   provider = "mysql"
 }
 
+// ============================================
+// 管理员与权限模型
+// ============================================
+
+/// 管理员表
+model Admin {
+  id        Int         @id @default(autoincrement())
+  username  String      @unique
+  password  String      // bcrypt 加密
+  nickname  String
+  roleId    Int
+  role      Role        @relation(fields: [roleId], references: [id])
+  status    AdminStatus @default(ACTIVE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([status, roleId])
+}
+
+/// 管理员状态枚举
+enum AdminStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// 角色表
+model Role {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  description      String
+  isSystem         Boolean  @default(false) // 系统内置角色不可删除
+  menuPermissions  Json     // string[] - 菜单权限数组
+  apiPermissions   Json     // string[] - API 权限数组
+  admins           Admin[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isSystem])
+}
+
+// ============================================
+// 题目模型（保留现有结构）
+// ============================================
+
 model Question {
   id          Int      @id @default(autoincrement())
   stem        String

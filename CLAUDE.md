@@ -95,7 +95,7 @@ pnpm -C apps/quiz-admin dev  # 管理后台 (10050)
 
 # 代码质量检查
 pnpm run check        # 快速检查：lint + type-check + test:unit (~5s)
-pnpm run check:all    # 完整检查：包含 E2E 测试 (~5min)
+pnpm run check:e2e    # 完整检查：包含 E2E 测试 (~5min)
 pnpm lint:fix         # 自动修复代码格式问题
 
 # 数据库管理（后端）
@@ -138,7 +138,7 @@ pnpm run db:reset:test          # 重置测试库（清空+插入）
 
 ```bash
 pnpm run check                  # 快速检查（日常使用）
-pnpm run check:all              # 完整检查（提交 PR 前）
+pnpm run check:e2e              # 完整检查（提交 PR 前）
 ```
 
 更多脚本说明见 [apps/quiz-backend/scripts/README.md](apps/quiz-backend/scripts/README.md)
