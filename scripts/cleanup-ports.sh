@@ -7,8 +7,10 @@
 # 严格模式：当任一命令失败或使用未定义变量时脚本会退出
 set -euo pipefail
 
-# 默认要清理的端口列表（quiz-app、后端、UI、quiz-admin）
-DEFAULT_PORTS="10010 10020 10040 10060"
+# 默认要清理的端口列表（开发 + 预览端口）
+# Dev 端口: 10000(quiz-app), 10020(backend), 10030(UI Storybook), 10050(quiz-admin)
+# Preview 端口: 10010(quiz-app), 10060(quiz-admin)
+DEFAULT_PORTS="10000 10010 10020 10030 10050 10060"
 PORTS="${1:-$DEFAULT_PORTS}"
 
 # 优雅关闭的等待时间（秒）
