@@ -67,9 +67,7 @@ let nextId = 4
  * 从角色继承权限（核心逻辑）
  * 根据管理员的 roleId 查找角色，并继承角色的权限
  */
-const inheritPermissionsFromRole = async (
-  admin: AdminUserStorage,
-): Promise<AdminUser> => {
+const inheritPermissionsFromRole = async (admin: AdminUserStorage): Promise<AdminUser> => {
   // 获取所有角色
   const roles = await getRoles()
 
@@ -151,10 +149,7 @@ export const createAdmin = async (data: {
  * @param id 管理员 ID
  * @param roleId 新的角色 ID
  */
-export const updateAdminRole = async (
-  id: number,
-  roleId: number | string,
-): Promise<void> => {
+export const updateAdminRole = async (id: number, roleId: number | string): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   const admin = mockAdmins.find((u) => u.id === id)

@@ -41,12 +41,10 @@ const loadData = async () => {
     menuPermissions.value = menus
     apiPermissionGroups.value = apis
     permissionRouteMapping.value = mapping
-  }
-  catch (error) {
+  } catch (error) {
     const message = error instanceof Error ? error.message : '加载权限数据失败'
     ElMessage.error(message)
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -55,10 +53,7 @@ const loadData = async () => {
  * 统计 API 权限总数
  */
 const totalApiPermissions = () => {
-  return apiPermissionGroups.value.reduce(
-    (sum, group) => sum + group.permissions.length,
-    0,
-  )
+  return apiPermissionGroups.value.reduce((sum, group) => sum + group.permissions.length, 0)
 }
 
 /**
@@ -80,12 +75,8 @@ onMounted(() => {
   <div class="permissions-page">
     <!-- 页头 -->
     <div class="page-header">
-      <h1 class="page-title">
-        权限管理
-      </h1>
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-        权限是代码定义的，不支持动态修改
-      </div>
+      <h1 class="page-title">权限管理</h1>
+      <div class="text-sm text-gray-500 dark:text-gray-400">权限是代码定义的，不支持动态修改</div>
     </div>
 
     <!-- Tab 导航 -->
@@ -105,12 +96,7 @@ onMounted(() => {
             <el-table-column prop="label" label="权限名称" width="140" />
             <el-table-column label="对应路由" min-width="200">
               <template #default="{ row }">
-                <el-tag
-                  v-for="route in row.routes"
-                  :key="route"
-                  size="small"
-                  class="mr-1"
-                >
+                <el-tag v-for="route in row.routes" :key="route" size="small" class="mr-1">
                   {{ route }}
                 </el-tag>
                 <span v-if="row.routes.length === 0" class="text-gray-400">-</span>
@@ -135,17 +121,11 @@ onMounted(() => {
             <strong>{{ apiPermissionGroups.length }}</strong> 个模块，控制按钮和接口的访问
           </div>
           <div class="space-y-4">
-            <el-card
-              v-for="group in apiPermissionGroups"
-              :key="group.module"
-              shadow="never"
-            >
+            <el-card v-for="group in apiPermissionGroups" :key="group.module" shadow="never">
               <template #header>
                 <div class="flex items-center justify-between">
                   <span class="text-lg font-semibold">{{ group.label }}</span>
-                  <el-tag type="info">
-                    {{ group.permissions.length }} 个权限
-                  </el-tag>
+                  <el-tag type="info"> {{ group.permissions.length }} 个权限 </el-tag>
                 </div>
               </template>
               <el-table :data="group.permissions" :show-header="false">

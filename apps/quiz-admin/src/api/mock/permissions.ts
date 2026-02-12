@@ -30,9 +30,7 @@ export const getApiPermissions = async (): Promise<ApiPermissionGroup[]> => {
 /**
  * 权限-路由映射
  */
-export const getPermissionRouteMapping = async (): Promise<
-  Record<string, string[]>
-> => {
+export const getPermissionRouteMapping = async (): Promise<Record<string, string[]>> => {
   // 模拟网络延迟
   await new Promise((resolve) => setTimeout(resolve, 200))
   return {

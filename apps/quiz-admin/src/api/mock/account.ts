@@ -56,9 +56,7 @@ const mockAdmins: AdminUserStorage[] = [
  * 从角色继承权限（核心逻辑）
  * 根据管理员的 roleId 查找角色，并继承角色的权限
  */
-const inheritPermissionsFromRole = async (
-  admin: AdminUserStorage,
-): Promise<AdminUser> => {
+const inheritPermissionsFromRole = async (admin: AdminUserStorage): Promise<AdminUser> => {
   // 获取所有角色
   const roles = await getRoles()
 

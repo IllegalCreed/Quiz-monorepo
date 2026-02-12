@@ -43,13 +43,7 @@ const mockRoles: Role[] = [
     description: '管理 App 用户',
     isSystem: false,
     menuPermissions: ['dashboard', 'users'],
-    apiPermissions: [
-      'users:list',
-      'users:create',
-      'users:update',
-      'users:status',
-      'users:delete',
-    ],
+    apiPermissions: ['users:list', 'users:create', 'users:update', 'users:status', 'users:delete'],
     createdAt: '2024-02-15T00:00:00.000Z',
     updatedAt: '2024-02-15T00:00:00.000Z',
   },
@@ -112,10 +106,7 @@ export const createRole = async (data: CreateRoleForm): Promise<Role> => {
 /**
  * 更新角色
  */
-export const updateRole = async (
-  id: number | string,
-  data: UpdateRoleForm,
-): Promise<void> => {
+export const updateRole = async (id: number | string, data: UpdateRoleForm): Promise<void> => {
   // 模拟网络延迟
   await new Promise((resolve) => setTimeout(resolve, 500))
 
