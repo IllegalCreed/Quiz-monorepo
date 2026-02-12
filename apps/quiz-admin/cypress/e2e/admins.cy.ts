@@ -3,189 +3,189 @@
  * 测试管理员的列表、创建、修改角色、删除功能
  */
 
-describe('管理员管理', () => {
-  const BACKEND_URL = 'http://localhost:10020'
-  const RESET_SECRET = 'test-reset-secret-2024'
+describe("管理员管理", () => {
+  const BACKEND_URL = "http://localhost:10020";
+  const RESET_SECRET = "test-reset-secret-2024";
 
   beforeEach(() => {
     // 重置测试数据库
     cy.request({
-      method: 'POST',
+      method: "POST",
       url: `${BACKEND_URL}/api/test/reset`,
-      headers: { 'x-reset-secret': RESET_SECRET },
-    })
+      headers: { "x-reset-secret": RESET_SECRET },
+    });
 
     // 清除 localStorage
-    cy.clearLocalStorage()
+    cy.clearLocalStorage();
 
     // 使用超级管理员登录
-    cy.visit('/login')
-    cy.get('input[placeholder="用户名"]').type('super_admin')
-    cy.get('input[placeholder="密码"]').type('super_admin')
-    cy.contains('button', '登录').click()
-    cy.url().should('include', '/home/dashboard')
+    cy.visit("/login");
+    cy.get('input[placeholder="用户名"]').type("super_admin");
+    cy.get('input[placeholder="密码"]').type("super_admin");
+    cy.contains("button", "登录").click();
+    cy.url().should("include", "/home/dashboard");
 
     // 导航到管理员管理页面
-    cy.contains('.menu-item', '管理员管理').click()
-    cy.url().should('include', '/home/admins')
-  })
+    cy.contains(".menu-item", "管理员管理").click();
+    cy.url().should("include", "/home/admins");
+  });
 
-  it('管理员列表应正常加载', () => {
+  it("管理员列表应正常加载", () => {
     // 验证页面标题
-    cy.contains('h1', '管理员管理').should('be.visible')
+    cy.contains("h1", "管理员管理").should("be.visible");
 
     // 验证表格存在
-    cy.get('.el-table').should('be.visible')
+    cy.get(".el-table").should("be.visible");
 
     // 验证默认的两个管理员存在
-    cy.contains('td', 'super_admin').should('be.visible')
-    cy.contains('td', 'admin').should('be.visible')
+    cy.contains("td", "super_admin").should("be.visible");
+    cy.contains("td", "admin").should("be.visible");
 
     // 验证创建按钮存在
-    cy.contains('button', '新增管理员').should('be.visible')
-  })
+    cy.contains("button", "新增管理员").should("be.visible");
+  });
 
-  it('应该能够创建新管理员', () => {
+  it("应该能够创建新管理员", () => {
     // 点击新增按钮
-    cy.contains('button', '新增管理员').click()
+    cy.contains("button", "新增管理员").click();
 
     // 验证对话框打开
-    cy.get('.el-dialog').should('be.visible')
-    cy.contains('.el-dialog__title', '新增管理员').should('be.visible')
+    cy.get(".el-dialog").should("be.visible");
+    cy.contains(".el-dialog__title", "新增管理员").should("be.visible");
 
     // 填写表单
-    cy.get('.el-dialog input[placeholder="请输入用户名"]').type('test_admin')
-    cy.get('.el-dialog input[placeholder="请输入密码"]').type('test123456')
-    cy.get('.el-dialog input[placeholder="请输入昵称"]').type('测试管理员')
+    cy.get('.el-dialog input[placeholder="请输入用户名"]').type("test_admin");
+    cy.get('.el-dialog input[placeholder="请输入密码"]').type("test123456");
+    cy.get('.el-dialog input[placeholder="请输入昵称"]').type("测试管理员");
 
     // 选择角色
-    cy.get('.el-dialog .el-select').click()
-    cy.contains('.el-select-dropdown__item', '用户管理员').click()
+    cy.get(".el-dialog .el-select").click();
+    cy.contains(".el-select-dropdown__item", "用户管理员").click();
 
     // 提交表单
-    cy.contains('.el-dialog button', '确定').click()
+    cy.contains(".el-dialog button", "确定").click();
 
     // 验证成功提示
-    cy.contains('.el-message', '创建成功').should('be.visible')
+    cy.contains(".el-message", "创建成功").should("be.visible");
 
     // 验证对话框关闭
-    cy.get('.el-dialog').should('not.exist')
+    cy.get(".el-dialog").should("not.exist");
 
     // 验证新管理员出现在列表中
-    cy.contains('td', 'test_admin').should('be.visible')
-    cy.contains('td', '测试管理员').should('be.visible')
-    cy.contains('td', '用户管理员').should('be.visible')
-  })
+    cy.contains("td", "test_admin").should("be.visible");
+    cy.contains("td", "测试管理员").should("be.visible");
+    cy.contains("td", "用户管理员").should("be.visible");
+  });
 
-  it('重复的用户名应提示错误', () => {
+  it("重复的用户名应提示错误", () => {
     // 点击新增按钮
-    cy.contains('button', '新增管理员').click()
+    cy.contains("button", "新增管理员").click();
 
     // 填写已存在的用户名
-    cy.get('.el-dialog input[placeholder="请输入用户名"]').type('super_admin')
-    cy.get('.el-dialog input[placeholder="请输入密码"]').type('password123')
-    cy.get('.el-dialog input[placeholder="请输入昵称"]').type('重复用户')
+    cy.get('.el-dialog input[placeholder="请输入用户名"]').type("super_admin");
+    cy.get('.el-dialog input[placeholder="请输入密码"]').type("password123");
+    cy.get('.el-dialog input[placeholder="请输入昵称"]').type("重复用户");
 
     // 选择角色
-    cy.get('.el-dialog .el-select').click()
-    cy.contains('.el-select-dropdown__item', '用户管理员').click()
+    cy.get(".el-dialog .el-select").click();
+    cy.contains(".el-select-dropdown__item", "用户管理员").click();
 
     // 提交表单
-    cy.contains('.el-dialog button', '确定').click()
+    cy.contains(".el-dialog button", "确定").click();
 
     // 应该显示错误提示
-    cy.contains('.el-message', '已存在').should('be.visible')
+    cy.contains(".el-message", "已存在").should("be.visible");
 
     // 对话框应该仍然打开
-    cy.get('.el-dialog').should('be.visible')
-  })
+    cy.get(".el-dialog").should("be.visible");
+  });
 
-  it('应该能够修改管理员角色', () => {
+  it("应该能够修改管理员角色", () => {
     // 找到普通管理员行并点击编辑按钮
-    cy.contains('tr', 'admin').within(() => {
-      cy.contains('button', '编辑').click()
-    })
+    cy.contains("tr", "admin").within(() => {
+      cy.contains("button", "编辑").click();
+    });
 
     // 验证对话框打开
-    cy.get('.el-dialog').should('be.visible')
-    cy.contains('.el-dialog__title', '编辑管理员').should('be.visible')
+    cy.get(".el-dialog").should("be.visible");
+    cy.contains(".el-dialog__title", "编辑管理员").should("be.visible");
 
     // 修改角色
-    cy.get('.el-dialog .el-select').click()
-    cy.contains('.el-select-dropdown__item', '内容管理员').click()
+    cy.get(".el-dialog .el-select").click();
+    cy.contains(".el-select-dropdown__item", "内容管理员").click();
 
     // 提交
-    cy.contains('.el-dialog button', '确定').click()
+    cy.contains(".el-dialog button", "确定").click();
 
     // 验证成功提示
-    cy.contains('.el-message', '更新成功').should('be.visible')
+    cy.contains(".el-message", "更新成功").should("be.visible");
 
     // 验证角色已更新
-    cy.contains('tr', 'admin').within(() => {
-      cy.contains('td', '内容管理员').should('be.visible')
-    })
-  })
+    cy.contains("tr", "admin").within(() => {
+      cy.contains("td", "内容管理员").should("be.visible");
+    });
+  });
 
-  it('超级管理员账号的角色不可修改', () => {
+  it("超级管理员账号的角色不可修改", () => {
     // 找到超级管理员行
-    cy.contains('tr', 'super_admin').within(() => {
+    cy.contains("tr", "super_admin").within(() => {
       // 编辑按钮应该被禁用或不存在
-      cy.get('button').contains('编辑').should('be.disabled')
-    })
-  })
+      cy.get("button").contains("编辑").should("be.disabled");
+    });
+  });
 
-  it('应该能够删除普通管理员', () => {
+  it("应该能够删除普通管理员", () => {
     // 先创建一个管理员用于删除
-    cy.contains('button', '新增管理员').click()
-    cy.get('.el-dialog input[placeholder="请输入用户名"]').type('to_delete')
-    cy.get('.el-dialog input[placeholder="请输入密码"]').type('password123')
-    cy.get('.el-dialog input[placeholder="请输入昵称"]').type('待删除')
-    cy.get('.el-dialog .el-select').click()
-    cy.contains('.el-select-dropdown__item', '用户管理员').click()
-    cy.contains('.el-dialog button', '确定').click()
-    cy.contains('.el-message', '创建成功').should('be.visible')
+    cy.contains("button", "新增管理员").click();
+    cy.get('.el-dialog input[placeholder="请输入用户名"]').type("to_delete");
+    cy.get('.el-dialog input[placeholder="请输入密码"]').type("password123");
+    cy.get('.el-dialog input[placeholder="请输入昵称"]').type("待删除");
+    cy.get(".el-dialog .el-select").click();
+    cy.contains(".el-select-dropdown__item", "用户管理员").click();
+    cy.contains(".el-dialog button", "确定").click();
+    cy.contains(".el-message", "创建成功").should("be.visible");
 
     // 找到新创建的管理员并删除
-    cy.contains('tr', 'to_delete').within(() => {
-      cy.contains('button', '删除').click()
-    })
+    cy.contains("tr", "to_delete").within(() => {
+      cy.contains("button", "删除").click();
+    });
 
     // 确认删除
-    cy.contains('.el-message-box', '确定删除').should('be.visible')
-    cy.contains('.el-message-box button', '确定').click()
+    cy.contains(".el-message-box", "确定删除").should("be.visible");
+    cy.contains(".el-message-box button", "确定").click();
 
     // 验证成功提示
-    cy.contains('.el-message', '删除成功').should('be.visible')
+    cy.contains(".el-message", "删除成功").should("be.visible");
 
     // 验证管理员已从列表中移除
-    cy.contains('td', 'to_delete').should('not.exist')
-  })
+    cy.contains("td", "to_delete").should("not.exist");
+  });
 
-  it('超级管理员账号不可删除', () => {
+  it("超级管理员账号不可删除", () => {
     // 找到超级管理员行
-    cy.contains('tr', 'super_admin').within(() => {
+    cy.contains("tr", "super_admin").within(() => {
       // 删除按钮应该被禁用或不存在
-      cy.get('button').contains('删除').should('be.disabled')
-    })
-  })
+      cy.get("button").contains("删除").should("be.disabled");
+    });
+  });
 
-  it('普通管理员无权访问管理员管理页面', () => {
+  it("普通管理员无权访问管理员管理页面", () => {
     // 登出
-    cy.get('.user-dropdown').click()
-    cy.contains('.dropdown-item', '退出登录').click()
+    cy.get(".user-dropdown").click();
+    cy.contains(".dropdown-item", "退出登录").click();
 
     // 使用普通管理员登录
-    cy.get('input[placeholder="用户名"]').type('admin')
-    cy.get('input[placeholder="密码"]').type('admin123')
-    cy.contains('button', '登录').click()
-    cy.url().should('include', '/home/dashboard')
+    cy.get('input[placeholder="用户名"]').type("admin");
+    cy.get('input[placeholder="密码"]').type("admin123");
+    cy.contains("button", "登录").click();
+    cy.url().should("include", "/home/dashboard");
 
     // 尝试直接访问管理员管理页面
-    cy.visit('/home/admins')
+    cy.visit("/home/admins");
 
     // 应该被重定向或显示无权限提示
-    cy.url().should('not.include', '/home/admins')
+    cy.url().should("not.include", "/home/admins");
     // 或者显示 403 错误页面
-    cy.contains('403').should('be.visible')
-  })
-})
+    cy.contains("403").should("be.visible");
+  });
+});

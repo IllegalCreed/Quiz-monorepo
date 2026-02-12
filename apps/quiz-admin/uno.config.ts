@@ -10,46 +10,46 @@ import {
   presetWebFonts,
   transformerDirectives,
   transformerVariantGroup,
-} from 'unocss'
+} from "unocss";
 
 export default defineConfig({
   content: {
-    filesystem: ['src/**/*.{vue,js,ts,jsx,tsx}'],
+    filesystem: ["src/**/*.{vue,js,ts,jsx,tsx}"],
   },
   safelist: [
     // 菜单图标（动态绑定，需要 safelist）
-    'i-carbon-home',
-    'i-carbon-settings',
-    'i-carbon-user-multiple',
-    'i-carbon-user-admin',
+    "i-carbon-home",
+    "i-carbon-settings",
+    "i-carbon-user-multiple",
+    "i-carbon-user-admin",
 
     // Header 图标
-    'i-carbon-menu',
-    'i-carbon-sun',
-    'i-carbon-moon',
-    'i-carbon-user',
+    "i-carbon-menu",
+    "i-carbon-sun",
+    "i-carbon-moon",
+    "i-carbon-user",
 
     // Tab 关闭按钮
-    'i-carbon-close',
+    "i-carbon-close",
 
     // 登录页 loading
-    'i-carbon-renew',
+    "i-carbon-renew",
 
     // Dashboard 统计卡片图标
-    'i-carbon-analytics',
-    'i-carbon-user-activity',
-    'i-carbon-email',
+    "i-carbon-analytics",
+    "i-carbon-user-activity",
+    "i-carbon-email",
   ],
   presets: [
     presetWind4(),
     presetIcons({ scale: 1.2, warn: true }),
     presetTypography(),
-    presetWebFonts({ fonts: { sans: 'Inter:400,600,700' } }),
+    presetWebFonts({ fonts: { sans: "Inter:400,600,700" } }),
   ],
   transformers: [transformerDirectives(), transformerVariantGroup()],
   theme: {
     colors: {
-      primary: '#6366f1',
+      primary: "#6366f1",
     },
   },
-})
+});

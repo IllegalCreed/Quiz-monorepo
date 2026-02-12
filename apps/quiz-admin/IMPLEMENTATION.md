@@ -165,10 +165,10 @@ apps/quiz-admin/
 **CSS 导入顺序**（参考 beitou-survey-admin）：
 
 ```ts
-import './styles/index.scss' // Element Plus 深色模式（@use dark/css-vars.scss）
-import './styles/main.scss' // 全局样式 + 主题变量
-import 'element-plus/.../message-box.scss' // 弹窗组件（非按需引入）
-import 'virtual:uno.css' // UnoCSS（最后导入，最高优先级）
+import "./styles/index.scss"; // Element Plus 深色模式（@use dark/css-vars.scss）
+import "./styles/main.scss"; // 全局样式 + 主题变量
+import "element-plus/.../message-box.scss"; // 弹窗组件（非按需引入）
+import "virtual:uno.css"; // UnoCSS（最后导入，最高优先级）
 ```
 
 **Element Plus 样式体系**：
