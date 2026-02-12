@@ -135,7 +135,9 @@ onMounted(() => {
     <!-- 页头 -->
     <div class="page-header">
       <h1 class="page-title">用户管理</h1>
-      <el-button type="primary" @click="openCreateDialog">新增用户</el-button>
+      <el-button v-permission="'users:create'" type="primary" @click="openCreateDialog">
+        新增用户
+      </el-button>
     </div>
 
     <!-- 用户列表 -->
@@ -159,13 +161,16 @@ onMounted(() => {
       <el-table-column label="操作" min-width="160">
         <template #default="{ row }">
           <el-button
+            v-permission="'users:status'"
             link
             :type="row.status === 'active' ? 'warning' : 'success'"
             @click="toggleStatus(row)"
           >
             {{ row.status === 'active' ? '禁用' : '启用' }}
           </el-button>
-          <el-button link type="danger" @click="handleDelete(row)"> 删除 </el-button>
+          <el-button v-permission="'users:delete'" link type="danger" @click="handleDelete(row)">
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>

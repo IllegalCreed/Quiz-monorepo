@@ -7,8 +7,15 @@ export interface AdminUser {
   id: number
   username: string
   nickname: string
+  /** @deprecated 旧的角色字段，保留用于兼容 */
   role: 'super_admin' | 'admin'
+  /** 关联的角色 ID */
+  roleId: number | string
+  /** 角色名称（用于显示） */
+  roleName: string
+  /** 菜单权限（从角色继承，计算得出） */
   menuPermissions: string[]
+  /** API 权限（从角色继承，计算得出） */
   apiPermissions: string[]
   createdAt: string
   updatedAt: string

@@ -2,31 +2,41 @@
  * Mock 账号 API
  *
  * 测试账号:
- * - 超级管理员: super_admin / super_admin (全权限，含管理员管理)
- * - 普通管理员: admin / admin (仅用户管理)
+ * - 超级管理员: super_admin / super_admin (拥有超级管理员角色)
+ * - 普通管理员: admin / admin (拥有用户管理员角色)
  *
  * Token 格式: mock-token-{userId}-{timestamp}
  * 通过 token 中的 userId 反查用户信息，支持页面刷新后恢复登录状态
+ *
+ * RBAC 模型：管理员 → 角色 → 权限
+ * - 管理员通过 roleId 关联角色
+ * - 权限从角色继承（动态计算）
  */
 import type { LoginForm, AdminUser } from '@/types/account'
+import { getRoles } from './roles'
 
-/** Mock 数据库 - 管理员列表 */
-const mockAdmins: AdminUser[] = [
+/**
+ * Mock 数据库 - 管理员列表（简化存储，只存关键信息）
+ */
+interface AdminUserStorage {
+  id: number
+  username: string
+  nickname: string
+  role: 'super_admin' | 'admin' // 保留用于兼容
+  roleId: number | string
+  roleName: string
+  createdAt: string
+  updatedAt: string
+}
+
+const mockAdmins: AdminUserStorage[] = [
   {
     id: 1,
     username: 'super_admin',
     nickname: '超级管理员',
     role: 'super_admin',
-    menuPermissions: ['dashboard', 'users', 'admins', 'system'],
-    apiPermissions: [
-      'users:read',
-      'users:write',
-      'users:delete',
-      'admins:read',
-      'admins:write',
-      'admins:delete',
-      'admins:permission',
-    ],
+    roleId: 1, // 关联超级管理员角色
+    roleName: '超级管理员',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   },
@@ -35,12 +45,37 @@ const mockAdmins: AdminUser[] = [
     username: 'admin',
     nickname: '普通管理员',
     role: 'admin',
-    menuPermissions: ['dashboard', 'users'],
-    apiPermissions: ['users:read', 'users:write'],
+    roleId: 3, // 关联用户管理员角色
+    roleName: '用户管理员',
     createdAt: '2024-01-02T00:00:00.000Z',
     updatedAt: '2024-01-02T00:00:00.000Z',
   },
 ]
+
+/**
+ * 从角色继承权限（核心逻辑）
+ * 根据管理员的 roleId 查找角色，并继承角色的权限
+ */
+const inheritPermissionsFromRole = async (
+  admin: AdminUserStorage,
+): Promise<AdminUser> => {
+  // 获取所有角色
+  const roles = await getRoles()
+
+  // 查找管理员对应的角色
+  const role = roles.find((r) => r.id === admin.roleId)
+
+  if (!role) {
+    throw new Error(`角色 ID ${admin.roleId} 不存在`)
+  }
+
+  // 从角色继承权限
+  return {
+    ...admin,
+    menuPermissions: role.menuPermissions,
+    apiPermissions: role.apiPermissions,
+  }
+}
 
 /**
  * 从 token 中解析用户 ID
@@ -76,9 +111,9 @@ export const login = async (loginForm: LoginForm): Promise<string> => {
 
 /**
  * Mock 获取用户信息
- * 通过 token 中的 userId 反查用户数据，支持页面刷新
+ * 通过 token 中的 userId 反查用户数据，并从角色继承权限
  * @param token 登录 token
- * @returns 管理员信息
+ * @returns 管理员信息（包含从角色继承的权限）
  */
 export const getInfo = async (token: string): Promise<AdminUser> => {
   // 模拟网络延迟
@@ -96,7 +131,8 @@ export const getInfo = async (token: string): Promise<AdminUser> => {
     throw new Error('未登录或登录已过期')
   }
 
-  return user
+  // 从角色继承权限
+  return inheritPermissionsFromRole(user)
 }
 
 /**

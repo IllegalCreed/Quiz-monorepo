@@ -20,9 +20,15 @@ import 'element-plus/theme-chalk/src/notification.scss'
 // UnoCSS（最后导入，确保最高优先级）
 import 'virtual:uno.css'
 
+// 自定义指令
+import { permission } from './directives/permission'
+
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
+
+// 注册全局指令
+app.directive('permission', permission)
 
 app.mount('#app')

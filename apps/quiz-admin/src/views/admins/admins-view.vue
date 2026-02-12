@@ -3,18 +3,26 @@
  * 管理员管理页面
  * 仅超级管理员可访问，管理 Admin 后台的管理员账号
  *
+ * RBAC 模型：管理员 → 角色 → 权限
+ * - 管理员通过 roleId 关联角色
+ * - 权限从角色继承（动态计算）
+ *
  * 保护规则：
  * - 超级管理员不可被删除
- * - 超级管理员的权限不可被修改
+ * - 超级管理员的角色不可被修改
  */
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAdminUsers, createAdmin, updateAdminPermissions, deleteAdmin } from '@/api/mock/admins'
-import { ALL_MENU_PERMISSIONS, ALL_API_PERMISSIONS } from '@/types/permission'
+import { getAdminUsers, createAdmin, updateAdminRole, deleteAdmin } from '@/api/mock/admins'
+import { getRoles } from '@/api/mock/roles'
 import type { AdminUser } from '@/types/account'
+import type { Role } from '@/types/role'
 
 /** 管理员列表 */
 const admins = ref<AdminUser[]>([])
+
+/** 角色列表 */
+const roles = ref<Role[]>([])
 
 /** 加载中状态 */
 const loading = ref(false)
@@ -22,40 +30,41 @@ const loading = ref(false)
 /** 新增管理员对话框 */
 const createDialogVisible = ref(false)
 
-/** 权限配置对话框 */
-const permissionDialogVisible = ref(false)
+/** 角色分配对话框 */
+const roleDialogVisible = ref(false)
 
 /** 当前编辑的管理员 */
 const currentAdmin = ref<AdminUser | null>(null)
+
+/** 选中的角色 ID */
+const selectedRoleId = ref<number | string>('')
 
 /** 新增管理员表单 */
 const createForm = ref({
   username: '',
   nickname: '',
-  menuPermissions: [] as string[],
-  apiPermissions: [] as string[],
+  roleId: '' as number | string,
 })
 
-/** 选中的菜单权限 */
-const selectedMenuPermissions = ref<string[]>([])
-
-/** 选中的 API 权限 */
-const selectedApiPermissions = ref<string[]>([])
-
 /**
- * 普通管理员可分配的菜单权限（排除 admins）
- * admins 菜单权限仅超级管理员拥有，不可分配给普通管理员
+ * 可分配的角色列表（排除超级管理员角色）
+ * 超级管理员角色仅系统内置，不可分配给新建管理员
  */
-const assignableMenuPermissions = computed(() =>
-  ALL_MENU_PERMISSIONS.filter((p) => p.key !== 'admins'),
+const assignableRoles = computed(() =>
+  roles.value.filter((r) => !r.isSystem),
 )
 
 /**
- * 普通管理员可分配的 API 权限（排除 admins 模块）
+ * 加载角色列表
  */
-const assignableApiPermissions = computed(() =>
-  ALL_API_PERMISSIONS.filter((p) => p.module !== 'admins'),
-)
+const loadRoles = async () => {
+  try {
+    roles.value = await getRoles()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '加载角色列表失败'
+    ElMessage.error(message)
+  }
+}
 
 /**
  * 加载管理员列表
@@ -73,7 +82,7 @@ const loadAdmins = async () => {
 }
 
 /**
- * 判断是否为超级管理员（受保护，不可删除/修改权限）
+ * 判断是否为超级管理员（受保护，不可删除/修改角色）
  */
 const isSuperAdmin = (admin: AdminUser): boolean => {
   return admin.role === 'super_admin'
@@ -86,8 +95,7 @@ const openCreateDialog = () => {
   createForm.value = {
     username: '',
     nickname: '',
-    menuPermissions: ['dashboard'],
-    apiPermissions: [],
+    roleId: assignableRoles.value[0]?.id || '',
   }
   createDialogVisible.value = true
 }
@@ -98,6 +106,11 @@ const openCreateDialog = () => {
 const handleCreate = async () => {
   if (!createForm.value.username || !createForm.value.nickname) {
     ElMessage.warning('请填写用户名和昵称')
+    return
+  }
+
+  if (!createForm.value.roleId) {
+    ElMessage.warning('请选择角色')
     return
   }
 
@@ -116,38 +129,38 @@ const handleCreate = async () => {
 }
 
 /**
- * 打开权限配置对话框
+ * 打开角色分配对话框
  */
-const openPermissionDialog = (admin: AdminUser) => {
+const openRoleDialog = (admin: AdminUser) => {
   if (isSuperAdmin(admin)) {
-    ElMessage.warning('超级管理员的权限不可修改')
+    ElMessage.warning('超级管理员的角色不可修改')
     return
   }
 
   currentAdmin.value = admin
-  selectedMenuPermissions.value = [...admin.menuPermissions]
-  selectedApiPermissions.value = [...admin.apiPermissions]
-  permissionDialogVisible.value = true
+  selectedRoleId.value = admin.roleId
+  roleDialogVisible.value = true
 }
 
 /**
- * 保存权限
+ * 保存角色分配
  */
-const savePermissions = async () => {
+const saveRole = async () => {
   if (!currentAdmin.value) return
+
+  if (!selectedRoleId.value) {
+    ElMessage.warning('请选择角色')
+    return
+  }
 
   try {
     loading.value = true
-    await updateAdminPermissions(
-      currentAdmin.value.id,
-      selectedMenuPermissions.value,
-      selectedApiPermissions.value,
-    )
-    ElMessage.success('权限更新成功')
-    permissionDialogVisible.value = false
+    await updateAdminRole(currentAdmin.value.id, selectedRoleId.value)
+    ElMessage.success('角色更新成功')
+    roleDialogVisible.value = false
     await loadAdmins()
   } catch (error) {
-    const message = error instanceof Error ? error.message : '权限更新失败'
+    const message = error instanceof Error ? error.message : '角色更新失败'
     ElMessage.error(message)
   } finally {
     loading.value = false
@@ -190,8 +203,9 @@ const formatDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleDateString('zh-CN')
 }
 
-onMounted(() => {
-  loadAdmins()
+onMounted(async () => {
+  await loadRoles()
+  await loadAdmins()
 })
 </script>
 
@@ -208,13 +222,13 @@ onMounted(() => {
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="username" label="用户名" width="140" />
       <el-table-column prop="nickname" label="昵称" width="140" />
-      <el-table-column prop="role" label="角色" width="120">
+      <el-table-column prop="roleName" label="角色" width="140">
         <template #default="{ row }">
-          <el-tag v-if="isSuperAdmin(row)" type="danger">超级管理员</el-tag>
-          <el-tag v-else>普通管理员</el-tag>
+          <el-tag v-if="isSuperAdmin(row)" type="danger">{{ row.roleName }}</el-tag>
+          <el-tag v-else type="info">{{ row.roleName }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="菜单权限">
+      <el-table-column label="菜单权限" min-width="200">
         <template #default="{ row }">
           <el-tag v-for="perm in row.menuPermissions" :key="perm" size="small" class="mr-1 mb-1">
             {{ perm }}
@@ -232,9 +246,9 @@ onMounted(() => {
             link
             type="primary"
             :disabled="isSuperAdmin(row)"
-            @click="openPermissionDialog(row)"
+            @click="openRoleDialog(row)"
           >
-            配置权限
+            分配角色
           </el-button>
           <el-button link type="danger" :disabled="isSuperAdmin(row)" @click="handleDelete(row)">
             删除
@@ -253,31 +267,24 @@ onMounted(() => {
           <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
         </el-form-item>
 
-        <!-- 菜单权限 -->
-        <el-form-item label="菜单权限">
-          <el-checkbox-group v-model="createForm.menuPermissions">
-            <el-checkbox
-              v-for="perm in assignableMenuPermissions"
-              :key="perm.key"
-              :value="perm.key"
+        <!-- 角色选择 -->
+        <el-form-item label="角色">
+          <el-select v-model="createForm.roleId" placeholder="请选择角色" style="width: 100%">
+            <el-option
+              v-for="role in assignableRoles"
+              :key="role.id"
+              :label="role.name"
+              :value="role.id"
             >
-              {{ perm.label }}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-
-        <!-- API 权限 -->
-        <el-form-item label="API 权限">
-          <el-checkbox-group v-model="createForm.apiPermissions">
-            <el-checkbox
-              v-for="perm in assignableApiPermissions"
-              :key="perm.key"
-              :value="perm.key"
-              class="block mb-2"
-            >
-              {{ perm.label }}
-            </el-checkbox>
-          </el-checkbox-group>
+              <div class="flex items-center justify-between">
+                <span>{{ role.name }}</span>
+                <span class="text-xs text-gray-400">{{ role.description }}</span>
+              </div>
+            </el-option>
+          </el-select>
+          <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            新建管理员将继承所选角色的全部权限
+          </div>
         </el-form-item>
       </el-form>
 
@@ -287,46 +294,76 @@ onMounted(() => {
       </template>
     </el-dialog>
 
-    <!-- 权限配置对话框 -->
-    <el-dialog v-model="permissionDialogVisible" title="配置权限" width="600px">
+    <!-- 角色分配对话框 -->
+    <el-dialog v-model="roleDialogVisible" title="分配角色" width="600px">
       <div v-if="currentAdmin">
         <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          为管理员 <strong>{{ currentAdmin.nickname }}</strong> 配置权限
+          为管理员 <strong>{{ currentAdmin.nickname }}</strong> 分配角色
         </p>
 
-        <!-- 菜单权限 -->
-        <div class="mb-6">
-          <h3 class="section-title">菜单权限</h3>
-          <el-checkbox-group v-model="selectedMenuPermissions">
-            <el-checkbox
-              v-for="perm in assignableMenuPermissions"
-              :key="perm.key"
-              :value="perm.key"
-            >
-              {{ perm.label }}
-            </el-checkbox>
-          </el-checkbox-group>
-        </div>
+        <!-- 角色选择 -->
+        <el-form label-width="100px">
+          <el-form-item label="选择角色">
+            <el-select v-model="selectedRoleId" placeholder="请选择角色" style="width: 100%">
+              <el-option
+                v-for="role in assignableRoles"
+                :key="role.id"
+                :label="role.name"
+                :value="role.id"
+              >
+                <div class="flex items-center justify-between">
+                  <span>{{ role.name }}</span>
+                  <span class="text-xs text-gray-400">{{ role.description }}</span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
 
-        <!-- API 权限 -->
-        <div>
-          <h3 class="section-title">API 权限</h3>
-          <el-checkbox-group v-model="selectedApiPermissions">
-            <el-checkbox
-              v-for="perm in assignableApiPermissions"
-              :key="perm.key"
-              :value="perm.key"
-              class="block mb-2"
-            >
-              {{ perm.label }}
-            </el-checkbox>
-          </el-checkbox-group>
+        <!-- 当前权限展示 -->
+        <div class="mt-4">
+          <h4 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+            当前权限（从角色继承）
+          </h4>
+          <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded">
+            <div class="mb-3">
+              <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
+              <div class="mt-1">
+                <el-tag
+                  v-for="perm in currentAdmin.menuPermissions"
+                  :key="perm"
+                  size="small"
+                  class="mr-1 mb-1"
+                >
+                  {{ perm }}
+                </el-tag>
+              </div>
+            </div>
+            <div>
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                API 权限（{{ currentAdmin.apiPermissions.length }} 个）：
+              </span>
+              <div class="mt-1 max-h-40 overflow-y-auto">
+                <el-tag
+                  v-for="perm in currentAdmin.apiPermissions"
+                  :key="perm"
+                  size="small"
+                  class="mr-1 mb-1"
+                >
+                  {{ perm }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            更改角色后，权限将自动更新为新角色的权限
+          </div>
         </div>
       </div>
 
       <template #footer>
-        <el-button @click="permissionDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="savePermissions"> 保存 </el-button>
+        <el-button @click="roleDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="saveRole"> 保存 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -343,11 +380,6 @@ onMounted(() => {
 
 .page-title {
   @apply text-2xl font-bold;
-  color: var(--color-text);
-}
-
-.section-title {
-  @apply text-lg font-semibold mb-3;
   color: var(--color-text);
 }
 </style>

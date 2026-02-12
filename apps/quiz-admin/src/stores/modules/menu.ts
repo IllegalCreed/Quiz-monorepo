@@ -29,6 +29,18 @@ const allMenus: MenuItem[] = [
     icon: 'i-carbon-user-admin',
   },
   {
+    index: '/home/roles',
+    name: 'roles',
+    title: '角色管理',
+    icon: 'i-carbon-user-role',
+  },
+  {
+    index: '/home/permissions',
+    name: 'permissions',
+    title: '权限管理',
+    icon: 'i-carbon-locked',
+  },
+  {
     index: '/home/settings',
     name: 'system',
     title: '系统设置',

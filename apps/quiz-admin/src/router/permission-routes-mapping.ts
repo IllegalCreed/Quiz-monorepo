@@ -6,5 +6,7 @@ export const permissionRoutesMapping: Record<string, string[]> = {
   dashboard: ['dashboard'],
   users: ['users'],
   admins: ['admins'],
+  roles: ['roles'],
+  permissions: ['permissions'],
   system: ['settings'],
 }

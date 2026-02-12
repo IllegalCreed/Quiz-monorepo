@@ -24,6 +24,18 @@ export const homeRoutes: RouteRecordRaw[] = [
     meta: { title: '管理员管理' },
   },
   {
+    path: 'roles',
+    name: 'roles',
+    component: () => import('@/views/roles/roles-view.vue'),
+    meta: { title: '角色管理' },
+  },
+  {
+    path: 'permissions',
+    name: 'permissions',
+    component: () => import('@/views/permissions/permissions-view.vue'),
+    meta: { title: '权限管理' },
+  },
+  {
     path: 'settings',
     name: 'settings',
     component: () => import('@/views/system/settings-view.vue'),
