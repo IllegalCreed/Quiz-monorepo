@@ -246,7 +246,7 @@ quiz-monorepo/
 ### 端口占用
 
 ```bash
-pnpm preview:clean  # 清理 10010/10020/10040
+pnpm clean:ports  # 清理所有端口（dev + preview）
 ````
 
 ### Prisma Client 缺失
