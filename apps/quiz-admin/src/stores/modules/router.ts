@@ -5,6 +5,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { RouteLike } from "@/types/router";
+import { getPageCacheSettings } from "@/api/mock/settings";
 
 export const useRouterStore = defineStore("router", () => {
   /** 访问过的视图(Tab 历史) */
@@ -12,6 +13,9 @@ export const useRouterStore = defineStore("router", () => {
 
   /** 缓存的视图名称(用于 keep-alive) */
   const cachedViews = ref<string[]>([]);
+
+  /** 页面缓存配置（从系统设置加载，key 是组件名，value 是是否启用缓存） */
+  const pageCacheConfig = ref<Record<string, boolean>>({});
 
   /**
    * 添加视图到历史记录
@@ -57,9 +61,15 @@ export const useRouterStore = defineStore("router", () => {
       return;
     }
 
-    // 如果路由 meta 设置了 noCache,则不缓存
+    // 如果路由 meta 设置了 noCache,则不缓存（优先级最高）
     if (view.meta?.noCache) {
       return;
+    }
+
+    // 检查系统设置中的缓存配置（新增逻辑）
+    const isEnabled = pageCacheConfig.value[cacheName];
+    if (isEnabled === false) {
+      return; // 配置中禁用了缓存
     }
 
     cachedViews.value.push(cacheName);
@@ -110,6 +120,28 @@ export const useRouterStore = defineStore("router", () => {
     cachedViews.value = [];
   };
 
+  /**
+   * 初始化缓存配置
+   * 在应用启动时调用，从系统设置加载缓存配置
+   */
+  const initCacheConfig = async () => {
+    try {
+      const settings = await getPageCacheSettings();
+      // 将配置转换为 Map 格式：{ componentName: cacheEnabled }
+      pageCacheConfig.value = settings.pages.reduce(
+        (acc, page) => {
+          acc[page.componentName] = page.cacheEnabled;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      );
+    } catch (error) {
+      console.error("加载缓存配置失败:", error);
+      // 失败时使用默认配置：全部启用（pageCacheConfig 为空对象时，addCachedView 会默认启用）
+      pageCacheConfig.value = {};
+    }
+  };
+
   return {
     visitedViews,
     cachedViews,
@@ -120,5 +152,6 @@ export const useRouterStore = defineStore("router", () => {
     deleteVisitedView,
     deleteCachedView,
     clearAllViews,
+    initCacheConfig,
   };
 });

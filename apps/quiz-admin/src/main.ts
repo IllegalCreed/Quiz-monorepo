@@ -13,6 +13,7 @@ import "./styles/index.scss";
 import "./styles/main.scss";
 
 // Element Plus 弹窗组件样式（非按需引入的组件需手动导入）
+import "element-plus/theme-chalk/src/overlay.scss"; // 遮罩层基础组件（MessageBox/Dialog/Drawer 依赖）
 import "element-plus/theme-chalk/src/message-box.scss";
 import "element-plus/theme-chalk/src/message.scss";
 import "element-plus/theme-chalk/src/notification.scss";
