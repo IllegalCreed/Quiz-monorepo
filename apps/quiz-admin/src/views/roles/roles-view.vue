@@ -296,7 +296,7 @@ onMounted(() => {
     <!-- 角色列表 -->
     <el-table :data="roles" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="角色名称" width="150">
+      <el-table-column prop="name" label="角色名称" min-width="180">
         <template #default="{ row }">
           <div class="flex items-center gap-2">
             <span>{{ row.name }}</span>
@@ -304,13 +304,13 @@ onMounted(() => {
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" min-width="200" />
+      <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
       <el-table-column prop="adminCount" label="使用人数" width="100">
         <template #default="{ row }">
           <span>{{ row.adminCount || 0 }} 人</span>
         </template>
       </el-table-column>
-      <el-table-column label="菜单权限" width="200">
+      <el-table-column label="菜单权限" min-width="240">
         <template #default="{ row }">
           <el-tag
             v-for="perm in row.menuPermissions.slice(0, 3)"
@@ -325,7 +325,7 @@ onMounted(() => {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="API 权限" width="120">
+      <el-table-column label="API 权限" width="100">
         <template #default="{ row }">
           <span>{{ row.apiPermissions.length }} 个</span>
         </template>

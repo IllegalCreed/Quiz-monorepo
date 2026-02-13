@@ -143,9 +143,9 @@ onMounted(() => {
     <!-- 用户列表 -->
     <el-table :data="users" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" width="140" />
-      <el-table-column prop="nickname" label="昵称" width="140" />
-      <el-table-column prop="email" label="邮箱" width="220" />
+      <el-table-column prop="username" label="用户名" min-width="120" />
+      <el-table-column prop="nickname" label="昵称" min-width="120" />
+      <el-table-column prop="email" label="邮箱" min-width="180" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'danger'" size="small">
@@ -153,12 +153,12 @@ onMounted(() => {
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="140">
+      <el-table-column label="创建时间" min-width="120">
         <template #default="{ row }">
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" min-width="160">
+      <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
           <el-button
             v-permission="'users:status'"

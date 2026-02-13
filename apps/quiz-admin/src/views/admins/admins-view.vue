@@ -278,22 +278,15 @@ onMounted(async () => {
     <!-- 管理员列表 -->
     <el-table :data="admins" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" width="140" />
-      <el-table-column prop="nickname" label="昵称" width="140" />
-      <el-table-column prop="roleName" label="角色" width="140">
+      <el-table-column prop="username" label="用户名" min-width="120" />
+      <el-table-column prop="nickname" label="昵称" min-width="120" />
+      <el-table-column prop="roleName" label="角色" min-width="120">
         <template #default="{ row }">
           <el-tag v-if="isSuperAdmin(row)" type="danger">{{ row.roleName }}</el-tag>
           <el-tag v-else type="info">{{ row.roleName }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="菜单权限" min-width="200">
-        <template #default="{ row }">
-          <el-tag v-for="perm in row.menuPermissions" :key="perm" size="small" class="mr-1 mb-1">
-            {{ perm }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="140">
+      <el-table-column label="创建时间" min-width="120">
         <template #default="{ row }">
           {{ formatDate(row.createdAt) }}
         </template>
