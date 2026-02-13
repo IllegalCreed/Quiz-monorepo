@@ -62,7 +62,10 @@ const handleCacheToggle = async (page: PageCacheConfig) => {
       cacheEnabled: page.cacheEnabled,
     });
 
-    // 实时更新路由缓存
+    // 同步更新路由缓存配置（修复：防止下次访问时又被添加到缓存）
+    routerStore.updateCacheConfig(page.componentName, page.cacheEnabled);
+
+    // 实时更新路由缓存列表
     if (page.cacheEnabled) {
       // 启用缓存：将组件名添加到缓存列表
       if (!routerStore.cachedViews.includes(page.componentName)) {
@@ -103,7 +106,12 @@ const enableAll = async () => {
     // 更新本地状态
     cacheConfigs.value.forEach((p) => (p.cacheEnabled = true));
 
-    // 更新路由缓存（添加所有组件名）
+    // 同步更新路由缓存配置
+    cacheConfigs.value.forEach((p) => {
+      routerStore.updateCacheConfig(p.componentName, true);
+    });
+
+    // 更新路由缓存列表（添加所有组件名）
     const allComponentNames = cacheConfigs.value.map((p) => p.componentName);
     routerStore.cachedViews = [...new Set([...routerStore.cachedViews, ...allComponentNames])];
 
@@ -137,7 +145,12 @@ const disableAll = async () => {
     // 更新本地状态
     cacheConfigs.value.forEach((p) => (p.cacheEnabled = false));
 
-    // 清空路由缓存
+    // 同步更新路由缓存配置
+    cacheConfigs.value.forEach((p) => {
+      routerStore.updateCacheConfig(p.componentName, false);
+    });
+
+    // 清空路由缓存列表
     routerStore.cachedViews = [];
 
     ElMessage.success("已全部禁用缓存");
@@ -164,7 +177,12 @@ const resetToDefault = async () => {
     await resetPageCacheSettings();
     await loadCacheSettings();
 
-    // 重新同步路由缓存
+    // 同步更新路由缓存配置
+    cacheConfigs.value.forEach((p) => {
+      routerStore.updateCacheConfig(p.componentName, p.cacheEnabled);
+    });
+
+    // 重新同步路由缓存列表
     const enabledComponents = cacheConfigs.value
       .filter((p) => p.cacheEnabled)
       .map((p) => p.componentName);

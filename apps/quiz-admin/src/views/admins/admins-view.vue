@@ -57,6 +57,9 @@ const createDialogVisible = ref(false);
 /** 角色分配对话框 */
 const roleDialogVisible = ref(false);
 
+/** 查看管理员详情对话框 */
+const viewDialogVisible = ref(false);
+
 /** 当前编辑的管理员 */
 const currentAdmin = ref<AdminUserItem | null>(null);
 
@@ -185,6 +188,14 @@ const handleCreate = async () => {
 };
 
 /**
+ * 打开查看管理员详情对话框
+ */
+const openViewDialog = (admin: AdminUserItem) => {
+  currentAdmin.value = admin;
+  viewDialogVisible.value = true;
+};
+
+/**
  * 打开角色分配对话框
  */
 const openRoleDialog = (admin: AdminUserItem) => {
@@ -299,8 +310,9 @@ onMounted(async () => {
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="240">
         <template #default="{ row }">
+          <el-button link type="primary" @click="openViewDialog(row)"> 查看 </el-button>
           <el-button link type="primary" :disabled="isSuperAdmin(row)" @click="openRoleDialog(row)">
             分配角色
           </el-button>
@@ -345,6 +357,96 @@ onMounted(async () => {
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="handleCreate"> 创建 </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 查看管理员详情对话框 -->
+    <el-dialog v-model="viewDialogVisible" title="管理员详情" width="600px">
+      <div v-if="currentAdmin">
+        <!-- 基本信息 -->
+        <div class="mb-6">
+          <h4 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">基本信息</h4>
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400 w-20">ID：</span>
+              <span class="text-sm">{{ currentAdmin.id }}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400 w-20">用户名：</span>
+              <span class="text-sm">{{ currentAdmin.username }}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400 w-20">昵称：</span>
+              <span class="text-sm">{{ currentAdmin.nickname }}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400 w-20">角色：</span>
+              <el-tag v-if="isSuperAdmin(currentAdmin)" type="danger" size="small">
+                {{ currentAdmin.roleName }}
+              </el-tag>
+              <el-tag v-else type="info" size="small">
+                {{ currentAdmin.roleName }}
+              </el-tag>
+            </div>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 dark:text-gray-400 w-20">创建时间：</span>
+              <span class="text-sm">{{ formatDate(currentAdmin.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 权限信息 -->
+        <div>
+          <h4 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
+            权限信息（从角色继承）
+          </h4>
+          <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded">
+            <div class="mb-3">
+              <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
+              <div class="mt-1">
+                <el-tag
+                  v-for="perm in currentAdminMenuPermissions"
+                  :key="perm"
+                  size="small"
+                  class="mr-1 mb-1"
+                >
+                  {{ perm }}
+                </el-tag>
+                <span
+                  v-if="currentAdminMenuPermissions.length === 0"
+                  class="text-xs text-gray-400 dark:text-gray-500"
+                >
+                  无
+                </span>
+              </div>
+            </div>
+            <div>
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                API 权限（{{ currentAdminApiPermissions.length }} 个）：
+              </span>
+              <div class="mt-1 max-h-40 overflow-y-auto">
+                <el-tag
+                  v-for="perm in currentAdminApiPermissions"
+                  :key="perm"
+                  size="small"
+                  class="mr-1 mb-1"
+                >
+                  {{ perm }}
+                </el-tag>
+                <span
+                  v-if="currentAdminApiPermissions.length === 0"
+                  class="text-xs text-gray-400 dark:text-gray-500"
+                >
+                  无
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 

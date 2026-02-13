@@ -142,6 +142,16 @@ export const useRouterStore = defineStore("router", () => {
     }
   };
 
+  /**
+   * 更新单个页面的缓存配置
+   * 系统设置页面切换缓存时调用，确保配置和缓存列表同步
+   * @param componentName 组件名称（如 "AdminsView"）
+   * @param enabled 是否启用缓存
+   */
+  const updateCacheConfig = (componentName: string, enabled: boolean) => {
+    pageCacheConfig.value[componentName] = enabled;
+  };
+
   return {
     visitedViews,
     cachedViews,
@@ -153,5 +163,6 @@ export const useRouterStore = defineStore("router", () => {
     deleteCachedView,
     clearAllViews,
     initCacheConfig,
+    updateCacheConfig,
   };
 });

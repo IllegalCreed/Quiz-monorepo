@@ -52,6 +52,9 @@ const editDialogVisible = ref(false);
 /** 权限配置对话框 */
 const permissionDialogVisible = ref(false);
 
+/** 当前权限对话框是否为只读模式（用于查看系统角色） */
+const isPermissionReadonly = ref(false);
+
 /** 当前编辑的角色 */
 const currentRole = ref<Role | null>(null);
 
@@ -204,7 +207,7 @@ const handleEdit = async () => {
 };
 
 /**
- * 打开权限配置对话框
+ * 打开权限配置对话框（编辑模式）
  */
 const openPermissionDialog = (role: Role) => {
   if (isSystemRole(role)) {
@@ -215,6 +218,20 @@ const openPermissionDialog = (role: Role) => {
   currentRole.value = role;
   selectedMenuPermissions.value = [...role.menuPermissions];
   selectedApiPermissions.value = [...role.apiPermissions];
+  isPermissionReadonly.value = false;
+  // 默认展开所有模块
+  activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module);
+  permissionDialogVisible.value = true;
+};
+
+/**
+ * 打开权限查看对话框（只读模式）
+ */
+const openViewPermissionDialog = (role: Role) => {
+  currentRole.value = role;
+  selectedMenuPermissions.value = [...role.menuPermissions];
+  selectedApiPermissions.value = [...role.apiPermissions];
+  isPermissionReadonly.value = true;
   // 默认展开所有模块
   activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module);
   permissionDialogVisible.value = true;
@@ -349,12 +366,15 @@ onMounted(() => {
             编辑
           </el-button>
           <el-button
+            v-if="!isSystemRole(row)"
             link
             type="primary"
-            :disabled="isSystemRole(row)"
             @click="openPermissionDialog(row)"
           >
             配置权限
+          </el-button>
+          <el-button v-else link type="primary" @click="openViewPermissionDialog(row)">
+            查看权限
           </el-button>
           <el-button link type="danger" :disabled="isSystemRole(row)" @click="handleDelete(row)">
             删除
@@ -407,22 +427,28 @@ onMounted(() => {
       </template>
     </el-dialog>
 
-    <!-- 权限配置对话框 -->
+    <!-- 权限配置/查看对话框 -->
     <el-dialog
       v-model="permissionDialogVisible"
-      title="配置权限"
+      :title="isPermissionReadonly ? '查看权限' : '配置权限'"
       width="700px"
       class="permission-dialog"
     >
       <div v-if="currentRole">
         <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-          为角色 <strong>{{ currentRole.name }}</strong> 配置权限
+          <template v-if="isPermissionReadonly">
+            角色 <strong>{{ currentRole.name }}</strong> 的权限信息
+            <el-tag v-if="isSystemRole(currentRole)" type="danger" size="small" class="ml-2">
+              系统角色
+            </el-tag>
+          </template>
+          <template v-else> 为角色 <strong>{{ currentRole.name }}</strong> 配置权限 </template>
         </p>
 
         <!-- 菜单权限 -->
         <div class="mb-6">
           <h3 class="section-title">菜单权限</h3>
-          <el-checkbox-group v-model="selectedMenuPermissions">
+          <el-checkbox-group v-model="selectedMenuPermissions" :disabled="isPermissionReadonly">
             <el-checkbox v-for="perm in ALL_MENU_PERMISSIONS" :key="perm.key" :value="perm.key">
               {{ perm.label }}
             </el-checkbox>
@@ -447,7 +473,11 @@ onMounted(() => {
                   </el-tag>
                 </div>
               </template>
-              <el-checkbox-group v-model="selectedApiPermissions" class="permission-group">
+              <el-checkbox-group
+                v-model="selectedApiPermissions"
+                class="permission-group"
+                :disabled="isPermissionReadonly"
+              >
                 <el-checkbox
                   v-for="perm in group.permissions"
                   :key="perm.key"
@@ -463,8 +493,13 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <el-button @click="permissionDialogVisible = false"> 取消 </el-button>
-        <el-button type="primary" :loading="loading" @click="savePermissions"> 保存 </el-button>
+        <template v-if="isPermissionReadonly">
+          <el-button @click="permissionDialogVisible = false"> 关闭 </el-button>
+        </template>
+        <template v-else>
+          <el-button @click="permissionDialogVisible = false"> 取消 </el-button>
+          <el-button type="primary" :loading="loading" @click="savePermissions"> 保存 </el-button>
+        </template>
       </template>
     </el-dialog>
   </div>
