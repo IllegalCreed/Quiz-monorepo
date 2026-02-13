@@ -32,15 +32,26 @@
       <div class="radio__label">
         <slot name="label">{{ label }}</slot>
       </div>
-      <div v-if="$slots.description || description" class="radio__desc">
-        <slot name="description">{{ description }}</slot>
+      <!-- 描述区域：Spacer（占位）+ Content（绝对定位显示） -->
+      <div
+        class="radio__desc"
+        :class="{ 'has-content': descHeight > 0 }"
+        :style="{ '--desc-height': `${descHeight}px` }"
+      >
+        <!-- 占位元素：负责高度过渡 -->
+        <div class="radio__desc-spacer"></div>
+
+        <!-- 内容元素：绝对定位，负责内容显示和透明度过渡 -->
+        <div class="radio__desc-content" ref="descContentRef">
+          <slot name="description">{{ description }}</slot>
+        </div>
       </div>
     </div>
   </label>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, nextTick, useSlots } from "vue";
 /**
  * CheckRadio（哑组件）
  *
@@ -48,6 +59,7 @@ import { ref } from "vue";
  * - 仅负责展示状态并在被点击时发出 `select` 事件。
  * - 视觉由 `status` ("none" | "correct" | "incorrect") 决定。
  * - 不维护选中状态（`checked`），由父级（例如 `CheckRadioGroup`）通过 `status` 或 `v-model` 管理。
+ * - 描述文字过渡：通过 JavaScript 获取实际高度，实现平滑的展开/收起动画。
  */
 defineOptions({ name: "CheckRadio" });
 
@@ -60,6 +72,9 @@ defineSlots<{
   /** 自定义描述内容 */
   description?: () => unknown;
 }>();
+
+// 获取 slots 对象用于运行时检测
+const slots = useSlots();
 
 const emit = defineEmits<{ (e: "select", v: string | number): void }>();
 
@@ -82,9 +97,37 @@ const props = withDefaults(defineProps<CheckRadioProps>(), {
   status: "none",
 });
 
-// 暴露根元素引用，便于父组件进行焦点管理
+// 根元素引用，便于父组件进行焦点管理
 const rootEl = ref<HTMLElement | null>(null);
-defineExpose({ rootEl });
+
+// 描述内容元素引用和高度状态（用于过渡动画）
+const descContentRef = ref<HTMLElement | null>(null);
+const descHeight = ref(0);
+
+/**
+ * 监听 description prop 和 slot 变化，计算并更新描述元素的实际高度
+ *
+ * @remarks
+ * - 通过 scrollHeight 获取实际内容高度（包括换行）
+ * - 使用 nextTick 确保 DOM 已更新
+ * - 高度通过 CSS 变量 --desc-height 传递给样式
+ */
+watch(
+  [() => props.description, () => !!slots.description],
+  async () => {
+    if ((props.description || slots.description) && descContentRef.value) {
+      // 等待 DOM 更新后获取实际高度
+      await nextTick();
+      descHeight.value = descContentRef.value.scrollHeight;
+    } else {
+      descHeight.value = 0;
+    }
+  },
+  { immediate: true },
+);
+
+// 暴露元素引用，便于父组件访问和测试
+defineExpose({ rootEl, descContentRef });
 
 /**
  * 响应用户点击，发出 `select` 事件。

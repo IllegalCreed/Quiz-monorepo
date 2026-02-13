@@ -59,28 +59,48 @@
 
   // 内容区域：包含标签与描述
   .radio__content {
-    @apply flex flex-col;
+    @apply flex flex-col flex-1; // 添加 flex-1 占据剩余空间
     .radio__label {
       @apply text-sm font-medium;
       color: var(--quiz-ui-text, #111827);
     }
     .radio__desc {
-      @apply text-xs;
-      color: var(--quiz-ui-muted, #6b7280);
+      position: relative; // 为绝对定位的 content 提供定位上下文
+      width: 100%; // 确保容器撑满宽度
 
-      // 优化过渡动画：增加时长和使用更平滑的缓动函数
-      @apply max-h-0 overflow-hidden opacity-0 pt-0;
-      transition:
-        max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.4s ease-out 0.1s,
-        padding-top 0.4s ease-out;
+      // Spacer：直接使用 CSS 变量控制高度
+      &-spacer {
+        height: var(--desc-height, 0);
+        transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-      // 当有内容时自动展开
-      &:not(:empty) {
-        @apply opacity-100 pt-2;
-        max-height: 300px; // 增加最大高度以容纳更长的描述
+      // Content：绝对定位，不占位，负责内容显示
+      &-content {
+        @apply text-xs;
+        color: var(--quiz-ui-muted, #6b7280);
+
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%; // 明确设置宽度撑满
+
+        // 默认：透明 + 无内边距
+        opacity: 0;
+        padding-top: 0;
+
+        transition:
+          opacity 0.25s ease-out 0.05s,
+          padding-top 0.3s ease-out;
       }
     }
+  }
+
+  // 当有内容时（通过 has-content class 控制）：显示 + 添加间距
+  // 移到外层以确保选择器优先级
+  .radio__desc.has-content .radio__desc-content {
+    opacity: 1 !important;
+    padding-top: 0.375rem; // pt-1.5
   }
 
   // 正确状态（radio--correct）
