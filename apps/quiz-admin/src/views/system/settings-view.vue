@@ -2,6 +2,13 @@
 /**
  * 系统设置页面(占位)
  */
+
+/**
+ * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
+ */
+defineOptions({
+  name: "SettingsView",
+});
 </script>
 
 <template>

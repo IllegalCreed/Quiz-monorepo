@@ -44,12 +44,16 @@ export const useRouterStore = defineStore("router", () => {
    * 添加到缓存列表
    */
   const addCachedView = (view: RouteLike) => {
-    if (typeof view.name !== "string") {
+    // 优先使用 meta.componentName（用于 keep-alive 匹配组件 name）
+    // 如果没有则使用路由 name（兼容旧逻辑）
+    const cacheName = view.meta?.componentName || view.name;
+
+    if (typeof cacheName !== "string") {
       return;
     }
 
     // 如果已缓存,不重复添加
-    if (cachedViews.value.includes(view.name)) {
+    if (cachedViews.value.includes(cacheName)) {
       return;
     }
 
@@ -58,7 +62,7 @@ export const useRouterStore = defineStore("router", () => {
       return;
     }
 
-    cachedViews.value.push(view.name);
+    cachedViews.value.push(cacheName);
   };
 
   /**
@@ -84,11 +88,15 @@ export const useRouterStore = defineStore("router", () => {
    * 从缓存列表中删除
    */
   const deleteCachedView = (view: RouteLike) => {
-    if (typeof view.name !== "string") {
+    // 优先使用 meta.componentName（用于 keep-alive 匹配组件 name）
+    // 如果没有则使用路由 name（兼容旧逻辑）
+    const cacheName = view.meta?.componentName || view.name;
+
+    if (typeof cacheName !== "string") {
       return;
     }
 
-    const index = cachedViews.value.indexOf(view.name);
+    const index = cachedViews.value.indexOf(cacheName);
     if (index > -1) {
       cachedViews.value.splice(index, 1);
     }

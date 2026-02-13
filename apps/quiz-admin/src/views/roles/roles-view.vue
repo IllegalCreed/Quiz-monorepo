@@ -12,6 +12,14 @@ import { ref, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getRoles, createRole, updateRole, deleteRole } from "@/api/roles";
 import { getAdminUsers } from "@/api/admins";
+
+/**
+ * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
+ */
+defineOptions({
+  name: "RolesView",
+});
+
 import {
   getRoles as getRolesMock,
   createRole as createRoleMock,

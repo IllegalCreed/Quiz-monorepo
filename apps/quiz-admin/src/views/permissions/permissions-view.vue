@@ -12,6 +12,13 @@ import {
 } from "@/api/mock/permissions";
 import type { ApiPermissionGroup, MenuPermission } from "@/types/permission";
 
+/**
+ * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
+ */
+defineOptions({
+  name: "PermissionsView",
+});
+
 /** 菜单权限列表 */
 const menuPermissions = ref<MenuPermission[]>([]);
 

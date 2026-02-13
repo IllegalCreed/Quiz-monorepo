@@ -8,6 +8,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { getAppUsers, createAppUser, updateAppUserStatus, deleteAppUser } from "@/api/mock/users";
 import type { AppUser } from "@/types/account";
 
+/**
+ * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
+ */
+defineOptions({
+  name: "UsersView",
+});
+
 /** 用户列表 */
 const users = ref<AppUser[]>([]);
 

@@ -5,6 +5,13 @@
 import { ref } from "vue";
 import { useAccountStore } from "@/stores/modules/account";
 
+/**
+ * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
+ */
+defineOptions({
+  name: "DashboardView",
+});
+
 const accountStore = useAccountStore();
 
 /**
