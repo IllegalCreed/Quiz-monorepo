@@ -4,14 +4,12 @@
  * 显示所有访问过的页面 Tab，支持横向滚动
  */
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
 import HistoryTabItem from "./history-tab-item.vue";
 import { useHistoryRouter } from "./composables/use-history-router";
 import { useRouterStore } from "@/stores/modules/router";
 
 const { visitedViews, close } = useHistoryRouter();
 const routerStore = useRouterStore();
-const route = useRoute();
 
 /** 滚动容器引用 */
 const scrollContainer = ref<HTMLDivElement | null>(null);
@@ -37,50 +35,17 @@ const handleWheel = (event: WheelEvent) => {
  * 刷新当前激活的页面
  */
 const refresh = async () => {
-  console.log("🔄 刷新按钮被点击");
-  console.log("当前状态:", {
-    refreshing: refreshing.value,
-    hasActiveTab: hasActiveTab.value,
-    visitedViewsLength: visitedViews.length,
-  });
-
-  if (refreshing.value || !hasActiveTab.value) {
-    console.warn("刷新被阻止:", {
-      refreshing: refreshing.value,
-      hasActiveTab: hasActiveTab.value,
-    });
-    return;
-  }
+  if (refreshing.value || !hasActiveTab.value) return;
 
   try {
     refreshing.value = true;
 
-    // 获取当前路由的组件名
-    const componentName = route.meta?.componentName;
-    console.log("当前路由信息:", {
-      path: route.path,
-      name: route.name,
-      componentName,
-      meta: route.meta,
-    });
-
-    if (!componentName) {
-      console.warn("当前路由未配置 componentName，无法刷新");
-      return;
-    }
-
-    console.log("开始刷新组件:", componentName);
-    console.log("当前 cachedViews:", routerStore.cachedViews);
-
     // 调用 store 方法刷新
-    await routerStore.refreshView(componentName);
-
-    console.log("刷新完成，新的 cachedViews:", routerStore.cachedViews);
+    await routerStore.refreshView();
   } finally {
     // 延迟 300ms 恢复按钮状态，让用户看到刷新动画
     setTimeout(() => {
       refreshing.value = false;
-      console.log("刷新状态已恢复");
     }, 300);
   }
 };

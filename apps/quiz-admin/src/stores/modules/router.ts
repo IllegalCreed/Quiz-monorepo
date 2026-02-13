@@ -158,23 +158,16 @@ export const useRouterStore = defineStore("router", () => {
   /**
    * 刷新当前页面
    * 通过临时隐藏 router-view 强制组件重新渲染（无论是否缓存）
-   * @param componentName 组件名称（仅用于日志）
    */
-  const refreshView = async (componentName?: string) => {
-    console.log("🔄 [Store] refreshView 被调用", componentName ? `，组件名: ${componentName}` : "");
-    console.log("🔄 [Store] 当前 isRouterAlive:", isRouterAlive.value);
-
+  const refreshView = async () => {
     // 隐藏 router-view
     isRouterAlive.value = false;
-    console.log("🔄 [Store] 步骤1: 隐藏 router-view");
 
     // 等待组件销毁
     await nextTick();
-    console.log("🔄 [Store] 步骤2: 组件已销毁");
 
     // 显示 router-view（重新创建组件）
     isRouterAlive.value = true;
-    console.log("🔄 [Store] 步骤3: 显示 router-view，刷新完成");
   };
 
   return {
