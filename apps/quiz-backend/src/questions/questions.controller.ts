@@ -1,7 +1,9 @@
 import { Controller, Get, Query, Post, Body } from "@nestjs/common";
 import { QuestionsService } from "./questions.service";
+import { Public } from "../common/decorators/public.decorator";
 
 @Controller("questions")
+@Public() // 标记为公开接口,quiz-app 不需要登录认证
 export class QuestionsController {
   constructor(private readonly service: QuestionsService) {}
 

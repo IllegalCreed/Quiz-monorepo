@@ -1,8 +1,10 @@
 import { Controller, Post, Body } from "@nestjs/common";
 import { QuestionsService } from "../questions/questions.service";
 import { CheckAnswerDto } from "../questions/dto/check-answer.dto";
+import { Public } from "../common/decorators/public.decorator";
 
 @Controller("answers")
+@Public() // 标记为公开接口,quiz-app 不需要登录认证
 export class AnswersController {
   constructor(private readonly questionsService: QuestionsService) {}
 

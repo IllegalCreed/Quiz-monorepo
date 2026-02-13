@@ -442,7 +442,9 @@ onMounted(() => {
               系统角色
             </el-tag>
           </template>
-          <template v-else> 为角色 <strong>{{ currentRole.name }}</strong> 配置权限 </template>
+          <template v-else>
+            为角色 <strong>{{ currentRole.name }}</strong> 配置权限
+          </template>
         </p>
 
         <!-- 菜单权限 -->

@@ -22,6 +22,7 @@ export function useQuiz() {
     correctOptionId.value = null;
     error.value = null;
     optionDescriptions.value = {};
+
     if (isMock.value) {
       // return a simple mocked question
       question.value = {
