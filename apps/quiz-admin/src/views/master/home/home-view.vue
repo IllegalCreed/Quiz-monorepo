@@ -33,7 +33,7 @@ const routerStore = useRouterStore();
 
         <!-- 主内容区 -->
         <el-main class="home-main">
-          <router-view v-slot="{ Component }">
+          <router-view v-if="routerStore.isRouterAlive" v-slot="{ Component }">
             <keep-alive :include="routerStore.cachedViews">
               <component :is="Component" />
             </keep-alive>

@@ -3,7 +3,7 @@
  * 管理 Tab 历史记录和 keep-alive 缓存
  */
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 import type { RouteLike } from "@/types/router";
 import { getPageCacheSettings } from "@/api/mock/settings";
 
@@ -16,6 +16,9 @@ export const useRouterStore = defineStore("router", () => {
 
   /** 页面缓存配置（从系统设置加载，key 是组件名，value 是是否启用缓存） */
   const pageCacheConfig = ref<Record<string, boolean>>({});
+
+  /** 是否显示路由视图（用于刷新） */
+  const isRouterAlive = ref(true);
 
   /**
    * 添加视图到历史记录
@@ -152,9 +155,32 @@ export const useRouterStore = defineStore("router", () => {
     pageCacheConfig.value[componentName] = enabled;
   };
 
+  /**
+   * 刷新当前页面
+   * 通过临时隐藏 router-view 强制组件重新渲染（无论是否缓存）
+   * @param componentName 组件名称（仅用于日志）
+   */
+  const refreshView = async (componentName?: string) => {
+    console.log("🔄 [Store] refreshView 被调用", componentName ? `，组件名: ${componentName}` : "");
+    console.log("🔄 [Store] 当前 isRouterAlive:", isRouterAlive.value);
+
+    // 隐藏 router-view
+    isRouterAlive.value = false;
+    console.log("🔄 [Store] 步骤1: 隐藏 router-view");
+
+    // 等待组件销毁
+    await nextTick();
+    console.log("🔄 [Store] 步骤2: 组件已销毁");
+
+    // 显示 router-view（重新创建组件）
+    isRouterAlive.value = true;
+    console.log("🔄 [Store] 步骤3: 显示 router-view，刷新完成");
+  };
+
   return {
     visitedViews,
     cachedViews,
+    isRouterAlive,
     addView,
     addVisitedView,
     addCachedView,
@@ -164,5 +190,6 @@ export const useRouterStore = defineStore("router", () => {
     clearAllViews,
     initCacheConfig,
     updateCacheConfig,
+    refreshView,
   };
 });
