@@ -18,6 +18,7 @@
               :correct-value="status !== 'idle' ? correctOptionId : null"
             />
 
+            <!-- 答题失败时的错误提示（在卡片内显示） -->
             <div v-if="error" class="error">{{ error }}</div>
           </BaseCardContent>
         </BaseCard>
@@ -27,6 +28,8 @@
           <BaseButton @click="loadNext">下一题</BaseButton>
         </div>
       </template>
+      <!-- 加载题目失败时的错误提示（在外层显示） -->
+      <div v-else-if="error" class="error">{{ error }}</div>
       <div v-else>暂无题目</div>
     </div>
   </div>

@@ -22,12 +22,18 @@ export default defineConfig({
     "i-carbon-settings",
     "i-carbon-user-multiple",
     "i-carbon-user-admin",
+    "i-carbon-user-role",
+    "i-carbon-locked",
 
     // Header 图标
     "i-carbon-menu",
     "i-carbon-sun",
     "i-carbon-moon",
     "i-carbon-user",
+    "i-carbon-side-panel-open",
+    "i-carbon-side-panel-close",
+    "i-carbon-chevron-down",
+    "i-carbon-logout",
 
     // Tab 关闭按钮
     "i-carbon-close",

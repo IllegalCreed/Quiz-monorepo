@@ -21,7 +21,7 @@ const getBaseURL = (): string => {
 
 /** 从 localStorage 获取 token */
 const getToken = (): string | null => {
-  return localStorage.getItem("quiz-admin-token");
+  return localStorage.getItem("admin-token");
 };
 
 /**

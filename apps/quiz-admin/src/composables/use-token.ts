@@ -7,7 +7,7 @@ import { useLocalStorage } from "@vueuse/core";
 import { ref } from "vue";
 
 /** 模块级共享状态（单例） */
-const token = useLocalStorage("quiz-admin-token", "");
+const token = useLocalStorage<string | null>("admin-token", null);
 const needToRefreshRouter = ref(true);
 
 export const useToken = () => {
@@ -23,7 +23,7 @@ export const useToken = () => {
    * 清除 token
    */
   const clearToken = () => {
-    token.value = "";
+    token.value = null;
     needToRefreshRouter.value = true;
   };
 

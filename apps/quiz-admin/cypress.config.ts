@@ -5,4 +5,7 @@ export default defineConfig({
     specPattern: "cypress/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}",
     baseUrl: "http://localhost:10060",
   },
+  env: {
+    apiBaseUrl: "http://localhost:10020",
+  },
 });

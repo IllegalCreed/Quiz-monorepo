@@ -4,8 +4,8 @@
  */
 
 describe("登录流程", () => {
-  const BACKEND_URL = "http://localhost:10020";
-  const RESET_SECRET = "test-reset-secret-2024";
+  const BACKEND_URL = Cypress.env("apiBaseUrl") || "http://localhost:10020";
+  const RESET_SECRET = Cypress.env("TEST_RESET_SECRET");
 
   beforeEach(() => {
     // 重置测试数据库
@@ -110,6 +110,9 @@ describe("登录流程", () => {
     // 等待跳转
     cy.url().should("include", "/home/dashboard");
 
+    // 展开菜单（点击侧边栏折叠按钮）
+    cy.get(".header-icon-btn").first().click();
+
     // 验证所有菜单都可见
     cy.contains(".menu-item", "欢迎页").should("be.visible");
     cy.contains(".menu-item", "用户管理").should("be.visible");
@@ -126,6 +129,9 @@ describe("登录流程", () => {
 
     // 等待跳转
     cy.url().should("include", "/home/dashboard");
+
+    // 展开菜单（点击侧边栏折叠按钮）
+    cy.get(".header-icon-btn").first().click();
 
     // 验证有权限的菜单可见
     cy.contains(".menu-item", "欢迎页").should("be.visible");
@@ -146,6 +152,10 @@ describe("登录流程", () => {
     // 点击登出按钮
     cy.get(".user-dropdown").click();
     cy.contains(".dropdown-item", "退出登录").click();
+
+    // 确认登出 MessageBox（user-menu.vue 中会弹出确认框）
+    cy.contains(".el-message-box", "确定退出登录").should("be.visible");
+    cy.contains(".el-message-box button", "确定").click();
 
     // 应该返回登录页
     cy.url().should("include", "/login");

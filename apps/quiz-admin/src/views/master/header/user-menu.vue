@@ -51,15 +51,15 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <el-dropdown @command="handleCommand">
+  <el-dropdown class="user-dropdown" @command="handleCommand">
     <span class="user-info">
       <i-carbon-user class="w-5 h-5" />
-      <span class="user-nickname">{{ accountStore.userInfo?.nickname }}</span>
+      <span class="user-nickname nickname">{{ accountStore.userInfo?.nickname }}</span>
       <i-carbon-chevron-down class="w-3 h-3" />
     </span>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item command="logout">
+        <el-dropdown-item class="dropdown-item" command="logout">
           <i-carbon-logout class="w-4 h-4 mr-2" />
           退出登录
         </el-dropdown-item>

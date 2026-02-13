@@ -24,7 +24,12 @@ const { isCollapse } = useMenuCollapse();
     class="sidebar-menu"
     @select="handleSelect"
   >
-    <el-menu-item v-for="menu in menuStore.menus" :key="menu.index" :index="menu.index">
+    <el-menu-item
+      v-for="menu in menuStore.menus"
+      :key="menu.index"
+      :index="menu.index"
+      class="menu-item"
+    >
       <!-- el-icon 包裹：确保折叠模式下图标不被隐藏 -->
       <el-icon v-if="menu.icon">
         <span :class="menu.icon" />

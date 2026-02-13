@@ -10,7 +10,7 @@
  * - computeStatus 的各种组合（无 correctValue、有 correctValue、已选/未选）
  * - status 为 null 时的默认处理
  */
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { describe, it, expect } from "vitest";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
 import CheckRadio from "../components/CheckRadio.vue";
@@ -119,6 +119,39 @@ describe("CheckRadio 单选按钮组件", () => {
     const desc = wrapper.find(".radio__desc");
     expect(desc.exists()).toBe(true);
     expect(desc.text()).toBe("通过 slot 提供的描述");
+  });
+
+  it("动态 description：watch 响应式更新（覆盖 watch + nextTick 分支）", async () => {
+    // 准备：挂载初始无描述的 CheckRadio
+    const wrapper = mount(CheckRadio, {
+      props: { value: "dynamic", label: "动态描述测试" },
+    });
+
+    // 断言：初始无描述内容
+    const desc = wrapper.find(".radio__desc");
+    expect(desc.exists()).toBe(true);
+    expect(desc.text()).toBe("");
+
+    // 执行：动态添加描述（触发 watch + nextTick 分支）
+    await wrapper.setProps({ description: "这是动态添加的描述文字，用于测试高度计算" });
+    await flushPromises(); // 等待 watch 中的 nextTick 执行
+
+    // 断言：描述内容已更新
+    expect(desc.text()).toContain("这是动态添加的描述文字");
+
+    // 执行：修改描述内容（再次触发 watch + nextTick 分支）
+    await wrapper.setProps({ description: "更新后的描述内容" });
+    await flushPromises();
+
+    // 断言：内容已更新
+    expect(desc.text()).toContain("更新后的描述内容");
+
+    // 执行：移除描述（触发高度归零分支）
+    await wrapper.setProps({ description: undefined });
+    await flushPromises();
+
+    // 断言：描述内容已清空
+    expect(desc.text()).toBe("");
   });
 });
 

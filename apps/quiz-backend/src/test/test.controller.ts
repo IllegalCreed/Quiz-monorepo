@@ -7,6 +7,7 @@ import {
   Req,
 } from "@nestjs/common";
 import type { Request } from "express";
+import { Public } from "../common/decorators/public.decorator";
 
 function _getDatabaseNameFromEnv(): string {
   if (process.env.DATABASE_NAME) return process.env.DATABASE_NAME;
@@ -60,6 +61,7 @@ export function validateResetRequest(req: Request): void {
 
 @Controller("test")
 export class TestController {
+  @Public()
   @Post("reset")
   async reset(@Req() req: Request) {
     // Validate request (auth + db name checks)
@@ -106,6 +108,7 @@ export class TestController {
   // Used by preview/test orchestration to ensure the backend process is running and
   // the test endpoints are enabled without triggering DB queries that might fail
   // during transient DB connectivity issues.
+  @Public()
   @Get("ready")
   ready() {
     if (process.env.ENABLE_TEST_ENDPOINT !== "true") {
@@ -124,6 +127,7 @@ export class TestController {
   // Lightweight unconditional health check used by orchestration scripts to
   // verify the HTTP server is running. Intentionally does NOT access the DB
   // or require any environment variables.
+  @Public()
   @Get("hello")
   hello() {
     return { ok: true };

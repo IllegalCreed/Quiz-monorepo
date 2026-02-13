@@ -50,7 +50,8 @@ export const useAccountStore = defineStore("account", () => {
     }
 
     if (isMock.value) {
-      const info = await getInfoMockAPI(token.value);
+      // token 在调用 getInfo 时应该已经存在（登录后调用）
+      const info = await getInfoMockAPI(token.value!);
       userInfo.value = info;
       return info;
     }
@@ -66,7 +67,8 @@ export const useAccountStore = defineStore("account", () => {
    */
   const logout = async () => {
     if (isMock.value) {
-      await logoutMockAPI(token.value);
+      // token 在登出时应该已经存在
+      await logoutMockAPI(token.value!);
     } else {
       await logoutAPI();
     }

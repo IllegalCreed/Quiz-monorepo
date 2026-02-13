@@ -16,9 +16,13 @@ export function useQuiz() {
   const { isMock } = useMockStore();
 
   async function loadNext() {
+    // 防止并发请求：如果正在加载，直接返回
+    if (loading.value) {
+      return;
+    }
+
     loading.value = true;
     selected.value = null;
-    status.value = "idle";
     correctOptionId.value = null;
     error.value = null;
     optionDescriptions.value = {};
@@ -34,6 +38,7 @@ export function useQuiz() {
         ],
         explanation: "200 表示请求成功",
       };
+      status.value = "idle";
       loading.value = false;
       return;
     }
@@ -41,9 +46,11 @@ export function useQuiz() {
     try {
       const qs = await fetchQuestions(1);
       question.value = qs[0] ?? null;
+      status.value = "idle";
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e);
       question.value = null;
+      status.value = "idle";
     } finally {
       loading.value = false;
     }

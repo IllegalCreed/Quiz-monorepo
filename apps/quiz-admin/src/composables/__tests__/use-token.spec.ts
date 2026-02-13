@@ -13,7 +13,7 @@ describe("useToken", () => {
   it("应该正确设置和获取 token", () => {
     const { token, setToken } = useToken();
 
-    expect(token.value).toBe("");
+    expect(token.value).toBe(null);
 
     const testToken = "mock-token-123-456";
     setToken(testToken);
@@ -28,7 +28,7 @@ describe("useToken", () => {
     expect(token.value).toBe("mock-token-123-456");
 
     clearToken();
-    expect(token.value).toBe("");
+    expect(token.value).toBe(null);
   });
 
   it("应该持久化 token 到 localStorage", () => {

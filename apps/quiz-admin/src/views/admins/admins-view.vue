@@ -153,7 +153,8 @@ const openCreateDialog = () => {
  * 创建管理员
  */
 const handleCreate = async () => {
-  if (!createForm.value.username || !createForm.value.password || !createForm.value.nickname) {
+  // 验证必填字段（密码使用用户名作为初始密码，无需单独填写）
+  if (!createForm.value.username || !createForm.value.nickname) {
     ElMessage.warning("请填写完整信息");
     return;
   }
@@ -165,23 +166,32 @@ const handleCreate = async () => {
 
   try {
     loading.value = true;
+    // 使用用户名作为初始密码
+    const formData = {
+      ...createForm.value,
+      password: createForm.value.username,
+      roleId: Number(createForm.value.roleId),
+    };
+
     if (isMock.value) {
-      await createAdminMock({
-        ...createForm.value,
-        roleId: Number(createForm.value.roleId),
-      });
+      await createAdminMock(formData);
     } else {
-      await createAdmin({
-        ...createForm.value,
-        roleId: Number(createForm.value.roleId),
-      });
+      await createAdmin(formData);
     }
-    ElMessage.success("创建成功");
+    ElMessage({
+      message: "创建成功",
+      type: "success",
+      customClass: "admin-create-success",
+    });
     createDialogVisible.value = false;
     await loadAdmins();
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建管理员失败";
-    ElMessage.error(message);
+    ElMessage({
+      message,
+      type: "error",
+      customClass: "admin-create-error",
+    });
   } finally {
     loading.value = false;
   }
@@ -229,7 +239,11 @@ const saveRole = async () => {
         roleId: Number(selectedRoleId.value),
       });
     }
-    ElMessage.success("角色更新成功");
+    ElMessage({
+      message: "角色更新成功",
+      type: "success",
+      customClass: "admin-role-update-success",
+    });
     roleDialogVisible.value = false;
     await loadAdmins();
   } catch (error) {
@@ -262,7 +276,11 @@ const handleDelete = async (admin: AdminUserItem) => {
     } else {
       await deleteAdmin(admin.id);
     }
-    ElMessage.success("删除成功");
+    ElMessage({
+      message: "删除成功",
+      type: "success",
+      customClass: "admin-delete-success",
+    });
     await loadAdmins();
   } catch (error) {
     if (error === "cancel") return;

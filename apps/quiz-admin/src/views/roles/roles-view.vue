@@ -150,12 +150,20 @@ const handleCreate = async () => {
     } else {
       await createRole(createForm.value);
     }
-    ElMessage.success("创建成功");
+    ElMessage({
+      message: "创建成功",
+      type: "success",
+      customClass: "role-create-success",
+    });
     createDialogVisible.value = false;
     await loadRoles();
   } catch (error) {
     const message = error instanceof Error ? error.message : "创建角色失败";
-    ElMessage.error(message);
+    ElMessage({
+      message,
+      type: "error",
+      customClass: "role-create-error",
+    });
   } finally {
     loading.value = false;
   }
@@ -195,12 +203,20 @@ const handleEdit = async () => {
     } else {
       await updateRole(currentRole.value.id, editForm.value);
     }
-    ElMessage.success("更新成功");
+    ElMessage({
+      message: "更新成功",
+      type: "success",
+      customClass: "role-update-success",
+    });
     editDialogVisible.value = false;
     await loadRoles();
   } catch (error) {
     const message = error instanceof Error ? error.message : "更新角色失败";
-    ElMessage.error(message);
+    ElMessage({
+      message,
+      type: "error",
+      customClass: "role-update-error",
+    });
   } finally {
     loading.value = false;
   }
@@ -256,12 +272,20 @@ const savePermissions = async () => {
         apiPermissions: selectedApiPermissions.value,
       });
     }
-    ElMessage.success("权限更新成功");
+    ElMessage({
+      message: "权限更新成功",
+      type: "success",
+      customClass: "role-permission-update-success",
+    });
     permissionDialogVisible.value = false;
     await loadRoles();
   } catch (error) {
     const message = error instanceof Error ? error.message : "权限更新失败";
-    ElMessage.error(message);
+    ElMessage({
+      message,
+      type: "error",
+      customClass: "role-permission-update-error",
+    });
   } finally {
     loading.value = false;
   }
@@ -287,12 +311,20 @@ const handleDelete = async (role: Role) => {
     } else {
       await deleteRole(role.id);
     }
-    ElMessage.success("删除成功");
+    ElMessage({
+      message: "删除成功",
+      type: "success",
+      customClass: "role-delete-success",
+    });
     await loadRoles();
   } catch (error) {
     if (error === "cancel") return;
     const message = error instanceof Error ? error.message : "删除失败";
-    ElMessage.error(message);
+    ElMessage({
+      message,
+      type: "error",
+      customClass: "role-delete-error",
+    });
   } finally {
     loading.value = false;
   }

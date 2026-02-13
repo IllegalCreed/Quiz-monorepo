@@ -35,7 +35,7 @@ const router = createRouter({
 
 /**
  * 路由守卫
- * 验证登录状态 + 动态加载路由
+ * 验证登录状态 + 动态加载路由 + 权限检查
  */
 router.beforeEach(async (to, from, next) => {
   const { token, needToRefreshRouter } = useToken();
@@ -70,13 +70,21 @@ router.beforeEach(async (to, from, next) => {
     } catch (error) {
       console.error("获取用户信息失败:", error);
       // 清除 token 并跳转登录页
-      token.value = "";
+      token.value = null;
       next({ path: "/login", query: { redirect: to.fullPath } });
     }
     return;
   }
 
-  // 4. 正常放行
+  // 4. 权限检查：验证用户是否有权访问该路由
+  if (to.matched.length === 0) {
+    // 路由不存在（可能因为无权限未添加），重定向到首页
+    console.warn(`路由 ${to.path} 不存在或无权限访问`);
+    next({ path: "/home/dashboard", replace: true });
+    return;
+  }
+
+  // 5. 正常放行
   next();
 });
 

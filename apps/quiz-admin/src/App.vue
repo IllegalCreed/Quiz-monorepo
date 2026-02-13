@@ -4,6 +4,7 @@
  */
 import { onMounted } from "vue";
 import { useRouterStore } from "@/stores/modules/router";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
 
 const routerStore = useRouterStore();
 
@@ -16,7 +17,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <router-view />
+  <el-config-provider :locale="zhCn">
+    <router-view />
+  </el-config-provider>
 </template>
 
 <style scoped></style>
