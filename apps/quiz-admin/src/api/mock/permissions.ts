@@ -36,6 +36,7 @@ export const getPermissionRouteMapping = async (): Promise<Record<string, string
   return {
     dashboard: ["dashboard"],
     users: ["users"],
+    questions: ["questions", "question-detail"],
     admins: ["admins"],
     roles: ["roles"],
     permissions: ["permissions"],

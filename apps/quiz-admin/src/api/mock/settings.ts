@@ -25,6 +25,12 @@ const getDefaultCacheSettings = (): PageCacheSettings => ({
       cacheEnabled: true,
     },
     {
+      routeName: "questions",
+      componentName: "QuestionsView",
+      title: "题目管理",
+      cacheEnabled: true,
+    },
+    {
       routeName: "admins",
       componentName: "AdminsView",
       title: "管理员管理",

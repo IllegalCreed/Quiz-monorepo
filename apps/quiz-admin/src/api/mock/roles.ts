@@ -12,7 +12,15 @@ const mockRoles: Role[] = [
     name: "超级管理员",
     description: "系统内置角色，拥有全部权限",
     isSystem: true,
-    menuPermissions: ["dashboard", "users", "admins", "roles", "permissions", "system"],
+    menuPermissions: [
+      "dashboard",
+      "users",
+      "questions",
+      "admins",
+      "roles",
+      "permissions",
+      "system",
+    ],
     apiPermissions: ALL_API_PERMISSIONS.map((p) => p.key), // 全部权限
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",

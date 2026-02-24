@@ -59,27 +59,44 @@
   - 角色 CRUD、系统角色保护、使用中角色检查
   - 权限查询、API 权限结构验证、权限选择器
 
-**已实现的后端接口（15 个）**：
+**已实现的后端接口（20 个）**：
 
-| 模块            | 端点                           | 方法   | 权限               | 状态 |
-| --------------- | ------------------------------ | ------ | ------------------ | ---- |
-| **Auth**        | `/api/admin/auth/login`        | POST   | Public             | ✅   |
-|                 | `/api/admin/auth/info`         | GET    | JWT                | ✅   |
-|                 | `/api/admin/auth/logout`       | POST   | JWT                | ✅   |
-| **Admins**      | `/api/admin/admins`            | GET    | `admins:list`      | ✅   |
-|                 | `/api/admin/admins/:id`        | GET    | `admins:list`      | ✅   |
-|                 | `/api/admin/admins`            | POST   | `admins:create`    | ✅   |
-|                 | `/api/admin/admins/:id/role`   | PATCH  | `admins:update`    | ✅   |
-|                 | `/api/admin/admins/:id`        | DELETE | `admins:delete`    | ✅   |
-| **Roles**       | `/api/admin/roles`             | GET    | `roles:list`       | ✅   |
-|                 | `/api/admin/roles/:id`         | GET    | `roles:list`       | ✅   |
-|                 | `/api/admin/roles`             | POST   | `roles:create`     | ✅   |
-|                 | `/api/admin/roles/:id`         | PUT    | `roles:update`     | ✅   |
-|                 | `/api/admin/roles/:id`         | DELETE | `roles:delete`     | ✅   |
-| **Permissions** | `/api/admin/permissions/menus` | GET    | `permissions:list` | ✅   |
-|                 | `/api/admin/permissions/apis`  | GET    | `permissions:list` | ✅   |
+| 模块                | 端点                           | 方法   | 权限               | 状态 |
+| ------------------- | ------------------------------ | ------ | ------------------ | ---- |
+| **Auth**            | `/api/admin/auth/login`        | POST   | Public             | ✅   |
+|                     | `/api/admin/auth/info`         | GET    | JWT                | ✅   |
+|                     | `/api/admin/auth/logout`       | POST   | JWT                | ✅   |
+| **Admins**          | `/api/admin/admins`            | GET    | `admins:list`      | ✅   |
+|                     | `/api/admin/admins/:id`        | GET    | `admins:list`      | ✅   |
+|                     | `/api/admin/admins`            | POST   | `admins:create`    | ✅   |
+|                     | `/api/admin/admins/:id/role`   | PATCH  | `admins:update`    | ✅   |
+|                     | `/api/admin/admins/:id`        | DELETE | `admins:delete`    | ✅   |
+| **Roles**           | `/api/admin/roles`             | GET    | `roles:list`       | ✅   |
+|                     | `/api/admin/roles/:id`         | GET    | `roles:list`       | ✅   |
+|                     | `/api/admin/roles`             | POST   | `roles:create`     | ✅   |
+|                     | `/api/admin/roles/:id`         | PUT    | `roles:update`     | ✅   |
+|                     | `/api/admin/roles/:id`         | DELETE | `roles:delete`     | ✅   |
+| **Permissions**     | `/api/admin/permissions/menus` | GET    | `permissions:list` | ✅   |
+|                     | `/api/admin/permissions/apis`  | GET    | `permissions:list` | ✅   |
+| **Admin Questions** | `/api/admin/questions`         | GET    | `questions:list`   | ✅   |
+|                     | `/api/admin/questions/:id`     | GET    | `questions:list`   | ✅   |
+|                     | `/api/admin/questions`         | POST   | `questions:create` | ✅   |
+|                     | `/api/admin/questions/:id`     | PATCH  | `questions:update` | ✅   |
+|                     | `/api/admin/questions/:id`     | DELETE | `questions:delete` | ✅   |
 
-**测试账号（已更新）**：
+**✅ Phase 6: 题目管理模块（2026-02-24 完成）**
+
+- **后端**：`AdminQuestionsModule` 独立模块，5 个 CRUD 端点
+  - 软删除（`deletedAt` 字段）+ 题型字段（`type`，默认 `single_choice`）
+  - Schema 迁移 + 公开 API 软删除过滤修复
+  - 选项 replace-all 更新策略（`$transaction`）
+  - 创建时验证恰好 1 个正确答案
+- **前端**：列表页 + 详情页（新建/编辑复用同一组件）
+  - Mock API（5 条测试数据）+ 真实 API（`/api/admin/questions`）
+  - 按关键词/标签搜索筛选 + 分页
+  - 选项动态增删 + 单选正确答案 Radio Group
+  - 权限路由：`questions`（列表）+ `question-detail`（详情，不缓存）
+  - 超级管理员菜单权限通配符 `["*"]`：JWT 策略、菜单 Store、动态路由全部支持
 
 - 超级管理员：`super_admin` / `super_admin`（全部权限）
 - 普通管理员：`admin` / `admin123`（仅 users:\* 权限）
@@ -150,6 +167,8 @@ apps/quiz-admin/
 │   │   ├── dashboard/        # 欢迎页（统计卡片）
 │   │   ├── users/            # 用户管理（CRUD + 状态切换）
 │   │   ├── admins/           # 管理员管理（权限配置 + 超级管理员保护）
+│   │   ├── roles/            # 角色管理（CRUD + 权限配置/查看）
+│   │   ├── questions/        # 题目管理（列表页 + 详情页）
 │   │   └── system/           # 系统设置（占位）
 │   └── main.ts               # 入口（优化后的 CSS 导入顺序）
 ├── vitest.config.ts          # 单元测试配置（已移除 passWithNoTests）
@@ -193,57 +212,30 @@ import "virtual:uno.css"; // UnoCSS（最后导入，最高优先级）
 
 ## 待完成任务
 
-### P1: 题目管理模块 ⭐⭐⭐
+### P1: 题目管理模块全套测试 ⭐⭐⭐
 
-管理后台核心功能，管理 Quiz App 的题目数据。
+**后端单元测试**（参考 `src/admins/__tests__/` 和 `src/roles/__tests__/`）：
 
-**功能需求**：
+- `admin-questions.service.spec.ts`：`findAll`（关键词/标签筛选、分页）、`findOne`（软删除过滤、NotFoundException）、`create`（正确答案校验、选项嵌套创建）、`update`（`$transaction` replace-all）、`remove`（软删除时间戳）
+- `admin-questions.controller.spec.ts`：5 个端点权限装饰器验证、DTO 转换、Service 调用
 
-- 题目列表：分页、按标签搜索/筛选
-- 创建题目：题干 + 多个选项（标记正确答案）+ 标签
-- 编辑/删除题目
-- 批量导入题目（JSON 格式，复用 seed-test.json 结构）
-- 题目预览（渲染效果预览）
+**前端单元测试**（Vitest）：
 
-**技术实现**：
+- `question.ts` 类型验证
+- Mock API 数据一致性
 
-- 新增 `src/views/questions/` 页面组件
-- 新增 `src/api/mock/questions.ts` Mock API
-- 更新 `src/router/home-routes.ts` 添加 questions 路由
-- 新增 `src/types/question.ts` 类型定义（对齐后端 Prisma schema）
-- 更新权限定义：`questions`（菜单）+ `questions:read/write/delete`（API）
+**前端 E2E 测试**（Cypress）：
 
-**参考设计**：
-
-- 列表页：Element Plus Table + Pagination
-- 表单页：Element Plus Form + Dynamic Form Items（选项动态添加/删除）
-- 标签筛选：Element Plus Select（multiple）
+- `questions.cy.ts`：列表展示、搜索/筛选、新建题目、编辑题目、软删除
+- 权限隔离：无 `questions` 权限的账号不显示菜单、直接访问 URL 被重定向
 
 ---
 
-### P2: 前端对接真实 API ⭐⭐
+### P2: 其他待完成功能
 
-**✅ 后端接口已完成**（2026-02-12）：
-
-- Auth: 登录、获取信息、登出
-- Admins: 列表、详情、创建、更新角色、删除
-- Roles: 列表、详情、创建、更新、删除
-- Permissions: 菜单权限、API 权限
-
-**⏳ 前端对接（待完成）**：
-
-- 新增 `src/api/` 真实 API 调用（account.ts/users.ts/admins.ts/questions.ts）
-- 配置 axios 实例（baseURL/timeout/interceptors）
-- 请求拦截器：注入 token（`Authorization: Bearer ${token}`）
-- 响应拦截器：401 自动跳转登录，统一错误处理
-- 根据 `VITE_MOCK` 环境变量切换 mock/真实 API
-
-**已完成的 E2E 测试可用于验证对接**：
-
-- `cypress/e2e/login.cy.ts` - 登录流程验证
-- `cypress/e2e/admins.cy.ts` - 管理员管理验证
-- `cypress/e2e/roles.cy.ts` - 角色管理验证
-- `cypress/e2e/permissions.cy.ts` - 权限查询验证
+- **批量导入题目**：JSON 格式上传（复用 seed-test.json 结构）
+- **题目预览**：渲染效果预览（对齐 quiz-app 样式）
+- **Dashboard 统计**：真实数据（题目数、用户数、答题次数）
 
 ---
 
@@ -351,4 +343,4 @@ pnpm preview                # 预览生产构建
 
 ---
 
-_最后更新: 2026-02-11_
+_最后更新: 2026-02-24_

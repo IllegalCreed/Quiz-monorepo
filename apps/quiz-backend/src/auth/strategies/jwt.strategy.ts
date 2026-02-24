@@ -54,7 +54,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       role: admin.roleId === 1 ? "super_admin" : "admin", // 兼容前端
       roleId: admin.roleId,
       roleName: admin.role.name,
-      menuPermissions: admin.role.menuPermissions as string[],
+      // 超级管理员拥有全部菜单权限，用通配符标记，与 apiPermissions 的 "*" 逻辑对称
+      menuPermissions:
+        admin.roleId === 1 ? ["*"] : (admin.role.menuPermissions as string[]),
       apiPermissions: admin.role.apiPermissions as string[],
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,

@@ -16,6 +16,7 @@ export class QuestionsService {
     const q = await this.prisma.$queryRaw<QuestionRow[]>`
       SELECT q.id as id, q.stem as stem, q.explanation as explanation, q.tags as tags
       FROM Question q
+      WHERE q.deletedAt IS NULL
       ORDER BY RAND()
       LIMIT ${limit}
     `;

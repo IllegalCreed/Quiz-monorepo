@@ -8,6 +8,7 @@ import { AuthModule } from "./auth/auth.module";
 import { AdminsModule } from "./admins/admins.module";
 import { RolesModule } from "./roles/roles.module";
 import { PermissionsModule } from "./permissions/permissions.module";
+import { AdminQuestionsModule } from "./admin-questions/admin-questions.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "./auth/guards/permission.guard";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
@@ -21,6 +22,7 @@ import { TransformInterceptor } from "./common/interceptors/transform.intercepto
     RolesModule,
     PermissionsModule,
     QuestionsModule,
+    AdminQuestionsModule,
     AnswersModule,
     TestModule,
   ],

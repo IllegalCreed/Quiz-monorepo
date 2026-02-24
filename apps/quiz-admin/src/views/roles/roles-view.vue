@@ -241,12 +241,43 @@ const openPermissionDialog = (role: Role) => {
 };
 
 /**
+ * 展开菜单权限通配符为具体权限 key 列表（用于只读展示）
+ */
+const expandMenuPermissions = (permissions: string[]): string[] => {
+  if (permissions.includes("*")) {
+    return ALL_MENU_PERMISSIONS.map((p) => p.key);
+  }
+  return permissions;
+};
+
+/**
+ * 展开 API 权限通配符为具体权限 key 列表（用于只读展示）
+ * 例：["users:*"] → ["users:list", "users:create", ...]
+ */
+const expandApiPermissions = (permissions: string[]): string[] => {
+  const expanded: string[] = [];
+  for (const perm of permissions) {
+    if (perm.endsWith(":*")) {
+      const module = perm.slice(0, -2);
+      const group = ALL_API_PERMISSION_GROUPS.find((g) => g.module === module);
+      if (group) {
+        expanded.push(...group.permissions.map((p) => p.key));
+      }
+    } else {
+      expanded.push(perm);
+    }
+  }
+  return expanded;
+};
+
+/**
  * 打开权限查看对话框（只读模式）
  */
 const openViewPermissionDialog = (role: Role) => {
   currentRole.value = role;
-  selectedMenuPermissions.value = [...role.menuPermissions];
-  selectedApiPermissions.value = [...role.apiPermissions];
+  // 展开通配符，确保复选框能正确显示全选状态
+  selectedMenuPermissions.value = expandMenuPermissions([...role.menuPermissions]);
+  selectedApiPermissions.value = expandApiPermissions([...role.apiPermissions]);
   isPermissionReadonly.value = true;
   // 默认展开所有模块
   activeCollapseNames.value = ALL_API_PERMISSION_GROUPS.map((g) => g.module);
@@ -369,17 +400,23 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="菜单权限" min-width="240">
         <template #default="{ row }">
-          <el-tag
-            v-for="perm in row.menuPermissions.slice(0, 3)"
-            :key="perm"
-            size="small"
-            class="mr-1 mb-1"
-          >
-            {{ perm }}
+          <!-- 超级管理员通配符：直接显示"全部权限" -->
+          <el-tag v-if="row.menuPermissions.includes('*')" size="small" type="danger">
+            全部权限
           </el-tag>
-          <el-tag v-if="row.menuPermissions.length > 3" size="small" type="info">
-            +{{ row.menuPermissions.length - 3 }}
-          </el-tag>
+          <template v-else>
+            <el-tag
+              v-for="perm in row.menuPermissions.slice(0, 3)"
+              :key="perm"
+              size="small"
+              class="mr-1 mb-1"
+            >
+              {{ perm }}
+            </el-tag>
+            <el-tag v-if="row.menuPermissions.length > 3" size="small" type="info">
+              +{{ row.menuPermissions.length - 3 }}
+            </el-tag>
+          </template>
         </template>
       </el-table-column>
       <el-table-column label="API 权限" width="100">

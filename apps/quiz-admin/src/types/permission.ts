@@ -34,6 +34,7 @@ export interface ApiPermissionGroup {
 export const ALL_MENU_PERMISSIONS: MenuPermission[] = [
   { key: "dashboard", label: "欢迎页" },
   { key: "users", label: "用户管理" },
+  { key: "questions", label: "题目管理" },
   { key: "admins", label: "管理员管理" },
   { key: "roles", label: "角色管理" },
   { key: "permissions", label: "权限管理" },
@@ -91,12 +92,9 @@ export const ALL_API_PERMISSION_GROUPS: ApiPermissionGroup[] = [
     label: "题目管理",
     permissions: [
       { key: "questions:list", label: "查看题目列表", module: "questions" },
-      { key: "questions:create", label: "创建题目", module: "questions" },
+      { key: "questions:create", label: "新增题目", module: "questions" },
       { key: "questions:update", label: "编辑题目", module: "questions" },
-      { key: "questions:delete", label: "删除题目", module: "questions" },
-      { key: "questions:publish", label: "发布题目", module: "questions" },
-      { key: "questions:export", label: "导出题目", module: "questions" },
-      { key: "questions:import", label: "批量导入题目", module: "questions" },
+      { key: "questions:delete", label: "删除题目（软删除）", module: "questions" },
     ],
   },
   {

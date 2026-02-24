@@ -23,6 +23,12 @@ const allMenus: MenuItem[] = [
     icon: "i-carbon-user-multiple",
   },
   {
+    index: "/home/questions",
+    name: "questions",
+    title: "题目管理",
+    icon: "i-carbon-document",
+  },
+  {
     index: "/home/admins",
     name: "admins",
     title: "管理员管理",
@@ -56,6 +62,9 @@ export const useMenuStore = defineStore("menu", () => {
    */
   const menus = computed<MenuItem[]>(() => {
     const permissions = accountStore.userInfo?.menuPermissions || [];
+
+    // 超级管理员（通配符 "*"）显示全部菜单
+    if (permissions.includes("*")) return [...allMenus];
 
     // 过滤菜单:只显示有权限的菜单
     return allMenus.filter((menu) => permissions.includes(menu.name));

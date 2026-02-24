@@ -422,20 +422,31 @@ onMounted(async () => {
             <div class="mb-3">
               <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
               <div class="mt-1">
+                <!-- 超级管理员通配符：显示"全部权限"标签 -->
                 <el-tag
-                  v-for="perm in currentAdminMenuPermissions"
-                  :key="perm"
+                  v-if="currentAdminMenuPermissions.includes('*')"
                   size="small"
+                  type="danger"
                   class="mr-1 mb-1"
                 >
-                  {{ perm }}
+                  全部权限
                 </el-tag>
-                <span
-                  v-if="currentAdminMenuPermissions.length === 0"
-                  class="text-xs text-gray-400 dark:text-gray-500"
-                >
-                  无
-                </span>
+                <template v-else>
+                  <el-tag
+                    v-for="perm in currentAdminMenuPermissions"
+                    :key="perm"
+                    size="small"
+                    class="mr-1 mb-1"
+                  >
+                    {{ perm }}
+                  </el-tag>
+                  <span
+                    v-if="currentAdminMenuPermissions.length === 0"
+                    class="text-xs text-gray-400 dark:text-gray-500"
+                  >
+                    无
+                  </span>
+                </template>
               </div>
             </div>
             <div>
@@ -503,14 +514,25 @@ onMounted(async () => {
             <div class="mb-3">
               <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
               <div class="mt-1">
+                <!-- 超级管理员通配符：显示"全部权限"标签 -->
                 <el-tag
-                  v-for="perm in currentAdminMenuPermissions"
-                  :key="perm"
+                  v-if="currentAdminMenuPermissions.includes('*')"
                   size="small"
+                  type="danger"
                   class="mr-1 mb-1"
                 >
-                  {{ perm }}
+                  全部权限
                 </el-tag>
+                <template v-else>
+                  <el-tag
+                    v-for="perm in currentAdminMenuPermissions"
+                    :key="perm"
+                    size="small"
+                    class="mr-1 mb-1"
+                  >
+                    {{ perm }}
+                  </el-tag>
+                </template>
               </div>
             </div>
             <div>

@@ -23,20 +23,14 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
 
   const superAdminRole = await prisma.role.upsert({
     where: { id: 1 },
-    update: {},
+    // 超级管理员菜单权限用通配符，与 jwt.strategy.ts 的处理逻辑对称
+    update: { menuPermissions: ["*"] },
     create: {
       id: 1,
       name: "超级管理员",
       description: "系统内置角色，拥有全部权限",
       isSystem: true,
-      menuPermissions: [
-        "dashboard",
-        "users",
-        "admins",
-        "roles",
-        "permissions",
-        "system",
-      ],
+      menuPermissions: ["*"],
       apiPermissions: [
         "users:*",
         "admins:*",

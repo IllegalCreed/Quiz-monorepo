@@ -5,6 +5,8 @@
 export const permissionRoutesMapping: Record<string, string[]> = {
   dashboard: ["dashboard"],
   users: ["users"],
+  // 题目管理：列表页 + 详情页（新建/编辑）均需 questions 权限
+  questions: ["questions", "question-detail"],
   admins: ["admins"],
   roles: ["roles"],
   permissions: ["permissions"],

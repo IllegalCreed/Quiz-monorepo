@@ -29,10 +29,16 @@ export const updateHomeRoutes = (router: Router, menuPermissions: string[]) => {
 
   // 获取所有允许访问的路由名称
   const allowedRouteNames = new Set<string>();
-  menuPermissions.forEach((permission) => {
-    const routes = permissionRoutesMapping[permission] || [];
-    routes.forEach((name) => allowedRouteNames.add(name));
-  });
+
+  // 超级管理员（通配符 "*"）拥有全部路由权限
+  if (menuPermissions.includes("*")) {
+    homeRoutes.forEach((route) => allowedRouteNames.add(route.name as string));
+  } else {
+    menuPermissions.forEach((permission) => {
+      const routes = permissionRoutesMapping[permission] || [];
+      routes.forEach((name) => allowedRouteNames.add(name));
+    });
+  }
 
   // 过滤出有权限的路由
   const filteredRoutes = homeRoutes.filter((route) => allowedRouteNames.has(route.name as string));

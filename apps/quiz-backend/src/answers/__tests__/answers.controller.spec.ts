@@ -48,8 +48,10 @@ describe("AnswersController", () => {
       const mockQuestion = {
         id: 1,
         stem: "测试题目",
+        type: "single_choice",
         explanation: "这是解析",
         tags: null,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         options: [
@@ -115,8 +117,10 @@ describe("AnswersController", () => {
       questionsService.findQuestionById.mockResolvedValue({
         id: 1,
         stem: "测试题目",
+        type: "single_choice",
         explanation: "这是解析",
         tags: null,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         options: [
@@ -187,8 +191,10 @@ describe("AnswersController", () => {
       questionsService.findQuestionById.mockResolvedValue({
         id: 1,
         stem: "测试题目",
+        type: "single_choice",
         explanation: null,
         tags: null,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         options: [
