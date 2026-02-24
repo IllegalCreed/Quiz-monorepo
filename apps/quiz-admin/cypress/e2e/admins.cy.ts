@@ -122,7 +122,9 @@ describe("管理员管理", () => {
 
     // 等待下拉菜单出现并选择
     cy.get(".el-select-dropdown:visible").should("be.visible");
-    cy.get(".el-select-dropdown:visible").contains(".el-select-dropdown__item", "内容管理员").click();
+    cy.get(".el-select-dropdown:visible")
+      .contains(".el-select-dropdown__item", "内容管理员")
+      .click();
 
     // 等待下拉菜单关闭
     cy.get(".el-select-dropdown:visible").should("not.exist");

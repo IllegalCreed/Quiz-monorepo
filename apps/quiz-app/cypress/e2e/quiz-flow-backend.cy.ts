@@ -73,7 +73,10 @@ describe("Quiz Flow - Real Backend", () => {
 
       // 判断是否答对
       cy.get("body").then(($body) => {
-        if ($body.find(".radio.radio--correct").length > 0 && $body.find(".radio.radio--incorrect").length === 0) {
+        if (
+          $body.find(".radio.radio--correct").length > 0 &&
+          $body.find(".radio.radio--incorrect").length === 0
+        ) {
           // 答对：不应该显示解析描述（has-content 类名不存在）
           cy.get(".radio__desc").should("not.have.class", "has-content");
           // 不应该显示"下一题"按钮
@@ -117,7 +120,9 @@ describe("Quiz Flow - Real Backend", () => {
           cy.get(".radio-group .radio").first().click();
 
           // 等待答题结果
-          cy.get(".radio.radio--correct, .radio.radio--incorrect", { timeout: 10000 }).should("exist");
+          cy.get(".radio.radio--correct, .radio.radio--incorrect", { timeout: 10000 }).should(
+            "exist",
+          );
 
           // 如果答错了，点击"下一题"
           cy.get("body").then(($body) => {

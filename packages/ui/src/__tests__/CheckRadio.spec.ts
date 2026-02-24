@@ -133,7 +133,9 @@ describe("CheckRadio 单选按钮组件", () => {
     expect(desc.text()).toBe("");
 
     // 执行：动态添加描述（触发 watch + nextTick 分支）
-    await wrapper.setProps({ description: "这是动态添加的描述文字，用于测试高度计算" });
+    await wrapper.setProps({
+      description: "这是动态添加的描述文字，用于测试高度计算",
+    });
     await flushPromises(); // 等待 watch 中的 nextTick 执行
 
     // 断言：描述内容已更新
