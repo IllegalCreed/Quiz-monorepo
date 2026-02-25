@@ -55,7 +55,7 @@ describe("PermissionsController", () => {
   describe("getMenuPermissions", () => {
     it("应该返回菜单权限列表", () => {
       // Arrange
-      jest
+      const getMenuSpy = jest
         .spyOn(service, "getMenuPermissions")
         .mockReturnValue(mockMenuPermissions);
 
@@ -64,14 +64,14 @@ describe("PermissionsController", () => {
 
       // Assert
       expect(result).toEqual(mockMenuPermissions);
-      expect(service.getMenuPermissions).toHaveBeenCalled();
+      expect(getMenuSpy).toHaveBeenCalled();
     });
   });
 
   describe("getApiPermissions", () => {
     it("应该返回 API 权限列表", () => {
       // Arrange
-      jest
+      const getApiSpy = jest
         .spyOn(service, "getApiPermissions")
         .mockReturnValue(mockApiPermissions);
 
@@ -80,7 +80,7 @@ describe("PermissionsController", () => {
 
       // Assert
       expect(result).toEqual(mockApiPermissions);
-      expect(service.getApiPermissions).toHaveBeenCalled();
+      expect(getApiSpy).toHaveBeenCalled();
     });
   });
 });

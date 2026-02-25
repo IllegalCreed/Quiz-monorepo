@@ -52,28 +52,32 @@ describe("AdminsController", () => {
   describe("findAll", () => {
     it("应该返回所有管理员", async () => {
       // Arrange
-      jest.spyOn(service, "findAll").mockResolvedValue(mockAdmins as never);
+      const findAllSpy = jest
+        .spyOn(service, "findAll")
+        .mockResolvedValue(mockAdmins as never);
 
       // Act
       const result = await controller.findAll();
 
       // Assert
       expect(result).toEqual(mockAdmins);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(findAllSpy).toHaveBeenCalled();
     });
   });
 
   describe("findOne", () => {
     it("应该返回指定管理员", async () => {
       // Arrange
-      jest.spyOn(service, "findOne").mockResolvedValue(mockAdmin as never);
+      const findOneSpy = jest
+        .spyOn(service, "findOne")
+        .mockResolvedValue(mockAdmin as never);
 
       // Act
       const result = await controller.findOne(2);
 
       // Assert
       expect(result).toEqual(mockAdmin);
-      expect(service.findOne).toHaveBeenCalledWith(2);
+      expect(findOneSpy).toHaveBeenCalledWith(2);
     });
   });
 
@@ -97,7 +101,9 @@ describe("AdminsController", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      jest.spyOn(service, "create").mockResolvedValue(createdAdmin as never);
+      const createSpy = jest
+        .spyOn(service, "create")
+        .mockResolvedValue(createdAdmin as never);
 
       // Act
       const result = await controller.create(createDto);
@@ -105,7 +111,7 @@ describe("AdminsController", () => {
       // Assert
       expect(result).toEqual(createdAdmin);
       expect(result).not.toHaveProperty("password");
-      expect(service.create).toHaveBeenCalledWith(createDto);
+      expect(createSpy).toHaveBeenCalledWith(createDto);
     });
   });
 
@@ -118,7 +124,7 @@ describe("AdminsController", () => {
         roleId: 2,
         roleName: "内容管理员",
       };
-      jest
+      const updateRoleSpy = jest
         .spyOn(service, "updateRole")
         .mockResolvedValue(updatedAdmin as never);
 
@@ -127,21 +133,23 @@ describe("AdminsController", () => {
 
       // Assert
       expect(result).toEqual(updatedAdmin);
-      expect(service.updateRole).toHaveBeenCalledWith(2, updateDto);
+      expect(updateRoleSpy).toHaveBeenCalledWith(2, updateDto);
     });
   });
 
   describe("remove", () => {
     it("应该删除管理员", async () => {
       // Arrange
-      jest.spyOn(service, "remove").mockResolvedValue(mockAdmin as never);
+      const removeSpy = jest
+        .spyOn(service, "remove")
+        .mockResolvedValue(mockAdmin as never);
 
       // Act
       const result = await controller.remove(2);
 
       // Assert
       expect(result).toEqual(mockAdmin);
-      expect(service.remove).toHaveBeenCalledWith(2);
+      expect(removeSpy).toHaveBeenCalledWith(2);
     });
   });
 });

@@ -50,7 +50,6 @@ describe("AdminsService", () => {
       apiPermissions: ["*:*"],
       createdAt: new Date(),
       updatedAt: new Date(),
-      _count: { admins: 0 },
     },
   };
 
@@ -72,7 +71,6 @@ describe("AdminsService", () => {
       apiPermissions: ["users:*"],
       createdAt: new Date(),
       updatedAt: new Date(),
-      _count: { admins: 0 },
     },
   };
 
@@ -170,7 +168,7 @@ describe("AdminsService", () => {
       jest
         .spyOn(prisma.role, "findUnique")
         .mockResolvedValue(mockNormalAdmin.role);
-      jest.spyOn(prisma.admin, "create").mockResolvedValue({
+      const createSpy = jest.spyOn(prisma.admin, "create").mockResolvedValue({
         id: 3,
         username: createDto.username,
         password: hashedPassword,
@@ -189,7 +187,7 @@ describe("AdminsService", () => {
       expect(result).not.toHaveProperty("password");
       expect(result).toHaveProperty("username", "new_admin");
       expect(mockBcryptHash).toHaveBeenCalledWith("password123", 10);
-      expect(prisma.admin.create).toHaveBeenCalledWith({
+      expect(createSpy).toHaveBeenCalledWith({
         data: {
           username: "new_admin",
           password: hashedPassword,
@@ -218,6 +216,23 @@ describe("AdminsService", () => {
       // Act & Assert
       await expect(service.create(createDto)).rejects.toThrow(
         new BadRequestException(`用户名 "${createDto.username}" 已存在`),
+      );
+    });
+
+    it("指定的角色 ID 不存在时应该抛出 NotFoundException", async () => {
+      // Arrange：用户名不重复，但角色 ID 不存在
+      const createDto = {
+        username: "new_user",
+        password: "password123",
+        nickname: "新管理员",
+        roleId: 999,
+      };
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(null); // 用户名不重复
+      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(null); // 角色不存在
+
+      // Act & Assert
+      await expect(service.create(createDto)).rejects.toThrow(
+        new NotFoundException(`角色 ID ${createDto.roleId} 不存在`),
       );
     });
   });
@@ -271,20 +286,43 @@ describe("AdminsService", () => {
         new ForbiddenException("超级管理员账号的角色不可修改"),
       );
     });
+
+    it("管理员 ID 不存在时应该抛出 NotFoundException", async () => {
+      // Arrange
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(service.updateRole(999, { roleId: 2 })).rejects.toThrow(
+        new NotFoundException("管理员 ID 999 不存在"),
+      );
+    });
+
+    it("新角色 ID 不存在时应该抛出 NotFoundException", async () => {
+      // Arrange：管理员存在，但目标角色不存在
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockNormalAdmin);
+      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(service.updateRole(2, { roleId: 999 })).rejects.toThrow(
+        new NotFoundException("角色 ID 999 不存在"),
+      );
+    });
   });
 
   describe("remove", () => {
     it("应该删除普通管理员", async () => {
       // Arrange
       jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockNormalAdmin);
-      jest.spyOn(prisma.admin, "delete").mockResolvedValue(mockNormalAdmin);
+      const deleteSpy = jest
+        .spyOn(prisma.admin, "delete")
+        .mockResolvedValue(mockNormalAdmin);
 
       // Act
       const result = await service.remove(2);
 
       // Assert
       expect(result).not.toHaveProperty("password");
-      expect(prisma.admin.delete).toHaveBeenCalledWith({ where: { id: 2 } });
+      expect(deleteSpy).toHaveBeenCalledWith({ where: { id: 2 } });
     });
 
     it("超级管理员账号不可删除", async () => {

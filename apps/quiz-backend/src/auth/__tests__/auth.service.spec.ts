@@ -117,9 +117,13 @@ describe("AuthService", () => {
   describe("login", () => {
     it("正确的用户名和密码应该登录成功（超级管理员）", async () => {
       // Arrange
-      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockSuperAdmin);
+      const findUniqueSpy = jest
+        .spyOn(prisma.admin, "findUnique")
+        .mockResolvedValue(mockSuperAdmin);
       mockBcryptCompare.mockResolvedValue(true as never);
-      jest.spyOn(jwtService, "sign").mockReturnValue("mock_jwt_token");
+      const signSpy = jest
+        .spyOn(jwtService, "sign")
+        .mockReturnValue("mock_jwt_token");
 
       // Act
       const result = await service.login({
@@ -150,11 +154,11 @@ describe("AuthService", () => {
           updatedAt: mockSuperAdmin.updatedAt,
         },
       });
-      expect(prisma.admin.findUnique).toHaveBeenCalledWith({
+      expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { username: "super_admin" },
         include: { role: true },
       });
-      expect(jwtService.sign).toHaveBeenCalledWith({
+      expect(signSpy).toHaveBeenCalledWith({
         sub: 1,
         username: "super_admin",
         roleId: 1,

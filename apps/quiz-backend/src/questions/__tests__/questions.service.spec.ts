@@ -16,6 +16,20 @@ describe("QuestionsService (unit)", () => {
     expect(res.correctOptionId).toBe(1);
   });
 
+  it("checkAnswer 选项不存在时应该抛出错误", async () => {
+    // Arrange：findUnique 返回 null（选项 ID 不存在）
+    const mockPrisma = {
+      option: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn(),
+      },
+    } as unknown as PrismaService;
+    const svc = new QuestionsService(mockPrisma);
+
+    // Act & Assert
+    await expect(svc.checkAnswer(1, 999)).rejects.toThrow("Option not found");
+  });
+
   it("getRandom should return options with description field", async () => {
     // 模拟 Prisma 的 $queryRaw 和 option.findMany
     const mockOptions = [
@@ -89,5 +103,59 @@ describe("QuestionsService (unit)", () => {
     const results = await svc.getRandom(1);
 
     expect(results[0].options[0].description).toBeNull();
+  });
+
+  describe("findQuestionById", () => {
+    it("应该返回题目及其所有选项", async () => {
+      // Arrange
+      const mockQuestion = {
+        id: 1,
+        stem: "测试题干",
+        explanation: "测试解析",
+        tags: null,
+        deletedAt: null,
+        type: "single_choice",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        options: [
+          {
+            id: 10,
+            questionId: 1,
+            text: "选项A",
+            description: "A的解析",
+            isCorrect: true,
+          },
+        ],
+      };
+      const mockPrisma = {
+        question: {
+          findUnique: jest.fn().mockResolvedValue(mockQuestion),
+        },
+      } as unknown as PrismaService;
+      const svc = new QuestionsService(mockPrisma);
+
+      // Act
+      const result = await svc.findQuestionById(1);
+
+      // Assert
+      expect(result).toEqual(mockQuestion);
+      expect(result?.options).toHaveLength(1);
+    });
+
+    it("题目不存在时应该返回 null", async () => {
+      // Arrange
+      const mockPrisma = {
+        question: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      } as unknown as PrismaService;
+      const svc = new QuestionsService(mockPrisma);
+
+      // Act
+      const result = await svc.findQuestionById(999);
+
+      // Assert
+      expect(result).toBeNull();
+    });
   });
 });

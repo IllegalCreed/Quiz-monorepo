@@ -165,6 +165,37 @@ describe("PermissionGuard", () => {
         new ForbiddenException("无权限访问该接口"),
       );
     });
+
+    it("request 中无 user 时应该抛出 ForbiddenException（未登录）", () => {
+      // Arrange：模拟未登录状态（user 为 undefined）
+      const mockContext = {
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+        switchToHttp: jest.fn().mockReturnValue({
+          getRequest: jest.fn().mockReturnValue({ user: undefined }),
+        }),
+      } as unknown as ExecutionContext;
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("users:list");
+
+      // Act & Assert
+      expect(() => guard.canActivate(mockContext)).toThrow(
+        new ForbiddenException("未登录"),
+      );
+    });
+
+    it("精确权限不匹配且无通配符时应该抛出 ForbiddenException", () => {
+      // Arrange：权限列表只有 'users:list'（非通配符），请求需要 'admins:list'
+      const mockExecutionContext = createMockContext({
+        ...mockNormalAdmin,
+        apiPermissions: ["users:list"], // 精确权限，不含通配符
+      });
+      jest.spyOn(reflector, "getAllAndOverride").mockReturnValue("admins:list");
+
+      // Act & Assert（覆盖 some() 回调中 return false 分支）
+      expect(() => guard.canActivate(mockExecutionContext)).toThrow(
+        new ForbiddenException("无权限访问该接口"),
+      );
+    });
   });
 });
 

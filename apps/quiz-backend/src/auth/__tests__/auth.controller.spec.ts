@@ -60,7 +60,9 @@ describe("AuthController", () => {
   describe("login", () => {
     it("应该返回 token 和管理员信息", async () => {
       // Arrange
-      jest.spyOn(service, "login").mockResolvedValue(mockLoginResponse);
+      const loginSpy = jest
+        .spyOn(service, "login")
+        .mockResolvedValue(mockLoginResponse);
 
       // Act
       const result = await controller.login({
@@ -70,7 +72,7 @@ describe("AuthController", () => {
 
       // Assert
       expect(result).toEqual(mockLoginResponse);
-      expect(service.login).toHaveBeenCalledWith({
+      expect(loginSpy).toHaveBeenCalledWith({
         username: "super_admin",
         password: "super_admin",
       });

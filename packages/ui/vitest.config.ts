@@ -31,7 +31,6 @@ export default mergeConfig(
       // 覆盖配置（在顶层生效；运行 `--coverage` 时收集覆盖率）
       coverage: {
         provider: "v8",
-        enabled: true,
         reporter: [
           ["html", {}],
           ["text", {}],

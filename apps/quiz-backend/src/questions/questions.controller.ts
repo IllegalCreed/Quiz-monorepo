@@ -1,33 +1,21 @@
-import { Controller, Get, Query, Post, Body } from "@nestjs/common";
+import { Controller, Get, Query } from "@nestjs/common";
 import { QuestionsService } from "./questions.service";
 import { Public } from "../common/decorators/public.decorator";
 
 @Controller("questions")
-@Public() // 标记为公开接口,quiz-app 不需要登录认证
+@Public() // 标记为公开接口，quiz-app 不需要登录认证
 export class QuestionsController {
   constructor(private readonly service: QuestionsService) {}
 
+  /**
+   * 随机获取题目（供 quiz-app 使用）
+   * 答题提交请使用 POST /answers
+   */
   @Get()
   async get(@Query("limit") limit?: string) {
+    // 将 query string 转为数字，默认取 1 道
     const l = limit ? parseInt(limit, 10) : 1;
     const items = await this.service.getRandom(l);
     return items;
-  }
-
-  @Post("check")
-  async check(
-    @Body()
-    body: {
-      questionId: number;
-      selectedOptionId: number;
-      elapsedMs?: number;
-    },
-  ) {
-    const res = await this.service.checkAnswer(
-      body.questionId,
-      body.selectedOptionId,
-    );
-    // Optionally include explanation (not used currently)
-    return { ...res };
   }
 }

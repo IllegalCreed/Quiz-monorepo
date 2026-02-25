@@ -25,9 +25,6 @@ export default tseslint.config(
       },
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/no-unsafe-argument": "warn",
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
@@ -36,7 +33,9 @@ export default tseslint.config(
   {
     files: ["**/__tests__/**/*.spec.ts", "**/*.spec.ts"],
     rules: {
-      "@typescript-eslint/unbound-method": "off", // Jest 测试中允许 expect(service.method).toHaveBeenCalled()
+      "@typescript-eslint/no-unsafe-assignment": "off", // Jest mock 中常用 as never / as any 模式
+      "@typescript-eslint/no-unsafe-argument": "off", // Prisma 流式 API 类型与 mockResolvedValue 不兼容，需要 as any
+      "@typescript-eslint/no-explicit-any": "off", // Prisma mock 返回值需要 as any 绕过流式 API 类型检查
     },
   },
 );

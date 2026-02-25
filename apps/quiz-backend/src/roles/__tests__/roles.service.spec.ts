@@ -90,14 +90,16 @@ describe("RolesService", () => {
     it("应该返回所有角色", async () => {
       // Arrange
       const mockRoles = [mockSuperAdminRole, mockContentRole, mockUserRole];
-      jest.spyOn(prisma.role, "findMany").mockResolvedValue(mockRoles);
+      const findManySpy = jest
+        .spyOn(prisma.role, "findMany")
+        .mockResolvedValue(mockRoles);
 
       // Act
       const result = await service.findAll();
 
       // Assert
       expect(result).toEqual(mockRoles);
-      expect(prisma.role.findMany).toHaveBeenCalledWith({
+      expect(findManySpy).toHaveBeenCalledWith({
         orderBy: { id: "asc" },
         include: {
           _count: {
@@ -111,14 +113,16 @@ describe("RolesService", () => {
   describe("findOne", () => {
     it("应该返回指定角色", async () => {
       // Arrange
-      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(mockContentRole);
+      const findUniqueSpy = jest
+        .spyOn(prisma.role, "findUnique")
+        .mockResolvedValue(mockContentRole);
 
       // Act
       const result = await service.findOne(2);
 
       // Assert
       expect(result).toEqual(mockContentRole);
-      expect(prisma.role.findUnique).toHaveBeenCalledWith({
+      expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { id: 2 },
         include: {
           _count: {
@@ -155,16 +159,36 @@ describe("RolesService", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      jest.spyOn(prisma.role, "create").mockResolvedValue(mockCreatedRole);
+      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(null); // 名称不重复
+      const createSpy = jest
+        .spyOn(prisma.role, "create")
+        .mockResolvedValue(mockCreatedRole);
 
       // Act
       const result = await service.create(createDto);
 
       // Assert
       expect(result).toEqual(mockCreatedRole);
-      expect(prisma.role.create).toHaveBeenCalledWith({
+      expect(createSpy).toHaveBeenCalledWith({
         data: createDto,
       });
+    });
+
+    it("重复的角色名称应该抛出 BadRequestException", async () => {
+      // Arrange
+      const createDto = {
+        name: "内容管理员", // 已存在
+        description: "重复角色",
+        isSystem: false,
+        menuPermissions: [],
+        apiPermissions: [],
+      };
+      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(mockContentRole);
+
+      // Act & Assert
+      await expect(service.create(createDto)).rejects.toThrow(
+        new BadRequestException(`角色名称 "${createDto.name}" 已存在`),
+      );
     });
   });
 
@@ -183,14 +207,16 @@ describe("RolesService", () => {
         .spyOn(prisma.role, "findUnique")
         .mockResolvedValueOnce(mockContentRole) // findOne call
         .mockResolvedValueOnce(null); // name uniqueness check
-      jest.spyOn(prisma.role, "update").mockResolvedValue(mockUpdatedRole);
+      const updateSpy = jest
+        .spyOn(prisma.role, "update")
+        .mockResolvedValue(mockUpdatedRole);
 
       // Act
       const result = await service.update(2, updateDto);
 
       // Assert
       expect(result).toEqual(mockUpdatedRole);
-      expect(prisma.role.update).toHaveBeenCalledWith({
+      expect(updateSpy).toHaveBeenCalledWith({
         where: { id: 2 },
         data: { name: "更新后的名称", description: "更新后的描述" },
       });
@@ -227,16 +253,59 @@ describe("RolesService", () => {
         description: "只更新描述",
       };
       jest.spyOn(prisma.role, "findUnique").mockResolvedValue(mockContentRole);
-      jest.spyOn(prisma.role, "update").mockResolvedValue(mockUpdatedRole);
+      const updateSpy = jest
+        .spyOn(prisma.role, "update")
+        .mockResolvedValue(mockUpdatedRole);
 
       // Act
       const result = await service.update(2, updateDto);
 
       // Assert
       expect(result).toEqual(mockUpdatedRole);
-      expect(prisma.role.update).toHaveBeenCalledWith({
+      expect(updateSpy).toHaveBeenCalledWith({
         where: { id: 2 },
         data: { description: "只更新描述" },
+      });
+    });
+
+    it("修改名称时如果新名称已被占用应该抛出 BadRequestException", async () => {
+      // Arrange：角色本身存在且可修改，但新名称已被其他角色占用
+      jest
+        .spyOn(prisma.role, "findUnique")
+        .mockResolvedValueOnce(mockContentRole) // findOne：角色存在
+        .mockResolvedValueOnce(mockUserRole); // 名称唯一性检查：新名称已存在
+
+      // Act & Assert
+      await expect(service.update(2, { name: "用户管理员" })).rejects.toThrow(
+        new BadRequestException(`角色名称 "用户管理员" 已存在`),
+      );
+    });
+
+    it("应该支持同时更新权限字段（isSystem/menuPermissions/apiPermissions）", async () => {
+      // Arrange
+      const updateDto = {
+        isSystem: false,
+        menuPermissions: ["dashboard", "questions", "users"],
+        apiPermissions: ["questions:*", "users:list"],
+      };
+      const mockUpdatedRole = { ...mockContentRole, ...updateDto };
+      jest.spyOn(prisma.role, "findUnique").mockResolvedValue(mockContentRole);
+      const updateSpy = jest
+        .spyOn(prisma.role, "update")
+        .mockResolvedValue(mockUpdatedRole);
+
+      // Act
+      const result = await service.update(2, updateDto);
+
+      // Assert
+      expect(result).toEqual(mockUpdatedRole);
+      expect(updateSpy).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: {
+          isSystem: false,
+          menuPermissions: ["dashboard", "questions", "users"],
+          apiPermissions: ["questions:*", "users:list"],
+        },
       });
     });
   });
@@ -246,14 +315,16 @@ describe("RolesService", () => {
       // Arrange
       jest.spyOn(prisma.role, "findUnique").mockResolvedValue(mockContentRole);
       jest.spyOn(prisma.admin, "count").mockResolvedValue(0);
-      jest.spyOn(prisma.role, "delete").mockResolvedValue(mockContentRole);
+      const deleteSpy = jest
+        .spyOn(prisma.role, "delete")
+        .mockResolvedValue(mockContentRole);
 
       // Act
       const result = await service.remove(2);
 
       // Assert
       expect(result).toEqual({ message: "角色删除成功" });
-      expect(prisma.role.delete).toHaveBeenCalledWith({ where: { id: 2 } });
+      expect(deleteSpy).toHaveBeenCalledWith({ where: { id: 2 } });
     });
 
     it("超级管理员角色不可删除", async () => {

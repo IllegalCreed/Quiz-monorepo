@@ -69,7 +69,9 @@ router.beforeEach(async (to) => {
       updateHomeRoutes(router, userInfo.menuPermissions);
 
       // 重新导航到目标路由（确保动态路由已生效）
-      return { ...to, replace: true };
+      // 注意：不能用 { ...to }，刷新时 to.name 为 "__fallback__"，展开后第二次导航仍会命中兜底路由
+      // 只传 path/query/hash，让 Vue Router 用新注册的路由重新解析
+      return { path: to.path, query: to.query, hash: to.hash, replace: true };
     } catch (error) {
       console.error("获取用户信息失败:", error);
       // 清除 token 并跳转登录页
@@ -80,7 +82,7 @@ router.beforeEach(async (to) => {
 
   // 4. 若命中兜底路由，说明该路径无权访问或不存在（此时动态路由已注册）
   if (to.matched.some((r) => r.name === "__fallback__")) {
-    return { path: "/home/dashboard", replace: true };
+    return { path: "/home", replace: true };
   }
 
   // 5. 正常放行

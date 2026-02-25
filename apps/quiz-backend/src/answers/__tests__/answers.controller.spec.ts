@@ -72,15 +72,19 @@ describe("AnswersController", () => {
         ],
       };
 
-      questionsService.checkAnswer.mockResolvedValue(mockCheckResult);
-      questionsService.findQuestionById.mockResolvedValue(mockQuestion);
+      const checkAnswerSpy = jest
+        .spyOn(questionsService, "checkAnswer")
+        .mockResolvedValue(mockCheckResult);
+      const findQuestionByIdSpy = jest
+        .spyOn(questionsService, "findQuestionById")
+        .mockResolvedValue(mockQuestion);
 
       // Act
       const result = await controller.submit(dto);
 
       // Assert
-      expect(questionsService.checkAnswer).toHaveBeenCalledWith(1, 10);
-      expect(questionsService.findQuestionById).toHaveBeenCalledWith(1);
+      expect(checkAnswerSpy).toHaveBeenCalledWith(1, 10);
+      expect(findQuestionByIdSpy).toHaveBeenCalledWith(1);
       expect(result).toEqual({
         correct: true,
         correctOptionId: 10,

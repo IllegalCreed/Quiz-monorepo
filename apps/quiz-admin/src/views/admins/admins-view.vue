@@ -20,6 +20,7 @@ import {
   deleteAdmin,
   type AdminUserItem,
 } from "@/api/admins";
+import { ALL_MENU_PERMISSIONS } from "@/types/permission";
 
 /**
  * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
@@ -93,6 +94,18 @@ const currentAdminRole = computed(() => {
  */
 const currentAdminMenuPermissions = computed(() => {
   return currentAdminRole.value?.menuPermissions || [];
+});
+
+/**
+ * 当前管理员的有效菜单权限列表（展开通配符）
+ * 超级管理员的 ["*"] 会展开为全部菜单权限，其余按 key 匹配后返回带 label 的对象
+ */
+const resolvedMenuPermissions = computed(() => {
+  const perms = currentAdminMenuPermissions.value;
+  if (perms.includes("*")) {
+    return ALL_MENU_PERMISSIONS;
+  }
+  return ALL_MENU_PERMISSIONS.filter((p) => perms.includes(p.key));
 });
 
 /**
@@ -422,31 +435,20 @@ onMounted(async () => {
             <div class="mb-3">
               <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
               <div class="mt-1">
-                <!-- 超级管理员通配符：显示"全部权限"标签 -->
                 <el-tag
-                  v-if="currentAdminMenuPermissions.includes('*')"
+                  v-for="perm in resolvedMenuPermissions"
+                  :key="perm.key"
                   size="small"
-                  type="danger"
                   class="mr-1 mb-1"
                 >
-                  全部权限
+                  {{ perm.label }}
                 </el-tag>
-                <template v-else>
-                  <el-tag
-                    v-for="perm in currentAdminMenuPermissions"
-                    :key="perm"
-                    size="small"
-                    class="mr-1 mb-1"
-                  >
-                    {{ perm }}
-                  </el-tag>
-                  <span
-                    v-if="currentAdminMenuPermissions.length === 0"
-                    class="text-xs text-gray-400 dark:text-gray-500"
-                  >
-                    无
-                  </span>
-                </template>
+                <span
+                  v-if="resolvedMenuPermissions.length === 0"
+                  class="text-xs text-gray-400 dark:text-gray-500"
+                >
+                  无
+                </span>
               </div>
             </div>
             <div>
@@ -514,25 +516,20 @@ onMounted(async () => {
             <div class="mb-3">
               <span class="text-xs text-gray-500 dark:text-gray-400">菜单权限：</span>
               <div class="mt-1">
-                <!-- 超级管理员通配符：显示"全部权限"标签 -->
                 <el-tag
-                  v-if="currentAdminMenuPermissions.includes('*')"
+                  v-for="perm in resolvedMenuPermissions"
+                  :key="perm.key"
                   size="small"
-                  type="danger"
                   class="mr-1 mb-1"
                 >
-                  全部权限
+                  {{ perm.label }}
                 </el-tag>
-                <template v-else>
-                  <el-tag
-                    v-for="perm in currentAdminMenuPermissions"
-                    :key="perm"
-                    size="small"
-                    class="mr-1 mb-1"
-                  >
-                    {{ perm }}
-                  </el-tag>
-                </template>
+                <span
+                  v-if="resolvedMenuPermissions.length === 0"
+                  class="text-xs text-gray-400 dark:text-gray-500"
+                >
+                  无
+                </span>
               </div>
             </div>
             <div>

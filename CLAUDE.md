@@ -106,8 +106,9 @@ pnpm -C apps/quiz-backend run db:seed:dev          # 插入开发数据
 pnpm -C apps/quiz-backend run db:reset:test        # 重置测试数据
 
 # 测试
-pnpm test:unit        # 单元测试 (~56 tests, ~5s)
-pnpm test             # 完整测试（包括 E2E，~5 分钟）
+pnpm test:unit              # 单元测试 (~345 tests, ~10s)
+pnpm test:unit:coverage     # 单元测试 + 覆盖率报告（按需）
+pnpm test                   # 完整测试（包括 E2E，~5 分钟）
 ```
 
 ### 后端脚本详解
@@ -264,12 +265,12 @@ pnpm -C apps/quiz-backend run build  # 如需重新构建后端
 
 ## 测试策略
 
-| 包           | 单元测试           | E2E 测试                        |
-| ------------ | ------------------ | ------------------------------- |
-| quiz-app     | Vitest (~6 tests)  | Cypress (mocked + real backend) |
-| quiz-admin   | -                  | Cypress (计划中)                |
-| quiz-backend | Jest (~12 tests)   | -                               |
-| ui           | Vitest (~38 tests) | Playwright (Storybook 交互测试) |
+| 包           | 单元测试          | E2E 测试                        |
+| ------------ | ----------------- | ------------------------------- |
+| quiz-app     | Vitest (22 tests) | Cypress (mocked + real backend) |
+| quiz-admin   | Vitest (88 tests) | Cypress (计划中)                |
+| quiz-backend | Jest (150 tests)  | -                               |
+| ui           | Vitest (85 tests) | Playwright (Storybook 交互测试) |
 
 **推荐日常使用**：`pnpm test:unit`（快速，~5 秒）
 **提交 PR 前**：`pnpm test`（完整，~5 分钟，包含 E2E）

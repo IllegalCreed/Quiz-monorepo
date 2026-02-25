@@ -52,28 +52,32 @@ describe("RolesController", () => {
   describe("findAll", () => {
     it("应该返回所有角色", async () => {
       // Arrange
-      jest.spyOn(service, "findAll").mockResolvedValue(mockRoles);
+      const findAllSpy = jest
+        .spyOn(service, "findAll")
+        .mockResolvedValue(mockRoles);
 
       // Act
       const result = await controller.findAll();
 
       // Assert
       expect(result).toEqual(mockRoles);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(findAllSpy).toHaveBeenCalled();
     });
   });
 
   describe("findOne", () => {
     it("应该返回指定角色", async () => {
       // Arrange
-      jest.spyOn(service, "findOne").mockResolvedValue(mockRole);
+      const findOneSpy = jest
+        .spyOn(service, "findOne")
+        .mockResolvedValue(mockRole);
 
       // Act
       const result = await controller.findOne(2);
 
       // Assert
       expect(result).toEqual(mockRole);
-      expect(service.findOne).toHaveBeenCalledWith(2);
+      expect(findOneSpy).toHaveBeenCalledWith(2);
     });
   });
 
@@ -87,7 +91,7 @@ describe("RolesController", () => {
         menuPermissions: ["dashboard"],
         apiPermissions: ["users:list"],
       };
-      jest
+      const createSpy = jest
         .spyOn(service, "create")
         .mockResolvedValue({ id: 3, ...createDto } as never);
 
@@ -96,7 +100,7 @@ describe("RolesController", () => {
 
       // Assert
       expect(result).toEqual({ id: 3, ...createDto });
-      expect(service.create).toHaveBeenCalledWith(createDto);
+      expect(createSpy).toHaveBeenCalledWith(createDto);
     });
   });
 
@@ -108,21 +112,23 @@ describe("RolesController", () => {
         description: "更新后的描述",
       };
       const updatedRole = { ...mockRole, ...updateDto };
-      jest.spyOn(service, "update").mockResolvedValue(updatedRole);
+      const updateSpy = jest
+        .spyOn(service, "update")
+        .mockResolvedValue(updatedRole);
 
       // Act
       const result = await controller.update(2, updateDto);
 
       // Assert
       expect(result).toEqual(updatedRole);
-      expect(service.update).toHaveBeenCalledWith(2, updateDto);
+      expect(updateSpy).toHaveBeenCalledWith(2, updateDto);
     });
   });
 
   describe("remove", () => {
     it("应该删除角色", async () => {
       // Arrange
-      jest
+      const removeSpy = jest
         .spyOn(service, "remove")
         .mockResolvedValue({ message: "角色删除成功" });
 
@@ -131,7 +137,7 @@ describe("RolesController", () => {
 
       // Assert
       expect(result).toEqual({ message: "角色删除成功" });
-      expect(service.remove).toHaveBeenCalledWith(2);
+      expect(removeSpy).toHaveBeenCalledWith(2);
     });
   });
 });

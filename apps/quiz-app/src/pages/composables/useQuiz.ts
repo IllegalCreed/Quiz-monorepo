@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import type { Question, AnswerResult } from "@/api/questions";
+import type { Question, AnswerResult } from "@/types/question";
 import { fetchQuestions, submitAnswer } from "@/api/questions";
 import { useMockStore } from "@/stores/useMockStore";
 
