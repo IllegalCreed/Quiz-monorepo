@@ -116,6 +116,7 @@ describe("登录流程", () => {
     // 验证所有菜单都可见
     cy.contains(".menu-item", "欢迎页").should("be.visible");
     cy.contains(".menu-item", "用户管理").should("be.visible");
+    cy.contains(".menu-item", "题目管理").should("be.visible");
     cy.contains(".menu-item", "管理员管理").should("be.visible");
     cy.contains(".menu-item", "角色管理").should("be.visible");
     cy.contains(".menu-item", "系统设置").should("be.visible");
@@ -140,6 +141,7 @@ describe("登录流程", () => {
     // 验证无权限的菜单不可见
     cy.contains(".menu-item", "管理员管理").should("not.exist");
     cy.contains(".menu-item", "角色管理").should("not.exist");
+    cy.contains(".menu-item", "题目管理").should("not.exist");
   });
 
   it("登出后应返回登录页", () => {
