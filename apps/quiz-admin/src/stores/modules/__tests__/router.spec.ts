@@ -210,4 +210,60 @@ describe("useRouterStore", () => {
       expect(store.isRouterAlive).toBe(true);
     });
   });
+
+  // ── updateViewTitle ─────────────────────────────────────────────────────────
+
+  describe("updateViewTitle", () => {
+    it("更新已存在视图的 meta.title", () => {
+      // Arrange
+      const store = useRouterStore();
+      store.addVisitedView(makeRoute("/home/questions/1", "questionDetail"));
+
+      // Act
+      store.updateViewTitle("/home/questions/1", "编辑：Vue 面试题");
+
+      // Assert
+      const view = store.visitedViews.find((v) => v.path === "/home/questions/1");
+      expect(view?.meta?.title).toBe("编辑：Vue 面试题");
+    });
+
+    it("路径不存在时静默忽略，不抛出错误", () => {
+      // Arrange
+      const store = useRouterStore();
+
+      // Act & Assert
+      expect(() => store.updateViewTitle("/home/questions/999", "不存在的页面")).not.toThrow();
+    });
+
+    it("只更新目标视图，其他视图 meta 不受影响", () => {
+      // Arrange
+      const store = useRouterStore();
+      store.addVisitedView(makeRoute("/home/questions/1", "questionDetail1"));
+      store.addVisitedView(makeRoute("/home/questions/2", "questionDetail2"));
+
+      // Act
+      store.updateViewTitle("/home/questions/1", "编辑：题目 1");
+
+      // Assert：view1 标题已更新
+      const view1 = store.visitedViews.find((v) => v.path === "/home/questions/1");
+      expect(view1?.meta?.title).toBe("编辑：题目 1");
+      // view2 不受影响
+      const view2 = store.visitedViews.find((v) => v.path === "/home/questions/2");
+      expect(view2?.meta?.title).toBeUndefined();
+    });
+
+    it("多次调用时后一次的标题覆盖前一次", () => {
+      // Arrange
+      const store = useRouterStore();
+      store.addVisitedView(makeRoute("/home/questions/1", "questionDetail"));
+
+      // Act
+      store.updateViewTitle("/home/questions/1", "第一次标题");
+      store.updateViewTitle("/home/questions/1", "第二次标题");
+
+      // Assert
+      const view = store.visitedViews.find((v) => v.path === "/home/questions/1");
+      expect(view?.meta?.title).toBe("第二次标题");
+    });
+  });
 });

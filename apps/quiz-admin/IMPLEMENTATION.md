@@ -4,7 +4,7 @@
 
 基于 survey-admin 架构 + quiz-app 设计风格的管理后台。
 
-**特性**：Mock 登录 | 权限系统（菜单 + API） | 超级/普通管理员 | 动态路由 + Tab 历史 | Element Plus + UnoCSS + 紫色主题
+**特性**：Mock 登录 | 权限系统（菜单 + API） | 超级/普通管理员 | 动态路由 + Tab 历史 | Element Plus + UnoCSS + 紫色主题 | 多维度树形分类体系
 
 **端口**：开发 10050 | E2E 测试 10060 | **测试账号**：`super_admin` / `super_admin`（全权限）、`admin` / `admin`（部分权限）
 
@@ -13,13 +13,14 @@
 ## 已完成功能
 
 - 认证体系：JWT（7 天）+ Passport + Guards（JwtAuthGuard/PermissionGuard 通配符支持）
-- 业务模块：Admins / Roles / Permissions CRUD + 保护规则（150 个后端单元测试，86~95% 覆盖率）
-- 前端单元测试：88 个测试（utils / stores / composables / directives / mock API），覆盖率配置完善
-- E2E 测试：4 个 Cypress 文件，连接真实后端，每次自动重置数据库
+- 业务模块：Admins / Roles / Permissions CRUD + 保护规则（188 个后端单元测试，86~95% 覆盖率）
+- 前端单元测试：120+ 个测试（utils / stores / composables / directives / mock API / categories），覆盖率配置完善
+- E2E 测试：5 个 Cypress 文件，连接真实后端，每次自动重置数据库（含分类数据）
 - 核心布局：Header + Sidebar（手动/自动展开）+ Tab 历史 + keep-alive + 深色模式
 - 题目管理模块：后端 AdminQuestionsModule（5 个端点，软删除，选项 replace-all）+ 前端列表/详情页（Mock+真实 API，搜索筛选，动态选项）
+- 分类管理模块：后端 AdminCategoriesModule（7 个端点，维度 CRUD + 树形分类节点）+ 前端分类管理页（左侧维度列表 + 右侧树形展示，支持多维度、无限层级嵌套）
 
-**后端接口（20 个，均已实现）**：Auth × 3 | Admins × 5 | Roles × 5 | Permissions × 2 | AdminQuestions × 5
+**后端接口（27 个，均已实现）**：Auth × 3 | Admins × 5 | Roles × 5 | Permissions × 2 | AdminQuestions × 5 | AdminCategories × 7
 
 ---
 
@@ -27,7 +28,7 @@
 
 ```
 apps/quiz-admin/src/
-├── api/mock/             # Mock API（account/users/admins/questions）
+├── api/mock/             # Mock API（account/users/admins/questions/categories）
 ├── components/history-tab/
 ├── composables/          # use-token.ts | use-mock-store.ts
 ├── router/
@@ -40,10 +41,12 @@ apps/quiz-admin/src/
 │   ├── index.scss        # Element Plus 深色模式
 │   ├── main.scss         # 全局样式 + 25+ 深色 CSS 变量（slate 系）
 │   └── element/          # SCSS 变量覆盖（浅色/深色）
+├── types/category.ts     # CategoryItem / CategoryGroupItem / CategoryForm 类型
 └── views/
     ├── login/ | master/ | dashboard/
     ├── users/ | admins/ | roles/
     ├── questions/        # 列表页 + 详情页（新建/编辑复用）
+    ├── categories/       # 分类管理页（左侧维度列表 + 右侧分类树，递归组件）
     └── system/
 ```
 
@@ -81,6 +84,7 @@ import "virtual:uno.css"; // UnoCSS（最后，最高优先级）
 
 ### P2: 其他功能
 
+- [ ] **历史页签右键菜单**：右键点击页签弹出上下文菜单，支持"关闭全部页签"、"关闭其他页签"操作（参考 vue-element-admin 实现）
 - 批量导入题目（JSON 上传，复用 seed-test.json 结构）
 - 题目预览（对齐 quiz-app 样式）
 - Dashboard 真实统计数据
@@ -108,4 +112,4 @@ import "virtual:uno.css"; // UnoCSS（最后，最高优先级）
 
 ---
 
-_最后更新: 2026-02-25（新增前端单元测试 88 个，覆盖率配置，后端测试扩充至 150 个）_
+_最后更新: 2026-02-25（新增分类管理模块全栈实现，前端单元测试扩充至 120+，E2E 测试增至 5 个文件 10/10 通过，后端单元测试扩充至 188 个）_

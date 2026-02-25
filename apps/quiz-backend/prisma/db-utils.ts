@@ -227,6 +227,17 @@ export async function resetTest() {
   await prisma.option.deleteMany();
   await prisma.question.deleteMany();
 
+  // 清除分类体系（Category 有自引用 FK parentId，需先删叶节点再删根节点）
+  // 循环删叶节点直到全部清完，再清 CategoryGroup
+  let hasCategories = true;
+  while (hasCategories) {
+    const { count } = await prisma.category.deleteMany({
+      where: { children: { none: {} } },
+    });
+    hasCategories = count > 0;
+  }
+  await prisma.categoryGroup.deleteMany();
+
   // 重新插入（含分类体系）
   await seedSystem();
   await seedTest();
