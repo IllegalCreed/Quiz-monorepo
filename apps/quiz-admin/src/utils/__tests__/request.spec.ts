@@ -1,8 +1,21 @@
 /**
  * request 工具函数单元测试
- * 测试 HTTP 封装：鉴权头、方法快捷函数、错误处理
+ * 测试 HTTP 封装：鉴权头、方法快捷函数、错误处理、401 拦截
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// element-plus 和 router 在测试环境下需要 mock，否则 element-plus 会尝试加载 .scss 文件
+vi.mock("element-plus", () => ({
+  ElMessageBox: {
+    confirm: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+vi.mock("@/router", () => ({
+  default: { push: vi.fn() },
+}));
+
+import { ElMessageBox } from "element-plus";
+import router from "@/router";
 import { request, get, post, put, patch, del } from "../request";
 
 // 模拟全局 fetch
@@ -80,6 +93,25 @@ describe("request", () => {
   it("HTTP 非 ok 且无 message 时抛出含状态码的错误", async () => {
     mockFetch.mockResolvedValue(makeErrResponse(500));
     await expect(request("/test")).rejects.toThrow("500");
+  });
+
+  it("401 时清除 token 并调用 ElMessageBox.confirm", async () => {
+    localStorage.setItem("admin-token", "expired-token");
+    mockFetch.mockResolvedValue(makeErrResponse(401, "登录已过期"));
+    await expect(request("/test")).rejects.toThrow("登录已过期");
+    expect(localStorage.getItem("admin-token")).toBeNull();
+    expect(ElMessageBox.confirm).toHaveBeenCalled();
+  });
+
+  it("401 弹窗确认后跳转登录页", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(ElMessageBox.confirm).mockResolvedValue(undefined as any);
+    mockFetch.mockResolvedValue(makeErrResponse(401, "登录已过期"));
+    await expect(request("/test")).rejects.toThrow();
+    // 等待 handle401 异步完成
+    await vi.waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith("/login");
+    });
   });
 });
 
