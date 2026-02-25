@@ -31,6 +31,12 @@ export const homeRoutes: RouteRecordRaw[] = [
     meta: { title: "题目详情" },
   },
   {
+    path: "categories",
+    name: "categories",
+    component: () => import("@/views/categories/categories-view.vue"),
+    meta: { title: "分类管理", componentName: "CategoriesView" },
+  },
+  {
     path: "admins",
     name: "admins",
     component: () => import("@/views/admins/admins-view.vue"),

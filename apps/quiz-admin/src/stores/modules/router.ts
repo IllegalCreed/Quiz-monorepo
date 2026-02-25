@@ -170,6 +170,18 @@ export const useRouterStore = defineStore("router", () => {
     isRouterAlive.value = true;
   };
 
+  /**
+   * 动态更新某个 Tab 的显示标题
+   * @param path 路由 path
+   * @param title 新标题
+   */
+  const updateViewTitle = (path: string, title: string) => {
+    const view = visitedViews.value.find((v) => v.path === path);
+    if (view) {
+      view.meta = { ...view.meta, title };
+    }
+  };
+
   return {
     visitedViews,
     cachedViews,
@@ -184,5 +196,6 @@ export const useRouterStore = defineStore("router", () => {
     initCacheConfig,
     updateCacheConfig,
     refreshView,
+    updateViewTitle,
   };
 });

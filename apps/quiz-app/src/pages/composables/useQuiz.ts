@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import type { Question, AnswerResult } from "@/types/question";
 import { fetchQuestions, submitAnswer } from "@/api/questions";
 import { useMockStore } from "@/stores/useMockStore";
@@ -120,6 +120,9 @@ export function useQuiz() {
     }
   }
 
+  /** 当前题目的整体解析（答题后展示） */
+  const explanation = computed(() => question.value?.explanation ?? null);
+
   return {
     question,
     loading,
@@ -130,5 +133,6 @@ export function useQuiz() {
     error,
     correctOptionId,
     optionDescriptions,
+    explanation,
   };
 }

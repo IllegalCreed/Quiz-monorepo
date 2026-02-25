@@ -29,6 +29,12 @@ const allMenus: MenuItem[] = [
     icon: "i-carbon-document",
   },
   {
+    index: "/home/categories",
+    name: "categories",
+    title: "分类管理",
+    icon: "i-carbon-category",
+  },
+  {
     index: "/home/admins",
     name: "admins",
     title: "管理员管理",

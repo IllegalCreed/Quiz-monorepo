@@ -20,6 +20,12 @@
 
             <!-- 答题失败时的错误提示（在卡片内显示） -->
             <div v-if="error" class="error">{{ error }}</div>
+
+            <!-- 整体解析（答错后展示，仅当有内容时显示） -->
+            <div v-if="status === 'wrong' && explanation" class="explanation">
+              <span class="explanation__label">解析</span>
+              {{ explanation }}
+            </div>
           </BaseCardContent>
         </BaseCard>
 
@@ -50,6 +56,7 @@ const {
   error,
   correctOptionId,
   optionDescriptions,
+  explanation,
 } = useQuiz();
 
 onMounted(() => loadNext());
@@ -169,6 +176,21 @@ const radioOptions = computed(() => {
 }
 
 // ============================================
+// 整体解析样式
+// ============================================
+.explanation {
+  @apply mt-4 px-4 py-3 rounded-lg text-sm leading-relaxed;
+  color: var(--quiz-ui-text-secondary, #6b7280);
+  background: var(--color-blue-50, #eff6ff);
+  border-left: 3px solid var(--quiz-ui-primary, #6366f1);
+
+  &__label {
+    @apply font-semibold mr-2;
+    color: var(--quiz-ui-primary, #6366f1);
+  }
+}
+
+// ============================================
 // 错误提示样式
 // ============================================
 .error {
@@ -198,6 +220,16 @@ const radioOptions = computed(() => {
         transparent 100%
       );
       filter: blur(50px);
+    }
+  }
+
+  .explanation {
+    background: var(--color-blue-950, #1e1b4b);
+    color: var(--color-blue-200, #bfdbfe);
+    border-left-color: var(--quiz-ui-primary, #818cf8);
+
+    &__label {
+      color: var(--color-indigo-400, #818cf8);
     }
   }
 

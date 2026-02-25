@@ -9,11 +9,12 @@
  * - 单选题约束：恰好 1 个正确答案
  * - 提交后返回列表页
  */
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useEventBus } from "@vueuse/core";
 import { useMockStore } from "@/composables/use-mock-store";
+import { useRouterStore } from "@/stores/modules/router";
 import {
   getQuestion as getQuestionMock,
   createQuestion as createQuestionMock,
@@ -24,13 +25,17 @@ import {
   createQuestion as createQuestionApi,
   updateQuestion as updateQuestionApi,
 } from "@/api/questions";
+import { getCategoryGroups as getCategoryGroupsMock } from "@/api/mock/categories";
+import { getCategoryGroups as getCategoryGroupsApi } from "@/api/categories";
 import type { OptionForm, QuestionForm } from "@/types/question";
+import type { CategoryGroupItem, CategoryItem } from "@/types/category";
 
 defineOptions({ name: "QuestionDetailView" });
 
 const route = useRoute();
 const router = useRouter();
 const { isMock } = useMockStore();
+const routerStore = useRouterStore();
 
 /** 题目列表刷新事件总线，创建/编辑成功后通知列表页重新加载 */
 const questionsBus = useEventBus("questions-refresh");
@@ -59,6 +64,7 @@ const form = ref<QuestionForm>({
   type: "single_choice",
   explanation: "",
   tags: [],
+  categoryIds: [],
   options: [
     { text: "", isCorrect: true, description: "" },
     { text: "", isCorrect: false, description: "" },
@@ -70,6 +76,41 @@ const correctIndex = ref(0);
 
 /** 题目类型选项（预留扩展） */
 const typeOptions = [{ value: "single_choice", label: "单选题" }];
+
+/** 分类维度列表（用于题目表单的分类选择器） */
+const categoryGroups = ref<CategoryGroupItem[]>([]);
+
+/**
+ * 递归收集某个分类树中所有节点的 ID 集合
+ */
+const collectGroupCategoryIds = (items: CategoryItem[]): Set<number> => {
+  const ids = new Set<number>();
+  const traverse = (nodes: CategoryItem[]) => {
+    for (const node of nodes) {
+      ids.add(node.id);
+      if (node.children?.length) traverse(node.children);
+    }
+  };
+  traverse(items);
+  return ids;
+};
+
+/**
+ * 获取某个维度下已选中的分类 ID 列表（过滤掉其他维度的 ID）
+ */
+const getCategoryIdsForGroup = (group: CategoryGroupItem): number[] => {
+  const groupIds = collectGroupCategoryIds(group.categories);
+  return form.value.categoryIds.filter((id) => groupIds.has(id));
+};
+
+/**
+ * 更新某个维度下的已选分类 ID（保留其他维度的选择不变）
+ */
+const setCategoryIdsForGroup = (group: CategoryGroupItem, newIds: number[]) => {
+  const groupIds = collectGroupCategoryIds(group.categories);
+  const otherIds = form.value.categoryIds.filter((id) => !groupIds.has(id));
+  form.value.categoryIds = [...otherIds, ...newIds];
+};
 
 /** 常用标签（标签选择器候选值） */
 const tagCandidates = [
@@ -167,6 +208,7 @@ const handleSubmit = async () => {
       type: form.value.type,
       explanation: form.value.explanation.trim(),
       tags: form.value.tags.filter((t) => t.trim()),
+      categoryIds: form.value.categoryIds,
       options: form.value.options.map((o) => ({
         text: o.text.trim(),
         isCorrect: o.isCorrect,
@@ -240,6 +282,8 @@ const loadQuestion = async () => {
       type: question.type,
       explanation: question.explanation ?? "",
       tags: question.tags ?? [],
+      categoryIds:
+        question.questionCategories?.map((qc: { categoryId: number }) => qc.categoryId) ?? [],
       options: question.options.map(
         (o): OptionForm => ({
           text: o.text,
@@ -252,6 +296,10 @@ const loadQuestion = async () => {
     // 同步正确答案索引
     const idx = form.value.options.findIndex((o) => o.isCorrect);
     correctIndex.value = idx >= 0 ? idx : 0;
+
+    // 数据加载后更新 Tab 标题，显示题干前 10 个字
+    const shortStem = question.stem.length > 10 ? question.stem.slice(0, 10) + "…" : question.stem;
+    routerStore.updateViewTitle(route.path, `编辑：${shortStem}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "加载题目失败";
     ElMessage.error(message);
@@ -261,9 +309,39 @@ const loadQuestion = async () => {
   }
 };
 
-onMounted(() => {
-  loadQuestion();
-});
+const loadCategories = async () => {
+  try {
+    categoryGroups.value = isMock.value
+      ? await getCategoryGroupsMock()
+      : await getCategoryGroupsApi();
+  } catch {
+    // 分类加载失败不影响题目编辑，静默处理
+  }
+};
+
+onMounted(() => loadCategories());
+
+/** 路由 id 变化时重新加载题目（同一组件实例复用场景） */
+watch(
+  () => route.params.id,
+  () => {
+    // 重置表单
+    form.value = {
+      stem: "",
+      type: "single_choice",
+      explanation: "",
+      tags: [],
+      categoryIds: [],
+      options: [
+        { text: "", isCorrect: true, description: "" },
+        { text: "", isCorrect: false, description: "" },
+      ],
+    };
+    correctIndex.value = 0;
+    loadQuestion();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -326,11 +404,36 @@ onMounted(() => {
               filterable
               allow-create
               default-first-option
-              placeholder="选择或输入标签（回车创建新标签）"
+              placeholder="选择或输入标签（回车创建，如：面试高频）"
               class="question-detail-view__tags-select"
             >
               <el-option v-for="tag in tagCandidates" :key="tag" :label="tag" :value="tag" />
             </el-select>
+          </div>
+
+          <!-- 分类（多维度树形选择） -->
+          <div v-if="categoryGroups.length > 0" class="question-detail-view__field">
+            <label class="question-detail-view__label">分类</label>
+            <div class="question-detail-view__categories">
+              <div
+                v-for="group in categoryGroups"
+                :key="group.id"
+                class="question-detail-view__category-row"
+              >
+                <span class="question-detail-view__category-group-name">{{ group.name }}</span>
+                <el-tree-select
+                  :model-value="getCategoryIdsForGroup(group)"
+                  :data="group.categories"
+                  :props="{ label: 'name', value: 'id', children: 'children' }"
+                  multiple
+                  check-strictly
+                  filterable
+                  placeholder="选择分类"
+                  class="question-detail-view__category-select"
+                  @update:model-value="(val: number[]) => setCategoryIdsForGroup(group, val)"
+                />
+              </div>
+            </div>
           </div>
 
           <!-- 整体解析 -->
@@ -492,6 +595,23 @@ onMounted(() => {
 
   &__tags-select {
     @apply w-full;
+  }
+
+  &__categories {
+    @apply flex flex-col gap-2;
+  }
+
+  &__category-row {
+    @apply flex items-center gap-3;
+  }
+
+  &__category-group-name {
+    @apply text-sm flex-shrink-0 w-20 text-right;
+    color: var(--el-text-color-secondary);
+  }
+
+  &__category-select {
+    @apply flex-1;
   }
 
   &__options {

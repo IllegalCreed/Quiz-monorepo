@@ -3,11 +3,14 @@ import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { seedAdmin } from "./data/seed-admin";
+import {
+  seedCategories,
+  linkTestQuestionCategories,
+} from "./data/seed-categories";
 
 // db-utils focuses only on data operations; caller must load dotenv or set DATABASE_URL.
 // If DATABASE_URL isn't set, allow constructing from discrete parts; otherwise, throw.
 if (!process.env.DATABASE_URL) {
-  // If user provided discrete connection parts, construct DATABASE_URL as convenience
   if (
     process.env.DATABASE_HOST &&
     process.env.DATABASE_USERNAME &&
@@ -25,22 +28,6 @@ if (!process.env.DATABASE_URL) {
       "DATABASE_URL not set. Please load your dotenv file in the caller (e.g. set ENV_FILE and call dotenv.config) or set DATABASE_URL directly.",
     );
   }
-}
-
-// If DATABASE_URL still missing but individual parts exist, construct it from parts
-if (
-  !process.env.DATABASE_URL &&
-  process.env.DATABASE_HOST &&
-  process.env.DATABASE_USERNAME &&
-  process.env.DATABASE_PASSWORD &&
-  process.env.DATABASE_NAME
-) {
-  const host = process.env.DATABASE_HOST;
-  const port = process.env.DATABASE_PORT || "3306";
-  const user = encodeURIComponent(process.env.DATABASE_USERNAME);
-  const pass = encodeURIComponent(process.env.DATABASE_PASSWORD);
-  const db = process.env.DATABASE_NAME;
-  process.env.DATABASE_URL = `mysql://${user}:${pass}@${host}:${port}/${db}`;
 }
 
 function _maskDatabaseUrl(raw?: string) {
@@ -85,10 +72,10 @@ export async function seedSystem() {
   ensureNotProd();
   console.log("seedSystem: beginning (idempotent)");
 
-  // 1. 插入管理员系统种子数据
+  // 1. 管理员系统数据（角色 + 账号）
   await seedAdmin(prisma);
 
-  // 2. 插入基础题目数据
+  // 2. 基础题目
   const exists = await prisma.question.findFirst({
     where: { stem: "Hello World - 基础题" },
   });
@@ -118,6 +105,10 @@ export async function seedSystem() {
   } else {
     console.log("seedSystem: base question already exists");
   }
+
+  // 3. 分类体系（维度 + 分类节点）
+  await seedCategories(prisma);
+
   console.log("seedSystem: finished");
 }
 
@@ -133,12 +124,7 @@ export async function seedTest() {
     options: SeedOption[];
   };
 
-  // Locate `prisma/data/seed-test.json`.
-  // Prefer the path next to this module (works when running from source or compiled
-  // package), but fall back to the repo-local path for cases where the runtime
-  // resolves modules from a different layout (e.g., start:test using compiled/dist
-  // layout). This keeps reset/seed working in CI and local test runs without
-  // requiring special build-time copy steps.
+  // 定位 seed-test.json（兼容源码运行和编译后运行两种路径布局）
   const candidatePaths = [
     path.join(__dirname, "data", "seed-test.json"),
     path.join(__dirname, "..", "prisma", "data", "seed-test.json"),
@@ -201,13 +187,15 @@ export async function seedTest() {
     }
   }
 
+  // 将测试题关联到结构化分类（依赖 seedSystem 中的 seedCategories 已执行）
+  await linkTestQuestionCategories(prisma);
+
   console.log("seedTest: finished");
 }
 
 export async function resetTest() {
   ensureNotProd();
 
-  // Safety: refuse to reset unless the database name looks like a test database.
   const dbName = _getDatabaseName();
   if (!dbName.toLowerCase().includes("test")) {
     throw new Error(
@@ -217,28 +205,29 @@ export async function resetTest() {
 
   console.log("resetTest: wiping and reseeding test data");
 
-  // 1. 清除管理员系统数据
+  // 清除管理员系统数据
   try {
     await prisma.admin?.deleteMany();
   } catch {
-    // ignore if model not present
+    /* ignore */
   }
   try {
     await prisma.role?.deleteMany();
   } catch {
-    // ignore if model not present
+    /* ignore */
   }
 
-  // 2. 清除题目数据
+  // 清除题目相关数据（QuestionCategory 有 FK，必须先于 question/option 删除）
   try {
     await prisma.answerAttempt?.deleteMany();
   } catch {
-    // ignore if model not present
+    /* ignore */
   }
+  await prisma.questionCategory.deleteMany();
   await prisma.option.deleteMany();
   await prisma.question.deleteMany();
 
-  // 3. 重新插入种子数据
+  // 重新插入（含分类体系）
   await seedSystem();
   await seedTest();
   console.log("resetTest: finished");

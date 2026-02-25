@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsInt,
   IsOptional,
   IsString,
   ValidateNested,
@@ -28,11 +29,17 @@ export class UpdateQuestionDto {
   @IsString()
   explanation?: string;
 
-  /** 标签数组 */
+  /** 自由辅助标签数组 */
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  /** 结构化分类 ID 列表（多维度多选，提供时替换全部已有关联） */
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  categoryIds?: number[];
 
   /** 选项数组（提供时替换全部已有选项，至少 2 个） */
   @IsOptional()

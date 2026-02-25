@@ -39,24 +39,9 @@ const total = ref(0);
 /** 查询参数 */
 const query = reactive({
   keyword: "",
-  tag: "",
   page: 1,
   pageSize: 20,
 });
-
-/** 常用标签选项（用于筛选下拉） */
-const tagOptions = ref<string[]>([
-  "JavaScript",
-  "Vue",
-  "NestJS",
-  "HTTP",
-  "算法",
-  "数据结构",
-  "数据库",
-  "网络",
-  "安全",
-  "基础",
-]);
 
 /**
  * 加载题目列表
@@ -66,7 +51,6 @@ const loadQuestions = async () => {
     loading.value = true;
     const params = {
       keyword: query.keyword || undefined,
-      tag: query.tag || undefined,
       page: query.page,
       pageSize: query.pageSize,
     };
@@ -95,7 +79,6 @@ const handleSearch = () => {
  */
 const handleReset = () => {
   query.keyword = "";
-  query.tag = "";
   query.page = 1;
   loadQuestions();
 };
@@ -207,17 +190,6 @@ questionsBus.on(() => loadQuestions());
         </template>
       </el-input>
 
-      <el-select
-        v-model="query.tag"
-        placeholder="按标签筛选"
-        clearable
-        class="questions-view__tag-select"
-        @change="handleSearch"
-        @clear="handleSearch"
-      >
-        <el-option v-for="tag in tagOptions" :key="tag" :label="tag" :value="tag" />
-      </el-select>
-
       <el-button @click="handleSearch">搜索</el-button>
       <el-button @click="handleReset">重置</el-button>
     </div>
@@ -240,20 +212,18 @@ questionsBus.on(() => loadQuestions());
         </template>
       </el-table-column>
 
-      <el-table-column label="标签" width="180">
+      <el-table-column label="分类" min-width="200">
         <template #default="{ row }">
-          <template v-if="row.tags && row.tags.length">
+          <template v-if="row.questionCategories && row.questionCategories.length">
             <el-tag
-              v-for="tag in row.tags.slice(0, 3)"
-              :key="tag"
+              v-for="qc in row.questionCategories"
+              :key="qc.categoryId"
               size="small"
+              type="success"
               class="questions-view__tag"
             >
-              {{ tag }}
+              {{ qc.category.group.name }}·{{ qc.category.name }}
             </el-tag>
-            <span v-if="row.tags.length > 3" class="questions-view__more-tags">
-              +{{ row.tags.length - 3 }}
-            </span>
           </template>
           <span v-else class="text-slate-400">-</span>
         </template>
@@ -313,20 +283,12 @@ questionsBus.on(() => loadQuestions());
     @apply w-64;
   }
 
-  &__tag-select {
-    @apply w-44;
-  }
-
   &__table {
     @apply w-full;
   }
 
   &__tag {
-    @apply mr-1;
-  }
-
-  &__more-tags {
-    @apply text-xs text-slate-400;
+    @apply mr-1 mb-1;
   }
 
   &__pagination {

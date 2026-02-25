@@ -6,7 +6,7 @@
  *   pnpm run db:seed:test  - 测试库（重置）
  *   pnpm run db:seed:prod  - 生产库（需要确认）
  */
-import { seedSystem, resetTest } from "../prisma/db-utils";
+import { seedSystem, seedTest, resetTest } from "../prisma/db-utils";
 
 async function main() {
   const mode = process.argv[2] || "dev";
@@ -30,6 +30,7 @@ async function main() {
     } else {
       console.log(`插入系统基础数据 (${mode})...`);
       await seedSystem();
+      await seedTest();
     }
     console.log("✅ 完成");
   } catch (e: unknown) {

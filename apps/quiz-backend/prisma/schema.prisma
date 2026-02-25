@@ -51,15 +51,16 @@ model Role {
 // ============================================
 
 model Question {
-  id          Int       @id @default(autoincrement())
-  stem        String
-  type        String    @default("single_choice") // 题目类型，预留扩展
-  explanation String?   // 答题解析
-  tags        Json?     // JSON array of tags
-  deletedAt   DateTime? // 软删除时间戳，null 表示未删除
-  options     Option[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                 Int                @id @default(autoincrement())
+  stem               String
+  type               String             @default("single_choice") // 题目类型，预留扩展
+  explanation        String?            // 答题解析
+  tags               Json?              // JSON array of tags（自由辅助标签，如"面试高频"）
+  deletedAt          DateTime?          // 软删除时间戳，null 表示未删除
+  options            Option[]
+  questionCategories QuestionCategory[] // 结构化多维度分类关联
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([deletedAt])
 }
@@ -81,4 +82,47 @@ model AnswerAttempt {
   correct         Boolean
   elapsedMs       Int?
   createdAt       DateTime @default(now())
+}
+
+// ============================================
+// 多面分类体系
+// ============================================
+
+/// 分类维度（如"技术方向"、"难度"、"题型"）
+model CategoryGroup {
+  id         Int        @id @default(autoincrement())
+  name       String
+  sort       Int        @default(0)
+  categories Category[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+/// 分类节点（支持树形多级，如 "前端 > 框架 > Vue"）
+model Category {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  groupId            Int
+  group              CategoryGroup      @relation(fields: [groupId], references: [id])
+  parentId           Int?
+  parent             Category?          @relation("CategoryTree", fields: [parentId], references: [id])
+  children           Category[]         @relation("CategoryTree")
+  sort               Int                @default(0)
+  questionCategories QuestionCategory[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([groupId])
+  @@index([parentId])
+}
+
+/// 题目-分类多对多关联表
+model QuestionCategory {
+  questionId Int
+  categoryId Int
+  question   Question @relation(fields: [questionId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([questionId, categoryId])
+  @@index([categoryId])
 }

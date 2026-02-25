@@ -1,4 +1,11 @@
-import { IsInt, IsOptional, IsString, Min, Max } from "class-validator";
+import {
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Min,
+  Max,
+} from "class-validator";
 import { Type } from "class-transformer";
 
 /**
@@ -10,10 +17,17 @@ export class QueryQuestionsDto {
   @IsString()
   keyword?: string;
 
-  /** 按标签过滤 */
+  /** 按自由辅助标签过滤 */
   @IsOptional()
   @IsString()
   tag?: string;
+
+  /** 按结构化分类 ID 过滤 */
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  categoryId?: number;
 
   /** 页码（默认 1） */
   @IsOptional()

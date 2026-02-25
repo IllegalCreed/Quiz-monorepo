@@ -35,6 +35,7 @@ export const ALL_MENU_PERMISSIONS: MenuPermission[] = [
   { key: "dashboard", label: "欢迎页" },
   { key: "users", label: "用户管理" },
   { key: "questions", label: "题目管理" },
+  { key: "categories", label: "分类管理" },
   { key: "admins", label: "管理员管理" },
   { key: "roles", label: "角色管理" },
   { key: "permissions", label: "权限管理" },
@@ -98,13 +99,13 @@ export const ALL_API_PERMISSION_GROUPS: ApiPermissionGroup[] = [
     ],
   },
   {
-    module: "tags",
-    label: "标签管理",
+    module: "categories",
+    label: "分类管理",
     permissions: [
-      { key: "tags:list", label: "查看标签列表", module: "tags" },
-      { key: "tags:create", label: "创建标签", module: "tags" },
-      { key: "tags:update", label: "编辑标签", module: "tags" },
-      { key: "tags:delete", label: "删除标签", module: "tags" },
+      { key: "categories:list", label: "查看分类列表", module: "categories" },
+      { key: "categories:create", label: "创建分类", module: "categories" },
+      { key: "categories:update", label: "编辑分类", module: "categories" },
+      { key: "categories:delete", label: "删除分类", module: "categories" },
     ],
   },
   {

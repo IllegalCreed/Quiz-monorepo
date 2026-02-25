@@ -299,4 +299,10 @@ onMounted(() => {
   @apply text-lg font-semibold;
   color: var(--color-text);
 }
+
+/* card 内嵌表格去掉全局阴影，改用简单边框 */
+:deep(.el-card .el-table) {
+  box-shadow: none;
+  border: 1px solid var(--el-border-color-light);
+}
 </style>

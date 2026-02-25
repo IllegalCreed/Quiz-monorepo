@@ -132,7 +132,7 @@ onMounted(() => {
             个模块，控制按钮和接口的访问
           </div>
           <div class="space-y-4">
-            <el-card v-for="group in apiPermissionGroups" :key="group.module" shadow="never">
+            <el-card v-for="group in apiPermissionGroups" :key="group.module" shadow="always">
               <template #header>
                 <div class="flex items-center justify-between">
                   <span class="text-lg font-semibold">{{ group.label }}</span>
@@ -170,10 +170,21 @@ onMounted(() => {
 }
 
 .tab-content {
-  @apply py-4;
+  @apply py-4 px-0.5; /* px-0.5 为 table 阴影留出左右空间 */
+}
+
+/* 让 tab 面板不裁切阴影 */
+:deep(.el-tabs__content) {
+  overflow: visible;
 }
 
 :deep(.el-card__header) {
   @apply py-3;
+}
+
+/* API 权限内嵌表格：去掉全局卡片阴影，改用简单边框 */
+:deep(.el-card .el-table) {
+  box-shadow: none;
+  border: 1px solid var(--el-border-color-light);
 }
 </style>

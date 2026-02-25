@@ -54,6 +54,7 @@ describe("AdminQuestionsService", () => {
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     options: mockOptions,
+    questionCategories: [],
     _count: { options: 4 },
   };
 
@@ -72,6 +73,10 @@ describe("AdminQuestionsService", () => {
               update: jest.fn(),
             },
             option: {
+              deleteMany: jest.fn(),
+            },
+            questionCategory: {
+              createMany: jest.fn(),
               deleteMany: jest.fn(),
             },
             $transaction: jest.fn(),
@@ -181,10 +186,19 @@ describe("AdminQuestionsService", () => {
       // Act
       const result = await service.findOne(1);
 
-      // Assert：必须以软删除过滤条件查询
+      // Assert：必须以软删除过滤条件查询，并包含 questionCategories
       expect(findFirstSpy).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: null },
-        include: { options: true },
+        include: {
+          options: true,
+          questionCategories: {
+            include: {
+              category: {
+                include: { group: true },
+              },
+            },
+          },
+        },
       });
       expect(result.options).toHaveLength(4);
     });
@@ -221,20 +235,18 @@ describe("AdminQuestionsService", () => {
     };
 
     it("恰好 1 个正确答案，创建成功并返回含选项的题目", async () => {
-      // Arrange
-      const createSpy = jest
+      // Arrange：create 返回新题目，findFirst 供 create 结束后的 findOne 调用
+      jest
         .spyOn(prisma.question, "create")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.question, "findFirst")
         .mockResolvedValue(mockQuestion as never);
 
       // Act
       const result = await service.create(validCreateDto);
 
       // Assert
-      expect(createSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: { options: true },
-        }),
-      );
       expect(result.options).toBeDefined();
     });
 
@@ -277,6 +289,9 @@ describe("AdminQuestionsService", () => {
       // Arrange
       const createSpy = jest
         .spyOn(prisma.question, "create")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.question, "findFirst")
         .mockResolvedValue(mockQuestion as never);
 
       // Act

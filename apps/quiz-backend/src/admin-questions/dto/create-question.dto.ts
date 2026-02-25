@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -28,11 +29,17 @@ export class CreateQuestionDto {
   @IsString()
   explanation?: string;
 
-  /** 标签数组（可选） */
+  /** 自由辅助标签数组（可选，如"面试高频"） */
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  /** 结构化分类 ID 列表（多维度多选） */
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  categoryIds?: number[];
 
   /** 选项数组，至少 2 个 */
   @IsArray()

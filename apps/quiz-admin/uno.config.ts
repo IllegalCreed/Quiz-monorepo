@@ -24,6 +24,8 @@ export default defineConfig({
     "i-carbon-user-admin",
     "i-carbon-user-role",
     "i-carbon-locked",
+    "i-carbon-document",
+    "i-carbon-category",
 
     // Header 图标
     "i-carbon-menu",

@@ -15,7 +15,20 @@ export interface QuestionOption {
   description: string | null;
 }
 
-/** 题目列表项（不含 options 详情，含选项计数） */
+/** 题目列表项里的分类关联（含分类名和维度名） */
+export interface QuestionCategoryItem {
+  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+    group: {
+      id: number;
+      name: string;
+    };
+  };
+}
+
+/** 题目列表项（不含 options 详情，含选项计数和结构化分类） */
 export interface QuestionItem {
   id: number;
   stem: string;
@@ -26,6 +39,7 @@ export interface QuestionItem {
   createdAt: string;
   updatedAt: string;
   _count?: { options: number };
+  questionCategories?: QuestionCategoryItem[];
 }
 
 /** 题目详情（含所有选项） */
@@ -46,6 +60,8 @@ export interface QuestionForm {
   type: QuestionType;
   explanation: string;
   tags: string[];
+  /** 结构化分类 ID 列表（多维度多选） */
+  categoryIds: number[];
   options: OptionForm[];
 }
 
