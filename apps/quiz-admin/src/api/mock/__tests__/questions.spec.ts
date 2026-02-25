@@ -156,6 +156,7 @@ describe("questions mock API", () => {
       type: "single_choice" as const,
       explanation: "",
       tags: [],
+      categoryIds: [] as number[],
       options: [
         { text: "JavaScript 的超集", isCorrect: true, description: "" },
         { text: "CSS 框架", isCorrect: false, description: "" },
