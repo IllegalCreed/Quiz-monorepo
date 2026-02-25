@@ -12,6 +12,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useEventBus } from "@vueuse/core";
 import { useMockStore } from "@/composables/use-mock-store";
 import {
   getQuestion as getQuestionMock,
@@ -30,6 +31,9 @@ defineOptions({ name: "QuestionDetailView" });
 const route = useRoute();
 const router = useRouter();
 const { isMock } = useMockStore();
+
+/** 题目列表刷新事件总线，创建/编辑成功后通知列表页重新加载 */
+const questionsBus = useEventBus("questions-refresh");
 
 /** 是否为新建模式 */
 const isCreate = computed(() => route.params.id === "new");
@@ -188,7 +192,8 @@ const handleSubmit = async () => {
       ElMessage.success("题目保存成功");
     }
 
-    // 返回列表页
+    // 通知列表页刷新（事件总线），再跳转
+    questionsBus.emit();
     router.push("/home/questions");
   } catch (error) {
     const message = error instanceof Error ? error.message : "操作失败";

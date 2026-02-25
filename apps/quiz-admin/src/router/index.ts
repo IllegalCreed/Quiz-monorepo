@@ -90,3 +90,13 @@ router.beforeEach(async (to) => {
 });
 
 export default router;
+
+/**
+ * 路由切换后将主内容区滚回顶部
+ * el-main(.home-main) 自带 overflow-y-auto，keep-alive 缓存会保留滚动位置，
+ * 每次导航完成后手动 reset，避免切换页面时停在上次的位置
+ */
+router.afterEach(() => {
+  const main = document.querySelector(".home-main");
+  if (main) main.scrollTop = 0;
+});

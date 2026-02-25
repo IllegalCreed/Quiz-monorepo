@@ -72,7 +72,7 @@ export class RolesService {
       data: {
         name: createRoleDto.name,
         description: createRoleDto.description,
-        isSystem: createRoleDto.isSystem,
+        isSystem: createRoleDto.isSystem ?? false,
         menuPermissions: createRoleDto.menuPermissions,
         apiPermissions: createRoleDto.apiPermissions,
       },

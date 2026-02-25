@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsBoolean, IsArray } from "class-validator";
+import {
+  IsString,
+  IsNotEmpty,
+  IsBoolean,
+  IsArray,
+  IsOptional,
+} from "class-validator";
 
 /**
  * 创建角色 DTO
@@ -22,10 +28,12 @@ export class CreateRoleDto {
 
   /**
    * 是否为系统内置角色（系统角色不可删除）
+   * 前端创建时通常不传，默认为 false
    * @example false
    */
+  @IsOptional()
   @IsBoolean({ message: "isSystem 必须是布尔值" })
-  isSystem!: boolean;
+  isSystem?: boolean;
 
   /**
    * 菜单权限列表

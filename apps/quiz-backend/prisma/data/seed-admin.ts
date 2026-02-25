@@ -87,7 +87,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
 
   const superAdminPassword = await bcrypt.hash("super_admin", SALT_ROUNDS);
   const superAdmin = await prisma.admin.upsert({
-    where: { username: "super_admin" },
+    where: { id: 1 },
     update: {
       password: superAdminPassword,
       nickname: "超级管理员",
@@ -95,6 +95,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
       status: "ACTIVE",
     },
     create: {
+      id: 1,
       username: "super_admin",
       password: superAdminPassword,
       nickname: "超级管理员",
@@ -105,7 +106,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
 
   const adminPassword = await bcrypt.hash("admin123", SALT_ROUNDS);
   const admin = await prisma.admin.upsert({
-    where: { username: "admin" },
+    where: { id: 2 },
     update: {
       password: adminPassword,
       nickname: "普通管理员",
@@ -113,6 +114,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
       status: "ACTIVE",
     },
     create: {
+      id: 2,
       username: "admin",
       password: adminPassword,
       nickname: "普通管理员",

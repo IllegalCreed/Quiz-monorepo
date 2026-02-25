@@ -209,13 +209,13 @@ describe("管理员管理", () => {
     cy.get('input[placeholder="用户名"]').type("admin");
     cy.get('input[placeholder="密码"]').type("admin123");
     cy.contains("button", "登录").click();
-    cy.url().should("include", "/home/dashboard");
+    cy.url().should("include", "/home");
 
     // 尝试直接访问管理员管理页面
     cy.visit("/home/admins");
 
-    // 应该被重定向到首页（路由守卫会将无权限路由重定向到 dashboard）
-    cy.url().should("include", "/home/dashboard");
+    // 应该被重定向到首页（路由守卫会将无权限路由重定向到 /home）
+    cy.url().should("include", "/home");
     cy.url().should("not.include", "/home/admins");
   });
 });

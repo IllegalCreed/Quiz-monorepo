@@ -5,6 +5,7 @@
  * 操作：新建（跳转详情页）、编辑（跳转详情页）、软删除
  */
 import { ref, reactive, onMounted } from "vue";
+import { useEventBus } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useMockStore } from "@/composables/use-mock-store";
@@ -171,6 +172,11 @@ const typeLabels: Record<string, string> = {
 onMounted(() => {
   loadQuestions();
 });
+
+// 订阅题目变更事件（新建/编辑成功后由详情页发出），触发列表刷新
+// 使用事件总线而非 onActivated，避免每次切换菜单都无谓请求
+const questionsBus = useEventBus("questions-refresh");
+questionsBus.on(() => loadQuestions());
 </script>
 
 <template>

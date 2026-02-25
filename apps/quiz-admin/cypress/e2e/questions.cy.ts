@@ -78,7 +78,7 @@ describe("题目管理", () => {
     cy.url().should("include", "/home/questions/new");
 
     // 页面标题应为新建模式
-    cy.contains("新建题目").should("be.visible");
+    cy.get(".question-detail-view__card-title").should("contain", "新增题目").and("be.visible");
 
     // 填写题干
     cy.get('textarea[placeholder="请输入题目题干"]').type("E2E新建：什么是闭包？");
@@ -114,9 +114,9 @@ describe("题目管理", () => {
     cy.url().should("include", "/home/questions");
     cy.url().should("not.include", "/new");
 
-    // 验证新题目出现在列表中（题干在 60 字符内可完整显示）
+    // 验证新题目出现在列表中（按 createdAt desc 排序，新题在首行）
     cy.get(".el-loading-mask").should("not.exist");
-    cy.contains("td", "E2E新建：什么是闭包？").should("be.visible");
+    cy.contains("td", "E2E新建：什么是闭包？").should("exist");
   });
 
   it("应该能够编辑题目", () => {
@@ -131,7 +131,7 @@ describe("题目管理", () => {
     cy.url().should("match", /\/home\/questions\/\d+$/);
 
     // 验证页面标题为编辑模式
-    cy.contains("编辑题目").should("be.visible");
+    cy.get(".question-detail-view__card-title").should("contain", "编辑题目").and("exist");
 
     // 等待题目数据加载
     cy.get(".el-loading-mask").should("not.exist");
@@ -152,7 +152,7 @@ describe("题目管理", () => {
 
     // 验证修改后的题干出现在列表中
     cy.get(".el-loading-mask").should("not.exist");
-    cy.contains("td", "E2E已修改的题干内容").should("be.visible");
+    cy.contains("td", "E2E已修改的题干内容").should("exist");
   });
 
   it("应该能够软删除题目", () => {

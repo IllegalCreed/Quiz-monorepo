@@ -67,8 +67,9 @@ while true; do
   sleep 1
 done
 
-# 4. 运行 Cypress
+# 4. 运行 Cypress（unset ELECTRON_RUN_AS_NODE 防止子进程继承导致 Electron 以 Node 模式启动）
 log "Running Cypress..."
+unset ELECTRON_RUN_AS_NODE
 cross-env NODE_ENV=production cypress run --e2e
 CYP_EXIT=$?
 

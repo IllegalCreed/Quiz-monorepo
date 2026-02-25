@@ -111,40 +111,7 @@ pnpm test:unit:coverage     # 单元测试 + 覆盖率报告（按需）
 pnpm test                   # 完整测试（包括 E2E，~5 分钟）
 ```
 
-### 后端脚本详解
-
-所有后端脚本使用 `dotenv-cli` 自动加载环境变量，支持两层配置：
-
-- `.env.{environment}` - 团队共享配置（已提交）
-- `.env.{environment}.local` - 个人敏感配置（不提交，会覆盖同名变量）
-
-**数据库迁移**：
-
-```bash
-pnpm run migrate:deploy:dev    # 开发库
-pnpm run migrate:deploy:test   # 测试库
-pnpm run migrate:deploy:prod   # 生产库
-pnpm run migrate:status         # 查看所有环境状态
-```
-
-**数据库管理**：
-
-```bash
-pnpm run db:studio:dev          # 打开开发库可视化界面
-pnpm run db:seed:dev            # 插入基础数据
-pnpm run db:reset:test          # 重置测试库（清空+插入）
-```
-
-**代码检查**：
-
-```bash
-pnpm run check                  # 快速检查（日常使用）
-pnpm run check:e2e              # 完整检查（提交 PR 前）
-```
-
 更多脚本说明见 [apps/quiz-backend/scripts/README.md](apps/quiz-backend/scripts/README.md)
-
-```
 
 ## Prisma 7 特殊说明
 
@@ -158,21 +125,23 @@ pnpm run check:e2e              # 完整检查（提交 PR 前）
 
 采用**两层配置策略**，清晰分离团队共享配置和敏感信息：
 
-| 文件 | 提交到仓库 | 用途 |
-|------|-----------|------|
-| `.env.development` | ✅ 是 | 开发环境共享配置（端口、环境变量等） |
-| `.env.test` | ✅ 是 | 测试环境共享配置 |
-| `.env.production` | ✅ 是 | 生产环境共享配置 |
-| `.env.development.local` | ❌ 否 | 开发环境敏感配置（数据库密码等） |
-| `.env.test.local` | ❌ 否 | 测试环境敏感配置 |
-| `.env.production.local` | ❌ 否 | 生产环境敏感配置 |
-| `.env.create-db.local` | ❌ 否 | 数据库初始化脚本配置 |
+| 文件                     | 提交到仓库 | 用途                                 |
+| ------------------------ | ---------- | ------------------------------------ |
+| `.env.development`       | ✅ 是      | 开发环境共享配置（端口、环境变量等） |
+| `.env.test`              | ✅ 是      | 测试环境共享配置                     |
+| `.env.production`        | ✅ 是      | 生产环境共享配置                     |
+| `.env.development.local` | ❌ 否      | 开发环境敏感配置（数据库密码等）     |
+| `.env.test.local`        | ❌ 否      | 测试环境敏感配置                     |
+| `.env.production.local`  | ❌ 否      | 生产环境敏感配置                     |
+| `.env.create-db.local`   | ❌ 否      | 数据库初始化脚本配置                 |
 
 **配置分层原则**：
+
 - **非敏感配置**（PORT、NODE_ENV、ENABLE_TEST_ENDPOINT 等）放在 `.env.{environment}` 中，团队共享
 - **敏感配置**（DATABASE_PASSWORD、TEST_RESET_SECRET 等）放在 `.env.{environment}.local` 中，本地覆盖
 
 **新成员上手**：
+
 1. `git clone` 项目后，配置文件已包含团队默认设置
 2. 复制 `.env.{environment}.example` 到 `.env.{environment}.local`
 3. 填入真实数据库密码（从团队密码管理器获取）
@@ -240,7 +209,7 @@ quiz-monorepo/
 │ └── quiz-app-requirements.md
 └── scripts/ # 工具脚本
 
-````
+```
 
 ## 常见问题
 
@@ -248,7 +217,7 @@ quiz-monorepo/
 
 ```bash
 pnpm clean:ports  # 清理所有端口（dev + preview）
-````
+```
 
 ### Prisma Client 缺失
 

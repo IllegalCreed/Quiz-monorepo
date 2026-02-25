@@ -2,6 +2,8 @@
  * HTTP 请求工具（基于 fetch）
  * 统一处理请求拦截、响应拦截和错误处理
  */
+import { ElMessageBox } from "element-plus";
+import router from "@/router";
 
 /** 统一响应格式 */
 interface ApiResponse<T = unknown> {
@@ -22,6 +24,30 @@ const getBaseURL = (): string => {
 /** 从 localStorage 获取 token */
 const getToken = (): string | null => {
   return localStorage.getItem("admin-token");
+};
+
+/** 防止并发请求同时弹出多个 401 对话框 */
+let handling401 = false;
+
+/**
+ * 处理 401 未授权：清除 token，弹窗询问是否跳回登录页
+ */
+const handle401 = async (message: string): Promise<void> => {
+  if (handling401) return;
+  handling401 = true;
+  localStorage.removeItem("admin-token");
+  try {
+    await ElMessageBox.confirm(message || "登录已过期，请重新登录", "会话过期", {
+      confirmButtonText: "重新登录",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+    router.push("/login");
+  } catch {
+    // 用户点了取消，不跳转
+  } finally {
+    handling401 = false;
+  }
 };
 
 /**
@@ -62,6 +88,10 @@ export const request = async <T = unknown>(url: string, config: RequestConfig = 
 
     // 处理 HTTP 错误状态
     if (!response.ok) {
+      // 401 未授权：触发全局弹窗，询问是否重新登录
+      if (response.status === 401) {
+        handle401(result.message || "登录已过期，请重新登录");
+      }
       throw new Error(result.message || `请求失败: ${response.status}`);
     }
 
