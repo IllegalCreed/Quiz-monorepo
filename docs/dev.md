@@ -488,6 +488,17 @@ app.useWebSocketAdapter(new WsAdapter(app));
 
 ---
 
+### 4. 管理后台增强
+
+以下功能独立于三大模块，可随时穿插实现：
+
+- **历史页签右键菜单**：右键点击页签弹出上下文菜单，支持"关闭全部页签"、"关闭其他页签"操作（参考 vue-element-admin 实现）
+- **批量导入题目**：JSON 文件上传，复用 `seed-test.json` 数据结构，后端 `POST /admin/questions/import`
+- **题目预览**：管理后台中预览题目样式，对齐 quiz-app 答题界面风格
+- **Dashboard 真实统计数据**：替换当前静态内容，展示题目总数、答题次数、用户数等实时统计
+
+---
+
 ## 实施顺序（推荐）
 
 1. **DB Schema + 迁移 SQL**（User / UserPreference / SystemLog 模型，AnswerAttempt 更新）
