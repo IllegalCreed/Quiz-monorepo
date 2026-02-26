@@ -205,8 +205,9 @@ quiz-monorepo/
 │ │ ├── CheckRadio.vue
 │ │ └── CheckRadioGroup.vue
 │ └── .storybook/
-├── docs/ # 产品文档
-│ └── quiz-app-requirements.md
+├── docs/                   # 文档
+│ ├── product.md            # 产品需求 + 路线图
+│ └── dev.md                # 技术架构 + AI 开发指南
 └── scripts/ # 工具脚本
 
 ```
@@ -234,12 +235,12 @@ pnpm -C apps/quiz-backend run build  # 如需重新构建后端
 
 ## 测试策略
 
-| 包           | 单元测试          | E2E 测试                        |
-| ------------ | ----------------- | ------------------------------- |
-| quiz-app     | Vitest (22 tests) | Cypress (mocked + real backend) |
-| quiz-admin   | Vitest (88 tests) | Cypress (计划中)                |
-| quiz-backend | Jest (150 tests)  | -                               |
-| ui           | Vitest (85 tests) | Playwright (Storybook 交互测试) |
+| 包           | 单元测试                        | E2E 测试                        |
+| ------------ | ------------------------------- | ------------------------------- |
+| quiz-app     | Vitest (22 tests)               | Cypress (mocked + real backend) |
+| quiz-admin   | Vitest (120+ tests)             | Cypress (5 个文件，连真实后端)  |
+| quiz-backend | Jest (188 tests, 86~95% 覆盖率) | -                               |
+| ui           | Vitest (85 tests)               | Playwright (Storybook 交互测试) |
 
 **推荐日常使用**：`pnpm test:unit`（快速，~5 秒）
 **提交 PR 前**：`pnpm test`（完整，~5 分钟，包含 E2E）
@@ -270,5 +271,5 @@ pnpm -C apps/quiz-backend run build  # 如需重新构建后端
 ## 相关文档
 
 - [README.md](./README.md) - 快速上手
-- [ROADMAP.md](./ROADMAP.md) - 功能规划
-- [docs/quiz-app-requirements.md](./docs/quiz-app-requirements.md) - 产品需求
+- [docs/product.md](./docs/product.md) - 产品需求 + 路线图
+- [docs/dev.md](./docs/dev.md) - 技术架构 + 待实现功能详细计划
