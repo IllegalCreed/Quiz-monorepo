@@ -1,23 +1,96 @@
 # quiz-backend
 
-Nest-like backend for Quiz project (minimal scaffold for MVP)
+Quiz 应用后端 API 服务。
 
-## Quick Start (development)
+**技术栈**：NestJS + Prisma 7 + MySQL (MariaDB adapter)
+**端口**：开发 `10020`，测试 `10020`（独立测试数据库）
 
-1. Copy `.env.example` -> `.env.development.local` and fill values.
-2. Option A: Start local MySQL via `docker-compose up -d` (will listen on 3307 locally)
-3. Run `pnpm --filter apps/quiz-backend install` (or `cd apps/quiz-backend && pnpm install`)
-4. Ensure database exists: `pnpm --filter apps/quiz-backend run db:create` (this uses env vars)
-5. Run `pnpm --filter apps/quiz-backend run prisma:generate` and `pnpm --filter apps/quiz-backend run prisma:migrate` to apply migrations
-6. Seed (dev): `pnpm --filter apps/quiz-backend run db:seed` (alias for `db:seed:dev`)
+---
 
-- `db:seed:dev` — idempotent system seed (creates base system data if missing). This is the canonical command to ensure system data exists in development.
-- `db:seed:test` — **reset** test DB and seed both system and test data (clears previous test data then inserts a deterministic dataset). This is the script intended for E2E/CI preparation. The older `db:reset` and `db:setup:test` scripts have been removed; `db:seed:test` performs deterministic reset and seed for tests.
-- `db:seed:prod` — seeds system data to production **only** when explicitly allowed (requires `QUIZ_ALLOW_PROD_SEED=true` and, if you want the script to load `.env.production.local`, `QUIZ_ALLOW_READ_PROD_ENV=true`).
+## 快速开始
 
-7. Start dev server: `pnpm --filter apps/quiz-backend run dev`
+1. 复制 `.env.example` 为 `.env.development.local` 并填入数据库连接信息
 
-Notes:
+2. 应用数据库迁移：
 
-- For production, use `.env.production.local` for secrets and a managed DB. The seed scripts are intentionally conservative about touching production: running `db:seed:prod` requires explicit confirmation via `QUIZ_ALLOW_PROD_SEED=true` to avoid accidental destructive operations.
-- This scaffold includes Prisma schema, seed utilities and a small Questions controller with `GET /api/questions` and `POST /api/questions/check` endpoints.
+   ```bash
+   pnpm run migrate:deploy:dev
+   ```
+
+3. 生成 Prisma Client：
+
+   ```bash
+   pnpm run prisma:generate
+   ```
+
+4. 插入开发种子数据：
+
+   ```bash
+   pnpm run db:seed:dev
+   ```
+
+5. 启动开发服务器：
+   ```bash
+   pnpm dev
+   ```
+
+---
+
+## 常用命令
+
+```bash
+pnpm dev                       # 开发服务器 (port 10020, 热重载)
+pnpm run build                 # 生产构建
+pnpm run test:unit             # 单元测试 (Jest, ~188 tests, 86~95% 覆盖率)
+pnpm run check                 # lint + type-check + test:unit (~5s)
+pnpm run type-check            # TypeScript 类型检查
+
+# 数据库
+pnpm run migrate:deploy:dev    # 应用迁移到开发数据库
+pnpm run migrate:status        # 查看所有环境迁移状态
+pnpm run db:studio             # 打开 Prisma Studio（可视化查看数据）
+pnpm run db:seed:dev           # 插入开发种子数据
+pnpm run db:reset:test         # 重置测试数据库（E2E 前使用）
+```
+
+---
+
+## API 端点（27 个）
+
+| 模块            | 前缀                 | 端点数                         |
+| --------------- | -------------------- | ------------------------------ |
+| Auth            | `/admin/auth`        | 3（login / refresh / logout）  |
+| Admins          | `/admin/admins`      | 5（CRUD + 状态切换）           |
+| Roles           | `/admin/roles`       | 5（CRUD）                      |
+| Permissions     | `/admin/permissions` | 2（菜单列表 + API 列表）       |
+| AdminQuestions  | `/admin/questions`   | 5（CRUD，软删除）              |
+| AdminCategories | `/admin/categories`  | 7（维度 CRUD + 树形节点 CRUD） |
+| Questions       | `/api/questions`     | 2（随机题目）                  |
+| Answers         | `/api/answers`       | 1（提交答案）                  |
+| Test            | `/test/reset`        | 1（E2E 数据重置，仅测试环境）  |
+
+---
+
+## 全局机制
+
+- **JWT 认证**：`JwtAuthGuard` 全局启用，`@Public()` 装饰器跳过
+- **权限检查**：`PermissionGuard` 读取 JWT payload 中的 `role.apiPermissions`
+- **超级管理员**：通配符权限 `["*"]`，自动放行所有接口
+- **响应格式**：`TransformInterceptor` 统一包装为 `{ code: 0, data, message }`
+- **异常格式**：`HttpExceptionFilter` 统一返回 `{ statusCode, message, error }`
+
+---
+
+## Prisma 迁移说明
+
+- Prisma 7 配置文件：`prisma.config.ts`（DB URL 不在 `schema.prisma` 中）
+- `prisma migrate dev` 需要 shadow DB 权限（RDS 通常无此权限）
+- 变通方案：手动写 migration SQL → `prisma migrate deploy`
+- 详见 [scripts/README.md](./scripts/README.md)
+
+---
+
+## 相关文档
+
+- [docs/dev.md](../../docs/dev.md) — 技术架构 + DB Schema
+- [scripts/README.md](./scripts/README.md) — 数据库脚本说明

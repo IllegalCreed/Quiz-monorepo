@@ -1,77 +1,61 @@
 # quiz-app
 
-This template should help get you started developing with Vue 3 in Vite.
+用户端答题应用。题目随机推送，用户点击选项即提交，答对自动跳转，答错高亮对错选项并展示解析。
 
-## Recommended IDE Setup
+**技术栈**：Vue 3 + Vite + Pinia + SCSS + UnoCSS
+**端口**：开发 `10000`，E2E 测试 `10010`
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+---
 
-## Recommended Browser Setup
+## 快速开始
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+```bash
+# 在 monorepo 根目录
+pnpm dev:frontend      # 启动前端开发服务器
 
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+# 或在当前目录
 pnpm dev
 ```
 
-### Type-Check, Compile and Minify for Production
+首次启动前，复制 `.env.example` 为 `.env.development.local` 并填入 API 地址：
 
-```sh
-pnpm build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-pnpm test:unit
-```
-
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
-
-```sh
-pnpm test:e2e:dev
-```
-
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
-
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
-
-```sh
-pnpm build
-pnpm test:e2e
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
+```bash
+VITE_API_BASE=http://localhost:10020
+VITE_MOCK=false
 ```
 
 ---
 
-Notes for this project:
+## 常用命令
 
-- Follows view → composable → store → api pattern. `src/pages/QuizPage.vue` uses `src/pages/composables/useQuiz.ts`, which relies on `src/stores/useMockStore.ts` (toggle `VITE_MOCK=true`) and `src/api/questions.ts` for API calls.
-- Default dev API base: `VITE_API_BASE` (set in `.env.development.local`).
+```bash
+pnpm dev               # 开发服务器 (port 10000)
+pnpm build             # 生产构建
+pnpm test:unit         # 单元测试 (Vitest, ~22 tests)
+pnpm test:e2e          # E2E 测试 (Cypress, 需后端运行)
+pnpm type-check        # TypeScript 类型检查
+pnpm lint              # oxlint + ESLint 检查
+```
+
+---
+
+## 架构
+
+```
+src/
+├── pages/quiz-page.vue   # 主答题页（唯一业务页面）
+├── api/questions.ts      # API 调用（获取题目 + 提交答案）
+├── composables/
+│   ├── use-quiz.ts       # 答题核心逻辑（随机获取、提交、跳转）
+│   └── use-theme.ts      # 主题切换（系统检测 + 手动）
+└── stores/               # Pinia stores
+```
+
+答题流程：`useQuiz` → `GET /api/questions/random` → 用户选择 → `POST /api/answers` → 后端返回判定结果 + 选项解析
+
+---
+
+## 相关文档
+
+- [docs/product.md](../../docs/product.md) — 产品需求
+- [docs/dev.md](../../docs/dev.md) — 技术架构

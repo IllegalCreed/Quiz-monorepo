@@ -1,70 +1,77 @@
 # quiz-admin
 
-This template should help get you started developing with Vue 3 in Vite.
+管理后台。提供题目、分类、管理员、角色、权限的完整 CRUD，支持 RBAC 权限系统、动态路由、深色模式。
 
-## Recommended IDE Setup
+**技术栈**：Vue 3 + Element Plus + UnoCSS + Pinia
+**端口**：开发 `10050`，E2E 测试 `10060`
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+**测试账号**：`super_admin` / `super_admin`（全权限）、`admin` / `admin`（部分权限）
 
-## Recommended Browser Setup
+---
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## 快速开始
 
-## Type Support for `.vue` Imports in TS
+```bash
+# 在 monorepo 根目录
+pnpm -C apps/quiz-admin dev
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+# 或在当前目录
 pnpm dev
 ```
 
-### Type-Check, Compile and Minify for Production
+首次启动前，复制 `.env.example` 为 `.env.development.local`：
 
-```sh
-pnpm build
+```bash
+VITE_API_BASE=http://localhost:10020
+VITE_MOCK=false
+VITE_PORT=10050
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+---
 
-```sh
-pnpm test:unit
+## 常用命令
+
+```bash
+pnpm dev               # 开发服务器 (port 10050)
+pnpm build             # 生产构建
+pnpm test:unit         # 单元测试 (Vitest, ~120+ tests)
+pnpm test:e2e          # E2E 测试 (Cypress, 连真实后端，5 个文件)
+pnpm type-check        # TypeScript 类型检查
+pnpm lint              # ESLint 检查
 ```
 
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
+---
 
-```sh
-pnpm test:e2e:dev
+## 已实现功能
+
+| 模块       | 功能                                                     |
+| ---------- | -------------------------------------------------------- |
+| 认证       | JWT 登录、7 天有效期                                     |
+| 权限系统   | RBAC（菜单权限 + API 权限）、动态路由、超级管理员通配符  |
+| 管理员管理 | CRUD、角色分配、保护规则                                 |
+| 角色管理   | 自定义角色、菜单/API 权限配置                            |
+| 题目管理   | 列表/搜索/筛选、新建/编辑/软删除、动态选项、分类关联     |
+| 分类管理   | 多维度树形分类（无限层级递归组件）                       |
+| 布局       | Header + Sidebar 折叠 + Tab 历史 + keep-alive + 深色模式 |
+
+---
+
+## 架构
+
+```
+src/
+├── api/mock/             # Mock API（开发/测试用）
+├── composables/          # use-token.ts | use-mock-store.ts
+├── router/               # 动态路由 + 权限守卫
+├── stores/modules/       # account / menu / router
+├── styles/               # Element Plus 覆盖 + 全局变量
+├── types/                # permission.ts | category.ts | question.ts
+└── views/                # 各业务页面
 ```
 
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
+---
 
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
+## 相关文档
 
-```sh
-pnpm build
-pnpm test:e2e
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
-```
+- [docs/dev.md](../../docs/dev.md) — 技术架构 + 添加新页面流程
+- [docs/product.md](../../docs/product.md) — 产品需求

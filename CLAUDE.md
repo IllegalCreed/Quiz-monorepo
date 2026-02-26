@@ -191,7 +191,6 @@ quiz-monorepo/
 │ │ │ ├── stores/ # Pinia stores
 │ │ │ ├── router/ # 动态路由 + 权限
 │ │ │ └── styles/ # SCSS 主题 + Element Plus 覆盖
-│ │ └── IMPLEMENTATION.md # 详细实施指南
 │ └── quiz-backend/ # 后端 (NestJS)
 │ ├── src/
 │ │ ├── questions/ # 题目模块
