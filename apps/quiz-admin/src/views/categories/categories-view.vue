@@ -240,7 +240,13 @@ async function handleDeleteCategory(node: CategoryItem) {
       <div class="categories-view__sidebar">
         <div class="categories-view__sidebar-header">
           <span class="categories-view__sidebar-title">分类维度</span>
-          <el-button size="small" type="primary" text @click="startNewGroup">
+          <el-button
+            v-permission="'categories:create'"
+            size="small"
+            type="primary"
+            text
+            @click="startNewGroup"
+          >
             <template #icon><i class="i-carbon-add" /></template>
             新增维度
           </el-button>
@@ -297,10 +303,21 @@ async function handleDeleteCategory(node: CategoryItem) {
                 </span>
               </div>
               <div class="categories-view__group-actions">
-                <el-button size="small" text @click.stop="startEditGroup(group)">
+                <el-button
+                  v-permission="'categories:update'"
+                  size="small"
+                  text
+                  @click.stop="startEditGroup(group)"
+                >
                   <i class="i-carbon-edit" />
                 </el-button>
-                <el-button size="small" text type="danger" @click.stop="handleDeleteGroup(group)">
+                <el-button
+                  v-permission="'categories:delete'"
+                  size="small"
+                  text
+                  type="danger"
+                  @click.stop="handleDeleteGroup(group)"
+                >
                   <i class="i-carbon-trash-can" />
                 </el-button>
               </div>
@@ -318,7 +335,13 @@ async function handleDeleteCategory(node: CategoryItem) {
         <template v-if="selectedGroup">
           <div class="categories-view__tree-header">
             <span class="categories-view__tree-title">「{{ selectedGroup.name }}」分类树</span>
-            <el-button size="small" type="primary" text @click="startAddCategory(-1)">
+            <el-button
+              v-permission="'categories:create'"
+              size="small"
+              type="primary"
+              text
+              @click="startAddCategory(-1)"
+            >
               <template #icon><i class="i-carbon-add" /></template>
               新增根分类
             </el-button>

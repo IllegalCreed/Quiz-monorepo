@@ -20,6 +20,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** 关闭事件 */
   close: [view: RouteLike];
+  /** 右键菜单事件，携带鼠标坐标 */
+  contextmenu: [view: RouteLike, event: MouseEvent];
 }>();
 
 /** 是否为当前激活的 Tab */
@@ -41,7 +43,11 @@ function change() {
 </script>
 
 <template>
-  <div :class="['history-tab-item', { 'is-active': isActive }]" @click="change">
+  <div
+    :class="['history-tab-item', { 'is-active': isActive }]"
+    @click="change"
+    @contextmenu.prevent="emit('contextmenu', props.data, $event)"
+  >
     <span class="tab-title">{{ data.meta?.title || data.name }}</span>
     <span class="tab-close i-carbon-close" @click.stop="close" />
   </div>

@@ -4,6 +4,7 @@
  */
 import { onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 import { useRouterStore } from "@/stores/modules/router";
 import type { RouteLike } from "@/types/router";
 
@@ -11,6 +12,9 @@ export function useHistoryRouter() {
   const routerStore = useRouterStore();
   const router = useRouter();
   const route = useRoute();
+
+  // 用 storeToRefs 保持响应式连接，避免解构后丢失对 store ref 的追踪
+  const { visitedViews } = storeToRefs(routerStore);
 
   /** 监听路由变化，自动添加到历史记录 */
   watch(route, () => {
@@ -40,13 +44,15 @@ export function useHistoryRouter() {
 
   /**
    * 关闭 Tab
-   * 如果关闭的是当前激活的 Tab，则跳转到最后一个 Tab
-   * 如果没有其他 Tab 了，跳转到 /home（不带子路由）
+   * 从 store 中删除视图，如果关闭的是当前激活的 Tab 则跳转到相邻 Tab
    * @param view 要关闭的路由
    */
   function close(view: RouteLike) {
+    // 先从 store 删除（X 按钮路径已在 tab-item 中删过，再删一次也无副作用）
+    routerStore.deleteView(view);
+
+    // 关闭的是当前激活页面时，才需要跳转
     if (view.path === route.path) {
-      // 关闭的是当前页面，跳转到最后一个 Tab
       const latestView = routerStore.visitedViews.slice(-1)[0];
       if (latestView) {
         return router.push(latestView.fullPath);
@@ -56,8 +62,31 @@ export function useHistoryRouter() {
     }
   }
 
+  /**
+   * 关闭其他页签，只保留指定的 Tab
+   * 如果当前路由不是目标 Tab，跳转到目标 Tab
+   * @param view 要保留的路由
+   */
+  function closeOthers(view: RouteLike) {
+    routerStore.deleteOtherViews(view);
+    // 当前路由不是目标 Tab 时，导航到目标 Tab
+    if (route.path !== view.path) {
+      router.push({ path: view.path, query: view.query });
+    }
+  }
+
+  /**
+   * 关闭全部页签并跳转到 /home
+   */
+  function closeAll() {
+    routerStore.clearAllViews();
+    router.push("/home");
+  }
+
   return {
-    visitedViews: routerStore.visitedViews,
+    visitedViews,
     close,
+    closeOthers,
+    closeAll,
   };
 }

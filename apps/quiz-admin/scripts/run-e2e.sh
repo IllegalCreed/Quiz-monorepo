@@ -6,6 +6,10 @@
 #  3) 等待服务就绪
 #  4) 运行 Cypress E2E 测试
 #  5) 优雅停止服务并返回 Cypress 退出码
+#
+# 用法：
+#  bash scripts/run-e2e.sh                                    # 跑全部 spec
+#  SPEC=cypress/e2e/users.cy.ts bash scripts/run-e2e.sh       # 只跑单个 spec
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -63,7 +67,14 @@ done
 # 4. 运行 Cypress（unset ELECTRON_RUN_AS_NODE 防止子进程继承导致 Electron 以 Node 模式启动）
 log "Running Cypress..."
 unset ELECTRON_RUN_AS_NODE
-cross-env NODE_ENV=production cypress run --e2e
+
+CYPRESS_ARGS="--e2e"
+if [ -n "${SPEC:-}" ]; then
+  log "Running single spec: ${SPEC}"
+  CYPRESS_ARGS="${CYPRESS_ARGS} --spec ${SPEC}"
+fi
+
+pnpm exec cypress run ${CYPRESS_ARGS}
 CYP_EXIT=$?
 
 # 5. 优雅停止并返回退出码

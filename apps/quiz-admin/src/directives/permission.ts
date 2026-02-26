@@ -19,8 +19,26 @@ export const permission: Directive = {
     // 获取当前用户的 API 权限
     const userPermissions = accountStore.userInfo?.apiPermissions || [];
 
+    /**
+     * 判断用户是否拥有某个权限
+     * 支持三种匹配：
+     * - 精确匹配：users:list === users:list
+     * - 模块通配符：users:* 匹配 users:list、users:delete 等
+     * - 全局通配符：*:* 匹配所有权限
+     */
+    const matchPermission = (required: string): boolean => {
+      const [reqModule] = required.split(":");
+      return userPermissions.some((userPerm: string) => {
+        if (userPerm === "*:*") return true;
+        if (userPerm === required) return true;
+        // 模块通配符：users:* 匹配 users:任意
+        if (userPerm === `${reqModule}:*`) return true;
+        return false;
+      });
+    };
+
     // 检查是否有任意一个权限
-    const hasPermission = requiredPermissions.some((perm) => userPermissions.includes(perm));
+    const hasPermission = requiredPermissions.some(matchPermission);
 
     // 无权限则移除元素
     if (!hasPermission) {

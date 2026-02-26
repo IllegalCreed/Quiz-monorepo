@@ -40,6 +40,10 @@ export default defineConfig({
     // Tab 关闭按钮
     "i-carbon-close",
 
+    // Tab 右键菜单图标
+    "i-carbon-subtract",
+    "i-carbon-trash-can",
+
     // 登录页 loading
     "i-carbon-renew",
 

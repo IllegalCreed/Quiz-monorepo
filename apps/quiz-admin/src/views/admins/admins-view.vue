@@ -322,7 +322,9 @@ onMounted(async () => {
     <!-- 页头 -->
     <div class="page-header">
       <h1 class="page-title">管理员管理</h1>
-      <el-button type="primary" @click="openCreateDialog"> 新增管理员 </el-button>
+      <el-button v-permission="'admins:create'" type="primary" @click="openCreateDialog">
+        新增管理员
+      </el-button>
     </div>
 
     <!-- 管理员列表 -->
@@ -343,11 +345,25 @@ onMounted(async () => {
       </el-table-column>
       <el-table-column label="操作" width="240">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openViewDialog(row)"> 查看 </el-button>
-          <el-button link type="primary" :disabled="isSuperAdmin(row)" @click="openRoleDialog(row)">
+          <el-button v-permission="'admins:list'" link type="primary" @click="openViewDialog(row)">
+            查看
+          </el-button>
+          <el-button
+            v-permission="'admins:update'"
+            link
+            type="primary"
+            :disabled="isSuperAdmin(row)"
+            @click="openRoleDialog(row)"
+          >
             分配角色
           </el-button>
-          <el-button link type="danger" :disabled="isSuperAdmin(row)" @click="handleDelete(row)">
+          <el-button
+            v-permission="'admins:delete'"
+            link
+            type="danger"
+            :disabled="isSuperAdmin(row)"
+            @click="handleDelete(row)"
+          >
             删除
           </el-button>
         </template>

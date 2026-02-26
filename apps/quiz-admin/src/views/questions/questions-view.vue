@@ -167,7 +167,7 @@ questionsBus.on(() => loadQuestions());
     <!-- 页面头部 -->
     <div class="questions-view__header">
       <h2 class="questions-view__title">题目管理</h2>
-      <el-button type="primary" @click="handleCreate">
+      <el-button v-permission="'questions:create'" type="primary" @click="handleCreate">
         <template #icon>
           <i class="i-carbon-add" />
         </template>
@@ -243,8 +243,22 @@ questionsBus.on(() => loadQuestions());
 
       <el-table-column label="操作" width="140" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button size="small" type="primary" text @click="handleEdit(row.id)">编辑</el-button>
-          <el-button size="small" type="danger" text @click="handleDelete(row)">删除</el-button>
+          <el-button
+            v-permission="'questions:update'"
+            size="small"
+            type="primary"
+            text
+            @click="handleEdit(row.id)"
+            >编辑</el-button
+          >
+          <el-button
+            v-permission="'questions:delete'"
+            size="small"
+            type="danger"
+            text
+            @click="handleDelete(row)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>

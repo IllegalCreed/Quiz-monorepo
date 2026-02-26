@@ -2,11 +2,23 @@
 /**
  * 用户管理页面
  * 管理 Quiz App 的普通用户（非管理员）
+ * 支持搜索、状态筛选、分页，对接真实/Mock API
  */
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getAppUsers, createAppUser, updateAppUserStatus, deleteAppUser } from "@/api/mock/users";
-import type { AppUser } from "@/types/account";
+import {
+  getAppUsers as getAppUsersApi,
+  updateAppUserStatus as updateAppUserStatusApi,
+  deleteAppUser as deleteAppUserApi,
+} from "@/api/users";
+import {
+  getAppUsers as getAppUsersMock,
+  updateAppUserStatus as updateAppUserStatusMock,
+  deleteAppUser as deleteAppUserMock,
+} from "@/api/mock/users";
+import { useMockStore } from "@/composables/use-mock-store";
+import type { AppUserListItem } from "@/types/account";
 
 /**
  * 设置组件名称，与路由 meta.componentName 一致，用于 keep-alive 缓存
@@ -15,21 +27,29 @@ defineOptions({
   name: "UsersView",
 });
 
+const router = useRouter();
+const { isMock } = useMockStore();
+
 /** 用户列表 */
-const users = ref<AppUser[]>([]);
+const users = ref<AppUserListItem[]>([]);
+
+/** 总数（用于分页） */
+const total = ref(0);
 
 /** 加载中状态 */
 const loading = ref(false);
 
-/** 新增用户对话框可见性 */
-const createDialogVisible = ref(false);
+/** 搜索关键词 */
+const keyword = ref("");
 
-/** 新增用户表单 */
-const createForm = ref({
-  username: "",
-  nickname: "",
-  email: "",
-});
+/** 状态筛选 */
+const statusFilter = ref("");
+
+/** 当前页码 */
+const currentPage = ref(1);
+
+/** 每页条数 */
+const pageSize = ref(20);
 
 /**
  * 加载用户列表
@@ -37,7 +57,17 @@ const createForm = ref({
 const loadUsers = async () => {
   try {
     loading.value = true;
-    users.value = await getAppUsers();
+    const params = {
+      keyword: keyword.value || undefined,
+      status: statusFilter.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    };
+
+    const result = isMock.value ? await getAppUsersMock(params) : await getAppUsersApi(params);
+
+    users.value = result.items;
+    total.value = result.total;
   } catch (error) {
     const message = error instanceof Error ? error.message : "加载用户列表失败";
     ElMessage.error(message);
@@ -47,54 +77,72 @@ const loadUsers = async () => {
 };
 
 /**
- * 打开新增用户对话框
+ * 搜索
  */
-const openCreateDialog = () => {
-  createForm.value = { username: "", nickname: "", email: "" };
-  createDialogVisible.value = true;
+const handleSearch = () => {
+  currentPage.value = 1;
+  loadUsers();
 };
 
 /**
- * 创建用户
+ * 重置搜索条件
  */
-const handleCreate = async () => {
-  if (!createForm.value.username || !createForm.value.nickname) {
-    ElMessage.warning("请填写用户名和昵称");
-    return;
-  }
+const handleReset = () => {
+  keyword.value = "";
+  statusFilter.value = "";
+  currentPage.value = 1;
+  loadUsers();
+};
 
-  try {
-    loading.value = true;
-    await createAppUser(createForm.value);
-    ElMessage.success("创建成功");
-    createDialogVisible.value = false;
-    await loadUsers();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "创建用户失败";
-    ElMessage.error(message);
-  } finally {
-    loading.value = false;
-  }
+/**
+ * 页码变更
+ */
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  loadUsers();
+};
+
+/**
+ * 每页条数变更
+ */
+const handleSizeChange = (size: number) => {
+  pageSize.value = size;
+  currentPage.value = 1;
+  loadUsers();
+};
+
+/**
+ * 查看用户详情
+ */
+const handleView = (userId: number) => {
+  router.push(`/home/users/${userId}`);
 };
 
 /**
  * 切换用户状态（启用/禁用）
  */
-const toggleStatus = async (user: AppUser) => {
-  const newStatus = user.status === "active" ? "disabled" : "active";
-  const action = newStatus === "active" ? "启用" : "禁用";
+const toggleStatus = async (user: AppUserListItem) => {
+  const newStatus = user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
+  const action = newStatus === "ACTIVE" ? "启用" : "禁用";
 
   try {
-    await ElMessageBox.confirm(`确定要${action}用户 "${user.nickname}" 吗？`, "提示", {
-      type: "warning",
-    });
+    await ElMessageBox.confirm(
+      `确定要${action}用户 "${user.nickname || user.username}" 吗？`,
+      "提示",
+      {
+        type: "warning",
+      },
+    );
 
     loading.value = true;
-    await updateAppUserStatus(user.id, newStatus);
+    if (isMock.value) {
+      await updateAppUserStatusMock(user.id, newStatus);
+    } else {
+      await updateAppUserStatusApi(user.id, newStatus);
+    }
     ElMessage.success(`${action}成功`);
     await loadUsers();
   } catch (error) {
-    // 用户取消操作不报错
     if (error === "cancel") return;
     const message = error instanceof Error ? error.message : `${action}失败`;
     ElMessage.error(message);
@@ -106,14 +154,20 @@ const toggleStatus = async (user: AppUser) => {
 /**
  * 删除用户
  */
-const handleDelete = async (user: AppUser) => {
+const handleDelete = async (user: AppUserListItem) => {
   try {
-    await ElMessageBox.confirm(`确定要删除用户 "${user.nickname}" 吗？此操作不可恢复。`, "警告", {
-      type: "warning",
-    });
+    await ElMessageBox.confirm(
+      `确定要删除用户 "${user.nickname || user.username}" 吗？此操作不可恢复。`,
+      "警告",
+      { type: "warning" },
+    );
 
     loading.value = true;
-    await deleteAppUser(user.id);
+    if (isMock.value) {
+      await deleteAppUserMock(user.id);
+    } else {
+      await deleteAppUserApi(user.id);
+    }
     ElMessage.success("删除成功");
     await loadUsers();
   } catch (error) {
@@ -142,9 +196,23 @@ onMounted(() => {
     <!-- 页头 -->
     <div class="page-header">
       <h1 class="page-title">用户管理</h1>
-      <el-button v-permission="'users:create'" type="primary" @click="openCreateDialog">
-        新增用户
-      </el-button>
+    </div>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <el-input
+        v-model="keyword"
+        placeholder="搜索用户名/昵称"
+        clearable
+        class="search-bar__input"
+        @keyup.enter="handleSearch"
+      />
+      <el-select v-model="statusFilter" placeholder="状态筛选" clearable class="search-bar__select">
+        <el-option label="正常" value="ACTIVE" />
+        <el-option label="禁用" value="DISABLED" />
+      </el-select>
+      <el-button type="primary" @click="handleSearch">搜索</el-button>
+      <el-button @click="handleReset">重置</el-button>
     </div>
 
     <!-- 用户列表 -->
@@ -153,10 +221,15 @@ onMounted(() => {
       <el-table-column prop="username" label="用户名" min-width="120" />
       <el-table-column prop="nickname" label="昵称" min-width="120" />
       <el-table-column prop="email" label="邮箱" min-width="180" />
+      <el-table-column label="做题次数" width="100" align="center">
+        <template #default="{ row }">
+          {{ row._count?.answerAttempts ?? 0 }}
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'danger'" size="small">
-            {{ row.status === "active" ? "正常" : "禁用" }}
+          <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'danger'" size="small">
+            {{ row.status === "ACTIVE" ? "正常" : "禁用" }}
           </el-tag>
         </template>
       </el-table-column>
@@ -165,15 +238,18 @@ onMounted(() => {
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="160" fixed="right">
+      <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
+          <el-button v-permission="'users:list'" link type="primary" @click="handleView(row.id)">
+            查看
+          </el-button>
           <el-button
             v-permission="'users:status'"
             link
-            :type="row.status === 'active' ? 'warning' : 'success'"
+            :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
             @click="toggleStatus(row)"
           >
-            {{ row.status === "active" ? "禁用" : "启用" }}
+            {{ row.status === "ACTIVE" ? "禁用" : "启用" }}
           </el-button>
           <el-button v-permission="'users:delete'" link type="danger" @click="handleDelete(row)">
             删除
@@ -182,31 +258,24 @@ onMounted(() => {
       </el-table-column>
     </el-table>
 
-    <!-- 新增用户对话框 -->
-    <el-dialog v-model="createDialogVisible" title="新增用户" width="480px">
-      <el-form :model="createForm" label-width="80px">
-        <el-form-item label="用户名">
-          <el-input v-model="createForm.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="昵称">
-          <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="createForm.email" placeholder="请输入邮箱" />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleCreate"> 创建 </el-button>
-      </template>
-    </el-dialog>
+    <!-- 分页 -->
+    <div class="pagination-wrapper">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .users-page {
-  @apply space-y-6;
+  @apply space-y-4;
 }
 
 .page-header {
@@ -216,5 +285,21 @@ onMounted(() => {
 .page-title {
   @apply text-2xl font-bold;
   color: var(--color-text);
+}
+
+.search-bar {
+  @apply flex items-center gap-3;
+
+  &__input {
+    @apply w-60;
+  }
+
+  &__select {
+    @apply w-32;
+  }
+}
+
+.pagination-wrapper {
+  @apply flex justify-end pt-2;
 }
 </style>

@@ -48,34 +48,11 @@ quiz-monorepo/
 
 ### 计划新增模型（Phase 2）
 
+> **已实现**: User、UserStatus、UserPreference 模型已在 Phase 2.1 中实现（含迁移 + 种子数据）。
+> AnswerAttempt 已新增 `userId` 字段关联用户。
+
 ```prisma
-/// quiz-app 用户（游客 + 已登录）
-model User {
-  id             Int              @id @default(autoincrement())
-  username       String           @unique
-  password       String           // bcrypt 加密
-  nickname       String?
-  email          String?          @unique
-  status         UserStatus       @default(ACTIVE)
-  answerAttempts AnswerAttempt[]
-  preferences    UserPreference[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  @@index([status])
-}
-
-enum UserStatus { ACTIVE DISABLED }
-
-/// 用户偏好分类（多对多）
-model UserPreference {
-  userId     Int
-  categoryId Int
-  user       User     @relation(fields: [userId], references: [id])
-  category   Category @relation(fields: [categoryId], references: [id])
-  @@id([userId, categoryId])
-}
-
-/// 系统操作日志
+/// 系统操作日志（待实现）
 model SystemLog {
   id         Int       @id @default(autoincrement())
   type       LogType
@@ -102,10 +79,9 @@ enum LogType   { LOGIN API_MUTATION }
 enum ActorType { ADMIN USER }
 ```
 
-同时需要修改现有模型：
+同时需要修改现有模型（待实现）：
 
-- `AnswerAttempt`：新增 `userId Int?`（已登录用户）+ `sessionId String?`（游客 UUID）
-- `Category`：新增反向关联 `userPreferences UserPreference[]`
+- `Category`：新增反向关联 `userPreferences UserPreference[]`（已完成）
 
 ---
 
@@ -126,9 +102,11 @@ src/
 ├── roles/                   # 角色 CRUD
 ├── permissions/             # 权限列表查询
 ├── questions/               # 公开题目接口（随机、答题）
-├── answers/                 # 答案提交
+├── answers/                 # 答案提交（支持 userId 关联用户）
 ├── admin-questions/         # 管理员题目 CRUD（5 个端点）
 ├── admin-categories/        # 管理员分类 CRUD（7 个端点）
+├── app-users/               # App 用户管理（6 个端点）
+├── user-auth/               # 用户认证（注册/登录/信息）
 └── test/                    # 测试重置接口（仅测试环境启用）
 ```
 
@@ -142,19 +120,21 @@ src/
 | 异常格式   | `HttpExceptionFilter`  | 统一返回 `{ statusCode, message, error }`                                         |
 | 响应格式   | `TransformInterceptor` | 统一包装为 `{ code: 0, data, message }`                                           |
 
-### 已实现 API 端点（27 个）
+### 已实现 API 端点（33 个）
 
-| 模块            | 前缀                 | 端点数                         |
-| --------------- | -------------------- | ------------------------------ |
-| Auth            | `/admin/auth`        | 3（login / refresh / logout）  |
-| Admins          | `/admin/admins`      | 5（CRUD + 状态切换）           |
-| Roles           | `/admin/roles`       | 5（CRUD）                      |
-| Permissions     | `/admin/permissions` | 2（菜单列表 + API 列表）       |
-| AdminQuestions  | `/admin/questions`   | 5（CRUD，软删除）              |
-| AdminCategories | `/admin/categories`  | 7（维度 CRUD + 树形节点 CRUD） |
-| Questions       | `/api/questions`     | 2（随机题目）                  |
-| Answers         | `/api/answers`       | 1（提交答案）                  |
-| Test            | `/test/reset`        | 1（E2E 数据重置，仅测试环境）  |
+| 模块            | 前缀                 | 端点数                             |
+| --------------- | -------------------- | ---------------------------------- |
+| Auth            | `/admin/auth`        | 3（login / refresh / logout）      |
+| Admins          | `/admin/admins`      | 5（CRUD + 状态切换）               |
+| Roles           | `/admin/roles`       | 5（CRUD）                          |
+| Permissions     | `/admin/permissions` | 2（菜单列表 + API 列表）           |
+| AdminQuestions  | `/admin/questions`   | 5（CRUD，软删除）                  |
+| AdminCategories | `/admin/categories`  | 7（维度 CRUD + 树形节点 CRUD）     |
+| AppUsers        | `/admin/app-users`   | 6（列表/详情/历史/偏好/状态/删除） |
+| UserAuth        | `/api/user/auth`     | 3（register / login / info）       |
+| Questions       | `/api/questions`     | 2（随机题目）                      |
+| Answers         | `/api/answers`       | 1（提交答案，支持 userId）         |
+| Test            | `/api/test/reset`    | 1（E2E 数据重置，仅测试环境）      |
 
 ### Prisma 迁移说明
 
@@ -172,7 +152,7 @@ src/
 src/
 ├── api/
 │   ├── mock/               # Mock API（account / users / admins / questions / categories）
-│   └── {module}.ts         # 真实 API 调用（admins / roles / questions / categories）
+│   └── {module}.ts         # 真实 API 调用（admins / roles / questions / categories / users）
 ├── components/history-tab/ # Tab 历史组件
 ├── composables/
 │   ├── use-token.ts        # JWT Token 管理
@@ -198,7 +178,7 @@ src/
     ├── login/              # 登录页
     ├── master/             # 主布局（Header + Sidebar + Tab + RouterView）
     ├── dashboard/          # 欢迎页
-    ├── users/              # 用户管理（当前为 Mock）
+    ├── users/              # 用户管理（列表+搜索+分页+详情页）
     ├── admins/             # 管理员 CRUD
     ├── roles/              # 角色 CRUD
     ├── permissions/        # 权限查看
@@ -224,6 +204,41 @@ import "virtual:uno.css"; // 4. UnoCSS（必须最后，最高优先级）
 2. `stores/menu.ts`：菜单过滤时放行所有
 3. `router/dynamic-routes.ts`：路由生成时不过滤
 
+**v-permission 按钮级权限指令**：
+
+`v-permission` 指令根据用户 `apiPermissions` 控制操作按钮的显示/隐藏，支持三种匹配模式：
+
+- 精确匹配：`users:list === users:list`
+- 模块通配符：`users:*` 匹配 `users:list`、`users:delete` 等
+- 全局通配符：`*:*` 匹配所有权限
+
+各模块按钮权限对照：
+
+| 视图               | 按钮       | v-permission 值     |
+| ------------------ | ---------- | ------------------- |
+| users-view         | 查看       | `users:list`        |
+| users-view         | 禁用/启用  | `users:status`      |
+| users-view         | 删除       | `users:delete`      |
+| questions-view     | 新增题目   | `questions:create`  |
+| questions-view     | 编辑       | `questions:update`  |
+| questions-view     | 删除       | `questions:delete`  |
+| admins-view        | 新增管理员 | `admins:create`     |
+| admins-view        | 查看       | `admins:list`       |
+| admins-view        | 分配角色   | `admins:update`     |
+| admins-view        | 删除       | `admins:delete`     |
+| roles-view         | 新增角色   | `roles:create`      |
+| roles-view         | 编辑       | `roles:update`      |
+| roles-view         | 配置权限   | `roles:update`      |
+| roles-view         | 查看权限   | `roles:list`        |
+| roles-view         | 删除       | `roles:delete`      |
+| categories-view    | 新增维度   | `categories:create` |
+| categories-view    | 编辑维度   | `categories:update` |
+| categories-view    | 删除维度   | `categories:delete` |
+| categories-view    | 新增根分类 | `categories:create` |
+| category-tree-node | 新增子分类 | `categories:create` |
+| category-tree-node | 编辑       | `categories:update` |
+| category-tree-node | 删除       | `categories:delete` |
+
 **keep-alive + 列表刷新**：详情页（`question-detail-view`）不设 `meta.componentName`，不参与缓存。列表页刷新用 VueUse `useEventBus`，详情页成功后 `bus.emit()`，列表页 `bus.on(() => load())`。
 
 ### 添加新页面的标准流程
@@ -234,6 +249,10 @@ import "virtual:uno.css"; // 4. UnoCSS（必须最后，最高优先级）
 4. `src/router/permission-routes-mapping.ts` 配置菜单权限 → 路由名称映射
 5. `src/stores/modules/menu.ts` 添加菜单项
 6. （可选）`src/api/mock/{module}.ts` 创建 Mock API
+7. **操作按钮加 `v-permission`**：所有增删改操作按钮必须加上对应的 `v-permission` 指令（如 `v-permission="'module:create'"`)
+8. **更新种子数据**：在 `apps/quiz-backend/prisma/data/seed-admin.ts` 的 `superAdminApiPermissions` 数组中添加 `"module:*"`，确保超级管理员覆盖新模块权限；如需内容管理员等角色也有权限，同步更新对应角色的 `apiPermissions`
+9. **更新 Mock 角色数据**：在 `apps/quiz-admin/src/api/mock/roles.ts` 中为 Mock 角色添加新权限，确保 Mock 模式下角色权限与种子数据一致
+10. 重新 seed 数据库（dev + test + prod）：`pnpm -C apps/quiz-backend run db:seed:dev` / `db:reset:test` / `db:seed:prod`
 
 ---
 
@@ -274,8 +293,8 @@ src/
 | 包           | 单元测试                         | E2E 测试                        |
 | ------------ | -------------------------------- | ------------------------------- |
 | quiz-app     | Vitest (~22 tests)               | Cypress（含真实后端）           |
-| quiz-admin   | Vitest (~120+ tests)             | Cypress（5 个文件，连真实后端） |
-| quiz-backend | Jest (~188 tests, 86~95% 覆盖率) | —                               |
+| quiz-admin   | Vitest (~199 tests)              | Cypress（6 个文件，连真实后端） |
+| quiz-backend | Jest (~223 tests, 86~95% 覆盖率) | —                               |
 | ui           | Vitest (~85 tests)               | Playwright（Storybook 交互）    |
 
 **E2E 注意事项**（详见 [memory/cypress.md](../../../.claude/projects/-Users-zhangxu-illegal-quiz-monorepo/memory/cypress.md)）：
@@ -284,64 +303,39 @@ src/
 - `overflow:hidden/auto` 容器内用 `should("exist")`，不用 `should("be.visible")`
 - prop 驱动 `el-input`（`:model-value`）用 `.invoke("val", v).trigger("input")`，不用 `.type()`
 - E2E 前先 `pnpm clean:ports` 防止端口冲突
+- 侧边栏默认收起，测试中需先 `cy.get(".header-icon-btn").first().click()` 展开，否则 `.menu-item` 不可交互
+
+### Cypress 运行方式
+
+```bash
+# 完整 E2E（启动 preview + 后端 → 跑所有 spec → 关闭）
+pnpm test:e2e
+
+# 单独跑某个 spec（指向已运行的 dev server，不需要后端时用）
+# 注意：必须 unset ELECTRON_RUN_AS_NODE，否则 Cypress 以 Node 模式启动报错
+unset ELECTRON_RUN_AS_NODE && pnpm cypress run \
+  --spec "cypress/e2e/foo.cy.ts" \
+  --config baseUrl=http://localhost:10050
+
+# 完整 E2E 的底层脚本（自动 unset ELECTRON_RUN_AS_NODE）
+bash scripts/run-e2e.sh
+```
+
+**关键说明**：
+
+- `ELECTRON_RUN_AS_NODE` 被 Claude Code 设置后，Cypress（基于 Electron）会以纯 Node 模式启动，找不到 Electron app 入口文件而报错
+- `run-e2e.sh` 已内置 `unset ELECTRON_RUN_AS_NODE`（第 65 行），完整流程不受影响
+- 单独跑 spec 时，`baseUrl=http://localhost:10050` 指向 dev server；若需要真实后端，确保 `apps/quiz-backend` dev 模式已启动
 
 ---
 
 ## 待实现功能详细计划（Phase 2）
 
-### 1. 用户管理真实实现
+### ~~1. 用户管理真实实现~~ ✅ 已完成
 
-**目标**：将 quiz-admin 用户管理从 Mock 替换为真实后端，支持游客模式答题 + 可选注册绑定。
+后端 `user-auth` + `app-users` 模块、前端用户管理页面（列表+搜索+分页+详情页）均已实现。
 
-#### 1.1 后端：`user-auth` 模块（公开接口，不需要 admin JWT）
-
-新建 `apps/quiz-backend/src/user-auth/`
-
-| 方法 | 路径                      | 说明                        |
-| ---- | ------------------------- | --------------------------- |
-| POST | `/api/user/auth/register` | 用户注册（用户名+密码）     |
-| POST | `/api/user/auth/login`    | 用户登录，返回 user JWT     |
-| GET  | `/api/user/auth/info`     | 当前用户信息（需 user JWT） |
-
-**关键设计**：
-
-- user JWT 与 admin JWT 使用相同 `JWT_SECRET`，但 payload 含 `role: "user"` 区分
-- 新增 `UserJwtStrategy` 解析 user token，`@Public()` 不影响此路由的用户 JWT 验证
-- 密码 bcrypt 加密（salt=10），与 admin 一致
-
-#### 1.2 后端：`app-users` 模块（需要 admin JWT + 权限）
-
-新建 `apps/quiz-backend/src/app-users/`
-
-| 方法   | 路径                               | 权限           | 说明                  |
-| ------ | ---------------------------------- | -------------- | --------------------- |
-| GET    | `/admin/app-users`                 | `users:list`   | 用户列表（分页+搜索） |
-| GET    | `/admin/app-users/:id`             | `users:list`   | 用户详情              |
-| GET    | `/admin/app-users/:id/history`     | `users:list`   | 做题历史（分页）      |
-| GET    | `/admin/app-users/:id/preferences` | `users:list`   | 偏好分类              |
-| PATCH  | `/admin/app-users/:id/status`      | `users:status` | 启用/禁用             |
-| DELETE | `/admin/app-users/:id`             | `users:delete` | 删除用户              |
-
-#### 1.3 后端：answers 模块更新
-
-修改 `apps/quiz-backend/src/answers/answers.controller.ts`：
-
-- 可选解析 user JWT（`@Optional()` + `UserJwtGuard`）
-- 提交答案时将 `userId`（已登录）或 `sessionId`（游客，从 `x-session-id` header 获取）写入 `AnswerAttempt`
-
-#### 1.4 前端：quiz-app 新增
-
-- `stores/useUserAuth.ts`：user JWT 管理（login/register/logout/info）
-- `api/userAuth.ts`：调用 `/api/user/auth/*`
-- `composables/useSession.ts`：首次生成并持久化游客 sessionId（`crypto.randomUUID()`）
-
-#### 1.5 前端：quiz-admin 用户模块更新
-
-- 新建 `apps/quiz-admin/src/api/users.ts`：调用真实后端 API（参考 `api/categories.ts`）
-- 修改 `views/users/users-view.vue`：切换到真实 API
-- 新建 `views/users/user-detail-view.vue`：
-  - 做题历史列表（题干、选项、是否正确、时间）
-  - 偏好分类展示（按维度分组）
+详细端点见上方"已实现 API 端点"表格中 UserAuth 和 AppUsers 行。
 
 ---
 
@@ -501,14 +495,14 @@ app.useWebSocketAdapter(new WsAdapter(app));
 
 ## 实施顺序（推荐）
 
-1. **DB Schema + 迁移 SQL**（User / UserPreference / SystemLog 模型，AnswerAttempt 更新）
-2. **系统日志**（独立模块，LoggingInterceptor，最快见效）
-3. **用户认证 + app-users 管理**（后端 user-auth + app-users 模块）
-4. **answers 模块更新**（写入 userId / sessionId）
-5. **WebSocket 客户端管理**（后端 ClientsGateway）
-6. **quiz-app 前端**（userAuth store + useWs composable + useSession）
-7. **quiz-admin 前端**（users 真实 API + 系统日志视图 + 客户端管理视图）
+1. ~~**DB Schema + 迁移 SQL**（User / UserPreference 模型，AnswerAttempt 更新）~~ ✅ 已完成
+2. ~~**用户认证 + app-users 管理**（后端 user-auth + app-users 模块）~~ ✅ 已完成
+3. ~~**quiz-admin 用户管理前端**（users 真实 API + 详情页）~~ ✅ 已完成
+4. **系统日志**（独立模块，LoggingInterceptor + SystemLog 模型）
+5. **WebSocket 客户端管理**（后端 ClientsGateway + quiz-app useWs）
+6. **quiz-app 前端**（userAuth store + useSession composable）
+7. **quiz-admin 前端**（系统日志视图 + 客户端管理视图）
 
 ---
 
-_最后更新: 2026-02-26（整合 IMPLEMENTATION.md 技术文档，新增 Phase 2 三大功能详细计划）_
+_最后更新: 2026-02-26（用户管理已实现，新增 v-permission 权限指令文档，更新 API 端点和测试数量）_

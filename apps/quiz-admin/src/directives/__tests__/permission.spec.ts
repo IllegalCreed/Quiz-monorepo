@@ -104,4 +104,69 @@ describe("v-permission 指令", () => {
     expect(document.body.contains(el)).toBe(true);
     el.remove();
   });
+
+  it("超级管理员通配符 *:* 拥有全部权限", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["*:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding("users:delete"), stubVNode, null);
+    expect(document.body.contains(el)).toBe(true);
+    el.remove();
+  });
+
+  it("超级管理员通配符 *:* 对数组权限同样生效", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["*:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding(["admins:create", "roles:delete"]), stubVNode, null);
+    expect(document.body.contains(el)).toBe(true);
+    el.remove();
+  });
+
+  it("模块通配符 users:* 匹配 users:list", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["users:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding("users:list"), stubVNode, null);
+    expect(document.body.contains(el)).toBe(true);
+    el.remove();
+  });
+
+  it("模块通配符 users:* 匹配 users:delete", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["users:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding("users:delete"), stubVNode, null);
+    expect(document.body.contains(el)).toBe(true);
+    el.remove();
+  });
+
+  it("模块通配符不匹配其他模块的权限", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["users:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding("admins:list"), stubVNode, null);
+    expect(document.body.contains(el)).toBe(false);
+  });
+
+  it("多个模块通配符组合正确匹配", () => {
+    vi.mocked(useAccountStore).mockReturnValue({
+      userInfo: { apiPermissions: ["users:*", "questions:*"] },
+    } as unknown as ReturnType<typeof useAccountStore>);
+
+    const el = makeEl();
+    dir.mounted!(el, makeBinding("questions:create"), stubVNode, null);
+    expect(document.body.contains(el)).toBe(true);
+    el.remove();
+  });
 });

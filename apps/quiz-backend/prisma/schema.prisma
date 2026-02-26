@@ -31,6 +31,12 @@ enum AdminStatus {
   DISABLED
 }
 
+/// App 用户状态枚举
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
 /// 角色表
 model Role {
   id               Int      @id @default(autoincrement())
@@ -59,6 +65,7 @@ model Question {
   deletedAt          DateTime?          // 软删除时间戳，null 表示未删除
   options            Option[]
   questionCategories QuestionCategory[] // 结构化多维度分类关联
+  answerAttempts     AnswerAttempt[]    // 答题记录
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -74,14 +81,20 @@ model Option {
   description String?  // 选项解析说明（答题后展示）
 }
 
-// AnswerAttempt 保留但 MVP 不启用
+// AnswerAttempt — 答题记录（仅已登录用户记录）
 model AnswerAttempt {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   questionId      Int
+  question        Question  @relation(fields: [questionId], references: [id])
   selectedOption  Int
   correct         Boolean
   elapsedMs       Int?
-  createdAt       DateTime @default(now())
+  userId          Int?      // 已登录用户（游客不记录，此字段始终有值）
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([questionId])
 }
 
 // ============================================
@@ -109,6 +122,7 @@ model Category {
   children           Category[]         @relation("CategoryTree")
   sort               Int                @default(0)
   questionCategories QuestionCategory[]
+  userPreferences    UserPreference[]   // 用户偏好分类
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -124,5 +138,36 @@ model QuestionCategory {
   category   Category @relation(fields: [categoryId], references: [id])
 
   @@id([questionId, categoryId])
+  @@index([categoryId])
+}
+
+// ============================================
+// 用户模型（quiz-app 答题用户）
+// ============================================
+
+/// quiz-app 用户（游客可答题但不记录，注册后记录答题历史）
+model User {
+  id             Int              @id @default(autoincrement())
+  username       String           @unique
+  password       String           // bcrypt 加密
+  nickname       String?
+  email          String?          @unique
+  status         UserStatus       @default(ACTIVE)
+  answerAttempts AnswerAttempt[]
+  preferences    UserPreference[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status])
+}
+
+/// 用户偏好分类（多对多，已登录用户才能设置）
+model UserPreference {
+  userId     Int
+  categoryId Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
   @@index([categoryId])
 }

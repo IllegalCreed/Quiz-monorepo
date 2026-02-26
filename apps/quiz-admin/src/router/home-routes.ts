@@ -18,6 +18,13 @@ export const homeRoutes: RouteRecordRaw[] = [
     meta: { title: "用户管理", componentName: "UsersView" },
   },
   {
+    // 详情页不设 componentName，不参与 keep-alive 缓存
+    path: "users/:id",
+    name: "user-detail",
+    component: () => import("@/views/users/user-detail-view.vue"),
+    meta: { title: "用户详情" },
+  },
+  {
     path: "questions",
     name: "questions",
     component: () => import("@/views/questions/questions-view.vue"),

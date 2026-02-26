@@ -3,10 +3,12 @@ import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { seedAdmin } from "./data/seed-admin";
+import { seedUsers } from "./data/seed-users";
 import {
   seedCategories,
   linkTestQuestionCategories,
 } from "./data/seed-categories";
+import { seedUserData } from "./data/seed-user-data";
 
 // db-utils focuses only on data operations; caller must load dotenv or set DATABASE_URL.
 // If DATABASE_URL isn't set, allow constructing from discrete parts; otherwise, throw.
@@ -109,6 +111,9 @@ export async function seedSystem() {
   // 3. 分类体系（维度 + 分类节点）
   await seedCategories(prisma);
 
+  // 4. 测试用户
+  await seedUsers(prisma);
+
   console.log("seedSystem: finished");
 }
 
@@ -190,6 +195,9 @@ export async function seedTest() {
   // 将测试题关联到结构化分类（依赖 seedSystem 中的 seedCategories 已执行）
   await linkTestQuestionCategories(prisma);
 
+  // 为测试用户创建做题历史和偏好分类（依赖 seedUsers + 测试题目 + 分类体系）
+  await seedUserData(prisma);
+
   console.log("seedTest: finished");
 }
 
@@ -204,6 +212,13 @@ export async function resetTest() {
   }
 
   console.log("resetTest: wiping and reseeding test data");
+
+  // 清除用户偏好（FK 依赖 User + Category）
+  try {
+    await prisma.userPreference?.deleteMany();
+  } catch {
+    /* ignore */
+  }
 
   // 清除管理员系统数据
   try {
@@ -223,6 +238,14 @@ export async function resetTest() {
   } catch {
     /* ignore */
   }
+
+  // 清除用户（AnswerAttempt.userId FK 已通过上面 deleteMany 清除或 SET NULL）
+  try {
+    await prisma.user?.deleteMany();
+  } catch {
+    /* ignore */
+  }
+
   await prisma.questionCategory.deleteMany();
   await prisma.option.deleteMany();
   await prisma.question.deleteMany();

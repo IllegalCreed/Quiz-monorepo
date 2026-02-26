@@ -59,13 +59,29 @@ const emit = defineEmits<{
         <i class="category-node__bullet i-carbon-folder" />
         <span class="category-node__name">{{ node.name }}</span>
         <div class="category-node__actions">
-          <el-button size="small" text @click="emit('startAddChild', node.id)">
+          <el-button
+            v-permission="'categories:create'"
+            size="small"
+            text
+            @click="emit('startAddChild', node.id)"
+          >
             <i class="i-carbon-add" />
           </el-button>
-          <el-button size="small" text @click="emit('startEdit', node)">
+          <el-button
+            v-permission="'categories:update'"
+            size="small"
+            text
+            @click="emit('startEdit', node)"
+          >
             <i class="i-carbon-edit" />
           </el-button>
-          <el-button size="small" text type="danger" @click="emit('delete', node)">
+          <el-button
+            v-permission="'categories:delete'"
+            size="small"
+            text
+            type="danger"
+            @click="emit('delete', node)"
+          >
             <i class="i-carbon-trash-can" />
           </el-button>
         </div>

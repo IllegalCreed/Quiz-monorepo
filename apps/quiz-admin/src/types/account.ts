@@ -27,9 +27,41 @@ export interface AppUser {
   username: string;
   nickname: string;
   email: string;
-  status: "active" | "disabled";
+  status: "ACTIVE" | "DISABLED";
   createdAt: string;
   updatedAt: string;
+}
+
+/** App 用户列表项（含做题次数统计） */
+export interface AppUserListItem extends AppUser {
+  _count: { answerAttempts: number };
+}
+
+/** App 用户详情（含做题+偏好统计） */
+export interface AppUserDetail extends AppUser {
+  _count: { answerAttempts: number; preferences: number };
+}
+
+/** 做题历史项 */
+export interface AnswerAttemptItem {
+  id: number;
+  questionId: number;
+  selectedOption: number;
+  correct: boolean;
+  elapsedMs: number;
+  createdAt: string;
+  question: { id: number; stem: string; type: string };
+}
+
+/** 用户偏好项 */
+export interface UserPreferenceItem {
+  userId: number;
+  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+    group: { id: number; name: string };
+  };
 }
 
 /** 登录表单 */

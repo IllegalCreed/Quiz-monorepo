@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
  * 历史 Tab 面板
- * 显示所有访问过的页面 Tab，支持横向滚动
+ * 显示所有访问过的页面 Tab，支持横向滚动和右键菜单
  */
 import { ref, computed } from "vue";
 import HistoryTabItem from "./history-tab-item.vue";
+import HistoryTabContextMenu from "./history-tab-context-menu.vue";
 import { useHistoryRouter } from "./composables/use-history-router";
 import { useRouterStore } from "@/stores/modules/router";
+import type { RouteLike } from "@/types/router";
 
-const { visitedViews, close } = useHistoryRouter();
+const { visitedViews, close, closeOthers, closeAll } = useHistoryRouter();
 const routerStore = useRouterStore();
 
 /** 滚动容器引用 */
@@ -18,7 +20,18 @@ const scrollContainer = ref<HTMLDivElement | null>(null);
 const refreshing = ref(false);
 
 /** 是否有激活的 tab（用于禁用刷新按钮） */
-const hasActiveTab = computed(() => visitedViews.length > 0);
+const hasActiveTab = computed(() => visitedViews.value.length > 0);
+
+/** 右键菜单状态 */
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  targetView: null as RouteLike | null,
+});
+
+/** 是否可以关闭其他（tab 数量大于 1 时才有意义） */
+const canCloseOthers = computed(() => visitedViews.value.length > 1);
 
 /**
  * 处理鼠标滚轮横向滚动
@@ -49,12 +62,59 @@ const refresh = async () => {
     }, 300);
   }
 };
+
+/**
+ * 显示右键菜单
+ * @param view 被右键点击的 Tab 路由
+ * @param event 鼠标事件（用于获取坐标）
+ */
+function showContextMenu(view: RouteLike, event: MouseEvent) {
+  contextMenu.value = {
+    visible: true,
+    x: event.clientX,
+    y: event.clientY,
+    targetView: view,
+  };
+}
+
+/** 隐藏右键菜单 */
+function hideContextMenu() {
+  contextMenu.value.visible = false;
+}
+
+/** 右键菜单：关闭当前 Tab */
+function handleCloseCurrent() {
+  if (contextMenu.value.targetView) {
+    close(contextMenu.value.targetView);
+  }
+  hideContextMenu();
+}
+
+/** 右键菜单：关闭其他 Tab */
+function handleCloseOthers() {
+  if (contextMenu.value.targetView) {
+    closeOthers(contextMenu.value.targetView);
+  }
+  hideContextMenu();
+}
+
+/** 右键菜单：关闭全部 Tab */
+function handleCloseAll() {
+  closeAll();
+  hideContextMenu();
+}
 </script>
 
 <template>
   <div class="history-tab-panel-wrapper">
     <div ref="scrollContainer" class="history-tab-panel" @wheel="handleWheel">
-      <HistoryTabItem v-for="item in visitedViews" :key="item.path" :data="item" @close="close" />
+      <HistoryTabItem
+        v-for="item in visitedViews"
+        :key="item.path"
+        :data="item"
+        @close="close"
+        @contextmenu="showContextMenu"
+      />
     </div>
 
     <!-- 刷新按钮 -->
@@ -67,6 +127,19 @@ const refresh = async () => {
     >
       <i class="i-carbon-renew" />
     </button>
+
+    <!-- 右键上下文菜单 -->
+    <HistoryTabContextMenu
+      :visible="contextMenu.visible"
+      :x="contextMenu.x"
+      :y="contextMenu.y"
+      :target-view="contextMenu.targetView"
+      :can-close-others="canCloseOthers"
+      @close-current="handleCloseCurrent"
+      @close-others="handleCloseOthers"
+      @close-all="handleCloseAll"
+      @hide="hideContextMenu"
+    />
   </div>
 </template>
 

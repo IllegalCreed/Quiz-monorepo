@@ -21,27 +21,35 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
   // 1. 创建角色
   console.log("  📋 创建角色...");
 
+  /** 超级管理员 API 权限：覆盖所有资源模块 */
+  const superAdminApiPermissions = [
+    "users:*",
+    "admins:*",
+    "roles:*",
+    "permissions:*",
+    "questions:*",
+    "categories:*",
+    "tags:*",
+    "answers:*",
+    "statistics:*",
+    "system:*",
+  ];
+
   const superAdminRole = await prisma.role.upsert({
     where: { id: 1 },
     // 超级管理员菜单权限用通配符，与 jwt.strategy.ts 的处理逻辑对称
-    update: { menuPermissions: ["*"] },
+    // update 同步更新 apiPermissions，确保已有记录也能修正
+    update: {
+      menuPermissions: ["*"],
+      apiPermissions: superAdminApiPermissions,
+    },
     create: {
       id: 1,
       name: "超级管理员",
       description: "系统内置角色，拥有全部权限",
       isSystem: true,
       menuPermissions: ["*"],
-      apiPermissions: [
-        "users:*",
-        "admins:*",
-        "roles:*",
-        "permissions:*",
-        "questions:*",
-        "tags:*",
-        "answers:*",
-        "statistics:*",
-        "system:*",
-      ],
+      apiPermissions: superAdminApiPermissions,
     },
   });
 

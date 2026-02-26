@@ -170,6 +170,67 @@ describe("useRouterStore", () => {
     });
   });
 
+  // ── deleteOtherViews ────────────────────────────────────────────────────────
+
+  describe("deleteOtherViews", () => {
+    it("只保留目标 view，删除其余所有 visitedViews", () => {
+      const store = useRouterStore();
+      const target = makeRoute("/home/users", "users");
+      store.addView(target);
+      store.addView(makeRoute("/home/admins", "admins"));
+      store.addView(makeRoute("/home/roles", "roles"));
+
+      store.deleteOtherViews(target);
+
+      expect(store.visitedViews).toHaveLength(1);
+      expect(store.visitedViews[0]!.path).toBe("/home/users");
+    });
+
+    it("只保留目标 view 的缓存，其余缓存被清除", () => {
+      const store = useRouterStore();
+      const target = makeRoute("/home/users", "users", { componentName: "UsersView" });
+      store.addView(target);
+      store.addView(makeRoute("/home/admins", "admins", { componentName: "AdminsView" }));
+
+      store.deleteOtherViews(target);
+
+      expect(store.cachedViews).toContain("UsersView");
+      expect(store.cachedViews).not.toContain("AdminsView");
+    });
+
+    it("目标 view 本身不受影响", () => {
+      const store = useRouterStore();
+      const target = makeRoute("/home/users", "users", { componentName: "UsersView" });
+      store.addView(target);
+      store.addView(makeRoute("/home/admins", "admins"));
+
+      store.deleteOtherViews(target);
+
+      expect(store.visitedViews[0]!.path).toBe("/home/users");
+      expect(store.cachedViews).toContain("UsersView");
+    });
+
+    it("只有 1 个 tab 时调用不报错，保持不变", () => {
+      const store = useRouterStore();
+      const target = makeRoute("/home/users", "users");
+      store.addView(target);
+
+      expect(() => store.deleteOtherViews(target)).not.toThrow();
+      expect(store.visitedViews).toHaveLength(1);
+    });
+
+    it("目标 view 不在列表中时，清除所有 views", () => {
+      const store = useRouterStore();
+      store.addView(makeRoute("/home/admins", "admins"));
+      store.addView(makeRoute("/home/roles", "roles"));
+      const phantom = makeRoute("/home/nonexistent", "nonexistent");
+
+      store.deleteOtherViews(phantom);
+
+      expect(store.visitedViews).toHaveLength(0);
+    });
+  });
+
   // ── initCacheConfig ─────────────────────────────────────────────────────────
 
   describe("initCacheConfig", () => {

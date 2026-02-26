@@ -119,8 +119,23 @@ export const useRouterStore = defineStore("router", () => {
    * 清空所有历史
    */
   const clearAllViews = () => {
-    visitedViews.value = [];
-    cachedViews.value = [];
+    // 原地清空，避免替换 ref 导致外部持有的旧引用失效
+    visitedViews.value.splice(0);
+    cachedViews.value.splice(0);
+  };
+
+  /**
+   * 删除除指定 view 以外的所有视图（关闭其他页签）
+   * @param view 要保留的路由
+   */
+  const deleteOtherViews = (view: RouteLike) => {
+    // 计算需要保留的 views，用 splice 原地替换，避免外部引用失效
+    const kept = visitedViews.value.filter((v) => v.path === view.path);
+    visitedViews.value.splice(0, visitedViews.value.length, ...kept);
+
+    const cacheName = view.meta?.componentName || view.name;
+    const keptCache = cachedViews.value.filter((name) => name === cacheName);
+    cachedViews.value.splice(0, cachedViews.value.length, ...keptCache);
   };
 
   /**
@@ -192,6 +207,7 @@ export const useRouterStore = defineStore("router", () => {
     deleteView,
     deleteVisitedView,
     deleteCachedView,
+    deleteOtherViews,
     clearAllViews,
     initCacheConfig,
     updateCacheConfig,

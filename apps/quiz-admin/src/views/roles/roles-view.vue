@@ -378,7 +378,9 @@ onMounted(() => {
     <!-- 页头 -->
     <div class="page-header">
       <h1 class="page-title">角色管理</h1>
-      <el-button type="primary" @click="openCreateDialog"> 新增角色 </el-button>
+      <el-button v-permission="'roles:create'" type="primary" @click="openCreateDialog">
+        新增角色
+      </el-button>
     </div>
 
     <!-- 角色列表 -->
@@ -431,21 +433,40 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="操作" width="240" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" :disabled="isSystemRole(row)" @click="openEditDialog(row)">
+          <el-button
+            v-permission="'roles:update'"
+            link
+            type="primary"
+            :disabled="isSystemRole(row)"
+            @click="openEditDialog(row)"
+          >
             编辑
           </el-button>
           <el-button
             v-if="!isSystemRole(row)"
+            v-permission="'roles:update'"
             link
             type="primary"
             @click="openPermissionDialog(row)"
           >
             配置权限
           </el-button>
-          <el-button v-else link type="primary" @click="openViewPermissionDialog(row)">
+          <el-button
+            v-else
+            v-permission="'roles:list'"
+            link
+            type="primary"
+            @click="openViewPermissionDialog(row)"
+          >
             查看权限
           </el-button>
-          <el-button link type="danger" :disabled="isSystemRole(row)" @click="handleDelete(row)">
+          <el-button
+            v-permission="'roles:delete'"
+            link
+            type="danger"
+            :disabled="isSystemRole(row)"
+            @click="handleDelete(row)"
+          >
             删除
           </el-button>
         </template>
