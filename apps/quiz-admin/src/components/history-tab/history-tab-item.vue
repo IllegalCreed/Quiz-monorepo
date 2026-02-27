@@ -49,7 +49,9 @@ function change() {
     @contextmenu.prevent="emit('contextmenu', props.data, $event)"
   >
     <span class="tab-title">{{ data.meta?.title || data.name }}</span>
-    <span class="tab-close i-carbon-close" @click.stop="close" />
+    <span class="tab-close" @click.stop="close">
+      <span class="i-carbon-close" />
+    </span>
   </div>
 </template>
 
@@ -76,11 +78,17 @@ function change() {
 }
 
 .tab-close {
-  @apply w-3.5 h-3.5 rounded-full;
-  @apply opacity-60 transition-opacity duration-200;
+  @apply flex items-center justify-center w-4 h-4 rounded-sm;
+  @apply opacity-100 transition-all duration-200;
 
   &:hover {
-    @apply opacity-100 bg-gray-200 dark:bg-slate-600;
+    @apply opacity-100 bg-red-400 dark:bg-red-700 text-white;
+    @apply scale-110;
+  }
+
+  // 内部图标尺寸
+  > span {
+    @apply w-4 h-4;
   }
 }
 </style>
