@@ -299,7 +299,7 @@ const loadQuestion = async () => {
 
     // 数据加载后更新 Tab 标题，显示题干前 10 个字
     const shortStem = question.stem.length > 10 ? question.stem.slice(0, 10) + "…" : question.stem;
-    routerStore.updateViewTitle(route.path, `编辑：${shortStem}`);
+    routerStore.updateViewTitle(route.path, `题目：${shortStem}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "加载题目失败";
     ElMessage.error(message);

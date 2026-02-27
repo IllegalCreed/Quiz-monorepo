@@ -15,6 +15,8 @@ declare module "vue-router" {
     componentName?: string;
     /** 是否不缓存该页面（设为 true 则不使用 keep-alive） */
     noCache?: boolean;
+    /** 归属菜单路径（详情页等子页面指定高亮哪个菜单，如 "/home/users"） */
+    belong?: string;
   }
 }
 

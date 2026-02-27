@@ -290,6 +290,11 @@ onMounted(() => {
 .search-bar {
   @apply flex items-center gap-3;
 
+  // 重置 Element Plus 相邻按钮自带的 margin，统一用 flex gap 控制间距
+  :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
   &__input {
     @apply w-60;
   }

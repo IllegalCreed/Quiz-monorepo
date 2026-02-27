@@ -291,6 +291,11 @@ questionsBus.on(() => loadQuestions());
 
   &__toolbar {
     @apply flex items-center gap-3 flex-wrap;
+
+    // 重置 Element Plus 相邻按钮自带的 margin，统一用 flex gap 控制间距
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
   }
 
   &__search {

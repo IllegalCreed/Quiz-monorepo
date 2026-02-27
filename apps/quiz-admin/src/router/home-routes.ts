@@ -22,7 +22,7 @@ export const homeRoutes: RouteRecordRaw[] = [
     path: "users/:id",
     name: "user-detail",
     component: () => import("@/views/users/user-detail-view.vue"),
-    meta: { title: "用户详情" },
+    meta: { title: "用户详情", belong: "/home/users" },
   },
   {
     path: "questions",
@@ -35,7 +35,7 @@ export const homeRoutes: RouteRecordRaw[] = [
     path: "questions/:id",
     name: "question-detail",
     component: () => import("@/views/questions/question-detail-view.vue"),
-    meta: { title: "题目详情" },
+    meta: { title: "题目详情", belong: "/home/questions" },
   },
   {
     path: "categories",

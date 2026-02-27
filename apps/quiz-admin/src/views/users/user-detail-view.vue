@@ -155,7 +155,7 @@ onMounted(async () => {
     <div class="user-detail__breadcrumb">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/home/users' }">用户管理</el-breadcrumb-item>
-        <el-breadcrumb-item>用户详情</el-breadcrumb-item>
+        <el-breadcrumb-item>用户详情 #{{ userId }}</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
 
@@ -167,10 +167,6 @@ onMounted(async () => {
         </template>
 
         <div class="user-detail__info">
-          <div class="user-detail__info-row">
-            <span class="user-detail__info-label">ID</span>
-            <span>{{ user.id }}</span>
-          </div>
           <div class="user-detail__info-row">
             <span class="user-detail__info-label">用户名</span>
             <span>{{ user.username }}</span>
