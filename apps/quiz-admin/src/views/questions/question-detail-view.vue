@@ -32,6 +32,18 @@ import type { CategoryGroupItem, CategoryItem } from "@/types/category";
 
 defineOptions({ name: "QuestionDetailView" });
 
+/**
+ * 递归标记非叶子节点为不可选（只允许选择叶子分类）
+ * 有 children 的节点添加 disabled: true，叶子节点保持可选
+ */
+const markNonLeafDisabled = (nodes: CategoryItem[]): (CategoryItem & { disabled?: boolean })[] => {
+  return nodes.map((node) => ({
+    ...node,
+    disabled: !!node.children?.length,
+    children: node.children?.length ? markNonLeafDisabled(node.children) : [],
+  }));
+};
+
 const route = useRoute();
 const router = useRouter();
 const { isMock } = useMockStore();
@@ -423,12 +435,17 @@ watch(
                 <span class="question-detail-view__category-group-name">{{ group.name }}</span>
                 <el-tree-select
                   :model-value="getCategoryIdsForGroup(group)"
-                  :data="group.categories"
-                  :props="{ label: 'name', value: 'id', children: 'children' }"
+                  :data="markNonLeafDisabled(group.categories)"
+                  :props="{
+                    label: 'name',
+                    value: 'id',
+                    children: 'children',
+                    disabled: 'disabled',
+                  }"
                   multiple
                   check-strictly
                   filterable
-                  placeholder="选择分类"
+                  placeholder="选择分类（仅可选叶子节点）"
                   class="question-detail-view__category-select"
                   @update:model-value="(val: number[]) => setCategoryIdsForGroup(group, val)"
                 />

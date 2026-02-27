@@ -79,6 +79,9 @@ describe("AdminQuestionsService", () => {
               createMany: jest.fn(),
               deleteMany: jest.fn(),
             },
+            category: {
+              findMany: jest.fn(),
+            },
             $transaction: jest.fn(),
           },
         },
@@ -186,7 +189,7 @@ describe("AdminQuestionsService", () => {
       // Act
       const result = await service.findOne(1);
 
-      // Assert：必须以软删除过滤条件查询，并包含 questionCategories
+      // Assert：必须以软删除过滤条件查询，并包含 questionCategories + parent
       expect(findFirstSpy).toHaveBeenCalledWith({
         where: { id: 1, deletedAt: null },
         include: {
@@ -194,7 +197,10 @@ describe("AdminQuestionsService", () => {
           questionCategories: {
             include: {
               category: {
-                include: { group: true },
+                include: {
+                  group: true,
+                  parent: { select: { id: true, name: true } },
+                },
               },
             },
           },
@@ -422,6 +428,185 @@ describe("AdminQuestionsService", () => {
       // Act & Assert
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
       await expect(service.remove(999)).rejects.toThrow("题目 #999 不存在");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("create — 叶子节点校验", () => {
+    const validCreateDto = {
+      stem: "新题目",
+      options: [
+        { text: "选项A", isCorrect: true, description: "正确" },
+        { text: "选项B", isCorrect: false },
+      ],
+    };
+
+    it("categoryIds 含非叶子节点时，抛出 BadRequestException", async () => {
+      // Arrange：category.findMany 返回非叶子节点
+      jest
+        .spyOn(prisma.category, "findMany")
+        .mockResolvedValue([{ id: 1, name: "前端" }] as never);
+
+      // Act & Assert
+      await expect(
+        service.create({ ...validCreateDto, categoryIds: [1, 3] }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create({ ...validCreateDto, categoryIds: [1, 3] }),
+      ).rejects.toThrow("不是叶子节点");
+      // 不应调用 question.create
+      expect(prisma.question.create).not.toHaveBeenCalled();
+    });
+
+    it("categoryIds 全为叶子节点时，正常创建", async () => {
+      // Arrange：无非叶子节点（findMany 返回空数组）
+      jest.spyOn(prisma.category, "findMany").mockResolvedValue([] as never);
+      jest
+        .spyOn(prisma.question, "create")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+      jest.spyOn(prisma.questionCategory, "createMany").mockResolvedValue({
+        count: 2,
+      } as never);
+
+      // Act
+      const result = await service.create({
+        ...validCreateDto,
+        categoryIds: [3, 5],
+      });
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(prisma.questionCategory.createMany).toHaveBeenCalled();
+    });
+
+    it("categoryIds 为空数组时，不进行叶子校验", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.question, "create")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+
+      // Act
+      await service.create({ ...validCreateDto, categoryIds: [] });
+
+      // Assert：不调用 category.findMany（叶子校验）
+      expect(prisma.category.findMany).not.toHaveBeenCalled();
+    });
+
+    it("不传 categoryIds 时，不进行叶子校验也不创建关联", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.question, "create")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+
+      // Act
+      await service.create(validCreateDto);
+
+      // Assert
+      expect(prisma.category.findMany).not.toHaveBeenCalled();
+      expect(prisma.questionCategory.createMany).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("update — 叶子节点校验", () => {
+    it("更新 categoryIds 含非叶子节点时，抛出 BadRequestException", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.category, "findMany")
+        .mockResolvedValue([{ id: 2, name: "后端" }] as never);
+
+      // Act & Assert
+      await expect(service.update(1, { categoryIds: [2, 5] })).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it("更新 categoryIds 全为叶子节点时，替换分类关联", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+      jest.spyOn(prisma.category, "findMany").mockResolvedValue([] as never);
+      jest
+        .spyOn(prisma.questionCategory, "deleteMany")
+        .mockResolvedValue({ count: 1 } as never);
+      jest
+        .spyOn(prisma.questionCategory, "createMany")
+        .mockResolvedValue({ count: 2 } as never);
+      jest
+        .spyOn(prisma.question, "update")
+        .mockResolvedValue(mockQuestion as never);
+
+      // Act
+      await service.update(1, { categoryIds: [3, 5] });
+
+      // Assert：先删旧关联再建新关联
+      expect(prisma.questionCategory.deleteMany).toHaveBeenCalledWith({
+        where: { questionId: 1 },
+      });
+      expect(prisma.questionCategory.createMany).toHaveBeenCalledWith({
+        data: [
+          { questionId: 1, categoryId: 3 },
+          { questionId: 1, categoryId: 5 },
+        ],
+        skipDuplicates: true,
+      });
+    });
+
+    it("更新 categoryIds 为空数组时，清空关联且不做叶子校验", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.question, "findFirst")
+        .mockResolvedValue(mockQuestion as never);
+      jest
+        .spyOn(prisma.questionCategory, "deleteMany")
+        .mockResolvedValue({ count: 1 } as never);
+      jest
+        .spyOn(prisma.question, "update")
+        .mockResolvedValue(mockQuestion as never);
+
+      // Act
+      await service.update(1, { categoryIds: [] });
+
+      // Assert：删除旧关联，不调用 createMany
+      expect(prisma.questionCategory.deleteMany).toHaveBeenCalledWith({
+        where: { questionId: 1 },
+      });
+      expect(prisma.category.findMany).not.toHaveBeenCalled();
+      expect(prisma.questionCategory.createMany).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("findAll — categoryId 过滤", () => {
+    it("传入 categoryId 时，where 条件包含 questionCategories.some", async () => {
+      // Arrange
+      jest.spyOn(prisma, "$transaction").mockResolvedValue([[], 0]);
+      const findManySpy = jest.spyOn(prisma.question, "findMany");
+
+      // Act
+      await service.findAll({ categoryId: 5, page: 1, pageSize: 20 });
+
+      // Assert
+      expect(findManySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            questionCategories: { some: { categoryId: 5 } },
+          }),
+        }),
+      );
     });
   });
 });

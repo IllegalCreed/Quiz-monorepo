@@ -1,33 +1,42 @@
+/**
+ * 题目相关 API
+ *
+ * 使用统一请求封装，自动注入 token（答案提交时后端可识别用户身份）
+ */
+import { get, post } from "@/utils/request";
 import type { Question, AnswerResult } from "@/types/question";
+
 export type { Option, Question, AnswerResult } from "@/types/question";
 
-const BASE = import.meta.env.VITE_API_BASE || "http://localhost:10020/api";
-
-/** 后端统一响应格式 */
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: T;
+/**
+ * 获取随机题目
+ *
+ * @param limit - 获取数量（默认 1）
+ * @param categoryIds - 可选分类 ID 筛选
+ */
+export function fetchQuestions(limit = 1, categoryIds?: number[]): Promise<Question[]> {
+  let url = `/questions?limit=${limit}`;
+  if (categoryIds?.length) {
+    url += `&categoryIds=${categoryIds.join(",")}`;
+  }
+  return get<Question[]>(url);
 }
 
-export async function fetchQuestions(limit = 1): Promise<Question[]> {
-  const res = await fetch(`${BASE}/questions?limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch questions");
-  const json: ApiResponse<Question[]> = await res.json();
-  return json.data; // 返回 data 字段中的数组
-}
-
-export async function submitAnswer(
+/**
+ * 提交答案
+ *
+ * @param questionId - 题目 ID
+ * @param selectedOptionId - 选中的选项 ID
+ * @param elapsedMs - 答题耗时（毫秒）
+ */
+export function submitAnswer(
   questionId: number,
   selectedOptionId: number,
   elapsedMs?: number,
 ): Promise<AnswerResult> {
-  const res = await fetch(`${BASE}/answers`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ questionId, selectedOptionId, elapsedMs }),
+  return post<AnswerResult>("/answers", {
+    questionId,
+    selectedOptionId,
+    elapsedMs,
   });
-  if (!res.ok) throw new Error("Failed to submit answer");
-  const json: ApiResponse<AnswerResult> = await res.json();
-  return json.data; // 返回 data 字段中的结果
 }

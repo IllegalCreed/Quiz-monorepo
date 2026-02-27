@@ -184,6 +184,127 @@ describe("题目管理", () => {
     });
   });
 
+  // ── 题目分类选择（使用种子数据：技术方向 → 前端 → JavaScript / TypeScript）────
+
+  /**
+   * Element Plus 2.13 的 el-tree-select DOM 结构说明：
+   * - 文字节点：`.el-select-dropdown__item span`（非 `.el-tree-node__label`）
+   * - disabled 状态：`.el-select-dropdown__item.is-disabled`（非 `.el-checkbox.is-disabled`）
+   * - 展开箭头：`.el-tree-node__expand-icon`
+   * - 选中标签：`.el-tag`（在 `.el-select__wrapper` 内）
+   */
+
+  it("新建题目时应显示分类选择器", () => {
+    // 进入新建题目页
+    cy.contains("button", "新增题目").click();
+    cy.url().should("include", "/home/questions/new");
+
+    // 等待分类数据加载（种子数据含"技术方向"维度）
+    cy.get(".question-detail-view__category-row").should("exist");
+
+    // 维度名称应显示
+    cy.contains(".question-detail-view__category-group-name", "技术方向").should("exist");
+
+    // 点击第一个 tree-select 展开下拉
+    cy.get(".question-detail-view__category-row").first().find(".el-select__wrapper").click();
+
+    // 等待下拉面板及 tree 节点渲染
+    cy.get(".el-tree-select__popper .el-select-dropdown__item", { timeout: 10000 }).should("exist");
+
+    // 下拉面板中应显示"前端"分类节点
+    cy.contains(".el-select-dropdown__item", "前端").should("be.visible");
+  });
+
+  it("分类选择器中非叶子节点不可选（disabled）", () => {
+    // 进入新建题目页
+    cy.contains("button", "新增题目").click();
+    cy.url().should("include", "/home/questions/new");
+
+    // 等待分类数据加载
+    cy.get(".question-detail-view__category-row").should("exist");
+
+    // 展开第一个 tree-select（技术方向维度）
+    cy.get(".question-detail-view__category-row").first().find(".el-select__wrapper").click();
+    cy.get(".el-tree-select__popper .el-select-dropdown__item", { timeout: 10000 }).should("exist");
+
+    // 展开"前端"节点（点击展开箭头，非文字区域）
+    cy.contains(".el-select-dropdown__item", "前端")
+      .closest(".el-tree-node")
+      .find(".el-tree-node__expand-icon")
+      .first()
+      .click();
+
+    // "前端"是非叶子节点，应该为 disabled（.el-select-dropdown__item.is-disabled）
+    cy.contains(".el-select-dropdown__item", "前端").should("have.class", "is-disabled");
+
+    // "JavaScript / TypeScript"是叶子节点，应该可选（无 is-disabled）
+    cy.contains(".el-select-dropdown__item", "JavaScript / TypeScript").should(
+      "not.have.class",
+      "is-disabled",
+    );
+
+    // 选中叶子节点
+    cy.contains(".el-select-dropdown__item", "JavaScript / TypeScript").click();
+
+    // 验证已选中（tree-select 显示已选标签）
+    cy.get(".question-detail-view__category-select .el-tag").should(
+      "contain",
+      "JavaScript / TypeScript",
+    );
+  });
+
+  it("新建题目时选择分类应提交到后端", () => {
+    // 进入新建题目页
+    cy.contains("button", "新增题目").click();
+    cy.url().should("include", "/home/questions/new");
+
+    // 填写必填字段
+    cy.get('textarea[placeholder="请输入题目题干"]').type("E2E分类测试：什么是闭包？");
+    cy.get(".question-detail-view__option")
+      .eq(0)
+      .find(".question-detail-view__option-text input")
+      .type("函数及其词法作用域的组合");
+    cy.get(".question-detail-view__option")
+      .eq(1)
+      .find(".question-detail-view__option-text input")
+      .type("一种数据结构");
+    cy.get(".question-detail-view__option").eq(0).find(".el-radio").click();
+
+    // 等待分类选择器加载
+    cy.get(".question-detail-view__category-row").should("exist");
+
+    // 展开 tree-select 并选择叶子节点
+    cy.get(".question-detail-view__category-row").first().find(".el-select__wrapper").click();
+    cy.get(".el-tree-select__popper .el-select-dropdown__item", { timeout: 10000 }).should("exist");
+
+    // 展开"前端"
+    cy.contains(".el-select-dropdown__item", "前端")
+      .closest(".el-tree-node")
+      .find(".el-tree-node__expand-icon")
+      .first()
+      .click();
+
+    // 选中叶子节点
+    cy.contains(".el-select-dropdown__item", "JavaScript / TypeScript").click();
+
+    // 关闭下拉（点击标题区域）
+    cy.get(".question-detail-view__card-title").click();
+
+    // 提交
+    cy.contains("button", "创建题目").click();
+
+    // 验证成功
+    cy.contains(".el-message", "题目创建成功").should("be.visible");
+    cy.url().should("include", "/home/questions");
+    cy.url().should("not.include", "/new");
+
+    // 验证新题目出现在列表中
+    cy.get(".el-loading-mask").should("not.exist");
+    cy.contains("td", "E2E分类测试：什么是闭包？").should("exist");
+  });
+
+  // ── 权限隔离 ─────────────────────────────────────────────────────────────
+
   it("无 questions 权限的管理员访问题目管理应被重定向", () => {
     // 登出当前超级管理员
     cy.get(".user-dropdown").click();

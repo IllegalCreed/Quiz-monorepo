@@ -43,10 +43,82 @@ quiz-monorepo/
 **Category / CategoryGroup / QuestionCategory**（多维度分类）
 
 - `CategoryGroup`：id, name, sort — 维度（如"技术方向"/"难度"）
-- `Category`：id, name, groupId, parentId?(自引用树形), sort — 支持无限层级
-- `QuestionCategory`：questionId + categoryId — 题目与分类多对多
+- `Category`：id, name, groupId, parentId?(自引用树形), sort, **isDefault**(布尔, 默认 false) — 支持无限层级
+- `QuestionCategory`：questionId + categoryId — 题目与分类多对多，**categoryId 必须指向叶子节点**
 
-### 计划新增模型（Phase 2）
+**「通识」节点机制（叶子节点约束）**：
+
+> **核心原则**：`QuestionCategory` 和 `UserPreference` 只存储叶子节点 ID，查询时直接匹配，无需递归展开。
+> 三态选中逻辑要求非叶子节点的状态由子节点计算得出，不可独立进入结果集。
+> 为避免挂在非叶子节点上的题目「消失」，引入「通识」默认子节点。
+
+**数据模型**：
+
+- `Category` 新增 `isDefault: Boolean @default(false)` 字段
+- `isDefault=true` 的节点名称固定为 `"通识"`，DB 只存 `"通识"`
+- 前端显示时拼接父名：`"前端通识"`、`"Vue通识"`（数据转换层处理，非 DB 存储）
+
+**创建子分类时（叶子 → 非叶子）**：
+
+当管理员在叶子节点 X 下创建第一个子分类时，后端在同一事务中执行：
+
+1. 检测 X 当前无子节点（即 X 是叶子）
+2. 自动创建「通识」子节点（`isDefault=true`，`sort` 设最大值确保排最后）
+3. 将所有 `QuestionCategory.categoryId = X` 的记录更新为 `categoryId = 通识.id`
+4. 将所有 `UserPreference.categoryId = X` 的记录更新为 `categoryId = 通识.id`
+5. 创建管理员请求的目标子分类
+
+效果：X 下原有题目和用户偏好全部转移到「通识」，数据可见性不变。
+
+**删除子分类时（可能触发非叶子 → 叶子）**：
+
+删除前校验三条规则，任一不满足则拒绝：
+
+- 目标节点 `isDefault=true` → 拒绝（「通识」不可直接删除）
+- 目标节点有关联题目（`QuestionCategory` 有记录）→ 拒绝
+- 目标节点有子节点 → 拒绝（必须自底向上逐层删除）
+
+删除成功后，检测父节点 X 下是否只剩「通识」节点：
+
+1. 如果是：将 `QuestionCategory.categoryId = 通识.id` 更新回 `categoryId = X`
+2. 同步将 `UserPreference.categoryId = 通识.id` 更新回 `categoryId = X`
+3. 删除「通识」节点
+4. X 重新成为叶子，可直接关联题目
+
+**管理端约束**：
+
+- 「通识」节点：不可删除、不可改名、不可移动，视觉上灰色/斜体区分
+- 题目编辑的分类选择器：只展示叶子节点供选择
+- 分类树中「通识」始终排在同级最后
+
+**前端显示名称处理**：
+
+- DB 存 `"通识"`，前端数据转换层拼接父名展示（`"前端通识"`、`"后端通识"`）
+- ColumnSelector 已选摘要区、用户偏好标签、答题页分类标签统一使用拼接名
+- 避免 DB 存完整名：防止父节点改名导致不一致
+
+**完整生命周期示例**：
+
+```
+前端(叶子, 3道题, 2个用户偏好)
+  ↓ 管理员创建 "Vue"
+前端(非叶子)
+  ├── Vue(叶子, 0道题)
+  └── 前端通识(叶子, isDefault, 继承3道题 + 2个用户偏好)
+  ↓ 管理员创建 "React"
+前端(非叶子)
+  ├── Vue(叶子)
+  ├── React(叶子)
+  └── 前端通识(叶子, isDefault)
+  ↓ 管理员删除 "React"（无关联题目，允许删除）
+前端(非叶子)
+  ├── Vue(叶子)
+  └── 前端通识(叶子, isDefault)
+  ↓ 管理员删除 "Vue"（无关联题目，触发通识回收）
+前端(叶子, 3道题 + 2个用户偏好迁回)
+```
+
+### Phase 2 新增模型
 
 > **已实现**: User、UserStatus、UserPreference 模型已在 Phase 2.1 中实现（含迁移 + 种子数据）。
 > AnswerAttempt 已新增 `userId` 字段关联用户。
@@ -107,6 +179,8 @@ src/
 ├── admin-categories/        # 管理员分类 CRUD（7 个端点）
 ├── app-users/               # App 用户管理（6 个端点）
 ├── user-auth/               # 用户认证（注册/登录/信息）
+├── user-profile/               # 用户自服务（历史+偏好，UserJwtAuthGuard）
+├── categories/                 # 公开分类接口（@Public）
 └── test/                    # 测试重置接口（仅测试环境启用）
 ```
 
@@ -120,7 +194,7 @@ src/
 | 异常格式   | `HttpExceptionFilter`  | 统一返回 `{ statusCode, message, error }`                                         |
 | 响应格式   | `TransformInterceptor` | 统一包装为 `{ code: 0, data, message }`                                           |
 
-### 已实现 API 端点（33 个）
+### 已实现 API 端点（37 个）
 
 | 模块            | 前缀                 | 端点数                             |
 | --------------- | -------------------- | ---------------------------------- |
@@ -132,7 +206,9 @@ src/
 | AdminCategories | `/admin/categories`  | 7（维度 CRUD + 树形节点 CRUD）     |
 | AppUsers        | `/admin/app-users`   | 6（列表/详情/历史/偏好/状态/删除） |
 | UserAuth        | `/api/user/auth`     | 3（register / login / info）       |
-| Questions       | `/api/questions`     | 2（随机题目）                      |
+| UserProfile     | `/api/user`          | 3（history / preferences GET+PUT） |
+| Categories      | `/api/categories`    | 1（公开分类树 groups）             |
+| Questions       | `/api/questions`     | 2（随机题目，支持 categoryIds）    |
 | Answers         | `/api/answers`       | 1（提交答案，支持 userId）         |
 | Test            | `/api/test/reset`    | 1（E2E 数据重置，仅测试环境）      |
 
@@ -277,27 +353,233 @@ src/
 3. 答对：绿色高亮 + 展示解析 + 1 秒自动跳转下一题
 4. 答错：红色高亮 + 绿色正确答案 + 展示解析 + 手动点击下一题
 
+### Phase 2 计划：用户系统 + 分类筛选
+
+#### 新增目录结构
+
+```
+src/
+├── components/
+│   ├── AuthDialog.vue         # 登录注册对话框（BaseDialog center）✅
+│   ├── UserDropdown.vue       # 登录后用户下拉菜单（BasePopover）✅
+│   ├── HistoryDrawer.vue      # 答题历史抽屉面板（BaseDialog right）✅
+│   ├── CategorySelector.vue   # 分类选择器（BaseDialog center + ColumnSelector）✅
+│   └── LoginPrompt.vue        # 答题后登录引导卡片 ✅
+├── composables/
+│   ├── useAuthDialog.ts       # 控制登录对话框开关 + 初始 Tab ✅
+│   ├── useCategories.ts       # 分类数据获取 + 选中状态管理 ✅
+│   └── useHistory.ts          # 历史数据无限滚动加载 ✅
+├── stores/
+│   └── useUserStore.ts        # 用户认证状态（Pinia）：token / user / login / register / logout ✅
+├── api/
+│   ├── auth.ts                # 注册/登录/获取用户信息 ✅
+│   ├── categories.ts          # 公开分类树 ✅
+│   └── user-profile.ts        # 用户答题历史 + 偏好 ✅
+├── types/
+│   ├── user.ts                # 用户/认证类型 ✅
+│   ├── question.ts            # 题目/选项/答案类型 ✅
+│   ├── category.ts            # 分类/维度/偏好类型 ✅
+│   └── history.ts             # 历史条目/分页类型 ✅
+└── utils/
+    └── request.ts             # 统一请求封装（自动注入 token，替代裸 fetch）✅
+```
+
+#### 交互设计
+
+**登录/注册**（对话框模式，不中断答题流程）：
+
+- 触发方式：右上角浮动工具栏「登录」按钮 / 答题后底部提示卡片
+- 内容：两个 Tab（登录/注册），使用 BaseDialog + BaseInput 组件
+- 游客模式：不强制登录，答题功能照常（后端 OptionalUserJwtGuard 已支持）
+
+**用户菜单**（登录后替换「登录」按钮）：
+
+- 头像/图标 + 用户名，点击展开下拉菜单（BasePopover）
+- 菜单项：做题历史 → 打开抽屉 / 分类偏好 → 打开选择器 / 退出登录
+
+**答题历史**（右侧抽屉面板，`BaseDialog placement="right"`）：
+
+- 筛选：全部 / 答对 / 答错
+- 列表：题干(截断) + 正误徽标 + 选择的选项 + 相对时间
+- 无限滚动：IntersectionObserver 触底自动加载下一页
+- 空状态：未登录提示 / 无记录提示
+
+**分类筛选**（居中对话框，Miller Columns 分栏浏览器）：
+
+- 答题页显示「选择分类」按钮 + 已选分类标签
+- 对话框内采用类似 macOS Finder 的分栏布局：
+  - 左列维度 → 中列一级分类 → 右列二级分类 → 水平滚动展更深层级
+  - **点击文字** = 展开子级到右列
+  - **点击选中指示器** = 切换选中/取消
+- 三态选中逻辑：
+  - `●` 节点选中 → 所有后代自动包含
+  - `◐` 半选 → 节点未选中但部分后代已选中
+  - `○` 未选中
+- 选中父级 → 子级自动全选；取消子级 → 父级变为半选
+- 顶部搜索框：跨层级搜索所有分类
+- 已选摘要区：显示所有已选分类标签（可单独移除）
+- 保存后：已登录 → 同步到后端 UserPreference；游客 → localStorage
+- 后端存储显式选中的叶子 categoryId 列表，直接查询匹配（题目也只挂叶子节点，无需递归展开）
+
 ---
 
 ## packages/ui（共享组件库）
 
+### 已有组件
+
 - `CheckRadio.vue`：单选题选项组件（支持 correct/incorrect/default 状态）
-- `CheckRadioGroup.vue`：选项组封装
+- `CheckRadioGroup.vue`：选项组封装（键盘导航、v-model）
+- `BaseButton.vue`：按钮组件（variant: default/outline/ghost, size: sm/md/lg）
+- `BaseCard.vue` / `BaseCardHeader.vue` / `BaseCardContent.vue`：可组合卡片系统
+- `ThemeToggle.vue`：暗色/亮色模式切换（VueUse useDark）
 - Storybook 交互测试（Playwright）
 - `quiz-app` 必须在 `uno.config.ts` 中扫描 UI 源码：`filesystem: ["../../packages/ui/src/**/*.vue"]`
+
+### Phase 2 新增组件
+
+#### BaseDialog（对话框 + 抽屉，单组件 `placement` prop）
+
+支持居中对话框（`placement="center"`）和侧边抽屉（`placement="right"/"left"`），共享遮罩/滚动锁定/Esc 关闭/焦点管理逻辑。
+
+**文件**：`BaseDialog.vue` + `dialog.scss`
+
+**Props**：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `boolean` | — | v-model 控制显示/隐藏 |
+| `title` | `string?` | — | 标题（不传则不渲染 header） |
+| `placement` | `"center" \| "right" \| "left"` | `"center"` | 居中=对话框，左右=抽屉 |
+| `overlay` | `boolean` | `true` | 是否显示遮罩层 |
+| `closeOnOverlay` | `boolean` | `true` | 点击遮罩层是否关闭 |
+| `closable` | `boolean` | `true` | 是否显示关闭按钮 |
+| `width` | `string` | `"28rem"` | 面板宽度 |
+| `closeOnEsc` | `boolean` | `true` | Esc 键关闭 |
+
+**Events**：`update:modelValue`、`close`（关闭动画结束后）、`opened`（打开动画结束后）
+
+**Slots**：`header`（替代 title prop）、`default`（主体内容）、`footer`（底部操作区）
+
+**两种模式差异**：
+| 特性 | center（对话框） | right/left（抽屉） |
+|------|------|------|
+| 布局 | 居中 | 靠侧满屏高 |
+| 圆角 | 四角 `rounded-xl` | 仅内侧两角 |
+| 进入动画 | `scale(0.95)` → 1 | `translateX(100%)` → 0 |
+
+**行为**：Teleport to body、Transition 动画、body 滚动锁定、Esc 键关闭、基础焦点管理。
+
+**BEM**：`.dialog-overlay`（`--center`/`--right`）→ `.dialog`（`--center`/`--right`）→ `__header` / `__title` / `__close` / `__body` / `__footer`
+
+#### BaseInput（输入框）
+
+表单场景标准化输入框，支持 label、error 状态、password toggle。
+
+**文件**：`BaseInput.vue` + `input.scss`
+
+**Props**：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `string` | — | v-model |
+| `type` | `"text" \| "password" \| "email"` | `"text"` | 输入类型 |
+| `placeholder` | `string?` | — | 占位文字 |
+| `label` | `string?` | — | 标签 |
+| `error` | `string?` | — | 错误信息 |
+| `disabled` | `boolean` | `false` | 禁用 |
+| `size` | `"md" \| "sm" \| "lg"` | `"md"` | 尺寸 |
+
+**特性**：password 可见切换（眼睛图标）、error 红色边框 + 文字、focus-visible ring。
+
+**BEM**：`.input` → `__label` / `__field` / `__error`，修饰符 `--error` / `--disabled`
+
+#### BasePopover（弹出面板）
+
+通用定位弹出面板，用于 UserDropdown 等场景。
+
+**文件**：`BasePopover.vue` + `popover.scss`
+
+**Props**：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `placement` | `"bottom-start" \| "bottom-end" \| "top-start" \| "top-end"` | `"bottom-end"` | 弹出方向 |
+| `offset` | `number` | `4` | 与触发元素的间距(px) |
+
+**Slots**：`trigger`（触发元素）、`default`（弹出内容）
+
+**行为**：点击 trigger 切换显示、点击外部关闭（VueUse `onClickOutside`）、Esc 关闭、CSS 绝对定位。
+
+**BEM**：`.popover` → `__trigger` / `__content`（`--bottom-start` / `--bottom-end`）
+
+#### ColumnSelector（Miller Columns 分栏选择器）
+
+通用树形多选组件，macOS Finder 风格分栏浏览器。输入标准树形数据、输出选中 ID 数组，可用于任何多级分类/标签选择场景。
+
+**文件**：`ColumnSelector.vue` + `column-selector.scss`
+
+**Props**：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `modelValue` | `(string \| number)[]` | `[]` | v-model 选中节点 ID 数组 |
+| `data` | `TreeNode[]` | — | 树形数据（`{ id, label, children? }`） |
+| `searchable` | `boolean` | `true` | 是否显示搜索框 |
+| `searchPlaceholder` | `string` | `"搜索..."` | 搜索框占位文字 |
+
+**TreeNode 接口**：
+
+```typescript
+interface TreeNode {
+  id: string | number;
+  label: string;
+  children?: TreeNode[];
+}
+```
+
+**交互**：
+
+- 分栏布局：每列显示当前层级节点，点击有子级的节点 → 子级出现在右列
+- **点击文字** = 展开子级到右列（高亮当前路径）
+- **点击选中指示器**（圆圈图标）= 切换选中/取消
+- 三态选中：`●` 全选 / `◐` 半选（部分子级选中）/ `○` 未选中
+- 选中父级 → 所有后代自动包含；取消子级 → 父级变为半选
+- 顶部搜索框跨层级过滤
+- 底部已选摘要区，显示所有已选节点标签（可逐个移除）
+
+**BEM**：`.column-selector` → `__search` / `__columns` / `__column` / `__node`（`--active` / `--selected` / `--indeterminate`）/ `__indicator` / `__summary`
+
+#### BaseTag（标签）
+
+轻量标签组件，用于分类标签、题目标签等场景。支持多种颜色变体和尺寸，提供确定性着色工具函数。
+
+**文件**：`BaseTag.vue` + `tag.scss` + `tag-utils.ts`
+
+**Props**：
+| Prop | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` | 尺寸：sm（题目标签）、md（ColumnSelector 已选）、lg（醒目标签） |
+| `color` | `TagColor` | `"default"` | 颜色变体：blue/green/purple/orange/pink/cyan/default |
+| `removable` | `boolean` | `false` | 是否显示关闭按钮 |
+
+**Events**：`remove`（点击关闭按钮时触发）
+
+**工具函数**（`tag-utils.ts`）：
+
+- `TAG_COLORS`：6 种预设颜色常量数组
+- `TagColor`：颜色类型（6 种 + `"default"`）
+- `getTagColor(text: string): TagColor`：根据字符串哈希确定性分配颜色，同一文本始终得到同一颜色
+
+**BEM**：`.tag`（`--sm` / `--md` / `--lg` / `--blue` / `--green` / `--purple` / `--orange` / `--pink` / `--cyan`）→ `__remove`
 
 ---
 
 ## 测试策略
 
-| 包           | 单元测试                         | E2E 测试                        |
-| ------------ | -------------------------------- | ------------------------------- |
-| quiz-app     | Vitest (~22 tests)               | Cypress（含真实后端）           |
-| quiz-admin   | Vitest (~199 tests)              | Cypress（6 个文件，连真实后端） |
-| quiz-backend | Jest (~223 tests, 86~95% 覆盖率) | —                               |
-| ui           | Vitest (~85 tests)               | Playwright（Storybook 交互）    |
+| 包           | 单元测试                         | E2E 测试                                            |
+| ------------ | -------------------------------- | --------------------------------------------------- |
+| quiz-app     | Vitest (~88 tests)               | Cypress（6 个 spec，Mock API 模式，~33 tests）      |
+| quiz-admin   | Vitest (~211 tests)              | Cypress（8 个 spec，连真实后端 test DB，~58 tests） |
+| quiz-backend | Jest (~267 tests, 86~95% 覆盖率) | —                                                   |
+| ui           | Vitest (~224 tests)              | Playwright（Storybook 交互测试，10 个 story）       |
 
-**E2E 注意事项**（详见 [memory/cypress.md](../../../.claude/projects/-Users-zhangxu-illegal-quiz-monorepo/memory/cypress.md)）：
+**E2E 注意事项**（详见 `.claude/skills/cypress-skill/`）：
 
 - 选择器优先级：`[data-testid]` > `cy.contains()` > `[aria-label]` > `.class-name`
 - `overflow:hidden/auto` 容器内用 `should("exist")`，不用 `should("be.visible")`
@@ -311,11 +593,16 @@ src/
 # 完整 E2E（启动 preview + 后端 → 跑所有 spec → 关闭）
 pnpm test:e2e
 
-# 单独跑某个 spec（指向已运行的 dev server，不需要后端时用）
+# 单独跑某个 spec（先 build，再用 SPEC 指定文件）
+pnpm -C apps/quiz-admin run build:test
+cd apps/quiz-admin
+SPEC=cypress/e2e/users.cy.ts bash scripts/run-e2e.sh
+
+# 测试服务器已在运行 + dist 已最新时，直接手动跑 cypress
 # 注意：必须 unset ELECTRON_RUN_AS_NODE，否则 Cypress 以 Node 模式启动报错
-unset ELECTRON_RUN_AS_NODE && pnpm cypress run \
+unset ELECTRON_RUN_AS_NODE && pnpm -C apps/quiz-admin exec cypress run --e2e \
   --spec "cypress/e2e/foo.cy.ts" \
-  --config baseUrl=http://localhost:10050
+  --config baseUrl=http://localhost:10060
 
 # 完整 E2E 的底层脚本（自动 unset ELECTRON_RUN_AS_NODE）
 bash scripts/run-e2e.sh
@@ -323,15 +610,102 @@ bash scripts/run-e2e.sh
 
 **关键说明**：
 
+- E2E 测试**必须用测试服务器**（端口 10060，test DB），**不能用 dev server**（10050，test/reset 会 403）
 - `ELECTRON_RUN_AS_NODE` 被 Claude Code 设置后，Cypress（基于 Electron）会以纯 Node 模式启动，找不到 Electron app 入口文件而报错
 - `run-e2e.sh` 已内置 `unset ELECTRON_RUN_AS_NODE`（第 65 行），完整流程不受影响
-- 单独跑 spec 时，`baseUrl=http://localhost:10050` 指向 dev server；若需要真实后端，确保 `apps/quiz-backend` dev 模式已启动
+- Element Plus `el-tree-select` 的 DOM 结构特殊（用 `.el-select-dropdown__item` 而非 `.el-tree-node__label`），详见 `.claude/skills/cypress-skill/references/selectors.md`
 
 ---
 
-## 待实现功能详细计划（Phase 2）
+## 待实现功能详细计划
 
-### ~~1. 用户管理真实实现~~ ✅ 已完成
+### 1. App 端用户系统（Phase 2A~2D）
+
+#### 1.1 后端新增：`user-profile` 模块
+
+新建 `apps/quiz-backend/src/user-profile/`，提供用户自服务接口（与管理员 `app-users` 模块分离）。
+
+| 方法 | 路径                | 守卫             | 说明                                 |
+| ---- | ------------------- | ---------------- | ------------------------------------ |
+| GET  | `/user/history`     | UserJwtAuthGuard | 当前用户答题历史（分页 + 正误筛选）  |
+| GET  | `/user/preferences` | UserJwtAuthGuard | 当前用户偏好分类列表                 |
+| PUT  | `/user/preferences` | UserJwtAuthGuard | 更新偏好 `{ categoryIds: number[] }` |
+
+实现可复用 `AppUsersService` 中的 `getHistory()` / `getPreferences()` 逻辑，userId 从 JWT 提取。
+
+#### 1.2 后端新增：公开分类接口
+
+| 方法 | 路径                 | 守卫      | 说明                                                 |
+| ---- | -------------------- | --------- | ---------------------------------------------------- |
+| GET  | `/categories/groups` | @Public() | 公开分类树（复用 AdminCategoriesService 的读取逻辑） |
+
+#### 1.3 后端修改：题目分类筛选 + 叶子节点约束
+
+**题目分类筛选**：
+
+修改 `GET /api/questions`：新增可选 `categoryIds` 查询参数，SQL 中 JOIN `QuestionCategory` + `WHERE categoryId IN (...)`。因题目只挂叶子节点，无需递归展开。
+
+**叶子节点约束 — 需要修改的文件和逻辑**：
+
+1. **`Category` 模型**（`prisma/schema.prisma`）：新增 `isDefault Boolean @default(false)` 字段 + 迁移 SQL
+
+2. **`AdminCategoriesService.create()`**（创建子分类）：
+   - 在事务中检测父节点是否为叶子（当前无子节点）
+   - 若是：自动创建「通识」子节点（`name: "通识"`, `isDefault: true`, `sort: 9999`）
+   - 迁移 `QuestionCategory`：`WHERE categoryId = 父节点id` → `SET categoryId = 通识.id`
+   - 迁移 `UserPreference`：`WHERE categoryId = 父节点id` → `SET categoryId = 通识.id`
+   - 然后创建管理员请求的目标子分类
+
+3. **`AdminCategoriesService.delete()`**（删除分类）：
+   - 拒绝条件：`isDefault=true` / 有关联 `QuestionCategory` / 有子节点
+   - 删除后检测：父节点下是否只剩「通识」节点
+   - 若是：迁移 `QuestionCategory` + `UserPreference` 从通识回到父节点 → 删除通识 → 父节点恢复为叶子
+
+4. **`AdminCategoriesService.update()`**（更新分类）：
+   - 拒绝对 `isDefault=true` 节点的改名操作
+
+5. **`AdminQuestionsService.create()` / `.update()`**（题目 CRUD）：
+   - 校验所有传入的 `categoryIds` 必须是叶子节点（无子节点），否则 400 拒绝
+
+6. **公开分类接口** `GET /categories/groups` 返回值中包含 `isDefault` 字段，供前端识别
+
+7. **App 前端数据转换**（`quiz-app/composables/useCategories.ts`）：
+   - 对 `isDefault=true` 的节点拼接父名：`label = parentName + "通识"`
+
+8. **Admin 分类管理页**（`quiz-admin/views/categories/`）：
+   - `category-tree-node.vue`：对 `isDefault=true` 节点加灰色/斜体样式，隐藏「编辑」和「删除」按钮
+   - `categories-view.vue`：通识节点禁止拖拽排序（如后续加排序功能）
+
+9. **Admin 题目分类选择器**（`quiz-admin/views/questions/question-detail-view.vue`）：
+   - 当前使用 `el-tree-select` + `check-strictly`（父子独立选择，可选任意层级）
+   - 改为：非叶子节点禁用选中（`disabled: true`），只有叶子节点可被勾选
+   - 数据转换：遍历树，给有 `children` 的节点添加 `disabled: true` 属性
+
+10. **Admin 题目列表分类列**（`quiz-admin/views/questions/questions-view.vue`）：
+    - 当前显示格式：`维度名·分类名`（如 `技术方向·前端`）
+    - 对 `isDefault=true` 的节点拼接父名：`维度名·父分类名通识`（如 `技术方向·前端通识`）
+    - 改动位置：`qc.category.name` 的展示逻辑，后端返回需包含 `isDefault` 和父节点名
+
+#### 1.4 实施分阶段
+
+**Phase 2A：UI 组件**（✅ 已完成）
+
+1. ~~BaseDialog 组件（center + right 两种模式 + Storybook + 单元测试）~~ ✅
+2. ~~BaseInput 组件（label/error/password toggle + Storybook + 单元测试）~~ ✅
+3. ~~BasePopover 组件（定位弹出面板 + Storybook + 单元测试）~~ ✅
+4. ~~ColumnSelector 组件（Miller Columns 分栏选择器 + 三态选中 + Storybook + 单元测试）~~ ✅
+
+**Phase 2B：App 认证系统**（✅ 已完成）3. ~~`utils/request.ts` 统一请求封装（token 自动注入 + 401 回调 + 响应解包）~~ ✅ 4. ~~`api/auth.ts` + `stores/useUserStore.ts`（Pinia + useLocalStorage 持久化）~~ ✅ 5. ~~`App.vue` 右上角浮动工具栏（透明底色，登录按钮 / UserDropdown + ThemeToggle）~~ ✅ 6. ~~`components/AuthDialog.vue` + `composables/useAuthDialog.ts`（Tab 登录/注册）~~ ✅ 7. ~~`components/UserDropdown.vue`（BasePopover，历史/偏好 Phase 2D 禁用）~~ ✅
+
+**Phase 2C：后端新接口 + 叶子节点约束**（✅ 已完成）8. ~~`Category` 模型新增 `isDefault` 字段 + 迁移 SQL~~ ✅ 9. ~~`AdminCategoriesService` 改造：创建/删除子分类时自动维护通识节点（含 `QuestionCategory` + `UserPreference` 迁移）~~ ✅ 10. ~~`AdminCategoriesService.update()` 拒绝通识改名 + `AdminQuestionsService` 校验叶子节点~~ ✅ 11. ~~`user-profile` 模块（history + preferences）~~ ✅ 12. ~~公开分类接口 `GET /categories/groups`（含 `isDefault` 字段）~~ ✅ 13. ~~`GET /questions` 添加 `categoryIds` 筛选~~ ✅ 14. ~~Admin 分类管理页：通识节点视觉区分 + 隐藏编辑/删除按钮（`category-tree-node.vue`）~~ ✅ 15. ~~Admin 题目分类选择器：非叶子节点禁用选中（`question-detail-view.vue` 的 `el-tree-select`）~~ ✅ 16. ~~Admin 题目列表分类列：通识节点拼接父名显示（`questions-view.vue`，`维度·父分类通识`）~~ ✅
+
+**Phase 2D：历史 + 分类 + 引导**（✅ 已完成）17. ~~`components/HistoryDrawer.vue` + `composables/useHistory.ts`（BaseDialog right，IntersectionObserver 无限滚动，客户端筛选）~~ ✅ 18. ~~`components/CategorySelector.vue` + `composables/useCategories.ts`（BaseDialog center + ColumnSelector，后端 name→label 转换，通识拼接父名，游客 localStorage / 登录同步后端）~~ ✅ 19. ~~`components/LoginPrompt.vue`（游客答题后登录引导卡片，可永久关闭）~~ ✅ 20. ~~`UserDropdown.vue` 启用历史/偏好菜单项~~ ✅ 21. ~~`QuizPage.vue` 集成分类选择区 + 登录引导，`useQuiz.ts` 传入 categoryIds~~ ✅
+
+**Phase 2E：打磨 + 测试**（✅ 已完成）22. ~~E2E 测试补齐~~ ✅ - quiz-app 新增 3 个 spec：`auth-flow.cy.ts`（12 tests）、`category-filtering.cy.ts`（8 tests）、`history-drawer.cy.ts`（7 tests），全部使用 Mock API 模式 - quiz-admin `categories.cy.ts` 追加 4 个通識节点行为测试（14 tests 总计）- quiz-admin `questions.cy.ts` 追加 3 个分类选择器测试（9 tests 总计）23. ~~Storybook play 测试补齐（10 个 story 文件均含交互测试）~~ ✅ 24. ~~BaseTag 组件（packages/ui，3 种尺寸 + 6 种颜色 + removable + 确定性着色工具函数）~~ ✅ 25. ~~Cypress skill 经验沉淀（选择器策略、竞态修复、Element Plus DOM 结构、Chrome DevTools 调试流程）~~ ✅
+
+---
+
+### ~~2. 用户管理真实实现~~ ✅ 已完成
 
 后端 `user-auth` + `app-users` 模块、前端用户管理页面（列表+搜索+分页+详情页）均已实现。
 
@@ -339,7 +713,7 @@ bash scripts/run-e2e.sh
 
 ---
 
-### 2. 系统日志
+### 3. 系统日志
 
 **目标**：自动记录所有增删改 API 操作及登录行为，管理后台提供可筛选查看界面。
 
@@ -380,7 +754,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
 ---
 
-### 3. WebSocket 客户端管理
+### 4. WebSocket 客户端管理
 
 **目标**：服务端通过 WebSocket 监控在线 quiz-app 客户端状态，并支持主动广播事件（刷新页面、公告通知）。
 
@@ -482,7 +856,7 @@ app.useWebSocketAdapter(new WsAdapter(app));
 
 ---
 
-### 4. 管理后台增强
+### 5. 管理后台增强
 
 以下功能独立于三大模块，可随时穿插实现：
 
@@ -498,11 +872,15 @@ app.useWebSocketAdapter(new WsAdapter(app));
 1. ~~**DB Schema + 迁移 SQL**（User / UserPreference 模型，AnswerAttempt 更新）~~ ✅ 已完成
 2. ~~**用户认证 + app-users 管理**（后端 user-auth + app-users 模块）~~ ✅ 已完成
 3. ~~**quiz-admin 用户管理前端**（users 真实 API + 详情页）~~ ✅ 已完成
-4. **系统日志**（独立模块，LoggingInterceptor + SystemLog 模型）
-5. **WebSocket 客户端管理**（后端 ClientsGateway + quiz-app useWs）
-6. **quiz-app 前端**（userAuth store + useSession composable）
-7. **quiz-admin 前端**（系统日志视图 + 客户端管理视图）
+4. ~~**UI 组件**（BaseDialog + BaseInput + BasePopover + ColumnSelector → packages/ui）~~ ✅ 已完成
+5. ~~**App 认证系统**（useUserStore + AuthDialog + 浮动工具栏 + UserDropdown）~~ ✅ 已完成
+6. ~~**后端新接口**（user-profile 模块 + 公开分类 + 题目分类筛选）~~ ✅ 已完成（含叶子节点约束 + Admin 前端适配）
+7. ~~**App 历史 + 分类**（HistoryDrawer + CategorySelector + LoginPrompt）~~ ✅ 已完成
+8. **App E2E 测试 + 边缘情况打磨** ← 当前
+9. **系统日志**（独立模块，LoggingInterceptor + SystemLog 模型）
+10. **WebSocket 客户端管理**（后端 ClientsGateway + quiz-app useWs）
+11. **quiz-admin 前端**（系统日志视图 + 客户端管理视图）
 
 ---
 
-_最后更新: 2026-02-26（用户管理已实现，新增 v-permission 权限指令文档，更新 API 端点和测试数量）_
+_最后更新: 2026-02-27（Phase 2D 已完成：HistoryDrawer + CategorySelector + LoginPrompt + 分类筛选集成）_

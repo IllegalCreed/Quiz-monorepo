@@ -566,6 +566,12 @@ async function handleDeleteCategory(node: CategoryItem) {
   &__name {
     @apply flex-1 text-sm;
     color: var(--el-text-color-primary);
+
+    /** 通识节点：灰色斜体，与普通节点区分 */
+    &--default {
+      @apply italic;
+      color: var(--el-text-color-placeholder);
+    }
   }
 
   &__input {

@@ -12,6 +12,8 @@ export type Question = {
   options: Option[];
   explanation?: string;
   tags?: string[];
+  /** 分类显示名称（后端构造，通识节点已拼接父名） */
+  categoryNames?: string[];
 };
 
 /** 提交答案后的响应（包含选项解析） */

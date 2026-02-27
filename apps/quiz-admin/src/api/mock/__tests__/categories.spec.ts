@@ -67,6 +67,38 @@ describe("categories mock API", () => {
       expect(frontend?.children.length).toBeGreaterThan(0);
     });
 
+    it("通识节点包含 isDefault: true 标记", async () => {
+      const p = getCategoryGroups();
+      await vi.runAllTimersAsync();
+      const groups = await p;
+      const techGroup = groups.find((g) => g.name === "技术方向")!;
+      // 「前端 → 框架」下的通识节点（id=17）
+      const frontend = techGroup.categories.find((c) => c.name === "前端")!;
+      const framework = frontend.children.find((c) => c.name === "框架")!;
+      const defaultNode = framework.children.find((c) => c.name === "通识");
+      expect(defaultNode).toBeDefined();
+      expect(defaultNode!.isDefault).toBe(true);
+      // 普通节点没有 isDefault 或为 falsy
+      const vue = framework.children.find((c) => c.name === "Vue");
+      expect(vue!.isDefault).toBeFalsy();
+    });
+
+    it("通识节点的 sort 固定为 9999（排在末尾）", async () => {
+      const p = getCategoryGroups();
+      await vi.runAllTimersAsync();
+      const groups = await p;
+      const techGroup = groups.find((g) => g.name === "技术方向")!;
+      // 递归收集所有通识节点
+      type Node = { name: string; sort: number; isDefault?: boolean; children: Node[] };
+      const collectDefaults = (nodes: Node[]): Node[] =>
+        nodes.flatMap((n) => [...(n.isDefault ? [n] : []), ...collectDefaults(n.children)]);
+      const defaults = collectDefaults(techGroup.categories as unknown as Node[]);
+      expect(defaults.length).toBeGreaterThan(0);
+      for (const d of defaults) {
+        expect(d.sort).toBe(9999);
+      }
+    });
+
     it("返回副本，修改外部数组不影响内部状态", async () => {
       const p1 = getCategoryGroups();
       await vi.runAllTimersAsync();
@@ -245,6 +277,14 @@ describe("categories mock API", () => {
         vi.runAllTimersAsync(),
       ]);
     });
+
+    it("通识节点不可编辑", async () => {
+      // id=17 是「框架」下的通识节点（isDefault: true）
+      await Promise.all([
+        expect(updateCategory(17, { name: "改名" })).rejects.toThrow("通识节点不可编辑"),
+        vi.runAllTimersAsync(),
+      ]);
+    });
   });
 
   // ── deleteCategory ────────────────────────────────────────────────────────
@@ -285,6 +325,14 @@ describe("categories mock API", () => {
       // id=3 是「框架」，下有「Vue」和「React」
       await Promise.all([
         expect(deleteCategory(3)).rejects.toThrow("子分类"),
+        vi.runAllTimersAsync(),
+      ]);
+    });
+
+    it("通识节点不可删除", async () => {
+      // id=17 是「框架」下的通识节点（isDefault: true）
+      await Promise.all([
+        expect(deleteCategory(17)).rejects.toThrow("通识节点不可删除"),
         vi.runAllTimersAsync(),
       ]);
     });

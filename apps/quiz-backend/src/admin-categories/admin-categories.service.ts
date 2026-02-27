@@ -11,6 +11,7 @@ export interface CategoryTreeNode {
   id: number;
   name: string;
   sort: number;
+  isDefault: boolean;
   children: CategoryTreeNode[];
 }
 
@@ -33,6 +34,30 @@ export class AdminCategoriesService {
     });
 
     // 将每个维度的扁平分类数组组装为树形结构
+    return groups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      sort: group.sort,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      categories: this._buildTree(group.categories),
+    }));
+  }
+
+  /**
+   * 获取所有维度列表（含分类的 parent 信息，用于题目列表的分类显示名拼接）
+   */
+  async findAllGroupsWithParent() {
+    const groups = await this.prisma.categoryGroup.findMany({
+      orderBy: [{ sort: "asc" }, { createdAt: "asc" }],
+      include: {
+        categories: {
+          orderBy: [{ sort: "asc" }, { createdAt: "asc" }],
+          include: { parent: { select: { id: true, name: true } } },
+        },
+      },
+    });
+
     return groups.map((group) => ({
       id: group.id,
       name: group.name,
@@ -86,6 +111,11 @@ export class AdminCategoriesService {
 
   /**
    * 在指定维度下创建分类节点（支持指定 parentId 创建子节点）
+   *
+   * 通识节点自动管理：
+   * - 若父节点原来是叶子节点（无子节点），创建子节点时自动生成"通识"子节点
+   * - 将父节点原有的 QuestionCategory 和 UserPreference 迁移到通识节点
+   * - 通识节点不可直接创建子节点（前端已限制，后端兜底校验）
    */
   async createCategory(groupId: number, dto: CreateCategoryDto) {
     await this._assertGroupExists(groupId);
@@ -94,6 +124,7 @@ export class AdminCategoriesService {
     if (dto.parentId != null) {
       const parent = await this.prisma.category.findUnique({
         where: { id: dto.parentId },
+        include: { children: true },
       });
       if (!parent) {
         throw new BadRequestException(`父节点 #${dto.parentId} 不存在`);
@@ -101,9 +132,50 @@ export class AdminCategoriesService {
       if (parent.groupId !== groupId) {
         throw new BadRequestException("父节点不属于当前维度");
       }
+
+      // 父节点原来是叶子节点 → 需要在事务中自动创建通识节点并迁移数据
+      if (parent.children.length === 0) {
+        return this.prisma.$transaction(async (tx) => {
+          // 1. 创建通识子节点
+          const defaultNode = await tx.category.create({
+            data: {
+              name: "通识",
+              groupId,
+              parentId: dto.parentId!,
+              sort: 9999,
+              isDefault: true,
+            },
+          });
+
+          // 2. 将父节点的 QuestionCategory 迁移到通识节点
+          await tx.questionCategory.updateMany({
+            where: { categoryId: dto.parentId! },
+            data: { categoryId: defaultNode.id },
+          });
+
+          // 3. 将父节点的 UserPreference 迁移到通识节点
+          await tx.userPreference.updateMany({
+            where: { categoryId: dto.parentId! },
+            data: { categoryId: defaultNode.id },
+          });
+
+          // 4. 创建用户实际请求的新节点
+          await tx.category.create({
+            data: {
+              name: dto.name,
+              groupId,
+              parentId: dto.parentId ?? null,
+              sort: dto.sort ?? 0,
+            },
+          });
+
+          return { message: "分类创建成功（已自动生成通识节点）" };
+        });
+      }
     }
 
-    return this.prisma.category.create({
+    // 普通创建（父节点已有子节点，或者创建根节点）
+    await this.prisma.category.create({
       data: {
         name: dto.name,
         groupId,
@@ -111,15 +183,23 @@ export class AdminCategoriesService {
         sort: dto.sort ?? 0,
       },
     });
+
+    return { message: "分类创建成功" };
   }
 
   /**
    * 编辑分类节点（名称、排序、父节点）
+   * 通识节点不可编辑名称、排序和父节点
    */
   async updateCategory(id: number, dto: UpdateCategoryDto) {
     const category = await this.prisma.category.findUnique({ where: { id } });
     if (!category) {
       throw new BadRequestException(`分类节点 #${id} 不存在`);
+    }
+
+    // 通识节点禁止编辑
+    if (category.isDefault) {
+      throw new BadRequestException("通识节点不可编辑");
     }
 
     // 若重新挂载父节点，校验新父节点存在且属于同一维度
@@ -149,7 +229,13 @@ export class AdminCategoriesService {
   }
 
   /**
-   * 删除分类节点（要求无子节点且无题目关联）
+   * 删除分类节点
+   *
+   * 通识节点自动回收：
+   * - 通识节点不可直接删除
+   * - 有子节点或有关联题目的节点不可删除
+   * - 删除后若父节点下只剩通识节点，自动回收通识：
+   *   将通识节点的 QuestionCategory 和 UserPreference 迁移回父节点，然后删除通识
    */
   async deleteCategory(id: number) {
     const category = await this.prisma.category.findUnique({
@@ -162,6 +248,12 @@ export class AdminCategoriesService {
     if (!category) {
       throw new BadRequestException(`分类节点 #${id} 不存在`);
     }
+
+    // 通识节点不可直接删除
+    if (category.isDefault) {
+      throw new BadRequestException("通识节点不可删除");
+    }
+
     if (category.children.length > 0) {
       throw new BadRequestException("该分类下仍有子分类，请先删除子分类");
     }
@@ -170,8 +262,40 @@ export class AdminCategoriesService {
         `该分类已关联 ${category.questionCategories.length} 道题目，请先解除关联`,
       );
     }
-    await this.prisma.category.delete({ where: { id } });
-    return { message: "分类删除成功" };
+
+    // 执行删除 + 可能的通识回收（事务保证原子性）
+    return this.prisma.$transaction(async (tx) => {
+      await tx.category.delete({ where: { id } });
+
+      // 若该节点有父节点，检查兄弟节点是否只剩通识
+      if (category.parentId != null) {
+        const siblings = await tx.category.findMany({
+          where: { parentId: category.parentId },
+        });
+
+        // 兄弟只剩一个且是通识节点 → 回收
+        if (siblings.length === 1 && siblings[0].isDefault) {
+          const defaultNode = siblings[0];
+
+          // 将通识节点的 QuestionCategory 迁移回父节点
+          await tx.questionCategory.updateMany({
+            where: { categoryId: defaultNode.id },
+            data: { categoryId: category.parentId },
+          });
+
+          // 将通识节点的 UserPreference 迁移回父节点
+          await tx.userPreference.updateMany({
+            where: { categoryId: defaultNode.id },
+            data: { categoryId: category.parentId },
+          });
+
+          // 删除通识节点
+          await tx.category.delete({ where: { id: defaultNode.id } });
+        }
+      }
+
+      return { message: "分类删除成功" };
+    });
   }
 
   // ────────── 私有工具方法 ──────────
@@ -189,6 +313,7 @@ export class AdminCategoriesService {
         id: c.id,
         name: c.name,
         sort: c.sort,
+        isDefault: c.isDefault,
         children: this._buildTree(categories, c.id),
       }));
   }

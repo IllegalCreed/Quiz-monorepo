@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import type { Question, AnswerResult } from "@/types/question";
 import { fetchQuestions, submitAnswer } from "@/api/questions";
 import { useMockStore } from "@/stores/useMockStore";
+import { useCategories } from "@/composables/useCategories";
 
 export function useQuiz() {
   const question = ref<Question | null>(null);
@@ -14,6 +15,7 @@ export function useQuiz() {
   const optionDescriptions = ref<Record<number, string>>({});
 
   const { isMock } = useMockStore();
+  const { selectedIds: categoryIds } = useCategories();
 
   async function loadNext() {
     // 防止并发请求：如果正在加载，直接返回
@@ -44,7 +46,8 @@ export function useQuiz() {
     }
 
     try {
-      const qs = await fetchQuestions(1);
+      const ids = categoryIds.value.length ? categoryIds.value : undefined;
+      const qs = await fetchQuestions(1, ids);
       question.value = qs[0] ?? null;
       status.value = "idle";
     } catch (e: unknown) {

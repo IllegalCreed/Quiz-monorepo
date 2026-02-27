@@ -1,7 +1,10 @@
 /**
  * ThemeToggle 组件 Storybook 故事
+ *
+ * 每个 story 附带 play 交互测试
  */
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
+import { expect } from "storybook/test";
 import ThemeToggle from "../components/ThemeToggle.vue";
 
 const meta = {
@@ -25,16 +28,24 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 默认样式
+/** 默认样式 */
 export const Default: Story = {
   render: () => ({
     components: { ThemeToggle },
     template: "<ThemeToggle />",
   }),
   name: "默认样式",
+  play: async ({ canvas, userEvent }) => {
+    /* 验证切换按钮可点击 */
+    const btn = canvas.getByRole("button");
+    expect(btn).toBeEnabled();
+    await userEvent.click(btn);
+    /* 点击后按钮仍然存在 */
+    expect(canvas.getByRole("button")).toBeInTheDocument();
+  },
 };
 
-// 固定定位示例
+/** 固定定位示例 */
 export const FixedPosition: Story = {
   render: () => ({
     components: { ThemeToggle },
@@ -47,9 +58,13 @@ export const FixedPosition: Story = {
     `,
   }),
   name: "固定定位示例",
+  play: async ({ canvas }) => {
+    expect(canvas.getByText("右上角的按钮可以切换主题")).toBeInTheDocument();
+    expect(canvas.getByRole("button")).toBeInTheDocument();
+  },
 };
 
-// 自定义位置
+/** 自定义位置 */
 export const CustomPosition: Story = {
   render: () => ({
     components: { ThemeToggle },
@@ -61,4 +76,8 @@ export const CustomPosition: Story = {
     `,
   }),
   name: "自定义位置",
+  play: async ({ canvas }) => {
+    expect(canvas.getByText("主题切换：")).toBeInTheDocument();
+    expect(canvas.getByRole("button")).toBeInTheDocument();
+  },
 };

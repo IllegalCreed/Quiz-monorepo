@@ -147,21 +147,15 @@ describe("AdminCategoriesController", () => {
     it("创建子分类时 groupId + dto（含 parentId）正确透传", async () => {
       // Arrange
       const dto = { name: "Vue", parentId: 1 };
-      const childCategory = {
-        ...mockCategory,
-        id: 2,
-        name: "Vue",
-        parentId: 1,
-      };
       jest
         .spyOn(service, "createCategory")
-        .mockResolvedValue(childCategory as never);
+        .mockResolvedValue({ message: "分类创建成功" } as never);
 
       // Act
       const result = await controller.createCategory(1, dto);
 
       // Assert
-      expect(result.parentId).toBe(1);
+      expect(result).toEqual({ message: "分类创建成功" });
       expect(service.createCategory).toHaveBeenCalledWith(1, dto);
     });
   });

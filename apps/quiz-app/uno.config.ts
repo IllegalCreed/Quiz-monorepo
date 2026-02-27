@@ -18,8 +18,17 @@ export default defineConfig({
       "../../packages/ui/src/**/*.{vue,js,ts,jsx,tsx}", // 扫描 UI 库源码
     ],
   },
-  // safelist 只需要包含图标类（因为图标需要在构建时生成 SVG）
-  safelist: ["i-carbon-sun", "i-carbon-moon"],
+  // 图标类需要构建时生成 SVG，动态拼接的图标类名必须在 safelist 中
+  safelist: [
+    "i-carbon-sun",
+    "i-carbon-moon",
+    "i-carbon-user-avatar", // 用户头像（UserDropdown trigger）
+    "i-carbon-logout", // 退出登录
+    "i-carbon-time", // 做题历史
+    "i-carbon-settings", // 分类偏好
+    "i-carbon-checkmark", // 答对徽标
+    "i-carbon-close-filled", // 答错徽标
+  ],
   shortcuts: [
     // ...
   ],

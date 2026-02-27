@@ -8,25 +8,31 @@ import type { CreateQuestionDto } from "./dto/create-question.dto";
 import type { UpdateQuestionDto } from "./dto/update-question.dto";
 import type { QueryQuestionsDto } from "./dto/query-questions.dto";
 
-/** 题目列表/详情 include 配置：含选项数量、结构化分类信息 */
+/** 题目列表/详情 include 配置：含选项数量、结构化分类信息（含 parent + isDefault） */
 const QUESTION_INCLUDE = {
   _count: { select: { options: true } },
   questionCategories: {
     include: {
       category: {
-        include: { group: true },
+        include: {
+          group: true,
+          parent: { select: { id: true, name: true } },
+        },
       },
     },
   },
 } as const;
 
-/** 题目详情 include 配置：含选项明细 + 结构化分类信息 */
+/** 题目详情 include 配置：含选项明细 + 结构化分类信息（含 parent + isDefault） */
 const QUESTION_DETAIL_INCLUDE = {
   options: true,
   questionCategories: {
     include: {
       category: {
-        include: { group: true },
+        include: {
+          group: true,
+          parent: { select: { id: true, name: true } },
+        },
       },
     },
   },
@@ -100,13 +106,18 @@ export class AdminQuestionsService {
 
   /**
    * 创建题目（含结构化分类关联）
-   * 校验选项数量和正确答案唯一性
+   * 校验选项数量和正确答案唯一性，校验分类必须为叶子节点
    */
   async create(dto: CreateQuestionDto) {
     // 校验恰好有 1 个正确答案（单选题约束）
     const correctCount = dto.options.filter((o) => o.isCorrect).length;
     if (correctCount !== 1) {
       throw new BadRequestException("单选题必须恰好有 1 个正确答案");
+    }
+
+    // 校验分类 ID 均为叶子节点（无子节点）
+    if (dto.categoryIds && dto.categoryIds.length > 0) {
+      await this._assertAllLeafCategories(dto.categoryIds);
     }
 
     const question = await this.prisma.question.create({
@@ -159,6 +170,10 @@ export class AdminQuestionsService {
 
     // 更新分类关联（先删全部，再批量创建）
     if (dto.categoryIds !== undefined) {
+      // 校验分类 ID 均为叶子节点
+      if (dto.categoryIds.length > 0) {
+        await this._assertAllLeafCategories(dto.categoryIds);
+      }
       await this.prisma.questionCategory.deleteMany({
         where: { questionId: id },
       });
@@ -229,5 +244,28 @@ export class AdminQuestionsService {
     });
 
     return { message: "题目删除成功" };
+  }
+
+  // ────────── 私有工具方法 ──────────
+
+  /**
+   * 校验分类 ID 均为叶子节点（没有子节点的分类才可关联题目）
+   */
+  private async _assertAllLeafCategories(categoryIds: number[]) {
+    // 查找有子节点的分类（即非叶子节点）
+    const nonLeaf = await this.prisma.category.findMany({
+      where: {
+        id: { in: categoryIds },
+        children: { some: {} },
+      },
+      select: { id: true, name: true },
+    });
+
+    if (nonLeaf.length > 0) {
+      const names = nonLeaf.map((c) => `"${c.name}"(#${c.id})`).join("、");
+      throw new BadRequestException(
+        `以下分类不是叶子节点，不可关联题目：${names}`,
+      );
+    }
   }
 }

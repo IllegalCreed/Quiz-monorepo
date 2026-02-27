@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, useSlots } from "vue";
+import { ref, watch, nextTick, onMounted, useSlots } from "vue";
 /**
  * CheckRadio（哑组件）
  *
@@ -105,26 +105,36 @@ const descContentRef = ref<HTMLElement | null>(null);
 const descHeight = ref(0);
 
 /**
- * 监听 description prop 和 slot 变化，计算并更新描述元素的实际高度
+ * 测量描述内容的实际高度
  *
  * @remarks
  * - 通过 scrollHeight 获取实际内容高度（包括换行）
- * - 使用 nextTick 确保 DOM 已更新
  * - 高度通过 CSS 变量 --desc-height 传递给样式
  */
-watch(
-  [() => props.description, () => !!slots.description],
-  async () => {
-    if ((props.description || slots.description) && descContentRef.value) {
-      // 等待 DOM 更新后获取实际高度
-      await nextTick();
-      descHeight.value = descContentRef.value.scrollHeight;
-    } else {
-      descHeight.value = 0;
-    }
-  },
-  { immediate: true },
-);
+async function measureDescHeight() {
+  if ((props.description || slots.description) && descContentRef.value) {
+    await nextTick();
+    descHeight.value = descContentRef.value.scrollHeight;
+  } else {
+    descHeight.value = 0;
+  }
+}
+
+/**
+ * 初始挂载时测量高度
+ *
+ * @remarks
+ * 不用 watch + immediate 是因为 immediate 执行时 descContentRef 尚未挂载（为 null），
+ * 导致初始有描述时高度为 0，描述不可见。
+ */
+onMounted(() => {
+  measureDescHeight();
+});
+
+/** 描述 prop / slot 动态变化时重新测量 */
+watch([() => props.description, () => !!slots.description], () => {
+  measureDescHeight();
+});
 
 // 暴露元素引用，便于父组件访问和测试
 defineExpose({ rootEl, descContentRef });

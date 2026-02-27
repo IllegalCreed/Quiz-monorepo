@@ -10,8 +10,10 @@ import { RolesModule } from "./roles/roles.module";
 import { PermissionsModule } from "./permissions/permissions.module";
 import { AdminQuestionsModule } from "./admin-questions/admin-questions.module";
 import { AdminCategoriesModule } from "./admin-categories/admin-categories.module";
+import { CategoriesModule } from "./categories/categories.module";
 import { UserAuthModule } from "./user-auth/user-auth.module";
 import { AppUsersModule } from "./app-users/app-users.module";
+import { UserProfileModule } from "./user-profile/user-profile.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "./auth/guards/permission.guard";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
@@ -27,8 +29,10 @@ import { TransformInterceptor } from "./common/interceptors/transform.intercepto
     QuestionsModule,
     AdminQuestionsModule,
     AdminCategoriesModule,
+    CategoriesModule,
     UserAuthModule,
     AppUsersModule,
+    UserProfileModule,
     AnswersModule,
     TestModule,
   ],

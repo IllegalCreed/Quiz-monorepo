@@ -7,6 +7,8 @@ export interface CategoryItem {
   id: number;
   name: string;
   sort: number;
+  /** 是否为通识节点（通识节点不可编辑/删除，名称灰色斜体显示） */
+  isDefault?: boolean;
   children: CategoryItem[];
 }
 

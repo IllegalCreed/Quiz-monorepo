@@ -1,0 +1,200 @@
+/*
+ * Dialog / Drawer 样式（采用 BEM 命名规范）
+ *
+ * Block: .dialog-overlay, .dialog
+ * Elements: .dialog__header, .dialog__title, .dialog__close, .dialog__body, .dialog__footer
+ * Modifiers: .dialog-overlay--center, .dialog-overlay--right, .dialog-overlay--left
+ *            .dialog--center, .dialog--right, .dialog--left
+ */
+
+/* ── 遮罩层 ─────────────────────────────────────────────────── */
+
+.dialog-overlay {
+  @apply fixed inset-0 z-50;
+
+  background-color: rgba(0, 0, 0, 0.45);
+
+  /* 居中模式：flex 居中 */
+  &--center {
+    @apply flex items-center justify-center;
+    padding: 1rem;
+  }
+
+  /* 右侧抽屉模式：flex 靠右 */
+  &--right {
+    @apply flex items-stretch justify-end;
+  }
+
+  /* 左侧抽屉模式：flex 靠左 */
+  &--left {
+    @apply flex items-stretch justify-start;
+  }
+}
+
+/* ── 面板主体 ────────────────────────────────────────────────── */
+
+.dialog {
+  @apply flex flex-col;
+
+  background-color: var(--quiz-ui-bg);
+  color: var(--quiz-ui-text);
+  border: 1px solid transparent; /* 浅色模式无边框，深色模式通过 .dark 覆盖 */
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  max-height: 100%;
+  overflow: hidden;
+
+  /* 居中对话框：四角圆角，最大宽度限制 */
+  &--center {
+    @apply rounded-xl;
+    max-width: 100%;
+  }
+
+  /* 右侧抽屉：仅左侧圆角，满屏高度 */
+  &--right {
+    border-radius: 0.75rem 0 0 0.75rem;
+    height: 100%;
+  }
+
+  /* 左侧抽屉：仅右侧圆角，满屏高度 */
+  &--left {
+    border-radius: 0 0.75rem 0.75rem 0;
+    height: 100%;
+  }
+
+  /* ── Header ──────────────────────────────── */
+
+  &__header {
+    @apply flex items-center justify-between;
+    @apply px-6 py-4;
+
+    border-bottom: 1px solid var(--quiz-ui-border);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    @apply text-lg font-semibold;
+    @apply m-0;
+
+    color: var(--quiz-ui-text);
+  }
+
+  &__close {
+    @apply inline-flex items-center justify-center;
+    @apply w-8 h-8 rounded-md;
+    @apply cursor-pointer;
+
+    border: none;
+    background: transparent;
+    color: var(--quiz-ui-muted);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: var(--quiz-ui-control-bg);
+      color: var(--quiz-ui-text);
+    }
+
+    &:focus-visible {
+      @apply outline-none;
+      box-shadow: 0 0 0 3px var(--quiz-ui-focus);
+    }
+  }
+
+  /* ── Body（可滚动内容区） ────────────────── */
+
+  &__body {
+    @apply px-6 py-4;
+    @apply flex-1 overflow-y-auto;
+
+    /* 无 header 时 body 是第一个子元素，加大上 padding 与左右 px-6 平衡 */
+    &:first-child {
+      @apply pt-6;
+    }
+
+    /* 无 footer 时 body 是最后一个子元素，加大下 padding 同理 */
+    &:last-child {
+      @apply pb-6;
+    }
+  }
+
+  /* ── Footer ──────────────────────────────── */
+
+  &__footer {
+    @apply px-6 py-4;
+    @apply flex items-center justify-end gap-3;
+
+    border-top: 1px solid var(--quiz-ui-border);
+    flex-shrink: 0;
+  }
+}
+
+/* ── 深色模式增强（边界可见性） ──────────────────────────────── */
+
+.dark {
+  /* 加深遮罩层，让对话框从背景中脱出 */
+  .dialog-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  /* 添加边框 + 微光阴影，替代浅色模式的阴影效果 */
+  .dialog {
+    border-color: var(--quiz-ui-border);
+    box-shadow:
+      0 0 0 1px var(--quiz-ui-border),
+      0 20px 60px rgba(0, 0, 0, 0.4),
+      0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ── 过渡动画 ────────────────────────────────────────────────── */
+
+/* 遮罩淡入淡出 */
+.dialog-fade-enter-active,
+.dialog-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.dialog-fade-enter-from,
+.dialog-fade-leave-to {
+  opacity: 0;
+}
+
+/* 居中对话框：缩放 + 淡入 */
+.dialog-center-enter-active,
+.dialog-center-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dialog-center-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.dialog-center-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* 右侧抽屉：从右滑入 */
+.dialog-right-enter-active,
+.dialog-right-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dialog-right-enter-from,
+.dialog-right-leave-to {
+  transform: translateX(100%);
+}
+
+/* 左侧抽屉：从左滑入 */
+.dialog-left-enter-active,
+.dialog-left-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dialog-left-enter-from,
+.dialog-left-leave-to {
+  transform: translateX(-100%);
+}

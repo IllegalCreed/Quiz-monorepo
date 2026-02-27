@@ -222,7 +222,10 @@ questionsBus.on(() => loadQuestions());
               type="success"
               class="questions-view__tag"
             >
-              {{ qc.category.group.name }}·{{ qc.category.name }}
+              <!-- 通识节点拼接父名显示，如「技术方向·前端通识」 -->
+              {{ qc.category.group.name }}·{{
+                qc.category.isDefault ? `${qc.category.parent?.name ?? ""}通识` : qc.category.name
+              }}
             </el-tag>
           </template>
           <span v-else class="text-slate-400">-</span>

@@ -21,6 +21,13 @@ export interface QuestionCategoryItem {
   category: {
     id: number;
     name: string;
+    /** 是否为通识节点 */
+    isDefault?: boolean;
+    /** 父分类信息（通识节点拼接父名时使用） */
+    parent?: {
+      id: number;
+      name: string;
+    } | null;
     group: {
       id: number;
       name: string;

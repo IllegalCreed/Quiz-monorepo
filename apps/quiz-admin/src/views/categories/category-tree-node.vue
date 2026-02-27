@@ -57,8 +57,14 @@ const emit = defineEmits<{
       <!-- 普通状态 -->
       <template v-else>
         <i class="category-node__bullet i-carbon-folder" />
-        <span class="category-node__name">{{ node.name }}</span>
+        <span
+          class="category-node__name"
+          :class="{ 'category-node__name--default': node.isDefault }"
+        >
+          {{ node.name }}
+        </span>
         <div class="category-node__actions">
+          <!-- 通识节点只允许添加子节点，不允许编辑/删除 -->
           <el-button
             v-permission="'categories:create'"
             size="small"
@@ -68,6 +74,7 @@ const emit = defineEmits<{
             <i class="i-carbon-add" />
           </el-button>
           <el-button
+            v-if="!node.isDefault"
             v-permission="'categories:update'"
             size="small"
             text
@@ -76,6 +83,7 @@ const emit = defineEmits<{
             <i class="i-carbon-edit" />
           </el-button>
           <el-button
+            v-if="!node.isDefault"
             v-permission="'categories:delete'"
             size="small"
             text

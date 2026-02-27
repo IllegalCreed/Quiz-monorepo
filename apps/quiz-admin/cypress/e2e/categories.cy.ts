@@ -258,6 +258,183 @@ describe("分类管理", () => {
     cy.contains(".el-message", "分类已删除").should("be.visible");
   });
 
+  // ── 通識节点行为 ─────────────────────────────────────────────────────────
+
+  it("创建子分类时应自动生成通识节点", () => {
+    // 使用唯一名称避免与种子数据冲突
+    cy.contains("button", "新增维度").click();
+    cy.get(".categories-view__group-input-row input").type("E2E通识维度");
+    cy.contains(".categories-view__group-input-row button", "确认").click();
+    cy.contains(".categories-view__group-item", "E2E通识维度").should("exist");
+
+    // 选中新维度
+    cy.contains(".categories-view__group-item", "E2E通识维度").click();
+
+    // 创建根分类
+    cy.contains("button", "新增根分类").click();
+    cy.get(".categories-view__add-row input").type("E2E父分类");
+    cy.contains(".categories-view__add-row button", "确认").click();
+    cy.contains(".category-node__name", "E2E父分类").should("exist");
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 给根分类创建子分类（叶子→非叶子，应自动创建通识）
+    cy.contains(".category-node__row", "E2E父分类")
+      .find(".category-node__actions button")
+      .eq(0)
+      .click({ force: true });
+
+    cy.get(".category-node__add-row").should("exist");
+    cy.get(".category-node__add-row input")
+      .invoke("val", "E2E子分类")
+      .trigger("input", { force: true });
+    cy.contains(".category-node__add-row button", "确认").click({ force: true });
+
+    // 等待刷新
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 验证子分类节点出现
+    cy.contains(".category-node__name", "E2E子分类").should("exist");
+
+    // 验证"通识"节点自动出现
+    cy.contains(".category-node__name", "通识").should("exist");
+
+    // 通识节点应有特殊样式
+    cy.get(".category-node__name--default").should("exist");
+  });
+
+  it("通识节点不可编辑和删除", () => {
+    // 使用唯一名称
+    cy.contains("button", "新增维度").click();
+    cy.get(".categories-view__group-input-row input").type("E2E操作限制");
+    cy.contains(".categories-view__group-input-row button", "确认").click();
+    cy.contains(".categories-view__group-item", "E2E操作限制").click();
+
+    cy.contains("button", "新增根分类").click();
+    cy.get(".categories-view__add-row input").type("E2E父节点");
+    cy.contains(".categories-view__add-row button", "确认").click();
+    cy.contains(".category-node__name", "E2E父节点").should("exist");
+    cy.get(".el-loading-mask").should("not.exist");
+
+    cy.contains(".category-node__row", "E2E父节点")
+      .find(".category-node__actions button")
+      .eq(0)
+      .click({ force: true });
+    cy.get(".category-node__add-row input")
+      .invoke("val", "E2E子A")
+      .trigger("input", { force: true });
+    cy.contains(".category-node__add-row button", "确认").click({ force: true });
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 找到通识节点所在行，验证只有 1 个操作按钮（新增子节点）
+    cy.contains(".category-node__row", "通识").within(() => {
+      cy.get(".category-node__actions button").should("have.length", 1);
+      // 唯一的按钮是"新增子节点"（i-carbon-add 图标）
+      cy.get(".category-node__actions .i-carbon-add").should("exist");
+      // 不应有编辑图标
+      cy.get(".category-node__actions .i-carbon-edit").should("not.exist");
+      // 不应有删除图标
+      cy.get(".category-node__actions .i-carbon-trash-can").should("not.exist");
+    });
+  });
+
+  it("删除最后一个非通识子节点时应自动回收通识", () => {
+    // 使用唯一名称
+    cy.contains("button", "新增维度").click();
+    cy.get(".categories-view__group-input-row input").type("E2E回收测试");
+    cy.contains(".categories-view__group-input-row button", "确认").click();
+    cy.contains(".categories-view__group-item", "E2E回收测试").click();
+
+    cy.contains("button", "新增根分类").click();
+    cy.get(".categories-view__add-row input").type("E2E回收父");
+    cy.contains(".categories-view__add-row button", "确认").click();
+    cy.contains(".category-node__name", "E2E回收父").should("exist");
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 创建子分类（生成子分类 + 通识）
+    cy.contains(".category-node__row", "E2E回收父")
+      .find(".category-node__actions button")
+      .eq(0)
+      .click({ force: true });
+    cy.get(".category-node__add-row input")
+      .invoke("val", "E2E待删")
+      .trigger("input", { force: true });
+    cy.contains(".category-node__add-row button", "确认").click({ force: true });
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 确认子分类和通识都存在
+    cy.contains(".category-node__name", "E2E待删").should("exist");
+    cy.contains(".category-node__name", "通识").should("exist");
+
+    // 删除子分类节点（3 个操作按钮，index 2 = delete/danger）
+    cy.contains(".category-node__row", "E2E待删")
+      .find(".category-node__actions button")
+      .eq(2)
+      .click({ force: true });
+
+    // 确认删除
+    cy.contains(".el-message-box", "删除确认").should("be.visible");
+    cy.contains(".el-message-box button", "确认删除").click();
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 子分类应消失
+    cy.contains(".category-node__name", "E2E待删").should("not.exist");
+
+    // 通识应被自动回收（父节点重新变为叶子）
+    cy.contains(".category-node__name", "通识").should("not.exist");
+
+    // 父节点恢复为叶子（仍存在）
+    cy.contains(".category-node__name", "E2E回收父").should("exist");
+  });
+
+  it("通识节点应排在同级最后", () => {
+    // 使用唯一名称
+    cy.contains("button", "新增维度").click();
+    cy.get(".categories-view__group-input-row input").type("E2E排序测试");
+    cy.contains(".categories-view__group-input-row button", "确认").click();
+    cy.contains(".categories-view__group-item", "E2E排序测试").click();
+
+    cy.contains("button", "新增根分类").click();
+    cy.get(".categories-view__add-row input").type("E2E排序父");
+    cy.contains(".categories-view__add-row button", "确认").click();
+    cy.contains(".category-node__name", "E2E排序父").should("exist");
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 创建第一个子分类
+    cy.contains(".category-node__row", "E2E排序父")
+      .find(".category-node__actions button")
+      .eq(0)
+      .click({ force: true });
+    cy.get(".category-node__add-row input")
+      .invoke("val", "E2E排A")
+      .trigger("input", { force: true });
+    cy.contains(".category-node__add-row button", "确认").click({ force: true });
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 创建第二个子分类
+    cy.contains(".category-node__row", "E2E排序父")
+      .find(".category-node__actions button")
+      .eq(0)
+      .click({ force: true });
+    cy.get(".category-node__add-row input")
+      .invoke("val", "E2E排B")
+      .trigger("input", { force: true });
+    cy.contains(".category-node__add-row button", "确认").click({ force: true });
+    cy.get(".el-loading-mask").should("not.exist");
+
+    // 验证三个子节点都存在
+    cy.contains(".category-node__name", "E2E排A").should("exist");
+    cy.contains(".category-node__name", "E2E排B").should("exist");
+    cy.contains(".category-node__name", "通识").should("exist");
+
+    // 验证通识排最后：取父节点容器内所有子节点名称
+    cy.contains(".category-node__name", "E2E排序父")
+      .closest(".category-node")
+      .find(".category-node .category-node__name")
+      .last()
+      .should("have.class", "category-node__name--default")
+      .and("contain", "通识");
+  });
+
   // ── 权限隔离 ─────────────────────────────────────────────────────────────
 
   it("无 categories 权限的管理员访问分类管理应被重定向", () => {

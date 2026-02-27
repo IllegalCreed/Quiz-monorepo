@@ -1,7 +1,10 @@
 /**
  * BaseCard 组件 Storybook 故事
+ *
+ * 每个 story 附带 play 交互测试
  */
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
+import { expect } from "storybook/test";
 import BaseCard from "../components/BaseCard.vue";
 import BaseCardHeader from "../components/BaseCardHeader.vue";
 import BaseCardContent from "../components/BaseCardContent.vue";
@@ -29,7 +32,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 基础卡片
+/** 基础卡片 */
 export const Basic: Story = {
   render: () => ({
     components: { BaseCard, BaseCardContent },
@@ -42,9 +45,14 @@ export const Basic: Story = {
     `,
   }),
   name: "基础卡片",
+  play: async ({ canvas }) => {
+    expect(
+      canvas.getByText("这是一个基础卡片，只有内容区域。"),
+    ).toBeInTheDocument();
+  },
 };
 
-// 带标题和内容
+/** 带标题和内容 */
 export const WithHeader: Story = {
   render: () => ({
     components: { BaseCard, BaseCardHeader, BaseCardContent },
@@ -64,9 +72,13 @@ export const WithHeader: Story = {
     `,
   }),
   name: "带标题和内容",
+  play: async ({ canvas }) => {
+    expect(canvas.getByText("卡片标题")).toBeInTheDocument();
+    expect(canvas.getByText(/这是卡片的内容区域/)).toBeInTheDocument();
+  },
 };
 
-// 带虚线分割
+/** 带虚线分割 */
 export const WithDivider: Story = {
   render: () => ({
     components: { BaseCard, BaseCardHeader, BaseCardContent },
@@ -86,9 +98,14 @@ export const WithDivider: Story = {
     `,
   }),
   name: "带虚线分割",
+  play: async ({ canvas }) => {
+    /* 验证 header 有 divided 修饰类 */
+    const header = canvas.getByText("带虚线分割的卡片").closest(".card-header");
+    expect(header).toHaveClass("card-header--divided");
+  },
 };
 
-// 模拟题目卡片（嵌套 CheckRadioGroup）
+/** 模拟题目卡片 */
 export const QuizCard: Story = {
   render: () => ({
     components: { BaseCard, BaseCardHeader, BaseCardContent, CheckRadioGroup },
@@ -119,9 +136,15 @@ export const QuizCard: Story = {
     `,
   }),
   name: "题目卡片示例",
+  play: async ({ canvas }) => {
+    /* 验证题干与 4 个选项渲染 */
+    expect(canvas.getByText("Vue 3 使用什么语言编写？")).toBeInTheDocument();
+    const btns = canvas.getAllByRole("button");
+    expect(btns.length).toBe(4);
+  },
 };
 
-// 多卡片布局
+/** 多卡片布局 */
 export const Multiple: Story = {
   render: () => ({
     components: { BaseCard, BaseCardHeader, BaseCardContent },
@@ -169,4 +192,10 @@ export const Multiple: Story = {
     `,
   }),
   name: "多卡片布局",
+  play: async ({ canvas }) => {
+    /* 验证 3 张卡片全部渲染 */
+    expect(canvas.getByText("卡片 1")).toBeInTheDocument();
+    expect(canvas.getByText("卡片 2")).toBeInTheDocument();
+    expect(canvas.getByText("卡片 3")).toBeInTheDocument();
+  },
 };

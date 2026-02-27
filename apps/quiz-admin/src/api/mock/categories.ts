@@ -32,6 +32,8 @@ const mockGroups: CategoryGroupItem[] = [
             children: [
               { id: 5, name: "Vue", sort: 0, children: [] },
               { id: 6, name: "React", sort: 1, children: [] },
+              /** 框架维度下的通识节点 */
+              { id: 17, name: "通识", sort: 9999, isDefault: true, children: [] },
             ],
           },
           {
@@ -41,8 +43,12 @@ const mockGroups: CategoryGroupItem[] = [
             children: [
               { id: 7, name: "Vite", sort: 0, children: [] },
               { id: 8, name: "Webpack", sort: 1, children: [] },
+              /** 工具链维度下的通识节点 */
+              { id: 18, name: "通识", sort: 9999, isDefault: true, children: [] },
             ],
           },
+          /** 前端维度下的通识节点 */
+          { id: 19, name: "通识", sort: 9999, isDefault: true, children: [] },
         ],
       },
       {
@@ -52,6 +58,8 @@ const mockGroups: CategoryGroupItem[] = [
         children: [
           { id: 9, name: "Node.js", sort: 0, children: [] },
           { id: 10, name: "NestJS", sort: 1, children: [] },
+          /** 后端维度下的通识节点 */
+          { id: 20, name: "通识", sort: 9999, isDefault: true, children: [] },
         ],
       },
     ],
@@ -210,10 +218,11 @@ function _insertChild(nodes: CategoryItem[], parentId: number, newNode: Category
   return false;
 }
 
-/** 递归更新节点属性 */
+/** 递归更新节点属性（通识节点不可编辑） */
 function _updateNode(nodes: CategoryItem[], id: number, form: Partial<CategoryForm>): boolean {
   for (const node of nodes) {
     if (node.id === id) {
+      if (node.isDefault) throw new Error("通识节点不可编辑");
       if (form.name !== undefined) node.name = form.name;
       if (form.sort !== undefined) node.sort = form.sort;
       return true;
@@ -223,10 +232,11 @@ function _updateNode(nodes: CategoryItem[], id: number, form: Partial<CategoryFo
   return false;
 }
 
-/** 递归删除节点 */
+/** 递归删除节点（通识节点不可删除，有子节点的不可删除） */
 function _deleteNode(nodes: CategoryItem[], id: number): boolean {
   const idx = nodes.findIndex((n) => n.id === id);
   if (idx !== -1) {
+    if (nodes[idx]!.isDefault) throw new Error("通识节点不可删除");
     if (nodes[idx]!.children.length > 0) throw new Error("该分类下仍有子分类，请先删除子分类");
     nodes.splice(idx, 1);
     return true;

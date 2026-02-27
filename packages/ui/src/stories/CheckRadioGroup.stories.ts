@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3-vite";
 import CheckRadioGroup from "../components/CheckRadioGroup.vue";
-import { expect } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 
 // 交互测试（Story 的 play 用例）
 
@@ -61,9 +61,11 @@ export const GroupWithDesc: Story = {
   },
   name: "分组：带描述",
   play: async ({ canvas }) => {
-    // 断言：每个选项的描述文本存在
-    expect(canvas.getByText("A 的补充描述")).toBeInTheDocument();
-    expect(canvas.getByText("B 是正确答案的说明")).toBeInTheDocument();
+    // 等待描述文字可见（onMounted 测量高度 → has-content 类 → opacity 过渡）
+    await waitFor(() => expect(canvas.getByText("A 的补充描述")).toBeVisible());
+    await waitFor(() =>
+      expect(canvas.getByText("B 是正确答案的说明")).toBeVisible(),
+    );
   },
 };
 

@@ -17,6 +17,7 @@ describe("QuestionsController", () => {
     stem: "以下哪个是 JavaScript 的数据类型？",
     explanation: "JavaScript 有 7 种原始类型",
     tags: null,
+    categoryNames: [] as string[],
     options: [
       { id: 1, text: "string", description: "字符串类型" },
       { id: 2, text: "integer", description: "JS 中没有 integer 类型" },
@@ -55,7 +56,7 @@ describe("QuestionsController", () => {
       const result = await controller.get(undefined);
 
       // Assert
-      expect(getRandomSpy).toHaveBeenCalledWith(1);
+      expect(getRandomSpy).toHaveBeenCalledWith(1, undefined);
       expect(result).toEqual([mockQuestion]);
     });
 
@@ -70,7 +71,7 @@ describe("QuestionsController", () => {
       const result = await controller.get("2");
 
       // Assert
-      expect(getRandomSpy).toHaveBeenCalledWith(2);
+      expect(getRandomSpy).toHaveBeenCalledWith(2, undefined);
       expect(result).toHaveLength(2);
     });
 
@@ -97,8 +98,48 @@ describe("QuestionsController", () => {
       const result = await controller.get("5");
 
       // Assert
-      expect(getRandomSpy).toHaveBeenCalledWith(5);
+      expect(getRandomSpy).toHaveBeenCalledWith(5, undefined);
       expect(result).toEqual([]);
+    });
+
+    it("传入 categoryIds 字符串时解析为数字数组", async () => {
+      // Arrange
+      const getRandomSpy = jest
+        .spyOn(service, "getRandom")
+        .mockResolvedValue([mockQuestion]);
+
+      // Act
+      const result = await controller.get("1", "3,5,7");
+
+      // Assert
+      expect(getRandomSpy).toHaveBeenCalledWith(1, [3, 5, 7]);
+      expect(result).toEqual([mockQuestion]);
+    });
+
+    it("categoryIds 含空白时正确 trim 并过滤非数字", async () => {
+      // Arrange
+      const getRandomSpy = jest
+        .spyOn(service, "getRandom")
+        .mockResolvedValue([]);
+
+      // Act
+      await controller.get(undefined, " 1 , 2 , abc ");
+
+      // Assert：abc 被过滤（NaN），只保留 [1, 2]
+      expect(getRandomSpy).toHaveBeenCalledWith(1, [1, 2]);
+    });
+
+    it("categoryIds 未传时，传给 service 的是 undefined", async () => {
+      // Arrange
+      const getRandomSpy = jest
+        .spyOn(service, "getRandom")
+        .mockResolvedValue([]);
+
+      // Act
+      await controller.get("1", undefined);
+
+      // Assert
+      expect(getRandomSpy).toHaveBeenCalledWith(1, undefined);
     });
   });
 });

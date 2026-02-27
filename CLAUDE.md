@@ -234,12 +234,12 @@ pnpm -C apps/quiz-backend run build  # 如需重新构建后端
 
 ## 测试策略
 
-| 包           | 单元测试                        | E2E 测试                        |
-| ------------ | ------------------------------- | ------------------------------- |
-| quiz-app     | Vitest (22 tests)               | Cypress (mocked + real backend) |
-| quiz-admin   | Vitest (120+ tests)             | Cypress (5 个文件，连真实后端)  |
-| quiz-backend | Jest (188 tests, 86~95% 覆盖率) | -                               |
-| ui           | Vitest (85 tests)               | Playwright (Storybook 交互测试) |
+| 包           | 单元测试                         | E2E 测试                              |
+| ------------ | -------------------------------- | ------------------------------------- |
+| quiz-app     | Vitest (~88 tests)               | Cypress (6 spec, Mock API, ~33 tests) |
+| quiz-admin   | Vitest (~211 tests)              | Cypress (8 spec, 真实后端, ~58 tests) |
+| quiz-backend | Jest (~267 tests, 86~95% 覆盖率) | -                                     |
+| ui           | Vitest (~224 tests)              | Playwright (Storybook 交互, 10 story) |
 
 **推荐日常使用**：`pnpm test:unit`（快速，~5 秒）
 **提交 PR 前**：`pnpm test`（完整，~5 分钟，包含 E2E）

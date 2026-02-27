@@ -1,15 +1,37 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import "virtual:uno.css";
-// Include package CSS from @quiz/ui so component styles are present when consuming
+// 包级样式（确保组件样式可用）
 import "@quiz/ui/style.css";
 
 import App from "./App.vue";
 import router from "./router";
+import { setOn401Handler } from "./utils/request";
+import { useUserStore } from "./stores/useUserStore";
+import { useAuthDialog } from "./composables/useAuthDialog";
+import { useCategories } from "./composables/useCategories";
 
 const app = createApp(App);
+const pinia = createPinia();
 
-app.use(createPinia());
+app.use(pinia);
 app.use(router);
+
+// ── 注册 401 回调（token 过期时清空登录状态并打开登录框） ──
+const userStore = useUserStore();
+const { openLogin } = useAuthDialog();
+
+setOn401Handler(() => {
+  userStore.logout();
+  useCategories().clearSelection();
+  openLogin();
+});
+
+// ── 启动时恢复登录状态，登录后加载用户偏好 ──────────────
+userStore.fetchUserInfo().then(() => {
+  if (userStore.isLoggedIn) {
+    useCategories().loadUserPreferences();
+  }
+});
 
 app.mount("#app");

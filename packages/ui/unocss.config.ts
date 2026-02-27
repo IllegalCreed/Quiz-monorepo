@@ -18,6 +18,9 @@ export default defineConfig({
     "i-carbon-add",
     "i-carbon-edit",
     "i-carbon-trash-can",
+    "i-carbon-close",
+    "i-carbon-view",
+    "i-carbon-view-off",
   ],
   shortcuts: [
     // Add your shortcuts here

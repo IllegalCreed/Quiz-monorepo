@@ -10,6 +10,17 @@
         <BaseCard>
           <BaseCardHeader divided>
             <h2 class="stem">{{ question.stem }}</h2>
+            <!-- 分类标签（根据分类名自动分配颜色） -->
+            <div v-if="question.categoryNames?.length" class="stem-tags">
+              <BaseTag
+                v-for="name in question.categoryNames"
+                :key="name"
+                size="sm"
+                :color="getTagColor(name)"
+              >
+                {{ name }}
+              </BaseTag>
+            </div>
           </BaseCardHeader>
           <BaseCardContent>
             <CheckRadioGroup
@@ -33,6 +44,9 @@
         <div v-if="status === 'wrong'" class="actions">
           <BaseButton @click="loadNext">下一题</BaseButton>
         </div>
+
+        <!-- 游客答题后登录引导 -->
+        <LoginPrompt v-if="status !== 'idle'" />
       </template>
       <!-- 加载题目失败时的错误提示（在外层显示） -->
       <div v-else-if="error" class="error">{{ error }}</div>
@@ -43,8 +57,18 @@
 
 <script setup lang="ts">
 import { onMounted, watch, computed } from "vue";
-import { BaseCard, BaseCardHeader, BaseCardContent, BaseButton, CheckRadioGroup } from "@quiz/ui";
+import {
+  BaseCard,
+  BaseCardHeader,
+  BaseCardContent,
+  BaseButton,
+  BaseTag,
+  getTagColor,
+  CheckRadioGroup,
+} from "@quiz/ui";
 import { useQuiz } from "./composables/useQuiz";
+import { useCategories } from "@/composables/useCategories";
+import LoginPrompt from "@/components/LoginPrompt.vue";
 
 const {
   question,
@@ -59,7 +83,17 @@ const {
   explanation,
 } = useQuiz();
 
-onMounted(() => loadNext());
+const { selectedIds, init: initCategories } = useCategories();
+
+onMounted(() => {
+  initCategories();
+  loadNext();
+});
+
+/** 分类变化时重新加载题目 */
+watch(selectedIds, () => {
+  loadNext();
+});
 
 watch(selected, (v, old) => {
   if (v != null && v !== old && status.value === "idle") {
@@ -146,6 +180,13 @@ const radioOptions = computed(() => {
       display: none;
     }
   }
+}
+
+// ============================================
+// 题目分类标签
+// ============================================
+.stem-tags {
+  @apply flex flex-wrap gap-1.5 mt-2;
 }
 
 // ============================================

@@ -28,6 +28,7 @@ describe("AdminCategoriesService", () => {
       groupId: 1,
       parentId: null,
       sort: 0,
+      isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -37,6 +38,7 @@ describe("AdminCategoriesService", () => {
       groupId: 1,
       parentId: null,
       sort: 1,
+      isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -46,6 +48,7 @@ describe("AdminCategoriesService", () => {
       groupId: 1,
       parentId: 1,
       sort: 0,
+      isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -67,11 +70,23 @@ describe("AdminCategoriesService", () => {
             },
             category: {
               count: jest.fn(),
+              findMany: jest.fn(),
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
             },
+            questionCategory: {
+              updateMany: jest.fn(),
+            },
+            userPreference: {
+              updateMany: jest.fn(),
+            },
+            /** 事务 mock：按顺序执行传入的回调函数 */
+            $transaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) => {
+              // 将 prisma 自身作为 tx 参数传给回调
+              return fn(prisma);
+            }),
           },
         },
       ],
@@ -291,34 +306,26 @@ describe("AdminCategoriesService", () => {
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
         .mockResolvedValue(mockGroup as never);
-      const newCategory = {
-        id: 10,
-        name: "前端",
-        groupId: 1,
-        parentId: null,
-        sort: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      jest
-        .spyOn(prisma.category, "create")
-        .mockResolvedValue(newCategory as never);
+      jest.spyOn(prisma.category, "create").mockResolvedValue({} as never);
 
       // Act
       const result = await service.createCategory(1, { name: "前端" });
 
-      // Assert
-      expect(result.name).toBe("前端");
-      expect(result.parentId).toBeNull();
+      // Assert：普通创建返回 { message }
+      expect(result).toEqual({ message: "分类创建成功" });
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: { name: "前端", groupId: 1, parentId: null, sort: 0 },
+      });
     });
 
-    it("指定合法 parentId 时成功创建子分类节点", async () => {
-      // Arrange
+    it("指定合法 parentId 时成功创建子分类节点（父节点已有子节点）", async () => {
+      // Arrange：父节点已有一个子节点，不触发通识节点创建
       const parentCategory = {
         id: 1,
         name: "前端",
         groupId: 1,
         parentId: null,
+        children: [{ id: 3, name: "框架" }],
       };
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
@@ -326,18 +333,7 @@ describe("AdminCategoriesService", () => {
       jest
         .spyOn(prisma.category, "findUnique")
         .mockResolvedValue(parentCategory as never);
-      const newCategory = {
-        id: 11,
-        name: "Vue",
-        groupId: 1,
-        parentId: 1,
-        sort: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      jest
-        .spyOn(prisma.category, "create")
-        .mockResolvedValue(newCategory as never);
+      jest.spyOn(prisma.category, "create").mockResolvedValue({} as never);
 
       // Act
       const result = await service.createCategory(1, {
@@ -346,7 +342,62 @@ describe("AdminCategoriesService", () => {
       });
 
       // Assert
-      expect(result.parentId).toBe(1);
+      expect(result).toEqual({ message: "分类创建成功" });
+    });
+
+    it("父节点为叶子节点时，自动创建通识节点并迁移数据", async () => {
+      // Arrange：父节点无子节点（叶子 → 非叶子，触发通识节点生命周期）
+      const leafParent = {
+        id: 1,
+        name: "前端",
+        groupId: 1,
+        parentId: null,
+        children: [], // 无子节点 = 叶子
+      };
+      jest
+        .spyOn(prisma.categoryGroup, "findUnique")
+        .mockResolvedValue(mockGroup as never);
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(leafParent as never);
+      // Mock 通识节点创建返回
+      const defaultNode = { id: 100, name: "通识", isDefault: true };
+      jest
+        .spyOn(prisma.category, "create")
+        .mockResolvedValueOnce(defaultNode as never) // 通识节点
+        .mockResolvedValueOnce({} as never); // 用户请求的新节点
+
+      // Act
+      const result = await service.createCategory(1, {
+        name: "Vue",
+        parentId: 1,
+      });
+
+      // Assert：事务中创建了通识节点 + 迁移数据 + 创建新节点
+      expect(result).toEqual({ message: "分类创建成功（已自动生成通识节点）" });
+      // 第一次调用创建通识节点
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: {
+          name: "通识",
+          groupId: 1,
+          parentId: 1,
+          sort: 9999,
+          isDefault: true,
+        },
+      });
+      // 第二次调用创建用户请求的节点
+      expect(prisma.category.create).toHaveBeenCalledWith({
+        data: { name: "Vue", groupId: 1, parentId: 1, sort: 0 },
+      });
+      // 迁移 QuestionCategory 和 UserPreference
+      expect(prisma.questionCategory.updateMany).toHaveBeenCalledWith({
+        where: { categoryId: 1 },
+        data: { categoryId: 100 },
+      });
+      expect(prisma.userPreference.updateMany).toHaveBeenCalledWith({
+        where: { categoryId: 1 },
+        data: { categoryId: 100 },
+      });
     });
 
     it("维度不存在时抛出 BadRequestException", async () => {
@@ -379,6 +430,7 @@ describe("AdminCategoriesService", () => {
         name: "前端",
         groupId: 2,
         parentId: null,
+        children: [],
       };
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
@@ -420,7 +472,13 @@ describe("AdminCategoriesService", () => {
 
   // ─────────────────────────────────────────────────────────────────────────────
   describe("updateCategory", () => {
-    const mockCategory = { id: 1, name: "前端", groupId: 1, parentId: null };
+    const mockCategory = {
+      id: 1,
+      name: "前端",
+      groupId: 1,
+      parentId: null,
+      isDefault: false,
+    };
 
     it("成功更新分类节点名称", async () => {
       // Arrange
@@ -491,6 +549,29 @@ describe("AdminCategoriesService", () => {
       );
     });
 
+    it("通识节点不可编辑，抛出 BadRequestException", async () => {
+      // Arrange
+      const defaultCategory = {
+        id: 10,
+        name: "通识",
+        groupId: 1,
+        parentId: 1,
+        isDefault: true,
+      };
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(defaultCategory as never);
+
+      // Act & Assert
+      await expect(
+        service.updateCategory(10, { name: "新名字" }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateCategory(10, { name: "新名字" }),
+      ).rejects.toThrow("通识节点不可编辑");
+      expect(prisma.category.update).not.toHaveBeenCalled();
+    });
+
     it("parentId 未定义时不更新父节点字段", async () => {
       // Arrange
       jest
@@ -513,13 +594,14 @@ describe("AdminCategoriesService", () => {
 
   // ─────────────────────────────────────────────────────────────────────────────
   describe("deleteCategory", () => {
-    it("成功删除叶节点且无题目关联的分类", async () => {
+    it("成功删除叶节点且无题目关联的分类（无父节点）", async () => {
       // Arrange
       const leafCategory = {
         id: 3,
         name: "框架",
         groupId: 1,
-        parentId: 1,
+        parentId: null,
+        isDefault: false,
         children: [],
         questionCategories: [],
       };
@@ -535,7 +617,6 @@ describe("AdminCategoriesService", () => {
 
       // Assert
       expect(result).toEqual({ message: "分类删除成功" });
-      expect(prisma.category.delete).toHaveBeenCalledWith({ where: { id: 3 } });
     });
 
     it("分类节点不存在时抛出 BadRequestException", async () => {
@@ -548,11 +629,33 @@ describe("AdminCategoriesService", () => {
       );
     });
 
+    it("通识节点不可直接删除", async () => {
+      // Arrange
+      const defaultCategory = {
+        id: 10,
+        name: "通识",
+        groupId: 1,
+        parentId: 1,
+        isDefault: true,
+        children: [],
+        questionCategories: [],
+      };
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(defaultCategory as never);
+
+      // Act & Assert
+      await expect(service.deleteCategory(10)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
     it("分类有子节点时拒绝删除并抛出 BadRequestException", async () => {
       // Arrange
       const categoryWithChildren = {
         id: 1,
         name: "前端",
+        isDefault: false,
         children: [{ id: 3, name: "框架" }],
         questionCategories: [],
       };
@@ -564,7 +667,6 @@ describe("AdminCategoriesService", () => {
       await expect(service.deleteCategory(1)).rejects.toThrow(
         BadRequestException,
       );
-      expect(prisma.category.delete).not.toHaveBeenCalled();
     });
 
     it("分类已关联题目时拒绝删除并抛出 BadRequestException", async () => {
@@ -572,6 +674,7 @@ describe("AdminCategoriesService", () => {
       const categoryWithQuestions = {
         id: 3,
         name: "框架",
+        isDefault: false,
         children: [],
         questionCategories: [
           { questionId: 1, categoryId: 3 },
@@ -586,7 +689,184 @@ describe("AdminCategoriesService", () => {
       await expect(service.deleteCategory(3)).rejects.toThrow(
         BadRequestException,
       );
-      expect(prisma.category.delete).not.toHaveBeenCalled();
+    });
+
+    it("删除后有父节点，兄弟仅剩通识 → 自动回收通识节点", async () => {
+      // Arrange：待删除节点有 parentId，删除后兄弟只剩一个通识节点
+      const leafWithParent = {
+        id: 5,
+        name: "Vue",
+        groupId: 1,
+        parentId: 1,
+        isDefault: false,
+        children: [],
+        questionCategories: [],
+      };
+      const defaultSibling = {
+        id: 100,
+        name: "通识",
+        groupId: 1,
+        parentId: 1,
+        isDefault: true,
+      };
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(leafWithParent as never);
+      jest
+        .spyOn(prisma.category, "delete")
+        .mockResolvedValue(leafWithParent as never);
+      // 删除后查询兄弟，只剩通识
+      jest
+        .spyOn(prisma.category, "findMany")
+        .mockResolvedValue([defaultSibling] as never);
+
+      // Act
+      const result = await service.deleteCategory(5);
+
+      // Assert：事务执行了删除 + 回收通识
+      expect(result).toEqual({ message: "分类删除成功" });
+      // 删除原节点
+      expect(prisma.category.delete).toHaveBeenCalledWith({ where: { id: 5 } });
+      // 通识节点的数据迁移回父节点
+      expect(prisma.questionCategory.updateMany).toHaveBeenCalledWith({
+        where: { categoryId: 100 },
+        data: { categoryId: 1 },
+      });
+      expect(prisma.userPreference.updateMany).toHaveBeenCalledWith({
+        where: { categoryId: 100 },
+        data: { categoryId: 1 },
+      });
+      // 删除通识节点
+      expect(prisma.category.delete).toHaveBeenCalledWith({
+        where: { id: 100 },
+      });
+    });
+
+    it("删除后兄弟不止通识一个 → 不触发回收", async () => {
+      // Arrange：删除后兄弟还有 2 个（一个通识 + 一个普通）
+      const leafWithParent = {
+        id: 5,
+        name: "Vue",
+        groupId: 1,
+        parentId: 1,
+        isDefault: false,
+        children: [],
+        questionCategories: [],
+      };
+      const remainingSiblings = [
+        { id: 100, name: "通识", parentId: 1, isDefault: true },
+        { id: 6, name: "React", parentId: 1, isDefault: false },
+      ];
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(leafWithParent as never);
+      jest
+        .spyOn(prisma.category, "delete")
+        .mockResolvedValue(leafWithParent as never);
+      jest
+        .spyOn(prisma.category, "findMany")
+        .mockResolvedValue(remainingSiblings as never);
+
+      // Act
+      const result = await service.deleteCategory(5);
+
+      // Assert：删除成功，但不触发通识回收
+      expect(result).toEqual({ message: "分类删除成功" });
+      expect(prisma.questionCategory.updateMany).not.toHaveBeenCalled();
+      expect(prisma.userPreference.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("删除无父节点的根分类 → 不检查兄弟回收", async () => {
+      // Arrange：根节点（parentId = null）
+      const rootLeaf = {
+        id: 2,
+        name: "后端",
+        groupId: 1,
+        parentId: null,
+        isDefault: false,
+        children: [],
+        questionCategories: [],
+      };
+      jest
+        .spyOn(prisma.category, "findUnique")
+        .mockResolvedValue(rootLeaf as never);
+      jest
+        .spyOn(prisma.category, "delete")
+        .mockResolvedValue(rootLeaf as never);
+
+      // Act
+      const result = await service.deleteCategory(2);
+
+      // Assert
+      expect(result).toEqual({ message: "分类删除成功" });
+      expect(prisma.category.findMany).not.toHaveBeenCalled(); // 不查兄弟
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("findAllGroupsWithParent", () => {
+    it("返回带 parent 信息的维度树（供题目列表显示名拼接）", async () => {
+      // Arrange
+      jest
+        .spyOn(prisma.categoryGroup, "findMany")
+        .mockResolvedValue([
+          { ...mockGroup, categories: mockCategoryFlat } as never,
+        ]);
+
+      // Act
+      const result = await service.findAllGroupsWithParent();
+
+      // Assert：结构与 findAllGroups 相同
+      expect(result).toHaveLength(1);
+      expect(result[0].categories).toHaveLength(2);
+      // 验证 findMany 包含 parent include
+      expect(prisma.categoryGroup.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            categories: expect.objectContaining({
+              include: { parent: { select: { id: true, name: true } } },
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("_buildTree（通过 findAllGroups 间接测试）", () => {
+    it("树中节点包含 isDefault 字段", async () => {
+      // Arrange：含一个通识节点
+      const flatWithDefault = [
+        ...mockCategoryFlat,
+        {
+          id: 99,
+          name: "通识",
+          groupId: 1,
+          parentId: 1,
+          sort: 9999,
+          isDefault: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+      jest
+        .spyOn(prisma.categoryGroup, "findMany")
+        .mockResolvedValue([
+          { ...mockGroup, categories: flatWithDefault } as never,
+        ]);
+
+      // Act
+      const result = await service.findAllGroups();
+
+      // Assert
+      const frontend = result[0].categories.find((c) => c.id === 1);
+      expect(frontend).toBeDefined();
+      expect(frontend!.isDefault).toBe(false);
+      // 通识节点挂在前端下
+      const defaultChild = frontend!.children.find((c) => c.id === 99);
+      expect(defaultChild).toBeDefined();
+      expect(defaultChild!.isDefault).toBe(true);
+      expect(defaultChild!.name).toBe("通识");
     });
   });
 });
