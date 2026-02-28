@@ -25,6 +25,9 @@ describe("UserAuthController", () => {
     user: mockUserInfo,
   };
 
+  /** Mock Request 对象 */
+  const mockReq = { ip: "127.0.0.1" } as never;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserAuthController],
@@ -53,16 +56,22 @@ describe("UserAuthController", () => {
       service.register.mockResolvedValue(mockAuthResult);
 
       // Act
-      const result = await controller.register({
-        username: "testuser",
-        password: "user123",
-      });
+      const result = await controller.register(
+        {
+          username: "testuser",
+          password: "user123",
+        },
+        mockReq,
+      );
 
       // Assert
-      expect(service.register).toHaveBeenCalledWith({
-        username: "testuser",
-        password: "user123",
-      });
+      expect(service.register).toHaveBeenCalledWith(
+        {
+          username: "testuser",
+          password: "user123",
+        },
+        "127.0.0.1",
+      );
       expect(result).toEqual(mockAuthResult);
     });
   });
@@ -73,16 +82,22 @@ describe("UserAuthController", () => {
       service.login.mockResolvedValue(mockAuthResult);
 
       // Act
-      const result = await controller.login({
-        username: "testuser",
-        password: "user123",
-      });
+      const result = await controller.login(
+        {
+          username: "testuser",
+          password: "user123",
+        },
+        mockReq,
+      );
 
       // Assert
-      expect(service.login).toHaveBeenCalledWith({
-        username: "testuser",
-        password: "user123",
-      });
+      expect(service.login).toHaveBeenCalledWith(
+        {
+          username: "testuser",
+          password: "user123",
+        },
+        "127.0.0.1",
+      );
       expect(result).toEqual(mockAuthResult);
     });
   });

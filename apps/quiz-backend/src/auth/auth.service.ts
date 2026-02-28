@@ -6,6 +6,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
+import { SystemLogsService } from "../system-logs/system-logs.service";
 import { LoginDto } from "./dto/login.dto";
 import type { JwtPayload } from "./strategies/jwt.strategy";
 
@@ -18,14 +19,16 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly systemLogsService: SystemLogsService,
   ) {}
 
   /**
    * 管理员登录
    * @param loginDto - 登录信息
+   * @param ip - 请求者 IP（用于日志记录）
    * @returns 包含 token 和管理员信息的对象
    */
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ip?: string) {
     const { username, password } = loginDto;
 
     // 1. 查找管理员
@@ -35,17 +38,20 @@ export class AuthService {
     });
 
     if (!admin) {
+      this._logLogin(false, username, undefined, ip, "账号或密码错误");
       throw new UnauthorizedException("账号或密码错误");
     }
 
     // 2. 验证密码
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
+      this._logLogin(false, username, admin.id, ip, "账号或密码错误");
       throw new UnauthorizedException("账号或密码错误");
     }
 
     // 3. 检查账号状态
     if (admin.status === "DISABLED") {
+      this._logLogin(false, username, admin.id, ip, "账号已被禁用");
       throw new ForbiddenException("账号已被禁用");
     }
 
@@ -57,7 +63,10 @@ export class AuthService {
     };
     const token = this.jwtService.sign(payload);
 
-    // 5. 返回 token 和管理员信息（包含权限）
+    // 5. 记录登录成功日志
+    this._logLogin(true, admin.username, admin.id, ip);
+
+    // 6. 返回 token 和管理员信息（包含权限）
     return {
       token,
       admin: {
@@ -106,5 +115,34 @@ export class AuthService {
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
     };
+  }
+
+  /**
+   * 记录管理员登录日志（fire-and-forget，不阻塞登录流程）
+   */
+  private _logLogin(
+    success: boolean,
+    username: string,
+    adminId?: number,
+    ip?: string,
+    error?: string,
+  ): void {
+    this.systemLogsService
+      .create({
+        type: "LOGIN",
+        actorType: "ADMIN",
+        actorId: adminId,
+        actorName: username,
+        action: "LOGIN",
+        module: "auth",
+        path: "/admin/auth/login",
+        method: "POST",
+        success,
+        error,
+        ip,
+      })
+      .catch((err: Error) => {
+        console.error("AuthService: 写入登录日志失败", err.message);
+      });
   }
 }

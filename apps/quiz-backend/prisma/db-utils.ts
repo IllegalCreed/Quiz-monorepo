@@ -9,6 +9,7 @@ import {
   linkTestQuestionCategories,
 } from "./data/seed-categories";
 import { seedUserData } from "./data/seed-user-data";
+import { seedSystemLogs } from "./data/seed-logs";
 
 // db-utils focuses only on data operations; caller must load dotenv or set DATABASE_URL.
 // If DATABASE_URL isn't set, allow constructing from discrete parts; otherwise, throw.
@@ -198,7 +199,35 @@ export async function seedTest() {
   // 为测试用户创建做题历史和偏好分类（依赖 seedUsers + 测试题目 + 分类体系）
   await seedUserData(prisma);
 
+  // 创建系统日志种子数据
+  await seedSystemLogs(prisma);
+
   console.log("seedTest: finished");
+}
+
+/**
+ * 重置所有自增主键表的 AUTO_INCREMENT 计数器
+ * 在 deleteMany 清空表后调用，确保重新 seed 时 ID 从 1 开始
+ */
+async function _resetAutoIncrements(): Promise<void> {
+  const tables = [
+    "Role",
+    "Admin",
+    "User",
+    "Question",
+    "Option",
+    "AnswerAttempt",
+    "CategoryGroup",
+    "Category",
+    "SystemLog",
+  ];
+
+  for (const table of tables) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE \`${table}\` AUTO_INCREMENT = 1`,
+    );
+  }
+  console.log("resetTest: AUTO_INCREMENT counters reset");
 }
 
 export async function resetTest() {
@@ -216,6 +245,13 @@ export async function resetTest() {
   // 清除用户偏好（FK 依赖 User + Category）
   try {
     await prisma.userPreference?.deleteMany();
+  } catch {
+    /* ignore */
+  }
+
+  // 清除系统日志
+  try {
+    await prisma.systemLog?.deleteMany();
   } catch {
     /* ignore */
   }
@@ -260,6 +296,9 @@ export async function resetTest() {
     hasCategories = count > 0;
   }
   await prisma.categoryGroup.deleteMany();
+
+  // 重置所有自增主键表的 AUTO_INCREMENT 计数器，确保 ID 从 1 开始
+  await _resetAutoIncrements();
 
   // 重新插入（含分类体系）
   await seedSystem();

@@ -3,6 +3,7 @@ import { UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { AuthService } from "../auth.service";
 import { PrismaService } from "../../prisma/prisma.service";
+import { SystemLogsService } from "../../system-logs/system-logs.service";
 import { AdminStatus } from "@prisma/client";
 
 // Mock bcrypt module
@@ -97,6 +98,12 @@ describe("AuthService", () => {
           provide: JwtService,
           useValue: {
             sign: jest.fn(),
+          },
+        },
+        {
+          provide: SystemLogsService,
+          useValue: {
+            create: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

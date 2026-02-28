@@ -7,6 +7,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { PermissionGuard } from "./guards/permission.guard";
 import { PrismaModule } from "../prisma/prisma.module";
+import { SystemLogsModule } from "../system-logs/system-logs.module";
 
 /**
  * 认证模块
@@ -16,6 +17,7 @@ import { PrismaModule } from "../prisma/prisma.module";
   imports: [
     PrismaModule,
     PassportModule,
+    SystemLogsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || "your-secret-key",
       signOptions: {

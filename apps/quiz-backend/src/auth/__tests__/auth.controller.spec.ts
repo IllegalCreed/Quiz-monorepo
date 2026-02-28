@@ -65,17 +65,23 @@ describe("AuthController", () => {
         .mockResolvedValue(mockLoginResponse);
 
       // Act
-      const result = await controller.login({
-        username: "super_admin",
-        password: "super_admin",
-      });
+      const result = await controller.login(
+        {
+          username: "super_admin",
+          password: "super_admin",
+        },
+        { ip: "127.0.0.1" } as never,
+      );
 
       // Assert
       expect(result).toEqual(mockLoginResponse);
-      expect(loginSpy).toHaveBeenCalledWith({
-        username: "super_admin",
-        password: "super_admin",
-      });
+      expect(loginSpy).toHaveBeenCalledWith(
+        {
+          username: "super_admin",
+          password: "super_admin",
+        },
+        "127.0.0.1",
+      );
     });
   });
 

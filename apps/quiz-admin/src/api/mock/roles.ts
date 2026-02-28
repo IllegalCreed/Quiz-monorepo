@@ -19,6 +19,7 @@ const mockRoles: Role[] = [
       "admins",
       "roles",
       "permissions",
+      "system-logs",
       "system",
     ],
     apiPermissions: ALL_API_PERMISSIONS.map((p) => p.key), // 全部权限

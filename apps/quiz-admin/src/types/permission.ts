@@ -39,6 +39,7 @@ export const ALL_MENU_PERMISSIONS: MenuPermission[] = [
   { key: "admins", label: "管理员管理" },
   { key: "roles", label: "角色管理" },
   { key: "permissions", label: "权限管理" },
+  { key: "system-logs", label: "系统日志" },
   { key: "system", label: "系统设置" },
 ];
 

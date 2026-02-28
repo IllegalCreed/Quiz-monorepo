@@ -62,6 +62,12 @@ export const homeRoutes: RouteRecordRaw[] = [
     meta: { title: "权限管理", componentName: "PermissionsView" },
   },
   {
+    path: "system-logs",
+    name: "system-logs",
+    component: () => import("@/views/system/system-logs-view.vue"),
+    meta: { title: "系统日志", componentName: "SystemLogsView" },
+  },
+  {
     path: "settings",
     name: "settings",
     component: () => import("@/views/system/settings-view.vue"),

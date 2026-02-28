@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, UseGuards } from "@nestjs/common";
+import { Controller, Post, Get, Body, UseGuards, Req } from "@nestjs/common";
+import type { Request } from "express";
 import { UserAuthService } from "./user-auth.service";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { LoginUserDto } from "./dto/login-user.dto";
@@ -19,14 +20,14 @@ export class UserAuthController {
 
   /** 用户注册 */
   @Post("register")
-  register(@Body() dto: RegisterUserDto) {
-    return this.userAuthService.register(dto);
+  register(@Body() dto: RegisterUserDto, @Req() req: Request) {
+    return this.userAuthService.register(dto, req.ip);
   }
 
   /** 用户登录 */
   @Post("login")
-  login(@Body() dto: LoginUserDto) {
-    return this.userAuthService.login(dto);
+  login(@Body() dto: LoginUserDto, @Req() req: Request) {
+    return this.userAuthService.login(dto, req.ip);
   }
 
   /** 获取当前用户信息（需 user JWT） */

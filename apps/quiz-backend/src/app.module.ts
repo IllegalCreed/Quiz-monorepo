@@ -14,10 +14,12 @@ import { CategoriesModule } from "./categories/categories.module";
 import { UserAuthModule } from "./user-auth/user-auth.module";
 import { AppUsersModule } from "./app-users/app-users.module";
 import { UserProfileModule } from "./user-profile/user-profile.module";
+import { SystemLogsModule } from "./system-logs/system-logs.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "./auth/guards/permission.guard";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { TransformInterceptor } from "./common/interceptors/transform.intercepto
     UserAuthModule,
     AppUsersModule,
     UserProfileModule,
+    SystemLogsModule,
     AnswersModule,
     TestModule,
   ],
@@ -56,6 +59,11 @@ import { TransformInterceptor } from "./common/interceptors/transform.intercepto
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    // 全局日志拦截器（记录所有数据变更操作）
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
     },
   ],
 })

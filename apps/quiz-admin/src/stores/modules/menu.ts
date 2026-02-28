@@ -53,6 +53,12 @@ const allMenus: MenuItem[] = [
     icon: "i-carbon-locked",
   },
   {
+    index: "/home/system-logs",
+    name: "system-logs",
+    title: "系统日志",
+    icon: "i-carbon-catalog",
+  },
+  {
     index: "/home/settings",
     name: "system",
     title: "系统设置",

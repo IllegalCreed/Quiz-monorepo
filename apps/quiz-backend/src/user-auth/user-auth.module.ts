@@ -7,6 +7,7 @@ import { UserJwtStrategy } from "./strategies/user-jwt.strategy";
 import { UserJwtAuthGuard } from "./guards/user-jwt-auth.guard";
 import { OptionalUserJwtGuard } from "./guards/optional-user-jwt.guard";
 import { PrismaModule } from "../prisma/prisma.module";
+import { SystemLogsModule } from "../system-logs/system-logs.module";
 
 /**
  * 用户认证模块
@@ -16,6 +17,7 @@ import { PrismaModule } from "../prisma/prisma.module";
   imports: [
     PrismaModule,
     PassportModule,
+    SystemLogsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || "your-secret-key",
       signOptions: {

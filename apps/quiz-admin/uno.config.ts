@@ -26,6 +26,7 @@ export default defineConfig({
     "i-carbon-locked",
     "i-carbon-document",
     "i-carbon-category",
+    "i-carbon-catalog",
 
     // Header 图标
     "i-carbon-menu",

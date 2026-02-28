@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, UseGuards } from "@nestjs/common";
+import { Controller, Post, Get, Body, UseGuards, Req } from "@nestjs/common";
+import type { Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { Public } from "../common/decorators/public.decorator";
@@ -17,12 +18,13 @@ export class AuthController {
   /**
    * 管理员登录
    * @param loginDto - 登录信息
+   * @param req - 请求对象（提取 IP 用于日志记录）
    * @returns 包含 token 和管理员信息的对象
    */
   @Post("login")
   @Public()
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    return this.authService.login(loginDto, req.ip);
   }
 
   /**

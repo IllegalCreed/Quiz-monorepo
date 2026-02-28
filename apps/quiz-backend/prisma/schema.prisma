@@ -172,3 +172,44 @@ model UserPreference {
   @@id([userId, categoryId])
   @@index([categoryId])
 }
+
+// ============================================
+// 系统日志
+// ============================================
+
+/// 日志类型枚举
+enum LogType {
+  LOGIN        // 登录事件（成功/失败）
+  API_MUTATION // 数据变更操作（POST/PATCH/PUT/DELETE）
+}
+
+/// 操作者类型枚举
+enum ActorType {
+  ADMIN // 管理员
+  USER  // App 用户
+}
+
+/// 系统操作日志（记录所有增删改操作及登录行为）
+model SystemLog {
+  id         Int       @id @default(autoincrement())
+  type       LogType               // 日志类型
+  actorType  ActorType             // 操作者类型
+  actorId    Int?                  // 操作者 ID（匿名则 null）
+  actorName  String?               // 操作者名称快照（方便查询，无需 JOIN）
+  action     String                // 具体动作：CREATE / UPDATE / DELETE / LOGIN
+  module     String                // 业务模块：questions, admins, auth 等
+  path       String                // 请求路径
+  method     String                // HTTP 方法：POST / PATCH / PUT / DELETE
+  params     Json?                 // 请求参数（已过滤 password 等敏感字段）
+  result     Json?                 // 响应结果（截断至 2KB）
+  success    Boolean               // 操作是否成功
+  error      String?   @db.Text    // 错误信息（失败时记录）
+  ip         String?               // 请求者 IP
+  durationMs Int?                  // 请求耗时（毫秒）
+  createdAt  DateTime  @default(now())
+
+  @@index([type])
+  @@index([actorId, actorType])
+  @@index([createdAt])
+  @@index([module])
+}
