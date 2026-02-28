@@ -32,8 +32,6 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - 响应式布局（移动端适配）
 - 渐变标题 + 泛光效果
 
-### 计划中
-
 **用户身份（游客模式 + 可选绑定）**：
 
 - 游客直接答题，无需登录，答题功能完整（后端 OptionalUserJwtGuard 已支持）
@@ -64,6 +62,8 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - 顶部搜索框跨层级过滤 + 已选摘要可逐个移除
 - 已登录 → 偏好同步到服务器；游客 → 保存在 localStorage
 - **叶子节点约束**：题目只能挂到叶子分类；每个非叶子节点自带「通识」子节点，收纳不适合细分的题目。通识节点显示名拼接父名（如「前端通识」），创建/删除子分类时自动维护（含题目关联和用户偏好的迁移）
+
+### 计划中
 
 **实时通知（WebSocket）**：
 
@@ -117,7 +117,7 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - [x] 系统日志
 - [ ] 客户端管理（WebSocket 监控 + 广播）
 
-### Phase 2：用户系统（进行中）
+### Phase 2：用户系统 ✅
 
 **Phase 2A：共享 UI 组件** ✅
 
@@ -126,13 +126,13 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - [x] BasePopover（弹出面板，用于下拉菜单等）
 - [x] ColumnSelector（Miller Columns 分栏选择器，通用树形多选）
 
-**Phase 2B：App 认证系统** ← 当前
+**Phase 2B：App 认证系统** ✅
 
-- [ ] 统一请求封装（utils/request.ts，自动注入 token）
-- [ ] 用户状态管理（useUserStore，Pinia）
-- [ ] AppHeader 统一顶栏
-- [ ] 登录注册对话框（AuthDialog）
-- [ ] 用户下拉菜单（UserDropdown）
+- [x] 统一请求封装（utils/request.ts，自动注入 token）
+- [x] 用户状态管理（useUserStore，Pinia）
+- [x] AppHeader 统一顶栏（App.vue toolbar：登录按钮 / UserDropdown + ThemeToggle）
+- [x] 登录注册对话框（AuthDialog）
+- [x] 用户下拉菜单（UserDropdown）
 
 **Phase 2C：后端新接口 + 叶子节点约束** ✅
 
@@ -146,16 +146,16 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - [x] Admin 题目分类选择器：非叶子节点禁用
 - [x] Admin 题目列表：通识节点拼接父名显示
 
-**Phase 2D：历史 + 分类 + 引导**
+**Phase 2D：历史 + 分类 + 引导** ✅
 
-- [ ] 答题历史抽屉面板（HistoryDrawer，无限滚动）
-- [ ] 分类选择器（CategorySelector，Miller Columns 分栏浏览器 + 三态选中）
-- [ ] 答题后登录引导（LoginPrompt）
+- [x] 答题历史抽屉面板（HistoryDrawer，无限滚动）
+- [x] 分类选择器（CategorySelector，Miller Columns 分栏浏览器 + 三态选中）
+- [x] 答题后登录引导（LoginPrompt）
 
-**Phase 2E：打磨 + 测试**
+**Phase 2E：打磨 + 测试** ✅
 
-- [ ] E2E 测试（认证、历史、分类）
-- [ ] 边缘情况（401 处理、加载态、空状态、移动端适配）
+- [x] E2E 测试（认证、历史、分类）
+- [x] 边缘情况（401 处理、加载态、空状态、移动端适配）
 
 ### Phase 3：数据分析（计划中）
 

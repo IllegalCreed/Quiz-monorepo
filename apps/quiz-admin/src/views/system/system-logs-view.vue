@@ -155,8 +155,8 @@ const getActionLabel = (action: string): string => {
  */
 const getActionTagType = (action: string): string => {
   const map: Record<string, string> = {
-    LOGIN: "",
-    REGISTER: "",
+    LOGIN: "info",
+    REGISTER: "info",
     CREATE: "success",
     UPDATE: "warning",
     DELETE: "danger",
@@ -253,14 +253,15 @@ onMounted(() => {
         </template>
       </el-table-column>
 
-      <el-table-column label="操作者" min-width="150">
+      <el-table-column prop="actorName" label="操作者" min-width="120" show-overflow-tooltip>
         <template #default="{ row }">
-          <span>{{ row.actorName || "-" }}</span>
-          <el-tag
-            :type="row.actorType === 'ADMIN' ? 'warning' : 'info'"
-            size="small"
-            class="actor-badge"
-          >
+          {{ row.actorName || "-" }}
+        </template>
+      </el-table-column>
+
+      <el-table-column label="类型" width="90" align="center">
+        <template #default="{ row }">
+          <el-tag :type="row.actorType === 'ADMIN' ? 'warning' : 'info'" size="small">
             {{ row.actorType === "ADMIN" ? "管理员" : "用户" }}
           </el-tag>
         </template>
@@ -343,10 +344,6 @@ onMounted(() => {
   &__date {
     @apply w-60;
   }
-}
-
-.actor-badge {
-  @apply ml-1;
 }
 
 .expand-detail {
