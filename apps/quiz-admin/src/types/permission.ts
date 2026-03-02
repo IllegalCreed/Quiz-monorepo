@@ -40,6 +40,7 @@ export const ALL_MENU_PERMISSIONS: MenuPermission[] = [
   { key: "roles", label: "角色管理" },
   { key: "permissions", label: "权限管理" },
   { key: "system-logs", label: "系统日志" },
+  { key: "clients", label: "客户端管理" },
   { key: "system", label: "系统设置" },
 ];
 
@@ -135,6 +136,14 @@ export const ALL_API_PERMISSION_GROUPS: ApiPermissionGroup[] = [
         module: "statistics",
       },
       { key: "statistics:export", label: "导出统计报表", module: "statistics" },
+    ],
+  },
+  {
+    module: "clients",
+    label: "客户端管理",
+    permissions: [
+      { key: "clients:list", label: "查看在线客户端", module: "clients" },
+      { key: "clients:broadcast", label: "广播推送消息", module: "clients" },
     ],
   },
   {

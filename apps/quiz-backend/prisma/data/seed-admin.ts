@@ -32,6 +32,7 @@ export async function seedAdmin(prisma: PrismaClient): Promise<void> {
     "tags:*",
     "answers:*",
     "statistics:*",
+    "clients:*",
     "system:*",
   ];
 

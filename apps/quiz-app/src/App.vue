@@ -1,14 +1,34 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import { ThemeToggle } from "@quiz/ui";
 import AuthDialog from "@/components/AuthDialog.vue";
 import UserDropdown from "@/components/UserDropdown.vue";
 import HistoryDrawer from "@/components/HistoryDrawer.vue";
 import CategorySelector from "@/components/CategorySelector.vue";
 import { useAuthDialog } from "@/composables/useAuthDialog";
+import { useSse } from "@/composables/useSse";
 import { useUserStore } from "@/stores/useUserStore";
 
 const userStore = useUserStore();
 const { openLogin } = useAuthDialog();
+const { announcement, connect, disconnect, sendHeartbeat } = useSse();
+const router = useRouter();
+
+// ── SSE 连接管理 ──────────────────────────────────────
+onMounted(() => {
+  connect();
+  sendHeartbeat(router.currentRoute.value.fullPath);
+});
+
+onUnmounted(() => {
+  disconnect();
+});
+
+// 路由变更时上报当前页面
+router.afterEach((to) => {
+  sendHeartbeat(to.fullPath);
+});
 </script>
 
 <template>
@@ -31,6 +51,13 @@ const { openLogin } = useAuthDialog();
     <HistoryDrawer />
     <!-- 分类选择器对话框 -->
     <CategorySelector />
+
+    <!-- 公告 toast（管理端广播推送） -->
+    <Transition name="toast">
+      <div v-if="announcement" class="announcement-toast">
+        {{ announcement }}
+      </div>
+    </Transition>
 
     <main>
       <router-view />
@@ -84,6 +111,28 @@ main {
     @apply outline-none;
     text-decoration: underline;
   }
+}
+
+/* ── 公告 toast ────────────────────────────────────── */
+.announcement-toast {
+  @apply fixed top-4 left-1/2 z-50 px-5 py-3 rounded-lg text-sm font-medium;
+  transform: translateX(-50%);
+  background: var(--quiz-ui-primary);
+  color: #fff;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 0.15);
+  max-width: 90vw;
+}
+
+/* toast 过渡动画 */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
 }
 
 /* ── 右上角浮动工具栏 ───────────────────────────────── */

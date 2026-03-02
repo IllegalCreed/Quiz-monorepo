@@ -63,12 +63,12 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - 已登录 → 偏好同步到服务器；游客 → 保存在 localStorage
 - **叶子节点约束**：题目只能挂到叶子分类；每个非叶子节点自带「通识」子节点，收纳不适合细分的题目。通识节点显示名拼接父名（如「前端通识」），创建/删除子分类时自动维护（含题目关联和用户偏好的迁移）
 
-### 计划中
+**实时通知（SSE）**：
 
-**实时通知（WebSocket）**：
-
-- 管理员发布 app 更新时，客户端收到事件后刷新页面
-- 支持公告推送（弹窗提示）
+- 客户端启动自动建立 SSE 连接（EventSource 内置自动重连）
+- 管理员广播刷新事件时，客户端自动 reload 页面
+- 公告推送：顶部 toast 提示，5 秒自动消失
+- 心跳上报：路由变更、登录/退出时通过 HTTP POST 更新客户端状态
 
 ---
 
@@ -86,14 +86,8 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 | 分类管理   | 多维度 + 无限层级树形、「通识」节点自动生命周期管理（不可删除/改名，灰色区分） |
 | 用户管理   | 列表/搜索/分页、用户详情、做题历史、偏好分类、状态切换                         |
 | 系统日志   | 自动记录增删改 API + 登录日志、类型/操作者/模块/结果/日期筛选、展开行详情      |
+| 客户端管理 | SSE 实时监控在线客户端（用户名/游客 + IP + 当前页面）、广播推送（刷新/公告）   |
 | 布局       | Header + Sidebar 折叠 + Tab 历史 + keep-alive + 深色模式                       |
-
-### 计划中
-
-**客户端管理**：
-
-- 实时查看在线 quiz-app 客户端（用户名或游客 + IP + 当前页面）
-- 广播事件（强制刷新 / 公告通知）
 
 ---
 
@@ -115,47 +109,15 @@ Quiz App 是一个面向开发者的知识问答平台，帮助用户通过答�
 - [x] 分类管理（多维度树形，后端 7 个接口，前端递归组件）
 - [x] 用户管理（真实后端 6 个接口 + 详情页 + 做题历史 + 偏好查看）
 - [x] 系统日志
-- [ ] 客户端管理（WebSocket 监控 + 广播）
+- [x] 客户端管理（SSE 实时监控 + 广播推送）
 
 ### Phase 2：用户系统 ✅
 
-**Phase 2A：共享 UI 组件** ✅
-
-- [x] BaseDialog（对话框 + 抽屉，单组件 placement 切换）
-- [x] BaseInput（输入框，含 label/error/password toggle）
-- [x] BasePopover（弹出面板，用于下拉菜单等）
-- [x] ColumnSelector（Miller Columns 分栏选择器，通用树形多选）
-
-**Phase 2B：App 认证系统** ✅
-
-- [x] 统一请求封装（utils/request.ts，自动注入 token）
-- [x] 用户状态管理（useUserStore，Pinia）
-- [x] AppHeader 统一顶栏（App.vue toolbar：登录按钮 / UserDropdown + ThemeToggle）
-- [x] 登录注册对话框（AuthDialog）
-- [x] 用户下拉菜单（UserDropdown）
-
-**Phase 2C：后端新接口 + 叶子节点约束** ✅
-
-- [x] user-profile 模块（用户自查历史 + 偏好管理）
-- [x] 公开分类接口（GET /categories/groups）
-- [x] 题目分类筛选（GET /questions?categoryIds=）
-- [x] Category 模型新增 isDefault 字段 + 迁移
-- [x] 通识节点自动生命周期（创建/删除子分类时自动维护）
-- [x] AdminQuestions 叶子节点校验
-- [x] Admin 分类管理页：通识节点视觉区分 + 保护
-- [x] Admin 题目分类选择器：非叶子节点禁用
-- [x] Admin 题目列表：通识节点拼接父名显示
-
-**Phase 2D：历史 + 分类 + 引导** ✅
-
-- [x] 答题历史抽屉面板（HistoryDrawer，无限滚动）
-- [x] 分类选择器（CategorySelector，Miller Columns 分栏浏览器 + 三态选中）
-- [x] 答题后登录引导（LoginPrompt）
-
-**Phase 2E：打磨 + 测试** ✅
-
-- [x] E2E 测试（认证、历史、分类）
-- [x] 边缘情况（401 处理、加载态、空状态、移动端适配）
+- [x] 共享 UI 组件（BaseDialog/BaseInput/BasePopover/ColumnSelector）
+- [x] App 认证系统（useUserStore + AuthDialog + UserDropdown）
+- [x] 后端新接口（user-profile、公开分类、题目筛选）+ 叶子节点约束（通识节点自动生命周期）
+- [x] 答题历史抽屉 + 分类选择器（Miller Columns 三态选中）+ 登录引导
+- [x] E2E 测试 + 边缘情况打磨
 
 ### Phase 3：数据分析（计划中）
 

@@ -11,8 +11,6 @@ Quiz Monorepo - 开发者技术问答应用，前后端分离架构：
 - **后端** (`apps/quiz-backend`): NestJS + Prisma 7 + MySQL
 - **UI 库** (`packages/ui`): 共享组件 + Storybook
 
-## 技术栈速查
-
 | 层级     | 技术                                        |
 | -------- | ------------------------------------------- |
 | 前端     | Vue 3 Composition API + Vite + Pinia        |
@@ -33,56 +31,18 @@ Quiz Monorepo - 开发者技术问答应用，前后端分离架构：
 
 ### 样式规范
 
-偏好使用 SCSS + UnoCSS `@apply` 指令：
+偏好 SCSS + UnoCSS `@apply` 指令，BEM 命名：
 
 ```scss
 .button {
   @apply flex items-center gap-2 px-4 py-2 rounded-lg;
-  @apply bg-primary text-white hover:bg-primary-600;
-
   &--disabled {
     @apply cursor-not-allowed opacity-50;
   }
 }
 ```
 
-**CSS 布局最佳实践**：
-
-- **全屏高度布局**：使用 flex 链式传递
-
-  ```scss
-  #app {
-    @apply min-h-screen flex flex-col;
-  }
-  main {
-    @apply flex-1 flex flex-col;
-  }
-  // 让子组件撑满 main
-  :deep(> *) {
-    @apply flex-1 flex flex-col;
-  }
-  ```
-
-- **Grid 布局**：精确控制行列比例
-
-  ```scss
-  .page {
-    @apply grid;
-    grid-template-rows: 1fr 2fr; // 标题 1/3，内容 2/3
-    grid-template-columns: 1fr;
-  }
-  .title {
-    place-self: center;
-  } // 水平垂直居中
-  .content {
-    align-self: start;
-  } // 顶对齐
-  ```
-
-- **视觉效果技巧**：
-  - 渐变文字：`background: linear-gradient(...)` + `-webkit-background-clip: text`
-  - 泛光效果：伪元素 + `radial-gradient` + `filter: blur(40-50px)`（GPU 加速）
-  - 深浅模式区分：浅色用 Tailwind 300 级，深色用 500 级，确保对比度
+布局要点：全屏高度用 flex 链式传递（`min-h-screen flex flex-col` → `flex-1`）；深浅模式色阶区分（浅色 300 级，深色 500 级）。
 
 ## 常用命令
 
@@ -98,16 +58,16 @@ pnpm run check        # 快速检查：lint + type-check + test:unit (~5s)
 pnpm run check:e2e    # 完整检查：包含 E2E 测试 (~5min)
 pnpm lint:fix         # 自动修复代码格式问题
 
-# 数据库管理（后端）
+# 数据库管理（后端目录下）
 pnpm -C apps/quiz-backend run migrate:deploy:dev   # 应用迁移到开发库
 pnpm -C apps/quiz-backend run migrate:status       # 查看所有环境迁移状态
-pnpm -C apps/quiz-backend run db:studio            # 打开数据库可视化工具
+pnpm -C apps/quiz-backend run db:studio            # 数据库可视化
 pnpm -C apps/quiz-backend run db:seed:dev          # 插入开发数据
 pnpm -C apps/quiz-backend run db:reset:test        # 重置测试数据
 
 # 测试
-pnpm test:unit              # 单元测试 (~345 tests, ~10s)
-pnpm test:unit:coverage     # 单元测试 + 覆盖率报告（按需）
+pnpm test:unit              # 单元测试 (~885 tests, ~10s)
+pnpm test:unit:coverage     # 单元测试 + 覆盖率报告
 pnpm test                   # 完整测试（包括 E2E，~5 分钟）
 ```
 
@@ -115,160 +75,38 @@ pnpm test                   # 完整测试（包括 E2E，~5 分钟）
 
 ## Prisma 7 特殊说明
 
-- **配置文件**：`apps/quiz-backend/prisma.config.ts`（不再在 schema.prisma 中配置 url）
-- **Placeholder URL**：配置使用 `process.env.DATABASE_URL ?? "placeholder"` 确保 `prisma generate` 不依赖真实数据库
-- **环境变量管理**：采用两层配置策略（见下文"环境变量文件"）
-- **迁移限制**：`prisma migrate dev` 需要 shadow database 权限，RDS 用户通常没有
-- **变通方案**：手动创建 migration SQL，使用 `prisma migrate deploy`（无需 shadow DB）
-
-### 环境变量文件
-
-采用**两层配置策略**，清晰分离团队共享配置和敏感信息：
-
-| 文件                     | 提交到仓库 | 用途                                 |
-| ------------------------ | ---------- | ------------------------------------ |
-| `.env.development`       | ✅ 是      | 开发环境共享配置（端口、环境变量等） |
-| `.env.test`              | ✅ 是      | 测试环境共享配置                     |
-| `.env.production`        | ✅ 是      | 生产环境共享配置                     |
-| `.env.development.local` | ❌ 否      | 开发环境敏感配置（数据库密码等）     |
-| `.env.test.local`        | ❌ 否      | 测试环境敏感配置                     |
-| `.env.production.local`  | ❌ 否      | 生产环境敏感配置                     |
-| `.env.create-db.local`   | ❌ 否      | 数据库初始化脚本配置                 |
-
-**配置分层原则**：
-
-- **非敏感配置**（PORT、NODE_ENV、ENABLE_TEST_ENDPOINT 等）放在 `.env.{environment}` 中，团队共享
-- **敏感配置**（DATABASE_PASSWORD、TEST_RESET_SECRET 等）放在 `.env.{environment}.local` 中，本地覆盖
-
-**新成员上手**：
-
-1. `git clone` 项目后，配置文件已包含团队默认设置
-2. 复制 `.env.{environment}.example` 到 `.env.{environment}.local`
-3. 填入真实数据库密码（从团队密码管理器获取）
-4. `pnpm dev` 直接启动 ✅
+- **配置文件**：`apps/quiz-backend/prisma.config.ts`（不在 schema.prisma 中配置 url）
+- **Placeholder URL**：`process.env.DATABASE_URL ?? "placeholder"` 确保 generate 不依赖真实数据库
+- **迁移限制**：`prisma migrate dev` 需 shadow DB 权限（RDS 无），手动写 SQL + `prisma migrate deploy`
+- **环境变量**：两层策略 — `.env.{env}` 提交到仓库（端口等），`.env.{env}.local` 不提交（数据库密码等）
+- **新成员上手**：clone → 复制 `.env.{env}.example` 到 `.env.{env}.local` → 填密码 → `pnpm dev`
 
 ## Git 规范
 
-### Commit 格式（Conventional Commits）
-
-```
-
-feat: 新功能
-fix: 修复 bug
-docs: 文档更新
-refactor: 重构
-test: 测试相关
-chore: 构建/工具变更
-
-```
-
-### Git Hooks
-
-- **pre-commit**: lint-staged（自动格式化暂存文件）
-- **pre-push**: type-check + test:unit（~1-2 分钟，不含 E2E）
-
-### 分支策略
-
-- 简单修改（文档、拼写）：直接 main
-- 功能/Bug/重构：创建 feature 分支 → PR
-
-## 项目结构
-
-```
-
-quiz-monorepo/
-├── apps/
-│ ├── quiz-app/ # 前端 (Vue 3)
-│ │ ├── src/
-│ │ │ ├── pages/ # 页面组件
-│ │ │ ├── api/ # API 调用
-│ │ │ └── stores/ # Pinia stores
-│ │ └── cypress/ # E2E 测试
-│ ├── quiz-admin/ # 管理后台 (Vue 3 + Element Plus)
-│ │ ├── src/
-│ │ │ ├── views/ # 页面（login/dashboard/users/admins/system）
-│ │ │ ├── api/mock/ # Mock API（account/users/admins）
-│ │ │ ├── stores/ # Pinia stores
-│ │ │ ├── router/ # 动态路由 + 权限
-│ │ │ └── styles/ # SCSS 主题 + Element Plus 覆盖
-│ └── quiz-backend/ # 后端 (NestJS)
-│ ├── src/
-│ │ ├── questions/ # 题目模块
-│ │ └── answers/ # 答案模块
-│ ├── prisma/
-│ │ ├── schema.prisma
-│ │ └── data/seed-test.json
-│ └── prisma.config.ts # Prisma 7 配置
-├── packages/ui/ # 共享 UI 库
-│ ├── src/components/
-│ │ ├── CheckRadio.vue
-│ │ └── CheckRadioGroup.vue
-│ └── .storybook/
-├── docs/                   # 文档
-│ ├── product.md            # 产品需求 + 路线图
-│ └── dev.md                # 技术架构 + AI 开发指南
-└── scripts/ # 工具脚本
-
-```
-
-## 常见问题
-
-### 端口占用
-
-```bash
-pnpm clean:ports  # 清理所有端口（dev + preview）
-```
-
-### Prisma Client 缺失
-
-```bash
-pnpm -C apps/quiz-backend run prisma:generate
-```
-
-### 依赖问题
-
-```bash
-pnpm install
-pnpm -C apps/quiz-backend run build  # 如需重新构建后端
-```
+- **Commit**：Conventional Commits（feat / fix / docs / refactor / test / chore）
+- **Hooks**：pre-commit lint-staged；pre-push type-check + test:unit
+- **分支**：简单修改直接 main，功能/Bug 创建 feature 分支 → PR
 
 ## 测试策略
 
 | 包           | 单元测试                         | E2E 测试                              |
 | ------------ | -------------------------------- | ------------------------------------- |
-| quiz-app     | Vitest (~88 tests)               | Cypress (6 spec, Mock API, ~33 tests) |
-| quiz-admin   | Vitest (~225 tests)              | Cypress (9 spec, 真实后端, ~65 tests) |
-| quiz-backend | Jest (~310 tests, 86~95% 覆盖率) | -                                     |
-| ui           | Vitest (~224 tests)              | Playwright (Storybook 交互, 10 story) |
+| quiz-app     | Vitest (~99 tests)               | Cypress (6 spec, Mock API, ~33 tests) |
+| quiz-admin   | Vitest (~231 tests)              | Cypress (9 spec, 真实后端, ~65 tests) |
+| quiz-backend | Jest (~331 tests, 86~95% 覆盖率) | -                                     |
+| ui           | Vitest (~224 tests)              | Playwright (Storybook, 10 story)      |
 
-**推荐日常使用**：`pnpm test:unit`（快速，~5 秒）
-**提交 PR 前**：`pnpm test`（完整，~5 分钟，包含 E2E）
+日常：`pnpm test:unit`（~5 秒）| PR 前：`pnpm test`（~5 分钟，含 E2E）
 
-## 数据库架构
+## 常见问题
 
-### Question（题目）
-
-- `stem`: 题干
-- `explanation`: 题目整体解析（可选）
-- `tags`: JSON 标签数组
-- `options`: 关联选项
-
-### Option（选项）
-
-- `text`: 选项文本
-- `isCorrect`: 是否正确答案
-- `description`: 选项解析（答题后展示，说明为什么对/错）
-
-## 答题流程
-
-1. 用户选择选项 → 前端提交 POST `/api/answers`
-2. 后端返回判定结果 + 所有选项的 description
-3. 前端展示：
-   - **答对**：绿色高亮 + 展示解析 + 1 秒后自动跳转
-   - **答错**：红色高亮 + 绿色正确答案 + 展示所有解析 + 手动点击下一题
+```bash
+pnpm clean:ports                              # 端口占用
+pnpm -C apps/quiz-backend run prisma:generate # Prisma Client 缺失
+pnpm install && pnpm -C apps/quiz-backend run build  # 依赖问题
+```
 
 ## 相关文档
 
-- [README.md](./README.md) - 快速上手
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图
 - [docs/dev.md](./docs/dev.md) - 技术架构 + 待实现功能详细计划

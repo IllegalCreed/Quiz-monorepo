@@ -24,6 +24,7 @@ const SENSITIVE_FIELDS = new Set([
 const SKIP_PATH_PREFIXES = [
   "/api/test",
   "/api/ws",
+  "/api/clients", // 客户端心跳和 SSE 连接，高频低价值，跳过日志
   "/admin/auth/login",
   "/api/user/auth/login",
   "/api/user/auth/register",

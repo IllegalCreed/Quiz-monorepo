@@ -12,5 +12,6 @@ export const permissionRoutesMapping: Record<string, string[]> = {
   roles: ["roles"],
   permissions: ["permissions"],
   "system-logs": ["system-logs"],
+  clients: ["clients"],
   system: ["settings"],
 };

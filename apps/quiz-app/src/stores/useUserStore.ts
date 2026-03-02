@@ -5,10 +5,11 @@
  * - 登录/注册成功后自动存储 token 和用户信息
  * - 应用启动时若有 token 则自动恢复用户信息
  */
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { defineStore } from "pinia";
 import { useLocalStorage } from "@vueuse/core";
 import * as authApi from "@/api/auth";
+import { useSse } from "@/composables/useSse";
 import type { LoginForm, RegisterForm, UserInfo } from "@/types/user";
 
 /** localStorage key（与 request.ts 中的 TOKEN_KEY 一致） */
@@ -34,6 +35,10 @@ export const useUserStore = defineStore("user", () => {
     const res = await authApi.login(form);
     token.value = res.token;
     userInfo.value = res.user;
+    // 等待 VueUse watch 将 token 写入 localStorage（flush: 'pre' 是异步的）
+    await nextTick();
+    // 登录后发送心跳，服务端从 JWT 提取用户信息
+    useSse().sendHeartbeat();
   }
 
   /**
@@ -46,14 +51,22 @@ export const useUserStore = defineStore("user", () => {
     const res = await authApi.register(form);
     token.value = res.token;
     userInfo.value = res.user;
+    // 等待 VueUse watch 将 token 写入 localStorage
+    await nextTick();
+    // 注册后发送心跳（等同登录）
+    useSse().sendHeartbeat();
   }
 
   /**
    * 退出登录
    */
-  function logout() {
+  async function logout() {
     token.value = "";
     userInfo.value = null;
+    // 等待 VueUse watch 将 token 清空写入 localStorage
+    await nextTick();
+    // 退出后发送心跳，服务端标记为游客
+    useSse().sendHeartbeat();
   }
 
   /**

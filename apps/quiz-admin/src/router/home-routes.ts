@@ -68,6 +68,12 @@ export const homeRoutes: RouteRecordRaw[] = [
     meta: { title: "系统日志", componentName: "SystemLogsView" },
   },
   {
+    path: "clients",
+    name: "clients",
+    component: () => import("@/views/clients/clients-view.vue"),
+    meta: { title: "客户端管理", componentName: "ClientsView" },
+  },
+  {
     path: "settings",
     name: "settings",
     component: () => import("@/views/system/settings-view.vue"),

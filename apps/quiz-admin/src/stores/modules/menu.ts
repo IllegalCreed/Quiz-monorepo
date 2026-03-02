@@ -59,6 +59,12 @@ const allMenus: MenuItem[] = [
     icon: "i-carbon-catalog",
   },
   {
+    index: "/home/clients",
+    name: "clients",
+    title: "客户端管理",
+    icon: "i-carbon-screen",
+  },
+  {
     index: "/home/settings",
     name: "system",
     title: "系统设置",
