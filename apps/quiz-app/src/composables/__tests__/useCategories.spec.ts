@@ -15,10 +15,16 @@ vi.mock("@/api/user-profile", () => ({
   updatePreferences: vi.fn(),
 }));
 
-import { useCategories, transformNode, transformGroups } from "../useCategories";
+import {
+  useCategories,
+  transformNode,
+  transformGroups,
+  collectLeafIds,
+  findLabelById,
+} from "../useCategories";
 import { fetchCategoryGroups } from "@/api/categories";
 import { fetchPreferences, updatePreferences } from "@/api/user-profile";
-import type { RawCategoryNode, RawCategoryGroup, UserPreference } from "@/types/category";
+import type { RawCategoryNode, RawCategoryGroup, UserPreference, CategoryNode } from "@/types/category";
 
 const mockFetchGroups = vi.mocked(fetchCategoryGroups);
 const mockFetchPrefs = vi.mocked(fetchPreferences);
@@ -149,6 +155,74 @@ describe("useCategories — 数据转换", () => {
       expect(result[0]!.name).toBe("技术方向");
       expect(result[0]!.categories[0]!.label).toBe("前端");
       expect(result[0]!.categories[0]!.children![0]!.label).toBe("Vue");
+    });
+  });
+
+  describe("collectLeafIds", () => {
+    it("收集所有叶子节点 ID", () => {
+      const nodes: CategoryNode[] = [
+        {
+          id: 1,
+          label: "前端",
+          children: [
+            { id: 11, label: "Vue" },
+            { id: 12, label: "React" },
+          ],
+        },
+        { id: 2, label: "后端" },
+      ];
+      expect(collectLeafIds(nodes)).toEqual([11, 12, 2]);
+    });
+
+    it("空数组返回空", () => {
+      expect(collectLeafIds([])).toEqual([]);
+    });
+
+    it("深层嵌套时只收集叶子", () => {
+      const nodes: CategoryNode[] = [
+        {
+          id: 1,
+          label: "根",
+          children: [
+            {
+              id: 2,
+              label: "中间",
+              children: [{ id: 3, label: "叶子" }],
+            },
+          ],
+        },
+      ];
+      expect(collectLeafIds(nodes)).toEqual([3]);
+    });
+  });
+
+  describe("findLabelById", () => {
+    const nodes: CategoryNode[] = [
+      {
+        id: 1,
+        label: "前端",
+        children: [
+          { id: 11, label: "Vue" },
+          { id: 12, label: "React" },
+        ],
+      },
+      { id: 2, label: "后端" },
+    ];
+
+    it("找到顶层节点", () => {
+      expect(findLabelById(nodes, 1)).toBe("前端");
+    });
+
+    it("找到嵌套子节点", () => {
+      expect(findLabelById(nodes, 11)).toBe("Vue");
+    });
+
+    it("找不到时返回 null", () => {
+      expect(findLabelById(nodes, 999)).toBeNull();
+    });
+
+    it("空数组返回 null", () => {
+      expect(findLabelById([], 1)).toBeNull();
     });
   });
 });
@@ -339,6 +413,96 @@ describe("useCategories — 选中管理", () => {
       mockFetchPrefs.mockResolvedValue([fakePref(11)]);
       await loadUserPreferences();
       expect(selectedIds.value).toEqual([11]);
+    });
+  });
+
+  describe("treeData 计算属性", () => {
+    it("将 groups 转换为 ColumnSelector 树数据", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, treeData } = useCategories();
+
+      await init();
+
+      // 顶层节点是维度名称
+      expect(treeData.value).toHaveLength(1);
+      expect(treeData.value[0]!.label).toBe("技术方向");
+      expect(treeData.value[0]!.children).toHaveLength(1);
+      expect(treeData.value[0]!.children![0]!.label).toBe("前端");
+    });
+  });
+
+  describe("selectedLabels 计算属性", () => {
+    it("返回选中分类的显示名称", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds, selectedLabels } = useCategories();
+
+      await init();
+      selectedIds.value = [11, 12];
+
+      expect(selectedLabels.value).toEqual(["Vue", "React"]);
+    });
+
+    it("选中不存在的 ID 时过滤掉", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds, selectedLabels } = useCategories();
+
+      await init();
+      selectedIds.value = [11, 9999];
+
+      expect(selectedLabels.value).toEqual(["Vue"]);
+    });
+
+    it("无选中时返回空数组", () => {
+      const { selectedLabels } = useCategories();
+      expect(selectedLabels.value).toEqual([]);
+    });
+  });
+
+  describe("removeById", () => {
+    it("移除指定 ID", () => {
+      const { selectedIds, removeById } = useCategories();
+      selectedIds.value = [11, 12, 99];
+
+      removeById(12);
+
+      expect(selectedIds.value).toEqual([11, 99]);
+    });
+
+    it("移除不存在的 ID 时不影响", () => {
+      const { selectedIds, removeById } = useCategories();
+      selectedIds.value = [11, 12];
+
+      removeById(999);
+
+      expect(selectedIds.value).toEqual([11, 12]);
+    });
+  });
+
+  describe("showSelector", () => {
+    it("默认为 false", () => {
+      const { showSelector } = useCategories();
+      expect(showSelector.value).toBe(false);
+    });
+
+    it("可以切换", () => {
+      const { showSelector } = useCategories();
+      showSelector.value = true;
+      expect(showSelector.value).toBe(true);
+      showSelector.value = false;
+      expect(showSelector.value).toBe(false);
+    });
+  });
+
+  describe("loadGuestPreferences 边界情况", () => {
+    it("localStorage 存储非法 JSON 时返回空数组", async () => {
+      localStorage.setItem("quiz-guest-categories", "not-json");
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds } = useCategories();
+
+      await init();
+
+      // 非法 JSON 解析失败，回退为空数组
+      expect(selectedIds.value).toEqual([]);
     });
   });
 });

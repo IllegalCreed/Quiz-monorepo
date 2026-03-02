@@ -9,6 +9,13 @@ vi.mock("@/stores/useMockStore", () => ({
   }),
 }));
 
+// mock useCategories（mock 模式下不使用，但需要满足 import）
+vi.mock("@/composables/useCategories", () => ({
+  useCategories: () => ({
+    selectedIds: { value: [] },
+  }),
+}));
+
 describe("useQuiz (mock mode)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -90,5 +97,95 @@ describe("useQuiz (mock mode)", () => {
     for (const opt of question.value!.options) {
       expect(opt.description).toBeTruthy();
     }
+  });
+
+  it("choose 返回正确结果对象", async () => {
+    const { loadNext, choose, question } = useQuiz();
+
+    await loadNext();
+    const correctId = question.value!.options[0]!.id;
+    const result = await choose(correctId);
+
+    expect(result).toEqual({
+      correct: true,
+      correctOptionId: correctId,
+      explanation: question.value!.explanation,
+    });
+  });
+
+  it("choose 答错返回错误结果", async () => {
+    const { loadNext, choose, question } = useQuiz();
+
+    await loadNext();
+    const wrongId = question.value!.options[1]!.id;
+    const result = await choose(wrongId);
+
+    expect(result).toEqual({
+      correct: false,
+      correctOptionId: question.value!.options[0]!.id,
+      explanation: question.value!.explanation,
+    });
+  });
+
+  it("choose 无题目时直接返回", async () => {
+    const { choose, selected } = useQuiz();
+
+    const result = await choose(1);
+
+    expect(result).toBeUndefined();
+    expect(selected.value).toBeNull();
+  });
+
+  it("loadNext 连续调用不会出错", async () => {
+    const { loadNext, question } = useQuiz();
+
+    // 连续调用两次 loadNext（mock 模式是同步的）
+    await loadNext();
+    const firstQuestion = question.value;
+
+    await loadNext();
+    // 两次都正常加载
+    expect(question.value).not.toBeNull();
+    expect(question.value).toEqual(firstQuestion);
+  });
+
+  it("explanation 计算属性", async () => {
+    const { loadNext, explanation } = useQuiz();
+
+    // 未加载时为 null
+    expect(explanation.value).toBeNull();
+
+    await loadNext();
+    expect(explanation.value).toBe("200 表示请求成功");
+  });
+
+  it("loadNext 重置 selected、correctOptionId、error", async () => {
+    const { loadNext, selected, correctOptionId, error, choose, question } = useQuiz();
+
+    await loadNext();
+    // 答题设置状态
+    await choose(question.value!.options[1]!.id);
+    expect(selected.value).not.toBeNull();
+    expect(correctOptionId.value).not.toBeNull();
+
+    // 重新加载后重置
+    await loadNext();
+    expect(selected.value).toBeNull();
+    expect(correctOptionId.value).toBeNull();
+    expect(error.value).toBeNull();
+  });
+
+  it("选项无 description 时 optionDescriptions 中不包含该选项", async () => {
+    const { loadNext, choose, optionDescriptions, question } = useQuiz();
+
+    await loadNext();
+    // 手动移除第一个选项的 description
+    question.value!.options[0]!.description = undefined;
+    await choose(question.value!.options[0]!.id);
+
+    // 第一个选项无 description，不应在 map 中
+    expect(optionDescriptions.value[1]).toBeUndefined();
+    // 第二个选项有 description
+    expect(optionDescriptions.value[2]).toBeTruthy();
   });
 });
