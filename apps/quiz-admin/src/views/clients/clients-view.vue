@@ -184,53 +184,37 @@ onUnmounted(() => {
 
     <!-- 统计卡片 -->
     <div class="stats-row">
-      <el-card shadow="never" class="stats-card">
-        <el-statistic title="在线总数" :value="stats.total">
-          <template #prefix>
-            <el-icon class="stats-card__icon stats-card__icon--total">
-              <i class="i-carbon-screen" />
-            </el-icon>
-          </template>
-        </el-statistic>
+      <el-card class="stats-card">
+        <div class="stats-card__content">
+          <i class="i-carbon-screen stats-card__icon stats-card__icon--total" />
+          <div class="stats-card__info">
+            <p class="stats-card__value">{{ stats.total }}</p>
+            <p class="stats-card__title">在线总数</p>
+          </div>
+        </div>
       </el-card>
-      <el-card shadow="never" class="stats-card">
-        <el-statistic title="已登录" :value="stats.loggedIn">
-          <template #prefix>
-            <el-icon class="stats-card__icon stats-card__icon--logged">
-              <i class="i-carbon-user" />
-            </el-icon>
-          </template>
-        </el-statistic>
+      <el-card class="stats-card">
+        <div class="stats-card__content">
+          <i class="i-carbon-user stats-card__icon stats-card__icon--logged" />
+          <div class="stats-card__info">
+            <p class="stats-card__value">{{ stats.loggedIn }}</p>
+            <p class="stats-card__title">已登录</p>
+          </div>
+        </div>
       </el-card>
-      <el-card shadow="never" class="stats-card">
-        <el-statistic title="游客" :value="stats.guest">
-          <template #prefix>
-            <el-icon class="stats-card__icon stats-card__icon--guest">
-              <i class="i-carbon-user-avatar" />
-            </el-icon>
-          </template>
-        </el-statistic>
+      <el-card class="stats-card">
+        <div class="stats-card__content">
+          <i class="i-carbon-user-avatar stats-card__icon stats-card__icon--guest" />
+          <div class="stats-card__info">
+            <p class="stats-card__value">{{ stats.guest }}</p>
+            <p class="stats-card__title">游客</p>
+          </div>
+        </div>
       </el-card>
-    </div>
-
-    <!-- 操作栏 -->
-    <div class="action-bar">
-      <div class="action-bar__left">
-        <el-button :icon="''" @click="handleRefresh" :loading="loading">
-          <i class="i-carbon-renew mr-1" />
-          刷新
-        </el-button>
-        <el-switch
-          v-model="autoRefresh"
-          active-text="自动刷新"
-          @change="toggleAutoRefresh"
-          class="action-bar__switch"
-        />
-      </div>
     </div>
 
     <!-- 广播面板 -->
-    <el-card shadow="never" class="broadcast-panel">
+    <el-card class="broadcast-panel">
       <template #header>
         <span class="broadcast-panel__title">广播推送</span>
       </template>
@@ -259,6 +243,22 @@ onUnmounted(() => {
         </el-button>
       </div>
     </el-card>
+
+    <!-- 操作栏（表格上方） -->
+    <div class="action-bar">
+      <div class="action-bar__left">
+        <el-button :icon="''" @click="handleRefresh" :loading="loading">
+          <i class="i-carbon-renew mr-1" />
+          刷新
+        </el-button>
+        <el-switch
+          v-model="autoRefresh"
+          active-text="自动刷新"
+          @change="toggleAutoRefresh"
+          class="action-bar__switch"
+        />
+      </div>
+    </div>
 
     <!-- 客户端表格 -->
     <el-table :data="clients" v-loading="loading" row-key="clientId">
@@ -314,8 +314,12 @@ onUnmounted(() => {
 }
 
 .stats-card {
+  &__content {
+    @apply flex items-center gap-4;
+  }
+
   &__icon {
-    @apply text-xl mr-1;
+    @apply w-10 h-10 inline-block;
 
     &--total {
       color: var(--el-color-primary);
@@ -328,6 +332,20 @@ onUnmounted(() => {
     &--guest {
       color: var(--el-color-info);
     }
+  }
+
+  &__info {
+    @apply flex-1;
+  }
+
+  &__value {
+    @apply text-2xl font-bold;
+    color: var(--el-text-color-primary);
+  }
+
+  &__title {
+    @apply text-sm mt-1;
+    color: var(--el-text-color-secondary);
   }
 }
 
