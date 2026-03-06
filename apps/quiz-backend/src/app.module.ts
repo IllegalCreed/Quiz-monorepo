@@ -16,6 +16,7 @@ import { AppUsersModule } from "./app-users/app-users.module";
 import { UserProfileModule } from "./user-profile/user-profile.module";
 import { SystemLogsModule } from "./system-logs/system-logs.module";
 import { ClientsModule } from "./clients/clients.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "./auth/guards/permission.guard";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
@@ -38,6 +39,7 @@ import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
     UserProfileModule,
     SystemLogsModule,
     ClientsModule,
+    DashboardModule,
     AnswersModule,
     TestModule,
   ],
