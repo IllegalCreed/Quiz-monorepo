@@ -24,7 +24,12 @@ import {
 } from "../useCategories";
 import { fetchCategoryGroups } from "@/api/categories";
 import { fetchPreferences, updatePreferences } from "@/api/user-profile";
-import type { RawCategoryNode, RawCategoryGroup, UserPreference, CategoryNode } from "@/types/category";
+import type {
+  RawCategoryNode,
+  RawCategoryGroup,
+  UserPreference,
+  CategoryNode,
+} from "@/types/category";
 
 const mockFetchGroups = vi.mocked(fetchCategoryGroups);
 const mockFetchPrefs = vi.mocked(fetchPreferences);

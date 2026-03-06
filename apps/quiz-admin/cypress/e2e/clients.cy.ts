@@ -77,9 +77,7 @@ describe("客户端管理", () => {
     cy.clearLocalStorage();
 
     // 拦截客户端列表 API → 返回 mock 数据
-    cy.intercept("GET", "**/api/admin/clients", MOCK_LIST_RESPONSE).as(
-      "getClients",
-    );
+    cy.intercept("GET", "**/api/admin/clients", MOCK_LIST_RESPONSE).as("getClients");
 
     // 拦截广播 API → 返回 mock 数据
     cy.intercept("POST", "**/api/admin/clients/broadcast", {

@@ -89,12 +89,12 @@ pnpm test                   # 完整测试（包括 E2E，~5 分钟）
 
 ## 测试策略
 
-| 包           | 单元测试                         | E2E 测试                              |
-| ------------ | -------------------------------- | ------------------------------------- |
-| quiz-app     | Vitest (~99 tests)               | Cypress (6 spec, Mock API, ~33 tests) |
-| quiz-admin   | Vitest (~231 tests)              | Cypress (9 spec, 真实后端, ~65 tests) |
-| quiz-backend | Jest (~331 tests, 86~95% 覆盖率) | -                                     |
-| ui           | Vitest (~224 tests)              | Playwright (Storybook, 10 story)      |
+| 包           | 单元测试                         | E2E 测试                                |
+| ------------ | -------------------------------- | --------------------------------------- |
+| quiz-app     | Vitest (~122 tests)              | Cypress (6 spec, Mock API, ~33 tests)   |
+| quiz-admin   | Vitest (~247 tests)              | Cypress (11 spec, 真实后端, ~129 tests) |
+| quiz-backend | Jest (~370 tests, 86~95% 覆盖率) | -                                       |
+| ui           | Vitest (~224 tests)              | Playwright (Storybook, 10 story)        |
 
 日常：`pnpm test:unit`（~5 秒）| PR 前：`pnpm test`（~5 分钟，含 E2E）
 
