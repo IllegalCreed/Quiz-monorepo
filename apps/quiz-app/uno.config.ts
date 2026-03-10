@@ -9,6 +9,7 @@ import {
   transformerVariantGroup,
 } from "unocss";
 import { FileSystemIconLoader } from "@iconify/utils/lib/loader/node-loaders";
+import { icons as carbonIcons } from "@iconify-json/carbon";
 
 export default defineConfig({
   // 扫描 UI 库源码，自动检测使用的工具类
@@ -46,6 +47,7 @@ export default defineConfig({
       warn: true,
       // 同时支持自定义图标
       collections: {
+        carbon: () => carbonIcons,
         custom: FileSystemIconLoader("./src/assets/icons"),
       },
     }),

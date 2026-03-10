@@ -212,17 +212,46 @@ src/
 2. ~~用户管理~~ ✅ — 后端 `user-auth` + `app-users`，前端列表+详情
 3. ~~系统日志~~ ✅ — LoggingInterceptor 全局拦截 + 登录日志 + 管理端筛选视图
 4. ~~SSE 客户端管理~~ ✅ — 后端 clients 模块 + quiz-app useSse + quiz-admin 管理页
+5. ~~Dashboard 数据可视化~~ ✅ — 后端聚合接口 + Chart.js 图表（答题趋势/分类分布/正确率排名）
+6. ~~生产部署~~ ✅ — Nginx HTTPS 反向代理 + PM2 + 一键部署脚本 + GA4 流量统计
+7. ~~生产安全加固~~ ✅ — 登录页隐藏测试账号 + JWT 环境变量修复 + 游客引导弹窗优化
+
+---
+
+## 生产环境部署
+
+### 架构
+
+```
+                        ┌─ quiz.illegalscreed.cn ──────→ /var/www/quiz-app/dist (静态)
+用户 → Nginx (HTTPS) ──┤─ quiz-admin.illegalscreed.cn → /var/www/quiz-admin/dist (静态)
+                        └─ quiz-api.illegalscreed.cn ──→ 127.0.0.1:10020 (PM2 + NestJS)
+```
+
+### 关键配置
+
+- **HTTPS**：Let's Encrypt 证书（Certbot 自动续期）
+- **PM2**：`/root/server/quiz-backend/ecosystem.config.js`（环境变量直接写在 env 块中，避免 NestJS 模块初始化时 `process.env` 为空的问题）
+- **部署脚本**：`scripts/deploy.sh [app|admin|backend|all]` — 本地构建 → scp 上传 → 远程安装/迁移/重启
+- **SPA 路由**：Nginx `try_files $uri $uri/ /index.html` 支持客户端路由
+
+### 生产环境踩坑记录
+
+**JWT 401 问题**：`JwtModule.register({ secret: process.env.JWT_SECRET })` 在 NestJS 模块加载时执行，早于 `main.ts` 的 `dotenv.config()`，导致 secret 为 `undefined`。解决方案：将所有环境变量写入 PM2 的 `ecosystem.config.js` env 块。
+
+**UnoCSS 图标生产构建不加载**：pnpm 严格依赖隔离下 `presetIcons` 自动发现机制失效。解决方案：在 `uno.config.ts` 中显式导入 `import { icons as carbonIcons } from "@iconify-json/carbon"` 并传入 `collections: { carbon: () => carbonIcons }`。参考 [unocss#2905](https://github.com/unocss/unocss/issues/2905)。
 
 ---
 
 ## 待实现功能
 
-### 管理后台增强
+### 商业化 + 增强
 
+- **百度统计**：国内流量统计接入
+- **广告接入**：Carbon Ads / Google AdSense（需流量达标）
 - **批量导入题目**：JSON 文件上传，复用 `seed-test.json` 数据结构
+- **个人学习报告**：正确率、弱项分析
 - **题目预览**：管理后台预览题目样式，对齐 quiz-app 风格
-- **Dashboard 真实统计**：替换静态内容，展示题目/答题/用户实时统计
-- **历史页签右键菜单**：关闭全部/关闭其他
 
 ---
 
@@ -235,8 +264,10 @@ src/
 5. ~~App 历史 + 分类 + E2E~~ ✅
 6. ~~系统日志~~ ✅
 7. ~~SSE 客户端管理~~ ✅
-8. **管理后台增强**（Dashboard 统计、批量导入等） ← 下一阶段
+8. ~~Dashboard 数据可视化~~ ✅
+9. ~~生产部署 + 安全加固 + GA4~~ ✅
+10. **商业化 + 增强**（广告接入、百度统计、批量导入等） ← 下一阶段
 
 ---
 
-_最后更新: 2026-03-02_
+_最后更新: 2026-03-10_

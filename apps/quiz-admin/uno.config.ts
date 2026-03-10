@@ -11,6 +11,7 @@ import {
   transformerDirectives,
   transformerVariantGroup,
 } from "unocss";
+import { icons as carbonIcons } from "@iconify-json/carbon";
 
 export default defineConfig({
   content: {
@@ -55,7 +56,11 @@ export default defineConfig({
   ],
   presets: [
     presetWind4(),
-    presetIcons({ scale: 1.2, warn: true }),
+    presetIcons({
+      scale: 1.2,
+      warn: true,
+      collections: { carbon: () => carbonIcons },
+    }),
     presetTypography(),
     presetWebFonts({ fonts: { sans: "Inter:400,600,700" } }),
   ],

@@ -17,6 +17,9 @@ const route = useRoute();
 const accountStore = useAccountStore();
 const { setToken } = useToken();
 
+/** 是否开发环境（生产环境隐藏测试账号） */
+const isDev = import.meta.env.DEV;
+
 /** 深浅色模式 */
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
@@ -126,8 +129,8 @@ const handleLogin = async () => {
         </el-form-item>
       </el-form>
 
-      <!-- 测试账号提示 -->
-      <div class="test-accounts">
+      <!-- 测试账号提示（仅开发环境显示，生产环境隐藏） -->
+      <div v-if="isDev" class="test-accounts">
         <p class="test-title">测试账号:</p>
         <p class="test-item">超级管理员: super_admin / super_admin</p>
         <p class="test-item">普通管理员: admin / admin</p>

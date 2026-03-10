@@ -106,6 +106,28 @@ pnpm -C apps/quiz-backend run prisma:generate # Prisma Client 缺失
 pnpm install && pnpm -C apps/quiz-backend run build  # 依赖问题
 ```
 
+### UnoCSS 图标生产构建不加载
+
+**现象**：开发环境图标正常，生产构建后所有 `i-carbon-*` 图标不显示，构建日志出现 `[unocss] failed to load icon "carbon-*"`。
+
+**原因**：pnpm 严格依赖隔离下，UnoCSS `presetIcons` 的自动发现机制无法找到 `@iconify-json/carbon` 包（即使已安装）。这是 pnpm monorepo 的已知问题（[unocss#2905](https://github.com/unocss/unocss/issues/2905)）。
+
+**解决方案**：在 `uno.config.ts` 中显式导入并传入图标集合，不依赖自动发现：
+
+```ts
+import { icons as carbonIcons } from "@iconify-json/carbon";
+
+presetIcons({
+  scale: 1.2,
+  warn: true,
+  collections: {
+    carbon: () => carbonIcons,
+  },
+}),
+```
+
+> **注意**：`.npmrc` 中的 `public-hoist-pattern[]=@iconify-json/*` 不足以解决此问题，必须显式导入。
+
 ## 相关文档
 
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图

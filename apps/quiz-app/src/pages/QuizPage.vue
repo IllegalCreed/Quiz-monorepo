@@ -45,8 +45,8 @@
           <BaseButton @click="loadNext">下一题</BaseButton>
         </div>
 
-        <!-- 游客答题后登录引导 -->
-        <LoginPrompt v-if="status !== 'idle'" />
+        <!-- 游客答错后登录引导弹窗 -->
+        <LoginPrompt :status="status" />
       </template>
       <!-- 加载题目失败时的错误提示（在外层显示） -->
       <div v-else-if="error" class="error">{{ error }}</div>

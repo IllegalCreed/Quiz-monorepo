@@ -1,14 +1,20 @@
 <script setup lang="ts">
 /**
- * LoginPrompt — 游客答题后登录引导卡片
+ * LoginPrompt — 游客答错后登录引导弹窗
  *
- * 仅在未登录 + 答题后显示，可永久关闭
+ * 使用 BaseDialog 居中弹窗，仅在未登录 + 答错时显示
+ * 用户可选择"不再提示"永久关闭
  */
-import { computed } from "vue";
+import { ref, watch } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import { BaseCard, BaseCardContent, BaseButton } from "@quiz/ui";
+import { BaseDialog, BaseButton } from "@quiz/ui";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthDialog } from "@/composables/useAuthDialog";
+
+const props = defineProps<{
+  /** 当前答题状态 */
+  status: "idle" | "correct" | "wrong" | "answered";
+}>();
 
 /** 用户是否已关闭提示（持久化） */
 const dismissed = useLocalStorage("quiz-hide-login-prompt", false);
@@ -16,44 +22,59 @@ const dismissed = useLocalStorage("quiz-hide-login-prompt", false);
 const userStore = useUserStore();
 const { openLogin } = useAuthDialog();
 
-/** 是否显示（未登录 + 未关闭） */
-const visible = computed(() => !userStore.isLoggedIn && !dismissed.value);
+/** 弹窗显示状态 */
+const dialogVisible = ref(false);
 
-/** 永久关闭 */
-function dismiss() {
+/** 监听 status 变化：仅答错时弹出 */
+watch(
+  () => props.status,
+  (val) => {
+    if (val === "wrong" && !userStore.isLoggedIn && !dismissed.value) {
+      dialogVisible.value = true;
+    }
+  },
+);
+
+/** 点击登录 */
+function handleLogin() {
+  dialogVisible.value = false;
+  openLogin();
+}
+
+/** 永久关闭（不再提示） */
+function handleDismiss() {
   dismissed.value = true;
+  dialogVisible.value = false;
 }
 </script>
 
 <template>
-  <BaseCard v-if="visible" class="login-prompt">
-    <BaseCardContent>
-      <div class="login-prompt__content">
-        <p class="login-prompt__text">登录后可以记录做题历史和设置分类偏好</p>
-        <div class="login-prompt__actions">
-          <BaseButton size="sm" @click="openLogin">登录</BaseButton>
-          <BaseButton size="sm" variant="ghost" @click="dismiss">不再提示</BaseButton>
-        </div>
+  <BaseDialog v-model="dialogVisible" title="登录提示" placement="center" width="22rem">
+    <div class="login-prompt__content">
+      <p class="login-prompt__text">登录后可以记录做题历史和设置分类偏好</p>
+    </div>
+    <template #footer>
+      <div class="login-prompt__actions">
+        <BaseButton size="sm" variant="ghost" @click="handleDismiss">不再提示</BaseButton>
+        <BaseButton size="sm" @click="handleLogin">去登录</BaseButton>
       </div>
-    </BaseCardContent>
-  </BaseCard>
+    </template>
+  </BaseDialog>
 </template>
 
 <style scoped lang="scss">
 .login-prompt {
-  @apply w-full;
-
   &__content {
-    @apply flex flex-col items-center gap-3;
+    @apply flex flex-col items-center;
   }
 
   &__text {
-    @apply m-0 text-sm text-center;
+    @apply m-0 text-sm text-center leading-relaxed;
     color: var(--quiz-ui-muted);
   }
 
   &__actions {
-    @apply flex gap-2;
+    @apply flex justify-end gap-2 w-full;
   }
 }
 </style>
