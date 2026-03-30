@@ -128,6 +128,34 @@ presetIcons({
 
 > **注意**：`.npmrc` 中的 `public-hoist-pattern[]=@iconify-json/*` 不足以解决此问题，必须显式导入。
 
+## 内容审查规范
+
+本项目涉及跨仓库内容生产（VitePress 笔记、Slidev 幻灯片、Quiz 题目），审查/对比第三方库官方文档时必须遵循以下流程：
+
+### 审查流程
+
+1. **WebFetch 首页** → 获取官方文档的完整站点导航（所有页面链接）
+2. **逐页 WebFetch** → 全部页面过一遍（通常 3-8 页），获取完整的一手信息
+3. **context7 补充** → 适合快速查核心用法，但边缘页面（troubleshoot、migration）可能缺失，不能替代逐页浏览
+4. **本地验证** → 在项目中实际检查（`ls`、`cat` 关键文件），确认当前版本的真实行为
+5. **交叉比对后再动手** → 只有一手文档 + 本地验证都支持的情况下，才能判定现有内容有误
+
+### 禁止事项
+
+- **禁止把"文档摘要未提及"等同于"该特性已废弃"**
+- **禁止在未经本地验证的情况下修改用户已有的正确内容**
+- **禁止仅凭 context7 或 AI 总结就下"过时"结论**
+
+### 跨仓库工作目录
+
+统一在本仓库（quiz-monorepo）对话，跨目录操作其他项目：
+
+| 项目           | 路径                                            |
+| -------------- | ----------------------------------------------- |
+| VitePress 笔记 | `/Users/zhangxu/workspace/IllegalCreedWebsite/` |
+| Slidev 幻灯片  | `/Users/zhangxu/workspace/SlideStack/`          |
+| Quiz 题目      | 本仓库 `apps/quiz-backend/prisma/content/`      |
+
 ## 相关文档
 
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图
