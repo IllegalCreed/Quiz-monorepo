@@ -1,5 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { UnauthorizedException } from "@nestjs/common";
+import { UnauthorizedException, BadRequestException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { AuthService } from "../auth.service";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -190,17 +190,17 @@ describe("AuthService", () => {
       expect(result.admin.apiPermissions).toEqual(["users:*"]);
     });
 
-    it("不存在的用户名应该抛出 UnauthorizedException", async () => {
+    it("不存在的用户名应该抛出 BadRequestException", async () => {
       // Arrange
       jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(null);
 
       // Act & Assert
       await expect(
         service.login({ username: "nonexistent", password: "password" }),
-      ).rejects.toThrow("账号或密码错误");
+      ).rejects.toThrow(new BadRequestException("账号或密码错误"));
     });
 
-    it("错误的密码应该抛出 UnauthorizedException", async () => {
+    it("错误的密码应该抛出 BadRequestException", async () => {
       // Arrange
       jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockSuperAdmin);
       mockBcryptCompare.mockResolvedValue(false as never);
@@ -208,7 +208,7 @@ describe("AuthService", () => {
       // Act & Assert
       await expect(
         service.login({ username: "super_admin", password: "wrong_password" }),
-      ).rejects.toThrow("账号或密码错误");
+      ).rejects.toThrow(new BadRequestException("账号或密码错误"));
     });
 
     it("被禁用的账号应该抛出 ForbiddenException", async () => {

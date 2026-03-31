@@ -88,9 +88,8 @@ export const request = async <T = unknown>(url: string, config: RequestConfig = 
 
     // 处理 HTTP 错误状态
     if (!response.ok) {
-      // 401 未授权：仅在需要鉴权的接口上触发全局弹窗
-      // skipAuth 的接口（如登录）密码错误也会返回 401，不应弹窗
-      if (response.status === 401 && !skipAuth) {
+      // 401 未授权：触发全局弹窗，询问是否重新登录
+      if (response.status === 401) {
         handle401(result.message || "登录已过期，请重新登录");
       }
       throw new Error(result.message || `请求失败: ${response.status}`);

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  BadRequestException,
   UnauthorizedException,
   ForbiddenException,
 } from "@nestjs/common";
@@ -39,14 +40,14 @@ export class AuthService {
 
     if (!admin) {
       this._logLogin(false, username, undefined, ip, "账号或密码错误");
-      throw new UnauthorizedException("账号或密码错误");
+      throw new BadRequestException("账号或密码错误");
     }
 
     // 2. 验证密码
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
       this._logLogin(false, username, admin.id, ip, "账号或密码错误");
-      throw new UnauthorizedException("账号或密码错误");
+      throw new BadRequestException("账号或密码错误");
     }
 
     // 3. 检查账号状态
