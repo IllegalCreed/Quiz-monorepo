@@ -8,6 +8,11 @@
  *   - CategoryGroup：分类维度（技术方向 / 难度）
  *   - CategoryNode：递归树节点，children 为空时为叶子节点
  *   - Quiz 只关联叶子节点（isLeaf 隐式由 children 为空决定）
+ *
+ * 重构原则（2026-03-31）：
+ *   - 具名工具/库：各自独立成为叶子节点（如 React、Vue、Vite、Husky）
+ *   - 技术概念（非具名工具）：保持不变（如 性能优化、浏览器渲染原理）
+ *   - 已是单工具节点：保持不变（如 Git、Docker、Rust）
  */
 
 export interface CategoryNode {
@@ -37,6 +42,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
     name: "技术方向",
     sort: 1,
     categories: [
+      // ----- 1. Web基础知识 -----
       {
         name: "Web基础知识",
         sort: 1,
@@ -66,7 +72,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
                 name: "网络协议",
                 sort: 2,
                 children: [
-                  { name: "网络层及以下（ICMP / ARP / DNS）", sort: 1 },
+                  {
+                    name: "网络层及以下（ICMP / ARP / DNS）",
+                    sort: 1,
+                  },
                   {
                     name: "应用层（HTTP/HTTPS / WebSocket / SSL/TLS）",
                     sort: 2,
@@ -90,6 +99,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           },
         ],
       },
+
+      // ----- 2. Web进阶知识 -----
       {
         name: "Web进阶知识",
         sort: 2,
@@ -101,8 +112,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Markdown", sort: 1 },
               { name: "TypeScript", sort: 2 },
               {
-                name: "CSS预处理（Sass / Less / PostCSS / Tailwind CSS / UnoCSS）",
+                name: "CSS预处理",
                 sort: 3,
+                children: [
+                  { name: "Sass", sort: 1 },
+                  { name: "Less", sort: 2 },
+                  { name: "PostCSS", sort: 3 },
+                  { name: "Tailwind CSS", sort: 4 },
+                  { name: "UnoCSS", sort: 5 },
+                ],
               },
               { name: "JSON", sort: 4 },
               { name: "YAML", sort: 5 },
@@ -132,83 +150,226 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
                 name: "系统级（Homebrew / apt-get / yum / Chocolatey）",
                 sort: 1,
               },
-              { name: "框架级（pnpm / NPM / pip3 / Cargo）", sort: 2 },
+              {
+                name: "框架级",
+                sort: 2,
+                children: [
+                  { name: "pnpm", sort: 1 },
+                  { name: "NPM", sort: 2 },
+                  { name: "pip3", sort: 3 },
+                  { name: "Cargo", sort: 4 },
+                ],
+              },
             ],
           },
           {
-            name: "JS扩展库（Lodash-es / Day.js / uuid / axios / i18next / crypto.js）",
+            name: "JS扩展库",
             sort: 5,
+            children: [
+              { name: "Lodash-es", sort: 1 },
+              { name: "Day.js", sort: 2 },
+              { name: "axios", sort: 3 },
+              { name: "i18next", sort: 4 },
+              { name: "crypto.js", sort: 5 },
+            ],
           },
         ],
       },
+
+      // ----- 3. 前端框架 -----
       {
         name: "前端框架",
         sort: 3,
         children: [
           {
-            name: "UI框架（React / Vue / Angular / Solid / Svelte / Preact）",
+            name: "UI框架",
             sort: 1,
+            children: [
+              { name: "React", sort: 1 },
+              { name: "Vue", sort: 2 },
+              { name: "Angular", sort: 3 },
+              { name: "Solid", sort: 4 },
+              { name: "Svelte", sort: 5 },
+              { name: "Preact", sort: 6 },
+            ],
           },
           {
-            name: "元框架（Next.js / Nuxt.js / Astro / Qwik / Remix / SolidStart / SvelteKit）",
+            name: "元框架",
             sort: 2,
+            children: [
+              { name: "Next.js", sort: 1 },
+              { name: "Nuxt.js", sort: 2 },
+              { name: "Astro", sort: 3 },
+              { name: "Qwik", sort: 4 },
+              { name: "Remix", sort: 5 },
+              { name: "SolidStart", sort: 6 },
+              { name: "SvelteKit", sort: 7 },
+            ],
           },
-          { name: "静态网站框架（Docusaurus / VitePress / Slidev）", sort: 3 },
           {
-            name: "组件库（Element Plus / Vuetify / Vant UI / Ant Design / Nuxt UI / shadcn）",
+            name: "静态网站框架",
+            sort: 3,
+            children: [
+              { name: "Docusaurus", sort: 1 },
+              { name: "VitePress", sort: 2 },
+              { name: "Slidev", sort: 3 },
+            ],
+          },
+          {
+            name: "组件库",
             sort: 4,
+            children: [
+              { name: "Element Plus", sort: 1 },
+              { name: "Vuetify", sort: 2 },
+              { name: "Vant UI", sort: 3 },
+              { name: "Ant Design", sort: 4 },
+              { name: "Nuxt UI", sort: 5 },
+              { name: "shadcn", sort: 6 },
+            ],
           },
-          { name: "状态库（Pinia / Zustand / Redux）", sort: 5 },
           {
-            name: "路由库（Vue Router / React Router / React Navigation）",
+            name: "状态库",
+            sort: 5,
+            children: [
+              { name: "Pinia", sort: 1 },
+              { name: "Zustand", sort: 2 },
+              { name: "Redux", sort: 3 },
+            ],
+          },
+          {
+            name: "路由库",
             sort: 6,
+            children: [
+              { name: "Vue Router", sort: 1 },
+              { name: "React Router", sort: 2 },
+              { name: "React Navigation", sort: 3 },
+            ],
           },
           {
-            name: "复用库（VueUse / VueHooks Plus / Ahooks / React Use）",
+            name: "复用库",
             sort: 7,
+            children: [
+              { name: "VueUse", sort: 1 },
+              { name: "Ahooks", sort: 2 },
+            ],
           },
           {
-            name: "其他（Iconify / Shiki / Markdown-it / TanStack Query / Vee-validate / Vue-i18n）",
+            name: "其他",
             sort: 8,
+            children: [
+              { name: "Iconify", sort: 1 },
+              { name: "Shiki", sort: 2 },
+              { name: "TanStack Query", sort: 3 },
+              { name: "Vee-validate", sort: 4 },
+              { name: "Vue-i18n", sort: 5 },
+            ],
           },
         ],
       },
+
+      // ----- 4. 前端基础工具链 -----
       {
         name: "前端基础工具链",
         sort: 4,
         children: [
-          { name: "构建工具（Vite / Webpack / Turbopack）", sort: 1 },
-          { name: "编译器（Babel / SWC / tsc）", sort: 2 },
-          { name: "打包工具（esBuild / rollup / rolldown / rspack）", sort: 3 },
+          {
+            name: "构建工具",
+            sort: 1,
+            children: [
+              { name: "Vite", sort: 1 },
+              { name: "Webpack", sort: 2 },
+              { name: "Turbopack", sort: 3 },
+            ],
+          },
+          {
+            name: "编译器",
+            sort: 2,
+            children: [
+              { name: "Babel", sort: 1 },
+              { name: "SWC", sort: 2 },
+              { name: "tsc", sort: 3 },
+            ],
+          },
+          {
+            name: "打包工具",
+            sort: 3,
+            children: [
+              { name: "esBuild", sort: 1 },
+              { name: "rollup", sort: 2 },
+              { name: "rolldown", sort: 3 },
+              { name: "rspack", sort: 4 },
+            ],
+          },
           { name: "开发服务器（Live Server / BrowserSync）", sort: 4 },
         ],
       },
+
+      // ----- 5. 前端开发工具 -----
       {
         name: "前端开发工具",
         sort: 5,
         children: [
-          { name: "IDE（VScode / WebStorm）", sort: 1 },
+          {
+            name: "IDE",
+            sort: 1,
+            children: [
+              { name: "VSCode", sort: 1 },
+              { name: "WebStorm", sort: 2 },
+            ],
+          },
           { name: "版本控制（Git）", sort: 2 },
           {
-            name: "静态分析工具（ESLint / Prettier / Biome / StyleLint / EditorConfig）",
+            name: "静态分析工具",
             sort: 3,
+            children: [
+              { name: "ESLint", sort: 1 },
+              { name: "Prettier", sort: 2 },
+              { name: "Biome", sort: 3 },
+              { name: "StyleLint", sort: 4 },
+              { name: "EditorConfig", sort: 5 },
+            ],
           },
           { name: "在线编辑器（StackBlitz / CodeSandbox / Expo）", sort: 4 },
-          { name: "文档生成器（JSdoc / TypeDoc / TSDoc / SassDoc）", sort: 5 },
+          {
+            name: "文档生成器",
+            sort: 5,
+            children: [
+              { name: "JSDoc", sort: 1 },
+              { name: "TypeDoc", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 6. 前端测试 -----
       {
         name: "前端测试",
         sort: 6,
         children: [
           {
-            name: "单元测试（Jest / Vitest / VueTestUtils / Axios Mock Adapter / MSW / Testing Library / Vue Router Mock）",
+            name: "单元测试",
             sort: 1,
+            children: [
+              { name: "Jest", sort: 1 },
+              { name: "Vitest", sort: 2 },
+              { name: "Vue Test Utils", sort: 3 },
+              { name: "MSW", sort: 4 },
+              { name: "Testing Library", sort: 5 },
+            ],
           },
-          { name: "端到端测试（Cypress / Playwright）", sort: 2 },
+          {
+            name: "端到端测试",
+            sort: 2,
+            children: [
+              { name: "Cypress", sort: 1 },
+              { name: "Playwright", sort: 2 },
+            ],
+          },
           { name: "其他工具（Mailtrap）", sort: 3 },
         ],
       },
+
+      // ----- 7. 前端优化 -----
       {
         name: "前端优化",
         sort: 7,
@@ -230,6 +391,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           { name: "搜索引擎优化", sort: 6 },
         ],
       },
+
+      // ----- 8. 前端架构设计 -----
       {
         name: "前端架构设计",
         sort: 8,
@@ -257,55 +420,124 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "组件设计（组件分类 / 设计原则 / Storybook / Styleguidist）",
             sort: 2,
           },
-          { name: "微前端框架（qiankun / single spa）", sort: 3 },
+          {
+            name: "微前端框架",
+            sort: 3,
+            children: [
+              { name: "qiankun", sort: 1 },
+              { name: "single-spa", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 9. 移动/桌面开发 -----
       {
         name: "移动/桌面开发",
         sort: 9,
         children: [
           {
-            name: "移动端框架（React Native / Flutter / 微信小程序 / Uniapp / Ionic）",
+            name: "移动端框架",
             sort: 1,
+            children: [
+              { name: "React Native", sort: 1 },
+              { name: "Flutter", sort: 2 },
+              { name: "微信小程序", sort: 3 },
+              { name: "Uniapp", sort: 4 },
+              { name: "Ionic", sort: 5 },
+            ],
           },
-          { name: "桌面端框架（Electron / Tauri）", sort: 2 },
+          {
+            name: "桌面端框架",
+            sort: 2,
+            children: [
+              { name: "Electron", sort: 1 },
+              { name: "Tauri", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 10. 前端可视化 -----
       {
         name: "前端可视化",
         sort: 10,
         children: [
           {
-            name: "图表（ECharts / D3.js / Chart.js / Recharts / leaflet / Mermaid / KaTeX）",
+            name: "图表",
             sort: 1,
+            children: [
+              { name: "ECharts", sort: 1 },
+              { name: "D3.js", sort: 2 },
+              { name: "Chart.js", sort: 3 },
+              { name: "Mermaid", sort: 4 },
+            ],
           },
           {
-            name: "三维（WebGL / Three.js / Babylon / CesiumJS / ArcGIS API for JavaScript）",
+            name: "三维",
             sort: 2,
+            children: [
+              { name: "WebGL", sort: 1 },
+              { name: "Three.js", sort: 2 },
+              { name: "Babylon.js", sort: 3 },
+              { name: "CesiumJS", sort: 4 },
+            ],
           },
           {
-            name: "动画（Lottie / Popmotion / Framer Motion / GSAP / Anime.js / Animate.css）",
+            name: "动画",
             sort: 3,
+            children: [
+              { name: "GSAP", sort: 1 },
+              { name: "Framer Motion", sort: 2 },
+              { name: "Lottie", sort: 3 },
+            ],
           },
           {
-            name: "拖拽（Grid Layout Plus / Vue Draggable Plus / React DnD / Interact.js / Sortable.js / Draggable.js / Hammer.js / @use-gesture）",
+            name: "拖拽",
             sort: 4,
+            children: [{ name: "Sortable.js", sort: 1 }],
           },
         ],
       },
+
+      // ----- 11. 工程化与自动化 -----
       {
         name: "工程化与自动化",
         sort: 11,
         children: [
           {
-            name: "DevOps（GitHub Actions / GitLab CI/CD / Jenkins / Husky / lint-staged）",
+            name: "DevOps",
             sort: 1,
+            children: [
+              { name: "GitHub Actions", sort: 1 },
+              { name: "GitLab CI/CD", sort: 2 },
+              { name: "Jenkins", sort: 3 },
+              { name: "Husky", sort: 4 },
+              { name: "lint-staged", sort: 5 },
+            ],
           },
-          { name: "依赖管理器（Pnpm / Yarn / Bit）", sort: 2 },
+          {
+            name: "依赖管理器",
+            sort: 2,
+            children: [
+              { name: "pnpm（工程）", sort: 1 },
+              { name: "Yarn", sort: 2 },
+              { name: "Bit", sort: 3 },
+            ],
+          },
           { name: "容器（Docker）", sort: 3 },
-          { name: "Monorepo（Lerna / Turborepo）", sort: 4 },
+          {
+            name: "Monorepo",
+            sort: 4,
+            children: [
+              { name: "Lerna", sort: 1 },
+              { name: "Turborepo", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 12. 安全 -----
       {
         name: "安全",
         sort: 12,
@@ -318,37 +550,85 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "加密（对称加密和非对称加密 / 公钥基础设施 / Crypto.js / Web Crypto API）",
             sort: 2,
           },
-          { name: "认证与授权（OAuth 2.0 / JWT / SAML / 哈希算法）", sort: 3 },
           {
-            name: "安全框架（OWASP / Helmet.js / CORS / HTTP安全头）",
+            name: "认证与授权",
+            sort: 3,
+            children: [
+              { name: "OAuth 2.0", sort: 1 },
+              { name: "JWT", sort: 2 },
+              { name: "SAML", sort: 3 },
+            ],
+          },
+          {
+            name: "安全框架",
             sort: 4,
+            children: [{ name: "Helmet.js", sort: 1 }],
           },
           { name: "漏洞扫描（ZAP / Burp Suite / Nessus / Nmap）", sort: 5 },
         ],
       },
+
+      // ----- 13. 云服务 -----
       {
         name: "云服务",
         sort: 13,
         children: [
           {
-            name: "静态网站托管（Netlify / Vercel / Cloudflare Pages / AWS Amplify / Render）",
+            name: "静态网站托管",
             sort: 1,
+            children: [
+              { name: "Netlify", sort: 1 },
+              { name: "Vercel", sort: 2 },
+              { name: "Cloudflare Pages", sort: 3 },
+            ],
           },
           {
-            name: "通用云服务（阿里云 / Firebase / Azure / Netlify / Vercel / Cloudflare / AWS）",
+            name: "通用云服务",
             sort: 2,
+            children: [
+              { name: "阿里云", sort: 1 },
+              { name: "Firebase", sort: 2 },
+              { name: "AWS", sort: 3 },
+            ],
           },
         ],
       },
+
+      // ----- 14. 后端框架 -----
       {
         name: "后端框架",
         sort: 14,
         children: [
-          { name: "基础框架（Node.js / Deno / Bun）", sort: 1 },
-          { name: "应用框架（Express / Fastify / Hono）", sort: 2 },
-          { name: "ORM框架（TypeORM / Prisma）", sort: 3 },
+          {
+            name: "基础框架",
+            sort: 1,
+            children: [
+              { name: "Node.js", sort: 1 },
+              { name: "Deno", sort: 2 },
+              { name: "Bun", sort: 3 },
+            ],
+          },
+          {
+            name: "应用框架",
+            sort: 2,
+            children: [
+              { name: "Express", sort: 1 },
+              { name: "Fastify", sort: 2 },
+              { name: "Hono", sort: 3 },
+            ],
+          },
+          {
+            name: "ORM框架",
+            sort: 3,
+            children: [
+              { name: "TypeORM", sort: 1 },
+              { name: "Prisma", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 15. 服务器基础知识 -----
       {
         name: "服务器基础知识",
         sort: 15,
@@ -357,17 +637,41 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "基础工具",
             sort: 1,
             children: [
-              { name: "Shells（Bash / Zsh / powerShell）", sort: 1 },
+              {
+                name: "Shells",
+                sort: 1,
+                children: [
+                  { name: "Bash", sort: 1 },
+                  { name: "Zsh", sort: 2 },
+                  { name: "PowerShell", sort: 3 },
+                ],
+              },
               {
                 name: "基础命令（文件系统 / 进程管理 / 文本编辑器 / 网络工具 / 系统管理工具）",
                 sort: 2,
               },
-              { name: "SSH 工具（OpenSSH / OpenSSL）", sort: 3 },
+              {
+                name: "SSH 工具",
+                sort: 3,
+                children: [
+                  { name: "OpenSSH", sort: 1 },
+                  { name: "OpenSSL", sort: 2 },
+                ],
+              },
             ],
           },
-          { name: "Web服务器（Caddy / Nginx）", sort: 2 },
+          {
+            name: "Web服务器",
+            sort: 2,
+            children: [
+              { name: "Caddy", sort: 1 },
+              { name: "Nginx", sort: 2 },
+            ],
+          },
         ],
       },
+
+      // ----- 16. 进阶语言 -----
       {
         name: "进阶语言",
         sort: 16,
@@ -376,6 +680,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           { name: "通用编程语言", sort: 2 },
         ],
       },
+
+      // ----- 17. 软技能 -----
       {
         name: "软技能",
         sort: 17,

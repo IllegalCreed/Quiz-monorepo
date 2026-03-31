@@ -56,7 +56,7 @@ const prisma = new PrismaClient({ adapter });
 // 类型定义
 // ============================================
 
-/** 题目 JSON 格式 */
+/** 题目 JSON 格式（含内嵌分类映射） */
 interface SeedOption {
   text: string;
   isCorrect: boolean;
@@ -67,11 +67,10 @@ interface SeedQuestion {
   stem: string;
   explanation?: string | null;
   tags?: string[] | null;
+  /** 内嵌分类映射：[[维度名, 叶子分类名], ...] */
+  categories?: [string, string][];
   options: SeedOption[];
 }
-
-/** 分类映射格式：[题干, [[维度名, 叶子分类名], ...]][] */
-type CategoryMap = [string, [string, string][]][];
 
 /** 内存中分类名称 → ID 的快速查找索引 */
 interface CategoryIndex {
@@ -192,34 +191,19 @@ async function importCategories(): Promise<CategoryIndex> {
 
 /**
  * 导入单个技术的题目 JSON 文件
+ * 分类信息从 JSON 的 categories 字段内嵌读取
  */
 async function importQuestions(
   jsonPath: string,
-  categoryMapPath: string | null,
   categoryIndex: CategoryIndex,
 ): Promise<void> {
   const techName = path.basename(jsonPath, ".json");
   log(`--- 导入题目: ${techName} ---`);
 
-  // 读取题目数据
+  // 读取题目数据（含内嵌 categories）
   const questions = JSON.parse(
     fs.readFileSync(jsonPath, "utf-8"),
   ) as SeedQuestion[];
-
-  // 读取分类映射（可选）
-  let categoryMap: CategoryMap = [];
-  if (categoryMapPath && fs.existsSync(categoryMapPath)) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mod = (await import(categoryMapPath)) as Record<string, any>;
-    // 取第一个导出的数组
-
-    const exported = Object.values(mod)[0] as CategoryMap;
-    if (Array.isArray(exported)) {
-      categoryMap = exported;
-    }
-  }
-
-  const catMapByRtem = new Map<string, [string, string][]>(categoryMap);
 
   let created = 0;
   let updated = 0;
@@ -275,10 +259,9 @@ async function importQuestions(
       created++;
     }
 
-    // 关联分类（幂等，已存在则跳过）
-    const catPairs = catMapByRtem.get(q.stem);
-    if (catPairs) {
-      for (const [groupName, leafName] of catPairs) {
+    // 关联分类（幂等，已存在则跳过）—— 从 JSON 内嵌的 categories 字段读取
+    if (q.categories?.length) {
+      for (const [groupName, leafName] of q.categories) {
         const categoryId = categoryIndex[groupName]?.[leafName];
         if (!categoryId) {
           log(`  ⚠️  找不到分类: [${groupName}] > ${leafName}，跳过`);
@@ -318,10 +301,7 @@ async function main() {
   }
 
   for (const jsonFile of jsonFiles) {
-    const baseName = path.basename(jsonFile, ".json");
-    // 对应的分类映射文件：{techName}-categories.ts
-    const catMapPath = path.join(contentDir, `${baseName}-categories.ts`);
-    await importQuestions(jsonFile, catMapPath, categoryIndex);
+    await importQuestions(jsonFile, categoryIndex);
   }
 
   log("✅ 全部导入完成");
