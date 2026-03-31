@@ -160,4 +160,4 @@ presetIcons({
 
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图
 - [docs/dev.md](./docs/dev.md) - 技术架构 + 待实现功能详细计划
-- [docs/plans/](./docs/plans/) - 方案设计文档（实施前先写方案，规则详见 dev.md "计划文档" 章节）
+- [docs/plans/](./docs/plans/) - 方案设计文档（实施前先写方案，规则详见 dev.md "计划文档" 章节）；**文件名必须以 `YYYYMMDD-` 开头**（如 `20260331-xxx.md`），便于按时间排序
