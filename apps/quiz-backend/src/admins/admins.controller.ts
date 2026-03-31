@@ -8,13 +8,18 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import { AdminsService } from "./admins.service";
 import { CreateAdminDto } from "./dto/create-admin.dto";
 import { UpdateAdminRoleDto } from "./dto/update-admin-role.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { PermissionGuard } from "../auth/guards/permission.guard";
 import { RequirePermission } from "../common/decorators/require-permission.decorator";
+import { CurrentAdmin } from "../common/decorators/current-admin.decorator";
+import type { AdminInfo } from "../auth/interfaces/admin-info.interface";
 
 /**
  * 管理员控制器
@@ -55,6 +60,21 @@ export class AdminsController {
   @RequirePermission("admins:create")
   create(@Body() createAdminDto: CreateAdminDto) {
     return this.adminsService.create(createAdminDto);
+  }
+
+  /**
+   * 修改当前登录管理员的密码
+   * 无需额外权限，任何已登录管理员均可修改自己的密码
+   * @param admin - 当前登录管理员（由 JWT 注入）
+   * @param changePasswordDto - 当前密码 + 新密码
+   */
+  @Patch("me/password")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  changeMyPassword(
+    @CurrentAdmin() admin: AdminInfo,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.adminsService.changeMyPassword(admin.id, changePasswordDto);
   }
 
   /**

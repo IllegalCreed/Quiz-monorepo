@@ -69,3 +69,9 @@ export interface LoginForm {
   username: string;
   password: string;
 }
+
+/** 修改密码表单 */
+export interface ChangePasswordForm {
+  currentPassword: string;
+  newPassword: string;
+}

@@ -1,8 +1,8 @@
 /**
  * 账号相关 API（真实后端）
  */
-import { post, get } from "@/utils/request";
-import type { LoginForm, AdminUser } from "@/types/account";
+import { post, get, patch } from "@/utils/request";
+import type { LoginForm, AdminUser, ChangePasswordForm } from "@/types/account";
 
 /** 登录响应 */
 interface LoginResponse {
@@ -34,4 +34,12 @@ export const getInfo = async (): Promise<AdminUser> => {
  */
 export const logout = async (): Promise<void> => {
   return post<void>("/admin/auth/logout");
+};
+
+/**
+ * 修改当前登录管理员密码
+ * @param form 当前密码 + 新密码
+ */
+export const changePassword = async (form: ChangePasswordForm): Promise<void> => {
+  return patch<void>("/admin/admins/me/password", form);
 };

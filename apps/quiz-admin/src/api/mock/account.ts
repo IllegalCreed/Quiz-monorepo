@@ -12,7 +12,7 @@
  * - 管理员通过 roleId 关联角色
  * - 权限从角色继承（动态计算）
  */
-import type { LoginForm, AdminUser } from "@/types/account";
+import type { LoginForm, AdminUser, ChangePasswordForm } from "@/types/account";
 import { getRoles } from "./roles";
 
 /**
@@ -140,4 +140,12 @@ export const getInfo = async (token: string): Promise<AdminUser> => {
 export const logout = async (_token: string): Promise<void> => {
   // 模拟网络延迟
   await new Promise((resolve) => setTimeout(resolve, 200));
+};
+
+/**
+ * Mock 修改密码
+ * Mock 模式下直接成功，不做实际校验
+ */
+export const changePassword = async (_form: ChangePasswordForm): Promise<void> => {
+  await new Promise((resolve) => setTimeout(resolve, 300));
 };

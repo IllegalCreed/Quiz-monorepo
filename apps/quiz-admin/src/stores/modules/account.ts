@@ -8,11 +8,17 @@ import {
   login as loginMockAPI,
   getInfo as getInfoMockAPI,
   logout as logoutMockAPI,
+  changePassword as changePasswordMockAPI,
 } from "@/api/mock/account";
-import { login as loginAPI, getInfo as getInfoAPI, logout as logoutAPI } from "@/api/account";
+import {
+  login as loginAPI,
+  getInfo as getInfoAPI,
+  logout as logoutAPI,
+  changePassword as changePasswordAPI,
+} from "@/api/account";
 import { useMockStore } from "@/composables/use-mock-store";
 import { useToken } from "@/composables/use-token";
-import type { LoginForm, AdminUser } from "@/types/account";
+import type { LoginForm, AdminUser, ChangePasswordForm } from "@/types/account";
 
 export const useAccountStore = defineStore("account", () => {
   const { isMock } = useMockStore();
@@ -76,5 +82,16 @@ export const useAccountStore = defineStore("account", () => {
     userInfo.value = undefined;
   };
 
-  return { login, getInfo, logout, userInfo };
+  /**
+   * 修改当前登录管理员密码
+   * @param form 当前密码 + 新密码
+   */
+  const changePassword = async (form: ChangePasswordForm): Promise<void> => {
+    if (isMock.value) {
+      return changePasswordMockAPI(form);
+    }
+    return changePasswordAPI(form);
+  };
+
+  return { login, getInfo, logout, changePassword, userInfo };
 });

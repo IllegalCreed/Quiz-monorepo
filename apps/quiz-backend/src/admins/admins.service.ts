@@ -8,6 +8,7 @@ import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateAdminDto } from "./dto/create-admin.dto";
 import { UpdateAdminRoleDto } from "./dto/update-admin-role.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 
 /**
  * 管理员服务
@@ -165,6 +166,43 @@ export class AdminsService {
       role: updatedAdmin.roleId === 1 ? "super_admin" : "admin", // 兼容前端
       roleName: updatedAdmin.role.name,
     };
+  }
+
+  /**
+   * 修改当前登录管理员的密码
+   * @param adminId - 当前管理员 ID（从 JWT 中取）
+   * @param dto - 当前密码 + 新密码
+   */
+  async changeMyPassword(
+    adminId: number,
+    dto: ChangePasswordDto,
+  ): Promise<void> {
+    // 查出含密码字段的完整记录
+    const admin = await this.prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new NotFoundException(`管理员 ID ${adminId} 不存在`);
+    }
+
+    // 验证当前密码
+    const isMatch = await bcrypt.compare(dto.currentPassword, admin.password);
+    if (!isMatch) {
+      throw new BadRequestException("当前密码错误");
+    }
+
+    // 新密码不能与当前密码相同
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException("新密码不能与当前密码相同");
+    }
+
+    // 加密新密码并更新
+    const hashedPassword = await bcrypt.hash(dto.newPassword, this.SALT_ROUNDS);
+    await this.prisma.admin.update({
+      where: { id: adminId },
+      data: { password: hashedPassword },
+    });
   }
 
   /**

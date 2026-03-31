@@ -11,6 +11,7 @@ import { AdminStatus } from "@prisma/client";
 // Mock bcrypt module
 jest.mock("bcrypt", () => ({
   hash: jest.fn(),
+  compare: jest.fn(),
 }));
 import * as bcrypt from "bcrypt";
 
@@ -23,6 +24,9 @@ describe("AdminsService", () => {
   let prisma: PrismaService;
 
   const mockBcryptHash = bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>;
+  const mockBcryptCompare = bcrypt.compare as jest.MockedFunction<
+    typeof bcrypt.compare
+  >;
 
   // Mock 数据
   const mockSuperAdmin = {
@@ -384,6 +388,77 @@ describe("AdminsService", () => {
       expect(findOneResult).not.toHaveProperty("password");
       expect(createResult).not.toHaveProperty("password");
       expect(updateResult).not.toHaveProperty("password");
+    });
+  });
+
+  describe("changeMyPassword", () => {
+    it("当前密码正确时应该更新密码", async () => {
+      // Arrange
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockNormalAdmin);
+      mockBcryptCompare.mockResolvedValue(true as never);
+      const newHash = "$2b$10$newHash";
+      mockBcryptHash.mockResolvedValue(newHash as never);
+      const updateSpy = jest
+        .spyOn(prisma.admin, "update")
+        .mockResolvedValue(mockNormalAdmin);
+
+      // Act
+      await service.changeMyPassword(2, {
+        currentPassword: "oldPass",
+        newPassword: "newPass123",
+      });
+
+      // Assert
+      expect(mockBcryptCompare).toHaveBeenCalledWith(
+        "oldPass",
+        mockNormalAdmin.password,
+      );
+      expect(mockBcryptHash).toHaveBeenCalledWith("newPass123", 10);
+      expect(updateSpy).toHaveBeenCalledWith({
+        where: { id: 2 },
+        data: { password: newHash },
+      });
+    });
+
+    it("当前密码错误时应该抛出 BadRequestException", async () => {
+      // Arrange
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockNormalAdmin);
+      mockBcryptCompare.mockResolvedValue(false as never);
+
+      // Act & Assert
+      await expect(
+        service.changeMyPassword(2, {
+          currentPassword: "wrongPass",
+          newPassword: "newPass123",
+        }),
+      ).rejects.toThrow(new BadRequestException("当前密码错误"));
+    });
+
+    it("新密码与当前密码相同时应该抛出 BadRequestException", async () => {
+      // Arrange
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(mockNormalAdmin);
+      mockBcryptCompare.mockResolvedValue(true as never);
+
+      // Act & Assert
+      await expect(
+        service.changeMyPassword(2, {
+          currentPassword: "samePass",
+          newPassword: "samePass",
+        }),
+      ).rejects.toThrow(new BadRequestException("新密码不能与当前密码相同"));
+    });
+
+    it("管理员不存在时应该抛出 NotFoundException", async () => {
+      // Arrange
+      jest.spyOn(prisma.admin, "findUnique").mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(
+        service.changeMyPassword(999, {
+          currentPassword: "pass",
+          newPassword: "newPass123",
+        }),
+      ).rejects.toThrow(new NotFoundException("管理员 ID 999 不存在"));
     });
   });
 
