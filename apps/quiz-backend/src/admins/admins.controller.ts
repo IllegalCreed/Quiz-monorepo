@@ -8,8 +8,6 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
-  HttpCode,
-  HttpStatus,
 } from "@nestjs/common";
 import { AdminsService } from "./admins.service";
 import { CreateAdminDto } from "./dto/create-admin.dto";
@@ -69,12 +67,12 @@ export class AdminsController {
    * @param changePasswordDto - 当前密码 + 新密码
    */
   @Patch("me/password")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  changeMyPassword(
+  async changeMyPassword(
     @CurrentAdmin() admin: AdminInfo,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.adminsService.changeMyPassword(admin.id, changePasswordDto);
+    await this.adminsService.changeMyPassword(admin.id, changePasswordDto);
+    return { message: "密码修改成功" };
   }
 
   /**

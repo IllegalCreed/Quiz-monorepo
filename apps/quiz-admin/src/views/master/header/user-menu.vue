@@ -80,8 +80,8 @@ const handleChangePasswordSubmit = async () => {
     routerStore.clearAllViews();
     resetRoutesInitialized();
     router.push("/login");
-  } catch {
-    // 错误由 request.ts 统一处理
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "密码修改失败");
   } finally {
     changePasswordLoading.value = false;
   }
