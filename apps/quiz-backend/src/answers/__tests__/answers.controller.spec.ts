@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AnswersController } from "../answers.controller";
 import { QuestionsService } from "../../questions/questions.service";
@@ -36,6 +37,10 @@ describe("AnswersController", () => {
     controller = module.get<AnswersController>(AnswersController);
     questionsService = module.get(QuestionsService);
     prisma = module.get<PrismaService>(PrismaService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("应该被定义", () => {
@@ -234,6 +239,92 @@ describe("AnswersController", () => {
           userId: 1,
         },
       });
+    });
+
+    it("已登录用户提交答案不应等待 AnswerAttempt 写入完成", async () => {
+      const dto: CheckAnswerDto = {
+        questionId: 1,
+        selectedOptionId: 10,
+      };
+
+      questionsService.evaluateAnswer.mockResolvedValue({
+        correct: true,
+        correctOptionId: 10,
+        explanation: null,
+        options: [
+          {
+            id: 10,
+            text: "A",
+            description: null,
+            isCorrect: true,
+          },
+        ],
+      });
+
+      let resolveCreate: (() => void) | undefined;
+      const createSpy = jest
+        .spyOn(prisma.answerAttempt, "create")
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveCreate = () => resolve({} as any);
+            }) as any,
+        );
+
+      const result = await controller.submit(dto, createMockReq({ id: 1 }));
+
+      expect(result).toEqual({
+        correct: true,
+        correctOptionId: 10,
+        explanation: null,
+        options: [
+          {
+            id: 10,
+            text: "A",
+            description: null,
+            isCorrect: true,
+          },
+        ],
+      });
+      expect(createSpy).toHaveBeenCalledTimes(1);
+
+      resolveCreate?.();
+    });
+
+    it("答题记录持久化失败不应影响答题结果返回", async () => {
+      const dto: CheckAnswerDto = {
+        questionId: 1,
+        selectedOptionId: 10,
+      };
+
+      questionsService.evaluateAnswer.mockResolvedValue({
+        correct: true,
+        correctOptionId: 10,
+        explanation: null,
+        options: [
+          {
+            id: 10,
+            text: "A",
+            description: null,
+            isCorrect: true,
+          },
+        ],
+      });
+
+      jest
+        .spyOn(prisma.answerAttempt, "create")
+        .mockRejectedValue(new Error("db write failed"));
+      const loggerErrorSpy = jest
+        .spyOn(Logger.prototype, "error")
+        .mockImplementation(() => {});
+
+      const result = await controller.submit(dto, createMockReq({ id: 1 }));
+      await Promise.resolve();
+
+      expect(result.correct).toBe(true);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("db write failed"),
+      );
     });
 
     it("游客提交答案不应持久化 AnswerAttempt", async () => {

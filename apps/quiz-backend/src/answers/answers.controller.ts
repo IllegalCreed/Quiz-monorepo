@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from "@nestjs/common";
+import { Controller, Post, Body, UseGuards, Req, Logger } from "@nestjs/common";
 import type { Request } from "express";
 import {
   QuestionsService,
@@ -13,6 +13,8 @@ import type { UserInfo } from "../user-auth/interfaces/user-info.interface";
 @Controller("answers")
 @Public() // 标记为公开接口，quiz-app 不需要 admin 登录认证
 export class AnswersController {
+  private readonly logger = new Logger(AnswersController.name);
+
   constructor(
     private readonly questionsService: QuestionsService,
     private readonly prisma: PrismaService,
@@ -33,15 +35,21 @@ export class AnswersController {
     // 已登录用户：持久化答题记录
     const user = req.user as UserInfo | null;
     if (user?.id) {
-      await this.prisma.answerAttempt.create({
-        data: {
-          questionId: body.questionId,
-          selectedOption: body.selectedOptionId,
-          correct: result.correct,
-          elapsedMs: body.elapsedMs ?? null,
-          userId: user.id,
-        },
-      });
+      void this.prisma.answerAttempt
+        .create({
+          data: {
+            questionId: body.questionId,
+            selectedOption: body.selectedOptionId,
+            correct: result.correct,
+            elapsedMs: body.elapsedMs ?? null,
+            userId: user.id,
+          },
+        })
+        .catch((error: Error) => {
+          this.logger.error(
+            `Failed to persist answer attempt for user ${user.id}, question ${body.questionId}: ${error.message}`,
+          );
+        });
     }
 
     return result;
