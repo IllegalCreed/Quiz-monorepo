@@ -106,7 +106,13 @@ watch(activeTab, () => {
 </script>
 
 <template>
-  <BaseDialog v-model="showAuthDialog" placement="center" width="24rem" :closable="true">
+  <BaseDialog
+    v-model="showAuthDialog"
+    placement="center"
+    width="24rem"
+    :closable="true"
+    :close-on-overlay="false"
+  >
     <!-- 自定义 Header：Tab 切换 -->
     <template #header>
       <div class="auth-tabs">
