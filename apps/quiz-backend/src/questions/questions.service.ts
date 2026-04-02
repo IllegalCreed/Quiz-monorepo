@@ -2,6 +2,43 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 
+type PublicOption = {
+  id: number;
+  text: string;
+  description: string | null;
+};
+
+type RandomQuestionRow = {
+  id: number;
+  stem: string;
+  explanation: string | null;
+  tags: Prisma.JsonValue | null;
+};
+
+type QuestionCategoryRow = {
+  questionId: number;
+  categoryId: number;
+  categoryName: string;
+  categoryIsDefault: boolean;
+  parentCategoryName: string | null;
+};
+
+type QuestionOptionRow = {
+  questionId: number;
+  id: number;
+  text: string;
+  description: string | null;
+};
+
+type AnswerOptionRow = {
+  questionId: number;
+  explanation: string | null;
+  optionId: number | null;
+  optionText: string | null;
+  optionDescription: string | null;
+  optionIsCorrect: boolean | null;
+};
+
 @Injectable()
 export class QuestionsService {
   constructor(public prisma: PrismaService) {}
@@ -24,13 +61,7 @@ export class QuestionsService {
       `;
     }
 
-    type QuestionRow = {
-      id: number;
-      stem: string;
-      explanation: string | null;
-      tags: string | null;
-    };
-    const q = await this.prisma.$queryRaw<QuestionRow[]>`
+    const questions = await this.prisma.$queryRaw<RandomQuestionRow[]>`
       SELECT q.id as id, q.stem as stem, q.explanation as explanation, q.tags as tags
       FROM Question q
       WHERE q.deletedAt IS NULL
@@ -39,86 +70,128 @@ export class QuestionsService {
       LIMIT ${limit}
     `;
 
-    // For each question get options
-    type OptionPublic = {
-      id: number;
-      text: string;
-      description: string | null;
-    };
-    const results: Array<{
-      id: number;
-      stem: string;
-      explanation: string | null;
-      tags: string | null;
-      categoryNames: string[];
-      options: OptionPublic[];
-    }> = [];
+    if (questions.length === 0) {
+      return [];
+    }
 
-    // 批量获取所有题目的分类（一次查询，避免 N+1）
-    const questionIds = q.map((row) => row.id);
-    const allQC =
-      questionIds.length > 0
-        ? await this.prisma.questionCategory.findMany({
-            where: { questionId: { in: questionIds } },
-            include: {
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                  isDefault: true,
-                  parent: { select: { name: true } },
-                },
-              },
-            },
-          })
-        : [];
+    // 批量获取分类和选项，避免 relation include 带来的多次往返
+    const questionIds = questions.map((row) => row.id);
+    const [categoryRows, optionRows] = await Promise.all([
+      this.prisma.$queryRaw<QuestionCategoryRow[]>`
+        SELECT
+          qc.questionId as questionId,
+          qc.categoryId as categoryId,
+          c.name as categoryName,
+          c.isDefault as categoryIsDefault,
+          p.name as parentCategoryName
+        FROM QuestionCategory qc
+        INNER JOIN Category c ON c.id = qc.categoryId
+        LEFT JOIN Category p ON p.id = c.parentId
+        WHERE qc.questionId IN (${Prisma.join(questionIds)})
+        ORDER BY qc.questionId ASC, qc.categoryId ASC
+      `,
+      this.prisma.$queryRaw<QuestionOptionRow[]>`
+        SELECT
+          o.questionId as questionId,
+          o.id as id,
+          o.text as text,
+          o.description as description
+        FROM Option o
+        WHERE o.questionId IN (${Prisma.join(questionIds)})
+        ORDER BY o.questionId ASC, o.id ASC
+      `,
+    ]);
 
     // 按 questionId 分组，构造显示名称（通识节点拼接父名）
     const categoryMap = new Map<number, string[]>();
-    for (const qc of allQC) {
-      const { category } = qc;
+    for (const row of categoryRows) {
       const displayName =
-        category.isDefault && category.parent?.name
-          ? `${category.parent.name}${category.name}`
-          : category.name;
-      const list = categoryMap.get(qc.questionId) ?? [];
+        row.categoryIsDefault && row.parentCategoryName
+          ? `${row.parentCategoryName}${row.categoryName}`
+          : row.categoryName;
+      const list = categoryMap.get(row.questionId) ?? [];
       list.push(displayName);
-      categoryMap.set(qc.questionId, list);
+      categoryMap.set(row.questionId, list);
     }
 
-    for (const row of q) {
-      const options = await this.prisma.option.findMany({
-        where: { questionId: row.id },
-      });
-      const publicOptions: OptionPublic[] = options.map((o) => ({
-        id: o.id,
-        text: o.text,
-        description: o.description,
-      }));
-      results.push({
+    const optionMap = new Map<number, PublicOption[]>();
+    for (const row of optionRows) {
+      const list = optionMap.get(row.questionId) ?? [];
+      list.push({
         id: row.id,
-        stem: row.stem,
-        explanation: row.explanation,
-        tags: row.tags,
-        categoryNames: categoryMap.get(row.id) ?? [],
-        options: publicOptions,
+        text: row.text,
+        description: row.description,
       });
+      optionMap.set(row.questionId, list);
     }
-    return results;
+
+    return questions.map((row) => ({
+      id: row.id,
+      stem: row.stem,
+      explanation: row.explanation,
+      tags: row.tags,
+      categoryNames: categoryMap.get(row.id) ?? [],
+      options: optionMap.get(row.id) ?? [],
+    }));
+  }
+
+  async evaluateAnswer(questionId: number, selectedOptionId: number) {
+    const rows = await this.prisma.$queryRaw<AnswerOptionRow[]>`
+      SELECT
+        q.id as questionId,
+        q.explanation as explanation,
+        o.id as optionId,
+        o.text as optionText,
+        o.description as optionDescription,
+        o.isCorrect as optionIsCorrect
+      FROM Question q
+      LEFT JOIN Option o ON o.questionId = q.id
+      WHERE q.id = ${questionId}
+      ORDER BY o.id ASC
+    `;
+
+    if (rows.length === 0) {
+      return {
+        correct: false,
+        correctOptionId: null,
+        explanation: null,
+        options: [],
+      };
+    }
+
+    const explanation = rows[0]!.explanation;
+    const options = rows
+      .filter((row) => row.optionId !== null)
+      .map((row) => ({
+        id: row.optionId!,
+        text: row.optionText!,
+        description: row.optionDescription,
+        isCorrect: row.optionIsCorrect ?? false,
+      }));
+
+    const selectedOption = options.find(
+      (option) => option.id === selectedOptionId,
+    );
+    if (!selectedOption) {
+      throw new Error("Option not found");
+    }
+
+    const correctOption = options.find((option) => option.isCorrect);
+
+    return {
+      correct: selectedOption.isCorrect,
+      correctOptionId: correctOption?.id ?? null,
+      explanation,
+      options,
+    };
   }
 
   async checkAnswer(questionId: number, selectedOptionId: number) {
-    const option = await this.prisma.option.findUnique({
-      where: { id: selectedOptionId },
-    });
-    if (!option) {
-      throw new Error("Option not found");
-    }
-    const correctOption = await this.prisma.option.findFirst({
-      where: { questionId, isCorrect: true },
-    });
-    const correct = option.isCorrect;
-    return { correct, correctOptionId: correctOption?.id ?? null };
+    const result = await this.evaluateAnswer(questionId, selectedOptionId);
+    return {
+      correct: result.correct,
+      correctOptionId: result.correctOptionId,
+    };
   }
 
   async findQuestionById(id: number) {

@@ -12,8 +12,7 @@ describe("AnswersController", () => {
   beforeEach(async () => {
     // 创建 QuestionsService 的 mock
     const mockQuestionsService = {
-      checkAnswer: jest.fn(),
-      findQuestionById: jest.fn(),
+      evaluateAnswer: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,31 +55,19 @@ describe("AnswersController", () => {
         selectedOptionId: 10,
       };
 
-      const mockCheckResult = {
+      const mockResult = {
         correct: true,
         correctOptionId: 10,
-      };
-
-      const mockQuestion = {
-        id: 1,
-        stem: "测试题目",
-        type: "single_choice",
         explanation: "这是解析",
-        tags: null,
-        deletedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         options: [
           {
             id: 10,
-            questionId: 1,
             text: "选项A",
             description: "A的解析",
             isCorrect: true,
           },
           {
             id: 11,
-            questionId: 1,
             text: "选项B",
             description: "B的解析",
             isCorrect: false,
@@ -88,19 +75,15 @@ describe("AnswersController", () => {
         ],
       };
 
-      const checkAnswerSpy = jest
-        .spyOn(questionsService, "checkAnswer")
-        .mockResolvedValue(mockCheckResult);
-      const findQuestionByIdSpy = jest
-        .spyOn(questionsService, "findQuestionById")
-        .mockResolvedValue(mockQuestion);
+      const evaluateAnswerSpy = jest
+        .spyOn(questionsService, "evaluateAnswer")
+        .mockResolvedValue(mockResult);
 
       // Act
       const result = await controller.submit(dto, createMockReq());
 
       // Assert
-      expect(checkAnswerSpy).toHaveBeenCalledWith(1, 10);
-      expect(findQuestionByIdSpy).toHaveBeenCalledWith(1);
+      expect(evaluateAnswerSpy).toHaveBeenCalledWith(1, 10);
       expect(result).toEqual({
         correct: true,
         correctOptionId: 10,
@@ -129,31 +112,19 @@ describe("AnswersController", () => {
         selectedOptionId: 11,
       };
 
-      questionsService.checkAnswer.mockResolvedValue({
+      questionsService.evaluateAnswer.mockResolvedValue({
         correct: false,
         correctOptionId: 10,
-      });
-
-      questionsService.findQuestionById.mockResolvedValue({
-        id: 1,
-        stem: "测试题目",
-        type: "single_choice",
         explanation: "这是解析",
-        tags: null,
-        deletedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         options: [
           {
             id: 10,
-            questionId: 1,
             text: "选项A",
             description: "A的解析",
             isCorrect: true,
           },
           {
             id: 11,
-            questionId: 1,
             text: "选项B",
             description: "B的解析",
             isCorrect: false,
@@ -177,12 +148,12 @@ describe("AnswersController", () => {
         selectedOptionId: 10,
       };
 
-      questionsService.checkAnswer.mockResolvedValue({
+      questionsService.evaluateAnswer.mockResolvedValue({
         correct: false,
         correctOptionId: null,
+        explanation: null,
+        options: [],
       });
-
-      questionsService.findQuestionById.mockResolvedValue(null);
 
       // Act
       const result = await controller.submit(dto, createMockReq());
@@ -203,24 +174,13 @@ describe("AnswersController", () => {
         selectedOptionId: 10,
       };
 
-      questionsService.checkAnswer.mockResolvedValue({
+      questionsService.evaluateAnswer.mockResolvedValue({
         correct: true,
         correctOptionId: 10,
-      });
-
-      questionsService.findQuestionById.mockResolvedValue({
-        id: 1,
-        stem: "测试题目",
-        type: "single_choice",
         explanation: null,
-        tags: null,
-        deletedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         options: [
           {
             id: 10,
-            questionId: 1,
             text: "选项A",
             description: null, // null 的情况
             isCorrect: true,
@@ -243,24 +203,13 @@ describe("AnswersController", () => {
         selectedOptionId: 10,
       };
 
-      questionsService.checkAnswer.mockResolvedValue({
+      questionsService.evaluateAnswer.mockResolvedValue({
         correct: true,
         correctOptionId: 10,
-      });
-
-      questionsService.findQuestionById.mockResolvedValue({
-        id: 1,
-        stem: "测试题目",
-        type: "single_choice",
         explanation: null,
-        tags: null,
-        deletedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         options: [
           {
             id: 10,
-            questionId: 1,
             text: "A",
             description: null,
             isCorrect: true,
@@ -294,24 +243,13 @@ describe("AnswersController", () => {
         selectedOptionId: 10,
       };
 
-      questionsService.checkAnswer.mockResolvedValue({
+      questionsService.evaluateAnswer.mockResolvedValue({
         correct: true,
         correctOptionId: 10,
-      });
-
-      questionsService.findQuestionById.mockResolvedValue({
-        id: 1,
-        stem: "测试题目",
-        type: "single_choice",
         explanation: null,
-        tags: null,
-        deletedAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         options: [
           {
             id: 10,
-            questionId: 1,
             text: "A",
             description: null,
             isCorrect: true,
