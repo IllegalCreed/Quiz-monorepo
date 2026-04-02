@@ -19,11 +19,21 @@ vi.mock("@/composables/useCategories", () => ({
 describe("useQuiz (mock mode)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0);
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
+
+  function getCorrectOptionId() {
+    return 1;
+  }
+
+  function getWrongOptionId() {
+    return 2;
+  }
 
   it("loadNext 应加载题目并重置 optionDescriptions", async () => {
     const { loadNext, question, optionDescriptions, status } = useQuiz();
@@ -32,6 +42,7 @@ describe("useQuiz (mock mode)", () => {
 
     expect(question.value).not.toBeNull();
     expect(question.value!.options).toHaveLength(2);
+    expect(question.value!.options.map((option) => option.id)).toEqual([2, 1]);
     expect(optionDescriptions.value).toEqual({});
     expect(status.value).toBe("idle");
   });
@@ -40,8 +51,7 @@ describe("useQuiz (mock mode)", () => {
     const { loadNext, choose, optionDescriptions, status, question } = useQuiz();
 
     await loadNext();
-    // Mock 模式下第一个选项 (id=1) 是正确答案
-    const correctId = question.value!.options[0]!.id;
+    const correctId = getCorrectOptionId();
     await choose(correctId);
 
     expect(status.value).toBe("correct");
@@ -62,8 +72,7 @@ describe("useQuiz (mock mode)", () => {
     const { loadNext, choose, optionDescriptions, status, question } = useQuiz();
 
     await loadNext();
-    // Mock 模式下第二个选项 (id=2) 是错误答案
-    const wrongId = question.value!.options[1]!.id;
+    const wrongId = getWrongOptionId();
     await choose(wrongId);
 
     expect(status.value).toBe("wrong");
@@ -80,7 +89,7 @@ describe("useQuiz (mock mode)", () => {
 
     await loadNext();
     // 先答题填充 descriptions
-    const wrongId = question.value!.options[1]!.id;
+    const wrongId = getWrongOptionId();
     await choose(wrongId);
     expect(Object.keys(optionDescriptions.value).length).toBeGreaterThan(0);
 
@@ -103,7 +112,7 @@ describe("useQuiz (mock mode)", () => {
     const { loadNext, choose, question } = useQuiz();
 
     await loadNext();
-    const correctId = question.value!.options[0]!.id;
+    const correctId = getCorrectOptionId();
     const result = await choose(correctId);
 
     expect(result).toEqual({
@@ -117,12 +126,12 @@ describe("useQuiz (mock mode)", () => {
     const { loadNext, choose, question } = useQuiz();
 
     await loadNext();
-    const wrongId = question.value!.options[1]!.id;
+    const wrongId = getWrongOptionId();
     const result = await choose(wrongId);
 
     expect(result).toEqual({
       correct: false,
-      correctOptionId: question.value!.options[0]!.id,
+      correctOptionId: getCorrectOptionId(),
       explanation: question.value!.explanation,
     });
   });
@@ -164,7 +173,7 @@ describe("useQuiz (mock mode)", () => {
 
     await loadNext();
     // 答题设置状态
-    await choose(question.value!.options[1]!.id);
+    await choose(getWrongOptionId());
     expect(selected.value).not.toBeNull();
     expect(correctOptionId.value).not.toBeNull();
 
@@ -180,8 +189,9 @@ describe("useQuiz (mock mode)", () => {
 
     await loadNext();
     // 手动移除第一个选项的 description
-    question.value!.options[0]!.description = undefined;
-    await choose(question.value!.options[0]!.id);
+    const correctOption = question.value!.options.find((option) => option.id === getCorrectOptionId())!;
+    correctOption.description = undefined;
+    await choose(correctOption.id);
 
     // 第一个选项无 description，不应在 map 中
     expect(optionDescriptions.value[1]).toBeUndefined();

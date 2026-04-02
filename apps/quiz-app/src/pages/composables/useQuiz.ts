@@ -4,6 +4,24 @@ import { fetchQuestions, submitAnswer } from "@/api/questions";
 import { useMockStore } from "@/stores/useMockStore";
 import { useCategories } from "@/composables/useCategories";
 
+const MOCK_CORRECT_OPTION_ID = 1;
+
+function shuffleOptions<T>(options: T[]): T[] {
+  const shuffled = [...options];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  return shuffled;
+}
+
+function withShuffledOptions(question: Question): Question {
+  return {
+    ...question,
+    options: shuffleOptions(question.options),
+  };
+}
+
 export function useQuiz() {
   const question = ref<Question | null>(null);
   const loading = ref(false);
@@ -31,7 +49,7 @@ export function useQuiz() {
 
     if (isMock.value) {
       // return a simple mocked question
-      question.value = {
+      question.value = withShuffledOptions({
         id: 999,
         stem: "（Mock）下面哪个是 HTTP 状态码 200 的含义？",
         options: [
@@ -39,7 +57,7 @@ export function useQuiz() {
           { id: 2, text: "未找到", description: "「未找到」对应 404 状态码，不是 200。" },
         ],
         explanation: "200 表示请求成功",
-      };
+      });
       status.value = "idle";
       loading.value = false;
       return;
@@ -48,7 +66,7 @@ export function useQuiz() {
     try {
       const ids = categoryIds.value.length ? categoryIds.value : undefined;
       const qs = await fetchQuestions(1, ids);
-      question.value = qs[0] ?? null;
+      question.value = qs[0] ? withShuffledOptions(qs[0]) : null;
       status.value = "idle";
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : String(e);
@@ -78,9 +96,8 @@ export function useQuiz() {
 
     if (isMock.value) {
       const q = question.value!;
-      const first = q.options[0];
-      const correct = first !== undefined && optionId === first.id;
-      const correctId = first?.id ?? null;
+      const correct = optionId === MOCK_CORRECT_OPTION_ID;
+      const correctId = MOCK_CORRECT_OPTION_ID;
       correctOptionId.value = correctId;
       status.value = correct ? "correct" : "wrong";
       // Mock 模式下从题目选项中提取描述
