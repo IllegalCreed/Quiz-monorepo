@@ -1,6 +1,9 @@
 import { Controller, Post, Body, UseGuards, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { QuestionsService } from "../questions/questions.service";
+import {
+  QuestionsService,
+  type AnswerEvaluationResult,
+} from "../questions/questions.service";
 import { CheckAnswerDto } from "../questions/dto/check-answer.dto";
 import { Public } from "../common/decorators/public.decorator";
 import { OptionalUserJwtGuard } from "../user-auth/guards/optional-user-jwt.guard";
@@ -17,11 +20,15 @@ export class AnswersController {
 
   @Post()
   @UseGuards(OptionalUserJwtGuard)
-  async submit(@Body() body: CheckAnswerDto, @Req() req: Request) {
-    const result = await this.questionsService.evaluateAnswer(
-      body.questionId,
-      body.selectedOptionId,
-    );
+  async submit(
+    @Body() body: CheckAnswerDto,
+    @Req() req: Request,
+  ): Promise<AnswerEvaluationResult> {
+    const result: AnswerEvaluationResult =
+      await this.questionsService.evaluateAnswer(
+        body.questionId,
+        body.selectedOptionId,
+      );
 
     // 已登录用户：持久化答题记录
     const user = req.user as UserInfo | null;

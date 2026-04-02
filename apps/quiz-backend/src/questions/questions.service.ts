@@ -8,6 +8,17 @@ type PublicOption = {
   description: string | null;
 };
 
+export type AnswerEvaluationResult = {
+  correct: boolean;
+  correctOptionId: number | null;
+  explanation: string | null;
+  options: Array<
+    PublicOption & {
+      isCorrect: boolean;
+    }
+  >;
+};
+
 type RandomQuestionRow = {
   id: number;
   stem: string;
@@ -135,7 +146,10 @@ export class QuestionsService {
     }));
   }
 
-  async evaluateAnswer(questionId: number, selectedOptionId: number) {
+  async evaluateAnswer(
+    questionId: number,
+    selectedOptionId: number,
+  ): Promise<AnswerEvaluationResult> {
     const rows = await this.prisma.$queryRaw<AnswerOptionRow[]>`
       SELECT
         q.id as questionId,
@@ -159,7 +173,7 @@ export class QuestionsService {
       };
     }
 
-    const explanation = rows[0]!.explanation;
+    const explanation = rows[0].explanation;
     const options = rows
       .filter((row) => row.optionId !== null)
       .map((row) => ({
