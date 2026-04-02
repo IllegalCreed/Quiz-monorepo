@@ -65,6 +65,16 @@ describe("BaseDialog 对话框/抽屉组件", () => {
     expect(panel?.getAttribute("aria-modal")).toBe("true");
   });
 
+  it("面板支持程序化聚焦，滚动内容区支持键盘聚焦", () => {
+    mountDialog();
+
+    const panel = document.querySelector(".dialog");
+    const body = document.querySelector(".dialog__body");
+
+    expect(panel?.getAttribute("tabindex")).toBe("-1");
+    expect(body?.getAttribute("tabindex")).toBe("0");
+  });
+
   // ── placement 模式 ───────────────────────────────────────────
 
   describe("placement 模式", () => {
@@ -204,6 +214,15 @@ describe("BaseDialog 对话框/抽屉组件", () => {
       await flushPromises();
 
       expect(wrapper.emitted("update:modelValue")).toBeFalsy();
+    });
+  });
+
+  describe("焦点管理", () => {
+    it("打开后聚焦面板", async () => {
+      mountDialog();
+      await flushPromises();
+
+      expect(document.activeElement).toBe(document.querySelector(".dialog"));
     });
   });
 

@@ -20,6 +20,7 @@
             :class="['dialog', `dialog--${placement}`]"
             :style="{ width }"
             role="dialog"
+            tabindex="-1"
             aria-modal="true"
             :aria-label="title || '对话框'"
           >
@@ -39,7 +40,7 @@
             </div>
 
             <!-- Body（主体内容） -->
-            <div class="dialog__body">
+            <div class="dialog__body" tabindex="0">
               <slot />
             </div>
 
@@ -55,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, type PropType } from "vue";
+import { computed, nextTick, ref, watch, type PropType } from "vue";
 
 /**
  * BaseDialog 组件
@@ -171,7 +172,6 @@ function onOverlayClick() {
  * 打开动画结束后：聚焦面板并触发 opened 事件
  */
 function onOpened() {
-  panelRef.value?.focus();
   emit("opened");
 }
 
@@ -209,6 +209,9 @@ watch(
       document.body.style.overflow = "hidden";
       // 监听 Esc
       document.addEventListener("keydown", onKeydown);
+      void nextTick(() => {
+        panelRef.value?.focus();
+      });
     } else {
       // 恢复滚动
       document.body.style.overflow = originalOverflow;
