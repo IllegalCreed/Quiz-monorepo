@@ -210,6 +210,52 @@ describe("QuestionsService (unit)", () => {
       });
     });
 
+    it("应该把 raw query 返回的 0/1 正常转换成布尔值", async () => {
+      const mockPrisma = createMockPrisma([
+        [
+          {
+            questionId: 1,
+            explanation: "这是解析",
+            optionId: 10,
+            optionText: "选项A",
+            optionDescription: "A的解析",
+            optionIsCorrect: 1,
+          },
+          {
+            questionId: 1,
+            explanation: "这是解析",
+            optionId: 11,
+            optionText: "选项B",
+            optionDescription: "B的解析",
+            optionIsCorrect: 0,
+          },
+        ],
+      ]);
+      const svc = createService(mockPrisma);
+
+      const result = await svc.evaluateAnswer(1, 10);
+
+      expect(result).toEqual({
+        correct: true,
+        correctOptionId: 10,
+        explanation: "这是解析",
+        options: [
+          {
+            id: 10,
+            text: "选项A",
+            description: "A的解析",
+            isCorrect: true,
+          },
+          {
+            id: 11,
+            text: "选项B",
+            description: "B的解析",
+            isCorrect: false,
+          },
+        ],
+      });
+    });
+
     it("选项不属于该题时应该抛出错误", async () => {
       const mockPrisma = createMockPrisma([
         [

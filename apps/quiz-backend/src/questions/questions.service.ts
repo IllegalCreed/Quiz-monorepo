@@ -8,6 +8,8 @@ type PublicOption = {
   description: string | null;
 };
 
+type RawBoolean = boolean | number | bigint | null;
+
 export type AnswerEvaluationResult = {
   correct: boolean;
   correctOptionId: number | null;
@@ -47,8 +49,12 @@ type AnswerOptionRow = {
   optionId: number | null;
   optionText: string | null;
   optionDescription: string | null;
-  optionIsCorrect: boolean | null;
+  optionIsCorrect: RawBoolean;
 };
+
+function normalizeRawBoolean(value: RawBoolean): boolean {
+  return value === true || value === 1 || value === 1n;
+}
 
 @Injectable()
 export class QuestionsService {
@@ -180,7 +186,7 @@ export class QuestionsService {
         id: row.optionId!,
         text: row.optionText!,
         description: row.optionDescription,
-        isCorrect: row.optionIsCorrect ?? false,
+        isCorrect: normalizeRawBoolean(row.optionIsCorrect),
       }));
 
     const selectedOption = options.find(
