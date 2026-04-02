@@ -96,7 +96,7 @@ export class QuestionsService {
           o.id as id,
           o.text as text,
           o.description as description
-        FROM Option o
+        FROM \`Option\` o
         WHERE o.questionId IN (${Prisma.join(questionIds)})
         ORDER BY o.questionId ASC, o.id ASC
       `,
@@ -145,7 +145,7 @@ export class QuestionsService {
         o.description as optionDescription,
         o.isCorrect as optionIsCorrect
       FROM Question q
-      LEFT JOIN Option o ON o.questionId = q.id
+      LEFT JOIN \`Option\` o ON o.questionId = q.id
       WHERE q.id = ${questionId}
       ORDER BY o.id ASC
     `;
