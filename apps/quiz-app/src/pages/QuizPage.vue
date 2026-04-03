@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch, computed } from "vue";
+import { onMounted, watch, computed, ref } from "vue";
 import {
   BaseCard,
   BaseCardHeader,
@@ -69,6 +69,7 @@ import {
 import { useQuiz } from "./composables/useQuiz";
 import { useCategories } from "@/composables/useCategories";
 import LoginPrompt from "@/components/LoginPrompt.vue";
+import { useUserStore } from "@/stores/useUserStore";
 
 const {
   question,
@@ -83,15 +84,27 @@ const {
   explanation,
 } = useQuiz();
 
-const { selectedIds, init: initCategories } = useCategories();
+const { selectedIds, init: initCategories, loadUserPreferences } = useCategories();
+const userStore = useUserStore();
+const quizReady = ref(false);
 
-onMounted(() => {
-  initCategories();
-  loadNext();
+onMounted(async () => {
+  await initCategories();
+
+  if (userStore.token) {
+    await userStore.fetchUserInfo();
+    if (userStore.isLoggedIn) {
+      await loadUserPreferences();
+    }
+  }
+
+  quizReady.value = true;
+  await loadNext();
 });
 
 /** 分类变化时重新加载题目 */
 watch(selectedIds, () => {
+  if (!quizReady.value) return;
   loadNext();
 });
 

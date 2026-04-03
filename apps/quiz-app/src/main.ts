@@ -27,11 +27,7 @@ setOn401Handler(() => {
   openLogin();
 });
 
-// ── 启动时恢复登录状态，登录后加载用户偏好 ──────────────
-userStore.fetchUserInfo().then(() => {
-  if (userStore.isLoggedIn) {
-    useCategories().loadUserPreferences();
-  }
-});
+// ── 启动时恢复登录状态（分类偏好由页面初始化阶段负责加载） ──
+void userStore.fetchUserInfo();
 
 app.mount("#app");

@@ -24,6 +24,7 @@ export const useUserStore = defineStore("user", () => {
 
   /** 是否已登录 */
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value);
+  let fetchUserInfoPromise: Promise<void> | null = null;
 
   /**
    * 登录
@@ -77,12 +78,20 @@ export const useUserStore = defineStore("user", () => {
    */
   async function fetchUserInfo() {
     if (!token.value) return;
-    try {
-      userInfo.value = await authApi.getUserInfo();
-    } catch {
-      // token 失效，静默清空
-      logout();
-    }
+    if (fetchUserInfoPromise) return fetchUserInfoPromise;
+
+    fetchUserInfoPromise = (async () => {
+      try {
+        userInfo.value = await authApi.getUserInfo();
+      } catch {
+        // token 失效，静默清空
+        await logout();
+      } finally {
+        fetchUserInfoPromise = null;
+      }
+    })();
+
+    return fetchUserInfoPromise;
   }
 
   return { token, userInfo, isLoggedIn, login, register, logout, fetchUserInfo };
