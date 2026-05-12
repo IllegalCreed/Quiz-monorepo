@@ -1,0 +1,405 @@
+[
+  {
+    "stem": "lint-staged 主要用来解决什么问题？",
+    "explanation": "lint-staged 只针对 Git 暂存区中的文件运行 linter/formatter，避免每次提交都对整个项目跑一遍 lint。它通常与 Husky 的 pre-commit 钩子配合使用：钩子触发后调用 lint-staged，由它筛出本次暂存的文件并按 glob 规则分发给相应工具，从而把检查粒度收敛到本次改动。",
+    "tags": ["lint-staged", "git", "工程化", "代码质量"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只对 Git 暂存区中的文件运行 linter/formatter，避免全量扫描",
+        "isCorrect": true,
+        "description": "lint-staged 的核心价值是把检查范围收敛到本次改动文件"
+      },
+      {
+        "text": "替代 ESLint / Prettier 等工具自身的检查能力",
+        "isCorrect": false,
+        "description": "lint-staged 只是任务分发器，真正的检查仍由 ESLint/Prettier 完成"
+      },
+      {
+        "text": "在 CI 服务器上对所有文件进行全量 lint",
+        "isCorrect": false,
+        "description": "全量 lint 是 CI 流水线自身职责，lint-staged 聚焦本地暂存文件"
+      },
+      {
+        "text": "管理 Git hooks，让钩子脚本可以版本化共享",
+        "isCorrect": false,
+        "description": "这是 Husky 的职责，lint-staged 通常在 Husky 钩子中被调用"
+      }
+    ]
+  },
+  {
+    "stem": "在 pnpm 项目中安装 lint-staged 的正确命令是什么？",
+    "explanation": "lint-staged 只在开发期参与 Git 钩子检查，不会被业务代码运行时引用，所以应当作为开发依赖安装，使用 `-D`（即 `--save-dev`）标志。",
+    "tags": ["lint-staged", "pnpm", "安装"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm add -D lint-staged",
+        "isCorrect": true,
+        "description": "开发依赖使用 -D 标志安装"
+      },
+      {
+        "text": "pnpm add lint-staged",
+        "isCorrect": false,
+        "description": "缺少 -D 标志会装到生产依赖"
+      },
+      {
+        "text": "pnpm install -g lint-staged",
+        "isCorrect": false,
+        "description": "全局安装无法被项目配置识别，应安装到项目内"
+      },
+      {
+        "text": "pnpm create lint-staged",
+        "isCorrect": false,
+        "description": "pnpm create 用于通过脚手架初始化项目，lint-staged 没有提供这种入口"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪一种**不是** lint-staged 支持的配置文件形式？",
+    "explanation": "lint-staged 支持 package.json 的 `lint-staged` 字段、`.lintstagedrc(.json/.yaml/.yml/.cjs/.mjs)` 以及 `lint-staged.config.{js,cjs,mjs,ts}` 等形式，但没有 TOML 格式的配置文件。",
+    "tags": ["lint-staged", "配置文件"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "lint-staged.config.toml",
+        "isCorrect": true,
+        "description": "lint-staged 不支持 TOML 配置"
+      },
+      {
+        "text": "package.json 中的 lint-staged 字段",
+        "isCorrect": false,
+        "description": "最常见的方式之一"
+      },
+      {
+        "text": ".lintstagedrc.yaml",
+        "isCorrect": false,
+        "description": "支持 JSON/YAML/YML 形式的 rc 文件"
+      },
+      {
+        "text": "lint-staged.config.ts",
+        "isCorrect": false,
+        "description": "Node.js 支持原生执行 TS 后即可直接使用 .ts 配置"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 使用哪个库做 glob 文件匹配？",
+    "explanation": "lint-staged 内部采用 picomatch 来对暂存文件做 glob 匹配。它默认开启 picomatch 的 `matchBase` 选项，因此**不含斜杠**的模式（如 `*.js`）只匹配文件名而忽略目录；**含斜杠**的模式（如 `foo/**/*.js`）才会同时匹配路径。",
+    "tags": ["lint-staged", "picomatch", "glob"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "picomatch",
+        "isCorrect": true,
+        "description": "lint-staged 使用 picomatch 做 glob 匹配"
+      },
+      {
+        "text": "minimatch",
+        "isCorrect": false,
+        "description": "Husky/lint-staged 选用的是更快的 picomatch"
+      },
+      {
+        "text": "globby",
+        "isCorrect": false,
+        "description": "globby 是扫盘工具，lint-staged 是基于暂存文件再用 picomatch 过滤"
+      },
+      {
+        "text": "fast-glob",
+        "isCorrect": false,
+        "description": "lint-staged 不是用 fast-glob 来匹配 staged 文件"
+      }
+    ]
+  },
+  {
+    "stem": "下面这段 lint-staged 配置中，`*.ts` 命中的两个命令的执行顺序是怎样的？\n\n```json\n{ \"*.ts\": [\"prettier --list-different\", \"eslint\"] }\n```",
+    "explanation": "对同一个 glob 模式：写成**字符串**会被视为单条命令；写成**数组**则会按数组顺序**串行**执行其中每条命令。这一点常被用来强制顺序：例如先 `eslint --fix` 再 `prettier --write`，避免两者并发改同一个文件。",
+    "tags": ["lint-staged", "数组配置", "执行顺序"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "先 prettier 再 eslint，按数组顺序串行执行",
+        "isCorrect": true,
+        "description": "同一 glob 的数组任务按顺序串行运行"
+      },
+      {
+        "text": "两个命令并发执行，谁先完成不固定",
+        "isCorrect": false,
+        "description": "并发只发生在不同 glob 之间，同一 glob 的数组是串行"
+      },
+      {
+        "text": "只会执行数组中的第一条命令",
+        "isCorrect": false,
+        "description": "数组中的命令都会被执行，除非中途失败"
+      },
+      {
+        "text": "只会执行数组中的最后一条命令",
+        "isCorrect": false,
+        "description": "命令都会被执行"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 默认是如何调度不同 glob 模式之间的任务的？",
+    "explanation": "lint-staged 默认会**并发**执行不同 glob 模式对应的任务，以缩短钩子耗时。如果需要顺序执行（例如多个任务会写同一类文件），可以使用 `--concurrent <number>` 限制并发数，或 `--concurrent false` 完全禁用并发。",
+    "tags": ["lint-staged", "并发", "concurrent"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认并发执行，可通过 --concurrent <number> 或 --concurrent false 控制",
+        "isCorrect": true,
+        "description": "默认并发，支持限流或完全禁用"
+      },
+      {
+        "text": "默认串行执行，需要通过 --parallel 才能开启并发",
+        "isCorrect": false,
+        "description": "顺序与默认行为相反"
+      },
+      {
+        "text": "完全随机调度，无法控制顺序或并发数",
+        "isCorrect": false,
+        "description": "lint-staged 提供了明确的并发控制参数"
+      },
+      {
+        "text": "只能通过修改 package.json 的 type 字段调整",
+        "isCorrect": false,
+        "description": "type 字段控制的是 ESM/CJS，与并发无关"
+      }
+    ]
+  },
+  {
+    "stem": "下面这段 lint-staged 配置存在什么风险？\n\n```json\n{\n  \"*\": \"prettier --write\",\n  \"*.ts\": \"eslint --fix\"\n}\n```",
+    "explanation": "两条 glob 在 `.ts` 文件上重叠，且两个任务都会**修改文件**，于是会出现典型的竞争条件：prettier 和 eslint 几乎同时写同一个文件，可能互相覆盖。规避方式是使用否定模式（`!(*.ts)`）或把两条命令合并成数组让其串行，再配合 `--concurrent` 限流。",
+    "tags": ["lint-staged", "竞争条件", "glob重叠"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "两条 glob 在 .ts 文件上重叠，且都会修改文件，存在写入竞争",
+        "isCorrect": true,
+        "description": "需要用否定模式或合并成数组来串行"
+      },
+      {
+        "text": "*.ts 的 glob 写法非法，lint-staged 会直接报错",
+        "isCorrect": false,
+        "description": "*.ts 是合法且常用的写法"
+      },
+      {
+        "text": "prettier 无法同时格式化 TS 文件，必须改用 prettier-ts",
+        "isCorrect": false,
+        "description": "Prettier 原生支持 TS"
+      },
+      {
+        "text": "lint-staged 默认只会执行第一条规则，第二条会被忽略",
+        "isCorrect": false,
+        "description": "所有匹配的规则都会被触发"
+      }
+    ]
+  },
+  {
+    "stem": "关于 lint-staged 处理「需要被忽略的文件」，官方的核心立场是什么？",
+    "explanation": "lint-staged 官方明确表示自身不负责忽略文件，只是把暂存文件分发给任务。忽略逻辑应由具体工具承担：ESLint 用 `.eslintignore` 或 flat config 的 `ignores`、Prettier 用 `.prettierignore`，flat config 还可加 `--no-warn-ignored`。",
+    "tags": ["lint-staged", "ignore", "ESLint", "Prettier"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "lint-staged 不负责忽略文件，应由具体工具的 ignore 机制处理",
+        "isCorrect": true,
+        "description": "如 .eslintignore / .prettierignore / flat config ignores"
+      },
+      {
+        "text": "lint-staged 会自动读取 .gitignore 来忽略文件",
+        "isCorrect": false,
+        "description": ".gitignore 控制是否进入仓库，不参与 lint-staged 的 glob 过滤"
+      },
+      {
+        "text": "需要在 lint-staged 配置中写一个全局 ignore 字段",
+        "isCorrect": false,
+        "description": "lint-staged 配置没有顶层 ignore 字段"
+      },
+      {
+        "text": "需要在 package.json 中加 lintStagedIgnore 字段",
+        "isCorrect": false,
+        "description": "没有这种字段"
+      }
+    ]
+  },
+  {
+    "stem": "在 Husky 的 `.husky/pre-commit` 钩子中触发 lint-staged，最常见的写法是？",
+    "explanation": "Husky v9 的钩子是普通 shell 脚本，因此只要在 `.husky/pre-commit` 中写上 `npx lint-staged`（或包管理器对应命令）即可。这样每次提交都会先跑一遍 lint-staged，对暂存文件做检查，失败则中止提交。",
+    "tags": ["lint-staged", "husky", "pre-commit"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 .husky/pre-commit 中写 npx lint-staged",
+        "isCorrect": true,
+        "description": "Husky v9 钩子是普通 shell 脚本，直接调用 CLI 即可"
+      },
+      {
+        "text": "在 package.json 的 husky.hooks.pre-commit 中配置",
+        "isCorrect": false,
+        "description": "这是 Husky v4 的旧写法，v9 已废弃"
+      },
+      {
+        "text": "在 lint-staged.config.ts 中声明 hook: \"pre-commit\"",
+        "isCorrect": false,
+        "description": "lint-staged 配置不负责注册 Git 钩子"
+      },
+      {
+        "text": "在 .git/hooks/pre-commit 中手动写脚本",
+        "isCorrect": false,
+        "description": "Husky 通过 core.hooksPath 接管钩子，直接改 .git/hooks 不会被版本化"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的函数式任务（如 `(filenames) => string | string[]`）参数 `filenames` 的特点是？",
+    "explanation": "lint-staged 始终把暂存文件以**绝对路径**形式传入函数任务，避免不同工作目录（例如 `.git` 目录与 `package.json` 所在目录不一致）带来的混乱。如果某个工具一定要相对路径，可以在函数体里 `path.relative(process.cwd(), file)` 自行转换；CLI 也提供了 `--relative` 标志。",
+    "tags": ["lint-staged", "函数任务", "绝对路径"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "传入的是匹配到的暂存文件**绝对路径**数组",
+        "isCorrect": true,
+        "description": "可通过 path.relative 或 --relative 转成相对路径"
+      },
+      {
+        "text": "传入的是相对仓库根目录的相对路径",
+        "isCorrect": false,
+        "description": "默认是绝对路径，相对路径需显式开启 --relative"
+      },
+      {
+        "text": "传入的是所有暂存文件，无论是否匹配当前 glob",
+        "isCorrect": false,
+        "description": "数组里只包含当前 glob 命中的文件"
+      },
+      {
+        "text": "传入的是文件内容字符串，而不是路径",
+        "isCorrect": false,
+        "description": "lint-staged 传递的是路径，不会读取内容"
+      }
+    ]
+  },
+  {
+    "stem": "针对 ESLint v8.51+ 的 Flat Config，下列哪种写法可以最简洁地避免对被忽略文件报错？",
+    "explanation": "ESLint 在 Flat Config 模式下提供了 `--no-warn-ignored` 标志：被忽略的文件即使被显式作为参数传入，也不会再产生「File ignored」警告或 lint 失败。这正是 lint-staged 官方推荐的简洁方案，比用 `ESLint.isPathIgnored()` 在函数里手动过滤更直接。",
+    "tags": ["lint-staged", "ESLint", "flat-config", "no-warn-ignored"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "\"*.{js,ts}\": \"eslint --max-warnings=0 --no-warn-ignored\"",
+        "isCorrect": true,
+        "description": "Flat Config 下用 --no-warn-ignored 最简洁高效"
+      },
+      {
+        "text": "在 lint-staged 配置中写 ignore: [\"dist/**\"]",
+        "isCorrect": false,
+        "description": "lint-staged 没有顶层 ignore 字段"
+      },
+      {
+        "text": "在 ESLint CLI 里加 --skip-ignored-warnings 标志",
+        "isCorrect": false,
+        "description": "ESLint 没有此标志，正确的是 --no-warn-ignored"
+      },
+      {
+        "text": "在 .lintstagedrc 中开启 strict: false",
+        "isCorrect": false,
+        "description": "lint-staged 没有 strict 字段"
+      }
+    ]
+  },
+  {
+    "stem": "通过 lint-staged 调用 `tsc --noEmit` 时，常常报 `TS17004: Cannot use JSX...` 或 `TS1056`，原因是什么？修复方式是？",
+    "explanation": "lint-staged 默认会把暂存文件作为参数追加给命令。一旦 tsc 接到具体文件参数，就会忽略 tsconfig.json 的 compilerOptions，导致 JSX、target 等设置失效。解决办法是把任务写成返回字符串的函数，阻止 lint-staged 附加文件参数，如 `() => \"tsc -p tsconfig.json --noEmit\"`。",
+    "tags": ["lint-staged", "TypeScript", "tsc", "tsconfig"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "tsc 接到具体文件参数后会忽略 tsconfig；用函数形式返回命令以阻止 lint-staged 附加文件参数",
+        "isCorrect": true,
+        "description": "例如 \"**/*.ts?(x)\": [() => \"tsc -p tsconfig.json --noEmit\"]"
+      },
+      {
+        "text": "tsconfig.json 中必须显式声明 strict: true 才能避免该报错",
+        "isCorrect": false,
+        "description": "与 strict 选项无关，根因是文件参数覆盖了 tsconfig"
+      },
+      {
+        "text": "改用 tsc-files，并删除 tsconfig.json",
+        "isCorrect": false,
+        "description": "tsc-files 是另一种方案，但官方推荐函数形式，且不需要删 tsconfig"
+      },
+      {
+        "text": "在 lint-staged 命令前加 NODE_OPTIONS=--no-tsconfig",
+        "isCorrect": false,
+        "description": "Node.js 没有该环境变量"
+      }
+    ]
+  },
+  {
+    "stem": "关于 lint-staged 在 monorepo 中的工作机制，下面哪种说法是正确的？",
+    "explanation": "lint-staged 会使用**离暂存文件最近**的那一份配置文件，并且**不会**回退到上层目录的配置。如果该配置里没有匹配到当前文件的 glob，对应命令就不会执行 —— 即「空匹配 = 跳过」。这是 monorepo 中常见的「明明在根目录配了规则却没生效」的根因。",
+    "tags": ["lint-staged", "monorepo", "配置查找"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只采用离文件最近的配置，不会回退到父级配置；未匹配的 glob 则跳过执行",
+        "isCorrect": true,
+        "description": "这是 lint-staged 在 monorepo 中的关键行为"
+      },
+      {
+        "text": "总是合并根目录与子包的配置后再运行",
+        "isCorrect": false,
+        "description": "lint-staged 不会做配置合并，仅使用最近的那一份"
+      },
+      {
+        "text": "总是只读根目录配置，子包的 .lintstagedrc 会被忽略",
+        "isCorrect": false,
+        "description": "恰好相反：子包配置优先于根配置"
+      },
+      {
+        "text": "monorepo 中必须使用环境变量 LINT_STAGED_ROOT 显式指定根目录",
+        "isCorrect": false,
+        "description": "没有这个环境变量"
+      }
+    ]
+  }
+]
