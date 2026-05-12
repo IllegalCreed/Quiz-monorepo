@@ -1,0 +1,405 @@
+[
+  {
+    "stem": "Turborepo 在 monorepo 工具链中的定位是什么？",
+    "explanation": "Turborepo 不替代包管理器，而是依赖包管理器（pnpm / npm / yarn / bun）的 workspace 能力，本身专注于「任务依赖图编排」+「输入哈希缓存」+「Remote Cache」三件事，让 monorepo 中的任务可以并行、可跳过、可跨机器复用产物。",
+    "tags": ["turborepo", "monorepo", "概念"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "monorepo 任务编排与缓存系统，依赖包管理器的 workspace 能力",
+        "isCorrect": true,
+        "description": "Turborepo 不安装依赖，仅做任务图调度与缓存"
+      },
+      {
+        "text": "替代 pnpm / npm 的包管理器",
+        "isCorrect": false,
+        "description": "Turborepo 不安装依赖，需要包管理器配合"
+      },
+      {
+        "text": "Webpack / Vite 的同类构建器，自带打包能力",
+        "isCorrect": false,
+        "description": "Turborepo 是任务调度器而非打包器；具体打包由各包的 build 脚本负责"
+      },
+      {
+        "text": "TypeScript 项目引用（Project References）的替代品",
+        "isCorrect": false,
+        "description": "二者维度不同；Turborepo 可与 tsc Project References 共存"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo v2 起，`turbo.json` 顶层用哪个字段声明任务？",
+    "explanation": "v1 使用 `pipeline`，v2 起改名为 `tasks`，schema URL 为 `https://turborepo.dev/schema.json`。可通过 `pnpm dlx @turbo/codemod migrate` 自动改写。",
+    "tags": ["turborepo", "v2", "turbo.json"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "tasks",
+        "isCorrect": true,
+        "description": "v2 起用 tasks 取代 v1 的 pipeline"
+      },
+      {
+        "text": "pipeline",
+        "isCorrect": false,
+        "description": "v1 字段，v2 已改名"
+      },
+      {
+        "text": "scripts",
+        "isCorrect": false,
+        "description": "scripts 是 package.json 的字段，与 turbo.json 无关"
+      },
+      {
+        "text": "workflows",
+        "isCorrect": false,
+        "description": "turbo.json 没有 workflows 字段"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪种写法**违反** Turborepo 的最佳实践？",
+    "explanation": "根 `package.json` 中的脚本应当只做「委派」，全部通过 `turbo run <task>` 由 Turborepo 来编排。如果直接 `cd apps/web && next build && cd ../api && tsc`，等于绕过依赖图与缓存，丧失了 Turborepo 的并行与跳过能力。",
+    "tags": ["turborepo", "anti-pattern", "root scripts"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在根 package.json 写 `\"build\": \"cd apps/web && next build && cd ../api && tsc\"`",
+        "isCorrect": true,
+        "description": "完全绕过 Turborepo 的依赖图与缓存"
+      },
+      {
+        "text": "在根 package.json 写 `\"build\": \"turbo run build\"`",
+        "isCorrect": false,
+        "description": "标准委派写法"
+      },
+      {
+        "text": "在每个 app/package 的 package.json 里写自己的 build 脚本",
+        "isCorrect": false,
+        "description": "正是推荐做法：脚本下沉到各包"
+      },
+      {
+        "text": "在 turbo.json 中声明 `\"build\": { \"dependsOn\": [\"^build\"] }`",
+        "isCorrect": false,
+        "description": "标准任务声明"
+      }
+    ]
+  },
+  {
+    "stem": "在 turbo.json 中，`dependsOn: [\"^build\"]` 表示什么？",
+    "explanation": "尖号 `^` 表示「上游依赖包」。`^build` 意为：执行当前任务前，先让当前包在 `dependencies` 中声明的**所有内部 workspace 包**各自跑完 `build`。不带尖号的 `build` 则表示同一个包内的 `build` 先跑。",
+    "tags": ["turborepo", "dependsOn", "tasks"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "先让当前包在 dependencies 中声明的所有内部包跑完 build",
+        "isCorrect": true,
+        "description": "尖号 = 上游依赖包"
+      },
+      {
+        "text": "先让当前包自己的 build 跑完（同包内串接）",
+        "isCorrect": false,
+        "description": "那是不带尖号的 `build`"
+      },
+      {
+        "text": "先让所有 monorepo 包跑完 build，无论是否是依赖",
+        "isCorrect": false,
+        "description": "只涉及当前包的内部依赖，不是全量"
+      },
+      {
+        "text": "先让特定包（如 @acme/web）跑完 build",
+        "isCorrect": false,
+        "description": "那是 `@acme/web#build` 语法"
+      }
+    ]
+  },
+  {
+    "stem": "某任务在 turbo.json 中声明了 `dependsOn` 但**没有声明 `outputs`**，会发生什么？",
+    "explanation": "未声明 `outputs` 时，Turborepo **仅会缓存任务日志，不缓存任何产物文件**。下一次命中缓存只会回放日志，磁盘上的 dist / .next 等产物并不会被还原，等同于\"看着像 hit、其实没省时间\"。",
+    "tags": ["turborepo", "outputs", "缓存"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只缓存日志，不缓存产物文件；下次命中只回放日志",
+        "isCorrect": true,
+        "description": "outputs 不声明则没有产物可还原"
+      },
+      {
+        "text": "Turborepo 报错，拒绝运行",
+        "isCorrect": false,
+        "description": "outputs 是可选字段，不声明不会报错"
+      },
+      {
+        "text": "Turborepo 自动用 dist/** 作为默认",
+        "isCorrect": false,
+        "description": "没有默认 outputs；必须显式声明"
+      },
+      {
+        "text": "缓存完全禁用，每次必跑",
+        "isCorrect": false,
+        "description": "日志依然会被捕获并回放，任务哈希仍会计算"
+      }
+    ]
+  },
+  {
+    "stem": "`--filter` 与 `--affected` 在 CI 中如何取舍？",
+    "explanation": "`--affected` 默认等价于 `--filter=...[main...HEAD]`：只跑变更影响到的包及其 dependents；自定义基准/HEAD 用环境变量 `TURBO_SCM_BASE` / `TURBO_SCM_HEAD`。`--filter` 适合按包名/目录/依赖图等条件精细筛选，CI 中建议优先 `--affected`。",
+    "tags": ["turborepo", "filter", "affected", "CI"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "CI 中优先 --affected（自动算变更范围 + 含 dependents）；需精细筛选时用 --filter",
+        "isCorrect": true,
+        "description": "官方推荐 --affected 作为 CI 默认入口"
+      },
+      {
+        "text": "两者完全等价，可以互换",
+        "isCorrect": false,
+        "description": "--affected 是 --filter 的预置场景，不是别名"
+      },
+      {
+        "text": "--filter 已在 v2 被 --affected 替代",
+        "isCorrect": false,
+        "description": "--filter 仍然存在且常用"
+      },
+      {
+        "text": "--affected 仅在 GitHub Actions 中可用",
+        "isCorrect": false,
+        "description": "任何 CI 环境都可用，需要 git 历史可访问"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo v2 默认采用哪种环境变量模式？",
+    "explanation": "v2 起把 **Strict** 设为默认 env 模式：任务**只能看到**显式声明在 `env` / `globalEnv` / `passThroughEnv` 中的变量；未声明的变量在任务进程里是不可见的。这是从 v1 升级最常踩的坑，需通过 `--env-mode=loose` 临时回退或显式声明。",
+    "tags": ["turborepo", "env", "Strict", "v2"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Strict：未声明的 env 在任务里不可见",
+        "isCorrect": true,
+        "description": "v2 默认；v1 默认是 Loose"
+      },
+      {
+        "text": "Loose：进程所有 env 都对任务可见",
+        "isCorrect": false,
+        "description": "Loose 是 v1 行为，v2 需用 --env-mode=loose 显式开启"
+      },
+      {
+        "text": "Hybrid：根据 framework inference 自动判断",
+        "isCorrect": false,
+        "description": "不存在 Hybrid 模式"
+      },
+      {
+        "text": "Disabled：完全忽略环境变量",
+        "isCorrect": false,
+        "description": "不存在 Disabled 模式"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪条**不属于** v1 → v2 的破坏性变更？",
+    "explanation": "v2 的关键破坏性变更包括：`pipeline` 改名 `tasks`、Strict env 默认、根 `engines` 进入哈希、`packageManager` 必填、`--ignore` 与 `--scope` 移除、`--filter` 不再推断命名空间。\"tsc 必须开 incremental\" 与 v2 升级无关。",
+    "tags": ["turborepo", "v2", "升级"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "v2 要求所有 TypeScript 项目必须开启 incremental",
+        "isCorrect": true,
+        "description": "无此要求；TS 配置由各包自行决定"
+      },
+      {
+        "text": "`pipeline` 字段改名为 `tasks`",
+        "isCorrect": false,
+        "description": "v2 真实变更"
+      },
+      {
+        "text": "根 package.json 的 packageManager 字段成为必填",
+        "isCorrect": false,
+        "description": "v2 真实变更"
+      },
+      {
+        "text": "Strict env 模式成为默认",
+        "isCorrect": false,
+        "description": "v2 真实变更"
+      }
+    ]
+  },
+  {
+    "stem": "项目里 lint / check-types 这类任务**不需要上游 build 产物**，但希望「上游源码变化时让它们重跑」，最佳做法是？",
+    "explanation": "直接 `dependsOn: []` 会让缓存对上游变化失效；`dependsOn: [\"^lint\"]` 又强制串行。官方推荐 **Transit Node** 模式：声明一个不映射到任何脚本的 `transit` 任务，让需要并行的任务依赖它，从而获得「并行执行 + 正确的缓存失效」两全效果。",
+    "tags": ["turborepo", "transit-node", "并行"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "使用 Transit Node：声明 `transit` 任务，lint 依赖 transit，transit 依赖 ^transit",
+        "isCorrect": true,
+        "description": "官方推荐方案，兼顾并行与缓存正确性"
+      },
+      {
+        "text": "对所有 lint 任务使用 --parallel 强行并行",
+        "isCorrect": false,
+        "description": "--parallel 绕过依赖图（已 deprecated），且无法保证缓存正确"
+      },
+      {
+        "text": "把 lint 改名为 build:lint，复用 ^build 链",
+        "isCorrect": false,
+        "description": "会引入不必要的等待，仍然串行"
+      },
+      {
+        "text": "把 lint 写成 ^build 的 dependsOn",
+        "isCorrect": false,
+        "description": "强制等上游 build 跑完才能 lint，违背初衷"
+      }
+    ]
+  },
+  {
+    "stem": "包级 `turbo.json` 中，`$TURBO_EXTENDS$` 微语法的正确使用方式是？",
+    "explanation": "包级 `turbo.json` 中数组字段（`dependsOn` / `env` / `inputs` / `outputs` / `passThroughEnv` / `with` 共 6 个）默认会**整体替换**根配置。要在根配置基础上**追加**，需要把 `$TURBO_EXTENDS$` 作为数组的**第一个元素**。",
+    "tags": ["turborepo", "package-configurations", "TURBO_EXTENDS"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "作为数组首元素，告诉 Turborepo 在根配置的数组基础上追加",
+        "isCorrect": true,
+        "description": "必须是首元素；适用于 dependsOn/env/inputs/outputs/passThroughEnv/with"
+      },
+      {
+        "text": "作为数组末元素，把根配置追加到包级配置后",
+        "isCorrect": false,
+        "description": "必须是首元素，位置错误会被当作普通字符串"
+      },
+      {
+        "text": "作为标量字段值，如 \"env\": \"$TURBO_EXTENDS$\"",
+        "isCorrect": false,
+        "description": "只在数组中有意义"
+      },
+      {
+        "text": "在根 turbo.json 中声明，用来开启所有包的继承",
+        "isCorrect": false,
+        "description": "只能写在包级 turbo.json 中"
+      }
+    ]
+  },
+  {
+    "stem": "想让某次 `turbo run build` 重新计算并写入缓存，但**不读**任何已有缓存，应该用？",
+    "explanation": "`--force` 表示「不读缓存但仍写缓存」——任务全部重跑，结果会被写回本地及 remote 缓存。`--cache=local:,remote:` 则是两端都禁用读写。`--no-cache` 在 v2 已 deprecated，应改用 `--cache` 的细粒度选项。",
+    "tags": ["turborepo", "cache", "CLI"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--force",
+        "isCorrect": true,
+        "description": "不读但仍写缓存，常用于\"重建后想填充团队/CI 的 remote cache\""
+      },
+      {
+        "text": "--no-cache",
+        "isCorrect": false,
+        "description": "v2 中已 deprecated，建议改用 --cache 显式声明各端权限"
+      },
+      {
+        "text": "--cache=local:r,remote:r",
+        "isCorrect": false,
+        "description": "r 表示只读，会读缓存而不写——与目标相反"
+      },
+      {
+        "text": "--parallel",
+        "isCorrect": false,
+        "description": "--parallel 与缓存无关，且 v2 已 deprecated"
+      }
+    ]
+  },
+  {
+    "stem": "`turbo prune @acme/web --docker` 的输出结构是怎样的？",
+    "explanation": "`--docker` 模式输出三部分：`out/json/` 仅含必要包的 `package.json`（便于 Docker 先 COPY 这一层跑 `install`，命中 layer 缓存）；`out/full/` 含完整源码；`out/<lockfile>` 是修剪过的 lockfile。无 `--docker` 时所有内容合并到 `out/`。",
+    "tags": ["turborepo", "prune", "docker"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "out/json/（仅 package.json）+ out/full/（完整源码）+ 修剪过的 lockfile",
+        "isCorrect": true,
+        "description": "json 层用于 Docker install 缓存，full 层装源码"
+      },
+      {
+        "text": "out/ 单层目录，包含全部源码和 lockfile",
+        "isCorrect": false,
+        "description": "那是无 --docker 的输出结构"
+      },
+      {
+        "text": "out/docker.tar 归档文件，可直接 docker import",
+        "isCorrect": false,
+        "description": "Turborepo 不生成 tar 包"
+      },
+      {
+        "text": "out/Dockerfile + out/package/，附带可运行的 Dockerfile",
+        "isCorrect": false,
+        "description": "不会自动生成 Dockerfile，需自己编写"
+      }
+    ]
+  },
+  {
+    "stem": "下列关于 Turborepo Remote Cache **签名验证**的描述，哪一项是正确的？",
+    "explanation": "Remote Cache 签名验证需在 `turbo.json` 中开启 `remoteCache.signature: true`，并通过 `TURBO_REMOTE_CACHE_SIGNATURE_KEY` 环境变量提供 HMAC-SHA256 密钥。Turborepo 用该密钥对每个缓存条目计算签名，下载时验证防止篡改/伪造。",
+    "tags": ["turborepo", "remote-cache", "签名", "安全"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通过 remoteCache.signature: true + TURBO_REMOTE_CACHE_SIGNATURE_KEY 启用 HMAC-SHA256",
+        "isCorrect": true,
+        "description": "签名 + 密钥共同生效，防止恶意篡改缓存条目"
+      },
+      {
+        "text": "Turborepo 自动用 GPG 密钥签名缓存，无需任何配置",
+        "isCorrect": false,
+        "description": "需要显式开启 + 显式提供密钥"
+      },
+      {
+        "text": "签名功能仅 Vercel 托管的 Remote Cache 可用，自托管不支持",
+        "isCorrect": false,
+        "description": "自托管同样支持，常作为推荐做法"
+      },
+      {
+        "text": "签名密钥写在 turbo.json 的 remoteCache.key 字段",
+        "isCorrect": false,
+        "description": "密钥应通过环境变量传入，不应写入配置文件"
+      }
+    ]
+  }
+]
