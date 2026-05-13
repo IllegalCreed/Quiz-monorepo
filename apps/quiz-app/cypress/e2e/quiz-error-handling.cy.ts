@@ -9,6 +9,11 @@
  */
 
 describe("Quiz Flow - Error Handling", () => {
+  beforeEach(() => {
+    // 关闭游客答错登录提示弹窗，避免遮挡 "下一题" 按钮
+    localStorage.setItem("quiz-hide-login-prompt", "true");
+  });
+
   describe("API 错误处理", () => {
     it("当题目加载失败（500）时，应显示错误提示", () => {
       // stub questions endpoint 返回 500 错误

@@ -48,6 +48,9 @@ describe("Quiz Flow - Mock API", () => {
   }
 
   beforeEach(() => {
+    // 关闭游客答错登录提示弹窗，避免遮挡 "下一题" 按钮
+    localStorage.setItem("quiz-hide-login-prompt", "true");
+
     // stub questions endpoint - 后端返回格式为 { data: [...] }
     cy.intercept("GET", "**/questions*", {
       statusCode: 200,

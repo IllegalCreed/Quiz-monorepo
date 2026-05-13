@@ -14,6 +14,9 @@
 
 describe("Quiz Flow - Real Backend", () => {
   beforeEach(() => {
+    // 关闭游客答错登录提示弹窗，避免遮挡 "下一题" 按钮
+    localStorage.setItem("quiz-hide-login-prompt", "true");
+
     // 重置测试数据库（通过受保护的测试端点）
     const apiBaseUrl = Cypress.env("apiBaseUrl") || "http://localhost:10020";
     cy.request({
