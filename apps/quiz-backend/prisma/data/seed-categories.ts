@@ -132,43 +132,98 @@ export const TEST_QUESTION_CATEGORY_MAP: [string, [string, string][]][] = [
 
 /**
  * 创建初始分类体系（幂等）
- * 按 CATEGORY_GROUPS 定义逐级查找或创建 CategoryGroup 和 Category
+ *
+ * 优化策略：批量加载已有维度/分类到内存 Map，对缺失项用 createMany 批量插入，
+ * 三层（CategoryGroup → 根分类 → 子分类）各自只有 ≤3 次往返。
  */
 export async function seedCategories(prisma: PrismaClient): Promise<void> {
   console.log("  🗂️ 创建分类体系...");
 
-  /** 按名称查找或创建维度 */
-  async function getOrCreateGroup(name: string): Promise<number> {
-    const existing = await prisma.categoryGroup.findFirst({ where: { name } });
-    if (existing) return existing.id;
-    const created = await prisma.categoryGroup.create({ data: { name } });
-    return created.id;
+  // ── 1. 维度（CategoryGroup） ──
+  const groupNames = CATEGORY_GROUPS.map((g) => g.name);
+  const existingGroups = await prisma.categoryGroup.findMany({
+    where: { name: { in: groupNames } },
+    select: { id: true, name: true },
+  });
+  const groupByName = new Map<string, number>(
+    existingGroups.map((g) => [g.name, g.id]),
+  );
+  const missingGroups = groupNames.filter((n) => !groupByName.has(n));
+  if (missingGroups.length) {
+    await prisma.categoryGroup.createMany({
+      data: missingGroups.map((name) => ({ name })),
+    });
+    const refetched = await prisma.categoryGroup.findMany({
+      where: { name: { in: missingGroups } },
+      select: { id: true, name: true },
+    });
+    for (const g of refetched) groupByName.set(g.name, g.id);
   }
 
-  /** 按 groupId + parentId + name 查找或创建分类节点 */
-  async function getOrCreateCategory(
-    name: string,
-    groupId: number,
-    parentId?: number,
-  ): Promise<number> {
-    const existing = await prisma.category.findFirst({
-      where: { name, groupId, parentId: parentId ?? null },
+  // ── 2. 根分类（parentId = null） ──
+  const rootSpecs: { name: string; groupId: number }[] = [];
+  for (const g of CATEGORY_GROUPS) {
+    const groupId = groupByName.get(g.name)!;
+    for (const root of g.categories) {
+      rootSpecs.push({ name: root.name, groupId });
+    }
+  }
+  const existingRoots = await prisma.category.findMany({
+    where: {
+      parentId: null,
+      groupId: { in: Array.from(groupByName.values()) },
+    },
+    select: { id: true, name: true, groupId: true },
+  });
+  // 用 "groupId::name" 作为唯一键
+  const rootKey = (groupId: number, name: string) => `${groupId}::${name}`;
+  const rootIdByKey = new Map<string, number>(
+    existingRoots.map((r) => [rootKey(r.groupId, r.name), r.id]),
+  );
+  const missingRoots = rootSpecs.filter(
+    (s) => !rootIdByKey.has(rootKey(s.groupId, s.name)),
+  );
+  if (missingRoots.length) {
+    await prisma.category.createMany({ data: missingRoots });
+    const refetched = await prisma.category.findMany({
+      where: {
+        parentId: null,
+        OR: missingRoots.map((r) => ({ name: r.name, groupId: r.groupId })),
+      },
+      select: { id: true, name: true, groupId: true },
     });
-    if (existing) return existing.id;
-    const created = await prisma.category.create({
-      data: { name, groupId, parentId: parentId ?? null },
-    });
-    return created.id;
+    for (const r of refetched)
+      rootIdByKey.set(rootKey(r.groupId, r.name), r.id);
   }
 
-  for (const group of CATEGORY_GROUPS) {
-    const groupId = await getOrCreateGroup(group.name);
-
-    for (const root of group.categories) {
-      const rootId = await getOrCreateCategory(root.name, groupId);
+  // ── 3. 子分类（parentId 指向根分类） ──
+  const childSpecs: { name: string; groupId: number; parentId: number }[] = [];
+  for (const g of CATEGORY_GROUPS) {
+    const groupId = groupByName.get(g.name)!;
+    for (const root of g.categories) {
+      const parentId = rootIdByKey.get(rootKey(groupId, root.name))!;
       for (const child of root.children ?? []) {
-        await getOrCreateCategory(child.name, groupId, rootId);
+        childSpecs.push({ name: child.name, groupId, parentId });
       }
+    }
+  }
+  if (childSpecs.length) {
+    const existingChildren = await prisma.category.findMany({
+      where: {
+        parentId: { in: childSpecs.map((c) => c.parentId) },
+        name: { in: childSpecs.map((c) => c.name) },
+      },
+      select: { name: true, parentId: true },
+    });
+    const childKey = (parentId: number, name: string) => `${parentId}::${name}`;
+    const existingChildKeys = new Set(
+      existingChildren.map((c) => childKey(c.parentId!, c.name)),
+    );
+    const missingChildren = childSpecs.filter(
+      (c) => !existingChildKeys.has(childKey(c.parentId, c.name)),
+    );
+    if (missingChildren.length) {
+      await prisma.category.createMany({ data: missingChildren });
     }
   }
 
@@ -177,6 +232,11 @@ export async function seedCategories(prisma: PrismaClient): Promise<void> {
 
 /**
  * 将测试题关联到对应的结构化分类（幂等）
+ *
+ * 优化策略：一次性把所有相关 stem / groupName / categoryName 加载到内存，
+ * 构建 join 行清单后用 createMany + skipDuplicates 批量插入。原实现 10 道题
+ * × (1 + 2 × 3) = 70 次往返，现压缩到 4 次。
+ *
  * 依赖 seedCategories() 已经执行、分类节点已存在
  */
 export async function linkTestQuestionCategories(
@@ -184,32 +244,63 @@ export async function linkTestQuestionCategories(
 ): Promise<void> {
   console.log("seedTest: linking test questions to categories...");
 
+  // 收集所有用到的 stem / 维度名 / 分类名（按维度去重映射）
+  const stems = TEST_QUESTION_CATEGORY_MAP.map(([stem]) => stem);
+  const groupNames = Array.from(
+    new Set(
+      TEST_QUESTION_CATEGORY_MAP.flatMap(([, pairs]) => pairs.map(([g]) => g)),
+    ),
+  );
+  const catNames = Array.from(
+    new Set(
+      TEST_QUESTION_CATEGORY_MAP.flatMap(([, pairs]) =>
+        pairs.map(([, c]) => c),
+      ),
+    ),
+  );
+
+  // 并行加载题目 + 维度 + 分类
+  const [questions, groups, categories] = await Promise.all([
+    prisma.question.findMany({
+      where: { stem: { in: stems } },
+      select: { id: true, stem: true },
+    }),
+    prisma.categoryGroup.findMany({
+      where: { name: { in: groupNames } },
+      select: { id: true, name: true },
+    }),
+    prisma.category.findMany({
+      where: { name: { in: catNames } },
+      select: { id: true, name: true, groupId: true },
+    }),
+  ]);
+
+  const questionIdByStem = new Map(questions.map((q) => [q.stem, q.id]));
+  const groupIdByName = new Map(groups.map((g) => [g.name, g.id]));
+  // 同名分类可能跨维度，需用 "groupId::name" 唯一定位
+  const categoryIdByKey = new Map(
+    categories.map((c) => [`${c.groupId}::${c.name}`, c.id]),
+  );
+
+  // 构建待插入的 (questionId, categoryId) 对
+  const rows: { questionId: number; categoryId: number }[] = [];
   for (const [stem, pairs] of TEST_QUESTION_CATEGORY_MAP) {
-    const question = await prisma.question.findFirst({ where: { stem } });
-    if (!question) continue;
-
+    const questionId = questionIdByStem.get(stem);
+    if (!questionId) continue;
     for (const [groupName, catName] of pairs) {
-      const group = await prisma.categoryGroup.findFirst({
-        where: { name: groupName },
-      });
-      if (!group) continue;
-
-      const category = await prisma.category.findFirst({
-        where: { name: catName, groupId: group.id },
-      });
-      if (!category) continue;
-
-      await prisma.questionCategory.upsert({
-        where: {
-          questionId_categoryId: {
-            questionId: question.id,
-            categoryId: category.id,
-          },
-        },
-        update: {},
-        create: { questionId: question.id, categoryId: category.id },
-      });
+      const groupId = groupIdByName.get(groupName);
+      if (!groupId) continue;
+      const categoryId = categoryIdByKey.get(`${groupId}::${catName}`);
+      if (!categoryId) continue;
+      rows.push({ questionId, categoryId });
     }
-    console.log("  Linked categories for:", stem);
   }
+
+  if (rows.length) {
+    await prisma.questionCategory.createMany({
+      data: rows,
+      skipDuplicates: true,
+    });
+  }
+  console.log(`  Linked categories for ${questions.length} test questions`);
 }

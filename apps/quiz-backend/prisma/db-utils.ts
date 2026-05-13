@@ -71,49 +71,50 @@ function ensureNotProd() {
   }
 }
 
+/** 创建基础题目（"Hello World - 基础题"）—— 幂等 */
+async function _seedBaseQuestion(): Promise<void> {
+  const exists = await prisma.question.findFirst({
+    where: { stem: "Hello World - 基础题" },
+  });
+  if (exists) {
+    console.log("seedSystem: base question already exists");
+    return;
+  }
+  await prisma.question.create({
+    data: {
+      stem: "Hello World - 基础题",
+      explanation: "这是一个基础题目，所有环境都会包含这条数据。",
+      tags: ["基础"],
+      options: {
+        create: [
+          {
+            text: "Hello",
+            isCorrect: false,
+            description: "Hello 只是一个问候词，不是正确答案。",
+          },
+          {
+            text: "World",
+            isCorrect: true,
+            description: "World 是正确答案，代表完整的 Hello World 程序。",
+          },
+        ],
+      },
+    },
+  });
+  console.log("seedSystem: created base question");
+}
+
 export async function seedSystem() {
   ensureNotProd();
   console.log("seedSystem: beginning (idempotent)");
 
-  // 1. 管理员系统数据（角色 + 账号）
-  await seedAdmin(prisma);
-
-  // 2. 基础题目
-  const exists = await prisma.question.findFirst({
-    where: { stem: "Hello World - 基础题" },
-  });
-  if (!exists) {
-    await prisma.question.create({
-      data: {
-        stem: "Hello World - 基础题",
-        explanation: "这是一个基础题目，所有环境都会包含这条数据。",
-        tags: ["基础"],
-        options: {
-          create: [
-            {
-              text: "Hello",
-              isCorrect: false,
-              description: "Hello 只是一个问候词，不是正确答案。",
-            },
-            {
-              text: "World",
-              isCorrect: true,
-              description: "World 是正确答案，代表完整的 Hello World 程序。",
-            },
-          ],
-        },
-      },
-    });
-    console.log("seedSystem: created base question");
-  } else {
-    console.log("seedSystem: base question already exists");
-  }
-
-  // 3. 分类体系（维度 + 分类节点）
-  await seedCategories(prisma);
-
-  // 4. 测试用户
-  await seedUsers(prisma);
+  // 4 个阶段彼此独立（admins / 基础题 / 分类体系 / 测试用户），并行执行
+  await Promise.all([
+    seedAdmin(prisma),
+    _seedBaseQuestion(),
+    seedCategories(prisma),
+    seedUsers(prisma),
+  ]);
 
   console.log("seedSystem: finished");
 }
@@ -153,81 +154,97 @@ export async function seedTest() {
 
   const data = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as SeedQuestion[];
 
-  for (const q of data) {
-    const existing = await prisma.question.findFirst({
-      where: { stem: q.stem },
-    });
-    if (existing) {
-      await prisma.option.deleteMany({ where: { questionId: existing.id } });
-      await prisma.question.update({
-        where: { id: existing.id },
-        data: {
-          explanation: q.explanation ?? undefined,
-          tags: q.tags ?? undefined,
-          options: {
-            create: q.options.map((o) => ({
-              text: o.text,
-              isCorrect: o.isCorrect,
-              description: o.description ?? undefined,
-            })),
+  // 一次性查出所有同名题目，避免逐题 findFirst（10 次 → 1 次）
+  const existingByStem = new Map(
+    (
+      await prisma.question.findMany({
+        where: { stem: { in: data.map((q) => q.stem) } },
+        select: { id: true, stem: true },
+      })
+    ).map((q) => [q.stem, q.id]),
+  );
+
+  // 题目间互相独立，可并行 upsert
+  await Promise.all(
+    data.map(async (q) => {
+      const optionsCreate = q.options.map((o) => ({
+        text: o.text,
+        isCorrect: o.isCorrect,
+        description: o.description ?? undefined,
+      }));
+      const existingId = existingByStem.get(q.stem);
+      if (existingId !== undefined) {
+        await prisma.option.deleteMany({ where: { questionId: existingId } });
+        await prisma.question.update({
+          where: { id: existingId },
+          data: {
+            explanation: q.explanation ?? undefined,
+            tags: q.tags ?? undefined,
+            options: { create: optionsCreate },
           },
-        },
-      });
-      console.log("Updated test question", q.stem);
-    } else {
-      await prisma.question.create({
-        data: {
-          stem: q.stem,
-          explanation: q.explanation ?? undefined,
-          tags: q.tags ?? undefined,
-          options: {
-            create: q.options.map((o) => ({
-              text: o.text,
-              isCorrect: o.isCorrect,
-              description: o.description ?? undefined,
-            })),
+        });
+      } else {
+        await prisma.question.create({
+          data: {
+            stem: q.stem,
+            explanation: q.explanation ?? undefined,
+            tags: q.tags ?? undefined,
+            options: { create: optionsCreate },
           },
-        },
-      });
-      console.log("Inserted test question", q.stem);
-    }
-  }
+        });
+      }
+    }),
+  );
+  console.log(`  Seeded ${data.length} test questions`);
 
-  // 将测试题关联到结构化分类（依赖 seedSystem 中的 seedCategories 已执行）
-  await linkTestQuestionCategories(prisma);
-
-  // 为测试用户创建做题历史和偏好分类（依赖 seedUsers + 测试题目 + 分类体系）
-  await seedUserData(prisma);
-
-  // 创建系统日志种子数据
-  await seedSystemLogs(prisma);
+  // 题目已落库后，3 个下游 seed 互相独立，可并行：
+  // - linkTestQuestionCategories: 依赖 questions + categories
+  // - seedUserData: 依赖 users + questions + categories
+  // - seedSystemLogs: 完全独立
+  await Promise.all([
+    linkTestQuestionCategories(prisma),
+    seedUserData(prisma),
+    seedSystemLogs(prisma),
+  ]);
 
   console.log("seedTest: finished");
 }
 
 /**
- * 重置所有自增主键表的 AUTO_INCREMENT 计数器
- * 在 deleteMany 清空表后调用，确保重新 seed 时 ID 从 1 开始
+ * 一次性清空所有测试表并重置 AUTO_INCREMENT
+ *
+ * 通过临时关闭外键约束 + TRUNCATE TABLE 实现：
+ * - TRUNCATE 自带 AUTO_INCREMENT 重置，无需额外 ALTER TABLE
+ * - 跳过 FK 顺序依赖，无需按拓扑顺序删除
+ * - 单次连接往返完成全部清理，比逐表 deleteMany 快一个数量级
+ *
+ * 仅在 resetTest（已确认 db name 含 'test'）中使用，对生产/开发库不可见。
  */
-async function _resetAutoIncrements(): Promise<void> {
+async function _truncateAllTables(): Promise<void> {
   const tables = [
-    "Role",
-    "Admin",
-    "User",
-    "Question",
-    "Option",
-    "AnswerAttempt",
-    "CategoryGroup",
-    "Category",
+    "UserPreference",
     "SystemLog",
+    "AnswerAttempt",
+    "QuestionCategory",
+    "Option",
+    "Question",
+    "Category",
+    "CategoryGroup",
+    "Admin",
+    "Role",
+    "User",
   ];
 
-  for (const table of tables) {
-    await prisma.$executeRawUnsafe(
-      `ALTER TABLE \`${table}\` AUTO_INCREMENT = 1`,
-    );
-  }
-  console.log("resetTest: AUTO_INCREMENT counters reset");
+  // 用 interactive transaction 把 SET FOREIGN_KEY_CHECKS 与 TRUNCATE 绑定到同一连接，
+  // 否则 SET 会因为连接池分发到不同连接而失效。TRUNCATE 是 DDL 隐式提交，
+  // 但 FOREIGN_KEY_CHECKS 是 session-level 变量，对同连接的后续语句仍然有效。
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+    for (const table of tables) {
+      await tx.$executeRawUnsafe(`TRUNCATE TABLE \`${table}\``);
+    }
+    await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+  });
 }
 
 export async function resetTest() {
@@ -240,70 +257,15 @@ export async function resetTest() {
     );
   }
 
+  const startedAt = Date.now();
   console.log("resetTest: wiping and reseeding test data");
 
-  // 清除用户偏好（FK 依赖 User + Category）
-  try {
-    await prisma.userPreference?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-
-  // 清除系统日志
-  try {
-    await prisma.systemLog?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-
-  // 清除管理员系统数据
-  try {
-    await prisma.admin?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-  try {
-    await prisma.role?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-
-  // 清除题目相关数据（QuestionCategory 有 FK，必须先于 question/option 删除）
-  try {
-    await prisma.answerAttempt?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-
-  // 清除用户（AnswerAttempt.userId FK 已通过上面 deleteMany 清除或 SET NULL）
-  try {
-    await prisma.user?.deleteMany();
-  } catch {
-    /* ignore */
-  }
-
-  await prisma.questionCategory.deleteMany();
-  await prisma.option.deleteMany();
-  await prisma.question.deleteMany();
-
-  // 清除分类体系（Category 有自引用 FK parentId，需先删叶节点再删根节点）
-  // 循环删叶节点直到全部清完，再清 CategoryGroup
-  let hasCategories = true;
-  while (hasCategories) {
-    const { count } = await prisma.category.deleteMany({
-      where: { children: { none: {} } },
-    });
-    hasCategories = count > 0;
-  }
-  await prisma.categoryGroup.deleteMany();
-
-  // 重置所有自增主键表的 AUTO_INCREMENT 计数器，确保 ID 从 1 开始
-  await _resetAutoIncrements();
-
+  // 快速清理：TRUNCATE 所有表（FK 临时关闭，自动重置 AUTO_INCREMENT）
+  await _truncateAllTables();
   // 重新插入（含分类体系）
   await seedSystem();
   await seedTest();
-  console.log("resetTest: finished");
+  console.log(`resetTest: finished in ${Date.now() - startedAt}ms`);
 }
 
 export { prisma };

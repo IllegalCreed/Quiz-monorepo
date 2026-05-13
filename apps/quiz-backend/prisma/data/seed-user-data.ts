@@ -78,40 +78,37 @@ export async function seedUserData(prisma: PrismaClient): Promise<void> {
   console.log(`     ✓ testuser2: ${user2Attempts.length} 条做题记录`);
 
   // ── 4. 为测试用户创建偏好分类 ──
-  // 按分类名称查找分类节点
-  async function findCategoryByName(name: string): Promise<number | null> {
-    const cat = await prisma.category.findFirst({ where: { name } });
-    return cat?.id ?? null;
-  }
-
   // testuser1 偏好：前端方向（JS/TS、框架与库）+ 中级难度
   const user1PrefNames = ["JavaScript / TypeScript", "框架与库", "中级"];
   // testuser2 偏好：后端方向（Node.js、数据库）+ 初级难度
   const user2PrefNames = ["Node.js", "数据库", "初级"];
 
-  // 清除已有偏好（幂等）
+  // 一次性查出所有偏好用到的分类节点（同名分类按 name 唯一足够，
+  // 当前 seed 范围内无歧义），构建 name → id 映射
+  const allPrefNames = Array.from(
+    new Set([...user1PrefNames, ...user2PrefNames]),
+  );
+  const cats = await prisma.category.findMany({
+    where: { name: { in: allPrefNames } },
+    select: { id: true, name: true },
+  });
+  const categoryIdByName = new Map(cats.map((c) => [c.name, c.id]));
+
+  // 清除已有偏好 + 批量插入新偏好，并行执行
   await prisma.userPreference.deleteMany({
     where: { userId: { in: [1, 2] } },
   });
-
-  // 插入 testuser1 偏好
+  const prefRows: { userId: number; categoryId: number }[] = [];
   for (const name of user1PrefNames) {
-    const categoryId = await findCategoryByName(name);
-    if (categoryId) {
-      await prisma.userPreference.create({
-        data: { userId: 1, categoryId },
-      });
-    }
+    const categoryId = categoryIdByName.get(name);
+    if (categoryId) prefRows.push({ userId: 1, categoryId });
   }
-
-  // 插入 testuser2 偏好
   for (const name of user2PrefNames) {
-    const categoryId = await findCategoryByName(name);
-    if (categoryId) {
-      await prisma.userPreference.create({
-        data: { userId: 2, categoryId },
-      });
-    }
+    const categoryId = categoryIdByName.get(name);
+    if (categoryId) prefRows.push({ userId: 2, categoryId });
+  }
+  if (prefRows.length) {
+    await prisma.userPreference.createMany({ data: prefRows });
   }
 
   console.log(`     ✓ testuser1: ${user1PrefNames.length} 个偏好分类`);

@@ -21,44 +21,45 @@ export async function seedUsers(prisma: PrismaClient): Promise<void> {
 
   const password = await bcrypt.hash("user123", SALT_ROUNDS);
 
-  const user1 = await prisma.user.upsert({
-    where: { id: 1 },
-    update: { password, status: "ACTIVE" },
-    create: {
-      id: 1,
-      username: "testuser1",
-      password,
-      nickname: "测试用户一",
-      email: "user1@example.com",
-      status: "ACTIVE",
-    },
-  });
-
-  const user2 = await prisma.user.upsert({
-    where: { id: 2 },
-    update: { password, status: "ACTIVE" },
-    create: {
-      id: 2,
-      username: "testuser2",
-      password,
-      nickname: "测试用户二",
-      email: "user2@example.com",
-      status: "ACTIVE",
-    },
-  });
-
-  const user3 = await prisma.user.upsert({
-    where: { id: 3 },
-    update: { password, status: "DISABLED" },
-    create: {
-      id: 3,
-      username: "disableduser",
-      password,
-      nickname: "被禁用的用户",
-      email: "disabled@example.com",
-      status: "DISABLED",
-    },
-  });
+  // 3 个用户互相独立，并行 upsert
+  const [user1, user2, user3] = await Promise.all([
+    prisma.user.upsert({
+      where: { id: 1 },
+      update: { password, status: "ACTIVE" },
+      create: {
+        id: 1,
+        username: "testuser1",
+        password,
+        nickname: "测试用户一",
+        email: "user1@example.com",
+        status: "ACTIVE",
+      },
+    }),
+    prisma.user.upsert({
+      where: { id: 2 },
+      update: { password, status: "ACTIVE" },
+      create: {
+        id: 2,
+        username: "testuser2",
+        password,
+        nickname: "测试用户二",
+        email: "user2@example.com",
+        status: "ACTIVE",
+      },
+    }),
+    prisma.user.upsert({
+      where: { id: 3 },
+      update: { password, status: "DISABLED" },
+      create: {
+        id: 3,
+        username: "disableduser",
+        password,
+        nickname: "被禁用的用户",
+        email: "disabled@example.com",
+        status: "DISABLED",
+      },
+    }),
+  ]);
 
   console.log(`     ✓ ${user1.username} (ACTIVE)`);
   console.log(`     ✓ ${user2.username} (ACTIVE)`);
