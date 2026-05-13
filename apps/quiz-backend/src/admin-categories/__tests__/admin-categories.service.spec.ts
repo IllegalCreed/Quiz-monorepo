@@ -175,7 +175,7 @@ describe("AdminCategoriesService", () => {
       const createdGroup = { ...mockGroup, name: "难度", sort: 1 };
       jest
         .spyOn(prisma.categoryGroup, "create")
-        .mockResolvedValue(createdGroup as never);
+        .mockResolvedValue(createdGroup);
 
       // Act
       const result = await service.createGroup(dto);
@@ -189,9 +189,7 @@ describe("AdminCategoriesService", () => {
 
     it("sort 未传时默认为 0", async () => {
       // Arrange
-      jest
-        .spyOn(prisma.categoryGroup, "create")
-        .mockResolvedValue(mockGroup as never);
+      jest.spyOn(prisma.categoryGroup, "create").mockResolvedValue(mockGroup);
 
       // Act
       await service.createGroup({ name: "题型" });
@@ -209,11 +207,11 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       const updatedGroup = { ...mockGroup, name: "新名称" };
       jest
         .spyOn(prisma.categoryGroup, "update")
-        .mockResolvedValue(updatedGroup as never);
+        .mockResolvedValue(updatedGroup);
 
       // Act
       const result = await service.updateGroup(1, { name: "新名称" });
@@ -230,11 +228,11 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       const updatedGroup = { ...mockGroup, sort: 5 };
       jest
         .spyOn(prisma.categoryGroup, "update")
-        .mockResolvedValue(updatedGroup as never);
+        .mockResolvedValue(updatedGroup);
 
       // Act
       const result = await service.updateGroup(1, { sort: 5 });
@@ -260,11 +258,9 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest.spyOn(prisma.category, "count").mockResolvedValue(0);
-      jest
-        .spyOn(prisma.categoryGroup, "delete")
-        .mockResolvedValue(mockGroup as never);
+      jest.spyOn(prisma.categoryGroup, "delete").mockResolvedValue(mockGroup);
 
       // Act
       const result = await service.deleteGroup(1);
@@ -290,7 +286,7 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest.spyOn(prisma.category, "count").mockResolvedValue(3);
 
       // Act & Assert
@@ -305,7 +301,7 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest.spyOn(prisma.category, "create").mockResolvedValue({} as never);
 
       // Act
@@ -329,7 +325,7 @@ describe("AdminCategoriesService", () => {
       };
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest
         .spyOn(prisma.category, "findUnique")
         .mockResolvedValue(parentCategory as never);
@@ -356,7 +352,7 @@ describe("AdminCategoriesService", () => {
       };
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest
         .spyOn(prisma.category, "findUnique")
         .mockResolvedValue(leafParent as never);
@@ -414,7 +410,7 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest.spyOn(prisma.category, "findUnique").mockResolvedValue(null);
 
       // Act & Assert
@@ -434,7 +430,7 @@ describe("AdminCategoriesService", () => {
       };
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest
         .spyOn(prisma.category, "findUnique")
         .mockResolvedValue(parentInOtherGroup as never);
@@ -449,7 +445,7 @@ describe("AdminCategoriesService", () => {
       // Arrange
       jest
         .spyOn(prisma.categoryGroup, "findUnique")
-        .mockResolvedValue(mockGroup as never);
+        .mockResolvedValue(mockGroup);
       jest.spyOn(prisma.category, "create").mockResolvedValue({
         id: 10,
         name: "前端",

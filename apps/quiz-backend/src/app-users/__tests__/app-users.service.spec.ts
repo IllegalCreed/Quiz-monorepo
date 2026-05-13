@@ -182,7 +182,7 @@ describe("AppUsersService", () => {
       ];
       jest
         .spyOn(prisma.userPreference, "findMany")
-        .mockResolvedValue(mockPrefs as any);
+        .mockResolvedValue(mockPrefs);
 
       // Act
       const result = await service.getPreferences(1);

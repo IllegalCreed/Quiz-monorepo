@@ -469,7 +469,7 @@ describe("AdminQuestionsService", () => {
         .mockResolvedValue(mockQuestion as never);
       jest.spyOn(prisma.questionCategory, "createMany").mockResolvedValue({
         count: 2,
-      } as never);
+      });
 
       // Act
       const result = await service.create({
@@ -541,10 +541,10 @@ describe("AdminQuestionsService", () => {
       jest.spyOn(prisma.category, "findMany").mockResolvedValue([] as never);
       jest
         .spyOn(prisma.questionCategory, "deleteMany")
-        .mockResolvedValue({ count: 1 } as never);
+        .mockResolvedValue({ count: 1 });
       jest
         .spyOn(prisma.questionCategory, "createMany")
-        .mockResolvedValue({ count: 2 } as never);
+        .mockResolvedValue({ count: 2 });
       jest
         .spyOn(prisma.question, "update")
         .mockResolvedValue(mockQuestion as never);
@@ -572,7 +572,7 @@ describe("AdminQuestionsService", () => {
         .mockResolvedValue(mockQuestion as never);
       jest
         .spyOn(prisma.questionCategory, "deleteMany")
-        .mockResolvedValue({ count: 1 } as never);
+        .mockResolvedValue({ count: 1 });
       jest
         .spyOn(prisma.question, "update")
         .mockResolvedValue(mockQuestion as never);

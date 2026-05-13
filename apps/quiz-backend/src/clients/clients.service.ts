@@ -150,7 +150,7 @@ export class ClientsService {
   broadcast(type: string, payload: Record<string, unknown>): { sent: number } {
     const event: MessageEvent = {
       data: JSON.stringify({ type, ...payload }),
-    } as MessageEvent;
+    };
 
     let sent = 0;
     for (const entry of this.registry.values()) {
@@ -173,7 +173,7 @@ export class ClientsService {
     this.pingTimer = setInterval(() => {
       const pingEvent: MessageEvent = {
         data: JSON.stringify({ type: "ping", ts: Date.now() }),
-      } as MessageEvent;
+      };
 
       for (const entry of this.registry.values()) {
         try {

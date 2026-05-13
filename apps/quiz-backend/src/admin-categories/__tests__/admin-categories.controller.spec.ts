@@ -65,7 +65,7 @@ describe("AdminCategoriesController", () => {
     it("应该委托给 service.findAllGroups 并返回维度列表", async () => {
       // Arrange
       const groups = [mockGroup];
-      jest.spyOn(service, "findAllGroups").mockResolvedValue(groups as never);
+      jest.spyOn(service, "findAllGroups").mockResolvedValue(groups);
 
       // Act
       const result = await controller.findAllGroups();
@@ -81,7 +81,7 @@ describe("AdminCategoriesController", () => {
     it("应该将 dto 透传给 service.createGroup 并返回新建维度", async () => {
       // Arrange
       const dto = { name: "难度", sort: 1 };
-      jest.spyOn(service, "createGroup").mockResolvedValue(mockGroup as never);
+      jest.spyOn(service, "createGroup").mockResolvedValue(mockGroup);
 
       // Act
       const result = await controller.createGroup(dto);
@@ -98,9 +98,7 @@ describe("AdminCategoriesController", () => {
       // Arrange
       const dto = { name: "新维度名称" };
       const updatedGroup = { ...mockGroup, name: "新维度名称" };
-      jest
-        .spyOn(service, "updateGroup")
-        .mockResolvedValue(updatedGroup as never);
+      jest.spyOn(service, "updateGroup").mockResolvedValue(updatedGroup);
 
       // Act
       const result = await controller.updateGroup(1, dto);
@@ -116,7 +114,7 @@ describe("AdminCategoriesController", () => {
     it("应该将 id 透传给 service.deleteGroup 并返回成功消息", async () => {
       // Arrange
       const mockResult = { message: "维度删除成功" };
-      jest.spyOn(service, "deleteGroup").mockResolvedValue(mockResult as never);
+      jest.spyOn(service, "deleteGroup").mockResolvedValue(mockResult);
 
       // Act
       const result = await controller.deleteGroup(1);
@@ -149,7 +147,7 @@ describe("AdminCategoriesController", () => {
       const dto = { name: "Vue", parentId: 1 };
       jest
         .spyOn(service, "createCategory")
-        .mockResolvedValue({ message: "分类创建成功" } as never);
+        .mockResolvedValue({ message: "分类创建成功" });
 
       // Act
       const result = await controller.createCategory(1, dto);
@@ -184,9 +182,7 @@ describe("AdminCategoriesController", () => {
     it("应该将 id 透传给 service.deleteCategory 并返回成功消息", async () => {
       // Arrange
       const mockResult = { message: "分类删除成功" };
-      jest
-        .spyOn(service, "deleteCategory")
-        .mockResolvedValue(mockResult as never);
+      jest.spyOn(service, "deleteCategory").mockResolvedValue(mockResult);
 
       // Act
       const result = await controller.deleteCategory(1);

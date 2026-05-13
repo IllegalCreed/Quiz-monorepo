@@ -183,7 +183,7 @@ describe("AdminQuestionsController", () => {
       const mockResult = { message: "题目删除成功" };
       const removeSpy = jest
         .spyOn(service, "remove")
-        .mockResolvedValue(mockResult as never);
+        .mockResolvedValue(mockResult);
 
       // Act
       const result = await controller.remove(1);

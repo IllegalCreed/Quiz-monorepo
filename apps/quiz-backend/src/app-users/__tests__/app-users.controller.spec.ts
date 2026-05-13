@@ -109,7 +109,7 @@ describe("AppUsersController", () => {
     it("应该调用 service.updateStatus 并返回更新后的用户", async () => {
       // Arrange
       const updatedUser = { ...mockUser, status: "DISABLED" as UserStatus };
-      service.updateStatus.mockResolvedValue(updatedUser as any);
+      service.updateStatus.mockResolvedValue(updatedUser);
 
       // Act
       const result = await controller.updateStatus(1, { status: "DISABLED" });

@@ -121,7 +121,7 @@ describe("SystemLogsService", () => {
       };
       jest
         .spyOn(prisma.systemLog, "create")
-        .mockResolvedValue({ ...mockLogEntry, ...dto } as any);
+        .mockResolvedValue({ ...mockLogEntry, ...dto });
 
       // Act
       await service.create(dto);

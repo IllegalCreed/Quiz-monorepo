@@ -70,9 +70,7 @@ describe("CategoriesController", () => {
   describe("findAllGroups", () => {
     it("应该委托给 AdminCategoriesService.findAllGroups 并返回维度树", async () => {
       // Arrange
-      jest
-        .spyOn(service, "findAllGroups")
-        .mockResolvedValue(mockGroupsTree as never);
+      jest.spyOn(service, "findAllGroups").mockResolvedValue(mockGroupsTree);
 
       // Act
       const result = await controller.findAllGroups();

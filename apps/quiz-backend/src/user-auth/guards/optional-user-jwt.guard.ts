@@ -16,7 +16,7 @@ export class OptionalUserJwtGuard extends AuthGuard("user-jwt") {
 
   /** 认证失败时返回 null 而非抛异常 */
   handleRequest<TUser>(_err: Error | null, user: TUser | false): TUser | null {
-    if (!user) return null as unknown as TUser;
+    if (!user) return null;
     return user;
   }
 }

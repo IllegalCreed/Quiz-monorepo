@@ -48,7 +48,7 @@ describe("useQuiz (mock mode)", () => {
   });
 
   it("答对后应填充 optionDescriptions 并 1 秒后自动跳转", async () => {
-    const { loadNext, choose, optionDescriptions, status, question } = useQuiz();
+    const { loadNext, choose, optionDescriptions, status } = useQuiz();
 
     await loadNext();
     const correctId = getCorrectOptionId();
@@ -69,7 +69,7 @@ describe("useQuiz (mock mode)", () => {
   });
 
   it("答错后应填充 optionDescriptions 且不自动跳转", async () => {
-    const { loadNext, choose, optionDescriptions, status, question } = useQuiz();
+    const { loadNext, choose, optionDescriptions, status } = useQuiz();
 
     await loadNext();
     const wrongId = getWrongOptionId();
@@ -85,7 +85,7 @@ describe("useQuiz (mock mode)", () => {
   });
 
   it("loadNext 应重置 optionDescriptions", async () => {
-    const { loadNext, choose, optionDescriptions, question } = useQuiz();
+    const { loadNext, choose, optionDescriptions } = useQuiz();
 
     await loadNext();
     // 先答题填充 descriptions
@@ -169,7 +169,7 @@ describe("useQuiz (mock mode)", () => {
   });
 
   it("loadNext 重置 selected、correctOptionId、error", async () => {
-    const { loadNext, selected, correctOptionId, error, choose, question } = useQuiz();
+    const { loadNext, selected, correctOptionId, error, choose } = useQuiz();
 
     await loadNext();
     // 答题设置状态
@@ -189,7 +189,9 @@ describe("useQuiz (mock mode)", () => {
 
     await loadNext();
     // 手动移除第一个选项的 description
-    const correctOption = question.value!.options.find((option) => option.id === getCorrectOptionId())!;
+    const correctOption = question.value!.options.find(
+      (option) => option.id === getCorrectOptionId(),
+    )!;
     correctOption.description = undefined;
     await choose(correctOption.id);
 

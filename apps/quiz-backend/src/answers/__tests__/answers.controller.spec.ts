@@ -267,7 +267,7 @@ describe("AnswersController", () => {
         .mockImplementation(
           () =>
             new Promise((resolve) => {
-              resolveCreate = () => resolve({} as any);
+              resolveCreate = () => resolve({});
             }) as any,
         );
 
