@@ -1,0 +1,405 @@
+[
+  {
+    "stem": "vee-validate v4 中，从单个组件内启动一个表单上下文（统一管理多个字段的值、错误、校验、提交）的推荐入口是？",
+    "explanation": "v4 的核心是 `useForm`：它创建表单上下文，聚合所有 `defineField` 出来的字段的值、错误、meta、submit 流程。`useField` 单独使用会脱离 form 上下文，v4.10+ 已不推荐单用；`createForm` / `defineForm` 都不是公开 API。",
+    "tags": ["vee-validate", "Composition API", "入门"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`useForm({ validationSchema })`",
+        "isCorrect": true,
+        "description": "v4 的标准入口，返回 values/errors/defineField/handleSubmit 等"
+      },
+      {
+        "text": "`useField('email')`",
+        "isCorrect": false,
+        "description": "单字段 hook，需嵌在 useForm 上下文中，独立用会脱管"
+      },
+      {
+        "text": "`createForm({...})`",
+        "isCorrect": false,
+        "description": "vee-validate 没有这个 API"
+      },
+      {
+        "text": "`defineForm({...})`",
+        "isCorrect": false,
+        "description": "vee-validate 没有这个 API"
+      }
+    ]
+  },
+  {
+    "stem": "`const [email, emailAttrs] = defineField('email')` 在模板里正确的绑定方式是？",
+    "explanation": "`defineField` 返回 `[modelRef, attrsObject]`。`modelRef` 是字段值，配 `v-model`；`attrsObject` 包含 `onBlur` / `onInput` 等事件处理器，配 `v-bind`，让 vee-validate 能监听用户交互触发校验。两者必须分开绑，缺一不可。",
+    "tags": ["vee-validate", "defineField", "模板绑定"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`<input v-model=\"email\" v-bind=\"emailAttrs\">`",
+        "isCorrect": true,
+        "description": "model 绑值、attrs 绑事件处理，正确组合"
+      },
+      {
+        "text": "`<input v-model=\"emailAttrs\">`",
+        "isCorrect": false,
+        "description": "attrs 是事件处理器对象，不是值"
+      },
+      {
+        "text": "`<input :value=\"email\" v-bind=\"emailAttrs\">`",
+        "isCorrect": false,
+        "description": "只绑了单向 :value，输入不会回写到 email"
+      },
+      {
+        "text": "`<input v-bind=\"[email, emailAttrs]\">`",
+        "isCorrect": false,
+        "description": "v-bind 不接受数组解构语法"
+      }
+    ]
+  },
+  {
+    "stem": "vee-validate v4 与 Zod / Yup / Valibot 这类 schema 库集成时，必须使用哪个适配函数把 schema 接入 `validationSchema`？",
+    "explanation": "三个官方适配器（`@vee-validate/zod` / `yup` / `valibot`）都暴露同名 `toTypedSchema(schema)`：把外部 schema 转成 vee-validate 能识别的格式，同时把 schema 的输入 / 输出类型反推到 `useForm` 的 `values` 和 submit 参数。",
+    "tags": ["vee-validate", "zod", "TypeScript"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`toTypedSchema(schema)`",
+        "isCorrect": true,
+        "description": "三个适配器都暴露这个同名函数"
+      },
+      {
+        "text": "`createSchema(schema)`",
+        "isCorrect": false,
+        "description": "不存在的 API"
+      },
+      {
+        "text": "直接把 `z.object({...})` 传给 `validationSchema`",
+        "isCorrect": false,
+        "description": "v4 需要先经 toTypedSchema 转换，否则类型推导丢失"
+      },
+      {
+        "text": "`yup.toSchema(schema)`",
+        "isCorrect": false,
+        "description": "Yup 自身没有这个 API"
+      }
+    ]
+  },
+  {
+    "stem": "`handleSubmit(onSuccess, onInvalid?)` 的第二个回调（onInvalid）在什么时候触发？",
+    "explanation": "`handleSubmit` 是 v4 提交流程的总闸：它先把所有字段标记 touched + 跑校验，校验通过才执行第一个回调，**校验失败时**调用第二个回调（可拿到 `{ values, errors, results }`）。错误的对端不是 `setErrors`，而是这个第二回调。",
+    "tags": ["vee-validate", "submit", "校验"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "表单字段校验失败时",
+        "isCorrect": true,
+        "description": "可拿到 values / errors / 详细 results 做 UI 反馈"
+      },
+      {
+        "text": "提交过程中网络请求失败时",
+        "isCorrect": false,
+        "description": "网络错误属于业务侧，handleSubmit 不会主动捕获"
+      },
+      {
+        "text": "用户点了重置按钮时",
+        "isCorrect": false,
+        "description": "重置走 resetForm 流程，不触发 submit 回调"
+      },
+      {
+        "text": "字段失焦时",
+        "isCorrect": false,
+        "description": "失焦只是触发字段校验，不调用 submit 回调"
+      }
+    ]
+  },
+  {
+    "stem": "希望「刚进页面不要立刻显示红字、只在用户失焦后再开始校验」，最直接的实现是？",
+    "explanation": "实现「温和校验」的标准做法是显示侧加 `touched` 守卫——`meta.touched` 仅在字段失焦后才置 true，配合 `v-if` 就能阻止「首次渲染就报错」的尴尬。`validateOnMount` 是相反的（一挂载就校验），其它选项要么作用范围不对、要么不存在。",
+    "tags": ["vee-validate", "校验时机", "UX"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "模板里写 `v-if=\"meta.touched && errors.email\"`",
+        "isCorrect": true,
+        "description": "官方 Best Practice 推荐做法，touched 触发即显示"
+      },
+      {
+        "text": "把 `validateOnMount: true` 设到 useForm 上",
+        "isCorrect": false,
+        "description": "效果相反，会在挂载时立刻校验所有字段"
+      },
+      {
+        "text": "全局开启 `lazy: true`",
+        "isCorrect": false,
+        "description": "vee-validate 没有这个全局选项"
+      },
+      {
+        "text": "把所有 `<Field>` 包一层 `<KeepAlive>`",
+        "isCorrect": false,
+        "description": "和校验时机无关"
+      }
+    ]
+  },
+  {
+    "stem": "需要动态增删一组「链接」字段（label + url），最合适的 vee-validate API 是？",
+    "explanation": "`useFieldArray(name)` 专门处理可变长字段。它返回 `fields`（含稳定 key、value、isFirst/isLast 的只读响应式数组）和 `push/remove/swap/insert/move/replace/update` 等操作。字段路径用 `links[idx].url`（方括号）才会被识别为数组成员。",
+    "tags": ["vee-validate", "FieldArray", "动态字段"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`useFieldArray('links')`",
+        "isCorrect": true,
+        "description": "返回 fields + push/remove/swap/insert/move 等"
+      },
+      {
+        "text": "`useField('links')` + 自己维护数组",
+        "isCorrect": false,
+        "description": "可以做但要重写一套 add/remove/swap 逻辑，不必"
+      },
+      {
+        "text": "`useFormArray('links')`",
+        "isCorrect": false,
+        "description": "不存在的 API"
+      },
+      {
+        "text": "`useDynamicForm('links')`",
+        "isCorrect": false,
+        "description": "不存在的 API"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪个路径写法能让 vee-validate 把字段归入「数组」管理（而不是嵌套对象）？",
+    "explanation": "数组字段必须用方括号语法 `links[0].url`，vee-validate 才会识别为 `useFieldArray` 的成员；`links.0.url` 这种点号下标会被当作对象嵌套路径，结果 push/remove 操作不会响应。这是社区常见的坑。",
+    "tags": ["vee-validate", "FieldArray", "路径"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`links[0].url`",
+        "isCorrect": true,
+        "description": "方括号下标，FieldArray 标准格式"
+      },
+      {
+        "text": "`links.0.url`",
+        "isCorrect": false,
+        "description": "会被当作对象路径，不进入 FieldArray"
+      },
+      {
+        "text": "`links/0/url`",
+        "isCorrect": false,
+        "description": "斜杠不是 vee-validate 的合法分隔符"
+      },
+      {
+        "text": "`links->0->url`",
+        "isCorrect": false,
+        "description": "不存在的语法"
+      }
+    ]
+  },
+  {
+    "stem": "在模板里用 `<Field name=\"confirm\" rules=\"confirmed:@password\">` 时，`@password` 这个 `@` 前缀代表什么？",
+    "explanation": "`@` 是 vee-validate 全局规则参数的特殊前缀，告诉规则函数「这个值不要当字符串字面量解析，而是当作同一表单里另一个字段的名字，从 ctx.form 里取它的当前值」。这样就能做密码确认、起止日期等跨字段校验。",
+    "tags": ["vee-validate", "全局规则", "跨字段"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引用同一表单内另一个字段的值",
+        "isCorrect": true,
+        "description": "规则函数从 ctx.form[target] 读对应字段的当前值"
+      },
+      {
+        "text": "声明这是一个异步规则",
+        "isCorrect": false,
+        "description": "异步性由规则函数是否返回 Promise 决定，与 @ 无关"
+      },
+      {
+        "text": "声明这是一个 i18n key",
+        "isCorrect": false,
+        "description": "i18n 通过 generateMessage / localize 配置，不靠 @ 前缀"
+      },
+      {
+        "text": "解析为 Vue 的事件修饰符",
+        "isCorrect": false,
+        "description": "rules 字符串里 @ 是 vee-validate 自定义语法，不会触达 Vue"
+      }
+    ]
+  },
+  {
+    "stem": "想一次性接入 vee-validate 官方提供的所有内置规则（required / email / min / max …），下列写法哪个是官方推荐的？",
+    "explanation": "官方 `@vee-validate/rules` 子包导出常量 `all`（所有规则的 map），配合 `defineRule` 在应用入口逐个注册即可批量启用。这种「显式注册」风格让 tree-shake 仍然有效——只引入需要的也行（如 `import { email, min } from '@vee-validate/rules'`）。",
+    "tags": ["vee-validate", "全局规则", "内置规则"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "导入 `all` 后用 `Object.entries(all).forEach(([k,r]) => defineRule(k,r))`",
+        "isCorrect": true,
+        "description": "官方文档示例用法，简洁可控"
+      },
+      {
+        "text": "`import 'vee-validate/all-rules'` 一行搞定",
+        "isCorrect": false,
+        "description": "不存在的入口路径"
+      },
+      {
+        "text": "把 `@vee-validate/rules` 作为 Vue 插件 `app.use()` 注册",
+        "isCorrect": false,
+        "description": "该包不是 Vue 插件，没有 install 钩子"
+      },
+      {
+        "text": "在 `useForm` 里传 `rules: 'all'`",
+        "isCorrect": false,
+        "description": "useForm 没有这个配置项"
+      }
+    ]
+  },
+  {
+    "stem": "想让所有规则的错误消息都翻译成中文，vee-validate 推荐的方案是？",
+    "explanation": "`@vee-validate/i18n` 提供 40+ 内置语言包（如 `zh_CN.json` / `en.json`），通过 `configure({ generateMessage: localize({...}) })` 注册到 vee-validate 配置中，再用 `setLocale('zh-CN')` 切换。无需手动给每条规则写中文错误。",
+    "tags": ["vee-validate", "i18n", "国际化"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 `@vee-validate/i18n` 的 `localize` + `configure({ generateMessage })`",
+        "isCorrect": true,
+        "description": "官方配套包，40+ 语言开箱即用"
+      },
+      {
+        "text": "在每条规则里 `defineRule('required', () => '此项必填')`",
+        "isCorrect": false,
+        "description": "可以但要给每个规则写一遍，且不支持运行时切语言"
+      },
+      {
+        "text": "直接复用 Vue I18n 的 `t()` 输出",
+        "isCorrect": false,
+        "description": "可行但需要手写桥接，不是官方推荐"
+      },
+      {
+        "text": "vee-validate 自动检测浏览器语言并切换",
+        "isCorrect": false,
+        "description": "默认不自动切换语言"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪个属于 `useForm` 返回的「整表」meta 信息（一次性反映全表状态）？",
+    "explanation": "`useForm().meta` 是一个 ref，含整表的 `valid` / `touched` / `dirty` / `pending` / `initialValues`：只要任意字段是脏的、整表 dirty 就 true；所有字段全 valid，meta.valid 才 true。这与 `useField` 返回的字段级 meta 是同名但不同作用域。",
+    "tags": ["vee-validate", "meta", "状态"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`meta.value.valid` / `meta.value.touched` / `meta.value.dirty`",
+        "isCorrect": true,
+        "description": "useForm 返回的整表 meta，常用于禁用 submit 按钮"
+      },
+      {
+        "text": "`isValid` / `isTouched`",
+        "isCorrect": false,
+        "description": "vee-validate 没有顶层这两个 ref，都收在 meta 里"
+      },
+      {
+        "text": "`formStatus.value.dirty`",
+        "isCorrect": false,
+        "description": "vee-validate 没有这个 API"
+      },
+      {
+        "text": "`status.value === 'valid'`",
+        "isCorrect": false,
+        "description": "不存在的 API"
+      }
+    ]
+  },
+  {
+    "stem": "异步提交时，按钮按「提交中」禁用 + 完成自动恢复，最合适的 ref 是？",
+    "explanation": "`useForm` 返回的 `isSubmitting` ref 在 submit 流程开始时置 true，**等异步回调（包括 await）完成后**置 false，所以直接 `:disabled=\"isSubmitting\"` 即可覆盖整个生命周期。`submitCount` 只递增，不反映「进行中」。",
+    "tags": ["vee-validate", "isSubmitting", "提交状态"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`isSubmitting`",
+        "isCorrect": true,
+        "description": "submit 开始时 true，异步回调完成后 false"
+      },
+      {
+        "text": "`submitCount`",
+        "isCorrect": false,
+        "description": "只是提交次数计数器，不反映「进行中」"
+      },
+      {
+        "text": "`meta.value.pending`",
+        "isCorrect": false,
+        "description": "异步校验进行中（不是提交回调进行中）"
+      },
+      {
+        "text": "`isValidating`",
+        "isCorrect": false,
+        "description": "校验进行中，不覆盖业务回调阶段"
+      }
+    ]
+  },
+  {
+    "stem": "服务端返回「邮箱已注册」想把它显示在邮箱字段下方，vee-validate 推荐的做法是？",
+    "explanation": "`handleSubmit` 回调的第二个参数 `actions` 暴露 `setErrors` / `setFieldError`，能把服务端校验错误注入到字段级 `errors` 字典里、立刻反映到模板上，且不需要重新走 schema。直接改 `errors.email` 是只读视图，会被下次校验覆盖。",
+    "tags": ["vee-validate", "服务端错误", "setErrors"],
+    "categories": [
+      ["技术方向", "Vee-validate"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 submit 回调里 `actions.setErrors({ email: '已注册' })`",
+        "isCorrect": true,
+        "description": "把服务端错误直接灌入字段错误字典"
+      },
+      {
+        "text": "直接给 `errors.email = '已注册'` 赋值",
+        "isCorrect": false,
+        "description": "errors 是只读响应式视图，赋值无效"
+      },
+      {
+        "text": "重写 schema 加入这条规则",
+        "isCorrect": false,
+        "description": "schema 是静态校验，不该承担服务端业务错误"
+      },
+      {
+        "text": "throw 一个 Error，让 vee-validate 自动捕获",
+        "isCorrect": false,
+        "description": "vee-validate 不会拦截业务异常自动转错误"
+      }
+    ]
+  }
+]
