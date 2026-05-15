@@ -1,0 +1,467 @@
+[
+  {
+    "stem": "GitLab CI/CD 默认从仓库的什么位置读取 pipeline 配置文件？",
+    "explanation": "默认 `.gitlab-ci.yml` 必须在仓库根目录。如需放别处（如 `.gitlab/ci.yml`），到项目 Settings → CI/CD → General pipelines → 「CI/CD configuration file」修改路径。仓库根目录是最常见、最推荐的位置。",
+    "tags": ["gitlab-cicd", "入门", "config"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仓库根目录 `.gitlab-ci.yml`",
+        "isCorrect": true,
+        "description": "默认路径；可在项目 Settings 中改"
+      },
+      {
+        "text": "`.gitlab/workflows/main.yml`",
+        "isCorrect": false,
+        "description": "这是 GitHub Actions 风格，GitLab 不是这个约定"
+      },
+      {
+        "text": "`ci/pipeline.yml`",
+        "isCorrect": false,
+        "description": "不是 GitLab 约定路径"
+      },
+      {
+        "text": "`Jenkinsfile`",
+        "isCorrect": false,
+        "description": "Jenkins 的配置文件名，GitLab 不识别"
+      }
+    ]
+  },
+  {
+    "stem": "声明式 `.gitlab-ci.yml` 里，下面哪个字段在 job 定义中是**必填**的？",
+    "explanation": "`script` 是 job 唯一必填的字段，缺了会直接报「jobs:xxx config should contain at least one script step」。其它字段（stage / image / rules 等）都有默认值或可省略。即使部署 job 也必须写 `script:[]` 或具体命令。",
+    "tags": ["gitlab-cicd", "入门", "yaml"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`script`",
+        "isCorrect": true,
+        "description": "唯一必填，缺了 yml 解析直接失败"
+      },
+      {
+        "text": "`stage`",
+        "isCorrect": false,
+        "description": "可省略，省略时默认落到 `test` stage"
+      },
+      {
+        "text": "`image`",
+        "isCorrect": false,
+        "description": "可省略，缺则用 default.image 或 Runner 默认"
+      },
+      {
+        "text": "`rules`",
+        "isCorrect": false,
+        "description": "可省略，缺则 job 总是被创建"
+      }
+    ]
+  },
+  {
+    "stem": "yml 里没定义 `stages` 时，GitLab 默认使用什么阶段顺序？",
+    "explanation": "GitLab 默认 stages 是 `[.pre, build, test, deploy, .post]`。`.pre` 和 `.post` 是特殊保留 stage，分别在最前 / 最后；普通 job 不写 `stage` 时默认落到 `test`。新项目最好显式声明 `stages` 让阶段意图清晰。",
+    "tags": ["gitlab-cicd", "入门", "stages"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`.pre, build, test, deploy, .post`",
+        "isCorrect": true,
+        "description": "GitLab 内置默认；`.pre` / `.post` 是保留 stage"
+      },
+      {
+        "text": "`install, build, test, deploy`",
+        "isCorrect": false,
+        "description": "看似合理，但 install 不是 GitLab 默认 stage"
+      },
+      {
+        "text": "`prepare, build, deploy`",
+        "isCorrect": false,
+        "description": "不是默认值"
+      },
+      {
+        "text": "完全没有默认 stages，必须自己定义",
+        "isCorrect": false,
+        "description": "可以不写 `stages`，GitLab 会用内置默认"
+      }
+    ]
+  },
+  {
+    "stem": "下面关于 `after_script` 的描述，哪一项是**正确**的？",
+    "explanation": "`after_script` 在独立 shell 里跑（前面 `cd /work` 不延续）；独立 5 分钟 timeout；**不影响 job 状态**（里面失败不会让 job 标红）；可以拿到 `CI_JOB_STATUS` 变量判断主体跑成什么样。常见用途：清理临时文件 / 发通知。",
+    "tags": ["gitlab-cicd", "初级", "script"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "独立 shell 跑，失败不影响 job 状态，自带 5 分钟 timeout",
+        "isCorrect": true,
+        "description": "三个关键事实，记牢"
+      },
+      {
+        "text": "与 `script` 共 shell，错误会传播到 job 状态",
+        "isCorrect": false,
+        "description": "错；`after_script` 独立 shell 且不影响 job 状态"
+      },
+      {
+        "text": "项目级 timeout 同样作用于它",
+        "isCorrect": false,
+        "description": "错；`after_script` 单独限时 5 分钟，与项目 timeout 无关"
+      },
+      {
+        "text": "只在 `script` 成功时跑",
+        "isCorrect": false,
+        "description": "错；不论 script 成败 after_script 都会跑"
+      }
+    ]
+  },
+  {
+    "stem": "`artifacts` 和 `cache` 最关键的区别是？",
+    "explanation": "artifacts 走 GitLab 服务端存储、可跨 job 传递 / 下载 / 配合 reports；cache 走 Runner 本地（或对象存储），按 key 跨 pipeline 复用，主要为加速重复构建。经验法则：`dist`/`coverage` 用 artifacts；`node_modules` 用 cache。",
+    "tags": ["gitlab-cicd", "初级", "artifacts"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "artifacts 走 GitLab 服务端、可下载；cache 走 Runner 本地、跨 pipeline 复用",
+        "isCorrect": true,
+        "description": "目的 / 存储 / 跨 pipeline 三大差异"
+      },
+      {
+        "text": "完全等价，写谁都可以",
+        "isCorrect": false,
+        "description": "错；目的和存储位置都不同"
+      },
+      {
+        "text": "artifacts 只能存代码、cache 只能存编译产物",
+        "isCorrect": false,
+        "description": "反了，且都不限制内容类型"
+      },
+      {
+        "text": "artifacts 不能跨 job、cache 才能跨 job",
+        "isCorrect": false,
+        "description": "反了；artifacts 设计就是跨 job 传递的"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪个 `cache.key` 设法能让缓存被**有效复用**？",
+    "explanation": "`{ files: [pnpm-lock.yaml] }` 让 GitLab 根据 lockfile 内容计算 hash 作 key，lock 没变就命中同一份缓存——这是依赖类缓存的标准做法。用 `CI_PIPELINE_ID` 每条流水线 hash 都变、等于禁用了缓存。",
+    "tags": ["gitlab-cicd", "初级", "cache"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`key: { files: [pnpm-lock.yaml] }`",
+        "isCorrect": true,
+        "description": "lockfile 内容决定 hash，lock 不变就复用"
+      },
+      {
+        "text": "`key: ${CI_PIPELINE_ID}`",
+        "isCorrect": false,
+        "description": "每次 pipeline 都是新 key，缓存永远不命中"
+      },
+      {
+        "text": "`key: ${CI_COMMIT_SHA}`",
+        "isCorrect": false,
+        "description": "每次 commit 都换 key，缓存等同失效"
+      },
+      {
+        "text": "`key: ${CI_JOB_ID}`",
+        "isCorrect": false,
+        "description": "每个 job 都新 key，毫无复用价值"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab 13.5+ 推荐用什么取代旧的 `only` / `except` 关键字？",
+    "explanation": "`rules` 是 GitLab 13.5 起官方推荐替代 only/except 的方案：支持 `if / changes / exists / variables`，按顺序匹配，能赋值变量、控制 when/allow_failure。only/except 不会被移除但停止演进，新项目应该统一用 rules。",
+    "tags": ["gitlab-cicd", "进阶", "rules"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`rules`",
+        "isCorrect": true,
+        "description": "表达力强、支持赋变量、顺序匹配；官方推荐"
+      },
+      {
+        "text": "`when`",
+        "isCorrect": false,
+        "description": "when 控制 job 触发时机，不是条件匹配"
+      },
+      {
+        "text": "`workflow`",
+        "isCorrect": false,
+        "description": "workflow.rules 决定整条 pipeline 是否创建，与 job 级 rules 互补"
+      },
+      {
+        "text": "`triggers`",
+        "isCorrect": false,
+        "description": "Jenkins 的关键字，GitLab 没这个"
+      }
+    ]
+  },
+  {
+    "stem": "`needs` 关键字的核心作用是？",
+    "explanation": "`needs` 打破 stage 串行约束，让 job 一旦它的依赖完成就立刻开跑，无视 stage 边界。效果就是 DAG（有向无环图）调度，常见可砍掉 30~60% pipeline 时长。GitLab 17 默认每个 job 最多 50 个 needs。",
+    "tags": ["gitlab-cicd", "中级", "needs", "DAG"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "打破 stage 串行，按 DAG 拓扑顺序调度，缩短总耗时",
+        "isCorrect": true,
+        "description": "GitLab 实现的 DAG 调度，性能优化第一步"
+      },
+      {
+        "text": "声明依赖文件（替代 artifacts）",
+        "isCorrect": false,
+        "description": "依赖文件传递走 artifacts，与 needs 不是一回事"
+      },
+      {
+        "text": "限制 job 只在某些分支跑",
+        "isCorrect": false,
+        "description": "条件控制走 rules，不是 needs"
+      },
+      {
+        "text": "把 job 锁定到指定 Runner",
+        "isCorrect": false,
+        "description": "Runner 调度走 tags，不是 needs"
+      }
+    ]
+  },
+  {
+    "stem": "下面关于 `extends` 与 YAML 锚点（`&xxx + <<: *xxx`）的对比，哪一项**正确**？",
+    "explanation": "`extends` 是 GitLab 的特有特性，能**深度合并**嵌套字段（如 `cache.paths` 会合并而非整个 cache 替换）；YAML 锚点是 yaml 语言原生特性，纯粹是值替换。多数情况下 extends 更智能，复杂模板都应该用 extends。",
+    "tags": ["gitlab-cicd", "中级", "extends"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "extends 深度合并嵌套字段；YAML 锚点是值替换",
+        "isCorrect": true,
+        "description": "关键差别；extends 多数场景更适合"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "合并方式不同，遇到嵌套字段会有差异"
+      },
+      {
+        "text": "YAML 锚点支持多层继承；extends 只能单层",
+        "isCorrect": false,
+        "description": "extends 支持多继承（数组），可层叠"
+      },
+      {
+        "text": "extends 是 YAML 标准；锚点是 GitLab 特有",
+        "isCorrect": false,
+        "description": "反了；锚点是 YAML 标准，extends 是 GitLab 特有"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪个**不是** `include` 关键字支持的来源？",
+    "explanation": "`include` 支持 `local`（本仓库内）/ `project`（跨项目）/ `remote`（HTTP URL）/ `template`（GitLab 内置如 Auto-DevOps）/ `component`（16.10+ 引入的参数化模板）共 5 种。没有所谓 `dockerfile` 来源——别和镜像构建搞混。",
+    "tags": ["gitlab-cicd", "中级", "include"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`dockerfile`",
+        "isCorrect": true,
+        "description": "include 不支持；这跟 Dockerfile 混淆了"
+      },
+      {
+        "text": "`local`",
+        "isCorrect": false,
+        "description": "支持；本仓库内其它 yml"
+      },
+      {
+        "text": "`project`",
+        "isCorrect": false,
+        "description": "支持；跨项目共享 CI 模板"
+      },
+      {
+        "text": "`template`",
+        "isCorrect": false,
+        "description": "支持；GitLab 内置模板（如 Auto-DevOps）"
+      }
+    ]
+  },
+  {
+    "stem": "CI/CD 变量在 UI 配置时勾选「File」类型，会发生什么？",
+    "explanation": "File 类型变量值会被存到临时文件，**环境变量值变成文件路径**（如 `/builds/.../KUBECONFIG_FILE`），文件内容是你填的字符串。适合那些「要求文件路径而不是字符串」的工具：`kubectl --kubeconfig`、`gcloud auth --key-file`、私钥等。",
+    "tags": ["gitlab-cicd", "中级", "variables"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "变量值变成临时文件路径，文件内容是你填的字符串",
+        "isCorrect": true,
+        "description": "适合 kubectl --kubeconfig / SSH key 这类工具"
+      },
+      {
+        "text": "变量值本身被加密，使用前需要 decrypt",
+        "isCorrect": false,
+        "description": "GitLab 自动处理存储加密，job 内拿到的是明文"
+      },
+      {
+        "text": "变量只在文件型 job 里可用",
+        "isCorrect": false,
+        "description": "File 类型不限制使用范围"
+      },
+      {
+        "text": "变量名后自动加 `_FILE` 后缀",
+        "isCorrect": false,
+        "description": "名字不会被自动改，要靠 yml 里命名"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪种写法在受 `masked` 变量保护的情况下**仍然会泄露**密钥？",
+    "explanation": "masked 只屏蔽**完整变量值**。截取（`${TOKEN:0:5}`）/ 编码（base64）/ 拼接后再 echo 都绕过 mask。生产环境的铁律：永远不要 echo 敏感变量，连 debug 都不行；要打印就 echo 操作结果，不带值。",
+    "tags": ["gitlab-cicd", "高级", "安全"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`echo $TOKEN | base64`",
+        "isCorrect": true,
+        "description": "编码后绕过 mask，泄漏到日志"
+      },
+      {
+        "text": "`curl -H \"Auth: $TOKEN\" ...`",
+        "isCorrect": false,
+        "description": "用了变量但没 echo，安全"
+      },
+      {
+        "text": "`pnpm publish --token $TOKEN`",
+        "isCorrect": false,
+        "description": "传给工具，没 echo，安全"
+      },
+      {
+        "text": "`docker login --password-stdin <<< $TOKEN`",
+        "isCorrect": false,
+        "description": "通过 stdin 传入，不进入命令行历史 / 日志"
+      }
+    ]
+  },
+  {
+    "stem": "为生产环境构建 Docker 镜像，**不需要 privileged 容器**、且不需要 Docker daemon 的方案是？",
+    "explanation": "kaniko 在普通容器里直接构建 OCI 镜像，不需要 Docker daemon 也不需要 privileged，安全性远超 DinD。劣势是比 DinD 稍慢、Dockerfile 高级特性支持滞后。生产环境从 DinD 迁出去优先考虑它。",
+    "tags": ["gitlab-cicd", "高级", "docker", "kaniko"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "kaniko（`gcr.io/kaniko-project/executor`）",
+        "isCorrect": true,
+        "description": "无 daemon / 无 privileged，生产推荐"
+      },
+      {
+        "text": "Docker-in-Docker（services: docker:dind）",
+        "isCorrect": false,
+        "description": "需 privileged，安全风险大"
+      },
+      {
+        "text": "Docker socket binding（挂 /var/run/docker.sock）",
+        "isCorrect": false,
+        "description": "共享 host docker，几乎等同于给 root 权限"
+      },
+      {
+        "text": "直接在 shell executor 上跑 `docker build`",
+        "isCorrect": false,
+        "description": "依赖 host 装 Docker，仍是 daemon 方案"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 想 push 镜像到 GitLab 内置 Container Registry，下面哪个变量组合是 GitLab **自动注入**的，不用自己配？",
+    "explanation": "GitLab 预定义 `CI_REGISTRY`（registry 域名）、`CI_REGISTRY_IMAGE`（当前项目镜像名）、`CI_REGISTRY_USER`（gitlab-ci-token）、`CI_REGISTRY_PASSWORD`（= CI_JOB_TOKEN）。零配置 docker login + push 即可。",
+    "tags": ["gitlab-cicd", "中级", "registry", "变量"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`CI_REGISTRY` / `CI_REGISTRY_USER` / `CI_REGISTRY_PASSWORD` / `CI_REGISTRY_IMAGE`",
+        "isCorrect": true,
+        "description": "GitLab 自动注入；零配置 push 镜像"
+      },
+      {
+        "text": "`DOCKER_REGISTRY_URL` / `DOCKER_USERNAME` / `DOCKER_PASSWORD`",
+        "isCorrect": false,
+        "description": "不是 GitLab 预定义；需要自己手动配"
+      },
+      {
+        "text": "`REGISTRY_HOST` / `REGISTRY_USER` / `REGISTRY_PWD`",
+        "isCorrect": false,
+        "description": "不存在的预定义变量"
+      },
+      {
+        "text": "`GITLAB_TOKEN` / `GITLAB_USER`",
+        "isCorrect": false,
+        "description": "不是预定义变量；GITLAB_USER_LOGIN 是用户名变量"
+      }
+    ]
+  },
+  {
+    "stem": "用 GitLab 17+ 部署自建 Runner，注册时应该用哪种 token？",
+    "explanation": "GitLab 15.10 引入 runner authentication token（`glrt-` 前缀），从 UI「Settings → CI/CD → Runners → New runner」创建获得。老的 registration token 已弃用、20.0 移除。新装 Runner 一律用 `--token glrt-...`。",
+    "tags": ["gitlab-cicd", "高级", "runner"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Runner authentication token（`glrt-` 前缀，UI 创建时获得）",
+        "isCorrect": true,
+        "description": "GitLab 15.10+ 标准；老的 registration token 已弃用"
+      },
+      {
+        "text": "Personal Access Token（`glpat-` 前缀）",
+        "isCorrect": false,
+        "description": "PAT 用于用户级 API，不用于 Runner 注册"
+      },
+      {
+        "text": "Project Access Token",
+        "isCorrect": false,
+        "description": "项目级 API token，不是 Runner 用的"
+      },
+      {
+        "text": "Registration token（老方案）",
+        "isCorrect": false,
+        "description": "已弃用，GitLab 20.0 会移除；新装别再用"
+      }
+    ]
+  }
+]
