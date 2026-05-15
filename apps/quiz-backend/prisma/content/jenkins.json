@@ -1,0 +1,405 @@
+[
+  {
+    "stem": "下列哪份文件是 Jenkins Pipeline 推荐的「代码即配置」载体，并随项目仓库一起版本管理？",
+    "explanation": "Jenkinsfile 是 Pipeline 的代码载体，放仓库根目录、跟代码一起 review 和演进。`.jenkins.yml` 不是 Jenkins 的约定文件名（容易和 GitLab CI 搞混）；UI 里点击式配置（Freestyle）不入版本控制，Jenkins 官方明确不推荐用于复杂场景。",
+    "tags": ["jenkins", "Jenkinsfile", "入门"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`Jenkinsfile`（无后缀，放仓库根目录）",
+        "isCorrect": true,
+        "description": "Pipeline 标准载体，与代码同生命周期"
+      },
+      {
+        "text": "`.jenkins.yml`",
+        "isCorrect": false,
+        "description": "不是 Jenkins 约定文件名，容易和 GitLab CI 搞混"
+      },
+      {
+        "text": "`jenkins.config.groovy`",
+        "isCorrect": false,
+        "description": "不是 Pipeline 文件名约定"
+      },
+      {
+        "text": "Freestyle Job 的 UI 配置",
+        "isCorrect": false,
+        "description": "不入版本控制，官方不推荐用于现代项目"
+      }
+    ]
+  },
+  {
+    "stem": "声明式 Pipeline 的最外层骨架必须包含哪三件套？",
+    "explanation": "声明式 Pipeline 强制结构：`pipeline {}` 是外壳，里面至少有 `agent`（说明在哪里执行）和 `stages { stage { steps { ... } } }`（声明阶段流程）。`post / when / environment / triggers` 都是可选的；缺这三件 Jenkins 会直接拒绝解析。",
+    "tags": ["jenkins", "pipeline", "声明式"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`pipeline` + `agent` + `stages`",
+        "isCorrect": true,
+        "description": "声明式 Pipeline 三件必备"
+      },
+      {
+        "text": "`pipeline` + `node` + `stages`",
+        "isCorrect": false,
+        "description": "`node` 是脚本式语法，不能用在声明式外层"
+      },
+      {
+        "text": "`pipeline` + `triggers` + `steps`",
+        "isCorrect": false,
+        "description": "`triggers` 可选，`steps` 必须包在 stage 里"
+      },
+      {
+        "text": "`workflow` + `agent` + `tasks`",
+        "isCorrect": false,
+        "description": "完全不是 Jenkins 的关键字"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 想「按需在不同 stage 用不同环境」，整个 pipeline 又不该锁死 agent，应该怎么声明？",
+    "explanation": "顶层 `agent none` 告诉 Jenkins 不要为整条 pipeline 分配 executor，每个 stage 自己再用 `agent { ... }` 声明所需环境。这样 Linux 节点不会被一个跨阶段任务长期占用，对节点资源更友好。`agent any` 会先分配整条 pipeline 的 executor，反过来浪费。",
+    "tags": ["jenkins", "agent", "节点"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶层 `agent none`，每个 stage 内单独声明 agent",
+        "isCorrect": true,
+        "description": "节省 master / 公共节点资源的标准模式"
+      },
+      {
+        "text": "顶层 `agent any`，每个 stage 切换 docker image",
+        "isCorrect": false,
+        "description": "外层已经分配了 executor，stage 内切镜像并不真正释放节点"
+      },
+      {
+        "text": "把每个 stage 拆成独立 Job，靠 build 触发链路串起来",
+        "isCorrect": false,
+        "description": "可行但配置复杂，失去 Pipeline 的可视化优势"
+      },
+      {
+        "text": "完全不写 agent，让 Jenkins 自动决定",
+        "isCorrect": false,
+        "description": "声明式要求 agent 必填，省略会解析失败"
+      }
+    ]
+  },
+  {
+    "stem": "下面这个 `when` 表达式想「只在不是 PR 的 main 分支跑」，效果上还差什么？\n\n```groovy\nwhen {\n  branch 'main'\n}\n```",
+    "explanation": "默认 `branch 'main'` 在 Multibranch 下也会匹配「以 main 为目标的 PR」，因为 Jenkins 会给 PR 创建 `PR-N` 分支同时也跑一份 base 分支视角。要严格排除 PR，加 `not { changeRequest() }` 才行。`changeRequest()` 是判断「当前构建是不是 PR」的官方助词。",
+    "tags": ["jenkins", "when", "Multibranch"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "需要 `allOf { branch 'main'; not { changeRequest() } }`",
+        "isCorrect": true,
+        "description": "排除 PR 触发，只保留真正的 main 推送"
+      },
+      {
+        "text": "加上 `expression { env.PR_NUMBER == null }`",
+        "isCorrect": false,
+        "description": "`PR_NUMBER` 不是 Jenkins 标准变量，CHANGE_ID 才是"
+      },
+      {
+        "text": "什么都不缺，原写法已经只匹配真正 main 推送",
+        "isCorrect": false,
+        "description": "PR-N 构建里 BRANCH_NAME 仍可能匹配上 base 分支"
+      },
+      {
+        "text": "需要把 `branch 'main'` 替换为 `tag 'main'`",
+        "isCorrect": false,
+        "description": "`tag` 是匹配 Git tag，不是分支"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 里这样写凭据，自动会出现哪些环境变量？\n\n```groovy\nenvironment {\n  AWS = credentials('aws-prod')\n}\n```\n（前提：`aws-prod` 是 Username + Password 类型）",
+    "explanation": "Username+Password 凭据被 Jenkins 特殊处理：除把 `AWS` 设为 `username:password` 拼接字符串外，自动派生 `AWS_USR`（用户名）和 `AWS_PSW`（密码 / passphrase）。Jenkinsfile 里直接 `$AWS_USR / $AWS_PSW` 就能引用，无需再写 `withCredentials`。",
+    "tags": ["jenkins", "credentials", "environment"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`AWS`（user:pass 拼接）+ `AWS_USR` + `AWS_PSW`",
+        "isCorrect": true,
+        "description": "Username+Password 类型的标准三件套"
+      },
+      {
+        "text": "只有 `AWS`",
+        "isCorrect": false,
+        "description": "缺少 _USR / _PSW，登录类工具几乎都要分开用"
+      },
+      {
+        "text": "`AWS_USERNAME` + `AWS_PASSWORD`",
+        "isCorrect": false,
+        "description": "Jenkins 用 _USR / _PSW 后缀，不是 _USERNAME / _PASSWORD"
+      },
+      {
+        "text": "`AWS` + `AWS_TOKEN`",
+        "isCorrect": false,
+        "description": "_TOKEN 不是 Jenkins 自动派生的后缀"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪种触发方式 Jenkins 官方推荐用于「代码推送即触发构建」的场景？",
+    "explanation": "Webhook + 仓库 push 事件是行业标准做法：响应即时、零额外开销。`pollSCM` 让 Jenkins 主动定时拉，仓库越多 / 频率越密性能问题越明显。`cron` 适合定时任务而非事件驱动，`upstream` 是上游 Job 成功后才触发。",
+    "tags": ["jenkins", "triggers", "webhook"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在仓库（GitHub/GitLab）配置 webhook 指向 Jenkins",
+        "isCorrect": true,
+        "description": "事件驱动、零轮询开销，官方推荐"
+      },
+      {
+        "text": "`pollSCM('* * * * *')` 每分钟轮询",
+        "isCorrect": false,
+        "description": "高频轮询拖垮服务器，仓库越多越糟"
+      },
+      {
+        "text": "`cron('H */1 * * *')` 每小时跑",
+        "isCorrect": false,
+        "description": "适合定时任务而非「push 即触发」"
+      },
+      {
+        "text": "`upstream(...)` 上游成功后触发",
+        "isCorrect": false,
+        "description": "只对依赖链上游 Job 成功有效，不响应 SCM 事件"
+      }
+    ]
+  },
+  {
+    "stem": "声明式 Pipeline 里只允许声明 + step。要嵌入命令式逻辑（if/for/try-catch）应该用什么？",
+    "explanation": "声明式块的限制是只接受声明指令（pipeline / agent / stages / when ...）和 step 调用。需要 Groovy 流程控制时，必须在 `steps { script { ... } }` 块里写——`script` 块内部走脚本式 Pipeline，能用 Groovy 全部语法。直接在 steps 里写 if 会被解析器拒绝。",
+    "tags": ["jenkins", "声明式", "script"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 `steps` 里写 `script { ... }` 块",
+        "isCorrect": true,
+        "description": "唯一合法的方式：声明式内嵌脚本式"
+      },
+      {
+        "text": "直接在 `steps` 里写 `if (...) { ... }`",
+        "isCorrect": false,
+        "description": "声明式 steps 块禁止 Groovy 流程控制"
+      },
+      {
+        "text": "用 `expression { ... }` 包起来",
+        "isCorrect": false,
+        "description": "`expression` 是 `when` 子句，不能放 steps"
+      },
+      {
+        "text": "拆成多个 stage 用 `when` 分流",
+        "isCorrect": false,
+        "description": "能凑合用但表达力差，循环 / try-catch 仍要 script 块"
+      }
+    ]
+  },
+  {
+    "stem": "需要「先跑 Lint / Type / Test 三个独立任务，任一失败就立刻中止其它两个」，最简洁的写法是？",
+    "explanation": "`stages.stage` 内部的 `parallel { ... }` 让多个子 stage 并发，配合 `failFast true` 让任一分支失败立刻中止其它分支。这比手写「用 fail-fast 守卫每个 stage」清晰得多。仅 stage 串行（默认）则不会并发，`when` 是条件而非并发关键字。",
+    "tags": ["jenkins", "parallel", "failFast"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`stage('Quality') { failFast true; parallel { ... } }`",
+        "isCorrect": true,
+        "description": "并发 + 一败俱败的标准组合"
+      },
+      {
+        "text": "三个独立 stage 顺序排列",
+        "isCorrect": false,
+        "description": "默认 stage 是串行，不能并发"
+      },
+      {
+        "text": "三个独立 stage + 每个加 `when { expression { !FAIL } }`",
+        "isCorrect": false,
+        "description": "可行但代码冗长，且不真正并发"
+      },
+      {
+        "text": "`parallel(lint, type, test)` 顶层调用",
+        "isCorrect": false,
+        "description": "顶层 parallel 是脚本式语法，声明式里要嵌在 stage 内"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪条 `post` 条件会在「上次构建是失败、本次成功」时触发？",
+    "explanation": "`fixed` 严格匹配「上次失败 / 不稳定 / 中止 → 本次成功」的场景，专门用来发送「已恢复」通知。`success` 不论上次什么状态都会触发，`changed` 只判断「和上次状态不同」，`regression` 是反过来（上次成功本次失败）。",
+    "tags": ["jenkins", "post", "状态"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`fixed`",
+        "isCorrect": true,
+        "description": "上次失败 / 不稳定，本次成功才触发"
+      },
+      {
+        "text": "`success`",
+        "isCorrect": false,
+        "description": "只要本次成功就触发，不看上次"
+      },
+      {
+        "text": "`changed`",
+        "isCorrect": false,
+        "description": "只要状态不同就触发，方向不分"
+      },
+      {
+        "text": "`regression`",
+        "isCorrect": false,
+        "description": "反方向：上次成功本次失败 / 不稳定 / 中止"
+      }
+    ]
+  },
+  {
+    "stem": "Multibranch Pipeline 配置里，下面哪个环境变量是它独有的（普通单分支 Pipeline 没有）？",
+    "explanation": "Multibranch Pipeline 自动注入 `BRANCH_NAME`（当前分支名）和 `CHANGE_ID`（PR 号，仅在 PR 构建时有值）。单分支 Pipeline 不知道自己属于哪个分支，所以这俩变量不存在。`BUILD_NUMBER` 是所有 Job 都有的，`WORKSPACE` 也是。",
+    "tags": ["jenkins", "Multibranch", "环境变量"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`BRANCH_NAME` / `CHANGE_ID`",
+        "isCorrect": true,
+        "description": "Multibranch 自动注入，单分支 Pipeline 没有"
+      },
+      {
+        "text": "`BUILD_NUMBER`",
+        "isCorrect": false,
+        "description": "所有 Job 都有，不是 Multibranch 专属"
+      },
+      {
+        "text": "`WORKSPACE`",
+        "isCorrect": false,
+        "description": "所有 Job 都有，表示工作目录路径"
+      },
+      {
+        "text": "`JENKINS_HOME`",
+        "isCorrect": false,
+        "description": "controller 全局变量，所有 Job 共享"
+      }
+    ]
+  },
+  {
+    "stem": "共享库（Shared Library）的 `vars/deploy.groovy` 想作为 `deploy 'prod'` 这样调用，文件里应该实现什么方法？",
+    "explanation": "共享库的 `vars/` 目录约定：文件名即变量名，文件里实现 `call(...)` 方法，调用时直接 `deploy 'prod'`（Groovy 省括号 = `call('prod')`）。如果实现 `main` / `run` 等其它名字，Jenkins 不会识别成可调用变量。这是 Shared Library 最容易踩的入门坑。",
+    "tags": ["jenkins", "shared-library", "vars"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`def call(String env) { ... }`",
+        "isCorrect": true,
+        "description": "vars/xxx.groovy 的 call() 才会暴露成 step"
+      },
+      {
+        "text": "`def main(String env) { ... }`",
+        "isCorrect": false,
+        "description": "Jenkins 不识别 main，调用时报 No such method"
+      },
+      {
+        "text": "`def run(String env) { ... }`",
+        "isCorrect": false,
+        "description": "不是约定名字"
+      },
+      {
+        "text": "`class Deploy { def call(env) { ... } }`",
+        "isCorrect": false,
+        "description": "类应放 src/，且需要 new + 调用，不是 vars 模式"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 里 `withCredentials([...]) { ... }` 相比顶层 `environment { X = credentials('id') }`，最直接的好处是？",
+    "explanation": "`withCredentials` 是块作用域：进块时注入变量，**退块立刻销毁**，凭据仅在该步骤里可见，避免整条 pipeline 都能读到。`environment` 注入则会持续整条 pipeline / stage 生命周期，权限边界更宽。安全敏感的场景（密钥签名、上线令牌）建议用 withCredentials。",
+    "tags": ["jenkins", "credentials", "安全"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "块作用域：退块即销毁，缩小凭据可见范围",
+        "isCorrect": true,
+        "description": "更小的权限边界，敏感操作更安全"
+      },
+      {
+        "text": "能比 `environment` 注入更多种类的凭据",
+        "isCorrect": false,
+        "description": "支持的凭据类型差不多，主要差别是作用域"
+      },
+      {
+        "text": "性能更好，不需要从 controller 拉密文",
+        "isCorrect": false,
+        "description": "两者都从 controller 拉，差别不在此"
+      },
+      {
+        "text": "不会被自动 echo 屏蔽，方便调试",
+        "isCorrect": false,
+        "description": "正好相反，两者都启用日志屏蔽"
+      }
+    ]
+  },
+  {
+    "stem": "下列关于 Jenkins 安全的说法，哪个是错的？",
+    "explanation": "Jenkins 默认会把 controller 内置节点（built-in node）当成可执行 agent，意味着 `agent any` 可能让构建脚本跑在 controller 进程里、读到 JENKINS_HOME 下所有凭据 / 配置。生产环境必须把 built-in 的 executor 数手动设为 0；其它三条说法都正确。",
+    "tags": ["jenkins", "安全", "最佳实践"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认配置下 `agent any` 永远不会让构建跑到 controller",
+        "isCorrect": true,
+        "description": "错的！built-in node executor 默认非 0，需手动设 0"
+      },
+      {
+        "text": "脚本里 `echo $TOKEN` 在拼接 / base64 后可能绕过屏蔽",
+        "isCorrect": false,
+        "description": "正确说法：自动屏蔽只覆盖完整变量"
+      },
+      {
+        "text": "共享库锁版本（`@v1.0`）比锁分支（`@main`）更可控",
+        "isCorrect": false,
+        "description": "正确说法：tag 不会被 push 改，行为可预期"
+      },
+      {
+        "text": "untrusted 共享库受 Groovy sandbox 限制，无法随意调用 Jenkins API",
+        "isCorrect": false,
+        "description": "正确说法：sandbox 隔离的核心目的"
+      }
+    ]
+  }
+]
