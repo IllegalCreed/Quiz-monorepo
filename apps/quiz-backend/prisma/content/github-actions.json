@@ -1,0 +1,467 @@
+[
+  {
+    "stem": "GitHub Actions 默认从仓库的什么位置读取 workflow 配置？",
+    "explanation": "默认 `.github/workflows/` 目录下所有 `.yml` / `.yaml` 文件。一个仓库可以有多个 workflow 文件，按文件名区分。GitHub Actions 不读其它路径（不像 GitLab CI 那样可改），这是约定。",
+    "tags": ["github-actions", "入门", "config"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`.github/workflows/*.yml`",
+        "isCorrect": true,
+        "description": "默认目录，每个 yml 是一条独立 workflow"
+      },
+      {
+        "text": "`.github/actions/main.yml`",
+        "isCorrect": false,
+        "description": "actions 目录用于本地自定义 Action，不是 workflow"
+      },
+      {
+        "text": "仓库根目录 `.github-actions.yml`",
+        "isCorrect": false,
+        "description": "GitHub 没有这个约定"
+      },
+      {
+        "text": "`workflows/ci.yml`",
+        "isCorrect": false,
+        "description": "缺 .github 前缀，GitHub 不会扫描"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪种触发器**仅**通过 GitHub UI 上的「Run workflow」按钮或 API 调用触发？",
+    "explanation": "`workflow_dispatch` 是手动触发器，UI 上有按钮、API 也可调；可以定义 inputs 让用户填表后再触发，最适合「手动发布」「部署到指定环境」等场景。`schedule` 是定时、`workflow_run` 是被其它 workflow 完成触发、`repository_dispatch` 是外部 webhook。",
+    "tags": ["github-actions", "入门", "trigger"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`workflow_dispatch`",
+        "isCorrect": true,
+        "description": "UI 按钮 + API 手动触发，可带 inputs"
+      },
+      {
+        "text": "`schedule`",
+        "isCorrect": false,
+        "description": "定时触发（cron 表达式）"
+      },
+      {
+        "text": "`workflow_run`",
+        "isCorrect": false,
+        "description": "监听另一个 workflow 完成时触发"
+      },
+      {
+        "text": "`repository_dispatch`",
+        "isCorrect": false,
+        "description": "外部系统调 API webhook 触发"
+      }
+    ]
+  },
+  {
+    "stem": "在一个 step 里能否同时写 `uses:` 和 `run:`？",
+    "explanation": "互斥。`uses:` 调用某个 Action（自带逻辑），`run:` 跑自定义 shell——一个 step 必须二选一。要既调 Action 又跑 shell，拆成两个 step。这是 GitHub Actions 最基础的约束。",
+    "tags": ["github-actions", "入门", "step"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不能；一个 step 必须二选一",
+        "isCorrect": true,
+        "description": "互斥规则；要两个就拆两步"
+      },
+      {
+        "text": "可以；uses 先跑，再跑 run",
+        "isCorrect": false,
+        "description": "解析器会直接报错"
+      },
+      {
+        "text": "可以，但需加 `combine: true`",
+        "isCorrect": false,
+        "description": "不存在的字段"
+      },
+      {
+        "text": "可以，但 `run` 必须在 `uses` 之前",
+        "isCorrect": false,
+        "description": "解析器不允许同字段"
+      }
+    ]
+  },
+  {
+    "stem": "下面这条 cron 表达式 `0 4 * * *` 对应的实际时间是？",
+    "explanation": "GitHub Actions 的 `schedule.cron` **始终用 UTC**，不支持时区参数。`0 4 * * *` 是 UTC 04:00，换算北京时间是 12:00。要按本地时间排定时任务，必须自己换算 UTC 偏移。",
+    "tags": ["github-actions", "初级", "schedule"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "UTC 04:00 = 北京 12:00",
+        "isCorrect": true,
+        "description": "GitHub cron 永远 UTC，必须换算"
+      },
+      {
+        "text": "Runner 所在时区的 04:00",
+        "isCorrect": false,
+        "description": "Runner 时区不参与，固定 UTC"
+      },
+      {
+        "text": "仓库 Settings 里配的时区 04:00",
+        "isCorrect": false,
+        "description": "GitHub 没这个设置"
+      },
+      {
+        "text": "本地用户的时区 04:00",
+        "isCorrect": false,
+        "description": "Cron 与用户时区无关"
+      }
+    ]
+  },
+  {
+    "stem": "GHA 里 step 想把值传给下游 step 或 job，**现行**的正确写法是？",
+    "explanation": "GitHub 2022 起弃用了 `::set-output name=...::value` 的写法，改成往 `$GITHUB_OUTPUT` 文件追加 `key=value` 格式。配合 `id:` 字段，后续 step 用 `steps.<id>.outputs.<key>` 取值。旧写法虽然还能工作但会告警。",
+    "tags": ["github-actions", "初级", "outputs"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`echo \"key=value\" >> $GITHUB_OUTPUT`",
+        "isCorrect": true,
+        "description": "现行标准；step 必须有 id 才能取"
+      },
+      {
+        "text": "`echo \"::set-output name=key::value\"`",
+        "isCorrect": false,
+        "description": "已弃用；会有 deprecation 告警"
+      },
+      {
+        "text": "`echo \"key=value\" >> $GITHUB_ENV`",
+        "isCorrect": false,
+        "description": "GITHUB_ENV 设环境变量，不是 outputs"
+      },
+      {
+        "text": "把变量赋给 shell 变量即可",
+        "isCorrect": false,
+        "description": "shell 变量出 step 即销毁，无法跨 step"
+      }
+    ]
+  },
+  {
+    "stem": "默认情况下，GHA 里多个 job **不写 `needs:`** 时执行顺序是？",
+    "explanation": "GHA 把 jobs 设计成**默认全并行**——这是与 GitLab CI/Jenkins 最大的差别。要串行执行只能写 `needs:` 显式声明依赖。这让 DAG（有向无环图）成为 first-class 概念，不需要 stages 这种中间抽象。",
+    "tags": ["github-actions", "初级", "needs"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "全部并行，需要串行得写 `needs:`",
+        "isCorrect": true,
+        "description": "GHA 默认行为，DAG first-class"
+      },
+      {
+        "text": "按 yml 中出现顺序串行执行",
+        "isCorrect": false,
+        "description": "顺序不决定执行；GHA 不像 GitLab 那样有 stages"
+      },
+      {
+        "text": "按字母序串行执行",
+        "isCorrect": false,
+        "description": "字母序不影响调度"
+      },
+      {
+        "text": "随机执行一个",
+        "isCorrect": false,
+        "description": "全部都会跑，只是并发"
+      }
+    ]
+  },
+  {
+    "stem": "下面 `matrix` 配置会生成几个并发 job？\n\n```yaml\nmatrix:\n  os: [ubuntu-latest, macos-latest]\n  node: ['20', '22']\n  exclude:\n    - { os: macos-latest, node: '20' }\n```",
+    "explanation": "笛卡尔积 2×2 = 4 个组合，`exclude` 去掉 `(macos-latest, 20)` 一条，剩 3 个并发 job。`include` 是追加；`exclude` 是从笛卡尔积里减。`max-parallel` 是并发上限不影响总数。",
+    "tags": ["github-actions", "初级", "matrix"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "3 个",
+        "isCorrect": true,
+        "description": "2×2 = 4，减去 exclude 一条 = 3"
+      },
+      {
+        "text": "4 个",
+        "isCorrect": false,
+        "description": "忽略了 exclude"
+      },
+      {
+        "text": "2 个",
+        "isCorrect": false,
+        "description": "把 exclude 当替换"
+      },
+      {
+        "text": "1 个",
+        "isCorrect": false,
+        "description": "matrix 不会塌缩"
+      }
+    ]
+  },
+  {
+    "stem": "想配置一个「PR 频繁 push 时自动取消旧 workflow」的并发策略，下面哪个最合理？",
+    "explanation": "`cancel-in-progress: true` 让新触发取消旧运行；group 用 `head_ref || ref` 区分同分支——`head_ref` 在 PR 时是源分支名、push 时为空回退到 `ref`。这样 PR 多次 push 自动取消旧 job，但 push 到 main 不会被 PR 取消。",
+    "tags": ["github-actions", "中级", "concurrency"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}` + `cancel-in-progress: true`",
+        "isCorrect": true,
+        "description": "标准 CI 配置；PR 自动取消旧 push"
+      },
+      {
+        "text": "`group: deploy-prod` + `cancel-in-progress: true`",
+        "isCorrect": false,
+        "description": "固定 group + 取消，部署 job 用会丢状态"
+      },
+      {
+        "text": "`group: ${{ github.workflow }}` + `cancel-in-progress: false`",
+        "isCorrect": false,
+        "description": "排队不取消，达不到取消旧的目的"
+      },
+      {
+        "text": "没有 group，仅 `cancel-in-progress: true`",
+        "isCorrect": false,
+        "description": "缺 group 时 GitHub 拒绝该配置"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪个 `permissions` 配置允许 workflow 使用 **OIDC 联邦认证**？",
+    "explanation": "OIDC 必须显式声明 `permissions: id-token: write`，这是 GitHub Actions 拿到 JWT token 与 cloud provider 联邦的硬性前置。仓库 / job 任一级声明都行，但**只有该 job 启用了才能用**——OIDC 默认不打开。",
+    "tags": ["github-actions", "中级", "OIDC", "permissions"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`permissions: { id-token: write, contents: read }`",
+        "isCorrect": true,
+        "description": "`id-token: write` 是 OIDC 的硬性要求"
+      },
+      {
+        "text": "`permissions: write-all`",
+        "isCorrect": false,
+        "description": "虽然包含但太宽，违反最小权限原则"
+      },
+      {
+        "text": "`permissions: { contents: write }`",
+        "isCorrect": false,
+        "description": "没开 id-token，OIDC 无法拿 JWT"
+      },
+      {
+        "text": "省略 permissions 直接用",
+        "isCorrect": false,
+        "description": "id-token 默认 none，不显式打开会失败"
+      }
+    ]
+  },
+  {
+    "stem": "在 Composite Action 的 `action.yml` 里写 `run:` step，下面哪条**必须**设置？",
+    "explanation": "Composite Action 的 `run` step **必填 `shell:`** 字段（如 `shell: bash`），普通 workflow 里 shell 默认是 bash 可省，但 composite 里省略会解析失败：「shell is required for run steps in composite actions」。",
+    "tags": ["github-actions", "高级", "composite"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`shell:` 必须显式声明",
+        "isCorrect": true,
+        "description": "composite Action 强制要求；缺会解析失败"
+      },
+      {
+        "text": "`working-directory:` 必须声明",
+        "isCorrect": false,
+        "description": "可选，默认为项目根目录"
+      },
+      {
+        "text": "`name:` 必须声明",
+        "isCorrect": false,
+        "description": "可选，只是日志显示名"
+      },
+      {
+        "text": "`id:` 必须声明",
+        "isCorrect": false,
+        "description": "只有需要拿 outputs 时才必须"
+      }
+    ]
+  },
+  {
+    "stem": "`actions/upload-artifact@v4` 相比 v3，**主要的破坏性变化**是？",
+    "explanation": "v4 起同 workflow 内**同名 artifact 上传会报错**（v3 是后者覆盖前者）。matrix 多 job 上传同一 path 必须加后缀（如 `name: build-${{ matrix.os }}`）。还有性能改进、retention 控制更灵活等次要变化。",
+    "tags": ["github-actions", "高级", "artifacts"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同名 artifact 上传会冲突报错，不再覆盖",
+        "isCorrect": true,
+        "description": "v4 重大变化；matrix 多 job 上传需加后缀"
+      },
+      {
+        "text": "需要付费才能上传 > 100MB",
+        "isCorrect": false,
+        "description": "无此限制"
+      },
+      {
+        "text": "默认 retention 从 90 天降到 7 天",
+        "isCorrect": false,
+        "description": "默认仍 90 天"
+      },
+      {
+        "text": "不再支持 ZIP，必须用 TAR",
+        "isCorrect": false,
+        "description": "格式没变"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪种 cache 配置在 lockfile **没变**时能**有效复用**缓存？",
+    "explanation": "`hashFiles('pnpm-lock.yaml')` 计算 lockfile 内容的 hash 作 key——lock 没变 hash 不变，命中同一份 cache。这是依赖类缓存的标准做法。用 `github.sha` 每次 commit 一份新 key，等于禁用缓存。",
+    "tags": ["github-actions", "中级", "cache"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}`",
+        "isCorrect": true,
+        "description": "lockfile hash 决定 key，lock 不变就命中"
+      },
+      {
+        "text": "`key: ${{ github.sha }}`",
+        "isCorrect": false,
+        "description": "每个 commit 一份新 key，缓存永不命中"
+      },
+      {
+        "text": "`key: ${{ github.run_id }}`",
+        "isCorrect": false,
+        "description": "每次 workflow 运行一份新 key"
+      },
+      {
+        "text": "`key: pnpm`（固定字符串）",
+        "isCorrect": false,
+        "description": "永远命中同一份；lock 变了也不更新"
+      }
+    ]
+  },
+  {
+    "stem": "在 yml 中调用同仓库内的 Reusable Workflow，正确的 `uses:` 写法是？",
+    "explanation": "同仓库内调用必须用 `./.github/workflows/<file>.yml`（**带 `./` 前缀**，不能省）。跨仓库才用 `owner/repo/.github/workflows/<file>.yml@<ref>`。被调用的 workflow 必须配 `on: workflow_call`。",
+    "tags": ["github-actions", "高级", "reusable-workflow"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`uses: ./.github/workflows/deploy.yml`",
+        "isCorrect": true,
+        "description": "同仓库相对路径，`./` 必须有"
+      },
+      {
+        "text": "`uses: .github/workflows/deploy.yml`",
+        "isCorrect": false,
+        "description": "缺 `./` 前缀会被当作跨仓库语法解析失败"
+      },
+      {
+        "text": "`uses: deploy.yml`",
+        "isCorrect": false,
+        "description": "缺完整路径"
+      },
+      {
+        "text": "`uses: workflows/deploy`",
+        "isCorrect": false,
+        "description": "不是合法格式"
+      }
+    ]
+  },
+  {
+    "stem": "下面关于第三方 Marketplace Action 的**安全实践**，哪条最关键？",
+    "explanation": "Marketplace Action 历史上被供应链攻击过——作者可以悄悄修改 `v4` 这种浮动 tag 指向恶意代码。锁 commit SHA（`@a1b2c3d...`）让代码不可篡改；配 Dependabot 自动开 PR 升级，既安全又不丢更新。",
+    "tags": ["github-actions", "高级", "安全", "supply-chain"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 commit SHA 替代浮动 tag，配 Dependabot 自动升级",
+        "isCorrect": true,
+        "description": "防供应链攻击的标准做法"
+      },
+      {
+        "text": "永远只用 `@latest`，跟着最新版",
+        "isCorrect": false,
+        "description": "最危险——作者可悄悄发布恶意版本"
+      },
+      {
+        "text": "在 GitHub UI 给每个 Action 打上「已审核」标签",
+        "isCorrect": false,
+        "description": "GitHub 没有这个功能"
+      },
+      {
+        "text": "把所有 Action 改成 `uses: ./.github/...` 本地副本",
+        "isCorrect": false,
+        "description": "可行但维护负担太大，不实际"
+      }
+    ]
+  },
+  {
+    "stem": "默认情况下，新建仓库的 `GITHUB_TOKEN` 默认权限是？",
+    "explanation": "2023 起 GitHub 推动新仓库**默认 read-only**——`contents: read`，其它写权限全是 `none`。要写需要 yml 里显式 `permissions:` 声明。老仓库可在 Settings → Actions → General → Workflow permissions 切换到此默认。",
+    "tags": ["github-actions", "中级", "permissions", "安全"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Read-only（仅 contents: read）",
+        "isCorrect": true,
+        "description": "2023+ 默认，写权限需显式声明"
+      },
+      {
+        "text": "Read + write（全部 scope 都 write）",
+        "isCorrect": false,
+        "description": "老仓库 / 老组织的默认，2023 起已不是新默认"
+      },
+      {
+        "text": "完全没有权限，必须显式开",
+        "isCorrect": false,
+        "description": "默认还是有 contents: read"
+      },
+      {
+        "text": "由 GitHub Apps 决定",
+        "isCorrect": false,
+        "description": "GITHUB_TOKEN 是 workflow 内置，与 Apps 无关"
+      }
+    ]
+  }
+]
