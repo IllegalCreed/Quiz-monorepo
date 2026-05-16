@@ -556,5 +556,997 @@
         "description": "能凑合用但走的不是官方机制，trigger 是正解"
       }
     ]
+  },
+  {
+    "stem": "GitLab Runner 注册令牌（Registration Token）已被替代，**当前推荐**的注册方式是？",
+    "explanation": "**Authentication Token**（17.0 起完全替代 Registration Token）。从 GitLab UI 新建 runner → 生成一次性 `glrt-` 开头 token → `gitlab-runner register --token glrt-xxx`。**令牌可在 UI 单独撤销**，泄露不需重置整个 group/project。",
+    "tags": ["gitlab-cicd", "高级", "runner"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Authentication Token（`glrt-` 前缀，UI 单独可撤销）",
+        "isCorrect": true,
+        "description": "17.0 完全替代 Registration Token"
+      },
+      {
+        "text": "继续用 Registration Token",
+        "isCorrect": false,
+        "description": "已废弃"
+      },
+      {
+        "text": "用 SSH key 注册",
+        "isCorrect": false,
+        "description": "无此机制"
+      },
+      {
+        "text": "需先建 Personal Access Token",
+        "isCorrect": false,
+        "description": "用 glrt token"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab Runner executor 中 `docker` 与 `docker-machine` 的核心区别？",
+    "explanation": "**docker executor**：在当前主机起 docker 容器跑 job——单 runner 一对多。**docker-machine**：每 job 动态 provision VM（AWS/GCP），结束销毁——突发并发按需扩容。后者是 GitLab.com 共享 runner 的实现，已被 Custom Executor 替代。",
+    "tags": ["gitlab-cicd", "高级", "runner"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "docker 在本机起容器；docker-machine 每 job 起 VM 动态扩容",
+        "isCorrect": true,
+        "description": "docker-machine 已被 Custom Executor 替代"
+      },
+      {
+        "text": "完全等价别名",
+        "isCorrect": false,
+        "description": "调度模型不同"
+      },
+      {
+        "text": "docker 只支持 Linux",
+        "isCorrect": false,
+        "description": "都支持 Linux 容器"
+      },
+      {
+        "text": "docker-machine 不需要 Docker 守护进程",
+        "isCorrect": false,
+        "description": "仍需 Docker"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab Runner `config.toml` 里 `concurrent` 与 `limit` 的差别？",
+    "explanation": "**`concurrent`**：整个 runner 进程的全局并发上限（如 10 表示这台机同时最多 10 job）。**`[[runners]].limit`**：单个 runners 配置块的并发上限。多 runner 块时 limit 之和受 concurrent 截断。设过高会 OOM。",
+    "tags": ["gitlab-cicd", "高级", "runner"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "concurrent 是 runner 进程全局上限；limit 是单个 runner 块上限",
+        "isCorrect": true,
+        "description": "多 runner 时 limit 之和受 concurrent 截断"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "作用域不同"
+      },
+      {
+        "text": "limit 是 job timeout 上限",
+        "isCorrect": false,
+        "description": "timeout 是 job-level"
+      },
+      {
+        "text": "concurrent 仅 docker executor 生效",
+        "isCorrect": false,
+        "description": "全 executor 适用"
+      }
+    ]
+  },
+  {
+    "stem": "Runner 用 docker executor 跑 job，job 内想 `docker build`，最安全的方案？",
+    "explanation": "**用 Kaniko**（无 daemon 的镜像构建工具）——不需要 docker.sock 挂载，也不需要 privileged。**privileged: true + DinD**：能构建但 runner 容器拿到宿主 root 风险。**挂 docker.sock**：构建快但 job 可控宿主 docker（更危险）。Kaniko 在 CI 场景几乎是默认选择。",
+    "tags": ["gitlab-cicd", "高级", "docker"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Kaniko（无 daemon、无 privileged）",
+        "isCorrect": true,
+        "description": "CI 场景默认选择"
+      },
+      {
+        "text": "挂载 /var/run/docker.sock",
+        "isCorrect": false,
+        "description": "拿宿主 docker 控制权"
+      },
+      {
+        "text": "privileged: true + Docker-in-Docker",
+        "isCorrect": false,
+        "description": "拿宿主 root 风险"
+      },
+      {
+        "text": "用 root 用户跑 job",
+        "isCorrect": false,
+        "description": "不解决 docker 调用问题"
+      }
+    ]
+  },
+  {
+    "stem": "下列 `rules:` 写法的语义：\n\n```yaml\nrules:\n  - if: $CI_COMMIT_BRANCH == \"main\"\n    when: never\n  - if: $CI_PIPELINE_SOURCE == \"merge_request_event\"\n```",
+    "explanation": "**rules 是「**第一个匹配为准**」的顺序判定**。`main` 分支匹配第一条 → `when: never` → job 跳过。MR pipeline 不匹配第一条，匹配第二条 → job 默认 `when: on_success` → 运行。**等价于「MR 跑，main 不跑」**。",
+    "tags": ["gitlab-cicd", "高级", "rules"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "main 分支跳过；MR pipeline 运行",
+        "isCorrect": true,
+        "description": "rules 第一个匹配为准"
+      },
+      {
+        "text": "main 分支也跑，MR 不跑",
+        "isCorrect": false,
+        "description": "rules 顺序反了"
+      },
+      {
+        "text": "全部 pipeline 都跑",
+        "isCorrect": false,
+        "description": "第一条会让 main 跳过"
+      },
+      {
+        "text": "需要 rules: when: always 才生效",
+        "isCorrect": false,
+        "description": "默认就是 on_success"
+      }
+    ]
+  },
+  {
+    "stem": "`rules:` 中 `changes:` 子句的语义？",
+    "explanation": "**rules 是「**第一个匹配为准**」的顺序判定**。`main` 分支匹配第一条 → `when: never` → job 跳过。MR pipeline 不匹配第一条，匹配第二条 → 默认 `when: on_success` → 运行。**等价于「MR 跑，main 不跑」**。",
+    "tags": ["gitlab-cicd", "高级", "rules"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "改动文件匹配 glob 时该 rule 命中",
+        "isCorrect": true,
+        "description": "用于按目录分片 CI"
+      },
+      {
+        "text": "强制 git pull 拉最新改动",
+        "isCorrect": false,
+        "description": "无此语义"
+      },
+      {
+        "text": "对比 commit message 是否含关键字",
+        "isCorrect": false,
+        "description": "那是 commit message 检测"
+      },
+      {
+        "text": "只看改动的文件数，不看路径",
+        "isCorrect": false,
+        "description": "看 glob 路径"
+      }
+    ]
+  },
+  {
+    "stem": "`workflow:` 与 job 级 `rules:` 的关系？",
+    "explanation": "**`workflow.rules` 是 pipeline 级总开关**——决定整个 pipeline **是否创建**。job 级 `rules:` 决定单个 job **是否包含在已创建的 pipeline 中**。**workflow 不通过 → 整 pipeline 不跑**（连 job 都没机会判定）。两者独立，分层过滤。",
+    "tags": ["gitlab-cicd", "高级", "workflow"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "workflow 决定 pipeline 是否创建；job rules 决定 job 是否进 pipeline",
+        "isCorrect": true,
+        "description": "两层独立过滤"
+      },
+      {
+        "text": "完全等价，写哪都行",
+        "isCorrect": false,
+        "description": "作用域不同"
+      },
+      {
+        "text": "workflow 优先级低于 job rules",
+        "isCorrect": false,
+        "description": "workflow 决定前置"
+      },
+      {
+        "text": "workflow 仅适用 MR pipeline",
+        "isCorrect": false,
+        "description": "适用所有"
+      }
+    ]
+  },
+  {
+    "stem": "`include:` 与 `extends:` 在复用方面的差别？",
+    "explanation": "**`workflow.rules` 是 pipeline 级总开关**——决定整 pipeline **是否创建**。job 级 `rules:` 决定单个 job 是否包含在已创建 pipeline 中。workflow 不通过 → 整 pipeline 不跑（连 job 都没机会判定）。两者独立分层过滤。",
+    "tags": ["gitlab-cicd", "高级", "yaml"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "include 文件级合并；extends job 级继承可覆盖",
+        "isCorrect": true,
+        "description": "常组合使用"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "粒度不同"
+      },
+      {
+        "text": "extends 只能继承同文件 job",
+        "isCorrect": false,
+        "description": "include 引入的也能 extends"
+      },
+      {
+        "text": "include 已废弃用 extends 替代",
+        "isCorrect": false,
+        "description": "两者并行"
+      }
+    ]
+  },
+  {
+    "stem": "`needs:` 与 `dependencies:` 的关系？",
+    "explanation": "**`include:`** 文件级合并——把另一 yml 整个引入当前 pipeline 配置（常用模板库）。**`extends:`** job 级继承——一个 job 继承另一 job 的配置（image/before_script），可覆盖部分字段。两者常组合：include 引入模板 + extends 继承。",
+    "tags": ["gitlab-cicd", "高级", "needs"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "needs 控调度+拉 artifacts；dependencies 只控 artifacts 下载",
+        "isCorrect": true,
+        "description": "needs 含 dependencies 语义"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "作用域不同"
+      },
+      {
+        "text": "dependencies 已废弃",
+        "isCorrect": false,
+        "description": "仍可用"
+      },
+      {
+        "text": "needs 仅适用 manual job",
+        "isCorrect": false,
+        "description": "全 job 适用"
+      }
+    ]
+  },
+  {
+    "stem": "下面 cache 配置的语义：\n\n```yaml\ncache:\n  key:\n    files:\n      - package-lock.json\n  paths:\n    - node_modules/\n  policy: pull-push\n```",
+    "explanation": "`key.files` 用 `package-lock.json` hash 作 cache key——lockfile 变了 key 变，自动重建缓存。`paths` 列出要缓存的目录。`policy: pull-push`（默认）每 job pull + push；`pull` 只读不写（节省并发 push 冲突）；`push` 只写不读（首次预热）。",
+    "tags": ["gitlab-cicd", "高级", "cache"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "lockfile hash 作 key，node_modules 缓存，pull-push 模式",
+        "isCorrect": true,
+        "description": "默认 policy 是 pull-push"
+      },
+      {
+        "text": "package-lock.json 也会被缓存",
+        "isCorrect": false,
+        "description": "key 是哈希源，不是缓存内容"
+      },
+      {
+        "text": "node_modules 不会被缓存",
+        "isCorrect": false,
+        "description": "paths 列出会缓存"
+      },
+      {
+        "text": "每个 commit 都新缓存",
+        "isCorrect": false,
+        "description": "lockfile 未变则命中"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab CI 中 `artifacts:reports:dotenv` 的用途？",
+    "explanation": "`key.files` 用 `package-lock.json` hash 作 cache key——lockfile 变了 key 变，自动重建。`paths` 列出要缓存的目录。`policy: pull-push`（默认）每 job pull + push；`pull` 只读不写（节省并发 push 冲突）；`push` 只写不读（首次预热）。",
+    "tags": ["gitlab-cicd", "高级", "artifacts"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "前 job 写入 .env 文件，后续 job 自动加载为变量",
+        "isCorrect": true,
+        "description": "比 artifacts + cat 优雅"
+      },
+      {
+        "text": "把 .env 文件加密保护",
+        "isCorrect": false,
+        "description": "无加密语义"
+      },
+      {
+        "text": "把 .env 推送到 GitLab Variables",
+        "isCorrect": false,
+        "description": "仅 job 间传"
+      },
+      {
+        "text": "支持任意 yaml/json 格式",
+        "isCorrect": false,
+        "description": "仅 KEY=value"
+      }
+    ]
+  },
+  {
+    "stem": "`artifacts:reports:junit` 的展示位置？",
+    "explanation": "**MR 页面的「Tests」tab + Pipeline 详情的「Tests」tab**——GitLab 解析 JUnit XML 自动统计「**新增失败 / 修复 / 不稳定 测试**」，与 base 分支对比展示。CI 报错通常先去这里看，比翻 job log 快。`junit:` 路径支持 glob，多 job junit 自动合并。",
+    "tags": ["gitlab-cicd", "中级", "artifacts"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "MR Tests tab + Pipeline Tests tab，与 base 对比新增失败/修复",
+        "isCorrect": true,
+        "description": "比翻 job log 快"
+      },
+      {
+        "text": "下载到本地查看",
+        "isCorrect": false,
+        "description": "GitLab UI 直接展示"
+      },
+      {
+        "text": "发邮件到 commit author",
+        "isCorrect": false,
+        "description": "需另配通知"
+      },
+      {
+        "text": "仅 GitLab Enterprise 支持",
+        "isCorrect": false,
+        "description": "Community 也支持"
+      }
+    ]
+  },
+  {
+    "stem": "MR Pipeline 与 Branch Pipeline 的差别？",
+    "explanation": "**前置 job 把变量写入 `build.env` → 标记为 dotenv → 后续 job 自动加载为环境变量**。例：`build` job 算出 `VERSION=1.2.3` 写入 build.env，`deploy` job 直接 `echo $VERSION`。**仅 `KEY=value` 格式**，不支持多行/复杂结构。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "MR 跑合并后代码并拿 MR 变量；Branch 跑当前 HEAD",
+        "isCorrect": true,
+        "description": "默认都触发需 workflow.rules 互斥"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "对象不同"
+      },
+      {
+        "text": "MR Pipeline 不能用 cache",
+        "isCorrect": false,
+        "description": "都支持"
+      },
+      {
+        "text": "Branch Pipeline 不能 deploy",
+        "isCorrect": false,
+        "description": "都可"
+      }
+    ]
+  },
+  {
+    "stem": "「Merged Results Pipeline」相比普通 MR Pipeline 的优势？",
+    "explanation": "**普通 MR Pipeline**：对 head 单独的代码跑 CI——但合并到 base 后可能出现冲突或编译失败。**Merged Results**：GitLab 在临时分支上 merge → 对合并结果跑 CI——「**合并前真实验证**」，避免合并后 main 红。**Premium 起支持**。Merge Trains 在它基础上实现。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对临时合并后的代码跑 CI，避免合并后 main 红",
+        "isCorrect": true,
+        "description": "Premium 起支持"
+      },
+      {
+        "text": "并行跑两条 pipeline 取较快",
+        "isCorrect": false,
+        "description": "无此语义"
+      },
+      {
+        "text": "免费版默认开启",
+        "isCorrect": false,
+        "description": "Premium 起"
+      },
+      {
+        "text": "替代了普通 MR Pipeline",
+        "isCorrect": false,
+        "description": "可选启用"
+      }
+    ]
+  },
+  {
+    "stem": "Parent-Child Pipelines 的用途？",
+    "explanation": "**主 pipeline 触发子 pipeline**——子 pipeline 是独立 yml 文件，可以**动态生成**（`trigger: include:` 引用上游 job 的 artifacts 里的 yml）。常用于**monorepo 按目录拆分**：parent 检测改动 → 触发对应 child pipeline，避免一个巨型 yml 难维护。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "主 pipeline 触发独立子 pipeline，支持动态生成 yml",
+        "isCorrect": true,
+        "description": "monorepo 按目录拆分"
+      },
+      {
+        "text": "把 stage 命名为 parent/child",
+        "isCorrect": false,
+        "description": "概念不同"
+      },
+      {
+        "text": "Premium 起支持",
+        "isCorrect": false,
+        "description": "Free 也支持"
+      },
+      {
+        "text": "子 pipeline 不能拿 parent 变量",
+        "isCorrect": false,
+        "description": "可继承"
+      }
+    ]
+  },
+  {
+    "stem": "Multi-Project Pipelines 的核心场景？",
+    "explanation": "**A 项目 pipeline 触发 B 项目 pipeline**——典型：「**前端 release → 触发 deploy 仓库的 pipeline**」「**库发版 → 触发依赖该库的下游应用 CI**」。配置 `trigger: project: group/B; branch: main`。可双向 strategy:depend 让 A 等 B 完成才算成功。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "A 项目 pipeline 跨仓库触发 B 项目 pipeline",
+        "isCorrect": true,
+        "description": "release 流转、库发版触发下游 CI"
+      },
+      {
+        "text": "一个 pipeline 跨多 project 共享 artifacts",
+        "isCorrect": false,
+        "description": "无此语义"
+      },
+      {
+        "text": "等价于 Parent-Child",
+        "isCorrect": false,
+        "description": "前者跨项目，后者同项目"
+      },
+      {
+        "text": "需 Ultimate 版本",
+        "isCorrect": false,
+        "description": "Free 也支持"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab `environment:` 关键字的最小作用？",
+    "explanation": "**记录这次 job 把代码部署到了哪个环境**——UI 的 **Environments 页面**列出每个 environment 当前部署的 commit + 部署历史。配合 `url:` 可点击直接进入应用。**没有 environment 的 deploy job 只算普通 job**，UI 拿不到部署版本信息。生产场景几乎必配。",
+    "tags": ["gitlab-cicd", "中级", "environment"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 Environments 页面记录部署历史 + 当前版本",
+        "isCorrect": true,
+        "description": "生产几乎必配"
+      },
+      {
+        "text": "强制 job 在指定 K8s namespace 跑",
+        "isCorrect": false,
+        "description": "需 deploy-token 配 K8s 集成"
+      },
+      {
+        "text": "自动开启 reviewer 审批",
+        "isCorrect": false,
+        "description": "Protected Environments 才有"
+      },
+      {
+        "text": "等同于 environment variables",
+        "isCorrect": false,
+        "description": "概念不同"
+      }
+    ]
+  },
+  {
+    "stem": "`environment.action: stop` 的典型用法？",
+    "explanation": "**MR Pipeline**：`$CI_PIPELINE_SOURCE == 'merge_request_event'`，对合并后代码跑，能拿 `CI_MERGE_REQUEST_*` 变量。**Branch Pipeline**：push 触发，对当前 HEAD 跑。**默认都触发** → push 跑两次，用 workflow.rules 互斥。",
+    "tags": ["gitlab-cicd", "高级", "environment"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "MR 关闭时销毁 review app 等环境资源",
+        "isCorrect": true,
+        "description": "配合 on_stop 触发"
+      },
+      {
+        "text": "停止当前 job 执行",
+        "isCorrect": false,
+        "description": "job 控制不是 environment.action"
+      },
+      {
+        "text": "强制 retry job",
+        "isCorrect": false,
+        "description": "无关 retry"
+      },
+      {
+        "text": "禁用 environment 页面",
+        "isCorrect": false,
+        "description": "只是触发清理 job"
+      }
+    ]
+  },
+  {
+    "stem": "Protected Environment 的核心能力？",
+    "explanation": "**限制哪些用户能部署到该环境**——配置 allowed approvers（个人或角色），且支持「**部署需 N 人审批**」。常用于「**main 自动 deploy 到 staging，prod 需 1+ 人审批**」防止误操作。比 protected branch 颗粒更细（保护「**部署动作**」而非「**push 动作**」）。",
+    "tags": ["gitlab-cicd", "高级", "environment"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "限制部署用户 + 部署审批",
+        "isCorrect": true,
+        "description": "颗粒比 protected branch 细"
+      },
+      {
+        "text": "对环境网络加密",
+        "isCorrect": false,
+        "description": "无网络层语义"
+      },
+      {
+        "text": "环境只读不可修改",
+        "isCorrect": false,
+        "description": "保护部署不是只读"
+      },
+      {
+        "text": "等价 deploy_token",
+        "isCorrect": false,
+        "description": "概念不同"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab CI 变量的优先级（高 → 低）？",
+    "explanation": "**普通 MR Pipeline** 对 head 单独代码跑——合并到 base 后可能冲突或编译失败。**Merged Results**：GitLab 临时分支上 merge → 对合并结果跑 CI——「**合并前真实验证**」避免合并后 main 红。**Premium 起支持**，Merge Trains 在它基础上实现。",
+    "tags": ["gitlab-cicd", "高级", "variables"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "trigger > schedule > Project > Group > Instance > yml 顶层 > job",
+        "isCorrect": true,
+        "description": "上层覆盖下层"
+      },
+      {
+        "text": "yml 中定义优先级最高",
+        "isCorrect": false,
+        "description": "UI 配置优先"
+      },
+      {
+        "text": "Group > Project（公司统一配置）",
+        "isCorrect": false,
+        "description": "Project 优先"
+      },
+      {
+        "text": "全部同优先级，后定义胜出",
+        "isCorrect": false,
+        "description": "分层"
+      }
+    ]
+  },
+  {
+    "stem": "Project Variable 勾选 `Masked` 与 `Protected` 的差别？",
+    "explanation": "**主 pipeline 触发独立子 pipeline**——子 pipeline 是独立 yml 文件，可**动态生成**（`trigger: include:` 引用上游 job artifacts 里的 yml）。常用于 **monorepo 按目录拆分**：parent 检测改动 → 触发对应 child，避免一个巨型 yml 难维护。",
+    "tags": ["gitlab-cicd", "高级", "variables"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Masked 日志 mask；Protected 仅 protected branch/tag 注入",
+        "isCorrect": true,
+        "description": "两者独立常组合"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "保护层不同"
+      },
+      {
+        "text": "Masked 不允许 job 用",
+        "isCorrect": false,
+        "description": "可用，仅日志 mask"
+      },
+      {
+        "text": "Protected 加密存储",
+        "isCorrect": false,
+        "description": "都加密存储"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab 与外部 Vault（HashiCorp Vault）集成的核心方式？",
+    "explanation": "**A 项目 pipeline 触发 B 项目 pipeline**——典型：「前端 release → 触发 deploy 仓库 pipeline」「库发版 → 触发依赖该库的下游应用 CI」。配置 `trigger: project: group/B; branch: main`。可双向 strategy:depend 让 A 等 B 完成才算成功。",
+    "tags": ["gitlab-cicd", "高级", "secrets"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "GitLab JWT + Vault 验 claims 后发凭证",
+        "isCorrect": true,
+        "description": "无 long-lived token"
+      },
+      {
+        "text": "把 Vault token 存 GitLab Variables",
+        "isCorrect": false,
+        "description": "比 JWT 方式弱"
+      },
+      {
+        "text": "Vault sidecar 容器自动注入",
+        "isCorrect": false,
+        "description": "K8s 模式不是 GitLab 主流"
+      },
+      {
+        "text": "需要 Vault Agent injector",
+        "isCorrect": false,
+        "description": "GitLab 直接 OIDC 化"
+      }
+    ]
+  },
+  {
+    "stem": "Merge Trains 的核心机制？",
+    "explanation": "**MR 进入 train → GitLab 把当前队列前 MR 都合并后跑 CI**：如 MR1/MR2/MR3 入队，分别跑「base+MR1」「base+MR1+MR2」「base+MR1+MR2+MR3」的 CI。任一失败 → 该 MR 被踢出 train，后续重排。**真正解决「合并后 main 红」**——所有合并都基于「**已通过 CI 的合并结果**」。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "MR 队列依次跑「合并前面所有 MR 后」的 CI，失败踢出",
+        "isCorrect": true,
+        "description": "Premium 起支持"
+      },
+      {
+        "text": "并行合并多个 MR 到 main",
+        "isCorrect": false,
+        "description": "串行验证"
+      },
+      {
+        "text": "MR 之间互相 rebase",
+        "isCorrect": false,
+        "description": "仅临时合并验证"
+      },
+      {
+        "text": "Free 版可用",
+        "isCorrect": false,
+        "description": "Premium 起"
+      }
+    ]
+  },
+  {
+    "stem": "`interruptible: true` 的语义？",
+    "explanation": "**MR review app 销毁场景**——MR 关闭/合并时自动跑 `stop_review` 销毁 review app。`stop_review` 配 `action: stop` + `when: manual / on_stop`，GitLab 在 Environment 关闭时调度。还有 prepare/start/verify/access。",
+    "tags": ["gitlab-cicd", "高级", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "新 pipeline 启动时旧 job 可被取消",
+        "isCorrect": true,
+        "description": "deploy 不开，CI/test 开"
+      },
+      {
+        "text": "job 失败后自动 retry",
+        "isCorrect": false,
+        "description": "那是 retry:"
+      },
+      {
+        "text": "job 允许手动 cancel",
+        "isCorrect": false,
+        "description": "手动 cancel 不需要 interruptible"
+      },
+      {
+        "text": "job 跑超时自动 kill",
+        "isCorrect": false,
+        "description": "那是 timeout:"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab Container Registry 中 `$CI_REGISTRY_IMAGE` 变量的内容？",
+    "explanation": "**限制哪些用户能部署到该环境**——配 allowed approvers（个人或角色），支持「**部署需 N 人审批**」。常用「main 自动 deploy 到 staging，prod 需 1+ 人审批」防误操作。比 protected branch 颗粒细（保护「部署动作」非「push 动作」）。",
+    "tags": ["gitlab-cicd", "中级", "registry"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "项目专属 registry 路径，含域名+group+project",
+        "isCorrect": true,
+        "description": "如 registry.gitlab.com/g/p"
+      },
+      {
+        "text": "仅 registry 域名",
+        "isCorrect": false,
+        "description": "那是 $CI_REGISTRY"
+      },
+      {
+        "text": "镜像 SHA hash",
+        "isCorrect": false,
+        "description": "无关 hash"
+      },
+      {
+        "text": "registry 凭证 token",
+        "isCorrect": false,
+        "description": "那是 $CI_REGISTRY_PASSWORD"
+      }
+    ]
+  },
+  {
+    "stem": "Container Registry 的 cleanup policy 主要解决的问题？",
+    "explanation": "**自动清理过旧/过多的镜像 tag**——CI 推送的 `commit-sha` tag 累积会占大量空间。policy 配「**保留 N 个最新 / 删除 X 天前 / 匹配特定 tag 正则**」。**默认不开 cleanup → 几年下来 TB 级**。配 cleanup 是私有部署运维基本功。",
+    "tags": ["gitlab-cicd", "高级", "registry"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动删旧 tag 避免 registry 占用爆炸",
+        "isCorrect": true,
+        "description": "默认不开，私有部署必配"
+      },
+      {
+        "text": "扫描镜像漏洞",
+        "isCorrect": false,
+        "description": "那是 Container Scanning"
+      },
+      {
+        "text": "签名镜像防篡改",
+        "isCorrect": false,
+        "description": "那是 cosign"
+      },
+      {
+        "text": "限制镜像 pull 速率",
+        "isCorrect": false,
+        "description": "另一类配置"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab Secret Detection 的核心机制？",
+    "explanation": "**`Masked`**：变量值在 job log 显示成 `[MASKED]`——前提是值符合「8+ 字符、base64 字符集、无空白」。**`Protected`**：变量仅在 **protected branch/tag** 注入——保护 prod secret 不被普通分支拿到。两者独立，常组合：prod token 既 Masked 又 Protected。",
+    "tags": ["gitlab-cicd", "高级", "security"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Gitleaks 扫代码 + diff 检测密钥泄露，结果进 MR 安全面板",
+        "isCorrect": true,
+        "description": "CI 阶段，pre-commit hook 更靠前"
+      },
+      {
+        "text": "自动 rotate 泄露的 key",
+        "isCorrect": false,
+        "description": "无 rotate 能力"
+      },
+      {
+        "text": "加密 commit 中的 secret",
+        "isCorrect": false,
+        "description": "只检测不加密"
+      },
+      {
+        "text": "仅 Ultimate 支持",
+        "isCorrect": false,
+        "description": "Free 也支持基本版"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab Compliance Framework 的用途？",
+    "explanation": "**为 project 标注合规标签**（如 SOC2 / GDPR），并强制关联 **compliance pipeline**——该 pipeline 在所有该 framework 的项目 CI **之前**强制执行（合规扫描、签名校验等），项目自己的 .gitlab-ci.yml 不能跳过。**Ultimate 起支持**，用于受监管行业（金融/医疗）。",
+    "tags": ["gitlab-cicd", "高级", "compliance"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "为 project 打合规标签 + 强制跑前置合规 pipeline",
+        "isCorrect": true,
+        "description": "Ultimate 起，受监管行业用"
+      },
+      {
+        "text": "自动生成合规报告 PDF",
+        "isCorrect": false,
+        "description": "无报告自动生成"
+      },
+      {
+        "text": "禁用 force push",
+        "isCorrect": false,
+        "description": "是 protected branch 设置"
+      },
+      {
+        "text": "强制 2FA 登录",
+        "isCorrect": false,
+        "description": "instance 级 admin 设置"
+      }
+    ]
+  },
+  {
+    "stem": "Runner 配置 `[runners.docker] image = \"alpine:latest\"` 的作用？",
+    "explanation": "**没在 .gitlab-ci.yml 指定 image 时的默认 image**——job 跑在 alpine:latest 容器内。让 yml 不强制写 image 行（如简单 sh 脚本 job）。**项目级 yml 写了 `image:` 就覆盖此默认**。也可配 `pull_policy = [\"if-not-present\"]` 避免每次 pull。",
+    "tags": ["gitlab-cicd", "中级", "runner"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "yml 没写 image 时的默认容器",
+        "isCorrect": true,
+        "description": "yml 显式 image 会覆盖"
+      },
+      {
+        "text": "强制所有 job 跑在 alpine",
+        "isCorrect": false,
+        "description": "yml 可覆盖"
+      },
+      {
+        "text": "仅 K8s executor 有效",
+        "isCorrect": false,
+        "description": "docker executor 配置"
+      },
+      {
+        "text": "image 必须 pull 一次",
+        "isCorrect": false,
+        "description": "受 pull_policy 控制"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline stage 之间的执行顺序？",
+    "explanation": "**串行**——同 stage 内所有 job 并行，前一 stage 全成功才进下一 stage。默认顶层 `stages:` 列表顺序即执行顺序。**`needs:` 可打破 stage 顺序**形成 DAG（A 跑完 B 立即跑，不等同 stage 其它 job）。无 `stages:` 时默认 `build/test/deploy` 三 stage。",
+    "tags": ["gitlab-cicd", "入门", "pipeline"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "stage 串行，同 stage 内 job 并行；needs 可打破",
+        "isCorrect": true,
+        "description": "默认 build/test/deploy 三 stage"
+      },
+      {
+        "text": "所有 job 完全并行",
+        "isCorrect": false,
+        "description": "stage 内并行"
+      },
+      {
+        "text": "所有 job 完全串行",
+        "isCorrect": false,
+        "description": "同 stage 并行"
+      },
+      {
+        "text": "needs 不影响 stage 顺序",
+        "isCorrect": false,
+        "description": "needs 形成 DAG"
+      }
+    ]
+  },
+  {
+    "stem": "`only:`/`except:` 与 `rules:` 的关系？",
+    "explanation": "**`only`/`except` 是旧语法**，GitLab 12.3 起 `rules:` 为推荐写法。`rules:` 表达力更强（支持 `when` / `changes` / `if` 复合、`allow_failure` 等）。**官方建议新项目用 rules**；老项目两者**不能在同一 job 混用**（会报错）。",
+    "tags": ["gitlab-cicd", "入门", "rules"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "only/except 旧语法，rules 是推荐替代，同 job 不能混用",
+        "isCorrect": true,
+        "description": "12.3 起 rules 推荐"
+      },
+      {
+        "text": "完全等价别名",
+        "isCorrect": false,
+        "description": "rules 表达力更强"
+      },
+      {
+        "text": "可在同一 job 同时写两者",
+        "isCorrect": false,
+        "description": "会报错"
+      },
+      {
+        "text": "only 已废弃不能用",
+        "isCorrect": false,
+        "description": "仍可用但不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab CI YAML Lint 工具的访问路径？",
+    "explanation": "**`Project > Build > Pipeline Editor`**（取代了旧的 `CI/CD > Editor`）。Editor 支持「实时 lint + 可视化展示 stages/jobs 关系图 + 合并后的 yml（含 include 展开）」。也可 `gitlab-ci-validate` CLI 工具或 `glab ci lint`（GitLab CLI）。",
+    "tags": ["gitlab-cicd", "入门", "tooling"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Project > Build > Pipeline Editor",
+        "isCorrect": true,
+        "description": "支持 lint+图+include 展开"
+      },
+      {
+        "text": "Project > Settings > CI/CD",
+        "isCorrect": false,
+        "description": "那是配置页"
+      },
+      {
+        "text": "Admin Area > Pipelines",
+        "isCorrect": false,
+        "description": "instance 级管理"
+      },
+      {
+        "text": "只能用 CLI gitlab-ci-validate",
+        "isCorrect": false,
+        "description": "UI 也有"
+      }
+    ]
   }
 ]
