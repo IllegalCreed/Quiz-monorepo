@@ -401,5 +401,842 @@
         "description": "v9 流程中作为新字段加入，并非移除"
       }
     ]
+  },
+  {
+    "stem": "Flat config 中 `files:` 字段省略时，配置对象的作用范围？",
+    "explanation": "**省略 `files:` 的配置对全部文件生效**——这是「全局规则」的常用写法（如全局 globals 声明）。**但若想精准只对 ts 生效**，必须显式 `files: ['**/*.ts']`。**特别注意**：`ignores:` 单独成对象（无其它字段）时是「全局 ignore」；与 `files` 一起时是「该配置块的局部 ignore」。",
+    "tags": ["eslint", "高级", "flat-config"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对所有文件生效（全局规则）",
+        "isCorrect": true,
+        "description": "显式 files 才限定范围"
+      },
+      {
+        "text": "对当前目录文件生效",
+        "isCorrect": false,
+        "description": "无目录推断"
+      },
+      {
+        "text": "对 *.js 生效",
+        "isCorrect": false,
+        "description": "无后缀推断"
+      },
+      {
+        "text": "报错必须显式 files",
+        "isCorrect": false,
+        "description": "省略合法"
+      }
+    ]
+  },
+  {
+    "stem": "Flat config 中加载 React 插件，正确的写法是？",
+    "explanation": "**`import reactPlugin from 'eslint-plugin-react'`** + **`plugins: { react: reactPlugin }`** + **`rules: { 'react/no-unused-prop-types': 'error' }`**。必须 import 后放进 plugins，不支持字符串。",
+    "tags": ["eslint", "高级", "plugin"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "import 后放入 plugins 对象，rules 用 `react/xxx` 引用",
+        "isCorrect": true,
+        "description": "v9 flat config 标准"
+      },
+      {
+        "text": "`plugins: ['react']`（字符串数组）",
+        "isCorrect": false,
+        "description": "legacy 写法不支持"
+      },
+      {
+        "text": "`extends: ['plugin:react/recommended']`",
+        "isCorrect": false,
+        "description": "legacy extends 不支持"
+      },
+      {
+        "text": "在 package.json 的 eslintConfig.plugins 声明",
+        "isCorrect": false,
+        "description": "flat config 不用此"
+      }
+    ]
+  },
+  {
+    "stem": "Flat config 中 `linterOptions.reportUnusedDisableDirectives` 的作用？",
+    "explanation": "**对未被任何规则使用的 `/* eslint-disable */` 注释报错**——例：写了 `/* eslint-disable no-console */` 但本文件未触发 no-console → 报警「这条 disable 注释是无效的」。清理过期 disable 注释。值可 `error / warn / off`。",
+    "tags": ["eslint", "高级", "flat-config"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对未被使用的 eslint-disable 注释报警",
+        "isCorrect": true,
+        "description": "清理过期注释"
+      },
+      {
+        "text": "禁用所有 eslint-disable 注释",
+        "isCorrect": false,
+        "description": "不禁用，只检测无效"
+      },
+      {
+        "text": "把 disable 注释自动改成 enable",
+        "isCorrect": false,
+        "description": "无自动转换"
+      },
+      {
+        "text": "报告 CLI --no-warn-ignored 类似行为",
+        "isCorrect": false,
+        "description": "另一个 option"
+      }
+    ]
+  },
+  {
+    "stem": "Flat config 中 `processor:` 字段的典型场景？",
+    "explanation": "**对非 JS 文件预处理后再 lint**——例：`eslint-plugin-markdown` processor 把 MD 代码块抽出来 lint。又如 Vue 文件需 `vue-eslint-parser` + processor 拆 SFC 块。flat config 写 `processor: 'plugin/processor-name'`。",
+    "tags": ["eslint", "高级", "processor"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对非 JS 文件预处理后再 lint（Markdown/Vue SFC 等）",
+        "isCorrect": true,
+        "description": "拆出代码块/SFC 块分别 lint"
+      },
+      {
+        "text": "处理 CLI 命令行参数",
+        "isCorrect": false,
+        "description": "无关 CLI"
+      },
+      {
+        "text": "替代 parser",
+        "isCorrect": false,
+        "description": "preprocessor 是文件级别"
+      },
+      {
+        "text": "用于格式化代码",
+        "isCorrect": false,
+        "description": "格式化是 Prettier"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint 规则的「Fixable」类别中，「`auto-fixable`」与「`suggestion`」的区别？",
+    "explanation": "**`auto-fixable`**（fixable: 'code'/'whitespace'）：`eslint --fix` 自动应用。**`suggestion`**（hasSuggestions: true）：编辑器/IDE 通过 LSP 提示候选 fix，**用户手动选**——适合「多种修法」或「修复会改变行为」。CLI --fix 不自动应用 suggestion。",
+    "tags": ["eslint", "高级", "rule"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "auto-fix 由 --fix 自动应用；suggestion 由用户在编辑器手动选",
+        "isCorrect": true,
+        "description": "suggestion 适合多种修法/有副作用场景"
+      },
+      {
+        "text": "两者等价",
+        "isCorrect": false,
+        "description": "应用模型不同"
+      },
+      {
+        "text": "suggestion 仅在 v10 才支持",
+        "isCorrect": false,
+        "description": "v8 就支持"
+      },
+      {
+        "text": "--fix 默认包含 suggestion",
+        "isCorrect": false,
+        "description": "需 --fix-type suggestion"
+      }
+    ]
+  },
+  {
+    "stem": "`@typescript-eslint` 的 type-aware rule 与普通 rule 的差别？",
+    "explanation": "**type-aware rule**（如 `no-floating-promises`）：需 `parserOptions.project` 加载 TS 类型信息后再 lint。**普通 rule**：仅看 AST，速度快。type-aware 慢 5-10 倍但能 catch 「未 await 的 Promise」等需类型的错。",
+    "tags": ["eslint", "高级", "typescript"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "type-aware 需 parserOptions.project 加载类型，慢 5-10 倍",
+        "isCorrect": true,
+        "description": "能 catch no-floating-promises 等"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "执行模型不同"
+      },
+      {
+        "text": "type-aware 不需要 tsconfig",
+        "isCorrect": false,
+        "description": "必须配 project"
+      },
+      {
+        "text": "普通 rule 不能用在 TS 文件",
+        "isCorrect": false,
+        "description": "都能用"
+      }
+    ]
+  },
+  {
+    "stem": "`@typescript-eslint` v8 起推荐的 `projectService` 与 `project` 配置的区别？",
+    "explanation": "**`projectService: true`** 是 v8 推荐方式——自动发现 tsconfig（无需手动列举），且对大 monorepo 性能更好（按需加载）。**`project: ['./tsconfig.json']`**：手动指定 tsconfig 列表，初始化时全部加载，monorepo 多个 tsconfig 时启动慢。新项目用 projectService。",
+    "tags": ["eslint", "高级", "typescript"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "projectService 自动发现 tsconfig 且按需加载，性能更好",
+        "isCorrect": true,
+        "description": "v8 推荐"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "加载模型不同"
+      },
+      {
+        "text": "projectService 必须配 path",
+        "isCorrect": false,
+        "description": "true 即自动发现"
+      },
+      {
+        "text": "project 已废弃",
+        "isCorrect": false,
+        "description": "可用但不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint v9 起对单文件 lint 速度有显著提升的特性是？",
+    "explanation": "**`--cache`** 默认启用（v9 起 cache 命中条件优化），**重复 lint 未变文件直接跳过**。同时 v9 把 flat config 解析层重写，启动开销也降低。对大型仓库的 CI lint 全量扫描，加 `--cache --cache-location node_modules/.cache/eslint` 加速明显。",
+    "tags": ["eslint", "高级", "performance"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`--cache` 默认启用 + flat config 解析优化",
+        "isCorrect": true,
+        "description": "未变文件直接跳过"
+      },
+      {
+        "text": "改用 Rust 实现",
+        "isCorrect": false,
+        "description": "仍是 Node"
+      },
+      {
+        "text": "并行规则执行",
+        "isCorrect": false,
+        "description": "未推出"
+      },
+      {
+        "text": "禁用所有 plugin",
+        "isCorrect": false,
+        "description": "不会"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint `--cache-strategy` 的两种取值差别？",
+    "explanation": "**`metadata`**（默认）：用文件 mtime + size 判断变更——快但 git 切分支后 mtime 变所有文件 cache miss。**`content`**：用文件内容 hash 判断——准确但每次要算 hash，初始扫描慢。**CI 场景推荐 `content`**（避免 mtime 误判），本地 `metadata` 足够快。",
+    "tags": ["eslint", "高级", "cache"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "metadata 看 mtime 快但易误判；content 看内容 hash 准但慢",
+        "isCorrect": true,
+        "description": "CI 推荐 content"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "判断方式不同"
+      },
+      {
+        "text": "content 已废弃",
+        "isCorrect": false,
+        "description": "v9 仍支持"
+      },
+      {
+        "text": "metadata 不可用于 CI",
+        "isCorrect": false,
+        "description": "可用，但不准"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 配合 ESLint 的最佳实践命令？",
+    "explanation": "```json\n{\n  \"editor.codeActionsOnSave\": {\n    \"source.fixAll.eslint\": \"explicit\"\n  }\n}\n```\n值用字符串 `\"explicit\"`（替代旧 `true`，VS Code 1.85+），**只对保存且无错误时触发**。`\"always\"` 任何保存都触发可能扰乱编辑流。",
+    "tags": ["eslint", "中级", "integration"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`eslint --fix --cache --max-warnings=0`（让 lint-staged 传文件）",
+        "isCorrect": true,
+        "description": "不要写路径让全扫描"
+      },
+      {
+        "text": "`eslint .`",
+        "isCorrect": false,
+        "description": "无视 lint-staged 过滤"
+      },
+      {
+        "text": "`eslint src/ --fix`",
+        "isCorrect": false,
+        "description": "扫未 stage 文件"
+      },
+      {
+        "text": "`eslint --no-fix`",
+        "isCorrect": false,
+        "description": "禁了自动修复无意义"
+      }
+    ]
+  },
+  {
+    "stem": "VS Code ESLint 插件保存时自动修复，正确的 `settings.json` 配置是？",
+    "explanation": "```json\n{\n  \"editor.codeActionsOnSave\": {\n    \"source.fixAll.eslint\": \"explicit\"\n  }\n}\n```\n关键点：值用字符串 `\"explicit\"`（替代旧的 `true`，VS Code 1.85+），且**只对保存且无错误时触发**。`\"always\"` 任何保存都触发可能扰乱编辑流。",
+    "tags": ["eslint", "中级", "integration"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`\"source.fixAll.eslint\": \"explicit\"`",
+        "isCorrect": true,
+        "description": "v1.85+ 推荐写法"
+      },
+      {
+        "text": "`\"source.fixAll.eslint\": true`",
+        "isCorrect": false,
+        "description": "旧布尔写法已废弃"
+      },
+      {
+        "text": "`\"eslint.autoFix\": true`",
+        "isCorrect": false,
+        "description": "无此配置项"
+      },
+      {
+        "text": "`\"editor.formatOnSave\": true`",
+        "isCorrect": false,
+        "description": "那触发 formatter"
+      }
+    ]
+  },
+  {
+    "stem": "Prettier 与 ESLint 同时启用，如何避免规则冲突？",
+    "explanation": "**Node.js 20 LTS**（v9 是 18+）。v10 把目标 Node 提到 20，配合 ES2024 语法。在 Node 18 上运行 ESLint v10 会启动报错。生产用 v9 还是 v10：v10 在 2025 年底发布，Node 20 升级前用 v9。",
+    "tags": ["eslint", "中级", "integration"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 eslint-config-prettier 关闭格式化类规则",
+        "isCorrect": true,
+        "description": "不要用 eslint-plugin-prettier"
+      },
+      {
+        "text": "用 eslint-plugin-prettier 把 Prettier 当规则跑",
+        "isCorrect": false,
+        "description": "性能差且冗余"
+      },
+      {
+        "text": "禁用 ESLint，只用 Prettier",
+        "isCorrect": false,
+        "description": "质量类规则需要 ESLint"
+      },
+      {
+        "text": "禁用 Prettier，只用 ESLint",
+        "isCorrect": false,
+        "description": "Prettier 格式化更强"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint v10 起，Node 版本最低要求是？",
+    "explanation": "**Node.js 20 LTS**（v9 是 18+）。v10 把目标 Node 提到 20，配合 ES2024 语法。在 Node 18 上运行 ESLint v10 会启动报错。**生产用 v9 还是 v10**：v10 在 2025 年底发布，Node 20 升级前用 v9。",
+    "tags": ["eslint", "中级", "v10"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Node 20 LTS",
+        "isCorrect": true,
+        "description": "v9 是 Node 18"
+      },
+      {
+        "text": "Node 18",
+        "isCorrect": false,
+        "description": "v9 的要求"
+      },
+      {
+        "text": "Node 22",
+        "isCorrect": false,
+        "description": "未要求 22"
+      },
+      {
+        "text": "Node 16",
+        "isCorrect": false,
+        "description": "v8 时代"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint v10 移除的 legacy eslintrc 兼容性意味着？",
+    "explanation": "**`.eslintrc.*` 文件完全不再被识别**——v9 还能通过 `ESLINT_USE_FLAT_CONFIG=false` 兼容旧 eslintrc。v10 完全废除该环境变量。**项目升级 v10 前必须迁移到 flat config**，否则 ESLint 找不到配置直接报错退出。",
+    "tags": ["eslint", "中级", "v10"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`.eslintrc.*` 完全不再支持，必须 flat config",
+        "isCorrect": true,
+        "description": "v9 兼容 env 也废了"
+      },
+      {
+        "text": "eslintrc 仍能用但报 warning",
+        "isCorrect": false,
+        "description": "v10 完全废除"
+      },
+      {
+        "text": "仅 .eslintrc.js 不支持，json 还能用",
+        "isCorrect": false,
+        "description": "全废"
+      },
+      {
+        "text": "可用 v9 兼容模式",
+        "isCorrect": false,
+        "description": "v10 移除该模式"
+      }
+    ]
+  },
+  {
+    "stem": "想为公司内部多项目共享一套 ESLint 配置，flat config 模式下推荐做法？",
+    "explanation": "**发布 npm 包导出 flat config 数组**：`export default [{ rules, plugins }, ...]`。下游 `import shared from '@company/eslint-config'` 展开到 `eslint.config.js`。比 v8「eslint-config-xxx + extends 字符串」清晰多了。",
+    "tags": ["eslint", "高级", "shared-config"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "发布 npm 包 export flat config 数组，下游 import 展开",
+        "isCorrect": true,
+        "description": "替代 v8 extends 字符串"
+      },
+      {
+        "text": "推送到 git 仓库直接 clone 引用",
+        "isCorrect": false,
+        "description": "无法版本管理"
+      },
+      {
+        "text": "把 eslint.config.js 复制到每个项目",
+        "isCorrect": false,
+        "description": "无法统一升级"
+      },
+      {
+        "text": "用 .eslintrc 写 extends: company-config",
+        "isCorrect": false,
+        "description": "flat config 不支持"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint 自定义规则中 `meta.fixable` 与 `meta.hasSuggestions` 的差别？",
+    "explanation": "**`meta.fixable`**：rule 提供 `fixer.replaceText()` 自动修复，CLI `--fix` 应用。值需 `'code'` 或 `'whitespace'`。**`meta.hasSuggestions: true`**：rule 用 `context.report({ suggest })` 候选——用户编辑器手选，--fix 不自动应用。",
+    "tags": ["eslint", "高级", "custom-rule"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fixable 自动应用；hasSuggestions 用户手选",
+        "isCorrect": true,
+        "description": "应用方式不同"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "应用模型不同"
+      },
+      {
+        "text": "hasSuggestions 已废弃",
+        "isCorrect": false,
+        "description": "v8 起支持"
+      },
+      {
+        "text": "fixable 只能修空白",
+        "isCorrect": false,
+        "description": "可修代码"
+      }
+    ]
+  },
+  {
+    "stem": "想知道某文件实际应用了哪些规则配置，正确命令是？",
+    "explanation": "**`eslint --print-config <file>`**——输出该文件最终合并后的所有配置（rules / parser / plugins），常用于「调试为什么某规则没生效」「flat config 多个对象合并后实际什么样」。输出 JSON，常配 `| jq` 过滤。",
+    "tags": ["eslint", "中级", "cli"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`eslint --print-config <file>`",
+        "isCorrect": true,
+        "description": "输出合并后的完整配置"
+      },
+      {
+        "text": "`eslint --debug`",
+        "isCorrect": false,
+        "description": "输出运行时日志，非配置"
+      },
+      {
+        "text": "`eslint --show-config`",
+        "isCorrect": false,
+        "description": "无此参数"
+      },
+      {
+        "text": "`eslint config <file>`",
+        "isCorrect": false,
+        "description": "无此子命令"
+      }
+    ]
+  },
+  {
+    "stem": "`eslint --debug` 主要输出？",
+    "explanation": "**详细运行时日志**——配置文件加载路径、parser 解析时间、各 plugin 加载、每个文件的规则触发情况等。常用于「**为什么这个 file 没被 lint**」「**flat config 哪个对象命中了**」。输出非常啰嗦，最好配 `2>&1 | grep` 过滤。",
+    "tags": ["eslint", "中级", "cli"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "详细运行时日志（配置加载、parser、规则触发）",
+        "isCorrect": true,
+        "description": "调试为什么没生效"
+      },
+      {
+        "text": "等价 --print-config",
+        "isCorrect": false,
+        "description": "前者运行时日志，后者合并配置"
+      },
+      {
+        "text": "输出 AST",
+        "isCorrect": false,
+        "description": "需另用 espree"
+      },
+      {
+        "text": "等价 --quiet",
+        "isCorrect": false,
+        "description": "相反"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint 报「ParserError: Unexpected token」的常见原因？",
+    "explanation": "**详细运行时日志**——配置文件加载路径、parser 解析时间、各 plugin 加载、每个文件的规则触发情况。常用于「为什么这个 file 没被 lint」「flat config 哪个对象命中了」。输出非常啰嗦，最好配 `2>&1 | grep` 过滤。",
+    "tags": ["eslint", "中级", "error"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 parser 不支持 TS/JSX，需装/配置专门 parser",
+        "isCorrect": true,
+        "description": "@typescript-eslint/parser 等"
+      },
+      {
+        "text": "代码确实语法错",
+        "isCorrect": false,
+        "description": "也可能但先排查 parser"
+      },
+      {
+        "text": "Node 版本太低",
+        "isCorrect": false,
+        "description": "ESLint 自带 parser"
+      },
+      {
+        "text": "缺 .eslintrc",
+        "isCorrect": false,
+        "description": "无关配置文件"
+      }
+    ]
+  },
+  {
+    "stem": "`/* eslint-disable rule-name */` 与 `/* eslint-disable-next-line rule-name */` 的区别？",
+    "explanation": "**`eslint-disable`**：从该行起到文件末（或 `eslint-enable` 之前）整段禁用规则。**`eslint-disable-next-line`**：**仅下一行**禁用。**`eslint-disable-line`** 写在行末：仅当前行禁用。**最佳实践**：用 next-line 精准禁用一行，避免大段 disable 漏掉真问题。",
+    "tags": ["eslint", "入门", "directive"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "前者整段禁用至 enable；后者仅下一行禁用",
+        "isCorrect": true,
+        "description": "next-line 精准推荐"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "范围不同"
+      },
+      {
+        "text": "disable-next-line 已废弃",
+        "isCorrect": false,
+        "description": "推荐写法"
+      },
+      {
+        "text": "disable 仅对单行生效",
+        "isCorrect": false,
+        "description": "整段"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint 报「No files matching pattern were found」最常见原因？",
+    "explanation": "**`eslint-disable`**：从该行起到文件末（或 `eslint-enable` 之前）整段禁用。**`eslint-disable-next-line`**：仅下一行禁用。**`eslint-disable-line`** 写行末：仅当前行禁用。**最佳实践**：用 next-line 精准禁用一行，避免大段 disable 漏掉真问题。",
+    "tags": ["eslint", "入门", "config"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "v9 默认只扫 .js/.mjs/.cjs，需在 files 显式声明其它后缀",
+        "isCorrect": true,
+        "description": "v8 默认 .ext，v9 改了"
+      },
+      {
+        "text": "ESLint 装错版本",
+        "isCorrect": false,
+        "description": "更可能配置问题"
+      },
+      {
+        "text": "项目无 .eslintrc",
+        "isCorrect": false,
+        "description": "flat config 不要"
+      },
+      {
+        "text": "Node 版本太低",
+        "isCorrect": false,
+        "description": "无关 Node"
+      }
+    ]
+  },
+  {
+    "stem": "把 `error` 规则改成 `warn` 但仍想阻断 CI，CLI 该加什么？",
+    "explanation": "**`--max-warnings=0`**——把 warn 数量上限设为 0，超 0 个 warning 退出码非 0 → CI fail。这样既能在编辑器中以「warning」黄色提示而非「error」红线（避免心理负担），又保留 CI 阻断能力。",
+    "tags": ["eslint", "入门", "cli"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`--max-warnings=0`",
+        "isCorrect": true,
+        "description": "warn 也阻断"
+      },
+      {
+        "text": "`--strict`",
+        "isCorrect": false,
+        "description": "无此参数"
+      },
+      {
+        "text": "`--treat-warnings-as-errors`",
+        "isCorrect": false,
+        "description": "无此参数"
+      },
+      {
+        "text": "改回 error 严重级",
+        "isCorrect": false,
+        "description": "失去 warn 的好处"
+      }
+    ]
+  },
+  {
+    "stem": "Flat config 中 `languageOptions.ecmaVersion: 'latest'` 与 `2024` 的差别？",
+    "explanation": "**`'latest'`** 自动跟随 ESLint 当前最高支持版本——可能随 ESLint 升级而提升。**`2024`** 钉死该版本，未来 ESLint 升级也仍按 2024 解析。**新项目推荐 'latest'**（跟随生态）；稳定库可钉死版本避免升级意外。",
+    "tags": ["eslint", "高级", "config"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "latest 跟随 ESLint 最高版本；2024 钉死该版本",
+        "isCorrect": true,
+        "description": "新项目 latest"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "版本绑定方式不同"
+      },
+      {
+        "text": "latest 已废弃",
+        "isCorrect": false,
+        "description": "推荐写法"
+      },
+      {
+        "text": "2024 不支持 top-level await",
+        "isCorrect": false,
+        "description": "支持"
+      }
+    ]
+  },
+  {
+    "stem": "`globalIgnores` 与配置对象单独 `ignores:` 的差别？",
+    "explanation": "**`globalIgnores(['dist/**', 'coverage/**'])`**：明确语义，文件被全局忽略——任何配置都不处理。**单独 `{ ignores: [...] }`**（无其它字段）：旧式写法，等价 globalIgnores。**`{ files: [...], ignores: [...] }`**：仅在当前配置块内忽略——其它块仍处理这些文件。",
+    "tags": ["eslint", "高级", "ignore"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "globalIgnores 是辅助函数，等价于单独 ignores 配置对象",
+        "isCorrect": true,
+        "description": "都是全局忽略"
+      },
+      {
+        "text": "完全不同的概念",
+        "isCorrect": false,
+        "description": "等价"
+      },
+      {
+        "text": "globalIgnores 不支持 glob",
+        "isCorrect": false,
+        "description": "支持"
+      },
+      {
+        "text": "单独 ignores 已废弃",
+        "isCorrect": false,
+        "description": "仍可用"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint Bulk Suppressions 的工作机制？",
+    "explanation": "**`--suppress-all`** 把当前所有 lint 错误记录到 `.eslint-suppressions.json`——后续 lint 自动跳过这些已记录的错误（**「快照式抑制」**）。新增代码触发错误才会报。`--prune-suppressions` 清理已修复但仍在文件中的记录。**适合**：升级规则后老仓库立刻不被淹没。",
+    "tags": ["eslint", "高级", "bulk-suppress"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把当前错误快照到文件，后续 lint 跳过这些已记录错误",
+        "isCorrect": true,
+        "description": "升级规则时控制爆炸"
+      },
+      {
+        "text": "等价 eslint-disable 批量加",
+        "isCorrect": false,
+        "description": "不修改源码"
+      },
+      {
+        "text": "永久禁用全部规则",
+        "isCorrect": false,
+        "description": "仅快照错误"
+      },
+      {
+        "text": "v10 才支持",
+        "isCorrect": false,
+        "description": "v9 后期引入"
+      }
+    ]
+  },
+  {
+    "stem": "`eslint --rulesdir` 标志的用途？已废弃没？",
+    "explanation": "**已废弃**——v9 起完全移除。原用于「指定本地目录加载自定义规则」。**新方案**：把规则打包成 plugin（`{ rules: { my-rule: {...} } }`），在 flat config `plugins:` 注册。`local-rules` 风格的小项目自定义规则也走 plugin 形式。",
+    "tags": ["eslint", "高级", "deprecated"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "v9 已移除，改用 plugin 注册自定义规则",
+        "isCorrect": true,
+        "description": "本地规则走 plugin 形式"
+      },
+      {
+        "text": "仍是推荐用法",
+        "isCorrect": false,
+        "description": "已移除"
+      },
+      {
+        "text": "v10 才移除",
+        "isCorrect": false,
+        "description": "v9 就移除"
+      },
+      {
+        "text": "改名为 --plugin-dir",
+        "isCorrect": false,
+        "description": "无此参数"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint 报「Plugin xxx not found」flat config 下的原因？",
+    "explanation": "**flat config 必须 import 后放进 `plugins:` 对象**——而非旧 `plugins: ['xxx']` 字符串数组（v9 完全不支持字符串引用）。检查：① npm 是否装了该包；② config 是否 `import xxx from 'eslint-plugin-xxx'`；③ 是否写进 `plugins: { xxx }`。",
+    "tags": ["eslint", "中级", "error"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "flat config 没 import 后放进 plugins 对象",
+        "isCorrect": true,
+        "description": "v9 不支持字符串引用"
+      },
+      {
+        "text": "npm 未装该包（最常见）",
+        "isCorrect": false,
+        "description": "可能但 import 错更常见"
+      },
+      {
+        "text": "需在 .eslintrc 注册",
+        "isCorrect": false,
+        "description": "flat config 不要 eslintrc"
+      },
+      {
+        "text": "Plugin 名要带 eslint-plugin- 前缀",
+        "isCorrect": false,
+        "description": "import 时已是全名"
+      }
+    ]
   }
 ]
