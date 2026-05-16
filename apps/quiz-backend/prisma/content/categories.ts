@@ -683,10 +683,81 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         ],
       },
 
-      // ----- 17. 软技能 -----
+      // ----- 17. 大语言模型与生成式 AI -----
+      {
+        name: "大语言模型与生成式 AI",
+        sort: 17,
+        children: [
+          {
+            name: "模型",
+            sort: 1,
+            children: [
+              { name: "GPT", sort: 1 },
+              { name: "Gemini", sort: 2 },
+              { name: "Claude", sort: 3 },
+              { name: "Grok", sort: 4 },
+              { name: "GLM", sort: 5 },
+              { name: "DeepSeek", sort: 6 },
+              { name: "Qwen", sort: 7 },
+              { name: "MiniMax", sort: 8 },
+            ],
+          },
+          {
+            name: "Agent",
+            sort: 2,
+            children: [
+              { name: "Pi", sort: 1 },
+              { name: "Claude Code", sort: 2 },
+              { name: "Codex", sort: 3 },
+              { name: "Gemini CLI", sort: 4 },
+              { name: "OpenCode", sort: 5 },
+            ],
+          },
+          {
+            name: "编排工具",
+            sort: 3,
+            children: [{ name: "Dify", sort: 1 }],
+          },
+          {
+            name: "其他工具",
+            sort: 4,
+            children: [
+              { name: "RAG", sort: 1 },
+              { name: "LangChain", sort: 2 },
+              { name: "OpenRouter", sort: 3 },
+              { name: "Stitch", sort: 4 },
+              { name: "Claude Design", sort: 5 },
+              { name: "NotebookLM", sort: 6 },
+            ],
+          },
+          {
+            name: "提示词工程",
+            sort: 5,
+            children: [
+              { name: "基础提示设计", sort: 1 },
+              { name: "高级提示技巧", sort: 2 },
+            ],
+          },
+          {
+            name: "MCP",
+            sort: 6,
+            children: [{ name: "Brave Search", sort: 1 }],
+          },
+          {
+            name: "Skills",
+            sort: 7,
+            children: [
+              { name: "Superpowers", sort: 1 },
+              { name: "Everything Claude Code", sort: 2 },
+            ],
+          },
+        ],
+      },
+
+      // ----- 18. 软技能 -----
       {
         name: "软技能",
-        sort: 17,
+        sort: 18,
         children: [
           { name: "软件工程（敏捷开发 / Scrum）", sort: 1 },
           {

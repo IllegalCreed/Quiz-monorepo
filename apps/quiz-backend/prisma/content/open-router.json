@@ -1,0 +1,808 @@
+[
+  {
+    "stem": "OpenRouter 的核心定位是什么？",
+    "explanation": "OpenRouter 是 **LLM API 聚合中间层**——把 400+ 模型藏在一个 **OpenAI 兼容** 接口背后。一张 key + 一份代码即可调用 Claude / GPT / Gemini / Llama / DeepSeek 等全市场模型。",
+    "tags": ["open-router", "入门", "定位"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "LLM API 聚合中间层，OpenAI 兼容接口统一调用 400+ 模型",
+        "isCorrect": true,
+        "description": "核心价值：一张 key 走全市场"
+      },
+      {
+        "text": "Anthropic 官方推出的 Claude 模型托管平台",
+        "isCorrect": false,
+        "description": "OpenRouter 不属于 Anthropic"
+      },
+      {
+        "text": "开源大模型本地部署框架（类似 Ollama）",
+        "isCorrect": false,
+        "description": "OpenRouter 是 SaaS 聚合层，不做本地部署"
+      },
+      {
+        "text": "向量数据库 + RAG 工具链",
+        "isCorrect": false,
+        "description": "完全不沾边的领域"
+      }
+    ]
+  },
+  {
+    "stem": "用 Python OpenAI SDK 接入 OpenRouter，最少要改哪两个参数？",
+    "explanation": "OpenRouter 完全兼容 OpenAI Chat Completions schema——只需改 **base_url** 和 **api_key**。其余 `messages` / `tools` / `stream` / `response_format` 全套与官方 OpenAI SDK 一致。",
+    "tags": ["open-router", "入门", "OpenAI SDK"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "base_url 改成 https://openrouter.ai/api/v1，api_key 改成 sk-or-v1-xxx",
+        "isCorrect": true,
+        "description": "OR 完全兼容 OpenAI schema"
+      },
+      {
+        "text": "需要换装专用的 openrouter-sdk 包，不再用 openai 包",
+        "isCorrect": false,
+        "description": "无需换 SDK，复用 openai 包即可"
+      },
+      {
+        "text": "model 参数必须改成 OpenAI 模型，其它模型不可用",
+        "isCorrect": false,
+        "description": "model 用 OR 格式（vendor/model）即可调任意厂商"
+      },
+      {
+        "text": "需要把 messages 改成 Anthropic 风格的 system + human 字段",
+        "isCorrect": false,
+        "description": "messages 仍用 OpenAI 兼容格式"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 的模型 ID 命名规则是什么？",
+    "explanation": "OpenRouter 模型 ID 采用 **`<vendor>/<model-name>[:variant]`** 格式。例如 `anthropic/claude-sonnet-4.6`、`openai/gpt-5-mini`、`google/gemini-2.5-flash`，必带 vendor 前缀。",
+    "tags": ["open-router", "入门", "模型ID"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "<vendor>/<model-name>[:variant]，如 anthropic/claude-sonnet-4.6",
+        "isCorrect": true,
+        "description": "vendor 前缀必填，variant 可选"
+      },
+      {
+        "text": "直接用厂商原始名，如 claude-sonnet-4.6 即可",
+        "isCorrect": false,
+        "description": "缺 vendor 前缀会 404"
+      },
+      {
+        "text": "<region>-<vendor>-<model>，如 us-anthropic-claude",
+        "isCorrect": false,
+        "description": "OR 不按 region 命名"
+      },
+      {
+        "text": "数字 ID，如 model-1234",
+        "isCorrect": false,
+        "description": "OR 用字符串语义命名"
+      }
+    ]
+  },
+  {
+    "stem": "想让 OpenRouter 自动从全市场选最优模型，model 应该填什么？",
+    "explanation": "**`openrouter/auto`** 触发 OR 的 auto routing——内部用启发式算法选当下最优。适合 prototype 阶段快速验证，**不建议生产用**（model 漂移会导致输出风格不稳定）。",
+    "tags": ["open-router", "入门", "auto-routing"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "openrouter/auto",
+        "isCorrect": true,
+        "description": "OR 自动选最优模型"
+      },
+      {
+        "text": "auto/best",
+        "isCorrect": false,
+        "description": "不是合法 ID"
+      },
+      {
+        "text": "*/auto",
+        "isCorrect": false,
+        "description": "OR 不支持通配符"
+      },
+      {
+        "text": "any-model",
+        "isCorrect": false,
+        "description": "无此约定"
+      }
+    ]
+  },
+  {
+    "stem": "`meta-llama/llama-3.3-70b-instruct:free` 中 `:free` 后缀代表什么？",
+    "explanation": "**`:free`** 后缀表示免费 tier——完全免费但有更严格的 rate limit（默认 20 RPM / 200 RPD），并且**数据用于训练**（不可关），商业敏感场景慎用。",
+    "tags": ["open-router", "初级", "free-tier"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "完全免费，但有严格 rate limit 且数据用于训练",
+        "isCorrect": true,
+        "description": "免费有代价：数据训练 + RPD 低"
+      },
+      {
+        "text": "首月免费，之后按官方价收费",
+        "isCorrect": false,
+        "description": "不是试用机制，是长期免费"
+      },
+      {
+        "text": "完全免费且数据不会被训练",
+        "isCorrect": false,
+        "description": ":free 通常允许训练数据"
+      },
+      {
+        "text": "仅对企业 Pro 账户免费",
+        "isCorrect": false,
+        "description": "所有账号都可用"
+      }
+    ]
+  },
+  {
+    "stem": "想让 OpenRouter 在 UI 实时交互场景选「最快的 provider」，`provider.sort` 应该填什么？",
+    "explanation": "**`sort: \"latency\"`** 选延迟最低的 provider，适合 Chat UI 等用户等待场景。其它选项：`throughput`（吞吐最高，适合 batch）、`price`（最便宜，成本敏感场景）。",
+    "tags": ["open-router", "初级", "routing"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "latency",
+        "isCorrect": true,
+        "description": "延迟最低，适合 UI 实时交互"
+      },
+      {
+        "text": "throughput",
+        "isCorrect": false,
+        "description": "吞吐量优先，适合 batch / 离线"
+      },
+      {
+        "text": "price",
+        "isCorrect": false,
+        "description": "最便宜，但通常慢"
+      },
+      {
+        "text": "speed",
+        "isCorrect": false,
+        "description": "不是 OR 合法值"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 的 `HTTP-Referer` 和 `X-Title` header 有什么用？",
+    "explanation": "这两个 header 在 **Activity 面板**显示 app 来源，便于按 app 分类统计 token / cost。公开 app 加这两个 header 可让 OR 知道你的存在 → **更高 rate limit** + 排名优势。",
+    "tags": ["open-router", "初级", "headers"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Activity 按 app 分类统计 token / cost，并可获得更高 rate limit",
+        "isCorrect": true,
+        "description": "attribution + rate limit 双重优势"
+      },
+      {
+        "text": "用于鉴权，相当于第二个 API key",
+        "isCorrect": false,
+        "description": "鉴权用 Authorization header，与这两个无关"
+      },
+      {
+        "text": "OpenRouter 拒绝不带这两个 header 的请求",
+        "isCorrect": false,
+        "description": "非必填，不影响调用"
+      },
+      {
+        "text": "控制 model 路由策略（throughput / latency / price）",
+        "isCorrect": false,
+        "description": "路由策略走 provider.sort"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 相比官方直连大约加多少中间费？",
+    "explanation": "OpenRouter 加 **10-30%** 中间费。大厂模型（Claude / GPT）稳定 10-15%；小厂 / 开源模型加价波动 11-30%。实时价格在每模型详情页可查。",
+    "tags": ["open-router", "初级", "价格"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "10-30%",
+        "isCorrect": true,
+        "description": "大厂稳定 10-15%，小厂波动到 30%"
+      },
+      {
+        "text": "免费，OR 靠企业版盈利",
+        "isCorrect": false,
+        "description": "OR 个人版也加价"
+      },
+      {
+        "text": "固定 5%",
+        "isCorrect": false,
+        "description": "实际是 10-30% 的浮动加价"
+      },
+      {
+        "text": "50-100%（高溢价）",
+        "isCorrect": false,
+        "description": "远低于此区间"
+      }
+    ]
+  },
+  {
+    "stem": "用 TypeScript 的 OpenAI SDK 接入 OpenRouter，传 base URL 的参数名是什么？",
+    "explanation": "TypeScript 版用 **`baseURL`**（驼峰，大写 URL），Python 版用 **`base_url`**（蛇形）。这是 SDK 在两种语言的命名约定差异——很多人接入时踩坑。",
+    "tags": ["open-router", "初级", "SDK"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "baseURL（驼峰）",
+        "isCorrect": true,
+        "description": "TS SDK 用 baseURL 驼峰命名"
+      },
+      {
+        "text": "base_url（蛇形）",
+        "isCorrect": false,
+        "description": "这是 Python 版命名"
+      },
+      {
+        "text": "BASE_URL（全大写）",
+        "isCorrect": false,
+        "description": "环境变量命名，不是 SDK 参数"
+      },
+      {
+        "text": "endpoint",
+        "isCorrect": false,
+        "description": "不是 OpenAI SDK 用的参数名"
+      }
+    ]
+  },
+  {
+    "stem": "充值 $10+ 后，`:free` 模型的 RPD（每日请求数）会从 200 变成多少？",
+    "explanation": "OpenRouter 充值 $10+ 后，所有 `:free` 模型的 **RPD 从 200 上调到 1000**。这是激励用户付费的机制——免费模型继续免费，但额度大幅放宽。RPM 仍维持 20。",
+    "tags": ["open-router", "初级", "rate-limit"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "1000",
+        "isCorrect": true,
+        "description": "充值 $10+ 后 RPD 上调到 1000"
+      },
+      {
+        "text": "500",
+        "isCorrect": false,
+        "description": "实际是 1000"
+      },
+      {
+        "text": "无限制",
+        "isCorrect": false,
+        "description": "RPD 仍有上限"
+      },
+      {
+        "text": "10000",
+        "isCorrect": false,
+        "description": "过高，实际 1000"
+      }
+    ]
+  },
+  {
+    "stem": "调用 OpenRouter 时带 `response_format: json_schema`，但部分 provider 不支持。怎么避免 fallback 到不支持参数的 provider？",
+    "explanation": "设 **`require_parameters: True`** 让 OR 仅选支持本次所有参数的 provider。如果不设，OR 可能 fallback 到不支持 json_schema 的 provider 然后报错。",
+    "tags": ["open-router", "中级", "provider-routing"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "extra_body 加 provider.require_parameters: True",
+        "isCorrect": true,
+        "description": "强制过滤不支持参数的 provider"
+      },
+      {
+        "text": "把 allow_fallbacks 改成 False",
+        "isCorrect": false,
+        "description": "这是禁止 fallback，可能直接失败"
+      },
+      {
+        "text": "把 model 改成 openrouter/auto",
+        "isCorrect": false,
+        "description": "auto 不保证选支持参数的 provider"
+      },
+      {
+        "text": "OR 没办法解决，需要在 app 层自己 retry",
+        "isCorrect": false,
+        "description": "OR 已经提供 require_parameters 机制"
+      }
+    ]
+  },
+  {
+    "stem": "在大陆访问 OpenRouter 时，「Cloudflare Worker 代理」方案的核心步骤是什么？",
+    "explanation": "Cloudflare Worker 代理：写 `worker.js` 把请求转发到 `openrouter.ai`，部署到 Cloudflare 后得到 **`your-worker.workers.dev`** 域名，**当 base_url 用**。CF 大陆访问稳定 + 100k 请求/天免费。",
+    "tags": ["open-router", "中级", "大陆访问"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "部署 Worker → 拿到 workers.dev 域名 → 当 base_url 用",
+        "isCorrect": true,
+        "description": "Worker 当反代，base_url 指向 Worker"
+      },
+      {
+        "text": "在 Cloudflare 注册账号即可，无需写代码",
+        "isCorrect": false,
+        "description": "需要写 worker.js 转发代码"
+      },
+      {
+        "text": "Cloudflare Worker 不能代理 openrouter.ai 的 HTTPS 流量",
+        "isCorrect": false,
+        "description": "Worker 可以代理 HTTPS"
+      },
+      {
+        "text": "必须配合自定义域名 + DNS 解析才能用",
+        "isCorrect": false,
+        "description": "workers.dev 域名即可用，自定义域名是可选的"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 上 Claude 的 prompt caching 通过什么方式启用？",
+    "explanation": "Claude 用**显式 cache_control**——在消息的 content block 加 `cache_control: {type: \"ephemeral\"}`。OR 透明转发该字段给 Anthropic。命中后**约节省 85%**（含 OR 中间费）。",
+    "tags": ["open-router", "中级", "caching"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "content block 显式加 cache_control: ephemeral",
+        "isCorrect": true,
+        "description": "Claude 风格 caching，OR 透明转发"
+      },
+      {
+        "text": "OR 自动 cache 所有 Claude 请求，无需配置",
+        "isCorrect": false,
+        "description": "Claude 是显式 cache，需要 cache_control"
+      },
+      {
+        "text": "需要在 OR 后台开启 Claude caching 开关",
+        "isCorrect": false,
+        "description": "无此后台开关"
+      },
+      {
+        "text": "通过 extra_body.cache: True 启用",
+        "isCorrect": false,
+        "description": "不是 OR 的合法参数"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 上 GPT 的 prompt caching 怎么工作？",
+    "explanation": "GPT 上 caching 是**自动**的——第二次相同前缀的请求自动命中，**无需任何配置**。命中后约**节省 45%**。Gemini 同样是 implicit cache（约节省 65%）。",
+    "tags": ["open-router", "中级", "caching"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动 cache，无需配置；第二次相同前缀自动命中",
+        "isCorrect": true,
+        "description": "GPT 的 caching 是隐式自动的"
+      },
+      {
+        "text": "也需要加 cache_control 字段（与 Claude 一样）",
+        "isCorrect": false,
+        "description": "GPT 不需要显式字段"
+      },
+      {
+        "text": "GPT 不支持 caching",
+        "isCorrect": false,
+        "description": "GPT 支持自动 caching"
+      },
+      {
+        "text": "只有 GPT-5 Pro 账户才能用 caching",
+        "isCorrect": false,
+        "description": "GPT 自动 caching 不分账号等级"
+      }
+    ]
+  },
+  {
+    "stem": "通过 OpenRouter 调用 Claude，传 OpenAI 风格的 `tools` 数组。OpenRouter 怎么处理？",
+    "explanation": "OpenRouter **自动转换 schema**——把 OpenAI tool schema 转成 Anthropic / Google 的 tool 格式。前端代码无需改动，OR 在转发时透明做转换。",
+    "tags": ["open-router", "中级", "function-calling"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "OR 自动把 OpenAI tool schema 转成 Anthropic / Google 格式",
+        "isCorrect": true,
+        "description": "schema 转换由 OR 透明完成"
+      },
+      {
+        "text": "必须改写成 Anthropic 风格的 tools 数组，否则报错",
+        "isCorrect": false,
+        "description": "OR 做了兼容转换"
+      },
+      {
+        "text": "Claude 不支持 function calling，调用会失败",
+        "isCorrect": false,
+        "description": "Claude 支持，OR 转换格式"
+      },
+      {
+        "text": "OR 返回原始 Anthropic 格式响应，需要前端再解析",
+        "isCorrect": false,
+        "description": "OR 双向转换，返回也是 OpenAI 兼容"
+      }
+    ]
+  },
+  {
+    "stem": "通过 OpenRouter 调用 GPT-4o 并发图片输入，content 应该怎么写？",
+    "explanation": "用 **OpenAI 兼容格式**：`type: \"image_url\"` + `image_url: {url: \"data:image/png;base64,...\"}`。OR 自动转 Claude 的 image / Gemini 的 inlineData 格式。",
+    "tags": ["open-router", "中级", "多模态"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "type: image_url，image_url.url 用 data:image/png;base64 URL",
+        "isCorrect": true,
+        "description": "OpenAI 兼容多模态格式"
+      },
+      {
+        "text": "用 Anthropic 风格的 type: image，source.data 传 base64",
+        "isCorrect": false,
+        "description": "OR 用 OpenAI 兼容格式，会自动转 Anthropic"
+      },
+      {
+        "text": "把图片 base64 直接拼接到 text 字段",
+        "isCorrect": false,
+        "description": "需用 content array + type 区分"
+      },
+      {
+        "text": "type: file，file.file_data 传 base64",
+        "isCorrect": false,
+        "description": "type: file 用于 PDF 等文档，不是图"
+      }
+    ]
+  },
+  {
+    "stem": "想让 Claude Code 走 OpenRouter，需要设哪两个环境变量？",
+    "explanation": "Claude Code 支持 **`ANTHROPIC_BASE_URL`** + **`ANTHROPIC_API_KEY`**。把前者指向 `https://openrouter.ai/api/v1`，后者填 `sk-or-v1-xxx`，即可让 Claude Code 走 OR。注意：MCP / Files API 等独有特性不全。",
+    "tags": ["open-router", "中级", "Claude-Code"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ANTHROPIC_BASE_URL + ANTHROPIC_API_KEY",
+        "isCorrect": true,
+        "description": "Claude Code 用这两个环境变量"
+      },
+      {
+        "text": "OPENROUTER_BASE_URL + OPENROUTER_API_KEY",
+        "isCorrect": false,
+        "description": "Claude Code 不识别 OPENROUTER_ 前缀"
+      },
+      {
+        "text": "CLAUDE_API_BASE + CLAUDE_API_KEY",
+        "isCorrect": false,
+        "description": "不是 Claude Code 约定变量名"
+      },
+      {
+        "text": "Claude Code 不支持自定义 base URL",
+        "isCorrect": false,
+        "description": "Claude Code 支持，通过 ANTHROPIC_BASE_URL"
+      }
+    ]
+  },
+  {
+    "stem": "用 Aider 通过 OpenRouter 调用 Claude，model 字符串应该怎么写？",
+    "explanation": "Aider 命名约定：model 字符串前**需带 `openrouter/` 前缀**（aider 用此判断走 OR 路由）。完整写法：`openrouter/anthropic/claude-sonnet-4.6`。",
+    "tags": ["open-router", "中级", "aider"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "openrouter/anthropic/claude-sonnet-4.6",
+        "isCorrect": true,
+        "description": "aider 用 openrouter/ 前缀判断路由"
+      },
+      {
+        "text": "anthropic/claude-sonnet-4.6（与其它 SDK 相同）",
+        "isCorrect": false,
+        "description": "aider 需要额外 openrouter/ 前缀"
+      },
+      {
+        "text": "claude-sonnet-4.6（直接用 Anthropic 原名）",
+        "isCorrect": false,
+        "description": "aider 走 OR 时识别不出"
+      },
+      {
+        "text": "or://anthropic/claude-sonnet-4.6",
+        "isCorrect": false,
+        "description": "不是 aider 约定格式"
+      }
+    ]
+  },
+  {
+    "stem": "通过 OpenRouter 拉取所有可用模型的接口是？",
+    "explanation": "**`GET /api/v1/models`**——返回所有可用模型的 id / context_length / pricing / architecture 等字段。常用于价格监控、模型选型脚本、健康检查。",
+    "tags": ["open-router", "中级", "models-endpoint"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "GET /api/v1/models",
+        "isCorrect": true,
+        "description": "标准的 models endpoint"
+      },
+      {
+        "text": "POST /api/v1/list",
+        "isCorrect": false,
+        "description": "不是合法 endpoint"
+      },
+      {
+        "text": "GET /api/v1/catalog",
+        "isCorrect": false,
+        "description": "不是 OR 路径"
+      },
+      {
+        "text": "GET /models（无 /api/v1 前缀）",
+        "isCorrect": false,
+        "description": "需要 /api/v1 前缀"
+      }
+    ]
+  },
+  {
+    "stem": "Activity 面板可以提供哪些数据维度？",
+    "explanation": "OpenRouter Activity 记录每次请求的 **timestamp / model / provider / tokens / cost / latency / HTTP-Referer / X-Title**，可按 model / app 维度统计。支持导出 CSV / JSON 进 Grafana 看板。",
+    "tags": ["open-router", "中级", "activity"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "timestamp / model / provider / tokens / cost / latency / referer / title",
+        "isCorrect": true,
+        "description": "完整的请求级数据"
+      },
+      {
+        "text": "只有 cost 总额，没有 per-request 数据",
+        "isCorrect": false,
+        "description": "有 per-request 完整记录"
+      },
+      {
+        "text": "只统计 token 数，不含 cost / latency",
+        "isCorrect": false,
+        "description": "cost / latency 都有"
+      },
+      {
+        "text": "数据只保留 24 小时，不可导出",
+        "isCorrect": false,
+        "description": "可导出 CSV / JSON，保留更久"
+      }
+    ]
+  },
+  {
+    "stem": "在 OpenRouter 上 Claude Sonnet 4.6 输入约 $3.30/M，对应官方价 $3/M，加价比例约？",
+    "explanation": "OpenRouter 对 **大厂模型加价 10-15%**（Claude / GPT 等）。Claude Sonnet 4.6 输入 $3.30/M = $3 + 10%。小厂 / 开源模型加价 11-30% 波动。",
+    "tags": ["open-router", "中级", "价格"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "约 10%（大厂模型稳定加价区间）",
+        "isCorrect": true,
+        "description": "$3 → $3.30 = +10%"
+      },
+      {
+        "text": "约 50%",
+        "isCorrect": false,
+        "description": "实际只 +10%"
+      },
+      {
+        "text": "约 100%",
+        "isCorrect": false,
+        "description": "OR 不会双倍加价"
+      },
+      {
+        "text": "约 5%",
+        "isCorrect": false,
+        "description": "$3.30 - $3 = $0.30，是 10%"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter 「不转发」以下哪个特性？",
+    "explanation": "OpenRouter 不转发 **Claude MCP / Anthropic Files API / Gemini Live / GPT Realtime（WebSocket） / OpenAI Assistants** 等厂商独有特性。这些需要直连官方 API。普通 chat completions / tools / vision 都可正常用。",
+    "tags": ["open-router", "高级", "限制"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Claude MCP / Gemini Live / GPT Realtime 等厂商独有特性",
+        "isCorrect": true,
+        "description": "独有特性需要直连官方"
+      },
+      {
+        "text": "流式响应（stream: true）",
+        "isCorrect": false,
+        "description": "OR 支持所有模型的流式"
+      },
+      {
+        "text": "Function calling / tools",
+        "isCorrect": false,
+        "description": "OR 自动转换 schema 支持"
+      },
+      {
+        "text": "图片输入（vision）",
+        "isCorrect": false,
+        "description": "OR 支持所有 vision 模型"
+      }
+    ]
+  },
+  {
+    "stem": "OpenRouter response header `OpenRouter-Cost` 表示什么？",
+    "explanation": "**`OpenRouter-Cost`** 是本次请求 OR 端的实际费用（USD，已含中间费）。**`OpenRouter-Provider-Cost`** 才是 provider 原始费用——两者差就是中间费。`OpenRouter-Provider` 是实际用的 provider。",
+    "tags": ["open-router", "高级", "response-headers"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "本次请求 OR 端的实际费用（USD，含中间费）",
+        "isCorrect": true,
+        "description": "已含 OR 中间费的最终费用"
+      },
+      {
+        "text": "Provider 原始费用（不含 OR 加价）",
+        "isCorrect": false,
+        "description": "那是 OpenRouter-Provider-Cost"
+      },
+      {
+        "text": "账户累计余额",
+        "isCorrect": false,
+        "description": "余额查询用 /credits endpoint"
+      },
+      {
+        "text": "本月总费用",
+        "isCorrect": false,
+        "description": "Cost 是 per-request 而非月度"
+      }
+    ]
+  },
+  {
+    "stem": "`extra_body.transforms: [\"middle-out\"]` 的作用是什么？",
+    "explanation": "**`middle-out` 上下文压缩**：当上下文超过模型 context_length，OR 自动从中间裁切（保留头尾）。启用后请求永远不会因 context 超限失败，但中间消息会丢失。适合长对话不愿手动管理 context。",
+    "tags": ["open-router", "高级", "transforms"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "上下文超 context_length 时从中间裁切，保留头尾",
+        "isCorrect": true,
+        "description": "永不超限，代价是丢失中间消息"
+      },
+      {
+        "text": "把 messages 顺序反转（middle 在头部）",
+        "isCorrect": false,
+        "description": "不是反转，是裁切"
+      },
+      {
+        "text": "对每条消息单独 summarize",
+        "isCorrect": false,
+        "description": "不做 summarize，只裁切"
+      },
+      {
+        "text": "强制用模型的最大 context 长度",
+        "isCorrect": false,
+        "description": "是压缩到限制内"
+      }
+    ]
+  },
+  {
+    "stem": "通过 OpenRouter 调用时返回 HTTP 402，最可能原因是什么？",
+    "explanation": "**HTTP 402 = payment_required** = OpenRouter **credit 余额不足**。其它常见错误：401 unauthorized（key 错）、404 not_found（model ID 不存在）、429 rate_limit（超 RPM/RPD）、503（所有 provider 都不可用）。",
+    "tags": ["open-router", "高级", "错误码"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "credit 余额不足，需要充值",
+        "isCorrect": true,
+        "description": "402 = payment_required"
+      },
+      {
+        "text": "API key 错或被撤销",
+        "isCorrect": false,
+        "description": "那是 401 unauthorized"
+      },
+      {
+        "text": "请求超过 rate limit",
+        "isCorrect": false,
+        "description": "那是 429"
+      },
+      {
+        "text": "model ID 不存在",
+        "isCorrect": false,
+        "description": "那是 404"
+      }
+    ]
+  },
+  {
+    "stem": "想在单次请求强制禁止 OR 收集数据（覆盖账号默认设置），怎么做？",
+    "explanation": "**`extra_body.provider.data_collection: \"deny\"`** 单次请求强制禁止数据收集。即使账号开了 logging，本次请求也会被覆盖。商业敏感场景推荐每次显式声明。",
+    "tags": ["open-router", "高级", "隐私"],
+    "categories": [
+      ["技术方向", "OpenRouter"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "extra_body.provider.data_collection: deny",
+        "isCorrect": true,
+        "description": "单次请求覆盖账号设置"
+      },
+      {
+        "text": "在 Authorization header 加 X-No-Logging: true",
+        "isCorrect": false,
+        "description": "无此 header 约定"
+      },
+      {
+        "text": "在请求参数加 privacy: true",
+        "isCorrect": false,
+        "description": "不是合法 OR 参数"
+      },
+      {
+        "text": "必须改账号设置，无法 per-request 覆盖",
+        "isCorrect": false,
+        "description": "OR 提供了 per-request 覆盖机制"
+      }
+    ]
+  }
+]
