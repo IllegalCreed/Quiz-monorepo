@@ -463,5 +463,98 @@
         "description": "已弃用，GitLab 20.0 会移除；新装别再用"
       }
     ]
+  },
+  {
+    "stem": "`workflow:rules` 和 job 级 `rules:` 的核心差别是？",
+    "explanation": "`workflow:rules` 决定**整条 pipeline 是否被创建**；job 级 `rules:` 决定**该 job 是否加入 pipeline**。常见用途：`workflow:rules` 用来去重「同时是 push + MR 时只跑一份」；job-level rules 控制 deploy / lint 等特定 job 的触发条件。两者互补，不冲突。",
+    "tags": ["gitlab-cicd", "workflow", "rules"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前者决定 pipeline 是否创建，后者决定 job 是否加入",
+        "isCorrect": true,
+        "description": "层级不同；workflow 在外、job rules 在内"
+      },
+      {
+        "text": "完全等价，写哪里都行",
+        "isCorrect": false,
+        "description": "层级和效果都不同"
+      },
+      {
+        "text": "`workflow:rules` 已弃用，全部移到 job 级",
+        "isCorrect": false,
+        "description": "workflow:rules 仍是活跃推荐特性"
+      },
+      {
+        "text": "`workflow:rules` 只在 Premium 版本可用",
+        "isCorrect": false,
+        "description": "免费版同样可用"
+      }
+    ]
+  },
+  {
+    "stem": "下面 `parallel: matrix` 配置生成几个并发 job？\n\n```yaml\nparallel:\n  matrix:\n    - PROVIDER: aws\n      REGION: [us-east-1, eu-west-1]\n    - PROVIDER: gcp\n      REGION: [us-central1, asia-east1]\n```",
+    "explanation": "`parallel: matrix` 把数组展开成笛卡尔积。这里第一项 `aws × 2 region = 2`、第二项 `gcp × 2 region = 2`，合计 **4 个并发 job**。注意：matrix 是数组（多个 PROVIDER 组），不是单个对象——每个对象内部才是笛卡尔积。",
+    "tags": ["gitlab-cicd", "parallel", "matrix"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "4 个",
+        "isCorrect": true,
+        "description": "aws×2 + gcp×2 = 4 并发 job"
+      },
+      {
+        "text": "2 个",
+        "isCorrect": false,
+        "description": "只数了 PROVIDER 组数，忽略了 REGION"
+      },
+      {
+        "text": "6 个",
+        "isCorrect": false,
+        "description": "把所有 region 误算成 4，再 × 2 PROVIDER"
+      },
+      {
+        "text": "1 个",
+        "isCorrect": false,
+        "description": "matrix 一定展开"
+      }
+    ]
+  },
+  {
+    "stem": "GitLab CI/CD 想从主 pipeline 触发另一个项目的 pipeline 并**阻塞等待结果**，正确做法是？",
+    "explanation": "用 `trigger:` + `strategy: depend`——前者发起跨项目触发，后者让主 pipeline 等下游完成才继续（默认 fire-and-forget）。`include:` 只是引入外部 yml；`needs:project:` 是跨项目拿 artifacts，不触发新 pipeline。",
+    "tags": ["gitlab-cicd", "trigger", "downstream"],
+    "categories": [
+      ["技术方向", "GitLab CI/CD"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`trigger: { project: ..., strategy: depend }`",
+        "isCorrect": true,
+        "description": "trigger 跨项目 + strategy:depend 阻塞等下游"
+      },
+      {
+        "text": "`include:` 直接引入对方仓库的 yml",
+        "isCorrect": false,
+        "description": "include 只是引入 yml 文件，不触发下游 pipeline"
+      },
+      {
+        "text": "`needs:project:` 配跨项目依赖",
+        "isCorrect": false,
+        "description": "needs:project 只拿 artifacts，不触发新 pipeline"
+      },
+      {
+        "text": "用 webhook 调对方项目的 API 然后 `sleep` 轮询",
+        "isCorrect": false,
+        "description": "能凑合用但走的不是官方机制，trigger 是正解"
+      }
+    ]
   }
 ]
