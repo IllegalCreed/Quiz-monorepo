@@ -198,12 +198,14 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             sort: 2,
             children: [
               { name: "Next.js", sort: 1 },
-              { name: "Nuxt.js", sort: 2 },
+              { name: "Nuxt", sort: 2 },
               { name: "Astro", sort: 3 },
               { name: "Qwik", sort: 4 },
-              { name: "Remix", sort: 5 },
+              { name: "React Router", sort: 5 },
               { name: "SolidStart", sort: 6 },
               { name: "SvelteKit", sort: 7 },
+              { name: "TanStack Start", sort: 8 },
+              { name: "Analog", sort: 9 },
             ],
           },
           {
