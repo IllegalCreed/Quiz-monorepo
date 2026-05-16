@@ -401,5 +401,1276 @@
         "description": "正确说法：sandbox 隔离的核心目的"
       }
     ]
+  },
+  {
+    "stem": "声明式 Pipeline 中，`options { buildDiscarder(logRotator(numToKeepStr: '50')) }` 的作用是？",
+    "explanation": "**保留最近 50 次构建记录**，更老的自动清理（释放 JENKINS_HOME 磁盘）。可加 `daysToKeepStr` / `artifactNumToKeepStr` 等。`buildDiscarder` 是 pipeline 级清理策略——Jenkins 默认无清理，老 Job 攒到几千次会拖垮 controller 性能。",
+    "tags": ["jenkins", "options", "buildDiscarder"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "保留最近 50 次构建记录，更老的自动清理",
+        "isCorrect": true,
+        "description": "释放磁盘 + 防止 controller 性能退化"
+      },
+      {
+        "text": "构建失败 50 次后停止",
+        "isCorrect": false,
+        "description": "失败计数不是 logRotator 的字段"
+      },
+      {
+        "text": "只允许 50 个并发 build",
+        "isCorrect": false,
+        "description": "并发用 disableConcurrentBuilds / executor 配置"
+      },
+      {
+        "text": "每 50 秒检查一次 SCM",
+        "isCorrect": false,
+        "description": "完全无关"
+      }
+    ]
+  },
+  {
+    "stem": "`disableConcurrentBuilds(abortPrevious: true)` 与不带 `abortPrevious` 的区别是？",
+    "explanation": "**`abortPrevious: true` 新触发会取消当前正在跑的 build**——常用于「频繁 push 时只跑最新一次」。不带 `abortPrevious`（或 false）新触发会**排队等待**，当前 build 跑完再开下一次。前者像 GitHub Actions 的 `cancel-in-progress: true`，后者是顺序队列。",
+    "tags": ["jenkins", "options", "并发"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`abortPrevious: true` 取消旧 build；默认排队等",
+        "isCorrect": true,
+        "description": "类 GitHub Actions 的 cancel-in-progress 语义"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "行为差别明显"
+      },
+      {
+        "text": "`abortPrevious: true` 允许并发（与字面意义相反）",
+        "isCorrect": false,
+        "description": "理解反了"
+      },
+      {
+        "text": "`abortPrevious: true` 限制 5 个并发",
+        "isCorrect": false,
+        "description": "没有这个数字限制"
+      }
+    ]
+  },
+  {
+    "stem": "`options { timeout(time: 30, unit: 'MINUTES', activity: true) }` 的 `activity: true` 意思？",
+    "explanation": "**30 分钟无活动则超时**（不是从 build 开始算的）。每次有 stdout 输出 / 命令执行就重置计数器。适合「步骤可能很长，但定期有日志输出」的场景（如长 build），避免单纯按总时长截断有进展的 build。",
+    "tags": ["jenkins", "timeout", "options"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "30 分钟无活动（无输出 / 命令）才超时；有活动重置计数",
+        "isCorrect": true,
+        "description": "活动重置的滚动超时"
+      },
+      {
+        "text": "build 总时长不超过 30 分钟",
+        "isCorrect": false,
+        "description": "那是不带 activity: true 的写法"
+      },
+      {
+        "text": "30 分钟后必须有用户活动确认",
+        "isCorrect": false,
+        "description": "与用户活动无关"
+      },
+      {
+        "text": "30 分钟后强制激活下一个 stage",
+        "isCorrect": false,
+        "description": "没有这种语义"
+      }
+    ]
+  },
+  {
+    "stem": "`triggers { cron('H 4 * * 1-5') }` 中 `H` 的作用是？",
+    "explanation": "Hash 函数——Jenkins 给每个 Job 算一个稳定的 hash 值，放在 H 的位置上。**避免所有 Job 同分钟齐发**（如果都写 `0 4 * * *` 则所有 Job 在 4:00:00 同时打 SCM 服务器，可能压垮）。`H` 让 Jenkins 自动把触发时间分散到该字段允许范围内（如分钟 0-59）。",
+    "tags": ["jenkins", "triggers", "cron"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Jenkins hash 函数；把触发时间稳定地分散到字段范围内",
+        "isCorrect": true,
+        "description": "避免所有 Job 同分钟齐发"
+      },
+      {
+        "text": "Hour 简写（24h 制小时）",
+        "isCorrect": false,
+        "description": "Hour 在 cron 第二字段是数字，H 是 hash"
+      },
+      {
+        "text": "Holiday 节假日跳过",
+        "isCorrect": false,
+        "description": "没有节假日跳过功能"
+      },
+      {
+        "text": "Hold 表示暂停",
+        "isCorrect": false,
+        "description": "意思完全不同"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins Pipeline `parameters` 块中下列哪个**不是**内置参数类型？",
+    "explanation": "Jenkins 内置类型：`string`/`text`/`booleanParam`/`choice`/`password`。**`number` 不是内置**——要数字限制用 `string` + validate 表达式或装 Extended Choice plugin。",
+    "tags": ["jenkins", "parameters"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`number`",
+        "isCorrect": true,
+        "description": "不是内置；用 string + validate 替代"
+      },
+      {
+        "text": "`booleanParam`",
+        "isCorrect": false,
+        "description": "内置；布尔参数"
+      },
+      {
+        "text": "`choice`",
+        "isCorrect": false,
+        "description": "内置；下拉选择"
+      },
+      {
+        "text": "`password`",
+        "isCorrect": false,
+        "description": "内置；密码字段"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `environment` 块的字面量与 `sh()` 调用的限制是？",
+    "explanation": "顶层 `pipeline` 的 `environment` 块**不能用 `sh()` 取值**——agent 还没分配，没有 shell 可执行。要从命令拿值给 env，必须在 **stage 内的 `environment`** 块里写。或在 stage steps 内 `script { env.X = sh(returnStdout: true, ...) }` 赋值。",
+    "tags": ["jenkins", "environment", "陷阱"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "顶层 environment 不能 `sh()` 取值（agent 未分配）；要在 stage 内",
+        "isCorrect": true,
+        "description": "agent 时机问题"
+      },
+      {
+        "text": "顶层和 stage 一样能 sh()",
+        "isCorrect": false,
+        "description": "顶层时 agent 未分配，sh 会失败"
+      },
+      {
+        "text": "environment 只能用字面量，永远不能 sh()",
+        "isCorrect": false,
+        "description": "stage 内可以"
+      },
+      {
+        "text": "environment 不能引用其它 env 变量",
+        "isCorrect": false,
+        "description": "可以引用"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `tools { jdk 'jdk-21' }` 的前提是？",
+    "explanation": "**Manage Jenkins → Tools 中预先配置过 `jdk-21` 这条工具**——告诉 Jenkins 从哪儿装 / 装到哪儿。Pipeline `tools {}` 引用配置好的名字，自动把 PATH 加上、`java` 可直接调用。没配过名字时报「Tool type 'jdk' does not have an install of 'jdk-21'」。",
+    "tags": ["jenkins", "tools"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Manage Jenkins → Tools 中预配置过同名工具安装",
+        "isCorrect": true,
+        "description": "tools 块引用 Jenkins 全局工具配置"
+      },
+      {
+        "text": "agent 镜像里预装 jdk-21",
+        "isCorrect": false,
+        "description": "tools 块负责自动装，不依赖镜像"
+      },
+      {
+        "text": "tools 块自动下载任何指定版本",
+        "isCorrect": false,
+        "description": "要先在 Manage Jenkins 配置安装源"
+      },
+      {
+        "text": "需要 root 权限",
+        "isCorrect": false,
+        "description": "走 jenkins 用户 home 即可"
+      }
+    ]
+  },
+  {
+    "stem": "`when { branch comparator: 'REGEXP', pattern: '^release/.*' }` 用了哪种匹配方式？",
+    "explanation": "**正则匹配**——`comparator: 'REGEXP'` 让 pattern 当正则解析。其它 comparator：`'GLOB'`（默认，通配符）/ `'EQUALS'`（精确字符串）。如本例 `^release/.*` 匹配所有 `release/` 开头的分支。Glob 模式 `release/*` 也能做但表达力有限。",
+    "tags": ["jenkins", "when", "comparator"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "正则表达式匹配",
+        "isCorrect": true,
+        "description": "REGEXP 把 pattern 当正则"
+      },
+      {
+        "text": "Glob 通配符匹配",
+        "isCorrect": false,
+        "description": "Glob 是默认，本题显式用 REGEXP"
+      },
+      {
+        "text": "精确字符串匹配",
+        "isCorrect": false,
+        "description": "那是 EQUALS"
+      },
+      {
+        "text": "SQL LIKE 匹配",
+        "isCorrect": false,
+        "description": "Jenkins 没有 LIKE comparator"
+      }
+    ]
+  },
+  {
+    "stem": "`when { beforeAgent true; expression { params.DEPLOY == 'true' } }` 的 `beforeAgent: true` 优化作用？",
+    "explanation": "**让 `when` 条件在分配 agent 前判断**——条件不满足直接跳过 stage、**不分配 agent**。对昂贵的云 agent（K8s / EC2）节省巨大：原本要起 pod / 实例才能跑 when，现在直接 skip。其它优化：`beforeInput` / `beforeOptions`（优先级递增）。",
+    "tags": ["jenkins", "when", "beforeAgent", "性能"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "条件在分配 agent 前判断，跳过时不分配 agent",
+        "isCorrect": true,
+        "description": "云 agent 场景节省巨大"
+      },
+      {
+        "text": "强制在 agent 启动前 30 秒判断",
+        "isCorrect": false,
+        "description": "没有时间限制语义"
+      },
+      {
+        "text": "条件失败则取消 agent",
+        "isCorrect": false,
+        "description": "是不分配，不是取消"
+      },
+      {
+        "text": "Agent 启动后立即判断（默认行为）",
+        "isCorrect": false,
+        "description": "默认是 agent 后判断；beforeAgent 改提前"
+      }
+    ]
+  },
+  {
+    "stem": "`when { changeset 'src/**' }` 的作用是？",
+    "explanation": "**只在该 stage 改动文件匹配 glob 时执行**——`src/**` 匹配 src/ 下所有文件。如果本次 commit 只动了 docs/，stage 跳过。适合 monorepo 中**按目录差异化跑 stage**——比如 web 改动跑 web build、api 改动跑 api build。",
+    "tags": ["jenkins", "when", "changeset"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "本次 commit 改动文件匹配 glob 时才跑 stage",
+        "isCorrect": true,
+        "description": "monorepo 按目录差异化"
+      },
+      {
+        "text": "依赖文件 changeset 时跳过 stage",
+        "isCorrect": false,
+        "description": "反了；匹配才跑"
+      },
+      {
+        "text": "把 src/ 加入 git tracking",
+        "isCorrect": false,
+        "description": "不是 git 操作"
+      },
+      {
+        "text": "只在分支 src/* 时执行",
+        "isCorrect": false,
+        "description": "那是 branch 条件，不是 changeset"
+      }
+    ]
+  },
+  {
+    "stem": "`post { regression { ... } }` 块的触发条件是？",
+    "explanation": "**当前 build 失败 / unstable / aborted，且上次 build 是 success** —— 即「之前好好的，这次坏了」。专门给「质量退化告警」用。与 `fixed`（之前坏、本次好）相反。`changed` 是「状态有变化」（双向）。`success` 不关心上次状态。",
+    "tags": ["jenkins", "post", "regression"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "当前失败 / unstable / aborted，上次 success",
+        "isCorrect": true,
+        "description": "退化告警的专用条件"
+      },
+      {
+        "text": "当前 success，上次失败",
+        "isCorrect": false,
+        "description": "那是 fixed"
+      },
+      {
+        "text": "连续 3 次失败",
+        "isCorrect": false,
+        "description": "没有连续次数概念"
+      },
+      {
+        "text": "状态有任何变化",
+        "isCorrect": false,
+        "description": "那是 changed"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `matrix` 块的笛卡尔积 + `excludes` 行为是？",
+    "explanation": "**完整笛卡尔积 - excludes 列出的组合**。例 `os: [linux, win]` × `node: [20, 22]` = 4 组，excludes `(win, 20)` 去掉一组 = 3 组并发。`excludes` 内的每个 `exclude` 块按 axis 完整匹配才剔除。配合 `includes` 可加额外组合。",
+    "tags": ["jenkins", "matrix", "excludes"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "笛卡尔积减去 excludes 列出的组合",
+        "isCorrect": true,
+        "description": "标准 matrix 语义"
+      },
+      {
+        "text": "只跑 excludes 列出的组合",
+        "isCorrect": false,
+        "description": "反了；excludes 是排除"
+      },
+      {
+        "text": "所有组合都跑，excludes 仅标记",
+        "isCorrect": false,
+        "description": "excludes 真的会剔除"
+      },
+      {
+        "text": "matrix 只支持单 axis",
+        "isCorrect": false,
+        "description": "支持多 axis 笛卡尔积"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `input { submitterParameter 'APPROVED_BY' }` 的作用是？",
+    "explanation": "**把点 ok 的用户名写到该变量**——后续 step 用 `${APPROVED_BY}` 拿到「谁批准了部署」。配合 `submitter 'admin,release-mgr'` 限制谁能点。审计场景：log / 通知 / commit message 里追加批准人。",
+    "tags": ["jenkins", "input", "审批"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把点 ok 的用户名写入该变量，后续可用于审计",
+        "isCorrect": true,
+        "description": "审批追踪的标准做法"
+      },
+      {
+        "text": "把 submitter 列表写入变量",
+        "isCorrect": false,
+        "description": "submitter 是限制，submitterParameter 是记录实际批准者"
+      },
+      {
+        "text": "input 提交时自动写到 BUILD_USER",
+        "isCorrect": false,
+        "description": "BUILD_USER 是触发构建的人，不是 input 批准者"
+      },
+      {
+        "text": "记录 input 等待时长",
+        "isCorrect": false,
+        "description": "无此语义"
+      }
+    ]
+  },
+  {
+    "stem": "Multibranch Pipeline 中 `CHANGE_TARGET` 变量代表什么？",
+    "explanation": "**PR 的目标分支**（PR 想合入哪里）。`CHANGE_BRANCH` 是源分支。PR 构建特有变量，普通 push 触发时无值。其它 PR 相关：`CHANGE_ID` (PR 号) / `CHANGE_URL` / `CHANGE_TITLE` / `CHANGE_AUTHOR` / `CHANGE_FORK`。",
+    "tags": ["jenkins", "Multibranch", "PR"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PR 的目标分支（要合入的分支）",
+        "isCorrect": true,
+        "description": "CHANGE_BRANCH 是源、CHANGE_TARGET 是目标"
+      },
+      {
+        "text": "PR 的源分支",
+        "isCorrect": false,
+        "description": "那是 CHANGE_BRANCH"
+      },
+      {
+        "text": "目标 deploy 环境",
+        "isCorrect": false,
+        "description": "无关；deploy 环境自己定义"
+      },
+      {
+        "text": "上次构建分支",
+        "isCorrect": false,
+        "description": "没有这种变量"
+      }
+    ]
+  },
+  {
+    "stem": "Shared Library 引用 `@Library('lib@v1.0') _` 末尾的 `_` 起什么作用？",
+    "explanation": "**注解必填占位符**——Groovy `@Library` 是注解，必须有目标（注解某个东西）。`_` 是 Groovy 的「null/无操作」占位，让注解能合法存在。少了 `_` 报「@Library annotation must be on import, class definition, or method」。",
+    "tags": ["jenkins", "shared-library", "@Library"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Groovy 注解必须有目标，`_` 是占位符",
+        "isCorrect": true,
+        "description": "语法必填；少了会报错"
+      },
+      {
+        "text": "表示加载所有 var",
+        "isCorrect": false,
+        "description": "不带任何加载语义"
+      },
+      {
+        "text": "Pipeline 私有变量",
+        "isCorrect": false,
+        "description": "下划线与变量无关"
+      },
+      {
+        "text": "Groovy 风格指南可省略",
+        "isCorrect": false,
+        "description": "不可省，强制必需"
+      }
+    ]
+  },
+  {
+    "stem": "Shared Library `src/org/company/Deploy.groovy` 与 `vars/deploy.groovy` 的核心区别是？",
+    "explanation": "**`src/`** 是标准 Groovy 类（含 package 声明），需要 `import` + `new` 实例化才能用——适合**面向对象的逻辑**（继承、构造器、状态）。**`vars/`** 是「全局变量 / step」约定——文件名直接成为可调用方法（`deploy()`），适合**简单函数式**调用。",
+    "tags": ["jenkins", "shared-library", "src", "vars"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "src 是面向对象 Groovy 类（需 import + new）；vars 是全局变量约定，文件名即调用名",
+        "isCorrect": true,
+        "description": "OO vs 函数式约定"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "结构和使用方式不同"
+      },
+      {
+        "text": "src 仅供 trusted library 使用",
+        "isCorrect": false,
+        "description": "untrusted 也可用，但 sandbox 限制 API"
+      },
+      {
+        "text": "vars 是已弃用，新代码应用 src",
+        "isCorrect": false,
+        "description": "vars 仍是主流"
+      }
+    ]
+  },
+  {
+    "stem": "Shared Library 内 `libraryResource('k8s.yaml.tpl')` 的作用？",
+    "explanation": "**读取 `resources/` 目录下的文件内容为字符串**——给模板渲染 / 多行配置 / 静态文本用。Library 里的 yaml / json / template 文件应放 `resources/`，Pipeline 通过 `libraryResource` 取出来再 `writeFile` 或字符串替换。",
+    "tags": ["jenkins", "shared-library", "resources"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "读 library `resources/` 目录文件内容（字符串）",
+        "isCorrect": true,
+        "description": "模板 / 配置文件加载入口"
+      },
+      {
+        "text": "下载远程资源",
+        "isCorrect": false,
+        "description": "只读 library 内部"
+      },
+      {
+        "text": "注册 Jenkins 资源（如 plugin）",
+        "isCorrect": false,
+        "description": "完全无关功能"
+      },
+      {
+        "text": "复制文件到 workspace",
+        "isCorrect": false,
+        "description": "需要再 writeFile 才到 workspace"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins controller 的 「Built-In Node」 默认 executor 数推荐设为？",
+    "explanation": "**0**——禁止在 controller 进程上跑构建。理由：构建脚本能读 `JENKINS_HOME` 下凭据 / 配置；大构建吃光 controller 内存让整个 Jenkins 不可用。生产环境必须 0，所有构建必须分配到独立 agent。",
+    "tags": ["jenkins", "Master-Agent", "安全"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "0（禁止在 controller 跑构建）",
+        "isCorrect": true,
+        "description": "安全 + 性能双重考虑"
+      },
+      {
+        "text": "等于 CPU 核数",
+        "isCorrect": false,
+        "description": "那是 agent 的配置，不是 controller"
+      },
+      {
+        "text": "默认 2（不需调整）",
+        "isCorrect": false,
+        "description": "默认 2 但生产必须改为 0"
+      },
+      {
+        "text": "无限（系统会自动调度）",
+        "isCorrect": false,
+        "description": "Jenkins 不会自动限制"
+      }
+    ]
+  },
+  {
+    "stem": "Static SSH Agent 与 JNLP (Inbound) Agent 的核心差别是？",
+    "explanation": "**SSH agent**：controller **主动**用 SSH 连接 agent。**JNLP**（Inbound）：agent **主动**连 controller → 适合 agent 在防火墙/NAT 后、controller 连不上的场景。后者 `java -jar agent.jar -url ... -secret ...`。",
+    "tags": ["jenkins", "agent", "连接方式"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "SSH controller→agent；JNLP agent→controller（适合 agent 在防火墙后）",
+        "isCorrect": true,
+        "description": "连接方向相反"
+      },
+      {
+        "text": "两者等价",
+        "isCorrect": false,
+        "description": "连接方向 + 适用场景不同"
+      },
+      {
+        "text": "SSH 是 Linux 专用、JNLP 是 Windows 专用",
+        "isCorrect": false,
+        "description": "两者都跨平台"
+      },
+      {
+        "text": "JNLP 仅 Java 应用可用",
+        "isCorrect": false,
+        "description": "agent.jar 是工具，不限制构建内容"
+      }
+    ]
+  },
+  {
+    "stem": "Kubernetes 动态 Agent 的 Pod 模板里 `defaultContainer 'maven'` 的作用是？",
+    "explanation": "**指定 step 默认跑在哪个 container**——pod 内多 container（maven/docker/kubectl）时，`sh` 默认进 `maven` 容器。切换用 `container('docker') { ... }`。不设时默认 `jnlp` 容器（常不带工具）。",
+    "tags": ["jenkins", "Kubernetes", "agent"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "指定默认 container 跑 step；切换用 `container('xx') { ... }`",
+        "isCorrect": true,
+        "description": "多 container Pod 的标准用法"
+      },
+      {
+        "text": "只允许这一个 container 存在",
+        "isCorrect": false,
+        "description": "其它 container 还在，只是 step 默认进 maven"
+      },
+      {
+        "text": "container 启动顺序",
+        "isCorrect": false,
+        "description": "无关启动顺序"
+      },
+      {
+        "text": "container 重启策略",
+        "isCorrect": false,
+        "description": "无关重启"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins Credentials 类型「Secret File」在 environment 注入时变量值是？",
+    "explanation": "**文件的临时路径**——Jenkins 把文件解密写到 workspace 临时位置，把路径赋给变量。例：`KUBECONFIG = credentials('kube-config')` 后 `kubectl --kubeconfig=$KUBECONFIG`。build 结束自动删。",
+    "tags": ["jenkins", "credentials", "Secret File"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "文件的临时路径（build 结束自动删）",
+        "isCorrect": true,
+        "description": "类 GitLab CI 的 File 类型变量"
+      },
+      {
+        "text": "文件内容（字符串）",
+        "isCorrect": false,
+        "description": "字符串是 Secret Text 类型"
+      },
+      {
+        "text": "Base64 编码的内容",
+        "isCorrect": false,
+        "description": "不编码"
+      },
+      {
+        "text": "文件 hash",
+        "isCorrect": false,
+        "description": "没有此用途"
+      }
+    ]
+  },
+  {
+    "stem": "`withCredentials([sshUserPrivateKey(credentialsId: 'deploy', keyFileVariable: 'KEY', usernameVariable: 'USER')]) { ... }` 内变量值？",
+    "explanation": "`KEY` = 私钥文件**临时路径**（block 退出后删除）；`USER` = 用户名字符串。可在 block 内 `ssh -i $KEY $USER@host ...`。`sshUserPrivateKey` 还有 `passphraseVariable`（如果 key 有 passphrase）。block 退出后路径失效。",
+    "tags": ["jenkins", "withCredentials", "SSH"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`KEY` 私钥文件路径（临时），`USER` 用户名字符串",
+        "isCorrect": true,
+        "description": "SSH 凭据的标准注入"
+      },
+      {
+        "text": "`KEY` 私钥内容（PEM 文本）",
+        "isCorrect": false,
+        "description": "是路径不是内容"
+      },
+      {
+        "text": "两个都是字符串",
+        "isCorrect": false,
+        "description": "KEY 是文件路径"
+      },
+      {
+        "text": "block 退出后路径还能用",
+        "isCorrect": false,
+        "description": "block 退出后自动删除"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins 中 Pipeline `skipDefaultCheckout()` option 的效果？",
+    "explanation": "**跳过 SCM 自动 checkout**——Jenkins 默认 pipeline 启动时 `git clone` 当前分支。设此 option 后不自动 checkout，要自己写 `checkout scm` 或 `git url: ...`。适合需自定义 checkout 行为的场景。",
+    "tags": ["jenkins", "options", "skipDefaultCheckout"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跳过自动 git checkout，要自己写 `checkout scm`",
+        "isCorrect": true,
+        "description": "适合自定义 checkout 行为"
+      },
+      {
+        "text": "禁用所有 git 操作",
+        "isCorrect": false,
+        "description": "可以手动 checkout"
+      },
+      {
+        "text": "跳过 checkout 但保留之前的 workspace",
+        "isCorrect": false,
+        "description": "与 workspace 保留无关"
+      },
+      {
+        "text": "Multibranch 不扫描该 Job",
+        "isCorrect": false,
+        "description": "扫描照常"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 里 `junit 'reports/*.xml'` 的作用？",
+    "explanation": "**解析 JUnit 格式测试报告 + 在 build 页面展示**——Jenkins 用 JUnit XML 标准 schema 统计 pass/fail/skipped/duration，提供 build trend 图。其它工具（pytest / jest / mocha / mvn-surefire）几乎都能输出兼容格式。失败时把单个测试错误链接到 build 详情页。",
+    "tags": ["jenkins", "junit", "测试报告"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "解析 JUnit XML 测试报告并展示在 build 页面",
+        "isCorrect": true,
+        "description": "build trend + 失败链接到测试详情"
+      },
+      {
+        "text": "运行 JUnit 测试",
+        "isCorrect": false,
+        "description": "是解析报告，不是运行测试"
+      },
+      {
+        "text": "下载 JUnit jar",
+        "isCorrect": false,
+        "description": "无关下载"
+      },
+      {
+        "text": "仅 Java 项目可用",
+        "isCorrect": false,
+        "description": "任何输出 JUnit XML 的工具都能用"
+      }
+    ]
+  },
+  {
+    "stem": "`archiveArtifacts artifacts: 'dist/**', allowEmptyArchive: true` 的 `allowEmptyArchive` 用途？",
+    "explanation": "**允许 glob 匹配到 0 个文件时不让 build 失败**——默认匹配为空时 `archiveArtifacts` 失败。`allowEmptyArchive: true` 在「该 stage 可能不产生 artifacts」的场景下避免误报（如条件 build 跳过了 build step）。",
+    "tags": ["jenkins", "archiveArtifacts"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Glob 匹配 0 个文件时不让 build 失败",
+        "isCorrect": true,
+        "description": "可选 artifacts 场景的标准做法"
+      },
+      {
+        "text": "允许归档空目录",
+        "isCorrect": false,
+        "description": "空目录不影响归档行为"
+      },
+      {
+        "text": "允许覆盖已存在的 artifact",
+        "isCorrect": false,
+        "description": "无此语义"
+      },
+      {
+        "text": "允许 artifact 大小为 0KB",
+        "isCorrect": false,
+        "description": "不关注文件大小"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 里 `script { def result = sh(returnStdout: true, script: 'date').trim() }` 的 `returnStdout` 作用？",
+    "explanation": "**让 `sh()` 返回 stdout 字符串而非默认的 0 / 1 状态码**——可赋给变量后续使用。`returnStatus: true` 返回退出码（防失败时直接抛错）。默认 `sh('date')` 不返回值，只看是否成功。",
+    "tags": ["jenkins", "sh", "script"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回命令 stdout 字符串而非默认状态码",
+        "isCorrect": true,
+        "description": "拿命令输出赋给变量的标准做法"
+      },
+      {
+        "text": "把 stdout 写入 build console",
+        "isCorrect": false,
+        "description": "console 输出是默认行为"
+      },
+      {
+        "text": "强制 sh 跑在 stdout 容器",
+        "isCorrect": false,
+        "description": "完全无关概念"
+      },
+      {
+        "text": "等同 returnStatus: true",
+        "isCorrect": false,
+        "description": "两者返回不同——stdout 字符串 vs 状态码数字"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 内 `retry(3) { sh 'flaky-command' }` 的行为？",
+    "explanation": "**block 内代码失败时自动重试，最多 3 次**——总共最多跑 3+1=4 次（首次 + 3 重试）。每次失败前等待几秒（指数退避）。适合「网络抖动 / 偶发 flaky 测试」的场景。比 `options { retry(3) }` 粒度更细——只重试该 block 而非整 pipeline。",
+    "tags": ["jenkins", "retry"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "block 内失败自动重试，最多 3 次（共最多跑 4 次）",
+        "isCorrect": true,
+        "description": "细粒度重试 step"
+      },
+      {
+        "text": "失败 3 次后停止重试",
+        "isCorrect": false,
+        "description": "与上面表述等价，文字描述更准确"
+      },
+      {
+        "text": "每 3 分钟重试一次",
+        "isCorrect": false,
+        "description": "与时间无关"
+      },
+      {
+        "text": "并发跑 3 次取最快",
+        "isCorrect": false,
+        "description": "不是并发，是串行重试"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 里 `timeout(time: 5, unit: 'MINUTES') { sh 'slow-command' }` 失败时？",
+    "explanation": "**5 分钟内未完成则杀掉并抛 `FlowInterruptedException`**——pipeline 进入失败/aborted。可外套 `try/catch` 处理。Pipeline 默认无 timeout，long-running 卡死 agent。",
+    "tags": ["jenkins", "timeout"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "5 分钟超时 → 杀命令 + 抛 FlowInterruptedException",
+        "isCorrect": true,
+        "description": "需 try/catch 才能继续"
+      },
+      {
+        "text": "5 分钟后命令继续跑直到完成",
+        "isCorrect": false,
+        "description": "timeout 是硬截断"
+      },
+      {
+        "text": "等待 5 分钟再开始",
+        "isCorrect": false,
+        "description": "立即开始，5 分钟是上限"
+      },
+      {
+        "text": "build 标 unstable",
+        "isCorrect": false,
+        "description": "默认是 failure / aborted，不是 unstable"
+      }
+    ]
+  },
+  {
+    "stem": "Multibranch Pipeline 中 `Discover pull requests from forks → Trust: Nobody` 的安全意义？",
+    "explanation": "**外部 fork 的 PR 触发的构建不会拿到任何凭据**——即使把整个 `JENKINS_HOME` 加密保存，也防不住「Jenkinsfile 内被外部人改成偷凭据的脚本」。`Trust: Nobody` 是最安全选项。`Members of organization` 也常用——可信内部成员的 fork 仍然可拿凭据。",
+    "tags": ["jenkins", "Multibranch", "fork", "安全"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "外部 fork 的 PR 构建不拿任何凭据",
+        "isCorrect": true,
+        "description": "防 fork PR 偷凭据攻击"
+      },
+      {
+        "text": "禁止 fork PR 触发构建",
+        "isCorrect": false,
+        "description": "可以触发，只是不给凭据"
+      },
+      {
+        "text": "Trust 仅 organization 成员（更严格）",
+        "isCorrect": false,
+        "description": "那是 Members of organization 选项"
+      },
+      {
+        "text": "对内部 PR 也无凭据",
+        "isCorrect": false,
+        "description": "Trust: Nobody 只影响外部 fork"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins LTS 与 Weekly 版本的差别？",
+    "explanation": "**LTS（Long-Term Support）**：每 12 周一次稳定发布，跟着安全补丁滚（如 2.426.x）；**生产推荐**。**Weekly**：每周一次，含最新特性但回归风险大。Plugins 通常先兼容 weekly 再 backport 到 LTS。LTS 升级时同时跑「升级测试」环境验证 plugin 是否兼容。",
+    "tags": ["jenkins", "版本", "LTS"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "LTS 12 周一次稳定（生产推荐）；Weekly 每周一次（最新特性）",
+        "isCorrect": true,
+        "description": "频率 + 稳定性差别"
+      },
+      {
+        "text": "两者每周都发，不同分支",
+        "isCorrect": false,
+        "description": "LTS 是 12 周一次"
+      },
+      {
+        "text": "LTS 仅企业版有",
+        "isCorrect": false,
+        "description": "Jenkins 是开源，无企业 / 社区版区分"
+      },
+      {
+        "text": "Weekly 包含所有 LTS 安全补丁",
+        "isCorrect": false,
+        "description": "Weekly 在前，LTS 选 stable point 发布"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins **JCasC (Configuration as Code)** plugin 的核心价值？",
+    "explanation": "**用 YAML 声明所有 Jenkins 配置**（系统/credentials 占位/clouds/users/libraries），启动 `CASC_JENKINS_CONFIG=...` 自动加载——告别「UI 手配置 → 灾难恢复时谁记得」。配合 Job DSL 实现完整 as code。",
+    "tags": ["jenkins", "JCasC", "IaC"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "YAML 声明 Jenkins 配置，版本控制 + 灾难恢复友好",
+        "isCorrect": true,
+        "description": "Infrastructure as Code 实践"
+      },
+      {
+        "text": "把 Jenkinsfile 转成 YAML",
+        "isCorrect": false,
+        "description": "JCasC 配置 Jenkins 本身，不动 Jenkinsfile"
+      },
+      {
+        "text": "加密 Jenkins 配置",
+        "isCorrect": false,
+        "description": "凭据加密是另一回事"
+      },
+      {
+        "text": "替代 Jenkinsfile",
+        "isCorrect": false,
+        "description": "两者用途不同"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins 「Job DSL」plugin 与 「Pipeline」 的区别？",
+    "explanation": "**Job DSL**：生成 Job 的工具——一个 freestyle Job 跑 Groovy，描述要生成的其它 Jobs，自动批量创建/更新。**Pipeline**：Job 内的执行步骤定义。前者管 Job 元数据，后者管 Job 内流程。常一起用。",
+    "tags": ["jenkins", "Job DSL", "Pipeline"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Job DSL 用 Groovy 批量生成 Jobs；Pipeline 是 Job 内部步骤定义",
+        "isCorrect": true,
+        "description": "元数据 vs 执行内容"
+      },
+      {
+        "text": "Job DSL 已被 Pipeline 替代",
+        "isCorrect": false,
+        "description": "两者并存，各管不同层"
+      },
+      {
+        "text": "Pipeline 仅支持 Java 项目",
+        "isCorrect": false,
+        "description": "Pipeline 与语言无关"
+      },
+      {
+        "text": "Job DSL 仅企业版可用",
+        "isCorrect": false,
+        "description": "免费 plugin"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins 备份 `JENKINS_HOME` 时，最关键的几个目录是？",
+    "explanation": "**`jobs/`**（Job 配置+构建历史）、**`secrets/`**（master.key + credentials）、**`config.xml`**（全局配置）、**`users/`**、**`plugins/`**（可选）。漏 secrets 会让 restore 后所有凭据无法解密。",
+    "tags": ["jenkins", "备份"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`jobs/` + `secrets/` + `config.xml` + `users/`",
+        "isCorrect": true,
+        "description": "secrets 不可漏，否则 restore 后凭据无法解"
+      },
+      {
+        "text": "只 `jobs/` 就够",
+        "isCorrect": false,
+        "description": "丢 secrets 凭据解不开"
+      },
+      {
+        "text": "只 `config.xml`",
+        "isCorrect": false,
+        "description": "缺 Jobs 数据"
+      },
+      {
+        "text": "整个 `workspaces/`",
+        "isCorrect": false,
+        "description": "workspace 是临时数据，备份不需要"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins 蓝绿升级时，恢复 `JENKINS_HOME` 后**最先**该验证的是？",
+    "explanation": "**登录 + 查询凭据列表**——`master.key` / `secrets.AES` 不对的话凭据都解不开（界面显示「Cannot decrypt」）。这是备份最容易翻车的地方。然后再跑一个 sample Job 验证 plugin 兼容性 / agent 连接。在恢复演练时跑这套检查，比真出事时摸黑修要好。",
+    "tags": ["jenkins", "灾难恢复"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "登录 + 查凭据列表（确认 master.key 还能解密）",
+        "isCorrect": true,
+        "description": "凭据无法解是恢复最常见翻车点"
+      },
+      {
+        "text": "立即跑生产构建验证",
+        "isCorrect": false,
+        "description": "生产构建一旦失败影响业务，先 sample Job"
+      },
+      {
+        "text": "Plugin 全部升级到最新",
+        "isCorrect": false,
+        "description": "升级会引入新风险，恢复后先验证"
+      },
+      {
+        "text": "改 controller URL",
+        "isCorrect": false,
+        "description": "URL 不影响功能验证"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 用 `parallel(failFast: true)` 块时哪个分支失败会发生什么？",
+    "explanation": "**任一分支失败立即终止其它正在跑的分支** + 整个 parallel 块失败。适合「任一不通过就停 → 等其它快速失败信号」。如不带 failFast，等所有分支跑完再统计——耗时 + 资源浪费。`failFast` 也可写在 `stages.stage.parallel.failFast` 字段。",
+    "tags": ["jenkins", "parallel", "failFast"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "立即终止其它正在跑的分支 + 整体失败",
+        "isCorrect": true,
+        "description": "快速失败避免浪费"
+      },
+      {
+        "text": "等所有分支跑完再失败",
+        "isCorrect": false,
+        "description": "那是不带 failFast 的默认"
+      },
+      {
+        "text": "失败分支重试 3 次",
+        "isCorrect": false,
+        "description": "无重试语义"
+      },
+      {
+        "text": "标记 unstable",
+        "isCorrect": false,
+        "description": "标记 failure 不是 unstable"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 中 `currentBuild.result = 'UNSTABLE'` 的作用？",
+    "explanation": "**手动把 build 结果标为 unstable（黄色）**——常用于：测试 fail 但不想 build 全失败（继续跑后续 step）；warnings / lint 错过但不阻断；mark 已知缺陷未修复。`UNSTABLE` 介于 success（绿）和 failure（红）之间。也可设 `SUCCESS` / `FAILURE` / `ABORTED`。",
+    "tags": ["jenkins", "currentBuild", "result"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "手动把 build 结果标为 unstable（黄色）",
+        "isCorrect": true,
+        "description": "在 success 和 failure 之间的中间态"
+      },
+      {
+        "text": "强制立刻失败",
+        "isCorrect": false,
+        "description": "那是 throw 或 error 'msg'"
+      },
+      {
+        "text": "暂停 build 等用户确认",
+        "isCorrect": false,
+        "description": "那是 input"
+      },
+      {
+        "text": "重启 build",
+        "isCorrect": false,
+        "description": "无此功能"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `stash` / `unstash` step 用途？",
+    "explanation": "**跨 stage/跨 agent 存取文件**——`stash name:'out', includes:'dist/**'` 把文件存到 controller，下一 stage `unstash 'out'` 取。比 `archiveArtifacts` 轻量。**仅 build 内有效**，结束自动清。",
+    "tags": ["jenkins", "stash"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跨 stage / agent 临时存取文件；build 结束自动清",
+        "isCorrect": true,
+        "description": "比 artifacts 轻量的中间产物传递"
+      },
+      {
+        "text": "永久保存文件",
+        "isCorrect": false,
+        "description": "build 结束清，与 artifacts 不同"
+      },
+      {
+        "text": "把文件 push 到 Git",
+        "isCorrect": false,
+        "description": "无 Git 操作"
+      },
+      {
+        "text": "Stash 是 Git 命令，Jenkins 不用",
+        "isCorrect": false,
+        "description": "Jenkins 借用 stash 名称但与 git stash 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 内 `cleanWs()` step 调用时机？",
+    "explanation": "**清空当前 agent 的 workspace 目录**——常放在 `post { always { cleanWs() } }`。理由：避免「上次构建残留干扰下次」+ 节省 agent 磁盘。**注意：清完 workspace 后 stash / artifacts 仍保留**（这些不在 workspace 内）。",
+    "tags": ["jenkins", "cleanWs"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "清空 agent workspace；不影响 stash / artifacts",
+        "isCorrect": true,
+        "description": "post { always } 内常用，避免残留"
+      },
+      {
+        "text": "清空 stash + artifacts",
+        "isCorrect": false,
+        "description": "只清 workspace 目录"
+      },
+      {
+        "text": "把 workspace 推到远端",
+        "isCorrect": false,
+        "description": "无 push 行为"
+      },
+      {
+        "text": "清空整个 agent 节点",
+        "isCorrect": false,
+        "description": "只是当前 build 的 workspace"
+      }
+    ]
+  },
+  {
+    "stem": "Jenkins 升级 plugins 时**最稳妥**的做法是？",
+    "explanation": "**先在隔离测试环境跑相同 Job + 验证关键 plugin → 没问题再升级生产**。理由：plugin 之间存在依赖与不兼容（A v1.2 要求 B v3.0+，C v1.1 又只兼容 B v2.x），升级一次可能塌一片。生产升级前一定有「先在备机测过」的步骤。",
+    "tags": ["jenkins", "plugins", "升级"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先在隔离测试环境跑相同 Job 验证，再升级生产",
+        "isCorrect": true,
+        "description": "防 plugin 互不兼容塌一片"
+      },
+      {
+        "text": "看到红点就立刻点升级",
+        "isCorrect": false,
+        "description": "生产慎重"
+      },
+      {
+        "text": "禁止任何 plugin 升级",
+        "isCorrect": false,
+        "description": "停止升级意味着累积安全 / bug 风险"
+      },
+      {
+        "text": "只升 major 不升 minor",
+        "isCorrect": false,
+        "description": "major 风险更大，反了"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline 用 `node('linux-build')` 与 `agent { label 'linux-build' }` 的关系？",
+    "explanation": "**`agent { label 'linux-build' }`** 是 Declarative 写法；**`node('linux-build') { ... }`** 是 Scripted 写法。都调度到同 label。Declarative 推荐，Scripted 在「动态生成 stage」时仍有用。",
+    "tags": ["jenkins", "agent", "node"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`agent { label }` 是 Declarative；`node()` 是 Scripted；最终都调度到同 label",
+        "isCorrect": true,
+        "description": "两种 DSL 风格对应同一机制"
+      },
+      {
+        "text": "两者完全不同的功能",
+        "isCorrect": false,
+        "description": "底层调度相同"
+      },
+      {
+        "text": "`node()` 已弃用",
+        "isCorrect": false,
+        "description": "Scripted 仍然支持"
+      },
+      {
+        "text": "Declarative 不能用 node()",
+        "isCorrect": false,
+        "description": "可以包在 script {} 内但不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "Pipeline `options { ansiColor('xterm') }` 的前置条件是？",
+    "explanation": "**装了 `AnsiColor` plugin**——`options { ansiColor() }` 是 plugin 提供的 step，未装时 pipeline 解析失败。装后 console 显示 ANSI 颜色（绿 / 红 / 黄等），构建日志更易读。也支持 `xterm-256color` 等其它终端类型。",
+    "tags": ["jenkins", "plugin", "ansiColor"],
+    "categories": [
+      ["技术方向", "Jenkins"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "装了 `AnsiColor` plugin",
+        "isCorrect": true,
+        "description": "需安装才能用"
+      },
+      {
+        "text": "agent 必须 Linux",
+        "isCorrect": false,
+        "description": "与 agent OS 无关"
+      },
+      {
+        "text": "需要 Pipeline plugin v3+",
+        "isCorrect": false,
+        "description": "Pipeline 版本无关"
+      },
+      {
+        "text": "JDK 21+",
+        "isCorrect": false,
+        "description": "与 JDK 无关"
+      }
+    ]
   }
 ]
