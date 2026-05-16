@@ -556,5 +556,997 @@
         "description": "正确：UI 上一键回滚到任意历史版本"
       }
     ]
+  },
+  {
+    "stem": "Reusable Workflow 与 Composite Action 的核心区别？",
+    "explanation": "**Reusable Workflow**：完整 workflow 文件，自带 job/runner/permissions，被 `workflow_call` 触发，可跨仓库。**Composite Action**：步骤集合（不带 runner），嵌入到 caller 的 job 里。前者管整段流程，后者管 setup 片段。",
+    "tags": ["github-actions", "高级", "reusable"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Reusable 自带 job/runner，Composite 是步骤集合嵌入 caller",
+        "isCorrect": true,
+        "description": "前者管整段流程，后者管 setup 片段"
+      },
+      {
+        "text": "二者完全等价，只是写法不同",
+        "isCorrect": false,
+        "description": "运行模型完全不同"
+      },
+      {
+        "text": "Composite 只能在同仓库用",
+        "isCorrect": false,
+        "description": "都支持跨仓库"
+      },
+      {
+        "text": "Reusable 只支持 `bash`，Composite 支持多语言",
+        "isCorrect": false,
+        "description": "都不限"
+      }
+    ]
+  },
+  {
+    "stem": "Reusable Workflow 传递 `secrets: inherit` 的语义是？",
+    "explanation": "**caller 的所有 secrets 透传给 callee**——免去逐个 `secrets: TOKEN: ${{ secrets.X }}` 声明。callee 仍需 `on.workflow_call.secrets:` 显式列出。跨仓库且未 inherit 时 callee 拿不到 caller secrets。",
+    "tags": ["github-actions", "高级", "secrets"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "caller 的所有 secrets 透传给 callee，无需逐个声明",
+        "isCorrect": true,
+        "description": "callee 仍要 on.workflow_call.secrets 列出"
+      },
+      {
+        "text": "callee 自动拿到组织级 secrets，绕过仓库限制",
+        "isCorrect": false,
+        "description": "secrets 由 caller 决定"
+      },
+      {
+        "text": "继承 GITHUB_TOKEN 的所有 permissions",
+        "isCorrect": false,
+        "description": "permissions 是另一回事"
+      },
+      {
+        "text": "callee 可以读 caller 仓库的环境变量",
+        "isCorrect": false,
+        "description": "env 不会自动透传"
+      }
+    ]
+  },
+  {
+    "stem": "Composite Action 想暴露 outputs 给 caller，正确的写法是？",
+    "explanation": "**Composite outputs 必须显式 map**：`outputs.<name>.value: ${{ steps.<id>.outputs.<key> }}`。和 Reusable Workflow 不同（直接引用 job 输出），Composite 顶层 `outputs:` 用 `value:` 字段映射内部 step 输出。",
+    "tags": ["github-actions", "高级", "composite"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`outputs.<name>.value: ${{ steps.id.outputs.x }}`",
+        "isCorrect": true,
+        "description": "必须用 value 字段显式映射"
+      },
+      {
+        "text": "`outputs.<name>: steps.id.outputs.x`（无 value 字段）",
+        "isCorrect": false,
+        "description": "Composite 必须有 value: 字段"
+      },
+      {
+        "text": "在 step 里写 `outputs.<name>=value >> $GITHUB_OUTPUT`",
+        "isCorrect": false,
+        "description": "那是 step output，不是 action output"
+      },
+      {
+        "text": "Composite 不支持 outputs",
+        "isCorrect": false,
+        "description": "支持，要用 value: 映射"
+      }
+    ]
+  },
+  {
+    "stem": "调用同仓库 Reusable Workflow 与跨仓库的 `uses:` 写法差别？",
+    "explanation": "**同仓库**：`uses: ./.github/workflows/build.yml`（相对路径，**不带 ref**）。**跨仓库**：`uses: org/repo/.github/workflows/build.yml@ref`（**必须带 ref**，可以是 tag/branch/SHA）。同仓库不允许写 ref，会报错。",
+    "tags": ["github-actions", "高级", "reusable"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同仓库：`./.github/workflows/x.yml`（无 ref）；跨仓库：`org/repo/.../x.yml@ref`",
+        "isCorrect": true,
+        "description": "跨仓库必须带 ref，同仓库不允许"
+      },
+      {
+        "text": "都用 `org/repo/.../x.yml@ref`",
+        "isCorrect": false,
+        "description": "同仓库不允许 ref"
+      },
+      {
+        "text": "都用相对路径",
+        "isCorrect": false,
+        "description": "跨仓库要绝对路径"
+      },
+      {
+        "text": "同仓库不支持 Reusable Workflow",
+        "isCorrect": false,
+        "description": "支持，用相对路径"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪个 `if:` 表达式语法**不正确**？",
+    "explanation": "**`if:` 里的 `${{ }}` 是可选的**——GHA 在 `if:` 上下文中允许「裸表达式」，但**含通配符或复杂运算时建议写完整 `${{ }}`** 以避免歧义。完全裸写 `if: github.event_name == 'push'` 是合法的。**真正错的**是把多行 step 当成表达式（缩进 / 引号不对）。",
+    "tags": ["github-actions", "中级", "expression"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}`",
+        "isCorrect": false,
+        "description": "合法"
+      },
+      {
+        "text": "`if: github.event_name == 'push'`（裸表达式）",
+        "isCorrect": false,
+        "description": "GHA 允许 if 不带 `${{}}`"
+      },
+      {
+        "text": "`if: success() && env.DEPLOY == 'true'`",
+        "isCorrect": false,
+        "description": "合法"
+      },
+      {
+        "text": "`if: contains(env.LIST, 'a' 'b')`（缺逗号）",
+        "isCorrect": true,
+        "description": "contains 第二个参数语法错"
+      }
+    ]
+  },
+  {
+    "stem": "`if: always()` 与 `if: success() || failure()` 的关键差别？",
+    "explanation": "**`always()`** 即便 **job 被取消**（cancelled）也运行；**`success() || failure()`** 不含 cancelled——cancelled 时两者都返回 false。要清理资源用 `always()`；失败跑但取消不跑用 `success() || failure()`。",
+    "tags": ["github-actions", "高级", "expression"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`always()` 含 cancelled，`success() || failure()` 不含 cancelled",
+        "isCorrect": true,
+        "description": "唯一差别是 cancelled 行为"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "差在 cancelled"
+      },
+      {
+        "text": "`always()` 只在 step 级有效",
+        "isCorrect": false,
+        "description": "都可用"
+      },
+      {
+        "text": "`success() || failure()` 不能用在 step 级",
+        "isCorrect": false,
+        "description": "都可用"
+      }
+    ]
+  },
+  {
+    "stem": "GitHub Actions 表达式 `fromJSON()` 的典型用途？",
+    "explanation": "**把 JSON 字符串转成对象数组**，最常见用在「**动态 matrix**」：上一个 job 输出一个 JSON 数组到 `outputs`，下一个 job 用 `strategy.matrix.x: ${{ fromJSON(needs.setup.outputs.list) }}` 把数组当作 matrix 维度。也能在 `if:` 里访问嵌套字段。",
+    "tags": ["github-actions", "高级", "expression"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把 JSON 字符串转成对象/数组，常用于动态 matrix",
+        "isCorrect": true,
+        "description": "前置 job 产出 JSON，后续 job 当 matrix 输入"
+      },
+      {
+        "text": "把对象序列化成字符串写入文件",
+        "isCorrect": false,
+        "description": "那是 toJSON()"
+      },
+      {
+        "text": "校验 JSON 格式，错误时 step 失败",
+        "isCorrect": false,
+        "description": "无校验语义"
+      },
+      {
+        "text": "动态加载第三方 Action 元数据",
+        "isCorrect": false,
+        "description": "不能这样用"
+      }
+    ]
+  },
+  {
+    "stem": "`needs.<job>.result` 的可能值是？",
+    "explanation": "四种：`success` / `failure` / `cancelled` / `skipped`。注意：**`needs.X.result == 'success'` 是默认隐式条件**——下游 job 默认仅在所有 needs 成功时跑；若想「即便上游失败也跑」必须显式加 `if: always()` 或 `if: needs.X.result == 'failure'`。",
+    "tags": ["github-actions", "高级", "needs"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`success` / `failure` / `cancelled` / `skipped`",
+        "isCorrect": true,
+        "description": "四个状态值"
+      },
+      {
+        "text": "`pass` / `fail`",
+        "isCorrect": false,
+        "description": "GHA 用 success/failure"
+      },
+      {
+        "text": "`success` / `failure` / `timeout`",
+        "isCorrect": false,
+        "description": "无 timeout 单独状态"
+      },
+      {
+        "text": "0 / 1（数字）",
+        "isCorrect": false,
+        "description": "字符串枚举"
+      }
+    ]
+  },
+  {
+    "stem": "GHA 中 `set-output` 已废弃，传递 step 输出的现行写法是？",
+    "explanation": "**`echo \"key=value\" >> $GITHUB_OUTPUT`**。GitHub 2022 废弃 `::set-output name=key::value`，2023 完全停用。同理 `set-env` → `>> $GITHUB_ENV`，`add-path` → `>> $GITHUB_PATH`。Windows runner 同名变量。",
+    "tags": ["github-actions", "中级", "output"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`echo \"key=value\" >> $GITHUB_OUTPUT`",
+        "isCorrect": true,
+        "description": "现行标准写法"
+      },
+      {
+        "text": "`echo \"::set-output name=key::value\"`",
+        "isCorrect": false,
+        "description": "已废弃"
+      },
+      {
+        "text": "`outputs.key=value`",
+        "isCorrect": false,
+        "description": "无此语法"
+      },
+      {
+        "text": "`echo $GITHUB_OUTPUT=value`",
+        "isCorrect": false,
+        "description": "方向反了"
+      }
+    ]
+  },
+  {
+    "stem": "想在 step 里写多行字符串到 `$GITHUB_OUTPUT`，正确做法是？",
+    "explanation": "**heredoc 语法**：`echo \"key<<EOF\" >> $GITHUB_OUTPUT; echo $value >> $GITHUB_OUTPUT; echo EOF >> $GITHUB_OUTPUT`。直接 `key=$multi_line` 会因换行符破坏格式。`$GITHUB_ENV`、`$GITHUB_STEP_SUMMARY` 同理。",
+    "tags": ["github-actions", "高级", "output"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 `key<<EOF` heredoc 包裹多行内容",
+        "isCorrect": true,
+        "description": "GHA 官方 heredoc 语法"
+      },
+      {
+        "text": "把换行符替换成 `\\n` 转义后 `key=`",
+        "isCorrect": false,
+        "description": "GHA 不解码 \\n"
+      },
+      {
+        "text": "用 base64 编码后写",
+        "isCorrect": false,
+        "description": "可绕但太麻烦"
+      },
+      {
+        "text": "GHA 不支持多行 output",
+        "isCorrect": false,
+        "description": "heredoc 支持"
+      }
+    ]
+  },
+  {
+    "stem": "`$GITHUB_STEP_SUMMARY` 的作用是？",
+    "explanation": "**Markdown 写到此文件 → 显示在 workflow run 页面顶部摘要区**——常用于「贴 lint 报告 / 测试覆盖率表 / 部署 URL」让运行结果一眼可见。**每个 step** 写入独立 summary，按 step 顺序在 UI 拼接。支持完整 Markdown（表格、代码块、图片）。",
+    "tags": ["github-actions", "高级", "summary"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把 Markdown 内容显示在 workflow run 的摘要区",
+        "isCorrect": true,
+        "description": "UI 顶部可视化输出"
+      },
+      {
+        "text": "把内容写入 PR 评论",
+        "isCorrect": false,
+        "description": "需要 gh api 显式调用"
+      },
+      {
+        "text": "工作流结束后发邮件",
+        "isCorrect": false,
+        "description": "无此功能"
+      },
+      {
+        "text": "替代 GITHUB_OUTPUT 用于跨 step 传值",
+        "isCorrect": false,
+        "description": "纯展示，不传值"
+      }
+    ]
+  },
+  {
+    "stem": "下列 matrix 配置实际生成多少个 job？\n\n```yaml\nmatrix:\n  os: [ubuntu, windows]\n  node: [18, 20]\n  include:\n    - {os: macos, node: 20}\n  exclude:\n    - {os: windows, node: 18}\n```",
+    "explanation": "2×2 = 4 个组合，减去 1 个 exclude（windows+18）= 3 个，加上 1 个 include（macos+20）= **4 个**。执行顺序：先笛卡尔积 → 应用 exclude → 应用 include。include 中字段与已有 matrix 维度匹配则**追加**，与已有 job 字段完全一致则**合并**而非新增。",
+    "tags": ["github-actions", "高级", "matrix"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "4",
+        "isCorrect": true,
+        "description": "(2×2 - 1 exclude) + 1 include = 4"
+      },
+      {
+        "text": "3",
+        "isCorrect": false,
+        "description": "漏算 include"
+      },
+      {
+        "text": "5",
+        "isCorrect": false,
+        "description": "exclude 没生效"
+      },
+      {
+        "text": "6",
+        "isCorrect": false,
+        "description": "exclude 反向"
+      }
+    ]
+  },
+  {
+    "stem": "`strategy.fail-fast: false` 的效果？",
+    "explanation": "**默认 `fail-fast: true`**：matrix 中任一 job 失败 → **立即取消其它正在跑的 matrix job**。设 `false` 后所有 matrix job 跑完才看结果——适合「想知道每个组合都失败在哪儿」（如 OS 兼容矩阵），而非「快速失败省钱」。",
+    "tags": ["github-actions", "中级", "matrix"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "matrix 任一失败时不取消其它 job，全部跑完",
+        "isCorrect": true,
+        "description": "适合调试 OS 兼容矩阵"
+      },
+      {
+        "text": "失败的 job 自动重试一次",
+        "isCorrect": false,
+        "description": "无重试语义"
+      },
+      {
+        "text": "整个 workflow 不算失败",
+        "isCorrect": false,
+        "description": "仍算失败"
+      },
+      {
+        "text": "并行度从 N 降为 1",
+        "isCorrect": false,
+        "description": "那是 max-parallel"
+      }
+    ]
+  },
+  {
+    "stem": "`strategy.max-parallel: 2` 的语义？",
+    "explanation": "**matrix 并发上限为 2**——即便 matrix 展开出 10 个 job，runner 同时只跑 2 个，其余排队。常用于「**避免共享资源争抢**」（如 DB 测试连同一数据库）或「**节流避免 runner 配额耗尽**」。注意：受 GitHub 账户总并发配额限制（免费 20，付费更多）。",
+    "tags": ["github-actions", "中级", "matrix"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "matrix 同时只跑 2 个 job",
+        "isCorrect": true,
+        "description": "并发节流"
+      },
+      {
+        "text": "整个 workflow 至多 2 个 job",
+        "isCorrect": false,
+        "description": "只控制 matrix 内并发"
+      },
+      {
+        "text": "失败 2 次后整体放弃",
+        "isCorrect": false,
+        "description": "无关失败次数"
+      },
+      {
+        "text": "每个 job 至多 2 个并发 step",
+        "isCorrect": false,
+        "description": "step 顺序执行"
+      }
+    ]
+  },
+  {
+    "stem": "Action 第三方依赖用 `@v3` 与 `@<sha>` 的安全差别？",
+    "explanation": "**`@v3` 是动态 tag**——作者可重新打 tag 指向恶意 commit（**供应链攻击**）。**`@<sha>`（40 位 commit SHA）** 钉死到一个不可变 commit，作者篡改 tag 也不会影响你。**最佳实践**：第三方 Action 都用 SHA + Dependabot 自动更新。官方 actions/* 一般可信用 tag。",
+    "tags": ["github-actions", "高级", "security"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "SHA 不可变防供应链攻击，tag 可被作者重新打",
+        "isCorrect": true,
+        "description": "Dependabot 配合 SHA 升级"
+      },
+      {
+        "text": "二者完全等价",
+        "isCorrect": false,
+        "description": "SHA 防篡改"
+      },
+      {
+        "text": "SHA 比 tag 跑得慢",
+        "isCorrect": false,
+        "description": "性能一致"
+      },
+      {
+        "text": "tag 比 SHA 安全（GitHub 校验签名）",
+        "isCorrect": false,
+        "description": "反了，tag 可变"
+      }
+    ]
+  },
+  {
+    "stem": "Workflow 顶层 `permissions: write-all` 的风险？",
+    "explanation": "**GITHUB_TOKEN 获得仓库所有写权限**——一旦被恶意 Action 截获可推代码/打 release/改 setting。**最小权限**：顶层 `permissions: {}`（全禁），各 job 按需赋 `contents: read` 等。GitHub 2023 起新仓库默认 read-only。",
+    "tags": ["github-actions", "高级", "security"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "GITHUB_TOKEN 拿到仓库所有写权限，第三方 Action 拿到后可任意改",
+        "isCorrect": true,
+        "description": "最小权限：顶层 {} + 各 job 细化"
+      },
+      {
+        "text": "无风险，GitHub 沙箱隔离",
+        "isCorrect": false,
+        "description": "Action 与你共享 token"
+      },
+      {
+        "text": "仅影响 fork 仓库",
+        "isCorrect": false,
+        "description": "影响所有仓库"
+      },
+      {
+        "text": "无法导致代码被推送",
+        "isCorrect": false,
+        "description": "write-all 含 contents:write"
+      }
+    ]
+  },
+  {
+    "stem": "`pull_request_target` 触发器的危险用法是？",
+    "explanation": "**它运行在 base 分支上下文，能拿到 secrets**——若 checkout **PR head 代码**再 `npm install` 或跑 PR 提供脚本，**恶意 PR 可执行任意代码窃取 secrets**。正确做法：不 checkout PR head 或严格隔离不暴露 secrets。",
+    "tags": ["github-actions", "高级", "security"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "checkout PR head 后跑 PR 提供的脚本，恶意 PR 窃取 secrets",
+        "isCorrect": true,
+        "description": "GitHub 多次发文警告的安全坑"
+      },
+      {
+        "text": "fork PR 默认就能拿 secrets",
+        "isCorrect": false,
+        "description": "必须 checkout PR 代码+跑其脚本才中招"
+      },
+      {
+        "text": "比 pull_request 慢 10 倍",
+        "isCorrect": false,
+        "description": "性能无差"
+      },
+      {
+        "text": "无法 push 代码",
+        "isCorrect": false,
+        "description": "和 push 无关"
+      }
+    ]
+  },
+  {
+    "stem": "OIDC 联邦认证替代 long-lived secret（如 AWS Access Key）的核心机制？",
+    "explanation": "**workflow 运行时获取 OIDC JWT**（含 `repository`/`ref`/`environment` claims），云厂商验证后**临时换发 IAM 凭证**（如 AWS STS AssumeRoleWithWebIdentity）。**无长期 secret 可泄露**；claims 可作为信任策略条件。",
+    "tags": ["github-actions", "高级", "oidc"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "GitHub 签发 OIDC JWT → 云厂商验证 → 换临时凭证",
+        "isCorrect": true,
+        "description": "无长期 secret，claims 可做信任策略条件"
+      },
+      {
+        "text": "把 AWS Access Key 加密后注入 token",
+        "isCorrect": false,
+        "description": "完全无需 long-lived key"
+      },
+      {
+        "text": "OIDC 仅认证 GitHub 身份，仍需配 secret",
+        "isCorrect": false,
+        "description": "OIDC 换出的就是临时凭证"
+      },
+      {
+        "text": "GITHUB_TOKEN 直接可调 AWS API",
+        "isCorrect": false,
+        "description": "无关 GITHUB_TOKEN"
+      }
+    ]
+  },
+  {
+    "stem": "GitHub Environments 「required reviewers」的限制是？",
+    "explanation": "**最多 6 个 reviewer**（个人或团队），**至少 1 个**点击 approve 才放行 job。可配「**self-review 允许/禁止**」，禁止时 PR 发起人不能自审。还有 **wait timer**（0~43200 分钟）强制等待。**仅 GitHub Pro/Team/Enterprise** 支持（公开仓库免费版也支持）。",
+    "tags": ["github-actions", "高级", "environment"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "最多 6 个 reviewer，至少 1 个 approve 后才跑",
+        "isCorrect": true,
+        "description": "可禁止 self-review，配合 wait timer"
+      },
+      {
+        "text": "必须全部 reviewer 都 approve",
+        "isCorrect": false,
+        "description": "1 个就够"
+      },
+      {
+        "text": "无人数限制",
+        "isCorrect": false,
+        "description": "上限 6"
+      },
+      {
+        "text": "免费版完全不支持",
+        "isCorrect": false,
+        "description": "公开仓库免费也支持"
+      }
+    ]
+  },
+  {
+    "stem": "Environment secrets 与 Repository secrets 同名时的优先级？",
+    "explanation": "**Environment > Repository > Organization**——job 引用 `environment:` 后同名 secret 取 Environment 值。允许生产/预发注入不同 token。**未声明 `environment:` 的 job 拿不到 environment secrets**——是隔离的核心。",
+    "tags": ["github-actions", "高级", "environment"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Environment > Repository > Organization",
+        "isCorrect": true,
+        "description": "同名时取最细颗粒"
+      },
+      {
+        "text": "Repository > Environment > Organization",
+        "isCorrect": false,
+        "description": "颠倒"
+      },
+      {
+        "text": "Organization 最高",
+        "isCorrect": false,
+        "description": "颠倒"
+      },
+      {
+        "text": "随机选择",
+        "isCorrect": false,
+        "description": "确定优先级"
+      }
+    ]
+  },
+  {
+    "stem": "GitHub Variables（`vars` 上下文）与 Secrets 的核心差别？",
+    "explanation": "**Variables：明文存储，UI 可查可改，日志可见**——适合放「配置型非敏感值」（如 region、bucket name、feature flag）。**Secrets：加密存储，UI 不可查，日志自动 mask**——放敏感凭据。两者都支持 Repository / Environment / Organization 三级，作用域规则相同。",
+    "tags": ["github-actions", "中级", "secrets"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vars 明文可见，Secrets 加密 + 日志 mask",
+        "isCorrect": true,
+        "description": "Vars 用 vars.X，Secrets 用 secrets.X"
+      },
+      {
+        "text": "完全相同，只是命名空间不同",
+        "isCorrect": false,
+        "description": "敏感度差异"
+      },
+      {
+        "text": "Vars 只能在 organization 级",
+        "isCorrect": false,
+        "description": "三级都支持"
+      },
+      {
+        "text": "Secrets 可读但 Vars 不能读",
+        "isCorrect": false,
+        "description": "两者都能读"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪种 cache 策略的命中率**最高**？",
+    "explanation": "`restore-keys` 是「**前缀回退**」——主 key 未命中时按列表前缀匹配最新 cache。**带 lockfile hash 的主 key + 不带 hash 的前缀回退**：lockfile 变了仍能拿到上次 cache 作基础。`key: deps` 恒定会永远是第一次的旧 cache。",
+    "tags": ["github-actions", "高级", "cache"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`key: deps-${{ hashFiles('lock') }}` + `restore-keys: deps-`",
+        "isCorrect": true,
+        "description": "主 key 精确 + 前缀回退兼顾命中和新鲜度"
+      },
+      {
+        "text": "`key: deps`（恒定）",
+        "isCorrect": false,
+        "description": "永远是第一次的旧 cache"
+      },
+      {
+        "text": "`key: deps-${{ github.run_id }}`",
+        "isCorrect": false,
+        "description": "每次 run 都不命中"
+      },
+      {
+        "text": "`key: deps-${{ github.sha }}`",
+        "isCorrect": false,
+        "description": "每个 commit 不命中"
+      }
+    ]
+  },
+  {
+    "stem": "`actions/cache/save@v4` 与 `actions/cache@v4` 的区别？",
+    "explanation": "**`cache@v4`**：复合 step——开始 restore，结束若 miss 则 save。**`cache/save@v4` 与 `cache/restore@v4`**：分离子 action 可控时机——常用「**测试通过才保存 cache**」避免污染（如损坏的 node_modules）。复杂流程用分离版。",
+    "tags": ["github-actions", "高级", "cache"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "前者复合 step 自动 save；后者分离子 action 可控时机",
+        "isCorrect": true,
+        "description": "分离版用于测试通过才保存"
+      },
+      {
+        "text": "完全等价的别名",
+        "isCorrect": false,
+        "description": "执行模型不同"
+      },
+      {
+        "text": "save 只支持公开仓库",
+        "isCorrect": false,
+        "description": "都支持"
+      },
+      {
+        "text": "save 不支持 restore-keys",
+        "isCorrect": false,
+        "description": "save 不需要 restore-keys（只在 restore 端）"
+      }
+    ]
+  },
+  {
+    "stem": "`workflow_run` 触发器的典型用途？",
+    "explanation": "**链式触发**——监听另一个 workflow 完成事件，跑后续操作。例：「**CI 通过后自动跑部署 workflow**」（避免在 CI yml 里堆部署逻辑）。**只能从默认分支触发**，且**默认 cancelled 也会触发**（要用 `if: github.event.workflow_run.conclusion == 'success'` 过滤）。",
+    "tags": ["github-actions", "高级", "trigger"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "监听另一 workflow 完成事件，链式触发部署/通知",
+        "isCorrect": true,
+        "description": "用 conclusion 过滤成功"
+      },
+      {
+        "text": "每次 workflow run 都重跑当前 workflow",
+        "isCorrect": false,
+        "description": "会死循环"
+      },
+      {
+        "text": "等价于 schedule cron",
+        "isCorrect": false,
+        "description": "事件驱动而非定时"
+      },
+      {
+        "text": "需要 GitHub Enterprise 才能用",
+        "isCorrect": false,
+        "description": "免费版可用"
+      }
+    ]
+  },
+  {
+    "stem": "`workflow_dispatch` 想接收用户输入参数，输入类型支持哪些？",
+    "explanation": "**5 种**：`string` / `number` / `boolean` / `choice`（带 options 数组）/ `environment`（自动列出仓库 environments）。**`number` 是 string 子集**，输入仍是字符串需自己解析。`choice` 在 UI 渲染为下拉框。最多 **10 个 input**（GitHub 硬限制）。",
+    "tags": ["github-actions", "中级", "trigger"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`string` / `number` / `boolean` / `choice` / `environment`",
+        "isCorrect": true,
+        "description": "上限 10 个 input"
+      },
+      {
+        "text": "只支持 string",
+        "isCorrect": false,
+        "description": "5 种"
+      },
+      {
+        "text": "string / array / object",
+        "isCorrect": false,
+        "description": "无 array/object"
+      },
+      {
+        "text": "支持任意 JSON 类型",
+        "isCorrect": false,
+        "description": "5 类固定"
+      }
+    ]
+  },
+  {
+    "stem": "Job 顶层 `services:` 声明的 service container 主要用途？",
+    "explanation": "**为 job 启动 DB/Redis 等辅助服务**——例：测试要 Postgres，写 `services.postgres.image: postgres:15`，job 内通过 `localhost:5432`（或 service hostname）访问。固定端口用 `ports: ['5432:5432']`。**仅 Linux runner**。",
+    "tags": ["github-actions", "高级", "services"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "为 job 启动辅助容器（DB/Redis），通过 localhost 访问",
+        "isCorrect": true,
+        "description": "仅 Linux runner"
+      },
+      {
+        "text": "把 job 自身放进容器跑",
+        "isCorrect": false,
+        "description": "那是 jobs.<id>.container"
+      },
+      {
+        "text": "替代 docker-compose 编排多服务",
+        "isCorrect": false,
+        "description": "比 compose 简单，单 job 用"
+      },
+      {
+        "text": "macOS runner 也支持",
+        "isCorrect": false,
+        "description": "仅 Linux"
+      }
+    ]
+  },
+  {
+    "stem": "`jobs.<id>.container:` 与 `jobs.<id>.services:` 的区别？",
+    "explanation": "**container**：job 的所有 step **跑在指定容器里**（runner 充当宿主，容器内执行 `sh`）。**services**：旁挂的辅助容器（DB / Redis），与 job 容器/runner 同网络。一个 job 可同时用 container（跑代码的环境）+ services（依赖）。",
+    "tags": ["github-actions", "高级", "container"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "container：job step 跑在容器内；services：辅助容器（DB 等）",
+        "isCorrect": true,
+        "description": "可同时用"
+      },
+      {
+        "text": "完全等价的别名",
+        "isCorrect": false,
+        "description": "用途不同"
+      },
+      {
+        "text": "container 不支持自定义 entrypoint",
+        "isCorrect": false,
+        "description": "支持"
+      },
+      {
+        "text": "services 不能用私有 registry",
+        "isCorrect": false,
+        "description": "支持 credentials"
+      }
+    ]
+  },
+  {
+    "stem": "Self-hosted runner 在**公开仓库**上的主要安全风险？",
+    "explanation": "**fork PR 可往你的 self-hosted runner 跑任意代码**——攻击者 fork → 加恶意 workflow → 在你 runner 上挖矿/扫内网。**官方建议公开仓库不用 self-hosted**；非用必配「仅限 collaborator PR 触发」。",
+    "tags": ["github-actions", "高级", "self-hosted"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fork PR 可在你的 runner 上跑任意代码",
+        "isCorrect": true,
+        "description": "公开仓库慎用 self-hosted"
+      },
+      {
+        "text": "无风险，GitHub 隔离了",
+        "isCorrect": false,
+        "description": "公开仓库 fork 可触发"
+      },
+      {
+        "text": "只在 Windows runner 有风险",
+        "isCorrect": false,
+        "description": "全平台都有"
+      },
+      {
+        "text": "私有仓库也有同样风险",
+        "isCorrect": false,
+        "description": "私有仓库只 collaborator 能 push"
+      }
+    ]
+  },
+  {
+    "stem": "Self-hosted runner 启动时加 `--ephemeral` 的效果？",
+    "explanation": "**runner 跑完一个 job 后自动注销并退出**——下次需要 runner 时由 autoscaler（如 actions-runner-controller in K8s）拉新 pod 启新 runner。优势：**每个 job 全新环境**，避免「上个 job 污染 workspace / 装的 npm 包残留」。是企业级 self-hosted 的标配模式。",
+    "tags": ["github-actions", "高级", "self-hosted"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "runner 跑完一个 job 自动注销退出，下次拉新",
+        "isCorrect": true,
+        "description": "ARC + ephemeral 是企业标配"
+      },
+      {
+        "text": "runner 永远不重启",
+        "isCorrect": false,
+        "description": "反了"
+      },
+      {
+        "text": "跑完 N 个 job 后退出，N 可配",
+        "isCorrect": false,
+        "description": "固定 1 个"
+      },
+      {
+        "text": "仅适用于 Windows runner",
+        "isCorrect": false,
+        "description": "全平台支持"
+      }
+    ]
+  },
+  {
+    "stem": "GitHub Actions 公开仓库免费 minutes 限制是？",
+    "explanation": "**公开仓库完全免费、无 minutes 限制**（GitHub-hosted runner）。**私有仓库**按账户 plan 给免费额度：Free 2000 min/mo、Pro 3000、Team 3000、Enterprise 50000。超出按 OS 计费（Linux $0.008/min，Windows ×2，macOS ×10）。",
+    "tags": ["github-actions", "入门", "billing"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "公开仓库免费无限，私有仓库按 plan 给额度",
+        "isCorrect": true,
+        "description": "Free 2000 / Pro 3000 / Team 3000"
+      },
+      {
+        "text": "公开和私有都 2000 min/mo",
+        "isCorrect": false,
+        "description": "公开免费"
+      },
+      {
+        "text": "全部按分钟计费，无免费",
+        "isCorrect": false,
+        "description": "有免费额度"
+      },
+      {
+        "text": "仅 Enterprise 有 macOS runner",
+        "isCorrect": false,
+        "description": "所有 plan 都能用"
+      }
+    ]
+  },
+  {
+    "stem": "Dependabot 自动更新 GitHub Action 版本，配置文件位置？",
+    "explanation": "**`.github/dependabot.yml`**，`updates:` 加 `package-ecosystem: github-actions`，`directory: /`（指 `.github/workflows/`）。Dependabot 扫所有 yml 的 `uses:` 行，发现新版本自动开 PR 升级。配合 SHA 钉版是供应链安全最佳实践。",
+    "tags": ["github-actions", "中级", "dependabot"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`.github/dependabot.yml`，package-ecosystem: github-actions",
+        "isCorrect": true,
+        "description": "扫所有 yml 的 uses:"
+      },
+      {
+        "text": "`.github/workflows/dependabot.yml`",
+        "isCorrect": false,
+        "description": "不在 workflows 目录"
+      },
+      {
+        "text": "需要单独装 GitHub App",
+        "isCorrect": false,
+        "description": "Dependabot 内置"
+      },
+      {
+        "text": "无法自动更新 Action，只能更新 npm",
+        "isCorrect": false,
+        "description": "支持 github-actions ecosystem"
+      }
+    ]
+  },
+  {
+    "stem": "Workflow 顶层 `defaults.run.shell: bash` 的作用？",
+    "explanation": "**指定所有 `run:` step 的默认 shell**——Linux/macOS 默认 `bash -e -o pipefail`，Windows 默认 PowerShell。设 `shell: bash` 后 Windows 也用 Git Bash 跑——跨 OS workflow 一致。优先级 step > job > workflow defaults。",
+    "tags": ["github-actions", "中级", "config"],
+    "categories": [
+      ["技术方向", "GitHub Actions"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "所有 step 默认用 bash，Windows 也用 Git Bash",
+        "isCorrect": true,
+        "description": "跨 OS 一致体验"
+      },
+      {
+        "text": "只影响 Linux runner",
+        "isCorrect": false,
+        "description": "Windows 也强制 bash"
+      },
+      {
+        "text": "把 GitHub-hosted runner 切换到 bash 版本",
+        "isCorrect": false,
+        "description": "runner 不变，只是 step 用的 shell"
+      },
+      {
+        "text": "禁用 PowerShell，全局只允许 bash",
+        "isCorrect": false,
+        "description": "可在 step 级覆盖"
+      }
+    ]
   }
 ]
