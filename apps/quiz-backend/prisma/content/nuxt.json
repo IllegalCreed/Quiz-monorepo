@@ -556,5 +556,1493 @@
         "description": "自动导入，约定 `use*` 前缀"
       }
     ]
+  },
+  {
+    "stem": "`useFetch` 想让 `?page` 变化时自动重新请求，应该用哪个选项？",
+    "explanation": "`watch` 字段接受响应式来源数组——任一元素变化时自动 refetch。常见用法 `useFetch(url, { watch: [page, sort] })`。`immediate: false` 是「延迟首次请求」，与变化无关；`server: false` 跳过 SSR；`lazy: true` 不阻塞导航。",
+    "tags": ["nuxt", "useFetch", "watch"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`watch: [page]`",
+        "isCorrect": true,
+        "description": "watch 字段做响应式 refetch"
+      },
+      {
+        "text": "`immediate: true`",
+        "isCorrect": false,
+        "description": "默认就是 true；与依赖变化无关"
+      },
+      {
+        "text": "`lazy: true`",
+        "isCorrect": false,
+        "description": "lazy 只是不阻塞导航"
+      },
+      {
+        "text": "`server: false`",
+        "isCorrect": false,
+        "description": "跳过 SSR；不触发依赖响应"
+      }
+    ]
+  },
+  {
+    "stem": "`useFetch(url, { transform: raw => raw.items })` 主要解决什么问题？",
+    "explanation": "`transform` 在数据被存入 payload **之前**执行——只把改造后的精简数据序列化到 SSR HTML，减少首屏 HTML 体积；客户端 hydration 时也不必重新解析原始大对象。`pick` 是字段裁剪的更轻量版（只挑顶层字段，不能改造结构）。",
+    "tags": ["nuxt", "useFetch", "transform", "payload"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在存入 payload 前裁剪 / 改造数据，减小 SSR HTML 体积",
+        "isCorrect": true,
+        "description": "transform 在序列化前执行"
+      },
+      {
+        "text": "在客户端添加自定义响应式包装",
+        "isCorrect": false,
+        "description": "transform 是同步函数，不参与响应式"
+      },
+      {
+        "text": "失败时返回降级值",
+        "isCorrect": false,
+        "description": "降级用 `default` 字段"
+      },
+      {
+        "text": "改造请求 body",
+        "isCorrect": false,
+        "description": "请求 body 用 `body` / `query` 字段"
+      }
+    ]
+  },
+  {
+    "stem": "`useFetch(url, { lazy: true })` 的核心效果是？",
+    "explanation": "`lazy: true` 让 useFetch **不阻塞页面渲染**——页面先渲（data 是 null / default value），数据回来后再异步更新。普通用法（lazy 默认 false）是 `await useFetch`，等数据到了才渲页面。lazy 适合非关键数据（侧边栏 / 推荐位）让首屏不被拖慢。",
+    "tags": ["nuxt", "useFetch", "lazy"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不阻塞渲染，数据到了再异步更新",
+        "isCorrect": true,
+        "description": "首屏先渲、数据 streaming 进来"
+      },
+      {
+        "text": "首次请求时不发，等手动 refresh 触发",
+        "isCorrect": false,
+        "description": "这是 `immediate: false` 的行为"
+      },
+      {
+        "text": "跳过 SSR，只在客户端请求",
+        "isCorrect": false,
+        "description": "这是 `server: false` 的行为"
+      },
+      {
+        "text": "请求失败时不抛错",
+        "isCorrect": false,
+        "description": "lazy 与错误处理无关"
+      }
+    ]
+  },
+  {
+    "stem": "`useFetch(url, { server: false })` 的效果是？",
+    "explanation": "`server: false` 跳过 **SSR 阶段的请求**——服务端不取数据，HTML 里 data 为 null，客户端 hydration 后才请求。适合**仅客户端可获取的数据**（依赖 localStorage / browser-only API）或不想给服务端添负担的场景。注意 SEO 会丢失这部分内容。",
+    "tags": ["nuxt", "useFetch", "server"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跳过 SSR 请求，仅客户端取数据",
+        "isCorrect": true,
+        "description": "SSR HTML 没有这块数据"
+      },
+      {
+        "text": "禁用服务端缓存",
+        "isCorrect": false,
+        "description": "缓存控制是 routeRules / Nitro 层面"
+      },
+      {
+        "text": "服务端请求失败时降级到客户端",
+        "isCorrect": false,
+        "description": "没有这个降级机制"
+      },
+      {
+        "text": "强制走静态文件，不走 API",
+        "isCorrect": false,
+        "description": "不存在的语义"
+      }
+    ]
+  },
+  {
+    "stem": "`useAsyncData('user', fn)` 必填 key 参数的根因是？",
+    "explanation": "key 是 SSR payload **序列化时的索引**——服务端把数据按 key 写进 HTML 里，客户端 hydration 时用同 key 找回，避免重新请求。同名 key 多组件**共享**数据。`useFetch` 自动用 URL 当 key 才能省略——`useAsyncData` 接收任意 async 函数，没法自动派生 key。",
+    "tags": ["nuxt", "useAsyncData", "key"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SSR 序列化到 payload 用作索引；客户端 hydration 复用",
+        "isCorrect": true,
+        "description": "key 是 SSR 数据共享的核心"
+      },
+      {
+        "text": "Vue 模板里展示用",
+        "isCorrect": false,
+        "description": "key 不进入模板"
+      },
+      {
+        "text": "TypeScript 类型推导用",
+        "isCorrect": false,
+        "description": "类型从 fn 返回值推导，与 key 无关"
+      },
+      {
+        "text": "可以省略，Nuxt 会自动生成",
+        "isCorrect": false,
+        "description": "useAsyncData 必填；useFetch 自动用 URL"
+      }
+    ]
+  },
+  {
+    "stem": "想让 `useFetch` 在同一 pipeline 里**只请求一次**（防止并发去重），应该用什么？",
+    "explanation": "`getCachedData(key, nuxtApp, ctx)` 让你自定义缓存查找逻辑——返回 cached 数据则跳过请求。也可借助 Nuxt 4 同 key 自动去重：相同 URL 在多组件中自动共享 in-flight 请求。`dedupe: 'defer'` 让多次调用等同一个 promise（不重复发请求）。",
+    "tags": ["nuxt", "useFetch", "去重"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`dedupe: 'defer'` 或 `getCachedData`",
+        "isCorrect": true,
+        "description": "dedupe defer 多次调用等同一 promise；getCachedData 自定义缓存"
+      },
+      {
+        "text": "`once: true`",
+        "isCorrect": false,
+        "description": "不存在的选项"
+      },
+      {
+        "text": "用 useState 包一层手动判断",
+        "isCorrect": false,
+        "description": "可行但绕远；Nuxt 内置 dedupe 选项"
+      },
+      {
+        "text": "Nuxt 4 已强制去重，不需要任何选项",
+        "isCorrect": false,
+        "description": "Nuxt 4 共享 data，但默认 `dedupe: 'cancel'` 会取消旧请求，不是『不发』"
+      }
+    ]
+  },
+  {
+    "stem": "`useCookie('theme', { default: () => 'light' })` 的核心行为是？",
+    "explanation": "`useCookie` 返回一个**双端响应式 ref**——服务端写 Set-Cookie 响应头、客户端写 `document.cookie`。读取在两端都立即可用。`.value` 赋值自动同步到 cookie。配合 SSR 解决「服务端读不到 localStorage」的常见痛点。",
+    "tags": ["nuxt", "useCookie", "SSR"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "双端响应式 ref，赋值自动同步到 cookie",
+        "isCorrect": true,
+        "description": "服务端 Set-Cookie / 客户端 document.cookie"
+      },
+      {
+        "text": "只读 cookie，不能写入",
+        "isCorrect": false,
+        "description": "可读可写"
+      },
+      {
+        "text": "仅客户端可用",
+        "isCorrect": false,
+        "description": "服务端和客户端都可用"
+      },
+      {
+        "text": "不响应式，需手动 `.value` 重置触发更新",
+        "isCorrect": false,
+        "description": "是响应式 ref"
+      }
+    ]
+  },
+  {
+    "stem": "`useState('counter', () => 0)` 与 `ref(0)` 的本质区别是？",
+    "explanation": "`useState` 的特别之处：1) **SSR 时自动序列化到 payload**，客户端 hydration 复用值（不会重置为 0）；2) **跨组件按 key 共享**（多个组件用同 key 拿到同一份 ref）。普通 `ref(0)` 只在组件内、SSR 时客户端会重新跑 setup 重置为 0。",
+    "tags": ["nuxt", "useState", "SSR"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useState SSR-safe + 跨组件按 key 共享；ref 各组件独立、SSR 重置",
+        "isCorrect": true,
+        "description": "SSR 持久化 + 跨组件共享是 useState 的核心价值"
+      },
+      {
+        "text": "useState 是只读；ref 可读可写",
+        "isCorrect": false,
+        "description": "两者都可读可写"
+      },
+      {
+        "text": "useState 只在客户端可用；ref 双端可用",
+        "isCorrect": false,
+        "description": "反了；useState 双端、ref 也双端"
+      },
+      {
+        "text": "useState 自带深响应；ref 不带",
+        "isCorrect": false,
+        "description": "useState 内部就是 ref，没有「深」区别"
+      }
+    ]
+  },
+  {
+    "stem": "在组件里读 `useRuntimeConfig()` 时，下列哪类字段**客户端读不到**？",
+    "explanation": "`runtimeConfig` 顶层字段（如 `apiSecret`）仅服务端可读——Nuxt 在打包客户端时把它们 strip 掉，避免泄漏。`public` 嵌套对象下的字段（`public.apiBase`）双端都可读。生产环境放密钥到顶层、放配置到 `public`。",
+    "tags": ["nuxt", "runtimeConfig", "安全"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶层非 `public` 字段（如 `apiSecret`）",
+        "isCorrect": true,
+        "description": "仅服务端可读，客户端 bundle 已 strip"
+      },
+      {
+        "text": "`public.apiBase` 这种 public 下的字段",
+        "isCorrect": false,
+        "description": "双端都可读，安全暴露"
+      },
+      {
+        "text": "通过 `NUXT_` 前缀环境变量覆盖的字段",
+        "isCorrect": false,
+        "description": "覆盖只改值，不改可见性"
+      },
+      {
+        "text": "`app.head.title` 等 app 层字段",
+        "isCorrect": false,
+        "description": "属于 appConfig，与 runtimeConfig 无关"
+      }
+    ]
+  },
+  {
+    "stem": "`runtimeConfig` 与 `app.config.ts` (appConfig) 的根本差别是？",
+    "explanation": "**runtimeConfig**：运行时从环境变量 `NUXT_*` 注入，**部署后改不需要重新 build**；可有服务端独占字段。**appConfig**：构建时打包进 bundle，**改后需要重新 build**；但能在客户端被 HMR 热更新（dev 时）；常用于主题色 / feature flag / brand 这种非敏感构建期常量。",
+    "tags": ["nuxt", "runtimeConfig", "appConfig"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "runtimeConfig 运行时注入（部署后可改）；appConfig 构建时打包（要 rebuild）",
+        "isCorrect": true,
+        "description": "运行时 vs 构建时是核心差别"
+      },
+      {
+        "text": "两者完全等价，命名不同",
+        "isCorrect": false,
+        "description": "时机和可见性都不同"
+      },
+      {
+        "text": "runtimeConfig 仅客户端；appConfig 仅服务端",
+        "isCorrect": false,
+        "description": "可见性都跨端"
+      },
+      {
+        "text": "runtimeConfig 用于密钥；appConfig 用于路由",
+        "isCorrect": false,
+        "description": "appConfig 不管路由"
+      }
+    ]
+  },
+  {
+    "stem": "`navigateTo('/login', { replace: true })` 与 `navigateTo('/login')` 的差别是？",
+    "explanation": "`replace: true` 用 `router.replace`——**不进浏览器历史**（用户点回退不会回到原页面）。常用于：登录后跳走时不留登录页 / 错误页跳回首页 / 表单提交后跳详情。默认 false 走 `router.push` 进历史。",
+    "tags": ["nuxt", "navigateTo", "路由"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`replace: true` 用 router.replace，不进浏览器历史",
+        "isCorrect": true,
+        "description": "回退键不回到当前页"
+      },
+      {
+        "text": "`replace: true` 强制刷新整页",
+        "isCorrect": false,
+        "description": "走 SPA 路由，不刷新"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "历史栈行为不同"
+      },
+      {
+        "text": "`replace: true` 跳过 middleware",
+        "isCorrect": false,
+        "description": "middleware 照常跑"
+      }
+    ]
+  },
+  {
+    "stem": "`<NuxtLink to=\"/about\" prefetch-on=\"interaction\">` 的 prefetch-on 选项含义是？",
+    "explanation": "Nuxt 4 新增——只在用户**hover / focus 链接时**才预加载目标路由，而不是渲染到屏幕时立刻预加载。默认 `prefetch-on=\"visibility\"`（出现在视口时拉）。`interaction` 适合首屏链接多的页面，避免一打开页面预加载几十个 chunk。",
+    "tags": ["nuxt", "v4", "NuxtLink", "预加载"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "hover / focus 时才预加载",
+        "isCorrect": true,
+        "description": "Nuxt 4 新选项，节省首屏流量"
+      },
+      {
+        "text": "进入视口时预加载（默认行为）",
+        "isCorrect": false,
+        "description": "默认是 visibility，不需显式写"
+      },
+      {
+        "text": "点击时才加载",
+        "isCorrect": false,
+        "description": "点击是 navigation 不是 prefetch"
+      },
+      {
+        "text": "永不预加载",
+        "isCorrect": false,
+        "description": "那是 `no-prefetch` 属性"
+      }
+    ]
+  },
+  {
+    "stem": "在 `definePageMeta({ validate })` 里返回 `false` 的效果是？",
+    "explanation": "`validate(route)` 返回 false 触发 **404 错误页**（默认 `error.vue` 渲染 statusCode 404）。可用于校验路径参数格式——不符合就 404。比在组件内 if + showError 早一拍。",
+    "tags": ["nuxt", "definePageMeta", "validate"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "触发 404 错误页",
+        "isCorrect": true,
+        "description": "validate false = 路由不匹配 = 404"
+      },
+      {
+        "text": "重定向到首页",
+        "isCorrect": false,
+        "description": "没有自动重定向语义"
+      },
+      {
+        "text": "页面继续渲染但隐藏内容",
+        "isCorrect": false,
+        "description": "validate 决定是否渲染本页"
+      },
+      {
+        "text": "等待异步直到返回 true",
+        "isCorrect": false,
+        "description": "false 立即触发 404"
+      }
+    ]
+  },
+  {
+    "stem": "`useNuxtApp()` 的主要用途是？",
+    "explanation": "拿到全局 Nuxt 应用 context——可访问 `nuxtApp.payload`（SSR 数据）、`nuxtApp.$xxx`（plugins 注入的全局对象）、`nuxtApp.vueApp`（Vue 应用实例）。常见用法：在 plugin 内注册全局对象、在 middleware 内访问 SSR 数据。`useState` / `useFetch` 等内部都用它。",
+    "tags": ["nuxt", "useNuxtApp"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "拿到 Nuxt 全局 context（payload / $provides / vueApp）",
+        "isCorrect": true,
+        "description": "全局 context 入口"
+      },
+      {
+        "text": "热替换 Nuxt 实例",
+        "isCorrect": false,
+        "description": "没有这个能力"
+      },
+      {
+        "text": "服务端独占的 API",
+        "isCorrect": false,
+        "description": "双端通用"
+      },
+      {
+        "text": "等价 `useState`",
+        "isCorrect": false,
+        "description": "完全不同的两个 API"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro `readBody(event)` 默认能解析哪些 Content-Type？",
+    "explanation": "`readBody` 根据 `Content-Type` 自动解析：`application/json` → 对象；`x-www-form-urlencoded` → 对象；`text/plain` → 字符串。**`multipart/form-data` 必须用 `readMultipartFormData`**——readBody 无法处理流式 boundary。",
+    "tags": ["nuxt", "Nitro", "readBody"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JSON / URL-encoded / plain text；multipart 必须用 readMultipartFormData",
+        "isCorrect": true,
+        "description": "三种自动 + multipart 走专门 API"
+      },
+      {
+        "text": "只能解析 JSON",
+        "isCorrect": false,
+        "description": "至少支持 JSON / URL-encoded / text"
+      },
+      {
+        "text": "可以解析 multipart/form-data",
+        "isCorrect": false,
+        "description": "multipart 要用 readMultipartFormData"
+      },
+      {
+        "text": "需要手动指定 schema 才能解析",
+        "isCorrect": false,
+        "description": "按 Content-Type 自动解析"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro 里 `getRouterParam(event, 'id')` 与 `getQuery(event)` 的差别？",
+    "explanation": "`getRouterParam(event, 'id')` 取**路径参数**（`server/api/users/[id].get.ts` 里的 `:id`），返回字符串或 undefined；`getQuery(event)` 取**URL ?key=value 查询参数**，返回对象。两者完全不同的数据来源，不能互换。",
+    "tags": ["nuxt", "Nitro", "param"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "getRouterParam 取路径参数（`[id]`），getQuery 取 `?key=` 查询",
+        "isCorrect": true,
+        "description": "两者数据来源完全不同"
+      },
+      {
+        "text": "两者等价，可互换",
+        "isCorrect": false,
+        "description": "完全不同的两套 API"
+      },
+      {
+        "text": "getRouterParam 取 body，getQuery 取 URL",
+        "isCorrect": false,
+        "description": "body 用 readBody"
+      },
+      {
+        "text": "都是从 cookies 取数据",
+        "isCorrect": false,
+        "description": "Cookie 用 getCookie"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro 里 `setCookie(event, 'name', val, { httpOnly: true, secure: true })` 的 `httpOnly` 防的是？",
+    "explanation": "`httpOnly: true` 让 cookie **无法被 JavaScript 读取**（`document.cookie` / `useCookie` 都看不到）——专防 XSS 攻击者注入脚本盗 session。auth token 必须设。`secure` 是仅 HTTPS、`sameSite` 防 CSRF，三者配套用。",
+    "tags": ["nuxt", "Nitro", "cookie", "安全"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防 XSS——cookie 无法被 JS 读取",
+        "isCorrect": true,
+        "description": "session token / auth 必备"
+      },
+      {
+        "text": "防 CSRF——不会被跨站请求带上",
+        "isCorrect": false,
+        "description": "防 CSRF 用 `sameSite`"
+      },
+      {
+        "text": "强制 HTTPS 传输",
+        "isCorrect": false,
+        "description": "那是 `secure: true`"
+      },
+      {
+        "text": "防 cookie 被代理服务器修改",
+        "isCorrect": false,
+        "description": "没有这个语义"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro `sendRedirect(event, '/login', 302)` 与 `event.node.res.writeHead(302, ...)` 的关系是？",
+    "explanation": "`sendRedirect` 是 H3 高级 API，内部设 `Location` 响应头 + 状态码。Nitro / H3 推荐高级 API，**跨 runtime（Node / Edge / Bun）行为一致**——底层 `event.node.res` 只在 Node 上有，Edge 没有这个属性。",
+    "tags": ["nuxt", "Nitro", "sendRedirect"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "sendRedirect 是跨 runtime 的封装；底层 API 只在 Node 上可用",
+        "isCorrect": true,
+        "description": "Edge / Bun 没 event.node，推荐用 sendRedirect"
+      },
+      {
+        "text": "两者等价，没区别",
+        "isCorrect": false,
+        "description": "底层 API 不跨 runtime"
+      },
+      {
+        "text": "sendRedirect 仅支持 302",
+        "isCorrect": false,
+        "description": "第三参数可传 301 / 307 / 308 任意 3xx"
+      },
+      {
+        "text": "底层 API 性能更好",
+        "isCorrect": false,
+        "description": "差别不明显"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro 里 `createError({ statusCode, fatal })` 的 `fatal: true` 与 `fatal: false` 差别是？",
+    "explanation": "`fatal: true` 立即触发**全局 error.vue**（替换当前页内容）；`fatal: false`（默认）只是抛 HTTP 错误响应（客户端可 `try / catch` 或 `useFetch` 的 `error` 字段读到）。前者用于「这个页面挂掉」如 404；后者用于「这次 API 调用失败但页面继续」。",
+    "tags": ["nuxt", "createError", "fatal"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "fatal: true 触发全局 error.vue；fatal: false 只抛 HTTP 错误",
+        "isCorrect": true,
+        "description": "前者整页错误，后者局部 error"
+      },
+      {
+        "text": "两者等价",
+        "isCorrect": false,
+        "description": "错误展示位置不同"
+      },
+      {
+        "text": "fatal: true 表示不可恢复，断电级错误",
+        "isCorrect": false,
+        "description": "fatal 不表达「不可恢复」，只是「走 error.vue」"
+      },
+      {
+        "text": "fatal 字段已在 Nuxt 4 移除",
+        "isCorrect": false,
+        "description": "仍然有效"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro `event.context.user = { id: 42 }` 在中间件设置后，下游 handler 怎么读？",
+    "explanation": "`event.context` 是请求级共享对象——middleware 写入后，下游 handler 通过 **同一个 `event.context.user`** 读取。常用模式：auth middleware 解析 token 后挂用户对象、handler 内直接 `event.context.user` 取。**不是全局变量**，每个请求独立。",
+    "tags": ["nuxt", "Nitro", "context"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "下游 handler 用 `event.context.user` 直接读",
+        "isCorrect": true,
+        "description": "请求级共享，标准用法"
+      },
+      {
+        "text": "下游用 `useState('user')` 读",
+        "isCorrect": false,
+        "description": "useState 是 Vue 层；context 是 Nitro 层"
+      },
+      {
+        "text": "通过 module augmentation 自动暴露",
+        "isCorrect": false,
+        "description": "module augmentation 只加类型，运行时仍是 event.context"
+      },
+      {
+        "text": "下游不能读，必须在中间件 return",
+        "isCorrect": false,
+        "description": "中间件不该 return 数据；context 才是传递方式"
+      }
+    ]
+  },
+  {
+    "stem": "Nitro `defineNitroPlugin` 与 Nuxt `defineNuxtPlugin` 的区别？",
+    "explanation": "**`defineNitroPlugin`**：服务端引擎插件，**Nitro 启动时跑**——挂 `request` / `beforeResponse` 等 server hooks。**`defineNuxtPlugin`**：Vue 应用层插件，**Nuxt 启动时跑**（双端各一次）。两者不能互换。",
+    "tags": ["nuxt", "Nitro", "plugin"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Nitro plugin 服务端 hook；Nuxt plugin Vue 应用层",
+        "isCorrect": true,
+        "description": "前者 server/plugins/，后者 plugins/"
+      },
+      {
+        "text": "Nitro plugin 是 Nuxt plugin 的别名",
+        "isCorrect": false,
+        "description": "完全不同的执行层"
+      },
+      {
+        "text": "Nitro plugin 仅生产环境跑",
+        "isCorrect": false,
+        "description": "dev / prod 都跑"
+      },
+      {
+        "text": "Nuxt plugin 不支持 SSR",
+        "isCorrect": false,
+        "description": "双端都支持，可用 .client / .server 后缀限制"
+      }
+    ]
+  },
+  {
+    "stem": "`routeRules: { '/admin/**': { ssr: false } }` 的效果是？",
+    "explanation": "**Admin 路径下所有路由变 SPA**——服务端只返回 shell HTML（含 Nuxt 入口 + 占位），实际内容由客户端 JS 加载渲染。**不预渲染 / 不 SSR 任何动态内容**。适合「不需要 SEO 的后台」减少 SSR 服务器负载。配合 `prerender: false` 同效。",
+    "tags": ["nuxt", "routeRules", "ssr"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "admin 下所有路由变 SPA，服务端只返 shell HTML",
+        "isCorrect": true,
+        "description": "客户端 JS 渲染，不做 SSR"
+      },
+      {
+        "text": "admin 下完全不可访问",
+        "isCorrect": false,
+        "description": "依然可访问，只是改了渲染策略"
+      },
+      {
+        "text": "admin 下强制 SSR",
+        "isCorrect": false,
+        "description": "false 是关 SSR，不是开"
+      },
+      {
+        "text": "admin 下走 build 时预渲染",
+        "isCorrect": false,
+        "description": "预渲染要 `prerender: true`"
+      }
+    ]
+  },
+  {
+    "stem": "`routeRules: { '/api/**': { cors: true } }` 的效果是？",
+    "explanation": "自动给 `/api/*` 所有响应**加 CORS 头**（`Access-Control-Allow-Origin: *` 等），允许跨域调用。常见用法：前后端分离时让 SPA 跨域调你的 Nuxt API、第三方网站集成你的开放 API。生产环境一般不会用 `*`，会配具体 origin 白名单。",
+    "tags": ["nuxt", "routeRules", "cors"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "自动给 `/api/*` 加 CORS 头",
+        "isCorrect": true,
+        "description": "Access-Control-Allow-Origin 等"
+      },
+      {
+        "text": "禁止跨域调用 API",
+        "isCorrect": false,
+        "description": "反了；cors: true 是允许"
+      },
+      {
+        "text": "把 API 路由变成 SPA",
+        "isCorrect": false,
+        "description": "那是 ssr: false"
+      },
+      {
+        "text": "强制 CORS 预检 / OPTIONS",
+        "isCorrect": false,
+        "description": "browser 自动决定，跟 routeRules 无关"
+      }
+    ]
+  },
+  {
+    "stem": "下面 `routeRules` 写法中，哪种**不**让用户访问 `/old-page` 时跳到 `/new-page`？",
+    "explanation": "`redirect: '/new-page'` 是 Nitro 服务端重定向（**302 + Location header**）。其它三种都不重定向：`headers` 只加响应头、`ssr: false` 是渲染策略、`prerender: true` 是构建时预生成 HTML（页面仍在 `/old-page`）。",
+    "tags": ["nuxt", "routeRules", "redirect"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`{ headers: { Location: '/new-page' } }`",
+        "isCorrect": true,
+        "description": "只设响应头不返 3xx 状态码，不会触发跳转"
+      },
+      {
+        "text": "`{ redirect: '/new-page' }`",
+        "isCorrect": false,
+        "description": "标准重定向写法"
+      },
+      {
+        "text": "`{ redirect: { to: '/new-page', statusCode: 301 } }`",
+        "isCorrect": false,
+        "description": "带状态码的重定向"
+      },
+      {
+        "text": "在 middleware 里 `navigateTo('/new-page')`",
+        "isCorrect": false,
+        "description": "也能跳，但走 Vue 层"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 4 的 TypeScript 四套 tsconfig 中，`tsconfig.shared.json` 覆盖的是？",
+    "explanation": "`shared/` 目录下的代码**同时被客户端和服务端共用**——`tsconfig.shared.json` 限制只用「双端都能跑的 API」（不能用 `document` / `process.env` 这种半边能用的）。其他三套：`app` 客户端、`server` Nitro server、`node` 配置文件 / 脚本。",
+    "tags": ["nuxt", "v4", "TypeScript", "tsconfig"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`shared/` 目录代码（双端共用，禁单端 API）",
+        "isCorrect": true,
+        "description": "类型隔离避免误用单端 API"
+      },
+      {
+        "text": "整个项目的根 tsconfig",
+        "isCorrect": false,
+        "description": "根 tsconfig 是 `tsconfig.json`，extends 自动生成那份"
+      },
+      {
+        "text": "Vue SFC 文件",
+        "isCorrect": false,
+        "description": "Vue SFC 走 `tsconfig.app.json`"
+      },
+      {
+        "text": "测试文件",
+        "isCorrect": false,
+        "description": "测试由 vitest 配置控制，与 tsconfig.shared 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 4 默认开启 `noUncheckedIndexedAccess: true`，对下面代码的影响？\n\n```ts\nconst items: string[] = ['a', 'b'];\nconst first = items[0];\n```",
+    "explanation": "`noUncheckedIndexedAccess: true` 让 TS 把**数组下标访问的类型推断成 `T | undefined`**——`items[0]` 类型变成 `string | undefined`。解决：用 `!` 断言、`if` 守卫、或 `.at(0)`（语义一致）。",
+    "tags": ["nuxt", "v4", "TypeScript"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`first` 类型变成 `string | undefined`",
+        "isCorrect": true,
+        "description": "数组下标访问推断为可能 undefined"
+      },
+      {
+        "text": "编译失败，必须改用 `at(0)`",
+        "isCorrect": false,
+        "description": "不会编译失败，只是类型变宽"
+      },
+      {
+        "text": "运行时报错",
+        "isCorrect": false,
+        "description": "运行时与原本一样，只是类型推断变化"
+      },
+      {
+        "text": "items 必须声明成 `readonly string[]`",
+        "isCorrect": false,
+        "description": "readonly 与此无关"
+      }
+    ]
+  },
+  {
+    "stem": "想给 `useNuxtApp().$myPlugin` 加 TypeScript 类型，正确做法是？",
+    "explanation": "用 **module augmentation** 扩展 `NuxtApp` 接口：`declare module '#app' { interface NuxtApp { $myPlugin: MyPluginType } }`。这是 Nuxt 推荐的 plugin 类型扩展方式。直接给变量加类型不会传播；在 nuxt.config.ts 里也声明不了。",
+    "tags": ["nuxt", "TypeScript", "plugin"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`declare module '#app' { interface NuxtApp { $myPlugin: ... } }`",
+        "isCorrect": true,
+        "description": "module augmentation 标准做法"
+      },
+      {
+        "text": "在 nuxt.config 写 `typescript.providers: { $myPlugin: ... }`",
+        "isCorrect": false,
+        "description": "不存在的字段"
+      },
+      {
+        "text": "在 plugin 文件里 `declare let $myPlugin: ...`",
+        "isCorrect": false,
+        "description": "不会全局生效"
+      },
+      {
+        "text": "通过 nuxt.options.types 注入",
+        "isCorrect": false,
+        "description": "没这个 API"
+      }
+    ]
+  },
+  {
+    "stem": "`server/api/users.get.ts` 里 `return { id: 1, name: 'foo' }`，客户端 `useFetch('/api/users')` 拿到的 data 类型是？",
+    "explanation": "Nuxt 自动从 handler 返回类型推导 useFetch 的 `data` 类型——这里就是 `{ id: number, name: string } | null`（null 出现在 SSR 时未就绪的瞬间）。无需手动 `<T>` 标注。这是 Nuxt 类型生态的核心 DX —— end-to-end type safety。",
+    "tags": ["nuxt", "TypeScript", "useFetch", "类型推导"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`{ id: number, name: string } | null`（自动从 handler 推导）",
+        "isCorrect": true,
+        "description": "end-to-end type safety；无需手动标注"
+      },
+      {
+        "text": "`any` —— useFetch 不做类型推导",
+        "isCorrect": false,
+        "description": "v3 起就支持自动推导"
+      },
+      {
+        "text": "必须手动 `useFetch<User>('/api/users')`",
+        "isCorrect": false,
+        "description": "可手动但不必，handler 已有类型时自动推"
+      },
+      {
+        "text": "`unknown`",
+        "isCorrect": false,
+        "description": "推导有结果时不是 unknown"
+      }
+    ]
+  },
+  {
+    "stem": "`nitro: { preset: 'cloudflare-pages' }` 部署时，下列哪条**不能**在 Nitro handler 里用？",
+    "explanation": "Cloudflare Pages / Workers 跑在 **V8 isolate + Edge runtime**，没有完整 Node API——`fs` / `child_process` / `cluster` 等禁用。Web 标准 API（`fetch` / `crypto.subtle` / `Request`）都能用，`$fetch` 也跨 runtime 通用。",
+    "tags": ["nuxt", "Nitro", "Cloudflare", "Edge"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`import fs from 'node:fs'`（读取文件）",
+        "isCorrect": true,
+        "description": "Edge runtime 没有 Node fs"
+      },
+      {
+        "text": "`$fetch(url)`",
+        "isCorrect": false,
+        "description": "跨 runtime 通用"
+      },
+      {
+        "text": "`crypto.subtle.digest(...)`",
+        "isCorrect": false,
+        "description": "Web Crypto API，Edge 支持"
+      },
+      {
+        "text": "`new Response('hi', { status: 200 })`",
+        "isCorrect": false,
+        "description": "Web 标准，所有 runtime 都支持"
+      }
+    ]
+  },
+  {
+    "stem": "`pnpm generate` 生成静态站后，下列哪种页面**不能正常工作**？",
+    "explanation": "SSG 时**没有运行时服务器**——`server/api/*` 不会被部署。任何依赖**运行时调用 server API**的页面都会 404 或失败。但**预渲染时**能调外部 API（Nuxt 在 build 跑 fetch、把响应写进 payload）。所以「构建时拉数据」OK、「运行时拉本站 API」不行。",
+    "tags": ["nuxt", "SSG", "generate"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "页面 mount 后 `$fetch('/api/users')` 调本站 server API",
+        "isCorrect": true,
+        "description": "运行时无服务器；本站 API 不可用"
+      },
+      {
+        "text": "页面 setup 内 `useFetch('https://external.api/data')`",
+        "isCorrect": false,
+        "description": "构建时 fetch 外部 API，结果写进 payload"
+      },
+      {
+        "text": "静态 HTML + 客户端交互（无 API 依赖）",
+        "isCorrect": false,
+        "description": "纯静态页面，完全 OK"
+      },
+      {
+        "text": "页面用 `useState('counter', () => 0)` 客户端计数",
+        "isCorrect": false,
+        "description": "useState 是客户端状态，无服务器依赖"
+      }
+    ]
+  },
+  {
+    "stem": "本地 module 文件 `modules/my-module.ts` 想给 Nuxt 注册一个全局组件 `<MyButton />`，应该用什么？",
+    "explanation": "`addComponent({ name, filePath })` 是 Nuxt Kit utility 注册全局组件。配 `createResolver(import.meta.url).resolve(...)` 解析 module 内路径。同类 `addImports` 加 composable、`addServerHandler` 加 server route。",
+    "tags": ["nuxt", "module", "Kit"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`addComponent({ name: 'MyButton', filePath: resolver.resolve('./MyButton.vue') })`",
+        "isCorrect": true,
+        "description": "标准 Kit utility"
+      },
+      {
+        "text": "`registerComponent('MyButton', ...)`",
+        "isCorrect": false,
+        "description": "不存在这个 API"
+      },
+      {
+        "text": "在 nuxt.config 的 components 字段写",
+        "isCorrect": false,
+        "description": "可以但需要 path，module 内更常用 addComponent"
+      },
+      {
+        "text": "直接 `nuxtApp.vueApp.component('MyButton', ...)` 注册",
+        "isCorrect": false,
+        "description": "那是 plugin 写法，不是 module"
+      }
+    ]
+  },
+  {
+    "stem": "`createResolver(import.meta.url)` 在 module 里的作用是？",
+    "explanation": "给当前 module 提供**路径解析器**——`resolver.resolve('./xx.ts')` 返回相对 module 文件本身的绝对路径。否则 module 被装到 `node_modules` 后路径会乱。`import.meta.url` 是当前文件的 URL，作为锚点。这是 Nuxt Kit 模块开发的必备工具。",
+    "tags": ["nuxt", "Kit", "createResolver"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "解析相对 module 文件本身的资源路径",
+        "isCorrect": true,
+        "description": "node_modules 部署后路径不乱"
+      },
+      {
+        "text": "解析 nuxt.config.ts 的相对路径",
+        "isCorrect": false,
+        "description": "用 `nuxt.options.rootDir` 即可"
+      },
+      {
+        "text": "解析浏览器 URL",
+        "isCorrect": false,
+        "description": "与浏览器无关"
+      },
+      {
+        "text": "创建一个 Promise resolver",
+        "isCorrect": false,
+        "description": "名字相似但语义完全不同"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt Layers 之间的 `extends` 顺序对哪类资源**有覆盖优先级**？",
+    "explanation": "Layers 资源（`pages/` / `components/` / `composables/` / `nuxt.config` 等）按 extends 顺序加载。**主项目同名文件最高优先级、layer 次之、layer 之间按 extends 数组顺序**——主项目可重写 layer 局部，不必动 layer。",
+    "tags": ["nuxt", "layers", "extends"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同名文件按主项目 > extends 数组顺序解析",
+        "isCorrect": true,
+        "description": "主项目可覆盖 layer 任何资源"
+      },
+      {
+        "text": "Layer 的资源完全合并，无覆盖语义",
+        "isCorrect": false,
+        "description": "有覆盖语义；主项目优先"
+      },
+      {
+        "text": "extends 数组里靠后的 layer 优先级最高",
+        "isCorrect": false,
+        "description": "反了；越靠前优先级越高（主项目最高）"
+      },
+      {
+        "text": "只能覆盖 nuxt.config.ts，不能覆盖文件",
+        "isCorrect": false,
+        "description": "都可以覆盖"
+      }
+    ]
+  },
+  {
+    "stem": "`@nuxt/image` 的 `<NuxtImg>` 相比原生 `<img>` 最主要的优化是？",
+    "explanation": "1) **自动转 WebP / AVIF**（按浏览器能力）；2) **自动出多份尺寸 srcset**（高分屏不浪费流量）；3) **多 provider 接入**（Cloudinary / Vercel / Netlify 等 CDN 自动 transform）；4) **lazy-load 默认开**；5) **响应式 width**。原生 img 全部要手写。",
+    "tags": ["nuxt", "image", "module"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动 WebP / 多尺寸 srcset / 多 CDN provider / lazy",
+        "isCorrect": true,
+        "description": "图片端到端优化"
+      },
+      {
+        "text": "把所有图片内联到 HTML 里",
+        "isCorrect": false,
+        "description": "反而是按需懒加载"
+      },
+      {
+        "text": "图片压缩到 1KB 以下",
+        "isCorrect": false,
+        "description": "没有这种夸张承诺"
+      },
+      {
+        "text": "只能配 `@nuxtjs/cloudinary` 一种 provider",
+        "isCorrect": false,
+        "description": "支持多种 provider"
+      }
+    ]
+  },
+  {
+    "stem": "在 Vue 组件里调 `useUser()`（auto-imported）时遇到「Nuxt instance is unavailable」错误，最可能的原因？",
+    "explanation": "Nuxt context 只在特定生命周期内**同步**存在——`<script setup>` 顶层、plugin / middleware setup、`useAsyncData` 回调内。**在 setTimeout / 异步回调里调** composable 会丢失 context。解决：先在 setup 顶层调好拿到 ref。",
+    "tags": ["nuxt", "composable", "context", "陷阱"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 setTimeout / 异步回调里同步调，context 已丢",
+        "isCorrect": true,
+        "description": "解决：先在 setup 顶层调好"
+      },
+      {
+        "text": "useUser 未在 composables/ 目录下声明",
+        "isCorrect": false,
+        "description": "那是另一种错（找不到）"
+      },
+      {
+        "text": "TypeScript 类型错误",
+        "isCorrect": false,
+        "description": "运行时错误，与类型无关"
+      },
+      {
+        "text": "Vue 版本不兼容",
+        "isCorrect": false,
+        "description": "Nuxt 4 锁了 Vue 版本，不会出"
+      }
+    ]
+  },
+  {
+    "stem": "`<ClientOnly>` 组件包裹的内容在 SSR 时会渲染什么？",
+    "explanation": "**SSR 时不渲染 ClientOnly 内的内容**（避免出现 `window` / `localStorage` 等 browser API 报错）——HTML 里是 ClientOnly 的占位 comment 节点。**客户端 hydration 后**才真正渲染。`#fallback` slot 用来在 SSR 时显示占位（如 「加载中...」），客户端接管后被替换。",
+    "tags": ["nuxt", "ClientOnly", "SSR"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不渲染内容（可有 #fallback 占位）；客户端 hydration 后渲染",
+        "isCorrect": true,
+        "description": "避免 SSR 时调用浏览器 API 报错"
+      },
+      {
+        "text": "渲染完整内容，照常 SSR",
+        "isCorrect": false,
+        "description": "那就和不加一样了"
+      },
+      {
+        "text": "SSR 时报错",
+        "isCorrect": false,
+        "description": "ClientOnly 就是为避免报错而设计的"
+      },
+      {
+        "text": "客户端也不渲染",
+        "isCorrect": false,
+        "description": "客户端正常渲染"
+      }
+    ]
+  },
+  {
+    "stem": "组件文件 `components/HeavyChart.vue` 如果想**懒加载**（按需异步引入），调用语法是？",
+    "explanation": "Nuxt 自动给组件加 `Lazy` 前缀的「懒加载版本」——`<LazyHeavyChart />` 走异步 import，组件代码仅在该元素**首次渲染时**才下载。普通 `<HeavyChart />` 是同步引入（首屏即下载）。这是 Nuxt 内置的简化版 `defineAsyncComponent`。",
+    "tags": ["nuxt", "Lazy", "懒加载"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`<LazyHeavyChart />` （加 Lazy 前缀）",
+        "isCorrect": true,
+        "description": "Nuxt 自动生成异步版本"
+      },
+      {
+        "text": "`<HeavyChart lazy />`",
+        "isCorrect": false,
+        "description": "原生组件不识别 lazy 属性"
+      },
+      {
+        "text": "`<async-component>HeavyChart</async-component>`",
+        "isCorrect": false,
+        "description": "Vue 没这个内置组件"
+      },
+      {
+        "text": "必须手动 `defineAsyncComponent` 包装",
+        "isCorrect": false,
+        "description": "Nuxt 内置简化版"
+      }
+    ]
+  },
+  {
+    "stem": "`useSeoMeta({ title, description })` 相比 `useHead({ title, meta: [...] })` 的优势是？",
+    "explanation": "`useSeoMeta` 是**类型化 + 命名平铺**——直接传 `title` / `description` / `ogImage` / `twitterCard` 等字段，TS 严格检查命名（防 typo）。`useHead` 通用但要手动构 meta 数组（`name: 'description'` 等），易出错。",
+    "tags": ["nuxt", "useSeoMeta", "SEO"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "类型化 + 命名平铺 SEO 字段，避免 typo",
+        "isCorrect": true,
+        "description": "useSeoMeta 是 useHead 的 SEO 友好封装"
+      },
+      {
+        "text": "性能更好",
+        "isCorrect": false,
+        "description": "底层一样"
+      },
+      {
+        "text": "支持动态字段",
+        "isCorrect": false,
+        "description": "两者都支持响应式"
+      },
+      {
+        "text": "服务端独占",
+        "isCorrect": false,
+        "description": "双端都用"
+      }
+    ]
+  },
+  {
+    "stem": "`useServerSeoMeta` 比 `useSeoMeta` 多了什么？",
+    "explanation": "`useServerSeoMeta` 仅在 **SSR 时**注入 meta，客户端 hydration 后就「失忆」不再维护——意味着**客户端 JS bundle 不带这部分代码**，节省体积。适合「SEO 给爬虫看，客户端用户根本不关心 meta 变化」的场景（多数博客 / 文章页）。",
+    "tags": ["nuxt", "SEO", "性能"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仅 SSR 注入，客户端不带代码，节省 bundle",
+        "isCorrect": true,
+        "description": "客户端 JS 删掉这段"
+      },
+      {
+        "text": "SEO 字段更多",
+        "isCorrect": false,
+        "description": "字段集合相同"
+      },
+      {
+        "text": "支持运行时动态修改",
+        "isCorrect": false,
+        "description": "反而是不支持动态修改"
+      },
+      {
+        "text": "类型更严格",
+        "isCorrect": false,
+        "description": "类型一致"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 中 `error.vue` 文件正确放置位置是？",
+    "explanation": "`error.vue` 放在 **`app/` 目录根**（与 `app.vue` 同级），Nuxt 自动识别为全局错误页。Nuxt 4 默认源码在 `app/` 下，error.vue 也跟着移过去。**不是放 `app/pages/`**——那是普通路由页。**也不放根目录**（Nuxt 3 时代的位置，已废弃）。",
+    "tags": ["nuxt", "v4", "error.vue", "目录"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`app/error.vue`（与 app.vue 同级）",
+        "isCorrect": true,
+        "description": "Nuxt 4 标准位置"
+      },
+      {
+        "text": "`app/pages/error.vue`",
+        "isCorrect": false,
+        "description": "pages 下是普通路由，不是错误页"
+      },
+      {
+        "text": "`error.vue`（项目根）",
+        "isCorrect": false,
+        "description": "Nuxt 3 的位置，v4 在 app/"
+      },
+      {
+        "text": "`server/error.ts`",
+        "isCorrect": false,
+        "description": "server 下不是 Vue 文件"
+      }
+    ]
+  },
+  {
+    "stem": "想在 `error.vue` 里点击「回首页」清除错误状态，应该调用？",
+    "explanation": "`clearError({ redirect: '/' })` —— **清除当前错误状态 + 跳转**。也可只 `clearError()` 不跳。`navigateTo('/')` 不清错误，跳过去后还显示错误页。`location.href = '/'` 整页刷新够暴力但能用，只是失去 SPA 体验。",
+    "tags": ["nuxt", "error", "clearError"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`clearError({ redirect: '/' })`",
+        "isCorrect": true,
+        "description": "清错 + 跳转的标准组合"
+      },
+      {
+        "text": "`navigateTo('/')`",
+        "isCorrect": false,
+        "description": "不清错误状态，跳过去后页面仍标错"
+      },
+      {
+        "text": "`window.location.href = '/'`",
+        "isCorrect": false,
+        "description": "暴力刷新；丢失 SPA 体验"
+      },
+      {
+        "text": "`useError().value = null`",
+        "isCorrect": false,
+        "description": "不该直接改"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 4 起 `window.__NUXT__` 在 hydration 后被移除，要读 SSR payload 用什么？",
+    "explanation": "`useNuxtApp().payload` —— Nuxt 维护的内部 payload 对象（含 `data` / `state` / 等）。v4 起把 `window.__NUXT__` 从全局清掉避免污染 + 安全（不让第三方脚本读到 payload）。**业务代码不该依赖 payload**——它是 Nuxt 内部机制，但调试 / 自定义 module 偶尔要读。",
+    "tags": ["nuxt", "v4", "payload"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`useNuxtApp().payload`",
+        "isCorrect": true,
+        "description": "v4 推荐入口"
+      },
+      {
+        "text": "继续用 `window.__NUXT__`",
+        "isCorrect": false,
+        "description": "v4 hydration 后移除"
+      },
+      {
+        "text": "`useState('__nuxt__')`",
+        "isCorrect": false,
+        "description": "不存在此 key 约定"
+      },
+      {
+        "text": "`document.querySelector('#__NUXT_DATA__')`",
+        "isCorrect": false,
+        "description": "实现细节，不该业务代码读"
+      }
+    ]
+  },
+  {
+    "stem": "想给一个组件**只渲染在客户端**且**不出现在 SSR HTML 里**，最简洁的做法？",
+    "explanation": "文件名加 `.client.vue` 后缀 —— Nuxt 自动只在客户端引入它，**SSR 时整个 import 都不存在**，HTML 里无任何痕迹。`<ClientOnly>` 是另一种做法但会留占位 comment / 用 fallback。`.server.vue` 反向：仅 SSR、客户端 bundle 不带。",
+    "tags": ["nuxt", "client-only", "组件"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "文件名加 `.client.vue` 后缀",
+        "isCorrect": true,
+        "description": "SSR 完全不引入"
+      },
+      {
+        "text": "`<ClientOnly>` 组件包裹",
+        "isCorrect": false,
+        "description": "可行但会留 placeholder comment"
+      },
+      {
+        "text": "`onMounted` 内动态 import",
+        "isCorrect": false,
+        "description": "可行但繁琐"
+      },
+      {
+        "text": "在 nuxt.config 里 `components: { client: ['MyComp'] }`",
+        "isCorrect": false,
+        "description": "没这个字段"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt `<NuxtIsland name=\"Foo\" :props=\"{ id: 42 }\" />` 与 `.server.vue` 的区别？",
+    "explanation": "**`.server.vue`** = 整个组件在服务端渲染，**HTML 静态嵌入页面**——客户端不带这段代码。**NuxtIsland** = 服务端组件 + 客户端可**按需重新请求**渲染（同组件按 props 变化触发服务端重渲染）—— island 架构。前者一次性 HTML，后者动态可刷新。",
+    "tags": ["nuxt", "NuxtIsland", "服务端组件"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "NuxtIsland 客户端可按 props 重请求服务端重渲；.server.vue 一次性",
+        "isCorrect": true,
+        "description": "island = 可动态 fetch 服务端组件"
+      },
+      {
+        "text": "两者等价",
+        "isCorrect": false,
+        "description": "动态行为差别明显"
+      },
+      {
+        "text": "NuxtIsland 仅在生产可用",
+        "isCorrect": false,
+        "description": "dev / prod 都可用"
+      },
+      {
+        "text": ".server.vue 不支持 props",
+        "isCorrect": false,
+        "description": "支持，只是不重渲"
+      }
+    ]
+  },
+  {
+    "stem": "`hybrid` 渲染模式的核心是？",
+    "explanation": "「**同一份 Nuxt 项目，不同路由用不同渲染策略**」——通过 `routeRules` 配置，`/` prerender、`/blog/**` ISR、`/admin/**` SPA、`/api/**` 加 CORS。一份代码部署、同时享受 SSG 速度 + SSR 灵活 + SPA 交互。",
+    "tags": ["nuxt", "hybrid", "渲染"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同一项目不同路由用不同渲染策略（通过 routeRules）",
+        "isCorrect": true,
+        "description": "Nuxt hybrid 的卖点"
+      },
+      {
+        "text": "服务端 + 客户端各跑一次相同代码",
+        "isCorrect": false,
+        "description": "那是普通 SSR + hydration，不是 hybrid"
+      },
+      {
+        "text": "同时运行 Vue + React 组件",
+        "isCorrect": false,
+        "description": "Nuxt 没这种能力"
+      },
+      {
+        "text": "本地 SSR、生产 SSG",
+        "isCorrect": false,
+        "description": "两种环境通常用同一策略"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 4 起，layer 加载顺序的变化是？",
+    "explanation": "**v3 是反的**：项目代码先加载、layer 后加载——结果 layer 的 plugin 反而覆盖项目代码，违反直觉。**v4 修正**：layer 先加载（按 extends 数组顺序）、**项目最后**加载——主项目可以覆盖 layer 任何资源。这是「主项目优先级最高」原则的体现。",
+    "tags": ["nuxt", "v4", "layers", "加载顺序"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "layer 先加载、主项目最后加载（主项目可覆盖）",
+        "isCorrect": true,
+        "description": "v4 修正后的顺序"
+      },
+      {
+        "text": "主项目先、layer 后",
+        "isCorrect": false,
+        "description": "Nuxt 3 行为，v4 已改"
+      },
+      {
+        "text": "并行加载",
+        "isCorrect": false,
+        "description": "按顺序加载"
+      },
+      {
+        "text": "随机顺序",
+        "isCorrect": false,
+        "description": "确定性顺序"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt 项目想用 Markdown 内容 + 自动生成路由 + frontmatter 查询，最常用的官方模块是？",
+    "explanation": "**`@nuxt/content`** —— Nuxt 官方 Markdown / MDC 内容站方案。`content/` 目录的 `.md` 自动当路由，支持 frontmatter / 全文搜索 / `queryContent()` / mdc 语法（::div / :badge）。文档站 / 博客事实标准。",
+    "tags": ["nuxt", "modules", "content"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`@nuxt/content`",
+        "isCorrect": true,
+        "description": "官方 Markdown 内容模块"
+      },
+      {
+        "text": "`@vueuse/nuxt`",
+        "isCorrect": false,
+        "description": "VueUse 集成，与 Markdown 无关"
+      },
+      {
+        "text": "`@pinia/nuxt`",
+        "isCorrect": false,
+        "description": "Pinia 状态管理"
+      },
+      {
+        "text": "`vite-plugin-md`",
+        "isCorrect": false,
+        "description": "Vite 插件，可用但不如 @nuxt/content 集成深"
+      }
+    ]
+  },
+  {
+    "stem": "Nuxt `useState` 与 Pinia 的选择标准是？",
+    "explanation": "**`useState`**：轻量、SSR-safe、零依赖；适合「跨组件共享的简单数据」（用户登录态 / 主题色 / 单一计数器）。**Pinia**：完整 store 模式（state + getters + actions）+ DevTools 强支持 + 类型推导深；适合「复杂业务状态」（购物车 / 多步表单 / 全局通知队列）。两者**可共存**——不冲突。",
+    "tags": ["nuxt", "状态管理", "Pinia"],
+    "categories": [
+      ["技术方向", "Nuxt"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "简单跨组件用 useState；复杂 store + DevTools 用 Pinia",
+        "isCorrect": true,
+        "description": "按复杂度分；两者可共存"
+      },
+      {
+        "text": "新项目必须用 Pinia",
+        "isCorrect": false,
+        "description": "useState 足够简单场景"
+      },
+      {
+        "text": "useState 已弃用",
+        "isCorrect": false,
+        "description": "v4 仍是核心 API"
+      },
+      {
+        "text": "Pinia 不支持 SSR",
+        "isCorrect": false,
+        "description": "支持，@pinia/nuxt 模块封好了"
+      }
+    ]
   }
 ]
