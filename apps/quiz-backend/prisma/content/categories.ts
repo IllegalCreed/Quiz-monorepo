@@ -217,6 +217,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Docusaurus", sort: 1 },
               { name: "VitePress", sort: 2 },
               { name: "Slidev", sort: 3 },
+              { name: "Hexo", sort: 4 },
+              { name: "Eleventy", sort: 5 },
+              { name: "Nextra", sort: 6 },
+              { name: "Starlight", sort: 7 },
             ],
           },
           {
