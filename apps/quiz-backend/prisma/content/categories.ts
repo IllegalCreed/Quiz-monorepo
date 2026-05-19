@@ -242,6 +242,9 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Pinia", sort: 1 },
               { name: "Zustand", sort: 2 },
               { name: "Redux", sort: 3 },
+              { name: "Jotai", sort: 4 },
+              { name: "MobX", sort: 5 },
+              { name: "NgRx", sort: 6 },
             ],
           },
           {
@@ -251,6 +254,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Vue Router", sort: 1 },
               { name: "React Router", sort: 2 },
               { name: "React Navigation", sort: 3 },
+              { name: "TanStack Router", sort: 4 },
             ],
           },
           {
