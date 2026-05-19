@@ -807,6 +807,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       { name: "初级", sort: 2 },
       { name: "中级", sort: 3 },
       { name: "高级", sort: 4 },
+      { name: "专家", sort: 5 },
     ],
   },
 ];
