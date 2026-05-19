@@ -252,9 +252,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             sort: 6,
             children: [
               { name: "Vue Router", sort: 1 },
-              { name: "React Router", sort: 2 },
-              { name: "React Navigation", sort: 3 },
-              { name: "TanStack Router", sort: 4 },
+              { name: "React Navigation", sort: 2 },
+              { name: "TanStack Router", sort: 3 },
             ],
           },
           {
