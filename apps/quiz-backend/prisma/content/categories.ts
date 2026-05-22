@@ -268,11 +268,14 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
-            name: "复用库",
+            name: "组合式函数库",
             sort: 7,
             children: [
               { name: "VueUse", sort: 1 },
-              { name: "Ahooks", sort: 2 },
+              { name: "VueHooks Plus", sort: 2 },
+              { name: "Ahooks", sort: 3 },
+              { name: "React Use", sort: 4 },
+              { name: "usehooks-ts", sort: 5 },
             ],
           },
           {
