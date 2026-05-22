@@ -205,6 +205,18 @@ async function importQuestions(
     fs.readFileSync(jsonPath, "utf-8"),
   ) as SeedQuestion[];
 
+  // 断点续传 / 防 RDS 连接池超时：该文件所有 stem 已入库则整文件跳过。
+  // 真题只增不删，已完整的文件无需重复 update；仅未完整的文件才逐题处理。
+  if (questions.length > 0) {
+    const dbCount = await prisma.question.count({
+      where: { stem: { in: questions.map((q) => q.stem) } },
+    });
+    if (dbCount === questions.length) {
+      log(`  已完整 ${dbCount}/${questions.length}，跳过`);
+      return;
+    }
+  }
+
   let created = 0;
   let updated = 0;
 
