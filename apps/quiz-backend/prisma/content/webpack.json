@@ -1,0 +1,2306 @@
+[
+  {
+    "stem": "Webpack：在官方文档中，Webpack 被定义为 a static module bundler for modern JavaScript applications（现代 JavaScript 应用的静态模块打包器）。关于它的核心工作机制，下列哪项描述最准确？",
+    "explanation": "Webpack 处理应用时会从一个或多个入口（entry）出发，根据 import / require 等语句**自动构建并推断依赖图（dependency graph）**，把项目需要的每一个模块组合进一个或多个 bundle 输出。官方 why-webpack 页面明确指出：与需要手动声明全部依赖的旧式 Task Runner / Google Closure Compiler 不同，「bundlers like webpack automatically build and infer your dependency graph based on what is imported and exported」。\n\n- 「自动推断依赖图」正确，是 Webpack 区别于旧工具的核心特征。\n- 「需手动声明全部依赖」恰恰是旧式 Task Runner（如 Grunt/Gulp 时代）和 Closure Compiler 的做法，被 Webpack 取代，方向写反。\n- 「只处理 CSS、字体、图片，不处理 JS」颠倒了事实：Webpack 开箱即用只懂 JS/JSON，其它资源反而需要 loader。\n- 「运行时在浏览器动态加载未打包源码」混淆了打包器与原生 ESM 的 dev server（如 Vite 的 no-bundle 思路），Webpack 是构建期静态打包。",
+    "tags": [
+      "webpack",
+      "入门",
+      "核心概念",
+      "dependency-graph",
+      "module-bundler"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它从入口出发，依据 import/require 自动构建并推断依赖图，把所需模块打包成 bundle",
+        "isCorrect": true,
+        "description": "正确。这是 Webpack 的核心机制：自动推断依赖图（dependency graph），无需像旧工具那样手动声明全部依赖。"
+      },
+      {
+        "text": "它要求开发者在配置里手动声明项目用到的每一个依赖，再按声明顺序拼接",
+        "isCorrect": false,
+        "description": "错误。手动声明全部依赖是旧式 Task Runner 与 Google Closure Compiler 的做法，Webpack 正是为取代它而生，能自动推断依赖。"
+      },
+      {
+        "text": "它只负责处理 CSS、字体、图片等静态资源，JavaScript 由浏览器原生加载",
+        "isCorrect": false,
+        "description": "错误。事实相反：Webpack 开箱即用只理解 JS 和 JSON，CSS/字体/图片等反而需要通过 loader 才能处理。"
+      },
+      {
+        "text": "它不打包，而是在浏览器运行时按需动态加载未经处理的原始源码模块",
+        "isCorrect": false,
+        "description": "错误。这描述的是基于原生 ESM 的免打包开发模式（如 Vite dev server）。Webpack 是构建期的静态打包器。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在完全不写任何配置文件、也不传任何参数的情况下直接运行 `npx webpack`（Webpack 5），关于其零配置默认行为，下列哪一组默认值全部正确？",
+    "explanation": "根据官方 concepts 与 getting-started 文档，Webpack 的零配置默认值为：入口 entry = `./src/index.js`；输出 output = `./dist` 目录、主文件名 `main.js`（即 `./dist/main.js`）；mode 默认为 `production`（因此默认输出会被压缩，日志含 [minimized]）。\n\n- 「entry=./src/index.js，output=./dist/main.js，mode=production」三项全部正确。\n- 「mode=development」错误：development 必须显式 `--mode development`，默认是 production。\n- 「output=./build/bundle.js」错误：默认目录是 dist、文件名是 main.js，不是 build/bundle.js（bundle.js 是很多教程自定义的名字）。\n- 「entry=./index.js（根目录）」错误：默认入口在 src 子目录下，是 `./src/index.js`，找不到时会报 Entry module not found。",
+    "tags": ["webpack", "入门", "零配置", "默认值", "entry-output-mode"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "entry = ./src/index.js，output = ./dist/main.js，mode = production",
+        "isCorrect": true,
+        "description": "正确。三项均与官方文档一致：默认入口在 src/index.js，默认输出 dist/main.js，默认 mode 为 production（输出被压缩）。"
+      },
+      {
+        "text": "entry = ./src/index.js，output = ./dist/main.js，mode = development",
+        "isCorrect": false,
+        "description": "错误。前两项对，但 mode 默认是 production；development 需显式 `--mode development` 才生效。"
+      },
+      {
+        "text": "entry = ./index.js，output = ./build/bundle.js，mode = production",
+        "isCorrect": false,
+        "description": "错误。默认入口在 src 子目录（./src/index.js），默认输出是 ./dist/main.js，build/bundle.js 是自定义常见命名。"
+      },
+      {
+        "text": "entry = ./src/main.js，output = ./public/index.js，mode = none",
+        "isCorrect": false,
+        "description": "错误。默认入口文件名是 index.js 不是 main.js；输出目录是 dist 不是 public；mode 默认 production 不是 none。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：官方文档强调「Out of the box, webpack only understands JavaScript and JSON files」。当你需要在项目中 `import` 一个 `.css` 文件或一张图片时，下列哪种做法符合 Webpack 5 的设计？",
+    "explanation": "Webpack 开箱即用只理解 JS 和 JSON。要处理其它类型文件需借助两类扩展机制：\n1) **loader**：把非 JS/JSON 文件「转换」成 webpack 能消费的有效模块并加入依赖图（如 css-loader 处理 CSS）；\n2) 对于图片/字体等资源，Webpack 5 内置了 **asset modules**（type: 'asset/resource' 等），无需再装 file-loader/url-loader/raw-loader（这三者是 Webpack 4 时代的做法，已被官方废弃推荐）。\n\n- 「CSS 用 loader（如 css-loader），图片用 Webpack 5 内置 asset modules」最符合当前（Webpack 5）设计。\n- 「图片必须装 file-loader/url-loader」是 Webpack 4 的旧做法；Webpack 5 用内置 asset modules 取代，已不推荐再装这些 loader。\n- 「Webpack 原生支持任何文件类型，无需 loader」与官方原文「only understands JS and JSON」矛盾。\n- 「靠 plugin 转换单个文件类型」混淆了职责：转换文件类型是 loader 的工作，plugin 负责打包优化、资源管理、注入等更广的任务。",
+    "tags": ["webpack", "初级", "loaders", "asset-modules", "webpack5"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 通过 loader（如 css-loader）转换，图片/字体可直接用 Webpack 5 内置的 asset modules",
+        "isCorrect": true,
+        "description": "正确。loader 负责把非 JS/JSON 文件转成有效模块；Webpack 5 用内置 asset modules 处理图片等资源，取代了 4.x 的 file/url/raw-loader。"
+      },
+      {
+        "text": "图片必须额外安装 file-loader 或 url-loader 才能被打包，这是当前推荐做法",
+        "isCorrect": false,
+        "description": "错误。file-loader/url-loader 是 Webpack 4 时代做法，Webpack 5 已用内置 asset modules（asset/resource 等）取代并废弃推荐这些 loader。"
+      },
+      {
+        "text": "Webpack 原生支持任何文件类型，CSS 和图片都无需 loader 或额外配置",
+        "isCorrect": false,
+        "description": "错误。官方明确「开箱即用只理解 JavaScript 和 JSON」，CSS 等仍需 loader，图片需 asset modules 配置。"
+      },
+      {
+        "text": "要处理 CSS 应当编写一个 plugin 来转换该文件类型，loader 仅用于优化体积",
+        "isCorrect": false,
+        "description": "错误。转换文件类型是 loader 的职责；plugin 用于打包优化、资源管理、注入环境变量等更广泛任务，二者分工相反。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 Webpack 输出的运行时浏览器兼容性，官方文档「Browser Compatibility」一节给出的准确说法是哪一项？（基于 Webpack 5）",
+    "explanation": "官方原文：「Webpack supports all browsers that are ES5-compliant (IE8 and below are not supported)」。即 Webpack 自身（其运行时代码）支持所有兼容 ES5 的浏览器，**不支持 IE8 及更低版本**。此外文档补充：若使用 `import()` 和 `require.ensure()` 这类按需加载，环境需要 `Promise`，老浏览器需自行引入 Promise polyfill。注意：这说的是 Webpack 运行时自身的兼容下限，并不代表你写的业务代码（如 ES2020 语法）会被自动降级——降级需要 Babel 等 loader。\n\n- 「支持所有 ES5 兼容浏览器，不支持 IE8 及以下；import() 需要 Promise（老浏览器要 polyfill）」完全符合原文。\n- 「保证支持到 IE8」与原文「IE8 and below are not supported」直接矛盾。\n- 「会自动把你的 ES2020 业务代码降级到 ES5」错误：Webpack 只保证自身运行时是 ES5，业务代码语法降级需 Babel 等。\n- 「只支持最新版 Chrome/Firefox」过度收窄，与「所有 ES5 兼容浏览器」不符。",
+    "tags": ["webpack", "中级", "browser-compatibility", "ES5", "polyfill"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "支持所有 ES5 兼容的浏览器，不支持 IE8 及以下；用 import() 时环境需有 Promise，老浏览器需自行加 polyfill",
+        "isCorrect": true,
+        "description": "正确。与官方原文「supports all browsers that are ES5-compliant (IE8 and below are not supported)」及 Promise polyfill 说明一致。"
+      },
+      {
+        "text": "Webpack 运行时保证支持到 IE8，因此无需任何额外 polyfill 即可在 IE8 运行",
+        "isCorrect": false,
+        "description": "错误。官方明确 IE8 及以下不被支持（IE8 and below are not supported），与此项直接矛盾。"
+      },
+      {
+        "text": "Webpack 会自动把你的 ES2020 业务代码语法降级到 ES5，从而兼容老浏览器",
+        "isCorrect": false,
+        "description": "错误。文档说的是 Webpack 自身运行时为 ES5；业务代码的语法降级需 Babel 等 loader，Webpack 不会自动转译你的源码语法。"
+      },
+      {
+        "text": "Webpack 仅支持最新版的 Chrome 与 Firefox，其它浏览器一律不支持",
+        "isCorrect": false,
+        "description": "错误。范围被过度收窄；官方说的是支持「所有 ES5 兼容的浏览器」，而非仅限最新版 Chrome/Firefox。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：官方「Why webpack」页面用历史演进解释 Webpack 的诞生。关于 IIFE 与 CommonJS 的描述，下列哪一项与文档一致？",
+    "explanation": "官方 why-webpack 页面指出：IIFE（立即执行函数表达式）能解决大型项目的作用域问题——脚本被 IIFE 包裹后可以安全地拼接/合并而不必担心 **scope collision（作用域冲突）**；但其缺点是「改一个文件就得重建整体」，且不利于构建优化与 tree-shaking。随后 Node.js 带来的 CommonJS（require）按需导入解决了作用域问题，但它有局限：**浏览器原生不支持 CommonJS**、没有 live bindings、循环引用有问题、同步加载慢。正是这些演进促成了 Webpack（如今同时支持 ESM 与 CommonJS）。\n\n- 「IIFE 通过包裹脚本避免 scope collision，但改一处需重建整体；CommonJS 解决作用域但浏览器不原生支持」与文档一致。\n- 「CommonJS 浏览器原生支持，所以不需要打包器」与原文「There is no browser support for CommonJS」矛盾。\n- 「IIFE 自带 tree-shaking 能精确摇掉 lodash 未用函数」与原文相反：IIFE 恰恰使 tree-shaking 困难，即便只用一个函数也得带上整个库。\n- 「Webpack 只支持 ESM、不支持 CommonJS」错误：原文明确 Webpack「supporting both ESM and CommonJS」。",
+    "tags": ["webpack", "中级", "why-webpack", "IIFE", "commonjs"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "IIFE 包裹脚本可安全拼接、避免 scope collision，但改一处需重建整体；CommonJS 解决作用域却不被浏览器原生支持",
+        "isCorrect": true,
+        "description": "正确。完全对应文档：IIFE 解决作用域冲突但牺牲增量与优化；CommonJS 解决作用域但「no browser support」，催生了 Webpack。"
+      },
+      {
+        "text": "CommonJS 被浏览器原生支持，因此根本不需要 Webpack 这类打包器来兼容",
+        "isCorrect": false,
+        "description": "错误。文档原文「There is no browser support for CommonJS」，浏览器并不原生支持 CommonJS，这正是需要打包器的原因之一。"
+      },
+      {
+        "text": "IIFE 天生具备 tree-shaking 能力，能精确摇掉 lodash 中未使用的函数",
+        "isCorrect": false,
+        "description": "错误。与原文相反：IIFE 使 tree-shaking 变难，即使只用 lodash 一个函数也得引入整个库再压缩。"
+      },
+      {
+        "text": "Webpack 设计上只支持 ESM，完全不支持 CommonJS 模块",
+        "isCorrect": false,
+        "description": "错误。why-webpack 原文写明 Webpack「supporting both ESM and CommonJS」，两种模块系统都支持。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：以下配置中，`entry` 的值为一个数组：`entry: ['@babel/polyfill', './src/index.js']`。关于这种「多主入口（multi-main entry）」语法的行为，描述正确的是？",
+    "explanation": "当为入口提供数组时，Webpack 官方文档明确说明：webpack 仍只创建「单个入口 chunk（single entry chunk）」，数组中的所有模块按给定顺序加载并合并进同一个依赖图（dependency graph）。这正是 polyfill 注入的常见用法——把额外代码（polyfill / 开发期工具）放在主入口之前加载，而无需手动 import。因此 A 正确。要得到「多个独立 chunk / 多个独立依赖图」必须使用对象语法（如 `{ pageOne: ..., pageTwo: ... }`），那是 MPA 的做法，所以 B、C 把数组语法和对象语法的行为搞混了。D 错误：数组语法不会因为元素是 npm 包就拆分，所有元素无差别合并到同一 chunk。",
+    "tags": ["webpack", "中级", "entry", "multi-main", "入口语法"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Webpack 仍只创建单个入口 chunk，数组里的模块按顺序加载并合并进同一依赖图，常用于在主入口前注入 polyfill",
+        "isCorrect": true,
+        "description": "正确。官方文档原文：「When an array is provided for an entry point, webpack still creates a single entry chunk. All modules in the array are loaded in the given order and combined into the same dependency graph.」数组语法 = 单 chunk + 顺序合并。"
+      },
+      {
+        "text": "Webpack 会为数组里的每个元素各生成一个独立 chunk，输出两个 bundle 文件",
+        "isCorrect": false,
+        "description": "错误。这是把数组语法误当成对象（MPA）语法。要生成多个独立 chunk 必须用 `entry: { a: ..., b: ... }` 对象形式，数组永远只产出一个 chunk。"
+      },
+      {
+        "text": "Webpack 会把数组解析成多个独立的依赖图，等价于多页应用（MPA）配置",
+        "isCorrect": false,
+        "description": "错误。「多个独立依赖图 / MPA」是对象语法的语义，数组语法只产生「同一个依赖图」。文档原文用的是 combined into the same dependency graph。"
+      },
+      {
+        "text": "Webpack 会把 npm 包 `@babel/polyfill` 单独抽成 vendor chunk，仅把 `./src/index.js` 作为主入口",
+        "isCorrect": false,
+        "description": "错误。数组元素不会因为是 node_modules 包就被自动分离；vendor 抽取需要 `optimization.splitChunks` 等机制。数组里的所有元素无差别合并进同一入口 chunk。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 的入口描述对象（EntryDescription）中，需要让某入口共享另一入口提供的模块、且明确指定运行时（runtime）chunk 的名字。关于 `dependOn` 与 `runtime` 这两个字段的约束，描述正确的是？",
+    "explanation": "官方文档对 EntryDescription 有三条硬约束：(1) `dependOn` 声明当前入口依赖的其它入口，它们必须先加载，可用于在多个入口间共享模块、避免重复打包；(2) `dependOn` 不能循环（must not be circular）；(3) `runtime` 与 `dependOn` 不能用在同一个入口上（should not be used together），且 `runtime` 不能指向已存在的入口名。此外，自 webpack 5.43.0 起 `runtime` 可设为 `false` 以避免生成新的 runtime chunk。综合这些，B 正确。A 错把二者说成可共用；C 把「不能循环」说反；D 把 runtime:false 的版本与语义弄错（5.43.0 才支持，且 false 是「不创建新 runtime chunk」而非「复用入口同名 runtime」）。",
+    "tags": ["webpack", "高级", "entry", "dependOn", "runtime"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`dependOn` 与 `runtime` 不能同时用于同一入口，且 `dependOn` 不可循环；`runtime` 自 5.43.0 起可设为 `false` 来避免创建新的 runtime chunk",
+        "isCorrect": true,
+        "description": "正确。文档：runtime 与 dependOn 不能在同一入口共用；dependOn must not be circular；runtime 可设 false（since webpack 5.43.0）以不生成新 runtime chunk。"
+      },
+      {
+        "text": "`dependOn` 与 `runtime` 可以在同一入口同时使用，共享模块的同时还能命名 runtime chunk",
+        "isCorrect": false,
+        "description": "错误。官方明确「runtime and dependOn should not be used together on a single entry」，二者互斥，不能共用。"
+      },
+      {
+        "text": "`dependOn` 允许循环依赖（A 依赖 B、B 依赖 A），Webpack 会自动按拓扑顺序去环",
+        "isCorrect": false,
+        "description": "错误。文档要求 dependOn must not be circular，循环依赖会报错，Webpack 不会自动去环。"
+      },
+      {
+        "text": "`runtime` 自 Webpack 4 起即可设为 `false`，表示复用与入口同名的已存在 runtime chunk",
+        "isCorrect": false,
+        "description": "错误。runtime: false 是 webpack 5.43.0 才引入（非 4），含义是「不创建新的 runtime chunk」；且 runtime 不能指向已存在的入口名。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 `context` 与 `output.path` 这两个路径相关配置的默认值与约束，描述正确的是？",
+    "explanation": "官方文档：`context` 是解析入口和 loader 的基准目录，必须是绝对路径，默认值为「Node.js 的当前工作目录（current working directory，即 process.cwd()）」，但官方建议显式配置以摆脱对 CWD 的依赖。`output.path` 必须是绝对路径，默认值是 `path.join(process.cwd(), 'dist')`，社区通行写法是 `path.resolve(__dirname, 'dist')` 以保证绝对路径。综合这两点，A 正确。B 把 context 默认说成项目根 / 配置文件目录（实际是 cwd）；C 错误地称 output.path 可用相对路径；D 把 output.path 默认目录说成 build（实际是 dist）。",
+    "tags": ["webpack", "中级", "context", "output.path", "绝对路径"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`context` 默认是 Node.js 当前工作目录（process.cwd()）；`output.path` 必须是绝对路径，默认 `path.join(process.cwd(), 'dist')`，常用 `path.resolve` 拼出",
+        "isCorrect": true,
+        "description": "正确。context 默认 = Node.js 当前工作目录、须绝对路径；output.path 须绝对路径、默认 path.join(process.cwd(), 'dist')，官方示例用 path.resolve(__dirname, 'dist')。"
+      },
+      {
+        "text": "`context` 默认指向 webpack.config.js 所在目录；`output.path` 默认与 context 相同",
+        "isCorrect": false,
+        "description": "错误。context 默认是 Node.js 当前工作目录（process.cwd()），而非配置文件所在目录；output.path 默认是 process.cwd() 下的 dist，并非等于 context。"
+      },
+      {
+        "text": "`output.path` 可以是相对路径（如 `'./dist'`），Webpack 会基于 context 自动补全为绝对路径",
+        "isCorrect": false,
+        "description": "错误。output.path 必须是绝对路径，传相对路径会报错；这正是要用 path.resolve(__dirname, 'dist') 的原因。"
+      },
+      {
+        "text": "`output.path` 默认输出到 process.cwd() 下的 `build` 目录，`context` 无默认值必须显式指定",
+        "isCorrect": false,
+        "description": "错误。output.path 默认目录是 dist（不是 build）；context 有默认值（当前工作目录），只是官方建议显式配置，并非必须。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：现有 `output.filename: '[name].[contenthash:8].js'` 用于长期缓存。关于 `[name]`、`[hash]`/`[fullhash]`、`[chunkhash]`、`[contenthash]` 这些占位符的区别，以及 `:8` 截断语法，描述正确的是？",
+    "explanation": "官方文档对占位符的层级有明确区分：在 output.filename 语境下 `[fullhash]` 是整个 compilation 的完整哈希，`[hash]` 是它的别名（已 deprecated）；`[chunkhash]` 是某个 chunk 的哈希（包含该 chunk 的全部内容）；`[contenthash]` 仅针对该内容类型的内容哈希（受 optimization.realContentHash 影响），粒度最细、最利于缓存——例如只改 JS 不改 CSS 时 CSS 的 contenthash 不变。`[name]` 是 chunk 名（未设则用 chunk id）。哈希长度可用 `[contenthash:8]` 截断为 8 位，不指定时默认 20 位（也可用 output.hashDigestLength 全局配置）。据此 C 正确。A 把 contenthash 与 fullhash 的粒度说反；B 误称 [hash] 等于 [chunkhash]（实际等于 [fullhash]）；D 把默认长度说成 16。",
+    "tags": ["webpack", "高级", "占位符", "contenthash", "长期缓存"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`[contenthash]` 仅按该内容类型内容计算（粒度最细，最利于缓存），`[chunkhash]` 含整个 chunk，`[hash]`/`[fullhash]` 是整个 compilation 的哈希；`:8` 把哈希截断为 8 位，不写默认 20 位",
+        "isCorrect": true,
+        "description": "正确。文档：[fullhash]=整个 compilation；[hash] 为其别名（deprecated）；[chunkhash]=整个 chunk；[contenthash]=仅该内容类型；截断默认 20 位、可写 [contenthash:8]。"
+      },
+      {
+        "text": "`[contenthash]` 是整个 compilation 的哈希，`[fullhash]` 仅按单个 chunk 计算，二者粒度相反",
+        "isCorrect": false,
+        "description": "错误。粒度说反了：[fullhash] 才是整个 compilation 的哈希，[contenthash] 是最细粒度（仅该内容类型）。"
+      },
+      {
+        "text": "`[hash]` 与 `[chunkhash]` 完全等价，都按单个 chunk 计算；`[fullhash]` 已被废弃",
+        "isCorrect": false,
+        "description": "错误。在 filename 语境下 [hash] 等价于 [fullhash]（整个 compilation），不是 [chunkhash]；被标 deprecated 的是 [hash]，而非 [fullhash]。"
+      },
+      {
+        "text": "哈希截断不写位数时默认 16 位，`[contenthash:8]` 表示扩展到 8 字节（16 位十六进制）",
+        "isCorrect": false,
+        "description": "错误。默认长度是 20 字符（可用 output.hashDigestLength 调整），不是 16；[contenthash:8] 表示截断为 8 个字符，不是「扩展」。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 项目中，团队希望「每次构建前自动清空输出目录」并移除旧的 `clean-webpack-plugin` 依赖；同时部署路径在编译期未知、需运行时确定。关于 `output.clean` 与 `output.publicPath`，描述正确的是？",
+    "explanation": "官方文档：Webpack 5 内置 `output.clean`，`clean: true` 即可在 emit 前清空输出目录，替代 clean-webpack-plugin；它还支持对象形式：`clean: { dry: true }` 只打印将被删除的资源而不真正删除，`clean: { keep: /.../ }`（支持正则、字符串或函数）保留指定资源。对于编译期未知的部署路径，`output.publicPath` 默认值是 `'auto'`，webpack 会基于 import.meta / 运行时上下文自动推断；也可在运行时用 `__webpack_public_path__ = ...` 动态覆盖。据此 A 正确。B 把 dry 的语义说反（dry 是「不删只记日志」）；C 误称 publicPath 默认是空串且必须硬编码 CDN；D 把运行时变量名写错（应为 __webpack_public_path__，且它是运行时赋值而非配置项）。",
+    "tags": ["webpack", "中级", "output.clean", "publicPath", "webpack5"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`output.clean: true` 内置清空输出目录、可替代 clean-webpack-plugin（还支持 `dry`/`keep`）；`output.publicPath` 默认 `'auto'`，运行时可用 `__webpack_public_path__` 覆盖",
+        "isCorrect": true,
+        "description": "正确。clean: true 替代 clean-webpack-plugin，dry 只记日志、keep 保留资源；publicPath 默认 auto（自动推断），运行时用 __webpack_public_path__ 动态设置。"
+      },
+      {
+        "text": "`output.clean: { dry: true }` 会先删除目录再把删除清单写入日志，确保彻底清空",
+        "isCorrect": false,
+        "description": "错误。dry: true 的含义是「只打印将被删除的资源、并不真正删除」（log instead of delete），与「先删再记日志」相反。"
+      },
+      {
+        "text": "`output.publicPath` 默认是空字符串 `''`，编译期未知时只能把 CDN 地址硬编码进配置，无法运行时改",
+        "isCorrect": false,
+        "description": "错误。publicPath 默认是 'auto'（自动推断），不是空串；编译期未知时可在运行时用 __webpack_public_path__ 动态设置，无需硬编码。"
+      },
+      {
+        "text": "运行时动态改变公共路径应在配置里写 `output.runtimePublicPath = ...`，且仍需保留 clean-webpack-plugin",
+        "isCorrect": false,
+        "description": "错误。运行时变量是源码里的 `__webpack_public_path__`（不是配置项 runtimePublicPath）；Webpack 5 已可用内置 output.clean 替代 clean-webpack-plugin，无需保留该插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：要把入口产物打包成可供他人 import 的库（如同时支持 CommonJS、AMD 和浏览器全局），并且关注哈希算法性能。关于 `output.library.type` 与 `output.hashFunction` 在 Webpack 5（当前 latest）下的事实，描述正确的是？",
+    "explanation": "官方文档：`output.library.type` 用于指定库的暴露格式，内置类型包括 'var'、'module'、'commonjs'、'commonjs2'、'umd'、'window'、'global'、'self'、'assign'、'amd'、'system'、'jsonp' 等；要同时兼容 CommonJS / AMD / 浏览器全局应选 `'umd'`（Universal Module Definition）。关于哈希：Webpack 5 的 `output.hashFunction` 默认仍是 `'md4'`，更快的 `'xxhash64'` 仅在开启 `experiments.futureDefaults` 时才成为默认（xxhash64 自 5.54.0 可用）。据此 B 正确。A 误以为 umd 不是内置类型且要装额外插件；C 把 Webpack 5 默认哈希说成 xxhash64（这是 futureDefaults 下的行为，不是当前默认，属于典型 4→5/未来默认混淆）；D 把 'module'（ESM 输出）误当成多格式兼容方案。",
+    "tags": ["webpack", "专家", "library.type", "hashFunction", "umd"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`output.library.type: 'umd'` 是内置类型，可同时兼容 CommonJS/AMD/浏览器全局；`output.hashFunction` 在 Webpack 5 默认仍为 `'md4'`，`'xxhash64'` 只在 `experiments.futureDefaults` 下才成为默认",
+        "isCorrect": true,
+        "description": "正确。umd 是内置 library type（兼容 CJS/AMD/global）；hashFunction 默认 md4，xxhash64 仅在 futureDefaults 时默认（5.54.0+ 可用），是常见的「当前默认 vs 未来默认」混淆点。"
+      },
+      {
+        "text": "`'umd'` 并非内置 library type，必须额外安装并配置 webpack-umd-plugin 才能生成 UMD 包；hashFunction 默认 md4",
+        "isCorrect": false,
+        "description": "错误。'umd' 是 Webpack 内置的 library type，直接 type: 'umd' 即可，无需任何额外插件。"
+      },
+      {
+        "text": "Webpack 5 已把 `output.hashFunction` 默认值从 md4 改为更快的 `xxhash64`，无需任何额外配置即可生效",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 当前默认仍是 md4；xxhash64 只有开启 experiments.futureDefaults 才成为默认值，这是典型陷阱。"
+      },
+      {
+        "text": "要兼容 CommonJS/AMD/浏览器全局应选 `output.library.type: 'module'`，它会输出一份同时满足三者的代码",
+        "isCorrect": false,
+        "description": "错误。type: 'module' 输出的是 ES Module（export default ...），并不兼容 CommonJS/AMD/全局；多环境兼容应选 'umd'。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 loader 的本质与对链式 loader（chained loaders）的输出约束，下列哪项描述准确？",
+    "explanation": "loader 是对模块源码施加的转换（transformation），让你在 import/load 文件时进行预处理，从而把 TypeScript、CSS、图片等非 JS 资源接入构建。loader 可链式串联，每个 loader 处理上一个的输出，但整条链最终交给 webpack 的产物必须是 JavaScript（默认 module type 下 webpack 期望拿到 JS 字符串）。这正是 css-loader 把 CSS 转成 JS 模块、再交给 style-loader 的原因。注意：在 Webpack 5 中，file-loader/url-loader/raw-loader 已被 Asset Modules（type: 'asset/resource' 等）取代，但这不改变「loader 链最终须返回 JS」这一基本约束。",
+    "tags": ["webpack", "loaders", "chainable", "中级", "概念"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "loader 是对模块源码的转换，可链式串联，但整条链最终须返回 JavaScript 交给 webpack",
+        "isCorrect": true,
+        "description": "正确。官方定义 loader 为「applied to the source code of a module」的转换，chainable 且默认产物须为 JS，这是 css-loader→style-loader 链路成立的根本原因。"
+      },
+      {
+        "text": "loader 与 plugin 等价，都通过 tapable 钩子介入 compilation 生命周期来转换文件内容",
+        "isCorrect": false,
+        "description": "错误。loader 是文件级转换、运行在模块加载阶段；plugin 才是通过 tapable 钩子介入整个 compiler/compilation 生命周期。二者职责不同，不可等价。"
+      },
+      {
+        "text": "链中每个 loader 都必须独立返回合法 JavaScript，否则下一个 loader 无法接收",
+        "isCorrect": false,
+        "description": "错误。中间 loader 之间传递的是任意字符串/Buffer（如 sass-loader 输出 CSS 文本给 css-loader），只有整条链的最终输出才需要是 JS。"
+      },
+      {
+        "text": "loader 运行在浏览器运行时，因此不能使用 Node.js 的 fs 等 API",
+        "isCorrect": false,
+        "description": "错误。loader 运行在 Node.js 环境（构建期），可以使用 fs、读写文件、emit 额外文件等，与浏览器运行时无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：给定 module.rules 中 use: ['style-loader', 'css-loader', 'sass-loader'] 处理一个 .scss 文件，这三个 loader 的「正常执行（normal）」顺序是？",
+    "explanation": "在不涉及 pitch 与 enforce 的常规情形下，同一条 use 数组中的 loader 在 normal 阶段从右到左（也可理解为从下到上）执行：先 sass-loader 把 SCSS 编译为 CSS，再 css-loader 把 CSS 解析为 JS 模块并处理 @import/url()，最后 style-loader 把样式注入 DOM。官方文档原话即以此数组为例说明「execution starts with sass-loader, continues with css-loader and finally ends with style-loader」。",
+    "tags": ["webpack", "loaders", "execution-order", "module-rules", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "sass-loader → css-loader → style-loader（从右到左 / 从下到上）",
+        "isCorrect": true,
+        "description": "正确。normal 阶段 loader 从数组右端向左执行，先编译 SCSS、再处理 CSS、最后注入样式，与官方示例完全一致。"
+      },
+      {
+        "text": "style-loader → css-loader → sass-loader（从左到右 / 从上到下）",
+        "isCorrect": false,
+        "description": "错误。这恰好是 normal 阶段的反方向。从左到右是 pitch 阶段的方向，而非真正的内容转换（normal）顺序。"
+      },
+      {
+        "text": "三者并行执行，由 webpack 根据依赖图决定最终合并顺序",
+        "isCorrect": false,
+        "description": "错误。同一 use 链上的 loader 是严格串行的管道，前一个的输出作为后一个的输入，不存在并行。"
+      },
+      {
+        "text": "按字母顺序 css-loader → sass-loader → style-loader 执行",
+        "isCorrect": false,
+        "description": "错误。loader 执行顺序由数组位置（右→左）决定，与 loader 名称的字母顺序毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：为 babel-loader 配置 module.rules 以转译 .js 文件，下列哪一组设置同时做到了「不转译 node_modules」「开启文件缓存加速重建」？",
+    "explanation": "官方 babel-loader 示例用 exclude: /node_modules/ 跳过第三方依赖（它们通常已是兼容代码，转译会显著拖慢构建）；cacheDirectory 默认值为 false，显式设为 true 后会把转译结果缓存到 node_modules/.cache/babel-loader，可使 babel-loader 提速约 2 倍。注意 exclude 接收的是匹配「resource 解析后绝对路径」的 Condition，正则 /node_modules/ 是常用写法。",
+    "tags": ["webpack", "babel-loader", "exclude", "cacheDirectory", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "{ test: /\\.js$/, exclude: /node_modules/, use: { loader: 'babel-loader', options: { cacheDirectory: true } } }",
+        "isCorrect": true,
+        "description": "正确。exclude: /node_modules/ 跳过依赖转译，options.cacheDirectory: true 开启文件系统缓存（默认 false），二者均为官方推荐配置。"
+      },
+      {
+        "text": "{ test: /\\.js$/, include: /node_modules/, use: { loader: 'babel-loader', options: { cache: true } } }",
+        "isCorrect": false,
+        "description": "错误。include: /node_modules/ 反而只转译依赖；且 babel-loader 的缓存选项名为 cacheDirectory，不存在名为 cache 的布尔选项。"
+      },
+      {
+        "text": "{ test: /\\.js$/, exclude: /node_modules/, use: 'babel-loader', cache: true }",
+        "isCorrect": false,
+        "description": "错误。缓存应配置在 loader 的 options.cacheDirectory 中，而非 Rule 顶层的 cache 字段（Rule 上没有这样的缓存字段）。"
+      },
+      {
+        "text": "{ test: /\\.js$/, use: { loader: 'babel-loader', options: { cacheDirectory: true } } }（不写 exclude）",
+        "isCorrect": false,
+        "description": "错误。缺少 exclude: /node_modules/，会连第三方依赖一起转译，严重拖慢构建，不满足「不转译 node_modules」的要求。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：内联（inline）请求 import x from '!!style-loader!css-loader!./a.css' 中前缀 '!!' 的语义是什么？另外该「在 import 字符串里写 loader」的内联用法在版本上有何变化？",
+    "explanation": "内联前缀用于覆盖配置中声明的 loader：单个 '!' 禁用所有 normal loader；'-!' 禁用 pre + normal loader（保留 post）；'!!' 禁用全部已配置的 loader（pre/normal/post 都不参与），只用内联指定的 loader。题中 '!!style-loader!css-loader!./a.css' 即「忽略 webpack.config 里所有针对该资源的 loader，只跑内联这两个」。补充版本事实：在源码 import 字符串里写内联 loader 仍受支持；真正在 Webpack v5 被弃用的是「通过 CLI 使用内联 loader」这一用法。",
+    "tags": ["webpack", "loaders", "inline-loader", "v5", "高级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "'!!' 表示禁用全部已配置 loader（pre/normal/post），仅用内联 loader；CLI 内联 loader 用法在 v5 被弃用",
+        "isCorrect": true,
+        "description": "正确。官方明确 '!!' disables all configured loaders；且文档注明 inline loader 经 CLI 使用的方式在 webpack v5 deprecated。"
+      },
+      {
+        "text": "'!!' 表示只禁用 normal loader，保留 pre 与 post loader",
+        "isCorrect": false,
+        "description": "错误。这是单个 '!' 的语义（仅禁 normal）。'!!' 是禁用所有类别的 loader。"
+      },
+      {
+        "text": "'!!' 表示禁用 pre 与 normal loader 但保留 post loader",
+        "isCorrect": false,
+        "description": "错误。这是 '-!' 前缀的语义（禁 pre+normal、留 post），不是 '!!'。"
+      },
+      {
+        "text": "'!!' 表示强制并行执行内联 loader 以加速，且该语法在 v5 已被完全移除",
+        "isCorrect": false,
+        "description": "错误。'!!' 与并行无关；且 v5 只是弃用 CLI 内联 loader，并非把内联语法完全移除，源码 import 中仍可用。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：考虑配置 module.rules 中存在 enforce: 'pre' 的 eslint-loader、普通 babel-loader 与一个内联 loader。关于 webpack 的 pitching 阶段与 normal 阶段两者的 loader 执行类别顺序，下列哪项正确？",
+    "explanation": "Webpack 把 loader 分为 pre（enforce: 'pre'）、inline、normal、post（enforce: 'post'）四类，按两个阶段调度：pitching 阶段顺序为 post → inline → normal → pre；normal（真正的内容转换）阶段顺序则完全相反，为 pre → normal → inline → post。pitch 是「从左/外向里」预先调用各 loader 的 pitch 方法；若某个 loader 的 pitch 返回了值，则反向折返、跳过其右侧（更内层）尚未执行的 loader，直接进入已 pitch 过的左侧 loader 的 normal 执行。这就是 style-loader 等通过 pitch 短路重写请求的机制基础。",
+    "tags": ["webpack", "loaders", "enforce", "pitch", "专家"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "pitching 阶段：post → inline → normal → pre；normal 阶段：pre → normal → inline → post",
+        "isCorrect": true,
+        "description": "正确。官方 Rule.enforce 文档明确两阶段顺序：pitch 为 post,inline,normal,pre，normal 为 pre,normal,inline,post，二者互为镜像。"
+      },
+      {
+        "text": "两个阶段顺序相同，都是 pre → normal → inline → post",
+        "isCorrect": false,
+        "description": "错误。两阶段方向相反：pre→normal→inline→post 只是 normal 阶段的顺序，pitch 阶段恰好倒过来。"
+      },
+      {
+        "text": "pitching 阶段：pre → normal → inline → post；normal 阶段：post → inline → normal → pre",
+        "isCorrect": false,
+        "description": "错误。把两个阶段的顺序写反了。pitch 是 post→inline→normal→pre，normal 才是 pre→normal→inline→post。"
+      },
+      {
+        "text": "只有 normal 阶段存在类别顺序，pitch 阶段所有 loader 同时触发无先后",
+        "isCorrect": false,
+        "description": "错误。pitch 阶段同样按 post→inline→normal→pre 严格有序调用各 loader 的 pitch 方法，并非同时触发。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：以下两段配置——其一在 .css 规则下用 oneOf 配合 resourceQuery 区分 './a.css?inline' 与默认情况；其二用 module.noParse 忽略某大型 UMD 库。关于它们的行为，下列哪项准确？",
+    "explanation": "oneOf 是一组 Rule 数组，当父规则命中后，oneOf 内「只有第一个匹配的子规则」会被采用（命中即停），常配合 resourceQuery（匹配请求 `?` 之后的查询串，如 ?inline）做同一文件类型的分流。module.noParse 让 webpack 跳过对匹配文件的解析以提升构建性能，但被忽略的文件中绝不能含有 import / require / define 等任何模块导入机制，否则其依赖不会被处理、运行时会出错——所以它只适合已打好包、无内部依赖引用的库（如某些 UMD/min 文件）。",
+    "tags": ["webpack", "loaders", "oneOf", "resourceQuery", "noParse", "专家"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "oneOf 在父规则命中后只采用第一个匹配的子规则；noParse 忽略的文件不得包含 import/require/define",
+        "isCorrect": true,
+        "description": "正确。官方文档：oneOf 中 only the first matching Rule is used；noParse 的文件 must not have calls to import/require/define 等，否则依赖丢失。两条均与原文一致。"
+      },
+      {
+        "text": "oneOf 会依次应用所有匹配的子规则（类似多个 use 叠加）；noParse 仅跳过该文件的 minify",
+        "isCorrect": false,
+        "description": "错误。oneOf 是命中即停、只用第一个匹配项，不会叠加；noParse 是跳过模块「解析（parse 依赖）」而非跳过压缩。"
+      },
+      {
+        "text": "resourceQuery 匹配的是文件扩展名，noParse 可安全用于任何含 import 的源文件以加速",
+        "isCorrect": false,
+        "description": "错误。resourceQuery 匹配的是请求 `?` 之后的查询字符串（如 ?inline），不是扩展名；noParse 用于含 import 的文件会导致其依赖被漏掉。"
+      },
+      {
+        "text": "oneOf 只能基于 test 区分，不支持 resourceQuery；noParse 会自动 tree-shake 被忽略的库",
+        "isCorrect": false,
+        "description": "错误。oneOf 子规则完全支持 resourceQuery（官方示例即用 ?inline/?external 分流）；noParse 是跳过解析，与 tree-shaking 无关，被忽略的库整体进包。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中，团队成员把 `*.css` 文件配成 `use: ['css-loader']`（只用了 css-loader，没有其他 loader），结果运行后页面上完全看不到任何样式生效。关于这一现象的原因，下列说法正确的是？",
+    "explanation": "css-loader 的职责按官方文档原文是「interprets `@import` and `url()` like `import/require()` and resolves them」——它把 CSS 中的 `@import` 和 `url()` 当成模块依赖解析，把 CSS 翻译成 JS 模块（CommonJS/ESM 数组），但**不会把样式注入页面**。要让样式真正生效，开发环境需要 `style-loader` 在运行时把 CSS 通过 `<style>` 标签注入 DOM，生产环境则用 `MiniCssExtractPlugin.loader` 抽取成独立 `.css` 文件。所以只配 css-loader 时 CSS 只是被「解析成 JS 模块」却没有任何东西把它落到页面上。",
+    "tags": ["webpack", "css-loader", "css处理链", "中级", "style-loader"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "css-loader 只负责解析 @import/url() 并把 CSS 翻译成 JS 模块，本身不注入页面；需配合 style-loader（开发，注入 DOM）或 MiniCssExtractPlugin.loader（生产，抽取文件）才能生效",
+        "isCorrect": true,
+        "description": "正确。官方文档明确 css-loader 只解析 @import/url() 并将 CSS 转为 JS 模块，注入/抽取由 style-loader 或 mini-css-extract-plugin 完成。"
+      },
+      {
+        "text": "css-loader 默认会把样式注入页面，但 Webpack 5 起需要手动把 `injectType: 'styleTag'` 打开才生效",
+        "isCorrect": false,
+        "description": "错误。`injectType` 是 style-loader 的选项而非 css-loader 的，且 css-loader 从不负责注入；该说法把两个 loader 的职责张冠李戴。"
+      },
+      {
+        "text": "样式没生效是因为漏配了 `MiniCssExtractPlugin` 插件实例；只要在 plugins 里 new 一个该插件，即使 use 中只有 css-loader 也会自动注入",
+        "isCorrect": false,
+        "description": "错误。仅在 plugins 注册插件而 use 链里没有 `MiniCssExtractPlugin.loader` 是不会抽取/注入的；且抽取产物是独立 css 文件，仍需在 HTML 中引用，并非「注入」。"
+      },
+      {
+        "text": "css-loader 已废弃注入能力，Webpack 5 应改用内置的 asset modules（`type: 'asset/css'`）来注入样式",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 的 asset modules 类型只有 asset/resource、asset/inline、asset/source、asset，并不存在 asset/css，也不负责 CSS 注入。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：某 Webpack 5 项目想让样式在「开发环境注入 DOM、生产环境抽取成独立 .css 文件」之间切换，下列对 style-loader 与 MiniCssExtractPlugin.loader 关系的描述，正确的是？",
+    "explanation": "官方文档明确：`MiniCssExtractPlugin.loader` 在 loader 链中**替代** `style-loader`，二者「Do not use style-loader and mini-css-extract-plugin together」不能同时用于同一条链。推荐做法是：development（含 webpack-dev-server）用 style-loader（运行时注入 `<style>`，更快、支持 HMR），production 用 MiniCssExtractPlugin.loader（抽取独立 css 文件，便于 CSS/JS 并行加载、缓存）。典型写法是 `devMode ? 'style-loader' : MiniCssExtractPlugin.loader`。",
+    "tags": [
+      "webpack",
+      "style-loader",
+      "mini-css-extract-plugin",
+      "中级",
+      "css处理链"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "二者在链中互相替代、不能同时用于同一条规则；惯例是开发用 style-loader（注入 DOM、更快、支持 HMR），生产用 MiniCssExtractPlugin.loader（抽取独立 css 文件）",
+        "isCorrect": true,
+        "description": "正确。官方文档明确二者不可同用，MiniCssExtractPlugin.loader 替代 style-loader，并推荐开发用前者、生产用后者。"
+      },
+      {
+        "text": "应在同一条 use 链里同时放 style-loader 和 MiniCssExtractPlugin.loader，由 Webpack 根据 mode 自动二选一执行",
+        "isCorrect": false,
+        "description": "错误。Webpack 不会按 mode 自动跳过其中之一；二者同时放会导致样式被注入又被抽取的冲突，官方明文禁止同用。"
+      },
+      {
+        "text": "MiniCssExtractPlugin.loader 适合开发（HMR 快），style-loader 适合生产（抽取文件利于缓存）",
+        "isCorrect": false,
+        "description": "错误。推荐恰好相反：style-loader 适合开发（运行时注入、快），MiniCssExtractPlugin.loader 适合生产（抽取独立文件利于并行加载与缓存）。"
+      },
+      {
+        "text": "Webpack 5 起 style-loader 已被废弃，所有环境都必须改用 MiniCssExtractPlugin.loader",
+        "isCorrect": false,
+        "description": "错误。style-loader 在 Webpack 5 仍是开发环境的推荐选择，并未废弃。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中为 SCSS 配置生产环境抽取链，规则为 `test: /\\.s[ac]ss$/`。要实现「抽取独立 css 文件 → 解析 CSS 模块依赖 → 跑 PostCSS 自动加前缀 → 编译 Sass」，use 数组的正确写法是？（注意 loader 执行顺序）",
+    "explanation": "Webpack 的 loader 链执行顺序是**从右到左 / 从下到上**，而 use 数组从上到下书写时，靠后的先执行。源文件是 Sass，必须最先编译，所以 sass-loader 写在最后；接着 postcss-loader（加前缀），再 css-loader（把 CSS 转 JS 并解析 @import/url），最后由最前面的 MiniCssExtractPlugin.loader 抽取。官方推荐链正是 `[MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'sass-loader']`。生产环境用 MiniCssExtractPlugin.loader 而非 style-loader。",
+    "tags": [
+      "webpack",
+      "sass-loader",
+      "loader顺序",
+      "中级",
+      "css处理链",
+      "postcss"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`['MiniCssExtractPlugin.loader', 'css-loader', 'postcss-loader', 'sass-loader']`（书写从上到下，执行从下到上：sass→postcss→css→抽取）",
+        "isCorrect": true,
+        "description": "正确。loader 从右到左/从下到上执行，sass-loader 在数组末尾最先把 Sass 编译为 CSS，逐层向上到 MiniCssExtractPlugin.loader 抽取，符合官方推荐链。"
+      },
+      {
+        "text": "`['sass-loader', 'postcss-loader', 'css-loader', 'MiniCssExtractPlugin.loader']`（书写顺序即执行顺序，从上往下逐个跑）",
+        "isCorrect": false,
+        "description": "错误。Webpack loader 从右到左执行，按此写法会让 MiniCssExtractPlugin.loader 先于 css-loader 处理原始 Sass 文本，链条颠倒会直接报错。"
+      },
+      {
+        "text": "`['MiniCssExtractPlugin.loader', 'sass-loader', 'postcss-loader', 'css-loader']`",
+        "isCorrect": false,
+        "description": "错误。css-loader 被放到末尾会最先接触未经编译的 Sass 源码，而 Sass 语法不是合法 CSS，会解析失败；css-loader 应在 sass/postcss 之后。"
+      },
+      {
+        "text": "`['style-loader', 'css-loader', 'postcss-loader', 'sass-loader']`",
+        "isCorrect": false,
+        "description": "错误。链顺序对，但生产环境要抽取文件应用 MiniCssExtractPlugin.loader 而非 style-loader（后者是运行时注入 DOM，不产生独立 css 文件）。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中配置 SCSS 处理链时，关于 sass-loader 的依赖与配置，下列说法正确的是？",
+    "explanation": "官方文档明确：sass-loader「requires you to install either Dart Sass (`sass`) or Sass Embedded (`sass-embedded`) on your own」——它本身不内置 Sass 实现，需要自行安装 `sass` 或 `sass-embedded`，解析优先级是 sass-embedded > sass。`additionalData` 选项（类型 `string | function`，默认 `undefined`）会在每个入口文件**前面**注入 Sass 代码，常用于注入全局变量/mixin。`api` 选项默认 `'auto'`，可显式设为 `'modern-compiler'`（配合 sass-embedded 性能更好）；旧的 legacy JS API 已不再支持，若曾用 `api: 'legacy'` 需迁移到 modern API。",
+    "tags": [
+      "webpack",
+      "sass-loader",
+      "additionalData",
+      "专家",
+      "css处理链",
+      "sass-embedded"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "sass-loader 不内置编译器，需自行安装 `sass` 或 `sass-embedded`；`additionalData` 可在每个入口前注入全局变量/mixin；`api` 可设 `'modern-compiler'`，legacy JS API 已不再支持",
+        "isCorrect": true,
+        "description": "正确。三点均符合官方文档：需另装 sass/sass-embedded、additionalData 前置注入、api 支持 modern-compiler 且 legacy 已废弃。"
+      },
+      {
+        "text": "sass-loader 已内置 Dart Sass 实现，安装后开箱即用，无需额外安装 `sass` 或 `sass-embedded`",
+        "isCorrect": false,
+        "description": "错误。官方明确 sass-loader 需要使用者自行安装 sass 或 sass-embedded 作为 peer 依赖，并不内置编译器。"
+      },
+      {
+        "text": "`additionalData` 的作用是把内容追加到每个 Sass 文件**末尾**，常用于覆盖第三方库定义的变量",
+        "isCorrect": false,
+        "description": "错误。additionalData 是 prepend（注入到文件前面）而非末尾，正因如此才能让后续代码用上注入的全局变量。"
+      },
+      {
+        "text": "`api: 'legacy'` 是当前推荐配置，能获得最佳兼容性；`'modern-compiler'` 仍处于实验阶段不可用于生产",
+        "isCorrect": false,
+        "description": "错误。legacy JS API 已不再被支持，需迁移到 modern API；modern-compiler 配合 sass-embedded 是推荐的高性能方案，并非实验性。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中，CSS 处理链为 `[MiniCssExtractPlugin.loader, css-loader, postcss-loader, sass-loader]`，且开启了 `css-loader.options.modules`。为保证 CSS Modules 中通过 `@import`/`composes` 引入的依赖也能经过 postcss-loader 和 sass-loader 处理，`importLoaders` 应设为多少？",
+    "explanation": "官方文档对 `importLoaders`（默认 `0`）的定义：指定「在 css-loader **之前**（数组中位于 css-loader 之后、即更先执行的）有多少个 loader」应用于 `@import` 资源和 CSS Modules 导入。本链中 css-loader 后面（更先执行）有 postcss-loader 和 sass-loader 两个 loader，因此 `importLoaders: 2`。规则是「前置 loader 有几个就设几」。设为 1 只会让 postcss-loader 处理 import 进来的资源，sass-loader 被漏掉；设为 0 则两者都不处理。",
+    "tags": [
+      "webpack",
+      "css-loader",
+      "importLoaders",
+      "专家",
+      "css处理链",
+      "css-modules"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "2，因为 css-loader 之后（更先执行）还有 postcss-loader 和 sass-loader 两个前置 loader，需要它们也作用于 @import/composes 引入的资源",
+        "isCorrect": true,
+        "description": "正确。importLoaders 等于 css-loader 前置 loader 的数量，本链有 postcss-loader + sass-loader 共 2 个，故设 2。"
+      },
+      {
+        "text": "3，因为整条链一共有 3 个非 MiniCssExtractPlugin.loader 的处理 loader，应把它们全部计入",
+        "isCorrect": false,
+        "description": "错误。importLoaders 只数 css-loader 之前的前置 loader，不包含 css-loader 自身，也不应把 css-loader 算进去，本链应为 2 而非 3。"
+      },
+      {
+        "text": "1，importLoaders 只需把紧邻 css-loader 的那一个 loader 计入即可，多写无效",
+        "isCorrect": false,
+        "description": "错误。importLoaders 表示「有几个前置 loader」而非「只数紧邻一个」；设 1 会漏掉 sass-loader，导致 @import 进来的 .scss 不被编译。"
+      },
+      {
+        "text": "0，因为 modules 模式下 css-loader 会自动让所有前置 loader 处理被导入的资源，无需手动设置",
+        "isCorrect": false,
+        "description": "错误。importLoaders 默认就是 0，且不会因开启 modules 而自动调整；不显式设置会导致 @import/composes 引入的资源跳过 postcss/sass 处理。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中开启 css-loader 的 CSS Modules（`modules` 选项），下列关于 `localIdentName`、`:local`/`:global`/`composes` 以及 HMR 的说法，正确的是？",
+    "explanation": "css-loader 的 `modules.localIdentName` 默认 `'[hash:base64]'`，控制生成类名的模板，官方建议开发用 `'[path][name]__[local]'` 便于调试、生产用 `'[hash:base64]'`。CSS Modules 语法中：`:local(.x)` 表示局部作用域（默认 local 模式下普通类名即局部）、`:global(.x)` 表示全局不被哈希、`composes` 用于组合复用其他类（可加 `from './other.css'` 跨文件组合）。关于 HMR：mini-css-extract-plugin 在 Webpack 5 中「HMR is automatically supported in webpack 5. No need to configure it」——无需手动配置。",
+    "tags": [
+      "webpack",
+      "css-loader",
+      "css-modules",
+      "中级",
+      "localIdentName",
+      "hmr"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`localIdentName` 默认 `'[hash:base64]'`，可改成 `'[path][name]__[local]'` 便于开发调试；`:local`/`:global` 控制作用域、`composes` 组合复用类；mini-css-extract-plugin 在 Webpack 5 中 HMR 自动支持无需配置",
+        "isCorrect": true,
+        "description": "正确。默认 localIdentName、开发期可读模板、CSS Modules 三种语法语义，以及 Webpack 5 下 mini-css-extract-plugin 的 HMR 自动支持，均符合官方文档。"
+      },
+      {
+        "text": "`localIdentName` 默认 `'[path][name]__[local]'`，生产环境为安全起见反而要改成纯哈希 `'[hash:base64]'`",
+        "isCorrect": false,
+        "description": "错误。默认值就是 `'[hash:base64]'`（适合生产），可读模板 `'[path][name]__[local]'` 是开发期手动配置的，方向说反了。"
+      },
+      {
+        "text": "`composes` 用于把多个 CSS 文件合并成一个 bundle，`:global` 表示该类会被哈希成局部作用域",
+        "isCorrect": false,
+        "description": "错误。composes 是在类之间组合复用样式而非合并文件；`:global` 恰恰表示不哈希、保持全局，与「哈希成局部」相反。"
+      },
+      {
+        "text": "在 Webpack 5 中使用 mini-css-extract-plugin 必须额外引入 HotModuleReplacementPlugin 并手动开启 hmr 选项，CSS 才能热更新",
+        "isCorrect": false,
+        "description": "错误。官方文档说明 Webpack 5 下 HMR 自动支持、无需配置；且使用 webpack-dev-server 时不应手动加 HotModuleReplacementPlugin。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 plugin 和 loader 的区别，下列说法哪一项是正确的？",
+    "explanation": "loader 与 plugin 是 Webpack 两类完全不同的扩展机制。loader 本质是一个对单个模块源码做转换的函数（input → output），只在「模块解析/加载」这一环节针对特定文件类型工作，通过 `module.rules` 配置；而 plugin 是一个带有 `apply(compiler)` 方法的对象，借助 tapable 钩子接入「整个编译生命周期」，能做 loader 做不到的事（注入资源、优化产物、定义全局常量等），通过 `plugins` 数组以 `new` 实例化使用。官方原话即「plugins can do anything else that a loader cannot do」。因此把 loader 局限于文件转换、plugin 覆盖整个生命周期才是准确描述。",
+    "tags": ["webpack", "plugins", "loader-vs-plugin", "初级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "loader 用于转换特定类型的模块（在 module.rules 中配置）；plugin 通过 apply(compiler) 接入整个编译生命周期，能做 loader 做不到的事（在 plugins 数组中以 new 实例化）",
+        "isCorrect": true,
+        "description": "正确。这准确概括了两者职责：loader 是模块级的源码转换函数，plugin 借 tapable 钩子覆盖整个编译流程，二者配置位置和能力范围都不同，符合官方文档定义。"
+      },
+      {
+        "text": "loader 和 plugin 都通过 plugins 数组配置，区别仅在于 loader 处理 CSS、plugin 处理 JS",
+        "isCorrect": false,
+        "description": "错误。loader 配置在 module.rules 而非 plugins 数组；且 loader/plugin 与「处理 CSS 还是 JS」无关——loader 可处理任意文件类型，plugin 也不限于 JS。"
+      },
+      {
+        "text": "plugin 用于转换单个模块的源码，loader 用于接入编译生命周期的各个钩子",
+        "isCorrect": false,
+        "description": "错误。职责说反了：转换单个模块源码的是 loader，接入编译生命周期钩子的是 plugin。"
+      },
+      {
+        "text": "loader 必须带有 apply(compiler) 方法，plugin 是一个返回字符串的纯函数",
+        "isCorrect": false,
+        "description": "错误。带 apply(compiler) 方法的是 plugin；loader 才是函数（接收源码返回转换结果），并非「返回字符串的纯函数」这种笼统说法，且 apply 归属也弄反了。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：自定义一个最简单的 plugin，使其能在编译开始时打印日志。下列实现中符合 Webpack plugin 规范的是哪一项？",
+    "explanation": "Webpack plugin 的本质是「一个带有 apply 方法的对象/类」，`apply(compiler)` 由编译器调用并传入 compiler 实例，插件再通过 `compiler.hooks.<hookName>.tap(pluginName, callback)` 用 tapable 钩子接入生命周期。官方推荐 `tap` 的第一个参数用驼峰化的插件名常量。所以正确写法是定义类、实现 `apply(compiler)`、在内部 `compiler.hooks.run.tap('MyPlugin', ...)`。注意这是 plugin 机制，不是导出转换函数（那是 loader），也不是直接监听 `compiler.on(...)`（Webpack 用 tapable 钩子的 `.tap`/`.tapAsync`/`.tapPromise`，没有 EventEmitter 风格的 `on`）。",
+    "tags": ["webpack", "plugins", "apply-compiler", "tapable", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "class MyPlugin { apply(compiler) { compiler.hooks.run.tap('MyPlugin', () => console.log('start')); } }",
+        "isCorrect": true,
+        "description": "正确。定义类并实现 apply(compiler)，在内部用 compiler.hooks.run.tap(pluginName, cb) 接入 tapable 钩子，第一个参数用插件名——这正是官方文档给出的标准写法。"
+      },
+      {
+        "text": "class MyPlugin { apply(compiler) { compiler.on('run', () => console.log('start')); } }",
+        "isCorrect": false,
+        "description": "错误。Webpack 基于 tapable，钩子需用 hooks.run.tap/tapAsync/tapPromise 注册，并没有 EventEmitter 风格的 compiler.on(...) 监听 API。"
+      },
+      {
+        "text": "export default function (source) { console.log('start'); return source; }",
+        "isCorrect": false,
+        "description": "错误。这是 loader 的形态（接收源码、返回转换后的源码），不是 plugin。plugin 需要 apply 方法并接入 compiler 钩子。"
+      },
+      {
+        "text": "module.exports = { hooks: { run: () => console.log('start') } }",
+        "isCorrect": false,
+        "description": "错误。plugin 不是直接导出一个 hooks 对象，而是要提供 apply(compiler) 方法，由编译器在内部调用并把 compiler 传进来后再 tap 到具体钩子上。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack 5：在配置中使用内置的 DefinePlugin，下列对其值替换规则的理解哪一项是正确的？",
+    "explanation": "DefinePlugin 在编译期做「文本级」替换。关键规则：如果传入的值是字符串，它会被当作「代码片段」直接插入源码——例如 `VERSION: '5fa3b9'` 会被替换成裸标识符 `5fa3b9`（非法），而 `TWO: '1+1'` 会被替换成表达式 `1+1`（求值为 2）。要得到一个真正的字符串常量，必须显式 `JSON.stringify('5fa3b9')`，即让传入的值本身包含引号。官方甚至明确建议用 `'process.env.NODE_ENV': JSON.stringify(...)` 而非整体覆盖 `process` 对象。因此「字符串值被当作代码片段，需要 JSON.stringify 才能得到字符串字面量」是正确理解。",
+    "tags": ["webpack", "plugins", "DefinePlugin", "JSON.stringify", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "传入的字符串值会被当作「代码片段」原样插入，所以要替换成一个字符串字面量必须写 JSON.stringify('foo')（即值本身要包含引号）",
+        "isCorrect": true,
+        "description": "正确。这是 DefinePlugin 的核心规则：字符串值即代码片段。'1+1' 会被插成表达式 1+1，要得到字符串常量必须 JSON.stringify，让值带上引号，否则会变成裸标识符导致语法错误。"
+      },
+      {
+        "text": "DefinePlugin 会自动给所有字符串值加上引号，所以直接写 VERSION: '5fa3b9' 就能得到字符串 \"5fa3b9\"",
+        "isCorrect": false,
+        "description": "错误。DefinePlugin 不会自动加引号，VERSION: '5fa3b9' 会被替换为裸标识符 5fa3b9（非法 token）。自动 stringify 默认值的是 EnvironmentPlugin，而非 DefinePlugin。"
+      },
+      {
+        "text": "值在运行时通过读取浏览器环境变量动态注入，因此不同部署环境无需重新打包即可改变",
+        "isCorrect": false,
+        "description": "错误。DefinePlugin 是编译期静态文本替换，值在打包时就被写死进产物，运行时无法再改；浏览器也没有「环境变量」可读。"
+      },
+      {
+        "text": "必须把整个 process 对象作为值传入（如 process: { env: {...} }），官方推荐这种整体覆盖写法",
+        "isCorrect": false,
+        "description": "错误。官方明确警告不要整体覆盖 process 对象（会破坏依赖 process 其他属性的模块），而是推荐精确定义 'process.env.NODE_ENV': JSON.stringify(...)。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack 5：团队希望「源码里直接用 $ 调用 jQuery 而不必每个文件都 import」，同时「打死代码分支以便 minifier 消除调试代码」，且「让 EnvironmentPlugin 把 NODE_ENV 注入到 process.env」。下列对所涉及内置插件的搭配理解，哪一项完全正确？",
+    "explanation": "这道题考三个内置插件的精确分工。(1) ProvidePlugin：把标识符映射到模块，当某标识符作为「自由变量」出现时自动加载对应模块——`new webpack.ProvidePlugin({ $: 'jquery', jQuery: 'jquery' })` 即可让源码免 import 直接用 `$`。(2) DefinePlugin 配合 minifier 做死代码消除：`if (PRODUCTION)` 中的 `PRODUCTION` 被替换为 `true` 后，`if(!true)` 分支会被 minifier 整段删除。(3) EnvironmentPlugin 是 DefinePlugin 在 process.env 键上的「简写」，`new webpack.EnvironmentPlugin(['NODE_ENV'])` 等价于 `new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV) })`，且会自动对默认值 JSON.stringify。把这三件事正确对应即为正解。",
+    "tags": [
+      "webpack",
+      "plugins",
+      "ProvidePlugin",
+      "EnvironmentPlugin",
+      "dead-code-elimination",
+      "专家"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "ProvidePlugin 把 $ 映射到 'jquery' 实现免 import；DefinePlugin 把 PRODUCTION 替换为 true 让 minifier 删除死分支；EnvironmentPlugin 是 DefinePlugin 在 process.env 上的简写，且会自动对默认值 JSON.stringify",
+        "isCorrect": true,
+        "description": "正确。三者分工精准：ProvidePlugin 负责自由变量自动加载、DefinePlugin 负责编译期常量替换驱动死代码消除、EnvironmentPlugin 是针对 process.env 的 DefinePlugin 简写并自动 stringify 默认值。"
+      },
+      {
+        "text": "ProvidePlugin 通过在全局 window 上挂载 $ 实现免 import；EnvironmentPlugin 与 DefinePlugin 无关，是读取 .env 文件的独立插件",
+        "isCorrect": false,
+        "description": "错误。ProvidePlugin 是在「模块作用域内」为自由变量注入 require，并非往 window 挂全局；EnvironmentPlugin 恰恰就是 DefinePlugin 的简写，也不负责解析 .env 文件（那是 dotenv 之类的工作）。"
+      },
+      {
+        "text": "死代码消除由 DefinePlugin 自身完成，无需 minifier；EnvironmentPlugin 不会对默认值做 JSON.stringify，需手动加引号",
+        "isCorrect": false,
+        "description": "错误。DefinePlugin 只做替换（得到 if(!true) 这类恒定分支），真正删除死分支的是 minifier（如 TerserPlugin）；且 EnvironmentPlugin 与 DefinePlugin 不同，它会自动对默认值 JSON.stringify。"
+      },
+      {
+        "text": "ProvidePlugin 与 EnvironmentPlugin 可互换，二者都用于把环境变量注入全局；DefinePlugin 已在 Webpack 5 被废弃",
+        "isCorrect": false,
+        "description": "错误。ProvidePlugin（自由变量自动加载模块）与 EnvironmentPlugin（process.env 替换）职责完全不同、不可互换；DefinePlugin 在 Webpack 5 仍是核心内置插件，并未废弃。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack 5：为了把 moment.js 体积庞大的 locale 目录从产物中剔除，使用内置 IgnorePlugin。下列配置中能正确实现该目的的是哪一项？",
+    "explanation": "IgnorePlugin 阻止为「匹配的 import/require」生成模块。关键陷阱在官方文档明确指出：`resourceRegExp` 测试的是「源码里写给 require/import 的那个字符串」，而不是解析后的文件路径。moment 源码里是 `require('./locale/' + name)`，其请求字符串前缀为 `./locale`，所在目录（context）以 `moment` 结尾。因此正确写法是 `new webpack.IgnorePlugin({ resourceRegExp: /^\\.\\/locale$/, contextRegExp: /moment$/ })`。用 `/moment\\/locale\\//` 去匹配解析后路径是官方明确标注的「错误用法」，因为 resourceRegExp 针对的是请求字符串而非最终路径。",
+    "tags": ["webpack", "plugins", "IgnorePlugin", "moment-locale", "专家"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "new webpack.IgnorePlugin({ resourceRegExp: /^\\.\\/locale$/, contextRegExp: /moment$/ })",
+        "isCorrect": true,
+        "description": "正确。resourceRegExp 匹配 moment 源码中的请求字符串 './locale'，contextRegExp 限定该请求来自以 moment 结尾的目录，正是官方推荐的剔除 locale 写法。"
+      },
+      {
+        "text": "new webpack.IgnorePlugin({ resourceRegExp: /moment\\/locale\\// })",
+        "isCorrect": false,
+        "description": "错误。这是官方明确标注的错误用法：resourceRegExp 测试的是源码里给 require/import 的字符串（如 './locale'），而非解析后的文件路径，所以匹配不到。"
+      },
+      {
+        "text": "new webpack.IgnorePlugin({ test: /moment/, exclude: /locale/ })",
+        "isCorrect": false,
+        "description": "错误。IgnorePlugin 的选项是 resourceRegExp / contextRegExp（或 checkResource 函数），并没有 test / exclude 这些属于 module.rules 的字段。"
+      },
+      {
+        "text": "new webpack.IgnorePlugin({ resourceRegExp: /^moment$/ })",
+        "isCorrect": false,
+        "description": "错误。/^moment$/ 会试图忽略对 moment 主包本身的引入，导致 moment 整体不可用，而非仅剔除其 locale 目录。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack 5：在 plugins 中使用 HtmlWebpackPlugin 自动生成承载 bundle 的 HTML。下列对其默认行为与多页生成方式的描述，哪一项完全正确？",
+    "explanation": "HtmlWebpackPlugin 用于自动生成挂载 webpack 产物的 HTML，特别适合带 hash 的文件名场景。其默认行为：自动把所有 entry 产生的 bundle 以 `<script>` 注入（`inject` 默认开启、脚本默认放在 body）；`title` 默认 'webpack App'，`filename` 默认 'index.html'；`scriptLoading` 默认值在新版中为 'defer'，即注入的脚本带 `defer` 属性。要生成多个 HTML 页面，需要为每个页面「各加一个插件实例」并指定不同的 `filename`（如 index.html、about.html），而不是在单个实例里传数组。因此「自动注入 bundle + scriptLoading 默认 defer + 多实例多页」的描述正确。",
+    "tags": [
+      "webpack",
+      "plugins",
+      "HtmlWebpackPlugin",
+      "scriptLoading",
+      "专家"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认会自动把所有 bundle 注入生成的 HTML，scriptLoading 默认值为 'defer'（注入的 script 带 defer），生成多页需为每个页面各加一个 HtmlWebpackPlugin 实例并指定不同 filename",
+        "isCorrect": true,
+        "description": "正确。无配置时自动注入全部 bundle、title 默认 'webpack App'、filename 默认 'index.html'、scriptLoading 默认 'defer'；多页通过多个插件实例 + 不同 filename 实现，全部符合官方文档。"
+      },
+      {
+        "text": "默认不会注入任何 bundle，必须手动在模板里写 <script> 标签；一个实例可通过传入 filenames 数组同时生成多个 HTML",
+        "isCorrect": false,
+        "description": "错误。默认就会自动注入所有 bundle（这正是其核心价值）；且不存在 filenames 数组一次生成多页的用法，多页要靠多个插件实例。"
+      },
+      {
+        "text": "scriptLoading 默认值为 'blocking'（同步阻塞脚本），注入的 <script> 不带 defer 或 async",
+        "isCorrect": false,
+        "description": "错误。当前版本 scriptLoading 默认是 'defer'，注入的脚本带 defer 属性以避免阻塞解析；'blocking' 是需显式指定的另一种取值。"
+      },
+      {
+        "text": "它本质是一个 loader，需要在 module.rules 中以 test: /\\.html$/ 注册才能生成 HTML",
+        "isCorrect": false,
+        "description": "错误。HtmlWebpackPlugin 是 plugin（以 new 实例化放入 plugins 数组），不是 loader，也不通过 module.rules 注册。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 webpack.config.js 中既没有设置 mode 字段，也没有传 --mode CLI 参数，那么 Webpack 5 会以哪个 mode 进行构建？",
+    "explanation": "根据官方 mode 文档，Webpack 的默认 mode 是 production（不是 development、也不是 none）。也就是说，只要你不显式指定 mode，构建就会按 production 走全套优化：deterministic 的 moduleIds/chunkIds、minimize（TerserPlugin 压缩）、concatenateModules（作用域提升）、usedExports/sideEffects 摇树，并通过 DefinePlugin 把打包产物里的 process.env.NODE_ENV 设为 \"production\"。同时 Webpack 还会在控制台打印一条警告，提醒你没有设置 mode、将退回 production 默认值，建议显式声明。把默认值误记成 development 或 none 是常见的入门错误。",
+    "tags": ["webpack", "中级", "mode", "默认值", "production"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "production",
+        "isCorrect": true,
+        "description": "正确。官方文档明确：mode 不设时默认 production，会启用全部生产优化并把产物中的 NODE_ENV 设为 production，同时打印一条未设置 mode 的警告。"
+      },
+      {
+        "text": "development",
+        "isCorrect": false,
+        "description": "错误。development 必须显式设置才生效；它启用 named ids、eval devtool、内存缓存等，但绝不是默认值。"
+      },
+      {
+        "text": "none",
+        "isCorrect": false,
+        "description": "错误。none 会关闭所有内置优化，但它同样需要显式声明，不会在缺省时自动采用。"
+      },
+      {
+        "text": "Webpack 会直接报错中止，因为 mode 是必填项",
+        "isCorrect": false,
+        "description": "错误。mode 不是必填项；缺省时只是回退到 production 并打印警告，构建依然能完成。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：你在 webpack.config.js 顶部写了 `mode: \"production\"`，然后在同一个配置文件里用 `if (process.env.NODE_ENV === \"production\")` 来切换 devtool。运行后发现该分支始终不进入。最准确的原因是？",
+    "explanation": "这是 mode 最经典的陷阱。Webpack 的 mode 是通过内置 DefinePlugin 把 process.env.NODE_ENV 注入到「被打包的业务代码」里，让运行时的 bundle 能读到该值；它并不会修改「webpack 配置文件这个 Node 进程」的 process.env.NODE_ENV。配置文件在 Node 里执行时，process.env.NODE_ENV 仍然是 undefined（除非你在启动命令里用 cross-env 等显式设置）。官方文档因此建议：要在配置文件内根据模式分支，应该把配置导出为函数 `(env, argv) => {...}`，通过 argv.mode 读取当前模式，而不是依赖 process.env.NODE_ENV。",
+    "tags": ["webpack", "高级", "mode", "NODE_ENV", "DefinePlugin", "陷阱"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mode 只通过 DefinePlugin 把 NODE_ENV 注入到打包产物里，配置文件进程内的 process.env.NODE_ENV 仍是 undefined；应改用 `(env, argv) => {...}` 读 argv.mode",
+        "isCorrect": true,
+        "description": "正确。mode 设置的是 bundle 运行时的 NODE_ENV，不影响 config 进程的环境变量；官方推荐用函数式配置读 argv.mode 来做模式分支。"
+      },
+      {
+        "text": "mode 的赋值在 Webpack 解析配置之后才生效，所以配置文件读到的 NODE_ENV 总是上一次构建的值",
+        "isCorrect": false,
+        "description": "错误。不存在「上一次构建的值」这种缓存机制；问题根源是 mode 根本不写入 config 进程的 process.env，而非时序。"
+      },
+      {
+        "text": "production 模式下 Webpack 会把 process.env 整体冻结为只读，导致读取返回 undefined",
+        "isCorrect": false,
+        "description": "错误。Webpack 不会冻结 Node 进程的 process.env；该字段为 undefined 是因为从未被赋值，而非被冻结。"
+      },
+      {
+        "text": "需要额外安装并注册 DefinePlugin 才能让 NODE_ENV 在配置文件里可用",
+        "isCorrect": false,
+        "description": "错误。DefinePlugin 是 mode 内置启用的，且它作用于打包产物而非 config 进程；手动注册也无法让配置文件读到 NODE_ENV。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 mode 三个取值（production / development / none）启用的内置优化，下列描述哪一项是正确的？",
+    "explanation": "对照官方文档逐项核对：production 默认启用 moduleIds/chunkIds=deterministic、minimize=true（TerserPlugin）、concatenateModules=true（作用域提升 ModuleConcatenationPlugin）、usedExports/sideEffects 摇树等；development 默认 moduleIds/chunkIds=named（可读名）、devtool 推荐 eval 系、启用内存缓存（cache: memory）、minimize=false、concatenateModules=false；none 则关闭全部内置优化（moduleIds/chunkIds=natural、minimize/concatenateModules=false）。因此「development 用 named ids、none 关闭全部优化」是正确组合。",
+    "tags": ["webpack", "中级", "mode", "optimization", "内置优化"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "development 默认使用 named 的 module/chunk ids 以便调试，而 none 会关闭所有内置优化（ids 退回 natural、不压缩、不作用域提升）",
+        "isCorrect": true,
+        "description": "正确。development=named ids + 不压缩 + 内存缓存 + eval；none 关闭全部优化、ids 为 natural。两条描述都与官方一致。"
+      },
+      {
+        "text": "production 与 development 都默认开启 concatenateModules（作用域提升），只是 development 不压缩代码",
+        "isCorrect": false,
+        "description": "错误。concatenateModules 仅在 production 默认为 true，development 与 none 默认均为 false。"
+      },
+      {
+        "text": "none 模式仍会启用 deterministic 的 moduleIds，只是不做 minimize",
+        "isCorrect": false,
+        "description": "错误。none 关闭全部内置优化，moduleIds 退回 natural；deterministic 是 production 的默认值。"
+      },
+      {
+        "text": "development 默认开启 minimize，只是把 minimizer 换成更快的非压缩实现",
+        "isCorrect": false,
+        "description": "错误。development 下 minimize 默认为 false，根本不压缩；并不存在「更快的非压缩 minimizer」这种默认替换。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：为了让生产环境获得稳定的长期缓存（vendor chunk 内容不变时 hash 不变），团队从 Webpack 4 升级到 Webpack 5。下列做法在 Webpack 5 中最正确？",
+    "explanation": "在 Webpack 4 时代，稳定 moduleId 的常用做法是手动引入 HashedModuleIdsPlugin。Webpack 5 把这能力内置为 `optimization.moduleIds: 'deterministic'`，并在 production 模式下作为默认值，因此官方明确不再需要 HashedModuleIdsPlugin（它已废弃）。deterministic 会把模块路径哈希成稳定的小数字 id（默认至少 3 位、填充约 80% id 空间），保证模块内容不变时 id 不变，从而不破坏长期缓存。所以 Webpack 5 的正确姿势是依赖/显式设置 moduleIds: 'deterministic'，而非再装 HashedModuleIdsPlugin。",
+    "tags": [
+      "webpack",
+      "高级",
+      "moduleIds",
+      "deterministic",
+      "长期缓存",
+      "webpack5"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "依赖（或显式设置）`optimization.moduleIds: 'deterministic'`，它在 Webpack 5 production 下是默认值，已取代 Webpack 4 的 HashedModuleIdsPlugin",
+        "isCorrect": true,
+        "description": "正确。Webpack 5 内置 deterministic moduleIds（production 默认），把模块哈希成稳定小数字 id，HashedModuleIdsPlugin 不再需要。"
+      },
+      {
+        "text": "继续手动引入 HashedModuleIdsPlugin，因为 Webpack 5 并没有内置等价能力",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 已内置 deterministic moduleIds，HashedModuleIdsPlugin 在 5 中已废弃，不应再使用。"
+      },
+      {
+        "text": "设置 `optimization.moduleIds: 'named'`，因为可读名在多次构建间最稳定",
+        "isCorrect": false,
+        "description": "错误。named 用于 development 调试，会暴露完整路径且体积大；稳定缓存应用 deterministic 的短数字 id。"
+      },
+      {
+        "text": "设置 `optimization.moduleIds: 'natural'`，按使用顺序编号即可保证不变",
+        "isCorrect": false,
+        "description": "错误。natural 按引入顺序编号，新增/删除模块会导致后续 id 整体漂移，恰恰破坏长期缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 `optimization.runtimeChunk` 配置中，把它设为 `'single'` 与设为 `'multiple'`（等价于 `true`）有什么关键区别？",
+    "explanation": "runtimeChunk 控制 Webpack 运行时代码（runtime/manifest）的拆分方式。`'single'` 会为所有 entry 生成「一个共享的」runtime chunk（默认命名 runtime），适合多入口同页加载时共用一份 runtime；`true` 与 `'multiple'` 等价，会「为每个 entrypoint 各生成一个」runtime chunk（默认命名形如 runtime~{entrypoint.name}）。默认值是 false，即把 runtime 内联进各 entry chunk。官方还提醒：每个 runtime chunk 会各自初始化被它引入的模块，因此同页多入口时要谨慎，single 通常更省、避免重复初始化。",
+    "tags": [
+      "webpack",
+      "专家",
+      "runtimeChunk",
+      "single",
+      "multiple",
+      "optimization"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "'single' 为所有入口生成一个共享的 runtime chunk；'multiple'（等价 true）为每个 entrypoint 各生成一个独立 runtime chunk",
+        "isCorrect": true,
+        "description": "正确。single=全局唯一 runtime（默认名 runtime）；multiple/true=每入口一个（默认名 runtime~name）。两者命名与数量都不同。"
+      },
+      {
+        "text": "'single' 只为主入口生成 runtime，'multiple' 为每个动态 import 的异步 chunk 都生成 runtime",
+        "isCorrect": false,
+        "description": "错误。runtimeChunk 针对 entrypoint 而非异步 chunk；single 是「所有入口共享一个」，不是「只给主入口」。"
+      },
+      {
+        "text": "'single' 把 runtime 内联进每个 entry chunk，'multiple' 才会把 runtime 拆成独立文件",
+        "isCorrect": false,
+        "description": "错误。内联进 entry chunk 是默认值 false 的行为；single 同样会拆出独立 runtime 文件，只是全局共用一个。"
+      },
+      {
+        "text": "两者产物完全相同，'single'/'multiple' 只是别名，区别仅在生成文件的命名前缀",
+        "isCorrect": false,
+        "description": "错误。它们语义不同：single 产出一个共享 runtime，multiple 按入口数产出多个，chunk 数量与拆分结构都不一样。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：你想在 production 构建里加一个 CssMinimizerPlugin 压缩 CSS，但又不想丢掉 Webpack 默认的 JS minimizer（TerserPlugin）。下列 `optimization.minimizer` 写法哪个正确？",
+    "explanation": "一旦你显式给出 optimization.minimizer 数组，就会「整体覆盖」Webpack 的默认 minimizer（TerserPlugin），导致 JS 不再被压缩。Webpack 5（5.87.0+）提供了 `'...'` 字符串占位符，用来在自定义数组里「保留并展开默认 minimizer」。因此正确写法是 `minimizer: [new CssMinimizerPlugin(), '...']`，其中 '...' 代表默认的 TerserPlugin。注意 minimizer 只有在 optimization.minimize 为 true 时才生效（production 默认 true）；如果只写 `[new CssMinimizerPlugin()]`，TerserPlugin 会被覆盖掉、JS 不再压缩。",
+    "tags": [
+      "webpack",
+      "专家",
+      "minimizer",
+      "minimize",
+      "TerserPlugin",
+      "optimization"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "minimizer: [new CssMinimizerPlugin(), '...']，用字符串 '...' 保留并展开 Webpack 默认的 minimizer（TerserPlugin）",
+        "isCorrect": true,
+        "description": "正确。Webpack 5（5.87.0+）的 '...' 占位符会把默认 minimizer 展开进数组，从而同时保留 Terser（JS）并新增 CSS 压缩。"
+      },
+      {
+        "text": "minimizer: [new CssMinimizerPlugin()]，Webpack 会自动把默认 TerserPlugin 合并进来",
+        "isCorrect": false,
+        "description": "错误。显式提供 minimizer 数组会整体覆盖默认值，TerserPlugin 不会被自动合并，结果 JS 不再被压缩。"
+      },
+      {
+        "text": "minimizer: [new CssMinimizerPlugin(), 'terser']，用字符串 'terser' 指代默认 JS 压缩器",
+        "isCorrect": false,
+        "description": "错误。保留默认 minimizer 的占位符是 '...'，并不存在 'terser' 这种字符串简写。"
+      },
+      {
+        "text": "把 CssMinimizerPlugin 放进 plugins 数组并设 optimization.minimize: false，让默认 minimizer 接管 CSS",
+        "isCorrect": false,
+        "description": "错误。minimize: false 会关闭全部压缩（含 JS）；且默认 minimizer 是 Terser，不会处理 CSS，目标完全无法达成。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中，若 optimization.splitChunks 不做任何自定义配置，关于其内置默认行为，下列哪项描述是正确的？",
+    "explanation": "Webpack 5 的 splitChunks 默认配置为：chunks: 'async'（只对按需/动态 import 产生的异步 chunk 生效，不拆分初始 chunk），minSize: 20000（约 20kb，低于此不单独拆分），maxAsyncRequests: 30、maxInitialRequests: 30，enforceSizeThreshold: 50000（超过此体积强制拆分并忽略 maxRequests 等限制）。正确选项准确复述了 chunks 默认值与 minSize 的含义。把默认 chunks 当成 'all' 是最常见误解——'all' 需要手动开启才能在初始 chunk 与异步 chunk 之间共享代码。",
+    "tags": ["webpack", "splitchunks", "默认配置", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 chunks 为 'async'，只拆分动态 import 产生的异步 chunk，且模块需大于 minSize（默认 20000）才会被拆出",
+        "isCorrect": true,
+        "description": "正确。官方默认对象即 chunks:'async'、minSize:20000，因此开箱仅作用于按需加载的异步 chunk，初始入口 chunk 不受默认拆分影响。"
+      },
+      {
+        "text": "默认 chunks 为 'all'，会自动在初始 chunk 和异步 chunk 间共享并拆分 node_modules",
+        "isCorrect": false,
+        "description": "错误。'all' 是最强但非默认值；默认是 'async'。要让初始 chunk 也参与拆分/共享需手动设置 chunks:'all'。"
+      },
+      {
+        "text": "默认 minSize 为 0，任意大小的共享模块都会被拆成独立 chunk",
+        "isCorrect": false,
+        "description": "错误。默认 minSize 是 20000（约 20kb），小于该阈值的模块不会单独拆分；minRemainingSize 默认才是 0。"
+      },
+      {
+        "text": "默认 maxInitialRequests 与 maxAsyncRequests 均为 5，超过则不再拆分",
+        "isCorrect": false,
+        "description": "错误。这是 Webpack 4 时代的旧默认值（3/5）。Webpack 5 两者默认均为 30。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 optimization.splitChunks.chunks 的三个取值 'async'、'initial'、'all'，下列说法正确的是哪一项？",
+    "explanation": "chunks 决定哪些类型的 chunk 参与拆分：'async' 只作用于按需加载（动态 import）产生的异步 chunk；'initial' 只作用于入口产生的初始 chunk；'all' 同时作用于两者，是最强选项，能让同一个模块在初始 chunk 与异步 chunk 之间被共享提取。把 node_modules 提取为独立 vendor chunk 时通常用 'all' 才能覆盖初始加载路径上的第三方依赖。",
+    "tags": ["webpack", "splitchunks", "chunks", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "'all' 同时覆盖初始 chunk 和异步 chunk，能在二者之间共享提取模块，是三者中最强的选项",
+        "isCorrect": true,
+        "description": "正确。官方称 'all' 最强，因为它打通了初始与异步 chunk 的边界，可跨两类 chunk 复用同一份代码。"
+      },
+      {
+        "text": "'initial' 会拆分初始 chunk 和动态 import 产生的异步 chunk",
+        "isCorrect": false,
+        "description": "错误。'initial' 只作用于初始 chunk，动态 import 的异步 chunk 不在其范围内；要覆盖异步需用 'async' 或 'all'。"
+      },
+      {
+        "text": "'async' 会作用于入口的初始 chunk，因此默认就能拆分 node_modules 的初始依赖",
+        "isCorrect": false,
+        "description": "错误。'async' 只作用于按需加载的异步 chunk，初始 chunk 不受影响，所以默认配置无法拆分初始路径上的 vendor。"
+      },
+      {
+        "text": "三者效果等价，只是 'all' 写法更短，是 'async' 与 'initial' 的语法别名",
+        "isCorrect": false,
+        "description": "错误。三者语义不同：'async'/'initial' 各覆盖一类 chunk，'all' 是并集而非别名。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 splitChunks 的默认 cacheGroups 中，defaultVendors 与 default 两组的配置（test / priority / minChunks）对应关系，下列哪项完全正确？",
+    "explanation": "默认 cacheGroups 含两组：defaultVendors 用 test: /[\\\\/]node_modules[\\\\/]/ 匹配第三方依赖，priority: -10，reuseExistingChunk: true；default 没有 test，靠 minChunks: 2 匹配被至少 2 个 chunk 共享的模块，priority: -20，reuseExistingChunk: true。priority 数值越大优先级越高，defaultVendors(-10) 高于 default(-20)，所以 node_modules 模块优先归入 vendor 组。一个模块满足多组条件时按 priority 决定归属。",
+    "tags": ["webpack", "splitchunks", "cachegroups", "高级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "defaultVendors：test 为 node_modules、priority -10；default：无 test、minChunks 2、priority -20；defaultVendors 优先级更高",
+        "isCorrect": true,
+        "description": "正确。与官方默认对象一致：vendors 组靠 node_modules 正则匹配、优先级 -10，default 组靠 minChunks:2 匹配、优先级 -20，前者优先。"
+      },
+      {
+        "text": "defaultVendors priority 为 -20、default priority 为 -10，因此共享模块优先归入 default 组",
+        "isCorrect": false,
+        "description": "错误。优先级数值写反了：实际 defaultVendors 是 -10、default 是 -20，node_modules 模块优先进 vendor 组。"
+      },
+      {
+        "text": "default 组同样带 test: /node_modules/，与 defaultVendors 仅靠 name 区分",
+        "isCorrect": false,
+        "description": "错误。default 组不含 test，它通过 minChunks:2 匹配业务侧被多处共享的模块，与按 node_modules 匹配的 vendors 组职责不同。"
+      },
+      {
+        "text": "两组 priority 相同（均为 0），归属由模块体积大小决定",
+        "isCorrect": false,
+        "description": "错误。两组 priority 是负值且不相等（-10 与 -20）；归属由 priority 决定而非体积，体积只影响是否达到 minSize。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：要把所有来自 node_modules 的第三方依赖（无论位于初始还是异步加载路径）提取为一个名为 vendors 的独立 chunk，下列 optimization.splitChunks 配置最准确的是哪一项？",
+    "explanation": "官方推荐写法是在 cacheGroups 中新增一组，test 用 /[\\\\/]node_modules[\\\\/]/ 匹配第三方包，name 指定输出名（如 'vendors'），并把 chunks 设为 'all' 以覆盖初始与异步两类 chunk。关键点：仅靠默认配置（chunks:'async'）无法提取初始路径上的 vendor；必须显式 chunks:'all'。test 写成 /node_modules/（不带路径分隔符）虽常见但不够严谨，跨平台路径匹配推荐带 [\\\\/]。",
+    "tags": ["webpack", "splitchunks", "vendor", "cachegroups", "高级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cacheGroups 中加一组 { test: /[\\\\/]node_modules[\\\\/]/, name: 'vendors', chunks: 'all' }",
+        "isCorrect": true,
+        "description": "正确。test 匹配 node_modules、name 指定 chunk 名、chunks:'all' 让初始与异步路径上的第三方依赖都被提取到 vendors。"
+      },
+      {
+        "text": "只设 optimization.splitChunks.name = 'vendors'，Webpack 会自动把 node_modules 提取到该名下",
+        "isCorrect": false,
+        "description": "错误。顶层 name 只是给拆出的 chunk 命名，不会改变匹配规则；且默认 chunks:'async' 仍无法覆盖初始 vendor。"
+      },
+      {
+        "text": "cacheGroups 中加一组 { test: /[\\\\/]node_modules[\\\\/]/, name: 'vendors' }，省略 chunks 即可覆盖初始依赖",
+        "isCorrect": false,
+        "description": "错误。省略 chunks 会沿用默认 'async'，只提取异步路径上的 node_modules，初始路径上的第三方依赖不会进 vendors。"
+      },
+      {
+        "text": "用 new webpack.optimize.CommonsChunkPlugin({ name: 'vendors' }) 提取公共依赖",
+        "isCorrect": false,
+        "description": "错误。CommonsChunkPlugin 早在 Webpack 4 就被 SplitChunksPlugin 取代，Webpack 5 中已不存在该插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：一个项目用多入口配置 entry: { index: './index.js', another: './another.js' }，两个入口都 import 了 lodash，但未配置任何 splitChunks/dependOn。关于此时的产物，下列描述正确的是哪一项？",
+    "explanation": "纯多入口（不加任何去重手段）的核心缺陷是：入口之间若有重复引用的模块（如两边都引 lodash），该模块会被分别打进各自的 bundle，造成体积重复。官方在 code-splitting 指南中明确指出这一点。解决方式有两类：用 entry 的 dependOn 把共享依赖抽到单独入口，或用 optimization.splitChunks 自动提取公共 chunk。多入口本身不会自动去重。",
+    "tags": ["webpack", "code-splitting", "多入口", "重复打包", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "lodash 会被分别打包进 index 和 another 两个 bundle，产生重复代码",
+        "isCorrect": true,
+        "description": "正确。这是纯多入口的已知缺陷：入口间重复引用的模块会各自打包一份，需靠 dependOn 或 splitChunks 去重。"
+      },
+      {
+        "text": "Webpack 多入口会自动识别公共依赖并提取，lodash 只会打包一份",
+        "isCorrect": false,
+        "description": "错误。多入口默认不去重；自动提取公共依赖需要显式开启 splitChunks（如 chunks:'all'）。"
+      },
+      {
+        "text": "两个入口会自动共用同一份 runtime，因此 lodash 自然只保留一份",
+        "isCorrect": false,
+        "description": "错误。默认每个入口各自带 runtime；即便共用 runtime（runtimeChunk:'single'）也不会自动合并业务依赖 lodash。"
+      },
+      {
+        "text": "因为 lodash 来自 node_modules，默认 defaultVendors 组会自动把它提成一份 vendor chunk",
+        "isCorrect": false,
+        "description": "错误。默认 chunks:'async' 只作用于异步 chunk，静态 import 进初始入口的 lodash 不会被默认 cacheGroups 提取。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：使用 entry 的 dependOn 把 lodash 抽成共享入口（index/another 都 dependOn: 'shared'，shared: 'lodash'）以避免重复打包时，官方特别强调还需要补充哪一项配置，否则在单 HTML 页面加载多入口可能出问题？",
+    "explanation": "官方 code-splitting 指南明确指出：当在同一个 HTML 页面上使用多个入口、并用 dependOn 共享依赖时，还需要设置 optimization.runtimeChunk: 'single'，把多个入口的 runtime 合并为一个，否则多份 runtime 会导致模块状态/解析冲突而出错。dependOn 负责声明入口间的共享依赖关系（避免 lodash 重复），runtimeChunk:'single' 负责统一 runtime，两者配合才完整。",
+    "tags": ["webpack", "code-splitting", "dependon", "runtimechunk", "专家"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "设置 optimization.runtimeChunk: 'single'，把多入口的 runtime 合并为一个",
+        "isCorrect": true,
+        "description": "正确。官方原文：单 HTML 页面用多入口时需要 runtimeChunk:'single'，否则多份 runtime 会引发问题。"
+      },
+      {
+        "text": "设置 optimization.splitChunks.chunks: 'all'，否则 dependOn 不生效",
+        "isCorrect": false,
+        "description": "错误。dependOn 与 splitChunks 是两套独立去重机制，dependOn 不依赖 splitChunks；缺的是 runtimeChunk:'single'。"
+      },
+      {
+        "text": "设置 optimization.runtimeChunk: 'multiple'，为每个入口各生成一份 runtime",
+        "isCorrect": false,
+        "description": "错误。方向相反——'multiple'（即默认每入口一份 runtime）正是问题来源，需要的是合并成 'single'。"
+      },
+      {
+        "text": "把 shared 入口也加上 dependOn: 'shared' 形成自依赖闭环",
+        "isCorrect": false,
+        "description": "错误。让 shared 自依赖既无意义也会造成循环；正确补充项是 runtimeChunk:'single'。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：使用 import() 动态加载一个 CommonJS 模块 my-lib（其通过 module.exports = function () {...} 导出），下列哪种写法能正确拿到该导出的函数？",
+    "explanation": "官方 module-methods 文档明确指出：import() 返回一个 Promise；当用 import() 加载 CommonJS 模块时，必须解构 default 导出（import('my-commonjs-module').then(({ default: myModule }) => ...)）。这是因为 Webpack 把 CommonJS 的 module.exports 整体作为该模块命名空间对象的 default 属性。因此正确写法是在 then 回调中解构 { default: fn } 或访问 module.default。直接把整个命名空间对象当函数调用、或解构一个并不存在的具名导出都会失败。",
+    "tags": [
+      "webpack",
+      "中级",
+      "动态import",
+      "CommonJS",
+      "default解构",
+      "懒加载"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "import('my-lib').then(({ default: fn }) => fn())",
+        "isCorrect": true,
+        "description": "正确。import() 返回 Promise，CommonJS 模块的 module.exports 整体被放在命名空间对象的 default 属性上，故需解构 { default: fn }（等价于 module.default），这与官方文档示例一致。"
+      },
+      {
+        "text": "import('my-lib').then((fn) => fn())",
+        "isCorrect": false,
+        "description": "错误。then 回调收到的是模块命名空间对象（含 default 等属性），不是函数本身，直接 fn() 会抛 TypeError：对象不是函数。"
+      },
+      {
+        "text": "import('my-lib').then(({ myLib: fn }) => fn())",
+        "isCorrect": false,
+        "description": "错误。CommonJS 模块没有名为 myLib 的具名导出，解构得到 undefined，调用即报错。CommonJS 的整体导出统一挂在 default 上。"
+      },
+      {
+        "text": "const fn = import('my-lib'); fn()",
+        "isCorrect": false,
+        "description": "错误。import() 返回的是 Promise 而非模块，必须 await 或 .then 才能拿到模块；直接调用 Promise 会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：要给下面的动态导入生成的 chunk 起一个固定文件名前缀 \"editor\"，并确保该魔法注释能被 Webpack 识别，正确写法是？",
+    "explanation": "官方文档明确：魔法注释（magic comment）必须使用块注释 /* */，并放在 import() 的参数位置内。行注释 // 和 JSDoc 注释 /** */ 都不被支持，写了也会被忽略，chunk 名不会生效。webpackChunkName 用于命名生成的 chunk。故唯一正确的是用 /* webpackChunkName: \"editor\" */ 块注释。",
+    "tags": [
+      "webpack",
+      "中级",
+      "MagicComments",
+      "webpackChunkName",
+      "块注释",
+      "懒加载"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "import(/* webpackChunkName: \"editor\" */ './editor')",
+        "isCorrect": true,
+        "description": "正确。魔法注释必须是块注释 /* */ 且写在 import() 参数内，webpackChunkName 用于命名 chunk，这与官方文档示例完全一致。"
+      },
+      {
+        "text": "import(// webpackChunkName: \"editor\"\n './editor')",
+        "isCorrect": false,
+        "description": "错误。行注释 // 不被 Webpack 解析为魔法注释，文档明确说明仅支持块注释 /* */，此写法 chunk 名不会生效。"
+      },
+      {
+        "text": "import(/** webpackChunkName: \"editor\" */ './editor')",
+        "isCorrect": false,
+        "description": "错误。JSDoc 风格的 /** */ 同样不被支持，官方文档明确指出魔法注释只接受普通块注释 /* */，双星号开头会被忽略。"
+      },
+      {
+        "text": "/* webpackChunkName: \"editor\" */ import('./editor')",
+        "isCorrect": false,
+        "description": "错误。魔法注释必须位于 import() 的参数内部（紧邻模块路径），放在 import() 语句之外不会被关联到该次动态导入。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 import() 的 webpackMode 取值，下列哪项描述与官方文档一致？",
+    "explanation": "官方 module-methods 文档定义 webpackMode 默认值为 'lazy'：lazy 为每个 import() 生成一个可按需加载的独立 chunk；lazy-once 为同一动态表达式的所有匹配生成单个按需 chunk；eager 不生成额外 chunk，模块直接打进当前 chunk，但仍返回 Promise 且只有调用 import() 时才执行；weak 仅当模块已在别处加载时才尝试取用，否则 Promise 直接 reject，且绝不发起网络请求。据此，eager 仍返回 Promise 这一点是正确的；其余各项把模式行为张冠李戴。",
+    "tags": [
+      "webpack",
+      "专家",
+      "webpackMode",
+      "eager",
+      "weak",
+      "MagicComments"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "eager 模式不会生成额外 chunk（模块打进当前 chunk），但 import() 仍返回 Promise，且模块只有在调用 import() 时才执行",
+        "isCorrect": true,
+        "description": "正确。官方文档原文即此意：eager 不产生额外 chunk、模块并入当前 chunk，但仍返回 Promise，模块在 import() 被调用前不执行。"
+      },
+      {
+        "text": "weak 模式在模块尚未加载时会主动发起一次网络请求把它取回来",
+        "isCorrect": false,
+        "description": "错误。weak 恰恰相反：它只在模块已由别处加载时才尝试取用，否则 Promise 直接 reject，绝不发起网络请求。"
+      },
+      {
+        "text": "webpackMode 的默认值是 lazy-once",
+        "isCorrect": false,
+        "description": "错误。默认值是 'lazy'（每个 import() 各生成一个按需 chunk）。lazy-once 是把同一动态表达式的所有匹配合并为单个 chunk，需显式指定。"
+      },
+      {
+        "text": "lazy-once 会为每个不同的运行时请求各自生成一个独立的按需 chunk",
+        "isCorrect": false,
+        "description": "错误。那是 lazy 的行为。lazy-once 针对同一动态表达式只生成一个共享的按需 chunk（常用于 ./locale/${lang} 这类目录批量导入）。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：对比 webpackPrefetch: true 与 webpackPreload: true 两个魔法注释，下列哪项符合官方文档对二者的区分？",
+    "explanation": "官方代码分割文档逐条列出二者差异：prefetch 在父 chunk 加载完成之后才开始加载，在浏览器空闲时以低优先级下载，用于未来某次导航可能需要的资源；preload 与父 chunk 并行加载，被立即下载（中等优先级），用于当前导航也会用到的资源，且应由父 chunk 立即请求。故正确选项是 prefetch=父 chunk 加载完后、空闲低优先级。其余各项颠倒了时机或优先级。",
+    "tags": [
+      "webpack",
+      "专家",
+      "webpackPrefetch",
+      "webpackPreload",
+      "优先级",
+      "懒加载"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "prefetch 在父 chunk 加载完成之后才开始下载，且在浏览器空闲时以低优先级进行；适合未来某次导航可能用到的资源",
+        "isCorrect": true,
+        "description": "正确。完全对应官方文档：prefetch 在父 chunk 完成后、浏览器空闲时低优先级下载，语义是「将来某次导航可能需要」。"
+      },
+      {
+        "text": "preload 在父 chunk 加载完成之后才开始下载，且总是以最低优先级排在 prefetch 之后",
+        "isCorrect": false,
+        "description": "错误。preload 是与父 chunk 并行、被立即下载（中等优先级），并非在父 chunk 之后，也不是最低优先级。"
+      },
+      {
+        "text": "prefetch 与父 chunk 并行加载并立即以高优先级下载，preload 则等到空闲时才加载",
+        "isCorrect": false,
+        "description": "错误。这把两者完全调反了：并行、立即下载的是 preload；空闲、延后下载的是 prefetch。"
+      },
+      {
+        "text": "两者行为完全等价，只是写法不同，最终都会插入 <link rel=\"prefetch\">",
+        "isCorrect": false,
+        "description": "错误。二者在加载时机、优先级、生成的 link 类型（rel=prefetch vs rel=preload）和适用场景上均不同，且浏览器支持也有差异。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 import(`./locale/${lang}.json`) 这类动态表达式导入中，希望只把目录里匹配 /\\.json$/ 的文件纳入打包、同时排除 /\\.noimport\\.json$/，并且对生成的 chunk 只保留 default 导出以减小体积。下列魔法注释组合哪项正确？（基线 Webpack 5）",
+    "explanation": "官方文档：webpackInclude 用正则指定在解析时要「包含」的模块，webpackExclude 指定要「排除」的模块；二者均作用于动态表达式导入的目录匹配。webpackExports 用于只打包指定的导出（如 default）以减小 chunk 体积，但文档明确它不能与解构赋值一起用。这三个注释可组合在同一个 /* */ 块中。错误项把 include/exclude 语义弄反，或误用 webpackIgnore（它会整体关闭该 import 的代码分割解析）、或把 webpackExports 与 webpackPreload 混为一谈。",
+    "tags": [
+      "webpack",
+      "专家",
+      "webpackInclude",
+      "webpackExclude",
+      "webpackExports",
+      "动态import"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "/* webpackInclude: /\\.json$/, webpackExclude: /\\.noimport\\.json$/, webpackExports: [\"default\"] */",
+        "isCorrect": true,
+        "description": "正确。webpackInclude 限定纳入打包的文件、webpackExclude 排除特定文件、webpackExports 只保留 default 导出，三者可写在同一块注释里，与官方文档语义完全一致。"
+      },
+      {
+        "text": "/* webpackInclude: /\\.noimport\\.json$/, webpackExclude: /\\.json$/, webpackExports: [\"default\"] */",
+        "isCorrect": false,
+        "description": "错误。include 与 exclude 的正则用反了：这样只会纳入 .noimport.json 并把普通 .json 全部排除，与需求相反。"
+      },
+      {
+        "text": "/* webpackIgnore: true, webpackExports: [\"default\"] */",
+        "isCorrect": false,
+        "description": "错误。webpackIgnore: true 会让 Webpack 完全跳过该 import 的解析与代码分割，导致 include/exclude/exports 失效，不符合「按目录筛选并打包」的诉求。"
+      },
+      {
+        "text": "/* webpackInclude: /\\.json$/, webpackExclude: /\\.noimport\\.json$/, webpackPreload: [\"default\"] */",
+        "isCorrect": false,
+        "description": "错误。webpackPreload 是布尔值开关（控制预加载），不接受导出名数组；要只保留某些导出应使用 webpackExports。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于按需加载（lazy loading）的最佳实践、require.context 的默认模式以及 webpackFetchPriority 魔法注释，下列哪项陈述准确？（基线 Webpack 5，5.107）",
+    "explanation": "官方 lazy-loading 指南强调：动态 import() 应绑定到用户交互/事件（如 button.onclick）才能真正实现按需加载，否则每次页面加载都会触发请求，反而损害性能。module-methods 文档指出 require.context 的第四个参数 mode 默认值是 'sync'（同步打包进当前 chunk）。webpackFetchPriority 是在 Webpack 5.87.0+ 新增的魔法注释，用于为动态导入设置 fetchPriority（如 \"high\"）。综合这三点，正确项同时满足：绑定交互 + sync 默认 + 5.87+ 新增。其余项各错一处。",
+    "tags": [
+      "webpack",
+      "专家",
+      "懒加载",
+      "require.context",
+      "webpackFetchPriority",
+      "用户交互"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "动态 import() 应绑定到用户交互/事件以避免页面加载即请求；require.context 的 mode 默认是 'sync'；webpackFetchPriority 是 Webpack 5.87.0+ 新增的魔法注释",
+        "isCorrect": true,
+        "description": "正确。三点均与官方文档一致：lazy loading 须绑交互、require.context 默认 sync、webpackFetchPriority 自 5.87.0 引入。"
+      },
+      {
+        "text": "只要写了 import() 就一定是按需加载，无需绑定到任何交互或事件；require.context 默认 mode 为 'lazy'",
+        "isCorrect": false,
+        "description": "错误。两处都错：未绑交互的 import() 会在页面加载时即触发请求，文档称这「损害性能」；且 require.context 的默认 mode 是 'sync' 而非 'lazy'。"
+      },
+      {
+        "text": "require.context 的默认 mode 是 'lazy-once'；webpackFetchPriority 从 Webpack 4 起就已支持",
+        "isCorrect": false,
+        "description": "错误。require.context 默认 mode 是 'sync'；webpackFetchPriority 是 Webpack 5.87.0+ 才加入的，Webpack 4 并不支持。"
+      },
+      {
+        "text": "webpackFetchPriority 只能取布尔值 true/false 用于开关预取；require.context 默认会异步加载",
+        "isCorrect": false,
+        "description": "错误。webpackFetchPriority 取的是优先级字符串（如 \"high\"/\"low\"/\"auto\"，对应 HTMLScriptElement.fetchPriority），不是布尔开关；require.context 默认 sync 是同步打入当前 chunk，并非异步加载。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：团队反映某工具库即便配了 mode: 'production'，调用其中一个函数仍把整包都打了进来，无法 Tree Shaking。排查发现该库的 Babel 配置把源码的 import/export 转成了 CommonJS（module.exports / require）。关于「为什么转成 CommonJS 后 Tree Shaking 失效」，下列哪项解释最准确？",
+    "explanation": "Webpack 的 Tree Shaking 本质是基于 ES2015 模块语法（import/export）的「静态结构」做的死代码消除：import/export 的依赖关系在编译期即可静态分析，webpack 才能判断哪些导出从未被引用。CommonJS 的 require()/module.exports 是运行期动态求值的（可以写在条件分支里、可以动态拼字符串路径），无法在编译期静态确定导出图，因此 webpack 无法安全地摇掉未用导出。官方 Tree Shaking 指南明确提醒：要确保编译器（如 @babel/preset-env）不要把 ES 模块转成 CommonJS，否则 Tree Shaking 失效。这与 minify、mode 无关——根因是模块语法本身丧失了静态可分析性。",
+    "tags": ["webpack", "tree-shaking", "esm", "commonjs", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Tree Shaking 依赖 ES2015 模块 import/export 的静态结构才能在编译期分析依赖图；CommonJS 的 require/module.exports 是运行期动态求值，无法静态确定未用导出，故摇树失效",
+        "isCorrect": true,
+        "description": "正确。这是官方 Tree Shaking 指南的核心前提：摇树建立在 ESM 的静态结构上，CommonJS 的动态特性使其不可静态分析，因此应阻止 Babel 把模块转成 CommonJS。"
+      },
+      {
+        "text": "因为 CommonJS 模块不支持 optimization.usedExports，必须改用 ESM 才能开启 usedExports 标记",
+        "isCorrect": false,
+        "description": "错误。usedExports 是一个全局优化开关，并非「只对 ESM 才能开启」的配置项；真正失效的原因是 CommonJS 丧失了静态结构导致无法分析未用导出，而不是该开关不可用。"
+      },
+      {
+        "text": "因为 CommonJS 默认带有 sideEffects: true 标记，webpack 会保守地保留所有模块，删掉 package.json 的 sideEffects 字段即可摇树",
+        "isCorrect": false,
+        "description": "错误。失效根因是模块语法被转成动态的 CommonJS 而非静态 ESM，与 sideEffects 标记无关；删掉 sideEffects 字段不会让 CommonJS 重新变得可静态分析。"
+      },
+      {
+        "text": "因为转成 CommonJS 后 ModuleConcatenationPlugin 无法作用，只要手动启用作用域提升即可恢复摇树",
+        "isCorrect": false,
+        "description": "似是而非。作用域提升（ModuleConcatenationPlugin）确实只对 ESM 生效，但它是优化打包体积/性能的手段；即便恢复它也救不了根因——CommonJS 的动态 require 本身就不可静态分析，无法判断未用导出。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：某 UI 组件库的 package.json 里写了 \"sideEffects\": false 以增强 Tree Shaking，上线后发现页面样式全丢——业务侧 import 'xxx/dist/style.css' 引入的 CSS 在 production 构建中被整体摇掉了。在保留组件 JS 摇树能力的前提下，最贴合官方推荐的修复是？",
+    "explanation": "sideEffects: false 等于向 webpack 声明「本包所有模块都没有副作用，未被引用就可整模块跳过」。但 CSS 文件的 import 恰恰是「为副作用而引入」（它的作用是把样式注入/抽取，没有任何 JS 导出被使用），于是被误删。官方 Tree Shaking 指南给出的标准做法是把 sideEffects 从布尔 false 改成「带副作用文件的 glob 数组」，例如 [\"*.css\"]（不含 / 的模式等价于 **/*.css），从而保留 CSS 的副作用、同时其余 JS 模块仍可摇树。改成 \"sideEffects\": true 会让整包都不摇树，过度保守；删 CSS 的 import 会真丢样式；只配 module.rules 而不修 package.json 也可，但官方在此场景直接示范的是 package.json 的 glob 数组写法。",
+    "tags": ["webpack", "tree-shaking", "sideEffects", "css", "glob", "专家"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把 \"sideEffects\": false 改为副作用文件的 glob 数组，如 \"sideEffects\": [\"*.css\"]（不含 / 的模式等价 **/*.css），保留 CSS 副作用，其余 JS 模块照常摇树",
+        "isCorrect": true,
+        "description": "正确。这是官方 Tree Shaking 指南针对「CSS 被误删」给出的标准解法：用 glob 数组精确声明哪些文件有副作用，CSS 被保留而 JS 仍可摇树。"
+      },
+      {
+        "text": "把 \"sideEffects\": false 改为 \"sideEffects\": true，告诉 webpack 整个包都有副作用，确保 CSS 不被删",
+        "isCorrect": false,
+        "description": "似是而非。改成 true 确实能救回 CSS，但代价是整包所有模块都被视为有副作用、完全无法摇树，与「保留组件 JS 摇树能力」的前提冲突，过度保守。"
+      },
+      {
+        "text": "保留 \"sideEffects\": false，改为在业务侧删除 import 'xxx/dist/style.css'，用全局 <link> 引入样式绕过摇树",
+        "isCorrect": false,
+        "description": "错误。这是回避问题而非修复：放弃了 CSS 随组件按需引入的能力，也未解决「声明无副作用却含副作用文件」的本质矛盾，工程上更糟。"
+      },
+      {
+        "text": "保留 \"sideEffects\": false，转而在 webpack 配置的 optimization.usedExports 中把 CSS 加入白名单即可",
+        "isCorrect": false,
+        "description": "错误。usedExports 只是布尔开关，并不提供「文件白名单」配置；CSS 被删源于 sideEffects: false 的声明，应在 sideEffects（package.json glob 或 module.rules[].sideEffects）层面修，而非 usedExports。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：项目用 [contenthash] 做长期缓存，并已把 node_modules 通过 splitChunks 抽成 vendors chunk。但实践中发现：每次只改一行业务代码、根本没动任何第三方依赖，vendors.[contenthash].js 的文件名却也跟着变，导致用户每次都要重新下载第三方包。在 webpack 5 中，针对「vendor 哈希漂移」最对症的两项配置是？",
+    "explanation": "vendor 哈希在业务无关改动时漂移，根因是两点：（1）运行时（runtime/manifest，记录模块映射）默认内联在入口 chunk 里，业务一改它就变，连带改变包含它的 chunk 内容哈希——用 optimization.runtimeChunk: 'single' 把 runtime 抽成独立 chunk，与 vendor/业务分离。（2）模块 id 默认按解析顺序递增，增删模块会让后续 module.id 整体平移，从而改变 vendor chunk 内容——用 optimization.moduleIds: 'deterministic' 让模块 id 基于稳定信息生成、不随解析顺序漂移（webpack 5 在 production 下默认即 deterministic，但显式设置可保证一致）。两者配合即官方 caching 指南给出的稳定哈希组合。TerserPlugin 是删死代码、与哈希稳定无关；把 vendor 改回 [chunkhash] 不解决 runtime 内联与 moduleIds 漂移两个根因。",
+    "tags": [
+      "webpack",
+      "caching",
+      "runtimeChunk",
+      "moduleIds",
+      "deterministic",
+      "专家"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "optimization.runtimeChunk: 'single'（把内联的 runtime/manifest 抽成独立 chunk）+ optimization.moduleIds: 'deterministic'（让模块 id 不随解析顺序漂移），二者配合稳定 vendor 哈希",
+        "isCorrect": true,
+        "description": "正确。这正是官方 caching 指南的稳定哈希组合：runtimeChunk 隔离易变的 runtime，moduleIds: deterministic 消除模块 id 平移，从而让无关业务改动时 vendor 哈希保持不变。"
+      },
+      {
+        "text": "把 vendor 的输出名从 [contenthash] 换成 [chunkhash]，并启用 optimization.minimize: true 让 Terser 压缩 vendor",
+        "isCorrect": false,
+        "description": "错误。[chunkhash] 不解决 runtime 内联与 moduleIds 漂移两个根因，反而粒度更粗；minimize/Terser 负责删死代码与压缩，跟哈希是否漂移无关。"
+      },
+      {
+        "text": "optimization.runtimeChunk: 'single' + optimization.usedExports: true，靠 usedExports 锁定 vendor 内导出顺序来稳定哈希",
+        "isCorrect": false,
+        "description": "似是而非。runtimeChunk 这一半对，但 usedExports 是摇树标记开关，并不负责稳定模块 id 或导出顺序；防 id 漂移要靠 moduleIds: 'deterministic' 而非 usedExports。"
+      },
+      {
+        "text": "optimization.moduleIds: 'deterministic' + output.hashFunction: 'xxhash64'，用更快更稳的哈希算法消除漂移",
+        "isCorrect": false,
+        "description": "似是而非。moduleIds 这一半对，但 hashFunction 只是改哈希算法（webpack 5 默认仍是 md4，可改 xxhash64 提速），算法换了不影响「内容变没变」的判定，无法阻止 runtime 内联导致的漂移——缺的是 runtimeChunk: 'single'。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 中，需要把一张 PNG 图片以「单独文件 + 导出最终 URL」的方式打包（等价于旧版 file-loader 的行为），且不希望小文件被内联成 data URI。应给该规则的 type 设置为什么？",
+    "explanation": "Webpack 5 用 4 个内置 asset module type 取代了 file-loader / url-loader / raw-loader：`asset/resource` 发射单独文件并导出 URL（取代 file-loader）；`asset/inline` 导出 data URI（取代 url-loader）；`asset/source` 导出源码字符串（取代 raw-loader）；`asset` 则根据文件大小在 resource 与 inline 之间自动二选一（默认 8KB 阈值，取代带 limit 的 url-loader）。题目要求「单独文件 + 导出 URL，且绝不内联」，正是 `asset/resource` 的定义。`asset` 会对小于阈值的小文件内联，不满足「绝不内联」。`asset/inline` 恰好相反——它把资源编码为 data URI 内联。`asset/source` 导出的是源码字符串，用于文本类资源，不发射文件也不导出 URL。",
+    "tags": [
+      "webpack",
+      "中级",
+      "asset-modules",
+      "asset-resource",
+      "file-loader"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "type: 'asset/resource'",
+        "isCorrect": true,
+        "description": "正确。asset/resource 发射单独文件并导出其 URL，对应旧版 file-loader，且不会内联任何文件，完全符合需求。"
+      },
+      {
+        "text": "type: 'asset/inline'",
+        "isCorrect": false,
+        "description": "错误。asset/inline 取代 url-loader，会把资源编码成 data URI 内联进 bundle，与「单独文件 + 绝不内联」完全相反。"
+      },
+      {
+        "text": "type: 'asset'",
+        "isCorrect": false,
+        "description": "错误。asset 是自动模式，对小于默认 8KB 阈值的文件会内联成 data URI，违反「绝不内联」的要求。"
+      },
+      {
+        "text": "type: 'asset/source'",
+        "isCorrect": false,
+        "description": "错误。asset/source 取代 raw-loader，导出的是资源的源码字符串（用于文本），既不发射独立文件也不导出 URL。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：某规则配置为 type: 'asset'（自动模式），希望把内联与发射独立文件的临界点从默认值调到 4KB。下列哪项配置是正确的、能改变这个阈值的写法？",
+    "explanation": "type: 'asset' 自动模式默认以 8KB（8192 字节）为界：小于该值内联为 data URI，大于该值发射独立文件。要修改这个临界点，需在该规则的 `parser.dataUrlCondition.maxSize` 上设置字节数，例如 `4 * 1024`。`generator.filename` 控制的是发射文件的输出路径/命名模板，不影响内联判定。`output.assetModuleFilename` 是全局的资源文件命名模板，同样与阈值无关。把限制写在 `options.limit` 是 webpack 4 时代 url-loader 的写法，Webpack 5 的 asset module 不再使用 loader options 的 limit 字段。",
+    "tags": ["webpack", "中级", "asset-modules", "dataUrlCondition", "阈值"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "parser: { dataUrlCondition: { maxSize: 4 * 1024 } }",
+        "isCorrect": true,
+        "description": "正确。Webpack 5 通过规则的 parser.dataUrlCondition.maxSize 覆盖默认 8192 字节阈值，4*1024 即把临界点设为 4KB。"
+      },
+      {
+        "text": "generator: { filename: '4kb/[hash][ext]' }",
+        "isCorrect": false,
+        "description": "错误。generator.filename 只控制发射文件的输出命名/路径模板，不参与内联与否的大小判定。"
+      },
+      {
+        "text": "output: { assetModuleFilename: '[hash][ext][query]', maxSize: 4096 }",
+        "isCorrect": false,
+        "description": "错误。assetModuleFilename 是全局资源命名模板，且 output 上没有 maxSize 这个控制内联阈值的字段。"
+      },
+      {
+        "text": "options: { limit: 4096 }",
+        "isCorrect": false,
+        "description": "错误。limit 是 webpack 4 的 url-loader options 写法，Webpack 5 内置 asset module 已不再使用 loader 的 limit 字段。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在一个未显式配置 resolve.extensions 的 Webpack 5 项目里，import './utils'（无后缀）能被自动解析为哪些扩展名的文件？",
+    "explanation": "Webpack 5 中 `resolve.extensions` 的默认值是 `['.js', '.json', '.wasm']`。因此无后缀的 import 会按此顺序尝试 .js、.json、.wasm。.ts、.jsx、.vue 等都不在默认列表里，需要显式配置（且为保留默认值应使用 '...' 占位符，例如 `extensions: ['.ts', '...']`）。注意默认列表不含 .ts，这正是 TypeScript 项目必须自行追加 .ts 的原因；.mjs/.cjs 也不在 Webpack 5 该项的默认值中。",
+    "tags": ["webpack", "中级", "resolve", "extensions", "默认值"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": ".js、.json、.wasm",
+        "isCorrect": true,
+        "description": "正确。Webpack 5 中 resolve.extensions 的默认值就是 ['.js', '.json', '.wasm']，按此顺序尝试匹配。"
+      },
+      {
+        "text": ".js、.jsx、.ts、.tsx、.json",
+        "isCorrect": false,
+        "description": "错误。.jsx/.ts/.tsx 不在默认列表中，必须显式追加（并用 '...' 保留默认），这是一个常见误记。"
+      },
+      {
+        "text": ".js、.json、.mjs、.cjs",
+        "isCorrect": false,
+        "description": "错误。.mjs/.cjs 不在 Webpack 5 resolve.extensions 默认值里，且默认值包含 .wasm，此项遗漏了 .wasm。"
+      },
+      {
+        "text": "仅 .js",
+        "isCorrect": false,
+        "description": "错误。默认值不止 .js，还包含 .json 和 .wasm 两个扩展名。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：从 Webpack 4 升级到 Webpack 5 后，一段在浏览器端使用 Node 内置模块（如 require('crypto') / 'stream' / 'buffer'）的代码报出 \"Module not found: ... you need to add a fallback\" 错误。关于这一变化与正确处理方式，下列哪项描述准确？",
+    "explanation": "Webpack 5 不再为 Node.js 核心模块自动注入 polyfill（这是相对 Webpack 4 的重大破坏性变更）。当浏览器目标代码引用 crypto/stream/buffer 等核心模块时，需要自行安装浏览器替代实现（如 crypto-browserify、stream-browserify、buffer），并在 `resolve.fallback` 中映射，例如 `fallback: { crypto: require.resolve('crypto-browserify'), stream: require.resolve('stream-browserify'), buffer: require.resolve('buffer') }`；若确实不需要某模块，可将其 fallback 设为 `false` 以忽略。把映射写到 `resolve.alias`、靠升级 target、或宣称「Webpack 5 自带 polyfill 只需打开开关」都是错误认知——自动 polyfill 已被移除，必须显式声明 fallback。",
+    "tags": [
+      "webpack",
+      "专家",
+      "resolve",
+      "fallback",
+      "polyfill",
+      "webpack4-vs-5"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Webpack 5 移除了对 Node 核心模块的自动 polyfill，需安装替代包（如 crypto-browserify）并在 resolve.fallback 中显式映射，或将不需要的模块 fallback 设为 false",
+        "isCorrect": true,
+        "description": "正确。这正是 Webpack 5 相对 4 的破坏性变更：不再自动 polyfill node core，必须通过 resolve.fallback 手动配置替代实现或显式忽略。"
+      },
+      {
+        "text": "应在 resolve.alias 里把 crypto 指向 crypto-browserify，fallback 字段是给 loader 解析失败时用的，与此无关",
+        "isCorrect": false,
+        "description": "错误。处理 node core 缺失的官方机制是 resolve.fallback（resolveLoader/loader 解析另说）；alias 虽偶能凑效但不是为此场景设计，且不能像 fallback 那样设为 false 忽略。"
+      },
+      {
+        "text": "把 target 从 'web' 改为 'node' 即可，因为 node 目标会保留所有核心模块",
+        "isCorrect": false,
+        "description": "错误。改成 node 目标会让产物面向 Node 运行时（externals node 内置模块），但题目代码本就要跑在浏览器，改 target 会破坏部署目标，并非解决浏览器端 polyfill 的正确手段。"
+      },
+      {
+        "text": "Webpack 5 内置了这些 polyfill，只要在 config 里设 node: true 打开即可恢复 Webpack 4 行为",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 已彻底移除自动 node core polyfill，不存在 node: true 一键恢复的开关，必须逐个在 fallback 中声明。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 项目中写下 const worker = new URL('./worker.js', import.meta.url); 这行代码（且未为 .js 配置任何 asset 规则）。关于 Webpack 5 对这种语法的处理，下列哪项描述正确？",
+    "explanation": "Webpack 5 原生识别 `new URL('./path', import.meta.url)` 语法，会自动把被引用的资源当作一个 asset module 处理（无需在 module.rules 中显式声明规则），并在运行时返回指向该资源的 URL。此外自 Webpack 5.38.0 起，`new URL()` 中也支持 Data URLs。这一特性常用于 Web Worker、WebAssembly、媒体资源等的相对路径引用，是 Webpack 4 不具备的能力。它依赖 import.meta.url（ESM 语义），并不是被当成普通字符串拼接，也不是必须先配 file-loader 才能工作。",
+    "tags": ["webpack", "专家", "asset-modules", "import-meta-url", "new-URL"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Webpack 5 会自动将被引用资源识别为一个 asset module（无需显式规则）并在运行时返回其 URL；自 5.38.0 起还支持 Data URLs",
+        "isCorrect": true,
+        "description": "正确。new URL(..., import.meta.url) 是 Webpack 5 原生支持的自动 asset module 语法，无需手写 rule，5.38.0+ 还扩展支持了 Data URLs。"
+      },
+      {
+        "text": "Webpack 不解析这种动态构造，会原样保留为运行时 new URL 调用，资源不会被打包或拷贝",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 专门对该模式做了静态分析与资源处理，会把目标资源纳入构建产物，而非原样放过。"
+      },
+      {
+        "text": "必须先为 .js 配置 type: 'asset/resource' 规则，否则该 URL 解析会在构建时报错",
+        "isCorrect": false,
+        "description": "错误。new URL + import.meta.url 的自动处理不依赖显式 asset 规则，这正是它相对手动 file-loader 配置的便利之处。"
+      },
+      {
+        "text": "这是 Webpack 4 就已支持的特性，Webpack 5 未做任何增强",
+        "isCorrect": false,
+        "description": "错误。该自动 asset module 能力是 Webpack 5 新增的；Webpack 4 不支持，且 Data URLs 支持是 5.38.0 才加入。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 Webpack 5 中 target 配置的默认值与多目标（数组）支持，下列哪项描述完全准确？",
+    "explanation": "Webpack 5 中 target 的默认值是 `'browserslist'`——当项目存在 browserslist 配置（package.json 的 browserslist 字段或 .browserslistrc）时，会据此推断平台与 ES 特性；若未找到任何 browserslist 配置，则回退为 `'web'`。Webpack 5 还新增了数组多目标支持，例如 `target: ['web', 'es5']`，此时取各目标特性的公共子集（common subset）；但并非任意组合都合法，如 `['web', 'node']` 会报错（暂不支持通用 universal target）。数组多目标是 Webpack 5 才有的能力，Webpack 4 不支持把数组传给 target。因此「默认恒为 web」「数组是 Webpack 4 老特性」「['web','node'] 合法」等说法都不准确。",
+    "tags": [
+      "webpack",
+      "专家",
+      "target",
+      "browserslist",
+      "多目标",
+      "webpack4-vs-5"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认值为 'browserslist'（找到 browserslist 配置时据其推断，否则回退 'web'）；Webpack 5 支持数组多目标如 ['web', 'es5']（取特性公共子集），但 ['web', 'node'] 会报错",
+        "isCorrect": true,
+        "description": "正确。这准确描述了 Webpack 5 的 target 默认值回退逻辑与数组多目标行为，包括不兼容组合会报错。"
+      },
+      {
+        "text": "默认值恒为 'web'，与 browserslist 配置无关；Webpack 5 同样只接受单个字符串 target",
+        "isCorrect": false,
+        "description": "错误。默认值实为 'browserslist'，仅在无 browserslist 配置时才回退 'web'；且 Webpack 5 支持数组多目标，并非只接受单字符串。"
+      },
+      {
+        "text": "支持数组多目标是 Webpack 4 起就有的能力，Webpack 5 仅是沿用；默认 target 为 'node'",
+        "isCorrect": false,
+        "description": "错误。数组多目标是 Webpack 5 新增（4 不支持），默认 target 也不是 'node' 而是 'browserslist' 否则 'web'。"
+      },
+      {
+        "text": "Webpack 5 中 target: ['web', 'node'] 是推荐的同构（universal）写法，会生成同时适配浏览器与 Node 的产物",
+        "isCorrect": false,
+        "description": "错误。['web', 'node'] 在 Webpack 5 中会直接报错——目前不支持 universal target，同构需分别导出两套配置。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 webpack-dev-server 5（配合 Webpack 5）的开发模式下，关于 devServer 编译产物的存放位置，下列说法正确的是？",
+    "explanation": "官方开发指南明确写道：「webpack-dev-server doesn't write any output files after compiling. Instead, it keeps bundle files in memory and serves them as if they were real files mounted at the server's root path.」即 dev-server 把打包结果保存在内存中、不落盘，直接当作挂载在服务器根路径下的真实文件来提供，因此磁盘上看不到 dist 产物，这也是它启动快、热更新快的原因之一。若确实需要把文件写到磁盘，可配置 devMiddleware.writeToDisk: true。需要区分的是：webpack --watch 监听模式是会正常把产物写到磁盘的，只有 dev-server / dev-middleware 才是内存提供；这是初学者最容易混淆的点。",
+    "tags": ["webpack", "初级", "devserver", "dev-server", "内存", "开发态"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "产物保存在内存中、默认不写入磁盘，以「挂载在服务器根路径的真实文件」形式对外提供",
+        "isCorrect": true,
+        "description": "正确。官方原文「keeps bundle files in memory and serves them as if they were real files」，内存提供是 dev-server 的核心特性，磁盘上默认看不到 dist 文件。"
+      },
+      {
+        "text": "每次重编译都会把产物完整写入 output.path 指定的磁盘目录后再提供给浏览器",
+        "isCorrect": false,
+        "description": "错误。这是 webpack --watch 监听模式的行为；dev-server 默认不落盘，只在内存中提供。把 watch 的落盘行为套到 dev-server 上是典型混淆。"
+      },
+      {
+        "text": "产物写入操作系统临时目录（如 /tmp），进程退出时自动清理",
+        "isCorrect": false,
+        "description": "错误。dev-server 不使用临时文件目录，而是保存在进程内存里；并没有写 /tmp 这一步。"
+      },
+      {
+        "text": "产物先写入磁盘的 .cache 持久化缓存目录，再由静态服务器读取",
+        "isCorrect": false,
+        "description": "错误。.cache 是 Webpack 5 的 cache.type='filesystem' 持久化缓存（缓存模块编译中间结果），与 dev-server 如何对外提供 bundle 无关，二者是不同机制。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：使用 webpack-dev-server 5 启动一个未做任何端口/HMR 相关配置的 devServer，下列关于其默认行为的描述，正确的是？",
+    "explanation": "依据官方 dev-server 配置文档：devServer.port 默认 8080；devServer.hot 默认 true（即 HMR 默认开启，无需手动 new webpack.HotModuleReplacementPlugin()）；devServer.static 默认指向 'public' 目录，替代了 v4 的 contentBase；devServer.historyApiFallback 默认 false（需要 SPA 路由回退时要显式开启）。本题考查这几个默认值的记忆。",
+    "tags": ["webpack", "中级", "devserver", "默认值", "端口", "hot", "开发态"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认监听 8080 端口，且 hot（HMR）默认为 true 已开启",
+        "isCorrect": true,
+        "description": "正确。官方文档 devServer.port 默认 8080、devServer.hot 默认 true，HMR 开箱即用，无需手动加 HotModuleReplacementPlugin。"
+      },
+      {
+        "text": "默认监听 3000 端口，需手动设 hot: true 才开启 HMR",
+        "isCorrect": false,
+        "description": "错误。3000 是 Vite/CRA 等工具的常见默认端口，dev-server 默认是 8080；且 hot 本就默认 true，无需手动开启。"
+      },
+      {
+        "text": "默认监听 8080 端口，但 historyApiFallback 默认为 true，已自动处理 SPA 路由回退",
+        "isCorrect": false,
+        "description": "端口对，但 historyApiFallback 默认是 false，需要 SPA 深链回退时必须显式设为 true，并非默认开启。"
+      },
+      {
+        "text": "默认监听 8080 端口，但 hot 默认为 false，需配合 webpack.HotModuleReplacementPlugin 手动启用",
+        "isCorrect": false,
+        "description": "端口对，但 hot 默认是 true；在 dev-server 5 中开启 hot 会自动注入 HMR 运行时，不需要手动添加该插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：某 Vue/React 单页应用部署到 webpack-dev-server 5 后，根路径 / 正常，但直接刷新 /users/42 这类前端路由地址会返回 404。要让 devServer 在找不到静态资源时回退到 index.html，以支持 HTML5 History 路由，最直接的配置是？",
+    "explanation": "SPA 使用 HTML5 History API 路由时，深层 URL（如 /users/42）在服务端并没有对应的物理文件，刷新会 404。dev-server 提供了 historyApiFallback 选项（默认 false），开启后会在请求未命中静态资源时回退返回 index.html，由前端路由接管渲染。它还支持对象形式的 rewrites 做更细的回退规则。proxy 是把请求转发到后端 API 服务器，解决的是跨域/接口转发，不负责前端路由回退；static 是配置静态资源目录；compress 是 gzip 压缩，均不解决 404 回退问题。",
+    "tags": [
+      "webpack",
+      "中级",
+      "devserver",
+      "historyApiFallback",
+      "spa",
+      "路由",
+      "开发态"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "devServer.historyApiFallback: true",
+        "isCorrect": true,
+        "description": "正确。该选项默认 false，开启后未命中静态资源的请求回退到 index.html，正是 SPA HTML5 History 路由所需；还可用对象形式配 rewrites 定制回退。"
+      },
+      {
+        "text": "devServer.proxy: [{ context: ['/users'], target: 'http://localhost:3000' }]",
+        "isCorrect": false,
+        "description": "错误。proxy 是把匹配的请求转发到后端服务器（解决 API 跨域/转发），并非把前端深链回退到 index.html，反而会把 /users/42 转给后端导致行为更乱。"
+      },
+      {
+        "text": "devServer.static: { directory: path.join(__dirname, 'dist') }",
+        "isCorrect": false,
+        "description": "错误。static 只是指定从哪个目录提供静态文件（v5 中替代了 v4 的 contentBase），并不会在 404 时回退到 index.html。"
+      },
+      {
+        "text": "devServer.compress: true",
+        "isCorrect": false,
+        "description": "错误。compress 开启的是响应 gzip 压缩，与前端路由 404 回退完全无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：将一个 webpack-dev-server v4 的配置迁移到 v5（配合 Webpack 5）时，下列关于已废弃旧选项与新选项对应关系的说法，正确的是？",
+    "explanation": "dev-server v4→v5 的关键选项重组：(1) v4 的 contentBase 已被 v5 的 static 取代（用于提供静态文件目录）；(2) v4 中用于注入自定义中间件的 before / after / onBeforeSetupMiddleware / onAfterSetupMiddleware 全部被 v5 统一的 setupMiddlewares(middlewares, devServer) 取代——用 unshift() 实现「before」、push() 实现「after」并需 return middlewares；(3) v5 还新增了 client（client.overlay/client.logging 等浏览器侧配置）与 server（替代 https/http2 等服务端协议配置）两个命名空间。本题考查这些对应关系。",
+    "tags": [
+      "webpack",
+      "高级",
+      "devserver",
+      "迁移",
+      "v4-v5",
+      "setupMiddlewares",
+      "开发态"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "before / after / onBeforeSetupMiddleware / onAfterSetupMiddleware 统一被 setupMiddlewares 取代，contentBase 被 static 取代",
+        "isCorrect": true,
+        "description": "正确。v5 用单个 setupMiddlewares(middlewares, devServer) 收编 v4 的四个中间件钩子（unshift 对应 before、push 对应 after，需 return middlewares），并以 static 取代 contentBase。"
+      },
+      {
+        "text": "contentBase 在 v5 改名为 publicPath，setupMiddlewares 仅替代 onBeforeSetupMiddleware 一个钩子",
+        "isCorrect": false,
+        "description": "错误。取代 contentBase 的是 static 而非 publicPath（publicPath 是 output/devMiddleware 概念）；且 setupMiddlewares 替代的是 before/after/onBefore/onAfter 共四个钩子，不止一个。"
+      },
+      {
+        "text": "v4 的 overlay 顶层选项在 v5 保持原位不变，client 命名空间是 v6 才引入的",
+        "isCorrect": false,
+        "description": "错误。overlay 在 v5 被移入 client.overlay 命名空间，浏览器侧配置统一收进 client（v5 即引入，非 v6）；说法版本与位置均错。"
+      },
+      {
+        "text": "v5 移除了所有中间件注入能力，自定义中间件必须改用独立的 webpack-dev-middleware + Express 实现",
+        "isCorrect": false,
+        "description": "错误。v5 并未移除注入能力，而是用 setupMiddlewares 统一提供；无需被迫切换到 dev-middleware + 自建 Express 服务器。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Webpack 5 + dev-server 5 的 HMR（热模块替换）流程中，当某个被修改的模块（如 ./print.js）在自身及其向上的依赖链上都没有任何 module.hot.accept 处理器接住它的更新时，运行时会发生什么？",
+    "explanation": "HMR 的更新是「自下而上冒泡」的：当一个模块更新，运行时会查找该模块是否有 accept 处理器；若没有，则把更新冒泡给它的父模块，逐级向上寻找能 accept 它的处理器。如果一路冒泡到入口/根都没有任何处理器接住这次更新，HMR 无法安全地局部替换，便退化为整页刷新（full page reload）来保证状态一致。这正是为什么实践中要在恰当的模块用 module.hot.accept 注册接收点，并用 if (module.hot) 守卫包裹（避免生产环境无 HMR 运行时时报错）。注意：退化是整页刷新而非静默失败或抛错中断，也不是只刷新单个 chunk。",
+    "tags": [
+      "webpack",
+      "专家",
+      "hmr",
+      "module.hot.accept",
+      "冒泡",
+      "整页刷新",
+      "开发态"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "更新沿依赖链向上冒泡，若一路到顶都无 accept 处理器接住，则退化为整页刷新（full reload）",
+        "isCorrect": true,
+        "description": "正确。HMR 更新自下而上冒泡寻找 accept 处理器；无人接住时回退到浏览器整页刷新，这是官方文档描述的兜底行为。"
+      },
+      {
+        "text": "运行时静默忽略本次更新、保留旧模块代码，页面不做任何刷新，直到下次能被 accept 的更新到来",
+        "isCorrect": false,
+        "description": "错误。无处理器接住时不会静默保留旧代码，而是触发整页刷新以保证代码与状态一致，否则页面会停留在过期逻辑上。"
+      },
+      {
+        "text": "HMR 运行时抛出未捕获异常中断热更新通道，需手动重启 dev-server 才能恢复",
+        "isCorrect": false,
+        "description": "错误。缺少 accept 处理器是正常且常见的情况，会优雅回退到整页刷新，并不会抛异常或中断热更新通道、更不需重启服务。"
+      },
+      {
+        "text": "仅替换该模块对应的 chunk 而不冒泡、不刷新页面，依赖它的父模块继续引用旧实例",
+        "isCorrect": false,
+        "description": "错误。HMR 不会在无 accept 的情况下「只换 chunk 不冒泡」，那会造成父模块持有过期引用导致状态不一致；实际机制正是冒泡+回退整页刷新来避免这种情况。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 Webpack 5 官方开发指南中介绍的三种「自动重新编译」方式（watch 监听模式、webpack-dev-server、webpack-dev-middleware）的差异，下列说法正确的是？",
+    "explanation": "官方开发指南给出三种方式：(1) watch 监听模式（webpack --watch）：监听依赖图文件变化自动重编译，但产物会正常写入磁盘，且不内置浏览器自动刷新，需手动刷新页面；(2) webpack-dev-server：提供一个内置的小型服务器，自动重编译并刷新/热更新浏览器，且产物保存在内存中不落盘；(3) webpack-dev-middleware：作为中间件把 webpack 处理后的产物交给你自己的服务器（如 Express），同样从内存提供、不落盘，适合自定义服务端集成。综合记忆点：只有 watch 写磁盘且需手动刷新，两个 server/middleware 方案都是内存提供。",
+    "tags": [
+      "webpack",
+      "专家",
+      "watch",
+      "dev-server",
+      "dev-middleware",
+      "重编译",
+      "开发态"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "watch 模式会把产物写入磁盘且需手动刷新浏览器；dev-server 与 dev-middleware 均从内存提供产物、不落盘",
+        "isCorrect": true,
+        "description": "正确。官方指南：watch（webpack --watch）正常落盘且不自动刷新页面；dev-server 与 dev-middleware 都把 bundle 保存在内存中提供，不写磁盘。"
+      },
+      {
+        "text": "三种方式都从内存提供产物、都不写磁盘，区别仅在于是否自动刷新浏览器",
+        "isCorrect": false,
+        "description": "错误。watch 模式产物是正常写入磁盘的，并非内存提供；只有 dev-server / dev-middleware 才内存提供。"
+      },
+      {
+        "text": "dev-middleware 自带 HTTP 服务器可独立启动，dev-server 必须依附于已有的 Express 应用才能运行",
+        "isCorrect": false,
+        "description": "说反了。dev-server 自带内置小型服务器可独立启动；dev-middleware 才是作为中间件、需要你自己提供宿主服务器（如 Express）来集成。"
+      },
+      {
+        "text": "watch 与 dev-server 都内置浏览器自动刷新，dev-middleware 则把产物写入磁盘供静态服务器读取",
+        "isCorrect": false,
+        "description": "错误。watch 不内置浏览器自动刷新（需手动刷新）；dev-middleware 也不落盘，而是从内存提供产物给宿主服务器。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 externals 配置可接受的形式，以下哪项描述是正确的？",
+    "explanation": "externals 支持多种形式：string（jquery: 'jQuery'，把模块映射到全局变量）、array（['./math', 'subtract'] 取模块的子集）、object（为不同环境如 root/commonjs/amd 分别指定名称，主要用于 umd library）、function（运行时按 request 动态决定是否外置，回调签名 callback(err, result, type)）以及 RegExp（如 /^(jquery|\\$)$/i，匹配到的依赖一律外置）。这些形式还能放进数组里组合使用。对象形式的值并非「全局变量名字符串」一种语义——它恰恰是用来区分环境的映射对象。函数形式接收 ({ context, request }, callback) 并支持异步回调，不是只能返回布尔值。RegExp 是官方明确支持的合法形式。",
+    "tags": ["webpack", "externals", "中级", "配置"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "externals 可以是 string、array、object、function、RegExp，且可放入数组组合多种形式",
+        "isCorrect": true,
+        "description": "正确。官方文档列出 externals 支持字符串、数组、对象、函数和正则五种形式，并可在数组中混用，例如 [{ react: 'react' }, fn, /^(jquery|\\$)$/i]。"
+      },
+      {
+        "text": "externals 只能是对象，对象的值必须是一个字符串（要外置依赖的全局变量名）",
+        "isCorrect": false,
+        "description": "错误。这只是 string 形式的一种。对象形式的值可以是 { root, commonjs, amd } 这样的环境映射对象，且 externals 还支持数组/函数/正则等形式。"
+      },
+      {
+        "text": "externals 支持函数形式，但函数必须同步返回 true/false 表示是否外置该模块",
+        "isCorrect": false,
+        "description": "错误。函数形式签名是 ({ context, request }, callback)，通过 callback(null, 'commonjs ' + request) 异步指定外置结果，不是返回布尔值。"
+      },
+      {
+        "text": "externals 不支持正则表达式；要按模式匹配只能用 IgnorePlugin 替代",
+        "isCorrect": false,
+        "description": "错误。RegExp 是 externals 官方支持的合法形式，如 externals: /^(jquery|\\$)$/i。IgnorePlugin 是另一个用途（完全忽略匹配模块），二者语义不同。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在 Node.js 目标的库构建中，要让 'fs'、'path' 等 Node 内置模块以及第三方依赖都不被打进 bundle，并以 ES Module 输出（experiments.outputModule: true）时用 createRequire 加载 CommonJS 依赖，应如何配置？",
+    "explanation": "externalsPresets: { node: true } 会把 Node.js 内置模块（fs、path、vm 等）当作外置，无需手动逐个列举。当输出为 ESM（experiments.outputModule: true）却要外置 CommonJS 依赖时，需要 externalsType: 'node-commonjs'，它会生成 import { createRequire } from 'node:module'; const x = createRequire(import.meta.url)('jquery')，因为 ESM 里没有 require。target: 'node' 主要影响运行环境假设，并不会自动把第三方包外置（只影响内置/chunk 加载方式）。externalsType: 'var' 是默认值，生成 const x = jQuery 这种全局变量访问，不适用于 Node ESM 场景。",
+    "tags": [
+      "webpack",
+      "externals",
+      "externalsType",
+      "node-commonjs",
+      "高级",
+      "配置"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "externalsPresets: { node: true } 外置 Node 内置模块，并设 externalsType: 'node-commonjs' 让 ESM 输出用 createRequire 加载 CommonJS 依赖",
+        "isCorrect": true,
+        "description": "正确。node 预设负责外置 fs/path 等内置模块；node-commonjs 类型在 outputModule 下生成 createRequire(import.meta.url)(...)，解决 ESM 没有 require 的问题。"
+      },
+      {
+        "text": "只要设 target: 'node'，第三方 npm 依赖和内置模块就都会被自动外置，无需 externals 相关配置",
+        "isCorrect": false,
+        "description": "错误。target: 'node' 影响运行时假设和 chunk 加载，但不会自动外置第三方 npm 包；要外置内置模块需 externalsPresets.node，要外置依赖需在 externals 中声明。"
+      },
+      {
+        "text": "用 externalsType: 'var' 配合 externals: { fs: 'fs' }，会生成 const fs = require('fs')",
+        "isCorrect": false,
+        "description": "错误。'var' 是默认类型，生成的是全局变量访问 const fs = fs（访问全局 fs），不是 require。要生成 require 应使用 'commonjs' 或针对 ESM 的 'node-commonjs'。"
+      },
+      {
+        "text": "externalsPresets: { node: true } 会同时外置所有 node_modules 下的第三方依赖",
+        "isCorrect": false,
+        "description": "错误。node 预设只外置 Node.js 内置模块（fs、path、vm 等），不会自动外置 node_modules 中的第三方包；后者需在 externals 中显式声明或借助 webpack-node-externals 之类工具。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于 Webpack 5 的持久化构建缓存（cache），以下哪项描述准确？",
+    "explanation": "Webpack 5 内置了 cache，type 可为 'memory' 或 'filesystem'。默认值随 mode 变化：development 为 { type: 'memory' }，而 production 与 none 为 false（关闭）。filesystem 缓存把结果持久化到磁盘（默认 node_modules/.cache/webpack），它内置替代了 Webpack 4 时代常用的 cache-loader 和 hard-source-webpack-plugin。使用 filesystem 缓存时官方强烈建议配置 cache.buildDependencies.config: [__filename]，这样修改 webpack 配置文件会自动让缓存失效，避免读到陈旧缓存。说「production 默认开启 filesystem」是错的——生产默认 false，需手动开启。",
+    "tags": ["webpack", "cache", "filesystem", "持久化缓存", "高级", "性能"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cache 默认值随 mode 变化：development 为 memory、production 为 false；filesystem 缓存内置替代了 cache-loader 与 hard-source-webpack-plugin",
+        "isCorrect": true,
+        "description": "正确。官方文档明确 development 默认 { type: 'memory' }，production/none 默认 false，且 Webpack 5 的 filesystem 缓存使 cache-loader 和 hard-source-webpack-plugin 不再必要。"
+      },
+      {
+        "text": "Webpack 5 在 production 模式下默认启用 filesystem 持久化缓存，无需任何配置即可跨构建复用",
+        "isCorrect": false,
+        "description": "错误。production 模式 cache 默认是 false（关闭）。要在生产复用持久化缓存必须显式设置 cache: { type: 'filesystem' }。"
+      },
+      {
+        "text": "持久化缓存只需安装 cache-loader 并加到 module.rules 即可，这是 Webpack 5 推荐做法",
+        "isCorrect": false,
+        "description": "错误。cache-loader 是 Webpack 4 时代的方案，Webpack 5 已内置 filesystem 缓存取代它，官方不再推荐 cache-loader。"
+      },
+      {
+        "text": "filesystem 缓存默认存放在系统临时目录（os.tmpdir），无法修改",
+        "isCorrect": false,
+        "description": "错误。cache.cacheDirectory 默认是 node_modules/.cache/webpack，且可通过 cacheDirectory 选项自定义，并非系统临时目录且并非不可改。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：使用 ModuleFederationPlugin（Webpack 5 引入的微前端特性）搭建容器时，关于 exposes、shared 与 eager 消费的约束，以下哪项正确？",
+    "explanation": "Module Federation 是 Webpack 5 的特性，用于让多个独立构建组成同一应用（微前端）。exposes 的键必须以 './' 前缀开头（如 './Button': './src/Button'），这是相对 beta 版的一个破坏性约定，缺前缀会导致容器中找不到该模块。shared 中 singleton: true 强制整个应用只用同一份实例（典型如 react/react-dom）。当 shared 模块被入口同步（eager）引用时，会报 'Shared module is not available for eager consumption'，标准解法是引入异步引导边界：入口写 import('./bootstrap')，把真正的初始化挪到 bootstrap.js，使共享作用域先初始化。output.uniqueName 用于保证每个构建全局唯一，默认取自 package.json 的 name；多个构建同名时必须显式设置，否则运行时冲突。把 exposes 键写成不带 './' 是错误的。",
+    "tags": [
+      "webpack",
+      "module-federation",
+      "微前端",
+      "exposes",
+      "shared",
+      "专家"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "exposes 的键必须以 './' 前缀开头；shared 同步消费会触发 eager consumption 错误，需用 import('./bootstrap') 建立异步边界",
+        "isCorrect": true,
+        "description": "正确。exposes 键如 './Button' 必须带 './'；入口同步引用共享模块会报 Shared module is not available for eager consumption，标准解法是把初始化挪进 bootstrap，入口 import('./bootstrap')。"
+      },
+      {
+        "text": "exposes 的键不能带 './' 前缀，应直接写成 'Button': './src/Button'，否则消费端无法 import",
+        "isCorrect": false,
+        "description": "错误。恰好相反——键必须带 './'（如 './Button'）。不带前缀会导致容器中 'Module does not exist'，这是相对 beta 版的破坏性变更。"
+      },
+      {
+        "text": "把 shared 里的 react 设为 eager: true 后，入口即可同步 import 而完全不需要任何异步引导边界，且不增加产物体积",
+        "isCorrect": false,
+        "description": "部分对部分错。eager: true 确实允许同步消费、可省去 bootstrap 边界，但代价是共享模块会被同步打入主包、增大体积，官方提醒谨慎使用；说「不增加产物体积」是错的。"
+      },
+      {
+        "text": "output.uniqueName 仅在调试时影响日志，不设也不会引起运行时冲突，可放心省略",
+        "isCorrect": false,
+        "description": "错误。uniqueName 用于保证每个联邦构建全局唯一（默认取 package.json name）。多构建同名时不显式区分会导致运行时容器/chunk 加载冲突。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：关于配置文件的导出形态以及为开发/生产拆分配置的做法，以下哪项描述正确？",
+    "explanation": "webpack 配置可导出多种形态：对象、对象数组（多配置并行构建）、Promise、返回对象/Promise 的函数等。当导出函数时，签名是 (env, argv) => config：env 是通过 CLI --env 传入的环境变量（如 --env production 会得到 { production: true }），argv 是解析后的命令行参数，其中 argv.mode 反映 --mode 或 mode 字段。因此用 argv.mode === 'production' 来切换 devtool 等是常见模式。production 指南推荐用 webpack-merge 把 webpack.common.js 与 webpack.dev.js / webpack.prod.js 合并，避免重复。注意 env 与 argv.mode 是两个不同来源：env 来自 --env，mode 来自 --mode/配置 mode 字段；混淆二者是常见错误。配置导出函数时不能只导出纯对象就期望拿到 env/argv 参数。",
+    "tags": ["webpack", "配置导出", "webpack-merge", "env", "argv", "中级"],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可导出 (env, argv) => config 形式：env 来自 CLI --env，argv.mode 反映 --mode；并用 webpack-merge 合并 common/dev/prod 配置",
+        "isCorrect": true,
+        "description": "正确。函数形态 (env, argv) 中 env 由 --env 注入、argv.mode 反映模式，常据此切换 devtool；production 指南推荐 webpack-merge 拆分 common 与 dev/prod。"
+      },
+      {
+        "text": "env 参数的值等于 --mode 的值，所以 env === 'production' 与 argv.mode === 'production' 完全等价",
+        "isCorrect": false,
+        "description": "错误。env 来自 --env 标志（是对象，如 { production: true }），mode 来自 --mode 或配置 mode 字段，两者来源不同、不等价。混用是常见坑。"
+      },
+      {
+        "text": "webpack 配置只能导出一个对象；要做多套配置必须靠环境变量在同一对象里 if/else，无法导出数组",
+        "isCorrect": false,
+        "description": "错误。webpack 支持导出配置对象数组（多配置并行构建），也支持 Promise 与函数等形态，不止单一对象。"
+      },
+      {
+        "text": "导出纯对象（非函数）时，webpack 会把 env 和 argv 作为对象的 this 注入，可直接在对象里读取",
+        "isCorrect": false,
+        "description": "错误。只有导出函数时才会收到 (env, argv) 参数；导出纯对象拿不到这两个参数，也不会通过 this 注入。"
+      }
+    ]
+  },
+  {
+    "stem": "Webpack：在从 Webpack 4 迁移到 Webpack 5 时，关于产物输出、清理与 devtool 的现状，以下哪项描述准确（以 Webpack 5 为「当前」基线）？",
+    "explanation": "Webpack 5 引入了一系列取代旧插件/loader 的内置能力：Asset Modules（type: 'asset/resource' 等）取代 file-loader/url-loader/raw-loader；output.clean: true 取代 clean-webpack-plugin；不再自动为 Node 核心模块打 polyfill，需要时要手动配 resolve.fallback。要让 output.library.type 为 'module'（输出 ESM 库），必须开启 experiments.outputModule: true，这是个实验特性。关于 devtool：生产推荐 'source-map'（独立 .map，便于调试又不臃肿），开发常用 'eval-cheap-module-source-map' 或 'cheap-module-source-map'，生产应避免 eval-* / inline-*（增大体积、性能差）。需要注意 Webpack 5 的 output.hashFunction 默认仍是 md4 而非 xxhash64（虽然 xxhash64 更快，但默认未切换）。说「output.library.type: 'module' 无需任何实验开关即可用」是错的。",
+    "tags": [
+      "webpack",
+      "迁移",
+      "webpack4到5",
+      "asset-modules",
+      "devtool",
+      "专家"
+    ],
+    "categories": [
+      ["技术方向", "Webpack"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Asset Modules 取代 file/url/raw-loader、output.clean 取代 clean-webpack-plugin；输出 ESM 库需 experiments.outputModule: true；生产 devtool 推荐 source-map",
+        "isCorrect": true,
+        "description": "正确。这些都是 Webpack 5 的现状：内置 Asset Modules 与 output.clean、ESM 库输出依赖 experiments.outputModule，生产 devtool 推荐独立的 source-map。"
+      },
+      {
+        "text": "output.library.type: 'module' 在 Webpack 5 已稳定，无需任何 experiments 开关即可直接输出 ESM 库",
+        "isCorrect": false,
+        "description": "错误。输出 ESM 库（library.type: 'module' 或 externalsType: 'module'）仍依赖 experiments.outputModule: true，属于实验特性，并非默认开启。"
+      },
+      {
+        "text": "Webpack 5 会自动为 'crypto'、'stream' 等 Node 核心模块注入 polyfill，迁移时无需改动",
+        "isCorrect": false,
+        "description": "错误。Webpack 5 移除了对 Node 核心模块的自动 polyfill，迁移时若浏览器端用到这些模块需手动配置 resolve.fallback（或显式置 false）。"
+      },
+      {
+        "text": "生产环境应使用 devtool: 'eval-source-map' 以获得最佳调试体验，它体积小且性能好",
+        "isCorrect": false,
+        "description": "错误。eval-* / inline-* 会显著增大产物体积、性能差，官方明确不建议用于生产；生产推荐生成独立 .map 的 'source-map'。"
+      }
+    ]
+  }
+]
