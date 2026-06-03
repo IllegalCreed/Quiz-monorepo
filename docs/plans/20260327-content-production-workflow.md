@@ -1,5 +1,10 @@
 # 内容生产流程方案
 
+> 📌 **状态（2026-06-02 更新）**：本文档为 2026-03-27 的初始方案，**核心流程已落地跑通**（已产出 70+ 个技术的三件套）。下文部分细节随实现演进，已逐节标注真相源。**两条铁律**：
+>
+> 1. 内容真题**只导入 prod**（`pnpm -C apps/quiz-backend run import:content:prod`），**绝不进 dev / test**。dev = 开发小数据集（`db:seed:dev` 维护）；test = 可重置回归库（`db:reset:test`）。误跑 `import:content:dev` 会污染 dev 小数据集 + 触发 RDS 连接池超时。
+> 2. 分类体系以 `apps/quiz-backend/prisma/content/categories.ts`（`CONTENT_CATEGORY_GROUPS`）为**唯一真相源**；每道题的分类**内嵌在题目 JSON 的 `categories` 字段**，**不再使用单独的 `-categories.ts` 映射文件**。
+
 ## Context
 
 以"学习一门技术"为单位，批量生产三类内容：
@@ -18,7 +23,15 @@
 
 **维度设计**：保留"难度"维度，将"技术方向"替换为与网站 sidebar 完全对应的多级分类树。
 
-#### CategoryGroup 1: 技术方向
+> ⚠️ **下面这棵树是 2026-03 的规划蓝图（目标全景），不是当前真实分类**。已注册的真实分类以 `apps/quiz-backend/prisma/content/categories.ts` 为准，且已演进，已知差异包括：
+>
+> - "复用库" → 已改名 **"组合式函数库"**，叶子为 VueUse / VueHooks Plus / Ahooks / React Use / **usehooks-ts**
+> - **React Router** 归入"元框架"（不在"路由库"）；元框架还新增 **TanStack Start / Analog**
+> - "UI框架" 实际为 React / Vue / Angular / Svelte / Solid / **Lit / Alpine.js / HTMX**（蓝图里的 Preact 尚未注册）
+> - "组件库" 实际 17 个、"状态库"含 Jotai / MobX / NgRx、"路由库"含 TanStack Router
+> - "难度"维度新增 **"专家"** 档（见下）
+
+#### CategoryGroup 1: 技术方向（规划蓝图，真相源见 `content/categories.ts`）
 
 ```
 技术方向
@@ -170,7 +183,8 @@
 ├── 入门
 ├── 初级
 ├── 中级
-└── 高级
+├── 高级
+└── 专家   # 实现中新增（sort: 5）
 ```
 
 #### 实现说明
@@ -178,9 +192,9 @@
 - **Quiz 只需存叶子节点关联**（与现有 `QuestionCategory` 机制一致）
 - 题目关联到具体技术叶子（如 `"Vitest"`）而非中间节点（如 `"单元测试"`）
 - 中间节点只是分类导航用，不直接关联题目
-- `seed-categories.ts` 中的 `CATEGORY_GROUPS` 需要完整重写，支持任意深度嵌套
+- 生产分类体系定义在 **`apps/quiz-backend/prisma/content/categories.ts`** 的 `CONTENT_CATEGORY_GROUPS`（与测试用的 `data/seed-categories.ts` 完全分离、互不影响），支持任意深度嵌套
 
-**文件**：`apps/quiz-backend/prisma/data/seed-categories.ts`
+**文件**：`apps/quiz-backend/prisma/content/categories.ts`（真相源）；测试库分类仍是 `apps/quiz-backend/prisma/data/seed-categories.ts`（不动）
 
 ---
 
@@ -208,13 +222,13 @@ apps/quiz-backend/
 │   │   ├── seed-test.json
 │   │   ├── seed-categories.ts
 │   │   └── ...
-│   └── content/                 # 生产内容数据（新建）
-│       ├── categories.ts        # 完整分类体系定义（对齐个人学习网站）
-│       ├── vitest.json          # 每个技术的题目
-│       ├── vitest-categories.ts # 每个技术的分类映射
-│       └── ...
+│   └── content/                 # 生产内容数据（已建）
+│       ├── categories.ts        # 完整分类体系定义（CONTENT_CATEGORY_GROUPS，真相源）
+│       ├── vitest.json          # 每个技术的题目（分类已内嵌在每题的 categories 字段）
+│       └── ...                  # 注意：不再有 vitest-categories.ts 这类单独映射文件
 └── scripts/
-    └── import-content.ts        # 独立导入脚本入口
+    ├── import-content.ts        # 独立导入脚本入口
+    └── check-import-status.ts   # 只读核查各环境导入状态
 ```
 
 **导入脚本设计原则**：
@@ -227,13 +241,15 @@ apps/quiz-backend/
 
 ### 4. 注册导入命令
 
-在 `package.json` 中添加（三个环境都可以用）：
+`package.json` 中三个环境命令都已注册，但 **⚠️ 实际只允许使用 `import:content:prod`**。`dev` / `test` 两条命令保留只为对称，**严禁对内容真题使用**（见下方铁律）：
 
 ```json
-"import:content:dev": "dotenv -e .env.dev -- tsx scripts/import-content.ts",
-"import:content:test": "dotenv -e .env.test -- tsx scripts/import-content.ts",
-"import:content:prod": "dotenv -e .env.prod -e .env.prod.local -- tsx scripts/import-content.ts"
+"import:content:dev":  "...（勿用于内容真题，会污染 dev 小数据集）",
+"import:content:test": "...（勿用于内容真题，会被 reset 清掉）",
+"import:content:prod": "dotenv -e .env.production -e .env.production.local -- node -r ts-node/register scripts/import-content.ts"
 ```
+
+> ⚠️ **铁律：内容真题只导入 prod。** dev = 开发小数据集（`db:seed:dev` 维护）；test = 可重置回归库（`db:reset:test`）。两者都不灌真题。误跑 `import:content:dev` 会把全部真题灌进 dev，既污染小数据集又触发 RDS 连接池超时。
 
 ### 5. 生产环境首次初始化流程
 
@@ -241,11 +257,11 @@ apps/quiz-backend/
 2. 运行 `import:content:prod` 灌入完整分类体系 + 所有题目
 3. 之后每次新增技术内容，只需新增 JSON + 映射文件，再跑 `import:content:prod` 追加
 
-### 6. 待处理：`db:seed:prod` 安全隐患
+### 6. ✅ 已解决：`db:seed:prod` 安全隐患
 
-> **风险**：现有 `scripts/seed.ts` 在 `mode === "prod"` 时会调用 `seedSystem()` + `seedTest()`，向生产库灌入测试题目、测试分类、测试用户等数据。虽有 `QUIZ_ALLOW_PROD_SEED=true` 环境变量保护，但一旦设置就会污染生产数据。
+> **原风险**：早期 `db:seed:prod` 走 `seed.ts` 的 `prod` 模式，会调用 `seedSystem()` + `seedTest()`，向生产库灌入测试数据。
 >
-> **计划**：在正式灌入生产内容数据前，修改 `db:seed:prod` —— 去掉 `seedTest()` 调用，只保留 `seedSystem()`（管理员账号初始化）。或根据届时需要直接移除该命令。
+> **现状（已落地）**：`db:seed:prod` 已改为指向独立的 **`scripts/seed-prod.ts`**，**只调用 `seedSystem()`（管理员账号 + 角色），不调用 `seedTest()`**——生产库的真题完全由 `import:content:prod` 负责，两者分离。隐患消除。
 
 ---
 
@@ -380,16 +396,18 @@ packages/{技术名}-slide/
     "export": "slidev export"
   },
   "dependencies": {
-    "@slidev/cli": "^52.11.1",
+    "@slidev/cli": "^52.15.2",
     "@slidev/theme-default": "latest",
     "@slidev/theme-seriph": "latest",
-    "vue": "^3.5.26"
+    "vue": "^3.5.34"
   },
   "devDependencies": {
-    "@iconify/json": "^2.2.420"
+    "@iconify/json": "^2.2.472"
   }
 }
 ```
+
+> 版本以现有最新 `*-slide` 包为准（直接复制一份近期的 deck 改最稳）。`vercel.json` / `netlify.toml` 原样复制即可。
 
 #### slides.md 结构（约 10-15 页，轻量入门风格）
 
@@ -404,24 +422,46 @@ packages/{技术名}-slide/
 
 每页含 `<!-- 讲者备注 -->`。
 
+#### 必守的 Slidev 坑
+
+- **标题 `# ` 与 cover 副标题里禁用反引号 inline code**（渐变/白底导致文字消失）
+- **单页内容容器固定 980×552、`overflow:hidden`**：单栏 ≤ ~8 bullet 或一份中等代码块；two-cols 每栏 ≤ 6 行
+- **`mdc: true` 下禁用 `:::` 中文标题 admonition**（用 blockquote 代替）
+- 不用绝对路径 `<img src="/...">`（用相对 `./assets/`）
+
+#### 构建 + 溢出检测（必做，完工标准）
+
+```bash
+# 构建
+pnpm -C packages/{技术名}-slide run build
+# 实测每页是否溢出 552px —— 必须 0 溢出才算完成
+cd /Users/zhangxu/workspace/SlideStack && node scripts/check-slidev-overflow.mjs {技术名}-slide
+```
+
+> 「build 通过 ≠ 不溢出」——必须跑 `check-slidev-overflow.mjs`，有溢出按报告的超出像素逐页精简（代码行≈22px / 表格行≈33px / 正文行≈26px）。
+
 #### CI/CD
 
-无需配置——pnpm workspace 自动发现，GitHub Actions `pnpm -r build` 自动构建。
+无需配置——pnpm workspace 自动发现，GitHub Actions `pnpm -r build` 自动构建。部署单包：`bash scripts/deploy.sh {技术名}-slide`。
 
 ---
 
 ### 第三步：Quiz 题目
 
-#### 题目 JSON
+#### 题目 JSON（分类已内嵌，无单独映射文件）
 
-位置：`apps/quiz-backend/prisma/data/content/{技术名}.json`
+位置：`apps/quiz-backend/prisma/content/{技术名}.json`（注意：在 `prisma/content/` 下，**不在** `prisma/data/content/`）
 
 ```json
 [
   {
-    "stem": "{技术名}: {题干}？",
-    "explanation": "{解析}",
-    "tags": ["{技术标签}", "{领域标签}"],
+    "stem": "{技术名}：{题干}？",
+    "explanation": "{解析，支持 Markdown}",
+    "tags": ["{技术标签}", "{难度}", "{主题}"],
+    "categories": [
+      ["技术方向", "{叶子分类名，须与 categories.ts 注册的叶子完全一致}"],
+      ["难度", "{入门|初级|中级|高级|专家}"]
+    ],
     "options": [
       { "text": "选项A", "isCorrect": false, "description": "解释" },
       { "text": "选项B", "isCorrect": true, "description": "解释" },
@@ -431,33 +471,42 @@ packages/{技术名}-slide/
 ]
 ```
 
-**每技术 10-15 道**：基础 3-4 题 + 核心用法 4-5 题 + 进阶/易错 2-3 题 + 对比 1-2 题
+> 关键约定：
+>
+> - **分类内嵌在每题的 `categories` 字段**（`[[维度名, 叶子名], ...]`），导入脚本据此关联；**不再有单独的 `{技术名}-categories.ts` 映射文件**。
+> - **每道 `stem` 必须含技术名前缀**（如 `"VueHooks Plus：…"`），否则跨题库文件按 stem 去重会撞车。
+> - `categories` 里的叶子名必须与 `content/categories.ts` 已注册的叶子**完全一致**，否则导入时会 `⚠️ 找不到分类` 而跳过关联（新技术叶子需先加进 `categories.ts`）。
 
-#### 分类映射
-
-位置：`apps/quiz-backend/prisma/data/content/{技术名}-categories.ts`
-
-```typescript
-export const {TECH}_CATEGORY_MAP: [string, [string, string][]][] = [
-  ["{技术名}: {题干}？", [["技术方向", "{叶子分类名}"], ["难度", "{入门|初级|中级|高级}"]]],
-];
-```
+**题量：按内容深度定，不是固定 10-15**（早期写的 10-15 已废）。经验区间：微工具 8-15 / 中等 15-25 / 大型 30-50 / 元框架 80-200；组件库实际 64-96；组合式函数库（VueUse 156、VueHooks Plus 79）更多。给定数字是**下限**，写多不写少。
 
 #### 导入
 
+> ⚠️ **铁律：内容真题只导入 prod，绝不导入 dev / test。**
+>
+> - **prod** = 全套真实题库（append-only），每次新增题库后**必须且只能**同步这里。
+> - **dev** = 开发用小数据集，靠 `db:seed:dev` 维护，**永远不要** `import:content:dev`（会把全部真题灌进 dev、污染小数据集 + 触发 RDS 连接池超时）。
+> - **test** = 可重置回归库，`db:reset:test` 重置，**绝不灌真题**。
+
 ```bash
-pnpm -C apps/quiz-backend run import:content:dev
+# 唯一正确的内容导入命令（幂等、只增不删、按 stem 去重）
+pnpm -C apps/quiz-backend run import:content:prod
+```
+
+导入后核查（只读）：
+
+```bash
+npx tsx scripts/check-import-status.ts production
 ```
 
 ---
 
 ## 验证清单
 
-| 产出           | 验证方式                                                                  |
-| -------------- | ------------------------------------------------------------------------- |
-| VitePress 笔记 | `cd IllegalCreedWebsite && pnpm docs:dev` → 页面渲染 + 侧边栏导航正常     |
-| Slidev 幻灯片  | `cd SlideStack/packages/{X}-slide && pnpm dev` → 幻灯片播放正常           |
-| Quiz 题目      | `pnpm -C apps/quiz-backend run import:content:dev` → 管理后台题目列表可见 |
+| 产出           | 验证方式                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| VitePress 笔记 | `cd IllegalCreedWebsite && pnpm docs:dev` → 页面渲染 + 侧边栏导航正常                                         |
+| Slidev 幻灯片  | `cd SlideStack/packages/{X}-slide && pnpm dev` → 幻灯片播放正常                                               |
+| Quiz 题目      | `pnpm -C apps/quiz-backend run import:content:prod` → `check-import-status.ts production` 显示新文件 N/N 入库 |
 
 ---
 
