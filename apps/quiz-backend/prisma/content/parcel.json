@@ -1,0 +1,808 @@
+[
+  {
+    "stem": "Parcel：官方将其定位为「The zero configuration build tool for the web」。下面关于 Parcel 2「零配置」哲学的描述，哪一项是正确的？",
+    "explanation": "Parcel 主打「零配置」，开箱即用并自动跟随依赖构建，无需手写 webpack 那样的入口/loader/plugin 配置。但「零配置」并不等于「自动做一切」：① 开发环境默认面向现代浏览器，默认不对 JS 语法做降级转译，只有当项目里存在 browserslist（package.json 的 browserslist 字段或 .browserslistrc）声明了旧浏览器目标时才触发转译；② Parcel 不内置 TypeScript 类型检查，编译 .ts 时只剥离类型不报类型错误，类型检查仍需自行运行 tsc。因此「零配置」描述的是无需手动配置即可工作，而非「自动开启所有优化与转译」。scope hoisting、minify 等也仅在 parcel build 生产构建时默认开启，开发态不开。",
+    "tags": ["parcel", "零配置", "入门", "browserslist"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "零配置意味着开箱即用、自动跟随依赖构建，但默认不做 JS 语法降级转译（需 browserslist 触发），也不做 TS 类型检查（需自行跑 tsc）",
+        "isCorrect": true,
+        "description": "正确。零配置 = 无需手动写配置即可工作；但转译需 browserslist 触发、类型检查需 tsc，二者不在「自动」范围内。"
+      },
+      {
+        "text": "零配置意味着 Parcel 会自动把所有现代 JS 语法降级到 ES5，无需任何 browserslist 配置",
+        "isCorrect": false,
+        "description": "错误。开发态默认面向现代浏览器、默认不降级；降级需要 browserslist 声明旧目标才会触发。"
+      },
+      {
+        "text": "零配置意味着 Parcel 在编译 .ts 时会自动进行 TypeScript 类型检查并在类型错误时中断构建",
+        "isCorrect": false,
+        "description": "错误。Parcel 只剥离 TS 类型、不做类型检查，类型校验需另行运行 tsc。"
+      },
+      {
+        "text": "零配置意味着开发服务器默认就会启用 scope hoisting 和代码压缩（minify）以获得最优产物",
+        "isCorrect": false,
+        "description": "错误。scope hoisting 与 minify 仅在 parcel build 生产构建默认开启，开发态（serve/watch）不开。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：新手用 Parcel 2 搭建一个 Web 应用，推荐以什么作为入口文件，并在其中如何引用 JS？",
+    "explanation": "Parcel 的入门文档明确：「Parcel accepts any type of file as an entry point, but an HTML file is a good place to start. Parcel will follow all of your dependencies from there to build your app.」即推荐以 HTML 文件作为入口，Parcel 会从 HTML 出发跟随所有依赖进行构建。在 HTML 中通过 `<script type=\"module\" src=\"app.js\"></script>` 引用 JS（使用原生 ES module 的 type=\"module\"）。如果不想每次在命令行重复入口，可在 package.json 的 source 字段统一声明入口。把 JS 文件直接当入口、或要求必须先写 parcel.config / 配置 entry 数组都是误解——Parcel 正是以「HTML 即入口、零配置」为卖点。",
+    "tags": ["parcel", "入口", "入门", "html"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "以 HTML 文件作为入口，在其中用 <script type=\"module\" src=\"app.js\"></script> 引用 JS，Parcel 从 HTML 跟随所有依赖构建",
+        "isCorrect": true,
+        "description": "正确。官方推荐 HTML 作入口；用 type=\"module\" 引用 JS；也可在 package.json 的 source 字段声明入口。"
+      },
+      {
+        "text": "必须以 JS 文件作为入口，HTML 只能作为静态资源被复制，不能作入口",
+        "isCorrect": false,
+        "description": "错误。Parcel 接受任意文件作入口，HTML 反而是官方推荐的起点。"
+      },
+      {
+        "text": "必须先创建 parcel.config.js 并在其中显式配置 entry 数组，否则 Parcel 不知道入口",
+        "isCorrect": false,
+        "description": "错误。Parcel 零配置，入口直接在命令行或 package.json source 字段给出，无需 entry 配置文件。"
+      },
+      {
+        "text": "应在 HTML 里用 <script src=\"app.js\"></script>（不加 type=\"module\"），Parcel 才能正确解析 import",
+        "isCorrect": false,
+        "description": "错误。文档示例使用 <script type=\"module\">，原生 ES module 引用方式，去掉 type=\"module\" 并非要求。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：当 Parcel 2 在构建中遇到尚未安装对应插件的文件类型（例如某种它支持但未装依赖的格式）时，默认行为是什么？检测包管理器的顺序又是怎样的？",
+    "explanation": "Parcel 内置 autoinstall（自动安装）能力：在开发环境遇到需要某个插件/依赖才能处理的文件类型时，会自动帮你安装所需的插件和 dev 依赖，无需手动操作。安装时它会按 Yarn → Pnpm → Npm 的顺序检测项目使用的包管理器（依据 lockfile 等线索），用检测到的那个执行安装。如果不希望这种自动安装行为，可加 --no-autoinstall 关闭。注意 autoinstall 只在开发（serve/watch）时启用，生产 build 时不会自动装包。把顺序记成 npm 优先、或认为默认就报错让你手动装、或认为生产构建也自动装，都是错误的。",
+    "tags": ["parcel", "autoinstall", "初级", "包管理器"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认自动安装所需插件/依赖（autoinstall），按 Yarn→Pnpm→Npm 顺序检测包管理器；可用 --no-autoinstall 关闭",
+        "isCorrect": true,
+        "description": "正确。autoinstall 在开发态自动装包，检测顺序 Yarn→Pnpm→Npm，--no-autoinstall 可禁用。"
+      },
+      {
+        "text": "默认自动安装，但检测顺序为 Npm→Yarn→Pnpm，因为 npm 最通用所以优先",
+        "isCorrect": false,
+        "description": "错误。检测顺序是 Yarn→Pnpm→Npm，npm 排在最后作为兜底。"
+      },
+      {
+        "text": "默认直接报错并提示你手动安装对应插件，Parcel 不会自动装任何依赖",
+        "isCorrect": false,
+        "description": "错误。Parcel 的卖点之一就是 autoinstall 自动装插件，而非报错让你手动装。"
+      },
+      {
+        "text": "默认自动安装，且该行为在 parcel build 生产构建时同样启用以保证产物完整",
+        "isCorrect": false,
+        "description": "错误。autoinstall 仅在开发环境启用，生产构建不会自动装包。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：团队在用 Parcel 2 开发一个本身已有 Express 服务器的项目，只想让 Parcel 监听文件变化并重新构建、提供 HMR，但不要 Parcel 再起一个 HTTP 开发服务器（避免与自家服务器端口冲突）。应该用哪个命令？三者（serve/watch/build）有何区别？",
+    "explanation": "Parcel 2 的 CLI 三命令：① parcel serve（默认，parcel 是它的快捷方式）启动开发服务器，默认监听 http://localhost:1234，端口被占用时自动回退到其他可用端口，支持自动重建与热更新；② parcel watch 与 serve 类似、会随文件变化自动重建，但「does not start a dev server (only a HMR server)」——它不起 HTTP 开发服务器，只起 HMR 服务器，正适合「已有自己的 HTTP 服务器」的场景；③ parcel build 执行一次性生产构建后退出，默认开启 scope hoisting 等生产优化。题目需求是「要重建+HMR 但不要 Parcel 的 HTTP server」，正解是 parcel watch。",
+    "tags": ["parcel", "watch", "中级", "dev-server"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "parcel watch —— 与 serve 类似会自动重建，但不启动 HTTP 开发服务器，只起 HMR 服务器",
+        "isCorrect": true,
+        "description": "正确。watch 适合已有自己 HTTP 服务器的项目：保留重建+HMR，但不占用 1234 这样的 dev server 端口。"
+      },
+      {
+        "text": "parcel serve —— 它是默认命令，会监听变更并重建，但可以通过参数关掉它内置的 HTTP 服务器",
+        "isCorrect": false,
+        "description": "错误。serve 的定位就是启动开发服务器；要「重建但无 HTTP server」应改用 watch，而非给 serve 关 server。"
+      },
+      {
+        "text": "parcel build —— 用 --watch 让它持续构建，同时它本来就不带 HTTP 服务器",
+        "isCorrect": false,
+        "description": "错误。build 是一次性生产构建后退出（且默认开启 scope hoisting/minify），并非持续开发监听，不符合 HMR 需求。"
+      },
+      {
+        "text": "parcel serve --port 0 —— 用端口 0 让 Parcel 不监听任何 HTTP 端口，仅保留 HMR",
+        "isCorrect": false,
+        "description": "错误。serve 始终会起 HTTP 开发服务器；「只要 HMR 不要 HTTP server」的官方方式是 parcel watch。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：关于 Parcel 2 的开发服务器端口与磁盘缓存，下面哪一项描述完全正确？（注意区别于 Parcel 1）",
+    "explanation": "Parcel 2 的事实：① 开发服务器默认端口是 1234（http://localhost:1234），端口被占用时会「自动回退」到一个可用端口，可用 -p/--port 或 PORT 环境变量覆盖，--open 启动后自动用默认浏览器打开。② 缓存目录是 .parcel-cache（Parcel 1 时代是 .cache，2 改为 .parcel-cache）；--no-cache 这个 flag「只禁用从缓存读取，但仍会创建 .parcel-cache 目录并写入」，并不会阻止目录生成；要改缓存位置用 --cache-dir。常见错误：把默认端口记成 3000/8080、把缓存目录记成 Parcel 1 的 .cache、或误以为 --no-cache 会彻底不生成缓存目录。",
+    "tags": ["parcel", "缓存", "中级", "端口"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认端口 1234、占用时自动回退；缓存目录为 .parcel-cache，--no-cache 仅禁止读取缓存但仍会创建该目录",
+        "isCorrect": true,
+        "description": "正确。1234 默认+自动回退；Parcel 2 缓存目录是 .parcel-cache；--no-cache 只禁读、目录照建，改位置用 --cache-dir。"
+      },
+      {
+        "text": "默认端口 3000、占用时直接报错退出；缓存目录为 .parcel-cache，--no-cache 会阻止该目录被创建",
+        "isCorrect": false,
+        "description": "错误两处：默认端口是 1234 且占用会自动回退（不报错退出）；--no-cache 仍会创建 .parcel-cache 目录。"
+      },
+      {
+        "text": "默认端口 1234；但缓存目录是 .cache，因为 Parcel 沿用了一贯的缓存目录命名",
+        "isCorrect": false,
+        "description": "错误。.cache 是 Parcel 1 的缓存目录；Parcel 2 已改为 .parcel-cache。"
+      },
+      {
+        "text": "默认端口 8080；缓存目录为 .parcel-cache，--no-cache 等价于删除并禁用缓存，运行后目录不存在",
+        "isCorrect": false,
+        "description": "错误两处：默认端口是 1234 而非 8080；--no-cache 只禁读取，运行后 .parcel-cache 目录仍会被创建。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在 Parcel 2 开发服务器中，关于 HMR（热模块替换）的默认行为，下列哪项描述最准确？",
+    "explanation": "据官方 Development 文档：Parcel 的 HMR 默认即开启，无需任何 CLI 标志或额外配置。React 自动接入 Fast Refresh、Vue 有内置 HMR，CSS 变更会通过 HMR 自动应用、不触发整页刷新。对于普通 JS 模块，「默认情况下 Parcel 会整页刷新页面，某些情况下才执行 HMR」——要让某模块更新时就地替换而不刷新，需要自己在代码里调用 module.hot.accept()。所以「HMR 默认开启」是对的，但并非所有改动都自动就地替换：框架/CSS 自动，普通 JS 需 accept。要关闭 HMR 用 --no-hmr。干扰项把 HMR 说成需手动开启、或说必须装插件，都与文档不符。",
+    "tags": ["parcel", "hmr", "dev-server", "fast-refresh"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HMR 默认开启，无需配置：React 走 Fast Refresh、Vue 走内置 HMR、CSS 变更自动应用不刷新页面；普通 JS 模块若要就地替换则需自行调用 module.hot.accept()",
+        "isCorrect": true,
+        "description": "正确。这与官方文档一致：HMR 开箱即用，框架与 CSS 自动处理，普通 JS 需 accept 才不整页刷新。关闭用 --no-hmr。"
+      },
+      {
+        "text": "HMR 默认关闭，必须传 --hmr 标志或在 package.json 中设置 \"hmr\": true 才能启用",
+        "isCorrect": false,
+        "description": "错误。Parcel 没有 --hmr 开启标志，HMR 默认就是开的；存在的是反向的 --no-hmr 用于关闭。"
+      },
+      {
+        "text": "HMR 仅对 CSS 生效，JS 的热替换需要额外安装 @parcel/transformer-react-refresh 插件",
+        "isCorrect": false,
+        "description": "错误。React Fast Refresh 是 Parcel 内置支持的，无需手动装插件；JS 也能通过 module.hot.accept() 热替换。"
+      },
+      {
+        "text": "HMR 只在生产构建（parcel build）中可用，开发模式默认仅整页刷新",
+        "isCorrect": false,
+        "description": "错误。生产构建不含 HMR；module.hot 仅在开发环境可用。完全说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：你想在某个模块热更新时保存当前状态并在新版本里恢复，下面哪段 module.hot 代码符合 Parcel 2 官方约定？",
+    "explanation": "据官方文档，状态保留的标准做法是：在 module.hot.dispose(data => {...}) 回调里把状态写进传入的 data 对象（该回调在模块被替换之前调用）；在新版本模块里通过 module.hot.data 读回这些状态。同时 module.hot 只在开发环境存在，使用前必须 if (module.hot) 守卫。正确写法是 dispose 写入 data、accept 中用 module.hot.data 读回。干扰项常见错误：把要保存的数据放进 accept 的返回值（accept 不靠返回值传状态）；用 module.hot.dispose 去「读」而 accept 去「写」（写读方向反了）；或漏掉 if(module.hot) 守卫导致生产构建报错。",
+    "tags": ["parcel", "module-hot", "hmr", "state-preservation"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "if (module.hot) { module.hot.dispose(data => { data.state = getState() }); module.hot.accept(() => { restore(module.hot.data.state) }) }",
+        "isCorrect": true,
+        "description": "正确。dispose 在替换前把状态写入 data；新模块通过 module.hot.data 读回；外层 if(module.hot) 守卫确保仅开发环境执行。"
+      },
+      {
+        "text": "if (module.hot) { module.hot.accept(data => { data.state = getState() }); module.hot.dispose(() => { restore(module.hot.data.state) }) }",
+        "isCorrect": false,
+        "description": "错误。写读方向反了：保存状态应在 dispose（替换前）、读回应在新模块。把 dispose 当读取、accept 当保存不符合 API 语义。"
+      },
+      {
+        "text": "module.hot.accept(() => { return getState() }); 通过 accept 回调的返回值把状态传给下一版本，无需 if(module.hot) 守卫",
+        "isCorrect": false,
+        "description": "错误。accept 不依赖返回值传递状态；且 module.hot 仅开发可用，缺 if 守卫会让生产构建访问 undefined 报错。"
+      },
+      {
+        "text": "import.meta.hot.dispose(...) 是 Parcel 唯一支持的 HMR API，module.hot 已在 Parcel 2 中移除",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 文档使用的就是 module.hot（module.hot.accept/dispose/data），并未移除改用 import.meta.hot。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：关于 --lazy 懒构建模式，下列哪项描述与 Parcel 2 官方行为一致？",
+    "explanation": "据官方文档，--lazy 是开发服务器（serve/默认 serve 模式）专用的标志，它把构建推迟到浏览器实际请求某个 bundle 时才进行，从而加快含大量入口/路由的项目的启动速度。文档明确指出：「这同样适用于动态 import()，不只是分离的入口」，所以懒构建会配合动态 import() 按需触发对应分包的构建。它不是给 parcel build（生产构建）用的——生产需要完整产物。干扰项把 --lazy 说成生产标志、或说它会预构建所有入口、或说必须配合 --no-cache，都与文档不符。",
+    "tags": ["parcel", "lazy", "dev-server", "code-splitting"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--lazy 仅用于开发服务器，把 bundle 的构建推迟到浏览器请求时才执行；它对动态 import() 同样生效，按需构建被请求的分包",
+        "isCorrect": true,
+        "description": "正确。文档原文表明懒构建推迟到请求时进行，且「同样适用于动态 import()，不只是分离的入口」，适合多入口/多路由项目加速启动。"
+      },
+      {
+        "text": "--lazy 用于 parcel build 生产构建，跳过未被首页引用的模块以缩小产物体积",
+        "isCorrect": false,
+        "description": "错误。--lazy 是 dev server 标志（serve-only），生产构建需要完整产物，不能「懒掉」未请求的模块。"
+      },
+      {
+        "text": "--lazy 启动时会预先并行构建所有入口，再在内存中缓存以加速后续热更新",
+        "isCorrect": false,
+        "description": "错误。恰好相反，--lazy 的核心是不预构建，只在浏览器请求某 bundle 时才构建它。"
+      },
+      {
+        "text": "--lazy 只对静态多入口有效，遇到动态 import() 会回退为一次性全量构建",
+        "isCorrect": false,
+        "description": "错误。文档明确说懒构建对动态 import() 也生效，并非只支持静态入口。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：团队要把开发服务器跑在 HTTPS 下，并自定义一段 connect 兼容的代理中间件把 /api 转发到后端。在 Parcel 2 中，下列哪种做法组合是正确的？",
+    "explanation": "据官方文档：HTTPS 用 --https 让 Parcel 生成自签名证书，或用 --cert/--key 指定自有证书与私钥（两者均使 dev 与 HMR 服务器走 HTTPS）。代理方面，.proxyrc / .proxyrc.json 接受的是 http-proxy-middleware 的 options 对象（声明式 JSON，如 target/pathRewrite）；而 .proxyrc.js / .proxyrc.ts 允许挂载任意 connect 兼容的中间件函数（命令式，可写任意逻辑）。本题要「自定义一段 connect 兼容中间件」，因此必须用 .proxyrc.js/.proxyrc.ts，而非 JSON 形式。干扰项把两类配置文件的引擎弄反（说 .proxyrc.json 用 connect、.proxyrc.js 用 http-proxy-middleware options），或用根本不存在的 webpack devServer.proxy 配置，都是错的。",
+    "tags": ["parcel", "https", "proxy", "proxyrc"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 --https（或 --cert/--key 指定证书与私钥）开启 HTTPS；把自定义的 connect 中间件写在 .proxyrc.js / .proxyrc.ts 中",
+        "isCorrect": true,
+        "description": "正确。--https 生成自签名证书、--cert/--key 用自有证书；.proxyrc.js/.proxyrc.ts 允许挂载任意 connect 兼容中间件，正合「写自定义中间件」的需求。"
+      },
+      {
+        "text": "用 --secure 开启 HTTPS；把 connect 中间件写在 .proxyrc.json 中，因为 JSON 形式底层就是 connect",
+        "isCorrect": false,
+        "description": "错误。开启 HTTPS 的标志是 --https 不是 --secure；且 .proxyrc.json 用的是 http-proxy-middleware 的 options 对象（声明式），不能写任意函数中间件。"
+      },
+      {
+        "text": "用 --https 开启 HTTPS；自定义中间件写在 .proxyrc / .proxyrc.json，函数中间件写在 .proxyrc.js 的说法是 Parcel 1 才有的",
+        "isCorrect": false,
+        "description": "错误。把两类文件的能力弄反了：.proxyrc/.proxyrc.json 是 http-proxy-middleware options，.proxyrc.js/.ts 才能写 connect 中间件函数，且这是 Parcel 2 的现行机制。"
+      },
+      {
+        "text": "用 --https 开启 HTTPS；代理则在 package.json 的 devServer.proxy 字段里配置，与 webpack-dev-server 一致",
+        "isCorrect": false,
+        "description": "错误。Parcel 没有 webpack 风格的 devServer.proxy 字段，代理通过 .proxyrc 系列文件配置。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：执行 `parcel build` 进行生产构建时，关于默认启用的优化项，以下哪项描述是正确的？",
+    "explanation": "Parcel 2 的 `parcel build` 命令开箱即用、零配置地启用一整套生产优化：压缩（minify）、Tree Shaking、Scope Hoisting（作用域提升）和内容哈希（content hashing）。官方文档原文：\"Parcel includes minifiers for JavaScript, CSS, HTML, and SVG out of the box\"，并自动加入内容哈希以支持长期浏览器缓存。这与开发服务器（`parcel`，默认端口 1234）不同——minify 和 scope hoisting 默认仅在生产构建开启。需要关闭时用 `--no-optimize`（关全部优化）等标志，而不是反过来需要手动开启。注意 Parcel 默认并不做任何转译（需 browserslist 字段触发降级），也不做 TS 类型检查（需另跑 tsc），这两项不属于「优化」范畴。",
+    "tags": ["parcel", "生产构建", "优化", "minify"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "minify、Tree Shaking、Scope Hoisting、内容哈希全部默认开启，无需任何配置",
+        "isCorrect": true,
+        "description": "正确。`parcel build` 开箱即用启用全套优化，零配置。要关闭某项才需显式加 `--no-optimize` / `--no-scope-hoist` / `--no-content-hash` 等标志。"
+      },
+      {
+        "text": "默认只做 Tree Shaking，minify 与 Scope Hoisting 需在配置文件中手动开启",
+        "isCorrect": false,
+        "description": "错误。minify 和 scope hoisting 在 `parcel build` 中默认就开启，无需手动配置；只是开发模式下不开。"
+      },
+      {
+        "text": "默认会对 TypeScript 做类型检查并对所有代码转译到 ES5",
+        "isCorrect": false,
+        "description": "错误。Parcel 不做 TS 类型检查（需另跑 tsc），也不做任何转译（仅当存在 browserslist 时才按目标降级），二者均非默认优化项。"
+      },
+      {
+        "text": "内容哈希默认关闭，需添加 `--content-hash` 标志才会在文件名中加入哈希",
+        "isCorrect": false,
+        "description": "错误。内容哈希默认开启；存在的是关闭/固定哈希的 `--no-content-hash`，没有 `--content-hash` 这个开启标志。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在 Parcel 2 的生产构建中，JavaScript、CSS、SVG、HTML 四类资源默认底层使用的压缩器分别是什么？",
+    "explanation": "Parcel 2 各类资源的默认底层压缩引擎是高频考点，极易与「配置文件名」混淆。官方文档：JS 用 SWC（不是 Babel/Terser/UglifyJS），CSS 用 Lightning CSS（lightningcss，不是 PostCSS/cssnano），SVG 用 oxvg，HTML 用内置 minifier。关键区分点：配置文件名（`.terserrc` / `svgo.config.json` / `.htmlnanorc`）沿用了社区里那些老牌工具的命名以保持向后兼容，但底层引擎已替换——例如 `.terserrc` 是「Terser 兼容的配置格式」，实际由 SWC 读取执行（文档：\"For backward compatibility, this supports Terser config files\"）。把配置文件名当成底层引擎是最常见的错误。",
+    "tags": ["parcel", "minify", "底层压缩器", "SWC"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JS=SWC，CSS=Lightning CSS，SVG=oxvg，HTML=内置 minifier",
+        "isCorrect": true,
+        "description": "正确。这是 Parcel 2 的默认底层组合，全部内建、无需安装插件。"
+      },
+      {
+        "text": "JS=Terser，CSS=PostCSS(cssnano)，SVG=SVGO，HTML=html-minifier",
+        "isCorrect": false,
+        "description": "错误。这些是配置文件名（.terserrc/svgo.config.json）所致敬的老牌工具，但底层引擎已换成 SWC / Lightning CSS / oxvg / 内置压缩器。"
+      },
+      {
+        "text": "JS=Babel+UglifyJS，CSS=Lightning CSS，SVG=oxvg，HTML=内置 minifier",
+        "isCorrect": false,
+        "description": "错误。Parcel 默认用 SWC 压缩 JS，不是 Babel 配 UglifyJS；CSS/SVG/HTML 部分虽对，但 JS 引擎错误。"
+      },
+      {
+        "text": "JS=esbuild，CSS=Lightning CSS，SVG=SVGO，HTML=内置 minifier",
+        "isCorrect": false,
+        "description": "错误。Parcel 默认 JS 压缩器是 SWC 而非 esbuild；SVG 压缩用 oxvg 而非 SVGO。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：生产构建中对 `if (process.env.NODE_ENV !== \"production\") { ... }` 这类代码会发生什么？其触发机制是怎样的？",
+    "explanation": "`parcel build` 会自动把 `NODE_ENV` 环境变量设为 `production`（文档：\"automatically sets the NODE_ENV environment variable to production\"）。随后 Parcel 会把 `process.env.NODE_ENV` 内联（inline）为字面量 `\"production\"`，于是 `\"production\" !== \"production\"` 恒为 false，配合 minify 阶段的死代码消除（dead code elimination），整段 `if` 分支会被完全剥离。这正是 React / Vue 等库用来在生产环境去掉开发警告的标准机制。陷阱：（1）这是构建时自动行为，无需手写 `--define` 或 DefinePlugin（那是 webpack 的概念）；（2）剥离发生在生产构建，开发模式 `NODE_ENV` 为 `development`，分支会保留；（3）内联的是 `process.env.NODE_ENV`，并非把整个 `process` 对象 polyfill 进浏览器。",
+    "tags": ["parcel", "生产构建", "NODE_ENV", "死代码消除"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "构建自动设 NODE_ENV=production，将 `process.env.NODE_ENV` 内联为 \"production\"，该分支恒为 false 被死代码消除剥离",
+        "isCorrect": true,
+        "description": "正确。`parcel build` 自动注入 production，内联后比较恒假，minify 阶段把整段死分支移除——这是去掉库的开发警告的标准机制。"
+      },
+      {
+        "text": "需在 `.parcelrc` 中手动配置 `define` 字段把 NODE_ENV 替换为 \"production\"，否则分支不会被剥离",
+        "isCorrect": false,
+        "description": "错误。这是构建时自动行为，无需手动 define；`.parcelrc` 也并非用于此类常量替换（define/DefinePlugin 是 webpack 概念）。"
+      },
+      {
+        "text": "Parcel 会把完整的 `process` 对象 polyfill 到浏览器运行时，由运行时判断分支走向",
+        "isCorrect": false,
+        "description": "错误。Parcel 在构建时内联 `process.env.NODE_ENV` 字面量并静态剥离死分支，并不会注入运行时 process polyfill 来动态判断。"
+      },
+      {
+        "text": "无论开发还是生产，该分支都会被原样保留，需依赖运行时环境变量决定是否执行",
+        "isCorrect": false,
+        "description": "错误。生产构建中该分支会被静态剥离；只有开发模式（NODE_ENV=development）才保留分支。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：关于生产构建相关 CLI 标志，以下哪项对其行为的描述是准确的？",
+    "explanation": "几个 `parcel build` 相关标志的精确语义：(1) `--no-optimize` 关闭压缩及其它优化（minify 等），常用于排查压缩引入的问题；(2) `--no-content-hash` 的语义是「文件名里仍带哈希，但该哈希不会随每次构建变化」——文档原文：\"the name will still include a hash, but it will not change on each build\"，并不是「完全去掉哈希」；(3) `--detailed-report [number]` 输出每个 bundle 的文件构成、按体积排序，默认显示最多 10 个文件；(4) `--no-scope-hoist` 关闭作用域提升（保留每模块独立函数包裹）。常见误区是把 `--no-content-hash` 理解成文件名里彻底没有哈希。",
+    "tags": ["parcel", "生产构建", "CLI", "content-hash"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`--no-content-hash` 表示文件名仍包含哈希，只是该哈希不再随每次构建变化",
+        "isCorrect": true,
+        "description": "正确。文档原文：哈希仍在文件名里，但 \"it will not change on each build\"，即变成稳定哈希而非彻底移除。"
+      },
+      {
+        "text": "`--no-content-hash` 会使输出文件名完全不含任何哈希片段",
+        "isCorrect": false,
+        "description": "错误。它只是让哈希固定不变，文件名里仍保留哈希片段，并非彻底去掉。"
+      },
+      {
+        "text": "`--detailed-report` 默认显示每个 bundle 中最多 50 个文件，按字母顺序排序",
+        "isCorrect": false,
+        "description": "错误。`--detailed-report` 默认最多显示 10 个文件，且按体积（size）排序，而非 50 个或字母序。"
+      },
+      {
+        "text": "`--no-optimize` 仅关闭图片无损优化，JS/CSS 的 minify 仍会执行",
+        "isCorrect": false,
+        "description": "错误。`--no-optimize` 关闭的是 minify 等全套优化，并非只针对图片；JS/CSS 压缩也会一并停用。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在生产构建中开启了 tree shaking 与 scope hoisting。某 npm 包想让 Parcel 在它的导出未被使用时「整个模块跳过、不打进 bundle」，应在该包 package.json 中如何声明，且关于该字段的默认行为，下列哪项描述正确？",
+    "explanation": "官方 scope-hoisting 文档明确：package.json 的 sideEffects 字段用于声明哪些文件含副作用，可取三种形式——布尔 false（All files in this package have no side effects，全部无副作用）、单个 glob 字符串、或 glob 数组。只有标记为无副作用，Parcel 才能在导出未被使用时「entirely skipped」整个模块。关键陷阱在于默认值：Parcel 默认把所有文件都当作「有副作用」，因此不写 sideEffects 时即便导出未被引用也不会被移除整模块（仍可能保留以防其顶层执行有副作用，如注册全局、polyfill）。这与 tree shaking 移除「未用具名导出」是两回事——后者不需要 sideEffects 也能做。干扰项把默认值说成 false、或把字段当成只能布尔值、或张冠李戴成 Parcel 1 的旧机制，均与文档不符。",
+    "tags": ["parcel", "tree-shaking", "sideEffects", "scope-hoisting"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明 \"sideEffects\": false；但 Parcel 默认把所有文件视为「有副作用」，不声明时未用模块不会被整体跳过。该字段也可写成单个 glob 字符串或 glob 数组",
+        "isCorrect": true,
+        "description": "正确。文档列出 false / 字符串 / 数组三种形式，且默认全部当作有副作用，必须显式声明 false 才能整模块跳过。"
+      },
+      {
+        "text": "该字段默认值就是 false（无副作用），所以任何包不写 sideEffects，Parcel 也会自动把未用模块整体移除",
+        "isCorrect": false,
+        "description": "错误。默认是把所有文件当作有副作用，恰好相反；不声明时不会整模块移除。"
+      },
+      {
+        "text": "sideEffects 只能取布尔值 true/false，不支持 glob，要精确指定含副作用的文件需改用 .parcelrc 的 transformer 配置",
+        "isCorrect": false,
+        "description": "错误。文档明确支持单个 glob 字符串与 glob 数组，无需用 .parcelrc。"
+      },
+      {
+        "text": "在 Parcel 2 中该字段已废弃，副作用由 SWC 自动分析，声明 sideEffects 不再有任何效果",
+        "isCorrect": false,
+        "description": "错误。sideEffects 在 Parcel 2 仍是控制整模块跳过的关键字段，并未废弃。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：使用动态 import 做代码分割时，写法 `import('./pages/about').then(p => p.render())`。关于动态 import() 的语义与代码分割保证，下列哪项与官方文档一致？",
+    "explanation": "官方 code-splitting 文档原文：动态 import() 「works like the normal import statement, but returns a Promise」，返回 Promise，支持 .then 与 async/await 两种写法。更关键的一句：「dynamic import is merely a hint that a dependency is not needed synchronously, not a guarantee that a new bundle will be created」——它只是「提示」该依赖不必同步加载，并非「保证」一定生成新 bundle。当同一模块既被同步又被异步 import 时，异步依赖会被 internalized（内联回父 bundle）以避免重复加载，但仍用 Promise 包裹以保持异步语义。干扰项把 hint 说成强制保证、把返回值说成同步模块对象、或声称必然产生独立 chunk，均与文档矛盾。",
+    "tags": ["parcel", "code-splitting", "dynamic-import", "internalized"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "import() 返回 Promise，且它只是「该依赖无需同步」的 hint，并不保证一定生成新 bundle；若同模块又被同步引用，异步依赖会被 internalized 内联回父 bundle 但仍用 Promise 包裹",
+        "isCorrect": true,
+        "description": "正确。完全对应文档「returns a Promise」「merely a hint, not a guarantee」与 internalized 仍包 Promise 的描述。"
+      },
+      {
+        "text": "import() 保证为被导入模块生成一个独立的新 bundle，这是 Parcel 代码分割的强制契约",
+        "isCorrect": false,
+        "description": "错误。文档明确它是 hint 而非 guarantee，可能被内联而不生成新 bundle。"
+      },
+      {
+        "text": "import() 同步返回模块的命名空间对象，只有显式标注 `/* webpackChunkName */` 才会异步加载",
+        "isCorrect": false,
+        "description": "错误。import() 返回 Promise 而非同步对象；magic comment 是 webpack 概念，非 Parcel 机制。"
+      },
+      {
+        "text": "只要写了 import()，Parcel 一定会把该模块从父 bundle 中剥离，绝不会与同步引用合并到同一 bundle",
+        "isCorrect": false,
+        "description": "错误。同步+异步混用时会 internalized 合并回父 bundle 以避免重复。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：以现代 browserslist 为目标做生产构建，代码 `let math = await import('./math'); console.log(math[op](2, 3));`。Parcel 无法对 ./math 做 tree shaking、把所有导出全部保留，最贴切的根因是哪一项？",
+    "explanation": "官方 scope-hoisting 文档原文：「Dynamic property access ... let math = await import('./math'); console.log(math[op](2, 3))」会因属性名无法静态确定而无法 tree shaking；并补充「Any usage of an import namespace other than a static property access will cause all exports to be included」——只要对命名空间对象做了非静态属性访问（这里是 math[op] 动态下标），就会把全部导出都包含进来，这是一次 ESM bailout。注意题目特意限定「现代 browserslist」，因此排除「await 被转译降级」那条原因（文档另一句讲 await 被转译时才无法移除）。干扰项混淆了 CJS bailout（exports[var]）、await 转译降级、以及 sideEffects 字段——它们都不是本例（纯静态 await + 现代目标 + 动态下标）的根因。",
+    "tags": ["parcel", "scope-hoisting", "tree-shaking", "ESM-bailout"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对命名空间对象做了动态属性访问 math[op]（非静态属性访问），属性名无法静态确定，触发 ESM bailout，导致全部导出被保留",
+        "isCorrect": true,
+        "description": "正确。文档原例即此，非静态属性访问使所有导出都被包含。"
+      },
+      {
+        "text": "因为用了 await import 而非 .then，await 被转译降级导致未用导出无法移除",
+        "isCorrect": false,
+        "description": "错误。题目限定现代 browserslist，await 不会被转译；本例根因是动态下标而非降级。"
+      },
+      {
+        "text": "这是 CommonJS 的 exports[someVar] 动态导出 bailout，需要把 ./math 改写成 ESM 才能 tree shaking",
+        "isCorrect": false,
+        "description": "错误。这是 ESM 命名空间的动态访问，不是 CJS 动态导出；改成 ESM 也救不了 math[op]。"
+      },
+      {
+        "text": "因为 ./math 所在包未声明 \"sideEffects\": false，Parcel 默认保留其全部导出",
+        "isCorrect": false,
+        "description": "错误。sideEffects 影响「整模块跳过」，但本例是具名导出无法摇掉，根因是动态属性访问。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：团队从 Parcel 1 迁移到 Parcel 2（latest 2.16.x），在 dev server 上发现产物体积很大、没有 scope hoisting，且某个 `eval(...)` 调用所在文件完全没被 tree shaking。关于 Parcel 2 中 scope hoisting / tree shaking 的开启条件与诊断，下列哪项全部正确？",
+    "explanation": "Parcel 2 的关键默认行为：scope hoisting（及 minify）默认仅在生产构建（parcel build）开启，dev server（parcel serve，默认端口 1234）不做 scope hoisting，所以开发态产物大是预期，不是 bug。诊断 bailout 用官方文档给的 `parcel build src/app.html --log-level verbose`，会打印带 code frame 的 bailout 诊断。文档明确 eval() 「disables minification and causes wrapping」，顶层 return 也会「causes wrapping and disables tree shaking」——这两类都会打破优化。Parcel 1→2 迁移差异需显式标注：包名 parcel-bundler→parcel、缓存目录 .cache→.parcel-cache、插件改写到 .parcelrc、默认不再自动转译（需 browserslist 触发降级）。干扰项把 dev 也当作开 scope hoisting、把诊断 flag 写错、或声称 eval 不影响优化，均错误。",
+    "tags": ["parcel", "scope-hoisting", "parcel1-to-2", "log-level-verbose"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "scope hoisting/minify 默认仅生产（parcel build）开启，dev server（默认端口 1234）不做属正常；用 `parcel build --log-level verbose` 查 bailout；eval() 会禁用 minify 并导致模块被包裹（wrapping），打破优化",
+        "isCorrect": true,
+        "description": "正确。默认仅生产开 scope hoisting，verbose 诊断 bailout，eval 触发 wrapping，三点均与 Parcel 2 行为及文档一致。"
+      },
+      {
+        "text": "Parcel 2 在 dev server 也默认开启 scope hoisting，开发态产物大说明缓存损坏，删除 .cache 目录重建即可恢复",
+        "isCorrect": false,
+        "description": "错误。dev 默认不做 scope hoisting；且 Parcel 2 缓存目录是 .parcel-cache（.cache 是 Parcel 1）。"
+      },
+      {
+        "text": "eval() 不影响 tree shaking，只要在生产构建加上 --scope-hoist 显式开关就能强制摇树，verbose 诊断用 `parcel --verbose`",
+        "isCorrect": false,
+        "description": "错误。eval 会导致 wrapping 并禁用 minify；不存在 --scope-hoist 开关（生产默认开，可用 --no-scope-hoist 关）；诊断 flag 是 --log-level verbose。"
+      },
+      {
+        "text": "迁移后只需把 parcel-bundler 改名为 parcel，其余配置零变化；Parcel 2 默认仍会自动转译所有语法，无需 browserslist",
+        "isCorrect": false,
+        "description": "错误。迁移还需 .cache→.parcel-cache、插件迁 .parcelrc；且 Parcel 2 默认不转译，需 browserslist 触发降级。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：生产构建中希望靠 /*#__PURE__*/ 注解让未使用的纯计算被移除，同时排查为何一个 CommonJS 模块的导出全被保留。关于 PURE 注解、CJS bailout 与底层引擎，下列哪项描述完全正确？",
+    "explanation": "PURE 注解：文档示例 `export const circumference = /*#__PURE__*/ calculateCircumference(radius);`，它告诉「minifier」当结果未被使用时可安全移除该函数调用——而 Parcel 2 的 JS minifier 是 SWC（非 Terser/UglifyJS/Babel）。CJS bailout：文档列出 `exports[someVar] = 2`（动态导出）、module/exports 重新赋值或未知用法、非静态 require() 属性访问、条件 require() 等都会导致无法 tree shaking、保留全部导出。易混点须辨清：配置文件名 .terserrc 只是「用 Terser 风格选项配置 SWC minifier」的兼容文件名，底层引擎仍是 SWC；CSS 是 Lightning CSS（非 PostCSS）。干扰项把 PURE 当成运行时 polyfill、把底层引擎说成 Terser/Babel、或把 CJS 动态导出当作能正常摇树，均错误。",
+    "tags": ["parcel", "pure-annotation", "CJS-bailout", "swc"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "/*#__PURE__*/ 提示 minifier「结果未用时可安全删除该调用」，而 Parcel 2 的 JS minifier 是 SWC；CJS 中 exports[someVar]=2 这类动态导出会触发 bailout 导致全部导出被保留",
+        "isCorrect": true,
+        "description": "正确。PURE 面向 minifier（SWC），CJS 动态导出 exports[var] 触发 bailout，均与文档及 Parcel 2 默认引擎一致。"
+      },
+      {
+        "text": "/*#__PURE__*/ 是给 SWC 的运行时 polyfill 标记，被标注的函数会在运行时按需加载；CJS 的 exports[var] 写法 Parcel 能正常静态分析并摇树",
+        "isCorrect": false,
+        "description": "错误。PURE 是构建期纯函数提示而非运行时 polyfill；exports[var] 动态导出恰恰会 bailout。"
+      },
+      {
+        "text": "Parcel 2 的 JS 压缩底层是 Terser，PURE 注解只对 Terser 生效；若想用 SWC 需在 .swcrc 显式切换",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 JS minifier 默认是 SWC 而非 Terser；.terserrc 只是兼容配置名，底层仍 SWC。"
+      },
+      {
+        "text": "PURE 注解只影响 CSS 的 Lightning CSS 去重，对 JS 无效；要让纯 JS 计算被删需改用 PostCSS 插件链",
+        "isCorrect": false,
+        "description": "错误。PURE 是 JS 概念，与 CSS/Lightning CSS 无关；且 Parcel 2 CSS 用 Lightning CSS 而非 PostCSS。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在一个使用 Parcel 2（默认配置）构建的 TypeScript 项目中，团队希望保证 CI 能真正发现类型错误（例如把 string 赋给 number 的变量）。下列哪种说法符合 Parcel 2 的实际行为？",
+    "explanation": "Parcel 2 默认用 SWC 转译 TypeScript，速度远快于 tsc，但代价是「只剥离类型、不做任何类型检查」。官方文档明确指出 By default, Parcel does not perform any type checking，并推荐编辑器集成 + 在 CI 中通过 npm 脚本运行 tsc（如 tsc --noEmit）来做类型检查；另有实验性的 @parcel/validator-typescript 插件可在构建中类型检查。因此把 string 赋给 number，Parcel 构建本身不会报错，必须额外跑 tsc。把「能正常构建」误当成「类型安全」是常见误区。",
+    "tags": ["parcel", "typescript", "swc", "type-checking"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Parcel 默认不做类型检查，TS 类型错误不会让构建失败，需在 CI 中另跑 tsc --noEmit（或启用实验性 @parcel/validator-typescript）",
+        "isCorrect": true,
+        "description": "正确。官方明确 By default, Parcel does not perform any type checking，默认底层是 SWC 只剥类型；类型检查须靠 tsc 或实验性的 @parcel/validator-typescript 插件。"
+      },
+      {
+        "text": "Parcel 内部调用 tsc 编译，因此类型错误会自动让 parcel build 失败，无需额外配置",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 默认用 SWC 而非 tsc 转译，且不做类型检查；这种「内置 tsc 会报错」的认知是典型误解。"
+      },
+      {
+        "text": "只要 tsconfig.json 里把 strict 设为 true，Parcel 构建时就会执行严格类型检查并在出错时中断",
+        "isCorrect": false,
+        "description": "错误。strict 是 tsc 自己的选项，Parcel 默认转译器（SWC）不读取它来做类型检查，开 strict 也不会让 parcel build 因类型错误而失败。"
+      },
+      {
+        "text": "Parcel 会根据 browserslist 决定是否做类型检查，配置了浏览器目标后类型检查才会开启",
+        "isCorrect": false,
+        "description": "错误。browserslist 只影响语法/特性降级（transpile），与类型检查无关；无论是否配置 browserslist，Parcel 都不做类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：关于 Parcel 2 何时启用 Babel 以及如何配置而不破坏缓存，下列哪种说法正确？",
+    "explanation": "Parcel 2 默认用 SWC 转译，不依赖 Babel。仅当项目中存在文件相对配置（.babelrc / .babelrc.json）或项目级配置（babel.config.json）时，Parcel 才会在 SWC 之上叠加 Babel 作为「增强」，用于自定义转换。官方明确警告：JavaScript 形式的 Babel 配置（如 babel.config.js / .babelrc.js）应避免使用——These cause Parcel's caching to be less effective，会导致每次重启 Parcel 都重新编译所有 JS 文件。因此应优先用 JSON 形式的配置。",
+    "tags": ["parcel", "babel", "swc", "cache"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认用 SWC，仅当检测到 .babelrc/.babelrc.json/babel.config.json 等 JSON 配置时叠加 Babel；应避免 .babelrc.js 这类 JS 配置，否则削弱缓存导致每次重启全量重编译",
+        "isCorrect": true,
+        "description": "正确。Parcel 默认 SWC，Babel 作为增强按 JSON 配置触发；官方警告 JS 形式的 Babel 配置会让缓存失效（all of your JS files will be recompiled）。"
+      },
+      {
+        "text": "Parcel 2 始终用 Babel 转译所有 JS，SWC 仅在生产模式压缩时使用，因此 .babelrc 是必需的",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 默认转译用 SWC，不是 Babel；.babelrc 是可选增强而非必需，没有它也能正常转译。"
+      },
+      {
+        "text": "用 .babelrc.js 动态生成配置是官方推荐做法，因为它比 JSON 更灵活且对缓存没有任何影响",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，官方明确建议避免 JS 形式的 Babel 配置，因为它会削弱缓存效果，导致每次重启都全量重编译。"
+      },
+      {
+        "text": "Parcel 检测到 react 依赖时会自动启用 Babel 来转换 JSX，与是否存在 .babelrc 无关",
+        "isCorrect": false,
+        "description": "错误。检测到 react/preact 等依赖会启用 JSX 转换，但该转换由内置（SWC）完成，不等于「启用 Babel」；Babel 是否参与取决于是否存在 Babel 配置文件。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：以下哪种情况会让 Parcel 2 自动启用 JSX 转换（无需任何手动配置）？",
+    "explanation": "官方文档明确：JSX is automatically enabled in a .jsx or .tsx file, or when one of the following libraries is defined as a dependency in your package.json: react, preact, nervjs, hyperapp。也就是说有两类触发条件：文件后缀是 .jsx/.tsx，或 package.json 依赖里有 react/preact/nervjs/hyperapp 之一。此外 Parcel 还会自动探测已安装的 React/Preact 版本以决定是否启用现代 JSX transform。仅仅文件里写了尖括号、或文件后缀是 .js 但没有上述依赖，不会自动启用 JSX。",
+    "tags": ["parcel", "jsx", "auto-detection", "javascript"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "文件后缀是 .jsx 或 .tsx，或 package.json 依赖中包含 react、preact、nervjs、hyperapp 之一",
+        "isCorrect": true,
+        "description": "正确。这正是官方列出的两类自动启用条件；满足其一 Parcel 即开启 JSX 转换，并据安装版本决定是否用现代 JSX transform。"
+      },
+      {
+        "text": "只要源文件中出现了 JSX 尖括号语法，Parcel 会扫描内容并自动启用，与文件后缀和依赖无关",
+        "isCorrect": false,
+        "description": "错误。Parcel 不靠扫描内容里的尖括号来决定，而是看文件后缀（.jsx/.tsx）或 package.json 中的相关依赖。"
+      },
+      {
+        "text": "必须在 .parcelrc 中显式注册 @parcel/transformer-react 才能启用 JSX，没有自动检测机制",
+        "isCorrect": false,
+        "description": "错误。Parcel 有自动检测机制，无需手动注册转换器；且不存在名为 @parcel/transformer-react 的官方必需插件。"
+      },
+      {
+        "text": "在 tsconfig.json 中把 jsx 设为 preserve 是唯一触发方式，否则即使 .tsx 也不会处理 JSX",
+        "isCorrect": false,
+        "description": "错误。.tsx 后缀本身就会自动启用 JSX；tsconfig 的 jsx 选项是被尊重的配置项之一，但并非「唯一触发方式」。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在 Parcel 2 + Lightning CSS 下，有人写了 `:root { --bg: url(./images/dot.png); }` 然后在别处 `background: var(--bg);`，结果打包后图片路径错误或解析失败。最贴切的原因与官方约束是？",
+    "explanation": "Lightning CSS 会把 url() 引用当作依赖处理并重写路径，但 CSS 自定义属性是个特例。官方明确：url() references in custom properties are resolved from the location where the var() is used, not where the custom property is defined；因此 Only absolute paths may be used within CSS custom properties, not relative paths。即在自定义属性里写相对路径 ./images/dot.png 会因为「解析基准是 var() 使用处而非定义处」而出错，必须用绝对路径（如以 / 开头或包路径形式的绝对说明符）。这与「自定义属性里禁止用 url()」「Lightning CSS 不支持 url 重写」都不同。",
+    "tags": ["parcel", "css", "lightningcss", "custom-properties", "url"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 自定义属性里的 url() 是从 var() 被使用处解析的，而非定义处，所以官方要求自定义属性内只能用绝对路径，相对路径会出错",
+        "isCorrect": true,
+        "description": "正确。官方明确该解析基准差异，并规定 Only absolute paths may be used within CSS custom properties；相对路径不可用，须改为绝对路径。"
+      },
+      {
+        "text": "Lightning CSS 完全不支持重写 url() 依赖路径，所以任何 url() 都需要手动写成最终输出文件名",
+        "isCorrect": false,
+        "description": "错误。Lightning CSS 会把 url() 作为依赖处理并自动重写为输出文件名；问题仅出在自定义属性这一特例的相对路径上。"
+      },
+      {
+        "text": "CSS 自定义属性中禁止出现 url()，必须改用 background-image 直接引用图片才能被 Parcel 处理",
+        "isCorrect": false,
+        "description": "错误。自定义属性中可以使用 url()，约束只是必须用绝对路径，而非「禁止 url()」。"
+      },
+      {
+        "text": "这是因为没有配置 browserslist，Parcel 未对 var() 做降级才导致路径解析失败",
+        "isCorrect": false,
+        "description": "错误。browserslist 控制特性降级，与 url() 路径解析无关；路径出错的根因是相对路径在自定义属性中的解析基准问题。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：某库的 package.json 中同时写了 `\"main\": \"dist/index.js\"`、`\"module\": \"dist/index.mjs\"`、`\"type\": \"module\"`。关于 Parcel 2 为这两个 target 产出的模块格式，下列哪项正确？",
+    "explanation": "Parcel 2 的库字段语义：`module` 始终输出 ES module。`main` 默认输出 CommonJS，但有两种情况会被改写为 ESM —— 文件扩展名为 `.mjs`，或 package.json 顶层声明了 `\"type\": \"module\"`。本题中 `type:module` 已生效，因此 `main`（`dist/index.js`，普通 `.js` 在 `type:module` 下视为 ESM）也会输出 ES module，于是两个 target 都是 ESM。这正是“双 ESM”库的常见配置陷阱：开发者以为 `main` 永远是 CJS，但 `type:module` 会把它一并翻成 ESM，导致没有任何 CJS 产物供老式 require 消费。若想保留 CJS 入口，应去掉 `type:module` 或把 `main` 写成 `.cjs`。来源：parceljs.org/features/targets/（main outputs CommonJS by default，produces ES modules if `.mjs` extension or `\"type\": \"module\"` is specified；module outputs an ES module）。",
+    "tags": ["parcel", "targets", "库字段", "ESM"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "main 输出 ES module，module 输出 ES module（两者都是 ESM）",
+        "isCorrect": true,
+        "description": "正确。module 始终是 ESM；main 默认 CJS，但顶层 `\"type\": \"module\"` 会把它改写为 ESM，因此两个 target 都产出 ES module，没有 CJS 产物。"
+      },
+      {
+        "text": "main 输出 CommonJS，module 输出 ES module",
+        "isCorrect": false,
+        "description": "忽略了 `\"type\": \"module\"` 的作用。该字段（或 `.mjs` 扩展名）会让 main 也变成 ESM；只有在没有 type:module 且非 .mjs 时 main 才是 CJS。"
+      },
+      {
+        "text": "main 输出 ES module，module 输出 CommonJS",
+        "isCorrect": false,
+        "description": "把两个字段的语义搞反了。module 字段在 Parcel 中始终输出 ESM，不会因任何配置变成 CJS。"
+      },
+      {
+        "text": "main 与 module 都输出 CommonJS，因为 .js 默认是 CJS",
+        "isCorrect": false,
+        "description": "错误。`type:module` 下 `.js` 被当作 ESM，且 module 字段本身永远输出 ESM，不存在两者皆 CJS 的情况。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：在 .parcelrc 中你想在默认 CSS 转换流水线“最前面”插入一个自定义 transformer，同时保留 @parcel/config-default 原有的 CSS 处理逻辑。下列写法哪项能正确实现“扩展而非覆盖”？",
+    "explanation": "Parcel 2 的 .parcelrc 用特殊字符串 `\"...\"` 表示“此处展开被继承配置中该 key 对应的现有流水线”。在 transformers 的某个 glob 数组里写 `[\"./my-transformer\", \"...\"]` 意味着先跑自定义插件，再接上默认流水线（即插到最前面）；写成 `[\"...\", \"./my-transformer\"]` 则插到最后；放中间则插到中间。若数组里不写 `\"...\"`，就会完全覆盖默认流水线，丢掉 Parcel 内置的 CSS 处理（如 Lightning CSS），通常不是想要的效果。来源：parceljs.org（use the special `\"...\"` syntax to embed existing pipelines，可在 beginning/end/middle 扩展）。注意 Parcel 2 默认 CSS 引擎是 Lightning CSS 而非 PostCSS。",
+    "tags": ["parcel", "parcelrc", "transformers", "插件"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`\"*.css\": [\"./my-transformer\", \"...\"]`",
+        "isCorrect": true,
+        "description": "正确。`\"...\"` 展开被继承的默认 CSS 流水线，自定义插件排在它前面，从而在“最前面”插入且保留默认逻辑（如 Lightning CSS）。"
+      },
+      {
+        "text": "`\"*.css\": [\"./my-transformer\"]`",
+        "isCorrect": false,
+        "description": "缺少 `\"...\"`，这会完全覆盖默认 CSS 流水线，丢掉 Parcel 内置的 CSS 转换，不是“扩展”。"
+      },
+      {
+        "text": "`\"*.css\": [\"...\", \"./my-transformer\"]`",
+        "isCorrect": false,
+        "description": "语法合法且保留了默认流水线，但 `\"...\"` 在前意味着自定义插件被插到“最后”，与题目要求的“最前面”相反。"
+      },
+      {
+        "text": "`\"*.css\": { \"extends\": \"./my-transformer\" }`",
+        "isCorrect": false,
+        "description": "transformers 的 glob 值是插件数组，不是带 extends 的对象；`extends` 是 .parcelrc 顶层用来继承整套配置的字段，不能写在单个 glob 里。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：一名同事用 `parcel build src/index.html` 打包一个 Web 应用，构建成功但产物里出现了未压缩的 CommonJS bundle，且 dist 目录结构异常。检查 package.json 发现里面有 `\"main\": \"dist/index.js\"`。最可能的原因是？",
+    "explanation": "对 Web 应用而言，package.json 里的 `main` 是一个“库 target”字段。只要存在 `main`（以及 module/browser/types），Parcel 就会认为你在构建“库”，从而启用库模式：不打包 node_modules、强制 scope hoist、产出 CommonJS（main 默认 CJS）、库模式默认禁用 minification，并按 main 指向的路径生成产物——这就解释了“未压缩 CJS bundle + 目录异常”。修复办法是 Web 应用删掉 package.json 中的 main 字段，让 Parcel 走应用 target（输出到 dist，按 publicUrl 默认 `/` 处理资源 URL）。来源：parceljs.org/migration/parcel-1/（For web apps, remove the `main` field from package.json to prevent Parcel from treating your project as a library）与 targets 页（库 target 不打包 node_modules、minification disabled by default for libraries）。",
+    "tags": ["parcel", "targets", "库模式", "main"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "package.json 中的 main 字段让 Parcel 把项目当成库 target，从而启用了库模式（CJS、不压缩、不打包 node_modules）",
+        "isCorrect": true,
+        "description": "正确。main 属于库字段，其存在触发库模式：main 默认输出 CJS、库模式默认禁用 minify、不打包 node_modules，与现象吻合。Web 应用应删除 main 字段。"
+      },
+      {
+        "text": "`parcel build` 默认不开启压缩，必须显式加 `--optimize` 才会 minify",
+        "isCorrect": false,
+        "description": "相反，`parcel build` 默认就开启 scope hoisting 和优化（minify）。压缩缺失的真正原因是库模式默认禁用 minify，而非 build 默认不压缩。"
+      },
+      {
+        "text": "HTML 入口不支持生产压缩，需要改用 JS 入口才能得到压缩后的 bundle",
+        "isCorrect": false,
+        "description": "HTML 入口完全支持生产构建与压缩（HTML 走内置 minifier、JS 走 SWC）。问题与入口类型无关，而在于 main 字段触发了库 target。"
+      },
+      {
+        "text": "缺少 browserslist 字段导致 Parcel 回退到 CommonJS 输出格式",
+        "isCorrect": false,
+        "description": "browserslist 影响的是是否做语法降级转译，不决定 bundle 是 CJS 还是 ESM，也不会导致库模式。CJS 产物来自 main 库字段。"
+      }
+    ]
+  },
+  {
+    "stem": "Parcel：从 Parcel 1 升级到 Parcel 2 后，原本能正常工作的项目现在浏览器报旧语法兼容问题，且你发现 .babelrc 里只配了 `@babel/preset-env`。关于 Parcel 2 的默认转译行为，下列哪项描述正确？",
+    "explanation": "Parcel 2 的一个核心变化是“默认不做任何转译”（Parcel 2 no longer does any transpilation by default），目标降级由 package.json 的 `browserslist` 字段驱动——没有 browserslist，Parcel 就不会为兼容旧浏览器而降级语法。同时 Parcel 2 用 SWC 取代 Babel/tsc 来处理 JS/TS，因此若 .babelrc 仅含 `@babel/preset-env`/`@babel/preset-typescript`/`@babel/preset-react` 这类标准预设，可以直接删除，让 Parcel 内置（SWC）接管。Parcel 1 时代默认就做转译，这正是升级后“突然不兼容旧浏览器”的根因。其它易混点：Parcel 2 默认不做 TS 类型检查（需自行跑 tsc），缓存目录从 `.cache` 改为 `.parcel-cache`。来源：parceljs.org/migration/parcel-1/。",
+    "tags": ["parcel", "迁移", "browserslist", "SWC"],
+    "categories": [
+      ["技术方向", "Parcel"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Parcel 2 默认不做任何转译，需在 package.json 配置 browserslist 才会按目标浏览器降级；且仅含标准预设的 .babelrc 可删除（由内置 SWC 接管）",
+        "isCorrect": true,
+        "description": "正确。这是 Parcel 1→2 的关键差异：默认零转译、靠 browserslist 触发降级，标准 .babelrc 可删，JS/TS 由 SWC 处理。"
+      },
+      {
+        "text": "Parcel 2 仍默认转译到 ES5，旧语法问题应是 .parcel-cache 缓存损坏，删缓存即可",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 默认不转译，问题根因是缺少 browserslist 而非缓存。缓存目录确实从 .cache 改名为 .parcel-cache，但与本题症状无关。"
+      },
+      {
+        "text": "必须保留 .babelrc 中的 @babel/preset-env，否则 Parcel 2 无法做任何语法降级",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 用 SWC 内置处理这些预设，仅含标准预设的 .babelrc 应删除；语法降级由 browserslist 控制，不依赖手写的 Babel 预设。"
+      },
+      {
+        "text": "Parcel 2 默认用 Babel + Terser 转译并压缩 JS，迁移时无需额外配置",
+        "isCorrect": false,
+        "description": "错误。Parcel 2 默认 JS 引擎是 SWC（非 Babel/Terser），且默认不转译，迁移时通常需补 browserslist。"
+      }
+    ]
+  }
+]
