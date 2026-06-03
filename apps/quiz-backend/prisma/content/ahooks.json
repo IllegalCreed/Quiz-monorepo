@@ -1,0 +1,3567 @@
+[
+  {
+    "stem": "Ahooks 是面向哪个前端框架的 Hooks 工具库？",
+    "explanation": "**Ahooks 是 React-only 的 Hooks 库**，由阿里巴巴（alibaba/hooks）出品，支持 React 16.8 ~ 19（含 18），并基于 TypeScript 编写、支持 SSR。它不能用于 Vue —— Vue 生态对应的是 vue-hooks-plus。",
+    "tags": ["ahooks", "入门", "概述"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "React（支持 16.8 ~ 19）",
+        "isCorrect": true,
+        "description": "Ahooks 是 React 专用 Hooks 库，基于 React Hooks 机制"
+      },
+      {
+        "text": "Vue 3",
+        "isCorrect": false,
+        "description": "Vue 对应的是 vue-hooks-plus，Ahooks 不支持 Vue"
+      },
+      {
+        "text": "Angular",
+        "isCorrect": false,
+        "description": "Angular 有自己的依赖注入/服务体系，与 Ahooks 无关"
+      },
+      {
+        "text": "Svelte",
+        "isCorrect": false,
+        "description": "Ahooks 不针对 Svelte，Svelte 也无 Hooks 概念"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 默认在组件挂载时的行为是？",
+    "explanation": "useRequest 的 `manual` 选项默认为 **false**，因此**默认会在组件挂载时自动执行** service。若要改为手动触发，需设置 `manual: true`，再通过返回的 `run` / `runAsync` 主动调用。",
+    "tags": ["ahooks", "初级", "useRequest"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "自动执行 service（manual 默认为 false）",
+        "isCorrect": true,
+        "description": "默认 manual:false，挂载即自动发起请求"
+      },
+      {
+        "text": "不执行，必须手动调用 run",
+        "isCorrect": false,
+        "description": "这是 manual:true 时的行为，并非默认"
+      },
+      {
+        "text": "仅在 ready 为 true 时才考虑自动执行，但默认不自动",
+        "isCorrect": false,
+        "description": "默认即自动执行，ready 只是额外的开关条件"
+      },
+      {
+        "text": "先执行一次再进入轮询",
+        "isCorrect": false,
+        "description": "轮询需显式配置 pollingInterval，非默认行为"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 的 useRequest 中，run 与 runAsync 在错误处理上的关键区别是？",
+    "explanation": "`run` **不会抛出错误**，而是通过 `onError` 回调处理，因此 Promise 不会 reject；`runAsync` **返回 Promise 且会抛错**，需要自行 `try/catch`（或 `.catch`）来捕获。若直接用 run 又想捕获异常，会发现错误被 onError「吞掉」。",
+    "tags": ["ahooks", "中级", "useRequest"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "run 通过 onError 处理错误、不抛出；runAsync 返回 Promise 需自行 try/catch",
+        "isCorrect": true,
+        "description": "这是两者的核心差异"
+      },
+      {
+        "text": "run 返回 Promise 需 try/catch；runAsync 走 onError",
+        "isCorrect": false,
+        "description": "恰好说反了，runAsync 才返回 Promise"
+      },
+      {
+        "text": "两者都返回 Promise，区别仅在于是否携带 params",
+        "isCorrect": false,
+        "description": "run 不以抛错的 Promise 形式暴露错误，二者错误处理不同"
+      },
+      {
+        "text": "两者都不抛错，错误只能从返回的 error 字段读取",
+        "isCorrect": false,
+        "description": "runAsync 会抛错，可被 try/catch 捕获"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 处于 manual（手动）模式时，将 ready 设为 false 会怎样？",
+    "explanation": "`ready` 在 manual 模式下**会阻止请求执行，即使手动调用 run / runAsync 也不会真正发起**。这是常见陷阱：很多人以为 ready 只影响自动请求，但在手动模式下它同样会拦截手动触发。",
+    "tags": ["ahooks", "高级", "useRequest"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "即使手动调用 run / runAsync 也不会发起请求",
+        "isCorrect": true,
+        "description": "ready=false 在手动模式下也会阻断手动触发"
+      },
+      {
+        "text": "ready 只影响自动请求，手动 run 仍会照常执行",
+        "isCorrect": false,
+        "description": "常见误解，手动调用同样被 ready 拦截"
+      },
+      {
+        "text": "会立即抛出 ready 未就绪的异常",
+        "isCorrect": false,
+        "description": "不会抛错，只是不发起请求"
+      },
+      {
+        "text": "会延迟到 ready 变 true 后自动补发一次",
+        "isCorrect": false,
+        "description": "手动模式不会自动补发，需再次手动调用"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useRequest 轮询（pollingInterval）的行为，下列说法正确的是？",
+    "explanation": "useRequest 的轮询是**在上一次请求结束后再等待 pollingInterval 间隔**，而非固定按时间片并发触发，从而避免请求堆积。另有 `pollingWhenHidden`（默认 true）等选项控制页面隐藏时是否继续轮询。",
+    "tags": ["ahooks", "中级", "轮询"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在上一次请求完成后再等待 pollingInterval 才发起下一次",
+        "isCorrect": true,
+        "description": "避免请求并发堆积"
+      },
+      {
+        "text": "严格按固定时间片触发，不管上次是否返回",
+        "isCorrect": false,
+        "description": "那样会导致请求堆积，并非 useRequest 的设计"
+      },
+      {
+        "text": "只有 manual 为 true 时轮询才生效",
+        "isCorrect": false,
+        "description": "轮询与 manual 无强绑定，由 pollingInterval 控制"
+      },
+      {
+        "text": "轮询期间不会触发 onSuccess / onError 回调",
+        "isCorrect": false,
+        "description": "每次轮询请求仍会触发对应生命周期回调"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 的 useRequest 中，两个调用使用相同的 cacheKey 会产生什么效果？",
+    "explanation": "相同 `cacheKey` 的多个 useRequest **共享同一份缓存数据（SWR 风格）**，可实现跨组件数据复用。配合 `staleTime` 可控制数据新鲜期。这也是潜在陷阱：不同语义的请求若误用同一 cacheKey 会互相串数据。",
+    "tags": ["ahooks", "高级", "缓存"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它们共享同一份缓存数据（SWR 模式）",
+        "isCorrect": true,
+        "description": "相同 cacheKey 跨实例共享数据"
+      },
+      {
+        "text": "后者会报错，cacheKey 必须全局唯一",
+        "isCorrect": false,
+        "description": "框架允许复用 cacheKey，正是为了共享"
+      },
+      {
+        "text": "它们各自缓存，互不影响",
+        "isCorrect": false,
+        "description": "相同 key 恰恰会共享，可能误串数据"
+      },
+      {
+        "text": "只有第一个生效，第二个被忽略不执行",
+        "isCorrect": false,
+        "description": "两个 Hook 都会执行，只是共享缓存"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 中以下哪些 Hook 是基于 useRequest 封装的？",
+    "explanation": "useRequest 是 Ahooks 的异步数据管理核心，**usePagination、useAntdTable、useInfiniteScroll 等均构建在它之上**，复用其 loading / error / 缓存 / 轮询等能力。",
+    "tags": ["ahooks", "中级", "架构"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usePagination、useInfiniteScroll、useAntdTable",
+        "isCorrect": true,
+        "description": "这些数据类 Hook 都基于 useRequest 封装"
+      },
+      {
+        "text": "useMemoizedFn、useCreation、useSafeState",
+        "isCorrect": false,
+        "description": "这些是通用工具/状态 Hook，与 useRequest 无封装关系"
+      },
+      {
+        "text": "useLocalStorageState、useControllableValue",
+        "isCorrect": false,
+        "description": "状态类 Hook，并非基于 useRequest"
+      },
+      {
+        "text": "useUpdateEffect、useGetState",
+        "isCorrect": false,
+        "description": "属于通用副作用/状态工具，非 useRequest 衍生"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 usePagination 返回的 pagination 对象，不包含下列哪个字段？",
+    "explanation": "usePagination 的 `pagination` 对象包含 `current`、`pageSize`、`total`、`totalPage`、`onChange`、`changeCurrent`、`changePageSize` 等。**它不返回 loadMore（loadMore 属于 useInfiniteScroll）**，分页是页码切换而非追加加载。",
+    "tags": ["ahooks", "中级", "usePagination"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "loadMore",
+        "isCorrect": true,
+        "description": "loadMore 属于 useInfiniteScroll，分页对象里没有"
+      },
+      {
+        "text": "current",
+        "isCorrect": false,
+        "description": "pagination 确实包含当前页码 current"
+      },
+      {
+        "text": "changePageSize",
+        "isCorrect": false,
+        "description": "pagination 提供 changePageSize 修改每页条数"
+      },
+      {
+        "text": "totalPage",
+        "isCorrect": false,
+        "description": "pagination 提供总页数 totalPage"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useInfiniteScroll 在配置了 target（可滚动且有固定高度的父容器）后的核心行为是？",
+    "explanation": "useInfiniteScroll 基于 useRequest，会**自动拼接每次返回的 data.list 形成累计列表**，并在配置了 `target`（需为有固定高度、可内部滚动的父元素）、滚动接近底部时**自动调用 loadMore** 加载下一批。还提供 `isNoMore`（判断是否无更多）、`reload` 等。",
+    "tags": ["ahooks", "高级", "useInfiniteScroll"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动拼接 data.list，并在接近底部时自动 loadMore",
+        "isCorrect": true,
+        "description": "无限滚动的核心：累计数据 + 触底加载"
+      },
+      {
+        "text": "每次只保留最新一页数据，覆盖之前的列表",
+        "isCorrect": false,
+        "description": "它是累计拼接而非覆盖"
+      },
+      {
+        "text": "必须手动点击按钮才能加载，不支持触底触发",
+        "isCorrect": false,
+        "description": "设置可滚动 target 后即可触底自动加载"
+      },
+      {
+        "text": "它内部基于 usePagination 而非 useRequest",
+        "isCorrect": false,
+        "description": "它与 usePagination 同样直接基于 useRequest"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useMemoizedFn 相比 React 原生 useCallback 的关键优势是？",
+    "explanation": "`useMemoizedFn` 返回的函数**引用永不变化（稳定），但调用时始终执行最新的函数体（捕获最新的 state/props）**，因此可用来替代 useCallback，避免因依赖变化导致引用更新、又不会读到过期闭包值。",
+    "tags": ["ahooks", "中级", "useMemoizedFn"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引用永久稳定，但每次调用执行的是最新的函数逻辑",
+        "isCorrect": true,
+        "description": "既稳定引用又不会读到过期闭包"
+      },
+      {
+        "text": "它会在每次渲染都返回新引用，便于触发子组件更新",
+        "isCorrect": false,
+        "description": "恰恰相反，它保证引用稳定"
+      },
+      {
+        "text": "它必须显式传入依赖数组才能工作",
+        "isCorrect": false,
+        "description": "useMemoizedFn 无需依赖数组，这正是相比 useCallback 的便利"
+      },
+      {
+        "text": "它返回的是 Promise，需 await 后调用",
+        "isCorrect": false,
+        "description": "返回的仍是普通函数引用"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useCreation 与 React useMemo 的区别，下列说法正确的是？",
+    "explanation": "`useCreation` 的工厂函数**保证仅在 deps 变化时才重新执行**；而 React 的 useMemo **不保证**——React 可能出于内存等原因丢弃缓存并重算。因此创建「同一实例只该构造一次」的对象（如 class 实例）时应优先 useCreation。",
+    "tags": ["ahooks", "高级", "useCreation"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useCreation 保证仅在 deps 变化时重算，useMemo 不保证",
+        "isCorrect": true,
+        "description": "useMemo 可能被 React 丢弃缓存而重算"
+      },
+      {
+        "text": "两者完全等价，useCreation 只是别名",
+        "isCorrect": false,
+        "description": "语义有别，useMemo 无重算保证"
+      },
+      {
+        "text": "useCreation 没有依赖参数，每次渲染都重算",
+        "isCorrect": false,
+        "description": "useCreation 接受 deps，按依赖控制重算"
+      },
+      {
+        "text": "useMemo 保证只算一次，useCreation 反而每次都算",
+        "isCorrect": false,
+        "description": "说反了，useMemo 才是不保证的那个"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useLocalStorageState 调用 setState(undefined) 会发生什么？",
+    "explanation": "对 useLocalStorageState 的 setState 传入 `undefined`（或不传参 `setState()`），会**删除对应的 localStorage key**（而非存入字面 undefined）。这是它约定的删除语义，需要清除某项存储时可直接 setState(undefined)。",
+    "tags": ["ahooks", "高级", "useLocalStorageState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "删除对应的 localStorage key",
+        "isCorrect": true,
+        "description": "setState(undefined) 即清除该存储项"
+      },
+      {
+        "text": "把字符串 \"undefined\" 写入 localStorage",
+        "isCorrect": false,
+        "description": "不会序列化为字面量字符串，而是删除 key"
+      },
+      {
+        "text": "抛出类型错误，禁止传 undefined",
+        "isCorrect": false,
+        "description": "undefined 是合法且有特殊含义的入参"
+      },
+      {
+        "text": "仅清空内存状态，localStorage 中仍保留旧值",
+        "isCorrect": false,
+        "description": "会同步删除 localStorage 中的 key"
+      }
+    ]
+  },
+  {
+    "stem": "在 SSR 场景下使用 Ahooks 的 useLocalStorageState，推荐开启哪个选项以避免水合（hydration）不一致？",
+    "explanation": "SSR 时服务端无法读取浏览器的 localStorage，若初值在渲染阶段就读取会导致服务端/客户端首屏不一致。开启 **getInitialValueInEffect**（在 effect 中获取初值）可让首次渲染使用默认值、挂载后再读取真实值，从而**避免 hydration mismatch**。",
+    "tags": ["ahooks", "专家", "SSR"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "getInitialValueInEffect",
+        "isCorrect": true,
+        "description": "在 effect 中取初值，规避 SSR 水合不一致"
+      },
+      {
+        "text": "pollingWhenHidden",
+        "isCorrect": false,
+        "description": "那是 useRequest 轮询相关选项，与存储无关"
+      },
+      {
+        "text": "manual",
+        "isCorrect": false,
+        "description": "manual 属于 useRequest，非 useLocalStorageState 选项"
+      },
+      {
+        "text": "staleTime",
+        "isCorrect": false,
+        "description": "staleTime 是 useRequest 缓存新鲜期选项，与水合无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 中，下列关于 useSafeState、useGetState、useUpdateEffect 的描述正确的是？",
+    "explanation": "`useSafeState` 在组件**卸载后调用 setState 会被忽略（no-op）**，避免「在已卸载组件上更新状态」警告；`useGetState` 额外返回 `getState()` 用于在异步回调里**读取最新值**；`useUpdateEffect` 用法同 useEffect 但**跳过首次执行**（仅依赖更新时触发）。",
+    "tags": ["ahooks", "中级", "工具Hook"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useSafeState 卸载后 setState 为 no-op；useGetState 提供 getState 取最新值；useUpdateEffect 跳过首次",
+        "isCorrect": true,
+        "description": "三者描述均与设计一致"
+      },
+      {
+        "text": "useUpdateEffect 与 useEffect 完全相同，首次也会执行",
+        "isCorrect": false,
+        "description": "useUpdateEffect 恰恰跳过首次执行"
+      },
+      {
+        "text": "useGetState 没有取值方法，只能用解构出的 state",
+        "isCorrect": false,
+        "description": "它额外返回 getState() 以在异步中取最新值"
+      },
+      {
+        "text": "useSafeState 卸载后 setState 会抛错中断",
+        "isCorrect": false,
+        "description": "它是静默忽略而非抛错"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 第一个参数 service 必须是什么类型的函数？",
+    "explanation": "**service 必须是一个返回 Promise 的异步函数**，签名为 `(...args: TParams) => Promise<TData>`。useRequest 正是基于这个 Promise 来自动管理 `loading`/`data`/`error` 状态。如果传入的不是返回 Promise 的函数，状态管理不会按预期工作。",
+    "tags": ["ahooks", "入门", "useRequest基础"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个返回 Promise 的异步函数",
+        "isCorrect": true,
+        "description": "service 的标准签名 (...args) => Promise<TData>"
+      },
+      {
+        "text": "一个返回同步值的普通函数",
+        "isCorrect": false,
+        "description": "同步返回值无法被 useRequest 的异步状态机管理"
+      },
+      {
+        "text": "一个 Observable 对象",
+        "isCorrect": false,
+        "description": "useRequest 基于 Promise 而非 Observable"
+      },
+      {
+        "text": "一个返回 JSX 的渲染函数",
+        "isCorrect": false,
+        "description": "service 是数据请求函数，与渲染无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 在默认配置下（options 未设置 manual），组件初始化时会有什么行为？",
+    "explanation": "`manual` 默认值为 **false**，此时 useRequest 会在**组件初始化时自动执行 service**，并自动管理 `loading`、`data`、`error`。若希望手动触发，需显式设置 `manual: true` 后调用 `run`/`runAsync`。",
+    "tags": ["ahooks", "入门", "manual"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "组件初始化时自动执行 service",
+        "isCorrect": true,
+        "description": "manual 默认 false，自动发起请求"
+      },
+      {
+        "text": "不会执行，需手动调用 run",
+        "isCorrect": false,
+        "description": "那是 manual:true 的行为"
+      },
+      {
+        "text": "仅在 data 被访问时才执行（惰性）",
+        "isCorrect": false,
+        "description": "useRequest 不是惰性求值"
+      },
+      {
+        "text": "每隔固定时间轮询执行",
+        "isCorrect": false,
+        "description": "轮询需额外配置，非基础默认行为"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 返回结果中，run 和 runAsync 在异常处理上的核心区别是什么？",
+    "explanation": "**run 是同步函数、无返回值，会自动捕获异常并交给 `onError`**；**runAsync 返回 Promise，异常会向外抛出**，调用者必须自行 `.catch` 或 `try/catch`，否则会产生未处理的 rejection。",
+    "tags": ["ahooks", "中级", "run-vs-runAsync"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "run 自动捕获异常交给 onError 且无返回值；runAsync 返回 Promise，异常需自行 catch",
+        "isCorrect": true,
+        "description": "二者在返回值与异常处理上的根本差异"
+      },
+      {
+        "text": "run 返回 Promise 需自行 catch；runAsync 自动捕获异常",
+        "isCorrect": false,
+        "description": "二者职责说反了"
+      },
+      {
+        "text": "两者都返回 Promise，区别仅在于是否触发 loading",
+        "isCorrect": false,
+        "description": "run 无返回值，且都会管理 loading"
+      },
+      {
+        "text": "run 只能调用一次，runAsync 可多次调用",
+        "isCorrect": false,
+        "description": "调用次数不是二者区别"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，调用 cancel() 函数的实际效果是什么？",
+    "explanation": "文档原文加粗强调：**「调用 cancel 函数并不会取消 promise 的执行」**。cancel 仅让 useRequest **忽略当前 Promise 返回的 data 和 error**，底层请求（如 fetch）仍会继续发出并执行。",
+    "tags": ["ahooks", "高级", "cancel"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "忽略当前 Promise 的 data/error，但底层 promise 仍会继续执行",
+        "isCorrect": true,
+        "description": "cancel 只是忽略响应，不真正中断请求"
+      },
+      {
+        "text": "真正中断底层请求（如 abort fetch）",
+        "isCorrect": false,
+        "description": "useRequest 的 cancel 不会调用 AbortController"
+      },
+      {
+        "text": "清空 data 并把 loading 永久置为 true",
+        "isCorrect": false,
+        "description": "cancel 不会冻结 loading 状态"
+      },
+      {
+        "text": "卸载组件并销毁该 Hook 实例",
+        "isCorrect": false,
+        "description": "cancel 与组件卸载无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest，若用 run(1, 2, 3) 触发请求，之后返回结果中的 params 的值是什么？",
+    "explanation": "`params` 记录**当次执行 service 的参数数组**。`run(1, 2, 3)` 之后，`params === [1, 2, 3]`。注意它是数组而非单值，在回调（如 `onSuccess(data, params)`）中需按下标取参数，如 `params[0]`。",
+    "tags": ["ahooks", "中级", "params"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[1, 2, 3]（参数数组）",
+        "isCorrect": true,
+        "description": "params 是当次 service 调用的参数数组"
+      },
+      {
+        "text": "1（仅第一个参数）",
+        "isCorrect": false,
+        "description": "params 保存全部参数，而非首个"
+      },
+      {
+        "text": "{ 0: 1, 1: 2, 2: 3 }（参数对象）",
+        "isCorrect": false,
+        "description": "params 是数组，不是对象映射"
+      },
+      {
+        "text": "6（参数之和）",
+        "isCorrect": false,
+        "description": "useRequest 不会对参数做任何运算"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，refresh() 函数的作用是什么？",
+    "explanation": "**refresh 用上一次调用的 params 重新调用 run**（refreshAsync 则重新调用 runAsync）。在参数复杂的场景下非常有用，无需重新拼装参数即可重发上次请求。若从未执行过 service，则没有可复用的参数。",
+    "tags": ["ahooks", "中级", "refresh"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用上一次调用的 params 重新执行 run",
+        "isCorrect": true,
+        "description": "refresh 复用上次参数重发请求"
+      },
+      {
+        "text": "清空 data 后用 defaultParams 重新执行",
+        "isCorrect": false,
+        "description": "refresh 复用的是上次实际参数，非 defaultParams"
+      },
+      {
+        "text": "强制刷新整个组件树",
+        "isCorrect": false,
+        "description": "refresh 只重发请求，不涉及组件刷新"
+      },
+      {
+        "text": "取消当前请求并重置所有状态",
+        "isCorrect": false,
+        "description": "那更接近 cancel，且 refresh 不重置状态"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，mutate 函数的作用和用法是什么？",
+    "explanation": "**mutate 用于直接修改 useRequest 返回的 data，用法同 React.setState**，支持两种写法：`mutate(newData)`（直接传值）与 `mutate(oldData => newData)`（更新函数）。它是同步的本地修改，**不会触发 service 重新请求**，常用于乐观更新。",
+    "tags": ["ahooks", "中级", "mutate"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接修改返回的 data，支持传值或更新函数，用法同 setState",
+        "isCorrect": true,
+        "description": "mutate 本地改 data，两种写法皆可"
+      },
+      {
+        "text": "修改 service 参数并触发重新请求",
+        "isCorrect": false,
+        "description": "mutate 不发请求，那是 run 的职责"
+      },
+      {
+        "text": "修改 options 配置项",
+        "isCorrect": false,
+        "description": "mutate 只改 data，不改配置"
+      },
+      {
+        "text": "只能接收对象，不支持函数式更新",
+        "isCorrect": false,
+        "description": "mutate 同时支持值与更新函数两种写法"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 在乐观更新失败时，要回滚到旧数据，文档示例采用的做法是什么？",
+    "explanation": "mutate 是同步本地修改，**回滚需自己保存旧值**。文档示例用 `useRef`（`lastRef.current`）暂存旧值，在乐观更新前记录，在 `onError` 回调里调用 `mutate(lastRef.current)` 回滚到旧数据。",
+    "tags": ["ahooks", "高级", "乐观更新"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 useRef 暂存旧值，在 onError 中 mutate(lastRef.current) 回滚",
+        "isCorrect": true,
+        "description": "文档示例的失败回滚模式"
+      },
+      {
+        "text": "调用 refresh() 自动恢复服务端数据",
+        "isCorrect": false,
+        "description": "示例并未用 refresh 回滚，且会多发一次请求"
+      },
+      {
+        "text": "useRequest 内置自动回滚，无需手动处理",
+        "isCorrect": false,
+        "description": "mutate 不提供自动回滚能力"
+      },
+      {
+        "text": "调用 cancel() 即可撤销 mutate",
+        "isCorrect": false,
+        "description": "cancel 只忽略 promise 响应，与 mutate 本地修改无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，defaultParams 配置项在什么情况下生效？",
+    "explanation": "**defaultParams 仅在 `manual: false`（默认）的首次自动执行时生效**，作为传给 service 的参数。当 `manual: true` 时，首次参数应直接通过 `run(...)`/`runAsync(...)` 传入，defaultParams 不会被用作手动调用的参数。",
+    "tags": ["ahooks", "中级", "defaultParams"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅在 manual=false 的首次自动执行时作为 service 参数",
+        "isCorrect": true,
+        "description": "defaultParams 只服务于自动模式的首次请求"
+      },
+      {
+        "text": "每次调用 run() 不传参时都会兜底使用",
+        "isCorrect": false,
+        "description": "defaultParams 不是 run 缺省参数的兜底"
+      },
+      {
+        "text": "在 manual=true 时作为首次 run 的参数",
+        "isCorrect": false,
+        "description": "manual 模式首次参数应由 run 显式传入"
+      },
+      {
+        "text": "用于设置 data 的初始默认值",
+        "isCorrect": false,
+        "description": "defaultParams 是 service 参数，不是 data 初值"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 生命周期回调中，onSuccess 的回调签名是怎样的？",
+    "explanation": "`onSuccess` 在 service **resolve 时触发**，签名为 `(data: TData, params: TParams) => void`：第一个参数是 service 返回的数据，第二个参数是当次执行的参数数组。",
+    "tags": ["ahooks", "初级", "生命周期"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "(data, params) => void，data 是返回数据，params 是参数数组",
+        "isCorrect": true,
+        "description": "onSuccess 接收数据与本次参数"
+      },
+      {
+        "text": "(params) => void，只接收参数",
+        "isCorrect": false,
+        "description": "那是 onBefore 的签名"
+      },
+      {
+        "text": "(e, params) => void，第一个是错误对象",
+        "isCorrect": false,
+        "description": "带错误对象的是 onError"
+      },
+      {
+        "text": "(params, data, e) => void",
+        "isCorrect": false,
+        "description": "那是 onFinally 的签名"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，onFinally 回调的参数签名是怎样的？",
+    "explanation": "`onFinally` 在请求**完成时触发**（无论成功失败），签名为 `(params: TParams, data?: TData, e?: Error) => void`：首参是参数数组，随后是可选的 data 和可选的 error。",
+    "tags": ["ahooks", "高级", "生命周期"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "(params, data?, e?) => void",
+        "isCorrect": true,
+        "description": "onFinally 接收参数、可选数据、可选错误"
+      },
+      {
+        "text": "(data, error) => void",
+        "isCorrect": false,
+        "description": "缺少 params，且顺序不符"
+      },
+      {
+        "text": "(data, params) => void",
+        "isCorrect": false,
+        "description": "那是 onSuccess 的签名"
+      },
+      {
+        "text": "() => void，无任何参数",
+        "isCorrect": false,
+        "description": "onFinally 会接收参数与结果"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest，使用 runAsync() 时如果不处理返回的 Promise 会有什么风险？",
+    "explanation": "**runAsync 返回 Promise 且会把异常向外抛出**。如果不用 `.catch`/`try-catch` 处理，service reject 时会产生**未处理的 rejection（unhandled rejection）**。这与 run 不同——run 会自动捕获异常交给 onError。",
+    "tags": ["ahooks", "中级", "runAsync"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "service reject 时会产生未处理的 rejection",
+        "isCorrect": true,
+        "description": "runAsync 不自动捕获异常，需调用者处理"
+      },
+      {
+        "text": "没有风险，runAsync 会自动把异常交给 onError",
+        "isCorrect": false,
+        "description": "自动交给 onError 的是 run，不是 runAsync"
+      },
+      {
+        "text": "会导致 loading 永远为 true",
+        "isCorrect": false,
+        "description": "loading 仍正常结束，问题在未处理异常"
+      },
+      {
+        "text": "会自动触发 refresh 重试",
+        "isCorrect": false,
+        "description": "useRequest 不会因未处理 rejection 自动重试"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 在并发触发（竞态）场景下如何处理多次请求的结果？",
+    "explanation": "useRequest 会**自动忽略旧响应**：当上一次 promise 还未返回又发起下一次时，**只有最后一次 promise 的结果会被采用**，前面未完成的会被忽略。因此依赖中间结果会失效。组件卸载时同理会忽略响应。",
+    "tags": ["ahooks", "高级", "竞态处理"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只采用最后一次 promise 的结果，自动忽略前面未完成的响应",
+        "isCorrect": true,
+        "description": "useRequest 内置竞态处理，取最后一次"
+      },
+      {
+        "text": "采用最先返回的 promise 结果",
+        "isCorrect": false,
+        "description": "useRequest 以最后一次发起为准，而非最先返回"
+      },
+      {
+        "text": "把所有结果合并成数组",
+        "isCorrect": false,
+        "description": "useRequest 不会合并多次结果"
+      },
+      {
+        "text": "抛出竞态冲突错误",
+        "isCorrect": false,
+        "description": "竞态被自动处理，不会抛错"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中，refreshAsync 与 refresh 的关系，类比于下列哪一组？",
+    "explanation": "refresh/refreshAsync 都用**上一次的 params 重新发起请求**，二者区别**与 run/runAsync 相同**：refresh 同步、无返回、自动捕获异常；refreshAsync 返回 Promise、异常需自行处理。",
+    "tags": ["ahooks", "高级", "refresh"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "等同于 run 与 runAsync 的关系",
+        "isCorrect": true,
+        "description": "refresh:run = refreshAsync:runAsync"
+      },
+      {
+        "text": "等同于 mutate 与 cancel 的关系",
+        "isCorrect": false,
+        "description": "mutate 与 cancel 职责完全不同，不构成同类对照"
+      },
+      {
+        "text": "等同于 onSuccess 与 onError 的关系",
+        "isCorrect": false,
+        "description": "这是两个不同回调，不是同步/异步变体"
+      },
+      {
+        "text": "等同于 manual:true 与 manual:false 的关系",
+        "isCorrect": false,
+        "description": "那是 options 开关，非函数变体"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 返回的 Result 对象中，loading 字段的类型与含义是什么？",
+    "explanation": "`loading` 的类型为 **boolean，表示 service 是否正在执行**。在默认（manual=false）自动执行及每次 run/runAsync 期间，useRequest 会自动维护这个加载状态。",
+    "tags": ["ahooks", "入门", "Result字段"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "boolean，表示 service 是否正在执行",
+        "isCorrect": true,
+        "description": "loading 为加载中布尔标记"
+      },
+      {
+        "text": "number，表示已加载的进度百分比",
+        "isCorrect": false,
+        "description": "loading 不是进度数值"
+      },
+      {
+        "text": "Error | undefined，表示加载错误",
+        "isCorrect": false,
+        "description": "那是 error 字段"
+      },
+      {
+        "text": "string，表示当前加载状态文案",
+        "isCorrect": false,
+        "description": "loading 是布尔值，不是状态文案"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 完整签名是 useRequest(service, options?, plugins?)，关于它的架构描述，下列哪项正确？",
+    "explanation": "useRequest 采用**插件式架构**，签名为 `useRequest<TData, TParams>(service, options?, plugins?)`。service 是返回 Promise 的异步函数，options 为配置项（manual、defaultParams、生命周期回调等），plugins 为可选插件参数，许多高级能力通过插件实现。",
+    "tags": ["ahooks", "专家", "架构"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "采用插件式架构，签名为 useRequest(service, options?, plugins?)",
+        "isCorrect": true,
+        "description": "插件式架构，三个参数"
+      },
+      {
+        "text": "是单体函数，所有能力硬编码在核心里，不支持插件",
+        "isCorrect": false,
+        "description": "useRequest 恰恰是插件式可扩展架构"
+      },
+      {
+        "text": "service 必须作为 options 的一个字段传入",
+        "isCorrect": false,
+        "description": "service 是第一个独立位置参数"
+      },
+      {
+        "text": "options 是必填的第一个参数，service 是第二个",
+        "isCorrect": false,
+        "description": "service 才是第一个且必填的参数"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 在所有 hook 中有何独特之处？",
+    "explanation": "**useRequest 是 ahooks 唯一采用插件化（plugin）架构设计的 hook**。核心负责 loading/data/error/params 与 run/runAsync/refresh/refreshAsync/mutate/cancel，而 ready、refreshDeps、loadingDelay、polling、refreshOnWindowFocus、debounce、throttle、cache/SWR、retry 等进阶能力全部由 `packages/hooks/src/useRequest/src/plugins/` 下的插件实现，并通过同一个 useRequest 的 options 配置，而非独立 hook。",
+    "tags": ["ahooks", "中级", "插件化架构"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是 ahooks 中唯一采用插件化架构的 hook，进阶能力由插件实现",
+        "isCorrect": true,
+        "description": "正确，核心管基础状态，进阶能力由 8 个插件文件承载"
+      },
+      {
+        "text": "它的每个进阶能力都是一个独立导出的 hook，需分别引入",
+        "isCorrect": false,
+        "description": "恰恰相反，所有能力都通过同一个 useRequest 的 options 配置"
+      },
+      {
+        "text": "它是 ahooks 中唯一一个不返回 loading 状态的 hook",
+        "isCorrect": false,
+        "description": "useRequest 返回值明确包含 loading: boolean"
+      },
+      {
+        "text": "它必须配合 Redux 才能管理请求状态",
+        "isCorrect": false,
+        "description": "useRequest 自管状态，与 Redux 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 run 与 runAsync 在异常处理上的核心区别是什么？",
+    "explanation": "**run 是同步函数，会自动捕获异常并走 onError 回调；runAsync 返回 Promise，需要使用者自行 try/catch（或 .catch）处理错误**。因此当需要自己处理请求结果或错误时应使用 runAsync。",
+    "tags": ["ahooks", "初级", "run-runAsync"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "run 自动捕获异常走 onError；runAsync 返回 Promise 需自行 catch",
+        "isCorrect": true,
+        "description": "正确，这是两者最核心的差异"
+      },
+      {
+        "text": "run 返回 Promise；runAsync 是同步函数自动捕获异常",
+        "isCorrect": false,
+        "description": "说反了，run 才是同步自动捕获，runAsync 返回 Promise"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "两者在返回值与异常处理上有本质区别"
+      },
+      {
+        "text": "run 不能传参，runAsync 才能传参",
+        "isCorrect": false,
+        "description": "两者都接收 service 的参数 (...params: TParams)"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 默认情况下（manual 为默认值）初始化时会怎样？",
+    "explanation": "**manual 默认值为 false，此时 useRequest 初始化会自动执行 service（并带上 defaultParams）**。若设为 true 则进入手动模式，需要手动调用 run/runAsync 才会触发请求。",
+    "tags": ["ahooks", "入门", "manual"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "自动执行 service（manual 默认 false）",
+        "isCorrect": true,
+        "description": "正确，默认自动模式，初始化即发请求"
+      },
+      {
+        "text": "不执行任何请求，必须手动调用 run",
+        "isCorrect": false,
+        "description": "那是 manual:true 的手动模式行为"
+      },
+      {
+        "text": "只在第一次渲染后延迟 5 秒执行",
+        "isCorrect": false,
+        "description": "不存在这种默认延迟行为"
+      },
+      {
+        "text": "抛出错误提示必须先配置 cacheKey",
+        "isCorrect": false,
+        "description": "cacheKey 是可选缓存配置，与初始化无关"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 生命周期回调的执行顺序是怎样的？",
+    "explanation": "**正确顺序为 onBefore → service → onSuccess/onError → onFinally**。请求发起前触发 onBefore，随后执行 service，成功走 onSuccess、失败走 onError，无论成败最后都执行 onFinally。",
+    "tags": ["ahooks", "中级", "生命周期"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "onBefore → service → onSuccess/onError → onFinally",
+        "isCorrect": true,
+        "description": "正确的生命周期顺序"
+      },
+      {
+        "text": "service → onBefore → onFinally → onSuccess/onError",
+        "isCorrect": false,
+        "description": "onBefore 应在 service 之前，onFinally 最后"
+      },
+      {
+        "text": "onSuccess → onBefore → service → onFinally",
+        "isCorrect": false,
+        "description": "onBefore 必须先于 service 与成功回调"
+      },
+      {
+        "text": "onFinally → service → onBefore → onSuccess",
+        "isCorrect": false,
+        "description": "onFinally 是最后执行而非最先"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 cancel 的真实行为是什么？",
+    "explanation": "**cancel 不会真正取消底层 Promise 的执行，它只是忽略当前 Promise 返回的 data 和 error**。也就是说已经发出的网络请求等副作用仍会继续发生，只是其响应被丢弃。组件卸载时进行中的 Promise 以及竞态请求也会被自动忽略。",
+    "tags": ["ahooks", "高级", "cancel"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不真正取消 Promise 执行，只忽略其返回的 data 和 error",
+        "isCorrect": true,
+        "description": "正确，副作用（已发出的网络请求）仍会发生"
+      },
+      {
+        "text": "会调用 AbortController 真正中断底层网络请求",
+        "isCorrect": false,
+        "description": "useRequest 的 cancel 不做真正中断，仅忽略响应"
+      },
+      {
+        "text": "会清空已缓存的数据",
+        "isCorrect": false,
+        "description": "cancel 与缓存清除无关，清缓存用 clearCache"
+      },
+      {
+        "text": "会触发 onError 回调并传入取消错误",
+        "isCorrect": false,
+        "description": "cancel 只是忽略结果，不会触发 onError"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 配置 ready 选项时，关于其默认值与作用，下列哪项正确？",
+    "explanation": "**ready 默认值为 true，用于控制请求是否发出；为 false 时请求永远不发出**。它由 useAutoRunPlugin 实现，没有独立的 useReadyPlugin。在自动模式下 ready 由 false 变 true 会自动发起请求并带上 defaultParams；手动模式下只要 ready=false，run/runAsync 触发的请求都不执行。",
+    "tags": ["ahooks", "初级", "ready"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ready 默认 true，为 false 时请求永远不发出",
+        "isCorrect": true,
+        "description": "正确，控制请求是否发出的开关"
+      },
+      {
+        "text": "ready 默认 false，必须显式设为 true 才会发请求",
+        "isCorrect": false,
+        "description": "默认值是 true 而非 false"
+      },
+      {
+        "text": "ready 由独立的 useReadyPlugin 实现",
+        "isCorrect": false,
+        "description": "ready 由 useAutoRunPlugin 承载，无独立插件"
+      },
+      {
+        "text": "ready 仅在手动模式下有效，自动模式忽略它",
+        "isCorrect": false,
+        "description": "两种模式下 ready 都有效，只是行为不同"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 refreshDeps 的语义与最容易踩的坑分别是什么？",
+    "explanation": "**refreshDeps 是依赖数组，其内容变化后会自动调用 refresh()（重复上一次请求），语义等同于 `useEffect(() => { refresh() }, deps)`；关键坑是当 manual=true 时，refreshDeps 与 refreshDepsAction 都不再生效**，此时需手动 run/runAsync。源码使用 useUpdateEffect 实现，初始不触发、仅依赖更新时触发。",
+    "tags": ["ahooks", "中级", "refreshDeps"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "语义同 useEffect 依赖，变化触发 refresh()；但 manual=true 时失效",
+        "isCorrect": true,
+        "description": "正确，依赖刷新且受 manual 全局约束"
+      },
+      {
+        "text": "它在组件初始化时也会立即触发一次 refresh",
+        "isCorrect": false,
+        "description": "源码用 useUpdateEffect，初始不触发，仅更新时触发"
+      },
+      {
+        "text": "manual=true 时 refreshDeps 仍正常生效",
+        "isCorrect": false,
+        "description": "manual=true 会让 refreshDeps 失效"
+      },
+      {
+        "text": "refreshDeps 变化时会调用 runAsync 而非 refresh",
+        "isCorrect": false,
+        "description": "默认调用 refresh()，自定义行为才用 refreshDepsAction"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中想在依赖变化时执行自定义刷新逻辑（如带新参数请求），应使用哪个选项？",
+    "explanation": "**应使用 refreshDepsAction**。若设置了 refreshDepsAction，依赖变化时会执行 refreshDepsAction() 而非默认的 refresh()，可用于自定义刷新行为，例如 `refreshDepsAction: () => run(keyword)`。它同样由 useAutoRunPlugin 实现，且在 manual=true 时不生效。",
+    "tags": ["ahooks", "中级", "refreshDepsAction"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "refreshDepsAction，依赖变化时执行它而非默认 refresh()",
+        "isCorrect": true,
+        "description": "正确，用于自定义刷新行为"
+      },
+      {
+        "text": "refreshDeps 直接传一个函数即可",
+        "isCorrect": false,
+        "description": "refreshDeps 是依赖数组，自定义行为要用 refreshDepsAction"
+      },
+      {
+        "text": "onBefore，在其中重新发起请求",
+        "isCorrect": false,
+        "description": "onBefore 是请求前回调，不用于依赖刷新"
+      },
+      {
+        "text": "mutate，传入新参数触发请求",
+        "isCorrect": false,
+        "description": "mutate 只修改 data，不发请求"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 loadingDelay 选项的作用是什么？",
+    "explanation": "**loadingDelay 用于延迟 loading 变为 true 的时间（单位毫秒，默认 0），从而避免短暂请求时 Loading 闪现**。若请求在 loadingDelay 内返回，loading 始终保持 false。源码中 onBefore 先把 loading 置 false，再用 setTimeout(loadingDelay) 后才置 true，且仅在 ready !== false 时才启动该定时器。",
+    "tags": ["ahooks", "初级", "loadingDelay"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "延迟 loading 变 true 的时间，避免短请求的 Loading 闪烁",
+        "isCorrect": true,
+        "description": "正确，请求在该时间内返回则 loading 不变 true"
+      },
+      {
+        "text": "延迟整个 service 的发起时间",
+        "isCorrect": false,
+        "description": "loadingDelay 延迟的是 loading 状态，不延迟 service 发起"
+      },
+      {
+        "text": "设置请求超时时间，超时则报错",
+        "isCorrect": false,
+        "description": "它与超时无关，是防 Loading 闪烁的"
+      },
+      {
+        "text": "延迟 onSuccess 回调的执行",
+        "isCorrect": false,
+        "description": "它只影响 loading 状态的置 true 时机"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 轮询（polling）的触发节奏是怎样的？",
+    "explanation": "**轮询不是固定时间间隔触发，而是「每次请求完成后再等待 pollingInterval，然后发起下一次」**。源码在 onFinally 中用 setTimeout(pollingInterval) 触发下一次 refresh，因此慢请求会拉长实际轮询周期。pollingInterval 大于 0 即进入轮询模式，cancel 停止轮询，run/runAsync 启动轮询。",
+    "tags": ["ahooks", "中级", "polling"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次请求完成后再等待 pollingInterval 才发下一次",
+        "isCorrect": true,
+        "description": "正确，是完成后再计时，慢请求会拉长周期"
+      },
+      {
+        "text": "无论上次请求是否返回，都严格每隔 pollingInterval 触发一次",
+        "isCorrect": false,
+        "description": "不是固定间隔，而是完成后再计时"
+      },
+      {
+        "text": "只在页面可见时按浏览器空闲帧触发",
+        "isCorrect": false,
+        "description": "轮询节奏由 pollingInterval 决定，与空闲帧无关"
+      },
+      {
+        "text": "在 onSuccess 中递归调用 run 实现，无独立间隔",
+        "isCorrect": false,
+        "description": "轮询由 usePollingPlugin 实现并使用 pollingInterval"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 manual=true 时，关于轮询（polling）的启动，下列哪项正确？",
+    "explanation": "**manual=true 时初始化不会启动轮询，必须 run/runAsync 手动触发；并且即便 pollingInterval 从 0 变为大于 0，也不会自动启动轮询，同样需要 run/runAsync 触发**。这是轮询场景下常见的坑。",
+    "tags": ["ahooks", "高级", "polling"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "初始化不启动轮询，且 pollingInterval 从 0 变正也不自动启动，都需 run/runAsync 触发",
+        "isCorrect": true,
+        "description": "正确，两种情况都必须手动触发"
+      },
+      {
+        "text": "初始化即自动启动轮询，与 manual 无关",
+        "isCorrect": false,
+        "description": "manual=true 初始化不启动轮询"
+      },
+      {
+        "text": "pollingInterval 从 0 变为大于 0 时会自动开始轮询",
+        "isCorrect": false,
+        "description": "这种动态变化也不会自动启动，需手动触发"
+      },
+      {
+        "text": "轮询会在 ready 变 true 时自动启动而忽略 manual",
+        "isCorrect": false,
+        "description": "manual=true 下需 run/runAsync 启动，ready 不替代它"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中 refreshOnWindowFocus 与 focusTimespan 的关系是什么？",
+    "explanation": "**refreshOnWindowFocus 为 true 时，浏览器窗口 refocus 和 revisible 会重新发起请求（监听 visibilitychange 和 focus 事件）；focusTimespan 是重新请求的最小间隔，默认 5000ms，即距上次请求小于该值则不重复请求**。两者均支持动态变化。",
+    "tags": ["ahooks", "中级", "refreshOnWindowFocus"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "focusTimespan 是聚焦刷新的最小间隔，默认 5000ms 内不重复请求",
+        "isCorrect": true,
+        "description": "正确，避免短时间内重复触发聚焦刷新"
+      },
+      {
+        "text": "focusTimespan 是聚焦后延迟多久才发请求",
+        "isCorrect": false,
+        "description": "它是最小间隔（节流），不是延迟时间"
+      },
+      {
+        "text": "refreshOnWindowFocus 默认就是 true",
+        "isCorrect": false,
+        "description": "默认是 false，需显式开启"
+      },
+      {
+        "text": "它监听的是 scroll 与 resize 事件",
+        "isCorrect": false,
+        "description": "监听的是 visibilitychange 和 focus 事件"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 在防抖/节流模式下，runAsync 返回的 Promise 有什么需要注意的坑？",
+    "explanation": "**在防抖/节流模式下，runAsync 只在『真正被执行』时才返回 Promise；当本次触发被防抖/节流跳过时不返回任何东西，对其 await/then 可能永远不会 resolve**。这是 debounce 和 throttle 共有的陷阱。",
+    "tags": ["ahooks", "高级", "debounce-throttle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "被防抖/节流跳过时 runAsync 不返回任何东西，await 可能永远不 resolve",
+        "isCorrect": true,
+        "description": "正确，只有真正执行才返回 Promise"
+      },
+      {
+        "text": "被跳过时 runAsync 会返回一个 reject 的 Promise",
+        "isCorrect": false,
+        "description": "是不返回任何东西，并非 reject"
+      },
+      {
+        "text": "runAsync 总会返回上一次成功的缓存数据",
+        "isCorrect": false,
+        "description": "被跳过时无任何返回，不会回放旧数据"
+      },
+      {
+        "text": "防抖/节流下 runAsync 会自动降级为同步 run",
+        "isCorrect": false,
+        "description": "不存在这种自动降级行为"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 关于 debounce 与 throttle 的默认值与可用参数，下列哪项正确？",
+    "explanation": "**throttle 没有 maxWait 选项（只有 debounce 才有 debounceMaxWait）；并且 throttleLeading 默认 true，而 debounceLeading 默认 false，两者方向相反**。设置 debounceWait/throttleWait 后即进入对应模式，用法与 lodash 的 debounce/throttle 一致。",
+    "tags": ["ahooks", "高级", "debounce-throttle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "throttle 无 maxWait；throttleLeading 默认 true，debounceLeading 默认 false",
+        "isCorrect": true,
+        "description": "正确，注意两者 leading 默认值方向相反"
+      },
+      {
+        "text": "debounce 和 throttle 都有各自的 maxWait 参数",
+        "isCorrect": false,
+        "description": "只有 debounce 有 debounceMaxWait，throttle 没有"
+      },
+      {
+        "text": "throttleLeading 和 debounceLeading 默认值都是 false",
+        "isCorrect": false,
+        "description": "throttleLeading 默认 true，与 debounceLeading 相反"
+      },
+      {
+        "text": "debounceTrailing 默认 false，节流则没有 trailing",
+        "isCorrect": false,
+        "description": "debounceTrailing 默认 true，throttleTrailing 也默认 true"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 缓存功能中，设置了 cacheKey 后默认的请求行为（SWR）是怎样的？",
+    "explanation": "**设置 cacheKey 后成功数据被缓存，下次组件初始化时会优先返回缓存数据，再在后台发起新请求（即 SWR：stale-while-revalidate）**。staleTime 默认 0，cacheTime 默认 300000（5 分钟）。缓存只缓存成功请求，且内容包含 data 与 params。",
+    "tags": ["ahooks", "中级", "cache-SWR"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "初始化优先返回缓存数据，再后台发起新请求（SWR）",
+        "isCorrect": true,
+        "description": "正确，这是 stale-while-revalidate 模式"
+      },
+      {
+        "text": "只要命中缓存就永远不再发新请求",
+        "isCorrect": false,
+        "description": "默认仍会后台发新请求刷新数据"
+      },
+      {
+        "text": "缓存会同时保存失败的请求结果",
+        "isCorrect": false,
+        "description": "只缓存成功请求"
+      },
+      {
+        "text": "缓存只存 data，不包含本次请求的 params",
+        "isCorrect": false,
+        "description": "CachedData 同时含 data 与 params"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 中设置了 cacheTime 或 staleTime 会产生什么副作用（issue #2313）？",
+    "explanation": "**设置 cacheTime 或 staleTime 会使同一 cacheKey 的『数据共享』机制（相同 cacheKey 共用 Promise、数据自动同步）失效（issue #2313）**；并且只有发起新请求才会触发数据共享。这是缓存配置中容易被忽视的行为。",
+    "tags": ["ahooks", "专家", "cache-SWR"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "会使同 cacheKey 的『数据共享』（共用 Promise/数据同步）机制失效",
+        "isCorrect": true,
+        "description": "正确，对应 issue #2313 记录的行为"
+      },
+      {
+        "text": "会让缓存立即永久失效，下次必定重新请求",
+        "isCorrect": false,
+        "description": "影响的是数据共享机制，不是让缓存永久失效"
+      },
+      {
+        "text": "会自动开启轮询以保持数据新鲜",
+        "isCorrect": false,
+        "description": "与轮询无关，轮询由 pollingInterval 控制"
+      },
+      {
+        "text": "完全没有副作用，只是分别控制新鲜期与回收期",
+        "isCorrect": false,
+        "description": "虽控制新鲜/回收期，但会附带使数据共享失效"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 中 clearCache 这个清除缓存的能力是如何提供的？",
+    "explanation": "**clearCache 是从 'ahooks' 顶层导入的独立函数（`import { clearCache } from 'ahooks'`），并不在 useRequest 的返回值里**。它接收 `cacheKey?: string | string[]`，可清单个或一组缓存，为空则清空所有缓存。注意：在自定义缓存（setCache/getCache）模式下 clearCache 不生效。",
+    "tags": ["ahooks", "中级", "clearCache"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是从 'ahooks' 顶层导入的独立函数，不在 useRequest 返回值里",
+        "isCorrect": true,
+        "description": "正确，import { clearCache } from 'ahooks'"
+      },
+      {
+        "text": "它是 useRequest 返回值里的一个方法",
+        "isCorrect": false,
+        "description": "返回值含 mutate/cancel 等，但不含 clearCache"
+      },
+      {
+        "text": "它需要传入 useRequest 实例作为第一个参数",
+        "isCorrect": false,
+        "description": "它接收的是 cacheKey 字符串或数组"
+      },
+      {
+        "text": "它在自定义缓存（setCache/getCache）模式下依然有效",
+        "isCorrect": false,
+        "description": "自定义缓存模式下 clearCache 不生效，需自行实现"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useRequest 错误重试（retry）在不设置 retryInterval 时采用怎样的间隔策略？",
+    "explanation": "**不设置 retryInterval 时默认采用简易指数退避，文档表述为 `1000 * 2 ** retryCount`（第一次重试等 2s、第二次 4s，依此类推），超过 30s 取 30s**；源码实现为 `Math.min(1000 * 2 ** countRef.current, 30000)`。retryCount 为 -1 表示无限次重试，且 retryCount 与轮询的 pollingErrorRetryCount 是两套独立的计数。",
+    "tags": ["ahooks", "高级", "retry"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "简易指数退避：1000 * 2 ** retryCount，封顶 30s（2s、4s、8s…）",
+        "isCorrect": true,
+        "description": "正确，源码为 Math.min(1000 * 2 ** count, 30000)"
+      },
+      {
+        "text": "固定每次间隔 1000ms 重试",
+        "isCorrect": false,
+        "description": "固定间隔需显式设置 retryInterval，默认是指数退避"
+      },
+      {
+        "text": "线性递增：每次比上次多 1000ms",
+        "isCorrect": false,
+        "description": "是指数退避（乘 2）而非线性递增"
+      },
+      {
+        "text": "立即连续重试，无任何间隔",
+        "isCorrect": false,
+        "description": "默认存在指数退避间隔，不是无间隔"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，以下哪个 Hook **不属于** Scene 场景类？",
+    "explanation": "按 ahooks 官方文档分组（`config/hooks.ts` 的 `Scene` 分类），Scene 场景类包含 usePagination、useAntdTable、useFusionTable、useInfiniteScroll、useDynamicList、useVirtualList、useHistoryTravel、useNetwork、useSelections、useCountDown、useTextSelection、useWebSocket、useTheme 等。\n\n**useUrlState 不在 ahooks 主包中**，而是独立的 `@ahooksjs/use-url-state` 包（`packages/use-url-state`，主包 `packages/hooks/src` 下并无该目录）；而 useTitle/useFavicon/useDocumentVisibility 在官方分组里属于 **Dom 类**而非 Scene 类。容易混淆边界。",
+    "tags": ["ahooks", "初级", "Scene 类边界"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useUrlState",
+        "isCorrect": true,
+        "description": "正确。useUrlState 不在 ahooks 主包，而是独立的 @ahooksjs/use-url-state 包，不属于 Scene 类。"
+      },
+      {
+        "text": "useInfiniteScroll",
+        "isCorrect": false,
+        "description": "错误。useInfiniteScroll 是 Scene 类的无限滚动 Hook，确属 Scene 类。"
+      },
+      {
+        "text": "useVirtualList",
+        "isCorrect": false,
+        "description": "错误。useVirtualList 是 Scene 类的虚拟列表 Hook，确属 Scene 类。"
+      },
+      {
+        "text": "useTheme",
+        "isCorrect": false,
+        "description": "错误。useTheme 是 Scene 类的主题管理 Hook，确属 Scene 类。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 usePagination，下列描述正确的是？",
+    "explanation": "usePagination **基于 useRequest 封装**，service 第一个参数固定含 `{current, pageSize}`，返回值必须是 `{total, list}` 结构。\n\n它在 useRequest 的基础上额外返回 `pagination` 对象（包含 current/pageSize/total/**totalPage**/onChange/changeCurrent/changePageSize），其中 `totalPage = Math.ceil(total / pageSize)`。因此后端必须返回真实的 `total`，否则总页数计算错误。",
+    "tags": ["ahooks", "初级", "usePagination"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它基于 useRequest 封装，service 返回必须是 {total, list}，并额外提供 pagination 对象",
+        "isCorrect": true,
+        "description": "正确。usePagination 基于 useRequest，service 返回 {total, list}，并提供含 totalPage/onChange 等的 pagination 对象。"
+      },
+      {
+        "text": "它是独立实现的，不依赖 useRequest，service 返回任意结构即可",
+        "isCorrect": false,
+        "description": "错误。usePagination 正是基于 useRequest 封装的，且 service 返回必须是 {total, list}。"
+      },
+      {
+        "text": "service 第一个参数无固定结构，分页字段需要开发者自行附加",
+        "isCorrect": false,
+        "description": "错误。service 第一个参数固定包含 {current, pageSize}，由 Hook 注入。"
+      },
+      {
+        "text": "totalPage 需要后端直接返回，Hook 不会自行计算",
+        "isCorrect": false,
+        "description": "错误。totalPage 由 Hook 用 Math.ceil(total/pageSize) 计算得出。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 usePagination 中，defaultPageSize 与 defaultCurrent 的默认值分别是多少？",
+    "explanation": "usePagination 的 Options 在 useRequest 的 Options 之上新增了两个分页相关配置：\n\n- **defaultPageSize 默认 10**\n- **defaultCurrent 默认 1**\n\n即默认从第 1 页、每页 10 条开始。",
+    "tags": ["ahooks", "中级", "usePagination"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "defaultPageSize=10，defaultCurrent=1",
+        "isCorrect": true,
+        "description": "正确。源码默认每页 10 条，默认当前页为第 1 页。"
+      },
+      {
+        "text": "defaultPageSize=20，defaultCurrent=1",
+        "isCorrect": false,
+        "description": "错误。默认 pageSize 是 10 而非 20。"
+      },
+      {
+        "text": "defaultPageSize=10，defaultCurrent=0",
+        "isCorrect": false,
+        "description": "错误。current 从 1 开始，默认 defaultCurrent 是 1 而非 0。"
+      },
+      {
+        "text": "defaultPageSize=15，defaultCurrent=1",
+        "isCorrect": false,
+        "description": "错误。默认 pageSize 是 10，不是 15。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，usePagination、useAntdTable、useFusionTable 三者返回值类型的继承关系是？",
+    "explanation": "分页/表格三件套层层继承：\n\n**PaginationResult ← AntdTableResult ← FusionTableResult**\n\n- usePagination 返回 PaginationResult（`PaginationResult extends Result`，即 useRequest 的 Result）\n- useAntdTable 的 `AntdTableResult extends PaginationResult`\n- useFusionTable 的 `FusionTableResult extends Omit<AntdTableResult, 'tableProps'>`（去掉原 tableProps 后重定义）\n\n三者都基于 useRequest，因此返回值都带有 useRequest 的 run/refresh/params/loading/mutate/cancel 等。",
+    "tags": ["ahooks", "高级", "表格三件套"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "PaginationResult ← AntdTableResult ← FusionTableResult（层层继承）",
+        "isCorrect": true,
+        "description": "正确。FusionTableResult 继承 AntdTableResult，AntdTableResult 继承 PaginationResult。"
+      },
+      {
+        "text": "三者相互独立，没有继承关系",
+        "isCorrect": false,
+        "description": "错误。三者是层层 extends 的继承链，并非独立。"
+      },
+      {
+        "text": "FusionTableResult ← AntdTableResult ← PaginationResult（反向继承）",
+        "isCorrect": false,
+        "description": "错误。继承方向反了，PaginationResult 是最基础的，FusionTableResult 在最末端。"
+      },
+      {
+        "text": "AntdTableResult ← PaginationResult ← FusionTableResult",
+        "isCorrect": false,
+        "description": "错误。继承顺序错误，PaginationResult 才是基类。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useAntdTable，下列哪项描述是错误的？",
+    "explanation": "useAntdTable 为 Ant Design Table 量身定做：\n\n- service 接收两个参数：`{current, pageSize, sorter, filters, extra}` 和 `formData`（来自传入的 form 实例）\n- 返回 `tableProps`（含 dataSource/loading/onChange/pagination，可直接展开给 `<Table {...tableProps}/>`）\n- 返回 `search`：`{type, changeType, submit, reset}`\n- `AntdTableResult extends PaginationResult`，因此**同样有 pagination 对象与 useRequest 的 run/refresh/params/loading 等**\n\n错误选项称其不含 pagination/run 等，与「继承 PaginationResult」矛盾。",
+    "tags": ["ahooks", "中级", "useAntdTable"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "由于专为表格设计，useAntdTable 不再继承 useRequest 的 run/refresh/loading，也没有 pagination 对象",
+        "isCorrect": true,
+        "description": "正确（这是错误描述）。AntdTableResult 继承 PaginationResult，仍然带有 pagination 对象与 useRequest 的 run/refresh/loading 等。"
+      },
+      {
+        "text": "service 第二个参数 formData 来自传入的 form 表单实例",
+        "isCorrect": false,
+        "description": "这是正确描述。formData 确实来自配置的 form。"
+      },
+      {
+        "text": "tableProps 可直接展开给 <Table {...tableProps}/> 自动接管分页/排序/筛选",
+        "isCorrect": false,
+        "description": "这是正确描述。tableProps 含 dataSource/loading/onChange/pagination，可直接展开。"
+      },
+      {
+        "text": "search 提供 submit/reset/changeType，可在 simple/advance 之间切换查询类型",
+        "isCorrect": false,
+        "description": "这是正确描述。search 的 changeType 在 simple/advance 间切换，submit 提交、reset 重置。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useFusionTable 是面向哪个 UI 库的适配版本？",
+    "explanation": "useFusionTable 是 **useAntdTable 面向 Fusion Design（@alifd/next）的适配版本**，通过 `fusionAdapter.ts` 把分页/排序/筛选事件名适配成 Fusion 的 Table（onSort/onFilter）与 Pagination（onChange/onPageSizeChange）。\n\ntableProps 展开给 Fusion `<Table/>`，paginationProps 展开给 Fusion `<Pagination/>`。",
+    "tags": ["ahooks", "中级", "useFusionTable"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Fusion Design（@alifd/next）",
+        "isCorrect": true,
+        "description": "正确。useFusionTable 通过 fusionAdapter.ts 适配 Fusion Design 的 Table/Pagination。"
+      },
+      {
+        "text": "Ant Design（antd）",
+        "isCorrect": false,
+        "description": "错误。适配 Ant Design 的是 useAntdTable，不是 useFusionTable。"
+      },
+      {
+        "text": "Element Plus",
+        "isCorrect": false,
+        "description": "错误。ahooks 是 React Hooks 库，不会适配 Vue 生态的 Element Plus。"
+      },
+      {
+        "text": "Material UI（MUI）",
+        "isCorrect": false,
+        "description": "错误。useFusionTable 适配的是阿里 Fusion Design，并非 MUI。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useInfiniteScroll 的 noMore 与 service 行为，下列描述正确的是？",
+    "explanation": "useInfiniteScroll 的关键点在于 `noMore` 的判定逻辑：源码中 `noMore = isNoMore ? isNoMore(finalData) : false`。\n\n也就是说，**只有在配置了 `isNoMore` 时 `noMore` 才可能为 true；不配 `isNoMore`，`noMore` 恒为 false**，会导致无限触发加载，因此自动 target 滚动加载也必须同时配 isNoMore。\n\n此外，service 接收上一次聚合后的 `currentData`（用于游标分页等增量加载）；bottom 方向拼接为 `[...lastData.list, ...currentData.list]`，top 方向相反。",
+    "tags": ["ahooks", "高级", "useInfiniteScroll"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "noMore 只有在配置 isNoMore 时才可能为 true（默认恒为 false），service 接收上一次聚合后的 currentData",
+        "isCorrect": true,
+        "description": "正确。源码中 noMore = isNoMore ? isNoMore(finalData) : false；未配 isNoMore 则恒为 false，service 接收上一次聚合后的 currentData。"
+      },
+      {
+        "text": "noMore 会在数据返回空数组时自动变为 true，无需配置 isNoMore",
+        "isCorrect": false,
+        "description": "错误。noMore 的判定完全依赖 isNoMore，不会因空数组自动为 true；未配 isNoMore 时恒为 false。"
+      },
+      {
+        "text": "未配置 isNoMore 时，noMore 会在首次加载后变为 true",
+        "isCorrect": false,
+        "description": "错误。未配 isNoMore 时 noMore 恒为 false，反而会无限触发加载。"
+      },
+      {
+        "text": "service 不接收任何参数，每次都从头重新加载全量数据",
+        "isCorrect": false,
+        "description": "错误。service 接收上一次聚合后的 currentData，用于游标分页等增量加载。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useInfiniteScroll 配置自动滚动加载时，bottom 方向的触发条件 threshold 默认值是多少？",
+    "explanation": "useInfiniteScroll 的 Options 中 `threshold` **默认 100**，`direction` 默认 `'bottom'`。\n\n配 target 后自动监听滚动：**bottom 方向当 `scrollHeight - scrollTop <= clientHeight + threshold` 时触发 loadMore**；top 方向当 `scrollTop <= threshold` 时触发。",
+    "tags": ["ahooks", "中级", "useInfiniteScroll"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "threshold 默认 100",
+        "isCorrect": true,
+        "description": "正确。threshold 默认值为 100（像素）。"
+      },
+      {
+        "text": "threshold 默认 0",
+        "isCorrect": false,
+        "description": "错误。默认值是 100 而非 0。"
+      },
+      {
+        "text": "threshold 默认 50",
+        "isCorrect": false,
+        "description": "错误。默认值是 100 而非 50。"
+      },
+      {
+        "text": "threshold 默认 200",
+        "isCorrect": false,
+        "description": "错误。默认值是 100 而非 200。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useVirtualList，下列描述正确的是？",
+    "explanation": "useVirtualList 只做**可视区渲染、不负责数据加载**，因此 `list` 必须是已加载的完整数组（要与 useInfiniteScroll/usePagination 区分）。\n\n- `containerTarget` 必须是有固定高度 + overflow 滚动的容器，否则虚拟化失效\n- 返回元组 `[当前可视区列表, scrollTo]`，列表项是 `{data, index}`，渲染时用 `item.index` 当 key、读 `item.data`\n- `itemHeight` 可为定高数字或 `(index, data) => number` 的不定高函数（overscan 默认 5）",
+    "tags": ["ahooks", "高级", "useVirtualList"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它只渲染可视区、不负责数据加载，list 必须是完整已加载数组，返回项为 {data, index}",
+        "isCorrect": true,
+        "description": "正确。useVirtualList 仅做可视区渲染，list 须为完整数组，渲染用 item.index 当 key、读 item.data。"
+      },
+      {
+        "text": "它内置数据分页加载能力，list 可以只传第一页，滚动时自动拉取后续数据",
+        "isCorrect": false,
+        "description": "错误。useVirtualList 不负责数据加载，需配合 useInfiniteScroll/usePagination 等。"
+      },
+      {
+        "text": "itemHeight 只能是固定数字，不支持不定高场景",
+        "isCorrect": false,
+        "description": "错误。itemHeight 可为数字，也可为 (index, data) => number 的不定高函数。"
+      },
+      {
+        "text": "containerTarget 无需固定高度，Hook 会自动撑满整个页面",
+        "isCorrect": false,
+        "description": "错误。containerTarget 必须有固定高度 + overflow 滚动，否则虚拟化失效。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 的 useDynamicList 中，渲染列表项时应当用什么作为 React key？",
+    "explanation": "useDynamicList 内部为每一项维护稳定的 uuid key（counterRef 自增，存于 keyList）：\n\n- **`getKey(index)`** 取某项的稳定 key（`keyList.current[index]`）\n- `getIndex(key)` 反查 index\n\n渲染时务必用 **`getKey(index)` 当 React key**，而不是数组下标，否则增删后输入框/组件状态会错位。",
+    "tags": ["ahooks", "中级", "useDynamicList"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 getKey(index) 返回的稳定 uuid key",
+        "isCorrect": true,
+        "description": "正确。getKey(index) 返回内部维护的稳定 uuid key，是增删不错位的关键。"
+      },
+      {
+        "text": "直接用数组下标 index",
+        "isCorrect": false,
+        "description": "错误。用数组下标当 key 会在增删后造成输入框/组件状态错位。"
+      },
+      {
+        "text": "用列表项对象本身的引用",
+        "isCorrect": false,
+        "description": "错误。React key 必须是字符串或数字，不能是对象引用；应使用 getKey(index)。"
+      },
+      {
+        "text": "用 getIndex(key) 的返回值",
+        "isCorrect": false,
+        "description": "错误。getIndex 是按 key 反查 index，用于查询而非作为渲染 key。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useSelections 返回的判断字段命名，下列正确的是？",
+    "explanation": "useSelections 返回的判断字段名是 **`allSelected` / `noneSelected` / `partiallySelected`（无 is 前缀）**，唯一带 is 前缀的是 `isSelected(item)`。\n\n常见误区是写成 `isAllSelected` / `isPartiallySelected`，这些是错误的。此外对象数组务必传 `itemKey`，否则按引用比较易出错。",
+    "tags": ["ahooks", "中级", "useSelections"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "全选/半选字段是 allSelected / partiallySelected（无 is 前缀），只有 isSelected(item) 带 is",
+        "isCorrect": true,
+        "description": "正确。allSelected/noneSelected/partiallySelected 都无 is 前缀，唯一带 is 的是 isSelected(item)。"
+      },
+      {
+        "text": "全选字段是 isAllSelected，半选字段是 isPartiallySelected",
+        "isCorrect": false,
+        "description": "错误。源码中是 allSelected/partiallySelected，没有 is 前缀。"
+      },
+      {
+        "text": "所有判断字段都带 is 前缀：isAllSelected/isNoneSelected/isSelected",
+        "isCorrect": false,
+        "description": "错误。只有 isSelected(item) 带 is，其余 allSelected/noneSelected/partiallySelected 都不带。"
+      },
+      {
+        "text": "半选字段叫 indeterminate，全选字段叫 checkedAll",
+        "isCorrect": false,
+        "description": "错误。源码字段是 partiallySelected/allSelected，并非 indeterminate/checkedAll。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useCountDown 中，若同时传入 leftTime 和 targetDate，会发生什么？",
+    "explanation": "useCountDown 源码中 `const target = 'leftTime' in options ? memoLeftTime : targetDate;`——即只要 options 里存在 `leftTime` 键，就以 leftTime 推导的目标时间为准。\n\n因此 `leftTime`（相对当前的剩余毫秒）与 `targetDate`（绝对目标时间）**二选一**：\n\n- 若两者都传，**leftTime 优先、targetDate 被忽略**\n- 两者都不传时 target 为 undefined，countdown 恒为 0，且 onEnd 不触发\n- interval 默认 1000ms，实际 tick 间隔只是约等于设定值（非精确）",
+    "tags": ["ahooks", "高级", "useCountDown"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "leftTime 优先生效，targetDate 被忽略",
+        "isCorrect": true,
+        "description": "正确。源码 'leftTime' in options ? memoLeftTime : targetDate，两者都传时 leftTime 优先，targetDate 被忽略。"
+      },
+      {
+        "text": "targetDate 优先生效，leftTime 被忽略",
+        "isCorrect": false,
+        "description": "错误。优先级反了，是 leftTime 优先。"
+      },
+      {
+        "text": "两者会叠加，倒计时取两者之和",
+        "isCorrect": false,
+        "description": "错误。两者是二选一关系，不会叠加。"
+      },
+      {
+        "text": "会抛出错误，禁止同时传入两者",
+        "isCorrect": false,
+        "description": "错误。同时传入不会报错，而是 leftTime 优先、targetDate 被忽略。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useWebSocket，下列描述正确的是？",
+    "explanation": "useWebSocket 导出枚举 **ReadyState { Connecting=0, Open=1, Closing=2, Closed=3 }**。\n\n关键坑：**在 `readyState !== Open` 时调用 sendMessage 会抛错**（sendMessage 直接是底层 ws.send），发送前应判断 `readyState === ReadyState.Open`。\n\n默认 `manual=false` 会在 mount 自动连接；断线时按 `reconnectInterval`（默认 3000ms）间隔重连，最多 `reconnectLimit`（默认 3）次。",
+    "tags": ["ahooks", "高级", "useWebSocket"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 readyState 非 Open(1) 时调用 sendMessage 会抛错，发送前应判断 readyState===ReadyState.Open",
+        "isCorrect": true,
+        "description": "正确。sendMessage 在连接未打开时调用会报错，需先判断 readyState。"
+      },
+      {
+        "text": "sendMessage 内部会自动排队，连接未建立时也能安全调用",
+        "isCorrect": false,
+        "description": "错误。sendMessage 直接是底层 ws.send，连接未 Open 时调用会抛错。"
+      },
+      {
+        "text": "默认 manual=true，必须手动调用 connect() 才能连接",
+        "isCorrect": false,
+        "description": "错误。默认 manual=false，mount 时自动连接；manual=true 才需手动 connect。"
+      },
+      {
+        "text": "ReadyState 枚举中 Open 的值是 0",
+        "isCorrect": false,
+        "description": "错误。Open=1，Connecting 才是 0。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useWebSocket 中，reconnectLimit 与 reconnectInterval 的默认值分别是？",
+    "explanation": "useWebSocket 断线时会自动重连，源码默认值为：\n\n- **reconnectLimit 默认 3**（最多重连 3 次）\n- **reconnectInterval 默认 3 * 1000 = 3000**（毫秒，即每 3 秒重连一次）\n\n当 `manual=true` 时不会自动连接，需手动调用 connect()。",
+    "tags": ["ahooks", "中级", "useWebSocket"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "reconnectLimit=3，reconnectInterval=3000(ms)",
+        "isCorrect": true,
+        "description": "正确。源码默认重连上限 3 次，重连间隔 3000 毫秒（3 * 1000）。"
+      },
+      {
+        "text": "reconnectLimit=5，reconnectInterval=1000(ms)",
+        "isCorrect": false,
+        "description": "错误。默认是 3 次、3000ms，不是 5 次、1000ms。"
+      },
+      {
+        "text": "reconnectLimit=3，reconnectInterval=1000(ms)",
+        "isCorrect": false,
+        "description": "错误。reconnectInterval 默认 3000ms 而非 1000ms。"
+      },
+      {
+        "text": "reconnectLimit=0（不重连），reconnectInterval=3000(ms)",
+        "isCorrect": false,
+        "description": "错误。默认 reconnectLimit 是 3 而非 0，默认会自动重连。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useTheme，theme 与 themeMode 的区别正确的是？",
+    "explanation": "useTheme 返回 `theme`、`themeMode` 和 `setThemeMode`：\n\n- **themeMode 是用户选择**（可为 `light` / `dark` / **`system`**，默认 SYSTEM）\n- **theme 是最终生效的具体主题**（只会是 `light` 或 `dark`）\n\n源码中 `theme = themeMode === ThemeMode.SYSTEM ? currentTheme : themeMode`，当 themeMode='system' 时 theme 由 `window.matchMedia('(prefers-color-scheme: dark)')` 推导并实时监听。theme 字段不可手改，只能通过 setThemeMode 间接控制；持久化需传 localStorageKey。",
+    "tags": ["ahooks", "高级", "useTheme"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "themeMode 是用户选择（可为 system），theme 是最终生效的 light 或 dark",
+        "isCorrect": true,
+        "description": "正确。themeMode 含 light/dark/system 三态，theme 只会是 light 或 dark。"
+      },
+      {
+        "text": "theme 可取 system，themeMode 只能是 light 或 dark",
+        "isCorrect": false,
+        "description": "错误。反了，system 是 themeMode 的取值，theme 只会是 light/dark。"
+      },
+      {
+        "text": "theme 和 themeMode 完全等价，任何时候取值都相同",
+        "isCorrect": false,
+        "description": "错误。当 themeMode='system' 时两者取值不同，theme 由系统偏好推导。"
+      },
+      {
+        "text": "可以直接给 theme 赋值来强制切换主题",
+        "isCorrect": false,
+        "description": "错误。theme 不可手改，只能通过 setThemeMode 间接控制。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useTheme 导出的 ThemeMode 枚举包含哪些值？",
+    "explanation": "useTheme 导出真实的枚举 **ThemeMode { LIGHT='light', DARK='dark', SYSTEM='system' }**，以及类型别名 `ThemeModeType = \\`${ThemeMode}\\``。\n\n这是真实导出的枚举（源码 `export enum ThemeMode`），包含三个成员，对应 themeMode 的三种取值。",
+    "tags": ["ahooks", "中级", "useTheme"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "LIGHT='light'、DARK='dark'、SYSTEM='system'",
+        "isCorrect": true,
+        "description": "正确。ThemeMode 枚举有 LIGHT/DARK/SYSTEM 三个成员，值分别是 light/dark/system。"
+      },
+      {
+        "text": "只有 LIGHT 和 DARK 两个成员",
+        "isCorrect": false,
+        "description": "错误。还有 SYSTEM 成员，共三个。"
+      },
+      {
+        "text": "LIGHT、DARK、AUTO 三个成员",
+        "isCorrect": false,
+        "description": "错误。第三个成员是 SYSTEM 而非 AUTO。"
+      },
+      {
+        "text": "ThemeMode 不是枚举，只是字符串联合类型，没有具名成员",
+        "isCorrect": false,
+        "description": "错误。ThemeMode 是真实导出的枚举，另有类型别名 ThemeModeType 才是字符串联合类型。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useNetwork，下列描述正确的是？",
+    "explanation": "useNetwork 返回 NetworkState，其中：\n\n- `online` 来自 `navigator.onLine` 及 online/offline 事件，**兼容性较好、较通用**\n- `rtt` / `type` / `downlink` / `downlinkMax` / `saveData` / `effectiveType` 来自 **Network Information API（navigator.connection）**\n\n**坑：Network Information API 兼容性有限（Safari/部分浏览器不支持），这些字段可能为 undefined，使用前需判空。** effectiveType 是字符串，形如 '4g'/'3g'。",
+    "tags": ["ahooks", "中级", "useNetwork"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "rtt/downlink/effectiveType 等来自兼容性有限的 Network Information API，可能为 undefined，需判空",
+        "isCorrect": true,
+        "description": "正确。这些字段来自 navigator.connection，Safari 等不支持时为 undefined，使用前必须判空。"
+      },
+      {
+        "text": "所有字段在全部主流浏览器（含 Safari）都稳定返回有效值",
+        "isCorrect": false,
+        "description": "错误。Network Information API 兼容性有限，Safari/部分浏览器返回 undefined。"
+      },
+      {
+        "text": "online 字段来自 Network Information API，兼容性最差",
+        "isCorrect": false,
+        "description": "错误。online 来自 navigator.onLine，反而较通用；兼容性差的是 connection 系列字段。"
+      },
+      {
+        "text": "effectiveType 是布尔值，表示网络是否高速",
+        "isCorrect": false,
+        "description": "错误。effectiveType 是字符串，形如 '4g'/'3g'，不是布尔值。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，用于管理对象类型 state 的 `useSetState`，调用 `setState` 时对新旧 state 的处理方式是什么？",
+    "explanation": "`useSetState` 模仿 class 组件的 `this.setState`，内部实现为 `setState(prev => newState ? {...prev, ...newState} : prev)`，即**浅合并**而非整体替换。例如先 `setState({ count: 0 })` 再 `setState({ hello: 'world' })`，结果会保留 `count` 字段。注意它只做**一层浅合并**，嵌套对象不会深合并；若 patch 函数返回 `null/falsy` 则保持原 state 不变。",
+    "tags": ["ahooks", "初级", "useSetState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "对新旧 state 做一层浅合并（`{...prev, ...patch}`）",
+        "isCorrect": true,
+        "description": "正确。源码为 `setState(prev => newState ? {...prev, ...newState} : prev)`，是浅合并，类似 class 组件的 this.setState，新字段并入而不丢弃旧字段。"
+      },
+      {
+        "text": "用新值整体替换旧 state，与原生 `useState` 行为一致",
+        "isCorrect": false,
+        "description": "错误。这恰恰是 `useSetState` 与原生 `useState` 的区别——它做合并而非替换，否则就没有单独封装的意义。"
+      },
+      {
+        "text": "对新旧 state 做深合并（递归合并嵌套对象）",
+        "isCorrect": false,
+        "description": "错误。`useSetState` 只做一层浅合并，嵌套对象不会被递归合并，深层结构会被整体覆盖。"
+      },
+      {
+        "text": "总是追加为数组的一项，保留历史所有 state",
+        "isCorrect": false,
+        "description": "错误。`useSetState` 管理的是对象 state 的浅合并，并不维护历史快照数组。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useToggle` 的 actions（如 toggle/setLeft/setRight）是用 `useMemo` 空依赖缓存的，源码注释为 'useToggle ignore value change'。这意味着什么？",
+    "explanation": "`useToggle` 的 actions 用 `useMemo([])` 空依赖数组缓存，源码注释明确写了 `'useToggle ignore value change'`。因此闭包内捕获的是**首次渲染**时的 `defaultValue`/`reverseValue`，后续即使这两个入参变化，`toggle` 仍然基于初次渲染的值切换。`useBoolean` 复用了 `useToggle`，存在相同特性。",
+    "tags": ["ahooks", "高级", "useToggle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "actions 引用恒定，且 `defaultValue`/`reverseValue` 的后续变化不会反映到 toggle 的切换值里",
+        "isCorrect": true,
+        "description": "正确。空依赖 useMemo 缓存使 actions 引用永不变，闭包只认初次渲染捕获的 defaultValue/reverseValue。"
+      },
+      {
+        "text": "actions 每次渲染都会重新创建，因此能拿到最新的 `defaultValue`",
+        "isCorrect": false,
+        "description": "错误。正因为用空依赖 useMemo 缓存，actions 不会重建，也就拿不到后续变化的入参值。"
+      },
+      {
+        "text": "`defaultValue` 变化时，state 会自动重置为新的默认值",
+        "isCorrect": false,
+        "description": "错误。注释 'ignore value change' 表明入参变化被忽略，不会触发 state 重置。"
+      },
+      {
+        "text": "toggle 会基于最近一次渲染的 props 计算切换目标",
+        "isCorrect": false,
+        "description": "错误。toggle 基于的是首次渲染捕获的值，而非最近一次渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，关于 `useBoolean` 与 `useToggle` 的关系，下列说法正确的是？",
+    "explanation": "`useBoolean` 是 `useToggle` 的语义化封装，内部调用 `useToggle(!!defaultValue)`，固定管理布尔值，提供更直观的 `setTrue/setFalse/set/toggle`。其中 `set(value)` 会强制 `!!v` 转布尔。`useToggle` 才是更通用的底座，支持在任意两个值（`defaultValue`/`reverseValue`）间切换，actions 为 `toggle/set/setLeft/setRight`。",
+    "tags": ["ahooks", "初级", "useBoolean"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`useBoolean` 内部基于 `useToggle` 实现，专注布尔显隐场景，提供 setTrue/setFalse 等更直观的 action",
+        "isCorrect": true,
+        "description": "正确。useBoolean 是 useToggle 的语义化封装（内部 useToggle(!!defaultValue)），set 会强制转布尔。"
+      },
+      {
+        "text": "`useToggle` 内部基于 `useBoolean` 实现，只是把 setTrue/setFalse 重命名为 setLeft/setRight",
+        "isCorrect": false,
+        "description": "错误。依赖关系反了——是 useBoolean 复用 useToggle，而非相反。"
+      },
+      {
+        "text": "两者完全独立实现，没有任何复用关系",
+        "isCorrect": false,
+        "description": "错误。useBoolean 明确复用了 useToggle 作为底座。"
+      },
+      {
+        "text": "`useBoolean` 支持在任意两个值之间切换，`useToggle` 只能处理布尔",
+        "isCorrect": false,
+        "description": "错误。恰好相反，useToggle 支持双值切换，useBoolean 固定布尔。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useCookieState` 管理的 state 值类型是什么？",
+    "explanation": "`useCookieState` 基于 `js-cookie` 实现，其 `State` 类型被限定为 `string | undefined`。这与 `useLocalStorageState` 的泛型 `T`（默认 JSON 序列化任意类型）不同。读取优先级为：已存在的 cookie 值 > `options.defaultValue`。",
+    "tags": ["ahooks", "中级", "useCookieState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`string | undefined`",
+        "isCorrect": true,
+        "description": "正确。useCookieState 基于 js-cookie，值只能是字符串或 undefined。"
+      },
+      {
+        "text": "任意泛型 `T`，默认通过 JSON 序列化存储",
+        "isCorrect": false,
+        "description": "错误。这是 useLocalStorageState/useSessionStorageState 的行为，useCookieState 只支持字符串。"
+      },
+      {
+        "text": "`Record<string, any>` 对象",
+        "isCorrect": false,
+        "description": "错误。cookie 值被限定为字符串，并非对象类型。"
+      },
+      {
+        "text": "`string | number | boolean`",
+        "isCorrect": false,
+        "description": "错误。仅支持 string 或 undefined，不直接支持 number/boolean。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，使用 `useCookieState` 时，调用 `setState()`（不传值）或 `setState(undefined)` 会产生什么效果？",
+    "explanation": "`useCookieState` 在 `setState` 收到 `undefined` 或不传值时，会调用 `Cookies.remove` **删除该 cookie**。此外它有几个值得注意的特性：`defaultValue` 只用于本地初始 state，不会写回 cookie；不跨标签页同步；`setState` 第二参可覆盖 cookie 属性（与 options 浅合并）。",
+    "tags": ["ahooks", "中级", "useCookieState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "调用 `Cookies.remove` 删除该 cookie",
+        "isCorrect": true,
+        "description": "正确。传 undefined 或不传值会触发删除该 cookie。"
+      },
+      {
+        "text": "把 cookie 值重置为 `options.defaultValue`",
+        "isCorrect": false,
+        "description": "错误。不传值是删除 cookie，而非重置为默认值；且 defaultValue 本就不会写回 cookie。"
+      },
+      {
+        "text": "把 cookie 值设置为空字符串 `\"\"`",
+        "isCorrect": false,
+        "description": "错误。是调用 Cookies.remove 删除，而不是写入空字符串。"
+      },
+      {
+        "text": "抛出异常，因为 cookie 值不允许为空",
+        "isCorrect": false,
+        "description": "错误。不传值是受支持的删除操作，不会抛异常。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useLocalStorageState('key', { defaultValue: 'hello' })` 默认会如何存储字符串 `'hello'`？",
+    "explanation": "`useLocalStorageState` 默认使用 `JSON.stringify`/`JSON.parse` 序列化，因此存纯字符串 `'hello'` 实际写入的是带引号的 `\"hello\"`。若想原样存储不加引号，需自定义 `serializer: v => v` 和 `deserializer: v => v`。传 `undefined` 则会 `removeItem` 删除该 key。",
+    "tags": ["ahooks", "中级", "useLocalStorageState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "存为带引号的 `\"hello\"`（经过 `JSON.stringify`）",
+        "isCorrect": true,
+        "description": "正确。默认 JSON 序列化，纯字符串会被加上引号。要原样存需自定义 serializer/deserializer。"
+      },
+      {
+        "text": "原样存为 `hello`（不加引号）",
+        "isCorrect": false,
+        "description": "错误。默认走 JSON.stringify 会加引号；只有自定义 serializer 才能原样存。"
+      },
+      {
+        "text": "存为 Base64 编码后的字符串",
+        "isCorrect": false,
+        "description": "错误。默认序列化是 JSON，不涉及 Base64 编码。"
+      },
+      {
+        "text": "默认不存储字符串，仅支持对象类型",
+        "isCorrect": false,
+        "description": "错误。它支持任意可序列化值，包括字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，要让 `useLocalStorageState` 响应其他标签页或同页其他实例对同一 key 的修改，应该如何配置？",
+    "explanation": "`useLocalStorageState` **默认不监听**其他标签/实例的变化，需要显式传入 `listenStorageChange: true` 才会监听 storage 事件 + 自定义事件来响应同/跨标签的变化。此外 SSR 场景可用 `getInitialValueInEffect: true` 在 effect 里才读 storage，避免 hydration 不匹配。",
+    "tags": ["ahooks", "高级", "useLocalStorageState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "传入 `listenStorageChange: true`",
+        "isCorrect": true,
+        "description": "正确。默认不监听，显式开启 listenStorageChange 后才会响应同/跨标签变化。"
+      },
+      {
+        "text": "传入 `getInitialValueInEffect: true`",
+        "isCorrect": false,
+        "description": "错误。该选项用于 SSR 场景避免 hydration 不匹配（effect 里才读 storage），与跨标签同步无关。"
+      },
+      {
+        "text": "无需配置，跨标签同步是默认行为",
+        "isCorrect": false,
+        "description": "错误。useLocalStorageState 默认不监听其他标签/实例的变化。"
+      },
+      {
+        "text": "传入 `serializer` 函数即可触发监听",
+        "isCorrect": false,
+        "description": "错误。serializer 控制序列化方式，与是否监听 storage 变化无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，关于 `useSessionStorageState` 与 `useLocalStorageState` 的关系，下列说法正确的是？",
+    "explanation": "两者均由同一工厂函数 `createUseStorageState` 生成，行为完全一致（都支持 `defaultValue`/`serializer`/`deserializer`/`onError`/`getInitialValueInEffect`/`listenStorageChange`，传 `undefined` 即删除），唯一区别是底层存储：`useSessionStorageState` 用 `sessionStorage`（仅当前标签页会话、不跨标签持久），`useLocalStorageState` 用 `localStorage`。",
+    "tags": ["ahooks", "初级", "useSessionStorageState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "两者由同一工厂 `createUseStorageState` 生成，API 与行为一致，仅底层存储不同（sessionStorage vs localStorage）",
+        "isCorrect": true,
+        "description": "正确。createUseStorageState 工厂生成两者，行为一致，区别只是 sessionStorage 仅当前会话、不跨标签持久。"
+      },
+      {
+        "text": "`useSessionStorageState` 不支持自定义 serializer/deserializer",
+        "isCorrect": false,
+        "description": "错误。两者 Options 完全相同，sessionStorage 版同样支持自定义序列化。"
+      },
+      {
+        "text": "`useSessionStorageState` 默认会跨标签页同步，而 localStorage 版不会",
+        "isCorrect": false,
+        "description": "错误。sessionStorage 本身仅限当前标签页会话，无法跨标签持久；两者默认都不主动监听变化。"
+      },
+      {
+        "text": "两者实现完全独立，sessionStorage 版不支持 `onError` 回调",
+        "isCorrect": false,
+        "description": "错误。两者共用工厂实现，Options 一致，都支持 onError。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useDebounce(value, options)` 防抖处理的对象，以及其 `wait` 默认值，下列描述正确的是？",
+    "explanation": "`useDebounce` 对一个**值**做防抖：内部用 `useDebounceFn` 包一个 `setDebounced(value)`，由 `useEffect([value])` 触发，返回防抖后的值。`wait` 默认 `1000ms`（来自 `useDebounceFn` 默认）。如果要对**函数调用**做防抖，应使用 `useDebounceFn`。`DebounceOptions` 支持 `wait/leading/trailing/maxWait`。",
+    "tags": ["ahooks", "中级", "useDebounce"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防抖的是「值」的更新，`wait` 默认 1000ms；要防抖函数调用应用 `useDebounceFn`",
+        "isCorrect": true,
+        "description": "正确。useDebounce 防抖值，内部由 useEffect([value]) 触发，wait 默认 1000ms；防抖函数用 useDebounceFn。"
+      },
+      {
+        "text": "防抖的是「函数调用」，`wait` 默认 1000ms",
+        "isCorrect": false,
+        "description": "错误。防抖函数调用是 useDebounceFn 的职责；useDebounce 防抖的是值。"
+      },
+      {
+        "text": "防抖的是「值」的更新，但 `wait` 默认 300ms",
+        "isCorrect": false,
+        "description": "错误。对象判断正确，但默认 wait 是 1000ms，不是 300ms。"
+      },
+      {
+        "text": "防抖的是「值」的更新，且不支持 `leading`/`trailing` 配置",
+        "isCorrect": false,
+        "description": "错误。DebounceOptions 支持 leading/trailing/maxWait，语义同 lodash.debounce。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useDebounce` 的 `DebounceOptions` 与 `useThrottle` 的 `ThrottleOptions` 在配置项上的关键区别是什么？",
+    "explanation": "`DebounceOptions` 包含 `wait/leading/trailing/maxWait`，而 `ThrottleOptions` 只有 `wait/leading/trailing`——**节流没有 `maxWait`**。这与 lodash 的设计一致：`maxWait` 是 debounce 特有的「最长等待」语义，throttle 本身就是固定间隔触发，不需要 maxWait。",
+    "tags": ["ahooks", "高级", "useThrottle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`ThrottleOptions` 没有 `maxWait`，只有 `DebounceOptions` 有",
+        "isCorrect": true,
+        "description": "正确。debounce 支持 maxWait（最长等待），throttle 无此选项，符合 lodash 设计。"
+      },
+      {
+        "text": "`DebounceOptions` 没有 `leading`，只有 `ThrottleOptions` 有",
+        "isCorrect": false,
+        "description": "错误。两者都支持 leading/trailing；区别在 maxWait。"
+      },
+      {
+        "text": "`ThrottleOptions` 没有 `wait`，节流间隔写死为 1000ms",
+        "isCorrect": false,
+        "description": "错误。两者都支持 wait 配置，默认 1000ms 但可调整。"
+      },
+      {
+        "text": "`DebounceOptions` 没有 `trailing`，只有 `ThrottleOptions` 有",
+        "isCorrect": false,
+        "description": "错误。两者都支持 trailing；真正的区别是 maxWait 为 debounce 独有。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useSet` 返回的 actions 在执行 `add(key)` 时，若 key 已存在于 Set 中会发生什么？",
+    "explanation": "`useSet` 为避免无意义的重渲染做了优化：`add` 时若 `key` 已存在则直接 `return` 不触发更新；同理 `remove` 时若 `key` 不存在也直接 `return`。每次有效修改都会创建新 `Set` 保证不可变更新。注意 `useSet` 只有 `add/remove/reset`，没有 `useMap` 的 `setAll/get`。",
+    "tags": ["ahooks", "高级", "useSet"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "直接 return 不触发更新，避免无意义的重新渲染",
+        "isCorrect": true,
+        "description": "正确。源码中 add 时 `if (set.has(key)) return;`；remove 时 `if (!set.has(key)) return;`，避免无意义渲染。"
+      },
+      {
+        "text": "覆盖原有的 key 并强制触发一次重新渲染",
+        "isCorrect": false,
+        "description": "错误。Set 本身不存在重复，且源码刻意跳过更新以避免无意义渲染。"
+      },
+      {
+        "text": "抛出异常提示 key 已存在",
+        "isCorrect": false,
+        "description": "错误。重复 add 是受支持的无操作（no-op），不会抛异常。"
+      },
+      {
+        "text": "把该 key 移动到 Set 末尾并触发渲染",
+        "isCorrect": false,
+        "description": "错误。源码直接 return，不会重排也不会触发渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，下列哪一组 action 是 `useMap` 提供而 `useSet` 不提供的？",
+    "explanation": "`useMap` 提供 `set / setAll / remove / get / reset`，而 `useSet` 只有 `add / remove / reset`。因此 `setAll`（批量设置）和 `get`（按 key 取值）是 `useMap` 独有的，`useSet` 没有 `setAll/get`。两者都通过创建新集合（`new Map(prev)`/`new Set(prev)`）实现不可变更新。",
+    "tags": ["ahooks", "中级", "useMap"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`setAll` 和 `get`",
+        "isCorrect": true,
+        "description": "正确。useMap 有 set/setAll/remove/get/reset；useSet 只有 add/remove/reset，缺少 setAll/get。"
+      },
+      {
+        "text": "`add` 和 `remove`",
+        "isCorrect": false,
+        "description": "错误。add 是 useSet 的 action（useMap 用 set），remove 两者都有。"
+      },
+      {
+        "text": "`reset` 和 `remove`",
+        "isCorrect": false,
+        "description": "错误。reset 和 remove 两者都提供，并非 useMap 独有。"
+      },
+      {
+        "text": "`toggle` 和 `clear`",
+        "isCorrect": false,
+        "description": "错误。useMap 和 useSet 都没有 toggle/clear 这两个 action。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`usePrevious(state, shouldUpdate?)` 默认判断「值是否发生变化」所使用的比较逻辑是什么？",
+    "explanation": "`usePrevious` 默认比较函数为 `(a, b) => !Object.is(a, b)`，即当新旧值在 `Object.is` 意义上不相等时才更新「上一个」。它用两个 ref（prevRef/curRef）在渲染期间同步计算，不用 `useEffect`，因此当前渲染就能拿到上一个值。对象按引用比较，每次引用变都会更新；需按字段比较可传自定义 `shouldUpdate`。",
+    "tags": ["ahooks", "中级", "usePrevious"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`!Object.is(a, b)`（即 `Object.is` 不相等时更新）",
+        "isCorrect": true,
+        "description": "正确。默认比较为 (a,b)=> !Object.is(a,b)，可传自定义 shouldUpdate 改变记录时机。"
+      },
+      {
+        "text": "`a !== b`（严格不等运算符）",
+        "isCorrect": false,
+        "description": "错误。默认用的是 !Object.is，而非 !==；两者在 NaN、±0 等边界上行为不同。"
+      },
+      {
+        "text": "`JSON.stringify(a) !== JSON.stringify(b)`（深比较）",
+        "isCorrect": false,
+        "description": "错误。默认不做深比较；要按内容/字段比较需自定义 shouldUpdate。"
+      },
+      {
+        "text": "始终返回 true，每次渲染都更新「上一个」",
+        "isCorrect": false,
+        "description": "错误。默认用 !Object.is 判断，值未变化时不会更新上一个。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useRafState` 与原生 `useState` 的核心区别在于其 `setState` 的执行时机，下列描述正确的是？",
+    "explanation": "`useRafState` 的 `setState` 会在 `requestAnimationFrame` 回调里执行，且每次调用前先 `cancelAnimationFrame` 取消上一帧——因此**同一帧内多次 setState 只保留最后一次**，把更新对齐到下一动画帧，减少高频更新（resize/scroll/mousemove）导致的重复渲染。卸载时通过 `useUnmount` 调用 `cancelAnimationFrame` 防泄漏。它不适合需要立即同步读到新值的场景。",
+    "tags": ["ahooks", "高级", "useRafState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`setState` 推迟到下一动画帧执行，同帧内多次调用只保留最后一次",
+        "isCorrect": true,
+        "description": "正确。每次 setState 前先 cancelAnimationFrame 取消上一帧，把高频更新对齐到下一帧、合并为最后一次。"
+      },
+      {
+        "text": "`setState` 立即同步执行，但会额外触发一次 `requestAnimationFrame` 重绘",
+        "isCorrect": false,
+        "description": "错误。setState 本身被推迟到 rAF 回调里执行，并非立即同步执行。"
+      },
+      {
+        "text": "`setState` 会按调用顺序在同一帧内逐个执行，全部保留",
+        "isCorrect": false,
+        "description": "错误。同帧内由于前一帧被 cancel，只有最后一次 setState 生效。"
+      },
+      {
+        "text": "`setState` 会节流到固定 1000ms 间隔执行",
+        "isCorrect": false,
+        "description": "错误。useRafState 对齐到动画帧（约每 16ms 一帧），与固定 1000ms 节流无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，`useGetState` 相比原生 `useState` 多返回的第三项 `getState()` 主要用于解决什么问题？",
+    "explanation": "`useGetState` 在 `useState` 基础上多返回 `getState()`，内部用 `useLatest` 维护一个始终指向最新 state 的 ref，`getState` 经 `useCallback([])` 包裹同步读取最新值。它用于解决**闭包陈旧（stale closure）**问题——例如在 `setInterval`/`setTimeout`/事件回调里读到的是最新 state 而非定义时捕获的旧值。`getState` 只读不触发渲染。",
+    "tags": ["ahooks", "高级", "useGetState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 setInterval/setTimeout/事件回调中读取最新 state，绕过闭包陈旧问题",
+        "isCorrect": true,
+        "description": "正确。getState 用 useLatest 维护最新值 ref，解决 stale closure，且只读不触发渲染。"
+      },
+      {
+        "text": "强制组件立即同步重新渲染并返回新值",
+        "isCorrect": false,
+        "description": "错误。getState 只读取最新值，不触发任何渲染。"
+      },
+      {
+        "text": "把 state 持久化到 localStorage 后再读取",
+        "isCorrect": false,
+        "description": "错误。getState 仅读内存中的最新 state，与持久化无关（那是 useLocalStorageState 的职责）。"
+      },
+      {
+        "text": "在更新 state 时跳过浅比较，强制写入相同的值",
+        "isCorrect": false,
+        "description": "错误。getState 是读取器，不参与写入或比较逻辑。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，独立包 `useUrlState` 关于包名、依赖与 query 值类型，下列描述完全正确的是？",
+    "explanation": "`useUrlState` 的正确包名是带点的 **`@ahooks.js/use-url-state`**（不是 `@ahooksjs/use-url-state`）；它必须安装 `react-router` 作为 peerDependency（`^5 || ^6 || ^7`）并在 Router 上下文内使用（v5 用 `history[navigateMode]()`，v6/v7 用 `useNavigate`）；基于 `query-string`，默认 `parseNumbers:false`/`parseBooleans:false`，所以读出来的 query 值默认**全是字符串**，需要数字/布尔要自行转换或配 `parseOptions`。`navigateMode` 默认 `'push'`。",
+    "tags": ["ahooks", "专家", "useUrlState"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "包名是带点的 `@ahooks.js/use-url-state`，需装 react-router(5/6/7) peerDep，query 值默认全是字符串",
+        "isCorrect": true,
+        "description": "正确。三点全对：带点包名、react-router peerDep（^5 || ^6 || ^7）、parseNumbers/parseBooleans 默认 false 使值为字符串。"
+      },
+      {
+        "text": "包名是 `@ahooksjs/use-url-state`，无需任何 peerDependency 即可独立使用",
+        "isCorrect": false,
+        "description": "错误。包名带点（@ahooks.js），且必须安装 react-router 作为 peerDependency。"
+      },
+      {
+        "text": "包名是 `@ahooks.js/use-url-state`，但默认会把数字字符串自动 parse 成 number",
+        "isCorrect": false,
+        "description": "错误。默认 parseNumbers:false，不会自动转数字，值默认是字符串。"
+      },
+      {
+        "text": "它内置于核心 ahooks 包，`navigateMode` 默认为 `'replace'`",
+        "isCorrect": false,
+        "description": "错误。useUrlState 是独立包而非内置，且 navigateMode 默认是 'push' 而非 'replace'。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useUpdateEffect 与原生 useEffect 相比，最主要的行为差异是什么？",
+    "explanation": "`useUpdateEffect` 的用法与 `useEffect` 完全一致，唯一区别是它**会忽略首次渲染时的执行**，只在依赖数组 `deps` 更新时才触发回调。这在「初次挂载不想跑副作用，只想监听后续变化」的场景非常有用。",
+    "tags": ["ahooks", "入门", "effect"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用法与 useEffect 一致，但忽略首次执行，只在 deps 更新时触发",
+        "isCorrect": true,
+        "description": "正确。这正是 useUpdateEffect 的设计目的：跳过 mount 时的首次调用。"
+      },
+      {
+        "text": "它会把回调延迟到下一帧执行，相当于 requestAnimationFrame 包装",
+        "isCorrect": false,
+        "description": "错误。延迟到下一帧是 rAF 系列 hook 的行为，与 useUpdateEffect 无关。"
+      },
+      {
+        "text": "它只在组件卸载时执行一次回调，类似 cleanup",
+        "isCorrect": false,
+        "description": "错误。useUpdateEffect 仍在 deps 更新时执行，并非只在卸载时跑。"
+      },
+      {
+        "text": "它会对 deps 做深比较，避免引用变化导致的重复执行",
+        "isCorrect": false,
+        "description": "错误。深比较是 useDeepCompareEffect 的能力，useUpdateEffect 仍用默认的浅比较。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useDebounceFn(fn) 在不传任何配置时，默认的防抖等待时间 wait 是多少？",
+    "explanation": "`useDebounceFn` 基于 lodash 的 debounce 实现，配置项 `wait` 的**默认值为 1000 毫秒**。此外 `leading` 默认 `false`、`trailing` 默认 `true`，还支持可选的 `maxWait`。",
+    "tags": ["ahooks", "初级", "debounce"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "1000 毫秒",
+        "isCorrect": true,
+        "description": "正确。debounce 与 throttle 系列的 wait 默认值都是 1000ms。"
+      },
+      {
+        "text": "300 毫秒",
+        "isCorrect": false,
+        "description": "错误。300ms 是 useLongPress 的默认长按延迟，不是 useDebounceFn 的 wait。"
+      },
+      {
+        "text": "500 毫秒",
+        "isCorrect": false,
+        "description": "错误。文档中 wait 默认为 1000ms，500ms 通常是示例里手动设置的值。"
+      },
+      {
+        "text": "0 毫秒（即下一个事件循环执行）",
+        "isCorrect": false,
+        "description": "错误。默认并非 0，而是 1000ms。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useDebounceFn 返回的是什么？应当如何触发被防抖的函数？",
+    "explanation": "`useDebounceFn` **不会直接返回一个函数**，而是返回一个对象 `{ run, cancel, flush }`。需要调用 `run` 来执行（且 `run` 会透传参数），`cancel` 取消等待中的调用，`flush` 立即执行。这是常见陷阱：直接把返回值当函数调用会出错。",
+    "tags": ["ahooks", "初级", "debounce"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回 { run, cancel, flush } 对象，需调用 run 来触发",
+        "isCorrect": true,
+        "description": "正确。useDebounceFn 与 useThrottleFn 都返回这种对象，run 才是真正执行入口。"
+      },
+      {
+        "text": "直接返回一个已防抖的函数，可像普通函数那样调用",
+        "isCorrect": false,
+        "description": "错误。它返回对象而非函数，直接当函数调用会报错，这是高频踩坑点。"
+      },
+      {
+        "text": "返回 [debouncedFn, cancel] 的数组，按位置解构",
+        "isCorrect": false,
+        "description": "错误。返回的是对象不是数组，且包含 run/cancel/flush 三个方法。"
+      },
+      {
+        "text": "返回一个 ref，通过 .current 访问防抖函数",
+        "isCorrect": false,
+        "description": "错误。返回值是普通对象，并非 ref。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 中 useDebounceFn 与 useThrottleFn 的 leading 默认值，下列说法正确的是？",
+    "explanation": "这是一个不对称的默认值陷阱：**防抖系（useDebounceFn / useDebounceEffect）的 leading 默认为 false**，而**节流系（useThrottleFn / useThrottleEffect）的 leading 默认为 true**。两者的 trailing 都默认 true，wait 都默认 1000ms。",
+    "tags": ["ahooks", "中级", "debounce-throttle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防抖系 leading 默认 false，节流系 leading 默认 true",
+        "isCorrect": true,
+        "description": "正确。这正是研究事实中强调的不对称默认值陷阱。"
+      },
+      {
+        "text": "两者 leading 默认都为 true",
+        "isCorrect": false,
+        "description": "错误。只有节流系默认 true，防抖系默认 false。"
+      },
+      {
+        "text": "两者 leading 默认都为 false",
+        "isCorrect": false,
+        "description": "错误。只有防抖系默认 false，节流系默认 true。"
+      },
+      {
+        "text": "防抖系 leading 默认 true，节流系 leading 默认 false",
+        "isCorrect": false,
+        "description": "错误。把两者的默认值搞反了。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的节流 Hook（useThrottleFn / useThrottleEffect）相比防抖 Hook，在配置项上缺少哪一个选项？",
+    "explanation": "防抖系（useDebounceFn / useDebounceEffect）支持 `maxWait` 配置，而**节流系（useThrottleFn / useThrottleEffect）没有 maxWait**，只有 `wait`、`leading`、`trailing`。这是因为节流本身已限制最大执行间隔，无需 maxWait。",
+    "tags": ["ahooks", "中级", "throttle"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "maxWait",
+        "isCorrect": true,
+        "description": "正确。节流系没有 maxWait，这是与防抖系配置上的关键差异。"
+      },
+      {
+        "text": "wait",
+        "isCorrect": false,
+        "description": "错误。节流系仍有 wait（默认 1000ms）。"
+      },
+      {
+        "text": "leading",
+        "isCorrect": false,
+        "description": "错误。节流系有 leading（默认 true）。"
+      },
+      {
+        "text": "trailing",
+        "isCorrect": false,
+        "description": "错误。节流系有 trailing（默认 true）。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useDeepCompareEffect 对依赖 deps 进行比较时，使用的是哪种比较方式？",
+    "explanation": "`useDeepCompareEffect`（及其 LayoutEffect 版本）用 **react-fast-compare 的 isEqual 进行深比较**，而**不是** lodash 的 isEqual，也不是 React 默认的引用（浅）比较。当依赖是对象/数组且内容未变但引用变化时，它能避免不必要的重复执行。",
+    "tags": ["ahooks", "高级", "deep-compare"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "使用 react-fast-compare 的 isEqual 深比较",
+        "isCorrect": true,
+        "description": "正确。研究事实明确指出用的是 react-fast-compare，而非 lodash。"
+      },
+      {
+        "text": "使用 lodash 的 isEqual 深比较",
+        "isCorrect": false,
+        "description": "错误。常见误解，实际用的是 react-fast-compare 而非 lodash。"
+      },
+      {
+        "text": "使用 Object.is 的引用比较",
+        "isCorrect": false,
+        "description": "错误。引用比较是原生 useEffect 的行为，正是 useDeepCompareEffect 要替代的。"
+      },
+      {
+        "text": "使用 JSON.stringify 后的字符串比较",
+        "isCorrect": false,
+        "description": "错误。它并非通过序列化字符串比较，而是用 react-fast-compare 的深比较算法。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中使用 useInterval(fn, delay) 时，若想暂停定时器，应将 delay 设置为什么值？",
+    "explanation": "`useInterval` 的 `delay` 设为 **undefined 或 null 时会暂停**定时器。它还有 `immediate`（默认 false）选项控制是否立即执行一次。注意它的返回值是 `clear` 清除函数，而非定时器 id。",
+    "tags": ["ahooks", "中级", "interval"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "undefined 或 null",
+        "isCorrect": true,
+        "description": "正确。delay 为 undefined/null 时暂停，这是控制定时器启停的标准做法。"
+      },
+      {
+        "text": "0",
+        "isCorrect": false,
+        "description": "错误。delay 为 0 意味着尽可能频繁执行，并不会暂停。"
+      },
+      {
+        "text": "-1",
+        "isCorrect": false,
+        "description": "错误。文档约定的暂停值是 undefined/null，而非负数。"
+      },
+      {
+        "text": "false",
+        "isCorrect": false,
+        "description": "错误。delay 接收数字或 undefined/null，传 false 不是约定的暂停方式。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useInterval 与 useTimeout 在配置选项上的区别是什么？",
+    "explanation": "`useInterval` 支持 `immediate`（默认 false）选项，用于在首次启动时立即执行一次回调；而 **useTimeout 没有 immediate 选项**，只接收 `fn` 和 `delay`。两者返回值都是 `clear` 清除函数。",
+    "tags": ["ahooks", "中级", "timer"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useInterval 有 immediate 选项，useTimeout 没有",
+        "isCorrect": true,
+        "description": "正确。immediate 仅存在于 useInterval（默认 false），useTimeout 无此选项。"
+      },
+      {
+        "text": "useTimeout 有 immediate 选项，useInterval 没有",
+        "isCorrect": false,
+        "description": "错误。把两者的能力说反了。"
+      },
+      {
+        "text": "两者都支持 immediate 选项",
+        "isCorrect": false,
+        "description": "错误。useTimeout 没有 immediate。"
+      },
+      {
+        "text": "两者都不支持 immediate 选项",
+        "isCorrect": false,
+        "description": "错误。useInterval 是支持 immediate 的。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useRafInterval / useRafTimeout（基于 requestAnimationFrame 模拟），下列描述正确的是？",
+    "explanation": "`useRafInterval` / `useRafTimeout` 用 **requestAnimationFrame 模拟定时器**：**页面隐藏/不渲染时不执行**，因此不适合后台任务，也不适合小于 16ms 的低延迟场景；在 **Node 环境会降级为 setInterval/setTimeout**。",
+    "tags": ["ahooks", "高级", "raf-timer"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "页面隐藏时不执行，不适合后台任务和 16ms 以下的延迟，Node 下降级为原生定时器",
+        "isCorrect": true,
+        "description": "正确。这完整概括了 rAF 系定时器的限制与降级行为。"
+      },
+      {
+        "text": "即使页面隐藏也会按 delay 精确执行，适合后台轮询",
+        "isCorrect": false,
+        "description": "错误。页面隐藏时 rAF 暂停，恰恰不适合后台轮询。"
+      },
+      {
+        "text": "延迟可精确到 1ms，适合高频动画的精细控制",
+        "isCorrect": false,
+        "description": "错误。rAF 受刷新率限制，不适合 16ms 以下的延迟。"
+      },
+      {
+        "text": "在 Node 环境会抛错，因为没有 requestAnimationFrame",
+        "isCorrect": false,
+        "description": "错误。Node 下不会抛错，而是降级为 setInterval/setTimeout。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useLockFn 在上一次异步调用尚未完成时，再次并发调用包装后的函数会发生什么？",
+    "explanation": "`useLockFn` 给异步函数加竞态锁：当上一次调用的 Promise **尚未完成时，并发的再次调用会被忽略**，且这些被忽略的调用会**返回 undefined**（包装后函数签名为 `Promise<V | undefined>`）。常用于防止表单重复提交。",
+    "tags": ["ahooks", "高级", "lock"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "并发调用被忽略，且返回 undefined",
+        "isCorrect": true,
+        "description": "正确。这是竞态锁的核心行为，被忽略的调用 resolve 为 undefined。"
+      },
+      {
+        "text": "并发调用会排队，等上一次完成后依次执行",
+        "isCorrect": false,
+        "description": "错误。useLockFn 是忽略而非排队，不会缓冲后续调用。"
+      },
+      {
+        "text": "并发调用会抛出 LockError 异常",
+        "isCorrect": false,
+        "description": "错误。它不抛错，只是静默忽略并返回 undefined。"
+      },
+      {
+        "text": "并发调用会取消上一次正在进行的请求",
+        "isCorrect": false,
+        "description": "错误。它不取消进行中的调用，而是忽略新发起的调用。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useEventListener('click', handler) 在不指定 target 选项时，默认会把事件监听挂在哪个对象上？",
+    "explanation": "`useEventListener` 的 `target` 选项**默认为 window**。其余布尔选项中 `enable` 默认 true，`capture`、`once`、`passive` 默认均为 false。可传入 ref、DOM 元素或返回它们的函数来指定目标。",
+    "tags": ["ahooks", "初级", "event-listener"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "window",
+        "isCorrect": true,
+        "description": "正确。target 不传时默认为 window。"
+      },
+      {
+        "text": "document",
+        "isCorrect": false,
+        "description": "错误。useScroll 默认 target 是 document，但 useEventListener 默认是 window。"
+      },
+      {
+        "text": "document.body",
+        "isCorrect": false,
+        "description": "错误。默认目标是 window 而非 body。"
+      },
+      {
+        "text": "当前组件的根 DOM 节点",
+        "isCorrect": false,
+        "description": "错误。它不会自动绑定到组件根节点，默认是 window。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useExternal 用于动态注入外部 JS/CSS，其返回的 status 不可能是下列哪个值？",
+    "explanation": "`useExternal(path, options)` 返回资源加载状态，取值为 **unset / loading / ready / error** 四种。它会保证同一资源全局只加载一次；`keepWhenUnused` 默认 false（不再使用时移除）；缺省 `type` 时按文件后缀判断。题中 `pending` 并非合法状态值。",
+    "tags": ["ahooks", "中级", "external"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pending",
+        "isCorrect": true,
+        "description": "正确（即「不可能出现的值」）。合法状态是 unset/loading/ready/error，没有 pending。"
+      },
+      {
+        "text": "loading",
+        "isCorrect": false,
+        "description": "错误。loading 是资源加载中的合法状态。"
+      },
+      {
+        "text": "ready",
+        "isCorrect": false,
+        "description": "错误。ready 表示资源加载完成，是合法状态。"
+      },
+      {
+        "text": "error",
+        "isCorrect": false,
+        "description": "错误。error 表示加载失败，是合法状态。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中使用 useTitle 设置页面标题时，若希望组件卸载后恢复为原来的标题，应该怎么做？",
+    "explanation": "`useTitle(title, options)` 用于设置 `document.title`，其选项 `restoreOnUnmount` **默认为 false**；要在组件卸载后恢复原标题，需显式传入 `{ restoreOnUnmount: true }`。",
+    "tags": ["ahooks", "中级", "title"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "传入选项 { restoreOnUnmount: true }，因为它默认是 false",
+        "isCorrect": true,
+        "description": "正确。restoreOnUnmount 默认 false，需显式开启才会在卸载时恢复。"
+      },
+      {
+        "text": "什么都不用做，useTitle 默认就会在卸载时恢复原标题",
+        "isCorrect": false,
+        "description": "错误。默认 restoreOnUnmount 为 false，不会自动恢复。"
+      },
+      {
+        "text": "在 useEffect 的 cleanup 里手动调用 useTitle(原标题)",
+        "isCorrect": false,
+        "description": "错误。hook 不能在 cleanup 中调用，且无需手动处理，开启选项即可。"
+      },
+      {
+        "text": "传入 { keepWhenUnused: false }",
+        "isCorrect": false,
+        "description": "错误。keepWhenUnused 是 useExternal 的选项，与 useTitle 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Ahooks 的 useFavicon，下列哪一项是其文档明确指出的限制？",
+    "explanation": "`useFavicon(href)` 支持 svg / png / ico / gif 格式的图标，但文档明确指出 **Safari 浏览器无法动态设置 favicon**，这是该 Hook 已知的兼容性限制。",
+    "tags": ["ahooks", "高级", "favicon"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 Safari 浏览器中无法动态设置 favicon",
+        "isCorrect": true,
+        "description": "正确。这是 useFavicon 文档明确提到的兼容性限制。"
+      },
+      {
+        "text": "只支持 ico 格式，不支持 svg 或 png",
+        "isCorrect": false,
+        "description": "错误。它支持 svg/png/ico/gif 多种格式。"
+      },
+      {
+        "text": "在组件卸载时必须手动恢复原 favicon",
+        "isCorrect": false,
+        "description": "错误。文档未要求卸载时手动恢复，限制点在于 Safari。"
+      },
+      {
+        "text": "在 Chrome 中需要 HTTPS 才能生效",
+        "isCorrect": false,
+        "description": "错误。文档未提及 HTTPS 限制，真正的限制是 Safari。"
+      }
+    ]
+  },
+  {
+    "stem": "Ahooks 的 useKeyPress 中 exactMatch 选项默认值是什么，会带来什么效果？",
+    "explanation": "`useKeyPress` 的 `exactMatch` **默认为 false**。在默认（非精确匹配）下，例如监听单独的 `c` 键时，按下 `shift + c` 也会触发回调；只有把 `exactMatch` 设为 true，才会要求按键组合完全一致才触发。",
+    "tags": ["ahooks", "专家", "key-press"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认 false，此时监听单键 c，按 shift+c 也会触发",
+        "isCorrect": true,
+        "description": "正确。非精确匹配下组合键会误触发单键监听，这是常见陷阱。"
+      },
+      {
+        "text": "默认 true，必须按键组合完全一致才触发",
+        "isCorrect": false,
+        "description": "错误。默认是 false，不是 true。"
+      },
+      {
+        "text": "默认 false，但任何组合键都不会触发单键监听",
+        "isCorrect": false,
+        "description": "错误。默认 false 恰恰会让组合键触发单键监听。"
+      },
+      {
+        "text": "该选项不存在，useKeyPress 总是精确匹配",
+        "isCorrect": false,
+        "description": "错误。exactMatch 选项确实存在，且默认 false。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useSize、useScroll、useInViewport 这类依赖目标元素的 Hook，当目标尚未挂载（DOM 不存在）时返回什么？",
+    "explanation": "`useSize`（ResizeObserver）、`useScroll`、`useInViewport` 等依赖目标 DOM 的 Hook，在**目标元素尚未挂载时返回 undefined**。使用其返回值前应做空值判断，否则容易在初次渲染时报错。",
+    "tags": ["ahooks", "中级", "dom-undefined"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回 undefined",
+        "isCorrect": true,
+        "description": "正确。目标未挂载时这些 Hook 返回 undefined，需做空值保护。"
+      },
+      {
+        "text": "返回 { width: 0, height: 0 } 等零值对象",
+        "isCorrect": false,
+        "description": "错误。未挂载时返回的是 undefined 而非零值对象。"
+      },
+      {
+        "text": "返回 null",
+        "isCorrect": false,
+        "description": "错误。研究事实指明返回 undefined，而非 null。"
+      },
+      {
+        "text": "抛出「target not found」错误",
+        "isCorrect": false,
+        "description": "错误。不会抛错，而是安静地返回 undefined。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，使用 useControllableValue 实现一个既支持受控又支持非受控的组件时，它依据什么来判定当前处于「受控模式」？",
+    "explanation": "useControllableValue 源码用 `Object.prototype.hasOwnProperty.call(props, valuePropName)` 判定是否受控——**只要 props 上出现了 value 属性（哪怕值是 undefined）就视为受控**，而不是看值是否非空。这也是「传了 value 但忘传 onChange 导致视图死锁」的根因：受控时 setState 不更新内部 state，仅调用 trigger。",
+    "tags": ["ahooks", "中级", "useControllableValue"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "看 props 上是否「拥有」valuePropName 指定的属性（hasOwnProperty），即使值为 undefined 也算受控",
+        "isCorrect": true,
+        "description": "正确。源码用 hasOwnProperty 检测 props 是否含 value 字段，存在即受控，与具体值无关。"
+      },
+      {
+        "text": "看 props[valuePropName] 的值是否 !== undefined，为 undefined 则视为非受控",
+        "isCorrect": false,
+        "description": "错误。判定基于属性是否存在（hasOwnProperty），不是值是否为 undefined；传 value={undefined} 仍算受控。"
+      },
+      {
+        "text": "看是否同时传入了 value 和 onChange 两个属性，缺一即非受控",
+        "isCorrect": false,
+        "description": "错误。判定只看 valuePropName 是否存在；缺了 onChange 不会变成非受控，反而导致死锁。"
+      },
+      {
+        "text": "看 options 里是否显式设置了 controlled: true 标志",
+        "isCorrect": false,
+        "description": "错误。Options 只有 defaultValue/defaultValuePropName/valuePropName/trigger，没有 controlled 字段。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，父组件给自定义组件传了 `value` 但忘记传 `onChange`，此时内部调用 useControllableValue 返回的 setState 会发生什么？",
+    "explanation": "受控模式下 setState 源码为：算出新值 r 后，因 `isControlled` 为 true 故**不更新内部 stateRef、不调用 update()**；接着 `if (props[trigger]) props[trigger](r, ...)`，由于没传 onChange，trigger 也不会被调用。结果：内部 state 不动、外部也收不到通知，**视图永远不更新**，这是最经典的死锁。",
+    "tags": ["ahooks", "高级", "useControllableValue"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "既不更新内部 state，也无回调上抛，视图永远不更新（典型死锁）",
+        "isCorrect": true,
+        "description": "正确。受控时跳过内部更新，又因无 trigger 回调，状态彻底卡死。"
+      },
+      {
+        "text": "自动降级为非受控模式，更新内部 state 并刷新视图",
+        "isCorrect": false,
+        "description": "错误。受控判定在渲染期已确定，不会因缺 onChange 而降级，setState 不会更新内部 state。"
+      },
+      {
+        "text": "内部 state 正常更新刷新视图，只是不通知父组件",
+        "isCorrect": false,
+        "description": "错误。受控时根本不更新内部 stateRef，也不调 update()，视图不会刷新。"
+      },
+      {
+        "text": "控制台抛出错误提示必须传入 onChange 回调",
+        "isCorrect": false,
+        "description": "错误。源码不会因缺 trigger 报错，只是静默不触发，造成难以察觉的死锁。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，相比原生 useMemo，useCreation 的核心优势是什么？",
+    "explanation": "React 的 useMemo **不保证缓存值一定不被重新计算**（为节省内存可能丢弃缓存后重算）。useCreation 用 ref 存储结果 + 自定义 `depsAreSame` 深比较依赖（含函数比较），**保证 deps 不变时 factory 绝不重新执行**，适合创建只需初始化一次的昂贵实例。",
+    "tags": ["ahooks", "中级", "useCreation"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 ref 存储并配合自定义深比较，保证 deps 不变时 factory 绝不被重新执行",
+        "isCorrect": true,
+        "description": "正确。useMemo 可能丢弃缓存重算，useCreation 用 ref 兜底保证仅在 deps 变化时重建。"
+      },
+      {
+        "text": "useCreation 会自动收集依赖，无需手动传 deps 数组",
+        "isCorrect": false,
+        "description": "错误。useCreation 仍需手动传 deps，写法与 useMemo 一致，遗漏依赖会拿到旧实例。"
+      },
+      {
+        "text": "useCreation 返回值是响应式的，修改属性会自动触发重渲染",
+        "isCorrect": false,
+        "description": "错误。响应式属性是 useReactive 的能力；useCreation 只是稳定地缓存创建结果。"
+      },
+      {
+        "text": "useCreation 在服务端渲染时会跳过 factory，避免 SSR 报错",
+        "isCorrect": false,
+        "description": "错误。SSR 安全是 useIsomorphicLayoutEffect 的特性，与 useCreation 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，用 `const subject = useRef(new Subject()).current` 来缓存实例存在什么问题，而 useCreation 如何避免？",
+    "explanation": "`useRef(new Subject())` 中的 `new Subject()` 表达式**每次渲染都会执行**（即使结果被 useRef 丢弃，构造开销仍在）。useCreation 接收的是 factory 函数，**只在需要时（首次或 deps 变化）才调用 factory**，避免了每次渲染的无谓构造开销。",
+    "tags": ["ahooks", "高级", "useCreation"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useRef(new Subject()) 每次渲染都会执行 new Subject() 产生构造开销；useCreation 只在需要时才调 factory",
+        "isCorrect": true,
+        "description": "正确。useRef 的入参表达式逐次求值，useCreation 用函数延迟创建，仅在必要时执行。"
+      },
+      {
+        "text": "useRef 缓存的值不能跨渲染保持，useCreation 才能持久化",
+        "isCorrect": false,
+        "description": "错误。useRef.current 同样跨渲染持久化，区别在于初始化表达式是否被重复求值。"
+      },
+      {
+        "text": "useRef 不支持泛型，useCreation 才能保留类型信息",
+        "isCorrect": false,
+        "description": "错误。useRef 完全支持泛型；两者类型能力相当，差异在执行时机。"
+      },
+      {
+        "text": "useRef 在 deps 变化时不会重建实例，而 useCreation 永远不重建",
+        "isCorrect": false,
+        "description": "错误。恰相反——useCreation 会在 deps 变化时重建，且这正是它对比 useRef 的灵活点。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useEventEmitter 返回的 emitter 实例在组件多次重渲染期间，其引用会如何变化？",
+    "explanation": "useEventEmitter 内部用 `useRef` 缓存 emitter，`ref.current` **只初始化一次**，整个组件生命周期内引用保持不变。因此可安全地放进依赖数组或作为 props 传给多个子组件实现兄弟通信，不会因引用变化触发无谓更新。",
+    "tags": ["ahooks", "中级", "useEventEmitter"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引用是 useRef 缓存的稳定单例，整个生命周期内不变，可安全放进 deps",
+        "isCorrect": true,
+        "description": "正确。emitter 由 useRef 初始化一次，引用恒定，是兄弟通信的理想载体。"
+      },
+      {
+        "text": "每次重渲染都会创建新的 emitter 实例，需用 useMemo 包裹才稳定",
+        "isCorrect": false,
+        "description": "错误。内部已用 useRef 保证单例，无需额外 useMemo，引用本身就稳定。"
+      },
+      {
+        "text": "emitter 引用随订阅者数量变化而变化",
+        "isCorrect": false,
+        "description": "错误。订阅者存在内部 Set 中，增删订阅不影响 emitter 本身的引用。"
+      },
+      {
+        "text": "引用只在 deps 变化时才重建，类似 useMemo",
+        "isCorrect": false,
+        "description": "错误。useEventEmitter 不接收 deps，emitter 永远是同一个，不存在重建。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，关于 useEventEmitter 的事件模型，下列说法正确的是？",
+    "explanation": "useEventEmitter 的 `emit` 会同步遍历内部 `Set<Subscription>` 调用所有订阅者；它**没有事件名/topic 概念**，一个 emitter 就是一条消息流，需要多条独立的流时必须创建多个 emitter。此外 useSubscription 是 hook，必须在组件顶层调用。",
+    "tags": ["ahooks", "中级", "useEventEmitter"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 emitter 只对应一条消息流，没有 topic 概念，需要多条流就建多个 emitter",
+        "isCorrect": true,
+        "description": "正确。emit 同步广播给所有订阅者，无事件名区分，多流场景需多个 emitter。"
+      },
+      {
+        "text": "emit 时可传入事件名作为 topic，订阅者按 topic 过滤接收",
+        "isCorrect": false,
+        "description": "错误。emit(val) 没有 topic 参数，所有订阅者都会同步收到同一条消息。"
+      },
+      {
+        "text": "emit 是异步派发的，订阅者会在下一个微任务中收到事件",
+        "isCorrect": false,
+        "description": "错误。emit 是同步广播，遍历 Set 立即调用每个订阅回调。"
+      },
+      {
+        "text": "useSubscription 可以在条件判断或循环里按需调用",
+        "isCorrect": false,
+        "description": "错误。useSubscription 是 hook，必须在组件顶层调用，不能放进条件或循环。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useIsomorphicLayoutEffect 是为了解决什么问题？其实现机制是怎样的？",
+    "explanation": "React 在**服务端**调用 useLayoutEffect 会打印警告（useLayoutEffect does nothing on the server）。useIsomorphicLayoutEffect 实现为 `isBrowser ? useLayoutEffect : noop`：浏览器环境用真正的 useLayoutEffect，服务端退化为空函数 noop，从而消除该 SSR 警告。代价是依赖布局测量的逻辑在 SSR 首屏不执行，需客户端水合后才生效。",
+    "tags": ["ahooks", "中级", "useIsomorphicLayoutEffect"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "消除 SSR 警告——浏览器用真正的 useLayoutEffect，服务端退化为 noop",
+        "isCorrect": true,
+        "description": "正确。基于 isBrowser 判断切换实现，服务端用空函数避免 useLayoutEffect 的 SSR 警告。"
+      },
+      {
+        "text": "让 useLayoutEffect 在服务端也能同步执行布局测量逻辑",
+        "isCorrect": false,
+        "description": "错误。服务端退化为 noop，布局测量在 SSR 首屏不执行，需水合后才生效。"
+      },
+      {
+        "text": "把 useLayoutEffect 自动转成 useEffect 以避免阻塞渲染",
+        "isCorrect": false,
+        "description": "错误。浏览器端用的就是真正的 useLayoutEffect，并未转成 useEffect。"
+      },
+      {
+        "text": "在服务端和浏览器端都执行 useLayoutEffect，但服务端去掉警告日志",
+        "isCorrect": false,
+        "description": "错误。服务端是 noop 完全不执行，而非「执行但抑制警告」。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，要在 `useEffect(fn, [])` 内部的 setInterval 回调里读到 state 的最新值（而非闭包捕获的旧值），useLatest 应如何使用？",
+    "explanation": "useLatest 实现极简：`const ref = useRef(value); ref.current = value; return ref;`——每次渲染都把最新值写入 ref.current。在定时器/事件回调里通过 **`latestRef.current`** 读取即可拿到最新值，绕开闭包陷阱。注意：必须用 `.current` 读，且它不触发重渲染，只能「读最新值」不能驱动 UI。",
+    "tags": ["ahooks", "中级", "useLatest"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在定时器回调里读 latestRef.current，每次渲染 useLatest 都已把最新值写入 ref",
+        "isCorrect": true,
+        "description": "正确。useLatest 渲染期更新 ref.current，回调通过 .current 即可读到最新值。"
+      },
+      {
+        "text": "直接使用 useLatest 返回的 ref 对象本身作为值参与运算",
+        "isCorrect": false,
+        "description": "错误。返回的是 ref 对象，必须通过 .current 取值，直接用 ref 对象不行。"
+      },
+      {
+        "text": "把 useLatest 返回值放进 useEffect 的 deps 数组以触发重新执行",
+        "isCorrect": false,
+        "description": "错误。ref 变更不通知 React，放 deps 也不会触发重渲染或重执行 effect。"
+      },
+      {
+        "text": "调用 latestRef() 这个函数来获取最新值",
+        "isCorrect": false,
+        "description": "错误。useLatest 返回的是 ref 对象不是函数，取值用 .current 属性。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useMemoizedFn 相比原生 useCallback 的关键区别是什么？",
+    "explanation": "useMemoizedFn 返回的函数**引用永久稳定**（跨渲染始终同一身份），但调用时**永远执行最新的 fn 闭包**（内部 fnRef 持有最新 fn，包装器 apply 调用）。useCallback 在 deps 变化时引用会变，且需手写 deps。useMemoizedFn 无需写 deps 且引用绝对稳定，适合传给 memo 子组件或放进其他 hook 的 deps。",
+    "tags": ["ahooks", "中级", "useMemoizedFn"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引用永久稳定且无需写 deps，但调用时始终执行最新逻辑",
+        "isCorrect": true,
+        "description": "正确。fnRef 保最新逻辑，memoizedFn 包装器保引用稳定，省去 useCallback 的 deps 维护。"
+      },
+      {
+        "text": "useMemoizedFn 会在 deps 变化时返回新引用，更适合触发 effect",
+        "isCorrect": false,
+        "description": "错误。它的引用永不变，恰恰不能用于「引用变化触发 effect」。"
+      },
+      {
+        "text": "useMemoizedFn 会缓存函数的返回值，避免重复计算",
+        "isCorrect": false,
+        "description": "错误。它缓存的是函数引用本身，不缓存调用结果，每次调用都执行最新逻辑。"
+      },
+      {
+        "text": "useMemoizedFn 自动对参数做深比较，相同参数返回缓存结果",
+        "isCorrect": false,
+        "description": "错误。它不做参数比较或结果缓存，只是稳定函数引用 + 调用最新闭包。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，假设有 `const onClick = useMemoizedFn(...)`，下列哪种用法是它的「反效果」陷阱？",
+    "explanation": "useMemoizedFn 返回的函数引用**永久不变**。如果你想利用「函数引用变化」来标记逻辑变更、触发某个依赖该函数的 useEffect 重新执行，那 useMemoizedFn 会让该 effect **永远不会因它而重跑**——因为引用从不变。这与它的设计初衷（稳定引用做性能优化）相反，属于误用。",
+    "tags": ["ahooks", "高级", "useMemoizedFn"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把它放进某 effect 的 deps，期望它的引用变化来触发该 effect 重新执行",
+        "isCorrect": true,
+        "description": "正确。引用永不变，无法用作「逻辑变化」的触发信号，这与设计目的相反。"
+      },
+      {
+        "text": "把它作为 props 传给 React.memo 包裹的子组件",
+        "isCorrect": false,
+        "description": "错误。这正是推荐用法——稳定引用避免子组件无谓重渲染。"
+      },
+      {
+        "text": "把它放进另一个 hook 的 deps 以避免无谓更新",
+        "isCorrect": false,
+        "description": "错误。稳定引用进 deps 不会触发无谓更新，是正确的性能优化用法。"
+      },
+      {
+        "text": "在它的函数体内读取最新的 state / props",
+        "isCorrect": false,
+        "description": "错误。读取最新闭包值正是 useMemoizedFn 的能力，并非陷阱。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useReactive 创建的状态对象，当对某个属性赋上「与当前完全相同的值」时会发生什么？",
+    "explanation": "useReactive 的 `set`（及 deleteProperty）陷阱**无条件调用 cb()**（即 useUpdate 的 update()）触发重渲染——它**不比较新旧值**，所以赋相同值也会引发一次重渲染。此外 useReactive 用 useCreation 包一次 Proxy，get 递归代理嵌套对象/数组，但不兼容 Map/Set，解构属性会丢失响应式。",
+    "tags": ["ahooks", "高级", "useReactive"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仍会触发 update() 导致重渲染，因为 set 陷阱不比较新旧值",
+        "isCorrect": true,
+        "description": "正确。set 陷阱无条件调用 update()，赋相同值同样触发重渲染。"
+      },
+      {
+        "text": "会跳过更新，因为 Proxy 内部用 Object.is 比较后发现值未变",
+        "isCorrect": false,
+        "description": "错误。useReactive 的 set 不做新旧值比较，不存在跳过更新的优化。"
+      },
+      {
+        "text": "会抛出错误，因为 useReactive 禁止给属性赋相同值",
+        "isCorrect": false,
+        "description": "错误。赋相同值是合法操作，不会报错，只是会多触发一次重渲染。"
+      },
+      {
+        "text": "只更新数据但不触发重渲染，需手动调用 forceUpdate",
+        "isCorrect": false,
+        "description": "错误。set 陷阱本身就会调用 update() 触发重渲染，无需手动 forceUpdate。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，使用 useReactive 时，下列哪种写法会导致响应式追踪失效？",
+    "explanation": "useReactive 的响应式依赖于通过 Proxy 访问属性。**直接解构 `const { count } = state` 会得到属性当前的快照值，脱离 Proxy 的 get/set 追踪**，后续 count 的变化不再触发视图更新。要保持响应式必须始终通过 `state.xxx` 访问。此外它不兼容 Map/Set，对不可配置且不可写的属性直接返回原值不做代理。",
+    "tags": ["ahooks", "高级", "useReactive"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "解构 const { count } = state 后使用 count，拿到的是脱离追踪的快照值",
+        "isCorrect": true,
+        "description": "正确。解构脱离 Proxy 访问，得到快照值不再追踪，必须始终走 state.xxx。"
+      },
+      {
+        "text": "在事件回调里写 state.count++ 来修改并刷新",
+        "isCorrect": false,
+        "description": "错误。这是正确用法——通过 state.xxx 访问与修改，能正常触发响应式更新。"
+      },
+      {
+        "text": "调用 state.list.push(x) 操作嵌套数组",
+        "isCorrect": false,
+        "description": "错误。get 陷阱对嵌套数组递归代理，push 能被捕获并触发更新，属正确用法。"
+      },
+      {
+        "text": "通过 state.user.name 读取嵌套对象的属性",
+        "isCorrect": false,
+        "description": "错误。嵌套对象被递归代理，通过链式访问能保持响应式，是正确用法。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，调试时想知道「具体是哪个依赖项的变化触发了本次 effect」，应使用哪个 hook？其回调能拿到什么信息？",
+    "explanation": "useTrackedEffect 是增强版 useEffect，其 effect 回调签名为 `(changes?, previousDeps?, currentDeps?)`：**changes 是发生变化的依赖项下标数组**（如 [0, 2]），previousDeps 是上次依赖列表，currentDeps 是本次。变化检测用 diffTwoDeps 逐项 Object.is 比较返回不等项索引。它是开发调试工具，不建议在生产逻辑里用下标做条件分支。",
+    "tags": ["ahooks", "中级", "useTrackedEffect"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useTrackedEffect，回调首参 changes 是发生变化的依赖项下标数组",
+        "isCorrect": true,
+        "description": "正确。useTrackedEffect 回调提供 changes(变化下标数组)、previousDeps、currentDeps 三参。"
+      },
+      {
+        "text": "useWhyDidYouUpdate，回调返回变化的依赖项名称数组",
+        "isCorrect": false,
+        "description": "错误。useWhyDidYouUpdate 用于排查 props 变化导致的重渲染，不追踪 effect 依赖下标。"
+      },
+      {
+        "text": "useTrackedEffect，回调首参直接返回变化依赖的「值」数组",
+        "isCorrect": false,
+        "description": "错误。首参 changes 是变化项的下标数组，不是值数组；值在 previousDeps/currentDeps 里。"
+      },
+      {
+        "text": "useLatest，通过比较 ref 前后值得到变化的依赖",
+        "isCorrect": false,
+        "description": "错误。useLatest 只缓存最新值，不做依赖追踪，也无变化检测能力。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，关于调试 hook useWhyDidYouUpdate 的行为，下列说法正确的是？",
+    "explanation": "useWhyDidYouUpdate(componentName, props) 用 useRef 存上次 props，渲染后用 **Object.is 浅比较**合并两边 key，把变化项收集为 `{ propName: { from, to } }`，有变化时 `console.log('[why-did-you-update]', componentName, changedProps)`。由于是浅比较，**引用类型 prop（对象/数组/函数）内容相同但引用变了也会被报告为变化**——这恰恰是定位无谓重渲染的关键信号。它是纯开发调试工具，上线前应移除。",
+    "tags": ["ahooks", "高级", "useWhyDidYouUpdate"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 Object.is 浅比较，引用类型 prop 内容相同但引用变了也会被报告为变化",
+        "isCorrect": true,
+        "description": "正确。浅比较下引用变化即报告，这正是定位无谓重渲染的核心用途。"
+      },
+      {
+        "text": "用深比较，只有当对象/数组内容真正改变时才报告变化",
+        "isCorrect": false,
+        "description": "错误。它用 Object.is 浅比较，引用变化即报告，不做内容深比较。"
+      },
+      {
+        "text": "它返回一个包含变化项的对象供组件内消费",
+        "isCorrect": false,
+        "description": "错误。useWhyDidYouUpdate 无返回值，仅通过 console.log 输出变化信息。"
+      },
+      {
+        "text": "它适合保留在生产代码中持续监控性能",
+        "isCorrect": false,
+        "description": "错误。它是纯开发调试工具，每次渲染都比较 + log 有开销，上线前应移除。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useMount 的实现细节里，当传入的 fn 是一个返回 Promise 的 async 函数时会怎样处理？",
+    "explanation": "useMount 实现：`useEffect(() => { const result = fn?.(); if (isThenable(result)) return; return result; }, [])`。**若 fn 返回 Promise（thenable），isThenable 拦截后直接 return，不会把 Promise 当作 cleanup 函数返回**（避免误用）；若返回普通函数则作为清理函数。此外 deps 恒为 []，闭包捕获初始值，需最新值要配合 useLatest/useMemoizedFn。",
+    "tags": ["ahooks", "高级", "useMount"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "isThenable 检测到返回 Promise 后直接 return，不会把它当作 cleanup 函数",
+        "isCorrect": true,
+        "description": "正确。isThenable 拦截 Promise，避免把异步函数的返回值误用为清理函数。"
+      },
+      {
+        "text": "会把返回的 Promise 当作 cleanup 函数，在卸载时 await 它",
+        "isCorrect": false,
+        "description": "错误。源码恰恰用 isThenable 拦截以防止把 Promise 误当 cleanup。"
+      },
+      {
+        "text": "会自动 await 该 Promise 后再完成挂载流程",
+        "isCorrect": false,
+        "description": "错误。useMount 不会 await fn 的返回值，只是检测并跳过 thenable。"
+      },
+      {
+        "text": "开发模式会报错提示 useMount 不支持 async 函数",
+        "isCorrect": false,
+        "description": "错误。返回 Promise 是被允许的（仅不当 cleanup），不会报错；报错只发生在 fn 非函数时。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，useUnmount 为何要借助 useLatest 来存储回调，再在 cleanup 中调用 fnRef.current()？",
+    "explanation": "useUnmount 实现：`const fnRef = useLatest(fn); useEffect(() => () => fnRef.current(), [])`。cleanup 里调 **fnRef.current() 而非闭包里的 fn**，保证卸载时执行的永远是「最新」的回调，避免 stale closure（旧闭包）。同时因 deps 是空数组 []，不会因每次传入不同 fn 而反复重新注册 effect，只在真正卸载时触发一次。",
+    "tags": ["ahooks", "高级", "useUnmount"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "确保卸载时执行最新回调避免 stale closure，且 deps 为 [] 不因 fn 变化重新注册",
+        "isCorrect": true,
+        "description": "正确。useLatest 让 cleanup 调到最新 fn，空 deps 避免重复注册，只在卸载时触发。"
+      },
+      {
+        "text": "为了让 useUnmount 在每次 fn 变化时都重新注册卸载逻辑",
+        "isCorrect": false,
+        "description": "错误。deps 为 [] 正是为了避免重新注册，只在真正卸载时执行一次。"
+      },
+      {
+        "text": "为了让 fn 返回的 Promise 被当作清理函数处理",
+        "isCorrect": false,
+        "description": "错误。Promise 拦截是 useMount 的细节；useUnmount 用 useLatest 是为解 stale closure。"
+      },
+      {
+        "text": "为了在挂载时也能执行一次 fn",
+        "isCorrect": false,
+        "description": "错误。useUnmount 只在卸载的 cleanup 阶段执行 fn，挂载时不执行。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，异步请求返回后想避免对已卸载组件调用 setState，useUnmountedRef 应如何使用？",
+    "explanation": "useUnmountedRef 实现：挂载/重挂载时 `unmountedRef.current = false`，卸载 cleanup 时置 true，返回该 ref。用法是 `if (!unmountedRef.current) { setXxx(...) }`——**读 .current 判断组件是否还在**。它仅供读取卸载状态，本身不触发重渲染。注意现代 React 更推荐 AbortController 取消请求，但此 ref 仍是轻量可行的防护。",
+    "tags": ["ahooks", "中级", "useUnmountedRef"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在异步回调里判断 if (!unmountedRef.current) 再 setState",
+        "isCorrect": true,
+        "description": "正确。读 .current 为 false 表示组件仍挂载，此时 setState 才安全。"
+      },
+      {
+        "text": "直接 if (unmountedRef) 判断组件是否卸载",
+        "isCorrect": false,
+        "description": "错误。返回的是 ref 对象（恒为真值），必须读 .current 才能拿到布尔状态。"
+      },
+      {
+        "text": "卸载时 unmountedRef 变化会自动触发组件重渲染来阻止 setState",
+        "isCorrect": false,
+        "description": "错误。ref 变更不触发重渲染，它只供读取状态，不驱动 UI。"
+      },
+      {
+        "text": "挂载时 unmountedRef.current 为 true，卸载时为 false",
+        "isCorrect": false,
+        "description": "错误。正好相反——挂载时置 false，卸载 cleanup 时置 true。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Ahooks 中，使用 useMount 和 useUnmount 时，关于 React 18 StrictMode 开发模式需要注意什么？",
+    "explanation": "React 18 StrictMode 开发模式下会执行 **mount → unmount → remount** 流程，因此 useMount/useUnmount 的副作用会**多执行一次**。这要求挂载/卸载的副作用必须**幂等**（多次执行结果一致），否则可能出现重复订阅、重复请求等问题。这是 React 18 故意暴露副作用不健壮性的设计。",
+    "tags": ["ahooks", "高级", "useMount"],
+    "categories": [
+      ["技术方向", "Ahooks"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "会因 mount-unmount-remount 多执行一次，副作用必须写成幂等的",
+        "isCorrect": true,
+        "description": "正确。StrictMode 开发模式故意双调用，副作用需幂等以避免重复订阅/请求等问题。"
+      },
+      {
+        "text": "StrictMode 会完全跳过 useMount/useUnmount，需手动关闭才执行",
+        "isCorrect": false,
+        "description": "错误。StrictMode 不跳过而是多执行一次，目的是暴露副作用问题。"
+      },
+      {
+        "text": "该行为只在生产构建中出现，开发模式正常",
+        "isCorrect": false,
+        "description": "错误。恰相反——这是开发模式 StrictMode 的行为，生产构建不会双调用。"
+      },
+      {
+        "text": "ahooks 已内部去重，StrictMode 下 useMount 保证只执行一次",
+        "isCorrect": false,
+        "description": "错误。ahooks 未对 StrictMode 双调用做去重，开发者仍需保证副作用幂等。"
+      }
+    ]
+  }
+]

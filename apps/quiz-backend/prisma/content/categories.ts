@@ -193,6 +193,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Lit", sort: 6 },
               { name: "Alpine.js", sort: 7 },
               { name: "HTMX", sort: 8 },
+              { name: "Preact", sort: 9 },
             ],
           },
           {
@@ -208,6 +209,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "SvelteKit", sort: 7 },
               { name: "TanStack Start", sort: 8 },
               { name: "Analog", sort: 9 },
+              { name: "Remix", sort: 10 },
             ],
           },
           {
@@ -287,6 +289,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "TanStack Query", sort: 3 },
               { name: "Vee-validate", sort: 4 },
               { name: "Vue-i18n", sort: 5 },
+              { name: "Markdown-it", sort: 6 },
             ],
           },
         ],

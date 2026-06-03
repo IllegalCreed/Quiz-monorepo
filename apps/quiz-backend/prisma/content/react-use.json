@@ -1,0 +1,3381 @@
+[
+  {
+    "stem": "关于 React Use（streamich/react-use）的核心定位，以下哪项描述最准确？",
+    "explanation": "react-use 是社区维护的 React Hooks 大集合，**并不包含 ahooks 的 useRequest**。它的异步能力只有 `useAsync`（自动）、`useAsyncFn`（手动）、`useAsyncRetry`（带 retry），三者仅暴露 `loading/error/value`，**没有缓存、去重、轮询**。需要缓存请选 SWR/TanStack Query，企业级请求选 ahooks。",
+    "tags": ["react-use", "入门", "概述"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "社区 React Hooks 集合，异步靠 useAsync/useAsyncFn/useAsyncRetry，无内置缓存/去重/轮询",
+        "isCorrect": true,
+        "description": "准确：三个异步 hook 只提供 loading/error/value，复杂请求需配合 SWR/TanStack Query/ahooks。"
+      },
+      {
+        "text": "内置了与 ahooks useRequest 等价的缓存、轮询、refreshDeps 能力",
+        "isCorrect": false,
+        "description": "错误：react-use 没有 useRequest，也不提供缓存/轮询/refreshDeps。"
+      },
+      {
+        "text": "是 React 官方（Meta）维护的 Hooks 标准库",
+        "isCorrect": false,
+        "description": "错误：react-use 由 streamich 等社区开发者维护，并非 React 官方。"
+      },
+      {
+        "text": "是面向 Vue 的组合式函数库",
+        "isCorrect": false,
+        "description": "错误：那是 VueUse；react-use 服务于 React。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use 中，希望组件挂载时自动发起请求、依赖变化时自动重跑（语义同 useEffect），应使用哪个 hook？",
+    "explanation": "`useAsync(fn, deps?)` 会**自动执行**：挂载即跑、deps 变化重跑，返回 `{loading, error, value}`，语义与 useEffect 一致。`useAsyncFn` 则需要手动调用返回的 callback 才发起。",
+    "tags": ["react-use", "初级", "useAsync"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useAsync",
+        "isCorrect": true,
+        "description": "正确：自动执行，挂载即跑、deps 变化重跑，返回 {loading,error,value}。"
+      },
+      {
+        "text": "useAsyncFn",
+        "isCorrect": false,
+        "description": "错误：useAsyncFn 返回 [state, callback]，需手动调 callback 才发起。"
+      },
+      {
+        "text": "useEffectOnce",
+        "isCorrect": false,
+        "description": "错误：useEffectOnce 只是「只跑一次的 effect」，不处理异步状态。"
+      },
+      {
+        "text": "useInterval",
+        "isCorrect": false,
+        "description": "错误：useInterval 用于声明式定时器，与异步请求无关。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useAsyncFn 与 useAsync 最关键的区别是什么？",
+    "explanation": "`useAsyncFn(fn, deps?, initialState?)` 返回 `[state, callback]`，**只有手动调用 callback（如 onClick 时调 doFetch）才会发起**；而 `useAsync` 是自动执行的。useAsyncFn 还可传 initialState，且 callback 身份会随 deps 变化。",
+    "tags": ["react-use", "中级", "useAsyncFn"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useAsyncFn 返回 [state, callback]，需手动调用 callback 才发起；useAsync 自动执行",
+        "isCorrect": true,
+        "description": "正确：useAsyncFn 手动触发（适合 onClick 调 doFetch），useAsync 挂载/依赖变化自动跑。"
+      },
+      {
+        "text": "useAsyncFn 内置缓存，useAsync 没有",
+        "isCorrect": false,
+        "description": "错误：两者都没有缓存能力。"
+      },
+      {
+        "text": "useAsyncFn 只能用于 GET，useAsync 只能用于 POST",
+        "isCorrect": false,
+        "description": "错误：二者对请求方法没有限制，区别在自动还是手动触发。"
+      },
+      {
+        "text": "useAsyncFn 不返回 loading，useAsync 才返回",
+        "isCorrect": false,
+        "description": "错误：useAsyncFn 的 state 同样含 loading/error/value。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 中需要在异步失败后提供「重试」能力，应选用哪个 hook？",
+    "explanation": "`useAsyncRetry(fn, deps?)` 在 useAsync 基础上多返回一个 `retry` 函数，返回值为 `{loading, error, value, retry}`，调用 retry 即可重新发起。",
+    "tags": ["react-use", "初级", "useAsyncRetry"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useAsyncRetry，返回 {loading,error,value,retry}",
+        "isCorrect": true,
+        "description": "正确：在 useAsync 基础上额外暴露 retry 函数用于重试。"
+      },
+      {
+        "text": "useAsync，调用其返回的 retry",
+        "isCorrect": false,
+        "description": "错误：useAsync 返回 {loading,error,value}，并不含 retry。"
+      },
+      {
+        "text": "useAsyncFn，retry 即第二个返回值 callback",
+        "isCorrect": false,
+        "description": "错误：useAsyncFn 的 callback 是首次发起用的，并非专门的 retry，且语义不同。"
+      },
+      {
+        "text": "useAsyncRetry 不存在，需自行 try/catch 循环",
+        "isCorrect": false,
+        "description": "错误：useAsyncRetry 是 react-use 真实提供的 hook。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use 中使用 useToggle，下面哪种写法是正确且安全的？",
+    "explanation": "`useToggle` 返回 `[on, toggle]`。坑在于**不能把 toggle 直接当 onClick 传**，因为事件对象会被当作真值写入，使布尔变成对象。应写成 `onClick={() => toggle()}`；`toggle(true)/toggle(false)` 可显式设值。",
+    "tags": ["react-use", "中级", "useToggle"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "onClick={() => toggle()}",
+        "isCorrect": true,
+        "description": "正确：用箭头函数包裹，避免把事件对象传入 toggle 造成状态变成对象。"
+      },
+      {
+        "text": "onClick={toggle}",
+        "isCorrect": false,
+        "description": "错误：会把 event 当真值写入，使布尔状态被污染成对象。"
+      },
+      {
+        "text": "onClick={() => toggle(event)}",
+        "isCorrect": false,
+        "description": "错误：传入 event 同样会把状态写成对象，且 toggle 入参应为布尔或省略。"
+      },
+      {
+        "text": "onClick={() => on = !on}",
+        "isCorrect": false,
+        "description": "错误：on 是只读状态，不能直接赋值，必须通过 toggle 更新。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useLocalStorage 默认如何序列化存取数据？传入 options 的 raw:true 又有什么影响？",
+    "explanation": "`useLocalStorage(key, initialValue?, options?)` 默认走 **JSON**（写入 `stringify`、读取 `parse`），返回 `[value, setValue, remove]`。`raw:true` 表示按**原始字符串**存取（此时存非字符串会出错），也可通过 serializer/deserializer 自定义。",
+    "tags": ["react-use", "中级", "useLocalStorage"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 JSON 序列化（写 stringify、读 parse）；raw:true 时按原始字符串存取",
+        "isCorrect": true,
+        "description": "正确：默认 JSON，raw 模式直接存字符串，存非字符串会出错。"
+      },
+      {
+        "text": "默认按原始字符串；raw:true 才启用 JSON",
+        "isCorrect": false,
+        "description": "错误：默认就是 JSON，raw:true 反而关闭 JSON 改用原始字符串。"
+      },
+      {
+        "text": "默认不序列化，必须自己传 serializer 才能用",
+        "isCorrect": false,
+        "description": "错误：默认即提供 JSON 序列化，serializer 仅用于自定义。"
+      },
+      {
+        "text": "默认用 structuredClone 深拷贝后存入",
+        "isCorrect": false,
+        "description": "错误：localStorage 只能存字符串，默认用的是 JSON.stringify。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use 的 useDebounce，下面哪项描述符合其「依赖驱动」的行为？",
+    "explanation": "`useDebounce(fn, ms, deps?)` 返回 `[isReady, cancel]`，是**依赖驱动**的：deps 变化后等待 ms 才调用 fn，等待期间 deps 再变会重置计时；`isReady` 为 false（等待中）/true（已执行）/null（已取消），cancel 可取消挂起调用。",
+    "tags": ["react-use", "高级", "useDebounce"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "deps 变化后等 ms 才调 fn，等待期间 deps 再变会重置；返回 [isReady, cancel]",
+        "isCorrect": true,
+        "description": "正确：依赖驱动、非手动调用，isReady 反映 false/true/null 三态，cancel 取消挂起。"
+      },
+      {
+        "text": "返回一个防抖后的函数，需要手动调用才生效",
+        "isCorrect": false,
+        "description": "错误：useDebounce 由 deps 变化触发，并不返回需手动调用的函数。"
+      },
+      {
+        "text": "按固定间隔每 ms 最多放行一次",
+        "isCorrect": false,
+        "description": "错误：那是节流（throttle）的语义，debounce 是停止变化后才执行。"
+      },
+      {
+        "text": "返回 [value, setValue]，用于存储防抖后的值",
+        "isCorrect": false,
+        "description": "错误：useDebounce 返回 [isReady, cancel]，存防抖值的是其他 hook。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 中 useThrottle 与 useDebounce 在触发时机上的核心区别是什么？",
+    "explanation": "`useThrottle(value, ms?)` 是**固定间隔放行**——每 ms 最多更新一次值；而 `useDebounce` 是**停止变化后才执行**——deps 不再变动并等待 ms 后才调用。二者语义不同，节流保证频率上限，防抖延迟到静默。",
+    "tags": ["react-use", "中级", "useThrottle"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "throttle 按固定间隔放行（每 ms 最多一次），debounce 在停止变化后才执行",
+        "isCorrect": true,
+        "description": "正确：节流限制频率上限，防抖等待输入静默。"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "错误：节流与防抖的触发模型本质不同。"
+      },
+      {
+        "text": "throttle 停止变化后执行，debounce 固定间隔放行",
+        "isCorrect": false,
+        "description": "错误：说反了，固定间隔是节流，静默后执行是防抖。"
+      },
+      {
+        "text": "throttle 只能节流函数，不能节流值",
+        "isCorrect": false,
+        "description": "错误：useThrottle 节流的是值，useThrottleFn 才节流函数。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use 中 useCounter(5, 10, 1) 后调用 inc()，结果是多少？inc/dec 的入参代表什么？",
+    "explanation": "`useCounter(initial, max?, min?)` 中 max/min 默认 null（无界），值被钳制在 min~max。`inc/dec` 的**入参是增量**（默认 ±1），不是目标值。初始 5、inc() 加 1 得 6（在 1~10 范围内，不越界）。",
+    "tags": ["react-use", "中级", "useCounter"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "结果为 6；inc/dec 的入参是增量（默认 ±1），越界会被 clamp",
+        "isCorrect": true,
+        "description": "正确：5+1=6，仍在 1~10 内；inc 默认加 1，传参为增量而非目标值。"
+      },
+      {
+        "text": "结果为 1；inc 的入参是目标值，省略时设为最小值",
+        "isCorrect": false,
+        "description": "错误：inc 入参是增量不是目标值，省略时默认加 1。"
+      },
+      {
+        "text": "结果为 10；inc 会直接跳到 max",
+        "isCorrect": false,
+        "description": "错误：inc 只加增量 1，不会直接跳到上界。"
+      },
+      {
+        "text": "会抛出越界错误，因为超出了 min/max",
+        "isCorrect": false,
+        "description": "错误：6 未越界；即便越界 react-use 也是 clamp 钳制而非报错。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useMap 跟踪的是什么数据结构？要使用真正的 Set 语义应该用哪个 hook？",
+    "explanation": "`useMap(initialObject?)` 跟踪的是**普通 JS 对象**（不是 ES Map：无 has/size，key 会被转字符串），actions 为 `set/setAll/remove/reset/get`。需要真正的集合语义请用 `useSet`。",
+    "tags": ["react-use", "高级", "useMap"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跟踪普通 JS 对象（非 ES Map）；要 Set 语义用 useSet",
+        "isCorrect": true,
+        "description": "正确：useMap 操作的是普通对象，key 转字符串、无 has/size；集合语义用 useSet。"
+      },
+      {
+        "text": "跟踪原生 ES Map 实例，支持 has/size",
+        "isCorrect": false,
+        "description": "错误：useMap 跟踪的是普通对象，没有 ES Map 的 has/size。"
+      },
+      {
+        "text": "跟踪 ES Set 实例，因此可直接当集合用",
+        "isCorrect": false,
+        "description": "错误：集合语义应使用 useSet，useMap 跟踪的是对象。"
+      },
+      {
+        "text": "跟踪 WeakMap，key 必须是对象",
+        "isCorrect": false,
+        "description": "错误：useMap 用普通对象，key 会被转成字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useSetState 与原生 useState 的 setter 相比，更新行为有何不同？",
+    "explanation": "`useSetState(initialState?)` 仿 class 的 `this.setState`，做**浅合并**（不像原生 useState setter 那样整体替换），入参可为对象或函数。坑：仅一层浅合并，嵌套对象会被整层覆盖；与原生 useState 混用易丢字段。",
+    "tags": ["react-use", "中级", "useSetState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useSetState 做一层浅合并（类似 this.setState）；原生 useState setter 是整体替换",
+        "isCorrect": true,
+        "description": "正确：浅合并只保留顶层字段，嵌套对象仍会被整层覆盖。"
+      },
+      {
+        "text": "两者都做深合并，嵌套对象会自动递归合并",
+        "isCorrect": false,
+        "description": "错误：useSetState 只做一层浅合并，嵌套对象被整层覆盖。"
+      },
+      {
+        "text": "useSetState 整体替换，原生 useState 才浅合并",
+        "isCorrect": false,
+        "description": "错误：说反了，浅合并的是 useSetState，原生 setter 是替换。"
+      },
+      {
+        "text": "useSetState 不接受函数入参，只能传对象",
+        "isCorrect": false,
+        "description": "错误：useSetState 入参可以是对象，也可以是函数。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useInterval(callback, delay) 中，如何暂停定时器？关于动态启停的正确做法是？",
+    "explanation": "`useInterval` 是声明式定时器（基于 Dan Abramov 的实现），`delay = null` 即**暂停**，callback 始终引用最新闭包。动态启停应通过 `isRunning ? delay : null` 控制，**不能条件性地调用 hook**。",
+    "tags": ["react-use", "高级", "useInterval"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "传 delay=null 暂停；动态启停用 isRunning?delay:null，不能条件性调用 hook",
+        "isCorrect": true,
+        "description": "正确：null 暂停，通过切换 delay 实现启停，符合 Hooks 调用规则。"
+      },
+      {
+        "text": "传 delay=0 暂停；可以用 if 包裹 useInterval 实现启停",
+        "isCorrect": false,
+        "description": "错误：暂停用 null 不是 0，且 hook 不能条件性调用。"
+      },
+      {
+        "text": "调用返回的 stop() 方法暂停",
+        "isCorrect": false,
+        "description": "错误：useInterval 通过 delay=null 暂停，并非返回 stop 方法。"
+      },
+      {
+        "text": "卸载组件是唯一停止方式",
+        "isCorrect": false,
+        "description": "错误：传 delay=null 即可在不卸载的情况下暂停。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useClickAway(ref, onClickAway) 有一个常见坑，下列哪项描述正确？",
+    "explanation": "`useClickAway(ref, onClickAway, events?)` 在点击 ref 元素外部时触发，默认监听 `mousedown` 与 `touchstart`（可自定义如 click）。坑：**通过 portal 渲染的子层点击会被判为「外部」而误触发**，且 ref 必须挂到目标元素。",
+    "tags": ["react-use", "高级", "useClickAway"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "portal 渲染的子层点击会被判为外部，从而误触发 onClickAway",
+        "isCorrect": true,
+        "description": "正确：portal 内容不在 ref 的 DOM 子树内，会被当作外部点击。"
+      },
+      {
+        "text": "默认监听 click 事件，无法改为 mousedown",
+        "isCorrect": false,
+        "description": "错误：默认是 mousedown 与 touchstart，且 events 可自定义。"
+      },
+      {
+        "text": "无需把 ref 挂到元素上也能工作",
+        "isCorrect": false,
+        "description": "错误：ref 必须挂到目标元素，否则无法判断内外。"
+      },
+      {
+        "text": "onClickAway 不会接收到事件对象",
+        "isCorrect": false,
+        "description": "错误：onClickAway 会接收 event 参数。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 useMeasure 底层依赖什么 API？在旧浏览器中需要注意什么？",
+    "explanation": "`useMeasure()` 返回 `[ref, rect]`，使用 **ResizeObserver** 跟踪元素尺寸与位置。坑：旧浏览器无 ResizeObserver，需 `resize-observer-polyfill`（启动时若 `window.ResizeObserver` 不存在会动态 import 赋值）；初始渲染尺寸为 0，需等 observer 回调。",
+    "tags": ["react-use", "高级", "useMeasure"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "基于 ResizeObserver；旧浏览器需 resize-observer-polyfill，初始尺寸为 0 需等回调",
+        "isCorrect": true,
+        "description": "正确：依赖 ResizeObserver，缺失时动态引入 polyfill，首帧尺寸为 0。"
+      },
+      {
+        "text": "基于 window.resize 事件，所有浏览器都原生支持",
+        "isCorrect": false,
+        "description": "错误：useMeasure 用 ResizeObserver 而非 window.resize，旧浏览器需 polyfill。"
+      },
+      {
+        "text": "基于 IntersectionObserver 跟踪元素尺寸",
+        "isCorrect": false,
+        "description": "错误：尺寸跟踪用 ResizeObserver，IntersectionObserver 用于可见性。"
+      },
+      {
+        "text": "首帧即可拿到准确尺寸，无需等待回调",
+        "isCorrect": false,
+        "description": "错误：初始渲染尺寸为 0，需等 observer 回调后才有值。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use 的 createGlobalState 提供怎样的能力？它有什么需要注意的副作用？",
+    "explanation": "`createGlobalState(initialValue?)` 是**工厂**，生成一个 hook；多组件调用同一生成的 hook 即共享同一份 state，任一处 setValue 触发所有订阅组件重渲染，**无需 Context**。坑：state 模块级存活，所有组件卸载后值仍保留；复杂场景建议用 Redux/Zustand。",
+    "tags": ["react-use", "专家", "createGlobalState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "工厂生成共享态 hook，多组件共享同一 state、无需 Context；state 模块级存活，组件全卸载后仍保留",
+        "isCorrect": true,
+        "description": "正确：跨组件共享、任一 setValue 触发全部订阅重渲染，值随模块常驻。"
+      },
+      {
+        "text": "返回一个 Context Provider 组件，必须包裹根节点才能共享",
+        "isCorrect": false,
+        "description": "错误：createGlobalState 无需 Context，直接返回可共享的 hook。"
+      },
+      {
+        "text": "组件全部卸载后 state 会自动重置为 initialValue",
+        "isCorrect": false,
+        "description": "错误：state 是模块级存活的，卸载后值仍保留。"
+      },
+      {
+        "text": "它生成的 setValue 只能接收新值，不支持 updater 函数",
+        "isCorrect": false,
+        "description": "错误：setValue 既能接收值，也能接收 updater 函数。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，使用 useScroll 追踪某个滚动容器自身的滚动位置时，它需要接收什么参数，又返回什么？",
+    "explanation": "`useScroll(ref)` 接收一个指向 HTML 元素的 ref，追踪该元素自身的滚动位置，返回 `{ x, y }` 对象，元素滚动时触发重渲染。与之相对的 `useWindowScroll()` 无参数、追踪整个窗口。",
+    "tags": ["react-use", "入门", "useScroll"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "接收一个元素 ref，返回 { x, y } 对象",
+        "isCorrect": true,
+        "description": "正确。`useScroll(ref: RefObject<HTMLElement>)` 把 ref 挂在容器上，返回 `{ x, y }` 表示该元素当前的横向/纵向滚动距离。"
+      },
+      {
+        "text": "不接收任何参数，返回 { x, y } 对象",
+        "isCorrect": false,
+        "description": "错误。无参数、追踪窗口的是 `useWindowScroll`；`useScroll` 必须传入元素 ref 才能追踪该元素的滚动。"
+      },
+      {
+        "text": "接收一个元素 ref，返回一个布尔值表示是否正在滚动",
+        "isCorrect": false,
+        "description": "错误。返回布尔「是否正在滚动」的是 `useScrolling(ref)`，而非 `useScroll`，后者返回坐标对象。"
+      },
+      {
+        "text": "接收毫秒数，返回 { width, height } 对象",
+        "isCorrect": false,
+        "description": "错误。这混淆了概念：毫秒参数属于 `useIdle`，`{ width, height }` 属于 `useWindowSize`/`useSize`，都与 `useScroll` 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useScroll 与 useWindowScroll 两个 hook 的区别，下列说法正确的是？",
+    "explanation": "两者都返回 `{ x, y }`，但作用对象不同：`useScroll(ref)` 追踪传入元素自身的滚动且需要 ref；`useWindowScroll()` 无参数、追踪整个 window 的滚动位置。",
+    "tags": ["react-use", "初级", "useScroll"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useScroll 追踪传入元素的滚动并需要 ref，useWindowScroll 无参数追踪整个窗口",
+        "isCorrect": true,
+        "description": "正确。`useScroll(scrollRef)` 监听元素级滚动，`useWindowScroll()` 监听窗口级滚动，二者返回值都是 `{ x, y }`。"
+      },
+      {
+        "text": "两者都需要 ref，只是 useWindowScroll 多返回一个 width 字段",
+        "isCorrect": false,
+        "description": "错误。`useWindowScroll` 不接收参数也不返回 width，它只返回 `{ x, y }`。"
+      },
+      {
+        "text": "useScroll 返回布尔值，useWindowScroll 返回 { x, y }",
+        "isCorrect": false,
+        "description": "错误。返回布尔的是 `useScrolling`；`useScroll` 与 `useWindowScroll` 都返回 `{ x, y }` 坐标对象。"
+      },
+      {
+        "text": "useWindowScroll 追踪元素，useScroll 追踪整个窗口",
+        "isCorrect": false,
+        "description": "错误。说反了：`useScroll` 追踪元素，`useWindowScroll` 追踪窗口。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useMeasure 返回的是一个 tuple，下列对其用法与底层实现的描述，正确的是？",
+    "explanation": "`useMeasure()` 返回 `[ref, state]`，把 ref 挂到目标元素上，state 含 `x, y, width, height, top, right, bottom, left`（均为 number），底层用 ResizeObserver 监听尺寸变化自动更新；旧浏览器需注入 `resize-observer-polyfill`。",
+    "tags": ["react-use", "中级", "useMeasure"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回 [ref, state]，把 ref 挂到元素上，底层用 ResizeObserver 监听尺寸",
+        "isCorrect": true,
+        "description": "正确。形如 `const [ref, { width, height, top, left }] = useMeasure()`，将 ref 挂到 `<div ref={ref}>`，由 ResizeObserver 驱动更新。"
+      },
+      {
+        "text": "返回 [sized, state]，sized 必须渲染到 JSX 才生效",
+        "isCorrect": false,
+        "description": "错误。「需要把返回元素渲染到 JSX」是 `useSize` 的特征；`useMeasure` 用 ref 挂元素，不返回需渲染的 sized 元素。"
+      },
+      {
+        "text": "返回 { width, height } 对象且底层用 devicemotion 事件",
+        "isCorrect": false,
+        "description": "错误。`useMeasure` 返回 tuple 而非裸对象，底层是 ResizeObserver；devicemotion 属于 `useMotion`。"
+      },
+      {
+        "text": "返回 [ref, state]，但底层用 window resize 事件而非 ResizeObserver",
+        "isCorrect": false,
+        "description": "错误。`useMeasure` 明确依赖 ResizeObserver（旧浏览器需 polyfill），并非监听 window resize 事件。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中使用 useSize 测量元素尺寸时，关于它的第一个参数与返回值，下列哪项是正确的？",
+    "explanation": "`useSize(element, initialSize?)` 第一个参数是「要测量的元素或返回元素的渲染函数（渲染函数会收到 `{width,height}`）」，不是 ref。返回 `[sized, state]`，其中 sized 必须被渲染到 JSX 才能生效，state 为 `{ width, height }`。",
+    "tags": ["react-use", "高级", "useSize"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "第一个参数是元素或渲染函数（非 ref），返回 [sized, state]，sized 必须渲染到 JSX",
+        "isCorrect": true,
+        "description": "正确。例如 `const [sized, {width}] = useSize(({width}) => <div>({width}px)</div>, {width:100,height:100})`，再渲染 `{sized}`。"
+      },
+      {
+        "text": "第一个参数是一个 ref，把 ref 挂到目标元素即可",
+        "isCorrect": false,
+        "description": "错误。用 ref 挂元素的是 `useMeasure`。`useSize` 的第一个参数是元素或渲染函数，这是最易混淆的点。"
+      },
+      {
+        "text": "无参数，直接返回当前窗口的 { width, height }",
+        "isCorrect": false,
+        "description": "错误。无参数返回窗口尺寸的是 `useWindowSize`；`useSize` 需要传入元素/渲染函数来测量该元素。"
+      },
+      {
+        "text": "第一个参数是毫秒数，返回 [sized, isIdle]",
+        "isCorrect": false,
+        "description": "错误。毫秒数参数属于 `useIdle`，与 `useSize` 无关；`useSize` 返回的 state 是 `{ width, height }`。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）同时提供了 useHover 和 useHoverDirty，二者在 API 形态上的关键差异是什么？",
+    "explanation": "`useHover(element | fn)` 接收元素或 function-as-child，返回 `[被包裹元素, isHovering]`，由 hook 替你包裹元素；`useHoverDirty(ref, enabled?)` 接收你已有的 ref，直接返回布尔 hover 状态，不替你包裹元素。",
+    "tags": ["react-use", "高级", "useHover"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useHover 返回 [被包裹元素, isHovering] 并替你包裹元素；useHoverDirty 接收已有 ref 直接返回布尔",
+        "isCorrect": true,
+        "description": "正确。两者形态相反：`useHover` 替你包裹并返回新元素 + 布尔；`useHoverDirty(ref, enabled?)` 用现成 ref，只返回布尔。"
+      },
+      {
+        "text": "两者都接收 ref，只是 useHover 多返回一个被包裹元素",
+        "isCorrect": false,
+        "description": "错误。`useHover` 接收的是元素或渲染函数，不是 ref；接收 ref 的是 `useHoverDirty`。"
+      },
+      {
+        "text": "useHoverDirty 返回 [元素, 布尔]，useHover 只返回布尔",
+        "isCorrect": false,
+        "description": "错误。说反了：返回 `[元素, 布尔]` 的是 `useHover`，只返回布尔的是 `useHoverDirty`。"
+      },
+      {
+        "text": "两者签名完全相同，仅命名不同",
+        "isCorrect": false,
+        "description": "错误。二者形态完全不同，签名不可混用，这正是常见坑之一。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，下列哪一组关于 useHoverDirty 与 useMouseHovered 文档位置的描述是正确的？",
+    "explanation": "`useHoverDirty` 和 `useMouseHovered` 都没有独立的 docs 文件（`docs/useHoverDirty.md`、`docs/useMouseHovered.md` 均返回 404），它们分别被并入 `docs/useHover.md` 和 `docs/useMouse.md` 中。出题不应引用不存在的独立文档 URL。",
+    "tags": ["react-use", "专家", "文档"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "useHoverDirty 写在 docs/useHover.md 内，useMouseHovered 写在 docs/useMouse.md 内",
+        "isCorrect": true,
+        "description": "正确。两者均无独立 doc 文件（404），分别合并进对应的主 hook 文档中。"
+      },
+      {
+        "text": "两者都有各自独立的 docs/useHoverDirty.md 和 docs/useMouseHovered.md",
+        "isCorrect": false,
+        "description": "错误。这两个独立文档 URL 实际均返回 404，并不存在。"
+      },
+      {
+        "text": "useHoverDirty 写在 docs/useMouse.md，useMouseHovered 写在 docs/useHover.md",
+        "isCorrect": false,
+        "description": "错误。归属写反了：useHoverDirty 属 useHover.md，useMouseHovered 属 useMouse.md。"
+      },
+      {
+        "text": "两者文档都被合并进 docs/useScroll.md",
+        "isCorrect": false,
+        "description": "错误。它们与 useScroll 无关，分别合并在 useHover.md 与 useMouse.md 中。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useBattery 返回的是判别联合类型，使用时正确的处理方式是？",
+    "explanation": "`useBattery()` 返回 `{ isSupported: false }`、`{ isSupported: true; fetched: false }` 或 `BatteryState & { isSupported: true; fetched: true }`。必须先判断 `isSupported` 才能安全读取 `level`/`charging` 等字段。且底层 BatteryManager API 已被标记为 obsolete（废弃），官方不鼓励使用。",
+    "tags": ["react-use", "中级", "useBattery"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须先判断 isSupported 为 true，才能安全读取 level、charging 等字段",
+        "isCorrect": true,
+        "description": "正确。它是判别联合：不支持时仅有 `{ isSupported: false }`，支持时才含 `level`/`charging`/`chargingTime`/`dischargingTime`，且需配合 `fetched`。"
+      },
+      {
+        "text": "可以直接读取 level，hook 保证在所有浏览器都返回有效电量",
+        "isCorrect": false,
+        "description": "错误。不支持时不存在 level 字段，且 BatteryManager API 已废弃，并非所有浏览器都可用，必须先判别 isSupported。"
+      },
+      {
+        "text": "返回的 level 字段单位是百分比整数（0~100）",
+        "isCorrect": false,
+        "description": "错误。`level` 取值范围是 0.0~1.0，需要自行乘 100 转百分比。"
+      },
+      {
+        "text": "无需任何判断，因为 BatteryManager 是现代标准 API",
+        "isCorrect": false,
+        "description": "错误。BatteryManager API 已被标记为 obsolete（废弃），官方明确不鼓励使用，随时可能被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useIdle 的默认空闲判定时间是多少，参数与返回值如何？",
+    "explanation": "`useIdle(ms?: number, initialState?: boolean): boolean`，`ms` 是判定空闲前的毫秒数，默认 `60e3`（1 分钟）；`initialState` 初始空闲状态默认 `false`；返回布尔，用户空闲时为 true。例如 `useIdle(3e3)` 表示 3 秒无操作判为空闲。",
+    "tags": ["react-use", "初级", "useIdle"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认 60e3 毫秒（1 分钟），返回布尔值表示是否空闲",
+        "isCorrect": true,
+        "description": "正确。`useIdle(ms = 60e3, initialState = false)` 返回布尔，超过 ms 无操作即为空闲（true）。"
+      },
+      {
+        "text": "默认 3000 毫秒（3 秒），返回 { idle: boolean } 对象",
+        "isCorrect": false,
+        "description": "错误。3 秒只是文档示例 `useIdle(3e3)`，默认值是 60e3；且返回的是布尔而非对象。"
+      },
+      {
+        "text": "无默认值，必须显式传入毫秒数，返回布尔",
+        "isCorrect": false,
+        "description": "错误。`ms` 有默认值 60e3，可不传。"
+      },
+      {
+        "text": "默认 Infinity，返回 { idle, since } 对象",
+        "isCorrect": false,
+        "description": "错误。默认是 60e3 而非 Infinity（Infinity 是 useWindowSize 的初始尺寸默认值），且返回布尔。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useStartTyping 在哪种情况下才会触发其回调？",
+    "explanation": "`useStartTyping(onStartTyping)` 仅在两条件全满足时触发：(1) 当前焦点元素不可编辑（非 INPUT/TEXTAREA/contenteditable，或无焦点/焦点在 body）；(2) 按下的是「有效字符」——无修饰键且 keyCode 在 0-9(48-57) 或 a-z(65-90)。回调接收原生 KeyboardEvent，无返回值。",
+    "tags": ["react-use", "高级", "useStartTyping"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "焦点元素不可编辑，且按下无修饰键的 0-9 或 a-z 字符时",
+        "isCorrect": true,
+        "description": "正确。两条件须同时满足；按空格、回车、符号或带 Ctrl/Cmd/Alt 等修饰键、或焦点已在输入框时都不触发。"
+      },
+      {
+        "text": "只要用户按下任意键，无论焦点在哪里都会触发",
+        "isCorrect": false,
+        "description": "错误。触发条件很挑剔：焦点须不可编辑，且按键须为无修饰的字母数字字符。"
+      },
+      {
+        "text": "焦点位于 INPUT 或 TEXTAREA 中并开始输入时触发",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——焦点在可编辑元素（INPUT/TEXTAREA/contenteditable）时不会触发。"
+      },
+      {
+        "text": "按下 Ctrl/Cmd 等修饰键组合时才触发",
+        "isCorrect": false,
+        "description": "错误。带修饰键不触发；必须是无修饰键的字符键。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 usePageLeave 除了离开页面时触发的回调外，第二个参数是什么？",
+    "explanation": "`usePageLeave(onPageLeave, args = [])`：鼠标离开页面边界时触发回调；第二个参数 `args` 是可选的依赖数组（默认 `[]`），作为内部 useEffect 的依赖。若回调闭包引用了会变化的值，需正确传入 args，否则闭包会陈旧。无返回值。",
+    "tags": ["react-use", "中级", "usePageLeave"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "args，一个可选依赖数组（默认 []），作为内部 useEffect 的依赖",
+        "isCorrect": true,
+        "description": "正确。`usePageLeave(onPageLeave, args = [])`，回调闭包引用了可变值时需传入正确的 args 以避免陈旧闭包。"
+      },
+      {
+        "text": "一个布尔 enabled 开关，控制是否启用监听",
+        "isCorrect": false,
+        "description": "错误。带 enabled 开关的是 `useHoverDirty(ref, enabled?)`；usePageLeave 的第二参数是依赖数组 args。"
+      },
+      {
+        "text": "一个毫秒数，表示离开页面多久后才触发",
+        "isCorrect": false,
+        "description": "错误。usePageLeave 不接收延时参数；毫秒数参数属于 `useIdle`。"
+      },
+      {
+        "text": "一个 PositionOptions 选项对象",
+        "isCorrect": false,
+        "description": "错误。PositionOptions 是 `useGeolocation` 的可选参数，与 usePageLeave 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useWindowSize 在 SSR/非浏览器环境下，initialWidth 与 initialHeight 的默认值是？",
+    "explanation": "`useWindowSize({ initialWidth = Infinity, initialHeight = Infinity, onChange }?)` 返回 `{ width, height }`。两个初始值默认均为 `Infinity`（为 SSR/非浏览器环境准备），意味着 SSR 首屏拿到的是 Infinity 而非真实尺寸；onChange 在窗口尺寸变化时触发。",
+    "tags": ["react-use", "中级", "useWindowSize"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认均为 Infinity，SSR 首屏会拿到 Infinity 而非真实尺寸",
+        "isCorrect": true,
+        "description": "正确。这是为非浏览器/SSR 环境准备的初始值，需注意首屏不是真实宽高。"
+      },
+      {
+        "text": "默认均为 0，SSR 首屏拿到 0",
+        "isCorrect": false,
+        "description": "错误。默认值是 Infinity 而非 0，这是容易答错的细节。"
+      },
+      {
+        "text": "默认均为 window.innerWidth/innerHeight",
+        "isCorrect": false,
+        "description": "错误。SSR 环境没有 window，因此默认用 Infinity 占位而非读取真实 window 尺寸。"
+      },
+      {
+        "text": "默认均为 null，需开发者必传初始值",
+        "isCorrect": false,
+        "description": "错误。两者有默认值 Infinity，不需必传，也不是 null。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中使用 useMouse 追踪鼠标位置时，返回的 State 对象包含哪些字段，以及 elX/elY 的含义是？",
+    "explanation": "`useMouse(ref)` 返回全为 number 的 State：`{ docX, docY, posX, posY, elX, elY, elW, elH }`。docX/docY 是鼠标在文档中的坐标；posX/posY 是元素相对文档的位置（left/top）；elX/elY 是鼠标在元素内的坐标；elW/elH 是元素宽高。需传入指向 DOM 元素的 ref。",
+    "tags": ["react-use", "中级", "useMouse"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "含 docX/docY/posX/posY/elX/elY/elW/elH，其中 elX/elY 是鼠标在元素内的坐标",
+        "isCorrect": true,
+        "description": "正确。docX/docY 为文档坐标，posX/posY 为元素相对文档的位置，elX/elY 为元素内坐标，elW/elH 为元素宽高，全为 number。"
+      },
+      {
+        "text": "只含 x/y 两个字段，elX/elY 表示元素宽高",
+        "isCorrect": false,
+        "description": "错误。返回字段远不止 x/y，且元素宽高是 elW/elH，elX/elY 表示鼠标在元素内的坐标。"
+      },
+      {
+        "text": "含 latitude/longitude/accuracy，elX 表示精度",
+        "isCorrect": false,
+        "description": "错误。latitude/longitude/accuracy 是 `useGeolocation` 的字段，与 useMouse 无关。"
+      },
+      {
+        "text": "返回 [ref, state] tuple 而非对象",
+        "isCorrect": false,
+        "description": "错误。`useMouse` 返回的是 State 对象而非 tuple；返回 tuple 的是 useMeasure/useSize/useHover 等。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useMouseHovered 相比 useMouse 多了一个 options 参数，其中 bound 和 whenHovered 选项各自的作用是？",
+    "explanation": "`useMouseHovered(ref, options?)` 是 useMouse 的带选项变体，返回同样的 State。options 默认 `{ bound: false, whenHovered: false }`：`bound: true` 把鼠标坐标 clamp 在元素边界内；`whenHovered: true` 仅在 hover 元素期间才绑定 mousemove 监听器（省性能）。",
+    "tags": ["react-use", "专家", "useMouseHovered"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "bound 把坐标限制在元素边界内，whenHovered 仅 hover 期间才绑定 mousemove 监听",
+        "isCorrect": true,
+        "description": "正确。两者默认均为 false；bound 用于 clamp 坐标，whenHovered 用于按需绑定监听器以省性能。"
+      },
+      {
+        "text": "bound 控制是否返回边界尺寸，whenHovered 控制是否返回 hover 布尔",
+        "isCorrect": false,
+        "description": "错误。bound 是 clamp 坐标而非返回尺寸；whenHovered 控制监听绑定时机，而非返回额外布尔。"
+      },
+      {
+        "text": "bound 设置毫秒节流间隔，whenHovered 设置初始 hover 状态",
+        "isCorrect": false,
+        "description": "错误。两者都是布尔开关，不涉及毫秒节流或初始状态。"
+      },
+      {
+        "text": "bound 默认 true，whenHovered 默认 true",
+        "isCorrect": false,
+        "description": "错误。两者默认均为 false（`{ bound: false, whenHovered: false }`）。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useGeolocation 在尚未取得定位数据时，其返回状态的初始值大致是怎样的？",
+    "explanation": "`useGeolocation(options?)` 返回 GeoLocationSensorState，初始状态为 `loading: true`、`timestamp: Date.now()`，其余坐标字段（latitude/longitude/accuracy/altitude/heading/speed 等）为 null。可能含 error 字段。UI 中需对 null 做空值处理。",
+    "tags": ["react-use", "高级", "useGeolocation"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "loading 为 true、timestamp 为 Date.now()，其余坐标字段为 null",
+        "isCorrect": true,
+        "description": "正确。初始 loading:true、timestamp 取当前时间，latitude/longitude 等坐标字段均为 null，需做空值处理。"
+      },
+      {
+        "text": "loading 为 false，所有坐标字段都为 0",
+        "isCorrect": false,
+        "description": "错误。初始 loading 为 true，且未取到数据时坐标字段是 null 而非 0。"
+      },
+      {
+        "text": "返回一个判别联合，需先判断 isSupported",
+        "isCorrect": false,
+        "description": "错误。判别联合 + isSupported 是 `useBattery` 的特征；useGeolocation 返回的是带 loading/null 字段的状态对象。"
+      },
+      {
+        "text": "返回 { online, effectiveType, rtt } 等网络字段",
+        "isCorrect": false,
+        "description": "错误。online/effectiveType/rtt 是 `useNetworkState` 的字段，与 useGeolocation 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useNetworkState 返回对象中，哪些字段在不支持 Network Information API 的浏览器上通常为 undefined？",
+    "explanation": "`useNetworkState()` 返回 IUseNetworkState：online/previous/since 是在线状态字段（基于在线/离线事件），而 downlink、downlinkMax、effectiveType('slow-2g'|'2g'|'3g'|'4g')、rtt、saveData、type 等来自 Network Information API，部分浏览器不支持，故多为 undefined。",
+    "tags": ["react-use", "专家", "useNetworkState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "downlink、effectiveType、rtt、saveData、type 等来自 Network Information API 的字段",
+        "isCorrect": true,
+        "description": "正确。这些字段依赖 Network Information API，部分浏览器不支持时为 undefined；online/previous/since 则基于在线/离线事件较可靠。"
+      },
+      {
+        "text": "online、previous、since 这三个在线状态字段",
+        "isCorrect": false,
+        "description": "错误。在线状态字段 online/previous/since 基于较通用的在线/离线事件，反而是 Network Information API 字段更易缺失。"
+      },
+      {
+        "text": "latitude、longitude、accuracy",
+        "isCorrect": false,
+        "description": "错误。这些是 `useGeolocation` 的字段，不属于 useNetworkState。"
+      },
+      {
+        "text": "charging、level、dischargingTime",
+        "isCorrect": false,
+        "description": "错误。这些是 `useBattery` 的 BatteryState 字段，与网络状态无关。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useScratch（追踪鼠标按下拖拽状态）的导入方式与返回值，下列说法正确的是？",
+    "explanation": "`useScratch(params = {})` 文档演示用子路径导入 `import useScratch from 'react-use/lib/useScratch'`（也可从主入口导入）。返回 tuple `[ref(setter 函数), state]`，state 为 ScratchSensorState：`isScratching: boolean` + 一组可选 number（start/end/x/y/dx/dy/docX/docY/posX/posY/elH/elW/elX/elY），dx/dy 是拖拽位移增量。",
+    "tags": ["react-use", "专家", "useScratch"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "docs 演示用 react-use/lib/useScratch 导入（也可主入口），返回 [ref setter, state]，state 含 isScratching 与 dx/dy 等",
+        "isCorrect": true,
+        "description": "正确。返回 tuple，第一项是设置 ref 的 setter 函数，state 中 isScratching 为布尔，dx/dy 等为可选拖拽位移增量。"
+      },
+      {
+        "text": "只能从主入口导入，返回一个布尔值表示是否正在拖拽",
+        "isCorrect": false,
+        "description": "错误。docs 演示用子路径导入（主入口也可），且返回的是 tuple `[ref, state]` 而非单个布尔。"
+      },
+      {
+        "text": "返回 { x, y } 对象，与 useScroll 一致",
+        "isCorrect": false,
+        "description": "错误。useScratch 返回 tuple `[ref, state]`，state 字段远多于 x/y，且含 isScratching、dx/dy 等。"
+      },
+      {
+        "text": "返回 [被包裹元素, isScratching]，由 hook 替你包裹元素",
+        "isCorrect": false,
+        "description": "错误。「替你包裹元素」是 useHover 的特征；useScratch 返回的是 ref setter 函数 + state。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useAudio 的返回值是一个数组，正确的解构顺序是哪一项？",
+    "explanation": "`useAudio` 返回元组 `[audio, state, controls, ref]`：`audio` 是必须渲染到 JSX 的 React `<audio>` 元素；`state` 含 buffered/time/duration/paused/muted/volume/playing；`controls` 提供 play/pause/mute/unmute/volume/seek；`ref` 指向底层元素。若不渲染第一个 `audio` 元素，hook 不会工作。",
+    "tags": ["react-use", "初级", "useAudio"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "[audio, state, controls, ref]",
+        "isCorrect": true,
+        "description": "正确。第一项是需渲染的 `<audio>` 元素，随后是 state、controls、ref。务必把 `audio` 放进 JSX，否则媒体元素不存在。"
+      },
+      {
+        "text": "[state, audio, controls, ref]",
+        "isCorrect": false,
+        "description": "错误。state 不是第一项。第一项必须是要渲染的 audio 元素，否则 hook 无法控制任何真实媒体。"
+      },
+      {
+        "text": "[controls, state, audio]",
+        "isCorrect": false,
+        "description": "错误。controls 不是首位，且遗漏了 ref。正确顺序为 [audio, state, controls, ref]。"
+      },
+      {
+        "text": "[ref, audio, state, controls]",
+        "isCorrect": false,
+        "description": "错误。ref 是最后一项而非第一项；并且渲染用的 audio 元素应当排在最前。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useAudio / useVideo，下列哪项 controls 方法的描述是错误的？",
+    "explanation": "`controls`（AudioControls）包含 play()、pause()、mute()、unmute()、volume(v)、seek(time)。其中 `volume` 接受一个 0~1 的数值参数，`seek` 接受时间（秒）参数，二者都不是无参方法。`mute`/`unmute` 才是无参方法。",
+    "tags": ["react-use", "中级", "useVideo"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "controls.volume() 是无参方法，调用即可静音",
+        "isCorrect": true,
+        "description": "正确（这是错误描述）。`volume(v: number)` 需要传入音量数值，并非无参；静音应使用 `mute()`。本题选其作为错误项。"
+      },
+      {
+        "text": "controls.seek(time) 接受一个时间（秒）参数来跳转播放位置",
+        "isCorrect": false,
+        "description": "此描述正确。`seek(time: number)` 用于跳转，如 `controls.seek(state.time + 5)` 前进 5 秒。"
+      },
+      {
+        "text": "controls.mute() 与 controls.unmute() 都是无参方法",
+        "isCorrect": false,
+        "description": "此描述正确。静音/取消静音均为无参调用。"
+      },
+      {
+        "text": "controls.play() 返回 Promise<void> 或 void",
+        "isCorrect": false,
+        "description": "此描述正确。`play()` 的返回类型为 `Promise<void> | void`，与原生媒体 play 行为一致。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useCss(cssObject) 相比内联 style，最关键的能力优势是什么？",
+    "explanation": "`useCss` 接收一个 CSS-in-JS 对象并返回生成的 className 字符串，属于「虚拟 CSS」。与内联 style 不同，它支持伪类（如 `'&:hover'`）、嵌套选择器和媒体查询，且只重渲染发生变化的 CSS 规则。",
+    "tags": ["react-use", "初级", "useCss"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "支持伪类（如 &:hover）、嵌套选择器和媒体查询",
+        "isCorrect": true,
+        "description": "正确。这是 useCss 相对内联 style 的核心优势，内联 style 无法表达伪类与 media query。"
+      },
+      {
+        "text": "返回的是一个 style 对象，可直接展开到 style 属性上",
+        "isCorrect": false,
+        "description": "错误。useCss 返回的是 className 字符串，应用于 `className`，而非 style 对象。"
+      },
+      {
+        "text": "会把样式编译为 Tailwind 原子类名以减小体积",
+        "isCorrect": false,
+        "description": "错误。useCss 生成的是动态 CSS 规则与 className，与 Tailwind 原子类无关。"
+      },
+      {
+        "text": "完全在编译期生成静态 CSS，无任何运行时开销",
+        "isCorrect": false,
+        "description": "错误。它是运行时「虚拟 CSS」，会随对象变化更新规则，并非编译期静态产物。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中使用 useFullscreen(ref, show, options) 时，options.onClose 回调的典型用途是什么？",
+    "explanation": "`useFullscreen(ref, show, options)` 返回布尔 isFullscreen，`show` 控制全屏状态。当用户主动退出全屏时，浏览器触发 `onClose` 回调，常用它把自己的 toggle 状态翻回 false（常配合 useToggle），保持状态同步。",
+    "tags": ["react-use", "中级", "useFullscreen"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用户退出全屏时被调用，用于把自身的 toggle 状态重置为 false",
+        "isCorrect": true,
+        "description": "正确。典型写法 `useFullscreen(ref, show, { onClose: () => toggle(false) })`，确保退出全屏后内部状态同步。"
+      },
+      {
+        "text": "在进入全屏成功后调用，用于记录全屏开始时间",
+        "isCorrect": false,
+        "description": "错误。onClose 是退出（关闭）全屏时触发，而非进入全屏时。"
+      },
+      {
+        "text": "每次窗口尺寸变化时调用，用于重算全屏布局",
+        "isCorrect": false,
+        "description": "错误。onClose 与 resize 无关，它只在退出全屏这一事件发生时触发一次。"
+      },
+      {
+        "text": "作为权限被拒绝的错误处理回调",
+        "isCorrect": false,
+        "description": "错误。onClose 不是错误处理钩子，而是退出全屏的状态同步回调。"
+      }
+    ]
+  },
+  {
+    "stem": "根据 React Use（react-use）源码中的 State 接口，useSlider(ref, options) 返回对象**确定声明**的字段是哪一项？",
+    "explanation": "源码中 useSlider 的 State 接口仅声明 `{ isSliding: boolean; value: number }`，value 取值 0~1。文档示例额外解构了 `pos` 和 `length`，但它们并不在 TS State 类型声明中，不应作为「保证返回」的字段引用。",
+    "tags": ["react-use", "高级", "useSlider"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "{ isSliding: boolean; value: number }",
+        "isCorrect": true,
+        "description": "正确。源码 State 接口仅含这两项，value 为 0~1 的归一化滑动比例。"
+      },
+      {
+        "text": "{ isSliding, value, pos, length }",
+        "isCorrect": false,
+        "description": "错误。pos 与 length 仅出现在文档示例里，未在 TS State 类型中声明，不是确定的返回字段。"
+      },
+      {
+        "text": "{ percentage: number; dragging: boolean }",
+        "isCorrect": false,
+        "description": "错误。字段名应为 value 与 isSliding，不存在 percentage/dragging。"
+      },
+      {
+        "text": "{ x: number; y: number; sliding: boolean }",
+        "isCorrect": false,
+        "description": "错误。useSlider 不返回坐标 x/y，State 接口只有 isSliding 和 value。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useClickAway(ref, onClickAway, events?)，其默认监听的事件数组是哪一项？",
+    "explanation": "源码 `src/useClickAway.ts` 的 `defaultEvents = ['mousedown', 'touchstart']`，并非 `['click']`（旧文档摘要的说法有误）。需要监听 click 时应自行传入 `['click']` 覆盖默认值。当监听事件发生在 ref 元素之外时触发 onClickAway。",
+    "tags": ["react-use", "高级", "useClickAway"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "['mousedown', 'touchstart']",
+        "isCorrect": true,
+        "description": "正确。这是源码中的 defaultEvents，覆盖鼠标按下与触摸开始两种交互。"
+      },
+      {
+        "text": "['click']",
+        "isCorrect": false,
+        "description": "错误。文档摘要曾误写为 ['click']，但源码默认是 ['mousedown','touchstart']；想用 click 需手动传入。"
+      },
+      {
+        "text": "['click', 'touchend']",
+        "isCorrect": false,
+        "description": "错误。默认既不含 click 也不含 touchend，实际为 mousedown 与 touchstart。"
+      },
+      {
+        "text": "['pointerdown', 'focusout']",
+        "isCorrect": false,
+        "description": "错误。默认事件中没有 pointerdown 或 focusout，正确为 mousedown 与 touchstart。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useDrop 与 useDropArea 的核心区别是什么？",
+    "explanation": "`useDrop(options)` 监听**整个页面**的拖放，直接返回 state（含 `over` 布尔）；`useDropArea(options)` 作用于**特定元素**，返回元组 `[bond, state]`，需把 `bond` 用 `{...bond}` 展开到目标元素上。二者回调相同：onFiles、onUri、onText。",
+    "tags": ["react-use", "中级", "useDrop"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useDrop 监听整页拖放并返回 state；useDropArea 作用于特定元素并返回 [bond, state]",
+        "isCorrect": true,
+        "description": "正确。useDrop 页面级、返回 state；useDropArea 元素级、返回元组，bond 需展开到目标元素。"
+      },
+      {
+        "text": "useDrop 返回 [bond, state]，useDropArea 直接返回 state",
+        "isCorrect": false,
+        "description": "错误。返回形态恰好相反：useDrop 直接返回 state，useDropArea 返回 [bond, state]。"
+      },
+      {
+        "text": "useDrop 只支持文件，useDropArea 只支持文本",
+        "isCorrect": false,
+        "description": "错误。两者回调一致（onFiles/onUri/onText），不存在按数据类型分工的差异。"
+      },
+      {
+        "text": "useDropArea 监听整页，useDrop 作用于单个元素",
+        "isCorrect": false,
+        "description": "错误。作用范围反了：useDrop 是整页，useDropArea 是特定元素。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中使用 useDropArea(options) 时，如何让目标元素接收拖放事件？",
+    "explanation": "`useDropArea` 返回 `[bond, state]`，需要把第一个返回值 `bond` 通过 `{...bond}` 展开到目标 DOM 元素上，例如 `<div {...bond}>Drop here</div>`。`state.over` 为布尔，表示是否正有拖拽悬停。",
+    "tags": ["react-use", "初级", "useDropArea"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把返回的 bond 通过 {...bond} 展开到目标元素，如 <div {...bond}>",
+        "isCorrect": true,
+        "description": "正确。bond 是一组事件绑定，必须展开到目标元素上才能接收拖放。"
+      },
+      {
+        "text": "把返回的 state 通过 {...state} 展开到元素上",
+        "isCorrect": false,
+        "description": "错误。需展开的是 bond；state 只用于读取 over 等状态，展开它无法绑定事件。"
+      },
+      {
+        "text": "调用 bond() 并把返回值赋给元素的 ref",
+        "isCorrect": false,
+        "description": "错误。bond 是用于展开的属性对象，不是函数，也不通过 ref 绑定。"
+      },
+      {
+        "text": "把 options 直接展开到元素上即可自动监听",
+        "isCorrect": false,
+        "description": "错误。options 是配置回调，展开到元素无意义；事件绑定来自 bond。"
+      }
+    ]
+  },
+  {
+    "stem": "根据 React Use（react-use）源码，usePinchZoom(ref) 返回的 zoomingState 在「放大中」时的正确字符串值是哪一项？",
+    "explanation": "源码 `src/usePinchZoom.ts` 中 ZoomState 枚举值为 `'ZOOMING_IN'` 与 `'ZOOMING_OUT'`（带 -ING），文档示例里的 `'ZOOM_IN'/'ZOOM_OUT'` 是过时/有误的。空闲时返回 `{ zoomingState: null, pinchState: 0 }`。比较 effect 条件时必须用带 -ING 的字符串。",
+    "tags": ["react-use", "专家", "usePinchZoom"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "'ZOOMING_IN'",
+        "isCorrect": true,
+        "description": "正确。源码枚举为带 -ING 的 'ZOOMING_IN'/'ZOOMING_OUT'，应据此比较。"
+      },
+      {
+        "text": "'ZOOM_IN'",
+        "isCorrect": false,
+        "description": "错误。这是文档示例的过时写法，实际源码不存在该值，会导致比较永远不成立。"
+      },
+      {
+        "text": "'PINCH_IN'",
+        "isCorrect": false,
+        "description": "错误。枚举不含 PINCH_IN，捏合方向以 ZOOMING_IN/ZOOMING_OUT 表示。"
+      },
+      {
+        "text": "'UNKNOWN'",
+        "isCorrect": false,
+        "description": "错误。不存在 UNKNOWN/UNCHANGED 状态；空闲时 zoomingState 为 null。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useRaf(ms?, delay?)，下列描述哪项正确？",
+    "explanation": "`useRaf` 在每个 requestAnimationFrame 重渲染组件，返回一个 0~1 的「已用时间比例」（不是毫秒）。ms 默认 1e12（近乎无限运行），delay 默认 0（开始前延迟）。因每帧重渲染，性能开销较大。",
+    "tags": ["react-use", "高级", "useRaf"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 0~1 的已用时间比例，且每个动画帧都会重渲染组件，开销较大",
+        "isCorrect": true,
+        "description": "正确。返回归一化比例而非毫秒；逐帧重渲染意味着较高性能成本。"
+      },
+      {
+        "text": "返回已经过去的毫秒数（绝对时间）",
+        "isCorrect": false,
+        "description": "错误。返回的是 0~1 的比例（elapsed/ms），不是绝对毫秒数。"
+      },
+      {
+        "text": "默认 ms 为 0，因此不传参时立即结束",
+        "isCorrect": false,
+        "description": "错误。默认 ms 为 1e12，相当于近乎无限运行，而非 0。"
+      },
+      {
+        "text": "仅在 ms 结束时重渲染一次，性能开销很低",
+        "isCorrect": false,
+        "description": "错误。它每个动画帧都重渲染，正是其开销较大的原因。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，要暂停 useInterval(callback, delay) 的定时器，正确做法是什么？",
+    "explanation": "`useInterval` 基于 setInterval，传入 `delay = null` 即暂停（常见模式 `isRunning ? delay : null`）。传 0 是合法的「零延迟」间隔，不会暂停。回调被存入 ref，确保使用最新闭包而不重置定时器。",
+    "tags": ["react-use", "中级", "useInterval"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 delay 传为 null",
+        "isCorrect": true,
+        "description": "正确。delay 为 null 时暂停定时器，恢复时再传回数值即可，无需卸载组件。"
+      },
+      {
+        "text": "把 delay 传为 0",
+        "isCorrect": false,
+        "description": "错误。0 是合法的零延迟间隔，会立即且频繁地触发，并不会暂停。"
+      },
+      {
+        "text": "把 callback 传为 undefined",
+        "isCorrect": false,
+        "description": "错误。暂停由 delay=null 控制，与 callback 是否存在无关。"
+      },
+      {
+        "text": "返回值上调用 clear() 方法",
+        "isCorrect": false,
+        "description": "错误。useInterval 返回 void，没有 clear 方法；暂停靠 delay=null。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useHarmonicIntervalFn(fn, delay) 与普通 useInterval 相比，最关键的特性是什么？",
+    "explanation": "`useHarmonicIntervalFn` 是「和谐」间隔：所有使用相同 delay 的 hook 实例会在**同一时刻**一起触发，避免多个独立定时器之间的漂移（如多个时钟的秒计数器同步跳动）。delay 为 null 时暂停。",
+    "tags": ["react-use", "高级", "useHarmonicIntervalFn"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "所有相同 delay 的实例会在同一时刻同步触发，避免彼此漂移",
+        "isCorrect": true,
+        "description": "正确。这是「harmonic」的含义——共享同一节拍，适合多个计时器需要同步跳动的场景。"
+      },
+      {
+        "text": "它能保证回调的执行精确到纳秒级",
+        "isCorrect": false,
+        "description": "错误。它解决的是多实例间的同步/漂移问题，而非提升单次触发的时间精度到纳秒。"
+      },
+      {
+        "text": "它会在每个 requestAnimationFrame 触发一次",
+        "isCorrect": false,
+        "description": "错误。它仍基于按 delay 的间隔触发，而非逐帧；逐帧是 useRaf 的行为。"
+      },
+      {
+        "text": "它不接受 delay 参数，固定每秒触发一次",
+        "isCorrect": false,
+        "description": "错误。它接受 delay 参数，且 delay=null 可暂停，并非固定每秒。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useSpring，下列哪项关于导入方式的说法正确？",
+    "explanation": "`useSpring(targetValue, tension?, friction?)` 借助 `rebound` 库做弹簧插值。由于 `rebound` 是可选 peer 依赖，必须直接从子路径导入：`import useSpring from 'react-use/lib/useSpring'`，从包根 barrel 导入可能失败。返回当前动画数值。",
+    "tags": ["react-use", "专家", "useSpring"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "需直接从 'react-use/lib/useSpring' 导入，因其依赖可选的 rebound 库",
+        "isCorrect": true,
+        "description": "正确。从包根 barrel 引入可能因 rebound 这一可选依赖失败，故需子路径直接导入。"
+      },
+      {
+        "text": "和其他 hook 一样从 'react-use' 根直接具名导入即可",
+        "isCorrect": false,
+        "description": "错误。由于 rebound 可选依赖，从根 barrel 导入可能失败，应从 lib 子路径导入。"
+      },
+      {
+        "text": "它无需任何外部库，纯用 requestAnimationFrame 实现",
+        "isCorrect": false,
+        "description": "错误。useSpring 依赖 rebound 库做弹簧动力学计算。"
+      },
+      {
+        "text": "必须从 'rebound' 包里导入 useSpring",
+        "isCorrect": false,
+        "description": "错误。useSpring 属于 react-use，应从 'react-use/lib/useSpring' 导入；rebound 只是其底层依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "根据 React Use（react-use）源码，useTween(easingName?, ms?, delay?) 的默认参数值是哪一项？",
+    "explanation": "源码 `src/useTween.ts` 验证的默认值为 `easingName='inCirc'`、`ms=200`、`delay=0`。它在 ms 内把数值从 0 补间到 1 并逐帧重渲染返回当前值；easingName 引用 `ts-easing` 包中的缓动函数。",
+    "tags": ["react-use", "高级", "useTween"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "easingName='inCirc', ms=200, delay=0",
+        "isCorrect": true,
+        "description": "正确。这是源码中的默认值，缓动名引用 ts-easing 包的缓动函数。"
+      },
+      {
+        "text": "easingName='linear', ms=1000, delay=0",
+        "isCorrect": false,
+        "description": "错误。默认缓动是 'inCirc' 而非 'linear'，默认 ms 是 200 而非 1000。"
+      },
+      {
+        "text": "easingName='easeInOut', ms=300, delay=100",
+        "isCorrect": false,
+        "description": "错误。默认值不是这些；源码为 inCirc/200/0。"
+      },
+      {
+        "text": "easingName='inCirc', ms=1000, delay=200",
+        "isCorrect": false,
+        "description": "错误。easingName 对，但默认 ms 应为 200、delay 应为 0。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useTimeout 与 useTimeoutFn 在超时行为上的关键区别是什么？",
+    "explanation": "`useTimeout(ms)` 在超时后会**重渲染组件**（内部调用 useUpdate）；`useTimeoutFn(fn, ms)` 在超时时调用 fn 但**不重渲染**组件，且当回调 fn 变化时**不会重置**定时器（最新 fn 用 ref 捕获）。二者都返回 `[isReady, cancel, reset]`。",
+    "tags": ["react-use", "专家", "useTimeoutFn"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "useTimeout 超时后会重渲染组件，useTimeoutFn 超时时不重渲染",
+        "isCorrect": true,
+        "description": "正确。这是二者最易混淆之处：前者触发重渲染，后者只调用 fn 不重渲染。"
+      },
+      {
+        "text": "useTimeoutFn 超时后会重渲染组件，useTimeout 不会",
+        "isCorrect": false,
+        "description": "错误。重渲染行为反了：useTimeout 才重渲染，useTimeoutFn 不重渲染。"
+      },
+      {
+        "text": "两者超时后都会重渲染，区别仅在返回值数量不同",
+        "isCorrect": false,
+        "description": "错误。返回值都是 [isReady, cancel, reset]；区别在于是否重渲染，而非数量。"
+      },
+      {
+        "text": "useTimeoutFn 在回调 fn 变化时会自动重置定时器",
+        "isCorrect": false,
+        "description": "错误。fn 变化只更新回调 ref，不会重置定时器；最新 fn 通过 ref 捕获。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useTimeout(ms) 返回的 isReady 函数，其取值含义正确的是哪一项？",
+    "explanation": "`useTimeout(ms)` 返回 `[isReady, cancel, reset]`，其中 `isReady()` 返回 `boolean | null`：`false` = 计时中（pending），`true` = 已完成，`null` = 已取消（cancelled）。`cancel()` 中止计时（不触发重渲染），`reset()` 重启计时器。",
+    "tags": ["react-use", "中级", "useTimeout"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "false 表示计时中，true 表示已完成，null 表示已取消",
+        "isCorrect": true,
+        "description": "正确。isReady() 的三态：pending=false、completed=true、cancelled=null。"
+      },
+      {
+        "text": "true 表示计时中，false 表示已完成，null 表示出错",
+        "isCorrect": false,
+        "description": "错误。语义反了，且 null 表示取消而非出错。"
+      },
+      {
+        "text": "只返回 true/false 两态，没有 null",
+        "isCorrect": false,
+        "description": "错误。isReady() 还可返回 null 表示被 cancel() 取消的状态。"
+      },
+      {
+        "text": "返回剩余毫秒数，0 表示完成",
+        "isCorrect": false,
+        "description": "错误。isReady() 返回 boolean|null 状态，而非剩余毫秒数。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useAsync(fn, deps?) 这个 Hook 的返回值是什么形态？",
+    "explanation": "`useAsync` 返回的是一个**对象** `{ loading, error, value }`，而不是元组。读取时用 `state.loading` / `state.error` / `state.value`。返回元组 `[state, callback]` 的是 `useAsyncFn`。",
+    "tags": ["react-use", "初级", "异步Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回对象 `{ loading, error, value }`",
+        "isCorrect": true,
+        "description": "正确。useAsync 返回一个包含 loading、error、value 三个字段的对象，直接通过 state.loading 等读取，并在挂载时自动执行。"
+      },
+      {
+        "text": "返回元组 `[state, callback]`",
+        "isCorrect": false,
+        "description": "错误。这是 useAsyncFn 的返回形态（手动触发版），useAsync 返回的是对象而非元组。"
+      },
+      {
+        "text": "返回元组 `[value, setValue]`",
+        "isCorrect": false,
+        "description": "错误。这类似 useState/useSessionStorage 的返回，与 useAsync 无关。"
+      },
+      {
+        "text": "返回对象 `{ data, loading, run }`",
+        "isCorrect": false,
+        "description": "错误。这更接近 ahooks 的 useRequest 返回结构，react-use 的 useAsync 字段是 loading/error/value 且无 run。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）中，若希望异步函数不在挂载时自动执行、而是由按钮点击等事件手动触发，应使用哪个 Hook？",
+    "explanation": "`useAsyncFn` 不会自动执行，返回元组 `[state, callback]`，由返回的 callback（文档命名 doFetch）手动触发异步函数，是 useAsync 的懒执行/按需版本。",
+    "tags": ["react-use", "初级", "异步Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useAsyncFn",
+        "isCorrect": true,
+        "description": "正确。useAsyncFn 返回 [state, callback]，不自动运行，需调用 callback（如 doFetch）手动触发，适合按钮/事件触发。"
+      },
+      {
+        "text": "useAsync",
+        "isCorrect": false,
+        "description": "错误。useAsync 在挂载时自动执行且 deps 变化时重跑，无法手动触发。"
+      },
+      {
+        "text": "useAsyncRetry",
+        "isCorrect": false,
+        "description": "错误。useAsyncRetry 同样会自动执行，只是额外提供 retry() 方法，并非手动懒执行版。"
+      },
+      {
+        "text": "useDebounce",
+        "isCorrect": false,
+        "description": "错误。useDebounce 用于防抖地延迟调用一个函数，并非异步函数的手动触发 Hook。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useAsyncRetry(fn, deps?)，下列描述正确的是？",
+    "explanation": "`useAsyncRetry` 在 `useAsync` 的基础上额外增加 `retry()` 方法。它和 useAsync 一样自动执行，返回相同的对象 `{ loading, error, value }`，并额外带 `state.retry()` 用于重新执行/刷新。",
+    "tags": ["react-use", "中级", "异步Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它基于 useAsync，自动执行，并额外提供 state.retry() 用于重试/刷新",
+        "isCorrect": true,
+        "description": "正确。useAsyncRetry 包裹 useAsync，返回 {loading,error,value} 对象并附加 retry()，调用 state.retry() 即可重新执行异步函数。"
+      },
+      {
+        "text": "它返回元组 [state, retry]，且不会自动执行",
+        "isCorrect": false,
+        "description": "错误。它返回的是对象（含 retry 方法）而非元组，且与 useAsync 一样会自动执行。"
+      },
+      {
+        "text": "它内置了按次数重试（retry count）和轮询能力",
+        "isCorrect": false,
+        "description": "错误。react-use 的异步三件套很精简，没有按次重试计数、轮询等能力，那些属于 ahooks。它只新增一个 retry() 方法。"
+      },
+      {
+        "text": "它的 retry 是顶层返回值而非 state 上的方法",
+        "isCorrect": false,
+        "description": "错误。retry 是返回对象（state）上的方法，通过 state.retry() 调用。"
+      }
+    ]
+  },
+  {
+    "stem": "对比 React Use（react-use）的异步三件套与 ahooks 的 useRequest，下列说法正确的是？",
+    "explanation": "react-use 的异步三件套很精简：**没有**内置轮询、缓存、请求防抖/节流、按次重试、refreshDeps、ready/manual 标志、loadingDelay 或 onSuccess/onError 插件。手动触发靠 useAsyncFn；ahooks 则靠 `{ manual: true }`，并返回 `{data,loading,error,run,...}`。",
+    "tags": ["react-use", "高级", "异步Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "react-use 三件套无内置轮询/缓存/请求防抖等能力，手动触发靠 useAsyncFn；ahooks 用 {manual:true}",
+        "isCorrect": true,
+        "description": "正确。react-use 异步三件套是最小实现，useAsyncRetry 仅加 retry()；ahooks useRequest 提供轮询、缓存、manual 等大量特性。"
+      },
+      {
+        "text": "react-use 的 useAsync 内置 polling 和 onSuccess 回调",
+        "isCorrect": false,
+        "description": "错误。轮询和 onSuccess/onError 回调属于 ahooks 的 useRequest，react-use 没有这些。"
+      },
+      {
+        "text": "两者手动触发方式相同，都用 {manual:true} 配置",
+        "isCorrect": false,
+        "description": "错误。react-use 手动触发用单独的 useAsyncFn，{manual:true} 是 ahooks 的配置方式。"
+      },
+      {
+        "text": "react-use 的 useAsync 返回 {data,loading,error,run,refresh,mutate}",
+        "isCorrect": false,
+        "description": "错误。那是 ahooks useRequest 的返回结构。react-use 的 useAsync 返回 {loading,error,value}。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useDebounce 返回元组 `[isReady, cancel]`，其中第一个元素 isReady 的正确用法是？",
+    "explanation": "`isReady` 是一个**函数**，返回 `boolean | null`：false = 等待中，true = 已调用，null = 已取消。必须调用 `isReady()` 取值，不能当成普通布尔量直接用；`cancel()` 用于取消待执行的防抖。",
+    "tags": ["react-use", "高级", "防抖节流"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "isReady 是一个函数，需调用 isReady() 取值，返回 false(等待)/true(已调用)/null(已取消)",
+        "isCorrect": true,
+        "description": "正确。isReady 是函数而非布尔量，调用后返回 boolean|null 三态，反映防抖状态；cancel() 取消待执行的回调。"
+      },
+      {
+        "text": "isReady 是一个布尔值，可直接在 JSX 里写 {isReady && ...}",
+        "isCorrect": false,
+        "description": "错误。这是常见陷阱，isReady 是函数不是布尔量，直接当布尔用会得到恒真的函数引用，应写 isReady()。"
+      },
+      {
+        "text": "isReady 是已防抖后的最终值",
+        "isCorrect": false,
+        "description": "错误。useDebounce 不返回值，它延迟调用传入的 fn；isReady 只反映状态，不是被防抖的值。"
+      },
+      {
+        "text": "isReady 返回的 null 表示防抖已完成、已调用",
+        "isCorrect": false,
+        "description": "错误。null 表示已取消（cancelled）；true 才表示已调用（called）。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useDebounce(fn, ms, deps) 中，关于参数 ms 与 deps，下列正确的是？",
+    "explanation": "`ms` 是**必填**的（没有默认值）；`deps` 像 useEffect 的依赖数组，其中任一值变化时防抖计时会重新开始。fn 在 ms 毫秒无活动后被调用。",
+    "tags": ["react-use", "中级", "防抖节流"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ms 必填无默认值；deps 变化时防抖计时重新开始（类似 useEffect 依赖）",
+        "isCorrect": true,
+        "description": "正确。fn 在 ms 毫秒静默后调用，ms 必须显式传入；deps 中任一值变化都会重启防抖计时。"
+      },
+      {
+        "text": "ms 可省略，默认 200ms",
+        "isCorrect": false,
+        "description": "错误。useDebounce 的 ms 是必填参数，没有默认值。可省略 ms 的是值节流类 Hook（如 useThrottle 的 ms 可选）。"
+      },
+      {
+        "text": "deps 只是用于性能优化，变化与否不影响防抖计时",
+        "isCorrect": false,
+        "description": "错误。deps 的变化会触发防抖计时重启，行为类似 useEffect 的依赖数组。"
+      },
+      {
+        "text": "fn 会在每次渲染时立即执行一次",
+        "isCorrect": false,
+        "description": "错误。fn 是在 ms 毫秒无活动后才被调用，不是每次渲染立即执行。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）中 useThrottle 与 useThrottleFn 的核心区别是什么？",
+    "explanation": "`useThrottle(value, ms?)` 节流一个**值**，返回被节流后的值；`useThrottleFn(fn, ms, args)` 调用一个**函数**，其第三个参数 args 是触发节流的依赖数组（像 useEffect，其中值变化时启动节流计时）。",
+    "tags": ["react-use", "中级", "防抖节流"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useThrottle 节流一个值并返回节流后的值；useThrottleFn 调用一个函数，用 args 数组作为触发依赖",
+        "isCorrect": true,
+        "description": "正确。前者对值节流返回 throttledValue；后者执行 fn，第三参数 args 作为依赖数组触发节流，二者不可混淆。"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。一个针对值（返回节流值），一个针对函数调用（执行 fn），用途不同。"
+      },
+      {
+        "text": "useThrottle 调用函数，useThrottleFn 节流一个值",
+        "isCorrect": false,
+        "description": "错误。说反了。useThrottle 节流值，useThrottleFn 调用函数。"
+      },
+      {
+        "text": "useThrottleFn 的 ms 是可选的，useThrottle 的 ms 是必填的",
+        "isCorrect": false,
+        "description": "错误。恰好相反：useThrottle 的 ms 可选，useThrottleFn 的 ms 是必填的位置参数。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useLocalStorage 第三个参数（options）与返回值，下列描述正确的是？",
+    "explanation": "`useLocalStorage(key, initialValue?, options?)` 返回 3-元组 `[value, setValue, remove]`；第三参数是**选项对象** `{raw, serializer, deserializer}`，默认用 JSON.stringify/JSON.parse 序列化，`{raw:true}` 可禁用 JSON 序列化。",
+    "tags": ["react-use", "高级", "存储Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "第三参数是选项对象 {raw, serializer, deserializer}，返回 [value, setValue, remove]",
+        "isCorrect": true,
+        "description": "正确。useLocalStorage 默认 JSON 序列化，第三参数为 options 对象（可 raw 或自定义序列化器），返回三元组含 remove()。"
+      },
+      {
+        "text": "第三参数是布尔值 raw，返回 [value, setValue]",
+        "isCorrect": false,
+        "description": "错误。这是 useSessionStorage 的形态（第三参数为裸布尔 raw）。useLocalStorage 的第三参数是 options 对象，且返回三元组。"
+      },
+      {
+        "text": "默认不做任何序列化，原样存储字符串",
+        "isCorrect": false,
+        "description": "错误。默认会用 JSON.stringify/JSON.parse 序列化；要原样存储需传 {raw:true}。"
+      },
+      {
+        "text": "返回的第三个元素是 reset，用于重置为 initialValue",
+        "isCorrect": false,
+        "description": "错误。第三个元素是 remove（删除 key），不是 reset。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）中 useLocalStorage 与 useSessionStorage 在第三个参数上的关键差异是？",
+    "explanation": "`useLocalStorage` 的第三参数是**选项对象** `{raw, serializer, deserializer}` 且返回三元组 `[value, setValue, remove]`；`useSessionStorage` 的第三参数是**裸布尔 raw**，文档示例只返回二元组 `[value, setValue]`。两者默认都做 JSON 序列化。",
+    "tags": ["react-use", "专家", "存储Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "useLocalStorage 第三参数是 options 对象；useSessionStorage 第三参数是裸布尔 raw",
+        "isCorrect": true,
+        "description": "正确。这是易混淆点：localStorage 用 options 对象（可自定义序列化），sessionStorage 直接传布尔 raw，文档示例返回二元组。"
+      },
+      {
+        "text": "两者第三参数都是 options 对象，结构完全一致",
+        "isCorrect": false,
+        "description": "错误。只有 useLocalStorage 是 options 对象，useSessionStorage 是裸布尔 raw。"
+      },
+      {
+        "text": "useSessionStorage 第三参数是 options 对象，useLocalStorage 是布尔",
+        "isCorrect": false,
+        "description": "错误。说反了。localStorage 才用 options 对象，sessionStorage 用布尔。"
+      },
+      {
+        "text": "两者默认都不做序列化，必须手动传 serializer",
+        "isCorrect": false,
+        "description": "错误。两者默认都用 JSON 序列化；raw=true 才禁用序列化。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useCookie('my-cookie') 返回值是什么？",
+    "explanation": "`useCookie` 返回 3-元组 `[value, updateCookie, deleteCookie]`：value 是当前 cookie 值，updateCookie(newValue) 更新 cookie，deleteCookie() 删除 cookie。",
+    "tags": ["react-use", "初级", "存储Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回 [value, updateCookie, deleteCookie]",
+        "isCorrect": true,
+        "description": "正确。三元组：当前值、更新回调 updateCookie(newValue)、删除回调 deleteCookie()。"
+      },
+      {
+        "text": "返回 [value, setCookie]",
+        "isCorrect": false,
+        "description": "错误。useCookie 返回三元组，还包含一个删除 cookie 的回调 deleteCookie。"
+      },
+      {
+        "text": "返回对象 { value, set, remove }",
+        "isCorrect": false,
+        "description": "错误。useCookie 返回的是元组而非对象。"
+      },
+      {
+        "text": "返回 [value, updateCookie, refreshCookie]",
+        "isCorrect": false,
+        "description": "错误。第三个回调是 deleteCookie（删除），不是 refreshCookie。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useCopyToClipboard 返回 `[state, copyToClipboard]`，关于 state 下列正确的是？",
+    "explanation": "`state = { value, error, noUserInteraction }`：value 为已复制的文本（未复制时 undefined），error 为复制操作中捕获的 Error，noUserInteraction 表示剪贴板 API 的交互要求。复制可能失败，应检查 state.error。",
+    "tags": ["react-use", "中级", "副作用Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "state 含 { value, error, noUserInteraction }，复制可能失败，应检查 state.error",
+        "isCorrect": true,
+        "description": "正确。value 是已复制文本（未复制为 undefined），error 为捕获的错误，noUserInteraction 关于交互要求；调用 copyToClipboard(text) 复制。"
+      },
+      {
+        "text": "state 是一个布尔值，表示是否复制成功",
+        "isCorrect": false,
+        "description": "错误。state 是包含 value/error/noUserInteraction 的对象，不是布尔值。"
+      },
+      {
+        "text": "state 含 { loading, data }，复制时 loading 为 true",
+        "isCorrect": false,
+        "description": "错误。useCopyToClipboard 的 state 没有 loading/data 字段，而是 value/error/noUserInteraction。"
+      },
+      {
+        "text": "复制永远不会失败，无需检查错误",
+        "isCorrect": false,
+        "description": "错误。复制可能失败，state.error 会记录捕获到的 Error，应做检查。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useTitle 这个 Hook 的作用与可选参数是什么？",
+    "explanation": "`useTitle(title, options?)` 把 `document.title` 设置为给定字符串，可选第二参数 options 含 `restoreOnUnmount`（为 true 时在卸载时恢复之前的标题）。无返回值。",
+    "tags": ["react-use", "初级", "副作用Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "设置 document.title；可选 options.restoreOnUnmount 控制卸载时是否恢复原标题",
+        "isCorrect": true,
+        "description": "正确。useTitle 设置页面标题，第二参数 options 的 restoreOnUnmount 为 true 时在组件卸载时恢复之前标题。"
+      },
+      {
+        "text": "设置页面 favicon 图标",
+        "isCorrect": false,
+        "description": "错误。设置 favicon 的是 useFavicon(href)，useTitle 设置的是 document.title。"
+      },
+      {
+        "text": "返回当前 document.title 字符串供读取",
+        "isCorrect": false,
+        "description": "错误。useTitle 是设置标题的副作用 Hook，无返回值（返回 null/nothing）。"
+      },
+      {
+        "text": "第二参数是布尔值，true 表示标题随路由自动变化",
+        "isCorrect": false,
+        "description": "错误。第二参数是 options 对象，含 restoreOnUnmount，并非控制路由联动的布尔值。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useFavicon 这个 Hook 的签名与作用是？",
+    "explanation": "`useFavicon(href)` 是设置页面 favicon 的副作用 Hook，单一参数 href 为 favicon 的 URL 字符串，无返回值。示例：`useFavicon('https://.../favicon.ico')`。",
+    "tags": ["react-use", "入门", "副作用Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "useFavicon(href)：设置页面 favicon，参数为图标 URL，无返回值",
+        "isCorrect": true,
+        "description": "正确。单参数 href 是 favicon 的 URL 字符串，Hook 设置页面图标，返回 null/nothing。"
+      },
+      {
+        "text": "useFavicon(title)：设置页面标题",
+        "isCorrect": false,
+        "description": "错误。设置标题是 useTitle。useFavicon 设置的是页面图标（favicon）。"
+      },
+      {
+        "text": "useFavicon() 无参数，返回当前 favicon 的 URL",
+        "isCorrect": false,
+        "description": "错误。useFavicon 需要传入 href 参数，且作用是设置而非读取，无返回值。"
+      },
+      {
+        "text": "useFavicon(href, options)：第二参数可配置图标尺寸",
+        "isCorrect": false,
+        "description": "错误。useFavicon 只有单一参数 href，无尺寸配置项。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useBeforeUnload 在用户尝试刷新或关闭页面时弹出提示，关于它下列正确的是？",
+    "explanation": "`useBeforeUnload(enabled, message?)`：enabled 可为布尔或返回布尔的函数；当 enabled 是函数时，每次变化都会注册新回调，若值常变应配合 ref/useCallback。现代浏览器会忽略自定义 message，显示自己的通用提示。",
+    "tags": ["react-use", "高级", "副作用Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "enabled 可为函数；函数频繁变化时应配合 useCallback/ref；现代浏览器忽略自定义 message 显示通用提示",
+        "isCorrect": true,
+        "description": "正确。enabled 为布尔或返回布尔的函数，作为函数频繁变化需 useCallback/ref；message 在现代浏览器被忽略，仅显示浏览器自带的通用提示。"
+      },
+      {
+        "text": "enabled 只能是布尔值，不能是函数",
+        "isCorrect": false,
+        "description": "错误。enabled 可以是布尔，也可以是返回布尔的函数（如 dirtyFn）。"
+      },
+      {
+        "text": "自定义 message 文本会被现代浏览器原样展示给用户",
+        "isCorrect": false,
+        "description": "错误。现代浏览器会忽略自定义 message，显示自己的通用提示文案。"
+      },
+      {
+        "text": "该 Hook 会返回一个取消订阅的函数",
+        "isCorrect": false,
+        "description": "错误。useBeforeUnload 无返回值。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useError 这个 Hook 的工作机制是什么？",
+    "explanation": "`useError()` 返回一个错误派发器 `dispatchError(err: Error) => void`。调用 `dispatchError(new Error(...))` 会在渲染期间重新抛出错误，需要祖先存在 React Error Boundary 来捕获它。",
+    "tags": ["react-use", "高级", "副作用Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 dispatchError 回调，调用它会在渲染期抛错，需祖先 Error Boundary 捕获",
+        "isCorrect": true,
+        "description": "正确。useError 返回 (err)=>void 的派发器，dispatchError(new Error(...)) 触发渲染期抛错，由上层 Error Boundary 捕获。"
+      },
+      {
+        "text": "返回当前组件捕获到的最近一个错误对象",
+        "isCorrect": false,
+        "description": "错误。useError 返回的是错误派发器函数，不是错误对象本身。"
+      },
+      {
+        "text": "它会自动捕获子组件错误，无需 Error Boundary",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它依赖祖先 Error Boundary 来捕获被 dispatchError 抛出的错误。"
+      },
+      {
+        "text": "它返回一个布尔值，表示当前是否处于错误状态",
+        "isCorrect": false,
+        "description": "错误。它返回的是一个派发错误的回调函数，而非布尔状态。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useRafLoop 返回 `[stopLoop, startLoop, isActive]`，关于它下列正确的是？",
+    "explanation": "callback 在 RAF 循环中每帧调用且**不会重渲染父组件**，组件卸载时循环自动停止；`isActive` 是**函数**需调用 `isActive()`。要在 UI 反映变化需配合 `useUpdate()` 或 useState。",
+    "tags": ["react-use", "专家", "动画Hook"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "callback 每帧执行但不重渲染父组件，isActive 是需调用的函数，卸载时循环自动停止",
+        "isCorrect": true,
+        "description": "正确。useRafLoop 在 RAF 循环内调用 callback 而不触发父组件重渲染，isActive() 是函数，卸载自动停止；要反映 UI 变化需配合 useUpdate/useState。"
+      },
+      {
+        "text": "callback 每帧执行并自动触发父组件重渲染",
+        "isCorrect": false,
+        "description": "错误。它特意不触发父组件重渲染；想在 UI 体现变化需自行配合 useUpdate() 或 useState。"
+      },
+      {
+        "text": "isActive 是布尔值，可直接判断循环是否运行",
+        "isCorrect": false,
+        "description": "错误。isActive 是函数，需调用 isActive() 才能拿到状态。"
+      },
+      {
+        "text": "循环必须手动调用 stopLoop 才会停止，卸载不会自动清理",
+        "isCorrect": false,
+        "description": "错误。组件卸载时循环会自动停止。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）的 README 分类中，useRafState 被归在哪个类目下？",
+    "explanation": "`useRafState` 归在 **State（状态）** 类目下，而**不是** Side-effects。它像 useState 返回 `[state, setState]`，但实际更新被推迟到下一个 requestAnimationFrame 回调中执行，适合高频事件（resize/scroll/mousemove）以减少渲染。",
+    "tags": ["react-use", "中级", "分类"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "State（状态）类目，而非 Side-effects",
+        "isCorrect": true,
+        "description": "正确。useRafState 在 README 中归于 State 类目；它返回 [state,setState]，但更新推迟到 requestAnimationFrame 回调，适合高频事件减少重渲染。"
+      },
+      {
+        "text": "Side-effects（副作用）类目",
+        "isCorrect": false,
+        "description": "错误。这是常见误区。其名字带 Raf 易与 useRafLoop（Side-effects）混淆，但 useRafState 在 README 中属于 State 类目。"
+      },
+      {
+        "text": "Animations（动画）类目",
+        "isCorrect": false,
+        "description": "错误。它虽与 RAF 相关，但 README 把它归在 State 类目，而非 Animations。"
+      },
+      {
+        "text": "Sensors（传感器）类目",
+        "isCorrect": false,
+        "description": "错误。react-use 的类目集合为 Sensors/UI/Animations/Side-effects/Lifecycles/State/Miscellaneous，useRafState 属于 State。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，若你只想在组件挂载后执行一次回调，且不需要清理逻辑，最直接对应的 Hook 是哪个？",
+    "explanation": "`useMount(fn)` 在组件挂载后执行一次回调，内部基于 `useEffectOnce` 实现，且不支持清理逻辑。文档明确指出：如果还需要卸载逻辑，应改用 `useLifecycles`。",
+    "tags": ["react-use", "入门", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "useMount(() => { ... })",
+        "isCorrect": true,
+        "description": "正确。`useMount` 在组件挂载后执行一次回调，内部基于 `useEffectOnce`，专用于无需清理的挂载逻辑。"
+      },
+      {
+        "text": "useUpdateEffect(() => { ... })",
+        "isCorrect": false,
+        "description": "错误。`useUpdateEffect` 会跳过首次挂载渲染，只在后续 deps 更新时触发，正好不适合挂载时初始化。"
+      },
+      {
+        "text": "useUnmount(() => { ... })",
+        "isCorrect": false,
+        "description": "错误。`useUnmount` 是在组件卸载时执行回调，而非挂载时。"
+      },
+      {
+        "text": "useFirstMountState(() => { ... })",
+        "isCorrect": false,
+        "description": "错误。`useFirstMountState` 不接受回调，它返回一个布尔值表示是否首次渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 react-use 的 useMountedState，下列哪项描述是正确的？",
+    "explanation": "`useMountedState` 返回的是一个**函数**，需调用 `isMounted()` 才能得到布尔值；并且尽管名字里有 'State'，它**不会**触发重新渲染。常用于异步/定时器回调中守卫，避免在已卸载组件上更新状态。",
+    "tags": ["react-use", "中级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它返回一个函数，需调用 isMounted() 才能拿到布尔值，且不会触发重渲染",
+        "isCorrect": true,
+        "description": "正确。`const isMounted = useMountedState()` 返回函数，需 `isMounted()` 判断，且该 Hook 不引起重渲染。"
+      },
+      {
+        "text": "它返回一个布尔值，可直接用 if (isMounted) 判断当前是否挂载",
+        "isCorrect": false,
+        "description": "错误。它返回的是函数而非布尔值，直接 `if (isMounted)` 恒为真（函数为真值），属于常见误用。"
+      },
+      {
+        "text": "当挂载状态变化时它会触发组件重新渲染",
+        "isCorrect": false,
+        "description": "错误。文档明确指出尽管名字含 'State'，该 Hook 不会引起重新渲染。"
+      },
+      {
+        "text": "它返回一个 ref 对象，需通过 isMounted.current 读取",
+        "isCorrect": false,
+        "description": "错误。它返回的是函数 `() => boolean`，不是 ref 对象，没有 `.current`。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，useUpdateEffect 与原生 useEffect 的核心区别是什么？",
+    "explanation": "`useUpdateEffect` 的签名与 `useEffect` 完全相同（同样支持可选清理函数和可选 deps），唯一区别是它会**跳过首次挂载渲染**，仅在后续更新（deps 变化）时触发。挂载时初始化应改用 `useMount`/`useEffectOnce`。",
+    "tags": ["react-use", "初级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useUpdateEffect 会跳过首次挂载渲染，只在后续更新时触发",
+        "isCorrect": true,
+        "description": "正确。其签名与 `useEffect` 完全一致，但跳过初始 mount，只在 deps 变化的后续渲染中执行。"
+      },
+      {
+        "text": "useUpdateEffect 对依赖项做深比较，而 useEffect 做引用比较",
+        "isCorrect": false,
+        "description": "错误。深比较是 `useDeepCompareEffect` 的特性，`useUpdateEffect` 仍用引用比较。"
+      },
+      {
+        "text": "useUpdateEffect 不支持返回清理函数",
+        "isCorrect": false,
+        "description": "错误。文档称其签名与 `useEffect` 完全相同，同样支持可选清理函数。"
+      },
+      {
+        "text": "useUpdateEffect 只在首次挂载时运行一次",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它跳过首次挂载，仅在后续更新时运行。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 文档建议：当一个组件同时需要挂载和卸载逻辑时，应优先使用哪个 Hook 而不是叠加 useMount 与 useUnmount？",
+    "explanation": "`useMount` 与 `useUnmount` 都没有内置的对端逻辑。文档明确推荐：若同时需要挂载和卸载行为，应使用 `useLifecycles(mount, unmount?)`，它一次性接收挂载与卸载两个回调。",
+    "tags": ["react-use", "初级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useLifecycles(() => {...}, () => {...})",
+        "isCorrect": true,
+        "description": "正确。`useLifecycles(mount, unmount?)` 同时接收挂载和卸载回调，文档推荐用它替代叠加两个 Hook。"
+      },
+      {
+        "text": "useEffectOnce 配合多个返回值",
+        "isCorrect": false,
+        "description": "错误。`useEffectOnce` 只运行一次并可返回清理函数，但文档明确推荐 `useLifecycles` 处理双端逻辑。"
+      },
+      {
+        "text": "useLogger 同时记录挂载和卸载",
+        "isCorrect": false,
+        "description": "错误。`useLogger` 仅用于控制台日志记录生命周期，不执行业务回调。"
+      },
+      {
+        "text": "useIsomorphicLayoutEffect",
+        "isCorrect": false,
+        "description": "错误。它是 SSR 安全的 `useLayoutEffect` 替代，与挂载/卸载双回调无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，对于每次渲染都被重新创建、但结构上值相同的对象依赖（如 { step: 2 }），下列哪个 Hook 能避免因引用变化导致 effect 重复执行？",
+    "explanation": "`useDeepCompareEffect(effect, deps)` 对依赖项做**深比较**而非引用比较，适用于每次渲染重建但结构相同的对象依赖。注意它的 `deps` 是必填的 `any[]`。",
+    "tags": ["react-use", "中级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useDeepCompareEffect(() => {...}, [options])",
+        "isCorrect": true,
+        "description": "正确。它对 deps 做深比较，结构相同的对象不会触发 effect 重复执行，deps 为必填。"
+      },
+      {
+        "text": "useUpdateEffect(() => {...}, [options])",
+        "isCorrect": false,
+        "description": "错误。`useUpdateEffect` 仍用引用比较，每次重建的对象都会被视为变化。"
+      },
+      {
+        "text": "useEffectOnce(() => {...})",
+        "isCorrect": false,
+        "description": "错误。`useEffectOnce` 只运行一次，不响应 deps 变化，与按深比较触发无关。"
+      },
+      {
+        "text": "useMountedState(() => {...}, [options])",
+        "isCorrect": false,
+        "description": "错误。`useMountedState` 返回挂载判断函数，不接受 deps，也不是 effect 类 Hook。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 的 useCustomCompareEffect 比 useEffect 多出第三个参数 depsEqual，关于该比较函数的语义，下列哪项正确？",
+    "explanation": "`useCustomCompareEffect(effect, deps, depsEqual)` 的比较器签名为 `depsEqual(prevDeps, nextDeps) => boolean`，返回 `true` 表示依赖被视为**相等**（即 effect **不**重新执行）——与文档示例中 lodash `isEqual` 的极性一致。",
+    "tags": ["react-use", "高级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "depsEqual(prevDeps, nextDeps) 返回 true 表示依赖相等，effect 不会重新执行",
+        "isCorrect": true,
+        "description": "正确。返回 true 视为相等，effect 不重跑；与文档示例里 lodash `isEqual` 极性一致。"
+      },
+      {
+        "text": "depsEqual 返回 true 表示依赖发生变化，effect 会重新执行",
+        "isCorrect": false,
+        "description": "错误。极性相反：返回 true 是相等、不重跑，返回 false 才会重跑。"
+      },
+      {
+        "text": "depsEqual 的参数顺序是 (nextDeps, prevDeps)",
+        "isCorrect": false,
+        "description": "错误。文档签名是 `depsEqual(prevDeps, nextDeps)`，prev 在前。"
+      },
+      {
+        "text": "depsEqual 是可选的，省略时退化为引用比较",
+        "isCorrect": false,
+        "description": "错误。`useCustomCompareEffect` 必须提供比较器作为第三个参数。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，为什么在服务端渲染（SSR）代码里应使用 useIsomorphicLayoutEffect 而非原生 useLayoutEffect？",
+    "explanation": "`useIsomorphicLayoutEffect` 是 SSR 安全的 `useLayoutEffect` 替代：服务端会退化为 `useEffect`（effect 在服务端渲染时不执行），从而避免 React 在服务端打印 `useLayoutEffect` 的警告；客户端则与 `useLayoutEffect` 行为完全一致。",
+    "tags": ["react-use", "中级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在服务端它退化为 useEffect，从而避免 React 的 useLayoutEffect 警告；客户端行为与 useLayoutEffect 一致",
+        "isCorrect": true,
+        "description": "正确。SSR 下退化为 `useEffect`（不在服务端运行），消除警告；浏览器端等价于 `useLayoutEffect`。"
+      },
+      {
+        "text": "它在服务端会同步执行布局副作用以保证首屏无闪烁",
+        "isCorrect": false,
+        "description": "错误。服务端它退化为 `useEffect`，effect 在服务端渲染期间并不执行。"
+      },
+      {
+        "text": "它对依赖做深比较以避免 SSR 水合不一致",
+        "isCorrect": false,
+        "description": "错误。它与深比较无关，只是 SSR 安全的 layout effect 替代。"
+      },
+      {
+        "text": "它在客户端会跳过首次挂载，仅在更新时运行",
+        "isCorrect": false,
+        "description": "错误。跳过首次挂载是 `useUpdateEffect` 的行为，与本 Hook 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 的 usePermission 在异步权限查询尚未返回结果时，初始返回值是什么？",
+    "explanation": "`usePermission(permissionDesc)` 返回 `IState = PermissionState | ''`。在异步权限查询解析之前，初始返回**空字符串 `''`**（可视为未知/待定），随后才变为 `'granted' | 'denied' | 'prompt'` 之一。",
+    "tags": ["react-use", "中级", "side-effects"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "空字符串 ''",
+        "isCorrect": true,
+        "description": "正确。查询解析前返回 `''`（未知/待定），随后变为 `'granted' | 'denied' | 'prompt'`。"
+      },
+      {
+        "text": "字符串 'prompt'",
+        "isCorrect": false,
+        "description": "错误。`'prompt'` 是查询解析后的可能取值之一，而非未解析时的初始值。"
+      },
+      {
+        "text": "null",
+        "isCorrect": false,
+        "description": "错误。类型为 `PermissionState | ''`，初始是空字符串而非 `null`。"
+      },
+      {
+        "text": "undefined",
+        "isCorrect": false,
+        "description": "错误。初始返回空字符串 `''`，不是 `undefined`。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，要在异步操作（如 setTimeout 回调）里安全地判断组件是否仍处于挂载状态以避免对已卸载组件 setState，应如何使用 useMountedState？",
+    "explanation": "`const isMounted = useMountedState()` 返回一个函数，应在异步回调里调用 `isMounted()` 取得当前挂载状态：`setTimeout(() => { if (isMounted()) { /* 安全 setState */ } })`。直接 `if (isMounted)` 是错误用法，因为函数本身恒为真值。",
+    "tags": ["react-use", "高级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const isMounted = useMountedState(); setTimeout(() => { if (isMounted()) {...} });",
+        "isCorrect": true,
+        "description": "正确。在回调中调用 `isMounted()` 取得布尔值，再决定是否更新状态。"
+      },
+      {
+        "text": "const isMounted = useMountedState(); setTimeout(() => { if (isMounted) {...} });",
+        "isCorrect": false,
+        "description": "错误。`isMounted` 是函数，`if (isMounted)` 恒为真值，必须调用 `isMounted()`。"
+      },
+      {
+        "text": "const isMounted = useMountedState(); setTimeout(() => { if (isMounted.current) {...} });",
+        "isCorrect": false,
+        "description": "错误。返回的是函数而非 ref，没有 `.current` 属性。"
+      },
+      {
+        "text": "const mounted = useUnmount(); setTimeout(() => { if (mounted()) {...} });",
+        "isCorrect": false,
+        "description": "错误。`useUnmount` 接收卸载回调、无返回值，不能用于挂载判断。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 的 useUnmountPromise 返回一个包装函数 mounted，关于 mounted(promise) 的行为，下列哪项正确？",
+    "explanation": "`const mounted = useUnmountPromise()` 返回包装函数。`mounted(promise)` 返回的 Promise 在组件**卸载后不会 resolve**，用于避免卸载后回调。可选第二参 `mounted(promise, onError)`：若包装的 Promise 在卸载后 reject，会以错误调用 `onError`。",
+    "tags": ["react-use", "专家", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "mounted(promise) 返回的 Promise 在组件卸载后将不会 resolve",
+        "isCorrect": true,
+        "description": "正确。包装后的 Promise 在组件卸载后不再 resolve，从而避免卸载后的回调副作用。"
+      },
+      {
+        "text": "mounted(promise) 会在组件卸载时立即 reject 该 Promise",
+        "isCorrect": false,
+        "description": "错误。卸载后是不再 resolve，而非主动 reject；reject 处理需通过可选的 onError 参数。"
+      },
+      {
+        "text": "mounted(promise) 返回布尔值，表示组件当前是否挂载",
+        "isCorrect": false,
+        "description": "错误。它返回包装后的 Promise，判断挂载布尔值是 `useMountedState` 的职责。"
+      },
+      {
+        "text": "mounted 必须传入两个参数 (promise, onError)，否则报错",
+        "isCorrect": false,
+        "description": "错误。`onError` 是可选第二参数，仅传 promise 也可正常工作。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 中，对于所有 hook（如 useMount、useLifecycles），README 给出的标准导入方式是哪一种？而 useUnmountPromise 文档额外展示了什么形式？",
+    "explanation": "所有 lifecycle hook 的标准导入是命名导入 `import { hookName } from 'react-use'`。但 `useUnmountPromise` 的文档额外展示了深路径默认导入 `import useUnmountPromise from 'react-use/lib/useUnmountPromise'`，需留意其导入形式与多数命名导出不同。",
+    "tags": ["react-use", "初级", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "标准为命名导入 import { hookName } from 'react-use'；useUnmountPromise 文档额外展示深路径 'react-use/lib/useUnmountPromise'",
+        "isCorrect": true,
+        "description": "正确。多数 hook 用命名导入；`useUnmountPromise` 文档另展示 `react-use/lib/useUnmountPromise` 深路径默认导入。"
+      },
+      {
+        "text": "全部 hook 都必须使用默认导入 import hookName from 'react-use'",
+        "isCorrect": false,
+        "description": "错误。标准是命名导入，从包根 `import { hookName } from 'react-use'`。"
+      },
+      {
+        "text": "标准为 import * as ReactUse from 'react-use' 后用命名空间访问",
+        "isCorrect": false,
+        "description": "错误。文档示例为命名导入，并非强制命名空间导入。"
+      },
+      {
+        "text": "useMount 与 useUnmount 必须从 'react-use/lib' 深路径导入",
+        "isCorrect": false,
+        "description": "错误。它们是包根命名导出；展示深路径的是 `useUnmountPromise`。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 的 useFirstMountState 返回什么，又适合做什么？",
+    "explanation": "`const isFirstMount: boolean = useFirstMountState()` 在组件**首次/初始渲染**时返回 `true`，之后所有渲染返回 `false`，适合做基于挂载状态的条件逻辑。它在 README 中归于 State 类目。",
+    "tags": ["react-use", "初级", "state"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回布尔值，首次渲染为 true、其后均为 false",
+        "isCorrect": true,
+        "description": "正确。`useFirstMountState()` 首渲染返回 true，后续渲染均为 false，用于挂载相关条件逻辑。"
+      },
+      {
+        "text": "返回一个强制重渲染的函数",
+        "isCorrect": false,
+        "description": "错误。返回强制重渲染函数的是 `useUpdate`，不是本 Hook。"
+      },
+      {
+        "text": "返回布尔值，组件卸载时变为 true",
+        "isCorrect": false,
+        "description": "错误。它标记的是首次渲染，与卸载无关。"
+      },
+      {
+        "text": "返回一个挂载判断函数，需调用后得到布尔值",
+        "isCorrect": false,
+        "description": "错误。返回函数的是 `useMountedState`；`useFirstMountState` 直接返回布尔值。"
+      }
+    ]
+  },
+  {
+    "stem": "在 react-use 中，需要一个不依赖修改 state 或 props、调用即可强制组件重新渲染的函数，应使用哪个 Hook？",
+    "explanation": "`const update = useUpdate()` 返回一个函数，调用 `update()` 会强制组件重新渲染，且不修改任何 state 或 props。文档原文：returns a callback, which re-renders component when called。",
+    "tags": ["react-use", "初级", "animations"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const update = useUpdate(); 调用 update() 触发重渲染",
+        "isCorrect": true,
+        "description": "正确。`useUpdate` 返回函数，调用即强制重渲染，不改动 state/props。"
+      },
+      {
+        "text": "const isFirstMount = useFirstMountState(); 调用即重渲染",
+        "isCorrect": false,
+        "description": "错误。`useFirstMountState` 返回布尔值且不可调用，不触发重渲染。"
+      },
+      {
+        "text": "const isMounted = useMountedState(); 调用 isMounted() 触发重渲染",
+        "isCorrect": false,
+        "description": "错误。`useMountedState` 明确不会触发重渲染，仅返回挂载判断函数。"
+      },
+      {
+        "text": "useUpdateEffect(() => {}) 强制重渲染",
+        "isCorrect": false,
+        "description": "错误。`useUpdateEffect` 是更新时运行的 effect，不提供强制重渲染函数。"
+      }
+    ]
+  },
+  {
+    "stem": "react-use 的 useLogger 主要用途是什么？示例输出形如 'Demo mounted {}'、'Demo updated {}'、'Demo unmounted'。",
+    "explanation": "`useLogger(componentName, ...rest)` 在组件经历生命周期变化时进行控制台日志输出。`componentName` 是日志标签，`...rest` 为额外要记录的值。示例输出展示了挂载、更新、卸载三个阶段的日志，主要用于调试。",
+    "tags": ["react-use", "入门", "lifecycles"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在组件经历挂载/更新/卸载等生命周期时进行控制台日志输出，便于调试",
+        "isCorrect": true,
+        "description": "正确。`useLogger(componentName, ...rest)` 在各生命周期阶段打印日志，componentName 为标签，rest 为附加值。"
+      },
+      {
+        "text": "在生产环境收集生命周期指标并上报到监控服务",
+        "isCorrect": false,
+        "description": "错误。它只是控制台日志输出，并不上报到任何监控服务。"
+      },
+      {
+        "text": "拦截组件错误并打印错误堆栈",
+        "isCorrect": false,
+        "description": "错误。它记录生命周期变化，不是错误边界或错误拦截工具。"
+      },
+      {
+        "text": "返回当前组件的渲染次数供条件渲染使用",
+        "isCorrect": false,
+        "description": "错误。`useLogger` 返回 void，仅做日志输出，不返回渲染次数。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useToggle 返回的值结构是怎样的？",
+    "explanation": "`useToggle` 返回 `[boolean, toggleFn]` 元组。`toggle()` 无参翻转，`toggle(true)/toggle(false)` 设为指定值。官方描述：'React state hook that tracks value of a boolean.'",
+    "tags": ["react-use", "入门", "useToggle"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "返回 `[on, toggle]` 元组，toggle 无参翻转、传布尔则设值",
+        "isCorrect": true,
+        "description": "正确。`const [on, toggle] = useToggle(true)`，`toggle()` 翻转，`toggle(true)`/`toggle(false)` 设为指定布尔值。"
+      },
+      {
+        "text": "返回单个布尔值 on",
+        "isCorrect": false,
+        "description": "错误。useToggle 返回的是 `[value, toggleFn]` 元组，而非单个布尔值。"
+      },
+      {
+        "text": "返回 `[on, setTrue, setFalse]` 三元组",
+        "isCorrect": false,
+        "description": "错误。这是对 useBoolean 的常见误解，useToggle 只返回 `[value, toggle]` 两元组。"
+      },
+      {
+        "text": "返回 `{ on, toggle }` 对象",
+        "isCorrect": false,
+        "description": "错误。useToggle 返回的是元组而非对象；返回单一对象的是 useQueue/useStateList。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useBoolean，下列说法正确的是？",
+    "explanation": "`useBoolean` 是 `useToggle` 的别名（'useBoolean is an alias for useToggle'），返回 `[value, toggle]`，没有独立文档页（docs/useBoolean.md 返回 404）。常被误以为返回 `[value, setTrue, setFalse]`。",
+    "tags": ["react-use", "初级", "useBoolean"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它是 useToggle 的别名，返回 `[value, toggle]`，无独立文档页",
+        "isCorrect": true,
+        "description": "正确。useBoolean 完全等同 useToggle，docs/useBoolean.md 返回 404，所有说明都在 useToggle.md 内。"
+      },
+      {
+        "text": "它返回 `[value, setTrue, setFalse]`，比 useToggle 多两个 setter",
+        "isCorrect": false,
+        "description": "错误。这是常见误解，useBoolean 作为别名只返回 `[value, toggle]`。"
+      },
+      {
+        "text": "它有独立的 docs/useBoolean.md 文档页详述其行为",
+        "isCorrect": false,
+        "description": "错误。docs/useBoolean.md 返回 HTTP 404，说明全部在 useToggle.md 内。"
+      },
+      {
+        "text": "它与 useToggle 行为不同，专门用于受控布尔表单",
+        "isCorrect": false,
+        "description": "错误。useBoolean 是 useToggle 的别名，行为与返回形态完全相同。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useCounter（及其别名 useNumber）的 reset(value) 有什么特殊行为？",
+    "explanation": "`reset(value)` 不仅设值，还会更新内部的初始引用——之后无参 `reset()` 会回到这个新初始值，而非最早的 initial。useNumber 是 useCounter 的别名，签名完全一致。",
+    "tags": ["react-use", "中级", "useCounter"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "reset(value) 设值并更新初始引用，之后无参 reset() 回到这个新初始值",
+        "isCorrect": true,
+        "description": "正确。reset(value) 会改变内部初始引用，后续无参 reset() 回到新初始值而非最早的 initial。"
+      },
+      {
+        "text": "reset(value) 仅临时设值，下次无参 reset() 仍回到最早的 initial",
+        "isCorrect": false,
+        "description": "错误。reset(value) 会更新初始引用，无参 reset() 回到的是新初始值。"
+      },
+      {
+        "text": "reset(value) 会清空计数器并报错，因为 reset 不接受参数",
+        "isCorrect": false,
+        "description": "错误。reset 接受可选 value 参数，不会报错。"
+      },
+      {
+        "text": "reset 仅在 useCounter 有效，别名 useNumber 不提供 reset",
+        "isCorrect": false,
+        "description": "错误。useNumber 是 useCounter 的别名，actions 完全一致，同样含 reset。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中调用 `const [current, { inc, dec, set, reset }] = useCounter(0, 10, 0)` 时，第二、三个参数 `10` 和 `0` 的含义是？",
+    "explanation": "useCounter 签名为 `useCounter(initial, max = null, min = null)`。第二参数是上界 max，第三参数是下界 min（默认 null 表示无界）。",
+    "tags": ["react-use", "中级", "useCounter"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "max 上界为 10、min 下界为 0",
+        "isCorrect": true,
+        "description": "正确。`useCounter(initial, max, min)`，10 是上界，0 是下界，默认均为 null（无界）。"
+      },
+      {
+        "text": "min 下界为 10、max 上界为 0",
+        "isCorrect": false,
+        "description": "错误。参数顺序是 (initial, max, min)，第二个是 max=10，第三个是 min=0。"
+      },
+      {
+        "text": "步长 step 为 10、初始延迟为 0",
+        "isCorrect": false,
+        "description": "错误。useCounter 没有 step 或延迟参数，这两个是 max 和 min。"
+      },
+      {
+        "text": "分别是 inc 默认步长和 dec 默认步长",
+        "isCorrect": false,
+        "description": "错误。inc/dec 的步长通过调用时传 delta 控制，构造参数是 max/min。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useList 的 upsert action 在「predicate 未命中任何元素」时会做什么？",
+    "explanation": "`upsert(predicate, newItem)` 类似 updateFirst，但未命中时会把 item push 到列表末尾（'Like updateFirst but in case of predicate miss - pushes item to the list'）。",
+    "tags": ["react-use", "高级", "useList"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "将 newItem push 到列表末尾",
+        "isCorrect": true,
+        "description": "正确。upsert 命中则替换首个匹配项，未命中则将 newItem 追加到列表末尾。"
+      },
+      {
+        "text": "什么都不做，保持列表不变",
+        "isCorrect": false,
+        "description": "错误。upsert 与 updateFirst 的关键区别正是未命中时会 push。"
+      },
+      {
+        "text": "抛出错误，提示未找到匹配项",
+        "isCorrect": false,
+        "description": "错误。upsert 不会抛错，未命中时执行 push。"
+      },
+      {
+        "text": "清空整个列表后只保留 newItem",
+        "isCorrect": false,
+        "description": "错误。upsert 不清空列表，只在未命中时追加 newItem。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useMap，下列说法正确的是？",
+    "explanation": "useMap 返回 `[map, actions]`，map 是普通对象（非 ES Map）。actions 为 set/setAll/remove/reset，没有 get action，取值直接读 `map[key]`。",
+    "tags": ["react-use", "中级", "useMap"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回的 map 是普通对象，且没有 get action，取值直接 map[key]",
+        "isCorrect": true,
+        "description": "正确。useMap 的 map 是普通 object 而非 ES Map，actions 只有 set/setAll/remove/reset，无 get。"
+      },
+      {
+        "text": "返回的 map 是 ES Map 实例，需用 map.get(key) 取值",
+        "isCorrect": false,
+        "description": "错误。useMap 返回的是普通对象，直接 map[key] 取值；ES Map 是 useSet 才用真正的原生结构。"
+      },
+      {
+        "text": "actions 包含 add/has/toggle 用于增改键",
+        "isCorrect": false,
+        "description": "错误。add/has/toggle 是 useSet 的 actions，useMap 用 set/setAll/remove/reset。"
+      },
+      {
+        "text": "setAll(key, value) 用于设置单个键值对",
+        "isCorrect": false,
+        "description": "错误。setAll 是整体替换为新对象，设置单个键用 set(key, value)。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useSet 的 reset() 与 clear() 有何区别？",
+    "explanation": "官方明确：'The reset() method returns the Set to the initial value passed during useSet. The clear() method completely empties the Set.' reset 恢复初始值，clear 完全清空，二者不可混用。",
+    "tags": ["react-use", "高级", "useSet"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "reset() 恢复到 useSet 传入的初始值，clear() 完全清空",
+        "isCorrect": true,
+        "description": "正确。reset 回到初始传入的 Set 内容，clear 把 Set 清空成空集，语义不同。"
+      },
+      {
+        "text": "reset() 与 clear() 都是清空，互为别名",
+        "isCorrect": false,
+        "description": "错误。两者语义不同，reset 恢复初始值，clear 才是清空。"
+      },
+      {
+        "text": "reset() 完全清空，clear() 恢复初始值",
+        "isCorrect": false,
+        "description": "错误。语义恰好相反：reset 恢复初始值，clear 清空。"
+      },
+      {
+        "text": "reset() 删除最后一个元素，clear() 删除第一个元素",
+        "isCorrect": false,
+        "description": "错误。两者都作用于整个 Set，不是删除单个元素。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useQueue 的返回形态和成员是怎样的？",
+    "explanation": "useQueue 实现简单 FIFO 队列，返回单一对象（非元组），含 add/remove/first/last/size 五个成员，其中 first/last/size 是值而非函数。",
+    "tags": ["react-use", "中级", "useQueue"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回单一对象 `{ add, remove, first, last, size }`，first/last/size 是值",
+        "isCorrect": true,
+        "description": "正确。useQueue 返回对象而非元组，add/remove 是函数，first/last/size 是当前值。"
+      },
+      {
+        "text": "返回 `[queue, { add, remove }]` 元组",
+        "isCorrect": false,
+        "description": "错误。useQueue 返回的是单一对象，不是 [state, actions] 元组，容易误写成元组解构。"
+      },
+      {
+        "text": "返回单一对象，且 first/last/size 都是需要调用的函数",
+        "isCorrect": false,
+        "description": "错误。first/last/size 是值不是函数，直接读取即可。"
+      },
+      {
+        "text": "返回对象，含 enqueue/dequeue/peek 方法",
+        "isCorrect": false,
+        "description": "错误。成员名是 add/remove/first/last/size，没有 enqueue/dequeue/peek。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useSetState 与原生 useState 在更新状态对象上的关键区别是？",
+    "explanation": "useSetState 创建类似 class 组件 this.setState 的 setState——对对象做浅合并（merge）而非替换。'merges object changes into current state.'",
+    "tags": ["react-use", "初级", "useSetState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "useSetState 对对象做浅合并（merge）而非整体替换",
+        "isCorrect": true,
+        "description": "正确。useSetState 类似 class 的 this.setState，把变更浅合并进当前 state，而原生 useState 是替换。"
+      },
+      {
+        "text": "useSetState 做深度合并，可递归合并嵌套对象",
+        "isCorrect": false,
+        "description": "错误。useSetState 只做浅合并（shallow merge），不是深度合并。"
+      },
+      {
+        "text": "useSetState 与原生 useState 行为完全相同，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。关键区别在于 useSetState 浅合并，useState 是替换。"
+      },
+      {
+        "text": "useSetState 只能接受函数式更新，不能直接传对象",
+        "isCorrect": false,
+        "description": "错误。useSetState 既可传对象也可传函数 `(prevState) => ({...})`。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useStateList 的返回形态及 prev()/next() 的边界行为是怎样的？",
+    "explanation": "useStateList 对数组做循环（环形）迭代，返回单一对象（非元组）。next() 到尾回绕到开头，prev() 到头回绕到末尾。'Provides handles for circular iteration over states list.'",
+    "tags": ["react-use", "高级", "useStateList"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回单一对象，next() 到尾回绕到开头、prev() 到头回绕到末尾",
+        "isCorrect": true,
+        "description": "正确。useStateList 返回对象（非元组），实现环形迭代，prev/next 在边界处回绕。"
+      },
+      {
+        "text": "返回 `[state, { prev, next }]` 元组，到边界后 prev/next 停止不动",
+        "isCorrect": false,
+        "description": "错误。useStateList 返回单一对象而非元组，且到边界会回绕而非停止。"
+      },
+      {
+        "text": "返回单一对象，但到达边界后 prev/next 会抛出越界错误",
+        "isCorrect": false,
+        "description": "错误。prev/next 在边界处回绕，不抛错；setState(按值) 找不到值才抛错。"
+      },
+      {
+        "text": "返回对象，next()/prev() 仅在数组首尾各调用一次后失效",
+        "isCorrect": false,
+        "description": "错误。prev/next 可无限循环调用，永远环形回绕。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，useStateList 的 setState(value) 在「传入的值不在 stateSet 中」时会怎样？",
+    "explanation": "setStateAt(newIndex) 按索引设置带回绕、支持负索引；而 setState(value) 按值设置，若值不存在则抛错（'In case new state does not exists in stateSet an Error will be thrown'）。",
+    "tags": ["react-use", "专家", "useStateList"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "抛出错误，因为该值不在 stateSet 中",
+        "isCorrect": true,
+        "description": "正确。setState(value) 按值设置，值不存在于 stateSet 时会抛错；按索引用 setStateAt 才带回绕。"
+      },
+      {
+        "text": "自动把该值 push 到 stateSet 末尾并切换过去",
+        "isCorrect": false,
+        "description": "错误。useStateList 不会向 stateSet 追加新值，找不到会抛错。"
+      },
+      {
+        "text": "静默忽略，保持当前 state 不变",
+        "isCorrect": false,
+        "description": "错误。setState(value) 不会静默忽略，找不到值会抛错。"
+      },
+      {
+        "text": "回绕到索引 0 对应的值",
+        "isCorrect": false,
+        "description": "错误。回绕是 setStateAt(按索引) 的行为；setState(按值) 找不到会抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 useMediatedState 当 mediator 函数声明两个参数时，第二个参数是什么？",
+    "explanation": "useMediatedState 在 setState 前经 mediator 中介。若 mediator 接收两个参数，第二个参数是 setState 函数，可用于异步中介；hook 不会自动取消上一次中介调用，需自行管理取消。",
+    "tags": ["react-use", "专家", "useMediatedState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "是 setState 函数，可用于异步中介",
+        "isCorrect": true,
+        "description": "正确。mediator 第二参数为 setState，支持异步场景；但 hook 不会自动取消上次中介，需开发者自行管理取消。"
+      },
+      {
+        "text": "是 initialState 初始值",
+        "isCorrect": false,
+        "description": "错误。initialState 是 useMediatedState 的第二个参数，不是 mediator 的第二参数。"
+      },
+      {
+        "text": "是上一次的 previous state",
+        "isCorrect": false,
+        "description": "错误。mediator 第二参数是 setState 函数，而非 previous state。"
+      },
+      {
+        "text": "是一个 AbortSignal，hook 会自动取消上一次中介",
+        "isCorrect": false,
+        "description": "错误。第二参数是 setState；且 hook 不会自动取消上一次中介，需自行管理。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 useStateWithHistory，下列说法正确的是？",
+    "explanation": "useStateWithHistory 返回三元组 `[state, setState, stateHistory]`。'Initial state will not be pushed to initial history'；超出 capacity 的历史条目要到下次 setState 调用时才裁剪；history 数组引用恒定。",
+    "tags": ["react-use", "高级", "useStateWithHistory"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回三元组，且初始 state 不会被推入初始历史",
+        "isCorrect": true,
+        "description": "正确。返回 [state, setState, stateHistory]，初始 state 不进初始历史，超 capacity 的历史到下次 setState 才裁剪。"
+      },
+      {
+        "text": "返回二元组 `[state, setState]`，与原生 useState 完全一致",
+        "isCorrect": false,
+        "description": "错误。它返回三元组，第三个是 stateHistory 对象（含 history/position/back/forward/go）。"
+      },
+      {
+        "text": "初始 state 会立即被推入初始历史数组",
+        "isCorrect": false,
+        "description": "错误。官方明确初始 state 不会被推入初始历史。"
+      },
+      {
+        "text": "超出 capacity 的历史会在 setState 的同一次调用前先被裁剪",
+        "isCorrect": false,
+        "description": "错误。超出 capacity 的历史条目要到下次 setState 调用时才被裁剪。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，stateHistory.go(index) 的参数支持什么特性？",
+    "explanation": "useStateWithHistory 的 stateHistory.go(index) 跳到指定位置，支持负索引（从末尾计，'go(-2) equals go(history.length - 1)'）；back() 后退、forward() 前进，分别在首条/末条时无效。",
+    "tags": ["react-use", "中级", "useStateWithHistory"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "go(index) 支持负索引，从历史末尾倒数计",
+        "isCorrect": true,
+        "description": "正确。go 跳到指定位置，负索引从末尾计；back() 在首条无效，forward() 在末条无效。"
+      },
+      {
+        "text": "go(index) 只接受非负索引，传负数会抛错",
+        "isCorrect": false,
+        "description": "错误。go 支持负索引，从末尾倒数计位置。"
+      },
+      {
+        "text": "go(index) 等价于 setState，会向历史追加新条目",
+        "isCorrect": false,
+        "description": "错误。go 只是在已有历史中跳转 position，不追加新条目。"
+      },
+      {
+        "text": "go(index) 跳转后会清空 index 之后的所有历史",
+        "isCorrect": false,
+        "description": "错误。go 只移动 position，不清空后续历史。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，usePrevious 在组件「首次渲染」时返回什么？",
+    "explanation": "usePrevious 返回上一次渲染时的状态值，首次渲染时尚无前值，返回 undefined。每次渲染都会更新所记录的 previous。",
+    "tags": ["react-use", "初级", "usePrevious"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回 undefined",
+        "isCorrect": true,
+        "description": "正确。首次渲染时没有上一次的值，usePrevious 返回 undefined。"
+      },
+      {
+        "text": "返回当前传入的 state 值",
+        "isCorrect": false,
+        "description": "错误。usePrevious 返回的是上一次渲染的值，首次渲染没有前值故为 undefined。"
+      },
+      {
+        "text": "返回 null",
+        "isCorrect": false,
+        "description": "错误。首次渲染返回 undefined 而非 null。"
+      },
+      {
+        "text": "抛出错误提示尚无 previous 值",
+        "isCorrect": false,
+        "description": "错误。usePrevious 不会抛错，首次渲染返回 undefined。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 usePreviousDistinct 与 usePrevious 的关键差异是什么？",
+    "explanation": "usePrevious 每次渲染都更新 previous；usePreviousDistinct 仅在值'实际变化'时才更新（'Only update once the value actually changes'），可传 compare 比较函数（默认严格相等），从而跳过无关 state 引发的渲染。",
+    "tags": ["react-use", "高级", "usePreviousDistinct"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "usePreviousDistinct 仅在 compare 判定值变化时更新 previous，可跳过无关渲染",
+        "isCorrect": true,
+        "description": "正确。usePrevious 每次渲染都更新，usePreviousDistinct 仅在值实际变化（默认严格相等，可自定义 compare）时才更新 previous。"
+      },
+      {
+        "text": "usePreviousDistinct 每次渲染都更新，usePrevious 反而只在变化时更新",
+        "isCorrect": false,
+        "description": "错误。恰好相反：usePrevious 每次渲染更新，usePreviousDistinct 仅在 distinct 时更新。"
+      },
+      {
+        "text": "usePreviousDistinct 返回当前值，usePrevious 返回前一个值",
+        "isCorrect": false,
+        "description": "错误。两者都返回前一个值，区别在于何时更新所记录的 previous。"
+      },
+      {
+        "text": "usePreviousDistinct 不接受任何参数，无法自定义比较逻辑",
+        "isCorrect": false,
+        "description": "错误。它接受可选的 compare 比较函数，默认严格相等，可自定义判定 distinct。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中，`const [value, setValue] = useDefault(defaultValue, initialValue)` 在什么情况下会让读取到的 `value` 回退到 `defaultValue`？",
+    "explanation": "`useDefault` 的官方描述为「当 state 为 null 或 undefined 时返回默认值」。只有 `null` 与 `undefined` 触发回退，其他 falsy 值（`0`、`''`、`false`）会原样返回。",
+    "tags": ["react-use", "初级", "useDefault"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "当 state 为 `null` 或 `undefined` 时",
+        "isCorrect": true,
+        "description": "正确。文档明确：useDefault 在 state 为 null 或 undefined 时返回 defaultValue，例如 setUser(null) 后读取到的是默认对象。"
+      },
+      {
+        "text": "当 state 为任意 falsy 值（包括 `0`、`''`、`false`）时",
+        "isCorrect": false,
+        "description": "错误。`0`、`''`、`false` 会被原样返回，不触发回退，只有 null/undefined 才触发。"
+      },
+      {
+        "text": "当 state 严格等于初始值 `initialValue` 时",
+        "isCorrect": false,
+        "description": "错误。回退条件与 initialValue 无关，仅取决于当前 state 是否为 null/undefined。"
+      },
+      {
+        "text": "每次组件重新渲染时都会回退到 `defaultValue`",
+        "isCorrect": false,
+        "description": "错误。正常存储的值会保留，只有为 null/undefined 时才回退。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 `const [get, set] = useGetSet(initialValue)`，下列说法正确的是？",
+    "explanation": "useGetSet 返回的是一个 getter 函数而非原始值，目的是在嵌套/异步回调中避免 stale-closure。必须调用 `get()`（带括号）才能读到最新值，渲染时也要写 `{get()}`。",
+    "tags": ["react-use", "中级", "useGetSet"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`get` 是一个函数，必须调用 `get()` 才能读到最新值，主要用于避免 setTimeout/异步回调中的 stale-closure",
+        "isCorrect": true,
+        "description": "正确。文档说明 useGetSet 返回 getter 函数而非原始 state，get() 始终读到最新值，setTimeout 中 set(get()+1) 总能基于最新值递增。"
+      },
+      {
+        "text": "`get` 是原始 state 值，可直接渲染 `{get}` 显示",
+        "isCorrect": false,
+        "description": "错误。get 是函数，直接渲染会渲染出函数本身；必须 get() 调用。"
+      },
+      {
+        "text": "`set(patch)` 会对状态做浅合并（类似 setState）",
+        "isCorrect": false,
+        "description": "错误。浅合并是 useGetSetState 的行为；useGetSet 持有任意值并整体替换。"
+      },
+      {
+        "text": "`useGetSet` 只能用于对象类型的 state",
+        "isCorrect": false,
+        "description": "错误。对象限制是 useGetSetState（T extends object）；useGetSet 可持有任意值。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `useGetSetState` 与 `useGetSet` 在「写入状态」上的核心区别是什么？",
+    "explanation": "useGetSetState 仅支持对象（T extends object），其 setState(patch) 接收 Partial<T> 并通过 Object.assign 做浅合并（类似 this.setState），不替换整个对象；useGetSet 持有任意值且整体替换。",
+    "tags": ["react-use", "中级", "useGetSetState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useGetSetState 的 setState 接收 Partial 并浅合并（Object.assign），不替换整个对象；useGetSet 则整体替换任意值",
+        "isCorrect": true,
+        "description": "正确。README 称其「像 useGetSet 和 useSetState 生的孩子」，setState(patch) 通过 Object.assign 浅合并，类似 this.setState。"
+      },
+      {
+        "text": "两者写入行为完全一致，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。useGetSetState 是合并语义且仅限对象，useGetSet 是替换语义且可持任意值。"
+      },
+      {
+        "text": "useGetSetState 整体替换对象，useGetSet 做浅合并",
+        "isCorrect": false,
+        "description": "错误。说反了：合并的是 useGetSetState，替换的是 useGetSet。"
+      },
+      {
+        "text": "useGetSetState 的 get() 返回的是数组元组 [value, setter]",
+        "isCorrect": false,
+        "description": "错误。get() 返回当前 state 对象，读字段如 get().cnt，不是元组。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）中使用 `useMethods(createMethods, initialState)` 时，`createMethods` 里定义的方法应如何更新状态？",
+    "explanation": "useMethods 是 useReducer 的替代品，内部基于 useReducer。createMethods 接收当前 state 并返回方法对象，每个方法必须「返回新的 state」而非调用 setter 或直接 mutate。",
+    "tags": ["react-use", "中级", "useMethods"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "方法应返回新的 state 对象（如 `increment() { return { ...state, count: state.count + 1 } }`）",
+        "isCorrect": true,
+        "description": "正确。README 称其为「useReducer 的优雅替代」，方法返回更新后的 state，内部由 useReducer 驱动。"
+      },
+      {
+        "text": "方法应调用内部的 setState 来更新状态",
+        "isCorrect": false,
+        "description": "错误。useMethods 的方法不调用 setter，而是返回新 state。"
+      },
+      {
+        "text": "方法应直接 mutate 传入的 state 参数",
+        "isCorrect": false,
+        "description": "错误。应返回新 state 而非原地修改，示例用展开运算返回新对象。"
+      },
+      {
+        "text": "方法需返回一个 action 对象交由外部 dispatch 处理",
+        "isCorrect": false,
+        "description": "错误。useMethods 隐藏了 dispatch；调用 methods 上的方法即触发更新，方法直接返回新 state。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）中 `createGlobalState` 的事实，下列哪项正确？",
+    "explanation": "createGlobalState 是 './factory/createGlobalState' 的具名导出；文档页标题虽叫「useGlobalState」，但实际导出名是 createGlobalState。它使用模块级存储，无需 Provider，与需要 Provider 的 createStateContext/createReducerContext 不同。",
+    "tags": ["react-use", "高级", "createGlobalState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是具名导出 createGlobalState，使用模块级存储、无需 Provider，文档页标题却写作「useGlobalState」",
+        "isCorrect": true,
+        "description": "正确。createGlobalState 为 NAMED export，store 在模块级别，所有调用该 hook 的组件共享状态并一起重渲染，不需要 Provider 包裹。"
+      },
+      {
+        "text": "它需要用对应的 Provider 组件包裹才能共享状态",
+        "isCorrect": false,
+        "description": "错误。需要 Provider 的是 createStateContext/createReducerContext；createGlobalState 无需 Provider。"
+      },
+      {
+        "text": "实际导出名就是 useGlobalState，与文档页标题一致",
+        "isCorrect": false,
+        "description": "错误。文档页标题是 useGlobalState，但真实导出名是 createGlobalState（陷阱所在）。"
+      },
+      {
+        "text": "它是默认导出，返回 [state, dispatch] 元组",
+        "isCorrect": false,
+        "description": "错误。它是具名导出；调用工厂得到的 hook 返回 [value, setValue]，setValue 可接受值或更新函数。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `useLatest(state)` 返回的是什么，应如何读取它的值？",
+    "explanation": "useLatest 返回一个每次渲染都被更新的 MutableRefObject，通过 latestRef.current 读取最新值，常用于异步回调中读取新鲜值，避免 stale closure。它返回的是 ref，不是 [value, setter] 元组。",
+    "tags": ["react-use", "初级", "useLatest"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回一个 MutableRefObject，通过 `latestRef.current` 读取最新值",
+        "isCorrect": true,
+        "description": "正确。useLatest 把值存入每次渲染都更新的 ref，latestRef.current 总是最新的 props/state，适合在 setTimeout 等异步回调中读取。"
+      },
+      {
+        "text": "返回 `[value, setValue]` 元组，类似 useState",
+        "isCorrect": false,
+        "description": "错误。useLatest 返回 ref，不是元组。"
+      },
+      {
+        "text": "返回上一次渲染的「前一个」值",
+        "isCorrect": false,
+        "description": "错误。返回前一个值的是 usePrevious；useLatest 返回当前最新值，二者易混淆。"
+      },
+      {
+        "text": "返回一个 getter 函数，需调用读取",
+        "isCorrect": false,
+        "description": "错误。返回 getter 的是 useGetSet；useLatest 返回 ref，通过 .current 访问。"
+      }
+    ]
+  },
+  {
+    "stem": "在 React Use（react-use）的 `useStateValidator(state, validator, initialValidity?)` 中，validator 的第二个参数（dispatch/setValidity）起什么作用？",
+    "explanation": "validator 可同步返回 validity，或接受第二个 dispatch/setValidity 参数以异步设置 validity；一旦使用该第二参数，自动 validity 更新会被禁用，从而支持异步校验。validity[0] 可为 null/undefined 表示未定状态。",
+    "tags": ["react-use", "高级", "useStateValidator"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "接受第二个参数后由其手动设置 validity（支持异步），此时自动 validity 更新被禁用",
+        "isCorrect": true,
+        "description": "正确。validator 要么同步返回 validity，要么用第二个 setValidity/dispatch 异步设置；使用后自动更新被关闭（文档：if defined hook will not trigger validity change automatically）。"
+      },
+      {
+        "text": "第二个参数用于设置初始 validity 值",
+        "isCorrect": false,
+        "description": "错误。初始值由 initialValidity 参数决定（默认 [undefined]），不是 validator 第二参数。"
+      },
+      {
+        "text": "无论是否使用第二个参数，自动校验更新都会持续生效",
+        "isCorrect": false,
+        "description": "错误。使用第二参数会禁用自动更新，以便异步校验。"
+      },
+      {
+        "text": "第二个参数是上一次的 validity，用于做增量比较",
+        "isCorrect": false,
+        "description": "错误。它是 dispatch/setValidity 回调，用于手动/异步设置 validity，非历史值。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）中 `useStateValidator` 与 `useMultiStateValidator` 的导出方式，下列说法正确的是？",
+    "explanation": "useStateValidator 是默认导出，useMultiStateValidator 是具名导出。此外 docs/useMultiStateValidator.md 存在复制粘贴笔误，其签名块误写成 useStateValidator(...)，但真实导出名仍是 useMultiStateValidator。",
+    "tags": ["react-use", "专家", "useMultiStateValidator"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "useStateValidator 是默认导出，useMultiStateValidator 是具名导出",
+        "isCorrect": true,
+        "description": "正确。src/index.ts 中 useStateValidator 为默认导出，useMultiStateValidator 为具名导出；切勿被官方文档签名块里误写的 useStateValidator 误导。"
+      },
+      {
+        "text": "两者都是默认导出",
+        "isCorrect": false,
+        "description": "错误。只有 useStateValidator 是默认导出，useMultiStateValidator 是具名导出。"
+      },
+      {
+        "text": "两者都是具名导出",
+        "isCorrect": false,
+        "description": "错误。useStateValidator 是默认导出，并非具名。"
+      },
+      {
+        "text": "useMultiStateValidator 实际导出名是 useStateValidator（如文档签名所示）",
+        "isCorrect": false,
+        "description": "错误。那是文档的复制粘贴笔误；真实导出名是 useMultiStateValidator。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `useObservable(observable$, initialValue?)` 的返回值形式是怎样的？",
+    "explanation": "useObservable 订阅 RxJS 风格的 Observable，直接返回其最新发出的值（不是元组）。initialValue 是首次发射前使用的值，典型示例用 BehaviorSubject 并直接读取 value。",
+    "tags": ["react-use", "中级", "useObservable"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接返回 Observable 最新发出的值（不是元组），首次发射前用 initialValue",
+        "isCorrect": true,
+        "description": "正确。useObservable 跟踪 Observable 最新值，返回值本身；示例 const value = useObservable(counter$, 0) 直接读取 value。"
+      },
+      {
+        "text": "返回 `[value, next]` 元组，用 next 推送新值",
+        "isCorrect": false,
+        "description": "错误。它直接返回值，推送由 Observable 自身（如 counter$.next）完成，而非返回的 setter。"
+      },
+      {
+        "text": "返回一个 getter 函数，需调用 `value()` 读取",
+        "isCorrect": false,
+        "description": "错误。返回 getter 的是 useGetSet；useObservable 直接返回值。"
+      },
+      {
+        "text": "返回一个 MutableRefObject，通过 `.current` 读取",
+        "isCorrect": false,
+        "description": "错误。返回 ref 的是 useLatest；useObservable 直接返回最新值。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `useRafState(initialState)` 与原生 `useState` 相比有什么不同？",
+    "explanation": "useRafState 的 API 与 useState 相同，但 setState 会把实际状态更新推迟到下一帧 requestAnimationFrame，对 resize/scroll/mouse 等高频事件做批处理/节流，避免过多重渲染；卸载时会取消挂起的 RAF。",
+    "tags": ["react-use", "初级", "useRafState"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "API 相同，但 setState 会把状态更新推迟到下一帧 requestAnimationFrame，适合高频事件节流",
+        "isCorrect": true,
+        "description": "正确。文档称其「只在 requestAnimationFrame 回调中更新 state」，对 resize/scroll 等高频更新做批处理，卸载时取消挂起 RAF。"
+      },
+      {
+        "text": "它会用 setTimeout 把更新延迟固定毫秒数",
+        "isCorrect": false,
+        "description": "错误。它使用 requestAnimationFrame，而非 setTimeout 固定延时。"
+      },
+      {
+        "text": "它返回 getter 函数而非状态值以避免 stale closure",
+        "isCorrect": false,
+        "description": "错误。那是 useGetSet 的特性；useRafState 保持 [state, setState] 元组 API。"
+      },
+      {
+        "text": "它会在每次更新时同步触发多次重渲染以提高精度",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它通过对齐动画帧来减少重渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `createReducer(...middlewares)` 工厂的核心特性是什么？",
+    "explanation": "createReducer 是带自定义中间件的 reducer hook 工厂，API 与 React useReducer 完全相同，且兼容 Redux 中间件（如 thunk、logger）。正因支持 redux-thunk，dispatch 才能接受 thunk 函数。它不是 Redux store 的替代品。",
+    "tags": ["react-use", "高级", "createReducer"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回的 hook 与 useReducer API 相同，并兼容 Redux 中间件（如 thunk/logger），因此 dispatch 可接受 thunk 函数",
+        "isCorrect": true,
+        "description": "正确。文档称其「带自定义中间件、API 与 useReducer 一致、兼容 Redux 中间件」；传入 thunk 后 dispatch 可分发 thunk action。"
+      },
+      {
+        "text": "它是一个完整的 Redux store 替代品，内置全局单一状态树",
+        "isCorrect": false,
+        "description": "错误。它只是兼容 Redux 中间件的 reducer hook，不替代 Redux store。"
+      },
+      {
+        "text": "返回的 hook 直接返回 [get, set] getter 元组",
+        "isCorrect": false,
+        "description": "错误。它返回 [state, dispatch]，与 useReducer 相同。"
+      },
+      {
+        "text": "必须包裹在 Provider 中才能使用",
+        "isCorrect": false,
+        "description": "错误。需要 Provider 的是 createReducerContext；createReducer 返回的 hook 直接像 useReducer 使用。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）中 `createStateContext`、`createReducerContext`、`createGlobalState` 三者的关键区别，下列哪项描述正确？",
+    "explanation": "createStateContext 是「共享版 useState」（返回 [state,setState]），createReducerContext 是「共享版 useReducer」（返回 [state,dispatch]），两者都需要 Provider；createGlobalState 用模块级 store 无需 Provider。createReducerContext 的 Provider 可接受可选 initialState 覆盖工厂默认值。",
+    "tags": ["react-use", "专家", "createStateContext"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "createStateContext≈共享 useState、createReducerContext≈共享 useReducer 且都需 Provider；createGlobalState 用模块级 store 无需 Provider",
+        "isCorrect": true,
+        "description": "正确。前两者都返回 [hook, Provider] 且需 Provider 包裹，createGlobalState 无需 Provider。createReducerContext 的 Provider 还可传可选 initialState 覆盖默认值。"
+      },
+      {
+        "text": "三者都需要 Provider 才能共享状态",
+        "isCorrect": false,
+        "description": "错误。createGlobalState 使用模块级 store，无需 Provider。"
+      },
+      {
+        "text": "createStateContext 是共享 useReducer，createReducerContext 是共享 useState",
+        "isCorrect": false,
+        "description": "错误。说反了：createStateContext≈useState，createReducerContext≈useReducer。"
+      },
+      {
+        "text": "createReducerContext 的 Provider 不接受任何 props",
+        "isCorrect": false,
+        "description": "错误。其 Provider 接受可选 initialState prop，可覆盖工厂传入的默认值（文档：override the initial state for each Provider）。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 React Use（react-use）的 `useUpdateEffect` 与 `useEnsuredForwardedRef`，它们在 README 中分别属于哪个分类？",
+    "explanation": "useUpdateEffect 属于 Lifecycles（不是 State），与 useEffect 签名相同但跳过首次挂载执行；useEnsuredForwardedRef（及伴随的 ensuredForwardRef）属于 Miscellaneous（不是 State），用于在 forwardRef 子组件中保证拿到有效 ref。",
+    "tags": ["react-use", "高级", "useUpdateEffect"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useUpdateEffect 属于 Lifecycles，useEnsuredForwardedRef 属于 Miscellaneous",
+        "isCorrect": true,
+        "description": "正确。useUpdateEffect 与 useEffect 签名相同但跳过挂载首次执行，归 Lifecycles；useEnsuredForwardedRef/ensuredForwardRef 保证 forwardRef 子组件拿到有效 ref，归 Miscellaneous。"
+      },
+      {
+        "text": "两者都属于 State 分类",
+        "isCorrect": false,
+        "description": "错误。useUpdateEffect 归 Lifecycles，useEnsuredForwardedRef 归 Miscellaneous，都不是 State。"
+      },
+      {
+        "text": "useUpdateEffect 属于 Miscellaneous，useEnsuredForwardedRef 属于 Lifecycles",
+        "isCorrect": false,
+        "description": "错误。分类对调了：useUpdateEffect 是 Lifecycles，useEnsuredForwardedRef 是 Miscellaneous。"
+      },
+      {
+        "text": "useUpdateEffect 属于 State，useEnsuredForwardedRef 属于 Lifecycles",
+        "isCorrect": false,
+        "description": "错误。useUpdateEffect 是 Lifecycles 而非 State，useEnsuredForwardedRef 是 Miscellaneous 而非 Lifecycles。"
+      }
+    ]
+  },
+  {
+    "stem": "React Use（react-use）的 `useEnsuredForwardedRef` 解决了 forwardRef 组件中的什么问题？",
+    "explanation": "当父组件未向 forwardRef 组件传入 ref 时，子组件内拿到的 ref 是 undefined。useEnsuredForwardedRef 保证「无论是否传入 ref 都能拿到有效的 MutableRefObject」，在 effect 中读取 ensured.current 安全。伴随的 ensuredForwardRef 是对 React.forwardRef 的直接包装，提供同样保证。",
+    "tags": ["react-use", "专家", "useEnsuredForwardedRef"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "当父组件未传入 ref 导致子组件内 ref 为 undefined 时，它保证始终返回一个有效的 MutableRefObject",
+        "isCorrect": true,
+        "description": "正确。在 React.forwardRef((props, ref) => {...}) 内用 useEnsuredForwardedRef(ref)，即使父组件未传 ref，ensured.current 在 effect 中读取也安全。"
+      },
+      {
+        "text": "它将多个子组件的 ref 合并为一个 ref 数组",
+        "isCorrect": false,
+        "description": "错误。它只针对单个被转发的 ref 做「保证有效」处理，不做合并。"
+      },
+      {
+        "text": "它在 ref 变化时触发组件重渲染",
+        "isCorrect": false,
+        "description": "错误。ref 更新不触发重渲染，它只保证返回有效的 ref 对象。"
+      },
+      {
+        "text": "它把传入的 ref 转换为 [get, set] 元组以便读写",
+        "isCorrect": false,
+        "description": "错误。它返回 MutableRefObject，通过 .current 访问，并非 getter/setter 元组。"
+      }
+    ]
+  },
+  {
+    "stem": "以下关于 React Use（react-use）「是否提供某 hook」的判断，哪一项是正确的？",
+    "explanation": "useHookableRef 不属于 react-use：README 中没有，docs/useHookableRef.md 返回 404，src/index.ts 也无该导出。它实际存在于 @react-hookz/web。其余 createMemo、createGlobalState、useObservable 均为 react-use 真实存在的导出。",
+    "tags": ["react-use", "中级", "useHookableRef"],
+    "categories": [
+      ["技术方向", "React Use"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "react-use 并不导出 useHookableRef（它属于 @react-hookz/web，而非 react-use）",
+        "isCorrect": true,
+        "description": "正确。useHookableRef 不在 README、无 docs/useHookableRef.md（404）、不在 src/index.ts，属于另一个库 @react-hookz/web。"
+      },
+      {
+        "text": "react-use 通过 useHookableRef 提供可挂钩的 ref",
+        "isCorrect": false,
+        "description": "错误。react-use 没有 useHookableRef，该断言事实有误。"
+      },
+      {
+        "text": "react-use 并未提供 createMemo 这个 hook 工厂",
+        "isCorrect": false,
+        "description": "错误。createMemo 是 react-use 真实存在的工厂，可把纯函数包装成 memoized hook。"
+      },
+      {
+        "text": "react-use 并未提供 useObservable",
+        "isCorrect": false,
+        "description": "错误。useObservable 确实存在，用于跟踪 Observable 最新值。"
+      }
+    ]
+  }
+]
