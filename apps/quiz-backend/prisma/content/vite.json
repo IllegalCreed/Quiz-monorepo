@@ -1,0 +1,2153 @@
+[
+  {
+    "stem": "Vite：关于 Vite 在「开发」和「生产」两个阶段所做的事情，下列哪项描述最准确？",
+    "explanation": "这是 Vite 双引擎架构的核心认知。Vite 由两部分组成：\n\n1. **开发阶段（dev server）**：基于浏览器原生 ES 模块（native ESM）按需提供源码，浏览器请求哪个文件 Vite 才转换哪个，配合极快的 HMR（热模块替换）。它**不会**像传统打包器那样先把整个应用打成一个 bundle 再启动，所以冷启动几乎与项目体积无关。\n\n2. **生产阶段（build）**：仍然需要**打包**。原因正如官方《Why Vite》所述——若直接把原生 ESM 发到生产，嵌套 import 会带来大量额外网络往返（network round trips），影响加载性能，因此生产必须打包以做 tree-shaking、懒加载切分等优化。\n\n**版本差异（Vite 8 ↔ ≤7）**：生产打包用的「打包器」在 Vite 8 中是 **Rolldown**（Rust 编写，统一 dev/build）；而 Vite ≤7 的稳定默认是 **esbuild（依赖预构建/转译）+ Rollup（生产打包）**两套工具。本题只考阶段职责，不涉及具体打包器名，故各版本结论一致。",
+    "tags": ["vite", "入门", "定位", "原生ESM", "生产打包"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "开发时基于浏览器原生 ESM 按需提供源码并提供 HMR；生产时仍需打包以减少网络往返并做优化",
+        "isCorrect": true,
+        "description": "正确。这正是 Vite 的两段式设计：dev server 用 native ESM + HMR 免去整体打包以求秒级启动，生产因嵌套 import 的网络往返问题仍需打包优化。"
+      },
+      {
+        "text": "开发和生产都完全不打包，全程依赖浏览器原生 ESM 直接加载源码",
+        "isCorrect": false,
+        "description": "错误。生产环境若直接发原生 ESM，嵌套 import 会造成大量额外网络往返，性能很差，所以生产仍需打包。"
+      },
+      {
+        "text": "开发时先把整个应用打成一个 bundle 再启动 dev server，生产时再增量更新该 bundle",
+        "isCorrect": false,
+        "description": "错误。这恰是 Vite 要解决的「传统打包器服务器启动慢」的问题；Vite 开发期不做整体打包，而是按请求转换单个文件。"
+      },
+      {
+        "text": "开发时打包、生产时不打包——因为生产环境的浏览器都已原生支持 ESM",
+        "isCorrect": false,
+        "description": "错误。方向恰好反了：开发不整体打包、生产才打包。浏览器支持 ESM 不代表发原生 ESM 到生产是高效的（网络往返问题）。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：使用 npm 通过官方脚手架创建一个 Vue + TypeScript 项目，下列哪条命令是正确的？",
+    "explanation": "官方脚手架 `create-vite` 的调用因包管理器而异，**npm 的坑最多**：\n\n- **npm（7+）必须用 `--` 分隔符**，把后面的参数透传给 create-vite，否则 npm 会把 `--template` 当成自己的参数吞掉：\n  ```bash\n  npm create vite@latest my-vue-app -- --template vue-ts\n  ```\n- pnpm / yarn / bun **不需要**这个 `--`：\n  ```bash\n  pnpm create vite my-vue-app --template vue-ts\n  yarn create vite my-vue-app --template vue-ts\n  bun create vite my-vue-app --template vue-ts\n  ```\n\nVue + TypeScript 的模板名是 **`vue-ts`**（不是 `vue`，`vue` 是纯 JS 版）。\n\n这条规则在 Vite 7 与 Vite 8 中一致，无版本差异。",
+    "tags": ["vite", "入门", "create-vite", "脚手架", "npm分隔符"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "npm create vite@latest my-vue-app -- --template vue-ts",
+        "isCorrect": true,
+        "description": "正确。npm 7+ 需要 `--` 把 `--template vue-ts` 透传给 create-vite，且 Vue+TS 模板名正是 `vue-ts`。"
+      },
+      {
+        "text": "npm create vite@latest my-vue-app --template vue-ts",
+        "isCorrect": false,
+        "description": "错误。缺少 `--` 分隔符，npm 会拦截 `--template` 参数导致模板未被传入，最终进入交互式选择。"
+      },
+      {
+        "text": "npm create vite@latest my-vue-app -- --template vue",
+        "isCorrect": false,
+        "description": "错误。`--` 用对了，但模板名 `vue` 是纯 JavaScript 版本；要 TypeScript 应写 `vue-ts`。"
+      },
+      {
+        "text": "npm init vite@latest my-vue-app --framework vue --ts",
+        "isCorrect": false,
+        "description": "错误。create-vite 没有 `--framework`/`--ts` 这类参数，指定模板统一用 `--template <name>`（且 npm 仍需 `--`）。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：官方脚手架 create-vite 内置的官方框架族共有 8 个（各含 -ts 等变体），下列哪一组「全部」属于官方内置模板？",
+    "explanation": "create-vite 官方共内置 **8 个框架族**，每个框架族还有纯 JS、`-ts`（TypeScript）等多种变体（实际变体数不止 16，如 React 还有 react-compiler 系列）：\n\n`vanilla` / `vue` / `react` / `preact` / `lit` / `svelte` / `solid` / `qwik`（各自再加 `-ts`）。\n\n注意辨析常见混淆项：\n- **angular** 不在官方内置模板中（Angular 有自己的 CLI）。\n- **vanilla** 指「无框架的原生 JS」，是官方模板之一，别误以为它不是模板。\n- **astro / nuxt / next** 是上层框架，各有自己的 create 工具，不属于 create-vite 内置模板。\n\n该模板清单在 Vite 7 与 Vite 8 中一致。",
+    "tags": ["vite", "初级", "create-vite", "官方模板"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "vanilla、vue、react、preact、lit、svelte、solid、qwik",
+        "isCorrect": true,
+        "description": "正确。这正是 create-vite 的 8 个官方框架族，每族再有 -ts 变体，共 16 个模板。"
+      },
+      {
+        "text": "vanilla、vue、react、preact、lit、svelte、solid、angular",
+        "isCorrect": false,
+        "description": "错误。前 7 个对，但 `angular` 不是 create-vite 官方模板（Angular 用自己的 CLI），缺了 `qwik`。"
+      },
+      {
+        "text": "vue、react、preact、lit、svelte、solid、qwik、astro",
+        "isCorrect": false,
+        "description": "错误。漏了 `vanilla`，且 `astro` 是上层框架（有独立 create-astro），不在 create-vite 内置模板里。"
+      },
+      {
+        "text": "vanilla、vue、react、preact、lit、svelte、solid、nuxt",
+        "isCorrect": false,
+        "description": "错误。`nuxt` 是基于 Vite 的元框架，由 nuxi 脚手架创建，不属于 create-vite 内置模板；正确的第 8 个是 `qwik`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：当前 Vite 8（npm latest）相比 Vite ≤7，在「构建工具链」上最核心的变化是什么？",
+    "explanation": "这是 Vite 8 的标志性变化，必须区分版本：\n\n- **Vite ≤7（稳定默认）**：开发期依赖预构建与转译用 **esbuild**，生产打包用 **Rollup**——两套独立工具，导致 dev 与 build 行为存在不一致。Vite 7 中 Rolldown 只是**可选实验**（把 `vite` 别名为 `rolldown-vite` 包才启用）。\n- **Vite 8（当前）**：默认改用 **Rolldown（Rust 编写的统一打包器）+ Oxc 工具链**，统一了 dev 与 build，替换掉 esbuild + Rollup。相应地配置项也改名：`build.rollupOptions` → `build.rolldownOptions`（旧名废弃保留），JS 转换从 `esbuild` 选项迁移到 `oxc` 选项；CSS 压缩默认改用 **Lightning CSS**。\n\n干扰项中「Webpack」「SWC 默认」「Vite 8 移除 dev server 改纯打包」都是臆造或张冠李戴。",
+    "tags": ["vite", "中级", "Rolldown", "Oxc", "版本差异"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 8 默认用 Rolldown + Oxc 统一替换了 ≤7 的 esbuild + Rollup 双工具链",
+        "isCorrect": true,
+        "description": "正确。Vite 8 以 Rust 编写的 Rolldown（统一 dev/build）与 Oxc 工具替换了 ≤7 默认的 esbuild（转译/预构建）+ Rollup（打包）。"
+      },
+      {
+        "text": "Vite 8 把生产打包器从 Rollup 换成了 Webpack，开发仍用 esbuild",
+        "isCorrect": false,
+        "description": "错误。Vite 从未采用 Webpack；Vite 8 的新打包器是 Rolldown，且 Oxc 也取代了 esbuild。"
+      },
+      {
+        "text": "Vite 8 与 ≤7 工具链完全相同，只是默认开启了 SWC 转译",
+        "isCorrect": false,
+        "description": "错误。Vite 8 工具链有重大变化（Rolldown+Oxc），转译工具是 Oxc 而非 SWC。"
+      },
+      {
+        "text": "Vite 8 移除了开发 dev server，改为全程打包模式以贴近 Webpack 体验",
+        "isCorrect": false,
+        "description": "错误。Vite 8 仍保留基于原生 ESM 的 dev server；变化在打包器（Rolldown 统一了 dev 与 build），而非取消 dev server。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在一个已有的空目录里「手动」接入 Vite（不使用 create-vite 脚手架），下列哪条命令能正确启动开发服务器？",
+    "explanation": "手动接入 Vite 的标准流程与 CLI 语义：\n\n1. 安装为开发依赖：`npm install -D vite`\n2. 准备入口：Vite 以项目根目录下的 **`index.html`** 作为应用入口（它被当作模块图的一部分，而非静态资源）。\n3. 启动 dev server：`npx vite`。其中 `vite`、`vite dev`、`vite serve` 三者互为**别名**，都启动开发服务器；命令签名是 `vite [root]`，可传 root 目录，如 `npx vite ./src` 指定根目录。\n\n开发服务器默认端口是 **5173**（`http://localhost:5173`）。\n\n常见误区：\n- `vite build` 是「生产打包」命令，不会启动 dev server。\n- `vite preview` 是本地预览**已构建产物**的命令，需要先 build，且官方明确不应作为生产服务器。\n\n以上 CLI 语义在 Vite 7 与 8 中一致。",
+    "tags": ["vite", "中级", "CLI", "vite-serve", "index.html入口"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先 npm install -D vite，根目录放 index.html，再用 npx vite（或 vite serve）启动",
+        "isCorrect": true,
+        "description": "正确。Vite 装为 dev 依赖、以 index.html 为入口，`npx vite`/`vite dev`/`vite serve` 互为别名启动 dev server（默认 5173 端口）。"
+      },
+      {
+        "text": "npm install -D vite 后运行 npx vite build 即可启动开发服务器",
+        "isCorrect": false,
+        "description": "错误。`vite build` 是生产打包命令，产出 dist 产物，不会启动开发服务器。"
+      },
+      {
+        "text": "无需安装 vite，直接 npx vite preview 即可在 5173 端口开发",
+        "isCorrect": false,
+        "description": "错误。`vite preview` 只预览已构建产物（需先 build），且不是开发服务器，也不应作生产服务器。"
+      },
+      {
+        "text": "Vite 以 main.js 为唯一入口，缺少 main.js 时 dev server 无法启动",
+        "isCorrect": false,
+        "description": "错误。Vite 的入口是根目录的 index.html（被纳入模块图），由它再引用脚本，而非把某个 .js 当作唯一入口。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在本机安装并运行 Vite 8 前，关于 Node.js 版本要求，下列哪项说法正确？",
+    "explanation": "Vite 对运行环境的 Node.js 版本有明确下限。官方《Getting Started》写明：\n\n> Vite requires Node.js version **20.19+, 22.12+**.\n\n含义是：\n- 20.x 线需 **≥ 20.19**；\n- 22.x 线需 **≥ 22.12**；\n- 介于两者之间的奇数大版本（如 21.x、23.x）属非 LTS、不在保障范围；\n- 低于 20.19（如 Node 18、20.10）不满足要求。\n\n此外官方提示「部分模板可能要求更高的 Node 版本」。该版本基线在当前 Vite 8 文档中给出，是接入前的硬性前置条件；不要凭印象写成「Node 14/16/18 即可」。",
+    "tags": ["vite", "入门", "Node版本", "环境要求"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "需要 Node.js 20.19+ 或 22.12+",
+        "isCorrect": true,
+        "description": "正确。官方明确要求 Node.js 20.19+、22.12+，部分模板可能要求更高版本。"
+      },
+      {
+        "text": "需要 Node.js 14+ 即可，更高版本无强制要求",
+        "isCorrect": false,
+        "description": "错误。Node 14 远低于要求；当前 Vite 要求 20.19+ / 22.12+。"
+      },
+      {
+        "text": "需要 Node.js 16+ 或 18+ 任一即可",
+        "isCorrect": false,
+        "description": "错误。16/18 均不满足；下限是 20.19+ 与 22.12+。"
+      },
+      {
+        "text": "Vite 用 Rust 工具链构建，对 Node.js 版本无任何要求",
+        "isCorrect": false,
+        "description": "错误。即便 Rolldown/Oxc 用 Rust 编写，Vite 仍作为 Node 包运行，明确要求 Node 20.19+ / 22.12+。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 Vite 8 对 `.ts` 文件的处理，下列哪项描述正确？",
+    "explanation": "Vite 8 用 **Oxc Transformer** 对 `.ts` 文件**只做转译（transpile）、不做类型检查**——转译速度比 vanilla `tsc` 更快，HMR 更新可在 50ms 内完成。因为没有类型检查，官方推荐在**生产构建**时并行跑 `tsc --noEmit`，**开发**时用 `tsc --noEmit --watch` 单独进程或 `vite-plugin-checker`（在浏览器里报类型错误）。\n\n**版本差异**：Vite≤7 用 **esbuild** 做这层转译；Vite 8 起换成 **Oxc**。两者都是「只转译不检查」，但底层工具与配置选项名（`esbuild` → `oxc`）已不同。\n\n干扰项错误点：Vite 不会替你跑 `tsc` 类型检查；它并非用 `tsc` 转译；类型检查需要你自己接入。",
+    "tags": ["vite", "中级", "TypeScript", "Oxc"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 8 用 Oxc 仅转译不做类型检查，类型检查需自行用 `tsc --noEmit` 或 `vite-plugin-checker`",
+        "isCorrect": true,
+        "description": "正确。Oxc Transformer 只转译，类型检查由 IDE/构建流程负责，官方明确推荐 `tsc --noEmit` 与 `vite-plugin-checker`"
+      },
+      {
+        "text": "Vite 8 在转译 `.ts` 时会同步进行完整类型检查，构建出现类型错误即失败",
+        "isCorrect": false,
+        "description": "错误。Vite「does NOT perform type checking」，类型错误不会让构建失败，必须自己接入检查工具"
+      },
+      {
+        "text": "Vite 8 底层调用 `tsc` 编译 `.ts`，因此 `tsconfig.json` 的所有选项都会生效",
+        "isCorrect": false,
+        "description": "错误。Vite 8 用 Oxc 而非 tsc；且部分 tsconfig 选项（如 `target`）会被忽略"
+      },
+      {
+        "text": "Vite 8 仍沿用 esbuild 转译 `.ts`，Oxc 仅用于依赖预构建",
+        "isCorrect": false,
+        "description": "错误。把 Vite≤7 的事实套到 Vite 8。Vite 8 转译层已从 esbuild 换成 Oxc"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：使用 Vite 8 时，为什么 `tsconfig.json` 的 `compilerOptions.isolatedModules` 必须设为 `true`？",
+    "explanation": "Vite 8 的 **Oxc Transformer 是逐文件转译、不掌握跨文件类型信息**的，因此**不支持依赖类型信息才能正确处理的特性**，典型如 `const enum` 和**隐式的 type-only import**（即一个 import 实际上只被当成类型用、最终应被擦除，但语法上看不出来）。把 `isolatedModules` 设为 `true` 会让 TypeScript 主动报出这些「单文件转译器无法安全处理」的写法，从而与 Oxc 的能力边界对齐。\n\n这是单文件转译器（Vite≤7 的 esbuild、Vite 8 的 Oxc、Babel 的 `@babel/plugin-transform-typescript` 等）共同的约束，并非 Vite 8 新增的限制——只是转译器从 esbuild 换成 Oxc，要求依然成立。",
+    "tags": ["vite", "中级", "TypeScript", "isolatedModules"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Oxc 逐文件转译、无跨文件类型信息，无法安全处理 `const enum` 和隐式 type-only 导入，`isolatedModules` 能让 tsc 报出这些写法",
+        "isCorrect": true,
+        "description": "正确。这正是官方给出的理由：单文件转译器缺类型信息，`isolatedModules: true` 强制暴露不安全写法"
+      },
+      {
+        "text": "因为 `isolatedModules` 会让 Vite 把每个模块隔离到独立的 Web Worker 中并行转译，提升构建速度",
+        "isCorrect": false,
+        "description": "错误。`isolatedModules` 与 Worker 并行无关，它是约束「每个文件可独立转译」的语义标志"
+      },
+      {
+        "text": "因为只有开启它，Vite 才会启用 HMR；关闭后热更新会退化为整页刷新",
+        "isCorrect": false,
+        "description": "错误。HMR 由插件/客户端机制提供，与 `isolatedModules` 无直接关系"
+      },
+      {
+        "text": "因为它能让 Oxc 自动完成完整的跨文件类型检查，替代 `tsc --noEmit`",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——正因为没有跨文件类型检查能力才需要它；它不会带来类型检查"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中，决定 TS/JS **转译目标语法降级（target）** 的配置是什么？",
+    "explanation": "Vite **会忽略 `tsconfig.json` 里的 `target`**，改用自己的选项：\n\n- **开发（dev）**：用 `oxc.target`，默认 `esnext`；\n- **生产构建（build）**：用 `build.target`（其优先级更高，最终产物的语法降级以它为准）。\n\n**版本差异**：Vite≤7 对应的开发期转译目标选项是 `esbuild.target`；Vite 8 把转译器换成 Oxc 后，该选项随之改为 **`oxc.target`**（为兼容旧配置，Vite 8 仍接受 `esbuild` 选项并自动转换为 `oxc`）。无论哪个版本，`build.target` 都是生产产物的目标控制项，且 `tsconfig` 的 `target` 始终不参与 Vite 的转译降级。",
+    "tags": ["vite", "专家", "target", "Oxc"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "开发期用 `oxc.target`（默认 `esnext`），生产构建用 `build.target`；`tsconfig` 的 `target` 被忽略",
+        "isCorrect": true,
+        "description": "正确。Vite 8 用 Oxc，dev 看 `oxc.target`、build 看 `build.target`，tsconfig.target 不生效"
+      },
+      {
+        "text": "Vite 8 直接读取并遵循 `tsconfig.json` 的 `compilerOptions.target` 作为产物目标",
+        "isCorrect": false,
+        "description": "错误。Vite 明确忽略 tsconfig 的 `target`，无论 dev 还是 build"
+      },
+      {
+        "text": "开发与生产都统一由 `esbuild.target` 控制，这是 Vite 8 的唯一目标选项",
+        "isCorrect": false,
+        "description": "错误。`esbuild.target` 是 Vite≤7 的写法；Vite 8 已改名为 `oxc.target`（仅作兼容自动转换），且 build 另有 `build.target`"
+      },
+      {
+        "text": "由 `oxc.jsx.target` 控制，因为目标降级属于 JSX 转换的一部分",
+        "isCorrect": false,
+        "description": "错误。语法降级目标是 `oxc.target` / `build.target`，并不挂在 `jsx` 子配置下"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：要让 `import.meta.env`、资源导入（如 `import logo from './logo.png'`）和 HMR API 获得 TypeScript 类型提示，正确做法是？",
+    "explanation": "Vite 把这些「客户端环境」类型放在 **`vite/client`** 中。引入方式二选一：\n\n1. 在 `tsconfig.json` 里 `\"compilerOptions\": { \"types\": [\"vite/client\"] }`；\n2. 或在某个 `.d.ts`（如 `env.d.ts`）里用三斜线指令 `/// <reference types=\"vite/client\" />`。\n\n它提供 `import.meta.env`、各类资源/静态文件导入、以及 `import.meta.hot`（HMR API）的类型声明。这一点在 Vite 7 和 Vite 8 中一致。\n\n注意：用了 `types` 字段后，TypeScript 默认自动包含的 `@types/*` 会被这份显式列表**收窄**——所以若同时需要 Node 类型等，要一并写进 `types` 数组。",
+    "tags": ["vite", "中级", "类型声明", "vite/client"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 tsconfig 写 `\"types\": [\"vite/client\"]`，或用三斜线 `/// <reference types=\"vite/client\" />`",
+        "isCorrect": true,
+        "description": "正确。这是官方两种等价引入方式，覆盖 import.meta.env、资源导入与 HMR API 类型"
+      },
+      {
+        "text": "安装并在 tsconfig 引入 `@types/vite`，Vite 自身不附带任何类型声明",
+        "isCorrect": false,
+        "description": "错误。类型由 `vite` 包内的 `vite/client` 提供，并无独立的 `@types/vite` DefinitelyTyped 包"
+      },
+      {
+        "text": "在 `vite.config.ts` 里设置 `define: { 'import.meta.env': true }` 即可获得类型",
+        "isCorrect": false,
+        "description": "错误。`define` 做的是构建期常量替换，与 TS 类型声明完全无关"
+      },
+      {
+        "text": "把 `oxc.client: true` 写进 Vite 配置，让 Oxc 注入客户端类型",
+        "isCorrect": false,
+        "description": "错误。不存在 `oxc.client` 选项；类型是通过 `vite/client` 这个类型入口引入的，与 Oxc 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中为非框架插件场景配置 **JSX 的 importSource**（如改用 Preact 的自动运行时），应使用哪个配置项？",
+    "explanation": "Vite 8 用 **Oxc** 原生处理 `.jsx` / `.tsx`，JSX 相关配置挂在 **`oxc`** 选项下：\n\n```js\nexport default {\n  oxc: {\n    jsx: { importSource: 'preact' }, // 自动运行时从 'preact/jsx-runtime' 取 jsx 函数\n    jsxInject: `import React from 'react'`, // 每个 JSX 文件自动注入辅助导入\n  },\n}\n```\n\n**版本差异**：Vite≤7 对应写法是 `esbuild.jsx` / `esbuild.jsxImportSource` / `esbuild.jsxInject`（基于 esbuild）。Vite 8 换成 Oxc 后改为 `oxc.jsx.importSource` 等；为兼容旧配置，Vite 8 仍接受 `esbuild.*` 并自动映射成 `oxc.*`（例如 `esbuild.jsx: 'automatic'` → `oxc.jsx: { runtime: 'automatic' }`，`esbuild.jsxImportSource` → `oxc.jsx.importSource`）。\n\n实务上，使用官方框架插件（plugin-vue-jsx / plugin-react）时这些通常已由插件配好，手动配 `oxc.jsx` 多用于无框架插件或自定义 pragma 的场景。",
+    "tags": ["vite", "专家", "JSX", "Oxc"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`oxc.jsx.importSource`（如需自动注入还有 `oxc.jsxInject`）",
+        "isCorrect": true,
+        "description": "正确。Vite 8 JSX 由 Oxc 处理，importSource 配在 `oxc.jsx.importSource`，自动注入用 `oxc.jsxInject`"
+      },
+      {
+        "text": "`esbuild.jsxImportSource`，因为 Vite 8 的 JSX 仍由 esbuild 转换",
+        "isCorrect": false,
+        "description": "错误。这是 Vite≤7 的选项名；Vite 8 改用 Oxc，正名是 `oxc.jsx.importSource`（旧名仅作兼容自动映射）"
+      },
+      {
+        "text": "`build.jsx.importSource`，JSX 运行时只在生产构建阶段决定",
+        "isCorrect": false,
+        "description": "错误。不存在 `build.jsx`；JSX importSource 配在 `oxc.jsx` 下，dev/build 都生效"
+      },
+      {
+        "text": "在 `tsconfig.json` 设 `jsxImportSource`，Vite 会读取它来转换 JSX",
+        "isCorrect": false,
+        "description": "错误。Vite 转译不读取 tsconfig 的 JSX 设置（与忽略 tsconfig.target 同理），需在 `oxc.jsx` 配置"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 Vite 官方框架插件矩阵与各自的 HMR 集成机制，下列哪项**全部正确**？",
+    "explanation": "Vite 官方维护的插件矩阵：\n\n- **`@vitejs/plugin-vue`**：Vue 单文件组件（SFC），HMR 由该插件提供（SFC 级热替换）；\n- **`@vitejs/plugin-vue-jsx`**：Vue 的 JSX/TSX 支持；\n- **`@vitejs/plugin-react`**：React，HMR 基于 **React Fast Refresh**（默认 Babel 实现）；\n- **`@vitejs/plugin-react-swc`**：React 的 SWC 版替代（更快的转换）；\n- **`@vitejs/plugin-rsc`**：React Server Components 支持。\n\nPreact 的 HMR 不在上述官方包里，而是通过 **`@prefresh/vite`**（`@prefresh`）实现 Fast Refresh。\n\n这套矩阵在 Vite 7 / Vite 8 中一致，与转译器从 esbuild 换成 Oxc 无关（插件层独立于核心转译器）。",
+    "tags": ["vite", "专家", "框架插件", "HMR"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "React 的 HMR 靠 Fast Refresh（plugin-react / 更快的 plugin-react-swc），Vue SFC 的 HMR 由 plugin-vue 提供，Preact 用 `@prefresh/vite`",
+        "isCorrect": true,
+        "description": "正确。完整匹配官方矩阵与各框架 HMR 机制：React Fast Refresh、Vue SFC 插件、Preact @prefresh"
+      },
+      {
+        "text": "Preact 的 Fast Refresh 由官方 `@vitejs/plugin-preact` 提供，与 React 共用同一套 Fast Refresh 实现",
+        "isCorrect": false,
+        "description": "错误。官方矩阵里没有 plugin-preact；Preact 的热更新走社区的 `@prefresh/vite`"
+      },
+      {
+        "text": "`@vitejs/plugin-react-swc` 是给 Vue 用 SWC 编译 SFC 的插件，React 没有 SWC 版插件",
+        "isCorrect": false,
+        "description": "错误。plugin-react-swc 是 React 的 SWC 版替代；Vue SFC 用 plugin-vue，与 SWC 无关"
+      },
+      {
+        "text": "React Server Components 由 `@vitejs/plugin-vue-jsx` 处理，因为两者都涉及 JSX",
+        "isCorrect": false,
+        "description": "错误。RSC 由 `@vitejs/plugin-rsc` 处理；plugin-vue-jsx 是 Vue 的 JSX 支持，二者无关"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在开发服务器中导入一个普通的 .css 文件（如 import './style.css'），关于其默认行为，下列哪一项描述最准确？",
+    "explanation": "根据 Vite 官方 Features 文档：「Importing `.css` files will inject its content to the page via a `<style>` tag with HMR support.」即导入普通 `.css` 会把内容通过注入的 `<style>` 标签作用到页面，并且支持 HMR（修改后热替换，无需整页刷新）。\n\n- 该行为对 Vite 7（esbuild + Rollup）和 Vite 8（Rolldown 统一）一致，本题不涉及版本差异。\n- 若想拿到 CSS 字符串而不注入页面，需要加 `?inline` 查询后缀；普通导入不会返回字符串。\n- 只有 `.module.css` 才返回类名映射对象，普通 `.css` 不会。",
+    "tags": ["vite", "中级", "CSS导入", "HMR"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 内容会通过注入的 <style> 标签作用到页面，并支持 HMR 热更新",
+        "isCorrect": true,
+        "description": "正确。官方原文：Importing .css files will inject its content to the page via a <style> tag with HMR support，开发态以 <style> 注入并支持热替换。"
+      },
+      {
+        "text": "导入语句的默认导出是处理后的 CSS 字符串，需要手动插入 DOM 才生效",
+        "isCorrect": false,
+        "description": "错误。这是加了 ?inline 后缀的行为。普通 .css 导入会自动注入页面，不返回字符串也无需手动插入。"
+      },
+      {
+        "text": "导入会返回一个类名映射对象，可通过属性访问局部作用域类名",
+        "isCorrect": false,
+        "description": "错误。返回类名映射对象是 CSS Modules（.module.css）的行为，普通 .css 不做局部作用域处理。"
+      },
+      {
+        "text": "CSS 修改后必须整页刷新（full reload）才能看到效果，不支持模块级热替换",
+        "isCorrect": false,
+        "description": "错误。Vite 对 CSS 提供 HMR，样式修改是模块级热替换，不触发整页刷新。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 CSS 中 @import 的内联与 url() 重写（rebase），在默认（PostCSS transformer）下，下列说法正确的是？",
+    "explanation": "Vite 官方 Features 文档说明：默认 CSS 处理基于 PostCSS——「Vite is pre-configured to support CSS `@import` inlining via `postcss-import`」，并且「all CSS `url()` references, even if the imported files are in different directories, are always automatically rebased to ensure correctness.」\n\n即：@import 通过 `postcss-import` 内联，且即使被导入文件位于不同目录，所有 `url()` 引用都会自动 rebase 以保证路径正确。\n\n- 这是默认 transformer（PostCSS）的行为，与 Vite 7/8 一致；切换到实验性的 `css.transformer: 'lightningcss'` 后由 Lightning CSS 接管，但题干限定默认场景。\n- @import 是构建/转换时内联，而非保留为运行时多次 HTTP 请求。",
+    "tags": ["vite", "中级", "CSS-import", "url-rebase", "PostCSS"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "@import 通过 postcss-import 内联，且不同目录下的 url() 引用都会被自动 rebase 保证路径正确",
+        "isCorrect": true,
+        "description": "正确。官方原文：@import inlining via postcss-import，且所有 url() 引用即使跨目录也会 automatically rebased。"
+      },
+      {
+        "text": "@import 会被保留为运行时请求，浏览器在加载样式时再发起额外的 HTTP 请求获取",
+        "isCorrect": false,
+        "description": "错误。Vite 在构建/转换阶段用 postcss-import 把 @import 内联进来，不保留为运行时的额外请求。"
+      },
+      {
+        "text": "url() 引用一律保持原样不做处理，跨目录的相对路径需开发者自行修正",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，Vite 会自动 rebase 所有 url() 引用，包括跨目录的情况，无需手动修正。"
+      },
+      {
+        "text": "@import 内联仅在生产构建时发生，开发服务器下完全不处理 @import",
+        "isCorrect": false,
+        "description": "错误。@import 内联与 url rebase 在开发与构建态都生效，并非仅限生产构建。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：要在 .module.css 中以 className.fooBar 这种 camelCase 访问原本写作 foo-bar 的 CSS 类名，应配置下列哪个选项？",
+    "explanation": "导入 `.module.css` 会返回一个类名映射对象（module object），默认以原始（连字符）类名作为键。要支持 camelCase 访问，需配置 `css.modules.localsConvention`。\n\n官方 Shared Options：`css.modules.localsConvention` 类型为 `'camelCase' | 'camelCaseOnly' | 'dashes' | 'dashesOnly' | function`，默认 `undefined`。设为 `'camelCase'` 时，`foo-bar` 既可用原名也可用 `fooBar` 访问；`'camelCaseOnly'` 则只保留驼峰键。\n\n- `css.modules` 的其余选项透传给 `postcss-modules`。\n- 注意：使用实验性 Lightning CSS（`css.transformer: 'lightningcss'`）时 `css.modules` 不生效，需改用 `css.lightningcss.cssModules`——但本题用默认 PostCSS 路径。\n- 该选项名与默认在 Vite 7/8 一致。",
+    "tags": ["vite", "中级", "CSS-Modules", "localsConvention"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "css.modules.localsConvention 设为 'camelCase'（或 'camelCaseOnly'）",
+        "isCorrect": true,
+        "description": "正确。官方该选项取值含 camelCase/camelCaseOnly，用于让 foo-bar 类名可用 fooBar 驼峰键访问。"
+      },
+      {
+        "text": "css.preprocessorOptions.css.camelCase 设为 true",
+        "isCorrect": false,
+        "description": "错误。preprocessorOptions 是传给预处理器（sass/less/stylus）的选项，CSS Modules 的命名约定不在此配置，且无此键。"
+      },
+      {
+        "text": "css.transformer 设为 'lightningcss' 即可自动启用 camelCase 类名",
+        "isCorrect": false,
+        "description": "错误。切到 Lightning CSS 反而使 css.modules 失效，命名约定需在 css.lightningcss.cssModules 单独配置，且不会自动开启。"
+      },
+      {
+        "text": "build.cssTarget 设为 'esnext'",
+        "isCorrect": false,
+        "description": "错误。cssTarget 控制 CSS 压缩的浏览器目标（语法降级），与类名命名约定毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：项目里写了 .scss 文件，开发时报错提示找不到对应预处理器；关于 Vite 对 Sass/Less/Stylus 预处理器的依赖要求，下列说法正确的是？",
+    "explanation": "Vite 官方 Features 文档明确：预处理器本身不随 Vite 打包，需要单独安装对应依赖。原文要点：「There is no need to install Vite-specific plugins for them, but the corresponding pre-processor itself must be installed.」\n\n- Sass：安装 `sass-embedded` 或 `sass`；Less：安装 `less`；Stylus：安装 `stylus`。\n- 无需安装 Vite 专属插件（Vite 已内建对 `.scss/.sass/.less/.styl/.stylus` 的支持），只需装预处理器本体。\n- 该要求在 Vite 7/8 一致。\n- `css.preprocessorMaxWorkers` 默认 `true`（最多 CPU 数减 1 的线程），用于并行化预处理器，但它不能替代「装包」这一前提。",
+    "tags": ["vite", "中级", "预处理器", "sass-embedded"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 内建对 .scss/.less/.styl 的支持，无需 Vite 专属插件，但必须自行安装预处理器本体（如 sass-embedded/sass、less、stylus）",
+        "isCorrect": true,
+        "description": "正确。官方原文：无需安装 Vite 专属插件，但对应预处理器本身必须安装；Sass 用 sass-embedded 或 sass，Less 用 less，Stylus 用 stylus。"
+      },
+      {
+        "text": "Vite 已内置打包 sass/less/stylus 运行时，开箱即用，无需安装任何额外依赖",
+        "isCorrect": false,
+        "description": "错误。预处理器不随 Vite 打包，缺包会直接报错，必须自行作为依赖安装。"
+      },
+      {
+        "text": "需要分别安装 @vitejs/plugin-sass、@vitejs/plugin-less 等官方插件才能启用",
+        "isCorrect": false,
+        "description": "错误。Vite 不需要预处理器专属插件，文档明确 There is no need to install Vite-specific plugins；只需装预处理器本体。"
+      },
+      {
+        "text": "只要把 css.preprocessorMaxWorkers 设为 true 就能让 Vite 自动下载并启用预处理器",
+        "isCorrect": false,
+        "description": "错误。preprocessorMaxWorkers 只控制预处理线程数（默认 true），不会自动安装预处理器，缺包仍会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8（latest，Rolldown 统一、Lightning CSS 默认）中执行生产构建，下列关于 build.cssMinify 默认值与版本差异的描述，哪一项正确？",
+    "explanation": "据 Vite 8 官方 Build Options：`build.cssMinify` 类型为 `boolean | 'lightningcss' | 'esbuild'`，默认 `'lightningcss'`（若客户端构建禁用了 `build.minify` 则为 `false`）。官方原文：「Vite uses Lightning CSS by default to minify CSS... Set the option to `'esbuild'` to use esbuild instead.」\n\n版本差异（必须标注）：\n- Vite 8：默认 `'lightningcss'`。由于 Vite 8 用 Oxc/Rolldown，esbuild 不再默认随附，要回退到 `'esbuild'` 需把 esbuild 作为 devDependency 安装。\n- Vite ≤7：`build.cssMinify` 默认 `'esbuild'`。\n\nLightning CSS 压缩支持更好的语法降级（受 `build.cssTarget` 影响），CSS 体积可能略有变化。",
+    "tags": ["vite", "专家", "cssMinify", "Lightning-CSS", "Vite8"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Vite 8 默认 'lightningcss'；而 Vite ≤7 默认是 'esbuild'。Vite 8 中可设为 'esbuild' 回退（需自行安装 esbuild 依赖）",
+        "isCorrect": true,
+        "description": "正确。Vite 8 build.cssMinify 默认 lightningcss，Vite 7 默认 esbuild；Vite 8 下 esbuild 不再默认随附，回退到 'esbuild' 需把它装为 devDependency。"
+      },
+      {
+        "text": "Vite 7 与 Vite 8 的 build.cssMinify 默认值都是 'esbuild'，两版本无差异",
+        "isCorrect": false,
+        "description": "错误。Vite 8 已把默认改为 'lightningcss'，与 Vite 7 的 'esbuild' 默认不同，存在明确版本差异。"
+      },
+      {
+        "text": "build.cssMinify 只接受 true/false 布尔值，无法指定具体的压缩引擎",
+        "isCorrect": false,
+        "description": "错误。其类型为 boolean | 'lightningcss' | 'esbuild'，可显式指定压缩引擎，而非仅布尔。"
+      },
+      {
+        "text": "Vite 8 默认用 'lightningcss' 压缩 CSS，但该值无法改回 esbuild，esbuild 压缩已被移除",
+        "isCorrect": false,
+        "description": "错误。仍可设为 'esbuild' 回退使用 esbuild 压缩，只是 Vite 8 下需自行安装 esbuild 依赖，并非被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：某团队想试用基于 Rust 的 Lightning CSS 引擎，并希望为「CSS 压缩的浏览器目标」单独设定一个不同于 JS 转译目标的值，同时在开发态查看 CSS 源映射。关于 css.transformer、build.cssTarget、css.devSourcemap 三者，下列描述正确的是？",
+    "explanation": "三个选项各司其职，且其中两个标注为实验性：\n\n- `css.transformer`（实验性）：类型 `'postcss' | 'lightningcss'`，默认 `'postcss'`。设为 `'lightningcss'` 即用 Lightning CSS 引擎处理 CSS。注意此时 `css.modules` 失效，CSS Modules 需走 `css.lightningcss.cssModules`，且 Stylus 因 API 限制不支持 @import alias 与 url rebase（这是 Stylus 固有限制，与是否启用 Lightning CSS 无关）。\n- `build.cssTarget`：类型 `string | string[]`，默认与 `build.target` 相同（Vite 8 的 `build.target` 默认 `'baseline-widely-available'`）。它让 CSS 压缩使用与 JS 转译不同的浏览器目标，正是题述需求。\n- `css.devSourcemap`（实验性）：类型 `boolean`，默认 `false`，开启后在开发态生成 CSS 源映射。\n\n所以三者组合即：transformer 切 lightningcss、cssTarget 单设、devSourcemap 开。这些选项名/默认在 Vite 7/8 一致（cssMinify 默认引擎才是 7/8 的差异点）。",
+    "tags": ["vite", "专家", "Lightning-CSS", "cssTarget", "devSourcemap"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "css.transformer='lightningcss'（实验性）切换引擎；build.cssTarget 单独设定 CSS 的浏览器目标（默认与 build.target 相同）；css.devSourcemap=true（实验性）开启开发态 CSS 源映射",
+        "isCorrect": true,
+        "description": "正确。三选项分别对应切引擎(实验)、独立 CSS 目标(默认随 build.target)、开发态 CSS sourcemap(实验，默认 false)，恰好满足全部需求。"
+      },
+      {
+        "text": "只需把 css.transformer 设为 'lightningcss' 即可，它会一并接管 CSS 目标设定与开发态源映射，无需另设 build.cssTarget 与 css.devSourcemap",
+        "isCorrect": false,
+        "description": "错误。transformer 只决定处理引擎，不替代 build.cssTarget（浏览器目标）与 css.devSourcemap（开发态源映射开关，默认 false 需显式开启）。"
+      },
+      {
+        "text": "build.cssTarget 默认就是 'esnext'，与 build.target 无关，可独立省略不配；css.devSourcemap 默认已为 true",
+        "isCorrect": false,
+        "description": "错误。build.cssTarget 默认与 build.target 相同（Vite 8 为 baseline-widely-available），并非 esnext；css.devSourcemap 默认是 false。"
+      },
+      {
+        "text": "css.transformer 与 css.devSourcemap 都已稳定（非实验性），切到 lightningcss 后 css.modules 仍照常生效",
+        "isCorrect": false,
+        "description": "错误。css.transformer 与 css.devSourcemap 官方均标注 Experimental；且切到 Lightning CSS 后 css.modules 失效，需改用 css.lightningcss.cssModules。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中，下列对资源查询后缀产物的描述，哪一项是正确的？",
+    "explanation": "这四个后缀的产物截然不同，是 Vite 静态资源处理的高频考点（行为在 Vite 7→8 间一致，未变）：\n\n- `?url`：把资源作为 URL 引入，并**根据文件大小自动决定是否内联**（小于 `assetsInlineLimit` 阈值的会内联为 base64 data URL，否则发出独立文件并返回其 URL）。\n- `?raw`：把资源内容作为**字符串**引入。\n- `?worker`：把脚本作为 **Worker 构造器**默认导出引入（`new Worker()` 的封装），不是 URL 也不是字符串。\n- `?worker&inline`：构建时把 Worker **内联为 base64 字符串**，避免额外网络请求。\n- `?worker&url`：返回 Worker 的 **URL**（字符串），而非构造器，便于手动 `new Worker(url)`。\n\n官方原文：`?url`「Explicitly load assets as URL (automatically inlined depending on the file size)」。注意 `?url` 的内联是按大小自动判定，并非「永远发出独立文件」。",
+    "tags": ["vite", "中级", "静态资源", "资源查询后缀"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`?url` 把资源作为 URL 引入，且会依据文件大小自动决定是否内联为 base64",
+        "isCorrect": true,
+        "description": "正确。官方明确 `?url` 是「load assets as URL (automatically inlined depending on the file size)」，小文件内联、大文件发独立文件返回 URL。"
+      },
+      {
+        "text": "`?raw` 返回资源的 URL 字符串，需再 fetch 才能拿到内容",
+        "isCorrect": false,
+        "description": "错误。`?raw` 直接把文件**内容**作为字符串引入，无需再次请求；返回 URL 的是 `?url`。"
+      },
+      {
+        "text": "`?worker&inline` 与 `?worker&url` 产物相同，都返回 Worker 构造器",
+        "isCorrect": false,
+        "description": "错误。`?worker&inline` 把 Worker 内联为 base64 后仍返回构造器，而 `?worker&url` 返回的是 Worker 的 **URL 字符串**，两者产物不同。"
+      },
+      {
+        "text": "`?worker` 返回 Worker 脚本的 URL 字符串，需自行 `new Worker(url)`",
+        "isCorrect": false,
+        "description": "错误。`?worker` 默认导出的是封装好的 **Worker 构造器**（直接 `new MyWorker()`）；返回 URL 的是 `?worker&url`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中，对 JSON 文件「命名导入」（如 `import { version } from './package.json'`）的说法，正确的是？",
+    "explanation": "Vite 支持对 JSON 既做默认导入，也做**命名导入**（导入根字段作为命名导出）。命名导入的核心收益是**有利于 tree-shaking**——只用到的字段会被保留，未引用的根字段可在构建时被摇掉，从而减小产物体积。\n\n官方原文：「import a root field as named exports - helps with tree-shaking!」。\n\n注意：命名导入只能取 JSON 的**根级**字段，不能直接命名导入嵌套字段；默认导入 `import data from './x.json'` 仍可拿到整个对象。这一行为在 Vite 7 与 Vite 8 间没有差异（Vite 8 改的是底层打包器 Rollup→Rolldown、转译 esbuild→Oxc、CSS 走 Lightning CSS，但 JSON 命名导入语义不变）。",
+    "tags": ["vite", "中级", "JSON 导入", "tree-shaking"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "命名导入可导入 JSON 的根字段作为命名导出，有利于 tree-shaking",
+        "isCorrect": true,
+        "description": "正确。官方说明导入根字段为命名导出「helps with tree-shaking」，未引用字段可被摇除。"
+      },
+      {
+        "text": "JSON 只能默认导入整个对象，Vite 不支持命名导入",
+        "isCorrect": false,
+        "description": "错误。Vite 同时支持默认导入与命名导入，命名导入正是为 tree-shaking 设计。"
+      },
+      {
+        "text": "命名导入可直接取任意层级的嵌套字段，例如 `import { a.b } from`",
+        "isCorrect": false,
+        "description": "错误。命名导入只能取**根级**字段，且 `{ a.b }` 也不是合法的解构/导入语法。"
+      },
+      {
+        "text": "命名导入是 Vite 8 因切换 Rolldown 才新增的能力，Vite 7 不支持",
+        "isCorrect": false,
+        "description": "错误。JSON 命名导入在 Vite 7 即已支持，与 Vite 8 切换 Rolldown 无关，语义两版一致。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：使用 `import.meta.glob` 时，以下哪一项不会导致它在构建期失效或报错？",
+    "explanation": "`import.meta.glob` 在 Vite 中由编译期静态分析展开，因此**所有参数都必须是字面量**——不能用变量或表达式拼出 glob 模式、`eager`、`import`、`query`、`base` 等任何参数。这是最核心的约束。\n\n官方原文：「All the arguments in the `import.meta.glob` must be **passed as literals**. You can NOT use variables or expressions in them.」\n\n各选项剖析：\n- 用变量拼模式（如 `import.meta.glob(\\`./\\${dir}/*.js\\`)`）→ 违反字面量要求，失效。\n- `eager: true` 用变量 `eager: isEager` → 同样违反字面量要求。\n- **取反模式**用 `!` 前缀（如 `['./dir/*.js', '!./dir/ignore.js']`）→ **官方明确支持**，是合法字面量用法。\n- `query` 用变量 → 违反字面量要求。\n\n此外合法的字面量参数还包括：`import: 'setup'`（只导入命名导出）、`base: './dir'`（指定基路径）。该行为 Vite 7 与 8 一致。",
+    "tags": ["vite", "专家", "import.meta.glob", "字面量约束"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 `!` 前缀写取反模式，如 `import.meta.glob(['./dir/*.js', '!./dir/skip.js'])`",
+        "isCorrect": true,
+        "description": "正确。官方支持负向（取反）glob 模式，且这里全是字符串字面量，符合字面量约束。"
+      },
+      {
+        "text": "用变量拼接 glob 模式，如 `import.meta.glob(`./${dir}/*.js`)`",
+        "isCorrect": false,
+        "description": "错误。模式必须是字面量，不能用变量/表达式拼接，否则静态分析无法展开。"
+      },
+      {
+        "text": "用变量传 eager，如 `import.meta.glob('./dir/*.js', { eager: isEager })`",
+        "isCorrect": false,
+        "description": "错误。`eager` 也属于「所有参数」之一，必须写成字面量 `true`/`false`，不能传变量。"
+      },
+      {
+        "text": "用变量传 query，如 `import.meta.glob('./dir/*.svg', { query: q })`",
+        "isCorrect": false,
+        "description": "错误。`query` 同样要求字面量（如 `query: '?raw'`），传变量会失效。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于「带变量的动态 import」（`import(`./locales/${name}.js`)`）的编译期约束，下列哪项正确？",
+    "explanation": "Vite 对**含变量的动态 import** 有一套严格的可静态分析约束，以便构建期能枚举出候选模块：\n\n1. **变量只能代表「一层深」的文件名**：若 `file` 是 `'foo/bar'`，`import(`./dir/${file}.js`)` 会**失败**——变量不能跨目录层级。官方原文：「variables only represent file names one level deep. If `file` is `'foo/bar'`, the import would fail.」\n2. 路径必须以 `./` 或 `../` 开头（相对路径），不能是裸模块名。\n3. 必须带**文件扩展名**（如 `.js`），目录式导入要给出文件名模式。\n\n因此「变量可跨多层目录」「可省略扩展名」「可写裸包名」都是错的。该约束 Vite 7 与 8 一致（属于 Vite 自身的代码转换层，不随底层打包器从 Rollup 切到 Rolldown 而改变）。",
+    "tags": ["vite", "中级", "动态导入", "变量约束"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "变量只能表示一层深的文件名，路径须以 ./ 或 ../ 开头并带扩展名",
+        "isCorrect": true,
+        "description": "正确。三条约束同时成立：一层深、相对路径开头、带扩展名，这样构建期才能枚举候选。"
+      },
+      {
+        "text": "变量可跨多层目录，如 `file='foo/bar'` 时 `import(`./dir/${file}.js`)` 正常工作",
+        "isCorrect": false,
+        "description": "错误。官方明确变量只能一层深，`'foo/bar'` 这种跨层会导致 import 失败。"
+      },
+      {
+        "text": "可以省略扩展名，Vite 会像 Node 那样自动补全 .js/.ts",
+        "isCorrect": false,
+        "description": "错误。带变量的动态 import 必须显式写出扩展名，Vite 不做自动后缀解析。"
+      },
+      {
+        "text": "路径可写裸模块名（如 `import(`${pkg}`)`）由 Vite 解析 node_modules",
+        "isCorrect": false,
+        "description": "错误。路径必须以 ./ 或 ../ 开头，裸包名无法被静态枚举，不被支持。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 WebAssembly 的 `?init` 后缀与多次实例化场景，下列哪项描述正确？",
+    "explanation": "Vite 的 Wasm 预处理通过 `module.wasm?init` 提供一个**初始化函数**：\n\n- `import init from './add.wasm?init'` 拿到的 `init` 接收一个可选的 **importObject**（即传给 `WebAssembly.instantiate` 的导入对象，用于注入 JS 导入），返回 `Promise<WebAssembly.Instance>`。官方原文：返回「an initialization function that returns a Promise of the `WebAssembly.Instance`」。\n- **多次实例化同一模块**时，官方建议改用 **`?url` 显式拿到资源 URL**，再自行用 `WebAssembly.instantiateStreaming` 实例化，而不是反复调 `?init`。\n- **不支持** WebAssembly 的 **ESM Integration Proposal**（不能直接 `import ... from './x.wasm'` 像普通 ESM 那样用）。官方原文：「ES Module Integration Proposal for WebAssembly is not currently supported.」\n\n该行为在 Vite 7 与 8 间未变。",
+    "tags": ["vite", "专家", "WebAssembly", "wasm-init"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`?init` 导出的函数接收 importObject、返回 Promise<WebAssembly.Instance>；多次实例化宜用 ?url + instantiateStreaming",
+        "isCorrect": true,
+        "description": "正确。`?init` 返回的 init 接受导入对象并产出实例 Promise；重复实例化官方建议用 ?url 取 URL 再 instantiateStreaming。"
+      },
+      {
+        "text": "Vite 已完整支持 Wasm 的 ESM Integration，可直接 `import { add } from './m.wasm'`",
+        "isCorrect": false,
+        "description": "错误。官方明确「ES Module Integration Proposal for WebAssembly is not currently supported」，不能像普通 ESM 那样命名导入 Wasm 导出。"
+      },
+      {
+        "text": "`?init` 返回的是 WebAssembly.Module，需自行调用 instantiate 才能拿到 Instance",
+        "isCorrect": false,
+        "description": "错误。`?init` 返回的是一个**初始化函数**，调用后得到 `Promise<WebAssembly.Instance>`，而非裸 Module。"
+      },
+      {
+        "text": "多次实例化应反复 import 带 `?init` 的同一模块，每次都会得到全新独立实例",
+        "isCorrect": false,
+        "description": "错误。重复实例化官方建议改用 `?url` 取 URL + `instantiateStreaming`，而非依赖反复 import `?init`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：用 `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })` 方式引入 Web Worker，下列哪项正确？",
+    "explanation": "这是 Vite 推荐的、贴近浏览器标准的 Worker 引入方式，有几条关键事实：\n\n1. **`new URL()` 必须直接内联写在 `new Worker()` 调用内部**才会被检测和打包。官方原文：「The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration.」——若先把 `new URL(...)` 赋给变量再传入，Vite 检测不到，打包会出问题。\n2. **`{ type: 'module' }`** 创建「module worker」，使 worker 脚本里可以用 ESM `import` 语句而非 `importScripts()`；开发期依赖浏览器原生支持，生产构建会编译消除。\n3. **生产构建默认把 worker 脚本作为独立 chunk 发出**（不内联，除非用 `?worker&inline`）。官方原文：「By default, the worker script will be emitted as a separate chunk in the production build.」\n4. options 参数必须是静态值（字符串字面量）。\n\n该行为 Vite 7 与 8 一致。",
+    "tags": ["vite", "专家", "Web Worker", "new-URL-内联"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`new URL('./worker.js', import.meta.url)` 必须内联在 new Worker() 内才被检测；module worker 里可用 ESM import 取代 importScripts，且生产默认作为独立 chunk 发出",
+        "isCorrect": true,
+        "description": "正确。三点均符合官方：URL 必须内联在构造器内才被识别；{ type:'module' } 启用 ESM import；生产默认独立 chunk。"
+      },
+      {
+        "text": "可先 `const u = new URL('./worker.js', import.meta.url)` 再 `new Worker(u)`，Vite 同样能检测并打包",
+        "isCorrect": false,
+        "description": "错误。官方明确检测「only work if new URL() is used directly inside the new Worker() declaration」，抽成变量会检测失败。"
+      },
+      {
+        "text": "module worker（type:'module'）中仍只能用 importScripts() 加载依赖，不支持 ESM import",
+        "isCorrect": false,
+        "description": "错误。正是 module worker 让你能用 ESM `import` 语句，从而无需 `importScripts()`。"
+      },
+      {
+        "text": "生产构建默认会把 worker 脚本内联进主包，不会单独产出 chunk",
+        "isCorrect": false,
+        "description": "错误。生产构建**默认作为独立 chunk** 发出；要内联需显式用 `?worker&inline`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：开发服务器启动时为什么必须对依赖（如 lodash-es）做「依赖预构建」？下列对预构建两大动因的描述，哪一项最准确？",
+    "explanation": "依赖预构建（dep pre-bundling）只在**开发模式**生效，存在两大动因（见官方 `guide/dep-pre-bundling`）：\n\n1. **CommonJS / UMD → ESM 转换**：Vite 开发时以浏览器原生 ESM 提供源码，但 npm 上仍有大量包以 CJS/UMD 发布。预构建把它们转成 ESM，并做「智能导入分析」，让对 CJS 模块的具名导入也能工作（即使导出是动态赋值的，如 React）。\n\n2. **合并多模块、减少请求**：某些 ESM 包内部模块极多，官方举例 `lodash-es` 有 **600 多个内部模块**，若不预构建，浏览器会同时发起 600+ 个 HTTP 请求，瀑布式拖慢页面。预构建把它们打成单个模块，变为 1 个请求。\n\n注意：预构建解决的是「**开发时**模块数量/格式」问题，与生产构建的 tree-shaking、与 HTTP/2 多路复用都不是一回事——即使有 HTTP/2，几百个请求的解析/排队开销在 dev 下依然显著。",
+    "tags": ["vite", "中级", "依赖预构建", "CommonJS", "ESM"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一是把 CommonJS/UMD 依赖转成浏览器可用的 ESM 并做具名导入分析；二是把含大量内部模块的 ESM 包（如 lodash-es 600+ 模块）合并为单模块，避免几百个并发 HTTP 请求",
+        "isCorrect": true,
+        "description": "正确。这正是官方文档列出的两大动因：格式兼容（CJS/UMD→ESM）+ 性能（合并模块减请求）。"
+      },
+      {
+        "text": "一是对依赖做 tree-shaking 删除未使用代码；二是对依赖做代码压缩（minify），减小开发时传输体积",
+        "isCorrect": false,
+        "description": "错误。tree-shaking 与压缩是**生产构建**的优化目标；预构建只在开发模式生效，目的不是删代码/压体积，而是格式转换与合并模块。"
+      },
+      {
+        "text": "一是给依赖注入 HMR 运行时以支持热更新；二是把依赖提前编译进 service worker 做离线缓存",
+        "isCorrect": false,
+        "description": "错误。预构建产物默认是强缓存的、且通常不参与 HMR；预构建也与 service worker 离线缓存无关，这是凭空臆造的动因。"
+      },
+      {
+        "text": "一是把 ESM 依赖降级为 CommonJS 以兼容旧浏览器；二是为依赖生成 sourcemap 方便调试",
+        "isCorrect": false,
+        "description": "错误。方向恰好相反——Vite 是把 CJS/UMD 转成 ESM 而非降级为 CJS；生成 sourcemap 也不是预构建存在的根本动因。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8（npm latest 8.0.16，Rolldown 统一 dev/build）里，开发期的「依赖预构建」由哪个工具执行？相较 Vite≤7 有何变化？",
+    "explanation": "**版本差异要点**：\n\n- **Vite≤7**：依赖预构建由 **esbuild** 执行（生产构建用 Rollup），属于「dev 用 esbuild、build 用 Rollup」的双引擎时代。\n- **Vite 8**：Rolldown 统一了 dev 与 build，**依赖预构建改由 Rolldown 执行**。官方 `guide/dep-pre-bundling` 当前原文：\"The pre-bundling is performed with **Rolldown** so it's typically very fast.\" 同时转译走 Oxc、CSS 默认 Lightning CSS。\n\n相应地，Vite 8 自定义预构建底层行为的配置项是 `optimizeDeps.rolldownOptions`（取代 Vite≤7 时代基于 esbuild 的 `optimizeDeps.esbuildOptions` 思路）。把 Vite 8 的 Rolldown 默认硬套回 Vite7、或反过来把「esbuild 预构建」当作 Vite 8 现状，都是错的。",
+    "tags": ["vite", "专家", "依赖预构建", "Rolldown", "版本差异"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Vite 8 由 Rolldown 执行预构建；而 Vite≤7 用的是 esbuild",
+        "isCorrect": true,
+        "description": "正确。Vite 8 官方文档明确预构建 \"performed with Rolldown\"；Vite≤7 时代预构建则由 esbuild 负责。"
+      },
+      {
+        "text": "Vite 8 仍由 esbuild 执行预构建，只有生产构建才换成了 Rolldown",
+        "isCorrect": false,
+        "description": "错误。Vite 8 的卖点正是 Rolldown 统一 dev/build，预构建也归 Rolldown；把它说成「仍是 esbuild」是把 Vite≤7 行为当作 Vite 8 现状。"
+      },
+      {
+        "text": "Vite 8 由 Oxc 直接执行预构建（打包），esbuild 与 Rolldown 都已彻底移除",
+        "isCorrect": false,
+        "description": "错误。Oxc 在 Vite 8 中负责的是转译/解析层，**打包/预构建是 Rolldown**；二者职责不同，不能混为一谈。"
+      },
+      {
+        "text": "Vite 8 与 Vite≤7 一样都用 Rolldown 做预构建，二者没有差异",
+        "isCorrect": false,
+        "description": "错误。Vite≤7 预构建是 esbuild，并非 Rolldown；说「二者没差异」忽略了 Vite 8 的核心引擎迁移。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：预构建产物缓存在 `node_modules/.vite`，下次启动会复用。下列哪一项**不属于**官方列出的缓存失效（触发重新预构建）来源？",
+    "explanation": "官方 `guide/dep-pre-bundling` 列出，Vite 会综合以下因素决定是否需要重新预构建：\n\n1. **包管理器 lockfile 内容**（package-lock.json / yarn.lock / pnpm-lock.yaml / bun.lock）；\n2. **patches 目录的修改时间**（mtime）；\n3. **`vite.config.js` 中相关字段**的变化；\n4. **`NODE_ENV` 的值**。\n\n以上任一变化都会让 Vite 丢弃旧缓存并重新预构建。\n\n而「**当前系统时间 / 距上次构建超过 24 小时**」并不在失效来源之列——预构建缓存没有基于时钟的过期策略，它是内容/配置驱动的。若想手动强制重构，用 `--force` 启动或直接删 `node_modules/.vite`。",
+    "tags": ["vite", "中级", "依赖预构建", "缓存失效", "node_modules/.vite"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "距上次预构建已超过 24 小时，缓存按时间自动过期",
+        "isCorrect": true,
+        "description": "正确（此项即「不属于」的答案）。预构建缓存没有基于时间的过期机制；官方失效来源全是内容/配置驱动，不含时钟过期。"
+      },
+      {
+        "text": "包管理器 lockfile（如 pnpm-lock.yaml）内容发生变化",
+        "isCorrect": false,
+        "description": "这是官方列出的失效来源之一（依赖版本变了需重构），因此不是本题要选的「不属于」项。"
+      },
+      {
+        "text": "`vite.config.js` 中与预构建相关的字段发生变化",
+        "isCorrect": false,
+        "description": "这是官方列出的失效来源之一（配置变了可能影响产物），因此不是本题要选的「不属于」项。"
+      },
+      {
+        "text": "`NODE_ENV` 的值发生变化",
+        "isCorrect": false,
+        "description": "这是官方列出的失效来源之一（环境不同会影响依赖的条件导出/产物），因此不是本题要选的「不属于」项。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：monorepo 里你 `pnpm link` 进来一个本地包并改了它的源码，但 dev server 始终加载旧版本；该包以 CJS 发布且导入时报具名导出找不到。下列处理方式哪一项**整体最正确**？",
+    "explanation": "这题踩中两个常见坑，需要分别处理：\n\n**坑一：linked dep 的格式问题。** Vite 对「同仓库的 linked 包」默认当作源码、不预构建。但如果该包是 **CJS/UMD 发布**（非 ESM），不经预构建就会出现具名导入解析失败。官方做法：把它加入 `optimizeDeps.include`，强制纳入预构建做 CJS→ESM 转换。\n\n**坑二：linked dep 改动后缓存不失效。** 官方 `guide/troubleshooting` 明确：用 `npm link`（或等价 link）时，\"Vite won't invalidate the dependencies\" 自动失效，改了 link 包的源码后 dev 仍用旧预构建缓存。解决：用 `vite --force` 强制重新预构建（或删 `node_modules/.vite`）。\n\n所以正确组合是：**`optimizeDeps.include` 解决格式 + `--force` 解决过期缓存**。注意 `--force` 与 `optimizeDeps.exclude` 不能互相替代——exclude 是「别预构建它」，恰恰会让 CJS 具名导入继续坏。",
+    "tags": ["vite", "专家", "linked-dep", "optimizeDeps", "--force"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把该包加入 `optimizeDeps.include`（让 Vite 把它 CJS→ESM 预构建），并用 `vite --force` 启动强制重新预构建以丢弃过期缓存",
+        "isCorrect": true,
+        "description": "正确。include 解决「linked 的 CJS 包默认不被预构建导致具名导入失败」，--force 解决「link 包改动后 Vite 不自动失效缓存」，两个官方建议正好对应两个坑。"
+      },
+      {
+        "text": "把该包加入 `optimizeDeps.exclude`，这样 Vite 每次都会读取它的最新源码，问题自然解决",
+        "isCorrect": false,
+        "description": "错误。exclude 是「不要预构建」，对 CJS 包反而会让具名导入继续报错；且 exclude 也不能让 link 缓存自动失效。"
+      },
+      {
+        "text": "只需 `vite --force` 即可，linked 的 CJS 包不需要任何 `optimizeDeps` 配置就能正确具名导入",
+        "isCorrect": false,
+        "description": "错误。--force 只解决缓存过期，不改变「linked 包默认被当源码、不做 CJS→ESM 转换」的事实，具名导入仍会失败，必须配合 include。"
+      },
+      {
+        "text": "删 `node_modules/.vite` 没用，只能改用 `npm overrides`，并把该包改写成 ESM 发布才行",
+        "isCorrect": false,
+        "description": "错误。删 .vite 等价于 --force，是有效手段；overrides 是 link 的替代方案之一而非唯一出路；改写为 ESM 是上游优化，不是当前必须步骤——include 即可。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：同事抱怨 dev 下首屏「转译/请求一大堆文件、明显变慢」。按官方性能指南（`guide/performance`），下列哪一项是定位与优化此类「隐形」慢的最对路组合？",
+    "explanation": "官方 `guide/performance` 针对 dev 慢给了几条关键建议：\n\n1. **避免 barrel / 桶文件**：当你 `import { slash } from './utils'` 而 `./utils/index.ts` 重新导出了一大堆模块时，Vite 必须抓取并转译该 barrel 里**所有**文件，哪怕你只用一个 API——这是 dev 慢的隐形元凶。改为直接 `import { slash } from './utils/slash.js'`。\n\n2. **减少 resolve 操作**：导入时写全扩展名（`./Component.jsx` 而非 `./Component`），并可收窄 `resolve.extensions`（默认 `['.mjs','.js','.mts','.ts','.jsx','.tsx','.json']`），减少文件系统探测次数。\n\n3. **`server.warmup`**：用 `warmup.clientFiles` 预热那些会引发 import 瀑布的高频文件，缩短首屏等待。\n\n常见误区：把 `resolve.extensions` **加长**（以为越全越好）只会增加 fs 探测、更慢；warmup 也不该塞所有文件，否则压垮 dev server。",
+    "tags": ["vite", "中级", "性能", "barrel文件", "server.warmup"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "拆掉 barrel/桶文件改为直达具体文件、导入写全扩展名并适当收窄 `resolve.extensions`、对高频入口用 `server.warmup.clientFiles` 预热",
+        "isCorrect": true,
+        "description": "正确。三条都是官方性能指南原话：避免 barrel、减少 resolve 探测（写全扩展名/收窄 extensions）、warmup 预热高频文件。"
+      },
+      {
+        "text": "把所有零散导入改成从一个统一的 barrel `index.ts` 集中再导出，减少 import 语句数量来提速",
+        "isCorrect": false,
+        "description": "错误。这恰恰是反模式——barrel 会让 Vite 抓取并转译桶里全部文件，是 dev 慢的隐形元凶，官方明确建议避免。"
+      },
+      {
+        "text": "把 `resolve.extensions` 尽量加长（补上 `.vue`、`.scss`、`.cjs` 等）以确保任何导入都能解析，从而减少报错重试",
+        "isCorrect": false,
+        "description": "错误。加长 extensions 会增加每次导入的文件系统探测次数、更慢；官方建议是**收窄**该列表。"
+      },
+      {
+        "text": "把项目所有源文件统统加进 `server.warmup.clientFiles`，让 dev server 启动时一次性全部预热",
+        "isCorrect": false,
+        "description": "错误。官方提醒只预热「确实高频」的文件，全量预热会压垮 dev server，适得其反。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：生产环境偶发报 `Failed to fetch dynamically imported module`，同时本地 dev 改了组件却经常整页 reload 而非 HMR。结合官方 troubleshooting，下列判断哪一项正确？",
+    "explanation": "本题区分「生产动态导入失败」与「dev 下 HMR 失效整页重载」两类问题，官方 `guide/troubleshooting` 给出明确成因：\n\n**`Failed to fetch dynamically imported module` 的三因**：①**版本偏移（version skew）**——新部署后旧 chunk 文件名被删，而用户浏览器里缓存的旧 HTML 仍引用旧 chunk；②**网络不稳**（且浏览器限制导致动态 import 无法自动重试）；③**浏览器扩展/广告拦截**拦掉了名字含 ad/track 的 chunk 请求。它**不是**「打开了 file:// 协议」造成的——file:// 报的是 CORS（`origin 'null' blocked by CORS policy`），用 `vite preview` 起 HTTP 服务解决。\n\n**HMR 失效改为整页重载**：常见两因——①**导入大小写不匹配**（在大小写不敏感的文件系统上 `./Foo.js` 实际文件是 `foo.js`，HMR 不工作）；②**循环依赖**会触发 full reload，可用 `vite --debug hmr` 打印依赖路径排查。",
+    "tags": ["vite", "专家", "排查", "动态导入", "HMR"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "动态导入失败常见于版本偏移（旧 HTML 引用了新部署删掉的 chunk）；HMR 退化为整页重载常因导入大小写不匹配或存在循环依赖，可用 `vite --debug hmr` 定位",
+        "isCorrect": true,
+        "description": "正确。前半是官方三因之一（version skew），后半是 HMR 失效的两大典型成因（大小写、循环依赖），且官方推荐 --debug hmr 排查。"
+      },
+      {
+        "text": "动态导入失败一定是因为用 file:// 直接打开了构建产物，改用 `vite preview` 通过 HTTP 访问即可根治",
+        "isCorrect": false,
+        "description": "错误。file:// 打开产物报的是 CORS（origin 'null' blocked），不是 \"Failed to fetch dynamically imported module\"；后者三因是版本偏移/网络/扩展拦截。"
+      },
+      {
+        "text": "HMR 退化为整页重载是因为缺少 sourcemap，开启 `build.sourcemap` 后 HMR 即可恢复",
+        "isCorrect": false,
+        "description": "错误。sourcemap 与 HMR 是否工作无关；HMR 失效的官方成因是大小写不匹配与循环依赖，且 build.sourcemap 是生产配置。"
+      },
+      {
+        "text": "两个问题都能靠 `vite --force`（强制重新预构建）一并解决，因为根因都是预构建缓存陈旧",
+        "isCorrect": false,
+        "description": "错误。--force 解决的是依赖预构建缓存陈旧（如 linked dep 过期），与生产动态导入失败、dev 端 HMR 大小写/循环依赖均无因果关系。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中不带任何配置直接运行 `vite build`，`build.minify` 与 `build.target` 的默认值分别是什么？",
+    "explanation": "Vite 8 相对 Vite 7 改了两处生产构建默认值，是高频考点：\n\n**`build.minify`**：\n- Vite ≤7 默认是 `'esbuild'`；\n- **Vite 8 默认改为 `'oxc'`**（客户端构建），使用 Oxc Minifier，官方称比 terser 快 30~90 倍、压缩率仅差 0.5~2%。可选值为 `oxc | terser | esbuild`，设 `false` 关闭压缩。注意 **SSR 构建默认是 `false`**。\n\n**`build.target`**：\n- Vite ≤7 默认是 `'modules'`；\n- **Vite 8 默认改为 `'baseline-widely-available'`**，对应 `['chrome111','edge111','firefox114','safari16.4']`（截至 2026-01-01 的 Baseline Widely Available）。\n\n因此正确组合是 `oxc` + `baseline-widely-available`。把 esbuild / modules 当成当前默认，是没区分 Vite7 与 Vite8 的典型错误。",
+    "tags": ["vite", "中级", "生产构建", "minify", "浏览器目标"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "minify 默认 `oxc`，target 默认 `baseline-widely-available`",
+        "isCorrect": true,
+        "description": "正确。这是 Vite 8 的新默认：客户端构建用 Oxc 压缩，构建目标为 Baseline Widely Available（chrome111/edge111/firefox114/safari16.4）。"
+      },
+      {
+        "text": "minify 默认 `esbuild`，target 默认 `modules`",
+        "isCorrect": false,
+        "description": "错误。这是 Vite ≤7 的默认值。Vite 8 已把压缩器换成 Oxc、目标换成 baseline-widely-available，不能把 7 的默认套到 8。"
+      },
+      {
+        "text": "minify 默认 `terser`，target 默认 `es2015`",
+        "isCorrect": false,
+        "description": "错误。terser 从未是 Vite 的默认压缩器（一直是可选项，需额外安装）；`es2015` 也只是 target 的可选下限值，从不是默认。"
+      },
+      {
+        "text": "minify 默认 `false`，target 默认 `esnext`",
+        "isCorrect": false,
+        "description": "错误。`minify: false`（不压缩）只是 SSR 构建的默认；客户端构建默认会压缩。`esnext` 也不是默认 target。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 Vite 8 默认 `build.target: 'baseline-widely-available'` 时对 JS 语法降级与 polyfill 的处理，下列说法正确的是？",
+    "explanation": "这是理解 Vite 构建产物兼容性的核心：\n\n1. `build.target` 只决定**语法转换（syntax transform）**的下限。Vite 8 默认 `baseline-widely-available` 对应 `['chrome111','edge111','firefox114','safari16.4']`，构建会把高于该范围的语法降级到这些浏览器能解析的语法。\n2. 官方明确：**“Vite 默认只处理语法转换，不包含 polyfill”**。也就是说，`Promise`、`Object.fromEntries`、`structuredClone` 这类**运行时 API** 不会被自动注入垫片——target 调低不等于自动加 polyfill。\n3. 想覆盖更老的浏览器并自动注入对应 ES 特性的 polyfill，需要使用官方插件 **`@vitejs/plugin-legacy`**，它会生成 legacy chunk 并按需加载 polyfill。\n\n这条规则在 Vite 7/8 一致（Vite 8 仅把默认 target 抬高到了 baseline-widely-available）。",
+    "tags": ["vite", "高级", "浏览器目标", "polyfill"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 只做语法转换、不自动注入 polyfill；运行时 API 兼容需借助 `@vitejs/plugin-legacy`",
+        "isCorrect": true,
+        "description": "正确。官方文档原文即“默认只处理语法转换，不包含 polyfill”，更老浏览器的特性 polyfill 由 `@vitejs/plugin-legacy` 按需生成与加载。"
+      },
+      {
+        "text": "调低 `build.target` 后，Vite 会自动为缺失的运行时 API 注入 polyfill",
+        "isCorrect": false,
+        "description": "错误。target 只影响语法降级，不会注入运行时 API 的 polyfill；这正是文档反复强调的边界。"
+      },
+      {
+        "text": "`baseline-widely-available` 意味着产物以 ES5 输出，可直接在 IE11 运行",
+        "isCorrect": false,
+        "description": "错误。它对应的是 chrome111/edge111/firefox114/safari16.4 这批现代浏览器，绝非 ES5；且 Vite 始终要求宿主支持原生 ESM 动态导入与 import.meta，IE11 不可能直接运行。"
+      },
+      {
+        "text": "Vite 8 已内置 legacy 支持，无需任何插件即可覆盖老旧浏览器并打 polyfill",
+        "isCorrect": false,
+        "description": "错误。legacy 兼容与 polyfill 注入仍是 `@vitejs/plugin-legacy` 的职责，并未内置进核心。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8 中执行 `vite build -m production`，其中 `-m` 这个全局短别名等价于哪个完整选项？",
+    "explanation": "Vite CLI 的全局短别名容易混淆，需逐一记牢（Vite 7/8 一致）：\n\n- `-c` → `--config`\n- `-l` → `--logLevel`\n- `-m` → `--mode`\n- `-d` → `--debug`\n- `-f` → `--filter`\n- `-h` → `--help`\n- `-v` → `--version`\n- `-w` → `--watch`（仅 build 等命令）\n\n因此 `-m production` 等价于 `--mode production`，用于指定模式（影响 `.env.[mode]` 文件加载与 `import.meta.env.MODE`）。常见误区是把 `-m` 当成 `--minify`——但 `--minify` 没有单字母短别名，必须写全称。",
+    "tags": ["vite", "专家", "CLI", "短别名"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "--mode",
+        "isCorrect": true,
+        "description": "正确。`-m` 是 `--mode` 的短别名，用于指定构建/运行模式（如 production、staging），决定 `.env.[mode]` 与 `import.meta.env.MODE`。"
+      },
+      {
+        "text": "--minify",
+        "isCorrect": false,
+        "description": "错误。这是最常见的误判：`--minify` 并没有单字母短别名，必须写全称；`-m` 已被 `--mode` 占用。"
+      },
+      {
+        "text": "--manifest",
+        "isCorrect": false,
+        "description": "错误。`--manifest` 用于生成 manifest.json，同样没有 `-m` 这个短别名。"
+      },
+      {
+        "text": "--base",
+        "isCorrect": false,
+        "description": "错误。`--base` 设置公共基础路径（默认 `/`），与 `-m` 无关，也没有该短别名。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：把项目从 Vite 7 升级到 Vite 8 后，原来在 `build.rollupOptions.output.manualChunks` 里写的对象形式手动分包报错或不再生效，正确的迁移方向是？",
+    "explanation": "Vite 8 底层从 Rollup 切换到 Rolldown，配置面有多处破坏性变更：\n\n- `build.rollupOptions` 重命名为 **`build.rolldownOptions`**（`worker.rollupOptions` 同理改为 `worker.rolldownOptions`）；旧名已 deprecated。\n- **`output.manualChunks` 的对象形式被移除**；函数形式虽暂保留但已 deprecated，官方推荐迁移到 Rolldown 的 **`codeSplitting` / `advancedChunks`** 机制，它更灵活。\n- Rolldown 不再支持 `format: 'system'` 与 `format: 'amd'` 输出格式。\n- esbuild 不再是直接依赖（变为可选），`transformWithEsbuild` 弃用，迁移到 `transformWithOxc`。\n\n所以本题的正确迁移是：把配置移到 `rolldownOptions`，并用 `advancedChunks`（`codeSplitting`）替代 `manualChunks` 的对象形式。把它改写成 `manualChunks` 函数形式只是临时过渡（仍被弃用），并非推荐终态。",
+    "tags": ["vite", "专家", "Vite8迁移", "代码分割"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "改用 `build.rolldownOptions`，并以 `advancedChunks`（codeSplitting）替代被移除的 `manualChunks` 对象形式",
+        "isCorrect": true,
+        "description": "正确。Vite 8 中 rollupOptions→rolldownOptions、manualChunks 对象形式被移除，官方推荐用 Rolldown 的 advancedChunks/codeSplitting 来做手动分包。"
+      },
+      {
+        "text": "保持 `build.rollupOptions` 不变，只把 `manualChunks` 改成函数形式即可长期使用",
+        "isCorrect": false,
+        "description": "错误。`rollupOptions` 在 Vite 8 已 deprecated，应改名 `rolldownOptions`；且 manualChunks 函数形式也已被弃用，只是过渡手段，不是推荐终态。"
+      },
+      {
+        "text": "把输出格式显式设为 `format: 'system'` 以恢复旧的分包行为",
+        "isCorrect": false,
+        "description": "错误。Rolldown 在 Vite 8 中已移除 `system` 和 `amd` 输出格式，这样配置只会报错，与分包问题也无关。"
+      },
+      {
+        "text": "在 `build.esbuildOptions` 里重新配置 chunk 拆分",
+        "isCorrect": false,
+        "description": "错误。Vite 8 中 esbuild 已变为可选依赖、不再承担构建职责，且根本不存在 `build.esbuildOptions.manualChunks` 这样的分包入口。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：项目部署在 `https://example.com/app/` 子路径下，你在 `vite.config.ts` 设置了 `base: '/app/'`。组件里要拼出 public 目录下图片 `logo.png` 的最终 URL，下面哪种写法在生产构建后能得到正确的 `/app/logo.png`？",
+    "explanation": "`import.meta.env.BASE_URL` 表示公共基础路径（即 `base` 的值，本例为 `/app/`）。官方文档明确：它在构建时被**静态替换**，因此必须**原样出现**——`new URL('logo.png', import.meta.env.BASE_URL)` 这种写法里 `import.meta.env.BASE_URL` 文本完整保留，会被替换为字符串字面量 `'/app/'`，再交给 `new URL(...)` 在运行时拼成 `/app/logo.png`，正确。\n\n错误写法的根因都在于破坏了「原样出现」这一前提：\n- `import.meta.env['BASE_URL']`（方括号下标访问）无法被静态替换匹配，文档明确指出这种写法不生效。\n- 直接字符串拼接 `import.meta.env.BASE_URL + 'logo.png'` 本身的 `BASE_URL` 部分能替换，但写成 `'/app' + ...` 这类手动硬编码就脱离了 `base` 配置；而把整体写成模板/变量再间接引用会让替换器找不到完整模式。\n- 硬编码 `'/logo.png'` 完全忽略了 `base`，部署到子路径会 404。\n\n该机制在 Vite 7 与 Vite 8 中一致（静态替换语义未变）。",
+    "tags": ["vite", "中级", "base", "BASE_URL", "静态替换"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`new URL('logo.png', import.meta.env.BASE_URL).href`",
+        "isCorrect": true,
+        "description": "正确。`import.meta.env.BASE_URL` 原样出现，构建时被静态替换为 `'/app/'`，再由 `new URL` 在运行时正确解析为 `/app/logo.png`，且随 `base` 变化自动适配。"
+      },
+      {
+        "text": "`'/app' + '/logo.png'` 直接硬编码完整路径",
+        "isCorrect": false,
+        "description": "错误。手动硬编码 `base` 脱离了配置，一旦 `base` 改变就需要全局改字符串；这违背了用 `BASE_URL` 的初衷，也容易和实际 `base` 不一致。"
+      },
+      {
+        "text": "`import.meta.env['BASE_URL'] + 'logo.png'`",
+        "isCorrect": false,
+        "description": "错误。官方明确方括号下标访问 `import.meta.env['BASE_URL']` 不会被静态替换，因为它不匹配点号成员访问的固定模式，生产构建后值不正确。"
+      },
+      {
+        "text": "`'/logo.png'`（以根路径开头的绝对路径）",
+        "isCorrect": false,
+        "description": "错误。完全忽略了 `base: '/app/'`，部署到子路径后浏览器会请求 `https://example.com/logo.png` 而非 `/app/logo.png`，导致 404。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：你要构建一个多页面应用（MPA），包含 `index.html` 和 `nested/index.html` 两个 HTML 入口。在 Vite 8 中，应该通过哪个配置项指定这两个入口？",
+    "explanation": "多页面应用需要把多个 HTML 文件声明为构建入口。Vite 8 的底层打包器已从 Rollup 切换为 **Rolldown**，因此对应配置项是 `build.rolldownOptions.input`（一个对象，键为入口别名、值为 HTML 文件的解析路径）：\n\n```ts\nbuild: {\n  rolldownOptions: {\n    input: {\n      main: resolve(import.meta.dirname, 'index.html'),\n      nested: resolve(import.meta.dirname, 'nested/index.html'),\n    }\n  }\n}\n```\n\n**版本差异（必读）**：在 Vite ≤7 中，底层是 Rollup，对应配置项叫 `build.rollupOptions.input`。在 Vite 8 中 `build.rollupOptions` 仍作为 `build.rolldownOptions` 的**别名**保留（官方提示「请改用 `build.rolldownOptions`」），所以旧写法不会立刻报错，但 Vite 8 推荐使用新名字。\n\n另外文档提示：Vite 会忽略 input 对象里给入口起的 key 名，而采用文件解析后的 id 来生成输出文件名。`build.lib` 是库模式专用，与 MPA 无关；`server.input` 不存在。",
+    "tags": ["vite", "中级", "多页应用", "MPA", "rolldownOptions"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`build.rolldownOptions.input`（Vite 8 推荐；Vite 7 为 `build.rollupOptions.input`）",
+        "isCorrect": true,
+        "description": "正确。Vite 8 底层为 Rolldown，多 HTML 入口通过 `build.rolldownOptions.input` 对象声明。Vite 7 对应项为 `build.rollupOptions.input`（在 Vite 8 中作为别名仍可用但不推荐）。"
+      },
+      {
+        "text": "`build.lib.entry` 列出两个 HTML 文件",
+        "isCorrect": false,
+        "description": "错误。`build.lib` 是库模式（输出 es/umd 等格式的库产物）专用，入口是 JS/TS 模块而非 HTML，且会禁用 HTML 处理流程，不适用于 MPA。"
+      },
+      {
+        "text": "`server.input` 数组",
+        "isCorrect": false,
+        "description": "错误。Vite 没有 `server.input` 这个配置项，`server.*` 用于开发服务器，不控制构建入口。"
+      },
+      {
+        "text": "顶层 `entry` 字段直接写两个路径",
+        "isCorrect": false,
+        "description": "错误。Vite 配置顶层没有 `entry` 字段；多入口必须放在打包器选项（Vite 8 的 `rolldownOptions.input` / Vite 7 的 `rollupOptions.input`）内。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：使用 `build.lib` 库模式时，关于默认输出格式，下列哪一项描述与 Vite 官方默认行为一致？",
+    "explanation": "Vite 库模式的默认 `formats` 取决于入口是单个还是多个：\n- **单入口**（`entry` 为单个字符串/路径）：默认 `['es', 'umd']`。因为 UMD 是单文件、自包含格式，适合通过 `<script>` 直接引入，单入口才能合理生成 UMD。\n- **多入口**（`entry` 为对象/数组）：默认 `['es', 'cjs']`。多入口无法生成单一的 UMD 全局产物，故改用 CJS。\n\n因为单入口默认包含 `umd`（以及若手动加 `iife`），所以此时 `build.lib.name`（UMD 全局变量名）是**必填**的；多入口默认 `es+cjs` 则不要求 `name`。\n\n这一默认规则在 Vite 7 与 Vite 8 中一致；Vite 8 只是把底层打包器换成了 Rolldown，库模式的格式默认值未变。",
+    "tags": ["vite", "高级", "库模式", "build.lib", "输出格式"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "单入口默认 `['es', 'umd']`，多入口默认 `['es', 'cjs']`",
+        "isCorrect": true,
+        "description": "正确。这正是官方默认：单入口能生成自包含的 UMD 单文件故用 es+umd；多入口无法产出单一 UMD 故改为 es+cjs。Vite 7/8 一致。"
+      },
+      {
+        "text": "单入口和多入口默认都是 `['es', 'umd']`",
+        "isCorrect": false,
+        "description": "错误。多入口默认不是 umd 而是 cjs，因为多入口无法生成单一全局变量的 UMD 产物，UMD 仅对单入口默认开启。"
+      },
+      {
+        "text": "默认只输出 `['es']`，其它格式必须手动配置",
+        "isCorrect": false,
+        "description": "错误。库模式默认就会输出两种格式（单入口 es+umd / 多入口 es+cjs），并非只有 es，无需手动添加即可得到第二种格式。"
+      },
+      {
+        "text": "单入口默认 `['es', 'cjs']`，多入口默认 `['es', 'umd']`",
+        "isCorrect": false,
+        "description": "错误。把单/多入口的默认格式弄反了。UMD 适合单入口、CJS 用于多入口，恰好与此选项相反。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：你用库模式打包一个依赖 Vue 的组件库，希望产物**不内联** Vue（由使用方提供），并能正确生成 UMD 构建。下面哪组配置是正确且完整的？",
+    "explanation": "库模式外部化依赖需要两步配合：\n1. 用打包器的 `external` 把依赖排除出产物——Vite 8 写在 `build.rolldownOptions.external`（Vite 7 为 `build.rollupOptions.external`）。\n2. 对 **UMD/IIFE** 这类需要在浏览器全局环境运行的格式，还必须提供 `output.globals` 告诉打包器外部依赖对应的全局变量名（如 `vue` → `Vue`），否则 UMD 产物运行时找不到 Vue。\n\n```ts\nbuild: {\n  lib: { entry: '...', name: 'MyLib' },\n  rolldownOptions: {\n    external: ['vue'],\n    output: { globals: { vue: 'Vue' } }\n  }\n}\n```\n\n常见错误：\n- 只写 `external` 不写 `globals`：ES/CJS 能用，但 UMD 构建会因缺少全局映射而无法正确引用 Vue。\n- 把 `external` 写进 `build.lib`：`build.lib` 没有 `external` 字段，外部化必须在打包器选项里。\n- 用 `define` 替换 Vue：`define` 是文本替换，不能用来外部化一个 import 依赖。\n\n版本差异：配置位置在 Vite 8 为 `rolldownOptions`，Vite 7 为 `rollupOptions`（Vite 8 中后者作为别名保留）。",
+    "tags": ["vite", "专家", "库模式", "外部化", "external", "globals"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`rolldownOptions.external: ['vue']` 搭配 `output.globals: { vue: 'Vue' }`（Vite 7 写在 `rollupOptions` 下）",
+        "isCorrect": true,
+        "description": "正确。external 把 vue 排除出产物，output.globals 为 UMD 提供全局变量映射，两者配合才能让 UMD 构建在浏览器中正确引用外部 Vue。Vite 8 用 rolldownOptions，Vite 7 用 rollupOptions。"
+      },
+      {
+        "text": "只设 `rolldownOptions.external: ['vue']`，不需要 `output.globals`",
+        "isCorrect": false,
+        "description": "错误。仅 external 对 ES/CJS 够用，但 UMD/IIFE 需要 output.globals 提供全局变量名，否则 UMD 产物运行时无法解析外部依赖 vue。"
+      },
+      {
+        "text": "在 `build.lib` 里加 `external: ['vue']` 即可",
+        "isCorrect": false,
+        "description": "错误。`build.lib` 没有 `external` 字段。外部化依赖必须配置在打包器选项（Vite 8 的 rolldownOptions / Vite 7 的 rollupOptions）的 external 中。"
+      },
+      {
+        "text": "用 `define: { vue: 'window.Vue' }` 把 Vue 替换成全局变量",
+        "isCorrect": false,
+        "description": "错误。`define` 只做源码层面的文本常量替换，无法把一个 ESM import 依赖标记为外部依赖；外部化必须靠 external + globals。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：库模式构建后，你在 `package.json` 设置了 `build.lib.fileName: 'my-lib'`，且 package.json 中**没有** `\"type\": \"module\"`。关于产物文件扩展名与 `exports` 字段，下列哪项符合 Vite 官方约定？",
+    "explanation": "当 package.json **没有** `\"type\": \"module\"`（即默认 CommonJS 上下文）时，Vite 为了让 Node.js 正确识别模块类型，会对产物扩展名做转换：\n- ES 格式产物的 `.js` 会变成 `.mjs`（明确标记为 ESM）；\n- CJS/UMD 格式产物的 `.cjs` 会变成 `.js`（在 CJS 默认上下文中 `.js` 即 CommonJS）。\n\n因此官方推荐的单入口 `exports` 写法是：\n```json\n{\n  \"exports\": {\n    \".\": {\n      \"import\": \"./dist/my-lib.js\",\n      \"require\": \"./dist/my-lib.umd.cjs\"\n    }\n  }\n}\n```\n注意上面这段是文档中**带** `\"type\": \"module\"` 场景的示例；而本题是**没有** type module 的场景，此时 import 入口会是 `.mjs`，require 入口的 UMD 用 `.js`。关键考点是：**扩展名取决于 package.json 是否声明 `\"type\": \"module\"`**，规则是「无 type module 时 `.js`→`.mjs`、`.cjs`→`.js`」。\n\n该扩展名规则在 Vite 7 与 Vite 8 中一致。",
+    "tags": ["vite", "专家", "库模式", "exports", "扩展名"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "无 `\"type\": \"module\"` 时，ES 产物的 `.js` 变为 `.mjs`，`.cjs` 产物变为 `.js`，`exports` 据此指向对应扩展名",
+        "isCorrect": true,
+        "description": "正确。这是 Vite 官方约定：在默认 CommonJS 上下文下，ESM 产物用 .mjs 显式标记，CJS/UMD 产物的 .cjs 简化为 .js，以便 Node 正确解析模块类型。Vite 7/8 一致。"
+      },
+      {
+        "text": "无论是否有 `\"type\": \"module\"`，ES 产物始终是 `.mjs`、CJS 始终是 `.cjs`",
+        "isCorrect": false,
+        "description": "错误。扩展名转换正是由 package.json 是否声明 `\"type\": \"module\"` 决定的：有 type module 时 import 入口才是 `.js`、require 入口是 `.cjs`，并非始终固定。"
+      },
+      {
+        "text": "扩展名与 `\"type\": \"module\"` 无关，完全由 `build.lib.formats` 的值决定",
+        "isCorrect": false,
+        "description": "错误。formats 决定生成哪些格式，但最终扩展名（.js/.mjs/.cjs）由 package.json 的 type 字段共同决定，二者不是一回事。"
+      },
+      {
+        "text": "Vite 不会改扩展名，全部统一为 `.js`，靠 `exports` 的 import/require 条件区分",
+        "isCorrect": false,
+        "description": "错误。Vite 确实会按 type 字段转换扩展名（如 .mjs），并不会把所有产物统一成 .js；统一 .js 会导致 Node 在 CJS 上下文下误把 ESM 当 CommonJS 解析。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：你正在开发一个库（`build.lib`），希望让**使用方**在自己的应用里通过设置 `process.env.NODE_ENV` 来切换库内部的开发/生产逻辑分支，而不是在你发布库时就被写死。关于 `import.meta.env.*` 与 `process.env.*` 在库构建中的替换差异，哪项正确？",
+    "explanation": "官方文档对库模式有明确说明：\n- **`import.meta.env.*`**：在为生产环境构建库时会被**静态替换**（写死成字面量），因此库里用它的值会在你发布时被固化，使用方无法再改。\n- **`process.env.*`**：在库构建中**不会**被替换，原样保留在产物里，于是交给使用方（应用打包时）去替换或在运行时决定，从而实现「由使用方控制」。\n\n所以要让使用方可控开发/生产分支，库内部应使用 `process.env.NODE_ENV` 而非 `import.meta.env.*`。文档也提示：若你**反过来**希望在库里就把 `process.env.NODE_ENV` 固化，可以用 `define: { 'process.env.NODE_ENV': '\"production\"' }` 强制静态替换。\n\n该语义差异在 Vite 7 与 Vite 8 中一致（属于库构建的替换规则，与底层 Rollup/Rolldown 切换无关）。",
+    "tags": ["vite", "中级", "库模式", "环境变量", "process.env"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "库里应使用 `process.env.NODE_ENV`，它在库构建中不会被静态替换、原样保留，交由使用方决定",
+        "isCorrect": true,
+        "description": "正确。官方明确：库构建中 process.env.* 不被替换，保留给使用方处理，因此能实现「使用方可控分支」；而 import.meta.env.* 会被静态替换写死。"
+      },
+      {
+        "text": "库里应使用 `import.meta.env.MODE`，它在库构建中保留原样、交给使用方替换",
+        "isCorrect": false,
+        "description": "错误。恰好相反——import.meta.env.* 在库的生产构建中会被静态替换为字面量，发布时即写死，使用方无法再改。"
+      },
+      {
+        "text": "`import.meta.env.*` 与 `process.env.*` 在库构建中行为完全相同，都会被静态替换",
+        "isCorrect": false,
+        "description": "错误。两者行为不同：import.meta.env.* 被静态替换，process.env.* 默认不被替换，正是这一差异决定了哪种写法可由使用方控制。"
+      },
+      {
+        "text": "两者都不会被替换，必须用 `define` 才能写入任何环境值",
+        "isCorrect": false,
+        "description": "错误。import.meta.env.* 默认就会被静态替换，无需 define；define 只是用来在需要时强制替换 process.env.*（如固化 NODE_ENV）。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在客户端代码里使用 `import.meta.env`，下列哪一组是 Vite 内置注入的环境常量？",
+    "explanation": "Vite 在 `import.meta.env` 上内置注入 5 个常量（Vite 7 与 Vite 8 一致，未发生变化）：\n\n- `MODE`（string）：应用运行的模式（mode）\n- `BASE_URL`（string）：来自 `base` 配置项的部署基础路径\n- `PROD`（boolean）：是否运行在生产环境\n- `DEV`（boolean）：是否运行在开发环境（恒为 `!PROD`）\n- `SSR`（boolean）：是否运行在服务端\n\n注意 `NODE_ENV` 不是 `import.meta.env` 上的成员，它是 Node 进程的环境变量；`VITE_API_URL` 是用户自定义的 `VITE_` 前缀变量，并非内置常量。",
+    "tags": ["vite", "入门", "import.meta.env", "内置常量"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`MODE`、`BASE_URL`、`PROD`、`DEV`、`SSR`",
+        "isCorrect": true,
+        "description": "正确。这正是 Vite 在 `import.meta.env` 上内置的 5 个常量：MODE/BASE_URL 为字符串，PROD/DEV/SSR 为布尔值。"
+      },
+      {
+        "text": "`MODE`、`BASE_URL`、`NODE_ENV`、`DEV`、`SSR`",
+        "isCorrect": false,
+        "description": "错误。`NODE_ENV` 是 Node 进程的环境变量，不是 `import.meta.env` 上的内置常量；内置的对应布尔常量是 `PROD`。"
+      },
+      {
+        "text": "`MODE`、`PUBLIC_URL`、`PROD`、`DEV`、`SSR`",
+        "isCorrect": false,
+        "description": "错误。`PUBLIC_URL` 是 Create React App 的约定，Vite 用的是 `BASE_URL`（取自 `base` 配置）。"
+      },
+      {
+        "text": "`MODE`、`BASE_URL`、`PROD`、`DEV`、`VITE_API_URL`",
+        "isCorrect": false,
+        "description": "错误。`VITE_API_URL` 是用户自定义的 `VITE_` 前缀变量，不是内置常量；少了内置的 `SSR`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 `.env` 文件中写了 `VITE_TITLE=我的应用` 和 `DB_PASSWORD=secret`，关于这两个变量在客户端代码中的可见性，下列说法正确的是？",
+    "explanation": "Vite 出于安全考虑，**只有以 `VITE_` 前缀开头**的环境变量才会被注入到客户端的 `import.meta.env` 中（Vite 7/8 行为一致）：\n\n- `import.meta.env.VITE_TITLE` → `\"我的应用\"`（会被打包进客户端源码）\n- `import.meta.env.DB_PASSWORD` → `undefined`（无 `VITE_` 前缀，不暴露）\n\n这正是官方反复强调的安全约束：`VITE_*` 变量会被打包进源码、对任何人可见，因此**绝不能把 API 密钥、数据库密码等敏感信息放进 `VITE_` 变量**；敏感数据应交由后端服务器或 serverless/edge 函数处理。\n\n默认前缀是 `VITE_`，可通过 `envPrefix` 配置项自定义。",
+    "tags": ["vite", "入门", "VITE_前缀", "环境变量暴露"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`VITE_TITLE` 会暴露到 `import.meta.env`，`DB_PASSWORD` 不会（值为 `undefined`）",
+        "isCorrect": true,
+        "description": "正确。只有 `VITE_` 前缀的变量被注入客户端；`DB_PASSWORD` 无前缀不暴露，访问得到 `undefined`。"
+      },
+      {
+        "text": "两个变量都会暴露到 `import.meta.env`，因为它们都在 `.env` 文件里",
+        "isCorrect": false,
+        "description": "错误。`.env` 文件里的变量不会全部暴露，只有 `VITE_` 前缀（默认）的才会注入客户端。"
+      },
+      {
+        "text": "两个都不会暴露，必须显式在 `define` 中声明才能在客户端使用",
+        "isCorrect": false,
+        "description": "错误。`VITE_` 前缀变量会被自动注入，无需在 `define` 中手动声明。"
+      },
+      {
+        "text": "`DB_PASSWORD` 会暴露但被自动加密，`VITE_TITLE` 不暴露",
+        "isCorrect": false,
+        "description": "错误。前缀规则完全相反，且 Vite 不会对环境变量做任何\"自动加密\"，敏感信息绝不能放进客户端变量。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：项目中同时存在 `.env`、`.env.local`、`.env.production`、`.env.production.local` 四个文件，且都定义了 `VITE_API`。执行 `vite build`（默认 production 模式）时，最终生效的 `VITE_API` 来自哪个文件？",
+    "explanation": "Vite 的 `.env` 文件加载遵循固定的优先级顺序，**后加载的覆盖先加载的**（Vite 7/8 一致）。优先级从低到高为：\n\n1. `.env`（所有情况都加载）\n2. `.env.local`（所有情况加载，应被 git 忽略）\n3. `.env.[mode]`（指定模式时加载，如 `.env.production`）\n4. `.env.[mode].local`（指定模式时加载，应被 git 忽略）\n\n因此在 production 模式下，最高优先级是 `.env.production.local`，它会覆盖其余三个文件中的同名变量。\n\n另外有一条更高优先级规则：**Vite 执行时操作系统中已存在的环境变量优先级最高，不会被 `.env` 文件覆盖**。本题没有外部环境变量，故由 `.env.production.local` 生效。",
+    "tags": ["vite", "中级", ".env加载顺序", "优先级"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`.env.production.local`",
+        "isCorrect": true,
+        "description": "正确。模式专属且 `.local` 后缀的文件优先级最高，会覆盖 `.env`、`.env.local`、`.env.production`。"
+      },
+      {
+        "text": "`.env`",
+        "isCorrect": false,
+        "description": "错误。`.env` 是优先级最低的基础文件，会被更具体的文件覆盖。"
+      },
+      {
+        "text": "`.env.production`",
+        "isCorrect": false,
+        "description": "错误。它优先于 `.env`/`.env.local`，但仍会被 `.env.production.local`（带 `.local`）覆盖。"
+      },
+      {
+        "text": "`.env.local`",
+        "isCorrect": false,
+        "description": "错误。`.env.local` 优先于 `.env`，但模式专属文件（`.env.production` 系列）优先级更高。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：`.env` 文件中写了 `VITE_PORT=8080`，在代码里执行 `if (import.meta.env.VITE_PORT > 3000)`，结果不符合预期。最根本的原因是？",
+    "explanation": "Vite 的环境变量值**永远是字符串类型**（Vite 7/8 一致）。`.env` 文件本质是文本，`VITE_PORT=8080` 注入后得到的是字符串 `\"8080\"` 而非数字 `8080`。\n\n官方明确提示：\"Note that env variables are strings, so you may need to convert them to the desired type.\"（环境变量是字符串，使用时需自行转换为目标类型。）\n\n`\"8080\" > 3000` 这类比较会触发 JS 的隐式类型转换，行为容易出乎意料；正确做法是显式转换，例如 `Number(import.meta.env.VITE_PORT) > 3000`。\n\n这与打包器无关（Vite 7 的 esbuild+Rollup 与 Vite 8 的 Rolldown 都一样），纯粹是 dotenv 解析出来的值就是字符串。",
+    "tags": ["vite", "中级", "环境变量类型", "字符串转换"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`import.meta.env.VITE_PORT` 的值是字符串 `\"8080\"`，需手动转成数字再比较",
+        "isCorrect": true,
+        "description": "正确。Vite 环境变量值都是字符串，应用 `Number()`/`parseInt()` 等显式转换后再做数值比较。"
+      },
+      {
+        "text": "Vite 只在 `.env.[mode]` 文件中解析数字，普通 `.env` 文件的数字会被丢弃",
+        "isCorrect": false,
+        "description": "错误。Vite 不区分文件来源做类型解析，任何 `.env` 文件中的值都是字符串。"
+      },
+      {
+        "text": "`VITE_` 前缀的变量会被强制转成布尔值，导致比较失效",
+        "isCorrect": false,
+        "description": "错误。`VITE_` 前缀只决定是否暴露到客户端，不会改变值的类型；值仍是字符串。"
+      },
+      {
+        "text": "Vite 8 改用 Rolldown 后环境变量解析行为变了，需开启兼容选项",
+        "isCorrect": false,
+        "description": "错误。环境变量为字符串是 dotenv 解析的固有行为，与 Vite 8 的 Rolldown 打包器无关，无需任何兼容选项。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：执行 `NODE_ENV=development vite build --mode production` 时，`import.meta.env.MODE` 与 `import.meta.env.PROD` 分别是什么？",
+    "explanation": "这是 Vite 中最容易混淆的概念之一：**`MODE` 与 `PROD`/`DEV` 由两个相互独立的因素决定**（Vite 7/8 行为一致，官方专门用表格说明）。\n\n- `import.meta.env.MODE` 由 **`--mode` 标志**决定 → 本题为 `\"production\"`\n- `import.meta.env.PROD` 由 **`NODE_ENV` 是否等于 `\"production\"`**决定，`DEV` 恒为 `!PROD` → 本题 `NODE_ENV=development`，故 `PROD` 为 `false`、`DEV` 为 `true`\n\n官方对照表（节选）：\n\n| 命令 | NODE_ENV | Mode |\n|------|----------|------|\n| `vite build` | `production` | `production` |\n| `vite build --mode development` | `production` | `development` |\n| `NODE_ENV=development vite build` | `development` | `production` |\n\n关键结论：**mode 决定加载哪个 `.env.[mode]` 文件以及 `MODE` 的值，而 `NODE_ENV` 决定 `PROD`/`DEV`**，二者可以\"打架\"。本题就是 mode 是 production 但 NODE_ENV 是 development 的矛盾组合。",
+    "tags": ["vite", "专家", "NODE_ENV与mode", "PROD判定"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`MODE` 为 `\"production\"`，`PROD` 为 `false`",
+        "isCorrect": true,
+        "description": "正确。MODE 由 `--mode` 决定（production），PROD 由 NODE_ENV 决定（development → 非 production → false）。"
+      },
+      {
+        "text": "`MODE` 为 `\"production\"`，`PROD` 为 `true`",
+        "isCorrect": false,
+        "description": "错误。PROD 不看 `--mode`，只看 `NODE_ENV`；此处 `NODE_ENV=development`，故 PROD 为 false。"
+      },
+      {
+        "text": "`MODE` 为 `\"development\"`，`PROD` 为 `false`",
+        "isCorrect": false,
+        "description": "错误。MODE 由显式的 `--mode production` 决定，是 `\"production\"`，不会被 NODE_ENV 改变。"
+      },
+      {
+        "text": "`MODE` 为 `\"development\"`，`PROD` 为 `true`",
+        "isCorrect": false,
+        "description": "错误。两个值都判反了：MODE 应为 production（看 --mode），PROD 应为 false（看 NODE_ENV）。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：为了让 `import.meta.env` 有 TypeScript 智能提示，并同时禁止访问未声明的环境变量（访问未定义的键时报类型错误），下列做法正确的是？",
+    "explanation": "Vite 通过类型声明文件为 `import.meta.env` 提供智能提示，并提供 `strictImportMetaEnv` 选项做严格约束（Vite 7/8 一致）。在 `vite-env.d.ts` 中需做接口扩展：\n\n```ts\n// 通过在 ViteTypeOptions 上声明 strictImportMetaEnv，\n// 让访问未在 ImportMetaEnv 中声明的键时报类型错误\ninterface ViteTypeOptions {\n  strictImportMetaEnv: unknown\n}\n\ninterface ImportMetaEnv {\n  readonly VITE_APP_TITLE: string\n  // ……更多自定义变量\n}\n\ninterface ImportMeta {\n  readonly env: ImportMetaEnv\n}\n```\n\n要点：\n- 通过**扩展（augment）`ImportMetaEnv` 接口**来声明自定义变量的类型，获得智能提示。\n- 在 **`ViteTypeOptions` 接口上声明 `strictImportMetaEnv`**，即可开启严格模式，访问未声明的键时 TS 报错。\n- 该 `.d.ts` 文件中**不能出现 `import`/`export` 语句**，否则会变成模块、破坏全局类型扩展（augmentation 失效）。\n\n注意 `import.meta.env` 不是普通对象：常量在构建时被静态替换，因此**解构或用动态键 `import.meta.env[key]` 访问都不可靠**，应使用 `import.meta.env.VITE_XXX` 形式的静态访问。",
+    "tags": ["vite", "专家", "TypeScript类型", "strictImportMetaEnv"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 `vite-env.d.ts` 中扩展 `ImportMetaEnv` 接口声明变量，并在 `ViteTypeOptions` 接口上声明 `strictImportMetaEnv`",
+        "isCorrect": true,
+        "description": "正确。扩展 `ImportMetaEnv` 提供提示；在 `ViteTypeOptions` 声明 `strictImportMetaEnv` 开启严格模式，访问未声明键即报错。"
+      },
+      {
+        "text": "在 `vite.config.ts` 的 `envOptions.strict: true` 中开启，无需任何 `.d.ts` 文件",
+        "isCorrect": false,
+        "description": "错误。Vite 没有 `envOptions.strict` 配置项；严格类型检查是通过 `.d.ts` 中的 `ViteTypeOptions.strictImportMetaEnv` 类型声明实现的。"
+      },
+      {
+        "text": "在 `vite-env.d.ts` 顶部 `import { ImportMetaEnv } from 'vite'` 后再扩展接口",
+        "isCorrect": false,
+        "description": "错误。文件中一旦出现 `import`/`export` 就会被视为模块，破坏全局接口扩展（augmentation），导致类型增强失效。"
+      },
+      {
+        "text": "在 `tsconfig.json` 的 `compilerOptions` 里加 `\"strictImportMetaEnv\": true`",
+        "isCorrect": false,
+        "description": "错误。`strictImportMetaEnv` 不是 TS 编译器选项，而是 Vite 约定的、在 `ViteTypeOptions` 接口上声明的类型标记。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：执行 `vite build` 后想在本地以接近生产的方式预览产物，下列哪条命令最合适？默认会监听哪个端口？",
+    "explanation": "`vite preview` 用于在本地启动一个静态服务器，托管 `dist/` 目录中已经构建好的产物，从而以**接近生产环境**的方式预览（它不会重新走 dev server 的转译/HMR 那一套）。默认监听端口是 **4173**（dev server 的 `vite`/`vite dev` 默认是 5173，二者要区分）。可用 `--port` 修改，例如 `vite preview --port 8080`。\n\n注意：`vite preview` **只是预览工具，不能当生产服务器用**，官方文档明确说它仅供本地预览构建结果。版本说明：4173/5173 这两个默认端口在 Vite 7 与 Vite 8 上一致，Vite 8 切到 Rolldown 统一构建并不改变 preview 的端口约定。",
+    "tags": ["vite", "初级", "preview", "部署"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`vite preview`，默认监听 4173 端口",
+        "isCorrect": true,
+        "description": "正确。`vite preview` 托管 `dist/` 的构建产物用于本地预览，默认端口 4173；可用 `--port` 覆盖。"
+      },
+      {
+        "text": "`vite dev`，默认监听 4173 端口",
+        "isCorrect": false,
+        "description": "错误。`vite dev` 启动的是开发服务器（带转译/HMR），默认端口是 5173，不是用来预览构建产物的，且端口也写错了。"
+      },
+      {
+        "text": "`vite preview`，默认监听 5173 端口",
+        "isCorrect": false,
+        "description": "命令对但端口错。5173 是 dev server 的默认端口，`vite preview` 的默认端口是 4173。"
+      },
+      {
+        "text": "`vite serve`，默认监听 3000 端口",
+        "isCorrect": false,
+        "description": "错误。`vite serve` 是 `vite dev` 的别名（开发服务器，5173），既不是预览命令，3000 也不是 Vite 的默认端口。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：你的项目要部署到 GitHub Pages 的**项目站**（仓库名 `my-app`，访问地址 `https://alice.github.io/my-app/`）。关于 `base` 配置，下列说法正确的是？",
+    "explanation": "GitHub Pages 区分两类站点：\n- **用户/组织站**（`https://<USERNAME>.github.io/`，仓库名形如 `<USERNAME>.github.io`）：站点挂在根路径，`base` 用默认值 `'/'`（可省略）。\n- **项目站**（`https://<USERNAME>.github.io/<REPO>/`）：站点挂在子路径 `/<REPO>/` 下，必须把 `base` 设为 `'/<REPO>/'`，否则产物里引用的 JS/CSS/资源会按根路径 `/assets/...` 去请求，导致 404 白屏。\n\n本题访问地址是 `https://alice.github.io/my-app/`，仓库名是 `my-app`，属于项目站，所以应 `base: '/my-app/'`。注意 `base` 必须以 `/` 开头并以 `/` 结尾。该规则在 Vite 7 与 Vite 8 完全一致，是与构建器（Rollup/Rolldown）无关的部署路径概念。",
+    "tags": ["vite", "中级", "base", "GitHub Pages"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "应设置 `base: '/my-app/'`（前后都带斜杠）",
+        "isCorrect": true,
+        "description": "正确。项目站挂在 `/<REPO>/` 子路径下，`base` 必须设为 `'/my-app/'`，否则资源会按根路径请求而 404。"
+      },
+      {
+        "text": "应设置 `base: '/'`，因为 GitHub Pages 一律从根路径提供服务",
+        "isCorrect": false,
+        "description": "错误。`base: '/'` 只适用于**用户/组织站**；项目站挂在 `/my-app/` 子路径，用 `'/'` 会导致资源 404。"
+      },
+      {
+        "text": "应设置 `base: 'https://alice.github.io/my-app/'`（完整 URL）",
+        "isCorrect": false,
+        "description": "不必要且通常不推荐。子路径部署只需相对的 `'/my-app/'`；写完整 URL 是用于 CDN 等绝对地址场景，不是项目站的常规做法。"
+      },
+      {
+        "text": "无需配置 `base`，Vite 会从 `package.json` 的 `homepage` 字段自动推断",
+        "isCorrect": false,
+        "description": "错误。Vite 不会读取 `homepage`（那是 CRA 的约定）；子路径部署必须显式设置 `base`。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：用 GitHub Actions 官方推荐流程把 Vite 产物部署到 GitHub Pages 时，`actions/upload-pages-artifact` 这一步的 `path` 参数通常应指向哪里？",
+    "explanation": "Vite 官方推荐的 GitHub Pages Actions 流程是：`actions/configure-pages`（配置 Pages）→ 构建（`npm run build`）→ `actions/upload-pages-artifact` 上传产物 → `actions/deploy-pages` 部署。\n\n其中 `upload-pages-artifact` 的 `path` 要指向**构建输出目录**，对 Vite 默认就是 `./dist`：\n```yaml\n- name: Upload artifact\n  uses: actions/upload-pages-artifact@v3\n  with:\n    path: './dist'\n```\n指向 `./dist` 才能把真正的静态产物打包上传；指向源码根目录 `.` 会把整个仓库（含 src、node_modules 等）当成站点。该流程与 Vite 版本无关，Vite 7/8 都一样（构建器从 Rollup 换成 Rolldown 不改变默认输出目录 `dist`）。",
+    "tags": ["vite", "中级", "GitHub Actions", "部署"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`path: './dist'`，即 Vite 默认的构建输出目录",
+        "isCorrect": true,
+        "description": "正确。Vite 默认产物在 `dist/`，上传该目录才是静态站点内容，配合 `deploy-pages` 完成部署。"
+      },
+      {
+        "text": "`path: '.'`，上传整个仓库根目录由 Pages 自行挑选入口",
+        "isCorrect": false,
+        "description": "错误。上传 `.` 会把源码、配置、node_modules 都当成站点内容，Pages 不会自动构建，结果不是预期的静态产物。"
+      },
+      {
+        "text": "`path: './public'`，因为 public 是 Vite 的静态资源目录",
+        "isCorrect": false,
+        "description": "错误。`public/` 是 Vite 的静态资源**源目录**，其内容构建时会被拷进 `dist/`；要部署的是构建后的 `dist/`。（注意：GitLab Pages 才用 `public/` 作为产物目录。）"
+      },
+      {
+        "text": "`path: './build'`，Vite 构建产物默认输出到 build 目录",
+        "isCorrect": false,
+        "description": "错误。Vite 默认输出目录是 `dist`，不是 `build`（`build` 是 CRA 的默认值）。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在「后端集成」模式下（HTML 由后端框架渲染），开发期需要手动往后端模板里注入 Vite 的脚本。下列关于注入与 `server.origin`（或新版 `server.cors`）的说法，正确的是？",
+    "explanation": "后端集成开发期，HTML 由后端框架产出，Vite 不接管 HTML，所以要手动注入两段脚本：\n```html\n<script type=\"module\" src=\"http://localhost:5173/@vite/client\"></script>\n<script type=\"module\" src=\"http://localhost:5173/main.js\"></script>\n```\n- `@vite/client` 负责建立 HMR、错误覆盖层等；入口脚本（如 `main.js`）是应用代码。\n- 这些 URL 指向 **Vite dev server（5173）**，而不是后端服务器，因此模块/资源由 Vite 提供。\n\n当后端与 Vite 跨域时，需要让 Vite 生成的资源 URL 指向 Vite dev server 的完整地址。早期用 `server.origin: 'http://localhost:5173'`；当前文档示例还会配置 `server.cors.origin` 指向**后端**地址以放行跨域。关键点：**这些脚本要指向 Vite dev server 而非后端**，且开发期才注入，生产环境改读 manifest。该机制 Vite 7/8 一致。",
+    "tags": ["vite", "中级", "后端集成", "server.origin"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "需注入 `@vite/client` 和入口脚本，且 `src` 都指向 Vite dev server（如 5173），不是后端地址",
+        "isCorrect": true,
+        "description": "正确。`@vite/client`（HMR/客户端运行时）和入口脚本由 Vite dev server 提供，URL 指向 5173；跨域时再配 `server.origin`/`server.cors` 让资源地址正确。"
+      },
+      {
+        "text": "脚本的 `src` 应指向后端服务器地址，由后端代理 Vite 的模块请求",
+        "isCorrect": false,
+        "description": "错误。开发期模块由 Vite dev server 直接提供，脚本 URL 指向 Vite（5173）；后端不需要代理这些请求。"
+      },
+      {
+        "text": "只需注入入口脚本即可，`@vite/client` 是构建产物，开发期不需要",
+        "isCorrect": false,
+        "description": "错误。`@vite/client` 恰恰是**开发期**才注入的客户端运行时（提供 HMR、错误覆盖层）；生产环境反而不需要它。"
+      },
+      {
+        "text": "`server.origin` 用来指定后端 API 的地址，让 Vite 把 `/api` 请求转发过去",
+        "isCorrect": false,
+        "description": "错误。把 API 请求转发是 `server.proxy` 的职责；`server.origin` 是为静态资源/模块 URL 指定 Vite dev server 的源（origin），用途完全不同。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：使用 `@vitejs/plugin-react` 做后端集成时，开发期还要在 HTML 里加一段 `@react-refresh` 预导言（preamble）。关于它的注入顺序，下列哪项正确？",
+    "explanation": "React Fast Refresh 依赖在**任何 React 组件代码执行之前**就把刷新运行时的钩子注入到全局（`$RefreshReg$` / `$RefreshSig$` / `__vite_plugin_react_preamble_installed__` 等）。官方文档明确要求把这段 `@react-refresh` 预导言放在 `@vite/client` 与入口脚本**之前**：\n```html\n<script type=\"module\">\n  import RefreshRuntime from 'http://localhost:5173/@react-refresh'\n  RefreshRuntime.injectIntoGlobalHook(window)\n  window.$RefreshReg$ = () => {}\n  window.$RefreshSig$ = () => (type) => type\n  window.__vite_plugin_react_preamble_installed__ = true\n</script>\n<!-- 然后才是 @vite/client 和入口脚本 -->\n```\n如果顺序颠倒，入口模块先于 preamble 执行，React 插件转译出的组件找不到已安装的刷新钩子，就会抛 `@vitejs/plugin-react can't detect preamble` 之类错误。该要求在 Vite 7/8 一致（与 Rolldown 切换无关）。",
+    "tags": ["vite", "高级", "React", "preamble"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须放在 `@vite/client` 和入口脚本**之前**",
+        "isCorrect": true,
+        "description": "正确。preamble 要先把 Fast Refresh 的全局钩子装好，否则后续 React 模块执行时检测不到 preamble 会报错。"
+      },
+      {
+        "text": "必须放在入口脚本**之后**，这样组件先加载再挂接刷新钩子",
+        "isCorrect": false,
+        "description": "错误。顺序反了：入口模块一旦先执行，React 转译代码就找不到已安装的刷新钩子，会抛 preamble 检测失败错误。"
+      },
+      {
+        "text": "顺序无所谓，只要三段脚本都在 `<head>` 内即可",
+        "isCorrect": false,
+        "description": "错误。顺序至关重要——preamble 必须最先执行；只放在 `<head>` 并不能保证执行先后。"
+      },
+      {
+        "text": "只有生产构建才需要 preamble，开发期 HMR 会自动注入",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：preamble 是**开发期** Fast Refresh 用的，生产构建不需要；后端集成开发期必须手动注入。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在生产环境的后端集成中，需要根据 `.vite/manifest.json` 把构建产物注入 HTML。关于 manifest 结构与官方推荐的「四步注入」算法，下列说法正确的是？",
+    "explanation": "开启 `build.manifest: true` 后，Vite 会在输出目录下生成 `.vite/manifest.json`。每个 chunk 条目包含：`file`（输出文件名）、`src`（源路径）、`isEntry`、`isDynamicEntry`、`imports`（静态导入的 chunk key 数组）、`dynamicImports`、`css`（该 chunk 引入的 CSS 文件数组）、`assets` 等。非入口 chunk 的 key 以下划线 `_` 前缀；入口 chunk 用相对的 `src` 作为 key。\n\n官方推荐的「四步」HTML 注入算法（针对每个入口）：\n1. 为入口 chunk 的 `css` 数组里每个 CSS 输出 `<link rel=\"stylesheet\">`；\n2. **递归**沿 `imports` 找到所有被导入 chunk，把它们的 CSS 也输出 `<link rel=\"stylesheet\">`；\n3. 输出入口本身的 `<script type=\"module\" src=\"...file\">`；\n4. （可选优化）为 `imports` 里的 JS chunk 递归输出 `<link rel=\"modulepreload\">`。\n\n关键点：CSS 要**递归**收集（含被导入 chunk 的样式），否则共享样式会漏。版本说明：manifest 结构与四步算法在 Vite 7/8 一致；但生成 manifest 时，Vite 8 配置走 `build.rolldownOptions.input`（Rolldown），而 Vite ≤7 用 `build.rollupOptions.input`（Rollup）——这是两版的实际差异。",
+    "tags": ["vite", "专家", "manifest", "后端集成"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "应递归沿 `imports` 收集所有被导入 chunk 的 `css` 都注入 stylesheet，而不仅注入入口 chunk 自己的 css",
+        "isCorrect": true,
+        "description": "正确。四步算法第 2 步要求递归跟随 `imports` 把被导入 chunk 的 CSS 也注入，否则共享/拆分出去的样式会漏，页面缺样式。"
+      },
+      {
+        "text": "manifest 里每个条目的 `imports` 存的是被导入文件的**输出文件名**，可直接当 `<script src>` 用",
+        "isCorrect": false,
+        "description": "错误。`imports` 存的是被导入 chunk 在 manifest 里的 **key**，需用该 key 再查到对应条目的 `file` 才是输出文件名。"
+      },
+      {
+        "text": "入口脚本应注入 `<script src>`（非 module），并把所有 `imports` 的 JS 也用 `<script>` 同步加载",
+        "isCorrect": false,
+        "description": "错误。入口注入的是 `<script type=\"module\" src=\"...\">`；被导入的 JS chunk 用 `<link rel=\"modulepreload\">` 做预加载优化，而不是再用 `<script>` 同步加载。"
+      },
+      {
+        "text": "生成 manifest 时必须在 Vite 8 的 `build.rollupOptions.input` 里配置入口，与 Vite 7 写法相同",
+        "isCorrect": false,
+        "description": "错误。Vite 8 用 Rolldown，后端集成文档里配置入口走 `build.rolldownOptions.input`；`rollupOptions` 是 Vite ≤7（Rollup）的写法，两版并不相同。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在标准 SSR 项目中，开发态服务器的「单次请求处理」按官方文档分为三步。下列对这三步的描述，哪一项是正确的？",
+    "explanation": "官方 SSR 指南把开发态请求处理明确分为三步：\n\n1. **`vite.transformIndexHtml(url, template)`** —— 读取 `index.html` 后，应用 Vite 的 HTML 转换（包括注入 HMR 客户端、解析 `@vitejs/plugin-*` 注入等）。\n2. **`vite.ssrLoadModule('/src/entry-server.js')`** —— 不打包地加载服务端入口模块，类似一个把 ESM 源转换为可在 Node 运行的模块的加载器（自动应用 SSR 专属转换，并支持热更）。\n3. 调用入口导出的 **`render(url, manifest)`**，由框架的 SSR API 渲染出 HTML 字符串，再把它替换进模板的 `<!--ssr-outlet-->` 占位符，最后 `res.end()` 返回。\n\n关键易错点：\n- `transformIndexHtml` 处理的是 **HTML 模板**，不是加载服务端 JS；`ssrLoadModule` 才是加载 JS 入口。\n- `ssrLoadModule` 的核心特征是**不打包（no bundling）**、按需转换，这正是 SSR 开发态能快速热更的原因，而不是「预先 bundle 服务端代码」。\n- `<!--ssr-outlet-->` 只是约定占位符，文档说明任何能被「精确替换」的占位字符串都行。\n\n版本说明：这套 `middlewareMode + appType:'custom'` 三步流程在 Vite 7（esbuild+Rollup）与 Vite 8（Rolldown 统一 dev/build、Oxc 转译）中行为一致，底层 bundler 的更替不改变 SSR 请求流程的 API 形态。新的 Environment API 提供的 `RunnableDevEnvironment.runner.import()` 是 `ssrLoadModule` 的替代路径，但截至 Vite 8 该 API 处于 RC，`ssrLoadModule` 仍是文档主线写法。",
+    "tags": ["vite", "高级", "SSR", "ssrLoadModule", "transformIndexHtml"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "依次为 transformIndexHtml（转换 HTML 模板 + 注入 HMR 客户端）→ ssrLoadModule（不打包地加载 /src/entry-server.js）→ 调用 render() 生成 HTML 并替换 <!--ssr-outlet-->",
+        "isCorrect": true,
+        "description": "正确。完全对应官方文档的三步：先转换 HTML 模板（含 HMR 注入），再用 ssrLoadModule 无打包加载服务端入口，最后调用框架 render() 把结果注入占位符。ssrLoadModule 的「不打包、按需转换」是关键特征。"
+      },
+      {
+        "text": "依次为 ssrLoadModule（预先打包整个 src 目录）→ transformIndexHtml（把打包结果写入 HTML）→ render() 输出最终页面",
+        "isCorrect": false,
+        "description": "错误。顺序与职责都错：transformIndexHtml 处理 HTML 模板而非「写入打包结果」；ssrLoadModule 的本质是「不打包」按需加载单个入口，绝不是「预先打包整个 src 目录」。"
+      },
+      {
+        "text": "依次为 transformIndexHtml → render（直接渲染并自动注入到 HTML，无需手动替换占位符）→ ssrLoadModule（最后再加载客户端激活脚本）",
+        "isCorrect": false,
+        "description": "错误。render 不会「自动注入」，需要开发者手动用渲染结果替换 <!--ssr-outlet--> 占位符；且 ssrLoadModule 必须在 render 之前加载服务端入口，而非最后加载客户端脚本。"
+      },
+      {
+        "text": "依次为 ssrLoadModule（加载入口）→ render() → transformIndexHtml（对 render 产出的 HTML 二次做 Vite 转换并返回）",
+        "isCorrect": false,
+        "description": "错误。transformIndexHtml 作用于原始 index.html 模板（在拿到 render 结果之前），用于注入 HMR 客户端等；它不是对 render 产出的页面做二次转换。三步顺序应是 transformIndexHtml 在最前。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 SSR 生产构建的「两次构建」与 import.meta.env.SSR，下列说法哪一项正确？",
+    "explanation": "SSR 生产部署需要**两次独立构建**：\n\n- **客户端构建**：`vite build --outDir dist/client`（用于浏览器端 hydration 的资源）。\n- **服务端构建**：`vite build --outDir dist/server --ssr src/entry-server.js`，`--ssr` 标志告诉 Vite 这是一次 SSR 构建，产出在 Node（或 `ssr.target` 指定的运行时）执行的入口。\n\n关于 manifest：在**客户端构建**上加 `--ssrManifest` 标志，会在客户端输出目录生成 `.vite/ssr-manifest.json`，记录模块 ID 到 chunk/asset 的映射，供服务端渲染时计算需要 **preload** 的资源链接（避免瀑布请求）。注意它生成在客户端构建产物里，但消费它的是服务端 render。\n\n关于 `import.meta.env.SSR`：这是一个**布尔常量**，在构建时被**静态替换**为字面量，因此 `if (import.meta.env.SSR)` / `if (!import.meta.env.SSR)` 的死分支可被 **tree-shaking 摇掉**——客户端 bundle 里 SSR-only 代码被剔除，服务端 bundle 里浏览器-only 代码被剔除。它不是运行时才求值的变量，所以不能用动态拼接绕过静态替换。\n\n版本说明：`--ssr` / `--ssrManifest` / `import.meta.env.SSR` 的语义在 Vite 7 与 Vite 8 一致。差异在底层：Vite 8 用 **Rolldown** 完成构建与 tree-shaking（替代 Vite 7 的 Rollup），配置键从 `rollupOptions` 改为 `rolldownOptions`，但 `import.meta.env.SSR` 静态替换 + 死代码消除这个机制本身不变。",
+    "tags": ["vite", "高级", "SSR", "ssrManifest", "tree-shaking"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "服务端构建用 vite build --ssr src/entry-server.js；--ssrManifest 加在客户端构建上生成 .vite/ssr-manifest.json 供服务端计算 preload；import.meta.env.SSR 被静态替换为字面量从而让无效分支可被 tree-shake",
+        "isCorrect": true,
+        "description": "正确。--ssr 标志用于服务端入口构建；--ssrManifest 作用于客户端构建并产出 .vite/ssr-manifest.json（供 render 计算预加载链接）；import.meta.env.SSR 在构建时被静态替换为 true/false，因此死分支可被摇树消除。"
+      },
+      {
+        "text": "ssr-manifest.json 由服务端构建（--ssr）生成，记录服务端 chunk，供客户端 hydration 时反向定位组件",
+        "isCorrect": false,
+        "description": "错误。ssr-manifest.json 由「客户端构建」加 --ssrManifest 生成（位于客户端输出目录），用途是让「服务端 render」计算要 preload 的客户端资源，而不是由服务端构建生成、供客户端 hydration 反向定位。"
+      },
+      {
+        "text": "import.meta.env.SSR 是运行时读取的环境变量，只能用 try/catch 包裹来避免在错误环境执行，无法被 tree-shaking",
+        "isCorrect": false,
+        "description": "错误。import.meta.env.SSR 是构建时被静态替换的布尔字面量，正因为是字面量，基于它的 if 分支才能被 tree-shaking 摇掉。它不是运行时变量，也不需要 try/catch 来规避。"
+      },
+      {
+        "text": "客户端与服务端可以共用一次 vite build，靠 ssr.target 自动产出两套产物，无需分别指定 outDir",
+        "isCorrect": false,
+        "description": "错误。SSR 生产部署需要两次独立的 vite build（分别 --outDir dist/client 与 --outDir dist/server --ssr ...）。ssr.target 只是声明服务端运行时（node/webworker），不会让单次构建自动产出两套产物。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 ssr.external / ssr.noExternal / ssr.target / ssr.resolve.conditions 这组 SSR 配置，下列哪一项描述正确？",
+    "explanation": "逐项核对官方 SSR 配置语义：\n\n- **`ssr.external`**：强制把指定依赖**外部化**（externalize），即在服务端运行时由 Node 的 `require`/`import` 从 `node_modules` 直接加载，而不被打进 SSR bundle。默认情况下 Vite 会把**链接的（linked）以外的依赖**尽量外部化，以加快构建并保留依赖的原生行为。\n- **`ssr.noExternal`**：与之相反，强制把指定依赖**打包进** SSR bundle（不外部化）；设为 `true` 时表示**不外部化任何依赖**（全部打包）。文档提醒：若被打包的代码 import 了 Node.js 内建模块，在非 Node 的 `ssr.target` 下会抛错。\n- **`ssr.target`**：服务端运行时目标，默认 `'node'`，另可设 `'webworker'`（用于 Cloudflare Workers 等边缘运行时）。\n- **`ssr.resolve.conditions`**：SSR 解析依赖入口时使用的 **exports/imports conditions**（条件导出），会**覆盖** `resolve.conditions`；另有 `ssr.resolve.externalConditions` 专门用于被外部化依赖的解析。\n\n常见误解：external 与 noExternal 的方向容易记反——external = 不打包（交给运行时），noExternal = 打包进去。\n\n版本说明：这组 `ssr.*` 选项在 Vite 7 与 Vite 8 中语义一致。Vite 8 改用 Rolldown 完成 SSR 打包（替代 Rollup），但「外部化 vs 打包」的判定与上述配置项名称、默认值不变；`ssr.target: 'webworker'` 在两版均用于边缘运行时场景。",
+    "tags": ["vite", "高级", "SSR", "ssr.external", "resolve.conditions"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ssr.external 把依赖外部化（运行时由 node_modules 加载，不进 bundle）；ssr.noExternal 反向把依赖打包进 SSR bundle，设为 true 表示全部打包；ssr.target 默认 'node'，可设 'webworker'；ssr.resolve.conditions 覆盖 resolve.conditions",
+        "isCorrect": true,
+        "description": "正确。external=外部化（不打包），noExternal=打包进 bundle（true 即全打包），ssr.target 默认 node 可选 webworker，ssr.resolve.conditions 覆盖通用 resolve.conditions。四项语义全部与官方一致。"
+      },
+      {
+        "text": "ssr.external 把依赖打包进 SSR bundle，ssr.noExternal 把依赖外部化交给运行时加载；两者方向与名字直觉相反",
+        "isCorrect": false,
+        "description": "错误。方向记反了。external 是「外部化＝不打包、交运行时加载」，noExternal 是「不外部化＝打包进 bundle」，与名字字面直觉一致，并非相反。"
+      },
+      {
+        "text": "ssr.target 默认 'webworker'，需显式改为 'node' 才能在 Node 服务运行；不设则默认按边缘运行时构建",
+        "isCorrect": false,
+        "description": "错误。ssr.target 默认值是 'node'，不是 'webworker'。webworker 是为 Cloudflare Workers 等边缘运行时显式指定的可选值。"
+      },
+      {
+        "text": "ssr.resolve.conditions 仅对被 noExternal 打包的依赖生效，对外部化依赖必须改用 resolve.conditions（两者互不覆盖）",
+        "isCorrect": false,
+        "description": "错误。ssr.resolve.conditions 会覆盖 resolve.conditions 用于 SSR 入口解析；针对被外部化依赖另有专门的 ssr.resolve.externalConditions，并非「外部化依赖必须改回 resolve.conditions」。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 Environment API 的概念、当前稳定性状态及默认环境，下列说法哪一项正确？",
+    "explanation": "**Environment API** 是 Vite 6 引入、用于把「代码运行的不同上下文」形式化的能力，让同一个 Vite server 在开发态并发地服务多个环境（如浏览器 `client`、Node 服务端 `ssr`、边缘运行时等），并在构建态协调多环境产出。\n\n稳定性状态（核对版本基线）：截至 Vite 8，Environment API 整体处于 **Release Candidate（RC）**，计划在未来某个 major 稳定；其中部分具体 API 仍标注为 experimental，可能有破坏性变更。它**不是已 GA 稳定 API**，也不是「已废弃」。\n\n默认环境：\n- **`client`** 环境**始终存在**。\n- **`ssr`** 环境在**开发态默认存在**，在构建态为可选。\n- 自定义环境通过 `environments` 配置项声明。\n\n向后兼容：Vite 5 的 server API（如 `server.moduleGraph`）未被废弃，`server.moduleGraph` 返回 client 与 ssr 模块图的混合视图。\n\n版本说明：Environment API 自 Vite 6 起跨 Vite 7、Vite 8 持续演进，本题按 Vite 8（npm latest）基线认定其为 RC。Vite 8 的 Rolldown/Oxc 改造是 bundler/transformer 层的变化，与 Environment API 的稳定性等级是两条独立的演进线，不应混为一谈。",
+    "tags": ["vite", "专家", "SSR", "Environment API", "RC"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Environment API 形式化「代码运行上下文」，截至 Vite 8 整体处于 RC（部分 API 仍 experimental）；client 环境始终存在，ssr 环境开发态默认存在、构建态可选",
+        "isCorrect": true,
+        "description": "正确。它在 Vite 6 引入用于多环境并发；截至 Vite 8 整体为 Release Candidate（含部分 experimental API）；默认环境为始终存在的 client 与开发态默认存在、构建态可选的 ssr。"
+      },
+      {
+        "text": "Environment API 已在 Vite 8 随 Rolldown 一同 GA 稳定，且 import.meta.env.SSR 已被它废弃替代",
+        "isCorrect": false,
+        "description": "错误。截至 Vite 8，Environment API 仍是 RC 而非 GA；它也没有废弃 import.meta.env.SSR（后者仍是构建时静态替换的常量）。把它与 Rolldown 的稳定状态捆绑也不成立。"
+      },
+      {
+        "text": "默认只有 client 一个环境，ssr 必须通过 environments 配置项手动声明后才存在",
+        "isCorrect": false,
+        "description": "错误。除了始终存在的 client，ssr 环境在开发态默认即存在（构建态可选），无需手动声明；environments 配置项用于声明「额外的自定义环境」。"
+      },
+      {
+        "text": "Environment API 是 Vite 8 全新引入的实验特性，Vite 6/7 完全没有该概念，因此旧版无法配置 environments",
+        "isCorrect": false,
+        "description": "错误。Environment API 自 Vite 6 引入并在 7、8 持续演进，并非 Vite 8 全新引入；Vite 6 起即可使用 environments 配置。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 Environment API 的多环境配置继承规则，以及 DevEnvironment / RunnableDevEnvironment / ModuleRunner 在开发态加载服务端模块的机制，下列哪一项正确？",
+    "explanation": "**配置继承**：顶层 `EnvironmentOptions`（如 `resolve`、`define` 等）作为默认值被各环境继承；但存在**非继承（non-inherit）字段**——典型如 **`optimizeDeps`**，它只对 `client` 环境生效，不会自动下放给其他环境。这是因为依赖预构建（optimizeDeps）针对浏览器场景，盲目继承到服务端/边缘环境会出错。\n\n**开发态加载服务端模块**：\n- `DevEnvironment` 是开发态环境的基类。\n- `RunnableDevEnvironment` **继承自** `DevEnvironment`，额外提供 `runner: ModuleRunner`，能在「与 Vite server 同一运行时」内执行模块。\n- `ModuleRunner` 的 `runner.import(url)` 实例化并返回模块，**行为等同于旧的 `ssrLoadModule`**，是其在 Environment API 下的替代路径，并能为服务端模块提供 HMR。\n- 访问 `runner` 前应先用类型守卫 **`isRunnableDevEnvironment(environment)`** 判断，因为不是所有环境都是「可运行」的（例如运行在独立进程/Worker 中的环境就不可直接 runner.import，需走 fetch 等通信方式）。\n\n版本说明：上述 Environment API 与 ModuleRunner 自 Vite 6 引入，截至 Vite 8 处于 RC。`ssrLoadModule` 在 Vite 7、Vite 8 中仍可用（文档 SSR 主线仍以其示例），`runner.import()` 是其面向多运行时的现代替代。Vite 8 的 Rolldown/Oxc 改造不改变这些 dev 环境 API 的形态。",
+    "tags": [
+      "vite",
+      "专家",
+      "Environment API",
+      "RunnableDevEnvironment",
+      "ModuleRunner"
+    ],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "optimizeDeps 是非继承字段（只作用于 client）；RunnableDevEnvironment 继承 DevEnvironment 并提供 runner（ModuleRunner），runner.import() 行为等同 ssrLoadModule，访问 runner 前应先用 isRunnableDevEnvironment 判断",
+        "isCorrect": true,
+        "description": "正确。optimizeDeps 属于 non-inherit 字段只对 client 生效；RunnableDevEnvironment 扩展 DevEnvironment 提供 runner，其 runner.import() 等价于 ssrLoadModule，且并非所有环境可运行，访问前需用 isRunnableDevEnvironment 守卫。"
+      },
+      {
+        "text": "顶层 EnvironmentOptions 的所有字段（含 optimizeDeps）都会无差别继承到每个环境，不存在非继承字段",
+        "isCorrect": false,
+        "description": "错误。存在 non-inherit 字段，optimizeDeps 即典型例子——它只对 client 生效，不会无差别继承到 ssr/自定义环境，否则浏览器导向的预构建会污染服务端环境。"
+      },
+      {
+        "text": "DevEnvironment 直接内置 runner.import()，任意 DevEnvironment 实例都可直接调用它加载服务端模块，无需类型判断",
+        "isCorrect": false,
+        "description": "错误。runner 由 RunnableDevEnvironment（DevEnvironment 的子类）提供，而非基类内置；并非所有环境可运行，调用前需用 isRunnableDevEnvironment 守卫，否则非可运行环境会出错。"
+      },
+      {
+        "text": "ModuleRunner 仅用于生产构建阶段的代码分割，与开发态加载服务端模块无关，dev 态仍必须用 ssrLoadModule",
+        "isCorrect": false,
+        "description": "错误。ModuleRunner 正是开发态在同运行时加载/执行服务端模块的机制（runner.import 等同 ssrLoadModule），与生产构建的代码分割无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Environment API 的插件体系中，关于 applyToEnvironment、per-environment 状态隔离、sharedDuringBuild / builder.sharedConfigBuild，以及 Builder.buildApp，下列说法哪一项正确？",
+    "explanation": "**`applyToEnvironment` 钩子**：插件可定义该钩子来声明「是否在某环境激活」——返回 `true` 表示在该环境启用，返回 `false` 表示禁用，还可**返回一个新插件以在该环境替换自身**。若不定义，则插件默认在所有环境激活。另有 `perEnvironmentPlugin` 辅助函数简化「为每个环境包一层」的场景。\n\n**状态隔离**：因为**同一个插件实例**会服务多个环境，跨环境的状态应以 `this.environment` 为键存放（文档建议用 `Map<Environment, State>`），否则 client 与 server 的模块状态会串。`perEnvironmentStartEndDuringDev: true` 可让 `buildStart`/`buildEnd` 在开发态按环境分别触发。\n\n**构建共享**：默认 Vite 6+ 在构建时为每个环境创建**独立的 ResolvedConfig**（保持向后兼容）；可通过 `builder.sharedConfigBuild: true` 选择「共享 config 与插件流水线」，并用 `sharedDuringBuild: true` 让某插件在构建期成为跨环境**单实例共享**。\n\n**`Builder` / `builder.buildApp()`**：`Builder` 协调多环境的生产构建；`builder.buildApp()` 是编排入口，负责按配置顺序构建各环境（client、ssr、自定义），让框架作者在一个流程里完成「整个应用」的多环境构建，而非手动多次 `vite build`。\n\n版本说明：这些 per-environment 插件 API 与 Builder 属于 Environment API，自 Vite 6 引入、截至 Vite 8 处于 RC。它们与 Vite 8 的 Rolldown/Oxc bundler 改造是不同层面：Builder 编排的是「多环境构建流程」，底层每个环境的实际打包在 Vite 8 由 Rolldown 完成（Vite 7 为 Rollup），但 Builder/applyToEnvironment 这些 API 名称与语义不随 bundler 更替而改变。",
+    "tags": [
+      "vite",
+      "专家",
+      "Environment API",
+      "applyToEnvironment",
+      "Builder"
+    ],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "applyToEnvironment 返回 true/false 决定插件在某环境是否激活（还可返回新插件替换自身）；同一实例服务多环境故状态要以 this.environment 为键；builder.buildApp() 编排多环境生产构建，可借 builder.sharedConfigBuild / sharedDuringBuild 共享配置与插件",
+        "isCorrect": true,
+        "description": "正确。applyToEnvironment 控制按环境启用并可返回替换插件；因单实例服务多环境，状态需按 this.environment 隔离；builder.buildApp() 编排多环境构建，sharedConfigBuild/sharedDuringBuild 用于共享配置与单实例插件。各项均与官方一致。"
+      },
+      {
+        "text": "applyToEnvironment 只能返回布尔值，不允许返回新插件；插件实例天然按环境隔离，无需用 this.environment 管理状态",
+        "isCorrect": false,
+        "description": "错误。applyToEnvironment 除布尔外还可返回一个新插件以替换自身；且同一插件实例会服务多个环境，状态必须以 this.environment 为键隔离，并非天然隔离。"
+      },
+      {
+        "text": "Vite 6+ 构建时默认所有环境共享同一份 ResolvedConfig，sharedConfigBuild 反而用来强制每个环境拆出独立配置",
+        "isCorrect": false,
+        "description": "错误。默认是为每个环境创建独立 ResolvedConfig（保持向后兼容）；builder.sharedConfigBuild: true 才是「opt-in 共享 config 与插件流水线」，方向恰好相反。"
+      },
+      {
+        "text": "builder.buildApp() 仅在 Vite 8 才存在，因为它依赖 Rolldown 的统一打包；Vite 7 无法做多环境构建编排",
+        "isCorrect": false,
+        "description": "错误。Builder/buildApp 属于自 Vite 6 引入的 Environment API（RC），不依赖 Rolldown；Vite 7 同样可用。Rolldown 只是底层打包器，与多环境编排 API 的存在与否无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 vite.config.ts 中你希望仅在生产环境构建时启用某分析插件，开发服务器下不加载它。下面哪种写法最贴合 Vite 官方约定？",
+    "explanation": "Vite 插件对象支持 `apply` 属性来限制插件的生效阶段。\n\n- `apply: 'build'` 表示该插件只在执行 `vite build`（构建）时生效；`apply: 'serve'` 表示只在 `vite`/`vite dev`（开发服务器）时生效。`apply` 还可以是一个函数 `(config, env) => boolean`，根据 `env.command`（'build' | 'serve'）等做更精细判断。\n- 与之相关但语义不同的是 `enforce: 'pre' | 'post'`，它控制插件在流水线中的执行**顺序**（相对 Vite 核心插件的前后），而不是控制是否启用——把它和「只在 build 时启用」混为一谈是常见错误。\n- 利用「falsy 插件会被忽略」的特性写 `command === 'build' && plugin()` 也能达到条件启用的效果，但它要求你能拿到当前 command，通常不如直接用插件内置的 `apply` 简洁，且本题问的是「最贴合官方约定」的单插件写法。\n\n该行为在 Vite 7 与 Vite 8 中一致，不随底层从 Rollup/esbuild 切换到 Rolldown/Oxc 而改变。",
+    "tags": ["vite", "入门", "插件系统", "apply"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "给插件对象加 `apply: 'build'`",
+        "isCorrect": true,
+        "description": "正确。`apply` 用于限定插件生效阶段，`'build'` 即只在构建时调用，开发服务器下不加载，正是官方推荐的做法。"
+      },
+      {
+        "text": "给插件对象加 `enforce: 'build'`",
+        "isCorrect": false,
+        "description": "错误。`enforce` 只接受 `'pre'` / `'post'`，用于控制执行顺序而非启用阶段，`'build'` 不是合法值。"
+      },
+      {
+        "text": "给插件对象加 `mode: 'production'`",
+        "isCorrect": false,
+        "description": "错误。插件对象没有 `mode` 字段；`mode` 是 Vite 的全局配置/CLI 概念，不能写在单个插件上来控制其启用。"
+      },
+      {
+        "text": "把插件放进 `build.rollupOptions.plugins` 而不是顶层 `plugins`",
+        "isCorrect": false,
+        "description": "错误。放进底层 bundler 的 plugins 不会获得 Vite 的 apply/enforce 与开发服务器钩子能力，且无法保证仅 build 生效，也不是官方约定。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于顶层 `plugins` 数组，下列哪一项描述符合官方文档？",
+    "explanation": "Vite 官方文档对 `plugins` 数组有几条明确约定：\n\n- **预设扁平化**：数组中的元素可以是「预设」（即包含多个插件的数组），「the array will be flattened internally」——Vite 会在内部把嵌套数组拍平，因此 `plugins: [vue(), somePreset()]`（somePreset 返回数组）是合法的。\n- **falsy 插件被忽略**：「Falsy plugins will be ignored, which can be used to easily activate or deactivate plugins.」这正是 `condition && plugin()` 写法能工作的原因——当 condition 为 false 时表达式求值为 false，被忽略。\n- 关于排序：`enforce`/`apply` 只是修饰符，**最终执行顺序由 Vite 的固定流水线决定**，并非简单按数组书写顺序运行所有插件。\n\n以上约定在 Vite 7 与 Vite 8 相同。",
+    "tags": ["vite", "中级", "插件系统", "plugins数组"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "数组里可以放「包含多个插件的数组（预设）」，Vite 会在内部把它扁平化；值为 falsy 的插件会被直接忽略",
+        "isCorrect": true,
+        "description": "正确。官方明确说明数组会被内部扁平化，且 falsy 插件会被忽略（常用于条件启停插件）。"
+      },
+      {
+        "text": "数组中出现 `false`/`null`/`undefined` 会导致 Vite 启动报错，必须先 `.filter(Boolean)` 过滤",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，falsy 插件会被 Vite 自动忽略，无需手动 filter，更不会报错。"
+      },
+      {
+        "text": "嵌套数组（预设）不被支持，必须把每个插件单独平铺到顶层数组",
+        "isCorrect": false,
+        "description": "错误。预设（数组形式）是被支持的，Vite 会在内部扁平化，无需手动展开。"
+      },
+      {
+        "text": "插件的实际执行顺序严格等于它们在数组中书写的先后顺序",
+        "isCorrect": false,
+        "description": "错误。实际顺序由 Vite 固定流水线（Alias→pre→core→普通→build→post）决定，enforce 会改变相对位置，不等同于书写顺序。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：你写了一个虚拟模块插件，用户用 `import data from 'virtual:my-config'`。按官方约定，`resolveId` 钩子应把该 id 解析成什么，目的又是什么？",
+    "explanation": "Vite/Rollup 的虚拟模块约定：用户侧用 `virtual:plugin-name` 形式导入，而插件在 `resolveId` 中把解析结果加上 `\\0`（null 字符）前缀，例如把 `virtual:my-config` 解析为 `\\0virtual:my-config`，随后在 `load` 中匹配带 `\\0` 的 id 返回模块内容。\n\n`\\0` 前缀的作用是官方明确说明的：「This prevents other plugins from trying to process the id (like node resolution), and core features like sourcemaps can use this info to differentiate between virtual modules and regular files.」即一方面阻止其他插件（如 node 解析）去处理这个 id，另一方面让 sourcemap 等核心功能能区分虚拟模块与真实文件。\n\n常见错误：\n- 直接把 id 解析成磁盘上的绝对路径——虚拟模块本就不对应真实文件，会触发文件系统查找而失败。\n- 不加 `\\0` 直接返回 `virtual:my-config`——其他插件可能会尝试解析它，破坏隔离性。\n\n该约定在 Vite 7、Vite 8 完全一致（属于 Rollup/Rolldown 通用机制）。",
+    "tags": ["vite", "中级", "虚拟模块", "resolveId"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "解析为带 `\\0` 前缀的 id（如 `\\0virtual:my-config`），以阻止其他插件处理该 id 并让 sourcemap 区分虚拟模块与真实文件",
+        "isCorrect": true,
+        "description": "正确。`\\0` 前缀是官方虚拟模块约定，既隔离其他插件（如 node 解析），又便于 sourcemap 区分虚拟/真实文件。"
+      },
+      {
+        "text": "解析为项目根目录下对应的绝对路径，让 Vite 去磁盘读取该文件",
+        "isCorrect": false,
+        "description": "错误。虚拟模块不存在真实文件，解析成磁盘路径会触发文件系统查找并失败。"
+      },
+      {
+        "text": "原样返回 `virtual:my-config`（不加任何前缀），由 `load` 钩子按字符串匹配处理",
+        "isCorrect": false,
+        "description": "错误。不加 `\\0` 前缀会让其他插件尝试处理该 id，破坏隔离，sourcemap 也无法区分，违反官方约定。"
+      },
+      {
+        "text": "在 `resolveId` 里直接调用 `this.load()` 返回内容，无需关心 id 前缀",
+        "isCorrect": false,
+        "description": "错误。`resolveId` 负责返回解析后的 id（应带 `\\0`），加载内容是 `load` 钩子的职责，混淆了两者分工。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于通用（Rollup/Rolldown）钩子在「开发服务器（dev/serve）」下的调用时机，下列哪项准确？（以 Vite 8 为基线，并对比 Vite 7）",
+    "explanation": "Vite 在 dev 下并不会运行完整的 Rollup/Rolldown 构建流程，而是按请求即时处理模块（plugin container）。因此：\n\n- **会被调用的通用钩子**：`options`、`buildStart`（服务器启动时）；`resolveId`、`load`、`transform`（每个被请求的模块上按需调用）；`buildEnd`、`closeBundle`（服务器关闭时）。\n- **dev 下不会被调用的钩子**：`moduleParsed`——官方原文「not called during dev, because Vite avoids full AST parses for better performance」（dev 下 Vite 为性能避免完整 AST 解析）；以及**输出阶段钩子**（`renderChunk`、`generateBundle`、`writeBundle` 等，除 `closeBundle` 外），因为 dev 没有打包输出阶段。\n\n版本差异：Vite ≤7 的通用钩子由 **Rollup**（构建）+ 内部 plugin container（dev）提供；Vite 8 统一改由 **Rolldown** 驱动 dev 与 build。但「dev 下不调用 moduleParsed / 输出阶段钩子」这一行为模型在 7→8 保持一致，属于 dev 不做完整打包这一本质决定的，不因 Rolldown 而改变。",
+    "tags": ["vite", "专家", "通用钩子", "dev时机"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "dev 下会调用 `resolveId`/`load`/`transform`，但 `moduleParsed` 与输出阶段钩子（除 `closeBundle`）不会被调用",
+        "isCorrect": true,
+        "description": "正确。dev 按请求即时处理模块，故 resolveId/load/transform 生效；为性能不做完整 AST 解析故无 moduleParsed，也没有打包输出阶段故无 renderChunk/generateBundle 等。"
+      },
+      {
+        "text": "dev 下与 build 下钩子调用完全一致，连 `generateBundle`/`renderChunk` 也会在每次请求时触发",
+        "isCorrect": false,
+        "description": "错误。dev 没有打包输出阶段，输出类钩子（generateBundle/renderChunk 等）不会被调用。"
+      },
+      {
+        "text": "dev 下 `transform` 不会被调用，模块转换只发生在 build 阶段",
+        "isCorrect": false,
+        "description": "错误。`transform` 正是 dev 下按请求转换模块的核心钩子，恰恰会被调用。"
+      },
+      {
+        "text": "因为 Vite 8 改用 Rolldown，dev 下现在会运行完整打包，所以 `moduleParsed` 在 Vite 8 dev 下会被调用（Vite 7 才不调用）",
+        "isCorrect": false,
+        "description": "错误。Vite 8 虽统一用 Rolldown，但 dev 仍按请求处理、避免完整 AST 解析，moduleParsed 在 7 和 8 的 dev 下都不调用，不存在该版本差异。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在插件中实现 `config(userConfig, env)` 钩子时，下列哪种做法符合官方约定且能真正生效？",
+    "explanation": "`config` 钩子的正确用法有两条关键约束：\n\n1. **返回部分配置而非 mutate 入参**：官方推荐返回一个 partial config 对象，「will be deeply merged into existing config」（会被深合并进现有配置）。虽然在某些情况下直接修改 `userConfig` 也能改变结果，但官方文档对存在「无法合并」语义的字段建议返回新对象由 Vite 深合并；用「返回 partial + 由 Vite 深合并」是约定写法。注意：深合并不能用来「移除」已有值。\n2. **不能在 config 钩子里注入其他插件**：「User plugins are resolved before running this hook so injecting other plugins inside the `config` hook will have no effect.」——用户插件在该钩子运行前就已解析完毕，此时再往 `plugins` 里塞插件不会生效。\n\n常见错误：\n- 在 config 里 `config.plugins.push(somePlugin())` 期望追加插件——无效。\n- 期望返回 `{ server: { proxy: undefined } }` 去「删掉」用户已配的 proxy——深合并不会因此删除。\n\n这些语义在 Vite 7 与 Vite 8 一致。",
+    "tags": ["vite", "专家", "config钩子", "深合并"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "返回一个 partial config 对象（如 `{ resolve: { alias: {...} } }`），由 Vite 深合并进现有配置",
+        "isCorrect": true,
+        "description": "正确。官方推荐返回部分配置对象交给 Vite 深合并，这是 config 钩子的标准用法。"
+      },
+      {
+        "text": "在 config 钩子里 `config.plugins.push(myOtherPlugin())` 动态注入额外插件",
+        "isCorrect": false,
+        "description": "错误。用户插件在该钩子运行前已解析完毕，此时注入插件不会生效（官方明确说明 has no effect）。"
+      },
+      {
+        "text": "返回 `{ server: { proxy: undefined } }` 以删除用户已配置的某条 proxy 规则",
+        "isCorrect": false,
+        "description": "错误。深合并用于合并而非删除，返回 undefined 不会移除用户已有的 proxy 配置。"
+      },
+      {
+        "text": "config 钩子的最佳实践是直接 mutate 入参对象并且不返回任何值，Vite 会按引用采用所有改动",
+        "isCorrect": false,
+        "description": "错误。官方约定是返回部分配置交给深合并；直接 mutate 不是推荐方式，且对需要合并语义的字段不可靠。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 `configureServer`、`transformIndexHtml` 与 `handleHotUpdate` 三个开发期钩子的细节，下列哪项完全正确？（以 Vite 8 为基线）",
+    "explanation": "逐项核对官方约定：\n\n- **configureServer 注入「内部中间件之后」的中间件**：官方原文「If you want to inject a middleware after internal middlewares, you can return a function from `configureServer`, which will be called after internal middlewares are installed.」即直接在钩子体内 `server.middlewares.use(...)` 是在内部中间件**之前**注入；要在内部中间件**之后**注入，需**返回一个函数**（post hook），该函数在内部中间件安装完后被调用。\n\n- **transformIndexHtml 的 injectTo 默认值**：`HtmlTagDescriptor` 的 `injectTo` 默认是 `'head-prepend'`，可选 `'head'`、`'body'`、`'head-prepend'`、`'body-prepend'`。所以「不指定 injectTo 时默认注入到 body 末尾」是错的——默认是 head 前置。\n\n- **handleHotUpdate 返回 `[]`**：返回空数组表示「清空受影响模块列表」，从而不走默认的模块级 HMR——你要么自己执行完整 reload，要么通过 `server.ws.send('event', payload)` 发自定义事件做完全自定义的 HMR 处理。返回空数组并不等于「什么都不做、阻止一切更新」。\n\n版本说明：以上钩子名与语义在 Vite 7、Vite 8 一致；`handleHotUpdate` 仍是当前文档的 API 名（环境 API 下另有更细粒度的 `hotUpdate` 钩子，但本题考点是经典 `handleHotUpdate` 的返回值语义）。",
+    "tags": ["vite", "专家", "configureServer", "handleHotUpdate"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`configureServer` 中若想把中间件注入到内部中间件之后，需从钩子返回一个函数；该函数会在内部中间件安装完成后被调用",
+        "isCorrect": true,
+        "description": "正确。直接 use 是 pre（内部中间件之前），返回函数（post hook）则在内部中间件安装后执行，与官方文档一致。"
+      },
+      {
+        "text": "`transformIndexHtml` 返回的标签若不指定 `injectTo`，默认注入到 `<body>` 末尾",
+        "isCorrect": false,
+        "description": "错误。`injectTo` 默认值是 `'head-prepend'`（head 前置），不是 body 末尾。"
+      },
+      {
+        "text": "`handleHotUpdate` 返回空数组 `[]` 表示「保留默认 HMR 行为，仅做日志记录」",
+        "isCorrect": false,
+        "description": "错误。返回 `[]` 是清空受影响模块、跳过默认模块级 HMR，需自行 full reload 或发自定义事件处理，并非保留默认行为。"
+      },
+      {
+        "text": "要在内部中间件之前注入中间件，必须从 `configureServer` 返回函数；直接 `server.middlewares.use()` 则是之后注入",
+        "isCorrect": false,
+        "description": "错误。正好相反：直接 use 是「之前」（pre），返回函数才是「之后」（post），描述把前后关系颠倒了。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 Vite 8（8.0.x）中用 JS API 写一个脚本，先 `resolveConfig` 再启动 dev server，并希望复用 `vite.config.ts` 里基于环境变量的配置。下列关于 JS API 与环境变量读取的说法，哪一项正确？",
+    "explanation": "**`createServer`（Vite 8）**：`async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>`，返回的 `ViteDevServer` 上有 `listen()`、`printUrls()`、`close()`、`bindCLIShortcuts()` 等方法。注意 `printUrls()` 只负责把已解析的 URL 打印到 CLI，真正监听端口要先 `await server.listen()`，listen 之后才能拿到 resolvedUrls 再 printUrls。\n\n**vite.config 读 env（任何版本，含 Vite 8）**：Vite 故意把 `.env` 文件的加载推迟到用户配置解析之后，所以**配置文件本身**在被求值时 `process.env` 里并没有 `VITE_` 变量；要在配置里读 env，必须用 `loadEnv(mode, envDir, prefixes = 'VITE_')` 手动加载。函数式配置可拿到 `mode`：`export default defineConfig(({ mode }) => { const env = loadEnv(mode, process.cwd(), ''); ... })`（第三个参数传 `''` 可加载全部前缀）。\n\n**版本差异**：JS API 的 `version` 常量在 Vite 8 返回 `\"8.x.x\"`；Vite 8 还额外导出 `rolldownVersion`，而 `esbuildVersion` / `rollupVersion` 仅为向后兼容保留。",
+    "tags": ["vite", "中级", "JS API", "loadEnv", "createServer"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 vite.config.ts 中想根据 `VITE_*` 变量决定配置项，必须导出函数式配置并在其中用 `loadEnv(mode, root, prefixes)` 手动加载；`createServer` 返回的 server 需先 `await server.listen()` 再 `server.printUrls()`",
+        "isCorrect": true,
+        "description": "正确。Vite 把 .env 加载延后到用户配置解析之后，配置文件内 `process.env` 拿不到 VITE_ 变量，必须用 loadEnv 手动加载；这一行为在 Vite 8 仍然成立。listen 之后才有 resolvedUrls 可供 printUrls 打印。"
+      },
+      {
+        "text": "在 vite.config.ts 顶层直接读 `process.env.VITE_API` 即可拿到 `.env` 里的值，因为 Vite 在求值配置文件前已自动注入所有 `VITE_` 变量",
+        "isCorrect": false,
+        "description": "错误。Vite 刻意把 .env 加载推迟到用户配置解析之后，配置文件被求值时 process.env 里并没有 VITE_ 变量，所以才需要 loadEnv 手动加载。"
+      },
+      {
+        "text": "`createServer` 同步返回 `ViteDevServer`，调用 `printUrls()` 会自动绑定端口并开始监听，无需 `listen()`",
+        "isCorrect": false,
+        "description": "错误。createServer 是 async（返回 Promise），需 await；printUrls() 只打印已解析 URL，监听端口靠 listen()，二者职责不同。"
+      },
+      {
+        "text": "在 Vite 8 中 `loadEnv` 已被移除，环境变量统一通过 `import.meta.env` 在配置文件里读取",
+        "isCorrect": false,
+        "description": "错误。loadEnv 在 Vite 8 仍然导出且是配置内读 env 的推荐方式；import.meta.env 只在应用源码（浏览器侧）可用，配置文件（Node 侧）用不了。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 HMR API `import.meta.hot.accept` 的三种重载与「字面量静态分析约束」，下列哪一项描述准确？",
+    "explanation": "**三种重载（accept 重载）**：\n1. 自身接受 `accept(cb)`：模块接收自己更新后的版本并在内部完成替换。\n2. 接受单个依赖 `accept(dep: string, cb)`：依赖更新时回调拿到新模块，模块自身不重新加载。\n3. 接受多个依赖 `accept(deps: string[], cb)`：回调收到一个数组，**只有被更新的那个模块是非 null**，其余为 null。\n\n**字面量静态分析约束**：Vite 在源码里做静态扫描来建立 HMR 边界，要求调用必须以字面形式 `import.meta.hot.accept(` 出现（**对空白敏感**），且依赖路径参数必须是**字符串字面量**——不能用变量拼接、解构出的别名或动态表达式，否则 Vite 无法静态分析出依赖关系。\n\n**版本差异**：在 Vite 8（迁移指南明确）中，**向 `import.meta.hot.accept` 传 URL 已不再支持，必须传 id**（Vite ≤7 曾容忍 URL 形式）。`hot.decline` 在新版本中是 no-op，仅为向后兼容保留。",
+    "tags": ["vite", "专家", "HMR API", "accept", "静态分析"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "依赖路径必须是字符串字面量、且调用须以 `import.meta.hot.accept(` 字面形式出现（对空白敏感）；`accept(['./a','./b'], ([a,b]) => {})` 回调里只有被更新的那个模块非 null，其余为 null",
+        "isCorrect": true,
+        "description": "正确。这正是字面量静态分析约束 + 多依赖重载的语义：Vite 静态扫描要求字面调用与字符串字面量路径，多依赖回调中仅被更新模块非 null。"
+      },
+      {
+        "text": "可以把依赖路径先存到变量 `const dep = './a'` 再 `import.meta.hot.accept(dep, cb)`，Vite 会在运行时解析该变量",
+        "isCorrect": false,
+        "description": "错误。HMR 边界靠编译期静态分析，路径必须是字符串字面量，用变量会导致 Vite 无法分析出依赖、HMR 失效。"
+      },
+      {
+        "text": "在 Vite 8 中向 `import.meta.hot.accept` 传入模块的 URL（如 `/src/a.js`）是推荐写法，比传 id 更稳定",
+        "isCorrect": false,
+        "description": "错误。Vite 8 迁移指南明确：传 URL 已不再支持，必须传 id（Passing an URL is no longer supported. Please pass an id instead）。"
+      },
+      {
+        "text": "多依赖重载 `accept(deps, cb)` 的回调参数是被更新模块本身（单个值），其余依赖不会出现在回调里",
+        "isCorrect": false,
+        "description": "错误。多依赖回调收到的是与 deps 等长的数组，仅被更新模块非 null，其余位置为 null，并非只传单个值。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：在 HMR 清理副作用时，`import.meta.hot.dispose`、`prune`、`data` 与 `invalidate` 各自的语义与触发时机，下列哪一项正确？",
+    "explanation": "**`hot.dispose(cb)`**：在「更新后的副本即将替换当前模块」前执行，用于清理本次更新会重建的持久副作用（计时器、连接等）。**每次该模块被热替换都会触发**。\n\n**`hot.prune(cb)`**：当模块**不再被页面上任何模块导入**（被裁剪/移除）时执行清理，与 dispose 区分——dispose 针对「更新」，prune 针对「彻底移除」。\n\n**`hot.data`**：跨模块实例持久化的对象，用于在旧实例→新实例之间传递信息。**不支持对 `data` 本身重新赋值，只能 mutate 其属性**（`hot.data.foo = x`），否则丢失其他 handler 写入的数据。\n\n**`hot.invalidate(message?)`**：应在 accept 回调里调用，表示「本模块这次无法处理这次 HMR」，把更新**向上冒泡到导入方**（若一直冒泡到顶则触发整页刷新）。它会触发内置事件 `vite:invalidate`。\n\n**内置事件**：`vite:beforeUpdate`（更新应用前）、`vite:afterUpdate`、`vite:beforeFullReload`、`vite:beforePrune`、`vite:invalidate`、`vite:error` 等。以上 HMR API 语义在 Vite ≤7 与 Vite 8 一致。",
+    "tags": ["vite", "专家", "HMR API", "dispose", "invalidate"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`hot.data` 只能 mutate 属性（`hot.data.x = 1`）不能整体重新赋值；`hot.invalidate()` 应在 accept 回调内调用，把更新向导入方冒泡；`prune` 在模块不再被任何模块导入时触发，区别于每次更新都跑的 `dispose`",
+        "isCorrect": true,
+        "description": "正确。三者语义与触发时机都准确：data 仅可 mutate、invalidate 向上冒泡、prune 针对彻底移除而 dispose 针对每次更新。"
+      },
+      {
+        "text": "`hot.dispose` 与 `hot.prune` 等价，都在每次模块被热替换时触发，可任选其一清理副作用",
+        "isCorrect": false,
+        "description": "错误。dispose 针对「更新替换」每次触发；prune 仅在模块不再被任何模块导入（被裁剪）时触发，二者并不等价。"
+      },
+      {
+        "text": "推荐做法是 `import.meta.hot.data = { count: 0 }` 整体替换 data 对象，以确保拿到干净状态",
+        "isCorrect": false,
+        "description": "错误。官方明确不支持对 data 本身重新赋值，只能 mutate 其属性，否则会丢掉其他 handler 写入的数据。"
+      },
+      {
+        "text": "`hot.invalidate()` 的作用是阻止更新冒泡、强制只在当前模块内完成替换，对应内置事件 `vite:afterUpdate`",
+        "isCorrect": false,
+        "description": "错误。invalidate 恰恰是把更新向导入方冒泡（表示本模块处理不了），触发的是 vite:invalidate 而非 vite:afterUpdate。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：关于 `defineConfig` 的条件/异步配置与 `--configLoader`（即 `configLoader` 选项）的取值，在 Vite 8（8.0.x）下哪一项正确？",
+    "explanation": "**条件配置（函数式）**：`export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => ({...}))`。`command` 为 `'serve' | 'build'`，可据此 + `mode` + `isSsrBuild` + `isPreview` 返回不同配置。也可返回 Promise 实现**异步配置**（`async () => ({...})`）。\n\n**`configLoader` 三种取值（Vite 8）**：\n- **`bundle`（默认）**：用 **Rolldown** 把配置文件打包成临时文件再加载（Vite 8 默认即 Rolldown；Vite ≤7 此处用 esbuild bundle）。\n- **`runner`**：用 module runner 即时转译，**不支持配置文件里写 CommonJS**。\n- **`native`**：用运行时原生能力加载（如 `node --experimental-strip-types`），**不会侦测被导入模块的更新**。\n\n**版本差异**：默认 `bundle` 在 Vite 8 由 Rolldown 驱动，而 Vite ≤7 由 esbuild 驱动；行为上仍是「打包成临时文件再加载」，但底层工具不同——所以涉及配置加载性能/产物时需标版本。",
+    "tags": ["vite", "中级", "配置", "configLoader", "defineConfig"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "函数式配置可解构出 `command`/`mode`/`isSsrBuild`/`isPreview` 并可返回 Promise；`configLoader` 默认 `'bundle'`，Vite 8 中由 Rolldown 把配置打包成临时文件加载，`'runner'` 不支持配置里写 CommonJS",
+        "isCorrect": true,
+        "description": "正确。条件/异步配置参数与三种 configLoader 取值都准确；并标明了 Vite 8 默认 bundle 由 Rolldown 驱动这一版本相关事实。"
+      },
+      {
+        "text": "`configLoader: 'native'` 会用 module runner 即时转译配置，并能自动侦测被配置导入的模块更新后重新加载",
+        "isCorrect": false,
+        "description": "错误。即时转译是 'runner' 的特征；'native' 用运行时原生加载，且明确不会侦测被导入模块的更新。描述张冠李戴。"
+      },
+      {
+        "text": "默认 `configLoader: 'bundle'` 在 Vite 8 仍由 esbuild 把配置打包成临时文件，Rolldown 只用于应用构建不参与配置加载",
+        "isCorrect": false,
+        "description": "错误。Vite 8 默认的 bundle 加载器已改用 Rolldown；esbuild bundle 是 Vite ≤7 的行为，把版本搞反了。"
+      },
+      {
+        "text": "函数式配置只能根据 `command` 区分 serve/build，无法返回 Promise，异步逻辑必须放进插件 `config` 钩子",
+        "isCorrect": false,
+        "description": "错误。函数式配置除 command 外还能拿 mode/isSsrBuild/isPreview，且完全可以返回 Promise 实现异步配置。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite：团队还在 Vite 7，想提前体验 Rolldown 统一打包，问到 `rolldown-vite` 的接入方式与 `experimental.enableNativePlugin`。下列哪一项准确？",
+    "explanation": "**Rolldown 是什么**：Rolldown 是用 Rust 写的、Rollup 兼容的打包器。Vite 8 用它**统一了 dev 与 build**（dev 的依赖预构建 + 生产打包都走 Rolldown），并配合 Oxc 做转译/压缩。\n\n**Vite 6/7 提前接入（opt-in）**：通过包管理器的依赖覆盖把 `vite` 重定向到 `rolldown-vite`：\n```json\n// npm / pnpm\n{ \"overrides\": { \"vite\": \"npm:rolldown-vite@latest\" } }\n// yarn\n{ \"resolutions\": { \"vite\": \"npm:rolldown-vite@latest\" } }\n```\n官方提醒「请固定版本（pin the version）」，因为它是实验性的。这只对 Vite 6/7 需要；**Vite 8 已内置 Rolldown，无需 overrides**。\n\n**`experimental.enableNativePlugin`**：在 rolldown-vite / Vite 8 中，原生（Rust）alias/resolve 插件**默认开启，默认值为 `'v1'`**；可设 `false` 关闭。插件作者可用 `withFilter` 包裹插件，即便插件本身不支持 hook filter 也能减少 Rust↔JS 运行时间的通信开销。",
+    "tags": ["vite", "专家", "Rolldown", "rolldown-vite", "enableNativePlugin"],
+    "categories": [
+      ["技术方向", "Vite"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 Vite 6/7 用 `overrides`（npm/pnpm）或 `resolutions`（yarn）把 `vite` 指向 `npm:rolldown-vite@latest`（且应固定版本）即可提前体验；`experimental.enableNativePlugin` 默认 `'v1'`（原生 alias/resolve 插件默认开启）",
+        "isCorrect": true,
+        "description": "正确。opt-in 语法（overrides/resolutions + npm:rolldown-vite，需 pin）与 enableNativePlugin 默认 'v1' 均与官方一致。"
+      },
+      {
+        "text": "Vite 7 想用 Rolldown，只需安装 `@vitejs/plugin-rolldown` 并在 plugins 数组里启用，无需改 `overrides`",
+        "isCorrect": false,
+        "description": "错误。不存在这样一个插件式接入；Vite 6/7 的正确做法是用包管理器 overrides/resolutions 把 vite 替换为 rolldown-vite。"
+      },
+      {
+        "text": "`experimental.enableNativePlugin` 默认为 `false`，必须显式设为 `true` 才会启用 Rust 原生插件，且只对生产构建生效",
+        "isCorrect": false,
+        "description": "错误。该选项默认值是 'v1'（原生 alias/resolve 插件默认即开启），并非默认 false、也不限于生产构建。"
+      },
+      {
+        "text": "Rolldown 只用于生产构建，dev 期间 Vite 仍用 esbuild 预构建依赖，所以 dev/build 仍是两套打包器",
+        "isCorrect": false,
+        "description": "错误。Vite 8 用 Rolldown 统一了 dev（依赖预构建）与 build；说 dev 仍用 esbuild、两套打包器，与「统一」事实相悖。"
+      }
+    ]
+  }
+]
