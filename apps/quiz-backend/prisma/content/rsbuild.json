@@ -1,0 +1,870 @@
+[
+  {
+    "stem": "Rsbuild：关于 Rsbuild 与 Rspack 的关系，以下哪种描述最准确？",
+    "explanation": "Rsbuild 是「基于 Rspack 的现代 Web 构建工具」，二者是清晰的分层关系：Rspack 是底层用 Rust 编写的 bundler（真正负责模块打包），Rsbuild 是其上的集成层（build tool），提供开箱即用的默认配置和语义化的配置 API，降低直接使用 Rspack 的复杂度。这个分层正好对标 Vite 之于 Rolldown：上层是 build tool，底层是 bundler。所以「Rsbuild 在 Rspack 之上、Rspack 负责打包」是正确的。说二者无关、或说 Rsbuild 是 Rspack 的 Rust 实现、或把上下层关系颠倒，都是错的。核心包是 @rsbuild/core，由字节 web-infra-dev 团队出品。",
+    "tags": ["rsbuild", "rspack", "架构", "分层"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Rsbuild 是构建在 Rspack 之上的集成层（build tool），Rspack 才是底层负责打包的 Rust bundler",
+        "isCorrect": true,
+        "description": "正确。官方定义 Rsbuild 是「基于 Rspack 的现代 Web 构建工具」。Rspack 做底层打包，Rsbuild 在其上封装默认配置与语义化 API，分层关系对标 Vite︰Rolldown。"
+      },
+      {
+        "text": "Rspack 是构建在 Rsbuild 之上的封装层，Rsbuild 才是底层真正打包的引擎",
+        "isCorrect": false,
+        "description": "错误。上下层关系颠倒了。底层打包的是 Rspack（Rust bundler），Rsbuild 在它之上做集成。"
+      },
+      {
+        "text": "Rsbuild 是 Rspack 的纯 Rust 重写版本，二者是同一个 bundler 的两个语言实现",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 不是 Rspack 的语言重写，而是其上的 JS 集成层；真正用 Rust 写的是 Rspack。"
+      },
+      {
+        "text": "Rsbuild 与 Rspack 是两个互不依赖的独立项目，Rsbuild 内部自带一套与 Rspack 无关的打包内核",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 的打包能力正是来自其依赖的 Rspack，并非自带无关内核。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：默认情况下 Rsbuild 用哪一对底层工具来转译/压缩 JavaScript-TypeScript 与处理 CSS（语法降级、加厂商前缀）？",
+    "explanation": "Rsbuild 默认使用 SWC 来转译并压缩 JS/TS 代码（替代传统的 Babel 转译 + Terser 压缩），使用 Lightning CSS 做 CSS 语法降级并自动补齐厂商前缀（替代 autoprefixer 的角色）。这两者都是 Rust/高性能实现，是 Rsbuild 快的重要原因。需要注意：SWC 只做转译和压缩，不做类型检查（类型检查需另行开启 type-check 插件，由 tsc 完成）。「Babel + Terser + autoprefixer」是上一代工具链的组合，正是 Rsbuild 要替代的；PostCSS 在 Rsbuild 中可选用于自定义 CSS 转换，但默认的语法降级/加前缀是 Lightning CSS 负责。",
+    "tags": ["rsbuild", "swc", "lightning-css", "底层工具"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SWC（转译 + 压缩 JS/TS）+ Lightning CSS（CSS 语法降级 + 自动加厂商前缀）",
+        "isCorrect": true,
+        "description": "正确。Rsbuild 默认用 SWC 替代 Babel/Terser 完成 JS/TS 转译与压缩，用 Lightning CSS 替代 autoprefixer 做 CSS 降级与加前缀。"
+      },
+      {
+        "text": "Babel（转译）+ Terser（压缩 JS）+ autoprefixer（加 CSS 前缀）",
+        "isCorrect": false,
+        "description": "错误。这正是 Rsbuild 要替代的上一代工具链；Rsbuild 默认改用 SWC 和 Lightning CSS。"
+      },
+      {
+        "text": "esbuild（转译 + 压缩）+ PostCSS（加前缀），由 Rsbuild 内置驱动",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 默认不依赖 esbuild 做转译压缩；PostCSS 仅作可选自定义转换，默认降级/前缀由 Lightning CSS 负责。"
+      },
+      {
+        "text": "tsc（转译 + 类型检查）+ cssnano（加前缀），二者均默认开启",
+        "isCorrect": false,
+        "description": "错误。默认转译压缩由 SWC 完成（且 SWC 不做类型检查），CSS 前缀由 Lightning CSS 处理，cssnano 不是默认方案。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 Rstack 生态中，需要「将构建过程可视化、分析编译耗时与重复模块」时应选用哪个成员？",
+    "explanation": "Rstack 是字节 web-infra-dev 主导、以 Rspack 为核心的统一 JS 工具链，主要成员各司其职：Rspack（底层 bundler）、Rsbuild（build tool 集成层）、Rslib（库开发工具）、Rspress（基于 Rsbuild 的静态站点/文档生成器）、Rsdoctor（构建分析器）、Rstest（测试框架）、Rslint（linter）。题目要的是「可视化构建过程、分析编译耗时与重复模块」，这正是 Rsdoctor 的职责。Rspress 是做文档站点的，Rstest 是跑测试的，Rslib 是开发 npm 库的，都不负责构建分析。",
+    "tags": ["rsbuild", "rstack", "rsdoctor", "生态"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Rsdoctor",
+        "isCorrect": true,
+        "description": "正确。Rsdoctor 是构建分析器，能可视化展示编译耗时、编译前后代码变化、模块引用关系与重复模块等。"
+      },
+      {
+        "text": "Rspress",
+        "isCorrect": false,
+        "description": "错误。Rspress 是基于 Rsbuild + React + MDX 的静态站点/文档生成器，不负责构建分析。"
+      },
+      {
+        "text": "Rstest",
+        "isCorrect": false,
+        "description": "错误。Rstest 是基于 Rspack 的测试框架，用于跑单元测试，不做构建过程分析。"
+      },
+      {
+        "text": "Rslib",
+        "isCorrect": false,
+        "description": "错误。Rslib 是复用 Rsbuild 配置/插件来开发 JS 库的工具，与构建分析无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：要注册一个原生的 Rspack-或-webpack 插件（例如某个社区 webpack 插件），同时项目里已经用 pluginReact() 启用了 React 支持，应该把这两类插件分别放在哪里？",
+    "explanation": "这是高频混淆点。Rsbuild 区分两类插件：① 顶层 plugins[] 数组收的是 Rsbuild 插件（如 pluginReact()、pluginVue()），它们挂在 Rsbuild 自身的生命周期/钩子上，扩展的是 build tool 框架本身；② 原生的 Rspack/webpack 插件（继承自 bundler 插件体系的那种）要通过 tools.rspack（如 tools.rspack.plugins，或在 tools.rspack 回调里 push）注入到 Rsbuild 生成的 Rspack 配置中。所以正确做法是：pluginReact() 放顶层 plugins[]，原生 webpack/Rspack 插件放 tools.rspack。把原生 webpack 插件直接塞进顶层 plugins[] 会因类型/钩子不匹配而出错；反过来把 Rsbuild 插件放进 tools.rspack 也不对。",
+    "tags": ["rsbuild", "plugins", "tools.rspack", "插件体系"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pluginReact() 放顶层 plugins[]；原生 Rspack/webpack 插件放 tools.rspack（如 tools.rspack.plugins）",
+        "isCorrect": true,
+        "description": "正确。顶层 plugins[] 收 Rsbuild 插件、挂 Rsbuild 生命周期；原生 bundler 插件经 tools.rspack 注入到生成的 Rspack 配置。"
+      },
+      {
+        "text": "两类插件都放顶层 plugins[]，Rsbuild 会自动识别哪些转发给 Rspack",
+        "isCorrect": false,
+        "description": "错误。顶层 plugins[] 只接受 Rsbuild 插件；把原生 webpack/Rspack 插件塞进去会因钩子/类型不匹配而失败。"
+      },
+      {
+        "text": "pluginReact() 放 tools.rspack.plugins；原生 webpack 插件放顶层 plugins[]",
+        "isCorrect": false,
+        "description": "错误。两者位置正好放反了。Rsbuild 插件（pluginReact）应在顶层 plugins[]，原生插件才走 tools.rspack。"
+      },
+      {
+        "text": "两类插件都必须放 tools.rspack，因为 Rsbuild 没有自己独立的插件体系",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 有自己的插件体系（顶层 plugins[] + 生命周期钩子），pluginReact 正属于此，不该塞进 tools.rspack。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：从 v1 升级到 Rsbuild 2.0 时，以下关于「当前」版本基线（2.0.x）的破坏性变更，哪一项描述正确？",
+    "explanation": "以 Rsbuild 2.0 为当前基线，官方公布的破坏性变更包括：① 最低 Node.js 版本提升到 20.19+ 或 22.12+（Node 18 已 EOL）；② @rsbuild/core 改为纯 ESM 包，移除 CommonJS 产物，安装体积减小约 500KB；③ 默认依赖从 13 个精简到 4 个（core-js、@module-federation/runtime-tools、webpack-bundle-analyzer 等转为可选）；④ performance.chunkSplit 被废弃，改用与 Rspack 对齐的 splitChunks；⑤ dev server 默认 host 从 0.0.0.0 改为 localhost（secure-by-default）。所以「performance.chunkSplit 废弃、改用 splitChunks」是正确选项。其余三项把变更方向写反了：Node 版本是升不是降、@rsbuild/core 是变 ESM 不是变 CJS、host 默认是收窄到 localhost 而非放开到 0.0.0.0。",
+    "tags": ["rsbuild", "v2", "破坏性变更", "迁移"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "performance.chunkSplit 被废弃，代码分割改用与 Rspack 对齐的 splitChunks 配置",
+        "isCorrect": true,
+        "description": "正确。Rsbuild 2.0 废弃 performance.chunkSplit，引入与 Rspack 配置对齐、提供预设的 splitChunks 作为替代。"
+      },
+      {
+        "text": "最低 Node.js 版本从 20.19+/22.12+ 下调到 18.12+，以兼容更多旧环境",
+        "isCorrect": false,
+        "description": "错误。方向反了。2.0 是把最低版本提升到 20.19+/22.12+（Node 18 已 EOL），而非下调到 18.12+。"
+      },
+      {
+        "text": "@rsbuild/core 从纯 ESM 回退为 CommonJS 包，以提升对老旧 require 工具链的兼容",
+        "isCorrect": false,
+        "description": "错误。方向反了。2.0 是把 @rsbuild/core 改为纯 ESM、移除 CJS 产物（减小约 500KB），不是回退到 CJS。"
+      },
+      {
+        "text": "dev server 默认 host 从 localhost 放开为 0.0.0.0，方便局域网默认可访问",
+        "isCorrect": false,
+        "description": "错误。方向反了。2.0 出于 secure-by-default，把默认 host 从 0.0.0.0 收窄到 localhost。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：团队从 Vite 迁移一个 React 应用到 Rsbuild 2.0，希望保持开发体验一致。下列对 Rsbuild 与 Vite 架构差异的描述，哪一项是正确的？",
+    "explanation": "Rsbuild 与 Vite 最核心的架构差异在于「生产一致性」：Vite 开发期走原生 ESM（unbundled），由浏览器按需请求模块、esbuild 做依赖预打包，生产期才用 Rollup/Rolldown 打包，两套路径可能产生行为差异；Rsbuild 开发期和生产期都用底层的 Rspack（Rust bundler）打包，开发所见即生产所得。这也解释了官方基准里的取舍：Rsbuild 因为 dev 也要打包，冷启动后构建数字最快，但 Vite 的 unbundled + 原生 ESM HMR 在「首屏冷启动 instant」和 HMR 精度上各有优势——所以不能笼统说 Rsbuild「全面碾压」。干扰项 B 把分层搞反了（Rsbuild 是 Rspack 之上的集成层，不是 Rspack 在 Rsbuild 之上）；C 说 Vite 也用 Rspack 是错的（Vite 底层是 esbuild + Rollup/Rolldown）；D 把「dev 用 ESM、prod 打包」说成 Rsbuild 的模型，实际那是 Vite 的模型。",
+    "tags": ["rsbuild", "vite", "架构", "迁移"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Rsbuild 开发和生产都用底层 Rspack 打包（保证生产一致性），而 Vite 开发走原生 ESM unbundled、生产才打包",
+        "isCorrect": true,
+        "description": "正确。这是两者最关键的架构差异：Rsbuild dev/prod 同一套 Rspack 打包路径，Vite 则是 dev 原生 ESM + prod 打包两套路径。"
+      },
+      {
+        "text": "Rsbuild 是底层 Rust bundler，Rspack 是构建在 Rsbuild 之上提供配置 DSL 的集成层",
+        "isCorrect": false,
+        "description": "分层颠倒。实际是 Rspack 为底层 Rust bundler，Rsbuild 是其上的开箱即用集成层（对标关系：Rsbuild→Rspack 类比 Vite→Rolldown）。"
+      },
+      {
+        "text": "Vite 与 Rsbuild 底层都用 Rspack，区别仅在默认端口和环境变量前缀",
+        "isCorrect": false,
+        "description": "错误。Vite 底层是 esbuild（预打包）+ Rollup/Rolldown（生产），并不使用 Rspack；差异远不止端口和前缀。"
+      },
+      {
+        "text": "Rsbuild 开发期走原生 ESM 的 unbundled 模式，生产期才切换为打包，以此换取最快的 dev 冷启动",
+        "isCorrect": false,
+        "description": "这描述的恰是 Vite 的模型。Rsbuild dev 同样用 Rspack 打包，并非 unbundled。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：从 Vite 迁移配置时，下列哪一组迁移映射全部正确？",
+    "explanation": "官方 Vite 迁移文档明确：①默认端口 Vite 5173 → Rsbuild 3000，要保持旧端口需写 server.port: 5173；②环境变量前缀 Vite 用 VITE_ → Rsbuild 用 PUBLIC_，要兼容旧前缀可用 loadEnv({ prefixes: ['VITE_'] }) 配合 source.define 注入；③库构建 Vite 的 build.lib → 改用独立的 Rslib（不是在 Rsbuild 里配 output.lib）。正确项 A 三条都对。B 把端口方向写反（3000→5173）；C 说前缀仍是 VITE_、库构建继续用 build.lib，都不符；D 把库构建说成 Rspack 的 output.library——那是产物 UMD/全局名设置，不是 Vite build.lib 的等价物，官方指向的是 Rslib。",
+    "tags": ["rsbuild", "vite", "迁移", "rslib"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认端口 5173→3000；环境变量前缀 VITE_→PUBLIC_；库构建 build.lib→改用 Rslib",
+        "isCorrect": true,
+        "description": "三条均符合官方 Vite 迁移文档：端口、前缀、库构建工具的对应关系全部正确。"
+      },
+      {
+        "text": "默认端口 3000→5173；环境变量前缀 PUBLIC_→VITE_；库构建沿用 Vite 的 build.lib",
+        "isCorrect": false,
+        "description": "端口与前缀方向都写反了，且 Rsbuild 不沿用 build.lib（它是 Vite 配置）。"
+      },
+      {
+        "text": "默认端口 5173→3000；Rsbuild 同样用 VITE_ 前缀；库构建继续用 build.lib",
+        "isCorrect": false,
+        "description": "Rsbuild 用 PUBLIC_ 而非 VITE_，库构建也应迁到 Rslib，仅端口一项正确。"
+      },
+      {
+        "text": "默认端口 5173→3000；前缀 VITE_→PUBLIC_；库构建用 Rspack 的 output.library 字段",
+        "isCorrect": false,
+        "description": "前两条对，但 output.library 是设置 UMD/全局变量名，并非 build.lib 的等价方案；官方推荐用 Rslib。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：评审一份「Rsbuild 全面碾压 Vite」的技术选型报告。对照官方 build-tools-performance 基准（大型应用），下列哪一项判断最准确？",
+    "explanation": "官方基准呈现的是「各有胜负」而非全面碾压：Rsbuild 在 dev 冷启动上明显领先（约 1.36s vs Vite 约 6.50s），因为它 dev 也打包、不像 Vite 启动后还要按需编译；但在生产 build 上 Vite 反而更快（约 1.98s vs Rsbuild 约 3.35s），HMR 上 Vite 也略优（约 130ms vs 160ms）——这正是 Vite 原生 ESM、只失效编辑模块到最近 HMR 边界这条链的优势。所以 C 准确。A「全面碾压」与基准矛盾；B 把生产 build 也算成 Rsbuild 领先，方向错；D 说「dev、build、HMR Rsbuild 都更快」同样不符——只有 dev 冷启动 Rsbuild 领先。出题不把任何单一边界数字做唯一判别点，重点是定性结论：Rsbuild 强在 dev 冷启动与对 webpack 的提速，Vite 在生产/HMR 上仍有优势。",
+    "tags": ["rsbuild", "vite", "性能基准", "选型"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Rsbuild 在 dev 冷启动上明显领先，但 Vite 在生产 build 和 HMR 上数字反而略优，并非全面碾压",
+        "isCorrect": true,
+        "description": "符合官方基准：Rsbuild 赢 dev 启动，Vite 在 prod build 与 HMR 上略快，应据此修正报告结论。"
+      },
+      {
+        "text": "Rsbuild 在 dev 启动、生产 build、HMR 三项上全部显著优于 Vite，报告结论成立",
+        "isCorrect": false,
+        "description": "与基准矛盾。生产 build 和 HMR 上 Vite 反而略快，不能算全面碾压。"
+      },
+      {
+        "text": "Rsbuild 仅在生产 build 上领先，dev 启动和 HMR 都是 Vite 更快",
+        "isCorrect": false,
+        "description": "方向错。实际是 dev 冷启动 Rsbuild 领先、生产 build 反倒 Vite 更快。"
+      },
+      {
+        "text": "由于底层都用 Rust，两者所有指标几乎完全相同，性能不应作为选型依据",
+        "isCorrect": false,
+        "description": "Vite 底层并非 Rust（esbuild + Rollup/Rolldown），且各指标存在可测差异，性能仍是有效选型维度。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在一个尚未配置任何入口的全新项目中，根目录有 src/index.ts 文件，执行 npx rsbuild dev 后会发生什么？",
+    "explanation": "Rsbuild CLI 在未显式配置入口时，会自动探测 src/index.(ts|js|tsx|jsx|mts|cts|mjs|cjs) 作为默认入口；dev server 默认运行在 http://localhost:3000。因此存在 src/index.ts 时无需任何配置即可启动开发服务器。默认端口是 3000（不是 8080），默认产物目录是 dist（dev 模式下产物在内存中提供，但 build 输出目录是 dist 而非 build/ 或 public/）。auto-detect 是开箱即用的能力，并不要求必须先写 rsbuild.config.ts 声明 source.entry。",
+    "tags": ["rsbuild", "cli", "快速上手", "默认入口"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "自动把 src/index.ts 当作默认入口启动，dev server 默认监听 http://localhost:3000",
+        "isCorrect": true,
+        "description": "正确。Rsbuild CLI 自动探测 src/index.* 作为默认入口，dev server 默认端口 3000、host localhost，无需手写 source.entry 即可启动。"
+      },
+      {
+        "text": "因为缺少 source.entry 配置而报错，必须先在 rsbuild.config.ts 中显式声明入口",
+        "isCorrect": false,
+        "description": "错误。入口可显式配置，但 CLI 会自动探测 src/index.*，存在该文件时无需声明即可启动，不会报错。"
+      },
+      {
+        "text": "自动启动，但默认端口是 8080，产物默认输出到 build/ 目录",
+        "isCorrect": false,
+        "description": "错误。默认 dev 端口是 3000 而非 8080；build 默认产物目录是 dist 而非 build/。"
+      },
+      {
+        "text": "启动失败，因为 rsbuild dev 不存在，开发命令只能写成 rsbuild serve",
+        "isCorrect": false,
+        "description": "错误。开发命令就是 rsbuild dev（别名直接 rsbuild），并不存在 rsbuild serve 这个命令。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：关于 -w/--watch 这个 flag 在 CLI 各命令中的归属，下列哪项正确？",
+    "explanation": "在 Rsbuild CLI 中，-w/--watch 是 build 命令的选项，用于在文件变化时自动重新构建生产产物；dev 命令本身就是常驻并带 HMR 的开发服务器，不提供也不需要 --watch。preview 只是把 build 产物起一个本地静态服务器预览，必须先 build，同样没有 --watch。inspect 用于导出最终配置，也与 watch 无关。常见误区是把 watch 当成 dev 的能力。",
+    "tags": ["rsbuild", "cli", "build", "watch"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--watch 属于 build 命令，用于源码变化时自动重建产物；dev 不提供该 flag",
+        "isCorrect": true,
+        "description": "正确。--watch 是 rsbuild build 的选项；dev 本身就是带 HMR 的常驻开发服务器，不需要也不提供 --watch。"
+      },
+      {
+        "text": "--watch 属于 dev 命令，用于在源码变化时触发 HMR 热更新",
+        "isCorrect": false,
+        "description": "错误。dev 的热更新是内建的 HMR，不通过 --watch 开启；--watch 是 build 命令的选项。"
+      },
+      {
+        "text": "--watch 是所有命令通用的全局 flag，dev/build/preview/inspect 都能用",
+        "isCorrect": false,
+        "description": "错误。--watch 不是全局 flag，它只挂在 build 命令下，全局 flag 是 --config/--mode/--root 等。"
+      },
+      {
+        "text": "--watch 属于 preview 命令，用于产物变化时自动刷新预览页面",
+        "isCorrect": false,
+        "description": "错误。preview 仅本地预览已 build 的产物且需先 build，并不提供 --watch；--watch 属于 build。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：执行 rsbuild inspect 后，它的默认行为是什么？",
+    "explanation": "rsbuild inspect 用于把项目最终合并、解析后的 Rsbuild 与底层 Rspack 配置导出，方便排查配置问题。默认输出到 .rsbuild/ 目录，生成 .mjs 配置文件，且默认按 development 模式解析配置（需要看生产配置要加 --mode production）。它不会启动开发服务器，也不会执行真正的打包构建——只是导出配置。inspect 和 build 是不同命令，不存在「先 build 才能 inspect」的依赖（那是 preview 的限制）。",
+    "tags": ["rsbuild", "cli", "inspect", "配置"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把最终解析后的 Rsbuild 与 Rspack 配置导出到 .rsbuild/ 目录的 .mjs 文件，默认按 development 模式",
+        "isCorrect": true,
+        "description": "正确。inspect 默认导出到 .rsbuild/ 目录、生成 .mjs 文件，默认 development 模式；看生产配置需 --mode production。"
+      },
+      {
+        "text": "启动一个配置可视化的 Web 面板，在浏览器中交互式查看配置树",
+        "isCorrect": false,
+        "description": "错误。inspect 是把配置写到磁盘文件（.rsbuild/*.mjs），不会起 Web 面板，也不开浏览器。"
+      },
+      {
+        "text": "必须先成功执行 rsbuild build，否则 inspect 因缺少产物而报错",
+        "isCorrect": false,
+        "description": "错误。「需先 build」是 preview 的限制；inspect 只导出配置，与是否已 build 无关。"
+      },
+      {
+        "text": "默认按 production 模式导出，并把配置写入 dist/ 目录的 JSON 文件",
+        "isCorrect": false,
+        "description": "错误。inspect 默认 development 模式，输出到 .rsbuild/ 而非 dist/，且是 .mjs 而非 JSON。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：团队从 webpack 迁来，想把 HMR 热更新和占用端口自动递增的行为都关掉，于是把 `dev` 段和 `server` 段搞混了。关于 `rsbuild.config` 中 `dev` 段与 `server` 段的职责划分，以下哪项描述是正确的（基于 Rsbuild 2.0）？",
+    "explanation": "Rsbuild 把开发服务器配置按「生效时机」拆成两段：`dev` 段的字段仅在开发模式（dev 命令）生效，典型如 `dev.hmr`（热更新）、`dev.liveReload`（整页刷新兜底）、`dev.lazyCompilation`（按需编译，官方明确仅对 dev build 生效）；而 `server` 段对 dev 服务器和 preview（预览生产产物）服务器都生效，典型如 `server.port`、`server.host`、`server.proxy`、`server.compress`。区分点在于：preview 服务器只是静态托管已构建产物，不存在 HMR/按需编译，所以这些放 `dev`；但端口、主机、代理这类网络层配置 dev 和 preview 都需要，所以放 `server`。把 `hmr` 写进 `server` 段或把 `proxy` 写进 `dev` 段都是无效/不被识别的。",
+    "tags": ["rsbuild", "rsbuild-config", "dev-vs-server", "dev-server"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`dev` 段（如 `hmr`/`liveReload`/`lazyCompilation`）仅开发模式生效；`server` 段（如 `port`/`host`/`proxy`）对 dev 与 preview 服务器都生效",
+        "isCorrect": true,
+        "description": "正确。官方文档明确：`dev` 段配置「只在开发模式生效」，`server` 段配置「对 dev 和 preview 服务器都生效」。lazyCompilation 文档也写明仅对 dev build 生效。"
+      },
+      {
+        "text": "`server` 段仅 preview 生效、`dev` 段仅 dev 生效，两段互斥；`proxy` 因为只在开发联调用，必须写在 `dev.proxy`",
+        "isCorrect": false,
+        "description": "错误。`server` 段同时覆盖 dev 与 preview，并非只 preview；`proxy` 是 `server.proxy`，对两个服务器都生效，不存在 `dev.proxy`。"
+      },
+      {
+        "text": "`dev` 与 `server` 完全等价，只是别名；写哪个段效果一样，2.0 推荐统一写 `server`",
+        "isCorrect": false,
+        "description": "错误。两段语义不同（生效时机不同），并非别名。把 `hmr` 写进 `server` 不会被识别。"
+      },
+      {
+        "text": "`hmr` 属于 `server` 段、`port` 属于 `dev` 段，因为热更新走网络层、端口属于开发体验",
+        "isCorrect": false,
+        "description": "错误，正好把两者对调了。`hmr` 是 `dev.hmr`，`port` 是 `server.port`。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 `rsbuild.config.ts` 中用 `source.define` 注入构建期常量，写了 `define: { API_BASE: 'https://api.example.com', PROD: true, VERSION: '5fa3b9' }`，构建后却报语法错误。根本原因和正确写法是什么？",
+    "explanation": "`source.define` 的值会被当作「代码片段」原样替换进源码，而非字符串字面量。所以当 `API_BASE` 被替换时，`const x = API_BASE` 会变成 `const x = https://api.example.com`，这是非法 JS（会被当成代码解析），导致语法错误。对于希望最终是字符串的值，必须用 `JSON.stringify` 包裹，让它替换后带上引号：`API_BASE: JSON.stringify('https://api.example.com')` → `const x = \"https://api.example.com\"`。同理 `VERSION` 也要 `JSON.stringify('5fa3b9')`。而布尔/数字/表达式则不需要 stringify：`PROD: 'true'` 或 `JSON.stringify(true)` 都可，甚至 `TWO: '1 + 1'` 会被替换成表达式 `1 + 1`。这条规则与 webpack DefinePlugin 一致。",
+    "tags": ["rsbuild", "rsbuild-config", "source-define", "json-stringify"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`define` 的值是「代码片段」会原样替换，字符串值需 `JSON.stringify` 包裹（如 `JSON.stringify('https://api.example.com')`），否则替换后变成裸代码引发语法错误",
+        "isCorrect": true,
+        "description": "正确。官方明确 define 值作为表达式插入，未 stringify 的字符串会变成非法代码；故字符串需 `JSON.stringify`，布尔/数字/表达式可不包裹。"
+      },
+      {
+        "text": "`source.define` 不支持字符串值，只能注入布尔和数字；要注入 URL 必须改用 `source.globalVars`",
+        "isCorrect": false,
+        "description": "错误。define 支持字符串，只要 `JSON.stringify` 即可；`source.globalVars` 是另一个特性（值会自动 stringify），但 define 本身完全能注入字符串。"
+      },
+      {
+        "text": "需要把所有值（包括 `true`）都用单引号包成字符串，如 `PROD: \"'true'\"`，Rsbuild 会自动去引号",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 不会自动去引号；布尔/数字无需 stringify，硬包成带内层引号的字符串反而改变语义。"
+      },
+      {
+        "text": "报错是因为 `define` 已在 2.0 移除，应改用 `tools.rspack.plugins` 手动注册 DefinePlugin",
+        "isCorrect": false,
+        "description": "错误。`source.define` 在 2.0 仍是受支持配置，并未移除，无需手动挂原生 DefinePlugin。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：项目升级到 Rsbuild 2.0（@rsbuild/core 2.0.x、底层 Rspack 2.0.x）后，CI 里 `pnpm dev` 启动正常、本机 localhost 能访问，但同事用局域网 IP 访问开发服务器突然连不上了，1.x 时还好好的。最可能的原因是？",
+    "explanation": "这是 Rsbuild 2.0 的一个破坏性变更：`server.host` 的默认值从 1.x 的 `0.0.0.0`（监听所有网卡，局域网可访问）改成了 `localhost`（仅本机回环）。所以升级后默认不再对局域网开放，同事用 IP 访问就连不上。解决办法是显式设 `server.host: '0.0.0.0'` 恢复旧行为。其余选项均为干扰：`server.port` 默认 3000 且占用时自动递增（除非设 `server.strictPort` 才报错），与「连不上」无关；`server.proxy` 的 `changeOrigin` 默认 true 是关于代理转发的，不影响监听地址；Node 版本门槛（2.0 最低 Node 20.19+，因 Node 18 已 EOL）会直接导致启动失败，而题中 dev 已正常启动，故排除。",
+    "tags": ["rsbuild", "rsbuild-config", "server-host", "breaking-change-2.0"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "2.0 把 `server.host` 默认值从 `0.0.0.0` 改为 `localhost`（破坏性变更），默认不再监听局域网；需显式设 `server.host: '0.0.0.0'`",
+        "isCorrect": true,
+        "description": "正确。这是 2.0 文档列出的破坏性变更：默认 host 由 `0.0.0.0` 变为 `localhost`，导致默认无法经局域网访问。"
+      },
+      {
+        "text": "`server.port` 默认从 3000 改成随机端口，且不再自动递增，导致同事访问的端口号变了",
+        "isCorrect": false,
+        "description": "错误。2.0 端口默认仍是 3000，占用时自动递增；只有显式 `strictPort` 才报错，且这与局域网连不上无关。"
+      },
+      {
+        "text": "2.0 默认给所有 `server.proxy` 规则设了 `changeOrigin: true`，把局域网请求的 Host 改写掉了",
+        "isCorrect": false,
+        "description": "错误。`changeOrigin` 默认 true 确实是 2.0 行为，但它只影响代理转发时的 Host 头，不影响开发服务器自身的监听地址。"
+      },
+      {
+        "text": "2.0 要求 Node 20.19+，CI 上 Node 18 导致服务器只能本机访问、对外端口未开放",
+        "isCorrect": false,
+        "description": "错误。Node 版本不达标（2.0 最低 20.19）会直接启动失败，而题中 dev 已正常启动并能本机访问，故非此因。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 `rsbuild.config` 里围绕 `output` 段做配置时，团队对几条默认行为产生争论。基于 Rsbuild 2.0，以下关于 `output.target`、`output.sourceMap`、`output.dataUriLimit` 默认行为的说法，哪一项是正确的？",
+    "explanation": "逐项核对官方默认值：① `output.dataUriLimit` 默认 4096 字节（4KiB），小于该阈值的静态资源会被 Base64 内联进产物以减少请求，超过则作为单独文件输出；设为 0 可完全禁用内联。② `output.sourceMap` 默认 `{ js: 'cheap-module-source-map'（仅开发模式，生产为 false）, css: false, extract: false }`——即开发态默认只生成 JS 的 source map，不生成 CSS 的。③ `output.target` 默认 `'web'`，可选 `'node'`（SSR，跳过 HTML、禁用 code splitting/HMR）和 `'web-worker'`（单文件、禁用动态 import）。错误项分别把 dataUriLimit 阈值、sourceMap 的 CSS 默认行为、target 取值说反或编造。",
+    "tags": ["rsbuild", "rsbuild-config", "output", "default-values"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`output.dataUriLimit` 默认 4096 字节（4KiB）：小于该阈值的资源被 Base64 内联，超过则输出为独立文件；设为 0 可关闭内联",
+        "isCorrect": true,
+        "description": "正确。官方默认各资源类型阈值均为 4096 字节，小于阈值内联为 data URI，0 表示禁用内联、MAX_SAFE_INTEGER 表示全部内联。"
+      },
+      {
+        "text": "`output.sourceMap` 默认在开发模式同时生成 JS 和 CSS 的 source map，二者默认都开启",
+        "isCorrect": false,
+        "description": "错误。默认 `css: false`，开发模式只生成 JS（`cheap-module-source-map`）的 source map，不生成 CSS 的。"
+      },
+      {
+        "text": "`output.target` 默认是 `'node'`，要构建浏览器产物必须显式改成 `'web'`，否则会跳过 HTML 生成",
+        "isCorrect": false,
+        "description": "错误。默认是 `'web'`；`'node'` 才会跳过 HTML、禁用 code splitting，用于 SSR。"
+      },
+      {
+        "text": "`output.dataUriLimit` 默认 0 即默认不内联任何资源，需手动设成 4096 才开启 4KiB 内联",
+        "isCorrect": false,
+        "description": "错误。默认是 4096 而非 0；0 才是「禁用内联」的特殊值。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：你需要导入一个 SVG，并希望像写 React 组件那样使用它（`<Logo />`），项目已启用 `@rsbuild/plugin-svgr`，且未额外配置 `svgrOptions.exportType`。下列哪种导入方式能正确把该 SVG 转成 React 组件？",
+    "explanation": "`@rsbuild/plugin-svgr` 的默认 `exportType` 为 `undefined`，此时它**不会**改变普通 `import Logo from './logo.svg'` 的行为（那仍然返回资源 URL）。要触发 SVGR 把 SVG 转成 React 组件，必须给导入路径加 `?react` 后缀：`import Logo from './logo.svg?react'`，Logo 即为可渲染的组件。只有当显式设置 `svgrOptions.exportType: 'default'` 时，无后缀的默认导入才返回组件；设为 `'named'` 时则用 `import { ReactComponent as Logo } from './logo.svg'`。题目明确「未配置 exportType」，因此 `?react` 后缀是唯一正确路径。",
+    "tags": ["rsbuild", "svgr", "静态资源", "svg"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`import Logo from './logo.svg?react'`",
+        "isCorrect": true,
+        "description": "正确。exportType 未配置（默认 undefined）时，必须用 ?react 后缀触发 SVGR 把 SVG 转为 React 组件。这是默认行为下唯一可靠的方式。"
+      },
+      {
+        "text": "`import Logo from './logo.svg'`，默认导入即为 React 组件",
+        "isCorrect": false,
+        "description": "错误。默认（exportType=undefined）下无后缀导入返回的是资源 URL，不是组件。只有显式设 exportType:'default' 才让默认导入返回组件。"
+      },
+      {
+        "text": "`import { ReactComponent as Logo } from './logo.svg'`",
+        "isCorrect": false,
+        "description": "错误。这种 ReactComponent 具名导入要求显式配置 svgrOptions.exportType:'named'，题目已说明未配置 exportType，故不生效。"
+      },
+      {
+        "text": "`import Logo from './logo.svg?inline'`",
+        "isCorrect": false,
+        "description": "错误。?inline 是控制资源以 base64 内联（强制内联，不论体积），与 SVG→React 组件转换无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在一个用 `@rsbuild/plugin-react` 的项目里，开发时发现某组件每次保存代码都会丢失内部 state（Fast Refresh 没保住状态）。当前写法是 `export default () => { const [n] = useState(0); return <div>{n}</div> }`。下列哪项是最直接、正确的原因与修复？",
+    "explanation": "React Fast Refresh 依赖「具名函数声明」来在热更新时识别并保留组件标识，从而保住 state。匿名箭头函数 + `export default` 直接导出会让 Fast Refresh 无法稳定追踪组件，触发整组件重挂载导致 state 丢失。正确做法是先声明具名组件再默认导出：`const MyComp = () => {...}; export default MyComp;`。这与 `swcReactOptions.runtime`（automatic/classic）无关——runtime 只影响 JSX 如何被编译成 `jsx()` 调用或 `React.createElement`，automatic 是默认值，把它改成 classic 既不解决问题还会要求手动配 pragma。底层用 SWC 完成转换（非 Babel），SWC 也不做类型检查，这些都不是此处症结。",
+    "tags": ["rsbuild", "plugin-react", "fast-refresh", "hmr"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "匿名函数导致 Fast Refresh 无法追踪组件；改为具名声明再默认导出（`const MyComp = () => {...}; export default MyComp;`）",
+        "isCorrect": true,
+        "description": "正确。Fast Refresh 需要具名函数才能在热更新中保留组件标识与 state，匿名 export default 会触发重挂载丢状态。改具名即修复。"
+      },
+      {
+        "text": "需把 `swcReactOptions.runtime` 从 `automatic` 改为 `classic`，classic runtime 才支持 Fast Refresh 保状态",
+        "isCorrect": false,
+        "description": "错误。runtime 只决定 JSX 编译为 jsx() 还是 React.createElement，与 Fast Refresh 保状态无关；automatic 本就是默认且推荐值，改 classic 还要手动配 pragma。"
+      },
+      {
+        "text": "Rsbuild 默认用 SWC 而非 Babel，SWC 不支持 Fast Refresh，必须额外加 `@rsbuild/plugin-babel`",
+        "isCorrect": false,
+        "description": "错误。plugin-react 基于 SWC 已内置 Fast Refresh 支持，无需 Babel。state 丢失的根因是匿名组件，不是转译器选择。"
+      },
+      {
+        "text": "SWC 不做类型检查，缺少类型信息导致 Fast Refresh 失效，需引入 vue-tsc 类型检查插件",
+        "isCorrect": false,
+        "description": "错误。SWC 确实不做类型检查，但 Fast Refresh 与类型检查无关；vue-tsc 更是 Vue 生态工具，与 React 项目无关，纯属张冠李戴。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：某 React 项目需要把一段 SVG 当作组件用、把一份 CSS 文件的内容拿来在 JS 里以字符串形式注入 `<style>`、再把一张图片**强制**当作独立文件 URL（即使它小于 4KiB 也不要内联）。在不写自定义 loader、仅用 Rsbuild 内置导入查询/约定的前提下，下列组合哪一项全部正确？",
+    "explanation": "逐个看：(1) SVG→React 组件用 `?react` 后缀（plugin-svgr）；(2) 把文件原始内容作为**字符串**导入用 `?raw`（`import css from './a.css?raw'`，Rsbuild ≥1.3 支持资源、≥1.4 支持 JS/TS）；(3) 让资源**始终**作为独立文件并返回 URL、绕过默认 4KiB（`output.dataUriLimit.assets`）内联阈值，用 `?url`。三者一一对应才正确。常见混淆：`?inline` 是**强制内联为 base64**（与「强制独立文件」恰好相反）；`?raw` 取的是源文本，不是 base64；4KiB 是默认内联阈值，小于它默认会内联，所以「强制不内联」必须显式 `?url`。",
+    "tags": ["rsbuild", "导入查询", "静态资源", "css"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "SVG 用 `?react`；CSS 文本用 `?raw`；图片强制独立文件用 `?url`",
+        "isCorrect": true,
+        "description": "正确。?react 转 React 组件、?raw 取原始字符串、?url 强制返回独立文件 URL 绕过 4KiB 内联阈值，三者一一对应 Rsbuild 内置约定。"
+      },
+      {
+        "text": "SVG 用 `?react`；CSS 文本用 `?url`；图片强制独立文件用 `?raw`",
+        "isCorrect": false,
+        "description": "错误。?url 返回的是 URL 不是文本，取不到 CSS 字符串；?raw 返回源文本而非独立文件 URL，两个 query 用反了。"
+      },
+      {
+        "text": "SVG 用 `?react`；CSS 文本用 `?raw`；图片强制独立文件用 `?inline`",
+        "isCorrect": false,
+        "description": "错误。?inline 是强制 base64 内联，与「强制当作独立文件 URL」完全相反；强制独立文件应该用 ?url。"
+      },
+      {
+        "text": "SVG 用 `?inline`；CSS 文本用 `?raw`；图片强制独立文件用 `?url`",
+        "isCorrect": false,
+        "description": "错误。SVG 转 React 组件靠 ?react（SVGR），而非 ?inline；?inline 只会把 SVG 当资源做 base64 内联，得不到可渲染组件。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：关于 `tools.bundlerChain` 与 `tools.rspack` 的执行顺序与定位，下列说法正确的是？",
+    "explanation": "`tools.bundlerChain` 基于 rspack-chain（webpack-chain 风格的链式 API），通过具名的 rule/plugin 链 ID 精细修改内置配置。关键事实有二：其一，它的执行时机**早于** `tools.rspack`，因此 `tools.rspack`（无论对象深合并还是函数替换）能够**覆盖** bundlerChain 所做的修改——顺序记反是常见错误。其二，并非所有预定义的链 ID 都默认存在：某些 rule 只有在对应插件注册后才出现（如 `RULE.STYLUS` 需先启用 Stylus 插件），所以针对不存在的链 ID 的修改会静默失效。另外官方明确提示：内置 Rspack 配置会随版本迭代变化且**不遵循 semver**，依赖具体链 ID 的自定义配置在升级时可能失效。bundlerChain 不是用来注册 Rsbuild 插件的，那是顶层 `plugins[]` 的职责。",
+    "tags": ["rsbuild", "tools.bundlerChain", "rspack-chain", "执行顺序"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bundlerChain 基于 rspack-chain，执行早于 tools.rspack，因此其修改可能被 tools.rspack 覆盖；且部分链 ID 仅在对应插件注册后才存在",
+        "isCorrect": true,
+        "description": "完全符合官方描述：执行时机早于 tools.rspack（会被后者覆盖），且 RULE.STYLUS 等链 ID 条件性存在，针对不存在的 ID 修改会静默失效。"
+      },
+      {
+        "text": "bundlerChain 执行晚于 tools.rspack，是修改链的最后一道工序，优先级最高，可覆盖 tools.rspack 的结果",
+        "isCorrect": false,
+        "description": "顺序记反了。bundlerChain 执行在前、tools.rspack 在后，被覆盖的是 bundlerChain 而非反过来。"
+      },
+      {
+        "text": "bundlerChain 的所有预定义 rule/plugin 链 ID 都恒定存在，且其配置遵循 semver 稳定性保证",
+        "isCorrect": false,
+        "description": "两处都错：部分链 ID 仅在对应插件启用时才有；官方明确内置 Rspack 配置随迭代变化且不在 semver 范围内，升级可能使自定义失效。"
+      },
+      {
+        "text": "bundlerChain 用于以链式 API 注册 Rsbuild 插件（如 pluginReact），等价于顶层 plugins 数组",
+        "isCorrect": false,
+        "description": "bundlerChain 操作的是底层 Rspack 配置链，不注册 Rsbuild 插件；Rsbuild 插件只能写进顶层 plugins[]。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 `tools.swc` 中你手动设置了 `jsc.target: 'es2015'`，同时项目又开启了 `output.polyfill`。关于 SWC 的 target 处理与类型检查，下列描述正确的是？",
+    "explanation": "SWC 不允许同时使用 `jsc.target`（指定 ES 版本）和 `env`（基于 targets 的转译），二者互斥。Rsbuild 的默认行为是把 `env.targets` 设为项目的 browserslist；当你手动配置 `jsc.target` 时，Rsbuild 会**自动移除内置的 `env.targets`**。但本题还叠加了 `output.polyfill`：一旦开启 polyfill，Rsbuild 会**强制启用 `env.mode` 并禁用 `jsc.target`**——因为 polyfill 注入依赖 env 模式按 targets 判定，所以此时你手写的 `jsc.target` 不会生效。另一条独立但必须记牢的事实：底层默认用 SWC 转译 TS，SWC **只剥离类型、不做任何类型检查**（且要求 isolatedModules 友好的写法）；要类型安全须额外接 `@rsbuild/plugin-type-check` 或独立跑 `tsc`。把这两点混为一谈是常见误区。",
+    "tags": ["rsbuild", "tools.swc", "jsc.target", "类型检查"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "开启 output.polyfill 时 Rsbuild 会强制 env.mode 并禁用 jsc.target，故此处 jsc.target 失效；且 SWC 转译 TS 只剥类型不做类型检查",
+        "isCorrect": true,
+        "description": "两点均符合官方：polyfill 开启即禁用 jsc.target 改走 env.mode；SWC 仅剥离类型，类型检查需 plugin-type-check 或 tsc。"
+      },
+      {
+        "text": "jsc.target 与 env.targets 可以共存并叠加；SWC 在转译 TS 时会顺带执行完整的类型检查并报错",
+        "isCorrect": false,
+        "description": "两处都错：jsc.target 与 env 互斥不能共存；SWC 只做语法转译不做类型检查，类型错误不会被它发现。"
+      },
+      {
+        "text": "因手动配了 jsc.target，Rsbuild 移除内置 env.targets，jsc.target 始终优先生效，与 output.polyfill 无关",
+        "isCorrect": false,
+        "description": "在没有 polyfill 时这个推断成立，但一旦 output.polyfill 开启，Rsbuild 会禁用 jsc.target 强制走 env.mode，jsc.target 不再生效。"
+      },
+      {
+        "text": "SWC 默认不可用，Rsbuild 底层用 Babel + Terser 转译，类型检查由 Babel 的 preset-typescript 完成",
+        "isCorrect": false,
+        "description": "Rsbuild 底层默认是 SWC（压缩也用 SWC）+ Lightning CSS，并非 Babel/Terser；且无论哪种转译器都不做类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：你要用 `environments` 配置在一次构建中同时产出客户端（web）和服务端（node）两套产物做 SSR。关于多环境构建机制，下列说法正确的是？",
+    "explanation": "`environments` 让 Rsbuild 在**单次构建**里产出多套产物，底层借助 Rspack 的 **MultiCompiler** 并行构建，无需多份配置文件或多次运行。要点：(1) 若不显式声明 environments，Rsbuild 会**自动派生**一个名字等于 `output.target` 的默认环境（如 `target: 'web'` → 名为 `web` 的环境）；(2) 多环境共享输出目录会导致文件名冲突，必须用 `output.distPath.root` 做**隔离**（如 client → `dist`，server → `dist/server`）；(3) CLI 可用 `--environment web,node` 选择性构建，省略则构建全部；(4) `environments` 内的配置**优先级高于**外层基础配置。把多环境理解成需要多个配置文件多次运行，或认为产物可以共用一个 distPath，都是错的。",
+    "tags": ["rsbuild", "environments", "MultiCompiler", "SSR"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Rsbuild 借助 Rspack 的 MultiCompiler 在一次构建中并行产出多环境；不显式声明时默认环境派生自 output.target，且各环境须用 output.distPath 隔离产物目录",
+        "isCorrect": true,
+        "description": "准确覆盖核心机制：MultiCompiler 单次并行构建、默认环境派生自 output.target、distPath 隔离避免文件名冲突。"
+      },
+      {
+        "text": "每个环境必须写成独立的配置文件并分别运行 rsbuild build 多次，Rsbuild 无法在单次构建里并行产出多套产物",
+        "isCorrect": false,
+        "description": "恰恰相反，environments 的价值就是单次构建经 MultiCompiler 并行产出多环境，无需多文件多次运行。"
+      },
+      {
+        "text": "多个环境默认共用同一个 distPath，Rsbuild 会自动给文件名加环境前缀防冲突，无需手动隔离目录",
+        "isCorrect": false,
+        "description": "Rsbuild 不会自动加前缀；多环境共用 distPath 会因文件名冲突而互相覆盖，必须用 output.distPath.root 手动隔离。"
+      },
+      {
+        "text": "environments 内的配置优先级低于外层基础配置，外层字段会覆盖环境内同名字段",
+        "isCorrect": false,
+        "description": "优先级方向反了：environments 内的配置优先级更高，用于覆盖外层基础配置中的同名字段。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 Rsbuild 2.0 中给项目配置路径别名（如 @ 指向 src），下列说法正确的是？",
+    "explanation": "Rsbuild 1.0 起路径别名配置在 **`resolve.alias`**（pre-1.0 旧版才是 `source.alias`，已迁移）。写法如 `resolve: { alias: { '@': './src' } }`，相对路径会自动转为相对项目根的绝对路径，加 `$` 后缀可精确匹配。此外 Rsbuild **开箱识别 `tsconfig.json` 的 `paths` 别名**，无需再装 `vite-tsconfig-paths` 之类依赖。",
+    "tags": ["rsbuild", "resolve", "alias", "配置"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "配置在 `resolve.alias`；且 Rsbuild 开箱识别 tsconfig 的 paths 别名，无需额外插件",
+        "isCorrect": true,
+        "description": "正确。2.0 别名在 resolve.alias，相对路径自动转绝对、$ 精确匹配；tsconfig paths 自动识别。"
+      },
+      {
+        "text": "配置在 `source.alias`，`resolve.alias` 在 2.0 已被移除",
+        "isCorrect": false,
+        "description": "反了。pre-1.0 才用 source.alias；1.0 起统一在 resolve.alias，并未移除。"
+      },
+      {
+        "text": "Rsbuild 顶层不支持别名，必须写在 `tools.rspack.resolve.alias`",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 提供语义化的 resolve.alias，无需下沉到 tools.rspack。"
+      },
+      {
+        "text": "别名只能用绝对路径，相对路径不被支持",
+        "isCorrect": false,
+        "description": "错误。resolve.alias 的相对路径会自动转为相对 root 的绝对路径。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：项目里有 `button.module.css`，默认怎样导入其类名？要改成具名导入 `import { red }` 需要什么？",
+    "explanation": "Rsbuild **默认识别 `*.module.*`** 为 CSS Modules（开箱即用，无需额外插件）。默认是**默认导入**：`import styles from './button.module.css'` 再用 `styles.red`。要改成**具名导入** `import { red } from '...'` 需开启 `output.cssModules.namedExport: true`。全局样式用 `:global()`，类名格式可用 `output.cssModules.localIdentName` 定制。",
+    "tags": ["rsbuild", "css-modules", "样式"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 `import styles from './button.module.css'` 再 `styles.red`；具名导入需开 `output.cssModules.namedExport: true`",
+        "isCorrect": true,
+        "description": "正确。默认导入即用；namedExport 才启用具名导入。"
+      },
+      {
+        "text": "默认就是具名导入 `import { red }`，无需任何配置",
+        "isCorrect": false,
+        "description": "错误。默认是默认导入对象，具名导入需 namedExport: true。"
+      },
+      {
+        "text": "必须先安装 `@rsbuild/plugin-css-modules` 才能用 `.module.css`",
+        "isCorrect": false,
+        "description": "错误。CSS Modules 默认内置，识别 *.module.* 即可，无此插件。"
+      },
+      {
+        "text": "要把文件改名为 `button.css` 并在 `tools.cssLoader` 开 `modules: true`",
+        "isCorrect": false,
+        "description": "错误。默认按 *.module.* 文件名识别；改选项优先用 output.cssModules 而非 tools.cssLoader。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：在 Rsbuild 内置的（类 EJS）HTML 模板引擎里，`<%= value %>` 与 `<%- value %>` 分别是什么行为？",
+    "explanation": "这是一个易记反的点：Rsbuild 内置 HTML 模板引擎里 **`<%= %>` 是【不转义】输出、`<%- %>` 是【转义】输出**——与**原生 EJS 的语义恰好相反**（原生 EJS 中 `<%=` 转义、`<%-` 不转义）。`<% %>` 用于逻辑（if/for 等）。需要完整 EJS 能力可用社区插件 `rsbuild-plugin-ejs`，Pug 用 `@rsbuild/plugin-pug`。",
+    "tags": ["rsbuild", "html", "模板", "ejs"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`<%= %>` 不转义输出、`<%- %>` 转义输出——与原生 EJS 恰好相反",
+        "isCorrect": true,
+        "description": "正确。Rsbuild 模板的 <%= 不转义、<%- 转义，与 EJS 语义相反，是高频记反点。"
+      },
+      {
+        "text": "`<%= %>` 转义输出、`<%- %>` 不转义输出，与原生 EJS 完全一致",
+        "isCorrect": false,
+        "description": "错误。这是原生 EJS 的语义；Rsbuild 内置模板恰好相反。"
+      },
+      {
+        "text": "两者完全等价，都会对内容做 HTML 转义",
+        "isCorrect": false,
+        "description": "错误。二者行为不同：一个转义、一个不转义。"
+      },
+      {
+        "text": "`<%= %>` 是 JS 逻辑块、`<%- %>` 是模板注释",
+        "isCorrect": false,
+        "description": "错误。逻辑块是 `<% %>`；`<%= %>`/`<%- %>` 都是输出，只是转义与否不同。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：关于框架插件的安装，下列哪项说法正确？",
+    "explanation": "Rsbuild 框架支持**全走插件**，核心包不内置。两个易错点：① **Solid** 用 `@rsbuild/plugin-solid`，但它底层走 `babel-preset-solid` 编译，**必须同时安装注册 `@rsbuild/plugin-babel`**（且通常放在 pluginSolid 之前）；② **Vue 3 的 SFC** 由 `@rsbuild/plugin-vue` 支持，但 **Vue 的 JSX/TSX 需要额外的 `@rsbuild/plugin-vue-jsx`**（不在主插件内）。React 的 Fast Refresh 则要求组件是具名函数才能保留 state。",
+    "tags": ["rsbuild", "插件", "solid", "vue"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`@rsbuild/plugin-solid` 因走 Babel 编译必须搭配 `@rsbuild/plugin-babel`；Vue 3 的 JSX 需在 `plugin-vue` 之外加 `plugin-vue-jsx`",
+        "isCorrect": true,
+        "description": "正确。Solid 走 Babel 需 pluginBabel；Vue SFC 在主插件、JSX 需独立 vue-jsx 插件。"
+      },
+      {
+        "text": "React / Vue / Solid 的支持都已内置在 `@rsbuild/core`，无需装任何插件",
+        "isCorrect": false,
+        "description": "错误。框架支持全走插件，核心包不内置。"
+      },
+      {
+        "text": "`@rsbuild/plugin-vue` 已内置 Vue JSX 支持，无需额外插件",
+        "isCorrect": false,
+        "description": "错误。SFC 内置，但 JSX/TSX 需额外 @rsbuild/plugin-vue-jsx。"
+      },
+      {
+        "text": "`@rsbuild/plugin-solid` 用 SWC 编译，因此不需要 Babel",
+        "isCorrect": false,
+        "description": "错误。Solid 走 babel-preset-solid，必须同时装 @rsbuild/plugin-babel。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：用 SWC 编译 TypeScript 时，官方为何建议开启 `isolatedModules`（TS<5.0）或 `verbatimModuleSyntax`（TS≥5.0）？",
+    "explanation": "Rsbuild 默认用 **SWC** 把 TS 转 JS，过程**只剥离类型注解、不做类型检查**。由于 SWC（和 Babel）是**逐文件编译**、无法跨文件区分一个导入到底是类型还是值，因此在未开启 `isolatedModules`（TS<5.0）/ `verbatimModuleSyntax`（TS≥5.0）时，`export { SomeType }` 这类**纯类型的 re-export** 会出错——应改写为 `export type { SomeType }`。类型安全本身要靠 `@rsbuild/plugin-type-check` 或单独跑 `tsc --noEmit`。",
+    "tags": ["rsbuild", "typescript", "swc", "isolatedModules"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因 SWC 逐文件编译无法区分导入是类型还是值，不开启时 `export { SomeType }` 类纯类型 re-export 会出错，应写 `export type`",
+        "isCorrect": true,
+        "description": "正确。逐文件编译需 isolatedModules/verbatimModuleSyntax 约束，纯类型导出要用 export type。"
+      },
+      {
+        "text": "为了让 SWC 在构建时执行完整类型检查并在类型错误时中断",
+        "isCorrect": false,
+        "description": "错误。SWC 只转译不做类型检查，开启这些选项也不会做类型检查。"
+      },
+      {
+        "text": "为了让 Rsbuild 自动把 .ts 编译输出 .d.ts 声明文件",
+        "isCorrect": false,
+        "description": "错误。声明文件生成是另一回事，与 isolatedModules 无关。"
+      },
+      {
+        "text": "为了启用 TypeScript 装饰器（decorators）支持",
+        "isCorrect": false,
+        "description": "错误。装饰器由 source.decorators.version 控制，与 isolatedModules 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：从 Create React App 迁移到 Rsbuild，关于客户端环境变量前缀，下列哪项正确？",
+    "explanation": "CRA 用 **`REACT_APP_`** 前缀把环境变量暴露给客户端；Rsbuild 默认前缀是 **`PUBLIC_`**。迁移时要么把变量改成 `PUBLIC_` 前缀，要么用 `loadEnv({ prefixes: ['REACT_APP_'] })` 读出后通过 `source.define` 注入以兼容旧前缀。其它映射：`react-scripts`→`@rsbuild/core` + `@rsbuild/plugin-react`，输出目录 `build`→`dist`（对齐用 `output.distPath.root: 'build'`），且 Rsbuild 不内置测试框架。",
+    "tags": ["rsbuild", "迁移", "cra", "环境变量"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CRA 用 `REACT_APP_` 前缀，Rsbuild 默认前缀是 `PUBLIC_`；兼容旧前缀可用 `loadEnv({ prefixes: ['REACT_APP_'] })` 配合 `source.define`",
+        "isCorrect": true,
+        "description": "正确。前缀从 REACT_APP_ 变 PUBLIC_，用 loadEnv + source.define 兼容。"
+      },
+      {
+        "text": "Rsbuild 默认也用 `REACT_APP_` 前缀，迁移时环境变量无需改动",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 默认前缀是 PUBLIC_，不是 REACT_APP_。"
+      },
+      {
+        "text": "Rsbuild 默认前缀是 `VITE_`，与 Vite 保持一致",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 默认前缀是 PUBLIC_；VITE_ 是 Vite 的。"
+      },
+      {
+        "text": "Rsbuild 不支持客户端环境变量注入，所有 process.env 都不会进产物",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 通过 PUBLIC_ 前缀 / source.define 注入客户端变量。"
+      }
+    ]
+  },
+  {
+    "stem": "Rsbuild：用 `server.proxy` 把 `/api` 代理到后端，关于其行为下列哪项正确？",
+    "explanation": "`server.proxy` 写在 **`server` 段**（dev 与 preview 都生效），底层基于 **http-proxy-middleware**（2.0 升到 v4）。一个区别于裸 http-proxy-middleware 的点：Rsbuild 会**自动把 `changeOrigin` 设为 `true`**（裸库默认 false）。支持 `pathRewrite`、`ws: true`、`pathFilter`、`bypass`；其中 `bypass` 返回 `false` 表示返回 404、返回 `true` 表示跳过代理正常处理、返回 string 表示替换请求路径。",
+    "tags": ["rsbuild", "server", "proxy", "dev"],
+    "categories": [
+      ["技术方向", "Rsbuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "底层基于 http-proxy-middleware，Rsbuild 自动把 `changeOrigin` 设为 `true`；`bypass` 返回 `false` 表示返回 404",
+        "isCorrect": true,
+        "description": "正确。changeOrigin 被 Rsbuild 自动置 true；bypass 返回 false=404、true=跳过代理、string=改路径。"
+      },
+      {
+        "text": "proxy 要写在 `dev` 段（`dev.proxy`），仅开发态生效、preview 不生效",
+        "isCorrect": false,
+        "description": "错误。proxy 在 server 段，dev 与 preview 都生效（dev 段是 hmr/liveReload 等）。"
+      },
+      {
+        "text": "`changeOrigin` 默认为 `false`，必须手动开启才能正常代理跨域",
+        "isCorrect": false,
+        "description": "错误。Rsbuild 会自动把 changeOrigin 设为 true。"
+      },
+      {
+        "text": "`server.proxy` 只支持字符串简写，不支持 pathRewrite / ws 等高级选项",
+        "isCorrect": false,
+        "description": "错误。支持 pathRewrite、ws、pathFilter、bypass 等。"
+      }
+    ]
+  }
+]
