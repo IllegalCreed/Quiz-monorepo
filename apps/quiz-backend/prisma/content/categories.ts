@@ -307,6 +307,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Vite", sort: 1 },
               { name: "Webpack", sort: 2 },
               { name: "Turbopack", sort: 3 },
+              // 零配置一体化构建工具（dev server + 打包 + 优化），与上三者同级
+              { name: "Parcel", sort: 4 },
+              // Rspack 之上的一体化构建工具（集成层，对位 Vite）；底层 Rspack 留在「打包工具」
+              { name: "Rsbuild", sort: 5 },
             ],
           },
           {
@@ -326,6 +330,9 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "rollup", sort: 2 },
               { name: "rolldown", sort: 3 },
               { name: "rspack", sort: 4 },
+              // 库打包向：tsup（esbuild 系事实标准）/ tsdown（Rolldown 版接班人）
+              { name: "tsup", sort: 5 },
+              { name: "tsdown", sort: 6 },
             ],
           },
           { name: "开发服务器（Live Server / BrowserSync）", sort: 4 },
@@ -560,6 +567,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "Lerna", sort: 1 },
               { name: "Turborepo", sort: 2 },
+              // TODO（做本批时补）：Nx —— 2026-06 调研漏项，8.5M/wk · 28.8k★，
+              // Monorepo 主流之一，体量不输 Turborepo，建议 sort: 3
             ],
           },
         ],
