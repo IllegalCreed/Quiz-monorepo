@@ -156,6 +156,14 @@ presetIcons({
 | Slidev 幻灯片  | `/Users/zhangxu/workspace/SlideStack/`          |
 | Quiz 题目      | 本仓库 `apps/quiz-backend/prisma/content/`      |
 
+### 内容生产质量门禁（三件套产出标准）
+
+产出"三件套"（VitePress 笔记 + Slidev 幻灯片 + Quiz 题目）时，每件都有**强制门禁，未过不算完成**：
+
+- **Quiz 题目**：**重质不限量**——题量按内容深度给足（宁多勿少，不设上限），但每题的题干、解析、选项解析都必须准确、有信息量，杜绝凑数与模板化重复。每道 `stem` 须含技术名前缀；`categories` 叶子名须与 `content/categories.ts` 完全一致。
+- **Slidev 幻灯片**：**必须过每页高度校验防溢出**。`pnpm -C packages/{x}-slide run build` 后跑 `node scripts/check-slidev-overflow.mjs {x}-slide`，**0 溢出**才算完成；有溢出按报告逐页精简（代码行≈22px / 表格行≈33px / 正文行≈26px）。"build 通过 ≠ 不溢出"。
+- **VitePress 笔记**：**context7 + 网页浏览双重校验**。两路独立信源都支持才能下笔；不一致时以"官方网页 + 本地验证"为准。context7 未接入时，用等效的库文档源（如 zread 直读 GitHub 仓库的文档/源码/issue）替代。
+
 ## 相关文档
 
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图
