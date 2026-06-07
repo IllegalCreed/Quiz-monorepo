@@ -1,0 +1,1304 @@
+[
+  {
+    "stem": "SWC：官方把 SWC 定义为「an extensible Rust-based platform for the next generation of fast developer tools」。关于它的实现语言与核心定位，下列哪项最准确？",
+    "explanation": "SWC（Speedy Web Compiler）是用 **Rust** 编写的可扩展编译平台，主要做 JS/TS/JSX 的**转译 + 压缩**。官方首页明确其为「extensible Rust-based platform」，并称「20x faster than Babel on a single thread and 70x faster on four cores」。\n\n- 「Rust 写的可扩展编译平台，做转译/压缩」正确。\n- 「用 Go 编写」错误：Go 写的是 esbuild、TypeScript 7.0 的 tsgo，不是 SWC。\n- 「用 TypeScript 编写、运行在 Node」错误：SWC 是原生 Rust（napi 绑定）。\n- 「主要是一个类型检查器」错误：SWC 不做类型检查。",
+    "tags": ["swc", "入门", "核心概念", "Rust", "定位"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 Rust 编写的可扩展编译平台，对 JS/TS/JSX 做转译与压缩",
+        "isCorrect": true,
+        "description": "正确。SWC 是 Rust 实现的编译平台，核心是极速转译 + 压缩，并以 Wasm 插件扩展。"
+      },
+      {
+        "text": "用 Go 编写的打包器，主打浏览器原生 ESM",
+        "isCorrect": false,
+        "description": "错误。Go 写的是 esbuild、TS 的 tsgo；SWC 用 Rust，且主业是转译而非打包。"
+      },
+      {
+        "text": "用 TypeScript 编写、运行在 Node 上的转译工具",
+        "isCorrect": false,
+        "description": "错误。SWC 是原生 Rust 实现（@swc/core 走 napi 绑定），不是 TS 写的。"
+      },
+      {
+        "text": "它本质上是一个独立的类型检查器",
+        "isCorrect": false,
+        "description": "错误。SWC 明确不做类型检查，类型把关仍交给 tsc。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：官方文档强调「SWC only transpiles the code and doesn't perform type checking」。这意味着把 TypeScript 工程交给 SWC 时，类型安全应如何保障？",
+    "explanation": "SWC **逐文件（file-by-file）转译、不做类型检查**——官方还说「any code transforms that depend on understanding the full type system will not work」。因此推荐继续用 **`tsc --noEmit`** 单独做类型检查，形成「SWC 极速 emit + tsc 把关类型」的分工。\n\n- 「另跑 tsc --noEmit 做类型检查」正确。\n- 「SWC 会顺带做类型检查，无需 tsc」错误：它根本不做。\n- 「开启某个 strict 选项让 SWC 检查类型」错误：SWC 没有类型检查能力。\n- 「类型错误会让 SWC 构建失败」错误：语法对就放行，类型错照样产出。",
+    "tags": ["swc", "入门", "类型检查", "tsc", "分工"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SWC 不做类型检查，需另跑 tsc --noEmit 把关类型",
+        "isCorrect": true,
+        "description": "正确。标准组合是 SWC 负责 emit、tsc --noEmit 负责类型检查。"
+      },
+      {
+        "text": "SWC 转译时会顺带完成完整类型检查，无需 tsc",
+        "isCorrect": false,
+        "description": "错误。官方明确 SWC 只转译、不做类型检查。"
+      },
+      {
+        "text": "在 .swcrc 里开启 strict 选项即可让 SWC 检查类型",
+        "isCorrect": false,
+        "description": "错误。SWC 没有类型检查能力，没有这样的开关。"
+      },
+      {
+        "text": "代码有类型错误时 SWC 构建一定会失败",
+        "isCorrect": false,
+        "description": "错误。SWC 逐文件转译，语法对就放行，类型错误照样产出。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：要在终端用 `swc` 命令把目录转译到 `dist`，并在脚本里调用 `transform`，最基本需要安装哪两个包？",
+    "explanation": "`@swc/core` 提供编译核心（napi 绑定）与编程 API（`transform` 等），`@swc/cli` 提供 `swc` 命令行。最基本就是 `npm i -D @swc/core @swc/cli`。`@swc/helpers` 是 externalHelpers 的运行时、`swc-loader`/`@swc/jest` 是集成包，非「最基本」。\n\n- 「@swc/core + @swc/cli」正确。\n- 「@swc/core + @swc/helpers」不完整：缺 CLI，且 helpers 是按需。\n- 「swc + swc-cli」错误：包名不对。\n- 「@babel/core + swc-loader」错误：这是 Babel/Webpack 组合。",
+    "tags": ["swc", "入门", "安装", "@swc/core", "@swc/cli"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "@swc/core 与 @swc/cli",
+        "isCorrect": true,
+        "description": "正确。core 提供编译核心与 API，cli 提供 swc 命令。"
+      },
+      {
+        "text": "@swc/core 与 @swc/helpers",
+        "isCorrect": false,
+        "description": "错误。缺命令行 @swc/cli；@swc/helpers 仅在 externalHelpers 时按需安装。"
+      },
+      {
+        "text": "swc 与 swc-cli",
+        "isCorrect": false,
+        "description": "错误。包名是 @swc/core 与 @swc/cli，不是 swc / swc-cli。"
+      },
+      {
+        "text": "@babel/core 与 swc-loader",
+        "isCorrect": false,
+        "description": "错误。@babel/core 是 Babel 的包；swc-loader 是 Webpack 集成，不是基础安装。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：SWC 的配置文件叫什么？它通常放在哪里、是什么格式？",
+    "explanation": "SWC 的配置文件是项目根目录下的 **`.swcrc`**，是一份 **JSON**。可加 `\"$schema\": \"https://swc.rs/schema.json\"` 获得编辑器补全。它不是 `swc.config.js`，也不是 YAML。\n\n- 「.swcrc，项目根，JSON」正确。\n- 「swc.config.js」错误：SWC 用 .swcrc。\n- 「.swcrc.yaml」错误：是 JSON 不是 YAML。\n- 「写在 package.json 的 swc 字段」错误：SWC 不从 package.json 读这类配置（标准方式是 .swcrc）。",
+    "tags": ["swc", "入门", "swcrc", "配置文件", "JSON"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": ".swcrc，放项目根目录，JSON 格式",
+        "isCorrect": true,
+        "description": "正确。.swcrc 是 JSON，可加 $schema 获得补全。"
+      },
+      {
+        "text": "swc.config.js，一个导出对象的 JS 文件",
+        "isCorrect": false,
+        "description": "错误。SWC 的标准配置文件是 .swcrc（JSON），不是 swc.config.js。"
+      },
+      {
+        "text": ".swcrc.yaml，YAML 格式",
+        "isCorrect": false,
+        "description": "错误。.swcrc 是 JSON 格式，不是 YAML。"
+      },
+      {
+        "text": "写在 package.json 的 \"swc\" 字段里",
+        "isCorrect": false,
+        "description": "错误。标准方式是 .swcrc 文件，而非 package.json 字段。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：官方称「The SWC CLI is designed to be a drop-in replacement for Babel」。这句话最贴切的含义是？",
+    "explanation": "「drop-in replacement for Babel」意味着 SWC CLI 在「剥类型 + 降级语法」这件事上**可平滑替换 Babel CLI**，迁移成本低。但它**不是替换 tsc 的类型检查**，也不是替换打包器。\n\n- 「在转译这件事上可平滑替换 Babel」正确。\n- 「可替换 tsc 的类型检查」错误：SWC 不做类型检查。\n- 「可替换 Webpack 的打包」错误：SWC 打包（spack）不成熟，打包仍交打包器。\n- 「必须配合 Babel 一起用」错误：它是替代 Babel，不是配合。",
+    "tags": ["swc", "入门", "Babel", "drop-in", "迁移"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在「剥类型 + 降级语法」上可平滑替换 Babel CLI，迁移成本低",
+        "isCorrect": true,
+        "description": "正确。drop-in replacement 指转译职责上替换 Babel，配置迁移成本低。"
+      },
+      {
+        "text": "它可以替换 tsc 承担类型检查",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，无法替换 tsc 的把关职责。"
+      },
+      {
+        "text": "它可以替换 Webpack 完成生产打包",
+        "isCorrect": false,
+        "description": "错误。SWC 的打包能力不成熟，打包仍交 Webpack/Rspack/Rollup/Vite。"
+      },
+      {
+        "text": "它必须和 Babel 一起使用才能转译",
+        "isCorrect": false,
+        "description": "错误。drop-in replacement 是替代 Babel，而非配合 Babel。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：下列哪一组工具/框架在内部使用了 SWC？",
+    "explanation": "SWC 被生态深度内置：**Next.js 的编译器、Parcel、Deno、`@swc/jest`、Rspack / Rsbuild 的 `swc-loader`** 都基于 SWC。它替代了这些场景里原本 Babel 承担的转译职责。\n\n- 「Next.js / Parcel / Deno / @swc/jest」正确。\n- 「只有 webpack 自己」错误：webpack 默认用 babel-loader，SWC 是通过 swc-loader 接入。\n- 「Prettier / ESLint 核心」错误：它们不以 SWC 为转译内核。\n- 「Sass / PostCSS」错误：那是 CSS 处理，与 SWC 无关。",
+    "tags": ["swc", "入门", "生态", "Next.js", "Parcel"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Next.js 编译器、Parcel、Deno、@swc/jest",
+        "isCorrect": true,
+        "description": "正确。这些都把 SWC 作为转译内核，是 SWC 落地的主要场景。"
+      },
+      {
+        "text": "只有 webpack 自身默认内置 SWC",
+        "isCorrect": false,
+        "description": "错误。webpack 默认用 babel-loader，SWC 需通过 swc-loader 接入。"
+      },
+      {
+        "text": "Prettier 与 ESLint 的核心引擎",
+        "isCorrect": false,
+        "description": "错误。它们不以 SWC 为转译内核。"
+      },
+      {
+        "text": "Sass 与 PostCSS",
+        "isCorrect": false,
+        "description": "错误。那是 CSS 处理工具，与 SWC 的 JS/TS 转译无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在 `.swcrc` 里要让 SWC 把一个 `.tsx` 文件正确解析为「TypeScript + JSX」，`jsc.parser` 应该怎么写？",
+    "explanation": "TypeScript 文件解析 JSX 用的是 **`tsx: true`**（搭配 `syntax: \"typescript\"`），而**不是** `jsx`。`jsx` 字段属于 `syntax: \"ecmascript\"`。写错会导致 JSX 解析失败。\n\n- `{ syntax: \"typescript\", tsx: true }` 正确。\n- `{ syntax: \"typescript\", jsx: true }` 错误：TS 下应用 tsx，不是 jsx。\n- `{ syntax: \"ecmascript\", tsx: true }` 错误：tsx 属于 typescript syntax。\n- `{ syntax: \"jsx\" }` 错误：syntax 只有 ecmascript / typescript 两种。",
+    "tags": ["swc", "初级", "parser", "tsx", "JSX"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "{ \"syntax\": \"typescript\", \"tsx\": true }",
+        "isCorrect": true,
+        "description": "正确。TS 文件解析 JSX 用 tsx，搭配 syntax: typescript。"
+      },
+      {
+        "text": "{ \"syntax\": \"typescript\", \"jsx\": true }",
+        "isCorrect": false,
+        "description": "错误。jsx 属于 ecmascript syntax；TS 下应用 tsx。"
+      },
+      {
+        "text": "{ \"syntax\": \"ecmascript\", \"tsx\": true }",
+        "isCorrect": false,
+        "description": "错误。tsx 属于 typescript syntax，不能配 ecmascript。"
+      },
+      {
+        "text": "{ \"syntax\": \"jsx\" }",
+        "isCorrect": false,
+        "description": "错误。syntax 仅 ecmascript / typescript 两种，没有 jsx。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`.swcrc` 里如果完全不写 `jsc.target`，SWC 会把语法降级到哪个默认目标？",
+    "explanation": "`jsc.target` 的**默认值是 `es5`**。不显式设置，SWC 会把代码一路降级到 ES5，往往会多打很多不必要的降级代码。按运行环境显式设 `es2020`/`es2022` 更合适。\n\n- 「默认 es5」正确。\n- 「默认 esnext（不降级）」错误：默认是 es5 而非不降级。\n- 「默认跟随当前 Node 版本」错误：SWC 不会自动探测 Node 版本。\n- 「默认 es2015」错误：默认是 es5。",
+    "tags": ["swc", "初级", "target", "默认值", "降级"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "es5（默认会一路降到 ES5，建议显式设更高目标）",
+        "isCorrect": true,
+        "description": "正确。jsc.target 默认 es5，不写会多打降级代码，应按环境显式设定。"
+      },
+      {
+        "text": "esnext，即默认不做任何语法降级",
+        "isCorrect": false,
+        "description": "错误。默认是 es5，会降级，而非保持 esnext。"
+      },
+      {
+        "text": "自动跟随当前安装的 Node 版本",
+        "isCorrect": false,
+        "description": "错误。SWC 不会自动探测运行环境，默认就是 es5。"
+      },
+      {
+        "text": "es2015",
+        "isCorrect": false,
+        "description": "错误。默认值是 es5，不是 es2015。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：把 `jsc.target` 设为 `es2015` 后，代码里用到的 `Promise`、`Array.prototype.includes` 在旧环境运行时报「未定义」。关于 `target` 的作用，正确理解是？",
+    "explanation": "和 tsc 一样，`jsc.target` 只做**语法降级**，**不注入运行时 API 的 polyfill**。`Promise`、`includes` 这类内置 API 缺失，要靠 `env`（配 `coreJs`）注入或在打包器侧引入 core-js。\n\n- 「target 只降语法、不补 API，需 polyfill」正确。\n- 「target 会自动注入 polyfill」错误：单独的 target 不注入。\n- 「把 target 调高即可补上 API」错误：调高只是少降语法，不补旧环境缺的 API。\n- 「这是 parser 配置错误」错误：与 parser 无关。",
+    "tags": ["swc", "初级", "target", "polyfill", "易错点"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "target 只做语法降级，不注入内置 API 的 polyfill，需用 env/coreJs 或打包器补",
+        "isCorrect": true,
+        "description": "正确。target 只降语法；运行时缺失的 API 要靠 polyfill（env.coreJs 或打包器）。"
+      },
+      {
+        "text": "target 会根据目标版本自动注入所需 polyfill",
+        "isCorrect": false,
+        "description": "错误。单独的 jsc.target 不注入 polyfill；注入要走 env。"
+      },
+      {
+        "text": "把 target 调到 esnext 就能自动补上这些 API",
+        "isCorrect": false,
+        "description": "错误。调高只是减少语法降级，旧环境缺的内置 API 仍需 polyfill。"
+      },
+      {
+        "text": "这是 jsc.parser 配置错误导致的",
+        "isCorrect": false,
+        "description": "错误。与 parser 无关，根因是 target 不补运行时 API。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`.swcrc` 里 `module.type` 的默认值是什么？想输出原生 ESM 应设为哪个？",
+    "explanation": "`module.type` 的默认值是 **`es6`**（即保留原生 ESM 的 `import`/`export`），适合交给打包器。要输出 CommonJS 则设 `commonjs`，另有 `amd`/`umd`/`systemjs`。\n\n- 「默认 es6，输出 ESM 用 es6」正确。\n- 「默认 commonjs」错误：默认是 es6。\n- 「输出 ESM 要设 esnext」错误：SWC 的值是 es6 而非 esnext。\n- 「默认 umd」错误。",
+    "tags": ["swc", "初级", "module", "es6", "默认值"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认是 es6（原生 ESM）；要输出 ESM 即用 es6",
+        "isCorrect": true,
+        "description": "正确。module.type 默认 es6，保留 import/export，适合交给打包器。"
+      },
+      {
+        "text": "默认是 commonjs",
+        "isCorrect": false,
+        "description": "错误。默认是 es6，不是 commonjs。"
+      },
+      {
+        "text": "输出 ESM 需把 module.type 设为 esnext",
+        "isCorrect": false,
+        "description": "错误。SWC 的 ESM 取值是 es6，没有 esnext 这个 module.type。"
+      },
+      {
+        "text": "默认是 umd",
+        "isCorrect": false,
+        "description": "错误。默认是 es6。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：把 emit 交给 SWC、用 `@swc/jest` 跑测试后，团队问「类型错误为什么没被测出来」。正确的解释与对策是？",
+    "explanation": "`@swc/jest` 只把**转译**换成 SWC，SWC **不做类型检查**，所以类型错误不会在测试阶段暴露。对策是**单独跑 `tsc --noEmit`**（通常放进 CI / pre-push）。\n\n- 「@swc/jest 只转译不检查类型，需另跑 tsc --noEmit」正确。\n- 「@swc/jest 配置错了才漏检」错误：它本就不检查类型。\n- 「升级 @swc/jest 即可获得类型检查」错误：不存在这种能力。\n- 「Jest 自带类型检查，应改 Jest 配置」错误：Jest 不做 TS 类型检查。",
+    "tags": ["swc", "初级", "@swc/jest", "类型检查", "测试"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "@swc/jest 只负责转译、不做类型检查，类型把关需另跑 tsc --noEmit",
+        "isCorrect": true,
+        "description": "正确。测试转译用 SWC，类型检查必须由 tsc 单独完成。"
+      },
+      {
+        "text": "是 @swc/jest 配置写错才导致类型检查被跳过",
+        "isCorrect": false,
+        "description": "错误。@swc/jest 本就不具备类型检查能力，与配置无关。"
+      },
+      {
+        "text": "升级 @swc/jest 到最新版即可自动检查类型",
+        "isCorrect": false,
+        "description": "错误。SWC 系工具都不做类型检查，升级也不会有该能力。"
+      },
+      {
+        "text": "Jest 本身会做 TS 类型检查，改 Jest 配置即可",
+        "isCorrect": false,
+        "description": "错误。Jest 不做 TypeScript 类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在 Webpack 里想用 SWC 取代 babel-loader 来转译 `.ts`/`.tsx`，应使用哪个 loader？",
+    "explanation": "Webpack 中用 **`swc-loader`** 取代 babel-loader，配置项与 `.swcrc` 的 `jsc` 等一致。它只负责转译，类型检查仍需 `tsc --noEmit`（或 fork-ts-checker 类插件并行跑）。\n\n- `swc-loader` 正确。\n- `@swc/loader` 错误：包名是 swc-loader。\n- `babel-loader` 错误：那是 Babel 的 loader。\n- `ts-loader` 错误：那是基于 tsc 的 loader，不是 SWC。",
+    "tags": ["swc", "初级", "swc-loader", "Webpack", "集成"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "swc-loader",
+        "isCorrect": true,
+        "description": "正确。swc-loader 在 Webpack 中取代 babel-loader 做转译。"
+      },
+      {
+        "text": "@swc/loader",
+        "isCorrect": false,
+        "description": "错误。包名是 swc-loader，不是 @swc/loader。"
+      },
+      {
+        "text": "babel-loader",
+        "isCorrect": false,
+        "description": "错误。babel-loader 用的是 Babel，不是 SWC。"
+      },
+      {
+        "text": "ts-loader",
+        "isCorrect": false,
+        "description": "错误。ts-loader 基于 tsc，会做类型检查，不是 SWC 集成。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：开启 `jsc.externalHelpers: true` 后，构建/运行时报「找不到模块 @swc/helpers」。原因与修复是？",
+    "explanation": "`externalHelpers: true` 让 SWC **从 `@swc/helpers` 引入** helper 而非内联，因此必须把 `@swc/helpers` 装为依赖。官方：「you must add `@swc/helpers` as a dependency」。修复就是 `npm i @swc/helpers`。\n\n- 「需安装 @swc/helpers」正确。\n- 「应关闭 externalHelpers 才能用」错误：关闭只是回到内联，不是「找不到」的正解。\n- 「@swc/helpers 由 @swc/cli 自动提供」错误：需自行安装。\n- 「是 target 设置过低」错误：与此报错无关。",
+    "tags": ["swc", "初级", "externalHelpers", "@swc/helpers", "易错点"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "externalHelpers 会从 @swc/helpers 引入助手，必须安装它（npm i @swc/helpers）",
+        "isCorrect": true,
+        "description": "正确。开启 externalHelpers 即依赖 @swc/helpers 运行时，需显式安装。"
+      },
+      {
+        "text": "应关闭 externalHelpers 才能正常运行",
+        "isCorrect": false,
+        "description": "错误。关闭只是回到内联 helper；正确做法是安装 @swc/helpers。"
+      },
+      {
+        "text": "@swc/helpers 会被 @swc/cli 自动安装，无需处理",
+        "isCorrect": false,
+        "description": "错误。它需要手动安装为依赖，不会自动提供。"
+      },
+      {
+        "text": "是 jsc.target 设得太低导致找不到 helpers",
+        "isCorrect": false,
+        "description": "错误。与 target 无关，根因是缺少 @swc/helpers 依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`jsc.externalHelpers: true` 解决的主要问题是什么？",
+    "explanation": "降级会在多个文件里产生**重复的 helper 函数**（如 `_class_call_check`）。`externalHelpers` 让这些 helper **统一从 `@swc/helpers` 引入**而不是每文件内联，从而**减小总体积**、便于打包器去重与 tree-shaking。\n\n- 「把重复 helper 外置到 @swc/helpers，减小体积」正确。\n- 「加快类型检查」错误：SWC 不做类型检查。\n- 「自动注入 polyfill」错误：那是 env/coreJs 的事。\n- 「开启后无需再设 target」错误：两者无关。",
+    "tags": ["swc", "初级", "externalHelpers", "体积优化", "helpers"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把各文件重复的 helper 外置到 @swc/helpers，减小产物总体积",
+        "isCorrect": true,
+        "description": "正确。externalHelpers 避免 helper 内联重复，配合打包器去重更省体积。"
+      },
+      {
+        "text": "显著加快 SWC 的类型检查速度",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，谈不上提速。"
+      },
+      {
+        "text": "自动为旧环境注入 core-js polyfill",
+        "isCorrect": false,
+        "description": "错误。polyfill 注入由 env/coreJs 负责，与 externalHelpers 无关。"
+      },
+      {
+        "text": "开启后就不必再配置 jsc.target",
+        "isCorrect": false,
+        "description": "错误。externalHelpers 与 target 是两件事，互不替代。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：用 `@swc/core` 写脚本对单段源码做「只转译、不检查」，最常用的 API 是哪个？",
+    "explanation": "最常用的是 **`transform(code, options)`**（异步，返回 `{ code, map? }`）。同步用 `transformSync`，按路径用 `transformFile`/`transformFileSync`。调用时通常给 `filename` 与 `jsc.parser` 让 SWC 知道语法。\n\n- `transform` 正确。\n- `compile` 错误：没有这个导出。\n- `check` 错误：SWC 不做检查，无此 API。\n- `bundle` 错误：那是打包（spack），不是单文件转译。",
+    "tags": ["swc", "初级", "API", "transform", "@swc/core"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "transform（异步，返回 { code, map }）",
+        "isCorrect": true,
+        "description": "正确。transform/transformSync 是单文件转译的主入口，传 filename + jsc.parser。"
+      },
+      {
+        "text": "compile",
+        "isCorrect": false,
+        "description": "错误。@swc/core 没有 compile 导出。"
+      },
+      {
+        "text": "check",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，没有 check API。"
+      },
+      {
+        "text": "bundle",
+        "isCorrect": false,
+        "description": "错误。bundle 是打包（spack），不是单文件转译。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：项目同时配了 `jsc.target: \"es2018\"` 和一份 `env: { targets: \"...\" }`，行为出现混乱。根因是？",
+    "explanation": "**`jsc.target` 与 `env` 互斥**。官方称 `env` 是 `preset-env` 的替代，但「this does not work with `jsc.target`」。二者只能选其一：要按 browserslist 反推就用 `env`，要钉死 ES 版本就用 `jsc.target`，同时写会冲突。\n\n- 「target 与 env 互斥，二选一」正确。\n- 「两者会自动合并取交集」错误：并非合并，而是冲突。\n- 「env 必须配合 target 才能工作」错误：恰恰相反，env 取代 target。\n- 「这是 SWC 的 bug」错误：是设计行为。",
+    "tags": ["swc", "中级", "env", "target", "互斥"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "jsc.target 与 env 互斥，应二选一（env 是 target 的替代方案）",
+        "isCorrect": true,
+        "description": "正确。官方明确 env 不与 jsc.target 共用，二者只能选一个。"
+      },
+      {
+        "text": "两者会自动合并并取目标交集",
+        "isCorrect": false,
+        "description": "错误。它们不会合并，同时配置会冲突。"
+      },
+      {
+        "text": "env 必须配合 jsc.target 一起使用",
+        "isCorrect": false,
+        "description": "错误。env 是用来替代 jsc.target 的，不与之共用。"
+      },
+      {
+        "text": "这是 SWC 的已知缺陷，升级即可解决",
+        "isCorrect": false,
+        "description": "错误。互斥是设计行为，并非缺陷。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：想用类似 `@babel/preset-env` 的方式「按目标浏览器反推降级 + 按需注入 polyfill」，应使用 `.swcrc` 的哪个配置块？",
+    "explanation": "用 **`env`** 块（SWC 版的 preset-env）：`env.targets` 指定 browserslist，`env.mode`（`\"usage\"`/`\"entry\"`）决定 polyfill 注入策略，`env.coreJs` 指定 core-js 版本。注意它与 `jsc.target` 互斥。\n\n- 「env（targets/mode/coreJs）」正确。\n- 「jsc.target」错误：target 只降语法、不注入 polyfill。\n- 「module.type」错误：那是模块格式。\n- 「minify」错误：那是压缩。",
+    "tags": ["swc", "中级", "env", "preset-env", "polyfill"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "env（配 targets / mode / coreJs）",
+        "isCorrect": true,
+        "description": "正确。env 是 SWC 版 preset-env，按 targets 降级并按 mode 注入 core-js polyfill。"
+      },
+      {
+        "text": "jsc.target",
+        "isCorrect": false,
+        "description": "错误。target 只做语法降级，不会注入 polyfill。"
+      },
+      {
+        "text": "module.type",
+        "isCorrect": false,
+        "description": "错误。module.type 决定模块格式，与 polyfill 无关。"
+      },
+      {
+        "text": "minify",
+        "isCorrect": false,
+        "description": "错误。minify 是压缩开关，与降级/polyfill 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`env.mode` 设为 `\"usage\"` 与 `\"entry\"` 的区别是什么？不写 `mode` 又会怎样？",
+    "explanation": "`mode: \"usage\"` 按文件**实际用到**的 API 自动按需注入 polyfill（对应 preset-env `useBuiltIns: \"usage\"`）；`mode: \"entry\"` 在入口的 `import \"core-js\"` 处按 `targets` 展开（对应 `useBuiltIns: \"entry\"`）。**不写 `mode` 则不注入任何 polyfill**。\n\n- 「usage 按需 / entry 入口展开 / 不写则不注入」正确。\n- 「两者都全量注入全部 polyfill」错误。\n- 「usage 在入口展开、entry 按需」把两者说反了。\n- 「不写 mode 默认 usage」错误：默认不注入。",
+    "tags": ["swc", "中级", "env", "mode", "polyfill"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usage 按实际用到的 API 按需注入；entry 在入口 import core-js 处展开；不写 mode 则不注入",
+        "isCorrect": true,
+        "description": "正确。usage=按需、entry=入口展开，未设 mode 时 SWC 不注入 polyfill。"
+      },
+      {
+        "text": "两者都会全量注入所有 polyfill",
+        "isCorrect": false,
+        "description": "错误。usage 是按需、entry 按 targets 展开，并非全量。"
+      },
+      {
+        "text": "usage 在入口展开，entry 按实际使用注入",
+        "isCorrect": false,
+        "description": "错误，两者说反了。usage 才是按需，entry 是入口展开。"
+      },
+      {
+        "text": "不写 mode 时默认按 usage 注入",
+        "isCorrect": false,
+        "description": "错误。不写 mode 时不注入任何 polyfill。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：React 17+ 项目想用「无需 import React」的新 JSX 运行时，`jsc.transform.react.runtime` 应设为什么？它的默认值又是什么？",
+    "explanation": "设 `runtime: \"automatic\"`（自动从 `react/jsx-runtime` 引入），写 JSX 无需手动 `import React`。该字段**默认是 `\"classic\"`**（转成 `React.createElement`，需手动 import React）。\n\n- 「automatic；默认是 classic」正确。\n- 「classic；默认 automatic」把默认值说反了。\n- 「preserve；默认 automatic」错误：preserve 是保留 JSX，且默认是 classic。\n- 「设 runtime: \"react17\"」错误：没有这个取值。",
+    "tags": ["swc", "中级", "react", "runtime", "JSX"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "设为 automatic；默认值是 classic",
+        "isCorrect": true,
+        "description": "正确。automatic 走 react/jsx-runtime 无需 import React；默认是 classic。"
+      },
+      {
+        "text": "设为 classic；默认值是 automatic",
+        "isCorrect": false,
+        "description": "错误。默认是 classic 而非 automatic，且新运行时应选 automatic。"
+      },
+      {
+        "text": "设为 preserve；默认值是 automatic",
+        "isCorrect": false,
+        "description": "错误。preserve 是保留 JSX；且默认值是 classic。"
+      },
+      {
+        "text": "设为 react17",
+        "isCorrect": false,
+        "description": "错误。runtime 取值是 automatic / classic / preserve，没有 react17。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：要让 SWC 正确转译 NestJS/TypeORM 这类「装饰器 + 反射元数据」的代码，`.swcrc` 至少要打开哪几个开关？",
+    "explanation": "装饰器要解析与转换两步，元数据再加一项：① `jsc.parser.decorators: true`（认识语法）；② `jsc.transform.legacyDecorator: true`（按旧版/experimentalDecorators 语义转换）；③ `jsc.transform.decoratorMetadata: true`（对应 TS 的 emitDecoratorMetadata，提供反射元数据）。\n\n- 「parser.decorators + legacyDecorator + decoratorMetadata」正确。\n- 「只开 parser.decorators」不够：装饰器不会被正确转换。\n- 「只开 minify」错误：与装饰器无关。\n- 「开 jsc.loose 即可」错误：loose 与装饰器/元数据无关。",
+    "tags": ["swc", "中级", "装饰器", "decoratorMetadata", "NestJS"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "parser.decorators + transform.legacyDecorator + transform.decoratorMetadata",
+        "isCorrect": true,
+        "description": "正确。三者联动：解析装饰器、按旧版转换、并产出反射元数据。"
+      },
+      {
+        "text": "只需打开 jsc.parser.decorators",
+        "isCorrect": false,
+        "description": "错误。只解析不转换，装饰器不会被正确降级，更没有元数据。"
+      },
+      {
+        "text": "只需打开顶层 minify",
+        "isCorrect": false,
+        "description": "错误。minify 是压缩，与装饰器无关。"
+      },
+      {
+        "text": "打开 jsc.loose 即可",
+        "isCorrect": false,
+        "description": "错误。loose 是宽松转换假设，与装饰器/元数据无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在 `.swcrc` 配置 `jsc.baseUrl` 路径别名时，官方对 `baseUrl` 的取值有什么硬性要求？",
+    "explanation": "官方明确：`jsc.baseUrl` **必须是绝对路径**（「The path must be specified as an absolute path」）。`jsc.paths` 依赖 `baseUrl`，语法与 tsconfig 的 `paths` 一致。\n\n- 「必须是绝对路径」正确。\n- 「必须是相对路径」错误，正好相反。\n- 「可省略，paths 自带基准」错误：paths 依赖 baseUrl。\n- 「必须等于 outDir」错误，无此要求。",
+    "tags": ["swc", "中级", "baseUrl", "paths", "别名"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "baseUrl 必须是绝对路径",
+        "isCorrect": true,
+        "description": "正确。官方规定 baseUrl 须为绝对路径，paths 依赖它且语法同 tsconfig。"
+      },
+      {
+        "text": "baseUrl 必须是相对路径",
+        "isCorrect": false,
+        "description": "错误，正好相反，官方要求绝对路径。"
+      },
+      {
+        "text": "baseUrl 可省略，paths 会自带基准目录",
+        "isCorrect": false,
+        "description": "错误。paths 依赖 baseUrl，不能省略。"
+      },
+      {
+        "text": "baseUrl 必须与 outDir 相同",
+        "isCorrect": false,
+        "description": "错误。没有这种约束。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：由于 SWC 逐文件转译、看不到完整类型系统，为正确处理「纯类型导入」，在 TypeScript 侧推荐怎么做？",
+    "explanation": "SWC 无法判断某个 import 是否「只用作类型」。推荐在 TS 侧开 **`verbatimModuleSyntax`** 并对纯类型导入显式写 **`import type`**，让「值还是类型」所见即所得，SWC 才能正确保留/删除。\n\n- 「开 verbatimModuleSyntax + 显式 import type」正确。\n- 「关闭 isolatedModules」错误，方向相反。\n- 「全部用 import * 命名空间导入」错误，不能区分类型/值。\n- 「依赖 SWC 自动识别类型导入」错误：file-by-file 下做不到。",
+    "tags": ["swc", "中级", "import-type", "verbatimModuleSyntax", "type-only"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 TS 侧开启 verbatimModuleSyntax，并对纯类型导入显式写 import type",
+        "isCorrect": true,
+        "description": "正确。所见即所得地区分类型/值导入，SWC 才能正确删除或保留。"
+      },
+      {
+        "text": "关闭 isolatedModules 让 SWC 自由处理",
+        "isCorrect": false,
+        "description": "错误，方向相反；单文件转译更需要显式标注类型导入。"
+      },
+      {
+        "text": "把所有导入都改成 import * as 命名空间导入",
+        "isCorrect": false,
+        "description": "错误。命名空间导入并不能区分类型与值。"
+      },
+      {
+        "text": "依赖 SWC 自动识别并删除纯类型导入",
+        "isCorrect": false,
+        "description": "错误。逐文件转译看不到类型系统，无法可靠自动识别。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：把 emit 交给 SWC 时，代码里大量使用 TypeScript 的 `const enum`，容易出问题。根本原因是？",
+    "explanation": "`const enum` 依赖编译期把成员**跨文件内联**为字面量，而 SWC 是**逐文件（file-by-file）转译**，看不到其它文件的定义，无法可靠内联。这正是「any code transforms that depend on understanding the full type system will not work」的体现。稳妥做法是避免 `const enum`（改普通 `enum` 或常量对象）。\n\n- 「逐文件转译无法跨文件内联 const enum」正确。\n- 「const enum 是 SWC 不支持的语法」不准确：根因是 file-by-file 模型而非语法不识别。\n- 「需要开 minify 才能内联」错误，无关。\n- 「target 太低导致」错误，与 target 无关。",
+    "tags": ["swc", "中级", "const-enum", "file-by-file", "TypeScript"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SWC 逐文件转译，看不到其它文件，无法可靠地跨文件内联 const enum",
+        "isCorrect": true,
+        "description": "正确。const enum 依赖跨文件内联，与 file-by-file 模型冲突，应避免使用。"
+      },
+      {
+        "text": "const enum 是一种 SWC 完全无法解析的语法",
+        "isCorrect": false,
+        "description": "错误。问题不在解析，而在逐文件模型无法跨文件内联。"
+      },
+      {
+        "text": "必须开启 minify 才能内联 const enum",
+        "isCorrect": false,
+        "description": "错误。与 minify 无关。"
+      },
+      {
+        "text": "是 jsc.target 设得太低导致内联失败",
+        "isCorrect": false,
+        "description": "错误。与 target 无关，根因是 file-by-file 转译。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`.swcrc` 顶层的 `minify: true` 与 `jsc.minify` 的关系/区别是什么？",
+    "explanation": "顶层 **`minify`** 是个布尔总开关，开启整体压缩；**`jsc.minify`** 提供**细粒度**控制（`compress` / `mangle` / `format`，与 Terser 兼容）。构建期通常把压缩交给打包器，写库或单独产出最终产物时才在 SWC 里开。\n\n- 「顶层是总开关，jsc.minify 细粒度（Terser 兼容）」正确。\n- 「两者完全等价」错误：一个是布尔、一个是细粒度对象。\n- 「jsc.minify 控制类型检查」错误：SWC 不做类型检查。\n- 「minify 控制是否打包」错误：压缩 ≠ 打包。",
+    "tags": ["swc", "中级", "minify", "Terser", "压缩"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶层 minify 是总开关；jsc.minify 提供 compress/mangle/format 等细粒度（Terser 兼容）",
+        "isCorrect": true,
+        "description": "正确。前者一键开压缩，后者细调压缩行为，二者都与 Terser 兼容。"
+      },
+      {
+        "text": "两者完全等价，写哪个都一样",
+        "isCorrect": false,
+        "description": "错误。顶层是布尔总开关，jsc.minify 是细粒度配置对象。"
+      },
+      {
+        "text": "jsc.minify 用于控制类型检查的严格度",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查；jsc.minify 是压缩配置。"
+      },
+      {
+        "text": "minify 控制是否把代码打包成 bundle",
+        "isCorrect": false,
+        "description": "错误。压缩与打包是两回事。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`module.importInterop` 的取值（`\"swc\"` / `\"node\"` / `\"none\"`）主要影响什么？默认值是哪个？",
+    "explanation": "`module.importInterop` 控制 **CommonJS / ESM 互操作的 helper 行为**（如对 CJS 包做默认导入时如何处理 `__esModule`），默认是 **`\"swc\"`**。配错可能导致 CJS 包的默认导入异常。\n\n- 「控制 CJS/ESM 互操作 helper，默认 swc」正确。\n- 「控制输出哪种模块格式」错误：那是 module.type。\n- 「控制是否注入 polyfill」错误：那是 env。\n- 「默认是 none」错误：默认是 swc。",
+    "tags": ["swc", "中级", "importInterop", "module", "互操作"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "控制 CJS/ESM 互操作的 helper 行为，默认是 swc",
+        "isCorrect": true,
+        "description": "正确。importInterop 决定互操作 helper 策略，默认 swc，配错会影响默认导入。"
+      },
+      {
+        "text": "控制输出哪种模块格式（es6/commonjs 等）",
+        "isCorrect": false,
+        "description": "错误。模块格式由 module.type 决定。"
+      },
+      {
+        "text": "控制是否注入 core-js polyfill",
+        "isCorrect": false,
+        "description": "错误。polyfill 注入由 env 负责。"
+      },
+      {
+        "text": "默认值是 none",
+        "isCorrect": false,
+        "description": "错误。默认是 swc，不是 none。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在调用 `@swc/core` 的 `transform` 时传入 `filename` 选项，主要作用是？",
+    "explanation": "传 `filename` 让 SWC **据扩展名/路径判断如何处理**（如识别是 `.ts` 还是 `.tsx`、生成更准确的 source map 路径），也便于 `.swcrc` 的 `test`/`exclude` 与按文件的配置匹配。它不是「输出文件名」。\n\n- 「帮助按文件类型/路径处理并生成正确 source map」正确。\n- 「指定输出文件名」错误：transform 返回 code/map，不写盘。\n- 「触发类型检查」错误：SWC 不做类型检查。\n- 「决定 target」错误：target 由 jsc.target/env 决定。",
+    "tags": ["swc", "中级", "transform", "filename", "API"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让 SWC 据文件类型/路径正确处理，并生成准确的 source map 信息",
+        "isCorrect": true,
+        "description": "正确。filename 辅助识别语法、匹配按文件配置并产出正确的 map 路径。"
+      },
+      {
+        "text": "指定 transform 把结果写出的输出文件名",
+        "isCorrect": false,
+        "description": "错误。transform 返回 { code, map }，不负责写文件。"
+      },
+      {
+        "text": "传入 filename 会触发类型检查",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，filename 与此无关。"
+      },
+      {
+        "text": "filename 决定降级 target",
+        "isCorrect": false,
+        "description": "错误。target 由 jsc.target 或 env 决定。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：现代库构建里，关于 SWC 与 `.d.ts` 声明文件的关系，下列说法正确的是？",
+    "explanation": "SWC 极速产出 `.js`，但**不产出权威的 `.d.ts`**（声明产出本需类型信息）。常见分工是 **用 SWC 出 `.js`，用 `tsc --emitDeclarationOnly` 出 `.d.ts`**；若开 TS 的 `isolatedDeclarations`，则第三方工具也能并行产声明。\n\n- 「SWC 出 .js，.d.ts 交 tsc --emitDeclarationOnly」正确。\n- 「SWC 默认会产出完整 .d.ts」错误。\n- 「SWC 不能产出 .js，只能产 .d.ts」错误，正好相反。\n- 「.d.ts 由 minify 生成」错误，无关。",
+    "tags": ["swc", "中级", "d.ts", "声明文件", "构建分工"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SWC 负责极速产出 .js，.d.ts 通常交给 tsc --emitDeclarationOnly",
+        "isCorrect": true,
+        "description": "正确。速度归 SWC，权威声明归 tsc；isolatedDeclarations 可让快工具并行产声明。"
+      },
+      {
+        "text": "SWC 默认就会产出完整的 .d.ts 声明",
+        "isCorrect": false,
+        "description": "错误。声明产出需类型信息，SWC 不产权威 .d.ts。"
+      },
+      {
+        "text": "SWC 只能产 .d.ts，不能产 .js",
+        "isCorrect": false,
+        "description": "错误，正好相反：SWC 主业是产 .js。"
+      },
+      {
+        "text": ".d.ts 由 SWC 的 minify 阶段生成",
+        "isCorrect": false,
+        "description": "错误。minify 是压缩，与声明产出无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在「SWC + 打包器」的工程里，生产环境的 polyfill 注入通常更适合放在哪一层？为什么？",
+    "explanation": "实践中 polyfill 经常**交给打包器层统一处理**：打包器能看到整图与 entry，结合 browserslist 与 core-js 做去重和按需注入，避免逐文件转译时重复或遗漏。SWC 侧的 `env.mode` 也能注入，但与打包器并存时要避免重复。\n\n- 「交打包器层统一处理，便于全局去重/按需」正确。\n- 「只能由 SWC 注入，打包器不能」错误。\n- 「polyfill 不需要，target 会自动补」错误：target 不补 API。\n- 「放运行时动态加载最优」不准确，不是通行做法。",
+    "tags": ["swc", "中级", "polyfill", "打包器", "core-js"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "常交给打包器层统一处理，便于结合整图与 browserslist 做去重和按需注入",
+        "isCorrect": true,
+        "description": "正确。打包器能看到 entry 与整图，统一注入更易去重、按需；SWC env 也能注入但要避免重复。"
+      },
+      {
+        "text": "polyfill 只能由 SWC 注入，打包器无法处理",
+        "isCorrect": false,
+        "description": "错误。打包器配合 core-js 同样能注入，且常更合适。"
+      },
+      {
+        "text": "不需要 polyfill，jsc.target 会自动补齐 API",
+        "isCorrect": false,
+        "description": "错误。target 只降语法，不补运行时 API。"
+      },
+      {
+        "text": "最佳做法是运行时再动态加载所有 polyfill",
+        "isCorrect": false,
+        "description": "错误。这不是通行做法，构建期按需注入更可靠。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：用 `@swc/core` 做「解析 → 修改 AST → 打印回代码」时，官方实践要求 `parse` 与 `print` 必须满足什么条件？",
+    "explanation": "`parse` 与 `print` **必须复用同一个 `Compiler` 实例**，否则两者持有的字符串表 / span（source map 上下文）对不上，`print` 出来会错乱。正确做法是 `const c = new swc.Compiler()`，再 `c.parse(...)` / `c.print(...)`。\n\n- 「必须用同一个 Compiler 实例」正确。\n- 「必须分别新建实例以隔离」错误，正好相反。\n- 「print 不需要 AST，只要源码」错误：print 接收 AST。\n- 「parse/print 已废弃，必须用 transform」不准确：它们可用（裸 parse 偏向被 Wasm 插件取代），但同实例约束依旧。",
+    "tags": ["swc", "高级", "parse", "print", "Compiler"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "parse 与 print 必须复用同一个 Compiler 实例，否则 span/source map 会错乱",
+        "isCorrect": true,
+        "description": "正确。同实例才能共享字符串表与 span 上下文，保证打印正确。"
+      },
+      {
+        "text": "必须为 parse 和 print 分别新建实例以隔离状态",
+        "isCorrect": false,
+        "description": "错误，正好相反；分实例会导致上下文不一致。"
+      },
+      {
+        "text": "print 不需要 AST，传源码字符串即可",
+        "isCorrect": false,
+        "description": "错误。print 接收的是 AST（Program），不是源码字符串。"
+      },
+      {
+        "text": "parse/print 已被移除，只能用 transform",
+        "isCorrect": false,
+        "description": "错误。它们仍可用，只是同实例约束必须满足。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：关于 SWC 的打包能力（早期称 spack、API 为 `bundle`），在 2026 年的工程实践中，下列判断最准确的是？",
+    "explanation": "SWC 的 `bundle`（spack）**成熟度长期不足**，code splitting、复杂资源处理等支持有限，**生产打包仍应交给 Webpack(swc-loader) / Rspack / Rollup / Vite**。SWC 的价值是作为这些打包器的**转译内核**。\n\n- 「bundle 不成熟，打包交专门打包器，SWC 当转译内核」正确。\n- 「spack 已是主流打包方案」错误。\n- 「SWC 不具备任何打包 API」错误：有 bundle，只是不成熟。\n- 「Rspack 抛弃了 SWC」错误：Rspack/Rsbuild 正用 swc-loader/SWC。",
+    "tags": ["swc", "高级", "spack", "bundle", "打包"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bundle/spack 成熟度不足，生产打包仍交专门打包器，SWC 更多作转译内核",
+        "isCorrect": true,
+        "description": "正确。SWC 强在转译/压缩内核，打包交 Webpack/Rspack/Rollup/Vite。"
+      },
+      {
+        "text": "spack 已成为主流的生产打包方案",
+        "isCorrect": false,
+        "description": "错误。spack 成熟度不足，不是主流打包方案。"
+      },
+      {
+        "text": "SWC 完全没有任何打包相关 API",
+        "isCorrect": false,
+        "description": "错误。SWC 有 bundle API，只是能力有限。"
+      },
+      {
+        "text": "Rspack 已抛弃 SWC，改用纯 JS 实现",
+        "isCorrect": false,
+        "description": "错误。Rspack / Rsbuild 正基于 SWC（swc-loader）。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：要在 Webpack 用 SWC 的同时保留类型检查，最常见的工程做法是？",
+    "explanation": "用 `swc-loader` 做转译（不检查类型），并**单独并行跑类型检查**——典型是 `fork-ts-checker-webpack-plugin`（后台跑 tsc）或在 CI / pre-push 直接 `tsc --noEmit`。两者职责分离、可并行。\n\n- 「swc-loader 转译 + 另跑 tsc 类型检查（如 fork-ts-checker）」正确。\n- 「给 swc-loader 开 typeCheck 选项」错误：没有这种能力。\n- 「换回 ts-loader 才能有类型检查」不必要：可保留 swc-loader 再并行 tsc。\n- 「类型检查可省略」错误：会丢失类型安全。",
+    "tags": ["swc", "高级", "swc-loader", "类型检查", "fork-ts-checker"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "swc-loader 负责转译，类型检查交给 fork-ts-checker 或 CI 里的 tsc --noEmit，并行跑",
+        "isCorrect": true,
+        "description": "正确。转译归 SWC、类型检查归 tsc，二者职责分离、可并行。"
+      },
+      {
+        "text": "给 swc-loader 打开 typeCheck 选项即可",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，没有这种选项。"
+      },
+      {
+        "text": "必须换回 ts-loader 才能获得类型检查",
+        "isCorrect": false,
+        "description": "错误。可保留 swc-loader，再并行跑 tsc/ fork-ts-checker。"
+      },
+      {
+        "text": "类型检查可以直接省略",
+        "isCorrect": false,
+        "description": "错误。省略会失去类型安全，应单独保留类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在 `.swcrc` 里挂载一个 SWC Wasm 插件，正确的写法形态是？",
+    "explanation": "Wasm 插件配置在 **`jsc.experimental.plugins`**，每项是一个 **`[插件名, 配置JSON]` 元组**，例如 `[\"@swc/plugin-styled-components\", { \"displayName\": true }]`。\n\n- 「jsc.experimental.plugins，元组 [name, config]」正确。\n- 「plugins: [\"name\"] 直接放顶层字符串数组」错误：位置与形态都不对。\n- 「在 module.plugins 里配」错误：插件不在 module 下。\n- 「用 require() 在 JS 里注册」错误：那是已废弃的旧 JS 插件思路。",
+    "tags": ["swc", "高级", "Wasm插件", "experimental", "plugins"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "写在 jsc.experimental.plugins，每项为 [插件名, 配置JSON] 元组",
+        "isCorrect": true,
+        "description": "正确。如 [\"@swc/plugin-...\", { ... }]，挂在 jsc.experimental.plugins 下。"
+      },
+      {
+        "text": "直接在顶层写 plugins: [\"插件名\"] 字符串数组",
+        "isCorrect": false,
+        "description": "错误。位置应在 jsc.experimental.plugins，且每项是 [name, config] 元组。"
+      },
+      {
+        "text": "配置在 module.plugins 下",
+        "isCorrect": false,
+        "description": "错误。插件不在 module 下，而在 jsc.experimental.plugins。"
+      },
+      {
+        "text": "在 JS 里用 require() 动态注册插件",
+        "isCorrect": false,
+        "description": "错误。那是已废弃的旧 JS 插件方式，现用 Wasm 插件。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：编写一个 SWC Wasm 插件来改写 AST，核心要实现的是哪个 trait？",
+    "explanation": "SWC 插件的核心是实现 **`VisitMut`**（可变访问器）trait，用 `visit_mut_*` 方法遍历并改写 AST 节点，并通过 `#[plugin_transform]` 暴露入口。依赖 crate 是 `swc_core`。\n\n- 「VisitMut」正确。\n- 「Serialize/Deserialize」错误：那是 serde，用于序列化。\n- 「Iterator」错误：标准库迭代器，与 AST 改写无关。\n- 「Display」错误：用于格式化输出，无关。",
+    "tags": ["swc", "高级", "Wasm插件", "VisitMut", "swc_core"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "VisitMut（可变访问器，用 visit_mut_* 改写 AST）",
+        "isCorrect": true,
+        "description": "正确。实现 VisitMut 遍历改写节点，配 #[plugin_transform] 暴露入口。"
+      },
+      {
+        "text": "Serialize / Deserialize",
+        "isCorrect": false,
+        "description": "错误。那是 serde 的序列化 trait，与 AST 改写无关。"
+      },
+      {
+        "text": "Iterator",
+        "isCorrect": false,
+        "description": "错误。标准库迭代器 trait，不用于 AST 改写。"
+      },
+      {
+        "text": "Display",
+        "isCorrect": false,
+        "description": "错误。Display 用于格式化输出，与插件改写无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`@swc/core` 的版本号长期停留在 1.x（2026 年为 1.15.x 这类）。关于这一点，正确的理解是？",
+    "explanation": "`@swc/core` **长期保持 1.x**，并非「停更」或「不稳定」——它在 1.x 内持续迭代功能与修复，被 Next.js、Parcel 等大规模生产使用。主版本号长期不变只反映其版本策略，不代表质量问题。\n\n- 「长期 1.x、持续迭代、生产可用」正确。\n- 「停在 1.x 说明项目已停更」错误：仍在活跃迭代。\n- 「1.x 表示尚未可用于生产」错误：已被广泛用于生产。\n- 「很快会发布 2.0 重写」并无依据，属臆测。",
+    "tags": ["swc", "高级", "版本", "@swc/core", "1.x"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它长期保持 1.x，但持续迭代、被广泛用于生产，版本号不代表质量问题",
+        "isCorrect": true,
+        "description": "正确。1.x 是版本策略，SWC 仍活跃迭代且大规模生产使用。"
+      },
+      {
+        "text": "停在 1.x 说明该项目早已停更",
+        "isCorrect": false,
+        "description": "错误。SWC 仍在活跃迭代。"
+      },
+      {
+        "text": "1.x 表示它尚不可用于生产环境",
+        "isCorrect": false,
+        "description": "错误。它已被 Next.js、Parcel 等广泛用于生产。"
+      },
+      {
+        "text": "官方已宣布很快发布 2.0 完全重写",
+        "isCorrect": false,
+        "description": "错误。这属臆测，无官方依据。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：`jsc.loose: true`（宽松模式）带来的主要权衡是什么？",
+    "explanation": "`jsc.loose` 启用**宽松转换**（采用 Babel 风格的「assumptions」），通常产出更小、更快的代码；但**代价是当源码不满足这些假设时可能产生意料之外的结果**。官方提示它「can produce unexpected results if code doesn't meet those assumptions」。\n\n- 「更小更快，但不满足假设时行为可能不符预期」正确。\n- 「让产物更严格、完全等价于规范语义」错误，正好相反。\n- 「开启类型检查」错误：SWC 不做类型检查。\n- 「等价于 minify」错误：loose 是转换假设，不是压缩。",
+    "tags": ["swc", "高级", "loose", "assumptions", "权衡"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "产物更小更快，但当代码不满足其假设时可能出现不符预期的行为",
+        "isCorrect": true,
+        "description": "正确。loose 用 Babel 风格假设换体积/速度，代价是边界情况可能不安全。"
+      },
+      {
+        "text": "让产物更严格、完全贴合规范语义",
+        "isCorrect": false,
+        "description": "错误，正好相反：loose 牺牲了部分规范严格性。"
+      },
+      {
+        "text": "开启后 SWC 会附带做类型检查",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查，与 loose 无关。"
+      },
+      {
+        "text": "loose 等价于开启 minify",
+        "isCorrect": false,
+        "description": "错误。loose 是转换假设，minify 是压缩，二者不同。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：在 `@swc/core` 里，关于 `parse` 与旧的 JS 端 `plugins()` 接口的现状，正确的是？",
+    "explanation": "旧 JS 端的 `plugins()`（在 JS 里链式注册转换）以及裸 `parse` 等接口已被 **`@deprecated`**，官方推荐扩展走 **Wasm 插件**路线；需要在 JS 侧操作 AST 时仍可用 `parse`/`print`，但要同一 `Compiler` 实例。\n\n- 「JS 端 plugins()/裸 parse 已 deprecated，推荐 Wasm 插件」正确。\n- 「plugins() 是当前推荐的扩展方式」错误，已废弃。\n- 「parse 从未存在」错误：存在但偏向被取代。\n- 「Wasm 插件已被移除」错误，恰恰是推荐方向。",
+    "tags": ["swc", "高级", "deprecated", "plugins", "Wasm插件"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "JS 端 plugins() 与裸 parse 已被 @deprecated，扩展推荐走 Wasm 插件",
+        "isCorrect": true,
+        "description": "正确。官方将扩展引向 Wasm 插件；JS 侧 plugins() 等接口已弃用。"
+      },
+      {
+        "text": "plugins() 是当前官方推荐的扩展方式",
+        "isCorrect": false,
+        "description": "错误。它已被弃用，推荐 Wasm 插件。"
+      },
+      {
+        "text": "parse 这个 API 从未在 @swc/core 中存在",
+        "isCorrect": false,
+        "description": "错误。parse 存在，只是偏向被 Wasm 插件路线取代。"
+      },
+      {
+        "text": "Wasm 插件机制已被官方移除",
+        "isCorrect": false,
+        "description": "错误。Wasm 插件正是官方推荐的扩展方向。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：关于 SWC Wasm 插件的版本兼容性，官方明确指出的关键事实是哪一条？",
+    "explanation": "官方明确：**「Currently, the Wasm plugins are not backwards compatible.」** 插件依赖的 `swc_core` 必须严格匹配宿主 `@swc/core` 的 ABI；宿主升级可能导致旧插件无法加载。选版本应用官方 webapp **plugins.swc.rs**。\n\n- 「Wasm 插件当前不向后兼容」正确。\n- 「Wasm 插件保证向后兼容」错误，正好相反。\n- 「插件与宿主版本无关」错误：强 ABI 耦合。\n- 「只要 Node 版本一致即可」错误：关键是 swc_core 与 @swc/core 的 ABI 匹配。",
+    "tags": ["swc", "专家", "Wasm插件", "向后兼容", "swc_core"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Wasm 插件当前不向后兼容，插件 swc_core 必须匹配宿主 @swc/core 的 ABI",
+        "isCorrect": true,
+        "description": "正确，与官方原文一致；选版本用 plugins.swc.rs，升级前先核对。"
+      },
+      {
+        "text": "Wasm 插件保证向后兼容，可随意搭配任意宿主版本",
+        "isCorrect": false,
+        "description": "错误，正好相反：官方明确当前不向后兼容。"
+      },
+      {
+        "text": "插件版本与宿主 @swc/core 版本互不相关",
+        "isCorrect": false,
+        "description": "错误。两者是强 ABI 耦合关系。"
+      },
+      {
+        "text": "只要 Node.js 版本一致，插件就一定兼容",
+        "isCorrect": false,
+        "description": "错误。关键是 swc_core 与 @swc/core 的 ABI 匹配，而非 Node 版本。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：升级 `@swc/core`（或升级内置 SWC 的 Next.js）前，为避免 Wasm 插件加载失败，最稳妥的做法是？",
+    "explanation": "由于 Wasm 插件无向后兼容、与宿主 ABI 强耦合，升级前应**到官方 webapp [plugins.swc.rs](https://plugins.swc.rs) 核对**：输入目标宿主版本，确认所用插件有匹配版本，再升级。\n\n- 「先到 plugins.swc.rs 核对插件匹配版本」正确。\n- 「直接升级，插件会自动适配」错误：不会自动适配。\n- 「锁定 Node 版本即可」错误：关键是插件/宿主 ABI 匹配。\n- 「删除 .swcrc 即可绕过」错误：那会丢配置且不解决插件问题。",
+    "tags": ["swc", "专家", "升级", "plugins.swc.rs", "Wasm插件"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "先到 plugins.swc.rs 按目标宿主版本核对所有 Wasm 插件的匹配版本",
+        "isCorrect": true,
+        "description": "正确。Wasm 插件强 ABI 耦合，升级前用官方 webapp 核对兼容版本最稳。"
+      },
+      {
+        "text": "直接升级即可，插件会自动适配新宿主",
+        "isCorrect": false,
+        "description": "错误。Wasm 插件不向后兼容，不会自动适配。"
+      },
+      {
+        "text": "只要锁定 Node.js 版本就不会有问题",
+        "isCorrect": false,
+        "description": "错误。关键是插件 swc_core 与 @swc/core 的 ABI 匹配。"
+      },
+      {
+        "text": "删除 .swcrc 文件即可绕过插件不兼容",
+        "isCorrect": false,
+        "description": "错误。删配置会丢失设置，且无法解决插件 ABI 问题。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：把 SWC 和同为 Rust 的 Oxc 对比，下列说法最准确的是？",
+    "explanation": "**Oxc（JavaScript Oxidation Compiler）**同样用 Rust，路线是更激进的「全家桶」（parser/linter/resolver/transformer/minifier 一体），被 Rolldown/Vite 生态采纳，与 SWC **直接竞争**。两者都「快且不做类型检查」；SWC 优势是被 Next.js 等深度内置 + Wasm 可扩展，Oxc 优势是更整合的新架构。\n\n- 「同为 Rust、直接竞争，Oxc 更激进一体化」正确。\n- 「Oxc 是用 Go 写的」错误：Oxc 是 Rust。\n- 「Oxc 是 SWC 的官方子项目」错误：是独立竞争项目。\n- 「两者都做完整类型检查」错误：都不做类型检查。",
+    "tags": ["swc", "专家", "Oxc", "竞争", "Rust"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Oxc 同为 Rust、与 SWC 直接竞争，走更激进的一体化全家桶路线",
+        "isCorrect": true,
+        "description": "正确。两者都快且不做类型检查；SWC 强在内置+Wasm，Oxc 强在整合新架构。"
+      },
+      {
+        "text": "Oxc 是用 Go 编写的打包器",
+        "isCorrect": false,
+        "description": "错误。Oxc 用 Rust，且是工具链而非单纯打包器。"
+      },
+      {
+        "text": "Oxc 是 SWC 团队的官方子项目",
+        "isCorrect": false,
+        "description": "错误。Oxc 是独立项目，与 SWC 形成竞争。"
+      },
+      {
+        "text": "SWC 与 Oxc 都会做完整类型检查",
+        "isCorrect": false,
+        "description": "错误。两者都不做类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：综合来看，要给「SWC 在前端工具链中的核心价值」一句话定位，最准确的是？",
+    "explanation": "SWC 的核心价值是**用 Rust 提供极速的「转译 + 压缩」内核**，作为 Babel 的 drop-in 替代，并被 Next.js / Parcel / Rspack 等深度内置；它**不做类型检查、打包能力有限**，因此与 tsc（类型）、打包器（打包）分工协作。\n\n- 「极速转译/压缩内核、Babel 替代、与 tsc/打包器分工」正确。\n- 「工具链里最强的类型检查器」错误：它不做类型检查。\n- 「最成熟的打包器」错误：打包能力有限。\n- 「一个 Babel 插件集合」错误：它是独立的 Rust 编译平台。",
+    "tags": ["swc", "专家", "定位", "转译内核", "分工"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 Rust 提供极速转译/压缩内核、作 Babel 替代，并与 tsc(类型)、打包器(打包) 分工",
+        "isCorrect": true,
+        "description": "正确。SWC 的价值是快内核与生态内置，类型与打包分别交 tsc 和打包器。"
+      },
+      {
+        "text": "工具链里能力最强的类型检查器",
+        "isCorrect": false,
+        "description": "错误。SWC 不做类型检查。"
+      },
+      {
+        "text": "目前最成熟、功能最全的打包器",
+        "isCorrect": false,
+        "description": "错误。SWC 打包能力有限，打包交专门工具。"
+      },
+      {
+        "text": "本质上只是一组 Babel 插件的集合",
+        "isCorrect": false,
+        "description": "错误。SWC 是独立的 Rust 编译平台，不是 Babel 插件集合。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：官方对 SWC 的性能宣称是「20x faster than Babel on a single thread and 70x faster on four cores」。对这句话最恰当的解读是？",
+    "explanation": "这句话说明 SWC **在转译这件事上**显著快于 Babel：单线程约 20×、四核约 70×——后者更高是因为 Rust 能有效利用**多核并行**。它衡量的是转译性能，并不意味着 SWC 多做了类型检查或打包。\n\n- 「转译比 Babel 快很多，多核并行收益更大」正确。\n- 「说明 SWC 顺带做了类型检查」错误：与类型检查无关。\n- 「70× 是指打包速度」错误：衡量的是转译。\n- 「数字与核数无关」错误：四核 70× 正体现并行收益。",
+    "tags": ["swc", "专家", "性能", "Babel", "并行"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "SWC 转译显著快于 Babel，且多核并行能放大优势（单线程约 20×、四核约 70×）",
+        "isCorrect": true,
+        "description": "正确。该宣称衡量转译性能，四核更高源于 Rust 的多核并行能力。"
+      },
+      {
+        "text": "说明 SWC 在快的同时还顺带做了类型检查",
+        "isCorrect": false,
+        "description": "错误。性能宣称与类型检查无关，SWC 不做类型检查。"
+      },
+      {
+        "text": "70× 指的是 SWC 的打包速度",
+        "isCorrect": false,
+        "description": "错误。衡量的是转译速度，不是打包。"
+      },
+      {
+        "text": "这些数字与 CPU 核数无关",
+        "isCorrect": false,
+        "description": "错误。四核 70× 正是多核并行带来的收益。"
+      }
+    ]
+  },
+  {
+    "stem": "SWC：一个团队从 Babel 迁移到 SWC 后，CI 里再也没发现过类型错误，线上却出了类型相关的 bug。最根本的原因与正确补救是？",
+    "explanation": "根因是迁移时**只换了转译（Babel→SWC），却把原来 Babel 流程之外的类型检查也一并丢了**——SWC 不做类型检查。补救是在 CI / pre-push **重新加回 `tsc --noEmit`**（或 fork-ts-checker），恢复「SWC emit + tsc 把关」的分工。\n\n- 「迁移丢了类型检查，需补回 tsc --noEmit」正确。\n- 「SWC 的类型检查有 bug，应升级」错误：它不做类型检查。\n- 「应回退到 Babel」错误：Babel 同样不做类型检查，回退不解决根因。\n- 「关掉 SWC 的某个选项即可」错误：与某个选项无关。",
+    "tags": ["swc", "专家", "迁移", "类型检查", "CI"],
+    "categories": [
+      ["技术方向", "SWC"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "迁移时丢失了独立的类型检查；应在 CI/pre-push 加回 tsc --noEmit",
+        "isCorrect": true,
+        "description": "正确。SWC 不做类型检查，必须单独保留 tsc 把关，恢复正确分工。"
+      },
+      {
+        "text": "SWC 的类型检查存在 bug，升级 SWC 即可修复",
+        "isCorrect": false,
+        "description": "错误。SWC 根本不做类型检查，无从谈 bug。"
+      },
+      {
+        "text": "应回退到 Babel，Babel 会做类型检查",
+        "isCorrect": false,
+        "description": "错误。Babel 同样不做类型检查，回退不解决根因。"
+      },
+      {
+        "text": "关掉 SWC 的某个选项就能恢复类型检查",
+        "isCorrect": false,
+        "description": "错误。没有这样的选项；需另跑 tsc。"
+      }
+    ]
+  }
+]

@@ -1,0 +1,1273 @@
+[
+  {
+    "stem": "tsc：官方把 tsc 描述为 TypeScript 的编译器。关于它在一次普通 `tsc` 调用里实际做的工作，下列哪项最准确？",
+    "explanation": "tsc 同时承担两件事：**类型检查（type-checking）** 与 **产出 JavaScript（emit）**。它先依据类型标注与推断找出类型错误，再把 TS 语法（类型标注、enum、装饰器、JSX 等）转换并降级成目标 ES 版本的 `.js`，可选地产出 `.d.ts` 与 source map。\n\n- 「既做类型检查又 emit JS」正确，这是 tsc 区别于纯转译器的根本特征。\n- 「只做类型检查、从不产出代码」错误：tsc 默认会 emit，只有显式 `--noEmit` 才只检查。\n- 「只把 .ts 改名为 .js、不改内容」错误：tsc 会真正转换并降级语法、抹除类型。\n- 「在浏览器运行时即时编译」错误：tsc 是构建期工具，运行时不参与。",
+    "tags": ["tsc", "入门", "核心概念", "type-checking", "emit"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "既对代码做类型检查，又把 TS 转换/降级 emit 成 JavaScript（可选产出 .d.ts）",
+        "isCorrect": true,
+        "description": "正确。tsc 的双职责就是 type-checking + emit，这也是它与只剥类型的 Babel/SWC 的根本不同。"
+      },
+      {
+        "text": "只做类型检查，永远不产出任何 JavaScript 文件",
+        "isCorrect": false,
+        "description": "错误。tsc 默认会 emit 出 .js；只有加 --noEmit（或 noEmit:true）时才只检查不产出。"
+      },
+      {
+        "text": "只是把 .ts 文件后缀改成 .js，文件内容原样保留",
+        "isCorrect": false,
+        "description": "错误。tsc 会抹除类型标注、按 target 降级语法、按 module 转换模块格式，绝非简单改后缀。"
+      },
+      {
+        "text": "在浏览器运行时把 TypeScript 即时编译为可执行代码",
+        "isCorrect": false,
+        "description": "错误。tsc 是构建期编译器，运行时浏览器/Node 执行的是它产出的 JS，tsc 不在运行时参与。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 TypeScript 工具链里，Babel、SWC、esbuild、tsc 都能把 .ts 变成 .js。关于「类型检查」这件事，下列说法正确的是？",
+    "explanation": "在这些工具里，**只有 tsc 做完整的跨文件类型检查**。Babel（preset-typescript）、SWC、esbuild、Oxc 都只是「逐文件剥掉类型再转译」——语法对就放行，类型错了照样产出。因此工程里常见组合是：用快转译器负责 emit，用 `tsc --noEmit` 负责把关类型。\n\n- 「只有 tsc 做完整类型检查，其余只剥类型」正确。\n- 「所有这些工具都会做类型检查」错误：只有 tsc 会。\n- 「SWC/esbuild 比 tsc 类型检查更快」错误：它们根本不做类型检查，无从比较。\n- 「Babel 编译 TS 时会报类型错误」错误：Babel 官方明确它不做类型检查。",
+    "tags": ["tsc", "入门", "对比", "类型检查", "transpile"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只有 tsc 做完整的跨文件类型检查，Babel/SWC/esbuild 都只是逐文件剥掉类型",
+        "isCorrect": true,
+        "description": "正确。类型检查是 tsc 独有职责，其余工具只做无类型校验的单文件转译。"
+      },
+      {
+        "text": "这些工具都会做类型检查，只是实现语言不同",
+        "isCorrect": false,
+        "description": "错误。Babel/SWC/esbuild/Oxc 都不做类型检查，只有 tsc 会。"
+      },
+      {
+        "text": "SWC 和 esbuild 的类型检查比 tsc 更快更准",
+        "isCorrect": false,
+        "description": "错误。它们不做类型检查，谈不上更快更准；类型错误需另跑 tsc --noEmit。"
+      },
+      {
+        "text": "Babel 的 preset-typescript 会在编译时报出 TS 类型错误",
+        "isCorrect": false,
+        "description": "错误。Babel 官方明确 preset-typescript 不具备类型检查能力，类型错的代码也会被转译。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：初始化一个新的 TypeScript 项目时，想快速生成一份带注释的 `tsconfig.json`，应该执行哪条命令？",
+    "explanation": "`tsc --init` 会在当前目录生成一份带大量注释说明的 `tsconfig.json` 模板，便于按需开关选项。tsc 命令由 `typescript` 包提供，所以前置步骤是 `npm install -D typescript`。\n\n- `tsc --init` 正确。\n- `tsc --new` 不存在该子命令。\n- `npm init typescript` 不是官方生成 tsconfig 的方式。\n- `tsc --config` 不是初始化命令（指定配置文件用 `-p/--project`）。",
+    "tags": ["tsc", "入门", "CLI", "tsconfig", "init"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "tsc --init",
+        "isCorrect": true,
+        "description": "正确。tsc --init 生成带注释的 tsconfig.json 模板。"
+      },
+      {
+        "text": "tsc --new",
+        "isCorrect": false,
+        "description": "错误。tsc 没有 --new 子命令。"
+      },
+      {
+        "text": "npm init typescript",
+        "isCorrect": false,
+        "description": "错误。这不是官方生成 tsconfig 的方式，初始化配置用 tsc --init。"
+      },
+      {
+        "text": "tsc --config",
+        "isCorrect": false,
+        "description": "错误。没有 --config 初始化命令；指定已有配置文件用 -p/--project。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：直接运行 `tsc`（不带任何输入文件）时，它如何决定用哪份配置编译？",
+    "explanation": "官方文档：「By invoking tsc with no input files, in which case the compiler searches for the `tsconfig.json` file starting in the current directory and continuing up the parent directory chain.」即**从当前目录开始向上逐级查找 `tsconfig.json`**。也可用 `tsc -p <path>` 显式指定。\n\n- 「从当前目录向上查找 tsconfig.json」正确。\n- 「总是只编译当前目录下所有 .ts，不看配置」错误：无输入文件时恰恰依赖 tsconfig。\n- 「必须用 --config 指定，否则报错」错误：不指定时会自动向上查找。\n- 「读取 package.json 的 typescript 字段」错误：tsc 不从 package.json 读编译配置。",
+    "tags": ["tsc", "入门", "tsconfig", "查找规则", "CLI"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "从当前目录开始，沿父目录链向上查找 tsconfig.json",
+        "isCorrect": true,
+        "description": "正确，与官方描述一致：无输入文件时向上查找 tsconfig.json。"
+      },
+      {
+        "text": "忽略配置，直接编译当前目录下的所有 .ts 文件",
+        "isCorrect": false,
+        "description": "错误。无输入文件时 tsc 依赖 tsconfig.json 决定文件范围与选项。"
+      },
+      {
+        "text": "必须显式 --config 指定，否则直接报错退出",
+        "isCorrect": false,
+        "description": "错误。不指定时会自动向上查找 tsconfig.json，并不强制 --config。"
+      },
+      {
+        "text": "从 package.json 的 \"typescript\" 字段读取编译选项",
+        "isCorrect": false,
+        "description": "错误。tsc 不从 package.json 读取编译配置，配置在 tsconfig.json。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：项目里明明有 `tsconfig.json` 配好了 `strict`、`outDir` 等选项，但执行 `tsc src/index.ts` 后这些选项似乎全没生效。最可能的原因是？",
+    "explanation": "官方文档明确：「When input files are specified on the command line, `tsconfig.json` files are ignored.」即**一旦在命令行显式指定了输入文件，整个 tsconfig.json 都会被忽略**，tsc 改用默认选项编译这些文件。要让配置生效，应执行不带文件的 `tsc`（或 `tsc -p tsconfig.json`）。\n\n- 「命令行指定了输入文件，导致 tsconfig 被整体忽略」正确。\n- 「strict 与命令行不兼容」错误：与 strict 无关。\n- 「必须把 .ts 改成 .tsx」错误，无关。\n- 「tsconfig.json 必须放在 src 目录内」错误：位置不是原因，指定文件才是。",
+    "tags": ["tsc", "初级", "tsconfig", "易错点", "CLI"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "命令行显式指定了输入文件，tsconfig.json 因此被整体忽略，改用默认选项",
+        "isCorrect": true,
+        "description": "正确。官方规定：指定输入文件时 tsconfig.json 被忽略。应执行不带文件的 tsc 或 tsc -p。"
+      },
+      {
+        "text": "strict 选项与命令行模式不兼容，需要去掉 strict",
+        "isCorrect": false,
+        "description": "错误。与 strict 无关，根因是命令行指定了文件导致整份配置被忽略。"
+      },
+      {
+        "text": "应该把 index.ts 改名为 index.tsx 才能读取配置",
+        "isCorrect": false,
+        "description": "错误。文件扩展名不是原因。"
+      },
+      {
+        "text": "tsconfig.json 必须放在 src 目录里才会被读取",
+        "isCorrect": false,
+        "description": "错误。位置不是原因；显式指定输入文件才是配置被忽略的原因。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在「用 SWC/esbuild 负责 emit、把类型检查单独交给 tsc」的现代工程里，应该用 tsc 的哪个选项来表达「只检查、不产出」？",
+    "explanation": "`tsc --noEmit`（或 tsconfig 里 `\"noEmit\": true`）表示只做类型检查、不写出任何 `.js`/`.d.ts`。这正是「快转译器 emit + tsc 把关类型」分工的标准做法，常配进 CI 与 pre-push。\n\n- `--noEmit` 正确。\n- `--checkOnly` 不存在该选项。\n- `--declaration` 是产出 .d.ts，与「只检查」相反。\n- `--skipLibCheck` 只是跳过 .d.ts 互检以提速，不等于只检查不产出。",
+    "tags": ["tsc", "初级", "noEmit", "类型检查", "工程化"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "tsc --noEmit",
+        "isCorrect": true,
+        "description": "正确。--noEmit 只做类型检查、不产出文件，是「emit 交他人、tsc 把关类型」的标准开关。"
+      },
+      {
+        "text": "tsc --checkOnly",
+        "isCorrect": false,
+        "description": "错误。tsc 没有 --checkOnly 选项。"
+      },
+      {
+        "text": "tsc --declaration",
+        "isCorrect": false,
+        "description": "错误。--declaration 是产出 .d.ts，属于 emit，与「只检查」相反。"
+      },
+      {
+        "text": "tsc --skipLibCheck",
+        "isCorrect": false,
+        "description": "错误。--skipLibCheck 只是跳过依赖 .d.ts 的检查以提速，仍会 emit。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：把 `target` 设为 `es2015` 后，代码里用到的 `Promise`、`Array.prototype.includes`、`Object.fromEntries` 在旧环境运行时报「未定义」。关于 `target` 的作用，下列理解正确的是？",
+    "explanation": "`target` 只负责**语法降级**（如把 `async/await`、可选链降级），**不会注入运行时 API 的 polyfill**。`Promise`、`includes`、`fromEntries` 这些是**内置 API**，缺了要靠 core-js 等 polyfill 补，tsc 不管。\n\n- 「target 只降语法，不补内置 API，需另上 polyfill」正确。\n- 「target 会自动注入 polyfill」错误：tsc 从不注入 polyfill。\n- 「报错是因为 target 设太高」错误：恰恰是旧环境缺 API。\n- 「lib 不含 dom 导致」错误：lib 只影响类型检查，不影响运行时是否存在该 API。",
+    "tags": ["tsc", "初级", "target", "polyfill", "易错点"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "target 只做语法降级，不注入内置 API 的 polyfill；缺的 API 需靠 core-js 等补",
+        "isCorrect": true,
+        "description": "正确。tsc 只降语法不补 API，运行时缺失的内置对象/方法要用 polyfill 解决。"
+      },
+      {
+        "text": "target 会根据目标版本自动注入所需 polyfill",
+        "isCorrect": false,
+        "description": "错误。tsc 从不注入 polyfill，这是它与打包器 + core-js 方案的分工。"
+      },
+      {
+        "text": "报错是因为 target 设得太高，应调到 esnext",
+        "isCorrect": false,
+        "description": "错误。根因是旧运行环境缺少这些内置 API，与 target 高低方向相反。"
+      },
+      {
+        "text": "是 lib 没包含 dom 导致这些 API 缺失",
+        "isCorrect": false,
+        "description": "错误。lib 只影响编译期类型检查，不决定运行时是否真的存在该 API。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：一个从未在 tsconfig 里写过 `strict` 的旧项目，升级到 TypeScript 6.0 后突然冒出大量「对象可能为 null」等报错。最可能的原因是？",
+    "explanation": "**TypeScript 6.0 把 `strict` 的默认值改为 `true`**。没显式设过 `strict` 的项目升级后等于一次性继承了 `strictNullChecks` 等全套严格检查，于是「可能为 null」之类报错集中出现。过渡可临时显式 `\"strict\": false` 或逐项关闭再分批修复。\n\n- 「6.0 起 strict 默认为 true」正确。\n- 「6.0 移除了 any 类型」错误，并无此事。\n- 「必须升级 @types/node」错误，与此无关。\n- 「6.0 默认开启 noEmit」错误，noEmit 默认仍是 false。",
+    "tags": ["tsc", "初级", "strict", "TypeScript6", "迁移"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "TypeScript 6.0 把 strict 的默认值改成了 true，旧项目一次性继承了全套严格检查",
+        "isCorrect": true,
+        "description": "正确。6.0 最大行为变化之一就是 strict 默认开启，常见表现是 strictNullChecks 带来的报错。"
+      },
+      {
+        "text": "6.0 移除了 any 类型，所以到处报错",
+        "isCorrect": false,
+        "description": "错误。any 仍在；报错根因是 strict 默认开启。"
+      },
+      {
+        "text": "必须同步升级 @types/node 否则报类型错",
+        "isCorrect": false,
+        "description": "错误。与 @types/node 无关，是 strict 默认值变化所致。"
+      },
+      {
+        "text": "6.0 默认开启了 noEmit",
+        "isCorrect": false,
+        "description": "错误。noEmit 默认仍为 false；本题现象由 strict 默认 true 引起。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 TypeScript 6.0 中，把 `target` 设为 `es5` 会发生什么？",
+    "explanation": "TypeScript 6.0 起 **`target: es5` 被弃用，最低支持目标提升到 `es2015`**。仍需 ES5 产物（兼容极旧环境）的项目，应改用更高的 target，或把降级交给 Babel/SWC 这类外部转译器。\n\n- 「es5 已弃用，最低 es2015」正确。\n- 「es5 仍是默认值」错误：旧版默认才是 es3/es5，6.0 已弃用 es5。\n- 「es5 是唯一受支持的目标」完全相反。\n- 「设 es5 会自动注入 polyfill」错误：tsc 不注入 polyfill。",
+    "tags": ["tsc", "初级", "target", "TypeScript6", "es5"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "es5 在 6.0 已被弃用，最低目标提升为 es2015；要 ES5 产物需交给 Babel/SWC",
+        "isCorrect": true,
+        "description": "正确。6.0 弃用 es5、最低 es2015，更低的降级交外部转译器。"
+      },
+      {
+        "text": "es5 依然是 target 的默认值，毫无变化",
+        "isCorrect": false,
+        "description": "错误。6.0 已弃用 es5，并非默认值。"
+      },
+      {
+        "text": "es5 是 6.0 唯一受支持的 target",
+        "isCorrect": false,
+        "description": "错误，方向完全相反：es5 被弃用，最低 es2015。"
+      },
+      {
+        "text": "设为 es5 时 tsc 会自动注入 core-js polyfill",
+        "isCorrect": false,
+        "description": "错误。tsc 从不注入 polyfill。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 TypeScript 6.0 里把 `module` 设为 `\"amd\"`、`\"umd\"` 或 `\"systemjs\"`，会怎样？",
+    "explanation": "TypeScript 6.0 **移除了 `amd` / `umd` / `systemjs` / `none` 这些旧模块格式**，划清了对遗留模块系统的支持边界。现代项目应使用 `nodenext`（按 Node 双制式）、`esnext`（保留原生 ESM 交打包器）或 `commonjs`。\n\n- 「这些旧模块格式在 6.0 已被移除」正确。\n- 「它们是 6.0 新增的推荐值」完全相反。\n- 「等价于 esnext」错误，语义不同且已被移除。\n- 「仅 systemjs 被保留」错误，systemjs 也在移除之列。",
+    "tags": ["tsc", "初级", "module", "TypeScript6", "模块格式"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "amd/umd/systemjs/none 在 6.0 已被移除，现代项目应改用 nodenext/esnext/commonjs",
+        "isCorrect": true,
+        "description": "正确。6.0 移除了这些遗留模块格式。"
+      },
+      {
+        "text": "它们是 6.0 新增的推荐模块格式",
+        "isCorrect": false,
+        "description": "错误，方向相反：是被移除而非新增推荐。"
+      },
+      {
+        "text": "它们都等价于 esnext，可放心使用",
+        "isCorrect": false,
+        "description": "错误。语义不同，且在 6.0 已被移除。"
+      },
+      {
+        "text": "只有 systemjs 被保留，amd/umd 被移除",
+        "isCorrect": false,
+        "description": "错误。systemjs 同样在移除之列。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：`tsconfig.json` 里的 `lib` 选项（如 `[\"es2022\", \"dom\"]`）主要影响什么？",
+    "explanation": "`lib` 声明**运行环境提供了哪些全局类型**（如 `Promise`、`document`、`Map`），**只影响类型检查，不影响产物**。不写 `lib` 时按 `target` 取默认。写 Node 服务可去掉 `\"dom\"`，避免误用 `window`/`document` 而不报错。\n\n- 「声明可用的全局类型，仅影响类型检查」正确。\n- 「决定产物降级到哪个版本」错误：那是 target。\n- 「自动注入对应 polyfill」错误：lib 只是类型，不注入运行时实现。\n- 「控制模块解析」错误：那是 moduleResolution。",
+    "tags": ["tsc", "初级", "lib", "类型环境", "tsconfig"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "声明运行环境提供哪些全局类型，仅影响类型检查、不影响产物",
+        "isCorrect": true,
+        "description": "正确。lib 是类型层面的环境声明，决定哪些全局 API 类型可用。"
+      },
+      {
+        "text": "决定 tsc 把语法降级到哪个 ES 版本",
+        "isCorrect": false,
+        "description": "错误。语法降级目标是 target，不是 lib。"
+      },
+      {
+        "text": "根据所列环境自动注入对应的运行时 polyfill",
+        "isCorrect": false,
+        "description": "错误。lib 只提供类型，不注入任何运行时实现。"
+      },
+      {
+        "text": "控制 import 路径的模块解析策略",
+        "isCorrect": false,
+        "description": "错误。模块解析由 moduleResolution 控制。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：库项目希望 `import express from \"express\"` 这种「CommonJS 包的默认导入」能正常工作，应开启哪个选项？",
+    "explanation": "`esModuleInterop: true` 改善 CommonJS 与 ESM 的互操作，让 `import express from \"express\"`（对 CJS 包做默认导入）正常工作，并自动连带 `allowSyntheticDefaultImports`。否则只能写 `import * as express from \"express\"`。新项目一律建议开。\n\n- `esModuleInterop` 正确。\n- `resolveJsonModule` 是允许导入 .json，无关。\n- `isolatedModules` 是单文件可转译约束，无关。\n- `verbatimModuleSyntax` 是照字面保留 import/export，并不解决 CJS 默认导入互操作。",
+    "tags": ["tsc", "初级", "esModuleInterop", "互操作", "tsconfig"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "esModuleInterop",
+        "isCorrect": true,
+        "description": "正确。它让对 CommonJS 包的默认导入可用，并连带 allowSyntheticDefaultImports。"
+      },
+      {
+        "text": "resolveJsonModule",
+        "isCorrect": false,
+        "description": "错误。它只是允许 import .json 文件，与 CJS 默认导入无关。"
+      },
+      {
+        "text": "isolatedModules",
+        "isCorrect": false,
+        "description": "错误。它约束每文件可独立转译，不解决互操作问题。"
+      },
+      {
+        "text": "verbatimModuleSyntax",
+        "isCorrect": false,
+        "description": "错误。它让 import/export 照字面保留，不负责 CJS 默认导入互操作。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：React 项目想用 React 17+ 的新 JSX 运行时（无需在每个文件 `import React`），`jsx` 应设为？",
+    "explanation": "`jsx: \"react-jsx\"` 启用新 JSX 运行时（自动从 `react/jsx-runtime` 引入工厂函数），写 JSX 不再需要手动 `import React`。开发模式可用 `react-jsxdev`。`preserve` 则保留 `<div/>` 原样交给 Babel/打包器，`react`（经典）会转成 `React.createElement` 且需手动 import React。\n\n- `react-jsx` 正确。\n- `preserve` 不转换 JSX，交给后续工具。\n- `react`（经典）需手动 import React。\n- `react-native` 是给 RN 保留 JSX 的特殊值，不是「新运行时」。",
+    "tags": ["tsc", "初级", "jsx", "react", "tsconfig"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "react-jsx",
+        "isCorrect": true,
+        "description": "正确。react-jsx 启用 React 17+ 新 JSX 运行时，无需手动 import React。"
+      },
+      {
+        "text": "preserve",
+        "isCorrect": false,
+        "description": "错误。preserve 保留 JSX 原样交给后续工具，不使用新运行时转换。"
+      },
+      {
+        "text": "react",
+        "isCorrect": false,
+        "description": "错误。react 是经典运行时，转成 React.createElement 且需手动 import React。"
+      },
+      {
+        "text": "react-native",
+        "isCorrect": false,
+        "description": "错误。react-native 是为 RN 保留 JSX 的特殊值，并非新 JSX 运行时。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：关于 `tsconfig.json` 里 `files`、`include`/`exclude` 的关系，下列说法正确的是？",
+    "explanation": "`files` 精确列举要编译的文件；`include`/`exclude` 用 glob 选取与排除（`exclude` 只从 `include` 的结果里剔除）。三者都**只在「命令行不指定输入文件」时生效**——一旦 `tsc a.ts` 显式传文件，整份 tsconfig（含这些字段）都被忽略。\n\n- 「exclude 从 include 结果中排除；显式传文件时整体失效」正确。\n- 「exclude 能排除 files 里精确列举的文件」错误：exclude 不影响 files。\n- 「include 默认空、必须手写」不准确：未设 files/include 时默认包含目录下所有 TS 文件。\n- 「exclude 优先级高于一切、能排除入口」错误：被其它文件 import 的文件仍会被纳入。",
+    "tags": ["tsc", "初级", "include", "exclude", "files"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "exclude 只从 include 的结果里排除；且这些字段在命令行显式指定输入文件时整体失效",
+        "isCorrect": true,
+        "description": "正确。exclude 作用于 include 之上，且指定输入文件时整份 tsconfig 被忽略。"
+      },
+      {
+        "text": "exclude 也能排除 files 里精确列举的文件",
+        "isCorrect": false,
+        "description": "错误。exclude 不影响 files 显式列举的文件。"
+      },
+      {
+        "text": "不写 include 时默认不编译任何文件",
+        "isCorrect": false,
+        "description": "错误。未设 files/include 时，默认包含项目目录下的所有 TS 文件。"
+      },
+      {
+        "text": "被 exclude 的文件即使被其它文件 import 也绝不会进入编译",
+        "isCorrect": false,
+        "description": "错误。被其它文件 import 的文件仍可能被纳入编译。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：多数交给 Vite/webpack 打包的前端项目，`moduleResolution` 现在最推荐设为哪个值？为什么 `node` 不再推荐？",
+    "explanation": "`moduleResolution: bundler` 是为「交给打包器」场景设计的：类 Node 解析但放宽——无需写文件扩展名、支持 package.json 的 `exports`。TypeScript 6.0 还**弃用了 `node`/`node10`**，于是「`module: esnext`/`preserve` + `moduleResolution: bundler`」成了前端项目最顺的配置。直接跑在 Node 或发 npm 包则用 `nodenext`（严格双制式）。\n\n- 「bundler；node 在 6.0 已弃用」正确。\n- 「classic 最好」错误：classic 是最古老的解析，几乎不该用。\n- 「node 仍是首选且无变化」错误：6.0 已弃用 node。\n- 「bundler 会做模块存在性校验」不准确：解析放宽，真正的运行时解析仍靠打包器。",
+    "tags": ["tsc", "中级", "moduleResolution", "bundler", "TypeScript6"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bundler；因为 6.0 弃用了 node/node10，交打包器的项目用 bundler 最顺",
+        "isCorrect": true,
+        "description": "正确。bundler 放宽解析（免扩展名、支持 exports），配 esnext/preserve 是前端首选；node 已弃用。"
+      },
+      {
+        "text": "classic，它最简单且兼容性最好",
+        "isCorrect": false,
+        "description": "错误。classic 是最古老的解析策略，早已不推荐用于现代项目。"
+      },
+      {
+        "text": "node，它仍是 6.0 的首选且没有变化",
+        "isCorrect": false,
+        "description": "错误。6.0 已弃用 moduleResolution: node/node10。"
+      },
+      {
+        "text": "bundler，因为它会在编译期校验模块是否真实存在",
+        "isCorrect": false,
+        "description": "错误。bundler 放宽了解析规则，运行时/打包期的真实解析仍由打包器负责。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 tsconfig 里配好了 `paths` 别名 `\"@/*\": [\"src/*\"]`，类型检查也通过，但 `node dist/index.js` 运行时报 `Cannot find module '@/utils'`。根因是？",
+    "explanation": "`paths` **只在类型层面生效**：它让 tsc 在类型检查时认得 `@/utils`，但 **tsc emit 出的 JS 不会重写这个路径**。真正在运行时/打包时解析别名，要靠打包器（如 Vite `resolve.alias`）、`tsc-alias`，或 Node 的 `imports` 字段。只配 tsconfig 不配运行时解析，就会出现「类型能过、运行报错」。\n\n- 「paths 只作用于类型，产物路径未被重写」正确。\n- 「paths 配错了大小写」不是普遍根因。\n- 「必须开 esModuleInterop」无关。\n- 「tsc 的 bug」错误：这是设计行为，非缺陷。",
+    "tags": ["tsc", "中级", "paths", "别名", "易错点"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "paths 只作用于类型检查，tsc 不重写产物里的路径，运行时需打包器/tsc-alias 解析",
+        "isCorrect": true,
+        "description": "正确。这是最经典的「类型过、运行报错」根因：paths 不改 emit 出的路径。"
+      },
+      {
+        "text": "paths 的大小写写错了",
+        "isCorrect": false,
+        "description": "错误。大小写不是这一现象的普遍根因，根因是 paths 不重写产物路径。"
+      },
+      {
+        "text": "没有开启 esModuleInterop",
+        "isCorrect": false,
+        "description": "错误。与 esModuleInterop 无关。"
+      },
+      {
+        "text": "这是 tsc 的已知 bug，升级版本即可修复",
+        "isCorrect": false,
+        "description": "错误。paths 不重写产物是设计行为，并非 bug。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：当项目的 emit 交给 SWC/esbuild（逐文件转译）时，为什么建议在 tsc 侧开启 `isolatedModules`？",
+    "explanation": "`isolatedModules: true` 让 tsc **强制要求每个文件都能被「单独」转译**，从而与 Babel/SWC/esbuild 这类逐文件工具行为一致。它会提前拦下依赖跨文件类型信息的写法——如重导出类型须写 `export type`、`const enum` 的跨文件内联不可靠等——避免单文件转译器在这些地方出错。\n\n- 「强制每文件可独立转译，提前拦下单文件工具会出错的写法」正确。\n- 「开启后 tsc 会变快」不是它的目的。\n- 「它会自动产出 .d.ts」错误：那是 declaration。\n- 「它会做更严格的类型检查」错误：它约束的是可转译性，不是类型严格度。",
+    "tags": ["tsc", "中级", "isolatedModules", "单文件转译", "工程化"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它强制每个文件可独立转译，提前拦下 SWC/esbuild 等单文件工具会出错的写法",
+        "isCorrect": true,
+        "description": "正确。isolatedModules 让 tsc 的约束与逐文件转译器对齐，避免运行期/转译期出错。"
+      },
+      {
+        "text": "开启后能显著加快 tsc 自身的编译速度",
+        "isCorrect": false,
+        "description": "错误。提速不是它的目的，它约束的是「可独立转译性」。"
+      },
+      {
+        "text": "它会让 tsc 自动产出 .d.ts 声明文件",
+        "isCorrect": false,
+        "description": "错误。产出 .d.ts 是 declaration 选项。"
+      },
+      {
+        "text": "它让类型检查变得更严格",
+        "isCorrect": false,
+        "description": "错误。它约束可转译性，与类型严格度（strict 系列）无关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：`verbatimModuleSyntax: true`（取代旧的 `importsNotUsedAsValues` + `preserveValueImports`）的核心语义是什么？",
+    "explanation": "`verbatimModuleSyntax` 让 tsc **照原样保留模块语法**：标了 `import type` 的一定被删除，没标 `type` 的一定被保留。这消除了「这个 import 到底会不会被 emit 进产物」的歧义，对 CJS/ESM 混用与单文件转译尤其重要；代价是**必须显式区分**类型导入与值导入，否则报错。\n\n- 「type 导入必删、值导入必留，所见即所得」正确。\n- 「自动删除所有未使用 import」错误：它按是否标 type 决定，而非按使用情况猜。\n- 「等价于 esModuleInterop」错误，两者无关。\n- 「会自动把类型导入转成 import type」错误：它要求你显式标注，不会替你改。",
+    "tags": ["tsc", "中级", "verbatimModuleSyntax", "import-type", "模块语法"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "照字面保留：标了 import type 的删除、没标的保留，消除「是否被 emit」的歧义",
+        "isCorrect": true,
+        "description": "正确。verbatimModuleSyntax 让模块语法所见即所得，需显式区分类型/值导入。"
+      },
+      {
+        "text": "自动删除一切未被使用的 import",
+        "isCorrect": false,
+        "description": "错误。它依据是否标注 type 来决定保留/删除，而非依据使用情况推断。"
+      },
+      {
+        "text": "等价于开启 esModuleInterop",
+        "isCorrect": false,
+        "description": "错误。两者职责完全不同。"
+      },
+      {
+        "text": "会自动把纯类型导入改写为 import type",
+        "isCorrect": false,
+        "description": "错误。它要求开发者显式标注，不会替你改写。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：`skipLibCheck: true` 通常能明显加快大型项目的编译，它跳过的是什么？",
+    "explanation": "`skipLibCheck` 跳过对**声明文件（`.d.ts`，主要是 `node_modules` 里的）之间的类型检查**。大型项目里第三方 `.d.ts` 互相检查开销很大，跳过它常是单项最大提速点；代价是可能漏掉不同库类型声明之间的冲突。\n\n- 「跳过 .d.ts 声明文件之间的类型检查」正确。\n- 「跳过你自己源码的类型检查」错误：你的源码照常检查。\n- 「跳过 emit」错误：仍会 emit。\n- 「跳过 strict 检查」错误：strict 仍生效。",
+    "tags": ["tsc", "中级", "skipLibCheck", "性能", "d.ts"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跳过对声明文件（.d.ts，多为 node_modules 里的）之间的类型检查",
+        "isCorrect": true,
+        "description": "正确。跳过第三方 .d.ts 互检常是最大提速点，代价是可能漏掉库间类型冲突。"
+      },
+      {
+        "text": "跳过你自己业务源码的类型检查",
+        "isCorrect": false,
+        "description": "错误。你的源码仍会被正常类型检查。"
+      },
+      {
+        "text": "跳过 emit 阶段以提速",
+        "isCorrect": false,
+        "description": "错误。skipLibCheck 不影响 emit。"
+      },
+      {
+        "text": "关闭 strict 系列检查",
+        "isCorrect": false,
+        "description": "错误。strict 仍然生效，被跳过的只是 .d.ts 互检。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：现代库构建里常见「用 SWC/esbuild 极速产出 .js，用 tsc 单独产出 .d.ts」。让 tsc「只出声明、不出 .js」应使用哪个选项？",
+    "explanation": "`emitDeclarationOnly: true`（配合 `declaration: true`）让 tsc **只产出 `.d.ts`，不产出 `.js`**。这样把快的 emit 交给 SWC/esbuild/tsup，把权威的声明产出留给 tsc，各取所长。\n\n- `emitDeclarationOnly` 正确。\n- `noEmit` 是「什么都不产出」，连 .d.ts 也没有。\n- `isolatedDeclarations` 是让第三方工具也能并行产 .d.ts 的约束，不是「只出声明」开关。\n- `declarationMap` 只是产出 .d.ts.map。",
+    "tags": ["tsc", "高级", "emitDeclarationOnly", "d.ts", "构建分工"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "emitDeclarationOnly（配合 declaration）",
+        "isCorrect": true,
+        "description": "正确。只产出 .d.ts、不产出 .js，把 emit 让给更快的工具。"
+      },
+      {
+        "text": "noEmit",
+        "isCorrect": false,
+        "description": "错误。noEmit 连 .d.ts 都不产出，只做类型检查。"
+      },
+      {
+        "text": "isolatedDeclarations",
+        "isCorrect": false,
+        "description": "错误。它是让第三方工具也能并行产声明的约束，不是「只出声明」的开关。"
+      },
+      {
+        "text": "declarationMap",
+        "isCorrect": false,
+        "description": "错误。declarationMap 只产出 .d.ts 的 source map。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：把一个大型 monorepo 拆成多个相互引用的子工程做增量构建，正确的机制组合是？",
+    "explanation": "用 **Project References**：每个子工程设 `composite: true`，主工程用 `references` 串联，再用 **`tsc -b`（--build）** 按依赖拓扑顺序增量构建。`composite` 会隐式开启 `declaration` 与 `incremental`，并要求源文件都在 `include` 内；引用的工程必须先产出 `.d.ts`，上游才能消费——这正是它能增量的关键。\n\n- 「composite + references + tsc -b」正确。\n- 「只设 incremental 就能跨工程增量」不完整：跨工程要 references + composite。\n- 「用 tsc -w 监听即可实现工程引用」错误：watch 不等于 references。\n- 「references 里写源码路径」错误：references 指向子工程的 tsconfig 目录。",
+    "tags": ["tsc", "高级", "project-references", "composite", "tsc-build"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "子工程 composite: true + 主工程 references + 用 tsc -b 按依赖顺序增量构建",
+        "isCorrect": true,
+        "description": "正确。这是 Project References 的标准组合，composite 隐式开 declaration/incremental。"
+      },
+      {
+        "text": "只在根 tsconfig 设 incremental: true 即可实现跨工程增量",
+        "isCorrect": false,
+        "description": "错误。跨工程增量需要 references + 各子工程 composite，单靠 incremental 不够。"
+      },
+      {
+        "text": "用 tsc -w 监听就等同于工程引用构建",
+        "isCorrect": false,
+        "description": "错误。watch 是监听模式，与 Project References 不是一回事。"
+      },
+      {
+        "text": "在 references 里直接写各子工程的源码文件路径",
+        "isCorrect": false,
+        "description": "错误。references 的 path 指向子工程的目录或其 tsconfig，而非源码文件。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：`incremental: true` 通过什么手段实现「下次只重算受影响的部分」？",
+    "explanation": "`incremental` 让 tsc 把上次编译的类型图与产物指纹写进 **`.tsbuildinfo`** 文件，下次据此只重算受影响的部分。`composite` 会自动开启它。把 `.tsbuildinfo` 纳入 CI 缓存可显著提速。\n\n- 「把状态存进 .tsbuildinfo，据此增量」正确。\n- 「在内存里常驻进程」错误：那更像 watch/daemon，不是 incremental 的机制。\n- 「跳过类型检查只做 emit」错误：增量仍做必要的检查。\n- 「依赖 node_modules/.cache 自动缓存」错误：tsc 增量靠 .tsbuildinfo，可用 tsBuildInfoFile 指定位置。",
+    "tags": ["tsc", "高级", "incremental", "tsbuildinfo", "性能"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把上次的类型图与产物指纹写入 .tsbuildinfo，下次据此只重算受影响部分",
+        "isCorrect": true,
+        "description": "正确。.tsbuildinfo 是增量的状态文件，可用 tsBuildInfoFile 指定路径并纳入 CI 缓存。"
+      },
+      {
+        "text": "靠一个常驻内存的后台进程缓存结果",
+        "isCorrect": false,
+        "description": "错误。那是 watch/daemon 思路；incremental 用磁盘上的 .tsbuildinfo。"
+      },
+      {
+        "text": "增量模式下跳过类型检查、只做 emit",
+        "isCorrect": false,
+        "description": "错误。增量仍执行必要的类型检查，只是复用未变部分的结果。"
+      },
+      {
+        "text": "自动使用 node_modules/.cache 做缓存",
+        "isCorrect": false,
+        "description": "错误。tsc 增量状态在 .tsbuildinfo，而非 node_modules/.cache。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：多个 tsconfig 想共享一份基础配置（如统一 target/strict），应使用哪个字段？",
+    "explanation": "`extends` 让一份 tsconfig **继承**另一份（可以是本地路径或 npm 包，如 `@tsconfig/node22/tsconfig.json`），子配置再覆盖个别选项。它也支持数组形式按顺序合并多个基础配置。\n\n- `extends` 正确。\n- `references` 是工程引用，不是配置继承。\n- `include` 是文件选取，无关。\n- `imports` 是 package.json 的字段，不是 tsconfig 继承机制。",
+    "tags": ["tsc", "高级", "extends", "配置继承", "tsconfig"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "extends（可继承本地或 npm 包的基础 tsconfig，子配置再覆盖）",
+        "isCorrect": true,
+        "description": "正确。extends 实现配置继承，支持字符串或数组形式。"
+      },
+      {
+        "text": "references",
+        "isCorrect": false,
+        "description": "错误。references 是 Project References 工程引用，不是配置继承。"
+      },
+      {
+        "text": "include",
+        "isCorrect": false,
+        "description": "错误。include 是选取要编译的文件，与配置继承无关。"
+      },
+      {
+        "text": "imports",
+        "isCorrect": false,
+        "description": "错误。imports 是 package.json 的子路径映射字段，不是 tsconfig 继承机制。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：用 TypeScript 编译 API 写工具时，想对单个文件做「只转译、不类型检查」的快速处理，应该用哪个 API？",
+    "explanation": "`ts.transpileModule(src, opts)` 是「**单文件、无类型检查**」的快速路径——ts-jest、各类 loader 内部就用它把 TS 转 JS。需要完整类型检查时才用 `ts.createProgram(...)` + `program.getTypeChecker()`/`ts.getPreEmitDiagnostics(program)`。\n\n- 「transpileModule 做单文件无检查转译」正确。\n- 「createProgram 才是单文件快速转译」错误：createProgram 是建立完整 Program 做检查的，更重。\n- 「getTypeChecker 用于快速转译」错误：它用于类型查询。\n- 「transpileModule 会做完整类型检查」错误：它恰恰不做。",
+    "tags": ["tsc", "高级", "compiler-api", "transpileModule", "createProgram"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ts.transpileModule —— 单文件、不做类型检查的快速转译",
+        "isCorrect": true,
+        "description": "正确。transpileModule 是无类型检查的单文件路径，ts-jest/loader 内部常用它。"
+      },
+      {
+        "text": "ts.createProgram —— 它是最轻量的单文件快速转译入口",
+        "isCorrect": false,
+        "description": "错误。createProgram 建立完整 Program 以做类型检查，较重，不是快速转译路径。"
+      },
+      {
+        "text": "program.getTypeChecker —— 用它来转译单个文件",
+        "isCorrect": false,
+        "description": "错误。getTypeChecker 用于类型查询/分析，不负责转译。"
+      },
+      {
+        "text": "transpileModule 会顺带做完整类型检查",
+        "isCorrect": false,
+        "description": "错误。transpileModule 不做类型检查，这正是它快的原因。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：TypeScript 7.0 的原生编译器（代号 Project Corsa、命令 tsgo）是用什么语言重写的？",
+    "explanation": "TypeScript 7.0 的原生版是用 **Go** 重写的（不是 Rust，这是高频误传），源码在 `microsoft/typescript-go`。官方实测约 10× 提速（如 VS Code 代码库类型检查 77.8s → 7.5s）。它与 JS 版语义对齐（通过约 99.6% 兼容性测试），目前以 `@typescript/native-preview` 预览。\n\n- 「Go」正确。\n- 「Rust」是最常见的错误猜测——SWC/Oxc/Rolldown 是 Rust，但 TS 原生版是 Go。\n- 「C++」错误。\n- 「仍是 TypeScript 自举」错误：原生版正是为摆脱 JS 自举的性能瓶颈而生。",
+    "tags": ["tsc", "专家", "TypeScript7", "tsgo", "Go"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Go",
+        "isCorrect": true,
+        "description": "正确。TS 7.0 原生版用 Go 重写（Project Corsa / tsgo），源码在 microsoft/typescript-go。"
+      },
+      {
+        "text": "Rust",
+        "isCorrect": false,
+        "description": "错误，这是最常见误传。Rust 的是 SWC/Oxc/Rolldown；TS 原生版是 Go。"
+      },
+      {
+        "text": "C++",
+        "isCorrect": false,
+        "description": "错误。原生版用 Go，不是 C++。"
+      },
+      {
+        "text": "仍用 TypeScript 自举编译",
+        "isCorrect": false,
+        "description": "错误。原生版正是为摆脱 JS/TS 自举的性能瓶颈而改用 Go。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：微软给 TypeScript 7.0 原生编译器宣称的性能目标，最接近下列哪一项？",
+    "explanation": "官方（Anders Hejlsberg，「A 10x Faster TypeScript」）实测：VS Code 1.5M 行代码检查从 77.8s 降到 7.5s（约 10.4×），Playwright 约 10.1×、TypeORM 约 13.5×，编辑器加载从 9.6s 降到 1.2s（约 8×）。原话称「reduce most build times by 10x」。\n\n- 「构建/检查约 10× 提速」正确。\n- 「约 1.5×」严重低估。\n- 「约 100×」夸大（个别微基准不能代表整体目标）。\n- 「只快在 emit、类型检查不变」错误：提速主要正是在类型检查与编辑器加载。",
+    "tags": ["tsc", "专家", "TypeScript7", "性能", "benchmark"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "大多数构建/类型检查约提速 10×（VS Code 77.8s → 7.5s）",
+        "isCorrect": true,
+        "description": "正确。官方目标是 most build times by 10x，编辑器加载约 8×。"
+      },
+      {
+        "text": "约 1.5× 的小幅提升",
+        "isCorrect": false,
+        "description": "错误。严重低估，官方目标是约 10×。"
+      },
+      {
+        "text": "约 100× 的提升",
+        "isCorrect": false,
+        "description": "错误。夸大；个别微基准不能代表整体约 10× 的目标。"
+      },
+      {
+        "text": "只有 emit 变快，类型检查速度不变",
+        "isCorrect": false,
+        "description": "错误。提速主要恰恰在类型检查与编辑器加载。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：现在（2026 年中）想在不影响现有项目的前提下，试用 TypeScript 7.0 的原生编译器，正确做法是？",
+    "explanation": "TS 7.0 原生版以 **`@typescript/native-preview`** 包预览，安装后用 **`tsgo`** 命令（如 `npx tsgo --noEmit`），可与现有 `typescript` 包并存、互不影响。稳定 7.0 发布后会把它作为 `typescript` 包的 `tsc` 入口正式接班。\n\n- 「装 @typescript/native-preview，用 tsgo」正确。\n- 「把 typescript 升级到 7.0 正式版」错误：截至此时 7.0 仍在预览，latest 还是 6.0.x。\n- 「设 tsconfig 的 native: true」错误：无此选项。\n- 「tsc --go」错误：无此 flag。",
+    "tags": ["tsc", "专家", "native-preview", "tsgo", "TypeScript7"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "安装 @typescript/native-preview，用 tsgo 命令（可与 typescript 并存）",
+        "isCorrect": true,
+        "description": "正确。native-preview 提供 tsgo，与现有 typescript 并存，互不影响。"
+      },
+      {
+        "text": "直接把 typescript 升级到 7.0 正式版",
+        "isCorrect": false,
+        "description": "错误。截至 2026 年中，7.0 仍在预览，typescript 的 latest 还是 6.0.x。"
+      },
+      {
+        "text": "在 tsconfig 里设 \"native\": true",
+        "isCorrect": false,
+        "description": "错误。没有这个 tsconfig 选项。"
+      },
+      {
+        "text": "运行 tsc --go 切换到原生模式",
+        "isCorrect": false,
+        "description": "错误。没有 --go 这个 flag；原生版命令是 tsgo。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 TypeScript 6.0 与 7.0 的关系上，下列说法正确的是？",
+    "explanation": "**TypeScript 6.0 是最后一个 JavaScript 实现版本**，定位为「过渡/收官版」，专门为切到 Go 原生的 7.0「清场」（弃用旧选项、收紧默认值、提供 `--stableTypeOrdering` 等迁移辅助）。两者会在过渡期并存，以适配不同项目约束。\n\n- 「6.0 是最后的 JS 实现版、为 7.0 过渡清场」正确。\n- 「7.0 是 6.0 的小补丁版」错误：7.0 是 Go 重写的大跨越。\n- 「6.0 已是 Go 重写版」错误：Go 版是 7.0。\n- 「6.0 与 7.0 类型语义完全不同」错误：7.0 目标是与 6.0 语义对齐。",
+    "tags": ["tsc", "专家", "TypeScript6", "TypeScript7", "版本关系"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "6.0 是最后一个 JS 实现版本，为切到 Go 原生的 7.0 做过渡清场，两者过渡期并存",
+        "isCorrect": true,
+        "description": "正确。6.0 收官 JS 实现并清理弃用项，7.0 是 Go 原生版，语义对齐、过渡期共存。"
+      },
+      {
+        "text": "7.0 只是 6.0 的一个小补丁版本",
+        "isCorrect": false,
+        "description": "错误。7.0 是用 Go 重写的重大版本，非小补丁。"
+      },
+      {
+        "text": "6.0 本身就已经是 Go 重写的原生版",
+        "isCorrect": false,
+        "description": "错误。6.0 是 JS 实现；Go 原生版是 7.0。"
+      },
+      {
+        "text": "6.0 与 7.0 的类型语义被刻意设计成完全不同",
+        "isCorrect": false,
+        "description": "错误。7.0 的目标恰恰是与现有语义对齐（约 99.6% 兼容）。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：TypeScript 6.0 提供 `\"ignoreDeprecations\": \"6.0\"` 来临时压制弃用选项的报错。关于它，正确的认识是？",
+    "explanation": "`ignoreDeprecations: \"6.0\"` 是个**临时逃生舱**，用来在迁移期压制「使用了弃用选项」的报错，争取时间。但它**只是缓冲——TypeScript 7.0 会彻底移除该逃生舱**，所以不能当长期方案，应尽快把弃用用法改掉。\n\n- 「临时逃生舱，7.0 会移除，应尽快迁移」正确。\n- 「永久关闭所有弃用警告的推荐做法」错误：它非永久、非推荐长期用。\n- 「会自动帮你迁移弃用选项」错误：它只压制报错，不改代码。\n- 「等价于 strict: false」完全无关。",
+    "tags": ["tsc", "专家", "ignoreDeprecations", "TypeScript6", "迁移"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是临时逃生舱，只争取迁移时间；7.0 会移除它，应尽快改掉弃用用法",
+        "isCorrect": true,
+        "description": "正确。ignoreDeprecations 只是缓冲，7.0 彻底移除，不可当长期方案。"
+      },
+      {
+        "text": "它是永久关闭弃用警告的官方推荐做法",
+        "isCorrect": false,
+        "description": "错误。它非永久、非长期推荐；7.0 会移除。"
+      },
+      {
+        "text": "它会自动把弃用选项迁移到新写法",
+        "isCorrect": false,
+        "description": "错误。它只压制报错，不会替你改代码。"
+      },
+      {
+        "text": "它等价于把 strict 设为 false",
+        "isCorrect": false,
+        "description": "错误。两者毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：`isolatedDeclarations: true`（TS 5.5+）解决的核心问题是什么？",
+    "explanation": "`isolatedDeclarations` 要求**每个导出都有足够显式的类型标注，使 `.d.ts` 能在不做跨文件类型推断的前提下、逐文件生成**。意义在于：声明产出本来必须依赖完整类型推断（慢、难并行），加上该约束后，**SWC、oxc、esbuild、tsgo 等第三方工具也能极速、并行地产出 `.d.ts`**，不必再回头调用慢速 tsc。代价是公共 API 必须写显式返回类型。\n\n- 「让第三方工具也能并行/快速产出 .d.ts（需显式返回类型）」正确。\n- 「自动为你补全所有返回类型」错误：它是要求你补，否则报错。\n- 「加快类型检查」不准确：它针对的是声明产出的可并行化。\n- 「替代 isolatedModules」错误：二者一个管 emit、一个管声明，互补不替代。",
+    "tags": ["tsc", "专家", "isolatedDeclarations", "d.ts", "并行"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "让 SWC/oxc/tsgo 等第三方工具也能逐文件、并行地快速产出 .d.ts（需显式返回类型）",
+        "isCorrect": true,
+        "description": "正确。它把声明产出从「必须全量类型推断」解放出来，使其可被快工具并行化。"
+      },
+      {
+        "text": "自动为所有导出补全缺失的返回类型",
+        "isCorrect": false,
+        "description": "错误。它要求开发者显式写返回类型，缺了会报错，而非自动补全。"
+      },
+      {
+        "text": "显著加快 tsc 的类型检查速度",
+        "isCorrect": false,
+        "description": "错误。它针对的是声明产出的可并行化，不是类型检查提速。"
+      },
+      {
+        "text": "用来替代 isolatedModules",
+        "isCorrect": false,
+        "description": "错误。isolatedModules 管「可独立转译 emit」，isolatedDeclarations 管「可独立产声明」，两者互补。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：综合来看，要给「tsc 在 TypeScript 工具链中不可替代的核心价值」一句话定位，最准确的是？",
+    "explanation": "在 emit 这件事上，SWC/esbuild/Babel/Oxc 都能做且更快；但**类型检查是 tsc 独有、且是 TypeScript 语言语义的参考实现**——它是类型安全的最终裁判，也是 `.d.ts` 与编辑器智能（tsserver）的根基。因此现代工程把 emit 外包给快工具，却仍**离不开 `tsc` 来把关类型**。\n\n- 「类型检查的唯一权威 + 语言语义参考实现」正确。\n- 「最快的转译器」错误：tsc 恰恰偏慢。\n- 「最好的打包器」错误：tsc 不打包。\n- 「唯一能 emit JS 的工具」错误：很多工具都能 emit。",
+    "tags": ["tsc", "专家", "定位", "类型检查", "对比"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "类型检查的唯一权威、TypeScript 语言语义的参考实现，也是 .d.ts 与编辑器智能的根基",
+        "isCorrect": true,
+        "description": "正确。emit 可外包给快工具，但类型检查与语义定义只有 tsc 能担当。"
+      },
+      {
+        "text": "工具链里最快的转译器",
+        "isCorrect": false,
+        "description": "错误。tsc 偏慢，速度正是 SWC/esbuild/Oxc 的强项。"
+      },
+      {
+        "text": "工具链里最好的打包器",
+        "isCorrect": false,
+        "description": "错误。tsc 不做打包。"
+      },
+      {
+        "text": "唯一能把 TS emit 成 JS 的工具",
+        "isCorrect": false,
+        "description": "错误。SWC/esbuild/Babel 等都能 emit，只是不做类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在终端能直接运行 `tsc` 命令，是因为安装了哪个 npm 包？",
+    "explanation": "`tsc` 命令由 **`typescript`** 包提供，通常 `npm install -D typescript` 安装为开发依赖。`@types/*` 是第三方库的类型声明，不提供 tsc；`ts-node` 是「直接运行 .ts」的工具（内部用 typescript）；`typescript-eslint` 是 ESLint 的 TS 支持，都不提供 tsc 命令本身。\n\n- `typescript` 正确。\n- `@types/typescript` 并非提供 tsc 的包。\n- `ts-node` 是运行器，依赖 typescript 但不等于它。\n- `tsc` 不是一个独立 npm 包名（命令名 ≠ 包名）。",
+    "tags": ["tsc", "入门", "安装", "typescript", "npm"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "typescript",
+        "isCorrect": true,
+        "description": "正确。tsc 命令由 typescript 包提供，npm i -D typescript 即可。"
+      },
+      {
+        "text": "@types/typescript",
+        "isCorrect": false,
+        "description": "错误。@types/* 是类型声明包，不提供 tsc 命令。"
+      },
+      {
+        "text": "ts-node",
+        "isCorrect": false,
+        "description": "错误。ts-node 是直接运行 .ts 的工具，内部依赖 typescript，但本身不提供 tsc。"
+      },
+      {
+        "text": "tsc（存在一个同名独立包提供该命令）",
+        "isCorrect": false,
+        "description": "错误。tsc 是命令名，由 typescript 包提供，并非独立的 tsc 包。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：官方称「某文件的存在标志着该目录是一个 TypeScript 项目的根」。这个文件是？",
+    "explanation": "官方原文：「The presence of a `tsconfig.json` file in a directory indicates that the directory is the root of a TypeScript project.」即 **`tsconfig.json`** 标志着 TS 项目根，它指定根文件与编译选项。\n\n- `tsconfig.json` 正确。\n- `package.json` 标志的是 npm 包，不是 TS 项目根。\n- `tsc.config.js` 不存在这种约定文件名。\n- `.tsrc` 不是 TypeScript 的配置文件。",
+    "tags": ["tsc", "入门", "tsconfig", "项目根", "官方定义"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "tsconfig.json",
+        "isCorrect": true,
+        "description": "正确，与官方定义一致：tsconfig.json 的存在标志该目录为 TS 项目根。"
+      },
+      {
+        "text": "package.json",
+        "isCorrect": false,
+        "description": "错误。package.json 标志 npm 包，不等于 TS 项目根。"
+      },
+      {
+        "text": "tsc.config.js",
+        "isCorrect": false,
+        "description": "错误。不存在 tsc.config.js 这种约定文件。"
+      },
+      {
+        "text": ".tsrc",
+        "isCorrect": false,
+        "description": "错误。TypeScript 没有 .tsrc 配置文件。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：编译后发现 `dist` 目录里多出了一层 `src/`（产物变成 `dist/src/index.js`）。要让产物结构干净，最直接的做法是？",
+    "explanation": "未显式设 `rootDir` 时，tsc 会按**所有输入文件的最长公共目录**推断源码根；当 `include` 还匹配到 src 之外的文件（如根目录的某个 .ts、或 tests）时，公共根上移，dist 里就多出一层 `src/`。显式设 `\"rootDir\": \"./src\"` 即可固定结构。\n\n- 「显式设 rootDir」正确。\n- 「改 outDir 为 dist/src」是掩盖问题而非解决。\n- 「删除 tsconfig」错误，会失去配置。\n- 「设 flatten: true」错误，无此选项。",
+    "tags": ["tsc", "中级", "rootDir", "outDir", "产物结构"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "显式设置 rootDir（如 \"rootDir\": \"./src\"），固定源码根",
+        "isCorrect": true,
+        "description": "正确。不设 rootDir 时按最长公共目录推断，常因匹配到 src 外文件而多出一层；显式设定即可。"
+      },
+      {
+        "text": "把 outDir 改成 ./dist/src",
+        "isCorrect": false,
+        "description": "错误。这是迁就错误结构，没解决「公共根被上移」的根因。"
+      },
+      {
+        "text": "删除 tsconfig.json 用默认编译",
+        "isCorrect": false,
+        "description": "错误。会丢失全部配置，且默认行为同样可能多层。"
+      },
+      {
+        "text": "设置 \"flatten\": true 压平目录",
+        "isCorrect": false,
+        "description": "错误。tsc 没有 flatten 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：发布库时除了 `declaration: true`，还常开 `declarationMap: true`。`declarationMap` 的作用是？",
+    "explanation": "`declarationMap` 产出 `.d.ts.map`，把声明文件映射回 `.ts` 源码。这样使用方在编辑器里对库 API 执行「跳转到定义」时，能**落到你的 `.ts` 源码**而不是停在 `.d.ts`，跨包开发体验更好。\n\n- 「产出 .d.ts.map，让跳转落到 .ts 源码」正确。\n- 「压缩 .d.ts 体积」错误，无关。\n- 「为 .js 产出 source map」错误：那是 sourceMap。\n- 「校验 .d.ts 正确性」错误，无此功能。",
+    "tags": ["tsc", "中级", "declarationMap", "d.ts", "库开发"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "产出 .d.ts.map，使「跳转到定义」能从声明落到 .ts 源码",
+        "isCorrect": true,
+        "description": "正确。declarationMap 改善跨包「跳转到源码」的开发体验。"
+      },
+      {
+        "text": "压缩 .d.ts 文件体积",
+        "isCorrect": false,
+        "description": "错误。它不做压缩。"
+      },
+      {
+        "text": "为产出的 .js 生成 source map",
+        "isCorrect": false,
+        "description": "错误。.js 的 source map 由 sourceMap 选项负责。"
+      },
+      {
+        "text": "在编译时校验 .d.ts 的正确性",
+        "isCorrect": false,
+        "description": "错误。它不承担校验职责。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：把 emit 交给 SWC、同时在代码里大量使用 `const enum` 时，容易出问题。最稳妥的应对是？",
+    "explanation": "`const enum` 依赖编译期把成员**跨文件内联**为字面量，而 SWC/esbuild 等是逐文件转译、看不到其它文件的定义，内联会失效甚至报错。开 `isolatedModules` 时 tsc 会提前对 `const enum` 等跨文件依赖发出警告。稳妥做法是**开 `isolatedModules` 并避免 `const enum`（改用普通 `enum` 或常量对象）**。\n\n- 「开 isolatedModules 并避免 const enum」正确。\n- 「无需处理，SWC 会正确内联」错误：逐文件转译做不到跨文件内联。\n- 「把所有 enum 改成 const enum」错误，方向相反、更糟。\n- 「关掉 strict」无关。",
+    "tags": ["tsc", "中级", "const-enum", "isolatedModules", "SWC"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "开启 isolatedModules，并避免使用 const enum（改普通 enum 或常量对象）",
+        "isCorrect": true,
+        "description": "正确。逐文件转译无法跨文件内联 const enum，isolatedModules 会提前预警。"
+      },
+      {
+        "text": "不用管，SWC 会正确地跨文件内联 const enum",
+        "isCorrect": false,
+        "description": "错误。SWC/esbuild 逐文件转译，看不到其它文件，无法可靠内联。"
+      },
+      {
+        "text": "把项目里所有 enum 都改成 const enum",
+        "isCorrect": false,
+        "description": "错误，方向相反，会让问题更严重。"
+      },
+      {
+        "text": "关闭 strict 即可规避",
+        "isCorrect": false,
+        "description": "错误。与 strict 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：默认情况下，若类型检查报错，`tsc` 是否仍会产出 `.js`？对应哪个选项？",
+    "explanation": "默认 `noEmitOnError` 为 `false`，意味着**即使有类型错误，tsc 仍会照常 emit 出 `.js`**（错误只是报告出来）。若希望「有错就不产出」，要显式设 `\"noEmitOnError\": true`。\n\n- 「默认仍会 emit；设 noEmitOnError:true 才阻止」正确。\n- 「默认有错就不产出」错误：那需要显式开 noEmitOnError。\n- 「由 noEmit 控制是否报错时产出」错误：noEmit 是「永不产出」，与「报错时」无关。\n- 「由 strict 决定」错误。",
+    "tags": ["tsc", "中级", "noEmitOnError", "emit", "默认值"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认仍会 emit（noEmitOnError 默认 false）；要「有错不产出」需显式设 true",
+        "isCorrect": true,
+        "description": "正确。默认报错也照常产出，noEmitOnError: true 才会在出错时阻止 emit。"
+      },
+      {
+        "text": "默认有错就不产出任何文件",
+        "isCorrect": false,
+        "description": "错误。默认 noEmitOnError 为 false，报错也会产出。"
+      },
+      {
+        "text": "这由 noEmit 选项控制",
+        "isCorrect": false,
+        "description": "错误。noEmit 是「永不产出」，与「报错时是否产出」是两回事。"
+      },
+      {
+        "text": "由 strict 是否开启决定",
+        "isCorrect": false,
+        "description": "错误。是否报错即停产出由 noEmitOnError 决定，与 strict 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：在 Project References 里，把某个子工程设为 `composite: true` 会带来哪些隐式效果？",
+    "explanation": "`composite: true` 会**隐式开启 `declaration` 与 `incremental`**，并**要求所有源文件都被 `include`/`files` 覆盖**（否则报 not listed within the file list）。这是为了让该工程能产出 `.d.ts` 供上游消费、并支持增量——这正是工程引用能增量构建的前提。\n\n- 「隐式开 declaration + incremental，且要求文件都在 include 内」正确。\n- 「会自动打包所有子工程」错误：tsc 不打包。\n- 「隐式关闭 strict」错误，无此效果。\n- 「让 tsc -b 跳过类型检查」错误。",
+    "tags": ["tsc", "高级", "composite", "project-references", "declaration"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "隐式开启 declaration 与 incremental，并要求所有源文件都在 include/files 内",
+        "isCorrect": true,
+        "description": "正确。composite 为「可被引用 + 可增量」做准备，故强制产声明并要求文件齐全。"
+      },
+      {
+        "text": "自动把所有被引用的子工程打包成一个文件",
+        "isCorrect": false,
+        "description": "错误。tsc 不做打包。"
+      },
+      {
+        "text": "隐式关闭 strict 类型检查",
+        "isCorrect": false,
+        "description": "错误。composite 不影响 strict。"
+      },
+      {
+        "text": "让 tsc -b 在构建时跳过类型检查",
+        "isCorrect": false,
+        "description": "错误。构建仍执行类型检查。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：使用 `tsc -b`（工程引用构建）时，想强制忽略增量信息、从头重建所有工程，应加哪个参数？",
+    "explanation": "`tsc -b --force` 忽略 `.tsbuildinfo` 的增量状态、**强制全量重建**；`tsc -b --clean` 则删除引用工程的产物；`tsc -b --watch` 进入监听。日常增量直接 `tsc -b` 即可。\n\n- `--force` 正确。\n- `--clean` 是清理产物，不是重建。\n- `--watch` 是监听，不是强制重建。\n- `--noIncremental` 不是 `tsc -b` 的强制重建参数。",
+    "tags": ["tsc", "高级", "tsc-build", "force", "clean"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "tsc -b --force",
+        "isCorrect": true,
+        "description": "正确。--force 忽略增量、强制全量重建所有引用工程。"
+      },
+      {
+        "text": "tsc -b --clean",
+        "isCorrect": false,
+        "description": "错误。--clean 是删除产物，而非重建。"
+      },
+      {
+        "text": "tsc -b --watch",
+        "isCorrect": false,
+        "description": "错误。--watch 是进入监听模式。"
+      },
+      {
+        "text": "tsc -b --noIncremental",
+        "isCorrect": false,
+        "description": "错误。强制重建用 --force，--noIncremental 不是 tsc -b 的该用途参数。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：TypeScript 6.0 新增的 `--stableTypeOrdering` 标志，主要用途是什么？",
+    "explanation": "`--stableTypeOrdering` 是 6.0 为配合原生版（7.0）迁移而加的标志：让类型/联合等的**排序在新旧实现间保持稳定**，便于把 6.0 与 7.0（tsgo）的输出做逐项比对，降低迁移时的「无意义 diff」。\n\n- 「稳定类型排序，便于 6.0→7.0 输出比对」正确。\n- 「按字母排序导出成员」不准确，且非其目的。\n- 「加快类型检查」错误。\n- 「强制 strict 类型顺序」错误，无此含义。",
+    "tags": ["tsc", "专家", "stableTypeOrdering", "TypeScript6", "迁移"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "让类型/联合的排序在新旧实现间稳定，便于 6.0 与 7.0(tsgo) 输出比对",
+        "isCorrect": true,
+        "description": "正确。它是 6.0→7.0 迁移辅助开关，减少实现差异带来的无意义 diff。"
+      },
+      {
+        "text": "把导出成员按字母顺序排列",
+        "isCorrect": false,
+        "description": "错误。这不是它的用途。"
+      },
+      {
+        "text": "显著加快类型检查速度",
+        "isCorrect": false,
+        "description": "错误。它服务于迁移比对，不是性能开关。"
+      },
+      {
+        "text": "强制要求代码按严格的类型顺序书写",
+        "isCorrect": false,
+        "description": "错误。它与代码书写顺序无关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsc：TypeScript 6.0 为多个新近稳定的 JavaScript API 增加了类型支持。下列哪一组属于 6.0 新增的 ES2025 相关类型支持？",
+    "explanation": "TS 6.0 为 ES2025 一批新 API 增加类型支持，包括 **`Temporal`、`Map.getOrInsert()`/`getOrInsertComputed()`、`RegExp.escape()`、Node 的 `#` 子路径导入** 以及 `es2025` target。\n\n- 「Temporal / Map.getOrInsert / RegExp.escape」正确，均为 6.0 新增类型支持。\n- 「jQuery / Lodash 类型」错误：那是第三方 @types，不随 TS 版本内置。\n- 「装饰器元数据反射」与此题无关。\n- 「window.fetch 首次加入」错误：fetch 早已有类型。",
+    "tags": ["tsc", "专家", "TypeScript6", "ES2025", "Temporal"],
+    "categories": [
+      ["技术方向", "tsc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Temporal、Map.getOrInsert()、RegExp.escape() 等 ES2025 API 的类型",
+        "isCorrect": true,
+        "description": "正确。这些都是 TS 6.0 新增的 ES2025 相关类型支持。"
+      },
+      {
+        "text": "jQuery 与 Lodash 的内置类型",
+        "isCorrect": false,
+        "description": "错误。第三方库类型来自 @types/*，不随 TypeScript 版本内置。"
+      },
+      {
+        "text": "装饰器元数据反射 API",
+        "isCorrect": false,
+        "description": "错误。与本题所指的 ES2025 新 API 类型支持无关。"
+      },
+      {
+        "text": "首次为 window.fetch 加入类型",
+        "isCorrect": false,
+        "description": "错误。fetch 的类型早已存在，并非 6.0 首次加入。"
+      }
+    ]
+  }
+]
