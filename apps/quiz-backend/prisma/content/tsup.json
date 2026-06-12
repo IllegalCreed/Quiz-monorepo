@@ -1,0 +1,1006 @@
+[
+  {
+    "stem": "tsup：官方对 tsup 的一句话定位是「Bundle your TypeScript library with no config, powered by esbuild」。它主要面向哪类场景？",
+    "explanation": "tsup 的核心定位是**零配置的 TypeScript 库打包器**：面向 npm 库作者，一条命令把 `.ts` 源码产出 esm/cjs 产物与 `.d.ts` 声明文件，底层由 esbuild 驱动。它不是应用级打包器——没有 dev server、HMR、HTML 处理等应用工程能力，应用打包应选 Vite/webpack/Rsbuild 等。\n\n- 「打包发布到 npm 的 TS 库」正确，这正是官方定位。\n- 「构建 Web 应用」错误：tsup 不含 dev server/HMR。\n- 「替代 tsc 做类型检查」错误：tsup 不做类型检查。\n- 「管理 monorepo 发包」错误：那是 pnpm workspace/changesets 的职责。",
+    "tags": ["tsup", "入门", "定位", "库打包", "esbuild"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "打包要发布到 npm 的 TypeScript 库：零配置产出多格式 JS 与声明文件",
+        "isCorrect": true,
+        "description": "正确。tsup 是库打包器，esbuild 驱动，零配置产出 esm/cjs/dts。"
+      },
+      {
+        "text": "构建 Web 应用：内置 dev server 与 HMR",
+        "isCorrect": false,
+        "description": "错误。tsup 没有 dev server/HMR，应用打包是 Vite/webpack 等的领域。"
+      },
+      {
+        "text": "替代 tsc 对项目做完整类型检查",
+        "isCorrect": false,
+        "description": "错误。tsup 不做类型检查，esbuild 快的原因之一就是跳过类型检查。"
+      },
+      {
+        "text": "管理 monorepo 的依赖与发包流程",
+        "isCorrect": false,
+        "description": "错误。依赖与发包管理是 pnpm workspace/changesets 等工具的职责，tsup 只管打包。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：在一个没有任何配置文件的项目里执行 `tsup src/index.ts`，关于默认行为，下列哪项正确？",
+    "explanation": "零配置默认值：产物写入 **`./dist`**（`--out-dir` 默认 `dist`），格式默认 **`cjs`**（CLI `--format` 默认值，源码里归一为 `['cjs']`）。另一个常被误解的点：tsup **不会自动推断入口**——完全不传入口且配置里也没有 `entry` 时，会直接报错 `No input files, try \"tsup <your-file>\" instead`。\n\n- 「输出到 ./dist、默认 cjs」正确。\n- 「输出到源文件同目录」错误：默认是 dist。\n- 「自动找 src/index.ts」错误：tsup 没有入口推断。\n- 「默认三格式齐发」错误：默认只有 cjs，多格式需显式 `--format`。",
+    "tags": ["tsup", "入门", "零配置", "默认值", "entry"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "产物输出到 ./dist，格式默认 cjs",
+        "isCorrect": true,
+        "description": "正确。--out-dir 默认 dist，--format 默认 cjs，这就是零配置的全部默认面貌。"
+      },
+      {
+        "text": "产物输出到源文件所在目录",
+        "isCorrect": false,
+        "description": "错误。默认输出目录是 dist，可用 --out-dir 修改。"
+      },
+      {
+        "text": "不传入口也能跑，tsup 会自动找 src/index.ts 作为入口",
+        "isCorrect": false,
+        "description": "错误。tsup 不做入口推断，无入口直接报 No input files 错误。"
+      },
+      {
+        "text": "默认同时产出 esm、cjs、iife 三种格式",
+        "isCorrect": false,
+        "description": "错误。默认只产 cjs，多格式需显式 --format esm,cjs,iife。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：`--format` 支持的打包格式是下列哪一组？",
+    "explanation": "官方文档：「Supported format: `esm`, `cjs`, (default) and `iife`」——支持 **esm、cjs、iife** 三种，默认 cjs；可逗号组合一次产多格式（`tsup src/index.ts --format esm,cjs,iife`）。**不支持 umd**，根因是 esbuild 本身不支持 UMD 输出。iife 产物默认命名 `[name].global.js`，可用 `--global-name` 指定全局变量名。\n\n- 「esm、cjs、iife」正确。\n- 含 umd 的选项错误：esbuild 系工具都给不了 UMD。\n- 「仅 esm 与 cjs」错误：还有 iife。\n- 「amd、systemjs」错误：均不支持。",
+    "tags": ["tsup", "入门", "format", "esm", "iife"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "esm、cjs、iife",
+        "isCorrect": true,
+        "description": "正确。三种格式可逗号组合一次产出，默认是 cjs。"
+      },
+      {
+        "text": "esm、cjs、umd",
+        "isCorrect": false,
+        "description": "错误。不支持 umd——esbuild 本身就不支持 UMD 输出，这是与 Rollup/webpack 的差异之一。"
+      },
+      {
+        "text": "仅 esm 与 cjs 两种",
+        "isCorrect": false,
+        "description": "错误。还支持 iife（产物为 [name].global.js，可配 --global-name）。"
+      },
+      {
+        "text": "esm、cjs、amd、systemjs",
+        "isCorrect": false,
+        "description": "错误。amd 与 systemjs 都不在支持列表里。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：`tsup index.ts --dts` 中 `--dts` 标志的作用是什么？",
+    "explanation": "`--dts` 用于**生成 TypeScript 声明文件**：该命令产出 `dist/index.js` 与 `dist/index.d.ts`。多入口时每个入口各得一份 `.d.ts`；多 format 时**每种格式各生成一份声明文件**（保证使用方类型检查准确）。官方同时提醒：非 tsc 工具生成的声明不保证无错，发布前建议用 tsc 或 `@arethetypeswrong/cli` 校验产物。\n\n- 「生成 .d.ts 声明文件」正确。\n- 「类型严格模式」错误：--dts 不是检查开关。\n- 「生成 source map」错误：那是 --sourcemap，且 --dts 构建不支持 source map。\n- 「把 d.ts 打包成 JS」错误：方向反了。",
+    "tags": ["tsup", "入门", "dts", "声明文件"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "为入口生成 .d.ts 声明文件，与 JS 产物一起输出",
+        "isCorrect": true,
+        "description": "正确。多入口各一份、多格式各一份；官方还建议发布前用 tsc 或 attw 校验声明产物。"
+      },
+      {
+        "text": "开启类型严格模式，类型错误时中断构建",
+        "isCorrect": false,
+        "description": "错误。--dts 是生成声明文件，不是 lint/严格模式开关。"
+      },
+      {
+        "text": "生成 source map 便于调试",
+        "isCorrect": false,
+        "description": "错误。那是 --sourcemap 的职责；而且官方明确 --dts 构建不支持 source map。"
+      },
+      {
+        "text": "把已有的 d.ts 文件当入口打包成 JS",
+        "isCorrect": false,
+        "description": "错误。方向反了：--dts 是从 TS 源码产出声明文件。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于 tsup 能打包的文件类型，官方的说法是？",
+    "explanation": "官方原文：「Anything that's supported by Node.js natively, namely `.js`, `.json`, `.mjs`. And TypeScript `.ts`, `.tsx`.」即 Node 原生支持的 `.js/.json/.mjs` 加 TypeScript 的 `.ts/.tsx`；**CSS 支持是实验性的**（基于 esbuild 实验性 CSS，可叠加 PostCSS 插件但需自装 postcss）。图片等任意资源需通过 `--loader`（如 `.jpg=base64`、`.webp=file`）显式指定 esbuild loader 处理。\n\n- 「.js/.json/.mjs + .ts/.tsx，CSS 实验性」正确。\n- 「任意资源开箱即用」错误：资源要配 loader。\n- 「只支持 .ts」错误。\n- 「完整支持 Sass/Less」错误：未内置预处理器。",
+    "tags": ["tsup", "入门", "文件类型", "css", "loader"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": ".js/.json/.mjs 与 .ts/.tsx；CSS 支持是实验性的",
+        "isCorrect": true,
+        "description": "正确。这是官方 What can it bundle 的原文范围，CSS 实验性、可叠 PostCSS。"
+      },
+      {
+        "text": "任何前端资源（图片、字体、视频）都开箱即用",
+        "isCorrect": false,
+        "description": "错误。资源文件需 --loader 显式指定处理方式（base64/file 等），并非开箱即用。"
+      },
+      {
+        "text": "只支持 .ts 文件，JS 文件需要先改写成 TS",
+        "isCorrect": false,
+        "description": "错误。Node 原生的 .js/.json/.mjs 都直接支持。"
+      },
+      {
+        "text": "完整支持 CSS 以及 Sass/Less 预处理器",
+        "isCorrect": false,
+        "description": "错误。CSS 是实验性支持，Sass/Less 并未内置。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于 tsup 构建时的类型检查，官方立场是哪种？",
+    "explanation": "官方 FAQ「What about type checking?」给出明确答案：esbuild 快正是因为**不做类型检查**——「you already get type checking from your IDE like VS Code or WebStorm」。若想在构建期获得类型检查，可以启用 `--dts`：它会运行**真正的 TypeScript 编译器**来生成声明文件，从而附带获得类型检查。严格的发布流水线通常仍会另跑 `tsc --noEmit` 显式把关。\n\n- 「默认不查、--dts 附带检查」正确。\n- 「每次构建都查」错误。\n- 「esbuild 的 Go 实现做检查」错误：esbuild 不实现类型系统。\n- 「与 tsc 不能共存」错误：常见实践正是两者并行。",
+    "tags": ["tsup", "入门", "类型检查", "esbuild", "tsc"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认不做类型检查；启用 --dts 时会跑真 TS 编译器，附带获得类型检查",
+        "isCorrect": true,
+        "description": "正确。这是官方 FAQ 原意：日常靠 IDE，构建期要检查就开 --dts（或另跑 tsc --noEmit）。"
+      },
+      {
+        "text": "每次构建都内置完整类型检查，类型错误必定构建失败",
+        "isCorrect": false,
+        "description": "错误。默认转译不查类型，这正是 esbuild 快的原因之一。"
+      },
+      {
+        "text": "类型检查由 esbuild 的 Go 实现完成",
+        "isCorrect": false,
+        "description": "错误。esbuild 没有实现类型系统，检查只能靠 TypeScript 编译器。"
+      },
+      {
+        "text": "用了 tsup 就无法再运行 tsc，两者互斥",
+        "isCorrect": false,
+        "description": "错误。常见实践恰是 tsup 产物 + tsc --noEmit 并行把关，二者互补。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：除了命令行参数，tsup 还支持哪些配置方式？",
+    "explanation": "官方支持：`tsup.config.ts` / `.js` / `.cjs` / `.json`，以及 **package.json 的 `tsup` 字段**；配置可导出为 `default`、`tsup` 或 `module.exports =`。TS 配置推荐配 `defineConfig` 获得类型提示（也可导出函数做条件配置）。`--config` 可指定自定义文件、`--no-config` 禁用配置文件；大多数配置项可被 CLI 参数覆盖。JSON 配置还能挂官方 schema store（jsdelivr CDN）获得编辑器补全。\n\n- 「五种载体均可」正确。\n- 「只支持 JSON」错误：.ts 原生支持。\n- 「必须有配置文件」错误：纯 CLI 就能零配置使用。\n- 「defineConfig 必须用」错误：它主要提供类型帮助。",
+    "tags": ["tsup", "入门", "配置文件", "defineConfig"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "tsup.config.ts/.js/.cjs/.json，或 package.json 的 tsup 字段均可",
+        "isCorrect": true,
+        "description": "正确。五种载体任选；导出名可为 default/tsup/module.exports。"
+      },
+      {
+        "text": "只支持 JSON 格式配置，TS 配置需要自己先编译",
+        "isCorrect": false,
+        "description": "错误。tsup.config.ts 原生支持（内部用 bundle-require 加载），还能用 defineConfig 拿类型。"
+      },
+      {
+        "text": "必须存在配置文件，否则 tsup 无法运行",
+        "isCorrect": false,
+        "description": "错误。纯 CLI 即可零配置使用，配置文件是可选项。"
+      },
+      {
+        "text": "defineConfig 会做运行时校验，是必须调用的 API",
+        "isCorrect": false,
+        "description": "错误。defineConfig 主要提供类型提示，直接导出普通对象也完全合法。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：package.json 中没有设置 `\"type\": \"module\"`，执行 `tsup src/index.ts --format esm,cjs,iife` 后，产物文件名是？",
+    "explanation": "默认（无 `type: module`）的扩展名规则：**cjs → `index.js`、esm → `index.mjs`、iife → `index.global.js`**——cjs 占用裸 `.js`，esm 用 `.mjs` 显式标明，保证每个产物在 Node 的模块判定下语义正确。不想要 `.mjs/.cjs` 扩展时可用 `--legacy-output`（按 esm/iife 子目录输出全 `.js`），或用 `outExtension` 回调自定义。\n\n- 「.js(cjs)/.mjs(esm)/.global.js(iife)」正确。\n- 「.cjs/.js」组合错误：那是 type:module 时的规则。\n- 「分目录输出」错误：那是 --legacy-output 的行为。\n- 「[name].[format].js」错误：需自己用 outExtension 实现。",
+    "tags": ["tsup", "初级", "扩展名", "format", "产物"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "index.js（cjs）、index.mjs（esm）、index.global.js（iife）",
+        "isCorrect": true,
+        "description": "正确。无 type:module 时 cjs 占裸 .js，esm 用 .mjs，iife 是 .global.js。"
+      },
+      {
+        "text": "index.cjs（cjs）、index.js（esm）、index.global.js（iife）",
+        "isCorrect": false,
+        "description": "错误。这是 type:module 时的规则；默认情况下 cjs 才占 .js。"
+      },
+      {
+        "text": "三种格式都输出 index.js，分别放进不同子目录",
+        "isCorrect": false,
+        "description": "错误。默认平铺在 dist 下靠扩展名区分；分子目录是 --legacy-output 的行为。"
+      },
+      {
+        "text": "index.cjs.js、index.esm.js、index.iife.js",
+        "isCorrect": false,
+        "description": "错误。[name].[format].js 这种命名需要自己用 outExtension 回调实现。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：把 package.json 设为 `\"type\": \"module\"` 之后，`--format esm,cjs` 的产物扩展名会发生什么变化？",
+    "explanation": "`type: module` 下规则翻转：**esm → `index.js`（改占裸 .js）、cjs → `index.cjs`**；iife 仍是 `index.global.js`。原因：`type: module` 时 Node 把 `.js` 按 ESM 解析，所以 CJS 产物必须用 `.cjs` 显式标记，否则会被当作 ESM 加载而报错。写 package.json `exports` 时必须与真实扩展名一一对应；`outExtension` 回调的上下文里也提供 `pkgType` 字段供按此定制。\n\n- 「esm→.js、cjs→.cjs」正确。\n- 「不受 type 影响」错误：扩展名规则正是按 pkgType 切换。\n- 「cjs 被禁用」错误：仍可产出，只是改名。\n- 「带 format 名」错误：默认不会。",
+    "tags": ["tsup", "初级", "type-module", "扩展名", "esm"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "esm 产物变成 index.js，cjs 产物变成 index.cjs",
+        "isCorrect": true,
+        "description": "正确。type:module 下 .js 按 ESM 解析，CJS 产物必须改用 .cjs 显式标记。"
+      },
+      {
+        "text": "扩展名不受 type 字段影响，规则固定不变",
+        "isCorrect": false,
+        "description": "错误。两套规则正好相反，tsup 按 package.json 的 type 字段切换。"
+      },
+      {
+        "text": "cjs 格式会被禁用，只能输出 esm",
+        "isCorrect": false,
+        "description": "错误。cjs 仍可产出，只是扩展名改为 .cjs。"
+      },
+      {
+        "text": "esm 变成 index.esm.js，cjs 变成 index.cjs.js",
+        "isCorrect": false,
+        "description": "错误。默认命名不带 format 后缀，那要 outExtension 自定义。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：默认情况下，哪些模块不会被打进 bundle？",
+    "explanation": "官方：「By default tsup bundles all `import`-ed modules but `dependencies` and `peerDependencies` in your package.json are always excluded」——默认打包所有被 import 的模块，但 **`dependencies` 与 `peerDependencies` 始终被排除（external）**。这符合库的语义：运行时依赖交给使用方安装。可用 `--external <module>` 追加排除；反向用 `noExternal` 强制打入（如 monorepo 内部包）。注意 **devDependencies 没有豁免**——dev 依赖若被 import 且不在排除名单，会被打进产物。\n\n- 「deps 与 peerDeps」正确。\n- 「node_modules 全部」错误：那是 tsup-node/skipNodeModulesBundle 的行为。\n- 「devDeps」错误：不在默认名单。\n- 「全部内联」错误。",
+    "tags": ["tsup", "初级", "external", "dependencies", "库语义"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "package.json 里 dependencies 与 peerDependencies 中的包",
+        "isCorrect": true,
+        "description": "正确。两者始终被 external，运行时依赖交给使用方安装，这是库打包的默认语义。"
+      },
+      {
+        "text": "node_modules 里的所有包",
+        "isCorrect": false,
+        "description": "错误。默认只豁免 deps/peerDeps；要跳过所有 Node 包需 tsup-node 或 skipNodeModulesBundle。"
+      },
+      {
+        "text": "devDependencies 里的包",
+        "isCorrect": false,
+        "description": "错误。devDeps 不在默认排除名单，被 import 就会打进产物。"
+      },
+      {
+        "text": "什么都不排除，所有 import 都会被内联",
+        "isCorrect": false,
+        "description": "错误。deps 与 peerDeps 始终被排除，这点没有开关可关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：希望把 src/a.ts 打包后输出为 dist/foo.js（自定义产物名），下列哪种写法正确？",
+    "explanation": "用**键值对入口**：CLI 写 `tsup --entry.foo src/a.ts`，配置里写 `entry: { foo: 'src/a.ts' }`——**键名即产物名**，输出 `dist/foo.js`。而 `tsup src/a.ts` 或 `entry: ['src/a.ts']`（数组形式，支持 glob）的产物名跟随源文件名，输出 `dist/a.js`。多入口时每个入口各得一份产物（含各自的 d.ts/source map）。\n\n- 「--entry.foo / entry 对象」正确。\n- 「--out-file」错误：tsup 没有该参数。\n- 「as 别名语法」错误：不存在。\n- 「无法自定义」错误：对象键名就是自定义产物名。",
+    "tags": ["tsup", "初级", "entry", "多入口", "命名"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "CLI 用 --entry.foo src/a.ts，或配置 entry: { foo: 'src/a.ts' }",
+        "isCorrect": true,
+        "description": "正确。键值对入口的键名就是产物名，这是官方提供的自定义产物名方式。"
+      },
+      {
+        "text": "tsup src/a.ts --out-file foo.js",
+        "isCorrect": false,
+        "description": "错误。tsup 没有 --out-file 参数；产物名由入口文件名或 entry 键名决定。"
+      },
+      {
+        "text": "entry: ['src/a.ts as foo']",
+        "isCorrect": false,
+        "description": "错误。不存在 as 别名语法；数组形式产物名只跟随源文件名。"
+      },
+      {
+        "text": "产物只能与源文件同名，tsup 无法自定义",
+        "isCorrect": false,
+        "description": "错误。entry 对象的键名即可自定义产物名。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：`tsup src/index.ts --watch` 监听模式下，默认会忽略哪些目录的变更？",
+    "explanation": "官方：「By default it always ignores `dist`, `node_modules` & `.git`」——watch 默认忽略 **dist、node_modules、.git** 三处。需要忽略更多目录用 `--ignore-watch <dir>`，且**可以重复传多次**（`--ignore-watch folder1 --ignore-watch folder2`）。其中忽略 dist 很关键：否则自己的产物写入又触发重建，会陷入构建循环。\n\n- 「dist、node_modules、.git」正确。\n- 「只忽略 node_modules」错误。\n- 「什么都不忽略」错误：默认名单开箱即有。\n- 「忽略隐藏目录与测试文件」错误：没有这种泛化规则。",
+    "tags": ["tsup", "初级", "watch", "ignore-watch"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "dist、node_modules 与 .git",
+        "isCorrect": true,
+        "description": "正确。三个默认忽略项；忽略 dist 是为了避免产物写入触发重建循环。"
+      },
+      {
+        "text": "只忽略 node_modules",
+        "isCorrect": false,
+        "description": "错误。还忽略 dist 与 .git，三者都是默认名单成员。"
+      },
+      {
+        "text": "什么都不忽略，需要手动配置全部忽略项",
+        "isCorrect": false,
+        "description": "错误。默认名单开箱即有，--ignore-watch 只是追加更多忽略目录。"
+      },
+      {
+        "text": "自动忽略所有隐藏目录与测试文件",
+        "isCorrect": false,
+        "description": "错误。没有这种泛化规则，默认忽略就是固定的三项。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：开发一个 Node 服务，希望每次 watch 重建成功后自动执行产物验证效果，最贴合的内置方案是？",
+    "explanation": "用 **`onSuccess`**：`tsup src/index.ts --watch --onSuccess \"node dist/index.js\"`，每次构建成功后执行该命令，与 watch 搭配是官方点名的典型用法。进一步地，在 `tsup.config.ts` 里 `onSuccess` 还能写成**返回 Promise 的函数**（CLI 形式只能是字符串命令），并且函数可以**返回一个清理函数**——下一次重建前先执行清理（如 `server.close()`），适合起常驻服务的场景。\n\n- 「--watch + --onSuccess」正确。\n- 「--exec」错误：那是 nodemon 的参数风格。\n- 「onSuccess 只能在配置文件用」错误：CLI 支持字符串形式。\n- 「需要外接工具」错误：onSuccess 就是内置能力。",
+    "tags": ["tsup", "初级", "onSuccess", "watch", "工作流"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--watch 搭配 --onSuccess \"node dist/index.js\"",
+        "isCorrect": true,
+        "description": "正确。onSuccess 在每次构建成功后执行；配置文件里还可写成函数并返回清理函数。"
+      },
+      {
+        "text": "--watch --exec node dist/index.js",
+        "isCorrect": false,
+        "description": "错误。tsup 没有 --exec，那是 nodemon 的参数风格。"
+      },
+      {
+        "text": "onSuccess 只能写在配置文件里，CLI 不支持",
+        "isCorrect": false,
+        "description": "错误。CLI 支持字符串命令；只有「函数形式 + 清理函数」必须写在配置文件里。"
+      },
+      {
+        "text": "tsup 无法在构建后执行命令，需要外接 npm-watch 这类工具",
+        "isCorrect": false,
+        "description": "错误。onSuccess 正是为「构建成功后执行任务」设计的内置能力。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于 `--minify` 压缩，下列说法正确的是？",
+    "explanation": "`--minify` 默认用 **esbuild** 做压缩（极快）。若要换 **Terser**，把它作为参数值传入：`tsup src/index.ts --minify terser`——注意官方提示 **terser 不是 tsup 的依赖，必须自行 `npm i -D terser`**；配置文件里还可传 `terserOptions`，原样透传给 `terser.minify`。Terser 压缩率通常略优但速度慢得多，库场景一般 esbuild 压缩已足够。\n\n- 「默认 esbuild、可切 terser 但需自装」正确。\n- 「默认 Terser」错误。\n- 「混淆加密」错误：minify 只做压缩改名。\n- 「内置 terser」错误：它不在任何依赖清单里。",
+    "tags": ["tsup", "初级", "minify", "terser", "esbuild"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认用 esbuild 压缩；--minify terser 可切换为 Terser，但要自行安装 terser",
+        "isCorrect": true,
+        "description": "正确。esbuild 是默认压缩器；切 Terser 需 npm i -D terser，并可配 terserOptions。"
+      },
+      {
+        "text": "默认用 Terser 压缩，esbuild 只负责转译",
+        "isCorrect": false,
+        "description": "错误。默认压缩器就是 esbuild，Terser 是可选替代方案。"
+      },
+      {
+        "text": "--minify 会同时混淆变量名并加密字符串常量",
+        "isCorrect": false,
+        "description": "错误。minify 只做常规压缩与标识符改名，不做加密混淆。"
+      },
+      {
+        "text": "tsup 内置了 terser，无需额外安装",
+        "isCorrect": false,
+        "description": "错误。terser 既不在 dependencies 也不在 peerDependencies，必须手动安装。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于 `--sourcemap`，下列哪项符合官方文档？",
+    "explanation": "`--sourcemap` 为每个入口产出对应的 `.js.map`；`--sourcemap inline` 把 map 内联进产物，但官方警告 **inline 仅用于开发场景**（如浏览器扩展无法访问独立 .map 文件时），不推荐生产使用。另一条重要限制：「Source map is not supported in `--dts` build」——**dts 构建不支持 source map**。要「跳转到源码」的 declaration map（.d.ts.map）是另一回事，tsup 同样生成不了，需另跑 tsc。\n\n- 「.js.map、inline 限开发、dts 不支持」正确。\n- 「默认生成」错误：需显式开启。\n- 「顺带产 d.ts.map」错误。\n- 「inline 是生产推荐」错误：与官方告诫相反。",
+    "tags": ["tsup", "初级", "sourcemap", "调试"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "可产 .js.map；inline 模式仅建议开发用；--dts 构建不支持 source map",
+        "isCorrect": true,
+        "description": "正确。这三点都是官方文档明示的行为与限制。"
+      },
+      {
+        "text": "默认就会生成 source map，无需任何参数",
+        "isCorrect": false,
+        "description": "错误。需显式 --sourcemap 或配置 sourcemap: true。"
+      },
+      {
+        "text": "--sourcemap 同时会生成 .d.ts.map 声明映射",
+        "isCorrect": false,
+        "description": "错误。tsup 不能生成 declaration map，那需要另跑 tsc --emitDeclarationOnly --declaration。"
+      },
+      {
+        "text": "inline source map 是生产环境的推荐姿势",
+        "isCorrect": false,
+        "description": "错误。官方明确 inline 仅限开发场景，生产不推荐。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于代码分割（code splitting），tsup 当前的默认行为是？",
+    "explanation": "官方：「Code splitting currently only works with the `esm` output format, and it's enabled by default.」——**分割只对 esm 生效且默认开启**（继承 esbuild 的限制）。想给 **cjs 也做分割**，可以试**实验性**的 `--splitting`（tsup 为绕过 esbuild 限制做的扩展）；想完全关闭则用 `--no-splitting`。典型场景：多入口共享代码会被拆成 chunk，若要求单文件产物就需要显式关闭。\n\n- 「esm 默认开、cjs 实验性、可关」正确。\n- 「所有格式都开」错误。\n- 「默认关闭」错误：esm 下默认即开。\n- 「不支持分割」错误。",
+    "tags": ["tsup", "中级", "splitting", "esm", "chunk"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅 esm 格式支持且默认开启；cjs 分割是实验性 --splitting；--no-splitting 可关闭",
+        "isCorrect": true,
+        "description": "正确。esm 默认分割来自 esbuild；--splitting 给 cjs 的分割是 tsup 的实验性扩展。"
+      },
+      {
+        "text": "所有格式默认都开启代码分割",
+        "isCorrect": false,
+        "description": "错误。cjs/iife 默认没有分割，esbuild 的 splitting 只支持 esm。"
+      },
+      {
+        "text": "默认关闭，必须传 --splitting 才会分割",
+        "isCorrect": false,
+        "description": "错误。esm 下默认就开启；--splitting 的意义是给 cjs 开启实验性分割。"
+      },
+      {
+        "text": "tsup 不支持代码分割，多入口必然完整复制共享代码",
+        "isCorrect": false,
+        "description": "错误。esm 格式默认就会把共享代码拆成 chunk。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：esbuild 本身默认就开启 tree shaking，那 tsup 的 `--treeshake` 标志存在的意义是什么？",
+    "explanation": "官方解释：esbuild 的摇树「sometimes it's not working very well」（文档援引 esbuild issue #1794、#1435），所以 tsup 提供 `--treeshake`，**改用 Rollup 来做 tree shaking**——在 esbuild 产物之上再跑一遍 Rollup 摇树。该选项的类型与 **Rollup 的 `treeshake` 选项相同**（可传 true，也可传 Rollup 的细粒度对象）。这是 tsup「混合引擎」的典型例子：转译打包靠 esbuild，摇树兜底靠 Rollup。\n\n- 「改用 Rollup 摇树」正确。\n- 「esbuild 开关别名」错误。\n- 「默认无摇树」错误：esbuild 自带默认摇树。\n- 「与 minify 互斥」错误：可同时使用。",
+    "tags": ["tsup", "中级", "treeshake", "rollup", "混合引擎"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "esbuild 摇树有时不够彻底，--treeshake 改用 Rollup 做摇树，选项类型同 Rollup",
+        "isCorrect": true,
+        "description": "正确。这是文档原意：esbuild 摇树不理想时用 Rollup 兜底，选项类型与 Rollup treeshake 一致。"
+      },
+      {
+        "text": "--treeshake 只是给 esbuild 的摇树换了个开关名",
+        "isCorrect": false,
+        "description": "错误。它引入的是 Rollup 的摇树实现，不是 esbuild 开关的别名。"
+      },
+      {
+        "text": "tsup 默认完全没有摇树，必须 --treeshake 才有",
+        "isCorrect": false,
+        "description": "错误。esbuild 本身默认就做摇树；--treeshake 是更彻底的 Rollup 方案。"
+      },
+      {
+        "text": "--treeshake 与 --minify 互斥，开了压缩就不能摇树",
+        "isCorrect": false,
+        "description": "错误。两者不互斥，常见做法正是摇树后再压缩。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：`--dts` 生成的声明文件里引用了 node_modules 中某个包的类型，希望把这些外部类型也内联进 d.ts 产物，应该用什么？",
+    "explanation": "官方：「`--dts` does not resolve external (aka in `node_modules`) types used in the `.d.ts` file」——`--dts` **不解析外部类型**；有此需求用**实验性的 `--dts-resolve`**，它会把用到的外部类型解析并打进声明产物（典型场景：某些只在类型层用到的 devDependency，内联后使用方无需安装它也能获得完整类型）。另外 8.0.0 起还有 `--experimental-dts`（基于 @microsoft/api-extractor、需自装该 peer 依赖）作为另一套实现；`--dts-only` 则是只产声明不产 JS（等价 tsc 的 emitDeclarationOnly）。\n\n- 「--dts-resolve」正确。\n- 「--dts 默认内联」错误。\n- 「--dts-only」错误：职责不同。\n- 「--external-types」错误：不存在。",
+    "tags": ["tsup", "中级", "dts-resolve", "声明文件", "外部类型"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--dts-resolve（实验性，解析并内联外部类型）",
+        "isCorrect": true,
+        "description": "正确。它专为「把 node_modules 中的类型打进声明产物」而设，常用于内联纯类型 devDependency。"
+      },
+      {
+        "text": "--dts 默认就会内联外部类型，无需任何参数",
+        "isCorrect": false,
+        "description": "错误。官方明确 --dts 不解析 node_modules 里的外部类型。"
+      },
+      {
+        "text": "--dts-only",
+        "isCorrect": false,
+        "description": "错误。--dts-only 是「只产声明不产 JS」，与外部类型解析无关。"
+      },
+      {
+        "text": "--external-types",
+        "isCorrect": false,
+        "description": "错误。不存在该标志；解析外部类型的是 --dts-resolve。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：没有在任何地方显式配置 `target` 时，tsup 实际使用的编译目标是什么？",
+    "explanation": "官方：「The value for `target` defaults to `compilerOptions.target` in your tsconfig.json, or `node14` if unspecified.」——**优先读 tsconfig 的 compilerOptions.target，都没有才回落到 `node14`**。target 支持 chrome/edge/firefox/node/safari 等环境名加版本号，也支持 es2020 这类语言版本；特殊地 `--target es5` 时 esbuild 先转到 es2020，再交 **SWC** 降到 es5（esbuild 自己不支持输出 es5）。与之相关的 `platform` 默认是 **node**（tsup 面向库/Node 场景，覆盖了 esbuild 自身的 browser 默认值）。\n\n- 「tsconfig target，否则 node14」正确。\n- 「固定 esnext」「默认 es5」「跟随运行时 Node 版本」均错误。",
+    "tags": ["tsup", "中级", "target", "platform", "tsconfig"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "优先取 tsconfig.json 的 compilerOptions.target，否则回落到 node14",
+        "isCorrect": true,
+        "description": "正确。这是官方写明的解析顺序；es5 是特例，需 esbuild→es2020→SWC 二段转译。"
+      },
+      {
+        "text": "固定为 esnext，从不读取 tsconfig",
+        "isCorrect": false,
+        "description": "错误。tsup 会读 tsconfig 的 target，这正是与 tsconfig 协同的设计。"
+      },
+      {
+        "text": "默认 es5，以保证最大兼容性",
+        "isCorrect": false,
+        "description": "错误。默认不会降到 es5；而且 es5 需要 SWC 参与二段转译才能实现。"
+      },
+      {
+        "text": "跟随当前运行的 Node 版本动态决定",
+        "isCorrect": false,
+        "description": "错误。兜底值是固定的 node14，不随运行时 Node 版本变化。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：用 `tsup src/index.ts --env.NODE_ENV production` 注入编译期变量，但代码里先 `import process from 'node:process'` 再读 `process.env.NODE_ENV`，发现替换不生效。原因是？",
+    "explanation": "官方明确：`--env.VAR_NAME` **只识别 `process.env.VAR_NAME` 与 `import.meta.env.VAR_NAME`** 两种访问形式，且 `process.env` 必须是作为**内建全局变量**使用时才会替换——原文特别告诫「do not import `process` from `node:process`」。import 进来的 process 是普通模块绑定，esbuild 的 define 替换不匹配这种访问路径，于是该表达式被保留为运行时读取。修复：直接用全局 `process.env.NODE_ENV`，或改用 `import.meta.env.NODE_ENV`。\n\n- 「只替换全局形式的访问」正确。\n- 「--env 是运行时注入」错误：它是编译期替换。\n- 「NODE_ENV 是保留名」错误。\n- 「需要 dotenv 插件」错误：与 dotenv 无关。",
+    "tags": ["tsup", "中级", "env", "define", "编译期替换"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--env 只替换全局 process.env.X / import.meta.env.X；import 进来的 process 不会被替换",
+        "isCorrect": true,
+        "description": "正确。官方原文告诫不要从 node:process 导入 process，否则 define 替换匹配不上。"
+      },
+      {
+        "text": "--env 注入的是运行时环境变量，本来就不该在编译期被替换",
+        "isCorrect": false,
+        "description": "错误。--env 恰恰是编译期的 define 替换，不是运行时注入。"
+      },
+      {
+        "text": "NODE_ENV 是保留变量名，tsup 禁止注入",
+        "isCorrect": false,
+        "description": "错误。NODE_ENV 完全可以注入，官方文档示例用的就是它。"
+      },
+      {
+        "text": "还需要再配 dotenv 插件才会生效",
+        "isCorrect": false,
+        "description": "错误。与 dotenv 无关，问题出在 process 的访问路径与 define 不匹配。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：开启 `shims: true` 后，tsup 会做哪两类垫片注入？",
+    "explanation": "shims 的职责是为 esm/cjs 双格式**互补对方专属的模块级变量**：**构建 cjs 产物时**，把代码里的 `import.meta.url`（ESM 专属）编译为基于 `__filename` 的等价表达式；**构建 esm 产物时**，把 `__dirname`（CJS 专属）编译为 `path.dirname(fileURLToPath(import.meta.url))`。这样同一份源码可以无痛产出双格式。补充一个源码层面的细节：esm 侧的 shims 注入只在 `platform: 'node'` 时生效——浏览器平台本就没有这些 Node 语义。\n\n- 「cjs 垫 import.meta.url、esm 垫 __dirname」正确。\n- 反向选项错误：方向记反了。\n- 「注入 polyfill」「Node 内置模块 browser 版」错误：都不是 shims 的职责。",
+    "tags": ["tsup", "中级", "shims", "双格式", "import-meta"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cjs 产物里垫 import.meta.url，esm 产物里垫 __dirname",
+        "isCorrect": true,
+        "description": "正确。每种格式垫的是「自己缺失的另一边变量」，让一份源码兼容双格式。"
+      },
+      {
+        "text": "esm 产物里垫 import.meta.url，cjs 产物里垫 __dirname",
+        "isCorrect": false,
+        "description": "错误。方向反了：import.meta.url 本来就是 ESM 原生能力，无需垫。"
+      },
+      {
+        "text": "自动注入 core-js polyfill 补齐缺失的运行时 API",
+        "isCorrect": false,
+        "description": "错误。shims 只针对 __dirname/import.meta.url 这类模块级变量，不做 polyfill。"
+      },
+      {
+        "text": "为浏览器注入 Node 内置模块的 browser 版实现",
+        "isCorrect": false,
+        "description": "错误。那是 node polyfill 类 esbuild 插件的事，tsup shims 不做这个。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：一个只有 default 导出的库，希望 CJS 使用方能直接 `const lib = require('lib')` 拿到导出本体（而不是再取 `.default`），应该用哪个选项？",
+    "explanation": "默认行为下 esbuild 把 `export default x` 编译成 `module.exports.default = x`，CJS 使用方必须写 `require('lib').default`。开启 **`--cjsInterop`** 后：**仅当模块只有默认导出、没有任何具名导出时**，产物转为 `module.exports = x`，require 直接拿到本体。这是发双格式库时改善 CJS 端体验的关键开关；若同时存在具名导出则不会改写（否则具名导出无处安放）。\n\n- 「--cjsInterop」正确。\n- 「--shims」错误：它管 __dirname/import.meta.url。\n- 「--legacy-output」错误：它改目录结构与扩展名。\n- 「默认就是 module.exports = x」错误：默认恰恰带 .default。",
+    "tags": ["tsup", "中级", "cjsInterop", "default导出", "互操作"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--cjsInterop：仅默认导出且无具名导出时，转成 module.exports = x",
+        "isCorrect": true,
+        "description": "正确。这正是 cjsInterop 的触发条件与效果，专治 require().default 的别扭体验。"
+      },
+      {
+        "text": "--shims：自动垫平 default 导出的差异",
+        "isCorrect": false,
+        "description": "错误。shims 管 __dirname/import.meta.url 等模块级变量，与导出形态无关。"
+      },
+      {
+        "text": "--legacy-output：恢复旧版导出行为",
+        "isCorrect": false,
+        "description": "错误。legacy-output 改的是产物目录与扩展名结构，不改写导出形态。"
+      },
+      {
+        "text": "什么都不用配，esbuild 默认就输出 module.exports = x",
+        "isCorrect": false,
+        "description": "错误。默认输出是 module.exports.default = x，正因如此才需要 cjsInterop。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：希望「watch 模式下不压缩、正式构建才 minify」，官方推荐的配置写法是？",
+    "explanation": "配置文件可以**导出函数**做条件配置：`export default defineConfig((options) => ({ minify: !options.watch }))`。文档明确「The `options` here is derived from CLI flags」——函数入参就是 CLI 标志的解析结果：跑 `tsup --watch` 时 `options.watch` 为 true，于是 minify 关闭；正式构建时 watch 为假，minify 开启。这是处理 dev/prod 行为差异最顺手的官方方式。\n\n- 「defineConfig 传函数，options 来自 CLI 标志」正确。\n- 「读 process.env.WATCH」错误：tsup 不注入该变量。\n- 「双配置文件自动切换」错误：没有按模式选文件的机制，需 --config 手动指定。\n- 「配置文件不支持条件逻辑」错误：函数式配置正是官方方案。",
+    "tags": ["tsup", "中级", "defineConfig", "条件配置", "watch"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "defineConfig 传入函数：(options) => ({ minify: !options.watch })，options 来自 CLI 标志",
+        "isCorrect": true,
+        "description": "正确。函数式配置是官方提供的条件配置方案，入参即 CLI 标志解析结果。"
+      },
+      {
+        "text": "在配置里读 process.env.WATCH，tsup 会自动注入该环境变量",
+        "isCorrect": false,
+        "description": "错误。tsup 不会注入 WATCH 环境变量，官方途径是函数式配置的 options 参数。"
+      },
+      {
+        "text": "写 tsup.dev.ts 与 tsup.prod.ts 两份配置，tsup 自动按模式选择",
+        "isCorrect": false,
+        "description": "错误。不存在按模式自动选配置文件的机制，自定义文件需 --config 手动指定。"
+      },
+      {
+        "text": "条件逻辑只能写在 npm scripts 里，配置文件不支持",
+        "isCorrect": false,
+        "description": "错误。函数式 defineConfig 正是为条件配置而生。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：`--format esm,cjs --dts` 会为每种格式各生成一份声明文件。官方给出这样设计的理由是什么？",
+    "explanation": "官方原文：「When emitting multiple bundle formats, one declaration file per bundle format is generated. **This is required for consumers to get accurate type checking with TypeScript.**」在 TS 的 Node16/NodeNext 模块解析下，`import` 与 `require` 两个条件各自解析到的声明文件，必须与对应产物的模块语义匹配（`.d.mts` 配 `.mjs`、`.d.cts` 配 `.cjs`/CJS 的 `.js`），否则会出现 @arethetypeswrong/cli 检出的「Masquerading as ESM/CJS」类型错配。因此 package.json 的 exports 里 import/require 分支应分别配好各自的 types 指向。\n\n- 「为了双分支都得到准确类型检查」正确。\n- 「纯冗余可删」「类型内容完全不同」「兼容 TS 3.x」均错误。",
+    "tags": ["tsup", "中级", "dts", "exports", "Node16解析"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "为了让使用方在 TS 的 Node16/NodeNext 解析下，对 import 与 require 两个分支都得到准确的类型检查",
+        "isCorrect": true,
+        "description": "正确。声明文件的模块语义必须与对应格式产物匹配，这是官方写明的理由。"
+      },
+      {
+        "text": "纯属冗余输出，手动删掉任意一份也完全无害",
+        "isCorrect": false,
+        "description": "错误。删掉会让对应分支的类型解析失配，attw 会报 Masquerading 类问题。"
+      },
+      {
+        "text": "因为 esm 与 cjs 的运行时行为不同，两份类型定义的内容完全不同",
+        "isCorrect": false,
+        "description": "错误。两份内容通常几乎一致，关键在扩展名承载的模块语义与解析规则。"
+      },
+      {
+        "text": "为了兼容 TypeScript 3.x 的旧版解析器",
+        "isCorrect": false,
+        "description": "错误。动机恰是现代的 Node16/NodeNext 解析规则，而非旧版兼容。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：用 tsup 构建 Node.js 应用/API 时，官方为什么额外提供 `tsup-node` 这个独立可执行命令？",
+    "explanation": "官方：构建 Node 应用时「usually bundling dependencies is not needed, and it can even break things, for instance, while outputting to ESM」——打包依赖通常没必要、输出 ESM 时甚至会出问题（如依赖内部的动态 require/`__dirname` 语义）。常规 `tsup` 只默认排除 deps/peerDeps，若仍有包被打进产物，**`tsup-node` 会自动跳过打包任何 Node 包**（等价 `skipNodeModulesBundle` 行为），其余 CLI 参数照常可用；需要重新打入的包（如 monorepo 本地包）再用 **`noExternal`** 拉回 bundle。\n\n- 「自动跳过所有 node_modules 包 + noExternal 拉回」正确。\n- 「固定产 cjs」「内联全部依赖出单文件」「专管 hashbang」均错误。",
+    "tags": [
+      "tsup",
+      "高级",
+      "tsup-node",
+      "skipNodeModulesBundle",
+      "noExternal"
+    ],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它自动跳过打包所有 node_modules 包；配合 noExternal 可再把 monorepo 本地包打回 bundle",
+        "isCorrect": true,
+        "description": "正确。这就是 tsup-node 的全部差异：更彻底的不打包依赖，等价 skipNodeModulesBundle。"
+      },
+      {
+        "text": "它是 Node 专用版，把产物固定为 cjs 以保证兼容",
+        "isCorrect": false,
+        "description": "错误。它不改 format，核心差异只在「跳过打包 Node 包」。"
+      },
+      {
+        "text": "它会把依赖全部内联，产出零依赖的单文件可执行程序",
+        "isCorrect": false,
+        "description": "错误。方向恰好相反，它是更彻底地不打包依赖。"
+      },
+      {
+        "text": "它专门负责给产物加 hashbang 并设置可执行权限",
+        "isCorrect": false,
+        "description": "错误。入口含 #! 时自动设可执行是 tsup 的通用行为，与 tsup-node 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：项目的 tsconfig 开启了 `emitDecoratorMetadata` 使用传统装饰器，tsup 会如何处理这次构建？",
+    "explanation": "esbuild **不支持 emitDecoratorMetadata**（发出装饰器元数据需要类型信息，esbuild 不做类型分析）。官方方案：检测到 tsconfig 开启该选项时，tsup **自动改用 SWC 来转译装饰器**——`@swc/core` 是 peerDependency，需要自行安装；可在配置的 `swc` 字段传额外 SWC 选项（如 `jsc.transform.useDefineForClassFields`），或设 `swcrc: true` 让它读取自定义 .swcrc。但要注意部分 SWC 选项被 tsup 固定、不可覆盖：`legacyDecorator: true`、`decoratorMetadata: true`、`keepClassNames: true`、`target: es2022` 等。\n\n- 「自动切 SWC、@swc/core 需自装、部分选项固定」正确。\n- 「esbuild 原生支持」「报错退出」「装饰器原样保留」均错误。",
+    "tags": ["tsup", "高级", "装饰器", "swc", "emitDecoratorMetadata"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动切换用 SWC 转译装饰器；@swc/core 是需自装的 peer 依赖，且部分 SWC 选项被固定",
+        "isCorrect": true,
+        "description": "正确。这是 tsup 弥补 esbuild 装饰器元数据短板的官方机制。"
+      },
+      {
+        "text": "esbuild 原生支持 emitDecoratorMetadata，直接编译即可",
+        "isCorrect": false,
+        "description": "错误。esbuild 不支持发出装饰器元数据，这正是要引入 SWC 的原因。"
+      },
+      {
+        "text": "tsup 直接报错退出，要求改用 tsc 构建",
+        "isCorrect": false,
+        "description": "错误。不会报错，tsup 自动走 SWC 转译路径，这是官方支持的场景。"
+      },
+      {
+        "text": "装饰器会被原样保留到产物里，交给运行时处理",
+        "isCorrect": false,
+        "description": "错误。legacy 装饰器必须在编译期转译并发出元数据，不能原样保留。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：开启 emitDecoratorMetadata 后构建报错 `No matching export in \"xxx.ts\" for import \"SomeType\"`，官方 Troubleshooting 给出的修复方式是？",
+    "explanation": "这是官方文档 Troubleshooting 唯一收录的问题：emitDecoratorMetadata 模式下 **SWC 先把装饰器转译成 JS，纯类型导出在这一步被剥除**，随后 esbuild 解析 import 时就找不到对应的导出，于是报 No matching export。修复方式：把类型导入显式标注为 type——改成 `import { type SomeType } from './x'` 或 `import type { SomeType } from './x'`，让工具链明确知道这是纯类型引用、可安全擦除。这也是所有「逐文件转译」工具（esbuild/SWC/Babel）的通用约束（isolatedModules 语义）。\n\n- 「改用 import type 标注」正确。\n- 「关 --dts」错误：报错发生在 JS 构建阶段。\n- 「改默认导出」错误：根源是未标注 type。\n- 「升级 esbuild」错误：这是机制性约束非版本 bug。",
+    "tags": [
+      "tsup",
+      "高级",
+      "troubleshooting",
+      "import-type",
+      "isolatedModules"
+    ],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把类型导入改写为 import type { SomeType } 或 import { type SomeType }",
+        "isCorrect": true,
+        "description": "正确。显式 type 标注让转译器知道可以安全擦除，这是官方给出的修复方式。"
+      },
+      {
+        "text": "关闭 --dts 即可绕过该报错",
+        "isCorrect": false,
+        "description": "错误。报错发生在 JS 构建阶段（esbuild 找不到导出），与 dts 生成无关。"
+      },
+      {
+        "text": "把 SomeType 改成默认导出",
+        "isCorrect": false,
+        "description": "错误。默认导出的纯类型同样会被剥除，问题根源是未标注 type 的类型导入。"
+      },
+      {
+        "text": "升级 esbuild 到最新版即可自动解决",
+        "isCorrect": false,
+        "description": "错误。这是逐文件剥类型的机制性约束，不是 esbuild 的版本 bug。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：monorepo 里想要 `.d.ts.map`（declaration map）以支持「点击类型跳转到 .ts 源码」，用 tsup 应该怎么做？",
+    "explanation": "官方明确：**tsup 无法生成 declaration map**（文档直接链接 issue #564 说明）。推荐做法：构建完成后用 TypeScript 编译器补一步——`tsc --emitDeclarationOnly --declaration`，并且官方点名可以把这条命令挂在 tsup 的 **`onSuccess`** 里串成一条流水线。两点澄清：declaration map 主要服务于 monorepo 内的跳转体验；官方提醒它**不应该被发布进 npm 包**，也不要与 source map 混为一谈。\n\n- 「tsup 生成不了，构建后另跑 tsc，可挂 onSuccess」正确。\n- 「--sourcemap 顺带产出」错误：两者是不同的东西。\n- 「--dts-resolve 可生成」错误：它解决的是外部类型内联。\n- 「必须随包发布」错误：官方明确不该进发布包。",
+    "tags": ["tsup", "高级", "declaration-map", "onSuccess", "monorepo"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "tsup 生成不了；构建后另跑 tsc --emitDeclarationOnly --declaration，可挂在 onSuccess 里",
+        "isCorrect": true,
+        "description": "正确。这是官方文档的原方案：tsc 补产 declaration map，用 onSuccess 串联。"
+      },
+      {
+        "text": "--sourcemap 顺带就会产出 .d.ts.map",
+        "isCorrect": false,
+        "description": "错误。source map 与 declaration map 是两码事，且 --dts 构建连 source map 都不支持。"
+      },
+      {
+        "text": "--dts-resolve 可以生成 declaration map",
+        "isCorrect": false,
+        "description": "错误。dts-resolve 解决的是外部类型内联，与 declaration map 无关。"
+      },
+      {
+        "text": "declaration map 必须随包发布到 npm，否则使用方类型跳转会失效",
+        "isCorrect": false,
+        "description": "错误。官方明确它不该进发布包，主要用于 monorepo 本地开发体验。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：产物要被一个不支持 .mjs/.cjs 扩展名的旧工具消费，tsup 提供了哪两条出路？",
+    "explanation": "出路一：**`--legacy-output`**——改为按格式分目录输出：`dist/index.js`（cjs）+ `dist/esm/index.js` + `dist/iife/index.js`，全部使用 `.js` 扩展名。出路二（更灵活）：**`outExtension` 回调**——如 `outExtension({ format }) { return { js: `.${format}.js` } }` 可产出 `[name].[format].js` 之类的自定义扩展名；回调的上下文除 `format` 外还提供 `options` 与 `pkgType`（package.json 的 type 字段）供决策。两者都是绕开默认「.js/.mjs/.cjs 语义化扩展名」的逃生门。\n\n- 「legacy-output 或 outExtension」正确。\n- 「改 type 字段是唯一办法」「不允许改扩展名」「--no-extension」均错误。",
+    "tags": ["tsup", "高级", "legacy-output", "outExtension", "兼容"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "--legacy-output 按格式分目录输出全 .js；或用 outExtension 回调自定义扩展名",
+        "isCorrect": true,
+        "description": "正确。这是官方提供的两条扩展名逃生门，outExtension 还能拿到 pkgType 做决策。"
+      },
+      {
+        "text": "修改 package.json 的 type 字段是唯一办法",
+        "isCorrect": false,
+        "description": "错误。type 只在两套默认规则间切换，分目录与自定义扩展名才是为旧工具准备的出路。"
+      },
+      {
+        "text": "tsup 不允许更改产物扩展名",
+        "isCorrect": false,
+        "description": "错误。outExtension 就是官方提供的扩展名定制接口。"
+      },
+      {
+        "text": "传 --no-extension 输出无扩展名文件",
+        "isCorrect": false,
+        "description": "错误。不存在 --no-extension 这个标志。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：关于 `--dts` 声明文件生成的底层实现，下列哪项准确？",
+    "explanation": "`--dts` 的实现是「**真 TypeScript 编译器 + rollup-plugin-dts**」的组合：先跑 TS 编译器获得类型信息，再在 Rollup 管线里用 rollup-plugin-dts 把声明**打包**（bundle）成每入口/每格式一份的 d.ts。所以 `rollup` 是 tsup 的**直接依赖**（8.5.x 锁 ^4.x），rollup-plugin-dts 则打进了 tsup 自身产物（源码以 `require('rollup-plugin-dts')` 引入），并配套 fix-dts-default-cjs-exports 插件修正 CJS 默认导出的声明形态；`typescript` 是 peerDependency（>=4.5），需项目自备。而 esbuild 在这条链路里只管 JS——它没有生成声明文件的能力。这也解释了为什么 dts 构建明显慢于 JS 构建、大项目还容易吃内存。\n\n- 「TS 编译器 + rollup-plugin-dts 打包」正确。\n- 「esbuild 用 Go 实现了 dts」「api-extractor 是默认」「需要全局 TS」均错误。",
+    "tags": ["tsup", "专家", "rollup-plugin-dts", "dts机制", "peerDependency"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "由真 TypeScript 编译器提供类型，rollup-plugin-dts 在 Rollup 管线里把声明打包成单文件",
+        "isCorrect": true,
+        "description": "正确。rollup 是直接依赖、TS 是 peer 依赖，这正是 dts 慢于 JS 构建的根源。"
+      },
+      {
+        "text": "esbuild 用 Go 重新实现了声明文件生成，所以 dts 与 JS 一样快",
+        "isCorrect": false,
+        "description": "错误。esbuild 不会生成声明文件，dts 链路与 esbuild 无关且明显更慢。"
+      },
+      {
+        "text": "默认由 @microsoft/api-extractor 生成声明文件",
+        "isCorrect": false,
+        "description": "错误。api-extractor 是 --experimental-dts 的实现，不是默认 --dts 的。"
+      },
+      {
+        "text": "必须全局安装 typescript，项目本地依赖不会被识别",
+        "isCorrect": false,
+        "description": "错误。typescript 是项目本地的 peer 依赖（>=4.5），无需全局安装。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：截至 2026 年中，关于 tsup 的维护状态与生态走向，下列哪项符合事实？",
+    "explanation": "事实链：tsup 仓库/README **官方声明「This project is not actively maintained anymore. Please consider using tsdown instead.」**；npm `latest` 停在 **8.5.1**（2025-11 发布）；但周下载仍约 **600 万+**，依旧是 esbuild 系库打包的事实标准。接班人 **tsdown** 由 VoidZero 主导、基于 **Rolldown**，关键默认值不同（format 默认 esm、clean 默认 true、检测到 types 字段自动开 dts），官方提供「Migrate from tsup」指南与自动迁移工具 **`npx tsdown-migrate`**（支持 --dry-run 与 monorepo 通配符）。「维护放缓但存量巨大、官方点名 tsdown 接班」是准确画像。\n\n- 「官宣不再积极维护并推荐 tsdown，存量仍巨大」正确。\n- 「已下架」「tsdown 是 tsup 改名」「接班是谣言」均不符事实。",
+    "tags": ["tsup", "专家", "tsdown", "维护状态", "迁移"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "README 官宣不再积极维护并推荐 tsdown（Rolldown 系）接班，提供自动迁移工具；tsup 存量使用仍然巨大",
+        "isCorrect": true,
+        "description": "正确。官方原话 + npx tsdown-migrate + 周下载约 600 万，这就是 2026 年的真实画像。"
+      },
+      {
+        "text": "tsup 已从 npm 下架，无法再安装",
+        "isCorrect": false,
+        "description": "错误。包完好可装，latest 为 8.5.1，周下载仍是数百万量级。"
+      },
+      {
+        "text": "tsdown 就是 tsup 9.0 的改名，两者是同一代码库",
+        "isCorrect": false,
+        "description": "错误。tsdown 是 VoidZero 主导、基于 Rolldown 的独立项目，并非 tsup 改名。"
+      },
+      {
+        "text": "tsup 仍在高频发版，「接班」只是社区谣言",
+        "isCorrect": false,
+        "description": "错误。「not actively maintained anymore」是 README 的官方原话，并非谣言。"
+      }
+    ]
+  },
+  {
+    "stem": "tsup：执行 `tsup src/index.ts --format esm,cjs --dts --treeshake`，且 tsconfig 开启了 emitDecoratorMetadata。这次构建里各引擎的分工，哪项正确？",
+    "explanation": "tsup 本质是**调度多引擎的指挥家**：**esbuild** 负责 TS/JS 的转译与打包（esm/cjs 各跑一遍）；**SWC** 因 emitDecoratorMetadata 而介入装饰器转译（esbuild 不支持发出元数据）；**Rollup** 出场两次——`--treeshake` 用它对产物做更彻底的摇树、`--dts` 用它（经 rollup-plugin-dts）打包声明文件；**TypeScript 编译器**则为 dts 提供类型信息。理解这张分工图，就能解释 tsup 的速度构成（JS 链路快、dts 链路慢）与每个 flag 的能力边界。\n\n- 「esbuild 管 JS、SWC 管装饰器、Rollup 管摇树与 dts、TS 供类型」正确。\n- 「esbuild 单引擎包办」「Rollup 管 JS、esbuild 管 dts」「SWC 全程参与」均与事实不符。",
+    "tags": ["tsup", "专家", "混合引擎", "架构", "分工"],
+    "categories": [
+      ["技术方向", "tsup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "esbuild 转译打包 JS；SWC 处理装饰器；Rollup 负责 treeshake 与 dts 打包；TS 编译器提供类型",
+        "isCorrect": true,
+        "description": "正确。这就是 tsup 的混合引擎全景：四个引擎各司其职、按需启用。"
+      },
+      {
+        "text": "全部工作由 esbuild 单引擎完成",
+        "isCorrect": false,
+        "description": "错误。装饰器（SWC）、--treeshake（Rollup）、声明（TS + rollup-plugin-dts）都不在 esbuild 手里。"
+      },
+      {
+        "text": "Rollup 负责 JS 打包，esbuild 只负责生成 dts",
+        "isCorrect": false,
+        "description": "错误。分工说反了：JS 主链路是 esbuild，dts 链路才用 Rollup；esbuild 根本不会产声明。"
+      },
+      {
+        "text": "SWC 参与所有构建中每个文件的转译",
+        "isCorrect": false,
+        "description": "错误。SWC 仅在 legacy 装饰器（或 --target es5）等特定场景被按需启用。"
+      }
+    ]
+  }
+]

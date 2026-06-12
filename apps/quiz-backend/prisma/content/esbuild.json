@@ -1,0 +1,1366 @@
+[
+  {
+    "stem": "esbuild：官网首页对 esbuild 的定位是「An extremely fast bundler for the web」。关于它的本职工作，下列哪项最准确？",
+    "explanation": "官方定位：esbuild 是**极快的 Web 打包器（bundler）兼压缩器（minifier）**，用 Go 编写并编译为原生代码，主打「Extreme speed without needing a cache」（无需缓存的极致速度）。它内置 JavaScript、CSS、TypeScript、JSX 支持，提供 CLI / JS / Go 三套 API，覆盖 tree shaking、minify、source map、本地服务器、watch 模式与插件机制。\n\n- 「Go 编写的极速打包器兼压缩器」正确。\n- 「JS 运行时」错误：esbuild 是构建期工具，不执行业务代码。\n- 「类型检查器」错误：官方明确不做类型检查。\n- 「运行时模块加载器」错误：它在构建期打包，不在浏览器运行时加载模块。",
+    "tags": ["esbuild", "入门", "核心概念", "定位", "bundler"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个用 Go 编写的极速 JS/CSS 打包器（bundler）兼压缩器（minifier），内置 TS/JSX 支持",
+        "isCorrect": true,
+        "description": "正确。官网定义「An extremely fast bundler for the web」，主体能力是打包 + 压缩，Go 实现是其速度根基。"
+      },
+      {
+        "text": "一个替代 Node.js 的 JavaScript 运行时",
+        "isCorrect": false,
+        "description": "错误。esbuild 是构建期工具，不执行代码；替代 Node 的是 Deno/Bun 这类运行时。"
+      },
+      {
+        "text": "一个 TypeScript 类型检查器，可替代 tsc",
+        "isCorrect": false,
+        "description": "错误。esbuild 只剥离类型不做检查，官方建议另跑 tsc --noEmit。"
+      },
+      {
+        "text": "一个浏览器端模块加载器，在运行时按需加载模块",
+        "isCorrect": false,
+        "description": "错误。esbuild 在构建期把模块打成产物，运行时没有 esbuild 的存在。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官网主打「Extreme speed without needing a cache」。下列哪项是官方 FAQ「Why is esbuild fast?」中给出的速度来源？",
+    "explanation": "官方 FAQ 给出四点：**① Go 编写并编译为原生代码**（JS 写的打包器每次启动都要被 VM 重新解释/优化）；**② 高度并行**——parse、link、code generation 三阶段都设计为吃满所有 CPU 核，Go 的共享内存模型优于 JS worker 的序列化通信；**③ 一切从零自研**（含 TS 解析器），不依赖第三方库；**④ 内存使用高效**——AST 全程只过大约三遍，缓存友好。\n\n- 「Go 原生代码 + 全阶段并行」正确，正是前两点。\n- 「持久化磁盘缓存」错误：口号恰恰是无需缓存。\n- 「正则字符串替换」错误：esbuild 做完整解析，自研 parser。\n- 「交给浏览器运行时」错误：构建在本机完成。",
+    "tags": ["esbuild", "入门", "性能", "Go", "并行"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认开启持久化磁盘缓存，二次构建直接复用上次结果",
+        "isCorrect": false,
+        "description": "错误。esbuild 的口号正是「无需缓存的极致速度」，速度不依赖缓存。"
+      },
+      {
+        "text": "用 Go 编写并编译为原生代码，且 parse/link/codegen 各阶段充分并行利用所有 CPU 核",
+        "isCorrect": true,
+        "description": "正确。这是官方 FAQ 四点原因中的前两点：原生代码无 VM 预热开销 + 全阶段并行。"
+      },
+      {
+        "text": "跳过语法解析，用正则表达式做快速字符串替换",
+        "isCorrect": false,
+        "description": "错误。esbuild 做完整的词法/语法分析，并为性能自研了 JS/TS 解析器。"
+      },
+      {
+        "text": "把打包工作下放给浏览器在运行时完成",
+        "isCorrect": false,
+        "description": "错误。esbuild 是本机构建期工具，浏览器只拿到打包产物。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：不安装任何插件的前提下，下列哪种文件 esbuild 无法直接处理？",
+    "explanation": "esbuild **内置**的内容类型包括 JavaScript、CSS、TypeScript、JSX（另有 json、text、binary、dataurl、file 等内置 loader）。而官方 FAQ 把「其他前端语言（Elm、Svelte、Vue、Angular）」明确列入**有意不在核心实现**的清单——处理 .vue 单文件组件需要社区插件或其他工具。\n\n- .ts / .jsx / .css 都是内置支持，开箱即用。\n- .vue 单文件组件不内置，正确答案。",
+    "tags": ["esbuild", "入门", "content-types", "loader", "边界"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "TypeScript 文件（.ts）",
+        "isCorrect": false,
+        "description": "错误。TS 是内置内容类型，esbuild 自研了 TS 解析器，直接剥类型转译。"
+      },
+      {
+        "text": "JSX 文件（.jsx）",
+        "isCorrect": false,
+        "description": "错误。.jsx 扩展名自动启用 JSX 解析，无需任何配置。"
+      },
+      {
+        "text": "Vue 单文件组件（.vue）",
+        "isCorrect": true,
+        "description": "正确。FAQ 明确把其他前端语言（Elm/Svelte/Vue/Angular）列为不打算内置的能力，需插件。"
+      },
+      {
+        "text": "CSS 文件（.css）",
+        "isCorrect": false,
+        "description": "错误。CSS 是 esbuild 的一等公民内容类型，可直接打包甚至作为入口。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：用 esbuild 编译 TypeScript 项目时，关于「类型错误」的处理，官方文档的说法是？",
+    "explanation": "官方 Content Types 页明确：「esbuild **does not** do any type checking so you will still need to run `tsc -noEmit`」。esbuild 对 TS 只做**逐文件剥离类型注解再转译**，语法合法就放行——类型错误的代码照样产出。要类型安全，需并行另跑 `tsc --noEmit`（IDE 内的类型提示也来自 tsserver 而非 esbuild）。\n\n- 「只剥类型不检查，建议另跑 tsc --noEmit」正确。\n- 「完整类型检查并中断构建」错误。\n- 「--strict 开启检查」错误：不存在这种开关。\n- 「调用本机 tsc」错误：esbuild 用自研解析器，与 tsc 无关。",
+    "tags": ["esbuild", "入门", "TypeScript", "类型检查", "边界"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "esbuild 会完整做类型检查，类型错误时中断构建",
+        "isCorrect": false,
+        "description": "错误。esbuild 完全不做类型检查，类型错误不会被发现。"
+      },
+      {
+        "text": "只有开启 --strict 标志后 esbuild 才做类型检查",
+        "isCorrect": false,
+        "description": "错误。esbuild 没有这种开关，类型检查不在其能力范围内。"
+      },
+      {
+        "text": "esbuild 会自动调用本机安装的 tsc 来检查类型",
+        "isCorrect": false,
+        "description": "错误。esbuild 用自研 TS 解析器，完全不依赖也不调用 tsc。"
+      },
+      {
+        "text": "esbuild 只剥离类型注解、不做任何类型检查，官方建议同时另跑 tsc --noEmit",
+        "isCorrect": true,
+        "description": "正确。官方原文：esbuild does not do any type checking，需另跑 tsc -noEmit 把关。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：执行 `esbuild app.js --outfile=out.js`（注意没有 --bundle）时，app.js 里 `import` 的依赖会发生什么？",
+    "explanation": "**bundling 默认是关闭的**，必须显式传 `--bundle` 才会递归内联依赖。不开 bundle 时，esbuild 只对输入文件本身做转换（剥 TS 类型、转 JSX、按 target 降级等），`import` 语句**原样保留**、依赖不会被跟随和打包。这与 Babel 的单文件转译行为类似。\n\n- 「只转换该文件本身，import 原样保留」正确。\n- 「依赖被递归内联」错误：那是 --bundle 的行为。\n- 「直接报错」错误：不会报错，只是不打包。\n- 「异步预取再合并」错误：不存在这种机制。",
+    "tags": ["esbuild", "入门", "bundle", "默认行为", "CLI"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "依赖会被递归内联进 out.js，输出单文件",
+        "isCorrect": false,
+        "description": "错误。递归内联是 --bundle 的行为，而 bundling 默认关闭。"
+      },
+      {
+        "text": "构建直接报错：import 必须配合 --bundle 使用",
+        "isCorrect": false,
+        "description": "错误。不会报错；esbuild 正常转换该文件并保留 import 语句。"
+      },
+      {
+        "text": "只转换 app.js 这一个文件本身，import 语句原样保留、依赖不会被打包",
+        "isCorrect": true,
+        "description": "正确。官方：bundling 默认关闭，不开启时输入文件被独立处理、不跟随依赖。"
+      },
+      {
+        "text": "依赖会被浏览器异步预取后再合并执行",
+        "isCorrect": false,
+        "description": "错误。esbuild 是构建期工具，没有任何运行时预取机制。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官网 Getting Started 的第一个示例是打包一个使用 React 的 app.jsx。要把它连同 react/react-dom 依赖打成单文件 out.js，正确的命令是？",
+    "explanation": "官方示例命令：`esbuild app.jsx --bundle --outfile=out.js`。要点：**① .jsx 扩展名自动启用 JSX 解析**（.js 文件想用 JSX 需 `--loader:.js=jsx`）；**② --bundle 开启依赖递归内联**；**③ --outfile 指定单文件输出**（多入口或代码拆分时改用 --outdir）。\n\n- 「--bundle --outfile」正确。\n- 「--compile --target=react」错误：两个标志都不存在这种用法。\n- 「--entry --pack」错误：纯属虚构的标志。\n- 「只有 --outfile 没有 --bundle」错误：不开 bundle 则 react 依赖不会被打进产物。",
+    "tags": ["esbuild", "入门", "CLI", "getting-started", "JSX"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "esbuild app.jsx --bundle --outfile=out.js",
+        "isCorrect": true,
+        "description": "正确。官方 Getting Started 原版命令：--bundle 内联依赖，--outfile 输出单文件。"
+      },
+      {
+        "text": "esbuild app.jsx --compile --target=react",
+        "isCorrect": false,
+        "description": "错误。不存在 --compile；--target 接收的是 es2020/chrome58 这类环境版本，不是框架名。"
+      },
+      {
+        "text": "esbuild --entry app.jsx --pack out.js",
+        "isCorrect": false,
+        "description": "错误。--entry 与 --pack 都是虚构标志；入口直接作为位置参数传入。"
+      },
+      {
+        "text": "esbuild app.jsx --outfile=out.js",
+        "isCorrect": false,
+        "description": "错误。缺少 --bundle，react/react-dom 不会被打进 out.js，浏览器无法直接运行。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官网首页用「打包 10 份 three.js 副本的生产构建（含 minify + sourcemap）」做基准测试。esbuild 与 webpack 5 的耗时量级大致是？",
+    "explanation": "官网首页基准数字：**esbuild 0.39s、Parcel 2 14.91s、Rollup 4 + terser 34.10s、webpack 5 41.21s**——esbuild 比 webpack 5 快约 **100 倍**，且默认开启 minify 和 sourcemap、不依赖缓存。FAQ 补充的 TypeScript 基准（旧 Rome 代码库）差距类似：esbuild 0.10s vs webpack 5 16.69s。这种数量级差异正是「JS 工具原生化」浪潮的起点。\n\n- 「0.4 秒 vs 41 秒，约百倍」正确。\n- 其他选项的量级都与官方数字不符；webpack 的持久缓存只能改善二次构建，官方基准对比的是冷构建。",
+    "tags": ["esbuild", "入门", "benchmark", "性能", "对比"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "两者都在 1 秒内完成，差距约 10%",
+        "isCorrect": false,
+        "description": "错误。webpack 5 在该基准下需 41.21 秒，远超 1 秒。"
+      },
+      {
+        "text": "esbuild 约 0.4 秒，webpack 5 约 41 秒，相差约百倍",
+        "isCorrect": true,
+        "description": "正确。官网数字：esbuild 0.39s、webpack 5 41.21s，约 106 倍差距。"
+      },
+      {
+        "text": "esbuild 约 4 秒，webpack 约 8 秒，差距约 2 倍",
+        "isCorrect": false,
+        "description": "错误。差距是数量级级别（百倍），不是 2 倍。"
+      },
+      {
+        "text": "webpack 更快，因为它有持久化缓存",
+        "isCorrect": false,
+        "description": "错误。官方基准是无缓存冷构建，esbuild 不需要缓存也快百倍。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官方推荐安装命令是 `npm install --save-exact --save-dev esbuild`。esbuild 的 npm 包能跑出原生速度，依靠的机制是？",
+    "explanation": "esbuild 主包通过**平台特定的原生二进制**工作：安装时按当前 OS/CPU 自动选择对应的可选依赖包（如 `@esbuild/darwin-arm64`、`@esbuild/linux-x64`），里面是 Go 编译出的原生可执行文件。因此官方提醒**不能把 node_modules 在不同系统间复制**。另有 `esbuild-wasm` 包可跑在浏览器/无原生支持的平台，但官方注明**慢约 10 倍**。也可用 `curl .../dl/v0.28.1 | sh` 直接下载二进制，或用 Go 源码自行构建。\n\n- 「平台特定原生二进制（optionalDependencies）」正确。\n- 「JS 重写版」「默认 WASM」「本机 Go 现场编译」都不符合实际分发机制。",
+    "tags": ["esbuild", "入门", "安装", "原生二进制", "wasm"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "npm 包里是 JS 重写版本，速度与 Go 版完全一致",
+        "isCorrect": false,
+        "description": "错误。不存在 JS 重写版；npm 包是原生二进制的分发壳。"
+      },
+      {
+        "text": "安装时按当前平台拉取对应的原生二进制包（如 @esbuild/darwin-arm64 等 optionalDependencies）",
+        "isCorrect": true,
+        "description": "正确。平台特定二进制是速度来源，也因此 node_modules 不可跨系统复制。"
+      },
+      {
+        "text": "默认安装 WebAssembly 版本，与原生版同速",
+        "isCorrect": false,
+        "description": "错误。esbuild-wasm 是独立包且官方注明慢约 10 倍，默认装的是原生版。"
+      },
+      {
+        "text": "首次运行时调用本机 Go 工具链现场编译源码",
+        "isCorrect": false,
+        "description": "错误。用户无需安装 Go；预编译二进制随包分发，Go 构建只是可选的源码安装方式。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官方 FAQ 列出了一份「有意不在 esbuild 核心实现」的能力清单。下列哪项属于该清单？",
+    "explanation": "FAQ 明确**不打算在核心实现**：其他前端语言支持（Elm/Svelte/Vue/Angular）、TypeScript 类型检查、自定义 AST 操作 API、**HMR（热模块替换）**、模块联邦（module federation）；HTML 内容类型仅「在考虑中」。作者的态度：「I'm not intending or expecting these extensibility points to cover all use cases… you should be using other tools」。注意 serve 模式的 live reload 是**整页刷新**（基于 SSE 的 change 事件），不是 HMR。\n\n- HMR 正确，在清单内。\n- tree shaking、source map、CSS 打包都是内置核心能力。",
+    "tags": ["esbuild", "入门", "FAQ", "HMR", "边界"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Tree shaking",
+        "isCorrect": false,
+        "description": "错误。tree shaking 是内置能力，bundle 或 iife 格式下默认启用。"
+      },
+      {
+        "text": "Source map 生成",
+        "isCorrect": false,
+        "description": "错误。--sourcemap 是内置能力，支持 linked/inline/external/both 四种模式。"
+      },
+      {
+        "text": "CSS 打包",
+        "isCorrect": false,
+        "description": "错误。CSS 是 esbuild 的一等公民内容类型，含 CSS Modules 支持。"
+      },
+      {
+        "text": "HMR（热模块替换）",
+        "isCorrect": true,
+        "description": "正确。FAQ 把 HMR 与类型检查、模块联邦、其他语言支持一起列为不做的事。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：JS API 同时提供 build 与 transform 两个入口。官方对 transform API 的描述是？",
+    "explanation": "官方原文：transform 是「a **limited special-case of build** that transforms a string of code representing an **in-memory file** in an **isolated environment**」——处理内存中的一段代码字符串、与文件系统完全隔离：**不能打包、不能用插件、不读写磁盘**。典型用途：单文件 TS/JSX 转译、压缩一段字符串。Vite 在 dev 阶段就是用它做 TS/JSX 的单文件转译。\n\n- 「build 的受限特例，内存字符串、不打包不插件」正确。\n- 「功能更全」「产出 .d.ts」「按运行环境分工」都与官方描述不符——esbuild 任何 API 都不能产出 .d.ts。",
+    "tags": ["esbuild", "初级", "API", "transform", "build"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "transform 是 build 的受限特例：处理内存中的代码字符串、与文件系统隔离，不能打包、不能用插件",
+        "isCorrect": true,
+        "description": "正确。官方原文：a limited special-case of build…in-memory file in an isolated environment。"
+      },
+      {
+        "text": "transform 比 build 功能更全，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。方向反了：transform 是受限子集，bundle/插件/文件系统都不可用。"
+      },
+      {
+        "text": "transform 专用于生成 .d.ts 类型声明文件",
+        "isCorrect": false,
+        "description": "错误。esbuild 不具备生成 .d.ts 的能力，这需要 TypeScript 编译器。"
+      },
+      {
+        "text": "transform 只能在浏览器用，build 只能在 Node 用",
+        "isCorrect": false,
+        "description": "错误。两者在 Node 都可用；浏览器里要用 esbuild-wasm，区别不在运行环境。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：--format 支持 iife、cjs、esm 三种输出格式。关于 iife，正确的是？",
+    "explanation": "**iife（immediately-invoked function expression，立即执行函数表达式）**把代码包进一个立即执行的函数，适合用 `<script>` 标签直接引入，**避免变量泄漏污染全局作用域**；它是 `platform=browser` 时开启 bundle 的**默认格式**。`cjs` 面向 Node（platform=node 默认），`esm` 保留 import/export（platform=neutral 默认）。配合 `--global-name=xxx` 可把 iife 的导出挂到指定全局变量上。\n\n- 「立即执行函数、防全局污染、browser 默认」正确。\n- 「Node 专用」是 cjs 的画像；「保留 import/export」是 esm；「生成 require 调用」是 cjs。",
+    "tags": ["esbuild", "初级", "format", "iife", "输出"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "iife 是 Node.js 专用输出格式",
+        "isCorrect": false,
+        "description": "错误。Node 场景默认用 cjs；iife 面向浏览器 script 标签场景。"
+      },
+      {
+        "text": "iife 输出会原样保留 import/export 语句",
+        "isCorrect": false,
+        "description": "错误。保留 import/export 的是 esm 格式；iife 把模块都收进一个函数体。"
+      },
+      {
+        "text": "iife 把代码包进立即执行函数，适合 script 标签引入、避免污染全局作用域，是 platform=browser 的默认格式",
+        "isCorrect": true,
+        "description": "正确。官方解释 iife 即立即执行函数表达式，browser 平台 bundle 时默认采用。"
+      },
+      {
+        "text": "iife 会把所有导入转换成运行时 require 调用",
+        "isCorrect": false,
+        "description": "错误。生成 require 语义的是 cjs 格式，iife 不依赖任何模块系统。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：执行 `esbuild app.ts --bundle --platform=node`，与默认的 platform=browser 相比，下列行为差异的描述错误的是？",
+    "explanation": "`platform=node` 的官方默认联动：**① 输出格式默认 cjs**；**② fs、path 等 Node 内置模块自动标记为 external**（不会尝试打包）；**③ package.json 的 exports 解析启用 node 条件**；④ mainFields 默认 `main,module`。而「自动降级到 ES5」是错误的——**target 与 platform 互相独立**（target 默认 esnext），且 esbuild 根本**不支持**把 ES6+ 语法降级到 ES5。\n\n- 前三项都是官方文档列出的 platform=node 真实行为。\n- 「自动降级 ES5」既混淆了 platform 与 target，又违背 esbuild 的 ES5 边界，是本题答案。",
+    "tags": ["esbuild", "初级", "platform", "node", "默认行为"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "输出格式默认从 iife 变为 cjs",
+        "isCorrect": false,
+        "description": "这是真实行为。platform=node 时 format 默认 cjs，适配 Node 的模块系统。"
+      },
+      {
+        "text": "fs、path 等 Node 内置模块自动标记为 external，不会尝试打包",
+        "isCorrect": false,
+        "description": "这是真实行为。esbuild 会把所有 Node 内置模块自动外置，避免打包报错。"
+      },
+      {
+        "text": "解析 package.json exports 字段时启用 node 导出条件",
+        "isCorrect": false,
+        "description": "这是真实行为。platform 影响 exports conditions：browser 用 browser 条件，node 用 node 条件。"
+      },
+      {
+        "text": "自动把输出代码降级到 ES5 以兼容旧版 Node",
+        "isCorrect": true,
+        "description": "正确（此项描述错误）。target 与 platform 无关且默认 esnext，esbuild 也不支持降级到 ES5。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：想把 import 进来的 .png 图片以「带 MIME 类型的 Base64 data URL」形式内联进 bundle，应配置哪个 loader？",
+    "explanation": "应使用 `--loader:.png=dataurl`：把文件内容编码成 **data URL**（自动探测 MIME 类型）并内联，import 得到的是一个可直接用于 `<img src>` 的字符串。容易混淆的几个二进制相关 loader：**binary**（运行时解码为 Uint8Array）、**base64**（纯 Base64 字符串、无 data: 前缀）、**dataurl**（含 MIME 的完整 data URL）、**file**（把文件拷贝到输出目录，import 得到文件名/URL 字符串）、**copy**（拷贝文件并保留 import 路径指向拷贝结果）。\n\n- dataurl 正确。\n- file 是外链而非内联；text 按 UTF-8 文本读取会损坏二进制；copy 只做文件搬运。",
+    "tags": ["esbuild", "初级", "loader", "dataurl", "资源处理"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--loader:.png=file",
+        "isCorrect": false,
+        "description": "错误。file loader 把文件拷到输出目录、导出文件名字符串，是外链不是内联。"
+      },
+      {
+        "text": "--loader:.png=dataurl",
+        "isCorrect": true,
+        "description": "正确。dataurl loader 生成含 MIME 类型的 data URL 并内联进 bundle。"
+      },
+      {
+        "text": "--loader:.png=text",
+        "isCorrect": false,
+        "description": "错误。text loader 按 UTF-8 文本读取，处理二进制图片会得到损坏内容。"
+      },
+      {
+        "text": "--loader:.png=copy",
+        "isCorrect": false,
+        "description": "错误。copy loader 只把文件原样拷贝到输出目录并保留导入关系，不内联。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：开启 --minify 后，esbuild 实际对代码做了哪几类压缩？",
+    "explanation": "官方文档：minify 做**三件事**——**删除空白（whitespace）**、**缩短标识符（identifiers）**、**改写为更短的等价语法（syntax，如 a === undefined 变 a === void 0）**。三者可分别用 `--minify-whitespace`、`--minify-identifiers`、`--minify-syntax` 单独开启。相关细节：输出默认 **ASCII-only**（charset 选项控制）；`--keep-names` 可在压缩时保留函数/类的 .name；target 为 es5 时压缩不会引入新语法。esbuild 不做 gzip——那是传输层的事。\n\n- 「三类压缩 + 可单独开启」正确。\n- 「仅删空白」不完整；「字符串加密」「gzip」都不是 minify 的职责。",
+    "tags": ["esbuild", "初级", "minify", "压缩", "选项"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "仅删除空白字符与注释",
+        "isCorrect": false,
+        "description": "错误。这只是三分之一；还有标识符缩短与语法改写两类。"
+      },
+      {
+        "text": "删空白 + 缩短标识符 + 改写为更短的等价语法，三者也可用 --minify-whitespace 等标志单独开启",
+        "isCorrect": true,
+        "description": "正确。官方明确 minify 由这三部分组成，并提供三个独立的细粒度开关。"
+      },
+      {
+        "text": "压缩代码并对字符串字面量做加密混淆",
+        "isCorrect": false,
+        "description": "错误。esbuild 不做字符串加密；mangleProps 也只是属性名改写，非加密。"
+      },
+      {
+        "text": "对输出文件做 gzip 压缩以减小传输体积",
+        "isCorrect": false,
+        "description": "错误。gzip/brotli 是服务器传输层的事，minify 只优化源码本身。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：--sourcemap 有多种模式。希望「生成独立的 .js.map 文件，但产物末尾不出现 //# sourceMappingURL 注释」，应使用哪种？",
+    "explanation": "四种模式：**`--sourcemap`（即 linked）**——生成 .map 文件并在产物末尾加 sourceMappingURL 注释指向它；**`inline`**——把完整 map 以 base64 内联进产物（体积大增）；**`external`**——生成 .map 文件但**不加注释**，适合错误上报系统私有持有 map；**`both`**——inline + external 同时。另有 `sources-content` 控制 map 里是否内嵌源码、`source-root` 设置源路径前缀。\n\n- external 正确：有 .map、无注释。\n- linked 有注释；inline 没有独立文件；both 是两者叠加，产物里也有内联 map。",
+    "tags": ["esbuild", "初级", "sourcemap", "调试", "选项"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--sourcemap（默认 linked 模式）",
+        "isCorrect": false,
+        "description": "错误。linked 会在产物末尾加 //# sourceMappingURL 注释指向 .map 文件。"
+      },
+      {
+        "text": "--sourcemap=inline",
+        "isCorrect": false,
+        "description": "错误。inline 把整个 map 以 base64 内联进产物，不生成独立 .map 文件。"
+      },
+      {
+        "text": "--sourcemap=external",
+        "isCorrect": true,
+        "description": "正确。external 生成独立 .map 文件且不在产物中留注释，常用于私有化错误还原。"
+      },
+      {
+        "text": "--sourcemap=both",
+        "isCorrect": false,
+        "description": "错误。both 同时生成内联与外部 map，产物里仍包含内联的 map 数据。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于 --target 选项的取值与行为，下列说法正确的是？",
+    "explanation": "target 默认 **esnext**；取值既可以是 ES 版本（es2017、es2020、esnext…），也可以是**具体引擎版本**（chrome58、firefox57、safari11、edge16、node12.19.0、ios 等），还能逗号组合多个目标取「都兼容」的交集，如 `--target=es2020,chrome58,node12`。关键行为：当某语法**无法被转换**到目标版本时（最典型是转 es5），esbuild 会**直接报错**而不是静默输出不兼容代码。注意 esbuild **没有 polyfill 机制**——target 只管语法转换，不会注入运行时 API（这正是它与 @babel/preset-env 的本质差异）。\n\n- 「ES 版本 + 引擎版本 + 组合 + 无法转换时报错」正确。",
+    "tags": ["esbuild", "初级", "target", "语法降级", "兼容性"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "target 只接受 es5 和 es6 两个值",
+        "isCorrect": false,
+        "description": "错误。支持 es2015~esnext 各版本及 chrome/firefox/safari/node 等引擎版本号。"
+      },
+      {
+        "text": "可写 es2020、esnext，也可写 chrome58、node12.19.0 等引擎版本并逗号组合；遇到无法转换到目标的语法会直接报错",
+        "isCorrect": true,
+        "description": "正确。多目标取交集；无法转换时报错而非静默输出，是 esbuild 的明确行为。"
+      },
+      {
+        "text": "目标过低时 esbuild 会静默输出不兼容代码",
+        "isCorrect": false,
+        "description": "错误。esbuild 会报错中断，不会静默产出跑不起来的代码。"
+      },
+      {
+        "text": "target 还会按目标环境自动注入缺失的 polyfill",
+        "isCorrect": false,
+        "description": "错误。esbuild 只转语法、不注入 polyfill，运行时 API 缺失需自行引 core-js 等。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于「输出 ES5 代码」这一需求，官方文档划定的边界是？",
+    "explanation": "Content Types 页明确：**esbuild 不支持把 ES6+ 语法转换为 ES5**。设置 `target=es5` 的实际意义是：**保证不往本来就是 ES5 的代码里引入新语法**（例如压缩时不会把 `{x: x}` 改写成简写 `{x}`）；一旦源码里出现需要降级的 ES6+ 语法（class、箭头函数等），esbuild 会**报错**。需要真正的 ES5 产物时，业界做法是 esbuild 之外接 Babel/SWC 做降级。这是 esbuild 与 Babel 工具链分工的核心边界之一。\n\n- 「不支持 ES6+→ES5，target=es5 只防止引入新语法、遇到新语法报错」正确。",
+    "tags": ["esbuild", "初级", "es5", "边界", "降级"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "target=es5 时可以把任意 ES6+ 语法完整降级到 ES5",
+        "isCorrect": false,
+        "description": "错误。官方明确不支持 ES6+ 到 ES5 的转换，这类需求要交给 Babel/SWC。"
+      },
+      {
+        "text": "esbuild 不支持把 ES6+ 语法转为 ES5；target=es5 主要保证不向 ES5 代码引入新语法，遇到需降级的语法会报错",
+        "isCorrect": true,
+        "description": "正确。这正是官方 Content Types 页对 ES5 边界的完整表述。"
+      },
+      {
+        "text": "安装官方 es5 插件后即可完成降级",
+        "isCorrect": false,
+        "description": "错误。不存在官方 es5 插件；插件机制也无法改变语法转换能力。"
+      },
+      {
+        "text": "只要同时开启 --minify 就能输出合法 ES5",
+        "isCorrect": false,
+        "description": "错误。minify 与语法降级无关；es5 目标下 minify 只是不引入新语法而已。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：要在构建期把代码里的 process.env.NODE_ENV 替换为字符串 \"production\"，CLI 写法正确的是？",
+    "explanation": "define 把指定**标识符替换为常量表达式**，值用 **JSON 语法**——字符串值必须是 JSON 字符串（带双引号），否则会被当作**另一个标识符**处理。所以正确写法是 `--define:process.env.NODE_ENV='\"production\"'`（外层单引号是 shell 转义，esbuild 真正收到的是 \"production\"）。配合 minify，`if (process.env.NODE_ENV !== \"production\") {...}` 这类分支会被常量折叠后整段删除——这正是 React 等库做开发/生产双版本的机制。\n\n- 带 JSON 引号的写法正确。\n- 不带引号会把 production 当成标识符替换进去，运行时报 ReferenceError。",
+    "tags": ["esbuild", "初级", "define", "NODE_ENV", "常量替换"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--define:process.env.NODE_ENV=production",
+        "isCorrect": false,
+        "description": "错误。不带 JSON 引号的 production 会被解析为标识符替换，运行时 ReferenceError。"
+      },
+      {
+        "text": "--define:process.env.NODE_ENV='\"production\"'",
+        "isCorrect": true,
+        "description": "正确。define 的字符串值必须是 JSON 字符串；外层单引号防止 shell 吃掉双引号。"
+      },
+      {
+        "text": "--env:NODE_ENV=production",
+        "isCorrect": false,
+        "description": "错误。esbuild 没有 --env 标志；环境变量替换统一走 define 机制。"
+      },
+      {
+        "text": "--define 只能替换布尔值，字符串需要写插件",
+        "isCorrect": false,
+        "description": "错误。define 支持 JSON 语法的各种常量表达式：布尔、数字、字符串、对象等。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：--bundle 打包时希望某个依赖（如原生模块 fsevents）不被打进产物、保留原始导入语句在运行时再加载，应使用？",
+    "explanation": "`--external:fsevents` 把匹配的导入**排除在 bundle 之外并保留原导入语句**，运行时再由 require/import 实际加载——原生扩展、体积大且不需要打包的依赖、运行环境会提供的模块都适用。external 还支持**通配符**（如 `--external:/images/*`）。platform=node 场景如果想一键外置全部依赖，可用 `--packages=external`。alias 则是「替换导入路径」，与排除打包是两码事。\n\n- --external 正确。\n- --ignore 不存在；alias 是路径重定向；删依赖显然因噎废食。",
+    "tags": ["esbuild", "初级", "external", "依赖", "bundle"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--external:fsevents",
+        "isCorrect": true,
+        "description": "正确。external 将匹配的导入排除出 bundle 并保留 import/require 语句。"
+      },
+      {
+        "text": "--ignore:fsevents",
+        "isCorrect": false,
+        "description": "错误。esbuild 没有 --ignore 标志；排除打包的标准选项是 external。"
+      },
+      {
+        "text": "--alias:fsevents=null",
+        "isCorrect": false,
+        "description": "错误。alias 用于把一个导入路径替换为另一个，不是排除打包的机制。"
+      },
+      {
+        "text": "从 package.json 删除该依赖",
+        "isCorrect": false,
+        "description": "错误。运行时仍需要该依赖；要解决的是「不打包但保留导入」，正是 external 的职责。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：CLI 的 --watch 与 --serve 两个开发选项的分工，正确的是？",
+    "explanation": "**--watch**：监听文件系统变化，**自动增量重建**。**--serve**（配 `--servedir` 提供静态目录）：启动本地开发服务器，最巧妙的设计是**按请求构建**——「每个进来的请求都会在没有构建进行时触发一次重建」，请求会等到最新构建完成后再响应，所以浏览器**永远拿到最新产物，不存在缓存失效问题**；serve 的构建产物默认只存在内存、不写磁盘。两者可**同时开启**（watch 负责重建、serve 负责供给 + live reload 事件）。\n\n- 「watch 自动重建；serve 按请求出最新构建」正确。\n- serve 是开发服务器而非生产部署；--watch 在 CLI 完全可用。",
+    "tags": ["esbuild", "初级", "watch", "serve", "开发体验"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "watch 监听文件变化自动重建；serve 启动本地开发服务器，请求到来时若无构建进行则先重建再响应，浏览器永远拿到最新产物",
+        "isCorrect": true,
+        "description": "正确。serve 的「按请求构建」设计从根上避免了浏览器拿到过期产物。"
+      },
+      {
+        "text": "两者完全等价，serve 只是 watch 的别名",
+        "isCorrect": false,
+        "description": "错误。watch 管重建、serve 管 HTTP 服务，是两个独立且可叠加的能力。"
+      },
+      {
+        "text": "serve 用于生产环境部署静态站点",
+        "isCorrect": false,
+        "description": "错误。serve 是开发服务器，产物在内存中；生产部署应使用正式的静态服务。"
+      },
+      {
+        "text": "watch 只能通过 JS API 使用，CLI 不支持",
+        "isCorrect": false,
+        "description": "错误。CLI 直接支持 --watch；JS API 里则是 context 对象的 watch() 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：v0.17 起官方推荐的增量构建/开发模式写法是 context API。下列用法正确的是？",
+    "explanation": "v0.17 做了一次大重构：原先 build 上的 `incremental`、`watch`、独立 `serve()` 三套入口**统一收敛为 context API**。正确流程：`const ctx = await esbuild.context(buildOptions)` 创建上下文（共享同一份构建选项），然后按需调用 **ctx.rebuild()**（手动增量重建，复用上次构建的工作）、**ctx.watch()**（监听文件自动重建）、**ctx.serve()**（开发服务器），三者可叠加；结束时 **ctx.dispose()** 等待进行中的构建结束、停止 watch/serve 并释放资源。所以旧写法 `esbuild.build({ watch: true })` 在新版本已不可用。\n\n- context → watch/serve/rebuild → dispose 正确。",
+    "tags": ["esbuild", "中级", "context", "增量构建", "API"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await esbuild.build({ entryPoints: ['app.ts'], watch: true })",
+        "isCorrect": false,
+        "description": "错误。watch 选项已在 0.17 从 build 移除，需改用 context API 的 watch() 方法。"
+      },
+      {
+        "text": "const ctx = await esbuild.context(options)，再按需 ctx.watch()/ctx.serve()/ctx.rebuild()，结束时 ctx.dispose()",
+        "isCorrect": true,
+        "description": "正确。0.17 起 incremental/watch/serve 统一收敛为 context 对象的方法。"
+      },
+      {
+        "text": "esbuild.watch(options) 直接启动监听",
+        "isCorrect": false,
+        "description": "错误。esbuild 没有顶层 watch 函数，watch 是 context 对象上的方法。"
+      },
+      {
+        "text": "new esbuild.Watcher(options) 创建监听器实例",
+        "isCorrect": false,
+        "description": "错误。不存在 Watcher 类；唯一入口是 esbuild.context() 返回的上下文对象。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：开启代码拆分 --splitting 的前提条件与拆分效果，正确的是？",
+    "explanation": "官方：code splitting **目前仅支持 format=esm**（仍是 work in progress，FAQ 称现状 primitive，改进追踪在 issue #16）。开启后两类代码会被拆为独立 chunk：**① 多个入口之间共享的代码**（避免重复打包）；**② `import()` 动态导入的模块**（实现按需加载）。因为会输出多个文件，必须用 **--outdir**（而非 --outfile）。\n\n- 「仅 esm + 共享代码与动态导入拆 chunk + 需 outdir」正确。\n- 「任何 format 可用」错误：cjs/iife 目前都不支持。\n- 「只拆 CSS」错误：拆的是 JS 模块图。\n- 「默认开启」错误：splitting 默认关闭，需显式开启。",
+    "tags": ["esbuild", "中级", "splitting", "代码拆分", "esm"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "任何输出 format 都可以开启 splitting",
+        "isCorrect": false,
+        "description": "错误。官方明确目前只有 esm 输出格式支持代码拆分。"
+      },
+      {
+        "text": "目前仅 format=esm 支持；多入口共享的代码与 import() 动态导入的模块会拆成独立 chunk，需配合 --outdir",
+        "isCorrect": true,
+        "description": "正确。esm-only、两类拆分来源、多文件输出需 outdir，三个要点齐全。"
+      },
+      {
+        "text": "splitting 只负责把 CSS 从 JS 中拆出来",
+        "isCorrect": false,
+        "description": "错误。CSS 提取是 CSS 内容类型自身的行为；splitting 拆的是 JS 模块。"
+      },
+      {
+        "text": "splitting 在 bundle 模式下默认开启",
+        "isCorrect": false,
+        "description": "错误。splitting 默认关闭，必须显式传 --splitting 才生效。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于 tree shaking 何时生效，esbuild 的默认规则是？",
+    "explanation": "esbuild 的 tree shaking（声明级死代码消除）**默认只在两种情况下启用：开启了 bundling，或输出 format 为 iife**；其余情况（如单纯 transform、format 为 cjs/esm 的非 bundle 转换）默认关闭——因为输出可能被外部代码引用，删了不安全。0.13 起可显式覆盖：`--tree-shaking=true` 强制开启（即使不 bundle），`--tree-shaking=false` 强制关闭。另外 ESM 的静态 import/export 结构最利于分析，CommonJS 的动态特性会显著阻碍 tree shaking。\n\n- 「bundle 或 iife 默认开，可 treeShaking:true 强制」正确。",
+    "tags": ["esbuild", "中级", "tree-shaking", "默认行为", "死代码消除"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "tree shaking 永远开启，无法关闭",
+        "isCorrect": false,
+        "description": "错误。非 bundle 且非 iife 时默认关闭，且 --tree-shaking=false 可强制关闭。"
+      },
+      {
+        "text": "默认仅在「开启 bundling」或「format=iife」时启用，其余情况默认关闭；可用 --tree-shaking=true 强制开启",
+        "isCorrect": true,
+        "description": "正确。这是官方默认规则；0.13 起提供 true/false 双向强制开关。"
+      },
+      {
+        "text": "只有同时开启 --minify 才会做 tree shaking",
+        "isCorrect": false,
+        "description": "错误。tree shaking 与 minify 是独立维度，bundle 不开 minify 也会摇树。"
+      },
+      {
+        "text": "只对 CommonJS 模块生效，ESM 不支持",
+        "isCorrect": false,
+        "description": "错误。方向反了：ESM 的静态结构最利于 tree shaking，CJS 反而常被整体保留。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：tree shaking 时，esbuild 会参考哪些「副作用标注」来决定代码能否安全移除？",
+    "explanation": "两类标注：**① package.json 的 `sideEffects` 字段**——声明为 false（或列出白名单）的包，其未被使用的文件可以被整体移除（这是 webpack 发起、esbuild 跟随的社区约定）；**② 代码内的 `/* @__PURE__ */` 注释**——标注某个函数/构造调用无副作用，返回值未被使用时整个调用可删。如果三方包**标注错误**导致产物行为异常，可用 `--ignore-annotations` 让 esbuild 忽略这两类标注做保守打包。\n\n- 「sideEffects + @__PURE__，可 ignore-annotations 忽略」正确。\n- 仅看 import 使用与否不完整；tsconfig/webpack 配置里没有这种机制。",
+    "tags": ["esbuild", "中级", "tree-shaking", "sideEffects", "PURE"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "package.json 的 sideEffects 字段与代码中的 /* @__PURE__ */ 注释，两者都可用 --ignore-annotations 忽略",
+        "isCorrect": true,
+        "description": "正确。这是 esbuild 参考的两类社区副作用标注及对应的兜底开关。"
+      },
+      {
+        "text": "只分析 import 是否被使用，不参考任何人工标注",
+        "isCorrect": false,
+        "description": "错误。除使用分析外，sideEffects 与 @__PURE__ 标注都会影响移除决策。"
+      },
+      {
+        "text": "tsconfig.json 里的 sideEffects 编译选项",
+        "isCorrect": false,
+        "description": "错误。sideEffects 是 package.json 字段，tsconfig 没有这个选项。"
+      },
+      {
+        "text": "webpack.config.js 中的 optimization.usedExports 配置",
+        "isCorrect": false,
+        "description": "错误。esbuild 不读取 webpack 配置文件，两者配置体系互不相通。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：想分析「bundle 为什么这么大、每个依赖各占多少体积」，esbuild 原生的做法是？",
+    "explanation": "开启 **`--metafile=meta.json`** 让 esbuild 输出构建元数据 JSON——包含每个输入文件的字节数与 import 关系、每个输出文件的组成与各输入贡献的体积。分析途径：**① `esbuild.analyzeMetafile(metafile)`** 在终端生成可读报告（CLI 直接加 `--analyze` 等效）；**② 官网的 Bundle Size Analyzer**（esbuild.github.io/analyze/）上传 metafile 得到可视化体积分解。\n\n- 「metafile + analyzeMetafile / 官网分析器」正确。\n- esbuild 原生就有分析能力，无需 webpack-bundle-analyzer；log-level 日志不含体积归因数据。",
+    "tags": ["esbuild", "中级", "metafile", "analyze", "体积分析"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "开启 --metafile=meta.json 生成构建元数据，再用 esbuild.analyzeMetafile()（或 CLI --analyze）出报告，也可上传官网 Bundle Size Analyzer 可视化",
+        "isCorrect": true,
+        "description": "正确。metafile 记录输入/输出/导入关系与字节数，是 esbuild 体积分析的数据底座。"
+      },
+      {
+        "text": "esbuild 无法输出任何构建分析信息，只能靠肉眼对比产物",
+        "isCorrect": false,
+        "description": "错误。metafile + analyze 正是为此设计的原生能力。"
+      },
+      {
+        "text": "必须安装 webpack-bundle-analyzer 并接到 esbuild 上",
+        "isCorrect": false,
+        "description": "错误。那是 webpack 生态工具，esbuild 用自家 metafile 体系即可。"
+      },
+      {
+        "text": "把 --log-level 调到 debug，从日志里统计体积",
+        "isCorrect": false,
+        "description": "错误。debug 日志输出的是解析过程细节，不含体积归因分析。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：platform=browser 且未手动 define 时，代码中的 process.env.NODE_ENV 会被如何处理？",
+    "explanation": "官方 platform 文档：**仅当 platform 为 browser** 时，`process.env.NODE_ENV` 会被**自动 define**——**所有 minify 选项都开启时替换为 \"production\"，否则替换为 \"development\"**；手动 `--define:process.env.NODE_ENV=...` 可覆盖该默认。这个设计是为了让 React 这类「按 NODE_ENV 区分开发/生产行为」的库能直接被打包给浏览器使用（浏览器里本没有 process 对象）。platform=node 时则不替换——Node 运行时真的有 process.env。\n\n- 「自动替换：全 minify → production，否则 development，可被手动 define 覆盖」正确。",
+    "tags": ["esbuild", "中级", "define", "NODE_ENV", "platform"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原样保留，浏览器运行时报 process is not defined",
+        "isCorrect": false,
+        "description": "错误。browser 平台下 esbuild 会自动替换这个表达式，正是为避免该报错。"
+      },
+      {
+        "text": "自动替换：所有 minify 选项开启时替换为 \"production\"，否则替换为 \"development\"；手动 define 可覆盖",
+        "isCorrect": true,
+        "description": "正确。这是 platform=browser 的内置便利行为，方便直接打包 React 等库。"
+      },
+      {
+        "text": "无条件替换为 \"production\"",
+        "isCorrect": false,
+        "description": "错误。是否替换为 production 取决于 minify 是否全开，开发构建得到 development。"
+      },
+      {
+        "text": "这是 Vite 的行为，esbuild 本身不会做任何替换",
+        "isCorrect": false,
+        "description": "错误。这是 esbuild 自身在 browser 平台的文档化行为，Vite 只是另有一套 define。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：由于 esbuild 对 TypeScript 采用「逐文件独立编译」，下列哪个 TS 特性是官方文档明确不支持的？",
+    "explanation": "esbuild 单文件编译模型带来的 TS 限制（Content Types 页）：**不支持 `emitDecoratorMetadata`**——它需要把类型标注转成运行时元数据，而类型信息分布在其他文件里，与单文件编译冲突（NestJS/Angular 的依赖注入正依赖它）；同理也**不生成 .d.ts**、要求代码满足 `isolatedModules` 约束（如不能 re-export 纯类型而不用 export type）。而剥类型、enum、`experimentalDecorators`（旧版装饰器，读 tsconfig 开启）都是支持的。\n\n- emitDecoratorMetadata 正确。\n- interface 剥离、experimentalDecorators、enum 编译均为支持项（const enum 跨文件内联另有限制，但 enum 本身可用）。",
+    "tags": ["esbuild", "中级", "TypeScript", "decorator", "isolatedModules"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "剥离 interface 与 type 等类型注解",
+        "isCorrect": false,
+        "description": "错误。剥类型正是 esbuild TS 支持的本职工作。"
+      },
+      {
+        "text": "experimentalDecorators 旧版装饰器语法",
+        "isCorrect": false,
+        "description": "错误。在 tsconfig 开启 experimentalDecorators 后 esbuild 支持转换旧版装饰器。"
+      },
+      {
+        "text": "emitDecoratorMetadata 装饰器元数据生成",
+        "isCorrect": true,
+        "description": "正确。它依赖跨文件类型信息，与单文件编译模型冲突，官方明确不支持。"
+      },
+      {
+        "text": "enum 枚举的编译",
+        "isCorrect": false,
+        "description": "错误。enum 可正常编译；只是 const enum 的跨文件内联因单文件模型受限。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于 JSX 相关配置，下列说法错误的是？",
+    "explanation": "esbuild 的 JSX 默认是 **transform（classic）模式**——把 JSX 编译成 `React.createElement` 调用，**需要文件里能访问到 React**；`--jsx=automatic` 才启用 React 17+ 的自动运行时（从 react/jsx-runtime 自动引入，无需手动 import React），esbuild 也会读取 tsconfig 的 `jsx: react-jsx` 推断。其余说法均正确：`.jsx/.tsx` 自动启用 JSX 解析而 **`.js` 默认不解析**（需 `--loader:.js=jsx`）；`--jsx-factory=h --jsx-fragment=Fragment` 可适配 Preact 等非 React 框架。\n\n- 「默认就是 automatic」错误，是本题答案：默认 classic。",
+    "tags": ["esbuild", "中级", "JSX", "automatic", "loader"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": ".jsx/.tsx 文件自动启用 JSX 解析，而 .js 文件默认不解析 JSX，需要 --loader:.js=jsx",
+        "isCorrect": false,
+        "description": "这是真实行为。esbuild 按扩展名严格区分，.js 里写 JSX 默认会语法报错。"
+      },
+      {
+        "text": "--jsx=automatic 启用 React 17+ 自动运行时，无需在每个文件手动 import React",
+        "isCorrect": false,
+        "description": "这是真实行为。automatic 模式自动从 react/jsx-runtime 引入工厂函数。"
+      },
+      {
+        "text": "通过 --jsx-factory=h --jsx-fragment=Fragment 可以适配 Preact 等非 React 库",
+        "isCorrect": false,
+        "description": "这是真实行为。自定义工厂/Fragment 正是为 Preact 这类库准备的。"
+      },
+      {
+        "text": "esbuild 的 JSX 默认就是 automatic 运行时，无需任何配置",
+        "isCorrect": true,
+        "description": "正确（此说法错误）。默认是 classic 转 React.createElement；automatic 需显式开启或经 tsconfig 推断。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：serve + watch 组合下实现浏览器 live reload（自动刷新）的官方做法是？",
+    "explanation": "官方 Live reload 方案基于 **server-sent events**：开发服务器暴露 `/esbuild` 事件源，页面里订阅它的 **change 事件**：`new EventSource('/esbuild').addEventListener('change', () => location.reload())`。change 事件还携带 **added/removed/updated** 三个文件路径数组——官方文档演示了据此实现「**CSS 变更不刷新页面**、只替换对应 `<link>`」的热替换。注意这不是 HMR：JS 变更走整页刷新，运行状态不保留（HMR 在 FAQ 的不做清单里）。\n\n- EventSource('/esbuild') + change 正确。\n- 不是 WebSocket、没有自动注入的 HMR runtime、也不需要第三方 live-server。",
+    "tags": ["esbuild", "中级", "live-reload", "serve", "EventSource"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "页面里订阅 new EventSource('/esbuild') 的 change 事件，收到后 location.reload()；事件带 added/removed/updated 列表，CSS 可做免刷新热替换",
+        "isCorrect": true,
+        "description": "正确。这是官方文档的 live reload 标准模式，基于 SSE 而非 WebSocket。"
+      },
+      {
+        "text": "esbuild 自动往页面注入 HMR runtime，模块级热替换无需配置",
+        "isCorrect": false,
+        "description": "错误。HMR 在官方「不做」清单里；live reload 是整页刷新方案。"
+      },
+      {
+        "text": "通过 WebSocket 连接 ws://localhost/esbuild 接收推送",
+        "isCorrect": false,
+        "description": "错误。官方用的是 server-sent events（EventSource），不是 WebSocket。"
+      },
+      {
+        "text": "必须额外安装 live-server 之类的第三方工具",
+        "isCorrect": false,
+        "description": "错误。serve 模式原生提供 /esbuild 事件源，无需第三方工具。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：用 esbuild 给 Node.js 服务/CLI 打包时，希望「只打包自己的源码，所有 node_modules 依赖留在运行时加载」，最直接的官方选项是？",
+    "explanation": "`--packages=external`（配合 `--bundle --platform=node`）：把**所有「看起来是包」的导入**（不以 `./`、`../`、`/` 开头的路径）统一标记为 external——一条选项完成「源码打包、依赖外置」。官网 Getting Started 的 Node 打包小节专门演示了它。逐个写 `--external:xxx` 也可行但繁琐且容易漏；`--platform=neutral` 管的是默认 format/conditions，与依赖外置无关。注意该选项需在 bundle 模式下才有意义。\n\n- packages=external 正确。",
+    "tags": ["esbuild", "中级", "packages", "external", "node"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--packages=external",
+        "isCorrect": true,
+        "description": "正确。一条选项把所有裸模块导入标为 external，官方 Node 打包教程的推荐做法。"
+      },
+      {
+        "text": "对每个依赖逐个写 --external:依赖名",
+        "isCorrect": false,
+        "description": "可行但不是最直接做法：依赖多时繁琐易漏，packages=external 就是它的批量版。"
+      },
+      {
+        "text": "去掉 --bundle 改为逐文件转译",
+        "isCorrect": false,
+        "description": "错误。不 bundle 就无法把自己的多文件源码合并成单产物，偏离需求。"
+      },
+      {
+        "text": "--platform=neutral",
+        "isCorrect": false,
+        "description": "错误。neutral 只改变默认 format 与解析条件，不会外置任何依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：JS API 里 buildSync/transformSync 与异步版 build/transform 相比，正确的限制描述是？",
+    "explanation": "官方：同步 API **仅在 Node 可用**、**阻塞当前线程**，并且**无法使用插件**——因为插件回调本质是异步的，必须配合异步 API。异步版还有并发优势：「当前线程不被阻塞，可以同时发起多个构建充分利用 CPU」。同步 API 的合理场景是必须同步返回的钩子（如 require.extensions）。官方整体推荐异步 API。\n\n- 「仅 Node、阻塞线程、不能用插件」正确。\n- 「更快所以推荐」错误：阻塞还丧失并发；浏览器（esbuild-wasm）里同步 API 不可用；「支持插件但不支持 sourcemap」两头都说反了。",
+    "tags": ["esbuild", "中级", "API", "sync", "插件"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同步 API 仅在 Node 可用、会阻塞当前线程，且无法使用插件（插件必须配合异步 API）",
+        "isCorrect": true,
+        "description": "正确。这三条都是官方文档列出的同步 API 限制。"
+      },
+      {
+        "text": "同步 API 性能更高，是官方推荐的默认用法",
+        "isCorrect": false,
+        "description": "错误。同步 API 阻塞线程且丧失并发能力，官方推荐异步 API。"
+      },
+      {
+        "text": "buildSync 可以在浏览器中直接调用",
+        "isCorrect": false,
+        "description": "错误。浏览器环境（esbuild-wasm）只能用异步 API。"
+      },
+      {
+        "text": "同步 API 支持插件，但不支持生成 sourcemap",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：同步 API 不支持插件；sourcemap 与同步/异步无关。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：希望构建产物不写入磁盘、在内存中拿到结果做后处理（如测试、二次加工），JS API 的正确做法是？",
+    "explanation": "在 build 选项里设置 **`write: false`**：esbuild 不落盘，构建结果通过返回值的 **`outputFiles` 数组**给出，每项包含 `path`（本应写入的路径）、`contents`（Uint8Array）、`text`（字符串形式）。这是上层工具二次加工产物（再压缩、注入、上传、测试断言）的标准姿势。注意：**CLI 没有等价能力**（最多写 stdout），transform API 虽在内存工作但**不能打包**。\n\n- write:false + outputFiles 正确。\n- 写 /dev/null 是丢弃而非获取；transform 无法 bundle；「不支持内存输出」与事实相反。",
+    "tags": ["esbuild", "中级", "write", "outputFiles", "API"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "build 选项设 write: false，从返回值的 outputFiles（含 path/contents/text）读取产物",
+        "isCorrect": true,
+        "description": "正确。write:false 是内存输出的官方机制，outputFiles 提供每个产物的内容。"
+      },
+      {
+        "text": "把 outfile 指向 /dev/null",
+        "isCorrect": false,
+        "description": "错误。这只是把产物丢弃，程序拿不到任何内容。"
+      },
+      {
+        "text": "改用 transform API，它默认就在内存打包",
+        "isCorrect": false,
+        "description": "错误。transform 确实在内存工作，但它是单文件转换，不能打包依赖。"
+      },
+      {
+        "text": "esbuild 不支持内存输出，必须先写盘再读回",
+        "isCorrect": false,
+        "description": "错误。write:false 正是为避免写盘往返而设计的。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于内置的 CSS 支持，下列说法错误的是？",
+    "explanation": "esbuild 把 CSS 当**一等公民内容类型**：CSS 可以**作为独立入口**打包（@import 被内联合并）；JS 里 `import './style.css'` 时，bundle 会把整个模块图里的 CSS 收集为**与 JS 产物并列的同名 .css 文件**（不是转成 JS 字符串运行时注入——那是 webpack style-loader 的做法）；`.module.css` 默认走 **local-css loader**（CSS Modules，类名本地化防冲突）；还会按 target **自动加厂商前缀**、把嵌套等现代语法降级。\n\n- 「转成 JS 字符串、运行时 style 标签注入」错误，是本题答案——esbuild 产出独立 .css 文件。",
+    "tags": ["esbuild", "中级", "CSS", "css-modules", "content-types"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 可以作为独立入口打包，@import 会被内联合并",
+        "isCorrect": false,
+        "description": "这是真实行为。CSS 是一等公民，可直接 esbuild app.css --bundle。"
+      },
+      {
+        "text": ".module.css 文件默认按 CSS Modules（local-css loader）处理，类名本地化",
+        "isCorrect": false,
+        "description": "这是真实行为。.module.css 自动启用 local-css，导出本地化类名映射。"
+      },
+      {
+        "text": "JS 里 import './style.css' 时，CSS 会被收集进与 JS 产物并列的 .css 文件",
+        "isCorrect": false,
+        "description": "这是真实行为。esbuild 为 JS 入口生成配套的同名 CSS bundle。"
+      },
+      {
+        "text": "esbuild 会把 CSS 编译成 JS 字符串，运行时用 style 标签注入页面",
+        "isCorrect": true,
+        "description": "正确（此说法错误）。esbuild 产出独立 .css 文件；运行时注入是 webpack style-loader 的模式。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：插件 API 的基本形态，下列描述正确的是？",
+    "explanation": "esbuild 插件是一个 **`{ name, setup(build) }`** 对象：setup 在每次 build 调用时执行一次，通过 build 对象注册回调——**`build.onResolve({ filter, namespace }, cb)`** 拦截导入路径的解析（可重定向、标记 external、指定 namespace），**`build.onLoad`** 为匹配的模块提供内容与 loader；另有 **onStart/onEnd/onDispose** 生命周期钩子（onEnd 可读改构建结果）与 `build.resolve()` 手动调用内置解析。性能关键设计：**filter 是 Go 正则**，在 Go 侧先行筛选、不必每个路径都回调 JS，所以官方强调 filter 要尽量收窄。\n\n- 「name+setup、onResolve/onLoad、Go 正则 filter」正确。\n- visitor 模式是 Babel 的设计；apply(compiler) 是 webpack 插件；esbuild 插件是 JS/Go 对象而非 shell 脚本。",
+    "tags": ["esbuild", "高级", "plugins", "onResolve", "onLoad"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "插件是 {name, setup(build)} 对象；setup 里用 build.onResolve({filter, namespace}, cb) 拦截路径解析、build.onLoad 提供模块内容；filter 是 Go 正则，可在不回调 JS 的情况下先行筛选",
+        "isCorrect": true,
+        "description": "正确。这是官方插件 API 的完整骨架，filter 走 Go 正则引擎是性能要点。"
+      },
+      {
+        "text": "插件是按 AST 节点类型注册回调的 visitor 对象",
+        "isCorrect": false,
+        "description": "错误。visitor 是 Babel 的插件模型；esbuild 不向插件暴露 AST。"
+      },
+      {
+        "text": "插件实现 apply(compiler) 方法，可直接复用 webpack 插件",
+        "isCorrect": false,
+        "description": "错误。那是 webpack 的插件协议，与 esbuild 互不兼容。"
+      },
+      {
+        "text": "插件是一段 shell 脚本，esbuild 在构建前后调用它",
+        "isCorrect": false,
+        "description": "错误。esbuild 插件是进程内的 JS（或 Go）对象，不是外部脚本钩子。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于插件机制的能力边界，下列说法错误的是？",
+    "explanation": "esbuild 插件的真实边界：**只能用于 build API**（transform API 不支持插件）；**CLI 无法使用插件**（必须走 JS/Go API）；**不提供 AST 操作接口**——AST 全程留在 Go 内部不对外暴露，这是性能优先的有意设计（FAQ 把「自定义 AST API」列入不做清单）。插件作用在「模块的解析与加载」边界上：要做 AST 级改写，得在 onLoad 里自己调 Babel 等工具处理 contents 再返回。官方建议：「插件最适合做相对克制、只定制构建一小方面的事」。\n\n- 「可注册 visitor 精细改写表达式」错误，是本题答案。",
+    "tags": ["esbuild", "高级", "plugins", "限制", "AST"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "插件只能用于 build API，transform API 不支持插件",
+        "isCorrect": false,
+        "description": "这是真实限制。transform 是隔离环境的受限特例，插件机制不可用。"
+      },
+      {
+        "text": "CLI 命令行无法使用插件，必须通过 JS 或 Go API",
+        "isCorrect": false,
+        "description": "这是真实限制。插件需要进程内回调，CLI 无法表达。"
+      },
+      {
+        "text": "esbuild 不提供 AST 操作接口，插件无法直接修改 AST",
+        "isCorrect": false,
+        "description": "这是真实限制。AST 留在 Go 内部，自定义 AST API 在官方不做清单里。"
+      },
+      {
+        "text": "插件可以注册 visitor，对表达式级别的代码做精细改写",
+        "isCorrect": true,
+        "description": "正确（此说法错误）。esbuild 没有 visitor/AST 通道；要改代码只能在 onLoad 自行转换文本。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：官方 FAQ「Why is esbuild fast?」给出了四点原因。下列哪项不在其中？",
+    "explanation": "FAQ 四点：**① Go 语言 + 原生代码**——JS 写的打包器每次启动都被 VM「首次见到」、要重新解释优化，Go 是编译好的原生码；**② 极致并行**——parse/link/codegen 全阶段吃满 CPU 核，共享内存优于 JS worker 序列化；**③ 一切自研、零三方库**——含自研 TS 解析器（避开官方编译器的 megamorphic 对象形状等性能陷阱）；**④ 内存高效**——AST 全程只过约三遍（lex/parse/scope 一遍、bind/minify/transform 一遍、minify/codegen 一遍），CPU 缓存友好。\n\n- 「持久化磁盘缓存」不在其中，口号恰是「无需缓存的极致速度」——它是本题答案。",
+    "tags": ["esbuild", "高级", "性能", "FAQ", "架构"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Go 编写并编译为原生代码，避免 JS VM 每次冷启动的解释/优化开销",
+        "isCorrect": false,
+        "description": "这是 FAQ 第一点：原生代码起跑线就领先 JS 实现的工具。"
+      },
+      {
+        "text": "解析、链接、代码生成各阶段高度并行，吃满所有 CPU 核",
+        "isCorrect": false,
+        "description": "这是 FAQ 第二点：算法设计充分并行化，Go 共享内存模型助力。"
+      },
+      {
+        "text": "一切从零自研（含 TS 解析器）不依赖第三方库；AST 全程只过约三遍，内存与缓存高效",
+        "isCorrect": false,
+        "description": "这是 FAQ 第三、四点：自研一切 + 极少的 AST 遍历次数。"
+      },
+      {
+        "text": "依赖持久化磁盘缓存避免重复构建工作",
+        "isCorrect": true,
+        "description": "正确（不在四点中）。esbuild 的口号正是无需缓存也极快，速度不靠缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：打包含「顶层 await（top-level await）」的代码时，输出格式的支持情况是？",
+    "explanation": "顶层 await 是 **ESM 专属语义**：esbuild **只在 format=esm 时支持**，iife 与 cjs 都不支持——官方解释：导入含顶层 await 的模块必须用 `import`/`import()`，而 **require() 是同步的**，无法表达异步的模块求值过程。此外 target 也需支持该语法（es2022+），否则报「target 不支持」错误。把 `--supported:top-level-await=false` 理解为兼容开关是反的——那是声明目标环境不支持该特性，esbuild 转换不掉反而直接报错。\n\n- 「仅 esm，因 require 同步」正确。",
+    "tags": ["esbuild", "高级", "top-level-await", "esm", "format"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只有 format=esm 支持；iife 与 cjs 不支持，因为 require 是同步的、无法表达异步模块求值",
+        "isCorrect": true,
+        "description": "正确。顶层 await 是 ESM 语义，esbuild 明确仅在 esm 输出下支持。"
+      },
+      {
+        "text": "三种 format 都支持，esbuild 会自动转成回调",
+        "isCorrect": false,
+        "description": "错误。esbuild 不会做这种语义改写，iife/cjs 下直接报错。"
+      },
+      {
+        "text": "只有 cjs 支持，因为 Node 先实现了该特性",
+        "isCorrect": false,
+        "description": "错误。Node 的顶层 await 同样只在 ESM 里有效，CJS 的 require 是同步的。"
+      },
+      {
+        "text": "加 --supported:top-level-await=false 后可以在 iife 中使用",
+        "isCorrect": false,
+        "description": "错误。该写法是声明目标环境不支持此特性，要求 esbuild 转换；转不掉只会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：截至 Vite 7（2026 年），esbuild 在 Vite 体系中承担的角色，正确的是？",
+    "explanation": "Vite 的「双引擎」架构里 esbuild 承担**速度敏感环节**：**① dev 阶段的依赖预打包（optimizeDeps）**——把 CommonJS 依赖转成 ESM、合并细碎模块；**② TS/JSX 的单文件转译**（transform API）；**③ 默认的 JS/CSS minifier** 也是 esbuild。而**生产 bundle 由 Rollup 完成**（产物控制更精细）。esbuild 官方 FAQ 也自证「Vite 用 esbuild 把 TS 转成 JS」。dev/prod 两套引擎的行为差异，正是 Rolldown（Rust、对齐 Rollup API 且目标兼下 esbuild 职责）要统一解决的问题——Rolldown 化的 Vite 正在推进中。\n\n- 「预打包 + 转译 + 默认 minify，生产交给 Rollup」正确。",
+    "tags": ["esbuild", "高级", "Vite", "生态", "optimizeDeps"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 的生产构建完全由 esbuild 打包",
+        "isCorrect": false,
+        "description": "错误。生产 bundle 用 Rollup（正向 Rolldown 演进）；esbuild 在生产环节主要做 minify。"
+      },
+      {
+        "text": "dev 依赖预打包（optimizeDeps）与 TS/JSX 单文件转译用 esbuild，默认 minify 也是 esbuild；生产 bundle 交给 Rollup",
+        "isCorrect": true,
+        "description": "正确。esbuild 承担 Vite 中速度敏感的环节，这正是 Vite 快的根基之一。"
+      },
+      {
+        "text": "Vite 7 已彻底移除对 esbuild 的依赖",
+        "isCorrect": false,
+        "description": "错误。Vite 7 仍默认使用 esbuild；Rolldown 替换仍在渐进推进中。"
+      },
+      {
+        "text": "esbuild 在 Vite 中只负责实现 HMR",
+        "isCorrect": false,
+        "description": "错误。HMR 是 Vite 自己基于原生 ESM 实现的；esbuild 明确不做 HMR。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：在 .tsx 文件里写 `const f = <T>(x: T) => x` 会编译失败，原因与正确解法是？",
+    "explanation": "官方 Content Types 页明确：**tsx loader 无法解析 `<T>() => {}` 形式的泛型箭头函数**——在 tsx 语法空间里 `<T>` 会被当作 **JSX 元素的开始**，这是 TypeScript 语言本身在 .tsx 下的语法歧义（tsc 行为一致，并非 esbuild 缺陷）。解法：写成 **`<T,>(x: T) => x`**（逗号消歧）或 **`<T extends unknown>(x: T) => x`**。同一文件若不含 JSX，也可以改用 .ts 后缀——.ts 没有 JSX 歧义，泛型箭头可直接解析。\n\n- 「JSX 占用语法空间，用 <T,> 或 extends 消歧」正确。",
+    "tags": ["esbuild", "高级", "tsx", "泛型", "语法歧义"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "esbuild 不支持泛型，需要先用 tsc 预处理",
+        "isCorrect": false,
+        "description": "错误。esbuild 完整支持 TS 泛型语法，问题只出在 tsx 的 JSX 歧义上。"
+      },
+      {
+        "text": "JSX 语法占用了 <T> 形式，tsx loader 无法将其解析为类型参数；写成 <T,>(x: T) => x 或 <T extends unknown> 即可",
+        "isCorrect": true,
+        "description": "正确。这是 TS 在 tsx 语法下的固有歧义，esbuild 与 tsc 行为一致。"
+      },
+      {
+        "text": "需要在 tsconfig 中开启 experimentalDecorators",
+        "isCorrect": false,
+        "description": "错误。装饰器配置与泛型箭头的解析歧义毫无关系。"
+      },
+      {
+        "text": "把文件改成 .ts 后缀也一定无法解决",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：.ts 没有 JSX 语法空间，<T>() => {} 可正常解析。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：发布构建想把所有 console.* 调用与 debugger 语句从产物中移除，esbuild 原生的做法是？",
+    "explanation": "用 **`--drop:console --drop:debugger`**：drop 选项直接把匹配的构造**从源码中移除**。注意官方提醒：drop:console 是**整个调用表达式替换为 undefined 语义**，若代码把 console 调用的返回值赋值使用过，行为会受影响。相关优化选项家族：**dropLabels**（按 label 名删代码块）、**pure**（把指定函数标记为无副作用以便摇树）、**mangleProps**（正则匹配混淆属性名）。错误项辨析：`--define:console=undefined` 会让 `console.log()` 变成对 undefined 取属性调用，**运行时直接 TypeError**；minify 不会删 console——调用有副作用，压缩器必须保留。\n\n- --drop 正确。",
+    "tags": ["esbuild", "高级", "drop", "console", "优化"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "--drop:console --drop:debugger",
+        "isCorrect": true,
+        "description": "正确。drop 是为移除 console/debugger 设计的专用选项。"
+      },
+      {
+        "text": "--define:console=undefined",
+        "isCorrect": false,
+        "description": "错误。这样 console.log() 会变成在 undefined 上取属性，运行时 TypeError。"
+      },
+      {
+        "text": "开 --minify 即可，压缩器会自动删掉 console",
+        "isCorrect": false,
+        "description": "错误。console 调用有副作用，minify 必须保留它们，不会自动删除。"
+      },
+      {
+        "text": "esbuild 没有此能力，必须写插件处理",
+        "isCorrect": false,
+        "description": "错误。无需插件，drop 选项原生覆盖该需求。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：2026 年 esbuild 版本号仍是 0.x（如 0.28.1）。关于它的版本号语义与升级策略，官方说法是？",
+    "explanation": "FAQ Production readiness 一节明确（与常规 semver 直觉相反）：「**Patch versions are intended for backwards-compatible changes and minor versions are intended for backwards-incompatible changes**」——patch（0.28.0→0.28.1）向后兼容，**minor（0.27→0.28）专门用于破坏性变更**。这正是官方安装命令带 **`--save-exact`** 的原因：锁死精确版本，避免 `^` 范围把破坏性 minor 自动升进来；升级 minor 前应读 changelog。同时 FAQ 称 esbuild 处于「late-stage beta」：虽是 0.x 但稳定且被 Vite、Amazon CDK、Phoenix 等大规模采用。\n\n- 「patch 兼容、minor 破坏、所以 --save-exact」正确。",
+    "tags": ["esbuild", "专家", "版本语义", "save-exact", "升级"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "0.x 意味着不可用于生产环境",
+        "isCorrect": false,
+        "description": "错误。FAQ 称其为 late-stage beta，Vite/CDK/Phoenix 等已大规模生产使用。"
+      },
+      {
+        "text": "patch 版本承诺向后兼容，minor 版本（如 0.27→0.28）用于不向后兼容的变更——因此官方安装命令带 --save-exact 锁定精确版本",
+        "isCorrect": true,
+        "description": "正确。这是 FAQ 原文的版本策略，也解释了 --save-exact 的由来。"
+      },
+      {
+        "text": "esbuild 严格遵循语义化版本，minor 升级总是安全的",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：minor 是 esbuild 安放破坏性变更的位置。"
+      },
+      {
+        "text": "任何版本升级都可能破坏兼容，官方不做任何承诺",
+        "isCorrect": false,
+        "description": "错误。patch 版本有明确的向后兼容承诺，并非毫无规则。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：watch 模式的文件监听实现颇为特别，官方对其设计的描述是？",
+    "explanation": "esbuild 的 watch **刻意不用各 OS 原生文件事件**（FSEvents/inotify 等），而是**为可移植性采用轮询**——但不是傻轮询：每轮只扫描**随机子集**的文件以压低 CPU 占用，大项目约 **2 秒**完成一轮全量覆盖；同时「**最近变更过的路径**」进入一个短名单**每轮必查**，所以连续编辑同一批文件几乎即时被感知。官方还说明：不喜欢轮询可以**自带任意 watcher 库 + ctx.rebuild()** 自己实现；watch 模式只是便利封装，并不比手动增量构建更快。\n\n- 「可移植性轮询 + 随机子集 + ~2 秒全扫 + 近期变更路径必查」正确。",
+    "tags": ["esbuild", "专家", "watch", "轮询", "实现机制"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "基于各操作系统的原生文件事件（FSEvents/inotify）实现",
+        "isCorrect": false,
+        "description": "错误。esbuild 刻意避开 OS 专属事件 API，理由是可移植性。"
+      },
+      {
+        "text": "为可移植性采用轮询：每轮只扫描随机子集文件以省 CPU，大项目约 2 秒全量覆盖一轮；最近变更过的路径每轮必查，连续修改近乎即时感知",
+        "isCorrect": true,
+        "description": "正确。这是官方对 watch 轮询策略的完整描述，兼顾 CPU 与响应速度。"
+      },
+      {
+        "text": "要求用户安装 chokidar 作为 peer 依赖",
+        "isCorrect": false,
+        "description": "错误。watch 是内置实现零依赖；chokidar 只是你自建 watch 时的可选项。"
+      },
+      {
+        "text": "通过比对 git 工作区状态来检测文件变更",
+        "isCorrect": false,
+        "description": "错误。esbuild 不依赖 git，监听的是文件系统本身。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：关于 2026 年 esbuild 的维护状态与路线图，与作者 Evan Wallace 在官方 FAQ 中的公开说法一致的是？",
+    "explanation": "FAQ 原文要点：**「I'm not doing active feature development for esbuild at the moment」**——项目处于维护态；未来计划聚焦两件事：**改进代码拆分（issue #16）**与**HTML 内容类型支持（issue #31）**，完成后 esbuild 将被认为「relatively complete」；长期愿景是**达到基本稳定后停止堆积特性**，刻意不做 all-in-one 解决方案（「very custom requirements should be using other tools」）。此外项目主要由**单一维护者**驱动。这种「范围克制」是 esbuild 与 webpack 哲学的根本分野。\n\n- 「维护态 + splitting/#16 与 HTML/#31 + relatively complete + 拒绝 all-in-one」正确。",
+    "tags": ["esbuild", "专家", "路线图", "维护状态", "FAQ"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "正在用 Rust 重写以对标 Rolldown/Rspack",
+        "isCorrect": false,
+        "description": "错误。没有任何 Rust 重写计划；esbuild 始终是 Go 实现。"
+      },
+      {
+        "text": "已宣布废弃，官方建议迁移到 Rspack",
+        "isCorrect": false,
+        "description": "错误。esbuild 仍在维护并被海量工具依赖，从未宣布废弃。"
+      },
+      {
+        "text": "处于维护态（当前不做活跃特性开发），剩余目标是改进代码拆分（#16）与 HTML 支持（#31），完成后即视为「相对完整」，刻意不做 all-in-one",
+        "isCorrect": true,
+        "description": "正确。这与 FAQ 中作者的原话一致：范围克制、达到稳定后停止堆特性。"
+      },
+      {
+        "text": "计划并入 Vite 仓库，由 Vite 团队接管",
+        "isCorrect": false,
+        "description": "错误。esbuild 是独立项目，与 Vite 只是被使用关系，无合并计划。"
+      }
+    ]
+  },
+  {
+    "stem": "esbuild：插件想提供一个磁盘上不存在的「虚拟模块」（如 import 'env' 时返回构建期环境变量对象），标准实现是？",
+    "explanation": "官网插件文档的经典示例：**onResolve 拦截 + 自定义 namespace + onLoad 供给内容**。第一步 `onResolve({ filter: /^env$/ }, () => ({ path: 'env', namespace: 'env-ns' }))`——返回**非 file 的 namespace** 等于告诉 esbuild「这个模块不在文件系统上，别按路径去找」；第二步 `onLoad({ filter: /.*/, namespace: 'env-ns' }, () => ({ contents: JSON.stringify(process.env), loader: 'json' }))` 提供模块内容与解释方式。注意：模块默认 namespace 是 **file**；若虚拟模块内容里还要 import 相对路径，需在 onLoad 返回值里给 **resolveDir** 告知解析基准目录。\n\n- 「onResolve 给 namespace + onLoad 按 namespace 供内容」正确。",
+    "tags": ["esbuild", "专家", "plugins", "虚拟模块", "namespace"],
+    "categories": [
+      ["技术方向", "esBuild"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "onResolve 匹配后返回 {path: 'env', namespace: 'env-ns'}，再注册 onLoad({filter: /.*/, namespace: 'env-ns'}) 返回 {contents: JSON.stringify(process.env), loader: 'json'}",
+        "isCorrect": true,
+        "description": "正确。自定义 namespace 标记虚拟模块 + onLoad 按 namespace 供给内容，官网示例同款。"
+      },
+      {
+        "text": "往 node_modules 里写一个临时的 env 包，构建后删除",
+        "isCorrect": false,
+        "description": "错误。落盘临时包脆弱且有竞态，虚拟模块机制正是为避免它而设计。"
+      },
+      {
+        "text": "用 --define:env=... 注入即可，无需插件",
+        "isCorrect": false,
+        "description": "错误。define 只能把标识符替换为常量表达式，无法伪造一个可 import 的模块。"
+      },
+      {
+        "text": "直接注册 onLoad 匹配 'env' 即可，不需要 onResolve",
+        "isCorrect": false,
+        "description": "错误。不先经 onResolve 指定 namespace，裸导入 'env' 会按文件系统解析而直接报错找不到。"
+      }
+    ]
+  }
+]

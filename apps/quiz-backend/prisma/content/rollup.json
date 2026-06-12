@@ -1,0 +1,1403 @@
+[
+  {
+    "stem": "Rollup：官方把 Rollup 定义为「a module bundler for JavaScript」。关于它在构建里实际承担的核心工作，下列哪项最准确？",
+    "explanation": "官方定义：「Rollup is a module bundler for JavaScript which compiles small pieces of code into something larger and more complex, such as a library or an application.」它的职责是**把多个模块（小块代码）按依赖关系合并成更大的产物**（库或应用），并在此过程中做 tree-shaking。\n\n- 「把多个模块按依赖合并成库或应用级产物」正确。\n- 「把新语法降级成旧语法」错误：语法降级是 Babel/SWC 这类编译器的事，Rollup 默认不降级语法。\n- 「做类型检查」错误：类型检查是 tsc 的职责。\n- 「管理依赖安装」错误：那是 npm/pnpm 等包管理器的事。",
+    "tags": ["rollup", "入门", "核心概念", "bundler", "定位"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把多个小块代码（模块）按依赖关系编译合并成更大的产物，如一个库或一个应用",
+        "isCorrect": true,
+        "description": "正确。这正是官网原文定义：compiles small pieces of code into something larger and more complex。"
+      },
+      {
+        "text": "把 ES2015+ 新语法降级成旧浏览器能跑的语法",
+        "isCorrect": false,
+        "description": "错误。语法降级是 Babel/SWC 等编译器的职责，Rollup 是打包器，默认不转换语法。"
+      },
+      {
+        "text": "对 TypeScript 代码做完整类型检查",
+        "isCorrect": false,
+        "description": "错误。类型检查是 tsc 的职责，Rollup 不做类型检查。"
+      },
+      {
+        "text": "解析 package.json 并负责安装和管理 node_modules 依赖",
+        "isCorrect": false,
+        "description": "错误。依赖安装是 npm/pnpm/yarn 等包管理器的事，与打包器无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：Rollup 官网把 tree-shaking 也叫「live code inclusion」。关于 tree-shaking 的本质，下列说法正确的是？",
+    "explanation": "官方 FAQ：tree-shaking 是**基于 ES 模块静态结构的死代码消除**——Rollup 静态分析你导入的代码，「will exclude anything that isn't actually used」。它的工作方式类似标记-清除 GC：先标记所有真正被用到的语句，再「摇掉」没被标记的部分，所以又叫 live code inclusion（只收集活代码），比逐条删除死代码更彻底。\n\n- 「静态分析模块导入导出，只把实际用到的代码纳入产物」正确。\n- 「运行时检测并卸载未执行的函数」错误：tree-shaking 发生在构建期，靠静态分析而非运行时检测。\n- 「压缩重命名变量来减小体积」错误：那是 minifier（如 terser）的职责。\n- 「删除注释与空白字符」错误：那也是压缩器的工作，与 tree-shaking 无关。",
+    "tags": ["rollup", "入门", "tree-shaking", "静态分析", "核心概念"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "构建期静态分析 import/export，标记真正被使用的代码，未用到的部分不进产物",
+        "isCorrect": true,
+        "description": "正确。官方称之为 live code inclusion：先标记活代码再摇掉其余，依赖 ESM 的静态结构。"
+      },
+      {
+        "text": "运行时监控函数调用，把一段时间没执行的函数从内存卸载",
+        "isCorrect": false,
+        "description": "错误。tree-shaking 是构建期行为，与运行时监控无关。"
+      },
+      {
+        "text": "把变量名压缩成短名字以减小产物体积",
+        "isCorrect": false,
+        "description": "错误。变量改名（mangle）是 terser 等压缩器的事，不是 tree-shaking。"
+      },
+      {
+        "text": "移除源码中的注释和多余空白",
+        "isCorrect": false,
+        "description": "错误。删注释删空白是 minify 的内容，与按使用情况裁剪代码无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：想把 `main.js` 打包成可以直接用 `<script>` 标签引入浏览器的自执行产物，官网快速上手给出的命令是哪个？",
+    "explanation": "官方 Introduction 的三条快速上手命令按目标环境区分格式：\n\n- 浏览器 `<script>`：`rollup main.js --file bundle.js --format iife`（iife = 立即执行函数表达式，自包含、不依赖模块加载器）。\n- Node.js：`--format cjs`（CommonJS）。\n- 浏览器与 Node 通吃：`--format umd --name \"myBundle\"`（UMD 需要指定全局变量名）。\n\n`--file` 指定输出文件，`--format` 指定产物格式，这是 Rollup CLI 最基本的两个参数。",
+    "tags": ["rollup", "入门", "cli", "iife", "快速上手"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "rollup main.js --file bundle.js --format iife",
+        "isCorrect": true,
+        "description": "正确。iife 产物是自执行函数，适合 script 标签直接引入，这是官网给浏览器场景的命令。"
+      },
+      {
+        "text": "rollup main.js --file bundle.js --format cjs",
+        "isCorrect": false,
+        "description": "错误。cjs 是 CommonJS 格式，官网给的是 Node.js 场景，浏览器无法直接跑 require。"
+      },
+      {
+        "text": "rollup build main.js --target browser",
+        "isCorrect": false,
+        "description": "错误。Rollup CLI 没有 build 子命令和 --target browser 参数，这不是真实语法。"
+      },
+      {
+        "text": "rollup main.js --minify --browser",
+        "isCorrect": false,
+        "description": "错误。Rollup 核心不内置压缩，也没有 --browser 标志；压缩需 terser 等插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：项目根目录已有 `rollup.config.js`，要让 Rollup 使用这份配置进行构建，命令行需要怎么写？",
+    "explanation": "Rollup **不会自动加载配置文件**，必须显式传 `--config`（缩写 `-c`）才会读取：`rollup -c` 使用默认查找的 `rollup.config.js`（也支持 `.mjs`/`.cjs`），`rollup -c 自定义路径` 可指定别的文件。不传 `-c` 时 Rollup 只按命令行参数工作。此外命令行参数会覆盖配置文件中的同名项，如 `rollup -c -o bundle-2.js` 用新输出路径覆盖配置里的 output.file。\n\n- 「rollup -c」正确。\n- 「rollup 会自动检测并加载配置」错误：必须显式传 -c。\n- 「rollup --load rollup.config.js」错误：没有 --load 这个标志。\n- 「配置文件只能用 JSON 格式」错误：配置文件是 JS 模块（导出对象），可以写逻辑、导入插件。",
+    "tags": ["rollup", "入门", "cli", "配置文件", "rollup.config"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "rollup -c（或 rollup --config），不传该标志则不会读取配置文件",
+        "isCorrect": true,
+        "description": "正确。配置文件必须用 -c/--config 显式启用，且命令行参数可覆盖配置中的同名项。"
+      },
+      {
+        "text": "什么都不用加，只要文件存在 Rollup 就会自动加载它",
+        "isCorrect": false,
+        "description": "错误。Rollup 不自动加载配置文件，必须显式传 -c。"
+      },
+      {
+        "text": "rollup --load rollup.config.js",
+        "isCorrect": false,
+        "description": "错误。Rollup CLI 没有 --load 标志，加载配置用 -c/--config。"
+      },
+      {
+        "text": "先把配置文件转成 rollup.config.json 才能被识别",
+        "isCorrect": false,
+        "description": "错误。Rollup 配置是 JS 模块而非 JSON，需要导出对象、可导入插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：关于 `output.format` 各取值的适用场景，下列说法正确的是？",
+    "explanation": "Rollup 支持六种输出格式：`es`（别名 esm/module，ES 模块，给现代浏览器与其他打包工具）、`cjs`（别名 commonjs，给 Node.js）、`iife`（自执行函数，给 `<script>` 标签）、`umd`（通用模块定义，**可同时作为 amd、cjs 与 iife 使用**）、`amd`（RequireJS）、`system`（SystemJS 加载器）。\n\n- 「umd 产物可同时以 CommonJS、AMD、全局变量三种方式消费」正确，这正是 Universal 的含义，官网也用它作为「browsers and Node.js」通吃方案。\n- 「iife 适合在 Node 里 require」错误：iife 是自执行函数，给 script 标签用。\n- 「es 格式无法被其他打包器消费」错误：es 恰恰是给打包器和现代浏览器的首选格式。\n- 「cjs 是给浏览器 script 标签用的」错误：cjs 给 Node。",
+    "tags": ["rollup", "入门", "output", "format", "umd"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "umd 产物可同时作为 CommonJS、AMD 与浏览器全局变量使用，浏览器和 Node 通吃",
+        "isCorrect": true,
+        "description": "正确。UMD = Universal Module Definition，amd + cjs + iife 三合一，但需配 output.name。"
+      },
+      {
+        "text": "iife 格式最适合在 Node.js 中通过 require 加载",
+        "isCorrect": false,
+        "description": "错误。iife 是自执行函数表达式，为 script 标签设计；Node 场景应使用 cjs 或 es。"
+      },
+      {
+        "text": "es 格式的产物无法被 webpack、Vite 等其他打包工具二次消费",
+        "isCorrect": false,
+        "description": "错误。es 格式正是给打包工具与现代浏览器的首选，库的 module 入口就指向它。"
+      },
+      {
+        "text": "cjs 格式专为浏览器 script 标签直接引入设计",
+        "isCorrect": false,
+        "description": "错误。cjs 是 CommonJS，面向 Node.js；浏览器 script 直接引入应使用 iife/umd。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：Rollup 在模块格式上的设计取向是什么？",
+    "explanation": "Rollup 围绕 **ES 模块标准**构建：它「uses the new standardized format for code modules included in the ES6 revision」，官方 FAQ 进一步说 ESM 是「an official standard and the clear path forward」，而 CommonJS 是「an idiosyncratic legacy format」。ESM 的 import/export 是**静态结构**，使 Rollup 能把所有模块视作「a big abstract syntax tree with shared bindings」做 tree-shaking 与作用域提升。**CommonJS 输入不被原生支持**，需要 `@rollup/plugin-commonjs` 转换。\n\n- 「原生面向 ESM，CJS 输入要靠插件转换」正确。\n- 「原生支持 CJS、ESM 反而要插件」说反了。\n- 「对所有模块格式输入一视同仁原生支持」错误。\n- 「只接受 AMD 模块」错误。",
+    "tags": ["rollup", "入门", "esm", "commonjs", "设计哲学"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "原生面向 ES 模块（import/export），CommonJS 输入需要 @rollup/plugin-commonjs 转换",
+        "isCorrect": true,
+        "description": "正确。ESM 的静态结构是 tree-shaking 的根基；CJS 是「遗留格式」，靠插件转成 ESM 再参与打包。"
+      },
+      {
+        "text": "原生支持 CommonJS 输入，处理 ES 模块反而需要装插件",
+        "isCorrect": false,
+        "description": "错误。正好说反了：ESM 是一等公民，CJS 才需要插件。"
+      },
+      {
+        "text": "对 ESM、CJS、AMD 等所有输入格式都开箱即用、一视同仁",
+        "isCorrect": false,
+        "description": "错误。Rollup 核心刻意保持精简，只原生理解 ESM 输入。"
+      },
+      {
+        "text": "以 AMD 为核心格式，import 语法会先转成 define 再处理",
+        "isCorrect": false,
+        "description": "错误。AMD 只是可选的输出格式之一，绝不是 Rollup 的核心模型。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：npm 上很多老依赖仍以 CommonJS 格式发布（用 module.exports 导出）。要把这类依赖打进 Rollup 产物，需要哪个官方插件？",
+    "explanation": "Rollup 原生只理解 ES 模块，「Rollup 不原生支持 CommonJS」是官方 FAQ 明确写的。打包 CJS 依赖需要 **`@rollup/plugin-commonjs`**——它把 CommonJS 转换成 ESM 再交给 Rollup。实践中它几乎总是和 `@rollup/plugin-node-resolve` 一起用：后者负责**定位** node_modules 里的包，前者负责**转换**格式。\n\n- `@rollup/plugin-commonjs` 正确。\n- `@rollup/plugin-node-resolve` 只解决「按 Node 算法找到模块文件」，不做格式转换，两者职责互补。\n- `@rollup/plugin-json` 只负责把 JSON 文件转成可 import 的模块。\n- `@rollup/plugin-terser` 是压缩插件，与模块格式无关。",
+    "tags": ["rollup", "入门", "插件", "plugin-commonjs", "依赖处理"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "@rollup/plugin-commonjs",
+        "isCorrect": true,
+        "description": "正确。它把 CommonJS 模块转换为 ESM，使 Rollup 能打包 require/module.exports 风格的依赖。"
+      },
+      {
+        "text": "@rollup/plugin-node-resolve",
+        "isCorrect": false,
+        "description": "错误。node-resolve 只负责按 Node 算法定位第三方模块文件，不转换模块格式，需与 commonjs 插件配合。"
+      },
+      {
+        "text": "@rollup/plugin-json",
+        "isCorrect": false,
+        "description": "错误。json 插件只把 .json 文件转成可 import 的 ES 模块。"
+      },
+      {
+        "text": "@rollup/plugin-terser",
+        "isCorrect": false,
+        "description": "错误。terser 是产物压缩插件，与 CommonJS 转换无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：源码里写了 `import moment from 'moment'`，构建时出现警告「Treating 'moment' as external dependency」，产物里也没有 moment 的代码。原因是什么？",
+    "explanation": "Rollup **默认只解析相对路径**（`./`、`../`）的导入。`'moment'` 这种**裸导入（bare import）**指向 node_modules，Rollup 默认不知道如何定位，于是把它当作外部依赖（external）保留 import 语句并发出该警告。两种处理方式：\n\n1. 想把依赖打进产物 → 安装 **`@rollup/plugin-node-resolve`**，它实现 Node 的模块定位算法（如果该依赖是 CJS 还要配 `@rollup/plugin-commonjs`）。\n2. 有意保留为外部依赖 → 在配置里显式声明 `external: ['moment']`，警告即消除。\n\n另外 Node 内置模块（events、util 等）在浏览器场景需要 `rollup-plugin-polyfill-node` 这类 polyfill 插件。",
+    "tags": ["rollup", "入门", "external", "node-resolve", "警告排查"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Rollup 默认只解析相对路径导入，裸导入需要 node-resolve 插件定位，或用 external 显式声明为外部依赖",
+        "isCorrect": true,
+        "description": "正确。这是官方 Troubleshooting 的标准解释与两条处理路径。"
+      },
+      {
+        "text": "moment 这个包名拼写错误导致解析失败",
+        "isCorrect": false,
+        "description": "错误。拼写错误会是找不到模块的报错；该警告是 Rollup 对裸导入的默认 external 处理。"
+      },
+      {
+        "text": "moment 是 CommonJS 包，Rollup 会直接拒绝打包并报 fatal 错误",
+        "isCorrect": false,
+        "description": "错误。这是警告而非错误，构建仍会完成，只是依赖被当作 external 留在产物外。"
+      },
+      {
+        "text": "必须把 import 改写成 require 才能让 Rollup 识别第三方包",
+        "isCorrect": false,
+        "description": "错误。Rollup 原生面向 import 语法，改 require 反而需要 commonjs 插件处理。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：用 Rollup 打包一个准备发布到 npm 的库，官方 Introduction 建议的 package.json 入口字段策略是什么？",
+    "explanation": "官方建议：用 Rollup 把库编译成 **UMD 或 CommonJS 格式**，让 `package.json` 的 **`main`** 字段指向它（兼容传统消费方式）；同时**可选地**输出一份 ESM 版本并用 **`module`** 字段指向（「point to the compiled version, and a module field pointing to the ES module version」的思路），使 webpack/Rollup/Vite 这类**支持 ESM 的工具能直接拿到 ES 模块版**，享受 tree-shaking。现代库还会进一步用 `exports` 字段做条件导出，但 main + module 是 Rollup 官网给出的经典双入口方案。\n\n- 「main 指 CJS/UMD，module 指 ESM」正确。\n- 「module 是 Node.js 官方标准字段」错误：module 是打包器社区约定，Node 本身认 main/exports。\n- 「ESM 产物必须用 .mjs 扩展名」错误：扩展名不是必须，取决于 type 字段与消费方。\n- 「main 必须指向 ESM」错误：main 给的是传统消费方，指 CJS/UMD 更兼容。",
+    "tags": ["rollup", "入门", "库打包", "package.json", "发布"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "main 指向 CommonJS/UMD 产物保证兼容，再用 module 字段指向 ESM 产物供打包工具 tree-shake",
+        "isCorrect": true,
+        "description": "正确。这是官网 Introduction 给出的库发布双入口策略，现代项目可再叠加 exports 条件导出。"
+      },
+      {
+        "text": "module 是 Node.js 官方标准字段，Node 运行时会优先读取它",
+        "isCorrect": false,
+        "description": "错误。module 是打包器社区约定字段，Node 运行时并不识别它，Node 认 main 与 exports。"
+      },
+      {
+        "text": "ESM 产物必须命名为 .mjs 扩展名否则所有工具都无法识别",
+        "isCorrect": false,
+        "description": "错误。打包工具按 module/exports 字段识别 ESM，.mjs 只是 Node 场景的一种显式标记方式。"
+      },
+      {
+        "text": "main 必须指向 ESM 产物，CommonJS 版本已无需提供",
+        "isCorrect": false,
+        "description": "错误。main 面向传统消费方，指向 CJS/UMD 兼容性最好；是否再提供 CJS 取决于受众而非「无需」。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：配置 `input: { main: 'src/index.js', 'admin/app': 'src/admin.js' }`，这种对象形式的多入口有什么效果？",
+    "explanation": "input 支持字符串、数组、对象三种形式。**对象形式的 key 决定入口 chunk 的名字**——它会替换 `output.entryFileNames` 模板里的 `[name]` 占位符；key 中包含 `/` 时还能把 chunk **输出到子目录**。例中产物默认是 `main.js` 与 `admin/app.js`。数组形式则以文件名（去扩展名）作为 chunk 名。\n\n- 「key 作为入口 chunk 的 [name]，含斜杠可输出到子目录」正确。\n- 「对象的 value 是输出路径」错误：value 是入口源文件路径，输出位置由 output 决定。\n- 「多入口必须用 glob 语法」错误：Rollup 核心不支持 glob，需要数组/对象显式列出（或借助插件）。\n- 「多入口只能用数组」错误：对象形式正是为自定义命名而存在。",
+    "tags": ["rollup", "初级", "input", "多入口", "命名"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "对象的 key 会作为入口 chunk 的 [name] 参与文件命名，key 含斜杠时可把产物放进子目录",
+        "isCorrect": true,
+        "description": "正确。官方文档明确对象形式用于自定义入口名，/ 可创建子目录结构。"
+      },
+      {
+        "text": "对象的 value 表示输出文件路径，key 表示源文件路径",
+        "isCorrect": false,
+        "description": "错误。方向反了：value 是入口源文件，输出位置与命名由 output.dir 和 entryFileNames 决定。"
+      },
+      {
+        "text": "多入口必须写成 glob 模式字符串，如 src/**/*.js",
+        "isCorrect": false,
+        "description": "错误。Rollup 核心不解析 glob，多入口要用数组或对象显式列出。"
+      },
+      {
+        "text": "input 只接受数组，对象写法会直接报配置错误",
+        "isCorrect": false,
+        "description": "错误。字符串、数组、对象都是合法形式，对象还是唯一能自定义入口名的方式。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：`output.file` 与 `output.dir` 的使用边界是什么？",
+    "explanation": "**`output.file` 只能用于单 chunk 输出**：一旦构建会产生多个 chunk——使用了动态 `import()` 做代码分割、配置了多入口、或开启 `preserveModules`——就**必须改用 `output.dir`**，让 Rollup 把多个 chunk 文件写进目录，配合 `entryFileNames`/`chunkFileNames` 控制命名。CLI 里对应 `-o/--file` 与 `-d/--dir`。\n\n- 「file 仅限单 chunk，多 chunk（动态导入/多入口）必须用 dir」正确。\n- 「dir 已废弃」错误：dir 是代码分割时代的标准选项。\n- 「写了 file 时 Rollup 会自动把它当目录」错误：多 chunk 配 file 会直接报错。\n- 「两者等价随便选」错误：语义完全不同。",
+    "tags": ["rollup", "初级", "output", "file", "dir"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "file 只能承载单个 chunk；动态 import、多入口等产生多 chunk 时必须改用 dir",
+        "isCorrect": true,
+        "description": "正确。多 chunk 输出需要目录，这也是教程代码分割一节改用 --dir 的原因。"
+      },
+      {
+        "text": "dir 是旧版选项，新版本已废弃并统一为 file",
+        "isCorrect": false,
+        "description": "错误。dir 不仅没废弃，反而是代码分割/preserveModules 场景的必需选项。"
+      },
+      {
+        "text": "配置 file 后如果出现多个 chunk，Rollup 会自动把 file 当成目录处理",
+        "isCorrect": false,
+        "description": "错误。多 chunk 配 file 会报错终止，需要显式改用 dir。"
+      },
+      {
+        "text": "file 与 dir 完全等价，仅是命名习惯不同",
+        "isCorrect": false,
+        "description": "错误。一个写单文件、一个写目录，适用场景互斥。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：配置 `external: ['lodash-es']` 之后，构建产物会发生什么变化？",
+    "explanation": "`external` 声明哪些模块**不打进 bundle**：匹配的导入会被保留为 import/require 语句（按输出格式而定），**运行时由宿主环境提供**该依赖。这是库打包的关键选项——把 peerDependencies（如 vue、react）external 掉，避免依赖被重复打包、版本冲突与体积膨胀。external 接受字符串数组、正则，也支持函数形式 `(id, importer, isResolved) => boolean` 做批量判断（如 `/node_modules/`）。注意在 iife/umd 格式下，external 的包还需配 `output.globals` 映射全局变量名。\n\n- 「lodash-es 不进产物，导入语句保留、运行时由环境提供」正确。\n- 「会被内联并压缩」与 external 含义相反。\n- 「只支持正则」错误：字符串、正则、函数都支持。\n- 「自动从 npm 下载」无中生有。",
+    "tags": ["rollup", "初级", "external", "库打包", "依赖管理"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "lodash-es 不会被打进产物，相关导入语句被保留，运行时由使用方环境提供该依赖",
+        "isCorrect": true,
+        "description": "正确。external 即「外置」：跳过打包、保留导入。库打包时常把 peerDependencies 全部 external。"
+      },
+      {
+        "text": "lodash-es 会被强制内联进产物并单独压缩",
+        "isCorrect": false,
+        "description": "错误。external 的含义恰好相反——不打包、不内联。"
+      },
+      {
+        "text": "external 只能写正则表达式，字符串包名是非法值",
+        "isCorrect": false,
+        "description": "错误。字符串、正则、函数三种形式都合法，函数形式还能按 id 批量判断。"
+      },
+      {
+        "text": "Rollup 会在构建时自动从 npm 重新下载 lodash-es 的最新版",
+        "isCorrect": false,
+        "description": "错误。Rollup 不负责依赖安装，external 只是打包边界声明。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：打 umd 格式产物时把 jquery 声明为 external，还需要配置 `output.globals: { jquery: '$' }`。这个 globals 起什么作用？",
+    "explanation": "`umd`/`iife` 产物运行在**没有模块加载器**的环境里，external 依赖无法靠 import 语句获取，只能**从全局变量上拿**。`output.globals` 就是这张映射表：`{ jquery: '$' }` 告诉 Rollup「运行时 jquery 这个外部依赖对应全局变量 `$`」，产物的 UMD 包装代码会按此取值（如 `factory(global.$)`）。es/cjs 格式保留 import/require 语句，**不需要 globals**。它也支持函数形式 `(id) => name`。\n\n- 「为 umd/iife 下的 external 依赖指明对应的全局变量名」正确。\n- 「决定哪些内容打进 bundle」错误：那是 external 的职责，globals 只管映射。\n- 「es 格式也必须配」错误：es 保留 import，无需全局变量。\n- 「自动推断不需要配置」错误：不配会有警告且运行时取不到依赖。",
+    "tags": ["rollup", "初级", "globals", "umd", "external"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "为 umd/iife 格式下的 external 依赖建立「模块 id → 全局变量名」映射，运行时从全局对象取依赖",
+        "isCorrect": true,
+        "description": "正确。无模块加载器的环境只能靠全局变量提供外部依赖，globals 就是这张映射表。"
+      },
+      {
+        "text": "globals 决定哪些模块被打进 bundle、哪些被排除",
+        "isCorrect": false,
+        "description": "错误。打包边界由 external 决定；globals 只负责 external 依赖在全局环境下叫什么名字。"
+      },
+      {
+        "text": "es 格式同样必须配置 globals，否则 import 语句无法生成",
+        "isCorrect": false,
+        "description": "错误。es 格式保留标准 import 语句，由模块系统解析，与全局变量无关。"
+      },
+      {
+        "text": "globals 可以省略，Rollup 会按包名自动推断出全局变量名",
+        "isCorrect": false,
+        "description": "错误。Rollup 不做这种推断，缺失映射会发警告，运行时也拿不到依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：打包一个有导出的库为 iife/umd 格式时，`output.name` 这个配置是干什么的？",
+    "explanation": "`output.name` 指定 iife/umd 产物挂到**全局作用域的变量名**——使用方通过 `window.MyLib`（或 Node 全局）访问库的导出。**对有导出的 iife/umd 产物这是必填项**，CLI 对应 `--name`（官网示例：`rollup main.js --file bundle.js --format umd --name \"myBundle\"`）。它还支持命名空间写法 `'a.b.c'`，会自动生成嵌套对象。es/cjs 格式不需要 name。\n\n- 「iife/umd 产物暴露到全局的变量名，有导出时必须配置」正确。\n- 「name 是输出文件名」错误：文件名由 output.file/entryFileNames 决定。\n- 「cjs 也必须配置 name」错误：cjs 用 module.exports 导出，与全局变量无关。\n- 「只能用小写字母」错误：没有这种限制，惯例反而常用 PascalCase。",
+    "tags": ["rollup", "初级", "output.name", "iife", "umd"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "指定产物在全局作用域暴露的变量名，iife/umd 且有导出时必须配置，支持 a.b.c 命名空间",
+        "isCorrect": true,
+        "description": "正确。script 标签场景只能靠全局变量消费库的导出，name 就是这个全局入口。"
+      },
+      {
+        "text": "name 决定输出文件的文件名，如 name: 'foo' 输出 foo.js",
+        "isCorrect": false,
+        "description": "错误。文件名由 output.file 或 entryFileNames 模板控制，与 name 无关。"
+      },
+      {
+        "text": "cjs 格式同样强制要求 output.name，否则 exports 为空",
+        "isCorrect": false,
+        "description": "错误。cjs 通过 module.exports 导出，不挂全局变量，无需 name。"
+      },
+      {
+        "text": "name 只能使用全小写字母，否则在浏览器中无法访问",
+        "isCorrect": false,
+        "description": "错误。合法 JS 标识符即可，社区惯例反而多用 PascalCase（如 Vue、React）。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：用 `rollup -c -w` 进入 watch 模式后，关于其行为下列说法正确的是？",
+    "explanation": "watch 模式监听文件变化并增量重建。要点：① Rollup 会把环境变量 **`ROLLUP_WATCH` 设为 `'true'`**，配置文件和插件可据此区分 watch 与普通构建（如开发期跳过压缩）；② `watch.include`/`watch.exclude` 可限定监听范围；③ `--watch.onStart`/`onBundleEnd`/`onEnd`/`onError` 等可在事件点执行 shell 命令；④ `watch.buildDelay` 节流重建，`watch.clearScreen: false` 保留控制台输出；⑤ watch 利用 cache 复用上次构建的模块解析结果。\n\n- 「ROLLUP_WATCH=true，配置可据此调整行为」正确。\n- 「每次重建都是全新冷启动」错误：watch 有 cache 机制。\n- 「不支持执行 shell 命令」错误：--watch.onXxx 系列就是干这个的。\n- 「必须配合 dev server」错误：Rollup watch 独立工作，它本身也不内置 dev server。",
+    "tags": ["rollup", "初级", "watch", "ROLLUP_WATCH", "开发体验"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "watch 模式下环境变量 ROLLUP_WATCH 为 'true'，配置文件可据此区分开发/构建行为",
+        "isCorrect": true,
+        "description": "正确。典型用法：watch 时跳过 terser、开 sourcemap，正式构建时反之。"
+      },
+      {
+        "text": "每次文件变化都会完全冷启动重建，不存在任何缓存复用",
+        "isCorrect": false,
+        "description": "错误。watch 模式利用 cache 复用模块解析与构建信息来加速重建。"
+      },
+      {
+        "text": "watch 模式无法在构建事件点执行 shell 命令",
+        "isCorrect": false,
+        "description": "错误。--watch.onStart/onBundleEnd/onEnd/onError 专门用于在事件点挂 shell 命令。"
+      },
+      {
+        "text": "watch 模式必须搭配内置 dev server 才能启动",
+        "isCorrect": false,
+        "description": "错误。Rollup 没有内置 dev server，watch 只负责监听与重建，可独立运行。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：`output.sourcemap` 支持 true、'inline'、'hidden' 三种典型取值，它们的区别是什么？",
+    "explanation": "- `true`：生成**独立的 `.map` 文件**，并在产物末尾追加 `//# sourceMappingURL=` 注释指向它；\n- `'inline'`：sourcemap 以 **data URI 形式内联**进产物文件末尾，不产生独立文件（产物会显著变大，只适合开发）；\n- `'hidden'`：与 true 一样**生成独立 .map 文件，但产物里不写 sourceMappingURL 注释**——适合「错误监控平台需要 map 还原堆栈，但不想向用户暴露源码映射」的场景。\n\n默认值是 `false`（不生成）。CLI 对应 `-m`/`--sourcemap`，`-m inline` 即内联。",
+    "tags": ["rollup", "初级", "sourcemap", "调试", "output"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "'hidden' 会生成独立 .map 文件但不在产物中追加 sourceMappingURL 注释，适合错误监控场景",
+        "isCorrect": true,
+        "description": "正确。map 照常产出供监控平台还原堆栈，但浏览器不会自动加载它。"
+      },
+      {
+        "text": "true 表示把 sourcemap 以 data URI 内联进产物末尾",
+        "isCorrect": false,
+        "description": "错误。true 生成独立 .map 文件并加注释指向；内联是 'inline' 的行为。"
+      },
+      {
+        "text": "'inline' 会生成独立的 .map 文件且体积最小",
+        "isCorrect": false,
+        "description": "错误。inline 把整个 map 塞进产物本身，体积反而最大，且没有独立文件。"
+      },
+      {
+        "text": "sourcemap 默认开启，需要显式设为 false 才能关闭",
+        "isCorrect": false,
+        "description": "错误。默认值是 false，需要显式开启。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：关于 Rollup 配置文件本身的模块格式，下列说法正确的是？",
+    "explanation": "Rollup **默认把配置文件当作 ES 模块**加载（用 `export default` 导出配置）。要点：① 用 `.mjs` 扩展名可显式声明 ESM，**`.cjs` 显式声明 CommonJS**（此时用 `module.exports`）；② 原生 ESM 配置里没有 `__dirname`/`require`，需用 `import.meta.url` + `fileURLToPath` 替代，或干脆传 `--bundleConfigAsCjs` 把配置转译成 CJS 执行；③ `defineConfig` 辅助函数提供类型提示但**不是必需**；④ 配置可导出对象、数组（多构建）、函数（接收命令行参数）甚至 Promise。\n\n- 「默认按 ESM 解析，CommonJS 写法需 .cjs 扩展名」正确。\n- 「必须是 JSON」错误。\n- 「.mjs 表示 CommonJS」错误：.mjs 是 ESM。\n- 「defineConfig 是必需的」错误：它只是可选的智能提示辅助。",
+    "tags": ["rollup", "初级", "配置文件", "esm", "defineConfig"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "配置文件默认按 ES 模块解析；要用 require/module.exports 需改 .cjs 扩展名或传 --bundleConfigAsCjs",
+        "isCorrect": true,
+        "description": "正确。Rollup 3 起 ESM 是配置默认格式，CJS 写法要显式声明。"
+      },
+      {
+        "text": "配置文件必须是纯 JSON，不能包含任何 JS 逻辑",
+        "isCorrect": false,
+        "description": "错误。配置是 JS 模块，可导入插件、写条件逻辑、导出函数或数组。"
+      },
+      {
+        "text": ".mjs 扩展名表示按 CommonJS 解析配置",
+        "isCorrect": false,
+        "description": "错误。.mjs 显式声明 ES 模块；CommonJS 对应的是 .cjs。"
+      },
+      {
+        "text": "所有配置必须包在 defineConfig() 里才能被 Rollup 识别",
+        "isCorrect": false,
+        "description": "错误。defineConfig 只是提供 IDE 类型提示的可选辅助，直接导出普通对象同样有效。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：官方教程推荐在团队项目里如何安装与运行 Rollup？",
+    "explanation": "教程明确建议**本地安装**：`npm install rollup --save-dev`，然后在 package.json 写 `\"scripts\": { \"build\": \"rollup --config\" }`，协作者 `npm run build` 即可。理由：「ensures all contributors use the same version」——全局安装会导致不同机器版本漂移、CI 难以复现。npm scripts 执行时会自动把 `node_modules/.bin` 加入 PATH，所以脚本里直接写 `rollup` 就能找到本地版本，不需要 npx 前缀。\n\n- 「devDependencies 本地安装 + npm scripts，保证团队同版本」正确。\n- 「必须全局安装」与教程建议相反。\n- 「scripts 里必须写 npx rollup」错误：scripts 自动解析 .bin。\n- 「只有全局安装才能用配置文件」错误：配置文件与安装方式无关。",
+    "tags": ["rollup", "初级", "安装", "npm-scripts", "工程实践"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "安装到 devDependencies，并通过 npm scripts（如 build: rollup --config）运行，保证团队与 CI 使用同一版本",
+        "isCorrect": true,
+        "description": "正确。本地安装锁定版本，scripts 自动解析 node_modules/.bin 下的 rollup 命令。"
+      },
+      {
+        "text": "必须全局安装 rollup，本地安装的版本无法在命令行使用",
+        "isCorrect": false,
+        "description": "错误。npm scripts 和 npx 都能调用本地安装的 rollup，全局安装反而造成版本漂移。"
+      },
+      {
+        "text": "npm scripts 里必须写 npx rollup，否则找不到命令",
+        "isCorrect": false,
+        "description": "错误。npm scripts 执行时自动把 node_modules/.bin 加进 PATH，直接写 rollup 即可。"
+      },
+      {
+        "text": "只有全局安装的 rollup 才支持读取 rollup.config.js",
+        "isCorrect": false,
+        "description": "错误。配置文件加载与安装位置完全无关，本地版本同样用 -c 读取。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：下列关于常用官方插件职责的描述，哪一项是正确的？",
+    "explanation": "官方插件各司其职：\n- **@rollup/plugin-node-resolve**：实现 Node 模块定位算法，让 Rollup 能找到 node_modules 里的第三方包（处理 exports/browser/main 字段）；\n- **@rollup/plugin-commonjs**：把 CommonJS 模块转换成 ESM；\n- **@rollup/plugin-json**：把 .json 文件转成可 import 的模块（教程演示过 `import { version } from './package.json'`，且只打包用到的字段）;\n- **@rollup/plugin-terser**：压缩产物，属于输出阶段插件，常放进 `output.plugins` 按输出启用；\n- **@rollup/plugin-babel / @rollup/plugin-typescript**：接入 Babel/TS 转译。\n\n「输出 cjs 格式产物」由 output.format 决定，不是 commonjs 插件的职责——它处理的是**输入侧**的 CJS 依赖。",
+    "tags": ["rollup", "初级", "官方插件", "node-resolve", "职责划分"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "node-resolve 按 Node 算法定位 node_modules 里的第三方模块，commonjs 插件把 CJS 依赖转换为 ESM，两者常配合使用",
+        "isCorrect": true,
+        "description": "正确。一个管「找到文件」、一个管「转换格式」，是打包第三方依赖的标准组合。"
+      },
+      {
+        "text": "@rollup/plugin-json 的作用是压缩产物里的 JSON 字符串",
+        "isCorrect": false,
+        "description": "错误。json 插件是把 .json 文件变成可 import 的 ES 模块，未用到的字段还能被摇掉，与压缩无关。"
+      },
+      {
+        "text": "@rollup/plugin-terser 属于构建阶段插件，必须放在 plugins 数组的第一位",
+        "isCorrect": false,
+        "description": "错误。terser 作用于产物生成阶段，常放在 output.plugins 中按需对某份输出启用。"
+      },
+      {
+        "text": "要输出 CommonJS 格式的产物，必须安装 @rollup/plugin-commonjs",
+        "isCorrect": false,
+        "description": "错误。输出格式由 output.format: 'cjs' 控制；commonjs 插件解决的是输入侧的 CJS 依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：配置文件里写 `plugins: [resolve(), commonjs(), isProduction && terser()]`，关于这种写法下列说法正确的是？",
+    "explanation": "Rollup 插件是**调用工厂函数返回的对象**（含 name 和若干钩子），所以配置里写的是 `resolve()` 而非 `resolve`。官方文档明确：plugins 数组中的 **falsy 值会被忽略**——`isProduction && terser()` 在开发环境求值为 false，被直接跳过，这是按环境启停插件的惯用法。插件顺序对 resolveId/transform 等钩子的执行有影响（如 commonjs 通常放在 node-resolve 之后）。CLI 场景则可用 `-p node-resolve` 按名字加载。\n\n- 「插件是工厂函数调用结果，falsy 项被忽略，可按环境条件启用」正确。\n- 「放包名字符串即可」错误：配置文件里需要导入并调用，字符串形式是 CLI -p 的能力。\n- 「顺序无关紧要」错误：顺序影响钩子执行次序。\n- 「一次构建只能一个插件」错误：插件链是常态。",
+    "tags": ["rollup", "初级", "plugins", "条件启用", "配置"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "插件是工厂函数的调用结果；数组中的 falsy 值会被忽略，因此 isProduction && terser() 可按环境条件启用插件",
+        "isCorrect": true,
+        "description": "正确。这是官方文档认可的条件插件惯用法，开发环境下该项为 false 被跳过。"
+      },
+      {
+        "text": "plugins 数组里直接写包名字符串（如 'rollup-plugin-terser'）即可，Rollup 会自动 require",
+        "isCorrect": false,
+        "description": "错误。配置文件中必须导入插件并调用工厂函数；按名字加载是 CLI 的 -p 标志提供的便利。"
+      },
+      {
+        "text": "插件在数组中的先后顺序对构建结果没有任何影响",
+        "isCorrect": false,
+        "description": "错误。resolveId/load/transform 等钩子按插件顺序执行，commonjs 等插件对位置是敏感的。"
+      },
+      {
+        "text": "每次构建只允许注册一个插件，多插件需要多次构建",
+        "isCorrect": false,
+        "description": "错误。插件链式协作是 Rollup 的基本工作方式，一次构建挂多个插件是常态。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：`treeshake.moduleSideEffects` 默认是 true。如果把它设为 false，可能产生什么后果？",
+    "explanation": "`moduleSideEffects` 控制「是否假定模块有副作用」。默认 true：即便一个模块的导出都没被用，只要它被 import，其顶层副作用代码仍会保留。设为 **false 等于全局假定所有非入口模块无副作用**：只被导入但未使用其导出的模块会被**整个删除**——包括 `import './polyfill.js'`、`import 'some.css'` 这类**纯副作用导入**，造成运行时缺 polyfill、样式丢失等隐蔽问题。所以 false 是激进选项，必须确认依赖确实无副作用（或用函数形式/数组精确指定哪些模块有副作用）。\n\n- 「纯副作用 import 可能被整体删除」正确。\n- 「关闭整个 tree-shaking」错误：它只影响副作用假定，不是 treeshake: false。\n- 「true 表示删除所有副作用」错误：true 是保守保留。\n- 「只影响 CSS」错误：影响所有模块。",
+    "tags": ["rollup", "中级", "tree-shaking", "moduleSideEffects", "副作用"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅被导入而未使用其导出的模块可能被整体删除，import './polyfill.js' 这类纯副作用导入会丢失",
+        "isCorrect": true,
+        "description": "正确。false 表示假定模块无副作用，纯副作用 import 是最典型的受害者。"
+      },
+      {
+        "text": "设为 false 会关闭整个 tree-shaking，产物包含全部源码",
+        "isCorrect": false,
+        "description": "错误。关闭 tree-shaking 是 treeshake: false；moduleSideEffects 只改变副作用假定，方向恰好相反（删得更狠）。"
+      },
+      {
+        "text": "默认值 true 表示 Rollup 会主动删除所有模块的副作用代码",
+        "isCorrect": false,
+        "description": "错误。true 是保守策略：假定有副作用，从而保留被导入模块的顶层代码。"
+      },
+      {
+        "text": "该选项只影响 CSS 文件的导入，对 JS 模块无效",
+        "isCorrect": false,
+        "description": "错误。它作用于所有模块的副作用假定，JS polyfill 与 CSS 导入都受影响。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：很多库的产物里能看到 `/*@__PURE__*/` 这样的注释，它对 Rollup 的 tree-shaking 有什么作用？",
+    "explanation": "`/*@__PURE__*/`（或 `#__PURE__`）注解标记**紧随其后的函数/构造器调用没有副作用**。tree-shaking 对「调用表达式」通常很保守——函数执行可能有副作用，不敢删；加了 PURE 注解后，Rollup 就敢在**调用结果未被使用**时把整个调用删掉。这是库作者帮助打包器的标准手段（如 `const x = /*@__PURE__*/ createHeavyThing()`，x 没人用时连 createHeavyThing() 一起删）。该行为由 `treeshake.annotations` 控制，默认 true（开启）。\n\n- 「声明调用无副作用，结果未用时整个调用可删」正确。\n- 「让函数被内联」错误：PURE 不触发内联。\n- 「阻止删除」恰好说反。\n- 「只对类构造函数有效」错误：函数调用与 new 调用都适用。",
+    "tags": ["rollup", "中级", "tree-shaking", "PURE注解", "annotations"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明紧随其后的函数调用无副作用，若调用结果未被使用，Rollup 可以把整个调用一并摇掉",
+        "isCorrect": true,
+        "description": "正确。没有注解时调用表达式默认可能有副作用而被保留；PURE 解除了这层保守限制。"
+      },
+      {
+        "text": "提示 Rollup 把该函数调用内联展开到调用处以减少函数开销",
+        "isCorrect": false,
+        "description": "错误。PURE 注解只关乎可删除性，Rollup 不做这种内联优化。"
+      },
+      {
+        "text": "标记该调用受保护，tree-shaking 时必须保留",
+        "isCorrect": false,
+        "description": "错误。方向完全相反，PURE 是「可以安全删除」的许可。"
+      },
+      {
+        "text": "该注解只对 new 一个类的构造调用生效，普通函数调用无效",
+        "isCorrect": false,
+        "description": "错误。普通调用与 new 表达式都可标注。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：npm 包在 package.json 里声明 `\"sideEffects\": false`，这对 Rollup 构建有什么影响？",
+    "explanation": "`sideEffects` 字段由 webpack 发起、已成社区通用约定，声明「包内模块没有顶层副作用」。在 Rollup 体系里它**不是核心直接读取**，而是由 **`@rollup/plugin-node-resolve` 解析**：插件读取依赖的 sideEffects 字段，并通过 resolveId 结果把模块标记为无副作用（等效于模块级 moduleSideEffects: false），于是「只被导入但未用到导出」的模块文件可以被**整体摇掉**，常见收益是 barrel file（index 全量再导出）只保留实际用到的子模块。注意：如果包里有 CSS 这类纯副作用文件，应使用数组形式列出（如 `\"sideEffects\": [\"*.css\"]`），否则会被误删。\n\n- 「node-resolve 读取该字段，未用到导出的无副作用模块可被整体删除」正确。\n- 「Rollup 核心内置读取」错误：经由 node-resolve 插件。\n- 「false 仍保留所有模块」错误：恰恰允许删除。\n- 「只对 webpack 生效」错误：Rollup 生态同样支持。",
+    "tags": ["rollup", "中级", "sideEffects", "node-resolve", "tree-shaking"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "@rollup/plugin-node-resolve 会读取该字段，把依赖模块标记为无副作用，未用到导出的模块文件可被整体摇掉",
+        "isCorrect": true,
+        "description": "正确。该字段经 node-resolve 进入 Rollup 的副作用模型，对 barrel file 类依赖瘦身效果显著。"
+      },
+      {
+        "text": "sideEffects 由 Rollup 核心直接读取，与任何插件无关",
+        "isCorrect": false,
+        "description": "错误。Rollup 核心不解析 package.json 元数据，该字段由 node-resolve 插件处理后传递给核心。"
+      },
+      {
+        "text": "声明 false 后所有模块都会被强制保留以保证安全",
+        "isCorrect": false,
+        "description": "错误。false 的含义恰好是允许更激进删除：没有副作用、导出未被用即可整体移除。"
+      },
+      {
+        "text": "这个字段是 webpack 专属约定，Rollup 工具链完全忽略它",
+        "isCorrect": false,
+        "description": "错误。虽然源自 webpack，但 Rollup 的 node-resolve 插件同样支持并应用它。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：在 Rollup 中，什么情况下会自动触发代码分割（生成多个 chunk）？",
+    "explanation": "两种情况自动触发，**无需任何手动配置加载器**：① 代码里使用**动态 `import()`**——被导入的模块拆成独立 chunk，按需加载（除非设置 `output.inlineDynamicImports: true` 强制内联回单文件）；② 配置**多个入口**——多入口共享的依赖被自动提取成**共享 chunk**，避免重复打包（官方教程演示两个入口引用同一个 `chunk-[hash].js`）。此外 `output.manualChunks` 和 `preserveModules` 也能人为产生多 chunk。多 chunk 输出必须用 `output.dir`，且 iife/umd 格式不支持多 chunk（需选 es/system/cjs/amd）。\n\n- 「动态 import 与多入口共享依赖都自动产生 chunk」正确。\n- 「必须手写 manualChunks 才分割」错误：manualChunks 是补充手段。\n- 「只支持 esm 格式」错误：system/cjs/amd 同样支持，只有 iife/umd 不支持。\n- 「动态 import 总是被内联」错误：内联是 inlineDynamicImports 的可选行为。",
+    "tags": ["rollup", "中级", "代码分割", "动态导入", "chunk"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "使用动态 import() 或配置多入口时自动分割：动态导入拆出按需 chunk，多入口的共享依赖提取为共享 chunk",
+        "isCorrect": true,
+        "description": "正确。这是 Rollup 代码分割的两大自动触发条件，官网首页称无需自定义加载代码。"
+      },
+      {
+        "text": "必须手动配置 manualChunks，否则 Rollup 永远只输出单个文件",
+        "isCorrect": false,
+        "description": "错误。manualChunks 只是人工干预手段，动态 import 与多入口本身就会自动分割。"
+      },
+      {
+        "text": "代码分割只在 output.format 为 es 时可用，其他格式一律不支持",
+        "isCorrect": false,
+        "description": "错误。es、system、cjs、amd 都支持多 chunk，不支持的是自包含的 iife/umd。"
+      },
+      {
+        "text": "动态 import() 默认会被内联进主文件，不产生新 chunk",
+        "isCorrect": false,
+        "description": "错误。默认行为就是拆 chunk；内联是 inlineDynamicImports: true 的显式选择。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：想把所有 node_modules 依赖拆进一个 vendor chunk，`output.manualChunks` 应该怎么用？",
+    "explanation": "manualChunks 两种形式：① **对象形式** `{ lodash: ['lodash'] }`——key 是 chunk 名、value 列出归入该 chunk 的模块；② **函数形式** `(id, { getModuleInfo, getModuleIds }) => string | void`——按模块 id 决定归属，**返回字符串即指定 chunk 名，返回 undefined 则交回默认分配策略**。拆 vendor 的惯用写法：\n\n```js\nmanualChunks(id) {\n  if (id.includes('node_modules')) return 'vendor';\n}\n```\n\n注意 manualChunks 产生多 chunk，需要 output.dir，且不适用于 iife/umd 这类不支持代码分割的格式。粗暴的单一 vendor 也可能让首屏加载无关代码，可按包名细分。",
+    "tags": ["rollup", "中级", "manualChunks", "vendor", "代码分割"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用函数形式按模块 id 判断：id 含 node_modules 时返回 'vendor'，返回 undefined 的模块走默认分配",
+        "isCorrect": true,
+        "description": "正确。函数形式最灵活，返回字符串指定 chunk 名，不返回则交由 Rollup 默认策略。"
+      },
+      {
+        "text": "manualChunks 只支持对象形式，必须逐个列出所有第三方包名",
+        "isCorrect": false,
+        "description": "错误。函数形式正是为批量规则设计的，逐个列举既繁琐也不现实。"
+      },
+      {
+        "text": "函数形式中返回 undefined 会导致该模块被丢弃出产物",
+        "isCorrect": false,
+        "description": "错误。返回 undefined 表示不干预，模块按默认 chunk 策略正常分配，不会被丢弃。"
+      },
+      {
+        "text": "manualChunks 配合 output.format: 'iife' 使用效果最佳",
+        "isCorrect": false,
+        "description": "错误。iife 是自包含单文件格式，不支持多 chunk 输出，manualChunks 在此无法工作。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：库打包时开启 `output.preserveModules: true`，产物会有什么特点？",
+    "explanation": "preserveModules（默认 false）让 Rollup **不把模块合并成少数 chunk，而是为每个模块输出一个对应文件**，尽量保留原始目录结构（置于 output.dir 下）。适合**库**场景：使用方可以按文件路径深度导入（如 `lib/utils/foo.js`），下游打包器也能做更细粒度的 tree-shaking。两个关键认知：① **tree-shaking 依然生效**——未被入口引用到的代码照样被删，它不是「原样拷贝源码」；② 多文件输出必须配 `output.dir`。\n\n- 「逐模块输出文件、保留结构，tree-shaking 仍生效」正确。\n- 「等于关闭 tree-shaking」错误：官方文档明确 tree-shaking 仍然适用。\n- 「只能与 output.file 配合」错误：恰恰必须用 dir。\n- 「把依赖强制内联」错误：external/依赖处理逻辑不变。",
+    "tags": ["rollup", "中级", "preserveModules", "库打包", "输出结构"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按原模块结构逐文件输出而非合并成单 bundle，但 tree-shaking 依然生效，未用代码仍会被删除",
+        "isCorrect": true,
+        "description": "正确。它改变的是输出粒度而非优化策略，常用于希望保留文件级导入的库。"
+      },
+      {
+        "text": "等价于完全关闭 tree-shaking，所有源码原样进入产物",
+        "isCorrect": false,
+        "description": "错误。官方明确 preserveModules 下 tree-shaking 照常工作，死代码仍被剔除。"
+      },
+      {
+        "text": "preserveModules 只能与 output.file 搭配输出单文件",
+        "isCorrect": false,
+        "description": "错误。它产生多个文件，必须配合 output.dir，与 file 互斥。"
+      },
+      {
+        "text": "开启后所有 external 依赖会被强制内联进各模块文件",
+        "isCorrect": false,
+        "description": "错误。external 语义不受影响，外部依赖仍保留导入语句。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：`output.exports` 默认值是 'auto'。打 cjs 产物时它如何工作，何时需要显式改成 'named'？",
+    "explanation": "`output.exports` 控制 cjs/umd 等格式的导出方式，取值 auto/default/named/none。**'auto' 会根据入口模块的实际导出形态自动猜测**：只有 default 导出→按 default 处理（module.exports 直接赋值）；只有具名导出→named；无导出→none。当入口**同时存在 default 与具名导出**时，自动猜测存在歧义——CJS 使用方要么 `require('x')` 直接拿 default，要么 `require('x').default`，两者不可兼得。此时 Rollup 会发出警告，建议显式 `exports: 'named'`（default 挂在 `.default` 上）或重构导出形态。ES 模块语法文档也直言：「在同一模块里混用 default 与 named 导出是坏实践」。\n\n- 「auto 按入口导出形态猜测，混用 default+named 时需显式 named 并有警告」正确。\n- 「default 模式允许同时有具名导出」错误：default 模式要求只有 default 导出。\n- 「none 表示导出全部」错误：none 是无导出（如纯应用入口）。\n- 「exports 控制 external」错误：完全不同的配置域。",
+    "tags": ["rollup", "中级", "output.exports", "cjs", "互操作"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "auto 根据入口实际导出形态自动选择；当 default 与具名导出混用时会警告，需显式设为 named 并以 .default 访问默认导出",
+        "isCorrect": true,
+        "description": "正确。混合导出在 CJS 下有互操作歧义，named 模式把 default 挂到 exports.default 上消除歧义。"
+      },
+      {
+        "text": "exports: 'default' 模式下可以同时保留任意数量的具名导出",
+        "isCorrect": false,
+        "description": "错误。default 模式仅适用于入口只有默认导出的情况，混用时不可选。"
+      },
+      {
+        "text": "exports: 'none' 表示把模块的全部导出无差别暴露",
+        "isCorrect": false,
+        "description": "错误。none 表示入口没有任何导出，适合纯执行副作用的应用入口。"
+      },
+      {
+        "text": "output.exports 用于声明哪些依赖是 external 外部依赖",
+        "isCorrect": false,
+        "description": "错误。external 是独立的顶层配置，exports 只管产物的导出形式。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：Rollup 插件钩子分为 build hooks 与 output generation hooks 两大类，这个划分的依据是什么？",
+    "explanation": "划分依据是**钩子在构建生命周期的哪个阶段运行**：\n- **Build hooks** 在**构建阶段**（`rollup.rollup()` 期间）运行，负责「定位、加载、转换模块、搭建模块图」：options → buildStart → resolveId → load → transform → moduleParsed → buildEnd。**每次构建只跑一轮**。\n- **Output generation hooks** 在**产物生成阶段**（`bundle.generate()`/`bundle.write()` 期间）运行，负责产物的渲染与写出：outputOptions → renderStart → banner/footer/intro/outro → renderChunk → generateBundle → writeBundle → closeBundle。**每份输出配置各跑一轮**——一份构建配三份 output 时，这些钩子各执行三次。\n\n这也是 output.plugins 只能用 output 钩子的原因。watch 相关另有 watchChange/closeWatcher。",
+    "tags": ["rollup", "中级", "插件机制", "build-hooks", "output-hooks"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "build 钩子在构建阶段处理模块定位/加载/转换，整次构建跑一轮；output 钩子在 generate/write 阶段运行，每份输出配置各跑一轮",
+        "isCorrect": true,
+        "description": "正确。一次构建可对应多份输出，build 钩子一轮、output 钩子按输出份数多轮。"
+      },
+      {
+        "text": "两类钩子都会对每一份 output 配置完整执行一遍",
+        "isCorrect": false,
+        "description": "错误。build 阶段与输出无关，只在 rollup.rollup() 时执行一轮；按输出重复的只有 output 钩子。"
+      },
+      {
+        "text": "transform 属于 output generation 钩子，在写盘前最后修改代码",
+        "isCorrect": false,
+        "description": "错误。transform 是 build 钩子，作用于单个模块加载后；输出阶段改 chunk 代码的是 renderChunk。"
+      },
+      {
+        "text": "generateBundle 属于 build 钩子，在模块图构建完成时触发",
+        "isCorrect": false,
+        "description": "错误。generateBundle 是 output 钩子，在产物生成末期、写盘前访问完整 bundle。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：插件的 resolveId、load、transform 三个核心 build 钩子分别承担什么职责？",
+    "explanation": "这是模块进入 Rollup 的三道工序：\n1. **resolveId(source, importer)**：把导入说明符（如 `'./foo'`、`'virtual:x'`）**解析成最终模块 id**；可返回 external 标记；返回 null 表示「我不管」，交给后续插件或默认解析。\n2. **load(id)**：**提供该 id 的模块内容**（虚拟模块、从内存/网络取源码都在这里）；返回 null 则走默认的文件系统读取。\n3. **transform(code, id)**：对**已加载的源码做转换**（编译 TS、转 JSX、处理 CSS 等），返回新代码与 sourcemap。\n\n三者配合即插件体系的主干：定位 → 取内容 → 转换。resolveId/load 是 first 类型（有插件给出答案即止），transform 是 sequential（依次串联转换）。\n\n- 「resolveId 定位、load 供内容、transform 转换」正确。其余选项均颠倒或歪曲了职责。",
+    "tags": ["rollup", "中级", "resolveId", "load", "transform"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "resolveId 把导入说明符解析成模块 id，load 提供模块内容，transform 对加载后的代码做转换",
+        "isCorrect": true,
+        "description": "正确。定位 → 取内容 → 转换，三道工序构成模块处理主干。"
+      },
+      {
+        "text": "load 负责把导入路径解析成绝对路径，resolveId 负责读取文件内容",
+        "isCorrect": false,
+        "description": "错误。两者职责说反了：解析路径是 resolveId，提供内容是 load。"
+      },
+      {
+        "text": "transform 在模块被解析成 AST 之后执行，因此无法再修改代码文本",
+        "isCorrect": false,
+        "description": "错误。transform 正是在 parse 前作用于源码文本的转换钩子，返回新代码即可生效。"
+      },
+      {
+        "text": "resolveId 返回 null 表示解析失败，构建会立即报错终止",
+        "isCorrect": false,
+        "description": "错误。返回 null 是「交给其他插件或默认行为」的礼让语义，不是报错。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：编写提供虚拟模块的插件时，官方约定要给虚拟模块 id 加 `\\0` 前缀（如 `\\0virtual:env`）。这个前缀的作用是什么？",
+    "explanation": "`\\0` 是官方插件约定（conventions）中的**虚拟模块标记**：它告诉**其他插件**「这个 id 是某插件凭空制造的，不要尝试解析或处理它」——例如 node-resolve 看到 `\\0` 前缀就不会试图把它当文件路径去 node_modules 找；其他依赖文件路径的核心行为也会跳过它。典型写法：resolveId 把公开名（`virtual:env`）映射为内部名（`\\0virtual:env`），load 再对内部名返回模块源码。`\\0` 不是注释语法、不会让模块变 external，虚拟模块也完全不需要磁盘上真实存在。\n\n- 「阻止其他插件把它当普通路径解析/处理」正确。\n- 「让模块变成 external」错误：external 是另一套机制。\n- 「是注释语法」错误：它是 id 字符串里的空字符前缀。\n- 「必须真实存在于磁盘」错误：虚拟模块的意义就是不存在于磁盘。",
+    "tags": ["rollup", "中级", "虚拟模块", "插件约定", "resolveId"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "向其他插件标明这是虚拟模块 id，避免 node-resolve 等插件把它当真实文件路径去解析处理",
+        "isCorrect": true,
+        "description": "正确。这是官方 conventions 规定的虚拟模块命名约定，防止插件间互相误处理。"
+      },
+      {
+        "text": "把该模块标记为 external，从而不打进产物",
+        "isCorrect": false,
+        "description": "错误。external 由 external 配置或 resolveId 返回值的 external 属性控制，与 \\0 无关。"
+      },
+      {
+        "text": "\\0 是 Rollup 特有的行内注释语法，构建时会被剥离",
+        "isCorrect": false,
+        "description": "错误。它是模块 id 字符串的前缀字符（空字符），不是注释。"
+      },
+      {
+        "text": "提示 Rollup 该模块必须在磁盘上存在同名文件作为回退",
+        "isCorrect": false,
+        "description": "错误。虚拟模块由插件的 load 钩子凭空提供内容，根本不需要磁盘文件。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：官方教程演示了同一份构建输出两份产物，其中只有 bundle.min.js 经过 terser 压缩。这是通过什么机制实现的？",
+    "explanation": "通过 **`output.plugins`（输出级插件）**实现：output 是数组，每个输出对象可以有自己的 plugins，里面的插件**只对这一份输出生效**，且**只允许使用 output generation 阶段的钩子**（renderChunk、generateBundle 等）。教程原例：\n\n```js\noutput: [\n  { file: 'bundle.js', format: 'cjs' },\n  { file: 'bundle.min.js', format: 'iife', name: 'version', plugins: [terser()] }\n]\n```\n\nterser 工作在 renderChunk 钩子上，正适合放进 output.plugins 做按输出压缩。若把它放顶层 plugins，则所有输出都被压缩。\n\n- 「把 terser 放进对应输出的 output.plugins」正确。\n- 「output.plugins 能用 transform」错误：仅限 output 阶段钩子。\n- 「插件放哪都一样」错误：作用范围完全不同。\n- 「terser 必须全局启用」错误：恰恰支持按输出启用。",
+    "tags": ["rollup", "中级", "output.plugins", "terser", "多输出"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 terser() 放进 bundle.min.js 那份输出配置的 output.plugins 数组，使压缩只作用于该输出",
+        "isCorrect": true,
+        "description": "正确。输出级插件按输出生效，这正是官方教程「Using output plugins」的演示。"
+      },
+      {
+        "text": "output.plugins 里的插件同样可以使用 transform 等 build 钩子",
+        "isCorrect": false,
+        "description": "错误。输出级插件只能使用产物生成阶段的钩子，build 钩子在那里不会被调用。"
+      },
+      {
+        "text": "插件放在顶层 plugins 还是 output.plugins 效果完全一样",
+        "isCorrect": false,
+        "description": "错误。顶层插件作用于整个构建与所有输出；输出级插件只影响所在的那份输出。"
+      },
+      {
+        "text": "terser 这类压缩插件只能全局启用，无法只压缩其中一份产物",
+        "isCorrect": false,
+        "description": "错误。terser 基于 renderChunk 钩子工作，放进 output.plugins 即可实现按输出压缩。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：构建时大量出现警告「'this' has been rewritten to 'undefined'」（this is undefined）。根本原因是什么？",
+    "explanation": "根因是**模块规范差异**：在 ES 模块的顶层作用域，`this` 就是 `undefined`（CommonJS 顶层 this 是 exports、script 里是 window）。Rollup 严格遵循 ESM 语义，会把模块顶层的 `this` 改写为 `undefined` 并发出警告。常见触发源：TypeScript 降级产物里的辅助代码、老式 UMD 头部的 `this` 探测（`typeof this !== 'undefined'`）。处理：最好用 commonjs 插件正确转换老代码；确有需要时用 `context`（全局）或 `moduleContext`（按模块）选项改写 this 的指向。\n\n- 「ESM 顶层 this 本就是 undefined，Rollup 按规范改写并警告」正确。\n- 「Rollup 的 bug」错误：是规范行为。\n- 「ESM 顶层 this 指向 window」错误：那是普通 script。\n- 「必须改用箭头函数」答非所问：箭头函数与顶层 this 语义无关。",
+    "tags": ["rollup", "中级", "this-undefined", "esm语义", "排错"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ES 模块顶层作用域的 this 按规范就是 undefined，Rollup 据此改写并警告；可用 context/moduleContext 选项调整",
+        "isCorrect": true,
+        "description": "正确。这是 ESM 与 CJS/script 的语义差异，常由老 UMD 代码或 TS 辅助产物触发。"
+      },
+      {
+        "text": "这是 Rollup 解析器的已知 bug，升级版本即可消除",
+        "isCorrect": false,
+        "description": "错误。改写行为完全符合 ES 模块规范，不是缺陷。"
+      },
+      {
+        "text": "ES 模块顶层 this 指向 window，Rollup 错误地改成了 undefined",
+        "isCorrect": false,
+        "description": "错误。指向 window 的是非模块 script；ESM 顶层 this 在规范层面就是 undefined。"
+      },
+      {
+        "text": "源码必须全部改成箭头函数才能消除该警告",
+        "isCorrect": false,
+        "description": "错误。警告与函数形式无关，关注点是模块顶层的 this 引用。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：用 @rollup/plugin-babel 给产物接入 Babel 时，babelHelpers 选项在应用与库两种场景下的推荐值是什么？",
+    "explanation": "`babelHelpers` 控制 Babel 辅助函数（helpers）的注入方式，官方 README 给出明确分工：\n- **应用 → `'bundled'`**：helpers 直接打进 bundle，自包含、无运行时依赖（插件默认推荐值）；\n- **库 → `'runtime'`**：helpers 改为引用 `@babel/runtime`，需要配 `@babel/plugin-transform-runtime`，并把 `@babel/runtime` 声明为 **external**（如 `external: [/@babel\\/runtime/]`）——使用方统一提供一份 runtime，避免每个库都内嵌重复 helpers；\n- `'inline'` 官方不推荐（每个文件重复内联，体积膨胀）；`'external'` 依赖全局 babelHelpers 对象，是遗留方案。\n\n- 「应用 bundled、库 runtime 且 external 化 @babel/runtime」正确。其余选项分别颠倒或张冠李戴。",
+    "tags": ["rollup", "中级", "plugin-babel", "babelHelpers", "库打包"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "应用用 'bundled' 把 helpers 打进产物；库用 'runtime' 引用 @babel/runtime 并将其声明为 external",
+        "isCorrect": true,
+        "description": "正确。这是插件官方 README 的推荐分工，库场景还需安装 transform-runtime 插件。"
+      },
+      {
+        "text": "'runtime' 表示把所有 helpers 逐文件内联，体积最小",
+        "isCorrect": false,
+        "description": "错误。runtime 是引用外部 @babel/runtime 去重；逐文件内联是 inline，且官方不推荐。"
+      },
+      {
+        "text": "babelHelpers 控制的是 polyfill（core-js）的注入策略",
+        "isCorrect": false,
+        "description": "错误。它只管 Babel 语法降级辅助函数的存放位置，polyfill 策略由 Babel 自身的 useBuiltIns 等控制。"
+      },
+      {
+        "text": "库应该选 'inline'，让每个文件自带 helpers 以保证独立性",
+        "isCorrect": false,
+        "description": "错误。inline 导致 helpers 在每个模块重复一份，官方明确不推荐，库应使用 runtime。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：团队要为「发 npm 的组件库」「重工程化的中后台应用」「追求极致构建速度的脚本」选打包器，关于 Rollup 与 webpack、esbuild 的定位差异，下列判断最准确的是？",
+    "explanation": "三者定位：\n- **Rollup**：ESM 优先、tree-shaking 鼻祖、scope hoisting 产出**干净扁平、几乎无运行时代码**的多格式产物（es/cjs/umd 一套配置全输出），是**库打包事实标准**；但核心刻意精简，没有内置 dev server/HMR。\n- **webpack**：面向**应用工程化**的全家桶——dev server/HMR、海量 loader、Module Federation 等，运行时包装与 chunk 管理代码较重，库场景产物不如 Rollup 干净。\n- **esbuild**：Go 实现、并行化，速度比两者快一到两个数量级，适合转译与快速打包；但产物精细控制（chunk 策略、产物格式细节）与插件钩子粒度不及 Rollup。\n\n所以：库 → Rollup；重工程化应用 → webpack（或基于其生态的方案）；追求速度的转译/简单打包 → esbuild。",
+    "tags": ["rollup", "中级", "选型对比", "webpack", "esbuild"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "组件库优先 Rollup（多格式输出、产物干净无运行时）；重工程化应用适合 webpack 生态；追求构建速度可选 esbuild",
+        "isCorrect": true,
+        "description": "正确。三者分别以「库产物质量」「应用工程化能力」「原始速度」见长，按场景选型。"
+      },
+      {
+        "text": "webpack 默认也输出无运行时代码的扁平 ESM 产物，与 Rollup 没有产物差异",
+        "isCorrect": false,
+        "description": "错误。webpack 产物带运行时与模块管理代码；Rollup 的 scope hoisting 扁平产物正是库场景选它的原因。"
+      },
+      {
+        "text": "esbuild 在 chunk 拆分策略与插件钩子粒度上都比 Rollup 控制得更精细",
+        "isCorrect": false,
+        "description": "错误。esbuild 赢在速度；产物精细控制与插件钩子体系恰是 Rollup 的强项。"
+      },
+      {
+        "text": "Rollup 内置 dev server 与 HMR，应用开发体验与 webpack 相当",
+        "isCorrect": false,
+        "description": "错误。Rollup 核心没有 dev server/HMR；Vite 正是「开发用 esbuild/原生 ESM + 生产用 Rollup 系打包」的组合产物。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：通过 JavaScript API 编程式构建时，rollup.rollup()、bundle.generate()、bundle.write()、bundle.close() 各自的职责是什么？",
+    "explanation": "官方 JS API 的标准流程：\n1. **`const bundle = await rollup(inputOptions)`**：构建模块图并完成 tree-shaking，**但不产出任何输出**；\n2. **`bundle.generate(outputOptions)`**：在**内存中**生成产物（拿到 output 数组分析 chunk）；**`bundle.write(outputOptions)`**：把产物**写到磁盘**。两者都可以**用不同 outputOptions 多次调用**（一次构建多格式输出）；\n3. **`await bundle.close()`**：官方强调用完必须调用——「let plugins clean up their external processes or services」，否则插件的外部进程/服务可能不被清理。出错时也应在 finally 里 close。\n\n- 「rollup() 只建图不产出，generate 内存/write 写盘，最后必须 close」正确。其余选项把各步职责混淆。",
+    "tags": ["rollup", "高级", "javascript-api", "bundle", "编程式构建"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "rollup() 构建模块图并 tree-shake 但不产出；generate 在内存生成、write 写磁盘，均可多次调用；结束必须 await bundle.close() 让插件清理资源",
+        "isCorrect": true,
+        "description": "正确。这是官方 JavaScript API 文档定义的完整生命周期与清理要求。"
+      },
+      {
+        "text": "rollup.rollup() 会直接把产物写到磁盘，generate/write 只是读取结果",
+        "isCorrect": false,
+        "description": "错误。官方明确 rollup() 阶段「will not generate any output」，写盘是 write 的职责。"
+      },
+      {
+        "text": "generate 与 write 都会写磁盘，区别只是是否返回产物信息",
+        "isCorrect": false,
+        "description": "错误。generate 纯内存操作不落盘，正适合只做产物分析的场景。"
+      },
+      {
+        "text": "bundle.close() 可以随意省略，Node 进程退出时会自动完成等价清理",
+        "isCorrect": false,
+        "description": "错误。插件可能持有外部进程/服务句柄，不 close 可能导致资源泄漏甚至进程挂起。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：使用 rollup.watch() API 做增量构建集成时，事件处理上有一个官方特别强调的资源管理要求，它是什么？",
+    "explanation": "`rollup.watch(options)` 返回 watcher，通过 `watcher.on('event', handler)` 接收事件，`event.code` 包括 START、BUNDLE_START、**BUNDLE_END**（携带 `event.duration` 与 `event.result`——即 bundle 对象）、END、**ERROR**（也可能携带 result）。官方特别强调：**当事件携带 `result` 时，无论你是否用它生成输出，都必须调用 `event.result.close()`**——watch 模式下每轮构建都会产生新的 bundle 对象，不关闭会累积泄漏插件资源。最后停止监听用 `watcher.close()`。这与 JS API 中 bundle.close() 的清理义务一脉相承。\n\n- 「BUNDLE_END/ERROR 携带 result 时必须 result.close()」正确。\n- 「watch 没有错误事件」错误：有 ERROR 事件。\n- 「watcher 自动 GC 无需关闭」错误：需显式 close。\n- 「BUNDLE_END 拿不到产物信息」错误：result 就是 bundle，duration 是耗时。",
+    "tags": ["rollup", "高级", "watch-api", "资源管理", "事件"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "BUNDLE_END、ERROR 等事件携带 event.result（bundle 对象）时，必须调用 event.result.close()，否则每轮重建都会泄漏插件资源",
+        "isCorrect": true,
+        "description": "正确。官方原文要求即使不生成输出也要 close result，停止监听则用 watcher.close()。"
+      },
+      {
+        "text": "watch API 不提供错误事件，构建失败只能靠 try/catch 捕获",
+        "isCorrect": false,
+        "description": "错误。事件流里有 ERROR 事件码，错误对象随事件传递。"
+      },
+      {
+        "text": "watcher 对象由引擎垃圾回收自动管理，从不需要显式 close",
+        "isCorrect": false,
+        "description": "错误。文件监听句柄与插件资源都需要显式 watcher.close()/result.close() 释放。"
+      },
+      {
+        "text": "BUNDLE_END 事件不包含任何构建产物信息，只是一个完成信号",
+        "isCorrect": false,
+        "description": "错误。它携带 result（可调用 generate/write 的 bundle）与 duration 等信息。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：Rollup 4 在解析器（parser）层面做了一次重大重构，下列描述正确的是？",
+    "explanation": "Rollup 4（2023 年发布，2026 年仍是主线 4.x）把沿用多年的 **acorn（JS 实现）换成了基于 SWC 的 Rust 原生解析器**：\n- 原生代码以**平台对应的 optionalDependencies** 形式分发（如 @rollup/rollup-darwin-arm64）；**不支持的平台可用 `@rollup/wasm-node`** 包走 WASM 回退，浏览器版 `@rollup/browser` 也基于 WASM；\n- 因解析器更换，**`acorn`/`acornInjectPlugins` 选项被移除**，不能再注入 acorn 插件解析非标准语法（官方后来基于 SWC 提供了内置 `jsx` 选项支持）；\n- 还对外暴露 `rollup/parseAst`（parseAst/parseAstAsync）直接使用该原生解析器产 ESTree 兼容 AST；\n- Node 要求 >= 18。\n\n注意边界：**原生化的是解析等热点环节，Rollup 的打包主逻辑仍是 JavaScript**——这也是后来 Rolldown 全量 Rust 重写的动机之一。",
+    "tags": ["rollup", "高级", "rollup4", "swc-parser", "原生化"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用基于 SWC 的 Rust 原生解析器取代 acorn，原生二进制按平台作为 optionalDependencies 分发，不支持的平台可用 @rollup/wasm-node 回退",
+        "isCorrect": true,
+        "description": "正确。acorn 相关选项随之移除，另提供 rollup/parseAst 暴露该解析器。"
+      },
+      {
+        "text": "Rollup 4 的解析器仍是 acorn，只是增加了解析缓存层提速",
+        "isCorrect": false,
+        "description": "错误。acorn 已被替换，acorn/acornInjectPlugins 选项也在 4.0 移除。"
+      },
+      {
+        "text": "原生二进制是必装依赖，平台不支持时 Rollup 4 完全无法运行",
+        "isCorrect": false,
+        "description": "错误。有 @rollup/wasm-node 的 WASM 回退方案，浏览器场景还有 @rollup/browser。"
+      },
+      {
+        "text": "Rollup 4 已把打包全流程都改写为 Rust 实现",
+        "isCorrect": false,
+        "description": "错误。原生化集中在解析环节，打包主逻辑仍是 JS；全量 Rust 化的是另一个项目 Rolldown。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：treeshake 选项支持 'smallest'、'recommended'、'safest' 三个预设，它们的取向分别是什么？",
+    "explanation": "预设代表 tree-shaking 的激进程度：\n- **'smallest'**：体积优先、假设最激进——假定 getter 无副作用、模块无副作用（moduleSideEffects: false）、不为「检测内置对象是否被 polyfill 篡改」的代码兜底，可能误删依赖非常规副作用的代码；\n- **'recommended'**：默认取向，在安全与体积间平衡，能正确处理绝大多数代码模式；\n- **'safest'**：最大限度贴近规范语义、最保守，删得最少。\n\n预设之上还能**单独覆盖细项**：如 `propertyReadSideEffects: false`（假定属性读取无副作用，getter 抛错/打日志的情况会被忽略）、`tryCatchDeoptimization`（try 块内代码的去优化处理）、`unknownGlobalSideEffects` 等。treeshake: false 才是彻底关闭。\n\n- 「smallest 最激进、safest 最保守、细项可单独覆盖」正确。其余选项与预设含义不符。",
+    "tags": [
+      "rollup",
+      "高级",
+      "treeshake预设",
+      "propertyReadSideEffects",
+      "权衡"
+    ],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "smallest 以体积优先做最激进假设，safest 最保守贴近规范语义，recommended 居中为默认取向；预设之上还可单独覆盖 propertyReadSideEffects 等细项",
+        "isCorrect": true,
+        "description": "正确。预设是一组副作用假设的打包方案，细项覆盖提供更精细的控制。"
+      },
+      {
+        "text": "safest 的含义是彻底关闭 tree-shaking，保证产物与源码一致",
+        "isCorrect": false,
+        "description": "错误。safest 仍做 tree-shaking，只是假设最保守；彻底关闭是 treeshake: false。"
+      },
+      {
+        "text": "smallest 是 Rollup 的默认预设，开箱即用最激进策略",
+        "isCorrect": false,
+        "description": "错误。默认行为对应 recommended 取向，smallest 需要显式选择并自担风险。"
+      },
+      {
+        "text": "propertyReadSideEffects 用于控制产物的输出格式是否含属性访问语法",
+        "isCorrect": false,
+        "description": "错误。它是副作用假设选项：是否把属性读取（可能触发 getter）视为副作用。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：关于打包产物中模块的执行顺序与循环依赖，官方文档给出的保证和行为是什么？",
+    "explanation": "官方 FAQ 的执行顺序保证：「**如果模块 A 导入模块 B，且不存在循环导入，B 一定先于 A 执行**」——这与 ESM 规范一致。一旦出现**循环依赖**，Rollup 会发出 `Circular dependency` 警告，构建仍会完成，但**模块初始化顺序可能不符合直觉**：某模块执行时，它从循环对端导入的绑定可能还未初始化（函数声明因提升通常没事，const/let 值则可能触发 TDZ 错误或拿到 undefined）。ESM 的 live bindings 机制保证「之后会同步到正确值」，但初始化期的访问仍可能踩坑。最佳实践是重构消除循环（抽公共依赖），而不是压警告。\n\n- 「无循环时被依赖者先执行；有循环则警告且初始化顺序可能不符预期」正确。\n- 「直接报错终止」错误：默认是警告。\n- 「自动拆 chunk 解决循环」错误：chunk 拆分与循环依赖处理无关。\n- 「打包后循环引用一定安全」错误：风险恰恰存在于初始化阶段。",
+    "tags": ["rollup", "高级", "循环依赖", "执行顺序", "live-bindings"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无循环导入时被依赖模块保证先执行；出现循环依赖会发警告，构建完成但初始化顺序可能不符预期，访问未初始化绑定会出错",
+        "isCorrect": true,
+        "description": "正确。这是 FAQ 的顺序保证 + Circular dependency 警告的实际含义，根治靠重构依赖关系。"
+      },
+      {
+        "text": "Rollup 检测到循环依赖会直接报错并终止构建",
+        "isCorrect": false,
+        "description": "错误。默认只发 Circular dependency 警告，构建照常产出。"
+      },
+      {
+        "text": "Rollup 会自动把循环的两个模块拆进不同 chunk 来打破循环",
+        "isCorrect": false,
+        "description": "错误。代码分割由动态导入/入口/manualChunks 驱动，不是循环依赖的解决机制。"
+      },
+      {
+        "text": "由于 ESM 有 live bindings，循环引用在打包后的任何时刻访问都绝对安全",
+        "isCorrect": false,
+        "description": "错误。live bindings 保证后续同步，但模块初始化期间访问未初始化的 const/let 绑定仍会出问题。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：关于 entryFileNames / chunkFileNames / assetFileNames 文件命名模板与其中的 [hash] 占位符，下列说法正确的是？",
+    "explanation": "三个命名模板的默认值：`entryFileNames: \"[name].js\"`（入口 chunk）、`chunkFileNames: \"[name]-[hash].js\"`（代码分割产生的共享/动态 chunk）、`assetFileNames: \"assets/[name]-[hash][extname]\"`（emitFile 产出的静态资源）。可用占位符含 [name]、[hash]、[format]、[extname]/[ext]，**模板里写 `/` 可自动创建子目录**。[hash] 基于内容及其依赖计算，是长缓存（immutable caching）方案的基础；**Rollup 4 起 hash 从 base16 改为 URL 安全的 base64，最长 21 字符**，且支持 `[hash:N]` 指定长度。\n\n- 「chunkFileNames 默认带 [hash]，Rollup 4 的 hash 是 url-safe base64，可用 [hash:N] 控制长度」正确。\n- 「hash 是 md5 hex」错误：4.x 是 base64 形式。\n- 「entryFileNames 不支持子目录」错误：含 / 即可分目录。\n- 「assetFileNames 管 JS chunk」错误：它管的是非 chunk 的资源文件。",
+    "tags": ["rollup", "高级", "文件命名", "hash", "长缓存"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "chunkFileNames 默认为 [name]-[hash].js；Rollup 4 起 hash 是 URL 安全的 base64（最长 21 字符），可用 [hash:N] 指定长度",
+        "isCorrect": true,
+        "description": "正确。内容 hash 是长缓存的根基，Rollup 4 的 hashing 升级是迁移说明里的明确变更。"
+      },
+      {
+        "text": "[hash] 生成的是 md5 十六进制串，格式从 Rollup 2 至今未变",
+        "isCorrect": false,
+        "description": "错误。Rollup 4 已切换为 url-safe base64 哈希，与旧版 base16 不同。"
+      },
+      {
+        "text": "entryFileNames 模板不支持子目录，所有入口必须平铺在 dir 根下",
+        "isCorrect": false,
+        "description": "错误。模板中含 / 即可输出到子目录，入口对象的 key 含 / 也有同样效果。"
+      },
+      {
+        "text": "assetFileNames 决定的是 JS chunk 的命名规则",
+        "isCorrect": false,
+        "description": "错误。JS chunk 归 entryFileNames/chunkFileNames 管；assetFileNames 管 emit 出来的静态资源。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：想用 TypeScript 写 rollup.config.ts 并直接运行，官方支持的方式是什么？",
+    "explanation": "官方 CLI 提供 **`--configPlugin`** 机制：`rollup --config rollup.config.ts --configPlugin typescript`——**先用指定插件把配置文件本身转译一遍**再执行。插件名享受与 `-p` 相同的便利（自动补 `@rollup/plugin-` 前缀、支持相对路径与内联 JSON 参数）。相关配套：`--bundleConfigAsCjs` 把配置强制转译/打包成 CommonJS 执行，从而可以在配置里用 `__dirname`、`require` 这些 CJS 专属能力。另外 `defineConfig` 仅提供类型提示，**不负责转译**，没有 configPlugin 时 Node 不认识 .ts 配置。\n\n- 「--configPlugin typescript 先转译配置文件再执行」正确。\n- 「原生执行 TS 配置无需参数」错误：Rollup 不内置 TS 转译配置的能力。\n- 「配置必须叫 rollup.config.js」错误：-c 可指定任意文件名。\n- 「--configPlugin 给业务代码加插件」错误：它只作用于配置文件本身，业务插件写在 plugins 里。",
+    "tags": ["rollup", "高级", "configPlugin", "typescript", "cli"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "执行 rollup --config rollup.config.ts --configPlugin typescript，让插件先把配置文件转译后再加载",
+        "isCorrect": true,
+        "description": "正确。configPlugin 专门负责配置文件自身的转译，插件名自动补 @rollup/plugin- 前缀。"
+      },
+      {
+        "text": "Rollup 原生支持执行 .ts 配置文件，无需任何额外参数",
+        "isCorrect": false,
+        "description": "错误。TS 配置必须经 --configPlugin 转译，Rollup/Node 不会直接执行 TypeScript。"
+      },
+      {
+        "text": "配置文件名必须是 rollup.config.js，.ts 后缀不可能被接受",
+        "isCorrect": false,
+        "description": "错误。-c 可显式指定包括 .ts 在内的任意配置路径，关键是配上 configPlugin。"
+      },
+      {
+        "text": "--configPlugin 的作用是给被打包的业务代码追加插件",
+        "isCorrect": false,
+        "description": "错误。业务插件配置在 plugins/output.plugins 里；configPlugin 只处理配置文件本身。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：官方 Troubleshooting 把「在被打包的代码里直接使用 eval」列为应当避免的做法。在 Rollup 的产物形态下，它带来的具体问题是什么？",
+    "explanation": "根源在 Rollup 的 **scope hoisting**：所有模块被提升进**同一个共享作用域**，而非像传统打包器那样每个模块包一层函数。于是直接 `eval`（在局部作用域求值）带来双重问题：① **性能/体积**——minifier 无法对 eval 可见范围内的变量安全改名（eval 的字符串可能引用任何名字），压缩效果劣化；② **安全**——恶意模块可借 eval 读取同一作用域里**其他模块的「私有」变量**。官方给的出路：**间接 eval**（`var eval2 = eval; eval2(...)`）让代码在**全局作用域**求值，或用 `new Function`（同样在全局作用域生成函数，重复调用还更快）。\n\n- 「共享作用域下直接 eval 阻碍变量改名且能窥探其他模块变量，可用间接 eval/new Function 规避」正确。其余选项与文档描述不符。",
+    "tags": ["rollup", "专家", "eval", "scope-hoisting", "安全"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "模块被提升进共享作用域后，直接 eval 既阻止 minifier 安全改名、又能读取其他模块变量；可改用间接 eval（var eval2 = eval）或 new Function 在全局作用域求值",
+        "isCorrect": true,
+        "description": "正确。这是官方 Troubleshooting 对 eval 危害与替代方案的完整论述。"
+      },
+      {
+        "text": "Rollup 构建时会把 eval 调用静默删除，导致相关逻辑丢失",
+        "isCorrect": false,
+        "description": "错误。Rollup 不会删除 eval，问题在于它与 scope hoisting、压缩的相互作用。"
+      },
+      {
+        "text": "eval 只造成轻微性能损耗，没有任何正确性或安全层面的影响",
+        "isCorrect": false,
+        "description": "错误。除压缩劣化外，官方明确指出共享作用域下 eval 可窥探其他模块变量的安全风险。"
+      },
+      {
+        "text": "new Function 与直接 eval 等价，同样能访问局部作用域，没有替代价值",
+        "isCorrect": false,
+        "description": "错误。new Function 在全局作用域生成函数体，不会捕获局部变量，正是官方推荐的替代之一。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：应用需要 polyfill 先于一切业务与依赖代码执行。官方 FAQ 为什么说「在入口第一行 import './polyfill.js'」不一定够，正确做法是什么？",
+    "explanation": "症结在**外部依赖的执行时机**：ESM 的 import 有提升与依赖优先执行语义，Rollup 能保证 bundle **内部**模块的相对顺序，但 **external 依赖由宿主加载，其执行顺序 Rollup 无法控制**——external 包可能在你的入口代码（包括第一行的 polyfill import）之前执行，若它恰好依赖缺失的 API 就会崩。官方 FAQ 给出两条路：① 若**没有 external 依赖需要 polyfill**：把 polyfill import 作为**每个静态入口的第一条语句**即可；② 否则：把 polyfill 做成**独立 entry 或 manual chunk**，由宿主（HTML script 顺序等）确保它先于一切加载。\n\n- 正确选项完整复述了这套判断逻辑。\n- 「第一行 import 万无一失」忽视了 external 时机问题。\n- 「必须用插件注入」官方未作此要求。\n- 「自动识别置顶」无此机制。",
+    "tags": ["rollup", "专家", "polyfill", "执行顺序", "external"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "external 依赖的执行时机不受 Rollup 控制，可能先于入口代码运行；无 external 需要时把 polyfill 放每个静态入口第一条语句，否则应将其独立成 entry 或 manual chunk 由宿主保证先加载",
+        "isCorrect": true,
+        "description": "正确。这是官方 FAQ「how do I add polyfills」的两分支结论，关键变量是 external 依赖是否也需要 polyfill。"
+      },
+      {
+        "text": "只要在主入口第一行 import polyfill，任何场景下都能保证它最先执行",
+        "isCorrect": false,
+        "description": "错误。bundle 内部顺序可保证，但 external 依赖可能在整个 bundle 之前执行，第一行也救不了。"
+      },
+      {
+        "text": "polyfill 必须通过专用注入插件加入，手动 import 的写法是被官方禁止的",
+        "isCorrect": false,
+        "description": "错误。官方方案恰恰以手动 import/独立入口为主，没有强制插件注入。"
+      },
+      {
+        "text": "Rollup 能自动识别 polyfill 模块并把它提升到所有代码之前",
+        "isCorrect": false,
+        "description": "错误。Rollup 没有 polyfill 语义识别，执行顺序只遵循模块依赖图与宿主加载顺序。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：2026 年看 Rollup 与 Rolldown 的关系与生态格局，下列判断最准确的是？",
+    "explanation": "格局事实（截至 2026-06）：\n- **Rolldown**：VoidZero 主导、**Rust 编写**的打包器，提供 **Rollup 兼容 API** 与插件接口，官网定位「the unified bundler powering Vite 8+」——**Vite 8 起它就是默认/统一的打包内核**（统一了此前「开发 esbuild + 生产 Rollup」的双引擎），已发布 **1.x 稳定版**；配套 Oxc 解析/转换体系。\n- **Rollup 本体**：**4.x 仍在持续维护发版**（npm latest 4.61.x、Node >= 18），海量存量库构建链与独立使用场景仍跑在 Rollup 上；rollupjs.org 官方文档并未宣布废弃。\n- 关系定位：Rolldown 是 Rollup 设计与插件生态的「Rust 时代接班人」，靠 API 兼容平滑承接生态，而非互不相干的竞争者。\n\n- 正确选项完整覆盖三点。「Rollup 5 更名」「官方宣布废弃」「插件 API 完全不兼容」均与事实不符。",
+    "tags": ["rollup", "专家", "rolldown", "vite8", "生态格局"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Rolldown 是 VoidZero 主导的 Rust 实现，保持 Rollup 兼容 API/插件接口，已发布 1.x 并成为 Vite 8+ 的统一打包内核；Rollup 4.x 本体仍在维护且大量在用",
+        "isCorrect": true,
+        "description": "正确。「兼容承接 + 本体仍维护」是 2026 年的真实格局，Rolldown 官网自述为 powering Vite 8+ 的统一打包器。"
+      },
+      {
+        "text": "Rolldown 就是 Rollup 5 的官方更名，由同一仓库直接演进而来",
+        "isCorrect": false,
+        "description": "错误。Rolldown 是独立项目（VoidZero 发起的 Rust 重写），不是 Rollup 仓库的版本演进。"
+      },
+      {
+        "text": "Rollup 已正式宣布废弃归档，npm 上不再发布新版本",
+        "isCorrect": false,
+        "description": "错误。Rollup 4.x 持续发版（4.61.x），官方文档也无废弃声明，存量生态依旧庞大。"
+      },
+      {
+        "text": "Rolldown 的插件 API 与 Rollup 完全不兼容，迁移需全部重写插件",
+        "isCorrect": false,
+        "description": "错误。Rollup 兼容 API 与插件生态复用正是 Rolldown 的核心卖点。"
+      }
+    ]
+  },
+  {
+    "stem": "Rollup：插件钩子按执行方式分为 first、sequential、parallel 三类。以 resolveId 为例，first 类型意味着什么？",
+    "explanation": "三类执行方式（official hook kinds）：\n- **first**：按插件顺序依次调用，**一旦某个插件返回非 null/undefined 值，立即采用该结果并停止询问后续插件**——resolveId、load 是典型：第一个给出答案的插件「赢得」该模块的解析/加载权；\n- **sequential**：所有插件按顺序**串行**执行、前一个完成才轮到下一个，结果可级联（transform 链式转换代码）；\n- **parallel**：所有插件**并发**执行，互不等待（buildStart、buildEnd、writeBundle 等通知型钩子）。\n\n此外钩子可写成对象形式 `{ order: 'pre'|'post', handler }` 调整在同类插件中的相对次序；parallel 钩子也可用 `sequential: true` 强制某插件串行化。理解 first 的「短路」语义对排查「我的 resolveId 怎么没被调用」类问题至关重要——往往是前面的插件已经返回了结果。",
+    "tags": ["rollup", "专家", "钩子类型", "first", "插件机制"],
+    "categories": [
+      ["技术方向", "rollup"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按插件顺序依次询问，一旦有插件返回非 null/undefined 即采用其结果并跳过后续插件，因此前置插件可能让你的 resolveId 根本得不到调用",
+        "isCorrect": true,
+        "description": "正确。first 是短路语义，resolveId/load 都属此类；order: 'pre' 可调整询问次序。"
+      },
+      {
+        "text": "transform 也是 first 类型，每个模块只会被一个插件转换",
+        "isCorrect": false,
+        "description": "错误。transform 是 sequential 类型，多个插件按顺序串联转换同一模块的代码。"
+      },
+      {
+        "text": "parallel 类型保证插件严格按数组顺序逐个等待执行",
+        "isCorrect": false,
+        "description": "错误。parallel 是并发执行互不等待；逐个等待是 sequential 的语义。"
+      },
+      {
+        "text": "钩子的执行次序完全固定，插件无法通过任何选项调整自己的相对位置",
+        "isCorrect": false,
+        "description": "错误。对象形式的 order: 'pre'/'post' 专门用于调整钩子在同类插件中的相对执行位置。"
+      }
+    ]
+  }
+]

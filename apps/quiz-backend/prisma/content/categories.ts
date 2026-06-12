@@ -330,9 +330,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "rollup", sort: 2 },
               { name: "rolldown", sort: 3 },
               { name: "rspack", sort: 4 },
-              // 库打包向：tsup（esbuild 系事实标准）/ tsdown（Rolldown 版接班人）
+              // 库打包向三巨头：tsup（esbuild 系事实标准）/ tsdown（Rolldown 官方接班人）/ unbuild（UnJS 系，独特 stub mode）
               { name: "tsup", sort: 5 },
               { name: "tsdown", sort: 6 },
+              { name: "unbuild", sort: 7 },
             ],
           },
           { name: "开发服务器（Live Server / BrowserSync）", sort: 4 },
