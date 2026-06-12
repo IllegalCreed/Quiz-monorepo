@@ -141,7 +141,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Web Workers API", sort: 9 },
             ],
           },
-          { name: "模块管理（CommonJS / ES Module）", sort: 3 },
+          {
+            // 2026-06 由单叶子「模块管理（CommonJS / ES Module）」拆为两叶（生产库旧叶子已就地改名复用 id）
+            name: "模块管理",
+            sort: 3,
+            children: [
+              { name: "CommonJS", sort: 1 },
+              { name: "ES Module", sort: 2 },
+            ],
+          },
           {
             name: "包管理器",
             sort: 4,
