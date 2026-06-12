@@ -336,7 +336,9 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "unbuild", sort: 7 },
             ],
           },
-          { name: "开发服务器（Live Server / BrowserSync）", sort: 4 },
+          // 注：曾规划「开发服务器」叶子（Live Server / BrowserSync），2026-06 裁撤——
+          // dev server 是构建工具的内置能力（Vite/Rsbuild 内容已覆盖），不构成独立分层；
+          // 本组语义收敛为构建链路三层：编译器 → 打包工具 → 构建工具。
         ],
       },
 
