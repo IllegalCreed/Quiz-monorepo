@@ -1,0 +1,1707 @@
+[
+  {
+    "stem": "type-fest：type-fest 这个库的本质定位是什么？",
+    "explanation": "type-fest 是 sindresorhus 维护的「a collection of essential TypeScript types」——一组开箱即用的实用**类型**集合。它**纯类型、零运行时**：所有导出都是 `type`，编译后不产生任何 JavaScript 代码，因此只能用 `import type` 引入。它补齐了 TS 内置工具类型（Partial/Pick/Omit 等）覆盖不到的常见需求，如深层 Partial、标称类型、字符串大小写转换等。\n\n- 「一组纯类型、零运行时的 TS 工具类型集合」正确。\n- 「一个运行时校验库」错误：那是 zod / yup 的范畴，type-fest 不做运行时校验。\n- 「一个代码生成 CLI」错误：它不生成代码，只提供类型。\n- 「polyfill 库」错误：它与 polyfill 无关。",
+    "tags": ["type-fest", "入门", "定位", "纯类型", "核心概念"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一组开箱即用的实用 TypeScript 类型集合，纯类型、零运行时，补齐内置工具类型的空白",
+        "isCorrect": true,
+        "description": "正确。type-fest = essential TypeScript types，全部是 type 声明，无任何运行时代码。"
+      },
+      {
+        "text": "一个运行时数据校验库，类似 zod / yup",
+        "isCorrect": false,
+        "description": "错误。type-fest 不做运行时校验，它只提供编译期类型。"
+      },
+      {
+        "text": "一个根据 schema 生成 TS 代码的命令行工具",
+        "isCorrect": false,
+        "description": "错误。它不是 CLI，也不生成代码，只导出类型。"
+      },
+      {
+        "text": "一个为旧浏览器补齐 API 的 polyfill 库",
+        "isCorrect": false,
+        "description": "错误。polyfill 提供运行时实现，type-fest 与之无关。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：既然 type-fest 的导出全是类型、编译后不产生任何运行时代码，引入它时最规范的写法是哪种？",
+    "explanation": "因为 type-fest 导出的都是 `type`，正确写法是 `import type {…} from 'type-fest'`。用 `import type` 能让编译器明确这是「仅类型导入」，配合 `verbatimModuleSyntax` / `isolatedModules` 等设置可保证该 import 在编译产物中被完全擦除，不会残留一行 `require`/`import`。直接用普通 `import {…}` 引类型在多数配置下也能工作（类型会被自动 elide），但 `import type` 语义更清晰、更安全。\n\n- `import type { PartialDeep } from 'type-fest'` 正确。\n- `const x = require('type-fest')` 错误：运行时根本没有可 require 的值导出。\n- `import 'type-fest'`（副作用导入）错误：它没有任何副作用，这样写没意义。\n- 「必须先 npm 注册全局类型」错误：装包即可，无需额外注册。",
+    "tags": ["type-fest", "入门", "import type", "纯类型", "用法"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "import type { PartialDeep } from 'type-fest'",
+        "isCorrect": true,
+        "description": "正确。导出全是类型，用 import type 语义最清晰，且保证编译产物中被完全擦除。"
+      },
+      {
+        "text": "const tf = require('type-fest')，再取出需要的类型",
+        "isCorrect": false,
+        "description": "错误。type-fest 没有运行时值导出，require 拿不到任何东西。"
+      },
+      {
+        "text": "import 'type-fest' 做副作用导入即可",
+        "isCorrect": false,
+        "description": "错误。它没有任何副作用，副作用导入毫无意义。"
+      },
+      {
+        "text": "必须先用 npm 命令把它注册成全局类型才能用",
+        "isCorrect": false,
+        "description": "错误。npm install 后即可按需 import type，没有「注册全局」这一步。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：使用 type-fest（4.x）对项目的 TypeScript 配置有什么硬性要求？",
+    "explanation": "type-fest 4.x 在其 readme 明确：「Requires TypeScript >=5.1 and {strict: true} in your tsconfig」。即需要**较新的 TypeScript**（4.41.0 要求 ≥5.1，更新的版本会进一步抬高基线）并开启 **strict 模式**。很多类型（如区分 optional/可空、深层变换）依赖严格模式下的类型行为，关闭 strict 会导致部分类型推断不符合预期。\n\n- 「需要较新 TS + strict: true」正确。\n- 「需要开启 experimentalDecorators」错误：与装饰器无关。\n- 「只能用于 CommonJS 项目」错误：纯类型与模块格式无关，ESM/CJS 都行。\n- 「需要 allowJs」错误：与是否允许 JS 文件无关。",
+    "tags": ["type-fest", "入门", "TS 版本", "strict", "配置要求"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "需要较新的 TypeScript（如 4.x 要求 ≥5.1）并在 tsconfig 开启 strict: true",
+        "isCorrect": true,
+        "description": "正确。readme 原文即「Requires TypeScript >=5.1 and {strict: true}」。"
+      },
+      {
+        "text": "必须开启 experimentalDecorators 才能使用",
+        "isCorrect": false,
+        "description": "错误。type-fest 与装饰器无关，不需要这个选项。"
+      },
+      {
+        "text": "只能用在 CommonJS 模块格式的项目里",
+        "isCorrect": false,
+        "description": "错误。它是纯类型，与模块格式无关，ESM/CJS 均可。"
+      },
+      {
+        "text": "必须开启 allowJs 允许 JS 文件",
+        "isCorrect": false,
+        "description": "错误。allowJs 控制是否编译 JS 文件，与 type-fest 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：TS 内置的 `Partial<T>` 把对象「所有键变可选」，但它有一个明显局限。type-fest 的 `PartialDeep<T>` 主要解决什么？",
+    "explanation": "内置 `Partial<T>` 是**浅层**的——只把第一层属性变可选，嵌套对象内部的属性仍是必填。`PartialDeep<T>` 是**递归深层**版：把所有层级、所有嵌套键都变为可选。典型场景：把一个「默认配置对象」与用户传入的「部分覆盖对象」合并时，覆盖对象应是默认对象的深层 partial（只填想改的字段，哪怕它在嵌套里）。\n\n- 「递归地把每一层嵌套键都变可选」正确。\n- 「把所有值变成 undefined」错误：它改的是「可选性」，不是把值设成 undefined。\n- 「只把第一层变可选」错误：那正是内置 Partial 的行为，PartialDeep 要更深。\n- 「把对象变只读」错误：那是 ReadonlyDeep 的职责。",
+    "tags": ["type-fest", "初级", "PartialDeep", "对象类型", "深层变换"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "递归地把对象每一层嵌套的键都变为可选，而不只是第一层",
+        "isCorrect": true,
+        "description": "正确。内置 Partial 是浅层，PartialDeep 深入所有嵌套层级，适合合并默认配置与部分覆盖。"
+      },
+      {
+        "text": "把对象的所有属性值都强制设为 undefined",
+        "isCorrect": false,
+        "description": "错误。它改变的是属性的「可选性」，不是把值变成 undefined。"
+      },
+      {
+        "text": "只把对象第一层属性变可选，和内置 Partial 完全一样",
+        "isCorrect": false,
+        "description": "错误。那是内置 Partial 的浅层行为，PartialDeep 的价值正是递归深入。"
+      },
+      {
+        "text": "把对象所有层级变成只读",
+        "isCorrect": false,
+        "description": "错误。深层只读是 ReadonlyDeep 的职责，与可选无关。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`ReadonlyDeep<T>` 与 TS 内置 `Readonly<T>` 的核心区别是什么？",
+    "explanation": "内置 `Readonly<T>` 也是**浅层**——只给第一层属性加 `readonly`，嵌套对象内部仍可改。`ReadonlyDeep<T>` 递归地把 object、Map、Set、Array 及其所有键/元素都变为不可变。典型场景：把导入的 JSON 模块或一份 API 响应作为「完全不可变」对外暴露，连深层数组的 `push` 都应在类型层面报错。\n\n- 「递归地把所有层级（含数组/Map/Set）变只读」正确。\n- 「只给第一层加 readonly」错误：那是内置 Readonly。\n- 「在运行时冻结对象（Object.freeze）」错误：type-fest 纯类型，不做任何运行时操作。\n- 「把可选键变必填」错误：与可选性无关。",
+    "tags": ["type-fest", "初级", "ReadonlyDeep", "对象类型", "不可变"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ReadonlyDeep 递归地把所有层级（含 Array/Map/Set 的元素）都变只读，内置 Readonly 只作用于第一层",
+        "isCorrect": true,
+        "description": "正确。深层只读连嵌套数组的 push 在类型上都会报错，适合暴露完全不可变的结构。"
+      },
+      {
+        "text": "ReadonlyDeep 会在运行时调用 Object.freeze 冻结对象",
+        "isCorrect": false,
+        "description": "错误。type-fest 是纯类型库，不产生任何运行时代码，不会调用 freeze。"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。内置 Readonly 是浅层，ReadonlyDeep 是递归深层，区别明显。"
+      },
+      {
+        "text": "ReadonlyDeep 会把对象的可选键改成必填",
+        "isCorrect": false,
+        "description": "错误。它只处理只读修饰符，不改可选性。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Simplify<T>` 最常见的用途是什么？",
+    "explanation": "`Simplify<T> = {[K in keyof T]: T[K]} & {}`。它把一个复杂类型（尤其是**交叉类型** `A & B` 或一串映射/条件类型的结果）「摊平」成一个干净的对象字面量。最大价值是**改善编辑器悬浮提示**：原本悬浮显示成 `A & B & C` 一长串，经 `Simplify` 后显示为合并好的单个 `{ ... }`，可读性大增。它还能把 interface「密封」成 type，从而满足某些需要索引签名的赋值场景。\n\n- 「摊平交叉/复杂类型，让悬浮提示显示成单个干净对象」正确。\n- 「在运行时合并两个对象」错误：纯类型，无运行时。\n- 「删除对象所有可选键」错误：它不改键集合，只改「展示形态」。\n- 「把对象变成联合类型」错误：它产出对象，不是联合。",
+    "tags": ["type-fest", "中级", "Simplify", "悬浮提示", "交叉类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把交叉类型或复杂映射结果「摊平」成单个干净的对象字面量，主要为了让编辑器悬浮提示更可读",
+        "isCorrect": true,
+        "description": "正确。Simplify<A & B> 让悬浮从一长串交叉变成合并好的 { ... }，并能把 interface 密封成 type。"
+      },
+      {
+        "text": "在运行时把两个对象的属性合并到一起",
+        "isCorrect": false,
+        "description": "错误。它是纯类型变换，不在运行时做任何合并。"
+      },
+      {
+        "text": "删除对象上所有的可选属性",
+        "isCorrect": false,
+        "description": "错误。它不改变键集合，只改变类型的「展示形态」。"
+      },
+      {
+        "text": "把一个对象类型转换成它所有值的联合类型",
+        "isCorrect": false,
+        "description": "错误。把值变联合是 ValueOf 的职责，Simplify 仍产出对象。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：下面哪段代码正确体现了 `Simplify` 改善悬浮提示的典型用法？",
+    "explanation": "Simplify 的经典用法就是包住一个交叉类型。`type Props = Simplify<PositionProps & SizeProps>` 后，在编辑器里悬浮 `Props` 会看到一个把 top/left/width/height 全部合并好的单一对象，而不是 `PositionProps & SizeProps` 这样的交叉表达式。\n\n- `Simplify<PositionProps & SizeProps>` 正确。\n- `Simplify('foo' | 'bar')` 错误：Simplify 接收的是类型参数，不是值；且它面向对象类型。\n- `Simplify<keyof T>` 用于联合的键名意义不大，不是其典型场景。\n- `new Simplify(obj)` 错误：它是类型，不能 new。",
+    "tags": ["type-fest", "中级", "Simplify", "代码示例", "交叉类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "type Props = Simplify<PositionProps & SizeProps>",
+        "isCorrect": true,
+        "description": "正确。包住交叉类型后，悬浮 Props 显示为合并好的单个对象，这正是 Simplify 的招牌用法。"
+      },
+      {
+        "text": "const p = Simplify('foo' | 'bar')",
+        "isCorrect": false,
+        "description": "错误。Simplify 是类型不是函数，不能用值调用；它也面向对象类型而非裸联合。"
+      },
+      {
+        "text": "type X = new Simplify(obj)",
+        "isCorrect": false,
+        "description": "错误。Simplify 是类型别名，不能用 new 实例化。"
+      },
+      {
+        "text": "import { Simplify } from 'type-fest'; Simplify.flatten(obj)",
+        "isCorrect": false,
+        "description": "错误。它没有任何运行时方法，纯类型，不存在 flatten() 这种调用。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`LiteralUnion<'dog' | 'cat', string>` 解决了 TS 中一个什么痛点？",
+    "explanation": "当你写 `type Pet = 'dog' | 'cat' | string` 时，TS 会把整个类型「坍缩」成 `string`，导致 IDE **丢失对 'dog'、'cat' 的自动补全**。`LiteralUnion<Literals, Base>`（实现为 `Literals | (Base & Record<never, never>)`）用一个小技巧阻止坍缩：既允许任意 `string`，又**保留对字面量的自动补全提示**。常用于「有一组推荐值，但也允许自定义字符串」的 API。\n\n- 「保留字面量自动补全，同时仍允许任意 string」正确。\n- 「禁止除字面量外的任何字符串」错误：它仍允许任意 string，只是补全推荐字面量。\n- 「把字面量转成大写」错误：与大小写无关。\n- 「在运行时校验取值」错误：纯类型。",
+    "tags": ["type-fest", "中级", "LiteralUnion", "自动补全", "联合类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "既允许任意 string，又保留对 'dog'、'cat' 等字面量的 IDE 自动补全（避免被坍缩成纯 string）",
+        "isCorrect": true,
+        "description": "正确。'dog'|'cat'|string 会坍缩丢补全，LiteralUnion 用 Base & Record<never,never> 技巧保住补全。"
+      },
+      {
+        "text": "禁止除 'dog'、'cat' 之外的任何字符串，相当于严格联合",
+        "isCorrect": false,
+        "description": "错误。它仍接受任意 string，只是把字面量作为补全提示，不做限制。"
+      },
+      {
+        "text": "把传入的字面量自动转换成大写形式",
+        "isCorrect": false,
+        "description": "错误。LiteralUnion 与大小写转换无关。"
+      },
+      {
+        "text": "在运行时校验传入值是否属于这些字面量",
+        "isCorrect": false,
+        "description": "错误。它是纯类型，不做任何运行时校验。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Except<ObjectType, Keys>` 相比 TS 内置 `Omit<T, K>` 更「严格」，严格在哪里？",
+    "explanation": "内置 `Omit<T, K>` **不要求** K 一定是 T 上存在的键——你写错键名或字段被重命名后，`Omit` 不会报错，悄悄失效。`Except` 把要排除的键约束为「必须是 T 上真实存在的键」，因此打错字、重命名时编译器能立刻发现。它还提供 `requireExactProps` 选项可禁止多余属性。官方曾向 TS 团队提议更严格的 Omit，被婉拒（建议由库自行实现）。\n\n- 「要求被排除的键必须真实存在于 T，能在重命名/拼写错误时报错」正确。\n- 「Except 会保留被排除的键」错误：它和 Omit 一样是删除键。\n- 「Except 是浅层、Omit 是深层」错误：删键都是浅层；深层删除是 OmitDeep。\n- 「两者完全等价」错误：严格性不同。",
+    "tags": ["type-fest", "中级", "Except", "Omit", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Except 要求被排除的键必须真实存在于源类型上，键名拼错或被重命名时会报错；Omit 则不检查",
+        "isCorrect": true,
+        "description": "正确。Omit 对不存在的键静默放过，Except 把键约束为 keyof T，更能配合重构发现问题。"
+      },
+      {
+        "text": "Except 会保留被指定的键，而 Omit 会删除它们",
+        "isCorrect": false,
+        "description": "错误。Except 和 Omit 一样是删除指定键，语义方向一致。"
+      },
+      {
+        "text": "Except 是深层递归删除，Omit 只删第一层",
+        "isCorrect": false,
+        "description": "错误。Except 也是浅层；深层删除对应的是 OmitDeep。"
+      },
+      {
+        "text": "两者行为完全一致，只是 type-fest 换了个名字",
+        "isCorrect": false,
+        "description": "错误。核心差异是键存在性的严格校验与 requireExactProps 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：要把对象类型 `Foo` 中的 `b`、`c` 两个键变为可选，其余键不动，用哪个类型最直接？",
+    "explanation": "`SetOptional<BaseType, Keys>` 正是「把指定键变可选、其余保持原样」。它是 `SetRequired` 的姊妹类型。典型场景：基于同一个模型，只在某个用法里让部分字段可选，而不必另写一个接口。例如 `SetOptional<Foo, 'b' | 'c'>` 让 b、c 变可选，a 维持必填。\n\n- `SetOptional<Foo, 'b' | 'c'>` 正确。\n- `Partial<Foo>` 错误：它把**所有**键变可选，不止 b、c。\n- `SetRequired<Foo, 'b' | 'c'>` 错误：那是把它们变必填，方向相反。\n- `Except<Foo, 'b' | 'c'>` 错误：那是删除 b、c，不是变可选。",
+    "tags": ["type-fest", "中级", "SetOptional", "对象类型", "选择"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SetOptional<Foo, 'b' | 'c'>",
+        "isCorrect": true,
+        "description": "正确。SetOptional 精确地把指定键变可选、其余原样保留，无需另写接口。"
+      },
+      {
+        "text": "Partial<Foo>",
+        "isCorrect": false,
+        "description": "错误。Partial 把所有键都变可选，粒度太粗，不符合「只动 b、c」。"
+      },
+      {
+        "text": "SetRequired<Foo, 'b' | 'c'>",
+        "isCorrect": false,
+        "description": "错误。SetRequired 是把指定键变必填，方向正好相反。"
+      },
+      {
+        "text": "Except<Foo, 'b' | 'c'>",
+        "isCorrect": false,
+        "description": "错误。Except 是删除 b、c 两个键，不是把它们变可选。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`SetRequired<Foo, 'b' | 'c'>` 的作用是什么？",
+    "explanation": "`SetRequired<BaseType, Keys>` 把指定的键变为**必填**，其余键保持原样，是 `SetOptional` 的姊妹类型。例如 `Foo = {a?: number; b: string; c?: boolean}`，`SetRequired<Foo, 'b' | 'c'>` 结果为 `{a?: number; b: string; c: boolean}`——c 从可选变必填，b 本就必填保持不变，a 不受影响。它甚至支持把数组中指定下标设为必填。\n\n- 「把指定键变必填、其余原样」正确。\n- 「把所有键变必填」错误：那是内置 Required。\n- 「把指定键删除」错误：那是 Except/Omit。\n- 「把指定键变只读」错误：那是 SetReadonly。",
+    "tags": ["type-fest", "中级", "SetRequired", "对象类型", "选择"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把对象中指定的键变为必填，其余键保持原样",
+        "isCorrect": true,
+        "description": "正确。SetRequired 精确地只把指定键变必填，是 SetOptional 的镜像，其余键不动。"
+      },
+      {
+        "text": "把对象中所有键都变为必填",
+        "isCorrect": false,
+        "description": "错误。把全部键变必填是内置 Required<T> 的行为。"
+      },
+      {
+        "text": "把指定键从对象中删除",
+        "isCorrect": false,
+        "description": "错误。删除键是 Except / Omit 的职责。"
+      },
+      {
+        "text": "把指定键标记为只读",
+        "isCorrect": false,
+        "description": "错误。把指定键变只读是 SetReadonly。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Merge<Destination, Source>` 合并两个对象类型时，遇到同名键如何取舍？",
+    "explanation": "`Merge<Destination, Source>` 把两个类型合并成一个新类型，**第二个类型（Source）的键覆盖第一个（Destination）的同名键**。它比裸交叉 `A & B` 更好用：交叉遇到同名不兼容键会得到 `never`，而 Merge 是干净地「后者覆盖前者」，并妥善处理索引签名，结果经 Simplify 摊平。\n\n- 「Source（第二参数）覆盖 Destination 的同名键」正确。\n- 「Destination 覆盖 Source」错误：方向反了。\n- 「同名键取交叉 A & B」错误：那正是 Merge 想避免的裸交叉行为。\n- 「同名键直接报错」错误：Merge 不报错，而是覆盖。",
+    "tags": ["type-fest", "中级", "Merge", "对象类型", "覆盖"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "第二个类型（Source）的键覆盖第一个类型（Destination）的同名键",
+        "isCorrect": true,
+        "description": "正确。Merge 语义是「后者覆盖前者」，比裸交叉更可控，并妥善处理索引签名。"
+      },
+      {
+        "text": "第一个类型（Destination）的键覆盖第二个类型的同名键",
+        "isCorrect": false,
+        "description": "错误。覆盖方向是 Source 覆盖 Destination，正好相反。"
+      },
+      {
+        "text": "同名键被合并为交叉类型 A & B",
+        "isCorrect": false,
+        "description": "错误。裸交叉同名不兼容会得到 never，正是 Merge 要规避的问题。"
+      },
+      {
+        "text": "遇到同名键直接编译报错",
+        "isCorrect": false,
+        "description": "错误。Merge 不报错，而是用 Source 的定义覆盖。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`OverrideProperties<TOriginal, TOverride>` 与 `Merge` 相比，多了什么约束？",
+    "explanation": "`OverrideProperties` 类似 `Merge`，但它**强制要求被覆盖的键必须在原类型上真实存在**。例如 `OverrideProperties<Foo, {b: number}>` 合法（b 在 Foo 上），而 `OverrideProperties<Foo, {c: number}>` 会报错，因为 Foo 上没有 c。这让「我只是想改某个已有字段的类型」这一意图更安全：拼错键名或字段被删时立即报错。Merge 则不做此检查，可顺带新增键。\n\n- 「要求被覆盖的键必须在原类型上存在，否则报错」正确。\n- 「允许覆盖任意键，包括原本不存在的」错误：那是 Merge 的行为。\n- 「会深层递归覆盖」错误：它是浅层覆盖。\n- 「会删除未列出的键」错误：未列出的键保留。",
+    "tags": ["type-fest", "高级", "OverrideProperties", "Merge", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "强制被覆盖的键必须在原类型上真实存在，覆盖一个不存在的键会报错",
+        "isCorrect": true,
+        "description": "正确。这保证「只改已有字段类型」的意图安全，拼错或字段被删时立即暴露。"
+      },
+      {
+        "text": "允许覆盖任意键，包括原类型上不存在的键",
+        "isCorrect": false,
+        "description": "错误。那正是 Merge 的宽松行为；OverrideProperties 要求键必须已存在。"
+      },
+      {
+        "text": "会对嵌套对象做深层递归覆盖",
+        "isCorrect": false,
+        "description": "错误。它是浅层覆盖；深层合并是 MergeDeep。"
+      },
+      {
+        "text": "会删除 TOverride 中未列出的所有原始键",
+        "isCorrect": false,
+        "description": "错误。未被覆盖的原始键会保留，不会删除。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：一个 `Responder` 类型有 `text?`、`json?`、`secure?` 三个可选键，业务要求「text 和 json 中至少要提供一个」。用哪个类型表达最贴切？",
+    "explanation": "`RequireAtLeastOne<ObjectType, KeysType>` 创建「在给定键中至少提供一个」的类型，其余键原样保留。例如 `RequireAtLeastOne<Responder, 'text' | 'json'>` 允许只给 text、只给 json、或两者都给，但不能两者都不给。这正是「至少一个」的语义。\n\n- `RequireAtLeastOne<Responder, 'text' | 'json'>` 正确。\n- `RequireExactlyOne<…, 'text' | 'json'>` 错误：那是「恰好一个」，不允许两者都给。\n- `SetRequired<…, 'text' | 'json'>` 错误：那要求两者都必填。\n- `Partial<Responder>` 错误：那允许全不给。",
+    "tags": ["type-fest", "高级", "RequireAtLeastOne", "对象类型", "约束"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "RequireAtLeastOne<Responder, 'text' | 'json'>",
+        "isCorrect": true,
+        "description": "正确。它要求在 text/json 中至少给一个，可以两者都给，但不能都不给。"
+      },
+      {
+        "text": "RequireExactlyOne<Responder, 'text' | 'json'>",
+        "isCorrect": false,
+        "description": "错误。RequireExactlyOne 是「恰好一个」，不允许 text、json 同时出现。"
+      },
+      {
+        "text": "SetRequired<Responder, 'text' | 'json'>",
+        "isCorrect": false,
+        "description": "错误。SetRequired 要求 text 和 json 都必填，比「至少一个」更严。"
+      },
+      {
+        "text": "Partial<Responder>",
+        "isCorrect": false,
+        "description": "错误。Partial 允许全部不给，不满足「至少一个」的约束。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`RequireExactlyOne<T, Keys>` 与 `RequireAtLeastOne<T, Keys>` 的关键区别是什么？",
+    "explanation": "`RequireAtLeastOne` 要求「至少一个」——可以多个同时存在；`RequireExactlyOne` 要求「**恰好一个**」——给了一个就**不能**再给同组里的其它键。例如对一个互斥的 `Responder`，`RequireExactlyOne<Responder, 'text' | 'json'>` 下，若已给 json，再加 text 会编译报错。注意其文档提醒的局限：TS 无法在编译期穷举运行时所有键，因此它对「它不知道的额外键」无能为力。\n\n- 「ExactlyOne 恰好一个、互斥；AtLeastOne 至少一个、可共存」正确。\n- 「两者都允许多个共存」错误：ExactlyOne 不允许。\n- 「ExactlyOne 允许零个」错误：它要求必须有一个。\n- 「两者等价」错误：互斥性不同。",
+    "tags": ["type-fest", "高级", "RequireExactlyOne", "互斥", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "RequireExactlyOne 要求恰好一个、彼此互斥；RequireAtLeastOne 允许多个同时存在",
+        "isCorrect": true,
+        "description": "正确。ExactlyOne 给了一个就不能再给同组其它键，AtLeastOne 则可共存。"
+      },
+      {
+        "text": "两者都允许同组的多个键同时存在",
+        "isCorrect": false,
+        "description": "错误。RequireExactlyOne 明确禁止同组多个键共存。"
+      },
+      {
+        "text": "RequireExactlyOne 允许同组键一个都不给",
+        "isCorrect": false,
+        "description": "错误。它要求必须恰好有一个，不能为零。"
+      },
+      {
+        "text": "两者语义完全等价",
+        "isCorrect": false,
+        "description": "错误。核心差异在于是否允许多个键共存（互斥性）。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：标称类型（nominal typing）里常用的 `Opaque` 在 type-fest 4.x 中处于什么状态？",
+    "explanation": "在 type-fest 4.x 中，`Opaque` 已被**标记为 deprecated，推荐改用 `Tagged`**（`UnwrapOpaque` 同理改用 `UnwrapTagged`）。源码里 `opaque.d.ts` 直接 `export * from './tagged'`，`Opaque` 现在只是兼容性别名。原因之一：`Opaque` 只支持单个 tag，而 `Tagged` 支持多个 tag 以及为每个 tag 附带元数据，能力更强。新代码应直接用 `Tagged`。\n\n- 「已 deprecated，推荐改用 Tagged」正确。\n- 「Opaque 是当前推荐、Tagged 已废弃」错误：方向反了。\n- 「Opaque 已被完全删除、无法导入」错误：仍可导入（作为别名），只是不推荐。\n- 「两者无关、用途不同」错误：Opaque 现在就是 Tagged 的别名。",
+    "tags": ["type-fest", "高级", "Opaque", "Tagged", "标称类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Opaque 已被标记 deprecated，官方推荐改用 Tagged（Opaque 现为兼容别名）",
+        "isCorrect": true,
+        "description": "正确。4.x 中 opaque.d.ts 直接 re-export tagged，Tagged 支持多 tag 与每 tag 元数据，能力更强。"
+      },
+      {
+        "text": "Opaque 是当前推荐写法，Tagged 才是已废弃的旧实现",
+        "isCorrect": false,
+        "description": "错误。恰好相反，是 Opaque 被废弃、Tagged 被推荐。"
+      },
+      {
+        "text": "Opaque 已被完全删除，根本无法 import",
+        "isCorrect": false,
+        "description": "错误。它仍作为别名保留可导入，只是被标记 deprecated。"
+      },
+      {
+        "text": "Opaque 与 Tagged 互不相关，分别用于不同领域",
+        "isCorrect": false,
+        "description": "错误。4.x 里 Opaque 就是 Tagged 的兼容别名，二者实现同源。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：用 `Tagged<number, 'AccountNumber'>` 和 `Tagged<number, 'AccountBalance'>` 创建两个标称类型，目的是什么？",
+    "explanation": "二者底层都是 `number`，但 `Tagged` 给它们贴了不同的「标签」，使它们在类型系统中成为**互不可赋值的不同类型**。这样即使运行时值同为 number，也不会把「账户余额」误传进只接受「账号」的函数——编译器会拦下。这就是标称类型（branding/tagging）的价值：为「碰巧底层类型相同、但语义不可混用」的概念建立类型壁垒。\n\n- 「让底层同为 number 的两者成为互不可赋值的不同类型，防止误用」正确。\n- 「让两者可以自由互相赋值」错误：正好相反，目的是禁止互换。\n- 「在运行时给 number 包一层对象」错误：纯类型，运行时仍是裸 number。\n- 「把 number 变成 string」错误：底层类型不变。",
+    "tags": ["type-fest", "高级", "Tagged", "标称类型", "branding"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让底层都是 number 的两者成为互不可赋值的不同类型，防止把余额误当账号传递",
+        "isCorrect": true,
+        "description": "正确。标称类型为「底层相同但语义不可混用」的概念建立类型壁垒，编译期拦截误用。"
+      },
+      {
+        "text": "让两个类型可以自由地互相赋值",
+        "isCorrect": false,
+        "description": "错误。Tagged 的目的恰恰是禁止它们互相赋值。"
+      },
+      {
+        "text": "在运行时把每个 number 包装进一个带标签的对象",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，运行时仍是裸 number，不产生包装对象。"
+      },
+      {
+        "text": "把 number 在编译后转换成 string",
+        "isCorrect": false,
+        "description": "错误。底层类型不变，仍是 number，只是附加了类型标签。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：关于 `Tagged`（标称类型）一个容易误解的点——一个 `Tagged<number, 'AccountNumber'>` 的值，能否直接当普通 `number` 参与运算（如 `+2`）？",
+    "explanation": "可以。type-fest 的 tagged 类型**不隐藏底层类型**：`Tagged<number, …>` 仍是 `number` 的子类型，所以能直接参与 `+`、比较等数值运算，也能传给只接受 `number` 的函数。受限的是**反方向**：一个裸 `number` 不能直接当 `AccountNumber` 传（需要显式断言）。文档明确指出这与某些语言里「完全不透明」的 opaque 不同——底层并未被藏起来。\n\n- 「可以，tagged 值仍可当底层 number 使用，但裸 number 不能反向当 tagged」正确。\n- 「不行，tagged 值完全无法参与数值运算」错误：它仍是 number。\n- 「可以，且裸 number 也能直接当 tagged 传」错误：反方向需断言。\n- 「需要先运行时解包」错误：纯类型，无运行时解包。",
+    "tags": ["type-fest", "专家", "Tagged", "标称类型", "可赋值性"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "可以——tagged 值仍是 number 子类型，能直接参与运算/传给收 number 的函数；但裸 number 不能反向当 tagged 用（需显式断言）",
+        "isCorrect": true,
+        "description": "正确。tagged 不隐藏底层类型，单向可赋值：tagged→number 自由，number→tagged 需断言。"
+      },
+      {
+        "text": "不行，tagged 值完全无法参与任何数值运算",
+        "isCorrect": false,
+        "description": "错误。它仍是 number 的子类型，可正常参与运算。"
+      },
+      {
+        "text": "可以，而且裸 number 也能不加断言直接当 AccountNumber 传",
+        "isCorrect": false,
+        "description": "错误。反方向（number→tagged）需要显式断言，不能隐式赋值。"
+      },
+      {
+        "text": "必须先在运行时调用解包函数才能当 number 用",
+        "isCorrect": false,
+        "description": "错误。纯类型库没有运行时解包；类型层面 tagged 本就可当 number 用。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：相比已废弃的 `Opaque`，`Tagged` 在「打标签」能力上多了什么？",
+    "explanation": "`Opaque<Type, Token>` 只能附加**单个** token。`Tagged<Type, TagName, TagMetadata>` 支持：① 通过对同一类型**多次应用 `Tagged`** 来叠加**多个**标签；② 为每个标签附带任意的**元数据**类型（`TagMetadata`），并可用 `GetTagMetadata` 取出。可赋值规则也更精细：A 可赋给 B，当且仅当底层可赋值、A 含有 B 的全部标签、且各标签元数据可赋值。\n\n- 「支持多个标签 + 每个标签可带元数据」正确。\n- 「只是换了个名字，能力相同」错误：能力确有增强。\n- 「Tagged 反而只支持单标签」错误：那是 Opaque。\n- 「Tagged 会在运行时写入标签字段」错误：纯类型，标签是虚拟的 unique symbol。",
+    "tags": ["type-fest", "专家", "Tagged", "Opaque", "标称类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "支持对同一类型叠加多个标签，并可为每个标签附带元数据类型",
+        "isCorrect": true,
+        "description": "正确。Opaque 仅单 token；Tagged 可多次应用叠加多标签，且每标签带 TagMetadata，可用 GetTagMetadata 取出。"
+      },
+      {
+        "text": "只是把 Opaque 改了个名字，能力完全相同",
+        "isCorrect": false,
+        "description": "错误。Tagged 在多标签与元数据上是实质增强，并非单纯改名。"
+      },
+      {
+        "text": "Tagged 反而退化为只支持单个标签",
+        "isCorrect": false,
+        "description": "错误。单标签是 Opaque 的局限，Tagged 支持多标签。"
+      },
+      {
+        "text": "Tagged 会在运行时给值写入真实的标签字段",
+        "isCorrect": false,
+        "description": "错误。标签基于虚拟 unique symbol，仅存在于类型层面，无运行时字段。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Jsonify<T>` 这个类型的用途是什么？",
+    "explanation": "`Jsonify<T>` 把一个类型转换成「经过 JSON 序列化后」会得到的类型——即可赋值给 `JsonValue` 的形态。它会处理诸多细节：带 `.toJSON()` 的类型（如 `Date` → string）按其返回值转换；函数、`undefined`、`symbol` 等不可序列化的值被剔除或转为 null；`interface` 被转成可结构比较的 `type`。典型场景：描述 `JSON.parse(JSON.stringify(x))` 之后的精确类型，或 API 序列化后的响应类型。\n\n- 「把类型转换为 JSON 序列化后（可赋给 JsonValue）的形态」正确。\n- 「在运行时执行 JSON.stringify」错误：纯类型。\n- 「校验对象是否为合法 JSON」错误：那更接近 Jsonifiable 的判定语义，且 Jsonify 是做转换不是布尔判定。\n- 「把 JSON 字符串解析成对象」错误：它不做解析。",
+    "tags": ["type-fest", "高级", "Jsonify", "JSON", "序列化"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把一个类型转换成它经过 JSON 序列化后、可赋值给 JsonValue 的形态（如 Date 变 string，函数/undefined 被剔除）",
+        "isCorrect": true,
+        "description": "正确。Jsonify 精确刻画 JSON.parse(JSON.stringify(x)) 后的类型，处理 toJSON、不可序列化值与 interface→type。"
+      },
+      {
+        "text": "在运行时对对象执行 JSON.stringify",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，不执行任何运行时序列化。"
+      },
+      {
+        "text": "返回一个布尔类型表示对象是否为合法 JSON",
+        "isCorrect": false,
+        "description": "错误。Jsonify 做的是类型转换，不是布尔判定。"
+      },
+      {
+        "text": "把 JSON 字符串解析回 TypeScript 对象类型",
+        "isCorrect": false,
+        "description": "错误。它不做解析，方向是「类型 → JSON 序列化后类型」。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`JsonValue` 的类型构成是下列哪一个？",
+    "explanation": "在 type-fest 中：`JsonPrimitive = string | number | boolean | null`，`JsonValue = JsonPrimitive | JsonObject | JsonArray`。即一个合法的 JSON 值要么是基本类型（字符串/数字/布尔/null），要么是 JSON 对象，要么是 JSON 数组。注意 JSON 里**没有 undefined、function、symbol、Date**，所以这些都不在 JsonValue 内。\n\n- 「JsonPrimitive | JsonObject | JsonArray」正确。\n- 「string | number | boolean | undefined」错误：JSON 没有 undefined，也漏了 null、对象、数组。\n- 「any」错误：JsonValue 是受限的，不是 any。\n- 「只有 string」错误：远不止字符串。",
+    "tags": ["type-fest", "中级", "JsonValue", "JSON", "类型构成"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JsonPrimitive（string | number | boolean | null）| JsonObject | JsonArray",
+        "isCorrect": true,
+        "description": "正确。这正是 type-fest 对 JsonValue 的定义，覆盖 JSON 允许的全部形态。"
+      },
+      {
+        "text": "string | number | boolean | undefined",
+        "isCorrect": false,
+        "description": "错误。JSON 不含 undefined，且 JsonValue 还包括 null、对象与数组。"
+      },
+      {
+        "text": "等价于 any",
+        "isCorrect": false,
+        "description": "错误。JsonValue 是受约束的联合，刻意排除函数、undefined、symbol 等。"
+      },
+      {
+        "text": "仅 string",
+        "isCorrect": false,
+        "description": "错误。JsonValue 远不止字符串，还含数字、布尔、null、对象、数组。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：在异步代码里，要表达「一个回调既可以同步返回值、也可以返回该值的 Promise」，应该用哪个类型？",
+    "explanation": "`Promisable<T> = T | PromiseLike<T>`，正是「值或值的 Promise」。典型场景：一个接受回调的函数，允许回调同步返回结果或返回一个 Promise，调用方统一 `await` 即可。例如 `getLogEntry: () => Promisable<string>` 同时接受 `() => 'foo'` 和 `() => Promise.resolve('bar')`。\n\n- `Promisable<T>` 正确。\n- `Awaited<T>` 错误：那是「解包」Promise 得到其结果类型，方向相反。\n- `AsyncReturnType<T>` 错误：用于取一个异步函数的返回结果类型。\n- `Promise<T>` 错误：那只允许 Promise，不允许同步值。",
+    "tags": ["type-fest", "中级", "Promisable", "异步", "选择"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Promisable<T>",
+        "isCorrect": true,
+        "description": "正确。Promisable<T> = T | PromiseLike<T>，恰好表达「同步值或其 Promise」。"
+      },
+      {
+        "text": "Awaited<T>",
+        "isCorrect": false,
+        "description": "错误。Awaited 是把 Promise 解包成结果类型，与「值或 Promise」相反。"
+      },
+      {
+        "text": "AsyncReturnType<T>",
+        "isCorrect": false,
+        "description": "错误。它用于取异步函数解析后的返回值类型，不是表达入参的两种形态。"
+      },
+      {
+        "text": "Promise<T>",
+        "isCorrect": false,
+        "description": "错误。Promise<T> 只接受 Promise，不允许同步返回值。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`UnionToIntersection<Union>` 把联合类型转成交叉类型。下列哪个结果是正确的？",
+    "explanation": "`UnionToIntersection<{a: 1} | {b: 2} | {c: 3}>` 结果是 `{a: 1} & {b: 2} & {c: 3}`，即拥有 a、b、c 全部属性的对象。它利用「函数参数位置上的联合会变成交叉」这一逆变特性实现。常用于把一组对象类型合并成「全都有」的形态。\n\n- `{a: 1} & {b: 2} & {c: 3}`（含全部键）正确。\n- `{a: 1} | {b: 2} | {c: 3}`（原样不变）错误：那没做任何转换。\n- `never` 错误：合并兼容对象不会得到 never。\n- `{a: 1}`（只取第一个）错误：它要合并全部成员。",
+    "tags": ["type-fest", "专家", "UnionToIntersection", "联合类型", "交叉类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "{a: 1} & {b: 2} & {c: 3}——合并出同时拥有 a、b、c 的类型",
+        "isCorrect": true,
+        "description": "正确。UnionToIntersection 把联合的各成员交叉合并，利用函数参数逆变把联合转成交叉。"
+      },
+      {
+        "text": "{a: 1} | {b: 2} | {c: 3}，保持原联合不变",
+        "isCorrect": false,
+        "description": "错误。那等于没转换，UnionToIntersection 的目的就是变成交叉。"
+      },
+      {
+        "text": "never",
+        "isCorrect": false,
+        "description": "错误。合并这些彼此兼容的对象不会塌成 never。"
+      },
+      {
+        "text": "{a: 1}，只保留联合的第一个成员",
+        "isCorrect": false,
+        "description": "错误。它合并全部成员，而非取第一个。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`CamelCase<'foo-bar'>` 这个类型层面的字符串变换，结果是什么？",
+    "explanation": "`CamelCase` 在**类型层面**把字符串字面量转成驼峰式。`CamelCase<'foo-bar'>` 得到字面量类型 `'fooBar'`。它能处理 kebab、snake 等分隔形式，把命令行参数、数据库列名等转成 JS 习惯的驼峰命名。注意它产出的是精确的字面量类型，不是泛泛的 `string`。配套还有 `CamelCasedProperties`（对对象所有键做驼峰化）。\n\n- `'fooBar'` 正确。\n- `'foo-bar'`（不变）错误：那没做转换。\n- `'FooBar'`（PascalCase）错误：首字母不应大写，那是 PascalCase。\n- `string`（丢失字面量）错误：CamelCase 保留精确字面量类型。",
+    "tags": ["type-fest", "高级", "CamelCase", "字符串类型", "大小写"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "字面量类型 'fooBar'",
+        "isCorrect": true,
+        "description": "正确。CamelCase 在类型层面把 'foo-bar' 转成精确字面量 'fooBar'，可用于列名/参数转驼峰。"
+      },
+      {
+        "text": "'foo-bar'，保持原样不变",
+        "isCorrect": false,
+        "description": "错误。CamelCase 会去掉分隔符并驼峰化，不会原样返回。"
+      },
+      {
+        "text": "'FooBar'（首字母大写）",
+        "isCorrect": false,
+        "description": "错误。首字母大写是 PascalCase 的结果，CamelCase 首字母小写。"
+      },
+      {
+        "text": "泛化的 string 类型，丢失字面量信息",
+        "isCorrect": false,
+        "description": "错误。CamelCase 保留精确字面量，不会退化成 string。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`SnakeCase<'fooBar'>` 的结果是什么？",
+    "explanation": "`SnakeCase` 在类型层面把字符串转成下划线分隔的小写形式。`SnakeCase<'fooBar'>` 得到 `'foo_bar'`。常见场景：把 JS 的驼峰属性名映射成 SQL 的 snake_case 列名（配合 `SnakeCasedProperties` 对整个对象的键做转换）。默认不在数字处断词（`SnakeCase<'p2pNetwork'>` → `'p2p_network'`），可用 `{splitOnNumbers: true}` 改变。\n\n- `'foo_bar'` 正确。\n- `'fooBar'`（不变）错误。\n- `'FOO_BAR'`（全大写）错误：那是 ScreamingSnakeCase。\n- `'foo-bar'`（连字符）错误：那是 KebabCase。",
+    "tags": ["type-fest", "高级", "SnakeCase", "字符串类型", "大小写"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "'foo_bar'",
+        "isCorrect": true,
+        "description": "正确。SnakeCase 转成下划线小写形式，常用于驼峰属性名映射 SQL 列名。"
+      },
+      {
+        "text": "'fooBar'，保持不变",
+        "isCorrect": false,
+        "description": "错误。SnakeCase 会插入下划线并小写，不会原样返回。"
+      },
+      {
+        "text": "'FOO_BAR'（全大写下划线）",
+        "isCorrect": false,
+        "description": "错误。全大写下划线是 ScreamingSnakeCase，不是 SnakeCase。"
+      },
+      {
+        "text": "'foo-bar'（连字符）",
+        "isCorrect": false,
+        "description": "错误。连字符形式是 KebabCase。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Split<'a,b,c', ','>` 这个类型的结果是什么？",
+    "explanation": "`Split<S, Delimiter>` 在类型层面按分隔符切分字符串字面量，结果是一个**元组类型**。`Split<'a,b,c', ','>` 得到 `['a', 'b', 'c']`。它常用于给 `String.prototype.split` 这类方法标注更精确的返回类型，从而保留每一段的字面量信息。\n\n- `['a', 'b', 'c']`（元组）正确。\n- `'a,b,c'`（原字符串）错误：它要切成数组。\n- `string[]`（泛化数组）错误：对字面量输入会得到精确元组，而非泛化数组。\n- `'a' | 'b' | 'c'`（联合）错误：那是 TupleToUnion 之后的结果，Split 直接产出的是元组。",
+    "tags": ["type-fest", "高级", "Split", "字符串类型", "元组"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "元组类型 ['a', 'b', 'c']",
+        "isCorrect": true,
+        "description": "正确。Split 按分隔符把字面量切成元组，保留每段的字面量，可精确标注 split() 返回值。"
+      },
+      {
+        "text": "原字符串 'a,b,c' 不变",
+        "isCorrect": false,
+        "description": "错误。Split 的目的就是把字符串切分开。"
+      },
+      {
+        "text": "泛化的 string[]",
+        "isCorrect": false,
+        "description": "错误。对字面量输入，Split 得到精确元组而非泛化数组。"
+      },
+      {
+        "text": "联合类型 'a' | 'b' | 'c'",
+        "isCorrect": false,
+        "description": "错误。那是把元组再转成联合（TupleToUnion）的结果，Split 直接产出元组。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Replace<'10:42:00', ':', '-', {all: true}>` 的结果是什么？",
+    "explanation": "`Replace<Input, Search, Replacement, {all: true}>` 在类型层面把字符串里**所有**匹配替换掉，结果是精确的字面量类型。`Replace<'10:42:00', ':', '-', {all: true}>` 得到 `'10-42-00'`。不带 `{all: true}` 时只替换**第一处**：`Replace<'hello ??', '?', '❓'>` → `'hello ❓?'`。\n\n- `'10-42-00'`（全部替换）正确。\n- `'10-42:00'`（只替换第一处）错误：因为带了 `{all: true}` 应全替换。\n- `'10:42:00'`（不变）错误。\n- `string`（泛化）错误：Replace 保留精确字面量。",
+    "tags": ["type-fest", "高级", "Replace", "字符串类型", "替换"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "'10-42-00'（所有冒号都被替换）",
+        "isCorrect": true,
+        "description": "正确。带 {all: true} 时 Replace 替换全部匹配，得到精确字面量 '10-42-00'。"
+      },
+      {
+        "text": "'10-42:00'（只替换第一处）",
+        "isCorrect": false,
+        "description": "错误。只替换第一处是不带 {all: true} 的默认行为；这里指定了全部替换。"
+      },
+      {
+        "text": "'10:42:00'，保持不变",
+        "isCorrect": false,
+        "description": "错误。Replace 会执行替换，不会原样返回。"
+      },
+      {
+        "text": "泛化的 string 类型",
+        "isCorrect": false,
+        "description": "错误。Replace 保留精确字面量，不退化成 string。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`ValueOf<T>` 的作用是什么？",
+    "explanation": "`ValueOf<ObjectType, ValueType=keyof ObjectType>` 返回对象**所有值**的联合类型（可选地指定只取某些键的值）。例如 `ValueOf<{foo: 1; bar: 2; biz: 3}>` 得到 `1 | 2 | 3`。它是 `keyof`（取键的联合）的「值版」对应物，常用于从一个 as const 的配置对象推导出其取值集合。\n\n- 「对象所有值的联合类型」正确。\n- 「对象所有键的联合」错误：那是 keyof。\n- 「对象的键值对元组数组」错误：那是 Entries。\n- 「对象第一个属性的值」错误：它取全部值的联合。",
+    "tags": ["type-fest", "中级", "ValueOf", "对象类型", "联合"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回对象所有值组成的联合类型（可选择只取某些键的值）",
+        "isCorrect": true,
+        "description": "正确。ValueOf<{foo:1;bar:2}> = 1 | 2，是 keyof 的「值版」对应物。"
+      },
+      {
+        "text": "返回对象所有键组成的联合类型",
+        "isCorrect": false,
+        "description": "错误。取键的联合是内置的 keyof 运算符。"
+      },
+      {
+        "text": "返回对象的 [键, 值] 元组数组类型",
+        "isCorrect": false,
+        "description": "错误。键值对元组数组是 Entries 的职责。"
+      },
+      {
+        "text": "只返回对象第一个属性的值类型",
+        "isCorrect": false,
+        "description": "错误。ValueOf 取的是全部值的联合，不是单个。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Entries<T>` 返回的类型形态是什么？",
+    "explanation": "`Entries<T>` 返回与该集合 `.entries()` 对应的类型——即 `[key, value]` 对组成的**数组类型**。它适配 Object、Map、Array、Set。典型用法：`Object.entries(obj) as Entries<typeof obj>`，从而在遍历 entries 时让 key、value 都带上精确类型（而内置 `Object.entries` 返回的是宽泛的 `[string, any][]`）。\n\n- 「[key, value] 对组成的数组类型」正确。\n- 「值的联合类型」错误：那是 ValueOf。\n- 「键的联合类型」错误：那是 keyof。\n- 「单个 [key, value] 元组」错误：那是 Entry（单数），Entries 是其数组。",
+    "tags": ["type-fest", "高级", "Entries", "对象类型", "遍历"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "由 [key, value] 对组成的数组类型，对应该集合 .entries() 的返回类型",
+        "isCorrect": true,
+        "description": "正确。Entries 适配 Object/Map/Array/Set，配合 Object.entries 断言可让 key/value 带上精确类型。"
+      },
+      {
+        "text": "对象所有值组成的联合类型",
+        "isCorrect": false,
+        "description": "错误。值的联合是 ValueOf。"
+      },
+      {
+        "text": "对象所有键组成的联合类型",
+        "isCorrect": false,
+        "description": "错误。键的联合是 keyof。"
+      },
+      {
+        "text": "单个 [key, value] 元组（非数组）",
+        "isCorrect": false,
+        "description": "错误。单个对应的是 Entry（单数）；Entries 是它们的数组。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：内置类型 `{}`（空对象字面量类型）有个著名陷阱：它几乎能接受任何值。type-fest 用哪个类型来精确表达「严格的空对象」？",
+    "explanation": "`{}` 在 TS 里表示「除 null/undefined 外的任何值」——`42`、`[]`、`{a: 1}` 都能赋给它，所以它**不能**真正表示空对象。type-fest 的 `EmptyObject`（基于一个内部 unique symbol：`{[emptyObjectSymbol]?: never}`）才是「严格空对象」：只有 `{}` 这个真正空的对象字面量能赋值，`42`、`[]`、`{a: 1}` 都会被拒。文档也指出 `Record<string, never>` 等替代写法都不奏效。\n\n- `EmptyObject` 正确。\n- `object` 错误：它接受任何非原始值（数组、函数等），不限空。\n- `Record<string, unknown>` 错误：那表示任意键值对，不是空。\n- `unknown` 错误：接受一切。",
+    "tags": ["type-fest", "高级", "EmptyObject", "对象类型", "陷阱"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "EmptyObject",
+        "isCorrect": true,
+        "description": "正确。EmptyObject 基于内部 unique symbol，只允许真正的 {}，拒绝 42/[]/{a:1}，弥补 {} 的陷阱。"
+      },
+      {
+        "text": "object",
+        "isCorrect": false,
+        "description": "错误。object 接受任何非原始值（数组、函数等），不限定为空对象。"
+      },
+      {
+        "text": "Record<string, unknown>",
+        "isCorrect": false,
+        "description": "错误。它表示任意字符串键的对象，恰恰是「非空」的，不是空对象。"
+      },
+      {
+        "text": "unknown",
+        "isCorrect": false,
+        "description": "错误。unknown 接受一切值，完全不约束。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Schema<User, 'mask' | 'hide' | 'show'>` 这类 `Schema` 的作用是什么？",
+    "explanation": "`Schema<ObjectType, ValueType>` 创建一个与原对象**结构相同**的深层类型，但把所有**叶子值**替换成给定的 `ValueType`。例如把一个 `User`（含嵌套 name 对象、数组等）映射成「每个字段都填 'mask'|'hide'|'show'」的配置对象，且嵌套结构保持一致。常用于表单校验配置、字段级设置、解析规则等「为每个字段配一份元信息」的场景。\n\n- 「保持原结构，把所有叶子值替换为给定类型」正确。\n- 「把所有键变可选」错误：那是 PartialDeep。\n- 「取对象所有值的联合」错误：那是 ValueOf。\n- 「在运行时校验对象符合 schema」错误：纯类型，不做运行时校验。",
+    "tags": ["type-fest", "专家", "Schema", "对象类型", "深层映射"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "生成与原对象同构的深层类型，但把每个叶子值都替换成指定的 ValueType",
+        "isCorrect": true,
+        "description": "正确。Schema 保留嵌套结构、把所有字段值替换为给定类型，适合为每个字段配一份元信息（如校验/掩码设置）。"
+      },
+      {
+        "text": "把对象所有键变为可选",
+        "isCorrect": false,
+        "description": "错误。深层变可选是 PartialDeep，Schema 是替换值类型。"
+      },
+      {
+        "text": "返回对象所有值的联合类型",
+        "isCorrect": false,
+        "description": "错误。取值联合是 ValueOf，与 Schema 的结构映射不同。"
+      },
+      {
+        "text": "在运行时校验对象是否符合某个 schema",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，不做运行时校验（那是 zod 等的事）。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：项目里已经能用内置 `Pick`、`Omit`、`Partial` 等。什么情况下才值得引入 type-fest，而不是自己手写类型工具？",
+    "explanation": "type-fest 的价值在于：当你需要的变换**超出内置工具能力**（深层 Partial/Readonly、标称类型、字符串大小写、JSON 序列化形态、至少/恰好一个键等），这些类型自己手写既容易出错（递归、分布式条件、索引签名等边界极多），又难维护。type-fest 提供了**经过充分测试、社区验证、覆盖大量边界**的实现。反之，内置工具能轻松搞定的简单变换，没必要为此引依赖。\n\n- 「需要内置工具覆盖不到、且手写易错难维护的复杂变换时」正确。\n- 「任何时候都应优先用 type-fest 替代内置工具」错误：简单场景内置即可，无需引依赖。\n- 「因为它能减小运行时包体积」错误：它本就零运行时，与包体积无关。\n- 「因为它能替代 zod 做校验」错误：它不做运行时校验。",
+    "tags": ["type-fest", "中级", "取舍", "手写工具类型", "工程实践"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "当需要的类型变换超出内置工具能力（深层/标称/字符串/JSON 等），且自己手写易错难维护时",
+        "isCorrect": true,
+        "description": "正确。这类类型边界极多、易写错，type-fest 提供经充分测试与社区验证的实现，省心可靠。"
+      },
+      {
+        "text": "任何时候都应优先用 type-fest 替代内置 Pick/Omit/Partial",
+        "isCorrect": false,
+        "description": "错误。内置工具能搞定的简单变换没必要引依赖，避免过度工程。"
+      },
+      {
+        "text": "因为引入它能减小最终运行时包的体积",
+        "isCorrect": false,
+        "description": "错误。type-fest 本就零运行时，不影响运行时包体积。"
+      },
+      {
+        "text": "因为它能替代 zod 在运行时做数据校验",
+        "isCorrect": false,
+        "description": "错误。它纯类型，不做运行时校验，无法替代 zod。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`MergeDeep` 与 `Merge` 的区别是什么？",
+    "explanation": "`Merge` 是**浅层**合并——同名键直接由 Source 覆盖 Destination，不会深入嵌套对象。`MergeDeep` 则**递归**合并：当两边的同名键都是对象（或都是数组）时，会深入到内部继续逐键合并，而不是整块覆盖。例如两个都含 `config: {...}` 的对象，`Merge` 会用 Source 的 config 整个替换，`MergeDeep` 会把两个 config 内部的字段也合并起来。\n\n- 「MergeDeep 在两边同名键都是对象/数组时递归深入合并；Merge 浅层覆盖」正确。\n- 「两者都是浅层，只是名字不同」错误。\n- 「MergeDeep 只合并第一层」错误：那是 Merge。\n- 「MergeDeep 会丢弃 Source」错误：它合并双方。",
+    "tags": ["type-fest", "高级", "MergeDeep", "Merge", "深层合并"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "当两边同名键都是对象或都是数组时，MergeDeep 会递归深入合并内部，而 Merge 只做浅层覆盖",
+        "isCorrect": true,
+        "description": "正确。Merge 用 Source 整块覆盖同名键，MergeDeep 则深入嵌套对象/数组逐层合并。"
+      },
+      {
+        "text": "两者都是浅层合并，仅名字不同",
+        "isCorrect": false,
+        "description": "错误。MergeDeep 是递归深层合并，与 Merge 的浅层语义不同。"
+      },
+      {
+        "text": "MergeDeep 反而只合并第一层属性",
+        "isCorrect": false,
+        "description": "错误。只合并第一层是 Merge；MergeDeep 递归深入。"
+      },
+      {
+        "text": "MergeDeep 会丢弃 Source 只保留 Destination",
+        "isCorrect": false,
+        "description": "错误。它合并双方，不会丢弃任何一方。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Writable<T>`（曾名 `Mutable`）的作用是什么？",
+    "explanation": "`Writable<T>` 去掉对象上的 `readonly` 修饰符，使属性可写——它是内置 `Readonly<T>` 的**逆操作**。典型场景：拿到一个 `as const` 或被标了 `readonly` 的类型，但某处需要一个可变版本来构建/修改。它是浅层的；深层去 readonly 用 `WritableDeep`。\n\n- 「去掉 readonly 修饰，使属性可写（Readonly 的逆）」正确。\n- 「给属性加上 readonly」错误：那是内置 Readonly。\n- 「把属性变可选」错误：那是 Partial。\n- 「深层去 readonly」错误：浅层去用 Writable，深层是 WritableDeep。",
+    "tags": ["type-fest", "中级", "Writable", "对象类型", "只读"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "去掉对象属性上的 readonly 修饰符，使其可写，是内置 Readonly 的逆操作",
+        "isCorrect": true,
+        "description": "正确。Writable 浅层剥离 readonly；需要深层剥离时用 WritableDeep。"
+      },
+      {
+        "text": "给对象所有属性加上 readonly 修饰符",
+        "isCorrect": false,
+        "description": "错误。加 readonly 是内置 Readonly<T> 的行为，Writable 正相反。"
+      },
+      {
+        "text": "把对象所有属性变为可选",
+        "isCorrect": false,
+        "description": "错误。变可选是 Partial，与只读修饰无关。"
+      },
+      {
+        "text": "递归地去掉所有层级的 readonly",
+        "isCorrect": false,
+        "description": "错误。深层剥离是 WritableDeep；Writable 是浅层。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`IsEqual<A, B>` 这类「类型守卫」工具返回的是什么？",
+    "explanation": "`IsEqual<A, B>` 返回一个**字面量布尔类型** `true` 或 `false`，表示 A、B 在类型层面是否严格相等。它属于 type-fest 的 Type Guard 家族（还有 `IsAny`、`IsNever`、`IsUnknown`、`IsLiteral` 等），都返回 `true`/`false` 类型。这类类型常作为条件类型的判定分支使用，例如 `IsEqual<X, never> extends true ? ... : ...`。注意返回的是**类型层面的布尔**，不是运行时的 boolean 值。\n\n- 「字面量布尔类型 true / false」正确。\n- 「运行时的 boolean 值」错误：纯类型，没有运行时值。\n- 「相等就返回 A，否则 never」错误：它返回布尔，不返回类型本身。\n- 「抛出编译错误」错误：它只是产出 true/false。",
+    "tags": ["type-fest", "高级", "IsEqual", "类型守卫", "布尔类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一个字面量布尔类型 true 或 false，表示两个类型是否严格相等",
+        "isCorrect": true,
+        "description": "正确。IsEqual 属 Type Guard 家族，返回 true/false 类型，常用于条件类型的判定分支。"
+      },
+      {
+        "text": "一个运行时的 boolean 值",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，IsEqual 产出的是类型层面的布尔，不是运行时值。"
+      },
+      {
+        "text": "相等时返回 A，不相等时返回 never",
+        "isCorrect": false,
+        "description": "错误。它返回 true/false 布尔类型，而非类型本身或 never。"
+      },
+      {
+        "text": "当两类型不等时抛出编译错误",
+        "isCorrect": false,
+        "description": "错误。它不报错，只是给出 true 或 false 的判定结果。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：处理 `any` 时，为什么需要 `IsAny<T>` 这样的专门类型来判定，而不能直接 `T extends any`？",
+    "explanation": "`any` 在条件类型里行为很「污染」：`any extends X` 既不可靠也常常同时命中两个分支，普通 `extends` 无法稳妥地「检测出 any」。`IsAny<T>` 用特殊技巧（利用 any 与其它类型在交叉/分布下的反常行为）可靠地判断 T 是否为 `any`，返回 `true`/`false`。这在写健壮的条件类型时很关键——很多深层变换都要先把 any 单独处理掉，否则会得到意料外的结果。\n\n- 「any 在条件类型中行为反常，普通 extends 无法可靠检测，IsAny 用特殊技巧稳妥判定」正确。\n- 「any extends any 总是 false」错误：恰恰相反，是它会反常地命中分支。\n- 「IsAny 在运行时用 typeof 判断」错误：纯类型。\n- 「any 和 unknown 完全等价，不需要区分」错误：两者差异很大。",
+    "tags": ["type-fest", "专家", "IsAny", "any", "类型守卫"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "any 在条件类型里行为反常（普通 extends 检测不可靠），IsAny 用特殊技巧才能稳妥地判定 T 是否为 any",
+        "isCorrect": true,
+        "description": "正确。深层变换常需先把 any 单独处理，否则 any 的污染性会让条件类型给出意外分支。"
+      },
+      {
+        "text": "因为 any extends any 永远返回 false",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，any 会反常地同时命中条件类型的两个分支。"
+      },
+      {
+        "text": "因为 IsAny 在运行时用 typeof 做判断",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，IsAny 完全在类型层面工作。"
+      },
+      {
+        "text": "因为 any 和 unknown 完全等价，无需专门判定",
+        "isCorrect": false,
+        "description": "错误。any 与 unknown 在赋值与分布行为上差异巨大，需要区分。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：把 type-fest 加入项目依赖时，放在 `dependencies` 还是 `devDependencies` 更合理？",
+    "explanation": "因为 type-fest **只有类型、零运行时代码**，编译后产物里不含任何对它的引用。所以对于「最终发布的应用」或「会被打包进产物的库」，它通常放 `devDependencies` 即可——构建期需要、运行期不需要。例外：如果你发布的是一个**库**，且其 `.d.ts` 公共类型里**直接 re-export 或引用了 type-fest 的类型**，那么下游用户也需要它，此时应放 `dependencies`（或 peerDependencies），否则下游解析类型会缺包。\n\n- 「一般 devDependencies；若库的公共 .d.ts 暴露了 type-fest 类型则需放 dependencies」正确。\n- 「永远必须放 dependencies」错误：纯类型多数情况 dev 即可。\n- 「放哪都报错」错误：放置位置只影响依赖解析，不会必然报错。\n- 「必须放 peerDependencies」错误：并非强制，视暴露情况而定。",
+    "tags": ["type-fest", "专家", "依赖管理", "devDependencies", "工程实践"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "一般放 devDependencies；但若你发布的库在公共 .d.ts 里直接暴露了 type-fest 的类型，则需放 dependencies",
+        "isCorrect": true,
+        "description": "正确。零运行时使它通常只在构建期需要；但下游若要解析你暴露的类型，就必须能拿到这个包。"
+      },
+      {
+        "text": "无论何种项目都必须放 dependencies",
+        "isCorrect": false,
+        "description": "错误。纯类型在应用或不暴露它的库里放 devDependencies 即可。"
+      },
+      {
+        "text": "放在 dependencies 或 devDependencies 都会导致编译报错",
+        "isCorrect": false,
+        "description": "错误。位置只影响依赖解析与下游可用性，不会必然报错。"
+      },
+      {
+        "text": "必须放在 peerDependencies",
+        "isCorrect": false,
+        "description": "错误。peer 不是强制选项；是否需要由你是否对外暴露其类型决定。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`PartialDeep` 在处理数组/元组元素时，默认行为是怎样的？",
+    "explanation": "`PartialDeep<T>` 默认**不**深入数组和元组的元素（`recurseIntoArrays` 默认为 `false`）——即数组里的对象元素不会被自动变成深层可选。若希望把数组/元组内部元素也变深层可选，需显式传第二参数 `{recurseIntoArrays: true}`。这是为了避免对数组做出不符合直觉的变换；需要时再开启。\n\n- 「默认不递归进数组元素，需 {recurseIntoArrays: true} 才深入」正确。\n- 「默认就会深入数组每个元素」错误：默认是 false。\n- 「会把数组整体删除」错误。\n- 「会把数组变成元组」错误。",
+    "tags": ["type-fest", "专家", "PartialDeep", "数组", "选项"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认不递归进数组/元组的元素；需要时传 {recurseIntoArrays: true} 才会深入",
+        "isCorrect": true,
+        "description": "正确。recurseIntoArrays 默认 false，避免对数组做出反直觉的深层变换，按需开启。"
+      },
+      {
+        "text": "默认就会递归把数组每个元素都变成深层可选",
+        "isCorrect": false,
+        "description": "错误。默认 recurseIntoArrays 为 false，不深入数组元素。"
+      },
+      {
+        "text": "会把数组属性整体从类型中删除",
+        "isCorrect": false,
+        "description": "错误。PartialDeep 不删除属性，只调整可选性。"
+      },
+      {
+        "text": "会把数组类型转换成元组类型",
+        "isCorrect": false,
+        "description": "错误。它不改变数组/元组的种类。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`UnwrapOpaque` / `UnwrapTagged` 这类「解包」类型的用途是什么？",
+    "explanation": "`UnwrapTagged`（以及已废弃、改名前的 `UnwrapOpaque`）把一个 tagged/opaque 类型**还原回它底层的原始类型**——即移除那个虚拟的 `[tag]` 标记。例如 `UnwrapTagged<Tagged<number, 'AccountNumber'>>` 得到 `number`。当你需要从标称类型回到裸类型（如对外接口、序列化、与第三方 API 交互）时会用到。注意这只是类型层面的操作。\n\n- 「把 tagged/opaque 类型还原回底层原始类型（移除标签）」正确。\n- 「给类型再加一层标签」错误：那是 Tagged 本身。\n- 「在运行时移除对象的标签字段」错误：标签是虚拟的，纯类型。\n- 「把类型变成 never」错误。",
+    "tags": ["type-fest", "专家", "UnwrapTagged", "Tagged", "标称类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把 tagged / opaque 类型还原回它底层的原始类型（移除虚拟标签）",
+        "isCorrect": true,
+        "description": "正确。UnwrapTagged<Tagged<number,'X'>> = number，用于从标称类型回到裸类型。UnwrapOpaque 是其废弃旧名。"
+      },
+      {
+        "text": "给一个类型再叠加一层新标签",
+        "isCorrect": false,
+        "description": "错误。叠加标签是 Tagged 的职责，Unwrap 是反向移除。"
+      },
+      {
+        "text": "在运行时删除对象上的标签字段",
+        "isCorrect": false,
+        "description": "错误。标签基于虚拟 unique symbol，仅类型层面存在，无运行时字段可删。"
+      },
+      {
+        "text": "把类型转换成 never",
+        "isCorrect": false,
+        "description": "错误。它还原为底层类型，不会变成 never。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：用 `Opaque<string>`（不传第二个 token 参数）创建两个类型 `type A = Opaque<string>; type B = Opaque<string>`，它们之间能互相赋值吗？",
+    "explanation": "能——这是 `Opaque` 的一个坑。不传 token 时，两者底层都是 `string & {__opaque__: unknown}`，对编译器而言**完全相同**，因此可以互相赋值，起不到区分作用。要让它们成为真正不同的类型，必须传入不同的 token：`Opaque<string, 'A'>` 与 `Opaque<string, 'B'>`。这也是新代码应改用 `Tagged`（必须显式给 tag 名）的原因之一。\n\n- 「能互相赋值，因为不传 token 时底层完全相同，起不到区分作用」正确。\n- 「不能，自动区分」错误：不传 token 时不会自动区分。\n- 「编译直接报错」错误：定义本身不报错。\n- 「运行时才能区分」错误：纯类型，且此时类型上根本没区分。",
+    "tags": ["type-fest", "专家", "Opaque", "token", "陷阱"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "能互相赋值——不传 token 时两者底层完全相同（string & {__opaque__}），无法区分；需传不同 token 才区分",
+        "isCorrect": true,
+        "description": "正确。这是 Opaque 的坑：必须显式给不同 token 才成为不同类型，也是推荐改用必须给 tag 名的 Tagged 的原因。"
+      },
+      {
+        "text": "不能，它们会被自动识别为两个不同的类型",
+        "isCorrect": false,
+        "description": "错误。不传 token 时不会自动区分，两者类型相同。"
+      },
+      {
+        "text": "定义这两个类型时编译器就会直接报错",
+        "isCorrect": false,
+        "description": "错误。定义本身合法，问题在于它们无法彼此区分。"
+      },
+      {
+        "text": "只有在运行时才能区分这两个类型",
+        "isCorrect": false,
+        "description": "错误。纯类型无运行时；且此时类型层面也没有任何区分。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Simplify` 还能解决「interface 不能赋值给 `Record<string, unknown>` 参数」的问题，原因是什么？",
+    "explanation": "TS 中 **interface 可以被「再次打开」**（declaration merging）追加属性，因此编译器不敢假定一个 interface 类型满足 `Record<string, unknown>` 这样带索引签名的约束——万一别处给该 interface 加了非 string 值的属性呢？而 **type 是「密封的」**，不会被再打开。`Simplify<SomeInterface>` 把 interface 映射成等价的 type，从而「密封」它，使其能赋值给需要索引签名的参数。这是 Simplify 除「改善悬浮提示」外的第二大用途。\n\n- 「interface 可被再次打开、不密封，Simplify 把它转成密封的 type 即可满足索引签名约束」正确。\n- 「interface 性能更差」错误：与性能无关。\n- 「Simplify 给 interface 加了索引签名」错误：它是转成 type，不是加签名。\n- 「interface 不能含可选属性」错误：与可选无关。",
+    "tags": ["type-fest", "专家", "Simplify", "interface", "索引签名"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "interface 可被声明合并「再次打开」，不密封，编译器不敢断定它满足索引签名；Simplify 把它转成密封的 type 即可赋值",
+        "isCorrect": true,
+        "description": "正确。type 是密封的而 interface 可再开，Simplify<Interface> 等价转成 type，从而满足 Record<string,unknown> 约束。"
+      },
+      {
+        "text": "因为 interface 的运行时性能比 type 差",
+        "isCorrect": false,
+        "description": "错误。两者都是编译期概念，无运行时性能差异，与本问题无关。"
+      },
+      {
+        "text": "因为 Simplify 给 interface 显式添加了一条索引签名",
+        "isCorrect": false,
+        "description": "错误。Simplify 是把 interface 映射成等价 type（密封它），并非添加索引签名。"
+      },
+      {
+        "text": "因为 interface 不允许包含可选属性",
+        "isCorrect": false,
+        "description": "错误。interface 当然可含可选属性，这与可赋值性问题无关。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`PackageJson` 和 `TsConfigJson` 这两个类型属于 type-fest 的哪类用途？",
+    "explanation": "它们属于 type-fest 的 **Miscellaneous（杂项）/ 现成结构类型**：`PackageJson` 精确刻画 npm 的 `package.json` 结构，`TsConfigJson` 刻画 `tsconfig.json` 结构。当你写工具去读取/生成这些配置文件时，直接 `import type {PackageJson} from 'type-fest'` 就能拿到完整且准确的字段类型，免去自己照着文档手敲一大堆字段。还有 `GlobalThis` 等也在此类。\n\n- 「现成的常见配置文件结构类型（package.json / tsconfig.json）」正确。\n- 「字符串大小写转换」错误：那是 Change case 类。\n- 「标称类型」错误：那是 Tagged。\n- 「运行时读取并解析这些文件」错误：纯类型，只给类型不读文件。",
+    "tags": ["type-fest", "中级", "PackageJson", "TsConfigJson", "杂项类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "现成的常见配置文件结构类型——精确描述 package.json / tsconfig.json 的字段",
+        "isCorrect": true,
+        "description": "正确。写读取/生成这些配置的工具时，import type 即可拿到完整字段类型，免去手敲。"
+      },
+      {
+        "text": "用于字符串大小写转换的类型",
+        "isCorrect": false,
+        "description": "错误。大小写转换是 CamelCase/SnakeCase 等 Change case 家族。"
+      },
+      {
+        "text": "用于创建标称类型",
+        "isCorrect": false,
+        "description": "错误。标称类型是 Tagged，与这两个结构类型无关。"
+      },
+      {
+        "text": "会在运行时读取并解析这些配置文件",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，只提供结构类型，不读取或解析文件。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：要把对象类型 `{a: 1; b: 2; c: 3}` 中「值为 string 类型的键」挑出来，应该用下面哪类工具？",
+    "explanation": "这属于「按值的类型条件筛选键/属性」的需求，对应 type-fest 的 **Conditional 家族**：`ConditionalKeys<T, Condition>` 取出值满足条件的键的联合；`ConditionalPick<T, Condition>` 取出这些键值对组成的子对象；`ConditionalExcept` 则排除满足条件的。例如 `ConditionalPick<T, string>` 留下所有值为 string 的属性。内置工具无法按「值类型」做这种条件筛选。\n\n- 「ConditionalKeys / ConditionalPick 等 Conditional 家族」正确。\n- 「Pick / Omit」错误：它们按**键名**选取，不能按值的类型筛选。\n- 「CamelCase」错误：那是字符串变换。\n- 「Promisable」错误：那是异步类型。",
+    "tags": ["type-fest", "高级", "ConditionalPick", "条件筛选", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ConditionalKeys / ConditionalPick 等 Conditional 家族（按值的类型条件筛选键/属性）",
+        "isCorrect": true,
+        "description": "正确。ConditionalPick<T, string> 留下所有值为 string 的属性，这是内置 Pick/Omit 做不到的按值筛选。"
+      },
+      {
+        "text": "内置的 Pick / Omit",
+        "isCorrect": false,
+        "description": "错误。Pick/Omit 只能按显式键名选取，无法按「值的类型」做条件筛选。"
+      },
+      {
+        "text": "CamelCase",
+        "isCorrect": false,
+        "description": "错误。CamelCase 是字符串大小写变换，与按值筛选键无关。"
+      },
+      {
+        "text": "Promisable",
+        "isCorrect": false,
+        "description": "错误。Promisable 是异步相关类型，与此需求无关。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Get<T, Path>` 这个类型的能力是什么？",
+    "explanation": "`Get<ObjectType, Path>` 按**点路径字符串**（如 `'a.b.c'`，也支持数组下标如 `'items[0].name'`）取出深层嵌套属性的类型。它在类型层面实现了类似 lodash `_.get` 的「按路径取值」能力，常用于给「按路径访问配置/状态」的函数标注精确返回类型。这是手写极难、type-fest 价值很高的一类工具。\n\n- 「按点路径字符串取深层嵌套属性的类型」正确。\n- 「把对象所有键变可选」错误：那是 PartialDeep。\n- 「在运行时按路径取值」错误：纯类型，不取实际值。\n- 「合并两个对象」错误：那是 Merge。",
+    "tags": ["type-fest", "专家", "Get", "路径", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按点路径字符串（如 'a.b.c'、'items[0].name'）取出深层嵌套属性的类型，相当于类型版的 lodash _.get",
+        "isCorrect": true,
+        "description": "正确。Get 在类型层面按路径取值，常用于给「按路径访问」的函数标注精确返回类型，手写极难。"
+      },
+      {
+        "text": "把对象所有嵌套键变为可选",
+        "isCorrect": false,
+        "description": "错误。深层变可选是 PartialDeep，与按路径取值无关。"
+      },
+      {
+        "text": "在运行时按路径从对象取出实际值",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，只推导类型，不取运行时的值。"
+      },
+      {
+        "text": "把两个对象类型合并",
+        "isCorrect": false,
+        "description": "错误。合并对象是 Merge / MergeDeep。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Paths<T>` 与 `Get<T, Path>` 常配合使用，`Paths<T>` 产出的是什么？",
+    "explanation": "`Paths<T>` 生成对象**所有可达属性路径**组成的联合类型（如 `'a' | 'a.b' | 'a.b.c' | ...`，含嵌套）。它与 `Get` 是天然搭档：用 `Paths<T>` 约束一个函数的 `path` 参数只能是合法路径（并获得自动补全），再用 `Get<T, path>` 推导该路径对应的返回类型。这样就能做出类型安全、带补全的「按路径访问」API。\n\n- 「对象所有属性路径组成的联合类型」正确。\n- 「对象所有值的联合」错误：那是 ValueOf。\n- 「单条最深路径」错误：它产出全部路径的联合。\n- 「运行时遍历得到路径数组」错误：纯类型。",
+    "tags": ["type-fest", "专家", "Paths", "Get", "路径"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "对象所有可达属性路径（含嵌套，如 'a' | 'a.b' | 'a.b.c'）组成的联合类型",
+        "isCorrect": true,
+        "description": "正确。Paths 与 Get 搭档：Paths 约束 path 参数并提供补全，Get 推导该路径的返回类型，做出类型安全的按路径 API。"
+      },
+      {
+        "text": "对象所有值组成的联合类型",
+        "isCorrect": false,
+        "description": "错误。值的联合是 ValueOf，Paths 产出的是路径字符串的联合。"
+      },
+      {
+        "text": "对象中最深的那一条路径",
+        "isCorrect": false,
+        "description": "错误。Paths 产出全部路径的联合，而非单条。"
+      },
+      {
+        "text": "在运行时遍历对象得到的路径数组",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，不在运行时遍历对象。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`CamelCasedPropertiesDeep<T>` 与 `CamelCase<S>` 的区别是什么？",
+    "explanation": "`CamelCase<S>` 作用于**单个字符串字面量**，把它转成驼峰；`CamelCasedPropertiesDeep<T>` 作用于**整个对象类型**，递归地把对象（含嵌套对象/数组里的对象）的**所有键**转成驼峰。典型场景：后端返回 snake_case 的嵌套 JSON，前端想在类型层面整体转成 camelCase。还有不带 Deep 的 `CamelCasedProperties`（只转第一层键）。\n\n- 「CamelCase 转单个字符串；CamelCasedPropertiesDeep 递归转对象所有键」正确。\n- 「两者都只转单个字符串」错误。\n- 「CamelCasedPropertiesDeep 只转第一层键」错误：那是不带 Deep 的版本。\n- 「CamelCase 转对象、Deep 版转字符串」错误：方向反了。",
+    "tags": ["type-fest", "高级", "CamelCasedPropertiesDeep", "CamelCase", "字符串类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CamelCase 转单个字符串字面量；CamelCasedPropertiesDeep 递归地把整个对象（含嵌套）的所有键转成驼峰",
+        "isCorrect": true,
+        "description": "正确。后端 snake_case 嵌套 JSON 想整体转 camelCase 就用 Deep 版；只转第一层用不带 Deep 的 CamelCasedProperties。"
+      },
+      {
+        "text": "两者都只能转换单个字符串字面量",
+        "isCorrect": false,
+        "description": "错误。CamelCasedPropertiesDeep 作用于对象类型的所有键，不是单个字符串。"
+      },
+      {
+        "text": "CamelCasedPropertiesDeep 只转换对象第一层的键",
+        "isCorrect": false,
+        "description": "错误。只转第一层是 CamelCasedProperties（不带 Deep）。"
+      },
+      {
+        "text": "CamelCase 作用于对象，Deep 版作用于字符串",
+        "isCorrect": false,
+        "description": "错误。方向相反：CamelCase 作用于字符串，Deep 版作用于对象。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：一个团队在 review 时争论「type-fest 会不会拖慢应用的运行时性能或增大打包体积」。正确的结论是什么？",
+    "explanation": "不会。type-fest **完全是编译期类型**，编译/打包后**不产生任何 JavaScript**，因此对运行时性能、最终 bundle 体积**零影响**。唯一可能的影响在**编译期**：某些极复杂的递归类型（深层变换、长路径推导等）会增加 TypeScript 类型检查的耗时，但这只影响 `tsc`/编辑器响应，与运行时无关。所以「运行时/包体积」这个担忧本身就不成立。\n\n- 「对运行时和包体积零影响；唯一代价是编译期类型检查耗时」正确。\n- 「会显著增大 bundle」错误：零运行时代码。\n- 「会拖慢运行时」错误：运行时没有它的代码。\n- 「完全没有任何代价」错误：复杂类型确实可能增加编译耗时。",
+    "tags": ["type-fest", "高级", "性能", "包体积", "工程实践"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对运行时性能与打包体积零影响（零运行时代码）；唯一潜在代价是复杂类型可能增加编译期类型检查耗时",
+        "isCorrect": true,
+        "description": "正确。它纯类型、编译后不产生 JS；只有极复杂递归类型会让 tsc/编辑器变慢，与运行时无关。"
+      },
+      {
+        "text": "会显著增大最终打包体积",
+        "isCorrect": false,
+        "description": "错误。它零运行时代码，编译后不进 bundle，不影响体积。"
+      },
+      {
+        "text": "会明显拖慢应用的运行时性能",
+        "isCorrect": false,
+        "description": "错误。运行时根本没有它的代码，谈不上拖慢运行时。"
+      },
+      {
+        "text": "完全没有任何代价，连编译都不受影响",
+        "isCorrect": false,
+        "description": "错误。复杂递归类型确实可能增加编译期类型检查时间，不是零代价。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`RequiredDeep<T>`（深层必填）与内置 `Required<T>` 的关系，类比于下面哪一组？",
+    "explanation": "`Required<T>` 是**浅层**把第一层键变必填；`RequiredDeep<T>` 是**递归深层**把所有层级的键变必填。这与 `Partial`→`PartialDeep`、`Readonly`→`ReadonlyDeep` 是同一个「内置浅层 vs type-fest 深层」的对应模式。所以 `Required` : `RequiredDeep` ≈ `Partial` : `PartialDeep`。\n\n- 「Partial : PartialDeep」正确（同为浅层 vs 深层）。\n- 「Pick : Omit」错误：那是「选取 vs 排除」，不是深浅关系。\n- 「Merge : Split」错误：毫不相关。\n- 「keyof : ValueOf」错误：那是键 vs 值。",
+    "tags": ["type-fest", "高级", "RequiredDeep", "Required", "深层变换"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Partial : PartialDeep（都是「内置浅层」对「type-fest 深层」）",
+        "isCorrect": true,
+        "description": "正确。Required→RequiredDeep 与 Partial→PartialDeep、Readonly→ReadonlyDeep 同属浅层 vs 深层的对应模式。"
+      },
+      {
+        "text": "Pick : Omit",
+        "isCorrect": false,
+        "description": "错误。Pick/Omit 是「选取 vs 排除」，与深浅层无关。"
+      },
+      {
+        "text": "Merge : Split",
+        "isCorrect": false,
+        "description": "错误。二者一个合并对象、一个切分字符串，毫不相关。"
+      },
+      {
+        "text": "keyof : ValueOf",
+        "isCorrect": false,
+        "description": "错误。那是「取键 vs 取值」的对应，不是深浅层关系。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`SetNonNullable<T, Keys>` 的作用是什么？",
+    "explanation": "`SetNonNullable<BaseType, Keys>` 把指定键的类型中的 `null` 和 `undefined` **去掉**（其余键不变），相当于对选定键做 `NonNullable`。典型场景：一个模型字段在数据库里可空（`string | null`），但在「已校验」后的上下文里你确信它非空，用 `SetNonNullable` 精确收窄那几个键。它是「按键定向」的，区别于对整个类型生效的内置 `NonNullable`。\n\n- 「去掉指定键类型中的 null/undefined，其余键不变」正确。\n- 「给指定键加上 null」错误：方向相反。\n- 「把所有键变必填」错误：可空与可选是两回事（`b: string | null` 仍是必填键）。\n- 「删除指定键」错误。",
+    "tags": ["type-fest", "高级", "SetNonNullable", "可空", "对象类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "去掉指定键类型中的 null 和 undefined（对选定键做 NonNullable），其余键保持不变",
+        "isCorrect": true,
+        "description": "正确。用于在「已确信非空」的上下文里定向收窄某几个可空字段，区别于作用于整个类型的内置 NonNullable。"
+      },
+      {
+        "text": "给指定键的类型加上 null",
+        "isCorrect": false,
+        "description": "错误。它是移除 null/undefined，不是添加。"
+      },
+      {
+        "text": "把对象所有键变为必填",
+        "isCorrect": false,
+        "description": "错误。可空（| null）与可选（?）是不同维度，去 null 不等于变必填。"
+      },
+      {
+        "text": "从对象中删除指定的键",
+        "isCorrect": false,
+        "description": "错误。删除键是 Except / Omit，不是 SetNonNullable。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`Stringified<T>` 这个类型的作用是什么？",
+    "explanation": "`Stringified<T>` 把对象**所有属性的值类型都改成 `string`**（键不变）。典型场景：表单数据或 URL query —— 原模型字段可能是 number、boolean，但通过表单/查询串传输时全部变成字符串。`Stringified<T>` 在类型层面刻画这种「全字段字符串化」的形态。注意它改的是值类型，不是键。\n\n- 「把所有属性的值类型改成 string」正确。\n- 「把对象转成 JSON 字符串类型」错误：那更接近对整个对象做 string 化，而非逐字段；且非其语义。\n- 「把键转成字符串」错误：对象键本就主要是字符串，它改的是值。\n- 「在运行时调用 String() 转换」错误：纯类型。",
+    "tags": ["type-fest", "高级", "Stringified", "对象类型", "字符串化"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把对象所有属性的值类型都改成 string（键保持不变）",
+        "isCorrect": true,
+        "description": "正确。刻画表单/URL query 这类「字段全部以字符串形式传输」的形态，改的是值类型。"
+      },
+      {
+        "text": "把整个对象转换成一个 JSON 字符串类型",
+        "isCorrect": false,
+        "description": "错误。它是逐字段把值类型改为 string，而非把对象整体变成一个字符串。"
+      },
+      {
+        "text": "把对象的键转换成字符串",
+        "isCorrect": false,
+        "description": "错误。它改的是值类型；对象键本就以字符串为主。"
+      },
+      {
+        "text": "在运行时对每个值调用 String() 转换",
+        "isCorrect": false,
+        "description": "错误。type-fest 纯类型，不执行任何运行时转换。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：以下关于「type-fest 与 ts-toolbelt、utility-types 等同类库」的说法，哪个最准确？",
+    "explanation": "它们都属于「补充 TS 内置工具类型」的**纯类型工具库**，定位相近、存在功能重叠（如各家都有深层 Partial、联合转交叉等）。type-fest 的特点是：维护活跃、文档（每个类型的 source 注释里都有用例）完善、注重单一职责的「essential」类型、社区采用广。选型时可按 API 覆盖、维护状态、文档质量、与团队习惯综合判断；它们都是零运行时的类型库，不互斥但通常择一为主以免概念重复。\n\n- 「同属纯类型工具库，定位相近、有重叠，按维护/文档/覆盖选型」正确。\n- 「type-fest 是运行时库，其它是类型库」错误：都是纯类型。\n- 「它们必须同时安装才能工作」错误：通常择一即可。\n- 「type-fest 能在运行时校验，故更优」错误：它不做运行时校验。",
+    "tags": ["type-fest", "专家", "选型", "同类库", "工程实践"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它们同属补充内置工具的纯类型库，定位相近、功能有重叠，应按 API 覆盖/维护活跃度/文档质量选型，通常择一为主",
+        "isCorrect": true,
+        "description": "正确。type-fest 以维护活跃、用例文档完善、单一职责的 essential 类型见长，与同类库不互斥但宜择一避免概念重复。"
+      },
+      {
+        "text": "type-fest 是运行时库，而 ts-toolbelt / utility-types 是类型库",
+        "isCorrect": false,
+        "description": "错误。三者都是零运行时的纯类型库。"
+      },
+      {
+        "text": "这几个库必须同时安装、配合使用才能正常工作",
+        "isCorrect": false,
+        "description": "错误。它们功能重叠，通常择一为主即可，不需要同时安装。"
+      },
+      {
+        "text": "type-fest 因为能在运行时做校验所以优于其它两者",
+        "isCorrect": false,
+        "description": "错误。type-fest 不做任何运行时校验，这个比较前提不成立。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`TupleToUnion<T>` 与 `UnionToTuple<T>` 互为反向操作。`TupleToUnion<['a', 'b', 'c']>` 的结果是什么？",
+    "explanation": "`TupleToUnion` 把一个元组类型转成其所有元素的**联合类型**。`TupleToUnion<['a', 'b', 'c']>` 得到 `'a' | 'b' | 'c'`。常见用法：有一个 `as const` 的数组（元组），想从中推导出一个联合类型用于约束取值。反向的 `UnionToTuple` 则把联合转回元组（但顺序不保证，使用需谨慎）。\n\n- `'a' | 'b' | 'c'`（联合）正确。\n- `['a', 'b', 'c']`（元组不变）错误。\n- `'a'`（仅首元素）错误：它合并全部元素。\n- `string`（泛化）错误：保留字面量联合。",
+    "tags": ["type-fest", "高级", "TupleToUnion", "元组", "联合"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "联合类型 'a' | 'b' | 'c'",
+        "isCorrect": true,
+        "description": "正确。TupleToUnion 把元组各元素合并成联合，常用于从 as const 数组推导取值联合。"
+      },
+      {
+        "text": "元组 ['a', 'b', 'c'] 保持不变",
+        "isCorrect": false,
+        "description": "错误。它的目的是把元组转成联合，不会原样返回。"
+      },
+      {
+        "text": "仅第一个元素 'a'",
+        "isCorrect": false,
+        "description": "错误。它合并全部元素为联合，而非取首元素。"
+      },
+      {
+        "text": "泛化的 string 类型",
+        "isCorrect": false,
+        "description": "错误。它保留精确的字面量联合，不退化成 string。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：关于「type-fest 的类型大多对应 TypeScript 官方仓库里某个未被采纳的提案」这一点，正确的理解是什么？",
+    "explanation": "type-fest 许多类型的 source 注释里都附了对应的 TS issue 链接（如 ReadonlyDeep 链到 microsoft/TypeScript#13923、Promisable 链到 #31394、LiteralUnion 链到 #29729），并写着「Please upvote this issue if you want this as a built-in」。这说明这些能力是**社区普遍需要、但 TS 尚未内置**的，type-fest 先行提供实现作为「事实标准」的补充。一旦 TS 内置了某能力，对应 type-fest 类型可能被标记废弃（如某些已发生）。\n\n- 「这些是社区需要但 TS 未内置的能力，type-fest 先行补位，内置后可能废弃」正确。\n- 「说明这些类型是错误的、不该用」错误：恰恰是经过验证的实用补充。\n- 「说明它们会拖慢运行时」错误：纯类型。\n- 「说明 TS 团队禁止使用 type-fest」错误：并无此事。",
+    "tags": ["type-fest", "专家", "TS 提案", "设计理念", "演进"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "这些是社区普遍需要、但 TS 尚未内置的能力，type-fest 先行实现作为补充；若 TS 日后内置，对应类型可能被标记废弃",
+        "isCorrect": true,
+        "description": "正确。许多类型注释里链到对应 TS issue 并呼吁 upvote，体现「先补位、内置后让位」的演进思路。"
+      },
+      {
+        "text": "说明这些类型实现有误、不应在生产中使用",
+        "isCorrect": false,
+        "description": "错误。它们是经过测试与社区验证的实用补充，并非错误实现。"
+      },
+      {
+        "text": "说明使用这些类型会拖慢应用运行时",
+        "isCorrect": false,
+        "description": "错误。它们是纯类型，与运行时性能无关。"
+      },
+      {
+        "text": "说明 TypeScript 团队明令禁止使用 type-fest",
+        "isCorrect": false,
+        "description": "错误。并不存在这样的禁令，二者是互补关系。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：综合判断——下面哪个场景**不**适合用 type-fest 解决？",
+    "explanation": "type-fest 解决的是**编译期类型**问题。「在运行时校验用户提交的表单数据是否合法（如邮箱格式、数值范围）」属于**运行时校验**，需要 zod、yup、valibot 等会生成运行时代码的库——type-fest 无能为力。其余三项都是纯类型变换：深层可选合并默认配置（PartialDeep）、给 ID 做标称类型防混用（Tagged）、把 snake_case 响应键类型转 camelCase（CamelCasedPropertiesDeep），都是 type-fest 的拿手好戏。\n\n- 「运行时校验表单数据合法性」正确（不适合，应用 zod 等）。\n- 「深层可选以合并默认配置」错误：适合，用 PartialDeep。\n- 「给 ID 做标称类型」错误：适合，用 Tagged。\n- 「把响应键类型转驼峰」错误：适合，用 CamelCasedPropertiesDeep。",
+    "tags": ["type-fest", "高级", "适用边界", "运行时校验", "综合"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在运行时校验用户提交的表单数据是否合法（邮箱格式、数值范围等）",
+        "isCorrect": true,
+        "description": "正确。这是运行时校验，需 zod/yup/valibot 等生成运行时代码的库；type-fest 纯类型无法胜任。"
+      },
+      {
+        "text": "把默认配置类型做成深层可选，便于与用户的部分覆盖对象合并",
+        "isCorrect": false,
+        "description": "这恰恰适合 type-fest——用 PartialDeep 即可。"
+      },
+      {
+        "text": "给用户 ID、订单 ID 做标称类型，防止互相误传",
+        "isCorrect": false,
+        "description": "这适合 type-fest——用 Tagged 创建互不可赋值的标称类型。"
+      },
+      {
+        "text": "把后端 snake_case 的响应对象在类型层面整体转成 camelCase",
+        "isCorrect": false,
+        "description": "这适合 type-fest——用 CamelCasedPropertiesDeep 递归转换键。"
+      }
+    ]
+  },
+  {
+    "stem": "type-fest：`AsyncReturnType<T>` 的作用是什么？",
+    "explanation": "`AsyncReturnType<Function>` 取出一个**异步函数**解析后的返回值类型——相当于把它返回的 `Promise<X>` 解包成 `X`。例如 `async function f(): Promise<User> {}`，`AsyncReturnType<typeof f>` 得到 `User`。它是 `ReturnType` 在异步场景的便捷封装（等价于 `Awaited<ReturnType<typeof f>>`），常用于从已有异步函数推导其结果类型，避免重复声明。\n\n- 「取异步函数解析后的返回值类型（解包 Promise）」正确。\n- 「把同步函数变异步」错误：那是 Asyncify。\n- 「取函数的参数类型」错误：那是 Parameters。\n- 「把返回值包成 Promise」错误：方向相反，那是 Asyncify。",
+    "tags": ["type-fest", "高级", "AsyncReturnType", "异步", "返回类型"],
+    "categories": [
+      ["技术方向", "type-fest"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "取出异步函数解析后的返回值类型（把它返回的 Promise<X> 解包成 X）",
+        "isCorrect": true,
+        "description": "正确。等价于 Awaited<ReturnType<typeof f>>，方便从已有异步函数推导结果类型，免去重复声明。"
+      },
+      {
+        "text": "把一个同步函数的返回值包装成 Promise",
+        "isCorrect": false,
+        "description": "错误。把返回值包成 Promise 是 Asyncify，方向相反。"
+      },
+      {
+        "text": "取出函数的参数类型",
+        "isCorrect": false,
+        "description": "错误。取参数类型是内置 Parameters<T>。"
+      },
+      {
+        "text": "把异步函数转换成同步函数类型",
+        "isCorrect": false,
+        "description": "错误。它不做异步到同步的转换，只是解包返回的 Promise。"
+      }
+    ]
+  }
+]

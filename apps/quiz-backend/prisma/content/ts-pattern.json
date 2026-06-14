@@ -1,0 +1,1676 @@
+[
+  {
+    "stem": "ts-pattern：这个库在「JS 扩展库」分类里的核心定位是什么？",
+    "explanation": "ts-pattern 的官方描述是「The exhaustive Pattern Matching library for TypeScript」——把函数式语言里的「模式匹配（pattern matching）」带进 TypeScript，用一条 `match(value).with(...).exhaustive()` 表达式替代层层 if/else 或 switch，并借助类型系统做编译期的穷尽性检查与精确类型收窄。\n\n- 「类型安全的模式匹配库」正确。\n- 「运行时类型校验/解析库」错误：那是 Zod/Valibot 的职责，ts-pattern 不做 schema 解析。\n- 「不可变数据库」错误：那是 Immer。\n- 「日期处理库」错误：那是 Day.js/date-fns。",
+    "tags": ["ts-pattern", "入门", "定位", "核心概念", "模式匹配"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "为 TypeScript 提供类型安全的模式匹配，用一条表达式替代 if/else 与 switch，并支持编译期穷尽性检查",
+        "isCorrect": true,
+        "description": "正确。官方定位即 exhaustive Pattern Matching library，核心是 match/with/exhaustive 与类型收窄。"
+      },
+      {
+        "text": "在运行时按 schema 校验并解析未知数据（如 API 响应）",
+        "isCorrect": false,
+        "description": "错误。运行时 schema 校验是 Zod/Valibot 的职责，ts-pattern 不解析数据结构。"
+      },
+      {
+        "text": "提供不可变数据更新能力，用可变写法产出不可变结果",
+        "isCorrect": false,
+        "description": "错误。这是 Immer 的定位，与模式匹配无关。"
+      },
+      {
+        "text": "提供链式日期时间解析与格式化",
+        "isCorrect": false,
+        "description": "错误。日期处理是 Day.js/date-fns/Luxon 的范畴。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：从库里导入匹配能力，最标准的写法是哪一个？",
+    "explanation": "官方约定的导入方式是 `import { match, P } from 'ts-pattern'`：`match` 是匹配表达式的入口，`P` 是模式（pattern）命名空间，几乎所有通配/组合模式（P.string、P.number、P.array、P.union……）都挂在它下面。还可按需导入 `isMatching`、`Pattern` 等。\n\n- `import { match, P } from 'ts-pattern'` 正确。\n- `import match from 'ts-pattern'`（默认导入）错误：库导出的是具名成员，没有默认导出 match。\n- `import * as match from 'ts-pattern'` 把整个命名空间命名为 match，用法不对。\n- `require('@ts-pattern/core')` 包名错误。",
+    "tags": ["ts-pattern", "入门", "导入", "match", "P"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "import { match, P } from 'ts-pattern'",
+        "isCorrect": true,
+        "description": "正确。match 是入口，P 是模式命名空间，二者为最常用的具名导出。"
+      },
+      {
+        "text": "import match from 'ts-pattern'",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 用具名导出，没有默认导出的 match。"
+      },
+      {
+        "text": "import * as match from 'ts-pattern'",
+        "isCorrect": false,
+        "description": "错误。把整个模块命名为 match 后无法直接调用 match(value)，且拿不到清晰的 P。"
+      },
+      {
+        "text": "const { match } = require('@ts-pattern/core')",
+        "isCorrect": false,
+        "description": "错误。包名是 ts-pattern，不是 @ts-pattern/core。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：一条最基本的匹配表达式由哪三个环节按顺序组成？",
+    "explanation": "基本结构是 `match(value).with(pattern, handler).exhaustive()`（或以 `.otherwise(handler)` 收尾）：① `match(value)` 传入要匹配的值，开启匹配链；② 一个或多个 `.with(pattern, handler)` 声明「模式 → 处理函数」分支；③ 末尾用 `.exhaustive()` 或 `.otherwise()` 收尾并真正执行、返回结果。\n\n- 「match → with → exhaustive/otherwise」正确。\n- 「直接 match(value, pattern)」错误：match 只接收待匹配值。\n- 「with 必须先于 match」顺序颠倒。\n- 「必须以 .run() 结尾」不准确：常用收尾是 exhaustive/otherwise，run 只是不做穷尽检查的执行方式。",
+    "tags": ["ts-pattern", "入门", "match", "with", "结构"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "match(value) 开启 → 一个或多个 .with(pattern, handler) 分支 → .exhaustive() 或 .otherwise() 收尾执行",
+        "isCorrect": true,
+        "description": "正确。这是 ts-pattern 表达式的标准三段式结构。"
+      },
+      {
+        "text": "match(value, pattern, handler) 一次传齐所有参数",
+        "isCorrect": false,
+        "description": "错误。match 只接收待匹配的值，模式与处理函数由 .with() 链式声明。"
+      },
+      {
+        "text": "先写 .with(...) 分支，再用 match(value) 把它们包起来",
+        "isCorrect": false,
+        "description": "错误。必须先 match(value) 开启链，再 .with()。"
+      },
+      {
+        "text": "任何匹配表达式都必须以 .run() 结尾才能执行",
+        "isCorrect": false,
+        "description": "错误。常用收尾是 .exhaustive()/.otherwise()，.run() 只是不带穷尽检查的执行方式。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.with('loading', () => 'Loading...')` 里的两个参数，分别扮演什么角色？",
+    "explanation": "`.with(pattern, handler)` 的第一个参数是「模式」，第二个是「处理函数」。模式可以是字面量（如 `'loading'`）、对象结构、数组，或 `P.*` 通配模式；当输入与模式匹配时，对应的 handler 被调用，其返回值成为整条表达式的结果。这里 `'loading'` 是字面量模式，`() => 'Loading...'` 是命中后返回的处理函数。\n\n- 「前者是模式、后者是命中后的处理函数」正确。\n- 「两个都是模式」错误。\n- 「前者是 handler、后者是模式」顺序反了。\n- 「第二个参数是错误回调」错误：错误处理是 exhaustive 的可选参数，不是这里。",
+    "tags": ["ts-pattern", "入门", "with", "handler", "字面量"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "第一个是模式（这里是字面量 'loading'），第二个是命中后执行、返回结果的处理函数",
+        "isCorrect": true,
+        "description": "正确。.with(pattern, handler)：模式匹配成功就调用 handler，返回值即整条表达式结果。"
+      },
+      {
+        "text": "两个参数都是模式，需同时匹配才命中",
+        "isCorrect": false,
+        "description": "错误。同时匹配多个模式是 .with(p1, p2, ..., handler) 的多模式写法，但最后一个一定是 handler。"
+      },
+      {
+        "text": "第一个是处理函数，第二个是模式",
+        "isCorrect": false,
+        "description": "错误。顺序是「先模式后处理函数」。"
+      },
+      {
+        "text": "第二个参数是匹配失败时的错误回调",
+        "isCorrect": false,
+        "description": "错误。失败兜底由 .otherwise() 或 .exhaustive(handler) 负责。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：与原生 `switch` 相比，ts-pattern 最本质的优势在哪？",
+    "explanation": "原生 switch 只能对单个值做 `===` 级别的相等比较，无法直接匹配对象/数组的结构、无法做范围/守卫判断，且对联合类型不提供编译期穷尽性保证（漏 case 不报错）。ts-pattern 能匹配深层结构、用 `P.*` 表达「任意 string」「大于 5 的数」等条件，更关键的是 `.exhaustive()` 在漏掉某个联合分支时直接编译报错，并在每个 handler 里收窄出精确类型。\n\n- 「能匹配结构 + 编译期穷尽检查 + 类型收窄」正确。\n- 「运行更快」错误：性能不是卖点，类型安全才是。\n- 「能匹配但不收窄类型」错误：收窄正是核心。\n- 「完全替代所有条件语句」过度：简单单值判断 switch 也够用。",
+    "tags": ["ts-pattern", "初级", "switch", "对比", "穷尽性"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "能直接匹配对象/数组结构与条件，提供编译期穷尽性检查，并在每个分支收窄出精确类型",
+        "isCorrect": true,
+        "description": "正确。结构匹配、穷尽检查、类型收窄三者是 switch 给不了的类型安全能力。"
+      },
+      {
+        "text": "运行时执行速度显著快于 switch",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 的价值是类型安全与可读性，而非运行性能。"
+      },
+      {
+        "text": "可以匹配结构，但不会收窄 handler 里的类型",
+        "isCorrect": false,
+        "description": "错误。类型收窄恰恰是它最核心的能力之一。"
+      },
+      {
+        "text": "能在任何场景完全取代 if 和 switch，让条件语句彻底消失",
+        "isCorrect": false,
+        "description": "错误。对简单单值判断，原生语句仍然合适，不必强行替换。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P` 这个导出代表什么？",
+    "explanation": "`P` 是「Pattern（模式）」命名空间，集中了所有用于构造模式的辅助物：通配模式（P.string / P.number / P.boolean / P._ 等）、集合模式（P.array / P.set / P.map / P.record）、组合模式（P.union / P.intersection / P.not / P.optional）、守卫与提取（P.when / P.select）、以及类型工具（P.infer / P.Pattern）。写匹配条件时几乎都从 `P.` 起手。\n\n- 「模式命名空间，聚合各种 P.* 模式与类型工具」正确。\n- 「Promise 工具」错误。\n- 「专指通配符一个常量」错误：P 是命名空间，P._ 才是通配符。\n- 「性能分析工具」错误。",
+    "tags": ["ts-pattern", "初级", "P", "命名空间", "模式"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "模式（Pattern）命名空间，聚合 P.string/P.array/P.union/P.when/P.select 等所有模式构造器与类型工具",
+        "isCorrect": true,
+        "description": "正确。P 是模式命名空间，构造匹配条件时几乎都从 P. 开始。"
+      },
+      {
+        "text": "处理 Promise 的工具集合",
+        "isCorrect": false,
+        "description": "错误。P 与 Promise 无关。"
+      },
+      {
+        "text": "它本身就是通配符常量，等价于「匹配任意值」",
+        "isCorrect": false,
+        "description": "错误。通配符是 P._（或 P.any），P 是包含它的命名空间。"
+      },
+      {
+        "text": "性能（Performance）分析命名空间",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 不提供性能分析能力。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P._` 这个模式的作用是什么？",
+    "explanation": "`P._` 是「通配符」模式，匹配任意值（无论类型），常用于写兜底分支。官方还提供 `P.any` 作为它的别名——`P.any` 与 `P._` 完全等价、行为一致，只是命名风格不同。事实上 `.otherwise(handler)` 等价于 `.with(P._, handler).exhaustive()`。\n\n- 「匹配任意值的通配符，P.any 是其别名」正确。\n- 「只匹配 undefined」错误：那更接近 P.nullish 的一部分。\n- 「只匹配对象」错误。\n- 「P._ 与 P.any 是两种不同模式」错误：官方明确 P.any 就是 P._ 的别名。",
+    "tags": ["ts-pattern", "初级", "P._", "P.any", "通配符"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "通配符，匹配任意值；P.any 是它的别名，二者行为完全一致",
+        "isCorrect": true,
+        "description": "正确。官方文档明确「P.any is an alias to P._」，常用于兜底分支。"
+      },
+      {
+        "text": "只匹配 undefined 值",
+        "isCorrect": false,
+        "description": "错误。匹配 null/undefined 用 P.nullish；P._ 匹配任意值。"
+      },
+      {
+        "text": "只匹配对象类型的值",
+        "isCorrect": false,
+        "description": "错误。P._ 不限类型，任何值都命中。"
+      },
+      {
+        "text": "P._ 和 P.any 是两个语义不同的模式，不能混用",
+        "isCorrect": false,
+        "description": "错误。P.any 就是 P._ 的别名，可互换使用。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：要匹配「任意字符串」「任意数字」，应分别用哪两个模式？",
+    "explanation": "通配模式里，`P.string` 匹配任意 `string` 类型的值，`P.number` 匹配任意 `number` 类型的值。类似的还有 `P.boolean`、`P.bigint`、`P.symbol`、`P.nullish`（null | undefined）、`P.nonNullable`（除 null/undefined 外的任意值）。它们在匹配的同时把 handler 参数收窄为对应类型。\n\n- 「P.string / P.number」正确。\n- 「P.str / P.num」错误：不存在这种缩写。\n- 「P.text / P.int」错误：没有 P.text；P.number.int() 才是「整数」断言，但「任意数字」用 P.number。\n- 「String / Number 构造函数」错误：模式要用 P 命名空间下的成员。",
+    "tags": ["ts-pattern", "初级", "P.string", "P.number", "通配模式"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "P.string 与 P.number",
+        "isCorrect": true,
+        "description": "正确。它们匹配任意 string/number，并把 handler 参数收窄为该类型。"
+      },
+      {
+        "text": "P.str 与 P.num",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 没有这种缩写，全名是 P.string / P.number。"
+      },
+      {
+        "text": "P.text 与 P.int",
+        "isCorrect": false,
+        "description": "错误。没有 P.text；P.number.int() 是整数断言，匹配任意数字用 P.number。"
+      },
+      {
+        "text": "直接用 String 与 Number 构造函数当模式",
+        "isCorrect": false,
+        "description": "错误。模式应使用 P.string / P.number，而非 JS 构造函数。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：用字面量对象 `{ status: 'success' }` 作为模式去匹配，会发生什么？",
+    "explanation": "ts-pattern 支持「结构模式」：用一个对象作模式时，它会逐个属性递归匹配——输入对象只要包含模式里列出的键、且这些键的值都满足对应子模式，就算命中（输入可以有额外属性）。这里 `{ status: 'success' }` 会匹配所有 `status` 字段等于 `'success'` 的对象，handler 里该对象类型被收窄到对应分支。\n\n- 「逐属性递归匹配，输入含这些键且值匹配即命中」正确。\n- 「要求两个对象引用相等」错误：是结构匹配不是引用比较。\n- 「输入必须与模式键完全一致、不能多键」错误：允许有额外属性。\n- 「对象不能作模式」错误：对象正是最常用的结构模式。",
+    "tags": ["ts-pattern", "初级", "结构匹配", "对象模式", "收窄"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "对模式里列出的每个属性递归匹配，输入只要包含这些键且值满足子模式即命中（可有额外属性）",
+        "isCorrect": true,
+        "description": "正确。对象模式是结构性的，按列出的键递归比对，不要求键完全一致。"
+      },
+      {
+        "text": "要求输入对象与模式对象是同一个引用",
+        "isCorrect": false,
+        "description": "错误。是结构匹配，不是 === 引用相等。"
+      },
+      {
+        "text": "要求输入对象的键与模式完全相同，多一个键就不匹配",
+        "isCorrect": false,
+        "description": "错误。模式只约束列出的键，输入可携带额外属性。"
+      },
+      {
+        "text": "对象类型不能作为模式，只能用字符串/数字",
+        "isCorrect": false,
+        "description": "错误。对象是 ts-pattern 最常用的结构模式形式。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.otherwise(handler)` 的作用，以及它和 `.exhaustive()` 在「是否要求覆盖所有情况」上的区别是什么？",
+    "explanation": "`.otherwise(handler)` 提供一个兜底处理：当前面所有 `.with` 都没命中时执行它并返回结果——它等价于 `.with(P._, handler).exhaustive()`。因为有了通配兜底，编译器认为所有情况都被覆盖，所以 `.otherwise` 不再强制你手写每个分支。而 `.exhaustive()` 不提供兜底，要求显式覆盖联合类型的每一种可能，漏掉就编译报错。\n\n- 「otherwise 是兜底、放宽穷尽要求；exhaustive 强制覆盖全部」正确。\n- 「两者完全等价」错误。\n- 「otherwise 更严格」说反了。\n- 「otherwise 只能放在 exhaustive 之后」错误：两者都是收尾，二选一。",
+    "tags": ["ts-pattern", "初级", "otherwise", "exhaustive", "兜底"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "otherwise 提供兜底处理（等价于 .with(P._, handler).exhaustive()），因而不强制覆盖每种情况；exhaustive 则要求显式覆盖全部，漏分支即编译报错",
+        "isCorrect": true,
+        "description": "正确。otherwise 用通配兜底放宽穷尽要求，exhaustive 强制穷尽。"
+      },
+      {
+        "text": "两者完全等价，可随意互换",
+        "isCorrect": false,
+        "description": "错误。exhaustive 强制穷尽，otherwise 用兜底放宽这一要求。"
+      },
+      {
+        "text": "otherwise 比 exhaustive 更严格，要求覆盖更多分支",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，otherwise 因为有兜底而更宽松。"
+      },
+      {
+        "text": "otherwise 必须写在 exhaustive 之后作为补充",
+        "isCorrect": false,
+        "description": "错误。二者都是收尾方法，只能二选一。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：handler 函数的返回值与整条匹配表达式之间是什么关系？",
+    "explanation": "match 表达式是「求值表达式」而非语句：被命中的那个 `.with` 分支的 handler 返回值，就是整条 `match(...)....exhaustive()` 的返回值。因此你可以直接 `const result = match(x).with(...).otherwise(...)` 把结果赋给变量。各分支 handler 的返回类型会被统一推导成表达式的输出类型（必要时可用 `.returnType<T>()` 显式约束）。\n\n- 「命中分支 handler 的返回值即整条表达式的返回值」正确。\n- 「match 无返回值，只能产生副作用」错误。\n- 「返回的是布尔，表示是否匹配」错误。\n- 「返回所有 handler 返回值的数组」错误：只返回命中的那一个。",
+    "tags": ["ts-pattern", "初级", "返回值", "表达式", "推导"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "命中分支的 handler 返回值就是整条 match 表达式的返回值，可直接赋给变量",
+        "isCorrect": true,
+        "description": "正确。match 是表达式，返回被命中 handler 的结果，各分支返回类型被统一推导。"
+      },
+      {
+        "text": "match 是语句没有返回值，只能在 handler 内部产生副作用",
+        "isCorrect": false,
+        "description": "错误。match 是可求值的表达式，整体有返回值。"
+      },
+      {
+        "text": "match 返回布尔值，表示是否有分支命中",
+        "isCorrect": false,
+        "description": "错误。返回的是命中 handler 的结果，而非布尔。"
+      },
+      {
+        "text": "match 返回所有 handler 返回值组成的数组",
+        "isCorrect": false,
+        "description": "错误。只返回被命中那一个分支的结果。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：要匹配「值为字符串 'a' 或 'b' 或 'c'，三者走同一处理逻辑」，最简洁的写法是哪种？",
+    "explanation": "`.with` 支持「多模式」语法：在 handler 之前可以列多个模式，只要输入命中其中任意一个就执行该 handler，例如 `.with('a', 'b', 'c', () => '...')`。这等价于把三个字面量并到一个分支。另一种等价思路是 `.with(P.union('a', 'b', 'c'), handler)`。\n\n- 「.with('a', 'b', 'c', handler) 多模式」正确。\n- 「写三个独立 .with 但共用同一函数引用」可行但不够简洁，且不是「同一分支」。\n- 「.with(['a','b','c'], handler)」错误：数组在这里会被当成「匹配一个三元素元组」的模式，语义完全不同。\n- 「.with('a' | 'b' | 'c', handler)」错误：联合是类型层面的写法，不能直接作运行时模式。",
+    "tags": ["ts-pattern", "中级", "多模式", "with", "union"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": ".with('a', 'b', 'c', () => '...')，在 handler 前并列多个模式",
+        "isCorrect": true,
+        "description": "正确。.with 支持多模式：命中其中任一个即执行同一 handler。"
+      },
+      {
+        "text": ".with(['a', 'b', 'c'], () => '...')",
+        "isCorrect": false,
+        "description": "错误。这会被解读为「匹配一个 ['a','b','c'] 三元素元组」，不是三选一。"
+      },
+      {
+        "text": ".with('a' | 'b' | 'c', () => '...')",
+        "isCorrect": false,
+        "description": "错误。| 是 TS 类型语法，不能作为运行时传入的模式值。"
+      },
+      {
+        "text": "无法用一个分支表达，只能写三个独立 .with",
+        "isCorrect": false,
+        "description": "错误。多模式语法或 P.union 都能用一个分支搞定。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.union('user', 'org')` 这个模式表达什么？",
+    "explanation": "`P.union(...subpatterns)` 是「联合模式」：只要输入命中其中任意一个子模式即匹配成功。`P.union('user', 'org')` 匹配值为 `'user'` 或 `'org'` 的情况，常嵌在对象里，如 `{ type: P.union('user', 'org') }` 匹配 type 是这两者之一的对象。子模式不限于字面量，也可以是其它 P.* 模式。\n\n- 「命中任一子模式即匹配（逻辑或）」正确。\n- 「必须同时满足所有子模式」错误：那是 P.intersection（逻辑与）。\n- 「取子模式的否定」错误：那是 P.not。\n- 「只能用于顶层、不能嵌套在对象里」错误：可自由嵌套。",
+    "tags": ["ts-pattern", "中级", "P.union", "组合模式", "或"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "联合模式：输入命中其中任意一个子模式即匹配成功（逻辑或）",
+        "isCorrect": true,
+        "description": "正确。P.union 是「或」语义，子模式可为字面量或其它 P.* 模式。"
+      },
+      {
+        "text": "交集模式：必须同时满足列出的所有子模式",
+        "isCorrect": false,
+        "description": "错误。同时满足全部是 P.intersection（逻辑与）。"
+      },
+      {
+        "text": "否定模式：匹配不属于这些值的输入",
+        "isCorrect": false,
+        "description": "错误。否定是 P.not。"
+      },
+      {
+        "text": "只能放在 match 的顶层，不能嵌进对象属性",
+        "isCorrect": false,
+        "description": "错误。P.union 可嵌入对象、数组等任意位置。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.array(P.string)` 作为模式会匹配什么？",
+    "explanation": "`P.array(subpattern)` 是「数组模式」，匹配「每个元素都满足子模式」的数组。`P.array(P.string)` 匹配元素全是字符串的数组（包括空数组）。子模式也可以是对象，如 `P.array({ title: P.string })` 匹配「对象数组，每个对象都有 string 类型的 title」。\n\n- 「每个元素都满足子模式的数组」正确。\n- 「恰好含一个字符串元素的数组」错误：不限长度。\n- 「任意数组，不检查元素」错误：会逐元素校验子模式。\n- 「Set 集合」错误：Set 用 P.set。",
+    "tags": ["ts-pattern", "中级", "P.array", "数组模式", "集合"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "匹配「每个元素都满足子模式」的数组（这里即元素全为字符串的数组，含空数组）",
+        "isCorrect": true,
+        "description": "正确。P.array(sub) 对数组逐元素校验子模式，不限长度。"
+      },
+      {
+        "text": "只匹配恰好包含一个字符串元素的数组",
+        "isCorrect": false,
+        "description": "错误。P.array 不限定元素数量。"
+      },
+      {
+        "text": "匹配任意数组，不检查元素类型",
+        "isCorrect": false,
+        "description": "错误。会对每个元素施加子模式校验。"
+      },
+      {
+        "text": "匹配元素全为字符串的 Set 集合",
+        "isCorrect": false,
+        "description": "错误。匹配 Set 应使用 P.set，P.array 针对数组。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.when(predicate)` 解决的是哪类匹配需求？",
+    "explanation": "有些条件无法用结构或字面量直接表达，比如「数字大于 5」「字符串长度为偶数」。`P.when((value) => boolean)` 接收一个谓词函数，返回 true 才算匹配，把任意运行时判断接入模式系统。若谓词写成类型守卫（`(x): x is 5 => x === 5`），还能进一步收窄 handler 里的类型。\n\n- 「用自定义谓词函数表达结构/字面量无法描述的条件」正确。\n- 「专门匹配 Promise」错误。\n- 「等价 P._，匹配任意值」错误：when 取决于谓词返回值。\n- 「只能返回字符串」错误：谓词必须返回布尔。",
+    "tags": ["ts-pattern", "中级", "P.when", "守卫", "谓词"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用自定义谓词函数表达结构/字面量无法描述的条件（如 score > 5），谓词返回 true 才命中",
+        "isCorrect": true,
+        "description": "正确。P.when 把任意运行时布尔判断接入模式；写成类型守卫还能收窄类型。"
+      },
+      {
+        "text": "专门用来匹配 Promise 是否 resolve",
+        "isCorrect": false,
+        "description": "错误。P.when 与 Promise 无关，它接收同步谓词。"
+      },
+      {
+        "text": "等价于 P._，对任意值都返回匹配",
+        "isCorrect": false,
+        "description": "错误。是否命中取决于谓词的返回值。"
+      },
+      {
+        "text": "谓词函数必须返回字符串作为分支名",
+        "isCorrect": false,
+        "description": "错误。谓词必须返回布尔值。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.select()`（匿名 select）在匹配命中后，对 handler 的参数有什么影响？",
+    "explanation": "`P.select()` 用于「从深层结构里提取一段值」，免去手动解构。匿名 `P.select()`（不传名字）会把被选中的值作为 handler 的**第一个参数**注入，匹配到的完整输入则作为第二个参数。例如 `.with({ type: 'post', user: { name: P.select() } }, (username) => username)` 里 `username` 就是被提取的 name。\n\n- 「匿名 select 把选中值作为 handler 第一个参数注入」正确。\n- 「把选中值放进一个对象的 _ 键」错误：那更像命名 select 的行为。\n- 「select 只标记不提取，参数不变」错误。\n- 「必须传名字否则报错」错误：匿名用法合法。",
+    "tags": ["ts-pattern", "中级", "P.select", "提取", "handler"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "匿名 P.select() 把被选中的值作为 handler 的第一个参数注入（完整输入作为第二个参数）",
+        "isCorrect": true,
+        "description": "正确。匿名 select 直接把选中片段作为第一个实参，省去手动解构。"
+      },
+      {
+        "text": "把选中值塞进一个名为 _ 的对象属性里传给 handler",
+        "isCorrect": false,
+        "description": "错误。匿名 select 直接作为第一个参数，不是包进对象。"
+      },
+      {
+        "text": "P.select() 只做标记不提取值，handler 参数与不用它时一样",
+        "isCorrect": false,
+        "description": "错误。select 的全部意义就在于提取并注入值。"
+      },
+      {
+        "text": "P.select() 必须传入名字，否则编译报错",
+        "isCorrect": false,
+        "description": "错误。匿名 P.select() 是合法且常用的写法。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：当一个模式里用多个 `P.select('name')`（命名 select）时，handler 怎样拿到这些值？",
+    "explanation": "命名 select 用于在一个分支里提取多处值。匹配命中后，所有命名选择会被**汇集进一个对象**，按各自的名字作为键，作为 handler 的第一个参数传入。例如 `.with({ data: P.select('prevData'), error: P.select('err') }, ({ prevData, err }) => ...)`，handler 通过解构 `{ prevData, err }` 拿到两个提取值，类型也分别精确推导。\n\n- 「汇集成 { name: 值 } 对象作为第一个参数」正确。\n- 「按声明顺序作为多个独立位置参数」错误：那是匿名 select 单值的情形，命名 select 走对象。\n- 「拼成数组传入」错误。\n- 「只能用一个命名 select」错误：可用多个。",
+    "tags": ["ts-pattern", "中级", "P.select", "命名提取", "解构"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "所有命名 select 汇集成一个对象（键为各自名字），作为 handler 的第一个参数，可解构取出",
+        "isCorrect": true,
+        "description": "正确。命名 select 走「选择对象」：{ prevData, err } 一次性传入并各自精确推导类型。"
+      },
+      {
+        "text": "按声明顺序作为多个独立的位置参数依次传入",
+        "isCorrect": false,
+        "description": "错误。多个命名 select 汇成对象传入，不是多个位置参数。"
+      },
+      {
+        "text": "被提取的值拼成一个数组传给 handler",
+        "isCorrect": false,
+        "description": "错误。命名 select 用对象而非数组承载。"
+      },
+      {
+        "text": "一个分支里最多只能放一个命名 select",
+        "isCorrect": false,
+        "description": "错误。可在同一模式里放多个命名 select。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.optional(P.string)` 这个模式只在什么上下文里有意义？",
+    "explanation": "`P.optional(subpattern)` 用于「对象模式中的可选属性」：标记某个键可以不存在，但若存在则其值需满足子模式。例如 `.with({ key: P.optional(P.string) }, (a) => a.key)` 里 `a.key` 的类型是 `string | undefined`。它依赖「键缺失」这一语义，因此只在对象属性位置才有意义，不能脱离对象单独使用。\n\n- 「对象模式里标记可选属性（缺失或满足子模式）」正确。\n- 「匹配 null 值」错误：null 用 P.nullish/字面量 null。\n- 「让任意位置的值都可省略」错误：脱离对象属性无意义。\n- 「等价 P.nullish」错误：optional 关乎「键是否存在」，nullish 关乎「值是否为 null/undefined」。",
+    "tags": ["ts-pattern", "中级", "P.optional", "可选属性", "对象模式"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对象模式中：标记某属性可选——该键可缺失，若存在则其值须满足子模式（类型推为 子类型 | undefined）",
+        "isCorrect": true,
+        "description": "正确。P.optional 表达「可选键」语义，只在对象属性位置有意义。"
+      },
+      {
+        "text": "用于匹配值恰好为 null 的情况",
+        "isCorrect": false,
+        "description": "错误。匹配 null 用 P.nullish 或字面量 null。"
+      },
+      {
+        "text": "可放在任意位置，使该处的值变成可省略",
+        "isCorrect": false,
+        "description": "错误。脱离对象属性的「可选键」语义后，P.optional 无意义。"
+      },
+      {
+        "text": "与 P.nullish 完全等价，可互换",
+        "isCorrect": false,
+        "description": "错误。optional 关注键是否存在，nullish 关注值是否为 null/undefined，语义不同。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.instanceOf(SomeClass)` 用来匹配什么？",
+    "explanation": "`P.instanceOf(Class)` 匹配「是该类（或其子类）实例」的值，等价于运行时 `value instanceof Class`，并在 handler 里把类型收窄为该类实例。典型用途：在错误处理里区分不同的 Error 子类，如 `.with(P.instanceOf(TypeError), ...)`、`.with(P.instanceOf(RangeError), ...)`。\n\n- 「匹配某类的实例（instanceof）并收窄类型」正确。\n- 「匹配与某对象结构相同的普通对象」错误：那是结构对象模式。\n- 「匹配类本身（构造函数）」错误：匹配的是实例不是类。\n- 「按类名字符串匹配」错误：传入的是构造函数引用。",
+    "tags": ["ts-pattern", "中级", "P.instanceOf", "实例", "Error"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "匹配「是该类（或子类）实例」的值，相当于 instanceof，并把 handler 参数收窄为该类实例",
+        "isCorrect": true,
+        "description": "正确。常用于区分 Error 子类等基于类的判别。"
+      },
+      {
+        "text": "匹配任何与该类实例结构相同的普通对象字面量",
+        "isCorrect": false,
+        "description": "错误。结构匹配用对象模式；instanceOf 看的是原型链。"
+      },
+      {
+        "text": "匹配类（构造函数）本身，而非其实例",
+        "isCorrect": false,
+        "description": "错误。匹配的是实例值，不是构造函数。"
+      },
+      {
+        "text": "传入类名字符串进行匹配",
+        "isCorrect": false,
+        "description": "错误。传入的是构造函数引用，如 P.instanceOf(TypeError)。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：要匹配「除布尔值以外的任意值」，应使用哪个模式？",
+    "explanation": "`P.not(pattern)` 是「否定模式」，匹配「不满足给定模式」的值。`P.not(P.boolean)` 即匹配任何非布尔值。它在收窄上很有用，例如 `.with(P.not(P.boolean), (n) => n)` 后，剩下的 `true`/`false` 分支可单独处理，配合 exhaustive 形成完整覆盖。\n\n- 「P.not(P.boolean)」正确。\n- 「P.boolean.negative()」错误：boolean 没有这种方法。\n- 「P.exclude(P.boolean)」错误：没有 P.exclude。\n- 「P.union(P.string, P.number)」不等价：它漏掉了对象、null 等其它非布尔值。",
+    "tags": ["ts-pattern", "中级", "P.not", "否定", "收窄"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "P.not(P.boolean)",
+        "isCorrect": true,
+        "description": "正确。P.not 匹配「不满足子模式」的值，这里即所有非布尔值。"
+      },
+      {
+        "text": "P.boolean.negative()",
+        "isCorrect": false,
+        "description": "错误。P.boolean 没有 negative 方法，negative 是 P.number 的断言。"
+      },
+      {
+        "text": "P.exclude(P.boolean)",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 没有 P.exclude，否定用 P.not。"
+      },
+      {
+        "text": "P.union(P.string, P.number)",
+        "isCorrect": false,
+        "description": "错误。这只覆盖 string 与 number，漏掉对象、数组、null 等其它非布尔值。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.exhaustive()` 提供的「穷尽性检查」最关键的价值是什么？",
+    "explanation": "`.exhaustive()` 的杀手锏是「编译期穷尽性检查」：当 match 的输入是联合类型（或枚举/判别联合）而你漏掉了某个可能分支时，TypeScript 会在编译阶段直接报错（错误类型形如 `NonExhaustiveError<漏掉的情况>`），而不是等到运行时才暴露。这样新增一个联合成员时，所有未覆盖它的 match 都会立刻飘红，逼你补齐。\n\n- 「漏分支在编译期即报错（NonExhaustiveError）」正确。\n- 「运行时抛异常提醒漏分支」不准确：核心价值是编译期，不是等运行时。\n- 「自动补全缺失分支」错误：它只报错，不自动补。\n- 「忽略多余分支」答非所问。",
+    "tags": ["ts-pattern", "高级", "exhaustive", "穷尽性", "编译期"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "漏掉联合类型的某个分支时，TypeScript 在编译期就报错（类型形如 NonExhaustiveError<未覆盖的情况>）",
+        "isCorrect": true,
+        "description": "正确。编译期穷尽检查能在新增联合成员时立刻暴露所有未覆盖的 match。"
+      },
+      {
+        "text": "在运行时遇到未覆盖的值才抛异常，提醒开发者",
+        "isCorrect": false,
+        "description": "不准确。运行时若真漏会抛 NonExhaustiveError，但核心价值是编译期就拦住。"
+      },
+      {
+        "text": "自动为缺失的分支生成默认 handler",
+        "isCorrect": false,
+        "description": "错误。它只报错提示，不会自动补分支。"
+      },
+      {
+        "text": "检测并删除多余、永远不会命中的分支",
+        "isCorrect": false,
+        "description": "错误。穷尽检查关注的是「有没有漏」，不是「有没有多」。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：用 `.exhaustive()` 收尾一个对判别联合的匹配，若团队后来给联合**新增了一个成员**但没改 match，会怎样？",
+    "explanation": "这正是穷尽性检查的核心收益场景。判别联合新增成员后，原本「看似覆盖完整」的 match 因为没处理新成员，`.exhaustive()` 会在编译期报错（提示存在未覆盖的情况），从而强制开发者回到这处补上新分支。这把「漏处理新情况」从隐蔽的运行时 bug 变成了显式的编译错误，是它相对 switch 的最大安全优势。\n\n- 「编译期报错，强制补新分支」正确。\n- 「静默忽略，运行到该成员才出错」正是它要避免的、switch 的老问题。\n- 「自动用第一个分支处理新成员」错误。\n- 「警告但仍可编译通过」错误：是 error 不是 warning。",
+    "tags": ["ts-pattern", "高级", "判别联合", "穷尽性", "维护"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "编译期立即报错，提示存在未覆盖的情况，强制开发者回到这处补上新分支",
+        "isCorrect": true,
+        "description": "正确。这是 exhaustive 相对 switch 的最大价值：把漏处理变成编译错误。"
+      },
+      {
+        "text": "静默通过编译，直到运行时真的遇到新成员才出错",
+        "isCorrect": false,
+        "description": "错误。这恰是 switch 的隐患，而 exhaustive 正是为消除它而存在。"
+      },
+      {
+        "text": "自动把新成员交给第一个 .with 分支处理",
+        "isCorrect": false,
+        "description": "错误。不存在这种自动兜底，未覆盖即报错。"
+      },
+      {
+        "text": "只给出一个可忽略的警告，编译仍能通过",
+        "isCorrect": false,
+        "description": "错误。这是类型错误（error），会阻断类型检查通过。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.exhaustive()` 与 `.run()` 在「类型安全」上的关键差别是什么？",
+    "explanation": "两者都会执行匹配并返回命中 handler 的结果，但 `.exhaustive()` 附带编译期穷尽性检查（漏分支报错），`.run()` 则**不做**穷尽检查——它「不安全」，即使你漏掉了某些联合分支也能通过编译，运行时碰到未覆盖的值才出问题。因此优先用 `.exhaustive()`（或显式兜底的 `.otherwise()`），`.run()` 仅在你明确不需要穷尽保证时才用。\n\n- 「exhaustive 做穷尽检查、run 不做」正确。\n- 「run 更安全」说反了。\n- 「两者都不返回值」错误：都返回结果。\n- 「run 会在编译期检查、exhaustive 在运行时检查」完全颠倒。",
+    "tags": ["ts-pattern", "高级", "run", "exhaustive", "类型安全"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": ".exhaustive() 附带编译期穷尽检查（漏分支报错），.run() 不做穷尽检查、属于不安全执行",
+        "isCorrect": true,
+        "description": "正确。优先 exhaustive/otherwise；run 仅在明确不需要穷尽保证时使用。"
+      },
+      {
+        "text": ".run() 比 .exhaustive() 更安全，会做更严格的检查",
+        "isCorrect": false,
+        "description": "错误。run 反而放弃了穷尽检查，安全性更低。"
+      },
+      {
+        "text": "两者都不返回结果，只用于触发副作用",
+        "isCorrect": false,
+        "description": "错误。两者都返回命中 handler 的结果。"
+      },
+      {
+        "text": ".run() 在编译期检查穷尽性，.exhaustive() 在运行时检查",
+        "isCorrect": false,
+        "description": "错误。恰好相反：exhaustive 才是编译期穷尽检查。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.with(pattern, when, handler)` 这种三参数写法（带守卫）是什么含义？",
+    "explanation": "`.with` 支持在「模式」和「处理函数」之间插入一个守卫函数：`.with(pattern, guard, handler)`。只有当输入既匹配 pattern、又让 guard 返回 true 时，才执行 handler。这把「结构匹配」与「额外运行时条件」组合起来，例如先用模式匹配出某个元组，再用守卫判断时间是否超时。守卫参数能拿到已按 pattern 收窄的值。\n\n- 「先匹配 pattern，再要求守卫返回 true，二者皆满足才命中」正确。\n- 「三个都是模式」错误：中间是守卫函数。\n- 「中间参数是失败回调」错误。\n- 「守卫返回任意真值字符串即可」错误：守卫返回布尔。",
+    "tags": ["ts-pattern", "高级", "with", "守卫", "guard"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在模式与 handler 之间插入守卫函数：输入既匹配 pattern、又让守卫返回 true 时才执行 handler",
+        "isCorrect": true,
+        "description": "正确。三参数 .with(pattern, guard, handler) 把结构匹配与额外运行时条件组合。"
+      },
+      {
+        "text": "三个参数都是模式，需同时匹配",
+        "isCorrect": false,
+        "description": "错误。中间参数是返回布尔的守卫函数，不是模式。"
+      },
+      {
+        "text": "中间参数是该分支匹配失败时的回调",
+        "isCorrect": false,
+        "description": "错误。它是命中前的额外条件守卫，不是失败回调。"
+      },
+      {
+        "text": "守卫函数返回任意非空字符串即视为通过",
+        "isCorrect": false,
+        "description": "错误。守卫必须返回布尔值，true 才通过。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.string.startsWith('http')`、`P.number.between(1, 5)` 这类写法属于什么能力？",
+    "explanation": "`P.string` 与 `P.number` 不只是「任意字符串/数字」的通配，它们还挂着一组「链式断言」：字符串有 `startsWith/endsWith/includes/regex/minLength/maxLength/length`，数字有 `between/gt/gte/lt/lte/int/positive/negative/finite`（`P.bigint` 同款）。它们让你不写 P.when 就能表达常见约束，如 `P.number.between(1, 5)` 匹配 1~5 的数。\n\n- 「P.string/P.number 上的内置链式断言」正确。\n- 「需要额外装插件才有」错误：内置。\n- 「只是文档示例，运行时无效」错误：真实可用。\n- 「等价于正则，仅限字符串」错误：数字也有自己的断言。",
+    "tags": ["ts-pattern", "高级", "链式断言", "P.string", "P.number"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "P.string / P.number 内置的链式断言，用来表达 startsWith、between 等常见约束，免写 P.when",
+        "isCorrect": true,
+        "description": "正确。字符串/数字模式都带一套链式断言方法，是内置能力。"
+      },
+      {
+        "text": "需要额外安装 ts-pattern 插件才能启用的扩展",
+        "isCorrect": false,
+        "description": "错误。这些断言是库内置的，无需插件。"
+      },
+      {
+        "text": "仅存在于文档示例中，实际运行时不生效",
+        "isCorrect": false,
+        "description": "错误。它们是真实可用的运行时模式。"
+      },
+      {
+        "text": "本质等价于正则，只能用于字符串",
+        "isCorrect": false,
+        "description": "错误。数字也有 between/gt/int 等专属断言。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`isMatching` 这个导出与 `match` 的定位差别是什么？",
+    "explanation": "`match` 用于「分支选择并返回结果」，而 `isMatching` 是一个「类型守卫」：它判断某个值是否匹配给定模式，返回布尔，并在 true 分支里收窄类型。两种用法：柯里化 `const isX = isMatching(pattern)`（生成可复用的守卫函数），或两参数 `isMatching(pattern, value)` 直接判断。常用于 if 条件、filter 回调里做类型收窄。\n\n- 「isMatching 是返回布尔的类型守卫，支持柯里化与两参用法」正确。\n- 「isMatching 会返回 handler 结果」错误：那是 match。\n- 「只能用在 match 链内部」错误：它独立使用。\n- 「与 match 完全等价」错误：一个选分支返回值，一个返回布尔做守卫。",
+    "tags": ["ts-pattern", "高级", "isMatching", "类型守卫", "柯里化"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "isMatching 是返回布尔的类型守卫，可柯里化 isMatching(pattern) 或两参 isMatching(pattern, value)，在 true 分支收窄类型",
+        "isCorrect": true,
+        "description": "正确。常用于 if / filter 中做类型收窄，与 match 的「选分支取值」定位不同。"
+      },
+      {
+        "text": "isMatching 会执行匹配并返回命中 handler 的结果",
+        "isCorrect": false,
+        "description": "错误。返回 handler 结果的是 match；isMatching 返回布尔。"
+      },
+      {
+        "text": "isMatching 只能作为 match 链内部的一个步骤使用",
+        "isCorrect": false,
+        "description": "错误。isMatching 是独立的守卫函数，常单独用于条件判断。"
+      },
+      {
+        "text": "isMatching 与 match 完全等价，可任意替换",
+        "isCorrect": false,
+        "description": "错误。一个返回布尔做守卫，一个选分支并返回值，用途不同。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.infer<typeof somePattern>` 这个类型工具的作用是什么？",
+    "explanation": "`P.infer` 把「模式」反推成「能被它匹配的值的类型」。当你用 `as const` 写好一个模式对象后，`type T = P.infer<typeof pattern>` 就能得到该模式对应的数据类型，从而「模式即类型的单一来源」，避免模式与类型声明两处重复维护。例如含 `P.string`、`P.number.between(1,5).optional()` 的模式会被推成相应字段类型（可选字段带 `?`）。\n\n- 「由模式反推出可匹配值的类型」正确。\n- 「由类型生成模式」方向反了。\n- 「推断 handler 返回类型」错误：那是表达式输出推导。\n- 「运行时校验数据」错误：infer 是纯类型层面的工具。",
+    "tags": ["ts-pattern", "高级", "P.infer", "类型工具", "推导"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把一个模式反向推断成「能被它匹配的值」的 TypeScript 类型，实现模式即类型的单一来源",
+        "isCorrect": true,
+        "description": "正确。配合 as const，P.infer<typeof pattern> 由模式得出数据类型，避免重复维护。"
+      },
+      {
+        "text": "由一个 TypeScript 类型自动生成对应的匹配模式",
+        "isCorrect": false,
+        "description": "错误。方向反了，P.infer 是「模式 → 类型」。"
+      },
+      {
+        "text": "推断某个 match 表达式所有 handler 的统一返回类型",
+        "isCorrect": false,
+        "description": "错误。那是 match 表达式自身的输出推导，不是 P.infer。"
+      },
+      {
+        "text": "在运行时按模式校验数据是否合法",
+        "isCorrect": false,
+        "description": "错误。P.infer 是纯类型工具，不参与运行时。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.returnType<T>()` 放在 match 链中的用途是什么？",
+    "explanation": "默认情况下，match 表达式的输出类型由各分支 handler 的返回值「自动联合推导」得出。`.returnType<T>()`（在 `.with` 之前调用）则**显式锁定**整条表达式的返回类型为 `T`，从而要求每个 handler 都必须返回兼容 `T` 的值，否则报错。它适合在你想强约束输出形态、或自动推导不够精确时使用。\n\n- 「显式锁定整条表达式的返回类型，约束所有 handler」正确。\n- 「指定输入类型」错误：输入由 match(value) 决定。\n- 「把返回值转换成 T」错误：它做的是类型约束而非运行时转换。\n- 「只影响最后一个分支」错误：约束所有分支。",
+    "tags": ["ts-pattern", "高级", "returnType", "返回类型", "约束"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "显式锁定整条 match 表达式的返回类型为 T，要求每个 handler 都返回兼容 T 的值",
+        "isCorrect": true,
+        "description": "正确。在 .with 前调用，用于强约束输出形态或修正自动推导不精确的情况。"
+      },
+      {
+        "text": "指定 match 接收的输入值类型",
+        "isCorrect": false,
+        "description": "错误。输入类型由 match(value) 决定，returnType 管的是输出。"
+      },
+      {
+        "text": "在运行时把每个 handler 的返回值强制转换为 T",
+        "isCorrect": false,
+        "description": "错误。它是编译期类型约束，不做运行时转换。"
+      },
+      {
+        "text": "只对最后一个 .with 分支的返回类型生效",
+        "isCorrect": false,
+        "description": "错误。它统一约束所有分支的返回类型。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：处理形如 `{ status: 'loading' } | { status: 'success'; data: T } | { status: 'error'; error: E }` 的判别联合，ts-pattern 的典型优势是什么？",
+    "explanation": "判别联合（discriminated union，靠 `status` 这种公共判别字段区分）是 ts-pattern 的主场：用 `.with({ status: 'success' }, (s) => s.data)` 这样的对象模式，匹配某个判别值后，handler 里该分支被**精确收窄**——例如命中 success 分支就能安全访问 `data`，命中 error 分支才有 `error`，访问不存在的字段会编译报错。再配 `.exhaustive()` 保证三种状态都被处理。\n\n- 「按判别字段匹配并在分支内精确收窄，配 exhaustive 保证全覆盖」正确。\n- 「需要先手动 as 断言类型」错误：收窄是自动的。\n- 「无法处理判别联合」错误：这正是强项。\n- 「所有分支 handler 拿到的都是完整联合类型」错误：会被收窄到具体成员。",
+    "tags": ["ts-pattern", "高级", "判别联合", "收窄", "状态机"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "按判别字段用对象模式匹配后，handler 里的类型被精确收窄到对应成员，再配 .exhaustive() 保证所有状态都被处理",
+        "isCorrect": true,
+        "description": "正确。判别联合是 ts-pattern 的主场：自动收窄 + 穷尽检查。"
+      },
+      {
+        "text": "需要在每个 handler 里手动用 as 断言把类型转成对应成员",
+        "isCorrect": false,
+        "description": "错误。收窄是自动完成的，无需手动断言。"
+      },
+      {
+        "text": "ts-pattern 无法匹配带判别字段的联合，只能用 switch",
+        "isCorrect": false,
+        "description": "错误。判别联合正是它最擅长的场景。"
+      },
+      {
+        "text": "所有分支的 handler 都只能拿到未收窄的完整联合类型",
+        "isCorrect": false,
+        "description": "错误。匹配某判别值后会收窄到具体成员，访问错字段会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：变长元组匹配里，`.with(['print', ...P.array(P.string)], handler)` 表达的是什么结构？",
+    "explanation": "ts-pattern 支持「变长（variadic）元组模式」，可用展开语法把固定元素与 `...P.array(sub)` 组合。`['print', ...P.array(P.string)]` 匹配「第一个元素是字面量 'print'，其后跟随任意多个字符串元素」的数组。类似地可写 `[...P.array(P.string), 'end']`（以 'end' 结尾）或 `['start', ...P.array(P.string), 'end']`（首尾固定、中间任意多个字符串）。\n\n- 「首元素是 'print'，后接任意多个字符串」正确。\n- 「恰好两个元素」错误：尾部是变长。\n- 「元素顺序无关的集合匹配」错误：元组是有序、有位置的。\n- 「只能匹配空数组或单元素数组」错误。",
+    "tags": ["ts-pattern", "高级", "变长元组", "P.array", "展开"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "首元素为字面量 'print'，其后跟随任意多个字符串元素的数组（变长元组）",
+        "isCorrect": true,
+        "description": "正确。... P.array(P.string) 表达「任意多个字符串」的可变尾部。"
+      },
+      {
+        "text": "恰好包含两个元素的数组：'print' 和一个字符串",
+        "isCorrect": false,
+        "description": "错误。展开的 P.array 部分长度可变，不限定为一个。"
+      },
+      {
+        "text": "顺序无关地包含 'print' 和若干字符串的集合",
+        "isCorrect": false,
+        "description": "错误。元组模式是按位置有序匹配，不是无序集合。"
+      },
+      {
+        "text": "只匹配空数组或只含 'print' 一个元素的数组",
+        "isCorrect": false,
+        "description": "错误。'print' 之后可有零个到任意多个字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.exhaustive()` 还能接收一个可选参数，例如 `.exhaustive((value) => '默认值')`，它的作用是什么？",
+    "explanation": "`.exhaustive()` 默认在运行时遇到「未被任何分支命中的值」时抛出 `NonExhaustiveError`（理论上类型完整时不会发生，但运行时数据可能越界）。传入可选的 handler `(unexpectedValue) => TOutput` 后，遇到这种意外值时改为调用它并返回结果，而**不抛异常**——既保留编译期穷尽检查，又能优雅兜底运行时的越界数据。\n\n- 「自定义遇到意外值时的处理，替代默认抛错」正确。\n- 「关闭穷尽检查」错误：穷尽检查仍在。\n- 「指定第一个分支」错误。\n- 「设置匹配超时」错误：与超时无关。",
+    "tags": ["ts-pattern", "高级", "exhaustive", "NonExhaustiveError", "兜底"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自定义「运行时遇到未覆盖值」时的处理函数，替代默认抛出的 NonExhaustiveError，同时仍保留编译期穷尽检查",
+        "isCorrect": true,
+        "description": "正确。可优雅兜底越界数据，又不丢掉类型层面的穷尽保证。"
+      },
+      {
+        "text": "传入它会关闭编译期穷尽性检查",
+        "isCorrect": false,
+        "description": "错误。穷尽检查依然生效，它只改变运行时遇意外值的行为。"
+      },
+      {
+        "text": "用来指定默认优先执行的第一个分支",
+        "isCorrect": false,
+        "description": "错误。它是「全都没命中时」的兜底，不影响分支优先级。"
+      },
+      {
+        "text": "为匹配过程设置超时时间",
+        "isCorrect": false,
+        "description": "错误。与超时毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：当多个 `.with` 分支都能匹配同一个输入时，最终由哪个分支处理？",
+    "explanation": "ts-pattern 的分支按「自上而下、短路」的顺序求值：第一个匹配成功的 `.with` 即被采用，其 handler 执行并返回，后续分支不再尝试。因此应把更具体的模式写在前、更宽泛的（如 `P._` 或 P.when 宽条件）写在后，否则宽模式会「截胡」具体分支。\n\n- 「第一个匹配的分支（自上而下短路）」正确。\n- 「最后一个匹配的分支」错误。\n- 「最具体的分支，与书写顺序无关」错误：顺序决定优先级，不会自动按具体度排序。\n- 「全部命中的分支都会执行」错误：只执行第一个。",
+    "tags": ["ts-pattern", "高级", "顺序", "短路", "优先级"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "按书写顺序自上而下，第一个匹配成功的 .with 被采用，后续分支不再尝试",
+        "isCorrect": true,
+        "description": "正确。所以应把具体模式放前、宽泛模式放后，避免被截胡。"
+      },
+      {
+        "text": "最后一个能匹配的分支胜出",
+        "isCorrect": false,
+        "description": "错误。是第一个匹配的胜出，不是最后一个。"
+      },
+      {
+        "text": "自动选择最具体的分支，与书写顺序无关",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 不按具体度自动排序，顺序即优先级。"
+      },
+      {
+        "text": "所有能匹配的分支都会依次执行一遍",
+        "isCorrect": false,
+        "description": "错误。匹配是短路的，只执行第一个命中的分支。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.array()`（不传子模式）与 `P.array(P.number)` 的差别是什么？",
+    "explanation": "`P.array(subpattern)` 要求每个元素满足子模式；而 `P.array()` 不传子模式时，等价于「匹配任意元素的数组」（元素不设约束）。在变长元组里，`...P.array()` 表示「任意多个任意类型元素」，`...P.array(P.number)` 则限定中间段元素都是数字。\n\n- 「P.array() 匹配任意元素数组，P.array(P.number) 要求元素全为数字」正确。\n- 「P.array() 只匹配空数组」错误。\n- 「两者完全等价」错误。\n- 「P.array() 非法、必须传子模式」错误：可省略。",
+    "tags": ["ts-pattern", "中级", "P.array", "子模式", "变长"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "P.array() 匹配任意元素的数组（元素不设约束），P.array(P.number) 要求每个元素都是数字",
+        "isCorrect": true,
+        "description": "正确。不传子模式即对元素无约束，传了则逐元素校验。"
+      },
+      {
+        "text": "P.array() 只能匹配空数组",
+        "isCorrect": false,
+        "description": "错误。P.array() 匹配任意长度、任意元素的数组。"
+      },
+      {
+        "text": "两者完全等价，子模式可有可无且无影响",
+        "isCorrect": false,
+        "description": "错误。传子模式会对元素施加类型约束，影响匹配与收窄。"
+      },
+      {
+        "text": "P.array() 是非法写法，必须传子模式",
+        "isCorrect": false,
+        "description": "错误。子模式可省略，P.array() 合法。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.record(P.string, P.number)` 这个模式匹配什么？",
+    "explanation": "`P.record(keyPattern, valuePattern)`（也可只传 valuePattern）匹配「键值类型一致的对象/字典」：`P.record(P.string, P.number)` 匹配「所有键为字符串、所有值为数字」的对象（典型如 `{ alice: 1, bob: 2 }` 这种分数表）。它面向「动态键的字典」，区别于「固定字段的结构对象模式」。\n\n- 「键全为字符串、值全为数字的字典对象」正确。\n- 「恰好含 string 和 number 两个字段的对象」错误：record 关注的是「所有键值」的统一类型，不是两个具体字段。\n- 「Map 实例」错误：Map 用 P.map。\n- 「元组 [string, number]」错误：那是数组/元组模式。",
+    "tags": ["ts-pattern", "高级", "P.record", "字典", "动态键"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "匹配「所有键为字符串、所有值为数字」的字典型对象（动态键）",
+        "isCorrect": true,
+        "description": "正确。P.record 面向键值类型统一的字典，区别于固定字段的对象模式。"
+      },
+      {
+        "text": "匹配恰好含一个 string 字段和一个 number 字段的对象",
+        "isCorrect": false,
+        "description": "错误。record 约束的是所有键值的统一类型，不是两个具体命名字段。"
+      },
+      {
+        "text": "匹配键值类型分别为 string/number 的 Map 实例",
+        "isCorrect": false,
+        "description": "错误。匹配 Map 应使用 P.map。"
+      },
+      {
+        "text": "匹配 [string, number] 形式的二元组",
+        "isCorrect": false,
+        "description": "错误。元组用数组模式，record 针对对象字典。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.select('age', P.number.gt(18))` 这种「带子模式的命名 select」做了两件什么事？",
+    "explanation": "`P.select(name, subpattern)` 把「提取」与「条件」合二为一：只有当对应位置的值满足子模式（这里 `P.number.gt(18)`，即大于 18 的数）时才算匹配，匹配后再把这个值以 `age` 为键提取到 handler 的选择对象里。于是你既约束了取值条件，又拿到了被选中的值，避免「先 when 判断、再 select 提取」的重复。\n\n- 「子模式约束取值条件 + 命名提取该值」正确。\n- 「只提取不约束」错误：子模式会施加条件。\n- 「只约束不提取」错误：仍会注入到选择对象。\n- 「age 是要匹配的字面量值」错误：第一个参数是「提取名」而非待匹配值。",
+    "tags": ["ts-pattern", "专家", "P.select", "子模式", "提取"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用子模式约束该处取值的条件（须为 >18 的数），同时把命中的值以名字 age 提取进 handler 的选择对象",
+        "isCorrect": true,
+        "description": "正确。带子模式的命名 select 把「条件 + 提取」合一，省去 when 与 select 的重复。"
+      },
+      {
+        "text": "只提取值、不施加任何取值条件",
+        "isCorrect": false,
+        "description": "错误。子模式 P.number.gt(18) 会作为匹配条件。"
+      },
+      {
+        "text": "只约束条件、并不把值提取给 handler",
+        "isCorrect": false,
+        "description": "错误。命名 select 仍会把值注入选择对象。"
+      },
+      {
+        "text": "第一个参数 'age' 是要匹配的字面量值",
+        "isCorrect": false,
+        "description": "错误。第一个参数是提取用的名字，不是待匹配的字面量。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：在 `P.infer` 推断出的类型里，模式中写成 `P.number.between(1, 5).optional()` 的字段会呈现为什么形态？",
+    "explanation": "字符串/数字模式上的链式断言可以再接 `.optional()`，把该模式标记为「可选」——这是 P.optional 的链式等价写法。用在对象字段里时，`P.infer` 会把该字段推断为「可选属性」，类型形如 `stars?: number`（即 `number | undefined` 且键可缺失）。这让「模式即类型来源」连可选性都能精确表达。\n\n- 「可选属性，类型形如 number | undefined（键可缺失）」正确。\n- 「必填的 number」错误：忽略了 .optional()。\n- 「字面量类型 1|2|3|4|5」错误：between 是运行时范围断言，类型层面仍是 number。\n- 「函数类型」错误。",
+    "tags": ["ts-pattern", "专家", "P.infer", "optional", "链式"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "推断为可选属性，类型形如 number | undefined 且该键可缺失（即 stars?: number）",
+        "isCorrect": true,
+        "description": "正确。.optional() 是 P.optional 的链式写法，P.infer 会把字段标记为可选。"
+      },
+      {
+        "text": "推断为必填的 number 字段",
+        "isCorrect": false,
+        "description": "错误。.optional() 使其成为可选属性，而非必填。"
+      },
+      {
+        "text": "推断为字面量联合类型 1 | 2 | 3 | 4 | 5",
+        "isCorrect": false,
+        "description": "错误。between 是运行时范围断言，类型层面仍是 number。"
+      },
+      {
+        "text": "推断为一个返回 number 的函数类型",
+        "isCorrect": false,
+        "description": "错误。字段类型是 number（可选），与函数无关。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：为什么说 `.with` 链上「具体模式在前、`P._` 兜底在后」是必须遵守的顺序约定？",
+    "explanation": "由于匹配是自上而下短路的，第一个命中的分支即生效。`P._` 匹配任意值，若把它放在前面，它会先于所有具体分支命中，导致后面的具体模式永远走不到——逻辑被「截胡」。因此 `P._`（或宽泛的 P.when）应作为最后的兜底分支。把这点和 exhaustive 结合：一旦写了 `P._` 兜底，穷尽检查就不再强制（因为「任意值」已覆盖），这也是 `.otherwise` 的本质。\n\n- 「P._ 在前会截胡所有具体分支，必须放最后兜底」正确。\n- 「顺序无所谓，引擎会智能排序」错误。\n- 「P._ 必须在最前面声明」错误。\n- 「P._ 不能和具体模式共存」错误。",
+    "tags": ["ts-pattern", "专家", "顺序", "P._", "短路"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "匹配自上而下短路，P._ 匹配任意值；放前面会先命中、截胡后续具体分支，故必须置于末尾作兜底",
+        "isCorrect": true,
+        "description": "正确。P._ 兜底在后，且一旦使用就放宽穷尽检查（这正是 .otherwise 的本质）。"
+      },
+      {
+        "text": "顺序无所谓，ts-pattern 会自动把兜底排到最后",
+        "isCorrect": false,
+        "description": "错误。引擎不会自动重排，顺序由开发者负责。"
+      },
+      {
+        "text": "P._ 必须写在所有 .with 的最前面",
+        "isCorrect": false,
+        "description": "错误。写最前面会截胡，应写在最后。"
+      },
+      {
+        "text": "P._ 与具体模式不能出现在同一条 match 链里",
+        "isCorrect": false,
+        "description": "错误。二者常配合使用，只是 P._ 要放在末尾。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：把 `match(value)` 写成 `match<SomeUnion>(value)`（显式传入类型参数）通常用于什么场景？",
+    "explanation": "多数情况下 match 能从 `value` 自动推断输入类型。但当 `value` 的字面量被 TS 推得过窄（如对象字面量被推成具体值而非声明的联合）、或你想以更宽的联合类型来驱动穷尽检查时，可显式写 `match<Input>(value)` 指定输入类型。这样 `.with` 的模式校验与 `.exhaustive()` 的穷尽性都基于你声明的 `Input` 联合进行。\n\n- 「显式指定输入类型，修正自动推断过窄或驱动按目标联合做穷尽检查」正确。\n- 「指定输出类型」错误：输出用 .returnType。\n- 「开启异步匹配」错误。\n- 「无任何作用」错误。",
+    "tags": ["ts-pattern", "专家", "类型参数", "输入类型", "穷尽性"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "显式指定 match 的输入类型，用于修正自动推断过窄，或让穷尽检查按你声明的联合类型进行",
+        "isCorrect": true,
+        "description": "正确。当字面量被推得过窄时，match<Input>(value) 能让 with/exhaustive 基于目标联合工作。"
+      },
+      {
+        "text": "用于指定整条表达式的输出类型",
+        "isCorrect": false,
+        "description": "错误。输出类型用 .returnType<T>() 约束，不是 match 的类型参数。"
+      },
+      {
+        "text": "用于开启对 Promise 的异步匹配模式",
+        "isCorrect": false,
+        "description": "错误。match 不因类型参数而变成异步。"
+      },
+      {
+        "text": "纯属语法噪音，对类型检查没有任何影响",
+        "isCorrect": false,
+        "description": "错误。它实打实地改变了输入类型推断与穷尽检查的基准。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：在性能/类型检查负担层面，关于 `.exhaustive()` 官方的提醒是什么？",
+    "explanation": "官方明确：穷尽性匹配是「可选的」，并指出它会因为更多的类型检查工作而带来「略长的编译时间」。也就是说，`.exhaustive()` 换来的编译期安全不是零成本——在超大联合、超深嵌套的场景，类型检查耗时会上升。实践建议：默认用 exhaustive 拿安全，若个别极端场景编译显著变慢，可在该处权衡改用 `.otherwise()` 兜底。\n\n- 「穷尽检查可选，会带来略长的编译时间」正确。\n- 「完全零成本」错误：官方反向提示。\n- 「会拖慢运行时」错误：影响的是编译期类型检查，不是运行时。\n- 「必须搭配特殊 tsconfig」错误。",
+    "tags": ["ts-pattern", "专家", "exhaustive", "编译时间", "性能"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "穷尽检查是可选的，且因更多类型检查工作可能带来略长的编译时间（影响编译期而非运行时）",
+        "isCorrect": true,
+        "description": "正确。官方原文提示 exhaustive 非零成本；极端场景可权衡改用 otherwise。"
+      },
+      {
+        "text": "穷尽检查完全零成本，任何规模都不影响编译",
+        "isCorrect": false,
+        "description": "错误。官方恰恰提醒它会增加类型检查负担、拉长编译时间。"
+      },
+      {
+        "text": "它会显著拖慢程序的运行时性能",
+        "isCorrect": false,
+        "description": "错误。增加的是编译期类型检查耗时，与运行时性能无关。"
+      },
+      {
+        "text": "必须配合特殊的 tsconfig 选项才能使用",
+        "isCorrect": false,
+        "description": "错误。exhaustive 在常规 TS 配置下即可使用。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.when` 写成「类型守卫」形式（如 `(x): x is Even => ...`）相比写成普通谓词（`(x) => boolean`），多带来什么好处？",
+    "explanation": "普通谓词只决定「是否命中」，不改变类型；写成类型守卫（返回类型为 `x is T`）后，TS 会在命中分支里把值进一步**收窄为守卫断言的类型**。例如 `P.when((n): n is 5 => n === 5)` 命中后 handler 拿到的就是字面量类型 `5`，而非宽泛的 `number`。这把运行时条件与类型收窄打通，让后续逻辑获得更精确的类型。\n\n- 「命中分支里把类型收窄为守卫断言的类型」正确。\n- 「让谓词可异步」错误。\n- 「省略 handler」错误。\n- 「绕过穷尽检查」错误：与穷尽性无直接关系。",
+    "tags": ["ts-pattern", "专家", "P.when", "类型守卫", "收窄"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "命中分支里会把值进一步收窄为守卫断言的类型（如收窄到字面量 5），获得更精确的类型",
+        "isCorrect": true,
+        "description": "正确。类型守卫把运行时条件与类型收窄打通，普通谓词只判断命中、不收窄。"
+      },
+      {
+        "text": "让谓词函数可以写成异步（返回 Promise）",
+        "isCorrect": false,
+        "description": "错误。守卫仍是同步谓词，类型守卫与异步无关。"
+      },
+      {
+        "text": "可以省略该分支的 handler 函数",
+        "isCorrect": false,
+        "description": "错误。handler 仍需提供。"
+      },
+      {
+        "text": "能让该分支绕过 exhaustive 的穷尽检查",
+        "isCorrect": false,
+        "description": "错误。类型守卫不改变穷尽检查的整体要求。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：把现有大型 `switch (action.type)` reducer 迁移到 ts-pattern，最值得强调的收益是什么？",
+    "explanation": "Redux 风格 reducer 常对 `action.type` 做 switch，痛点是：新增 action 类型时容易漏 case，且 switch 内访问 `action.payload` 往往拿不到精确类型（需手动断言）。改用 `match(action).with({ type: 'add' }, (a) => ...).exhaustive()` 后：① 每个分支自动收窄出该 action 的精确 payload 类型；② 新增 action 类型若没处理，exhaustive 编译报错，杜绝「漏 case」。这是从「易错的运行时」转向「编译期保证」。\n\n- 「分支自动收窄 payload + 漏 case 编译报错」正确。\n- 「运行更快」错误：收益是类型安全。\n- 「自动生成 action 创建函数」错误：超出库职责。\n- 「能去掉 default 分支且无需穷尽」自相矛盾。",
+    "tags": ["ts-pattern", "专家", "reducer", "迁移", "判别联合"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "每个分支按 action.type 自动收窄出精确 payload 类型，且新增 action 类型若漏处理会编译报错",
+        "isCorrect": true,
+        "description": "正确。把 switch reducer 的「漏 case + 手动断言」转为编译期保证与自动收窄。"
+      },
+      {
+        "text": "reducer 的运行时执行速度会明显变快",
+        "isCorrect": false,
+        "description": "错误。收益在类型安全与可维护性，而非运行性能。"
+      },
+      {
+        "text": "会自动为每种 action 生成对应的 action 创建函数",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 不生成 action creator，那不属于它的职责。"
+      },
+      {
+        "text": "既能去掉兜底分支，又完全不需要考虑穷尽性",
+        "isCorrect": false,
+        "description": "错误。去掉兜底正意味着要靠 exhaustive 保证穷尽，二者不矛盾对立。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：关于 ts-pattern 对运行时与打包体积的影响，正确的描述是哪一项？",
+    "explanation": "ts-pattern 是一个轻量运行时库（官方称约 ~2kB 量级、且标注 `sideEffects: false` 利于 tree-shaking）。它的「类型魔法」主要发生在编译期类型层面，运行时只是按模式做相应的结构/条件比较——并不会把你的代码体积撑大到夸张程度，也不需要任何编译插件或 babel 宏，开箱即用于标准 TypeScript 工程。\n\n- 「轻量运行时库、约 ~2kB、无需编译插件」正确。\n- 「纯类型库、零运行时代码」错误：它有真实的运行时匹配逻辑。\n- 「必须配 babel 宏/编译器插件」错误。\n- 「会显著增大产物体积」错误：体积很小且可 tree-shake。",
+    "tags": ["ts-pattern", "专家", "体积", "运行时", "tree-shaking"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是轻量运行时库（约 ~2kB 量级、sideEffects:false 利于 tree-shaking），无需任何编译插件即可使用",
+        "isCorrect": true,
+        "description": "正确。运行时做结构/条件比较，类型魔法在编译期，体积小、开箱即用。"
+      },
+      {
+        "text": "它是纯类型库，编译后零运行时代码",
+        "isCorrect": false,
+        "description": "错误。match/with 有真实的运行时匹配逻辑，并非纯类型。"
+      },
+      {
+        "text": "必须配合 babel 宏或专用编译器插件才能工作",
+        "isCorrect": false,
+        "description": "错误。它是普通运行时库，标准 TS/JS 工程直接可用。"
+      },
+      {
+        "text": "因为类型推导复杂，会显著增大最终打包产物体积",
+        "isCorrect": false,
+        "description": "错误。运行时部分很小且可被 tree-shaking，类型推导不进产物。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：用对象模式 `{ status: 'success' }` 匹配判别联合后，在该分支 handler 里访问联合**其它成员**才有的字段（如 error 成员的 `error`），会发生什么？",
+    "explanation": "对象模式匹配判别字段后，handler 参数被收窄到对应成员（这里是 `{ status: 'success'; data: ... }`）。该成员上并不存在 `error` 字段，因此在 handler 里访问 `s.error` 会触发 TypeScript 编译错误「类型上不存在属性 error」。这正是类型收窄带来的安全：你只能访问当前分支确实拥有的字段。\n\n- 「编译报错：该成员上不存在此属性」正确。\n- 「返回 undefined，不报错」错误：是类型错误而非静默 undefined。\n- 「自动放宽为完整联合类型」错误：恰恰是被收窄了。\n- 「运行时才报错」错误：编译期就拦下。",
+    "tags": ["ts-pattern", "专家", "收窄", "判别联合", "类型错误"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "编译报错：handler 参数已被收窄到 success 成员，其上不存在 error 属性",
+        "isCorrect": true,
+        "description": "正确。类型收窄保证你只能访问当前分支真正拥有的字段，访问错字段编译期即报错。"
+      },
+      {
+        "text": "正常通过，运行时该字段为 undefined",
+        "isCorrect": false,
+        "description": "错误。这是编译期类型错误，不是静默返回 undefined。"
+      },
+      {
+        "text": "handler 参数会自动放宽回完整联合类型，可随意访问任意成员字段",
+        "isCorrect": false,
+        "description": "错误。匹配判别值后参数被收窄，而非放宽。"
+      },
+      {
+        "text": "编译通过，仅在运行到该行时抛出异常",
+        "isCorrect": false,
+        "description": "错误。TypeScript 在编译期就会标红，不会放行到运行时。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.nullish` 与单独写字面量 `null` 作为模式，覆盖范围有何不同？",
+    "explanation": "`P.nullish` 匹配 `null` **或** `undefined`（即 `null | undefined`）；而把字面量 `null` 当模式只匹配 `null` 一种值，不含 `undefined`。当你想一并处理「空值」的两种形态时用 `P.nullish` 更省事；只想精确区分其中一种时才用字面量。与之相对，`P.nonNullable` 匹配「除 null/undefined 外」的任意值。\n\n- 「P.nullish 覆盖 null 和 undefined，字面量 null 只覆盖 null」正确。\n- 「两者等价」错误。\n- 「P.nullish 只匹配 undefined」错误。\n- 「字面量 null 同时匹配 undefined」错误。",
+    "tags": ["ts-pattern", "中级", "P.nullish", "null", "空值"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "P.nullish 匹配 null 或 undefined 两者；字面量 null 只匹配 null 一种值",
+        "isCorrect": true,
+        "description": "正确。要统一处理两种空值用 P.nullish；只认其中一种才用字面量。"
+      },
+      {
+        "text": "两者完全等价，都匹配 null 和 undefined",
+        "isCorrect": false,
+        "description": "错误。字面量 null 不匹配 undefined。"
+      },
+      {
+        "text": "P.nullish 只匹配 undefined，不匹配 null",
+        "isCorrect": false,
+        "description": "错误。P.nullish 同时覆盖 null 与 undefined。"
+      },
+      {
+        "text": "字面量 null 会同时匹配 null 和 undefined",
+        "isCorrect": false,
+        "description": "错误。字面量 null 只匹配 null。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`.with([{ status: 'loading' }, { type: 'cancel' }], handler)` 这种「数组里放多个对象模式」匹配的是什么？",
+    "explanation": "当 match 的输入本身是一个元组（如 `[state, event]` 这种「状态+事件」组合）时，用数组模式 `[patternA, patternB]` 可同时约束元组的各个位置：`[{ status: 'loading' }, { type: 'cancel' }]` 匹配「第一个元素 status 为 loading、第二个元素 type 为 cancel」的元组。这是状态机里「在某状态下收到某事件」的经典写法，配合 select/guard 极为顺手。\n\n- 「按位置匹配元组：首元素 loading 且次元素 cancel」正确。\n- 「三选一的多模式」错误：数组在这里是单个元组模式，不是多模式列举。\n- 「匹配含这两个对象的任意数组」错误：是定长按位置匹配。\n- 「匹配单个同时满足两者的对象」错误。",
+    "tags": ["ts-pattern", "专家", "元组", "状态机", "对象模式"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按位置匹配一个二元元组：第一个元素 status 为 loading、第二个元素 type 为 cancel（状态机「某状态下某事件」写法）",
+        "isCorrect": true,
+        "description": "正确。数组模式按位置约束元组各元素，是 [state, event] 组合匹配的经典形式。"
+      },
+      {
+        "text": "三选一的多模式：命中两个对象之一即可",
+        "isCorrect": false,
+        "description": "错误。多模式是把多个模式作为 .with 的并列前置参数；这里数组是单个元组模式。"
+      },
+      {
+        "text": "匹配任意一个包含这两个对象作为元素的数组",
+        "isCorrect": false,
+        "description": "错误。它是定长、按位置的元组匹配，而非「包含」语义。"
+      },
+      {
+        "text": "匹配单个同时具备 status 和 type 两字段的对象",
+        "isCorrect": false,
+        "description": "错误。最外层是数组（元组），匹配的是两个元素而非一个对象。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：下列关于「ts-pattern 与 Zod 各自职责」的说法，哪个最准确？",
+    "explanation": "两者都涉及「数据形态」，但层次不同：Zod 是**运行时**的 schema 校验/解析库，负责把未知输入（如 API 返回）验证并解析成可信类型；ts-pattern 是**控制流**工具，对**已知类型**的值做分支选择与类型收窄。常见组合是「先用 Zod 解析得到可信的判别联合，再用 ts-pattern match 它做穷尽分发」——前者把关入口，后者驱动逻辑。\n\n- 「Zod 运行时校验/解析入口，ts-pattern 对已知类型做分支控制流」正确。\n- 「两者完全重叠、二选一」错误：职责互补。\n- 「ts-pattern 也能在运行时校验未知数据的 schema」错误：它不做 schema 解析。\n- 「Zod 负责模式匹配」错误。",
+    "tags": ["ts-pattern", "专家", "Zod", "职责", "组合"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Zod 在运行时校验/解析未知输入为可信类型；ts-pattern 对已知类型的值做分支选择与收窄，二者常配合使用",
+        "isCorrect": true,
+        "description": "正确。典型组合：Zod 把关入口得到判别联合，ts-pattern match 它做穷尽分发。"
+      },
+      {
+        "text": "两者职责完全重叠，项目里二选一即可",
+        "isCorrect": false,
+        "description": "错误。一个管运行时入口校验，一个管控制流分发，互补而非替代。"
+      },
+      {
+        "text": "ts-pattern 也能像 Zod 那样在运行时校验未知数据的 schema",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 不做 schema 解析，处理的是已知类型的值。"
+      },
+      {
+        "text": "Zod 负责模式匹配，ts-pattern 负责数据校验",
+        "isCorrect": false,
+        "description": "错误。说反了：Zod 校验，ts-pattern 匹配。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：要表达「既是某类实例、又满足某结构」的复合条件（如「是 A 的实例且 foo === 'bar'」），应使用哪个组合模式？",
+    "explanation": "`P.intersection(...subpatterns)` 是「交集模式」：只有同时满足所有子模式才匹配。`P.intersection(P.instanceOf(A), { foo: 'bar' })` 匹配「既是 A 的实例、又有 foo 字段等于 'bar'」的值，命中后类型是两者的交集。它与 `P.union`（任一满足）相对，常用于「类身份 + 额外结构约束」这类复合判定。\n\n- 「P.intersection（同时满足所有子模式）」正确。\n- 「P.union」错误：那是「任一满足」。\n- 「P.and」错误：没有 P.and 这个 API。\n- 「P.not」错误：那是否定。",
+    "tags": ["ts-pattern", "专家", "P.intersection", "组合模式", "与"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "P.intersection(P.instanceOf(A), { foo: 'bar' })",
+        "isCorrect": true,
+        "description": "正确。P.intersection 是「与」语义，需同时满足全部子模式，类型取交集。"
+      },
+      {
+        "text": "P.union(P.instanceOf(A), { foo: 'bar' })",
+        "isCorrect": false,
+        "description": "错误。P.union 是「任一满足」，无法表达「同时满足」。"
+      },
+      {
+        "text": "P.and(P.instanceOf(A), { foo: 'bar' })",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 没有 P.and，交集用 P.intersection。"
+      },
+      {
+        "text": "P.not(P.instanceOf(A))",
+        "isCorrect": false,
+        "description": "错误。P.not 是否定，与「同时满足」无关。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.string.minLength(3)` 与 `P.string.length(3)` 的差别是什么？",
+    "explanation": "二者都是字符串模式上的链式断言，但语义不同：`P.string.minLength(3)` 匹配「长度 ≥ 3」的字符串；`P.string.length(3)` 匹配「长度恰好等于 3」的字符串。配套的还有 `maxLength(n)`（长度 ≤ n）。它们让长度约束无需手写 P.when 即可表达。\n\n- 「minLength 是 ≥3，length 是 ==3」正确。\n- 「两者都表示恰好等于 3」错误。\n- 「minLength 是 >3（严格大于）」错误：是 ≥。\n- 「length 表示 ≤3」错误：那是 maxLength。",
+    "tags": ["ts-pattern", "高级", "P.string", "minLength", "length"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "minLength(3) 匹配长度 ≥ 3 的字符串；length(3) 匹配长度恰好等于 3 的字符串",
+        "isCorrect": true,
+        "description": "正确。另有 maxLength(n) 表示 ≤ n，三者覆盖常见长度约束。"
+      },
+      {
+        "text": "两者都表示长度恰好等于 3",
+        "isCorrect": false,
+        "description": "错误。minLength 是「至少」，不是「恰好」。"
+      },
+      {
+        "text": "minLength(3) 表示长度严格大于 3",
+        "isCorrect": false,
+        "description": "错误。minLength 是 ≥（包含等于），不是严格大于。"
+      },
+      {
+        "text": "length(3) 表示长度不超过 3",
+        "isCorrect": false,
+        "description": "错误。「不超过」是 maxLength；length 是「恰好等于」。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：`P.number.int()`、`P.number.positive()` 这类断言是否会影响 `P.infer` 推出的字段类型？",
+    "explanation": "这些是「运行时数值约束」断言（整数、正数、有限数等），用于决定值在运行时是否命中。但 TypeScript 的类型系统并没有「正整数」这种内建类型，因此它们在 `P.infer` 层面通常仍把字段推断为 `number`——约束体现在运行时匹配，而非把类型细化成更窄的子类型。理解这一点能避免误以为 `P.number.positive()` 会让类型变成某种「正数类型」。\n\n- 「运行时约束命中，类型层面仍是 number」正确。\n- 「会把类型变成正整数等更窄类型」错误：TS 无此类型。\n- 「完全不影响运行时匹配」错误：运行时是会校验的。\n- 「会导致 infer 报错」错误。",
+    "tags": ["ts-pattern", "专家", "P.number", "断言", "P.infer"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它们在运行时决定是否命中，但类型层面通常仍把字段推为 number（TS 没有「正整数」这类内建类型）",
+        "isCorrect": true,
+        "description": "正确。约束体现在运行时匹配，P.infer 一般仍得到 number。"
+      },
+      {
+        "text": "会把 P.infer 推出的字段类型细化成「正整数」之类的更窄类型",
+        "isCorrect": false,
+        "description": "错误。TypeScript 没有正整数类型，无法这样细化。"
+      },
+      {
+        "text": "它们只是类型标注，对运行时匹配没有任何作用",
+        "isCorrect": false,
+        "description": "错误。这些断言在运行时会真实校验数值是否满足条件。"
+      },
+      {
+        "text": "在模式里使用它们会导致 P.infer 报类型错误",
+        "isCorrect": false,
+        "description": "错误。它们可正常用于模式与 P.infer，不会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：把 `match(value)` 的返回值赋给变量时，TypeScript 推断出的变量类型由什么决定？",
+    "explanation": "整条 match 表达式的输出类型，是所有被保留分支 handler 返回类型的「联合/统一」结果。例如各分支分别返回 `string` 和 `number`，未显式约束时变量被推为 `string | number`。若希望强制为某个统一类型，可用 `.returnType<T>()`。这与「返回布尔」「返回输入本身」都无关——决定它的是各 handler 实际返回了什么。\n\n- 「各分支 handler 返回类型的统一/联合」正确。\n- 「永远是输入值的类型」错误。\n- 「永远是 unknown」错误。\n- 「只取第一个分支的返回类型」错误：是所有分支的统一。",
+    "tags": ["ts-pattern", "高级", "返回类型", "推导", "returnType"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "由所有保留分支的 handler 返回类型统一/联合而成（未约束时可能是它们的联合类型）",
+        "isCorrect": true,
+        "description": "正确。如分别返回 string 与 number，则推为 string | number；可用 returnType 强制统一。"
+      },
+      {
+        "text": "永远等于 match 传入的输入值的类型",
+        "isCorrect": false,
+        "description": "错误。输出由 handler 返回值决定，与输入类型无必然关系。"
+      },
+      {
+        "text": "永远被推断为 unknown，需手动断言",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 会从 handler 返回值精确推导，不会退化为 unknown。"
+      },
+      {
+        "text": "只取第一个 .with 分支 handler 的返回类型",
+        "isCorrect": false,
+        "description": "错误。是所有分支返回类型的统一结果，不止第一个。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：在 `.with` 之前先调用 `.exhaustive()`，或在 `.with` 链中途调用 `.exhaustive()`——关于「exhaustive 的位置」正确的认识是什么？",
+    "explanation": "`.exhaustive()` 是「收尾并执行」的方法，语义上应放在所有 `.with` 分支声明完毕之后，作为链的终点（与 `.otherwise()`/`.run()` 同属收尾）。它一旦被调用就结束链式构建并求值，因此不能、也无需在分支之前或中途调用。正确心智：先 `match` 开头，中间堆 `.with`，最后 `.exhaustive()` 封口。\n\n- 「exhaustive 是收尾方法，放在所有 with 之后」正确。\n- 「可放最前面预声明穷尽」错误。\n- 「每个 with 后都要跟一次 exhaustive」错误。\n- 「exhaustive 与 with 顺序随意」错误：它必须是终点。",
+    "tags": ["ts-pattern", "中级", "exhaustive", "链式", "结构"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "exhaustive 是「收尾并执行」的方法，应放在所有 .with 分支之后作为链的终点",
+        "isCorrect": true,
+        "description": "正确。match 开头 → 中间 .with → 最后 .exhaustive() 封口求值。"
+      },
+      {
+        "text": "应放在 .with 之前，用来预先声明本次匹配要穷尽",
+        "isCorrect": false,
+        "description": "错误。exhaustive 调用即结束链并求值，不能放在分支之前。"
+      },
+      {
+        "text": "每个 .with 后面都要紧跟一次 .exhaustive()",
+        "isCorrect": false,
+        "description": "错误。整条链只在末尾收尾一次。"
+      },
+      {
+        "text": "exhaustive 与 .with 的先后顺序随意，引擎会自动归位",
+        "isCorrect": false,
+        "description": "错误。exhaustive 必须是链的终点，顺序不可随意。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：用 `match(someValue)` 但**完全不写任何 `.with` 分支**、直接 `.exhaustive()`，在输入是非 `never` 类型时会怎样？",
+    "explanation": "`.exhaustive()` 要求覆盖输入类型的所有可能。若一个 `.with` 都没写，而输入还有未被覆盖的可能值（非 `never`），穷尽检查就无法满足，TypeScript 会编译报错提示存在未处理的情况。只有当输入类型被前面分支收窄到 `never`（已无剩余可能）时，`.exhaustive()` 才合法通过。这也解释了「为什么 exhaustive 强制你写全分支」。\n\n- 「编译报错：仍有未覆盖的可能值」正确。\n- 「正常返回 undefined」错误。\n- 「正常通过，因为没分支就没漏」错误：恰恰相反。\n- 「运行时才报错」错误：编译期就拦。",
+    "tags": ["ts-pattern", "专家", "exhaustive", "never", "穷尽性"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "编译报错：输入仍有未覆盖的可能值，穷尽检查不通过（除非输入已被收窄到 never）",
+        "isCorrect": true,
+        "description": "正确。exhaustive 要求覆盖全部可能；没有分支又非 never，自然报错。"
+      },
+      {
+        "text": "正常通过并在运行时返回 undefined",
+        "isCorrect": false,
+        "description": "错误。这是编译期穷尽性错误，不会静默返回 undefined。"
+      },
+      {
+        "text": "正常通过——没有分支就不存在「漏分支」的问题",
+        "isCorrect": false,
+        "description": "错误。一个分支都没有恰恰意味着所有可能都没被覆盖。"
+      },
+      {
+        "text": "编译通过，运行时遇到第一个值才报错",
+        "isCorrect": false,
+        "description": "错误。TypeScript 在编译期就会因穷尽性不足报错。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：关于 `.when(predicate, handler)`（match 链上的方法）与 `P.when(predicate)`（模式），下列说法正确的是哪一项？",
+    "explanation": "二者都基于谓词，但用法层级不同：`P.when(predicate)` 是一个**模式**，嵌在 `.with(...)` 内部的某个位置参与结构匹配（如 `{ score: P.when(n => n > 5) }`）；而 `.when(predicate, handler)` 是 match **链上的顶层方法**，对整个输入施加谓词作为一个独立分支。需要对「整个值」加条件时用链上 `.when`，要对「结构中某处」加条件时用 `P.when`。\n\n- 「P.when 是嵌在模式里的、.when 是链上独立分支方法」正确。\n- 「两者完全等价可互换」错误：层级不同。\n- 「P.when 是方法、.when 是模式」说反了。\n- 「.when 不存在」错误：它是合法的链方法。",
+    "tags": ["ts-pattern", "专家", "P.when", ".when", "守卫"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "P.when 是嵌进 .with 模式内部某处的模式；.when 是 match 链上的顶层方法，对整个输入加谓词作为独立分支",
+        "isCorrect": true,
+        "description": "正确。对结构中某处加条件用 P.when，对整个值加条件用链上 .when。"
+      },
+      {
+        "text": "两者完全等价，可以随意互换书写位置",
+        "isCorrect": false,
+        "description": "错误。一个在模式内部、一个在链顶层，作用范围不同。"
+      },
+      {
+        "text": "P.when 是链上的方法，.when 是嵌进模式里的模式",
+        "isCorrect": false,
+        "description": "错误。说反了：P.when 是模式，.when 是链方法。"
+      },
+      {
+        "text": "ts-pattern 里只有 P.when，不存在链上的 .when 方法",
+        "isCorrect": false,
+        "description": "错误。.when(predicate, handler) 是合法的 match 链方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ts-pattern：综合来看，下列哪一项最完整地概括了选用 ts-pattern 的核心理由？",
+    "explanation": "ts-pattern 的价值可归纳为三层：① 表达力——用 `match().with().exhaustive()` 把复杂的结构/范围/守卫条件压成一条可读表达式，替代深层 if/else 与 switch；② 类型安全——每个分支自动收窄出精确类型，访问错字段编译报错；③ 可维护性——`.exhaustive()` 的编译期穷尽检查让「新增联合成员漏处理」无所遁形。三者共同把「易错的运行时分支」升级为「编译期可验证的逻辑」。\n\n- 「表达力 + 类型收窄 + 编译期穷尽检查」正确。\n- 「主要为运行时性能」错误。\n- 「主要为减少依赖体积」错误。\n- 「主要为替代 Zod 做数据校验」错误：职责不同。",
+    "tags": ["ts-pattern", "专家", "总结", "类型安全", "穷尽性"],
+    "categories": [
+      ["技术方向", "ts-pattern"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用一条表达式提升条件逻辑的表达力，分支内自动收窄精确类型，并用 exhaustive 做编译期穷尽检查",
+        "isCorrect": true,
+        "description": "正确。表达力、类型收窄、穷尽检查三者共同把运行时分支升级为编译期可验证逻辑。"
+      },
+      {
+        "text": "主要为了提升条件分支的运行时执行性能",
+        "isCorrect": false,
+        "description": "错误。ts-pattern 的卖点是类型安全与可读性，而非运行性能。"
+      },
+      {
+        "text": "主要为了减少项目依赖体积",
+        "isCorrect": false,
+        "description": "错误。它确实轻量，但减体积不是选用它的核心理由。"
+      },
+      {
+        "text": "主要为了替代 Zod 完成运行时数据校验",
+        "isCorrect": false,
+        "description": "错误。数据校验是 Zod 的职责，与 ts-pattern 的控制流定位不同。"
+      }
+    ]
+  }
+]

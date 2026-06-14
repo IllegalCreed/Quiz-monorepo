@@ -1,0 +1,2296 @@
+[
+  {
+    "stem": "RxJS：RxJS 的核心抽象 Observable，最准确的定位是什么？",
+    "explanation": "RxJS 官方把 Observable 定义为「a lazy Push collection of multiple values」——惰性的、可推送多个值的集合。它统一表达了同步/异步、单值/多值、有限/无限的数据流：可以理解为「能随时间推送 0 到 N 个值的函数」。\n\n- 「随时间推送多个值的惰性集合」正确。\n- 「只能异步发一个值」错误：那更像 Promise；Observable 可同步、可多值。\n- 「DOM 事件的别名」错误：fromEvent 只是把事件包成 Observable，Observable 本身是更通用的抽象。\n- 「数组的子类」错误：Observable 不是数组，是基于推送（push）的流。",
+    "tags": ["rxjs", "入门", "Observable", "核心概念", "响应式"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个惰性的、可随时间推送 0 到 N 个值的集合（Push 集合）",
+        "isCorrect": true,
+        "description": "正确。官方定义为 lazy Push collection of multiple values，统一表达同步/异步、单值/多值的数据流。"
+      },
+      {
+        "text": "只能异步地发出且仅发出一个值的容器",
+        "isCorrect": false,
+        "description": "错误。那是 Promise 的语义；Observable 可同步、可推送多个值。"
+      },
+      {
+        "text": "DOM 事件监听器的语法别名",
+        "isCorrect": false,
+        "description": "错误。fromEvent 能把 DOM 事件包成 Observable，但 Observable 是更通用的流抽象。"
+      },
+      {
+        "text": "JavaScript 数组的一个子类",
+        "isCorrect": false,
+        "description": "错误。Observable 基于推送模型，与数组（基于拉取的集合）不是继承关系。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：用「拉取 vs 推送」（Pull vs Push）来归类，Observable 属于哪一类？",
+    "explanation": "RxJS 用 Pull/Push 二分法解释各类数据生产者：函数、Iterator、Generator 是 Pull（消费者主动取值，生产者被动）；Promise、Observable 是 Push（生产者主动推值，消费者被动接收）。Observable 是「多值的 Push」，Promise 是「单值的 Push」。\n\n- 「Push，生产者主动推、消费者被动收」正确。\n- 「Pull，消费者主动取」错误：那是函数/Iterator。\n- 「既不是 Pull 也不是 Push」错误。\n- 「Push 但只能推一个值」错误：那是 Promise，Observable 可推多个值。",
+    "tags": ["rxjs", "入门", "Observable", "Pull-Push", "核心概念"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Push（推）：由生产者决定何时推送值，消费者被动接收",
+        "isCorrect": true,
+        "description": "正确。Observable 与 Promise 同属 Push 模型，区别在 Observable 可推多个值。"
+      },
+      {
+        "text": "Pull（拉）：由消费者主动决定何时取值",
+        "isCorrect": false,
+        "description": "错误。Pull 是函数、Iterator、Generator 的模型，生产者被动。"
+      },
+      {
+        "text": "既不属于 Pull 也不属于 Push",
+        "isCorrect": false,
+        "description": "错误。RxJS 明确把 Observable 归为 Push 系统。"
+      },
+      {
+        "text": "Push，但与 Promise 一样只能推送单个值",
+        "isCorrect": false,
+        "description": "错误。单值 Push 是 Promise；Observable 能推送 0 到 N 个值。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Observer（观察者）是一个对象，它最多包含哪三个回调方法来接收 Observable 的通知？",
+    "explanation": "Observer 是接收通知的回调集合，三个方法对应三类通知：next(value)（接收每一个值，可调用 0 到 N 次）、error(err)（出错，终止）、complete()（完成，终止）。error 与 complete 互斥且只会发生一次，之后不再有任何通知。\n\n- 「next / error / complete」正确。\n- 「then / catch / finally」错误：那是 Promise 的方法。\n- 「subscribe / unsubscribe / dispose」错误：那是订阅相关方法，不是 Observer 回调。\n- 「on / off / emit」错误：那是 EventEmitter 风格。",
+    "tags": ["rxjs", "入门", "Observer", "next-error-complete", "核心概念"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "next、error、complete",
+        "isCorrect": true,
+        "description": "正确。next 接收值（可多次），error/complete 终止流且互斥、各至多一次。"
+      },
+      {
+        "text": "then、catch、finally",
+        "isCorrect": false,
+        "description": "错误。那是 Promise 的链式方法，不是 Observer 的回调。"
+      },
+      {
+        "text": "subscribe、unsubscribe、dispose",
+        "isCorrect": false,
+        "description": "错误。这些与订阅生命周期相关，不是 Observer 用于接收通知的回调。"
+      },
+      {
+        "text": "on、off、emit",
+        "isCorrect": false,
+        "description": "错误。那是 Node EventEmitter 风格的 API，与 RxJS Observer 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：下面这段代码会打印什么顺序？\n```ts\nimport { Observable } from 'rxjs';\nconst obs = new Observable(s => { s.next(1); s.next(2); s.complete(); });\nconsole.log('A');\nobs.subscribe(v => console.log(v));\nconsole.log('B');\n```",
+    "explanation": "这个 Observable 的生产函数是**同步**的：订阅时立刻同步执行 s.next(1)、s.next(2)、s.complete()。所以 subscribe 调用会同步打印 1、2，再返回继续执行。顺序为 A → 1 → 2 → B。这说明 Observable 不一定异步——同步发值时它就是同步的。\n\n- 「A 1 2 B」正确。\n- 「A B 1 2」错误：那需要值是异步推送（如放进 setTimeout）。\n- 「1 2 A B」错误：subscribe 之前不会执行生产函数（惰性）。\n- 「A 1 2」漏了 B，错误。",
+    "tags": ["rxjs", "初级", "Observable", "同步执行", "惰性"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "A 1 2 B",
+        "isCorrect": true,
+        "description": "正确。生产函数同步发值，subscribe 同步执行 next，故 1、2 夹在 A 和 B 之间。"
+      },
+      {
+        "text": "A B 1 2",
+        "isCorrect": false,
+        "description": "错误。只有当值通过 setTimeout 等异步推送时，1、2 才会排到 B 之后。"
+      },
+      {
+        "text": "1 2 A B",
+        "isCorrect": false,
+        "description": "错误。Observable 惰性，订阅前生产函数不执行，1、2 不会先于 A。"
+      },
+      {
+        "text": "A 1 2",
+        "isCorrect": false,
+        "description": "错误。subscribe 同步返回后会继续执行 console.log('B')，B 一定会打印。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Observable 被称为「惰性」（lazy），这句话的准确含义是什么？",
+    "explanation": "惰性指：定义一个 Observable 时其生产函数（subscriber 回调）**不会**执行；只有当你调用 .subscribe() 时，生产函数才会为这一次订阅运行一遍。这与 Promise 不同——Promise 在创建时 executor 就立即执行（eager/急切）。惰性也意味着每次 subscribe 都重新执行一次生产逻辑（冷 Observable）。\n\n- 「订阅时才执行生产函数」正确。\n- 「创建时就执行」错误：那是 Promise 的急切行为。\n- 「只能延迟 1 帧执行」错误。\n- 「执行结果会被缓存复用」错误：冷 Observable 每次订阅都重跑，不缓存。",
+    "tags": ["rxjs", "初级", "Observable", "惰性", "vs-Promise"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "定义时不执行，只有调用 subscribe() 时生产函数才运行",
+        "isCorrect": true,
+        "description": "正确。这是惰性的核心，与 Promise 创建即执行（急切）形成对比。"
+      },
+      {
+        "text": "创建 Observable 实例时生产函数就立即执行",
+        "isCorrect": false,
+        "description": "错误。那是 Promise executor 的急切行为；Observable 要到订阅才执行。"
+      },
+      {
+        "text": "总是延迟一个事件循环（一帧）后才执行",
+        "isCorrect": false,
+        "description": "错误。惰性指「订阅才执行」，与是否异步、延迟多久无关。"
+      },
+      {
+        "text": "首次执行后缓存结果，后续订阅直接复用缓存",
+        "isCorrect": false,
+        "description": "错误。冷 Observable 每次订阅都重新执行生产函数，不缓存（缓存需 shareReplay 等）。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：调用 observable.subscribe(...) 的返回值是什么？它最重要的用途是？",
+    "explanation": "subscribe() 返回一个 **Subscription** 对象，代表这次正在进行的执行（一次性资源）。它最重要的方法是 unsubscribe()，用于**取消**这次订阅、停止后续发值并释放资源（如清除定时器、移除事件监听）。这是 RxJS 防内存泄漏的关键。\n\n- 「Subscription，用 unsubscribe() 取消」正确。\n- 「Promise，可 await」错误：subscribe 不返回 Promise。\n- 「Observable 本身，可链式」错误。\n- 「最后一个值」错误：subscribe 返回的是订阅句柄，不是值。",
+    "tags": ["rxjs", "初级", "Subscription", "unsubscribe", "取消订阅"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一个 Subscription 对象，可调用其 unsubscribe() 取消订阅、释放资源",
+        "isCorrect": true,
+        "description": "正确。Subscription 代表本次执行，unsubscribe() 是取消订阅、防泄漏的核心。"
+      },
+      {
+        "text": "一个 Promise，可以用 await 等待其完成",
+        "isCorrect": false,
+        "description": "错误。subscribe 返回 Subscription 而非 Promise；转 Promise 要用 firstValueFrom/lastValueFrom。"
+      },
+      {
+        "text": "Observable 自身，便于继续链式调用 .pipe()",
+        "isCorrect": false,
+        "description": "错误。链式变换用 pipe()，subscribe 返回的是 Subscription。"
+      },
+      {
+        "text": "流中发出的最后一个值",
+        "isCorrect": false,
+        "description": "错误。subscribe 不返回值，值通过 next 回调异步/同步送达。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：从 RxJS 7 起，把多个操作符组合到一个 Observable 上的官方推荐写法是？",
+    "explanation": "RxJS 5.5+ 引入、7.x 全面推广的是 **pipeable operators（管道操作符）**：操作符是纯函数，通过 source$.pipe(op1(), op2(), ...) 组合。它对 tree-shaking 友好、可读性好。早期的「patch/原型链操作符」（如 obs.map(...).filter(...)）已被废弃。\n\n- 「source.pipe(map(...), filter(...))」正确。\n- 「obs.map(...).filter(...)」错误：原型链操作符已废弃。\n- 「Rx.compose(...)」不存在。\n- 「在 subscribe 里手写循环」错误：违背声明式组合理念。",
+    "tags": ["rxjs", "初级", "pipe", "操作符", "pipeable"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "source$.pipe(map(...), filter(...)) —— 用 pipe() 串联 pipeable 操作符",
+        "isCorrect": true,
+        "description": "正确。pipeable 操作符是纯函数，pipe() 组合，tree-shaking 友好，是 7.x 标准写法。"
+      },
+      {
+        "text": "obs.map(...).filter(...) —— 直接在 Observable 原型上链式调用",
+        "isCorrect": false,
+        "description": "错误。原型链（patch）操作符已废弃，7.x 推荐 pipe() + 独立导入的操作符。"
+      },
+      {
+        "text": "Rx.compose(map, filter)(obs)",
+        "isCorrect": false,
+        "description": "错误。RxJS 没有这样的全局 compose API，组合用实例方法 pipe()。"
+      },
+      {
+        "text": "在 subscribe 的 next 回调里手写 if/for 处理",
+        "isCorrect": false,
+        "description": "错误。这放弃了声明式组合；应当用操作符在 pipe 中变换。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：在 RxJS 7.x 里，下面哪种导入 map、filter 等操作符的写法是官方推荐的「扁平导入」？",
+    "explanation": "RxJS 7.x 把绝大多数操作符与创建函数**扁平导出**到包根 'rxjs'，所以推荐 import { map, filter, of } from 'rxjs'。旧的 'rxjs/operators' 子路径仍可用（向后兼容），但官方文档已统一用扁平导入。注意 rxjs/ajax、rxjs/fetch、rxjs/testing、rxjs/webSocket 等仍是独立子路径。\n\n- 「from 'rxjs'」正确。\n- 「from 'rxjs/operators'」可用但非首选（旧式）。\n- 「from 'rxjs/internal/...'」错误：internal 是私有实现，不应直接导入。\n- 「default import」错误：RxJS 没有默认导出整包。",
+    "tags": ["rxjs", "初级", "导入", "7.x", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import { map, filter, of } from 'rxjs'",
+        "isCorrect": true,
+        "description": "正确。7.x 把操作符与创建函数扁平导出到 'rxjs'，这是官方文档的推荐写法。"
+      },
+      {
+        "text": "import { map, filter } from 'rxjs/operators'（唯一正确方式）",
+        "isCorrect": false,
+        "description": "错误。该子路径仍可用，但 7.x 已不是首选；且说「唯一正确」也不对。"
+      },
+      {
+        "text": "import { map } from 'rxjs/internal/operators/map'",
+        "isCorrect": false,
+        "description": "错误。internal 是私有实现路径，不保证稳定，不应直接导入。"
+      },
+      {
+        "text": "import rxjs from 'rxjs'; rxjs.map(...)",
+        "isCorrect": false,
+        "description": "错误。RxJS 不提供把所有 API 挂在默认导出上的用法。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：of(1, 2, 3) 与 from([1, 2, 3]) 这两个创建函数的区别，下面哪个说法准确？",
+    "explanation": "of(...args) 把**逐个参数**作为值依次发出，最后 complete；from(input) 把**单个可迭代/类数组/Promise/Observable**输入转成 Observable。所以 of([1,2,3]) 只会发出一个数组值，而 from([1,2,3]) 会逐个发 1、2、3。from 还能接收 Promise（resolve 值发出后 complete）。\n\n- 「of 发逐个参数，from 转单个可迭代/Promise」正确。\n- 「两者完全等价」错误：of([1,2,3]) ≠ from([1,2,3])。\n- 「from 只能接数组」错误：还能接 Promise、Iterable、Observable。\n- 「of 是异步的」错误：of 默认同步发值。",
+    "tags": ["rxjs", "初级", "of", "from", "创建函数"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "of 把每个参数依次发出；from 把单个可迭代对象/Promise/Observable 转成流并逐项发出",
+        "isCorrect": true,
+        "description": "正确。of([1,2,3]) 只发一个数组，from([1,2,3]) 逐个发 1、2、3；from 还能接 Promise。"
+      },
+      {
+        "text": "两者完全等价，可任意互换",
+        "isCorrect": false,
+        "description": "错误。of([1,2,3]) 发出一个数组值，from([1,2,3]) 发出三个数字值，结果不同。"
+      },
+      {
+        "text": "from 只能接收数组，不能接收 Promise 或 Iterable",
+        "isCorrect": false,
+        "description": "错误。from 支持数组、Iterable、类数组、Promise、甚至另一个 Observable。"
+      },
+      {
+        "text": "of 默认是异步发值的",
+        "isCorrect": false,
+        "description": "错误。of 默认同步发出全部值后立即 complete（除非传入 scheduler）。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：要把按钮的点击事件变成一个 Observable，应该用哪个创建函数？",
+    "explanation": "fromEvent(target, eventName) 用于把 DOM/事件目标的事件源包成 Observable，例如 fromEvent(button, 'click')。它在内部 addEventListener，并在 unsubscribe 时自动 removeEventListener，是处理 UI 事件流的标准入口（常配合 debounceTime、throttleTime 等）。\n\n- 「fromEvent」正确。\n- 「interval」错误：按固定周期发递增整数，与事件无关。\n- 「of」错误：把已知值发出，不监听事件。\n- 「timer」错误：延迟后发值/按周期发值，不监听事件。",
+    "tags": ["rxjs", "初级", "fromEvent", "创建函数", "事件"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "fromEvent(button, 'click')",
+        "isCorrect": true,
+        "description": "正确。fromEvent 把事件目标包成 Observable，内部自动 add/removeEventListener。"
+      },
+      {
+        "text": "interval(1000)",
+        "isCorrect": false,
+        "description": "错误。interval 按固定周期发出递增整数，不与 DOM 事件挂钩。"
+      },
+      {
+        "text": "of('click')",
+        "isCorrect": false,
+        "description": "错误。of 只是把字符串 'click' 当成值发出，不会监听点击。"
+      },
+      {
+        "text": "timer(1000)",
+        "isCorrect": false,
+        "description": "错误。timer 用于延迟/周期发值，不能监听事件。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：interval(1000) 与 timer(1000) 的行为差异，下面哪个说法正确？",
+    "explanation": "interval(period) 在每个 period 毫秒后发出递增整数（0,1,2,...），**第一个值在第一个周期之后**才发出，永不自行 complete。timer(due) 在 due 毫秒后发出一个 0 然后 complete；timer(due, period) 则先等 due，之后每隔 period 持续发递增整数。所以「立即/定点发一次」用 timer，「周期性」两者都可但起点不同。\n\n- 「interval 周期发且首值在一周期后；timer 可一次性或周期性，且能设初始延迟」正确。\n- 「interval 立即发首值」错误：首值在第一个周期后。\n- 「timer 只能周期发」错误：单参 timer 只发一次。\n- 「两者都会自动 complete」错误：interval 不会自动完成。",
+    "tags": ["rxjs", "中级", "interval", "timer", "创建函数"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "interval 每周期发一个递增整数且首值在一个周期之后、不自动完成；timer 可只发一次或带初始延迟后周期发",
+        "isCorrect": true,
+        "description": "正确。interval 首值滞后一个周期且永不 complete；timer(due) 发一次即完成，timer(due,period) 可周期发。"
+      },
+      {
+        "text": "interval 订阅后立即发出首个值 0",
+        "isCorrect": false,
+        "description": "错误。interval 的第一个值要等到第一个 period 之后才发出（想立即发可 startWith 或用 timer(0, period)）。"
+      },
+      {
+        "text": "timer 只能用于周期性发值，不能只发一次",
+        "isCorrect": false,
+        "description": "错误。单参 timer(due) 在延迟后只发一个 0 然后 complete。"
+      },
+      {
+        "text": "interval 与 timer 都会在发完后自动 complete",
+        "isCorrect": false,
+        "description": "错误。interval 永不自动完成，需手动取消或用 take/takeUntil 收尾。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：map 操作符在流里的作用是什么？",
+    "explanation": "map(project) 与数组的 Array.prototype.map 类比：对上游发出的**每一个值**应用投影函数，把结果作为新值发往下游，值的「数量」不变、只变换内容。例如 of(1,2,3).pipe(map(x => x*x)) 发出 1、4、9。\n\n- 「对每个值应用函数并发出结果」正确。\n- 「按条件过滤值」错误：那是 filter。\n- 「合并多个流」错误：那是 merge/combineLatest。\n- 「延迟发值」错误：那是 delay。",
+    "tags": ["rxjs", "初级", "map", "操作符", "变换"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "对上游每个值应用投影函数，把变换后的结果作为新值发往下游",
+        "isCorrect": true,
+        "description": "正确。map 类比数组 map，逐值变换、数量不变，如 map(x => x*x)。"
+      },
+      {
+        "text": "根据条件谓词过滤掉不满足的值",
+        "isCorrect": false,
+        "description": "错误。按条件保留/丢弃值是 filter 的职责。"
+      },
+      {
+        "text": "把多个 Observable 合并成一个",
+        "isCorrect": false,
+        "description": "错误。合并流用 merge、combineLatest、concat 等，而非 map。"
+      },
+      {
+        "text": "把每个值延迟固定时间后再发出",
+        "isCorrect": false,
+        "description": "错误。延迟发值是 delay 操作符的功能。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：filter 操作符的语义是？",
+    "explanation": "filter(predicate) 类比 Array.prototype.filter：只把满足谓词（返回真值）的值发往下游，其余丢弃。它不改变值本身，只决定哪些值能通过。例如 from([1,2,3,4]).pipe(filter(x => x % 2 === 0)) 发出 2、4。\n\n- 「只放行满足谓词的值」正确。\n- 「对每个值做变换」错误：那是 map。\n- 「只取前 N 个值」错误：那是 take。\n- 「去除连续重复值」错误：那是 distinctUntilChanged。",
+    "tags": ["rxjs", "初级", "filter", "操作符", "过滤"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只把满足谓词函数（返回真值）的值发往下游，其余丢弃",
+        "isCorrect": true,
+        "description": "正确。filter 类比数组 filter，按条件放行，不改变值本身。"
+      },
+      {
+        "text": "对每个值应用函数并发出变换结果",
+        "isCorrect": false,
+        "description": "错误。逐值变换是 map 的职责，filter 不修改值。"
+      },
+      {
+        "text": "只取流的前 N 个值后完成",
+        "isCorrect": false,
+        "description": "错误。取前 N 个用 take(N)，filter 是按条件而非按数量。"
+      },
+      {
+        "text": "去掉与上一个相同的连续重复值",
+        "isCorrect": false,
+        "description": "错误。去连续重复是 distinctUntilChanged 的功能。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：tap 操作符（旧称 do）最适合用来做什么？为什么不能用 map 代替？",
+    "explanation": "tap 用于**副作用**（side effect）：日志、调试、触发与流值无关的操作，它把上游值原样透传、不修改流。而 map 会用回调的返回值替换原值——若用 map 做日志却忘了 return，会把所有值变成 undefined。所以「只观察不改值」必须用 tap。\n\n- 「执行副作用且原样透传值」正确。\n- 「过滤值」错误：那是 filter。\n- 「变换并替换值」错误：那是 map（tap 恰恰不改值）。\n- 「合并流」错误。",
+    "tags": ["rxjs", "中级", "tap", "副作用", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "执行日志/调试等副作用，同时把上游值原样透传、不修改流",
+        "isCorrect": true,
+        "description": "正确。tap 专做副作用，值不变；用 map 做日志若忘记 return 会把值变成 undefined。"
+      },
+      {
+        "text": "按条件过滤掉部分值",
+        "isCorrect": false,
+        "description": "错误。过滤是 filter 的职责，tap 不影响哪些值通过。"
+      },
+      {
+        "text": "变换每个值并用返回值替换原值",
+        "isCorrect": false,
+        "description": "错误。那是 map；tap 的关键正是不改变流中的值。"
+      },
+      {
+        "text": "把两个 Observable 合并成一个",
+        "isCorrect": false,
+        "description": "错误。合并用 merge/combineLatest，与 tap 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Observable 的「冷」（cold）与「热」（hot）最本质的区别是什么？",
+    "explanation": "区别在于**数据生产者是在订阅内部创建还是在外部共享**。冷 Observable：每次 subscribe 都在内部新建一个生产者，各订阅者拿到独立、从头开始的数据（如 of、from、http 请求）。热 Observable：生产者在外部、被所有订阅者共享，订阅者只能收到「订阅之后」推送的值（如 fromEvent 的 DOM 事件、Subject）。\n\n- 「冷=每次订阅新建独立生产者；热=共享同一生产者」正确。\n- 「冷=同步、热=异步」错误：与同异步无关。\n- 「冷=可取消、热=不可取消」错误。\n- 「冷=单值、热=多值」错误。",
+    "tags": ["rxjs", "中级", "冷热Observable", "cold-hot", "多播"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "冷 Observable 每次订阅都在内部新建独立生产者；热 Observable 的生产者在外部、被所有订阅者共享",
+        "isCorrect": true,
+        "description": "正确。冷=单播、各订阅独立从头开始；热=多播、订阅者共享同一数据源、只收订阅后的值。"
+      },
+      {
+        "text": "冷 Observable 同步发值，热 Observable 异步发值",
+        "isCorrect": false,
+        "description": "错误。冷热与同步/异步无关，取决于生产者在订阅内创建还是外部共享。"
+      },
+      {
+        "text": "冷 Observable 可被取消订阅，热 Observable 不可取消",
+        "isCorrect": false,
+        "description": "错误。两者都能 unsubscribe，差别在生产者归属。"
+      },
+      {
+        "text": "冷 Observable 只能发一个值，热 Observable 能发多个值",
+        "isCorrect": false,
+        "description": "错误。冷热都能发多个值，与值的数量无关。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：一个对同一后端发请求的冷 Observable，被订阅了 3 次，会发生什么？",
+    "explanation": "冷 Observable 每次订阅都重新执行生产逻辑，所以 3 次订阅会**发起 3 次独立的 HTTP 请求**，互不共享结果。若想多个订阅者共享同一次请求结果，需要用 share()/shareReplay() 把它转成多播（热化）。这是新手常见的「重复请求」坑。\n\n- 「发起 3 次独立请求」正确。\n- 「只发 1 次、结果共享」错误：那需要 share/shareReplay。\n- 「报错」错误：多次订阅完全合法。\n- 「只有第一个订阅者收到结果」错误。",
+    "tags": ["rxjs", "中级", "冷Observable", "重复请求", "shareReplay"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "发起 3 次独立的 HTTP 请求，彼此不共享结果",
+        "isCorrect": true,
+        "description": "正确。冷 Observable 每次订阅重跑生产逻辑；要共享一次请求需 share()/shareReplay()。"
+      },
+      {
+        "text": "只发起 1 次请求，3 个订阅者共享同一结果",
+        "isCorrect": false,
+        "description": "错误。默认冷 Observable 不共享；共享需显式多播（share/shareReplay）。"
+      },
+      {
+        "text": "第二、三次订阅会抛错，因为不能重复订阅",
+        "isCorrect": false,
+        "description": "错误。同一 Observable 可被订阅任意多次，不会报错。"
+      },
+      {
+        "text": "只有第一个订阅者能收到响应，其余收不到",
+        "isCorrect": false,
+        "description": "错误。每个订阅者都有自己的独立执行，都会收到各自请求的结果。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Subject 与普通 Observable 相比，最关键的差异是什么？",
+    "explanation": "普通 Observable 是**单播**（unicast）：每个订阅者有独立执行。Subject 既是 Observable 又是 Observer，是**多播**（multicast）：它维护一个订阅者列表，调用 subject.next(v) 会把同一个值同时推给所有订阅者。它是把单播变多播、实现「事件总线」的核心工具。\n\n- 「Subject 多播、同时也是 Observer，可主动 next」正确。\n- 「Subject 只能订阅不能发值」错误：它能 next/error/complete。\n- 「Subject 是单播」错误：它是多播。\n- 「Subject 不能被订阅」错误。",
+    "tags": ["rxjs", "中级", "Subject", "多播", "multicast"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Subject 是多播的，且本身也是 Observer，可主动调用 next/error/complete 把值推给所有订阅者",
+        "isCorrect": true,
+        "description": "正确。Subject 同时是 Observable 与 Observer，维护订阅者列表，是把单播变多播的核心。"
+      },
+      {
+        "text": "Subject 只能被订阅，不能主动发出值",
+        "isCorrect": false,
+        "description": "错误。Subject 实现了 Observer 接口，可主动 next/error/complete。"
+      },
+      {
+        "text": "Subject 是单播的，每个订阅者有独立执行",
+        "isCorrect": false,
+        "description": "错误。单播是普通 Observable 的特性；Subject 是多播，多个订阅者共享同一次推送。"
+      },
+      {
+        "text": "Subject 无法被 subscribe()",
+        "isCorrect": false,
+        "description": "错误。Subject 是 Observable，可被多个观察者订阅。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：BehaviorSubject 相比普通 Subject，多了哪个关键特性？",
+    "explanation": "BehaviorSubject **需要一个初始值**，并且会向**每个新订阅者立即重放「当前最新值」**（订阅时就能拿到一个值，而不必等下一次 next）。它还提供 .value / .getValue() 同步读取当前值。非常适合表达「状态」（如当前登录用户、主题色）。\n\n- 「需初始值、新订阅者立即收到当前值、可同步取值」正确。\n- 「缓冲最近 N 个值」错误：那是 ReplaySubject。\n- 「只在 complete 时发最后一个值」错误：那是 AsyncSubject。\n- 「与 Subject 完全相同」错误。",
+    "tags": ["rxjs", "中级", "BehaviorSubject", "状态", "Subject"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须带初始值，且每个新订阅者会立即收到「当前最新值」，并可用 .value 同步读取",
+        "isCorrect": true,
+        "description": "正确。BehaviorSubject 适合表达状态：订阅即得当前值，getValue()/value 可同步取。"
+      },
+      {
+        "text": "会缓冲并重放最近 N 个值给新订阅者",
+        "isCorrect": false,
+        "description": "错误。缓冲 N 个值是 ReplaySubject 的特性，BehaviorSubject 只持有「一个」当前值。"
+      },
+      {
+        "text": "只有在它 complete 时才把最后一个值发给订阅者",
+        "isCorrect": false,
+        "description": "错误。那是 AsyncSubject 的行为。"
+      },
+      {
+        "text": "与普通 Subject 行为完全一致，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。普通 Subject 不持有当前值，新订阅者只能收到订阅之后的 next。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：ReplaySubject(2) 在依次 next(1)、next(2)、next(3) 之后才有新订阅者订阅，新订阅者会先收到哪些值？",
+    "explanation": "ReplaySubject(bufferSize) 会**缓存最近 bufferSize 个值**并在新订阅时按顺序重放。ReplaySubject(2) 缓存最近 2 个，即 2 和 3；新订阅者会先收到 2、3，之后再收到后续 next。它还可带时间窗口参数。\n\n- 「2、3」正确（最近两个）。\n- 「1、2、3」错误：那是无限缓冲（不传 bufferSize 或传很大值）。\n- 「3」错误：那是 BehaviorSubject/缓冲 1 的行为。\n- 「什么都收不到」错误：那是普通 Subject。",
+    "tags": ["rxjs", "中级", "ReplaySubject", "缓冲", "Subject"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先收到 2 和 3（最近的两个缓存值）",
+        "isCorrect": true,
+        "description": "正确。ReplaySubject(2) 缓存最近 2 个值并按序重放给新订阅者。"
+      },
+      {
+        "text": "先收到 1、2、3 全部历史值",
+        "isCorrect": false,
+        "description": "错误。重放全部需不限缓冲；ReplaySubject(2) 只保留最近 2 个。"
+      },
+      {
+        "text": "只收到 3（最新一个值）",
+        "isCorrect": false,
+        "description": "错误。只重放 1 个更接近 BehaviorSubject；这里 bufferSize=2。"
+      },
+      {
+        "text": "什么都收不到，只能收到订阅之后的新值",
+        "isCorrect": false,
+        "description": "错误。那是普通 Subject 的行为；ReplaySubject 会重放缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：AsyncSubject 的发值特性是什么？",
+    "explanation": "AsyncSubject **只在自身 complete 时，把「最后一个 next 的值」发给所有订阅者**（只发一个，且必须等到 complete）。如果没有 complete，订阅者永远收不到值；如果中途 error，则只收到 error。它语义上类似 Promise（最终单值），常用于「只关心最终结果」的场景。\n\n- 「complete 时只发最后一个值」正确。\n- 「立即发当前值」错误：那是 BehaviorSubject。\n- 「重放最近 N 个」错误：那是 ReplaySubject。\n- 「每次 next 都立即多播」错误：那是普通 Subject。",
+    "tags": ["rxjs", "高级", "AsyncSubject", "Subject", "最终值"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只有在它 complete 时，才把最后一次 next 的值发给所有订阅者（仅一个值）",
+        "isCorrect": true,
+        "description": "正确。AsyncSubject 等到 complete 才发最后一个值，语义类似最终单值（像 Promise）。"
+      },
+      {
+        "text": "新订阅者立即收到当前最新值",
+        "isCorrect": false,
+        "description": "错误。那是 BehaviorSubject；AsyncSubject 在 complete 前不发任何值。"
+      },
+      {
+        "text": "向新订阅者重放最近 N 个值",
+        "isCorrect": false,
+        "description": "错误。重放缓冲是 ReplaySubject 的行为。"
+      },
+      {
+        "text": "每次 next 都立即把值多播给当前所有订阅者",
+        "isCorrect": false,
+        "description": "错误。那是普通 Subject；AsyncSubject 会一直等到 complete。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：switchMap、mergeMap、concatMap、exhaustMap 都把外层值映射成内层 Observable 并「拍平」，它们最核心的区别在于？",
+    "explanation": "区别在于**如何处理「新外层值到来时仍未完成的内层 Observable」**：switchMap 取消上一个内层、切到新的；mergeMap 并发保留所有内层（同时进行）；concatMap 串行排队，等上一个内层 complete 再订阅下一个；exhaustMap 在当前内层未完成时**忽略**新外层值。这是 RxJS 最高频的考点。\n\n- 「对未完成内层的处理策略不同（切换/并发/排队/忽略）」正确。\n- 「只是性能不同、行为一致」错误。\n- 「都会取消上一个内层」错误：只有 switchMap。\n- 「都串行排队」错误：只有 concatMap。",
+    "tags": ["rxjs", "高级", "高阶Observable", "switchMap", "mergeMap"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对「新外层值到来时旧内层还没完成」的处理不同：switchMap 切换并取消旧内层、mergeMap 并发、concatMap 排队、exhaustMap 忽略新值",
+        "isCorrect": true,
+        "description": "正确。四者拍平方式一致，差别全在并发/取消/排队/忽略的策略上，这是高频面试点。"
+      },
+      {
+        "text": "行为完全一致，只是内部实现的性能不同",
+        "isCorrect": false,
+        "description": "错误。它们的可观察行为（是否取消、是否并发、是否排队）截然不同。"
+      },
+      {
+        "text": "四者都会在新值到来时取消上一个内层 Observable",
+        "isCorrect": false,
+        "description": "错误。只有 switchMap 取消旧内层；mergeMap 保留、concatMap 排队、exhaustMap 忽略新值。"
+      },
+      {
+        "text": "四者都会把内层 Observable 串行排队执行",
+        "isCorrect": false,
+        "description": "错误。串行排队是 concatMap；mergeMap 并发、switchMap 切换、exhaustMap 忽略。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：实现「搜索框输入自动补全」时，为什么通常选 switchMap 而不是 mergeMap？",
+    "explanation": "自动补全要求「只关心最新关键词的结果」。switchMap 在用户敲入新字符、发起新请求时会**取消上一个尚未返回的请求**，从而避免「旧关键词的响应比新关键词晚到、覆盖了正确结果」的竞态（race condition）。mergeMap 并发保留所有请求，旧响应可能后到导致结果错乱。\n\n- 「switchMap 取消过期请求，避免竞态」正确。\n- 「mergeMap 更快所以更好」错误：快但会乱序。\n- 「两者结果一样」错误。\n- 「switchMap 会缓存结果」错误：取消≠缓存。",
+    "tags": ["rxjs", "高级", "switchMap", "竞态", "自动补全"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "switchMap 会取消上一个尚未返回的请求，避免旧关键词的响应后到、覆盖最新结果（竞态）",
+        "isCorrect": true,
+        "description": "正确。自动补全只要最新结果，switchMap 的「切换即取消旧内层」恰好消除乱序竞态。"
+      },
+      {
+        "text": "mergeMap 不支持发起 HTTP 请求",
+        "isCorrect": false,
+        "description": "错误。mergeMap 同样能映射成请求，问题在它并发保留所有请求、不取消旧的。"
+      },
+      {
+        "text": "两者效果完全一样，选哪个都行",
+        "isCorrect": false,
+        "description": "错误。mergeMap 下旧请求的晚到响应可能覆盖新结果，导致补全错乱。"
+      },
+      {
+        "text": "switchMap 会自动缓存请求结果，省流量",
+        "isCorrect": false,
+        "description": "错误。switchMap 是取消旧订阅，不提供缓存（缓存需 shareReplay 等）。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：处理「连续点击提交按钮，第一次请求完成前忽略后续点击」这种防重复提交场景，最贴切的高阶映射操作符是？",
+    "explanation": "exhaustMap 在**当前内层 Observable 尚未完成时，会忽略所有新到的外层值**。点击提交后映射成请求，请求未返回前再点都被丢弃，天然实现防重复提交/防抖式的「忙时拒新」。switchMap 会取消正在进行的请求（不合适，可能取消已发出的提交），concatMap 会排队全部执行（仍会重复提交）。\n\n- 「exhaustMap」正确。\n- 「switchMap」错误：会取消进行中的提交。\n- 「concatMap」错误：会把每次点击排队执行，仍重复。\n- 「mergeMap」错误：会并发执行全部点击。",
+    "tags": ["rxjs", "高级", "exhaustMap", "防重复提交", "高阶Observable"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "exhaustMap",
+        "isCorrect": true,
+        "description": "正确。exhaustMap 在内层未完成时忽略新外层值，恰好实现「提交进行中拒绝新点击」。"
+      },
+      {
+        "text": "switchMap",
+        "isCorrect": false,
+        "description": "错误。switchMap 会取消正在进行的请求，可能中断已发出的提交，不符合防重复语义。"
+      },
+      {
+        "text": "concatMap",
+        "isCorrect": false,
+        "description": "错误。concatMap 把每次点击排队依次执行，仍会重复提交（只是不并发）。"
+      },
+      {
+        "text": "mergeMap",
+        "isCorrect": false,
+        "description": "错误。mergeMap 并发执行全部点击对应的请求，重复提交最严重。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：需要「保证每个内层请求按外层值的发出顺序、依次串行执行且不丢失」，应选哪个操作符？",
+    "explanation": "concatMap 把内层 Observable **排队**：必须等上一个内层 complete，才订阅下一个，从而严格保持顺序、不并发、不丢值。适合「必须按序、不能乱、每个都要执行」的写操作序列（如顺序保存）。mergeMap 并发（顺序不保证），switchMap 会取消前一个（丢值），exhaustMap 会忽略新值（丢值）。\n\n- 「concatMap」正确。\n- 「mergeMap」错误：并发、顺序不保证。\n- 「switchMap」错误：取消前一个、会丢。\n- 「exhaustMap」错误：忙时忽略、会丢。",
+    "tags": ["rxjs", "高级", "concatMap", "顺序", "高阶Observable"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "concatMap",
+        "isCorrect": true,
+        "description": "正确。concatMap 等上一个内层完成再订阅下一个，严格保序、不丢值、不并发。"
+      },
+      {
+        "text": "mergeMap",
+        "isCorrect": false,
+        "description": "错误。mergeMap 并发执行，内层完成顺序不确定，无法保证按外层顺序。"
+      },
+      {
+        "text": "switchMap",
+        "isCorrect": false,
+        "description": "错误。switchMap 在新值到来时取消上一个内层，会丢掉未完成的请求。"
+      },
+      {
+        "text": "exhaustMap",
+        "isCorrect": false,
+        "description": "错误。exhaustMap 在忙时忽略新外层值，同样会丢失部分请求。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：catchError 操作符的回调必须返回什么？常见用法是什么？",
+    "explanation": "catchError((err, caught) => ...) 在上游 error 时被调用，**必须返回一个新的 Observable**（替代流）。常见做法：返回 of(默认值) 优雅降级、返回 EMPTY 静默结束、返回 throwError(() => err) 重新抛出，或返回 caught 重新订阅源（小心死循环）。它让流从错误中恢复或转换错误。\n\n- 「必须返回一个 Observable」正确。\n- 「返回普通值即可」错误：必须是 Observable（或 ObservableInput）。\n- 「不需要返回」错误。\n- 「返回 Promise 才行」错误：返回 ObservableInput（含 Promise）皆可，但不限于 Promise。",
+    "tags": ["rxjs", "高级", "catchError", "错误处理", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须返回一个新的 Observable（如 of(默认值)、EMPTY 或 throwError(...)）作为后续流",
+        "isCorrect": true,
+        "description": "正确。catchError 用返回的 Observable 替代出错的流，实现降级、静默或重抛。"
+      },
+      {
+        "text": "返回一个普通值就能让流继续",
+        "isCorrect": false,
+        "description": "错误。需返回 ObservableInput；直接返回裸值（如数字）不符合契约。"
+      },
+      {
+        "text": "可以不返回任何东西，流会自动恢复",
+        "isCorrect": false,
+        "description": "错误。不返回 Observable 会导致类型/运行错误，流不会自动恢复。"
+      },
+      {
+        "text": "只能返回 Promise，不能返回 Observable",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，典型是返回 Observable；Promise 作为 ObservableInput 也可，但不限于此。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：从 RxJS 7.x 的角度，retryWhen 操作符的现状是？官方推荐的替代方案是？",
+    "explanation": "retryWhen 在 RxJS 7.x 已被**标记为废弃**（将在 v9/v10 移除），官方推荐改用 **retry 的配置对象**：retry({ count, delay })，其中 delay 既可以是毫秒数，也可以是一个函数 (error, retryCount) => ObservableInput，用来实现指数退避等自定义重试通知。\n\n- 「retryWhen 已废弃，改用 retry({ delay })」正确。\n- 「retryWhen 是首选」错误：已废弃。\n- 「retry 不支持延迟」错误：retry 现支持 delay。\n- 「两者都已删除」错误：retry 仍在用。",
+    "tags": ["rxjs", "专家", "retryWhen", "retry", "7.x废弃"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "retryWhen 已被废弃（计划移除），推荐用 retry({ count, delay }) 配置对象，delay 可为毫秒或返回通知的函数",
+        "isCorrect": true,
+        "description": "正确。7.x 标注 retryWhen 废弃；retry 现支持 delay 选项（数字或 (err,n)=>ObservableInput），可做退避。"
+      },
+      {
+        "text": "retryWhen 仍是实现自定义重试的首选，没有替代",
+        "isCorrect": false,
+        "description": "错误。retryWhen 已废弃，retry 的 delay 选项是其官方替代。"
+      },
+      {
+        "text": "retry 只能传次数，无法配置重试间隔",
+        "isCorrect": false,
+        "description": "错误。retry 既可传数字，也可传含 delay 的配置对象实现延迟/退避。"
+      },
+      {
+        "text": "retry 和 retryWhen 在 7.x 都已被移除",
+        "isCorrect": false,
+        "description": "错误。retry 仍是推荐 API；retryWhen 只是被标记废弃，尚未移除。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：在 RxJS 7+ 里把 Observable 转成 Promise，官方推荐用什么？被废弃的旧 API 是什么？",
+    "explanation": "RxJS 7 把 Observable.prototype.toPromise() **标记为废弃**（v8 移除），原因是它语义含糊（空流时 resolve 成 undefined）、不可 tree-shake。替代是两个独立函数：firstValueFrom(obs)（取第一个值后即 resolve）与 lastValueFrom(obs)（complete 时用最后一个值 resolve）。空流会 reject 一个 EmptyError，也可传 { defaultValue }。\n\n- 「firstValueFrom / lastValueFrom 取代 toPromise」正确。\n- 「toPromise 仍是首选」错误：已废弃。\n- 「用 await observable」错误：Observable 不是 thenable。\n- 「subscribe 返回 Promise」错误：返回 Subscription。",
+    "tags": ["rxjs", "专家", "firstValueFrom", "toPromise", "7.x废弃"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 firstValueFrom / lastValueFrom，废弃的旧 API 是 toPromise()",
+        "isCorrect": true,
+        "description": "正确。7.x 废弃 toPromise()，改用 firstValueFrom/lastValueFrom；空流会 reject EmptyError，可传 defaultValue。"
+      },
+      {
+        "text": "toPromise() 仍是 7.x 的首选转换方式",
+        "isCorrect": false,
+        "description": "错误。toPromise() 已被标记废弃，计划在 v8 移除。"
+      },
+      {
+        "text": "直接 await 一个 Observable 即可",
+        "isCorrect": false,
+        "description": "错误。Observable 不是 thenable，不能直接 await，需先转 Promise。"
+      },
+      {
+        "text": "subscribe() 会返回 Promise，await 它即可",
+        "isCorrect": false,
+        "description": "错误。subscribe() 返回 Subscription，不是 Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：忘记 unsubscribe 一个持续发值的 Observable（如 interval 或 fromEvent）会导致什么后果？",
+    "explanation": "未取消的订阅会**持续运行、持有回调与外部资源引用（定时器、事件监听、闭包变量）**，造成内存泄漏，组件销毁后回调仍执行甚至访问已销毁的状态。防护手段：手动 unsubscribe、takeUntil(destroy$)、take/first 自动收尾、或框架层的 async pipe / takeUntilDestroyed。\n\n- 「内存泄漏，回调持续执行」正确。\n- 「自动在 GC 时取消」错误：活跃订阅不会被 GC。\n- 「无影响」错误。\n- 「下次订阅时自动清理上次」错误。",
+    "tags": ["rxjs", "高级", "内存泄漏", "unsubscribe", "takeUntil"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "造成内存泄漏：订阅持续运行、持有定时器/监听/闭包引用，组件销毁后回调仍执行",
+        "isCorrect": true,
+        "description": "正确。活跃订阅不会被 GC；需 unsubscribe、takeUntil、take 或 async pipe 收尾。"
+      },
+      {
+        "text": "没有任何影响，垃圾回收会在合适时机自动取消",
+        "isCorrect": false,
+        "description": "错误。仍被引用的活跃订阅不会被 GC 回收，资源持续占用。"
+      },
+      {
+        "text": "RxJS 会在一段时间后自动超时取消",
+        "isCorrect": false,
+        "description": "错误。RxJS 没有自动超时机制（除非显式用 timeout 操作符）。"
+      },
+      {
+        "text": "下次对同一 Observable 订阅时会自动清理上一次订阅",
+        "isCorrect": false,
+        "description": "错误。每次订阅相互独立，新订阅不会清理旧订阅。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：管理多个订阅的生命周期，takeUntil(notifier$) 的工作机制是什么？",
+    "explanation": "takeUntil(notifier$) 会一直透传源值，**直到 notifier$ 发出第一个值（或 complete），此刻立即 complete 源流并自动取消订阅**。常见模式：建一个 destroy$ Subject，在组件销毁时 destroy$.next()，所有业务流都 pipe(takeUntil(destroy$))，一处触发、批量退订，避免逐个 unsubscribe。建议把它放在操作符链的**最后**。\n\n- 「notifier 发值时 complete 源并退订」正确。\n- 「notifier 发值时才开始发源值」错误：那更像 skipUntil 的反向。\n- 「按数量截取」错误：那是 take。\n- 「过滤值」错误。",
+    "tags": ["rxjs", "高级", "takeUntil", "退订", "destroy"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "持续透传源值，直到 notifier$ 发出第一个值（或完成），随即 complete 源流并自动退订",
+        "isCorrect": true,
+        "description": "正确。常配合 destroy$ Subject 实现「一处 next、批量退订」，建议放在链尾。"
+      },
+      {
+        "text": "在 notifier$ 发出值之前丢弃源值，发值之后才开始透传",
+        "isCorrect": false,
+        "description": "错误。那是 skipUntil 的行为；takeUntil 是发值即终止。"
+      },
+      {
+        "text": "只截取源流的前 notifier 个值",
+        "isCorrect": false,
+        "description": "错误。按数量截取是 take(N)，takeUntil 由通知流的发值时机决定。"
+      },
+      {
+        "text": "按谓词过滤源流中的值",
+        "isCorrect": false,
+        "description": "错误。过滤是 filter；takeUntil 控制的是何时终止整条流。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：debounceTime(300) 与 throttleTime(300) 的区别，下面哪个说法准确？",
+    "explanation": "debounceTime(d)：每来一个值就**重置计时**，只有当源**静默达 d 毫秒**后才发出「最后一个」值——适合搜索输入（等用户停手）。throttleTime(d)：发出一个值后，在 d 毫秒**节流窗口内忽略后续值**，窗口过后才放行下一个——适合限制高频事件（如滚动、按钮连点）的触发频率。\n\n- 「debounce 等静默后发最后一个；throttle 周期性放行、窗口内丢弃」正确。\n- 「两者完全一样」错误。\n- 「debounce 发第一个」错误：默认发最后一个。\n- 「throttle 等静默」错误：那是 debounce。",
+    "tags": ["rxjs", "中级", "debounceTime", "throttleTime", "时间操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "debounceTime 在源静默达指定时长后发出最近一个值；throttleTime 发一个值后在窗口内忽略其余、按频率放行",
+        "isCorrect": true,
+        "description": "正确。debounce 适合「等用户停手」（搜索输入），throttle 适合「限频」（滚动、连点）。"
+      },
+      {
+        "text": "两者行为完全相同，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。一个等静默发末值，一个限频丢中间值，触发时机与产出截然不同。"
+      },
+      {
+        "text": "debounceTime 总是发出窗口内的第一个值",
+        "isCorrect": false,
+        "description": "错误。debounceTime 默认发出静默前的「最后一个」值，而非第一个。"
+      },
+      {
+        "text": "throttleTime 会等待源静默后才发值",
+        "isCorrect": false,
+        "description": "错误。等静默才发是 debounce 的特征；throttle 是发值后限频。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：distinctUntilChanged 操作符的去重逻辑是什么？它和 distinct 有何不同？",
+    "explanation": "distinctUntilChanged 只在**当前值与「上一个发出的值」不同时**才放行——即去除**连续重复**（1,1,2,2,1 → 1,2,1）。distinct 则去除**全局所有重复**（记住所有出现过的值，1,1,2,2,1 → 1,2）。distinctUntilChanged 只比较相邻、内存占用恒定，更常用；可传比较函数或 keySelector。\n\n- 「只去连续重复，比较相邻」正确。\n- 「去全局重复」错误：那是 distinct。\n- 「按数量去重」错误。\n- 「随机丢弃重复」错误。",
+    "tags": ["rxjs", "中级", "distinctUntilChanged", "去重", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只过滤掉与「紧邻的上一个发出值」相同的值，即去除连续重复",
+        "isCorrect": true,
+        "description": "正确。distinctUntilChanged 只比较相邻值（1,1,2,2,1→1,2,1），内存恒定，可传比较器。"
+      },
+      {
+        "text": "去除流中出现过的所有重复值（全局去重）",
+        "isCorrect": false,
+        "description": "错误。全局去重是 distinct，它需记住所有历史值；distinctUntilChanged 只看相邻。"
+      },
+      {
+        "text": "每隔固定数量保留一个值",
+        "isCorrect": false,
+        "description": "错误。它按值相等性而非按数量过滤。"
+      },
+      {
+        "text": "随机丢弃一部分重复值",
+        "isCorrect": false,
+        "description": "错误。它的过滤是确定性的：相邻相等才丢。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：combineLatest([a$, b$]) 何时向下游发出一个组合值？",
+    "explanation": "combineLatest 要求**每个源都至少发出过一个值之后**才开始工作；此后**任意一个源发出新值，就把「所有源各自的最新值」组合成数组发出**。它适合「多个状态任一变化就重新计算」（如多个表单字段合并校验）。若某个源始终不发值，combineLatest 永远不发。\n\n- 「每个源都发过值后，任一源更新即发最新值组合」正确。\n- 「所有源同时发值时才组合」错误：不要求同步。\n- 「只在所有源都 complete 后发」错误：那是 forkJoin。\n- 「按顺序串接」错误：那是 concat。",
+    "tags": ["rxjs", "高级", "combineLatest", "组合操作符", "状态"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每个源都至少发过一个值之后，任意一个源再发新值时，组合所有源的最新值为数组发出",
+        "isCorrect": true,
+        "description": "正确。combineLatest 适合「多状态任一变化就重算」，前提是每个源都有过至少一个值。"
+      },
+      {
+        "text": "仅当所有源在同一时刻同时发值时才组合",
+        "isCorrect": false,
+        "description": "错误。combineLatest 不要求同步发值，任一源更新即触发组合。"
+      },
+      {
+        "text": "等所有源都 complete 后，一次性发出各自的最后值",
+        "isCorrect": false,
+        "description": "错误。那是 forkJoin 的语义；combineLatest 持续发出最新组合。"
+      },
+      {
+        "text": "把多个源按先后顺序首尾相接地发出",
+        "isCorrect": false,
+        "description": "错误。顺序串接是 concat；combineLatest 是「最新值组合」。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：withLatestFrom 与 combineLatest 都涉及「最新值」，关键区别是什么？",
+    "explanation": "combineLatest 是**对称**的：任何源发值都触发输出。withLatestFrom(other$) 是**不对称**的——只有**主源**发值时才输出，输出里携带 other$ 的最新值作为「快照」；other$ 自己发新值**不会**触发输出。适合「以主事件为驱动，顺带取其他流的当前状态」（如点击保存时取当前表单值）。\n\n- 「withLatestFrom 仅主源触发，附带其他源最新值」正确。\n- 「两者完全相同」错误。\n- 「withLatestFrom 任一源都触发」错误：那是 combineLatest。\n- 「withLatestFrom 等所有源 complete」错误。",
+    "tags": ["rxjs", "高级", "withLatestFrom", "combineLatest", "组合操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "withLatestFrom 只在「主源」发值时输出，并附带其它源的最新值快照；其它源单独发值不触发输出",
+        "isCorrect": true,
+        "description": "正确。它不对称、以主源为驱动，适合「主事件触发时顺带读其他流当前值」。"
+      },
+      {
+        "text": "两者行为完全相同，可互换",
+        "isCorrect": false,
+        "description": "错误。combineLatest 对称（任一源触发），withLatestFrom 不对称（仅主源触发）。"
+      },
+      {
+        "text": "withLatestFrom 在任意一个源发值时都会输出",
+        "isCorrect": false,
+        "description": "错误。那是 combineLatest；withLatestFrom 只由主源驱动。"
+      },
+      {
+        "text": "withLatestFrom 要等所有源 complete 才输出",
+        "isCorrect": false,
+        "description": "错误。它在主源每次发值时就输出，不等 complete。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：forkJoin 的典型用途和发值时机是什么？",
+    "explanation": "forkJoin 类似 Promise.all：传入一组 Observable，**等它们「全部 complete」后，把每个源的「最后一个值」组合成数组/对象发出一次，然后 complete**。任一源未 complete 则永不发出；任一源 error 则整体 error。适合「并发发起多个一次性请求，全部完成后统一处理」。\n\n- 「全部完成后发各自最后值一次（似 Promise.all）」正确。\n- 「任一源发值就发」错误：那是 merge/combineLatest。\n- 「发各自第一个值」错误：是最后一个值。\n- 「永不 complete」错误：发完即 complete。",
+    "tags": ["rxjs", "高级", "forkJoin", "并发请求", "组合操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "等所有源都 complete 后，把每个源的最后一个值组合发出一次再 complete（类似 Promise.all）",
+        "isCorrect": true,
+        "description": "正确。forkJoin 适合并发多个一次性请求、全部完成后统一处理；任一源不 complete 则永不发出。"
+      },
+      {
+        "text": "任意一个源发值时就立即发出组合结果",
+        "isCorrect": false,
+        "description": "错误。那是 combineLatest；forkJoin 要等全部 complete。"
+      },
+      {
+        "text": "在所有源 complete 后发出各自的「第一个」值",
+        "isCorrect": false,
+        "description": "错误。forkJoin 取的是每个源的「最后一个」值。"
+      },
+      {
+        "text": "组合后持续发值、永不 complete",
+        "isCorrect": false,
+        "description": "错误。forkJoin 只发一次组合值随即 complete。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：startWith('init') 操作符的作用是什么？",
+    "explanation": "startWith(...values) 在源 Observable **发出任何值之前，先同步发出给定的初始值**，再接着透传源的值。常用于给状态流一个初始值、给 combineLatest 的某个源「垫一个初值」以便尽快触发组合，或给 UI 一个加载前的占位状态。\n\n- 「先发初始值再发源值」正确。\n- 「在源末尾追加值」错误：那类似 endWith。\n- 「替换源的第一个值」错误：是前置而非替换。\n- 「过滤初始值」错误。",
+    "tags": ["rxjs", "中级", "startWith", "初始值", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在源发出任何值之前，先发出给定的初始值，然后继续透传源的值",
+        "isCorrect": true,
+        "description": "正确。startWith 前置初始值，常用于给状态流/combineLatest 源垫初值或提供占位。"
+      },
+      {
+        "text": "在源 complete 之后再追加一个值",
+        "isCorrect": false,
+        "description": "错误。在末尾追加是 endWith；startWith 是前置。"
+      },
+      {
+        "text": "用给定值替换源发出的第一个值",
+        "isCorrect": false,
+        "description": "错误。startWith 是额外前置一个值，不替换源的任何值。"
+      },
+      {
+        "text": "过滤掉源的初始若干个值",
+        "isCorrect": false,
+        "description": "错误。过滤/跳过是 filter/skip，startWith 是新增前置值。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：scan 与 reduce 操作符的核心区别是什么？",
+    "explanation": "两者都做累加：scan(acc, cur)→ 每来一个值就发出**当前的累加结果**（像「运行中的累加」，发多次）；reduce 则只在源**complete 时发出最终累加结果一次**（像数组 reduce）。所以做「实时累计计数/状态累积」用 scan，做「全部结束后求总和」用 reduce。\n\n- 「scan 每步都发中间结果；reduce 只在完成时发最终值」正确。\n- 「两者一样」错误。\n- 「scan 只发最终值」错误：那是 reduce。\n- 「reduce 每步都发」错误：那是 scan。",
+    "tags": ["rxjs", "中级", "scan", "reduce", "累加"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "scan 在每个值到来时都发出当前累加结果；reduce 只在源 complete 时发出最终累加结果一次",
+        "isCorrect": true,
+        "description": "正确。scan 适合实时状态累积（发多次），reduce 适合「结束后求总」（发一次）。"
+      },
+      {
+        "text": "两者完全等价，可互换",
+        "isCorrect": false,
+        "description": "错误。scan 发中间过程值，reduce 只发最终值，输出次数不同。"
+      },
+      {
+        "text": "scan 只在 complete 时发出一个最终值",
+        "isCorrect": false,
+        "description": "错误。只发最终值的是 reduce；scan 每步都发。"
+      },
+      {
+        "text": "reduce 在每个值到来时都发出中间结果",
+        "isCorrect": false,
+        "description": "错误。每步发中间结果的是 scan；reduce 等 complete。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：finalize 操作符（旧称 finally）在什么时机执行回调？",
+    "explanation": "finalize(callback) 注册一个在源**以任何方式终止时都会执行**的回调——无论 complete、error，还是订阅被 unsubscribe（取消），都会触发。适合放清理逻辑（关闭 loading、释放资源、打点），类似 try/finally。注意它不改变值，也不能阻止错误传播。\n\n- 「complete/error/退订时都执行」正确。\n- 「仅 complete 时执行」错误：error/退订也会。\n- 「仅 error 时执行」错误。\n- 「每个值都执行」错误：那是 tap。",
+    "tags": ["rxjs", "高级", "finalize", "清理", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在源以任意方式终止时执行：complete、error 或被取消订阅都会触发",
+        "isCorrect": true,
+        "description": "正确。finalize 类似 try/finally，适合放清理逻辑（关 loading、释放资源），三种终止都会跑。"
+      },
+      {
+        "text": "仅当源正常 complete 时才执行",
+        "isCorrect": false,
+        "description": "错误。error 和 unsubscribe 同样会触发 finalize。"
+      },
+      {
+        "text": "仅当源 error 时才执行",
+        "isCorrect": false,
+        "description": "错误。complete 和退订也会触发，不只 error。"
+      },
+      {
+        "text": "对每个发出的值都执行一次",
+        "isCorrect": false,
+        "description": "错误。逐值执行副作用是 tap；finalize 只在终止时执行一次。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Scheduler（调度器）在 RxJS 中控制的是什么？",
+    "explanation": "Scheduler 控制**「订阅何时开始」与「通知何时被投递」的执行上下文与时机**——即「什么时候、在哪种执行队列上跑」。它由三部分构成：数据结构（按优先级排程）、执行上下文（同步还是异步、宏任务/微任务/动画帧）、虚拟时钟。它能把同步流改成异步、控制并发节奏，也是测试时控制时间的基础。\n\n- 「控制执行时机/上下文（何时、在哪种队列执行）」正确。\n- 「控制值的内容」错误：那是 map。\n- 「控制订阅者数量」错误。\n- 「控制重试次数」错误：那是 retry。",
+    "tags": ["rxjs", "高级", "Scheduler", "调度器", "执行时机"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "控制订阅开始与通知投递的「执行上下文与时机」——即在什么队列、什么时候执行",
+        "isCorrect": true,
+        "description": "正确。Scheduler 决定同步/异步、宏任务/微任务/动画帧等执行时机，也是虚拟时间测试的基础。"
+      },
+      {
+        "text": "控制每个值被变换成什么内容",
+        "isCorrect": false,
+        "description": "错误。值的变换由 map 等操作符负责，与调度器无关。"
+      },
+      {
+        "text": "控制一个 Observable 最多能有几个订阅者",
+        "isCorrect": false,
+        "description": "错误。Scheduler 不限制订阅者数量。"
+      },
+      {
+        "text": "控制出错时的重试次数",
+        "isCorrect": false,
+        "description": "错误。重试次数由 retry 控制；Scheduler 管的是执行时机。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：以下关于常见 Scheduler 的对应关系，哪一组是正确的？",
+    "explanation": "RxJS 内置调度器各对应一种执行时机：asyncScheduler 用 setInterval/setTimeout（宏任务，做基于时间的延迟）；asapScheduler 用微任务队列（尽快异步、在当前宏任务后立刻）；queueScheduler 同步队列（当前同步执行，递归调度时排队避免栈溢出）；animationFrameScheduler 用 requestAnimationFrame（适合动画）。\n\n- 「asyncScheduler→setTimeout/宏任务，asapScheduler→微任务」正确。\n- 「asyncScheduler 同步」错误。\n- 「queueScheduler 用 rAF」错误：那是 animationFrameScheduler。\n- 「asapScheduler 用 setTimeout」错误：它用微任务。",
+    "tags": ["rxjs", "专家", "Scheduler", "asyncScheduler", "调度器种类"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "asyncScheduler 基于 setTimeout/setInterval（宏任务）；asapScheduler 基于微任务；animationFrameScheduler 基于 requestAnimationFrame",
+        "isCorrect": true,
+        "description": "正确。queueScheduler 则在当前同步上下文排队（防递归栈溢出），各调度器对应不同执行时机。"
+      },
+      {
+        "text": "asyncScheduler 是完全同步执行的",
+        "isCorrect": false,
+        "description": "错误。asyncScheduler 借助 setTimeout/setInterval 异步执行；同步排队的是 queueScheduler。"
+      },
+      {
+        "text": "queueScheduler 使用 requestAnimationFrame 调度",
+        "isCorrect": false,
+        "description": "错误。使用 rAF 的是 animationFrameScheduler；queueScheduler 是同步队列。"
+      },
+      {
+        "text": "asapScheduler 使用 setTimeout 实现",
+        "isCorrect": false,
+        "description": "错误。asapScheduler 使用微任务队列，比 setTimeout 的宏任务更早执行。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：observeOn 与 subscribeOn 这两个调度相关操作符的区别是什么？",
+    "explanation": "subscribeOn(scheduler) 决定**「订阅动作（即生产函数开始执行）」在哪个调度器上发生**——影响整条链的起点，且整链只需一个、放哪里都作用于源。observeOn(scheduler) 决定**「此后下游通知（next/error/complete 的投递）」在哪个调度器上发生**——可放在链中任意位置，只影响其下游。\n\n- 「subscribeOn 控订阅起点，observeOn 控之后的通知投递」正确。\n- 「两者一样」错误。\n- 「subscribeOn 控投递」错误：反了。\n- 「observeOn 控订阅」错误：反了。",
+    "tags": ["rxjs", "专家", "observeOn", "subscribeOn", "调度器"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "subscribeOn 决定「订阅/生产开始」在哪个调度器执行（影响起点）；observeOn 决定其下游的通知投递在哪个调度器执行",
+        "isCorrect": true,
+        "description": "正确。subscribeOn 作用于整链起点（一条链一个即可），observeOn 只影响其位置之后的下游通知。"
+      },
+      {
+        "text": "两者完全等价，放哪都一样",
+        "isCorrect": false,
+        "description": "错误。一个控制订阅起点、一个控制下游投递，位置语义不同。"
+      },
+      {
+        "text": "subscribeOn 控制下游通知投递的时机",
+        "isCorrect": false,
+        "description": "错误。控制下游通知投递的是 observeOn；subscribeOn 控制订阅起点。"
+      },
+      {
+        "text": "observeOn 控制订阅动作在哪发生",
+        "isCorrect": false,
+        "description": "错误。控制订阅动作的是 subscribeOn；observeOn 控制之后的通知。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：share() 操作符把冷 Observable 转成多播，它的核心作用是？",
+    "explanation": "share() 在内部用一个 Subject 把上游**多播**给多个订阅者，并采用**引用计数（refCount）**：第一个订阅者到来时订阅源、开始执行；订阅者增减共享同一次执行；当订阅者归零时退订源。这样多个订阅者只触发**一次**底层执行（如一次 HTTP / 一个 interval），避免重复。7.x 的 share 可传配置对象细调重置行为。\n\n- 「用 Subject 多播 + 引用计数，多订阅者共享一次执行」正确。\n- 「为每个订阅者各跑一次」错误：那是不 share 的冷行为。\n- 「缓存所有历史值」错误：那要 shareReplay。\n- 「让流变同步」错误。",
+    "tags": ["rxjs", "高级", "share", "多播", "引用计数"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用一个 Subject 把源多播给多个订阅者，并按引用计数共享同一次底层执行（避免重复请求/重复副作用）",
+        "isCorrect": true,
+        "description": "正确。share 让多个订阅者共享一次源执行，订阅者归零时退订；7.x 可传配置调整重置策略。"
+      },
+      {
+        "text": "为每个订阅者各自独立地执行一次源",
+        "isCorrect": false,
+        "description": "错误。那正是未 share 的冷 Observable 行为；share 的目的是共享一次执行。"
+      },
+      {
+        "text": "缓存源发出的所有历史值供新订阅者重放",
+        "isCorrect": false,
+        "description": "错误。重放历史值需要 shareReplay；share 默认不缓存。"
+      },
+      {
+        "text": "把异步流强制变成同步执行",
+        "isCorrect": false,
+        "description": "错误。share 改变的是「多播与共享」，不改变同步/异步性质。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：shareReplay 相比 share，额外提供了什么能力？最典型的用途是？",
+    "explanation": "shareReplay({ bufferSize, refCount }) 在多播基础上**缓存最近 bufferSize 个值，并重放给「之后才订阅」的新订阅者**——晚来的订阅者也能立刻拿到已发生的值。最典型用途是**缓存 HTTP 响应**：一次请求、结果共享并对后续订阅者重放，避免重复请求。需注意 refCount 选项与潜在的「源不完成时一直保活」内存问题。\n\n- 「缓存并重放给后来的订阅者，常用于缓存请求结果」正确。\n- 「与 share 完全相同」错误。\n- 「不能多播」错误。\n- 「只对第一个订阅者重放」错误。",
+    "tags": ["rxjs", "高级", "shareReplay", "缓存请求", "多播"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在多播之上缓存最近 N 个值并重放给后来的订阅者，典型用于缓存一次 HTTP 响应供后续复用",
+        "isCorrect": true,
+        "description": "正确。shareReplay 让晚来的订阅者也能拿到已发生的值；注意 refCount 与源不完成时的保活内存。"
+      },
+      {
+        "text": "与 share 行为完全一致，只是别名",
+        "isCorrect": false,
+        "description": "错误。shareReplay 多了「缓存 + 重放给后来者」，share 默认不重放历史值。"
+      },
+      {
+        "text": "shareReplay 不具备多播能力",
+        "isCorrect": false,
+        "description": "错误。它同样多播，且额外提供重放缓存。"
+      },
+      {
+        "text": "只把缓存重放给第一个订阅者",
+        "isCorrect": false,
+        "description": "错误。它对所有后来的订阅者重放缓存值。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：何时应优先选择 Observable 而不是 Promise？下面哪个理由最站得住？",
+    "explanation": "Observable 的优势在于：可发出**多个值**（流）、**可取消**（unsubscribe）、**惰性**（订阅才执行）、可被丰富操作符组合（debounce、retry、switchMap 等）。Promise 是单值、不可取消、急切。所以「多值/可取消/需要操作符组合」的异步（如事件流、可中断请求、自动补全）更适合 Observable；一次性、单值、简单的异步用 Promise/async-await 更轻。\n\n- 「需要多值、可取消、惰性、操作符组合时」正确。\n- 「任何异步都该用 Observable」错误：过度工程。\n- 「Promise 不能做异步」错误。\n- 「Observable 总是更快」错误。",
+    "tags": ["rxjs", "中级", "vs-Promise", "取舍", "可取消"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "当需要多个值、可取消、惰性执行，或要用 debounce/retry/switchMap 等操作符组合时",
+        "isCorrect": true,
+        "description": "正确。这些正是 Observable 相对 Promise（单值、不可取消、急切）的核心优势所在。"
+      },
+      {
+        "text": "任何异步操作都应一律改用 Observable",
+        "isCorrect": false,
+        "description": "错误。一次性、单值的简单异步用 Promise/async-await 更轻，盲目上 RxJS 是过度工程。"
+      },
+      {
+        "text": "因为 Promise 根本无法处理异步操作",
+        "isCorrect": false,
+        "description": "错误。Promise 正是为异步设计的；区别在多值/可取消/组合能力。"
+      },
+      {
+        "text": "因为 Observable 执行速度一定比 Promise 快",
+        "isCorrect": false,
+        "description": "错误。性能取决于场景，二者没有绝对的快慢，选择看语义需求。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：一个值得注意的取舍——RxJS 操作符链里能否直接 await 一个 Promise？怎样把 Promise 接入流？",
+    "explanation": "不能在 pipe 链中直接 await。把 Promise 接入流的标准方式：用 from(promise) 转成 Observable，或在高阶映射里返回 Promise（mergeMap/switchMap 等都接受 ObservableInput，含 Promise），如 switchMap(id => fetch(url).then(r => r.json()))。反向把 Observable 转 Promise 则用 firstValueFrom/lastValueFrom。\n\n- 「用 from(promise) 或在 mergeMap/switchMap 里返回 Promise」正确。\n- 「pipe 里直接 await」错误：pipe 是同步组合，不支持 await。\n- 「Promise 无法接入 RxJS」错误。\n- 「只能先转回调」错误。",
+    "tags": ["rxjs", "高级", "vs-Promise", "from", "互操作"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 from(promise) 把它转成 Observable，或在 switchMap/mergeMap 里直接返回 Promise（它们接受 ObservableInput）",
+        "isCorrect": true,
+        "description": "正确。高阶映射操作符接受含 Promise 的 ObservableInput；反向转 Promise 用 firstValueFrom/lastValueFrom。"
+      },
+      {
+        "text": "在 pipe(...) 链里直接写 await promise 即可",
+        "isCorrect": false,
+        "description": "错误。pipe 是同步的操作符组合，不能在其中使用 await。"
+      },
+      {
+        "text": "Promise 与 RxJS 不兼容，无法接入",
+        "isCorrect": false,
+        "description": "错误。from、高阶映射都能消费 Promise，二者可互操作。"
+      },
+      {
+        "text": "必须先把 Promise 改写成回调函数才能用",
+        "isCorrect": false,
+        "description": "错误。无需改写，from(promise) 或在映射里返回 Promise 即可。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：在 Angular 中，为什么官方推崇用模板里的 async 管道（async pipe）来消费 Observable？",
+    "explanation": "async pipe 在模板里订阅 Observable、自动取出最新值用于渲染，并在**组件销毁时自动 unsubscribe**——从根本上免去手动退订、杜绝相关内存泄漏。它还会在新值到来时自动触发变更检测。这就是 RxJS 被称作 Angular「御用」的原因之一：HttpClient、路由、表单等大量返回 Observable，配 async pipe 用最顺。\n\n- 「自动订阅 + 组件销毁时自动退订」正确。\n- 「需要手动 unsubscribe」错误：恰恰免去。\n- 「把 Observable 转成 Promise」错误。\n- 「禁用变更检测」错误：反而配合变更检测。",
+    "tags": ["rxjs", "中级", "Angular", "async-pipe", "退订"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它在模板中自动订阅并取最新值渲染，且在组件销毁时自动退订，免去手动 unsubscribe、防内存泄漏",
+        "isCorrect": true,
+        "description": "正确。async pipe 自动订阅/退订并触发变更检测，是 Angular 消费 Observable 的首选方式。"
+      },
+      {
+        "text": "它要求你在 ngOnDestroy 里手动 unsubscribe",
+        "isCorrect": false,
+        "description": "错误。async pipe 的卖点恰恰是自动退订，无需手动处理。"
+      },
+      {
+        "text": "它会把 Observable 同步转成 Promise 再渲染",
+        "isCorrect": false,
+        "description": "错误。async pipe 既能处理 Observable 也能处理 Promise，但不是把前者转成后者。"
+      },
+      {
+        "text": "它会禁用 Angular 的变更检测以提升性能",
+        "isCorrect": false,
+        "description": "错误。它在新值到来时配合并触发变更检测，而非禁用。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：mergeMap 默认会并发订阅所有内层 Observable。如何限制其并发数（例如最多同时 3 个请求）？",
+    "explanation": "mergeMap(project, concurrent) 接受第二个参数 **concurrent** 来限制同时活跃的内层 Observable 数量。例如 mergeMap(fn, 3) 表示最多并发 3 个，超出的排队等待空位。这在「批量请求但要限流、避免压垮服务器」时很有用。concatMap 等价于 mergeMap(fn, 1)（并发度为 1，即串行）。\n\n- 「第二个参数 concurrent 限制并发」正确。\n- 「mergeMap 无法限并发」错误。\n- 「用 take 限并发」错误：take 限数量不限并发。\n- 「concatMap 是并发无限」错误：concatMap 并发为 1。",
+    "tags": ["rxjs", "专家", "mergeMap", "并发控制", "concurrent"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "给 mergeMap 传第二个参数 concurrent，如 mergeMap(fn, 3) 限制最多并发 3 个内层 Observable",
+        "isCorrect": true,
+        "description": "正确。concurrent 控制活跃内层数，超出排队；concatMap 本质即 mergeMap(fn, 1)。"
+      },
+      {
+        "text": "mergeMap 无法限制并发，只能全并发",
+        "isCorrect": false,
+        "description": "错误。mergeMap 的第二个参数 concurrent 正是用于限制并发数。"
+      },
+      {
+        "text": "在 mergeMap 后加 take(3) 即可限制并发为 3",
+        "isCorrect": false,
+        "description": "错误。take(3) 限制总共取 3 个值后完成，不是限制同时进行的内层数。"
+      },
+      {
+        "text": "改用 concatMap，它的并发度是无限的",
+        "isCorrect": false,
+        "description": "错误。concatMap 并发度为 1（串行），并非无限；它确实能限流但只到 1。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：测试基于时间的流（如 debounceTime、interval）时，RxJS 官方提供的「虚拟时间」工具是什么？",
+    "explanation": "RxJS 提供 **TestScheduler**（来自 rxjs/testing），配合**弹珠图（marble diagrams）**做同步、确定性的时间测试。在 testScheduler.run(helpers => ...) 回调里，所有基于 asyncScheduler 的时间操作都会被虚拟时钟接管，几毫秒的真实等待被压缩成同步执行；用 cold/hot 构造输入、expectObservable(...).toBe(marble) 断言输出。\n\n- 「TestScheduler + 弹珠图」正确。\n- 「只能用 setTimeout + 真实等待」错误：慢且不稳。\n- 「jest.useFakeTimers 是 RxJS 官方方案」错误：可用但非 RxJS 自带的弹珠测试。\n- 「无法测试时间流」错误。",
+    "tags": ["rxjs", "专家", "TestScheduler", "弹珠图", "测试"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TestScheduler（rxjs/testing）配合弹珠图，在 run() 回调里用虚拟时钟同步、确定性地断言时间相关的流",
+        "isCorrect": true,
+        "description": "正确。TestScheduler 把基于 asyncScheduler 的时间操作虚拟化，cold/hot 造输入、expectObservable 断言。"
+      },
+      {
+        "text": "只能用 setTimeout 加真实等待来测试",
+        "isCorrect": false,
+        "description": "错误。真实等待慢且易抖动；RxJS 提供 TestScheduler 做虚拟时间测试。"
+      },
+      {
+        "text": "RxJS 官方测试方案就是 jest.useFakeTimers",
+        "isCorrect": false,
+        "description": "错误。假定时器可辅助，但 RxJS 自带的弹珠测试工具是 TestScheduler。"
+      },
+      {
+        "text": "基于时间的流无法被自动化测试",
+        "isCorrect": false,
+        "description": "错误。借助 TestScheduler 可对时间流做精确、可重复的单元测试。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：弹珠图（marble diagram）字符串里，符号 -、字母（如 a）、|、# 分别代表什么？",
+    "explanation": "弹珠语法中：- 代表「一帧时间的流逝」（无事发生）；字母/数字代表在该时刻**发出一个值**；| 代表流 **complete**；# 代表流 **error**；() 用于把同一帧内的多个事件分组；^ 在 hot Observable 里标记订阅起点。掌握这套符号是读写 TestScheduler 断言的基础。\n\n- 「- 时间流逝、字母=发值、| 完成、# 出错」正确。\n- 「- 代表发值」错误：- 是时间流逝。\n- 「| 代表错误」错误：| 是完成。\n- 「# 代表完成」错误：# 是错误。",
+    "tags": ["rxjs", "专家", "弹珠图", "marble", "测试"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "- 表示一帧时间流逝；字母/数字表示发出一个值；| 表示 complete；# 表示 error",
+        "isCorrect": true,
+        "description": "正确。另有 () 分组同帧事件、^ 标记 hot Observable 订阅点，是弹珠测试的基础符号。"
+      },
+      {
+        "text": "- 表示发出一个值，字母表示时间流逝",
+        "isCorrect": false,
+        "description": "错误。恰好相反：- 是时间流逝，字母才是发值。"
+      },
+      {
+        "text": "| 表示 error，# 表示 complete",
+        "isCorrect": false,
+        "description": "错误。反了：| 是 complete，# 是 error。"
+      },
+      {
+        "text": "所有符号都只是注释，没有时间语义",
+        "isCorrect": false,
+        "description": "错误。弹珠符号精确表达时间与事件，是断言流行为的依据。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：catchError 放在操作符链中的位置会影响行为。把它放在 retry 之前 vs 之后，有何不同？",
+    "explanation": "顺序很关键。retry 通过「重新订阅源」来重试，它捕获的是其**上游**的 error。若 catchError 在 retry **之前（更靠近源）**，每次错误会先被 catchError 处理（可能把 error 变成正常值），retry 就感知不到错误、不会重试。若 catchError 在 retry **之后（更靠下游）**，retry 先尝试重试 N 次，仍失败的 error 才落到 catchError 做最终降级。通常想「先重试、最后兜底」应把 catchError 放在 retry 之后。\n\n- 「位置决定谁先处理错误，影响是否重试」正确。\n- 「位置无影响」错误。\n- 「catchError 必须在最前」错误。\n- 「retry 会忽略 catchError」错误。",
+    "tags": ["rxjs", "专家", "catchError", "retry", "操作符顺序"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "catchError 在 retry 之前会先消化错误使 retry 不触发；放在 retry 之后则先重试 N 次、仍失败才兜底",
+        "isCorrect": true,
+        "description": "正确。retry 重订上游、捕获其上游错误；想「先重试再降级」要把 catchError 放在 retry 下游。"
+      },
+      {
+        "text": "两者位置对最终行为没有任何影响",
+        "isCorrect": false,
+        "description": "错误。位置决定错误先被谁处理，直接影响 retry 是否会触发。"
+      },
+      {
+        "text": "catchError 必须永远放在链的最前面",
+        "isCorrect": false,
+        "description": "错误。放在最前会拦掉所有错误，使下游的 retry 失效，并不总是想要的。"
+      },
+      {
+        "text": "无论放哪，retry 都会忽略 catchError 的存在",
+        "isCorrect": false,
+        "description": "错误。若 catchError 在上游已把错误转为正常值，retry 根本收不到错误。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：connectable / connect（取代旧的 multicast + connectableObservable）的作用是什么？",
+    "explanation": "connectable(source, { connector }) 返回一个 **ConnectableObservable**：订阅它**不会**立即触发源执行，要等显式调用 .connect() 才开始多播——从而能「先把所有订阅者接好，再统一开闸」，精确控制多播的开始时机，避免早订阅者错过值。它是对旧 multicast()/refCount 系列（已废弃）的现代替代；connect 操作符则适合在局部把源多播给多个分支再合并。\n\n- 「延迟到 connect() 才开始多播，可控开闸时机」正确。\n- 「订阅即开始」错误：要等 connect。\n- 「等价于 shareReplay」错误。\n- 「只能单播」错误。",
+    "tags": ["rxjs", "专家", "connectable", "多播", "connect"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "返回一个需手动 connect() 才开始多播的 Observable，便于先接好所有订阅者再统一开闸",
+        "isCorrect": true,
+        "description": "正确。connectable 精确控制多播开始时机，是已废弃的 multicast()/ConnectableObservable 系列的现代替代。"
+      },
+      {
+        "text": "订阅时就立即开始多播，无需任何额外调用",
+        "isCorrect": false,
+        "description": "错误。connectable 的特点正是延迟到 connect() 才开始，便于控制开闸时机。"
+      },
+      {
+        "text": "它等价于 shareReplay，会重放缓存值",
+        "isCorrect": false,
+        "description": "错误。connectable 控制的是多播开始时机，不自带重放缓存语义。"
+      },
+      {
+        "text": "它只能把源单播给一个订阅者",
+        "isCorrect": false,
+        "description": "错误。它正是为多播设计，可供多个订阅者共享一次源执行。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：defer(() => ...) 这个创建函数解决了什么问题？",
+    "explanation": "defer(factory) **把 Observable 的创建推迟到「订阅时」**，每次订阅都调用工厂函数生成一个全新的 Observable。它的价值在于：让原本「创建时就求值」的东西变成「每次订阅才求值」——例如每次订阅都读取当前时间 new Date()、或根据当下条件决定返回哪个流。没有 defer 的话，of(new Date()) 在定义时就固定了时间。\n\n- 「订阅时才创建/求值，每次订阅生成新流」正确。\n- 「让流变同步」错误。\n- 「缓存第一次创建的流」错误：每次都新建。\n- 「自动取消订阅」错误。",
+    "tags": ["rxjs", "专家", "defer", "惰性创建", "创建函数"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把 Observable 的创建延迟到订阅时，每次订阅都用工厂函数生成一个全新的流（保证按订阅时刻求值）",
+        "isCorrect": true,
+        "description": "正确。defer 让 new Date()、条件分支等在「每次订阅」时才求值，而非定义时固定。"
+      },
+      {
+        "text": "把异步流强制变为同步执行",
+        "isCorrect": false,
+        "description": "错误。defer 影响的是「何时创建」，不改变流的同步/异步性质。"
+      },
+      {
+        "text": "缓存首次创建的 Observable，后续订阅复用同一个",
+        "isCorrect": false,
+        "description": "错误。defer 每次订阅都调用工厂新建流，恰恰不复用。"
+      },
+      {
+        "text": "在流终止时自动取消所有订阅",
+        "isCorrect": false,
+        "description": "错误。自动退订与 defer 无关；defer 只负责延迟创建。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：EMPTY、NEVER、throwError 这三个特殊 Observable 的语义分别是什么？",
+    "explanation": "EMPTY：不发任何值，**立即 complete**（常用于 catchError 里静默结束或在条件分支返回「空流」）。NEVER：**既不发值也不 complete/error**，永远挂起（用于占位/测试）。throwError(() => err)：订阅时**立即 error**，把指定错误推给下游（7.x 推荐传工厂函数以便每次订阅生成新错误）。\n\n- 「EMPTY 立即完成、NEVER 永不结束、throwError 立即报错」正确。\n- 「EMPTY 永不结束」错误：那是 NEVER。\n- 「NEVER 立即完成」错误。\n- 「throwError 发一个值」错误：它发 error。",
+    "tags": ["rxjs", "高级", "EMPTY", "throwError", "特殊Observable"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "EMPTY 不发值并立即 complete；NEVER 既不发值也不终止；throwError 订阅时立即以指定错误 error",
+        "isCorrect": true,
+        "description": "正确。三者分别表达「空而完成」「永远挂起」「立即出错」，常用于条件分支与错误处理。"
+      },
+      {
+        "text": "EMPTY 永不完成，NEVER 立即完成",
+        "isCorrect": false,
+        "description": "错误。反了：EMPTY 立即完成，NEVER 永不完成。"
+      },
+      {
+        "text": "throwError 会先发出一个值再报错",
+        "isCorrect": false,
+        "description": "错误。throwError 不发值，订阅即 error；7.x 推荐传 () => err 工厂。"
+      },
+      {
+        "text": "三者行为相同，都是空流",
+        "isCorrect": false,
+        "description": "错误。完成、挂起、报错三种终止语义完全不同。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：一个 Observable 一旦 error 或 complete 之后，再调用 next() 会怎样？",
+    "explanation": "Observable 契约规定：error 与 complete 是**终止通知（terminal）**，二者互斥且整条流只会发生一次；一旦终止，后续的任何 next/error/complete 通知都会被**忽略、不再投递给订阅者**。这保证了流的「值* (error|complete)?」语法。若需要在出错后继续，必须用 catchError 切到新流或 retry 重订源。\n\n- 「终止后 next 被忽略」正确。\n- 「会重新开始发值」错误。\n- 「会抛异常中断程序」错误。\n- 「complete 后还能继续 next」错误。",
+    "tags": ["rxjs", "高级", "Observable契约", "终止通知", "complete"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "被忽略——error/complete 是终止通知，流终止后任何 next/error/complete 都不再投递",
+        "isCorrect": true,
+        "description": "正确。Observable 契约保证终止只发生一次；要在出错后继续需 catchError 切流或 retry 重订。"
+      },
+      {
+        "text": "流会自动从头重新开始发值",
+        "isCorrect": false,
+        "description": "错误。终止后不会自动重启；重订源需要 repeat/retry 等显式操作符。"
+      },
+      {
+        "text": "会抛出运行时异常导致程序崩溃",
+        "isCorrect": false,
+        "description": "错误。终止后的 next 只是被静默忽略，不会抛异常。"
+      },
+      {
+        "text": "complete 之后仍可继续 next 出新值",
+        "isCorrect": false,
+        "description": "错误。complete 是终止通知，之后的 next 不再生效。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：在一个操作符（如 map 的回调）内部抛出同步异常，会发生什么？",
+    "explanation": "RxJS 会**捕获操作符回调中抛出的同步异常，并把它转成该流的 error 通知**发给下游（即触发 Observer 的 error 回调 / 下游 catchError）。也就是说，抛错不会冒泡成未捕获异常崩溃程序，而是纳入流的错误通道。因此可以用 catchError 在下游统一处理这些异常。\n\n- 「被捕获并转为 error 通知发往下游」正确。\n- 「冒泡成未捕获异常使程序崩溃」错误。\n- 「被静默忽略」错误。\n- 「触发 complete」错误：是 error 不是 complete。",
+    "tags": ["rxjs", "高级", "错误处理", "操作符异常", "catchError"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "异常被捕获并转换为该流的 error 通知发往下游（可被 catchError 处理）",
+        "isCorrect": true,
+        "description": "正确。RxJS 把操作符回调里的同步抛错纳入流的错误通道，而非让它冒泡崩溃程序。"
+      },
+      {
+        "text": "直接冒泡为未捕获异常，导致程序崩溃",
+        "isCorrect": false,
+        "description": "错误。RxJS 会捕获它并转成 error 通知；下游可用 catchError 兜底。"
+      },
+      {
+        "text": "异常被静默吞掉，下游毫无感知",
+        "isCorrect": false,
+        "description": "错误。它不是被吞掉，而是作为 error 通知投递给下游。"
+      },
+      {
+        "text": "会触发流的 complete 而非 error",
+        "isCorrect": false,
+        "description": "错误。抛错对应 error 终止通知，不是 complete。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：pipe() 既是 Observable 的实例方法，也有一个独立的 pipe 函数。独立 pipe 函数的用途是什么？",
+    "explanation": "RxJS 导出一个独立的 pipe(...fns) 工具，用于**把多个操作符函数组合成一个可复用的新操作符**（函数组合），与具体 Observable 解耦。例如 const process = pipe(filter(...), map(...))，之后 source$.pipe(process) 复用它。这便于抽取公共的操作符链。实例方法 source$.pipe(...) 则是直接对某个流应用。\n\n- 「组合多个操作符为可复用的新操作符」正确。\n- 「立即订阅源」错误：pipe 不订阅。\n- 「只能用于创建 Observable」错误。\n- 「与实例 pipe 完全无关」错误。",
+    "tags": ["rxjs", "专家", "pipe", "操作符组合", "复用"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把多个操作符函数组合成一个可复用的新操作符（与具体 Observable 解耦）",
+        "isCorrect": true,
+        "description": "正确。独立 pipe(...ops) 做函数组合，便于抽取公共操作符链；实例 pipe 则直接应用到某流。"
+      },
+      {
+        "text": "立即订阅并执行源 Observable",
+        "isCorrect": false,
+        "description": "错误。pipe 只做组合，不订阅；订阅靠 subscribe。"
+      },
+      {
+        "text": "它只能用于从头创建一个 Observable",
+        "isCorrect": false,
+        "description": "错误。pipe 组合的是操作符，不负责创建源 Observable。"
+      },
+      {
+        "text": "与实例方法 pipe 毫无关系，是另一套机制",
+        "isCorrect": false,
+        "description": "错误。两者同源：实例 pipe 内部就是把操作符依次应用，独立 pipe 只是把它们先组合起来。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：自定义一个 pipeable 操作符，最正确的写法是什么？",
+    "explanation": "一个 pipeable 操作符本质是**一个接收源 Observable、返回新 Observable 的函数**：(source: Observable<T>) => Observable<R>。最简单且推荐的实现方式是用现有操作符通过独立 pipe 组合，例如 const double = () => pipe(map((x: number) => x * 2))；或显式 return (source) => source.pipe(...)。无需直接 new Observable 操作底层 subscriber（除非确有需要）。\n\n- 「返回 (source) => source.pipe(...) 或用 pipe 组合」正确。\n- 「必须继承 Observable 类」错误。\n- 「必须直接操作 subscriber」错误：组合现有操作符即可。\n- 「在 subscribe 里写」错误。",
+    "tags": ["rxjs", "专家", "自定义操作符", "pipeable", "组合"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "写一个接收源 Observable、返回新 Observable 的函数，通常用 pipe 组合现有操作符实现",
+        "isCorrect": true,
+        "description": "正确。pipeable 操作符即 (source)=>Observable；优先用现有操作符组合，而非手写底层 subscriber。"
+      },
+      {
+        "text": "必须创建一个继承自 Observable 的子类",
+        "isCorrect": false,
+        "description": "错误。操作符是函数而非类；不需要继承 Observable。"
+      },
+      {
+        "text": "必须用 new Observable 直接操作 subscriber.next/error",
+        "isCorrect": false,
+        "description": "错误。多数情况下组合现有操作符即可，手写底层只在确有需要时。"
+      },
+      {
+        "text": "把逻辑写进 subscribe 的回调里就算自定义操作符",
+        "isCorrect": false,
+        "description": "错误。写在 subscribe 里无法复用、不可组合，不是操作符。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：mergeAll、concatAll、switchAll、exhaustAll 这一组「拍平」操作符，与 mergeMap/concatMap/switchMap/exhaustMap 的关系是？",
+    "explanation": "xxxAll 系列处理的是**已经是「高阶 Observable」（发出 Observable 的 Observable）**，只负责把内层拍平、不做映射。xxxMap 系列则是「**先 map 成内层 Observable，再用对应策略拍平**」的合并写法，即 mergeMap ≈ map(...) + mergeAll，concatMap ≈ map(...) + concatAll，以此类推。日常更常用一步到位的 xxxMap。\n\n- 「xxxMap = map + 对应的 xxxAll」正确。\n- 「两组毫无关系」错误。\n- 「xxxAll 也做映射」错误：它只拍平。\n- 「xxxMap 不拍平」错误。",
+    "tags": ["rxjs", "专家", "mergeAll", "高阶Observable", "拍平"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "xxxAll 只把高阶 Observable 的内层拍平；xxxMap 等于「先 map 成内层 Observable，再用对应策略拍平」",
+        "isCorrect": true,
+        "description": "正确。如 mergeMap ≈ map + mergeAll、switchMap ≈ map + switchAll；日常多用一步到位的 xxxMap。"
+      },
+      {
+        "text": "两组操作符之间没有任何对应关系",
+        "isCorrect": false,
+        "description": "错误。xxxMap 正是 map 与对应 xxxAll 的组合简写。"
+      },
+      {
+        "text": "xxxAll 在拍平的同时也会对值做映射变换",
+        "isCorrect": false,
+        "description": "错误。xxxAll 只负责拍平内层，映射由 map 或 xxxMap 完成。"
+      },
+      {
+        "text": "xxxMap 只做映射、不负责拍平内层 Observable",
+        "isCorrect": false,
+        "description": "错误。xxxMap 既映射又按策略拍平，这正是它的核心。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：把一个普通 Subject 作为「事件总线」在应用里共享时，常见的内存泄漏隐患是什么？如何缓解？",
+    "explanation": "隐患在于：订阅了该长生命周期 Subject 的组件，如果在销毁时**没有退订**，其回调与闭包会被 Subject 的订阅者列表一直持有，无法 GC，导致泄漏且回调在组件销毁后仍执行。缓解：在组件侧用 takeUntil(destroy$)/take/async pipe 等保证退订；对外暴露时用 asObservable() 防止外部误调 next 破坏数据流。\n\n- 「订阅未退订被 Subject 持有，用 takeUntil 等退订」正确。\n- 「Subject 会自动退订所有订阅者」错误。\n- 「Subject 不可能泄漏」错误。\n- 「只要 complete 一次就无需退订」错误：业务流通常不主动 complete 总线。",
+    "tags": ["rxjs", "专家", "Subject", "事件总线", "内存泄漏"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "组件订阅长生命周期 Subject 后若不退订，会被其订阅者列表持有而泄漏；应在组件侧用 takeUntil/async pipe 退订",
+        "isCorrect": true,
+        "description": "正确。长生命周期 Subject 会持有未退订的回调；对外用 asObservable() 暴露也能防外部误 next。"
+      },
+      {
+        "text": "Subject 在组件销毁时会自动退订其所有订阅者",
+        "isCorrect": false,
+        "description": "错误。Subject 不感知组件生命周期，退订需订阅方主动处理。"
+      },
+      {
+        "text": "Subject 作为单例不可能造成内存泄漏",
+        "isCorrect": false,
+        "description": "错误。恰恰因为它长存，未退订的订阅者更容易被它长期持有而泄漏。"
+      },
+      {
+        "text": "只要该 Subject complete 过一次，订阅者就都无需退订",
+        "isCorrect": false,
+        "description": "错误。作为事件总线的 Subject 通常不会主动 complete，订阅方仍需自行退订。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：Subject 暴露给外部时常用 subject.asObservable()，它的目的是什么？",
+    "explanation": "asObservable() 返回一个**只读视图**：它是一个 Observable，订阅时转发源 Subject 的通知，但**不暴露 next/error/complete**。这样在「服务内部用 Subject 写入、对外只读」的封装模式里，能防止消费方误调用 next() 破坏数据流来源的单一性，是良好的封装实践。\n\n- 「返回只读 Observable，隐藏 next 等写入能力」正确。\n- 「把 Subject 变成 BehaviorSubject」错误。\n- 「提升性能」错误。\n- 「让外部也能 next」错误：恰恰相反。",
+    "tags": ["rxjs", "专家", "asObservable", "封装", "Subject"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "返回一个只读的 Observable 视图，隐藏 Subject 的 next/error/complete，防止外部写入",
+        "isCorrect": true,
+        "description": "正确。用于「内部写、对外只读」的封装，保证数据来源单一，消费方只能订阅不能 next。"
+      },
+      {
+        "text": "把普通 Subject 升级成 BehaviorSubject",
+        "isCorrect": false,
+        "description": "错误。asObservable 不改变 Subject 类型或重放语义，只隐藏写入接口。"
+      },
+      {
+        "text": "显著提升 Subject 的多播性能",
+        "isCorrect": false,
+        "description": "错误。它是封装手段，与性能优化无关。"
+      },
+      {
+        "text": "让外部消费方也能调用 next 主动发值",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它的目的就是阻止外部 next。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：repeat 与 retry 都会「重新订阅源」，它们的触发条件有何本质不同？",
+    "explanation": "repeat 在源**正常 complete 后**重新订阅（用于「成功完成后再来一遍」，如轮询场景）；retry 在源**出错（error）后**重新订阅（用于「失败后重试」）。一个针对成功路径、一个针对失败路径。两者都可限定次数；retry 还支持 delay 选项。\n\n- 「repeat 在 complete 后重订，retry 在 error 后重订」正确。\n- 「两者都在 error 后重订」错误：repeat 是 complete 后。\n- 「两者都在 complete 后重订」错误：retry 是 error 后。\n- 「完全等价」错误。",
+    "tags": ["rxjs", "高级", "repeat", "retry", "重订阅"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "repeat 在源正常 complete 后重新订阅；retry 在源 error 后重新订阅",
+        "isCorrect": true,
+        "description": "正确。repeat 针对成功路径（如轮询），retry 针对失败路径（如重试），触发条件相反。"
+      },
+      {
+        "text": "两者都只在源 error 后重新订阅",
+        "isCorrect": false,
+        "description": "错误。repeat 是在 complete（成功）后重订，不针对错误。"
+      },
+      {
+        "text": "两者都只在源 complete 后重新订阅",
+        "isCorrect": false,
+        "description": "错误。retry 是在 error（失败）后重订，不针对正常完成。"
+      },
+      {
+        "text": "二者行为完全等价，可互换使用",
+        "isCorrect": false,
+        "description": "错误。触发条件相反（成功 vs 失败），语义截然不同。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：concat(a$, b$) 与 merge(a$, b$) 在订阅与发值上的核心区别是？",
+    "explanation": "concat **串行**：先订阅 a$，**等它 complete** 后才订阅 b$，值按 a 全部、再 b 全部的顺序出现（保序、不交错）。merge **并行**：同时订阅所有源，谁先发就先出，值会**交错**（适合「多个独立流汇成一条」）。所以要顺序衔接用 concat，要并发汇流用 merge。\n\n- 「concat 串行等前一个完成，merge 并行交错」正确。\n- 「两者都并行」错误。\n- 「concat 也会交错」错误：concat 保序不交错。\n- 「merge 等前一个完成」错误：那是 concat。",
+    "tags": ["rxjs", "中级", "concat", "merge", "组合操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "concat 串行：等前一个源 complete 再订阅下一个、值不交错；merge 并行：同时订阅、值可交错",
+        "isCorrect": true,
+        "description": "正确。要顺序衔接（保序）用 concat，要并发汇多条流成一条用 merge。"
+      },
+      {
+        "text": "两者都并行订阅所有源，行为一致",
+        "isCorrect": false,
+        "description": "错误。concat 是串行（等前一个完成），只有 merge 并行。"
+      },
+      {
+        "text": "concat 会让多个源的值交错发出",
+        "isCorrect": false,
+        "description": "错误。concat 严格按源顺序、前一个全部发完再发下一个，不交错。"
+      },
+      {
+        "text": "merge 会等前一个源 complete 后才订阅下一个",
+        "isCorrect": false,
+        "description": "错误。等待前一个完成是 concat；merge 同时订阅全部源。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：从 RxJS 6 升级到 7，关于 subscribe() 的参数写法有什么变化？",
+    "explanation": "RxJS 7 **废弃了给 subscribe 传「多个分散回调参数」的写法**（subscribe(nextFn, errorFn, completeFn)，将在 v8 移除），推荐改为传**单个 Observer 对象**：subscribe({ next, error, complete })。只传一个 next 函数 subscribe(v => ...) 仍然合法、未废弃。这样更清晰、避免位置参数易错。\n\n- 「分散回调参数已废弃，改传 observer 对象」正确。\n- 「subscribe 不再接受任何参数」错误。\n- 「只能传一个对象，连单 next 函数都不行」错误：单函数仍可。\n- 「无任何变化」错误。",
+    "tags": ["rxjs", "专家", "subscribe", "7.x废弃", "observer"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "传多个分散回调（next, error, complete 位置参数）的写法已废弃，推荐改传单个 observer 对象；单 next 函数仍可用",
+        "isCorrect": true,
+        "description": "正确。7.x 废弃位置回调（v8 移除），推荐 subscribe({ next, error, complete }）；subscribe(fn) 仍合法。"
+      },
+      {
+        "text": "subscribe 在 7.x 不再接受任何参数",
+        "isCorrect": false,
+        "description": "错误。它仍接受 observer 对象或单个 next 函数。"
+      },
+      {
+        "text": "连 subscribe(v => ...) 这种单函数写法都被禁止了",
+        "isCorrect": false,
+        "description": "错误。只传一个 next 函数仍然合法、未被废弃。"
+      },
+      {
+        "text": "subscribe 的参数写法在 6 到 7 之间没有任何调整",
+        "isCorrect": false,
+        "description": "错误。位置回调参数在 7.x 被标记废弃，这是明确变化。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：throttleTime 默认在节流窗口内发出「第一个」值（leading）。如果想在窗口「结束时」也发出该窗口内的最后一个值，应怎么做？",
+    "explanation": "throttleTime(duration, scheduler, config) 接受第三个 config 参数 { leading, trailing }。默认 leading: true, trailing: false（只发窗口首值）。把 trailing 设为 true 可在窗口结束时再补发窗口内最后一个值；两者都可单独开关，从而精确控制「发头、发尾、还是头尾都发」。\n\n- 「传 { leading, trailing } 配置，开启 trailing」正确。\n- 「throttleTime 不可配置」错误。\n- 「改用 debounceTime」错误：语义不同。\n- 「加 takeLast」错误：takeLast 等 complete。",
+    "tags": ["rxjs", "专家", "throttleTime", "leading-trailing", "时间操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "给 throttleTime 传 { leading, trailing } 配置，将 trailing 设为 true 即可在窗口结束时补发最后一个值",
+        "isCorrect": true,
+        "description": "正确。throttleTime 默认 leading:true、trailing:false，可通过 config 精确控制发头/发尾。"
+      },
+      {
+        "text": "throttleTime 行为固定，无法配置 leading/trailing",
+        "isCorrect": false,
+        "description": "错误。它支持第三个 config 参数来配置 leading 与 trailing。"
+      },
+      {
+        "text": "改用 debounceTime 就能既发首值又发尾值",
+        "isCorrect": false,
+        "description": "错误。debounceTime 语义是「静默后发末值」，并非节流的首尾控制。"
+      },
+      {
+        "text": "在 throttleTime 后加 takeLast(1)",
+        "isCorrect": false,
+        "description": "错误。takeLast 要等流 complete 才发，无法实现每个节流窗口的尾值。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：bufferTime(1000) 与单纯的 throttleTime(1000) 在「攒值」上的本质差异是什么？",
+    "explanation": "bufferTime(span) **把一段时间内的所有值收集进一个数组**，到时间点把整个数组作为一个值发出（不丢值，做批处理）。throttleTime 则是**丢弃**窗口内多余的值、只放行少数。所以「要把高频事件成批处理、一个都不丢」用 buffer 系列；「只想降低触发频率、可丢中间值」用 throttle。\n\n- 「bufferTime 攒成数组不丢值，throttle 丢弃多余值」正确。\n- 「两者一样」错误。\n- 「bufferTime 也丢值」错误。\n- 「throttleTime 攒成数组」错误。",
+    "tags": ["rxjs", "高级", "bufferTime", "throttleTime", "批处理"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bufferTime 把窗口内所有值收集成数组整批发出（不丢值）；throttleTime 丢弃窗口内多余值、只放行少量",
+        "isCorrect": true,
+        "description": "正确。要批处理且不丢值用 buffer 系列；只想降频、可丢中间值用 throttle。"
+      },
+      {
+        "text": "两者完全等价，都把值攒成数组",
+        "isCorrect": false,
+        "description": "错误。throttleTime 不攒数组、会丢值；bufferTime 才把值收集成数组。"
+      },
+      {
+        "text": "bufferTime 也会丢弃窗口内的多余值",
+        "isCorrect": false,
+        "description": "错误。bufferTime 的核心是不丢值、整批收集。"
+      },
+      {
+        "text": "throttleTime 会把窗口内的值收集成数组发出",
+        "isCorrect": false,
+        "description": "错误。收集成数组是 buffer 系列；throttleTime 只放行个别值。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：要把一个 Observable 转成「数组」（收集所有值），用 toArray 操作符时有什么前提？",
+    "explanation": "toArray() 会把源发出的**所有**值收集进一个数组，**等源 complete 时**把这个数组作为单个值发出。前提是源**必须会 complete**——否则永远等不到那一刻、永远不发数组。所以对 interval、fromEvent 这类无限流直接用 toArray 是无效的（需先用 take/takeUntil 让它有限）。\n\n- 「源必须 complete，否则永不发出数组」正确。\n- 「每来一个值就发一次数组」错误：等 complete 一次性发。\n- 「对无限流也能立即发」错误。\n- 「toArray 会改变值类型为字符串」错误。",
+    "tags": ["rxjs", "高级", "toArray", "complete", "收集"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "源必须会 complete——toArray 等到 complete 才把收集的所有值作为一个数组发出",
+        "isCorrect": true,
+        "description": "正确。无限流（interval/fromEvent）需先 take/takeUntil 变有限，否则 toArray 永不发出。"
+      },
+      {
+        "text": "每来一个值就立即发出一次当前数组",
+        "isCorrect": false,
+        "description": "错误。那更像 scan 累积；toArray 只在 complete 时发一次完整数组。"
+      },
+      {
+        "text": "即使源永不完成，toArray 也会立即发出数组",
+        "isCorrect": false,
+        "description": "错误。toArray 依赖 complete 信号，无限流会让它永远等待。"
+      },
+      {
+        "text": "toArray 会把所有值转成字符串再拼接",
+        "isCorrect": false,
+        "description": "错误。toArray 收集成数组，不做字符串拼接或类型转换。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：关于 RxJS 7 的产物与体积，下面哪个说法是准确的？",
+    "explanation": "RxJS 7 对 **tree-shaking 与包体积**做了显著优化：pipeable 操作符是独立的纯函数，未用到的操作符可被打包器摇掉；官方称 7.x 相比 6.x 体积更小、类型推断更好。它仍以 ESM/CJS 双格式发布，并保留 rxjs/operators、rxjs/ajax 等子路径。这也是为何不应再用「原型链 patch 操作符」（会把整包拉进来）。\n\n- 「pipeable 操作符利于 tree-shaking、7.x 体积更优」正确。\n- 「7.x 必须整包导入无法摇树」错误。\n- 「7.x 只发布 CJS」错误。\n- 「操作符越多体积一定越大，无法优化」错误。",
+    "tags": ["rxjs", "专家", "tree-shaking", "体积", "7.x"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "pipeable 操作符是独立纯函数、利于 tree-shaking，7.x 在体积与类型推断上较 6.x 更优",
+        "isCorrect": true,
+        "description": "正确。未用到的操作符可被摇掉；这也是不该再用整包拉入的原型链 patch 操作符的原因。"
+      },
+      {
+        "text": "7.x 必须整包导入，无法做 tree-shaking",
+        "isCorrect": false,
+        "description": "错误。扁平导出 + 纯函数操作符正是为 tree-shaking 设计。"
+      },
+      {
+        "text": "7.x 只发布 CommonJS，不支持 ESM",
+        "isCorrect": false,
+        "description": "错误。RxJS 以 ESM/CJS 双格式发布，支持现代打包器摇树。"
+      },
+      {
+        "text": "导入的操作符越多，最终体积必然线性暴涨且无法优化",
+        "isCorrect": false,
+        "description": "错误。只打入用到的操作符；未引用的会被摇掉，并非不可优化。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：把同步的、CPU 密集的长循环放进 Observable 仍可能阻塞主线程。借助 Scheduler 缓解时，正确的思路是？",
+    "explanation": "JS 是单线程，Observable/Scheduler **不能把同步代码变成真正的并行**——它只能改变「执行时机」。可用 asyncScheduler/asapScheduler 把发值切片成异步任务，让出主线程、避免一次性长时间阻塞（如分批投递），但每段计算仍在主线程跑。要真正并行需 Web Worker。理解「调度器调时机、不调线程」很关键。\n\n- 「调度器只改执行时机、不提供并行，真并行需 Worker」正确。\n- 「调度器开新线程并行」错误。\n- 「Observable 天生不阻塞」错误。\n- 「用 queueScheduler 可并行」错误。",
+    "tags": ["rxjs", "专家", "Scheduler", "主线程阻塞", "并发"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "调度器只能改变执行时机（把工作切片成异步、让出主线程），不能提供真正并行；真并行需 Web Worker",
+        "isCorrect": true,
+        "description": "正确。JS 单线程，Scheduler 调的是时机不是线程；分批异步可缓解卡顿，但 CPU 密集仍占主线程。"
+      },
+      {
+        "text": "调度器会为 CPU 密集任务开启新线程实现并行",
+        "isCorrect": false,
+        "description": "错误。RxJS 调度器运行在主线程，不创建线程；并行要靠 Worker。"
+      },
+      {
+        "text": "Observable 天生不会阻塞主线程，无需担心",
+        "isCorrect": false,
+        "description": "错误。同步发值/同步计算照样阻塞主线程，Observable 不改变这一点。"
+      },
+      {
+        "text": "改用 queueScheduler 就能让计算并行执行",
+        "isCorrect": false,
+        "description": "错误。queueScheduler 是同步队列，更不会带来并行。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：auditTime 与 throttleTime 都用于限频，二者在「发出窗口内哪个值」上的差异是？",
+    "explanation": "二者都在收到一个值后开启计时窗口、期间忽略其余值，但发出的值不同：throttleTime 默认发出**窗口开始时那个值**（leading）；auditTime 则在**窗口结束时发出该窗口内最近的一个值**（即「采样最新」）。所以 audit 更像「忽略一阵后取最新值」，throttle 默认取触发那一刻的值。\n\n- 「audit 发窗口末的最新值，throttle 默认发窗口首值」正确。\n- 「两者发同一个值」错误。\n- 「auditTime 发首值」错误。\n- 「throttleTime 总发末值」错误：默认发首值。",
+    "tags": ["rxjs", "专家", "auditTime", "throttleTime", "限频"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "auditTime 在窗口结束时发出该窗口内最近的值；throttleTime 默认发出窗口开始时的那个值",
+        "isCorrect": true,
+        "description": "正确。audit 像「沉默一阵后取最新」，throttle 默认取触发瞬间的值（可用 config 调 trailing）。"
+      },
+      {
+        "text": "两者总是发出窗口内完全相同的值",
+        "isCorrect": false,
+        "description": "错误。audit 取窗口末的最新值，throttle 默认取窗口首值，时机不同值也常不同。"
+      },
+      {
+        "text": "auditTime 发出窗口开始时的值（leading）",
+        "isCorrect": false,
+        "description": "错误。发首值的是 throttleTime 默认行为；auditTime 发窗口末的最新值。"
+      },
+      {
+        "text": "throttleTime 默认总是发出窗口结束时的最后一个值",
+        "isCorrect": false,
+        "description": "错误。throttleTime 默认 leading（发首值），发末值需开启 trailing。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：关于「Observable 默认是单播」，下面哪个理解最准确？它对副作用意味着什么？",
+    "explanation": "默认 Observable 单播意味着**每个订阅者触发一次独立的生产执行**，因此源里的副作用（如 console.log、HTTP 请求、tap）会**按订阅次数重复发生**。若希望多个订阅者共享同一次执行与副作用，必须显式多播（share/shareReplay/Subject）。这是「为什么我的请求/日志跑了好几遍」的根因。\n\n- 「每个订阅独立执行，副作用按订阅数重复」正确。\n- 「副作用只发生一次」错误：那要多播。\n- 「单播=只能一个订阅者」错误：可多个，只是各自独立。\n- 「副作用被自动去重」错误。",
+    "tags": ["rxjs", "高级", "单播", "副作用", "多播"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "单播指每个订阅者各自触发一次独立执行，源中的副作用会按订阅次数重复发生；共享需显式多播",
+        "isCorrect": true,
+        "description": "正确。这解释了「请求/日志跑了好几遍」；要共享一次执行用 share/shareReplay/Subject。"
+      },
+      {
+        "text": "单播意味着源里的副作用无论多少订阅者都只发生一次",
+        "isCorrect": false,
+        "description": "错误。只发生一次是多播的效果；单播下每个订阅都重跑副作用。"
+      },
+      {
+        "text": "单播意味着该 Observable 只允许存在一个订阅者",
+        "isCorrect": false,
+        "description": "错误。单播允许多个订阅者，只是彼此独立、各跑一次执行。"
+      },
+      {
+        "text": "RxJS 会自动对重复的副作用去重",
+        "isCorrect": false,
+        "description": "错误。RxJS 不会自动去重副作用，需开发者用多播显式共享。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：用 RxJS 实现「每隔 5 秒轮询一次接口，组件销毁时停止」，下面哪种组合最贴切？",
+    "explanation": "典型实现：timer(0, 5000)（立即开始、之后每 5 秒触发一次）→ switchMap(() => http.get(...))（每次触发发起请求，新请求自动取消上一个未完成的）→ takeUntil(destroy$)（组件销毁时整体停止退订）。这套组合兼顾「定时、取消过期请求、生命周期收尾」。\n\n- 「timer + switchMap + takeUntil」正确。\n- 「interval + mergeMap，不退订」错误：会堆积请求且泄漏。\n- 「of + delay」错误：只发一次。\n- 「fromEvent」错误：与定时轮询无关。",
+    "tags": ["rxjs", "高级", "轮询", "switchMap", "takeUntil"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "timer(0, 5000).pipe(switchMap(() => http.get(...)), takeUntil(destroy$))",
+        "isCorrect": true,
+        "description": "正确。timer 定时、switchMap 每次取最新并取消过期请求、takeUntil 在销毁时退订收尾。"
+      },
+      {
+        "text": "interval(5000).pipe(mergeMap(() => http.get(...))) 且不做任何退订",
+        "isCorrect": false,
+        "description": "错误。mergeMap 会让慢请求堆积，且不退订会内存泄漏；轮询更适合 switchMap + takeUntil。"
+      },
+      {
+        "text": "of(null).pipe(delay(5000), switchMap(() => http.get(...)))",
+        "isCorrect": false,
+        "description": "错误。of+delay 只触发一次，不能周期轮询。"
+      },
+      {
+        "text": "fromEvent(window, 'scroll').pipe(switchMap(() => http.get(...)))",
+        "isCorrect": false,
+        "description": "错误。fromEvent 监听事件而非定时，与「每 5 秒轮询」语义不符。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：在 Angular 服务里维护一份共享状态，并希望「新订阅者能立即拿到当前状态、组件可订阅其变化」，最合适的工具是？",
+    "explanation": "BehaviorSubject 最贴切：它持有当前状态、新订阅者立即收到当前值、可用 .value 同步读取，并能通过 next() 更新状态广播给所有订阅者。对外通常 asObservable() 暴露只读流。这是 Angular 中轻量状态管理（不引入 NgRx）的常见模式。普通 Subject 不持当前值，新订阅者拿不到初始状态。\n\n- 「BehaviorSubject」正确。\n- 「普通 Subject」错误：新订阅者收不到当前值。\n- 「AsyncSubject」错误：要等 complete。\n- 「EMPTY」错误：不发值。",
+    "tags": ["rxjs", "中级", "BehaviorSubject", "状态管理", "Angular"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "BehaviorSubject（持有当前值、新订阅者立即获得、可 next 更新并广播）",
+        "isCorrect": true,
+        "description": "正确。它是 Angular 轻量状态管理的常见选择，对外用 asObservable() 暴露只读流。"
+      },
+      {
+        "text": "普通 Subject",
+        "isCorrect": false,
+        "description": "错误。普通 Subject 不保存当前值，新订阅者拿不到已有状态。"
+      },
+      {
+        "text": "AsyncSubject",
+        "isCorrect": false,
+        "description": "错误。AsyncSubject 要等 complete 才发值，不适合持续变化的状态。"
+      },
+      {
+        "text": "EMPTY",
+        "isCorrect": false,
+        "description": "错误。EMPTY 不发任何值、立即完成，无法承载状态。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：调试一条复杂的操作符链，想看清每个阶段的值流动，最稳妥不影响数据的做法是？",
+    "explanation": "在链中各阶段插入 tap(v => console.log('阶段X', v)) ——tap 专做副作用、原样透传值、不改变流，适合打点观测。还可用 tap({ next, error, complete }) 观察各类通知。切忌用 map 打日志（忘 return 会污染值）。生产环境记得移除或用自定义 debug 操作符按需开关。\n\n- 「用 tap 打日志，不改值」正确。\n- 「用 map 打日志」错误：易把值改成 undefined。\n- 「在 subscribe 里才能看到」错误：tap 可看中间阶段。\n- 「无法调试中间阶段」错误。",
+    "tags": ["rxjs", "中级", "tap", "调试", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在各阶段插入 tap(v => console.log(...))，它原样透传值、不影响数据流",
+        "isCorrect": true,
+        "description": "正确。tap 专做副作用、不改值，可用 tap({next,error,complete}) 观察各类通知，是安全的调试手段。"
+      },
+      {
+        "text": "用 map(v => { console.log(v); }) 打印每个值",
+        "isCorrect": false,
+        "description": "错误。map 用返回值替换原值，忘记 return 会把值变成 undefined，污染数据流。"
+      },
+      {
+        "text": "只能在最终 subscribe 的回调里观察，看不到中间阶段",
+        "isCorrect": false,
+        "description": "错误。tap 可插在链中任意位置观察该阶段的值。"
+      },
+      {
+        "text": "复杂链的中间阶段无法被调试观察",
+        "isCorrect": false,
+        "description": "错误。tap 正是用于观察中间阶段而不干扰数据。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：关于「操作符是纯函数、返回新 Observable」这一设计，下面哪个推论是正确的？",
+    "explanation": "pipeable 操作符是纯函数：调用它**不修改源 Observable，而是返回一个新的 Observable**（源不可变）。因此同一个源可安全地被不同操作符链多次复用、互不影响；source$.pipe(map(...)) 不会改变 source$ 本身。这种不可变 + 组合的设计是 RxJS 声明式、可测试的基础。\n\n- 「不改源、返回新 Observable，源可复用」正确。\n- 「会就地修改源」错误。\n- 「源被消费后不能再用」错误。\n- 「操作符有副作用改全局」错误。",
+    "tags": ["rxjs", "高级", "纯函数", "不可变", "操作符"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "操作符不修改源、返回一个新 Observable，因此同一个源可被多条不同的链安全复用",
+        "isCorrect": true,
+        "description": "正确。不可变 + 组合是 RxJS 声明式设计的基础；source$.pipe(...) 不改变 source$ 自身。"
+      },
+      {
+        "text": "操作符会就地修改（mutate）源 Observable",
+        "isCorrect": false,
+        "description": "错误。pipeable 操作符是纯函数，返回新流，不改源。"
+      },
+      {
+        "text": "源 Observable 被一条链 pipe 之后就不能再用于其它链",
+        "isCorrect": false,
+        "description": "错误。源不可变，可被任意多条链复用，互不影响。"
+      },
+      {
+        "text": "操作符通常带有修改全局状态的副作用",
+        "isCorrect": false,
+        "description": "错误。操作符设计为纯函数；需要副作用应显式用 tap。"
+      }
+    ]
+  },
+  {
+    "stem": "RxJS：firstValueFrom(obs) 在 obs 不发任何值就 complete 的情况下会怎样？如何避免抛错？",
+    "explanation": "firstValueFrom 期望至少有一个值；若源**未发值就 complete**，返回的 Promise 会 **reject 一个 EmptyError**。要避免，可传第二参 { defaultValue }：firstValueFrom(obs, { defaultValue: x })，空流时改为 resolve 该默认值。lastValueFrom 同理。这是从 toPromise 迁移时容易忽略的语义差异（toPromise 空流 resolve undefined）。\n\n- 「reject EmptyError，可传 defaultValue 避免」正确。\n- 「resolve undefined」错误：那是旧 toPromise。\n- 「永远 pending」错误。\n- 「抛同步异常」错误：是 reject。",
+    "tags": ["rxjs", "专家", "firstValueFrom", "EmptyError", "默认值"],
+    "categories": [
+      ["技术方向", "RxJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "返回的 Promise 会 reject 一个 EmptyError；可传第二参 { defaultValue } 让空流改为 resolve 默认值",
+        "isCorrect": true,
+        "description": "正确。这是与旧 toPromise（空流 resolve undefined）的关键差异，迁移时需注意。"
+      },
+      {
+        "text": "Promise 会 resolve 成 undefined",
+        "isCorrect": false,
+        "description": "错误。resolve undefined 是已废弃的 toPromise 行为；firstValueFrom 会 reject EmptyError。"
+      },
+      {
+        "text": "Promise 会永远处于 pending 状态",
+        "isCorrect": false,
+        "description": "错误。源 complete 后会立即 reject EmptyError，而非挂起。"
+      },
+      {
+        "text": "会抛出一个同步异常而非 reject",
+        "isCorrect": false,
+        "description": "错误。它通过 Promise 的 reject 通道报告 EmptyError。"
+      }
+    ]
+  }
+]

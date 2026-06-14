@@ -1,0 +1,2230 @@
+[
+  {
+    "stem": "Immer：用一句话概括，Immer 这个库的核心定位是什么？",
+    "explanation": "Immer（德语「always」）是一个微小的库，让你用「直接修改」的可变写法去产出不可变（immutable）数据。你在一个临时的 draft（草稿）上随意 mutate，Immer 记录这些改动并据此生成全新的不可变 nextState，原 state 不受影响。它不引入新的数据结构，用的就是普通 JS 对象/数组/Map/Set。\n\n- 「用可变写法产出不可变数据」正确。\n- 「一个新的不可变数据结构库（类似 Immutable.js 的 List/Map）」错误：Immer 用原生结构，不造新结构。\n- 「一个深拷贝工具」错误：它靠结构共享只拷贝改动的部分。\n- 「一个状态管理库（类似 Redux）」错误：它只负责不可变更新，不是状态容器。",
+    "tags": [
+      "immer",
+      "入门",
+      "定位",
+      "核心概念"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "一个让你用「可变写法」安全产出不可变数据的库：在 draft 上 mutate，自动生成新的不可变状态",
+        "isCorrect": true,
+        "description": "正确。这正是 Immer 的官方定位——用熟悉的 mutable API 获得 immutable 结果。"
+      },
+      {
+        "text": "一个全新的不可变数据结构库，提供 List/Map/Record 等专用结构替代原生对象",
+        "isCorrect": false,
+        "description": "错误。那是 Immutable.js 的路线；Immer 刻意复用原生对象/数组/Map/Set，无需学新结构。"
+      },
+      {
+        "text": "一个把对象做深拷贝（deep clone）的工具库",
+        "isCorrect": false,
+        "description": "错误。Immer 靠结构共享，只复制被改动的节点，未改动部分与旧状态共享内存。"
+      },
+      {
+        "text": "一个像 Redux 一样的全局状态管理容器",
+        "isCorrect": false,
+        "description": "错误。Immer 只解决「不可变更新」这一件事，常与 Redux/React state 搭配，但本身不是状态容器。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：最核心的 API 是哪个函数？",
+    "explanation": "`produce` 是 Immer 的核心 API。典型签名 `produce(baseState, recipe)`：第一个参数是基础状态，第二个是 recipe（配方）函数，Immer 给 recipe 传入一个 draft，你在 draft 上做改动，Immer 返回新的不可变状态。\n\n- `produce` 正确。\n- `immer()` 不是导出的函数（`Immer` 是用于创建独立实例的构造器）。\n- `draft()` 不存在。\n- `mutate()` 不存在。",
+    "tags": [
+      "immer",
+      "入门",
+      "produce",
+      "API"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "produce",
+        "isCorrect": true,
+        "description": "正确。produce(base, recipe) 是 Immer 的核心入口。"
+      },
+      {
+        "text": "immer",
+        "isCorrect": false,
+        "description": "错误。没有名为 immer 的默认导出函数；Immer（大写）是构造独立实例的类。"
+      },
+      {
+        "text": "draft",
+        "isCorrect": false,
+        "description": "错误。draft 是 recipe 收到的参数名，不是可调用的 API。"
+      },
+      {
+        "text": "mutate",
+        "isCorrect": false,
+        "description": "错误。Immer 没有名为 mutate 的导出。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 recipe 函数里，你拿到的 `draft` 本质上是什么？",
+    "explanation": "draft 是对 baseState 的一个 **Proxy（代理）**。你对 draft 的读写都会被 Proxy 的 trap 拦截：读取时按需把子对象也包成 draft，写入时记录「这里改了」。recipe 结束后，Immer 据此只复制被改动的节点、生成新状态，其余部分与原状态结构共享。\n\n- 「baseState 的 Proxy 代理」正确。\n- 「baseState 的深拷贝」错误：不会一上来就深拷贝，是按需 + 写时复制。\n- 「baseState 本身」错误：直接改 baseState 会破坏不可变性，Immer 不会让你改到原对象。\n- 「一个空对象」错误：draft 反映的是 baseState 的内容。",
+    "tags": [
+      "immer",
+      "入门",
+      "draft",
+      "Proxy"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "baseState 的 Proxy 代理对象，读写会被拦截并记录",
+        "isCorrect": true,
+        "description": "正确。draft 是 Proxy，Immer 靠它追踪你的修改，最后按需复制。"
+      },
+      {
+        "text": "baseState 的一份完整深拷贝",
+        "isCorrect": false,
+        "description": "错误。Immer 不预先深拷贝，只在你真正改动某节点时才复制它（写时复制）。"
+      },
+      {
+        "text": "baseState 对象本身（你直接改的就是原对象）",
+        "isCorrect": false,
+        "description": "错误。直接改原对象会破坏不可变性；draft 是代理，原 baseState 始终不被触碰。"
+      },
+      {
+        "text": "一个与 baseState 无关的空对象",
+        "isCorrect": false,
+        "description": "错误。draft 透出 baseState 的全部内容，只是读写经过代理。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：下面这段代码执行后，baseState 会被改变吗？\nconst next = produce(baseState, draft => { draft.done = true })",
+    "explanation": "不会。Immer 的根本承诺就是**原状态不可变**：你在 draft（代理）上写 `draft.done = true`，改动只反映在返回的 next 上，baseState 保持原样。这正是不可变更新的意义——旧引用不变，便于变更检测与时间旅行。\n\n- 「baseState 不变，next 是新状态」正确。\n- 「baseState 被原地修改」错误：那恰恰是 Immer 要避免的。\n- 「baseState 和 next 是同一个对象」错误：有改动时 next 是新对象。\n- 「会抛错」错误：这是完全合法的标准用法。",
+    "tags": [
+      "immer",
+      "入门",
+      "不可变",
+      "核心概念"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "不会改变 baseState；next 是反映了改动的新状态",
+        "isCorrect": true,
+        "description": "正确。原状态始终不被修改，改动只体现在返回值上。"
+      },
+      {
+        "text": "会，baseState 被原地（in-place）修改",
+        "isCorrect": false,
+        "description": "错误。draft 是代理，写入不会落到原对象；保持原状态不变是 Immer 的核心保证。"
+      },
+      {
+        "text": "baseState 与 next 始终是同一个对象引用",
+        "isCorrect": false,
+        "description": "错误。有实际改动时，next 是结构共享的新对象，引用与 baseState 不同。"
+      },
+      {
+        "text": "会抛出「不能修改对象」的错误",
+        "isCorrect": false,
+        "description": "错误。在 recipe 内修改 draft 完全合法，正是预期用法。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：不用 Immer 时，要「不可变地」更新嵌套对象的某个深层字段，通常得怎么写？",
+    "explanation": "手写不可变更新需要**逐层浅拷贝**被改动路径上的每一层（典型是层层 `...` 展开），再替换目标字段。层级一深就极其啰嗦且易错（漏拷一层就会意外共享并埋下 bug）。Immer 把这套样板代码全部消除——你只管 mutate draft。\n\n- 「逐层用扩展运算符浅拷贝路径上每一层」正确。\n- 「直接改原对象的深层字段」错误：那会破坏不可变性。\n- 「对整个对象做深拷贝再改」可行但浪费：未改动部分也被全量复制，丢失结构共享。\n- 「不可能做到」错误：手写当然能做，只是繁琐。",
+    "tags": [
+      "immer",
+      "入门",
+      "手写不可变",
+      "对比"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "用扩展运算符逐层浅拷贝改动路径上的每一层，再替换目标字段",
+        "isCorrect": true,
+        "description": "正确。这是手写不可变更新的标准做法，层级深时样板代码多、易错。"
+      },
+      {
+        "text": "直接给原对象的深层字段赋值即可",
+        "isCorrect": false,
+        "description": "错误。直接改原对象违反不可变原则，会让依赖引用比较的逻辑失效。"
+      },
+      {
+        "text": "把整个对象 structuredClone 深拷贝后再改",
+        "isCorrect": false,
+        "description": "可行但低效：未改动部分也被全量复制，失去结构共享，且大对象开销大。"
+      },
+      {
+        "text": "原生 JS 无法实现不可变更新",
+        "isCorrect": false,
+        "description": "错误。手写完全可行，Immer 只是把繁琐的样板代码自动化了。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：如何从 immer 包中正确导入 produce？",
+    "explanation": "produce 是命名导出（named export）：`import { produce } from \"immer\"`。Immer 同时也提供 produce 作为默认导出以兼容历史用法，但官方文档与现代写法统一用命名导入。其他 API（current、original、enableMapSet 等）也都是命名导出。\n\n- `import { produce } from \"immer\"` 正确。\n- `import produce from \"immer\"`（默认导入）历史上能用，但非文档推荐写法。\n- `const produce = require(\"produce\")` 错误：包名是 immer。\n- `import * as produce` 错误：那拿到的是整个命名空间对象，不是函数。",
+    "tags": [
+      "immer",
+      "入门",
+      "导入",
+      "produce"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "import { produce } from \"immer\"（命名导入）",
+        "isCorrect": true,
+        "description": "正确。produce 是命名导出，这是官方推荐写法。"
+      },
+      {
+        "text": "import produce from \"immer\"（默认导入）",
+        "isCorrect": false,
+        "description": "Immer 确实也提供默认导出兼容旧代码，但文档统一推荐命名导入，故非最佳答案。"
+      },
+      {
+        "text": "const { produce } = require(\"produce\")",
+        "isCorrect": false,
+        "description": "错误。包名是 immer，不是 produce。"
+      },
+      {
+        "text": "import * as produce from \"immer\"",
+        "isCorrect": false,
+        "description": "错误。这会把整个模块命名空间赋给 produce，它是对象不是可调用函数。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 recipe 里向数组追加一个元素，最符合 Immer 习惯的写法是？",
+    "explanation": "Immer 的卖点就是用**原生可变 API**：直接 `draft.push(item)` 即可，Immer 会记录这次改动并产出新数组，原数组不变。不需要 `return [...draft, item]` 这类手写不可变写法。\n\n- `draft.list.push(item)` 正确。\n- `return [...draft.list, item]`（在改动 draft 之外单独 return）可行但违背 Immer 初衷，且若同时改了 draft 还会冲突。\n- `draft.list = draft.list.concat(item)` 能工作但啰嗦，未用上 Immer 的简洁。\n- `draft.list[draft.list.length] = item` 虽可行但不如 push 直观。",
+    "tags": [
+      "immer",
+      "入门",
+      "数组",
+      "push"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "draft.list.push(item)",
+        "isCorrect": true,
+        "description": "正确。直接用原生 push，Immer 记录改动并产出新数组——这正是 Immer 的用法。"
+      },
+      {
+        "text": "return [...draft.list, item]",
+        "isCorrect": false,
+        "description": "这是手写不可变写法，背离 Immer 初衷；且若同时还改了 draft，会触发「既改又返回」错误。"
+      },
+      {
+        "text": "draft.list = draft.list.concat(item)",
+        "isCorrect": false,
+        "description": "能工作，但用 concat 重新赋值比直接 push 啰嗦，没体现 Immer 的简洁。"
+      },
+      {
+        "text": "draft.list[draft.list.length] = item",
+        "isCorrect": false,
+        "description": "技术上可行，但远不如 push 直观，不是惯用写法。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immer 能直接用普通的 JavaScript 对象和数组吗？需要先转换成专用数据结构吗？",
+    "explanation": "不需要任何转换。Immer 直接作用于普通 JS 对象、数组（以及启用插件后的 Map/Set），这正是它相对 Immutable.js 的最大优势之一——「No new APIs or mutation patterns to learn」。状态进出都是 plain object，与 JSON、网络传输、React props 无缝衔接。\n\n- 「直接用普通对象/数组，无需转换」正确。\n- 「必须先转成 Immer.Map / Immer.List」错误：Immer 没有这类结构。\n- 「必须调用 toImmutable() 包装」错误：无此 API。\n- 「只支持数组不支持对象」错误：对象、数组都支持。",
+    "tags": [
+      "immer",
+      "入门",
+      "原生结构",
+      "对比"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "入门"
+      ]
+    ],
+    "options": [
+      {
+        "text": "直接用普通对象/数组即可，无需转成任何专用结构",
+        "isCorrect": true,
+        "description": "正确。用原生结构、原生 API 是 Immer 的核心卖点，与 Immutable.js 形成对比。"
+      },
+      {
+        "text": "必须先把数据转成 Immer.Map / Immer.List",
+        "isCorrect": false,
+        "description": "错误。Immer 没有专用数据结构，那是 Immutable.js 的做法。"
+      },
+      {
+        "text": "必须调用 toImmutable() 包装后才能用",
+        "isCorrect": false,
+        "description": "错误。Immer 不存在这种包装 API。"
+      },
+      {
+        "text": "只能处理数组，对象需要另行处理",
+        "isCorrect": false,
+        "description": "错误。对象、数组（及启用后的 Map/Set）都直接支持。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：关于「结构共享（structural sharing）」，下面哪种说法正确？",
+    "explanation": "结构共享指：Immer 只对**被改动路径上的节点**创建新副本，**未改动的子树**则与旧状态**共享同一引用**。因此 next 与 base 的未变部分 `===` 仍相等，变更检测可以靠浅比较（引用比较）高效完成——这也是 React/Redux memo 化的基础。\n\n- 「只复制改动的节点，未改动部分共享引用」正确。\n- 「整棵树全部重新创建」错误：那是深拷贝，不是结构共享。\n- 「什么都不复制，原地改」错误：那破坏不可变性。\n- 「只共享顶层，深层全拷」错误：共享发生在所有未改动的子树。",
+    "tags": [
+      "immer",
+      "初级",
+      "结构共享",
+      "核心概念"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "只为被改动的节点创建新副本，未改动的子树与旧状态共享同一引用",
+        "isCorrect": true,
+        "description": "正确。这让未变部分 === 仍相等，支撑高效的引用比较与 memo 化。"
+      },
+      {
+        "text": "产出新状态时把整棵状态树完整重新创建一遍",
+        "isCorrect": false,
+        "description": "错误。那是深拷贝，正是结构共享要避免的开销。"
+      },
+      {
+        "text": "不复制任何东西，直接在原对象上修改",
+        "isCorrect": false,
+        "description": "错误。那会破坏不可变性，与 Immer 的承诺相悖。"
+      },
+      {
+        "text": "只共享顶层对象引用，所有深层节点都重新拷贝",
+        "isCorrect": false,
+        "description": "错误。共享发生在任意层级的未改动子树，不止顶层。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：默认情况下，produce 返回的新状态会被「冻结」吗？",
+    "explanation": "会。Immer **默认开启 auto-freeze**：produce 产出的状态树（以及新加入结果的普通对象/数组）会被**递归深冻结**（`Object.freeze`）。之后若在 recipe 之外试图修改它，严格模式下会抛错。这是为了从根本上防止意外 mutate 破坏不可变性。可用 `setAutoFreeze(false)` 关闭。\n\n- 「会，默认递归冻结产出结果」正确。\n- 「不会，需要手动 freeze」错误：默认就冻结。\n- 「只冻结顶层」错误：是递归深冻结。\n- 「只在 production 冻结」错误：默认在各环境都冻结（冻结本身始终生效，只是越界修改的报错主要在严格模式可见）。",
+    "tags": [
+      "immer",
+      "初级",
+      "auto-freeze",
+      "冻结"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "会，默认开启 auto-freeze，递归深冻结产出的状态",
+        "isCorrect": true,
+        "description": "正确。默认 setAutoFreeze 为 true，产出结果被深冻结以防意外修改。"
+      },
+      {
+        "text": "不会，必须自己调用 Object.freeze",
+        "isCorrect": false,
+        "description": "错误。Immer 默认自动冻结，无需手动。"
+      },
+      {
+        "text": "只冻结最外层对象，深层不冻",
+        "isCorrect": false,
+        "description": "错误。冻结是递归的，深层也会被冻。"
+      },
+      {
+        "text": "只有在生产环境构建时才冻结",
+        "isCorrect": false,
+        "description": "错误。冻结默认始终发生，不区分环境。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：要把一个包加进项目，安装命令是？",
+    "explanation": "Immer 是标准 npm 包，用任意包管理器安装即可，如 `npm install immer`（或 `pnpm add immer` / `yarn add immer` / `bun add immer`）。它体积很小（约 3KB gzipped）。\n\n- `npm install immer` 正确。\n- `npm install @immer/core` 错误：包名就是 immer，没有这个 scope 包。\n- `npm install immerjs` 错误：npm 上的包名是 immer 不是 immerjs（immerjs 是 GitHub 组织名）。\n- 「Immer 内置于 Node，无需安装」错误。",
+    "tags": [
+      "immer",
+      "初级",
+      "安装",
+      "包管理"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "npm install immer",
+        "isCorrect": true,
+        "description": "正确。包名就是 immer，约 3KB gzipped。"
+      },
+      {
+        "text": "npm install @immer/core",
+        "isCorrect": false,
+        "description": "错误。不存在 @immer/core 这个包，直接装 immer 即可。"
+      },
+      {
+        "text": "npm install immerjs",
+        "isCorrect": false,
+        "description": "错误。immerjs 是 GitHub 组织名，npm 包名是 immer。"
+      },
+      {
+        "text": "无需安装，Node.js 已内置 Immer",
+        "isCorrect": false,
+        "description": "错误。Immer 是第三方库，需要单独安装。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：当第一个参数传给 produce 的是一个**函数**而不是状态时，会得到什么？",
+    "explanation": "这叫 **curried producer（柯里化生产者）**：`produce(recipe)` 不立即对某个状态执行，而是返回一个**可复用的函数**，之后把状态传给它即可。常用于 reducer 或事件处理器，例如 `const toggle = produce(draft => { draft.done = !draft.done })`，再 `toggle(state)`。recipe 的额外参数会成为返回函数的额外参数。\n\n- 「返回一个可复用的柯里化生产者函数」正确。\n- 「立即报错」错误。\n- 「立即对 undefined 执行 recipe」错误。\n- 「返回 Promise」错误。",
+    "tags": [
+      "immer",
+      "初级",
+      "curried",
+      "produce"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "一个柯里化的生产者函数：之后把状态传给它，它再对该状态执行 recipe",
+        "isCorrect": true,
+        "description": "正确。produce(recipe) 返回 (state, ...args) => nextState，便于复用与做 reducer。"
+      },
+      {
+        "text": "立即抛出参数类型错误",
+        "isCorrect": false,
+        "description": "错误。第一参数为函数是合法的柯里化用法。"
+      },
+      {
+        "text": "立即对 undefined 状态执行一次 recipe",
+        "isCorrect": false,
+        "description": "错误。它不立即执行，而是返回待用的函数。"
+      },
+      {
+        "text": "一个返回新状态的 Promise",
+        "isCorrect": false,
+        "description": "错误。produce 是同步的，不返回 Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Redux Toolkit（RTK）与 Immer 是什么关系？",
+    "explanation": "RTK **内置了 Immer**：`createReducer`、`createSlice` 的 case reducer 内部就用 produce 包裹，所以你可以在 reducer 里**直接 mutate state**（如 `state.value += 1`），而仍得到不可变更新。这是 RTK 官方文档明确的特性。截至当前 RTK 2.x 依赖 immer 11.x。\n\n- 「RTK 内置 Immer，slice reducer 里可直接 mutate」正确。\n- 「两者无关，需手动集成」错误。\n- 「RTK 禁止使用 Immer」错误。\n- 「只有装了额外插件才支持」错误：开箱即用。",
+    "tags": [
+      "immer",
+      "初级",
+      "Redux Toolkit",
+      "集成"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "RTK 内置 Immer，createSlice/createReducer 里可直接 mutate state",
+        "isCorrect": true,
+        "description": "正确。RTK 用 produce 包裹 case reducer，这是其开箱即用特性。"
+      },
+      {
+        "text": "两者无关，要在 RTK 里用 Immer 必须手动接入",
+        "isCorrect": false,
+        "description": "错误。RTK 默认就集成了 Immer。"
+      },
+      {
+        "text": "RTK 明确禁止与 Immer 一起用",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，RTK 依赖并内置 Immer。"
+      },
+      {
+        "text": "需要额外安装插件才能在 RTK 里 mutate",
+        "isCorrect": false,
+        "description": "错误。无需任何额外配置，开箱即用。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：要在浏览器/Node 里用 Map 和 Set 作为 Immer 的状态，必须先做什么？",
+    "explanation": "从 Immer 6 起，Map/Set 支持是**可选插件**，必须在应用启动时**显式调用 `enableMapSet()`**（`import { enableMapSet } from \"immer\"`）。不调用就直接把 Map/Set 放进状态并 mutate 会报错。这样设计是为了让默认包保持精简（tree-shaking 友好）。\n\n- 「调用 enableMapSet()」正确。\n- 「无需任何操作，默认支持」错误：默认不支持，需启用。\n- 「装单独的 immer-map-set 包」错误：插件就在 immer 主包内。\n- 「调用 enablePatches()」错误：那是开启 patches 的。",
+    "tags": [
+      "immer",
+      "初级",
+      "Map",
+      "Set",
+      "enableMapSet"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "在应用入口调用一次 enableMapSet()",
+        "isCorrect": true,
+        "description": "正确。Map/Set 支持是可选插件，需显式 enableMapSet() 启用。"
+      },
+      {
+        "text": "什么都不用做，Immer 默认就支持 Map/Set",
+        "isCorrect": false,
+        "description": "错误。自 v6 起默认不支持，必须显式启用。"
+      },
+      {
+        "text": "安装额外的 immer-map-set 包",
+        "isCorrect": false,
+        "description": "错误。插件内置在 immer 主包，只需导入并调用即可。"
+      },
+      {
+        "text": "调用 enablePatches()",
+        "isCorrect": false,
+        "description": "错误。enablePatches 是开启 patch 功能的，与 Map/Set 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 React 函数组件里配合 useState 用 Immer，下面哪种写法是惯用的？",
+    "explanation": "利用 curried produce 可以把 produce 直接传给 setState：`setTodos(produce(draft => { ... }))`。因为 `produce(recipe)` 返回 `(state) => nextState`，正好符合 setState 的「函数式更新」签名，React 会把当前 state 传进去得到新 state。若嫌啰嗦，可用 `use-immer` 的 `useImmer`，它把 produce 自动包好。\n\n- `setTodos(produce(draft => { draft.push(x) }))` 正确。\n- 直接 `state.push(x)` 错误：直接 mutate React state 是 bug。\n- `setTodos(produce(state, draft => ...))` 在 setState 里不如柯里化形式自然（拿不到最新 state，易闭包陈旧）。\n- `produce(setTodos, ...)` 顺序完全错。",
+    "tags": [
+      "immer",
+      "初级",
+      "React",
+      "useState"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "setTodos(produce(draft => { draft.push(x) }))",
+        "isCorrect": true,
+        "description": "正确。柯里化 produce 返回 state => nextState，恰好匹配 setState 的函数式更新。"
+      },
+      {
+        "text": "直接 todos.push(x) 然后 setTodos(todos)",
+        "isCorrect": false,
+        "description": "错误。直接 mutate React state 违反规则，且引用不变可能不触发重渲染。"
+      },
+      {
+        "text": "setTodos(produce(todos, draft => { draft.push(x) }))",
+        "isCorrect": false,
+        "description": "可工作但不理想：闭包里的 todos 可能陈旧；柯里化形式让 React 注入最新 state 更安全。"
+      },
+      {
+        "text": "produce(setTodos, draft => { draft.push(x) })",
+        "isCorrect": false,
+        "description": "错误。produce 第一个参数应是状态或 recipe，不是 setter 函数。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 recipe 里删除对象的某个属性，正确写法是？",
+    "explanation": "用原生 `delete` 操作符：`delete draft.someKey`。Immer 会记录这次删除并在新状态里移除该属性，原对象不变。数组删元素则用 splice/pop/shift 等，或重新赋值过滤后的数组。\n\n- `delete draft.user.token` 正确。\n- `draft.user.token = undefined` 错误地把它设为 undefined 而非删除键（键仍存在）。\n- `draft.remove(\"token\")` 错误：普通对象没有 remove 方法。\n- `Reflect.deleteProperty(baseState, ...)` 错误：应作用于 draft，且 delete 更直接。",
+    "tags": [
+      "immer",
+      "初级",
+      "delete",
+      "对象"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "delete draft.user.token",
+        "isCorrect": true,
+        "description": "正确。原生 delete 即可，Immer 记录删除并在新状态移除该键。"
+      },
+      {
+        "text": "draft.user.token = undefined",
+        "isCorrect": false,
+        "description": "错误。这只是把值设为 undefined，键仍然存在，与删除不同。"
+      },
+      {
+        "text": "draft.user.remove(\"token\")",
+        "isCorrect": false,
+        "description": "错误。普通对象没有 remove 方法（Map 才有 delete）。"
+      },
+      {
+        "text": "Reflect.deleteProperty(baseState, \"token\")",
+        "isCorrect": false,
+        "description": "错误。应作用于 draft 而非 baseState，且直接 delete draft.x 更惯用。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：produce 的 recipe 如果什么都不返回（return 一个 undefined），Immer 会怎么处理？",
+    "explanation": "完全没问题。recipe **通常不需要 return**——Immer 会自动返回 draft 终态化后的结果。一个不写 return 的函数在 JS 里返回 undefined，Immer 据此判定为「你只是改了 draft，没有要替换整个状态」，于是返回基于 draft 改动的新状态。\n\n- 「正常返回基于 draft 改动的新状态」正确。\n- 「返回 undefined 作为新状态」错误：return undefined 被当作「没替换」，不是把状态变 undefined（要变 undefined 需 return nothing）。\n- 「抛错」错误。\n- 「返回原 baseState 不做任何改动」错误：draft 的改动仍会生效。",
+    "tags": [
+      "immer",
+      "初级",
+      "返回值",
+      "recipe"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "正常：Immer 返回基于 draft 改动后的新不可变状态",
+        "isCorrect": true,
+        "description": "正确。不写 return 是常态，Immer 自动产出 draft 的终态。"
+      },
+      {
+        "text": "把新状态置为 undefined",
+        "isCorrect": false,
+        "description": "错误。return undefined 被当作「未替换状态」；要产出 undefined 必须 return nothing。"
+      },
+      {
+        "text": "抛出「recipe 必须有返回值」的错误",
+        "isCorrect": false,
+        "description": "错误。recipe 无需返回值，这是最常见的写法。"
+      },
+      {
+        "text": "忽略所有 draft 改动，原样返回 baseState",
+        "isCorrect": false,
+        "description": "错误。draft 上的改动会被采纳并产出新状态。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immer 打包体积大约是多少？这对它的定位意味着什么？",
+    "explanation": "Immer 核心约 **3KB gzipped**，非常轻量。这与它「复用原生结构、不造新数据结构」的设计一致——只带一层 Proxy 逻辑，而不是一整套不可变集合实现。可选插件（Map/Set、patches、array methods）按需再各加约 1–2KB。\n\n- 「约 3KB gzipped」正确。\n- 「约 300KB」错误：差两个数量级。\n- 「0KB，浏览器原生」错误：它是第三方库。\n- 「约 50KB」错误：高估了。",
+    "tags": [
+      "immer",
+      "初级",
+      "体积",
+      "tree-shaking"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "初级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "约 3KB gzipped，核心很小，插件按需另加约 1–2KB",
+        "isCorrect": true,
+        "description": "正确。轻量是 Immer 的卖点之一，靠复用原生结构实现。"
+      },
+      {
+        "text": "约 300KB gzipped",
+        "isCorrect": false,
+        "description": "错误。高估了约两个数量级。"
+      },
+      {
+        "text": "0KB，因为它是浏览器原生 API",
+        "isCorrect": false,
+        "description": "错误。Immer 是需安装的第三方库。"
+      },
+      {
+        "text": "约 50KB gzipped",
+        "isCorrect": false,
+        "description": "错误。核心仅约 3KB，远小于此。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：下面这个 recipe 有什么问题？\nproduce(state, draft => { draft = { ...draft, done: true } })",
+    "explanation": "**重新给 draft 整体赋值（draft = ...）是无效的**，等于什么都没做。Immer 追踪的是「对 draft 所指对象的修改」，而 `draft = newObj` 只是把局部变量 draft 重新指向另一个对象，Immer 完全看不到、也不会采纳。正确做法要么 mutate 现有 draft（`draft.done = true`），要么 **return** 新对象（且不能同时改 draft）。\n\n- 「重新赋值 draft 无效，相当于没改」正确。\n- 「会深拷贝并生效」错误。\n- 「会抛错」错误：它静默无效，更隐蔽。\n- 「会修改 baseState」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "pitfall",
+      "draft 赋值"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "重新给 draft 整体赋值是无效的，这段代码相当于什么都没做",
+        "isCorrect": true,
+        "description": "正确。draft = ... 只是重指向局部变量，Immer 追踪不到；应 mutate 或改用 return。"
+      },
+      {
+        "text": "会正常深拷贝并把 done 设为 true",
+        "isCorrect": false,
+        "description": "错误。Immer 看不到对局部变量的重新赋值，改动不会生效。"
+      },
+      {
+        "text": "会抛出「不能重新赋值 draft」的错误",
+        "isCorrect": false,
+        "description": "错误。它不报错而是静默失效，因此更易踩坑。"
+      },
+      {
+        "text": "会意外修改 baseState",
+        "isCorrect": false,
+        "description": "错误。baseState 始终不被触碰，这里只是改动丢失。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在一个 recipe 里，既修改了 draft，又 return 了一个全新对象，会发生什么？",
+    "explanation": "这是被明确禁止的：**不能同时 mutate draft 又 return 新值**，Immer 会抛错（An immer producer returned a new value *and* modified its draft）。因为两种意图冲突——Immer 无法判断你到底想要 draft 的改动还是返回的新对象。正确：要么只 mutate 不 return，要么只 return 不 mutate。\n\n- 「抛错（既改又返回是冲突的）」正确。\n- 「优先采用 return 的值，忽略 draft 改动」错误：实际是报错。\n- 「把两者合并」错误。\n- 「优先采用 draft 改动」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "pitfall",
+      "返回值"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "抛错：不允许「既修改 draft 又返回新值」",
+        "isCorrect": true,
+        "description": "正确。两种意图冲突，Immer 会报错，要求二选一。"
+      },
+      {
+        "text": "静默地优先使用 return 的新对象",
+        "isCorrect": false,
+        "description": "错误。Immer 不会静默处理，而是直接抛错。"
+      },
+      {
+        "text": "把 draft 改动与返回对象做浅合并",
+        "isCorrect": false,
+        "description": "错误。不会合并，会报错。"
+      },
+      {
+        "text": "静默地优先使用 draft 的改动",
+        "isCorrect": false,
+        "description": "错误。同样不会静默，会抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：要让一个 recipe 产出的新状态值是 `undefined`，应该怎么写？",
+    "explanation": "直接 `return undefined` 不行——因为「没写 return 的函数也返回 undefined」，Immer 无法区分「想替换成 undefined」和「只是改了 draft」。为此 Immer 提供哨兵值 **`nothing`**：`return nothing`（`import { nothing } from \"immer\"`）明确表示「请产出 undefined」。注意：只有 undefined 有此歧义，null 等其他值正常 return 即可。\n\n- 「return nothing」正确。\n- 「return undefined」错误：被当作「未替换」。\n- 「draft = undefined」错误：重新赋值 draft 无效。\n- 「return null」错误：那产出的是 null 不是 undefined。",
+    "tags": [
+      "immer",
+      "中级",
+      "nothing",
+      "返回值"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "import { nothing } from \"immer\"，然后 return nothing",
+        "isCorrect": true,
+        "description": "正确。nothing 是专门用于「明确产出 undefined」的哨兵值。"
+      },
+      {
+        "text": "return undefined",
+        "isCorrect": false,
+        "description": "错误。这与「没写 return」无法区分，Immer 当作未替换状态。"
+      },
+      {
+        "text": "draft = undefined",
+        "isCorrect": false,
+        "description": "错误。重新赋值局部变量 draft 无效，改动不会生效。"
+      },
+      {
+        "text": "return null",
+        "isCorrect": false,
+        "description": "错误。这产出的是 null；要 undefined 必须用 nothing。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：current(draft) 与 original(draft) 的区别是什么？",
+    "explanation": "二者都用于在 recipe **内部**审视 draft，但取的「时点」不同：\n- `original(draft)`：返回**基础状态**里对应的**原始对象**（改动前的样子），常用于严格相等比较（如树搜索）。\n- `current(draft)`：返回 draft **当前改动后**状态的一份**普通（未冻结、非 Proxy）快照**，常用于调试打印中间态。\n两者都不能用于非 draft 对象。\n\n- 「original 取改动前原值，current 取当前改动后的快照」正确。\n- 把两者说反、或说成相同、或说成都返回 Proxy 都错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "current",
+      "original"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "original 返回改动前的原始对象；current 返回 draft 当前改动后的普通快照",
+        "isCorrect": true,
+        "description": "正确。original 看「过去」，current 看「现在」，且 current 是非 Proxy、未冻结的拷贝。"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。一个取改动前、一个取改动后，语义不同。"
+      },
+      {
+        "text": "current 返回原始对象，original 返回当前快照（即上面说法反过来）",
+        "isCorrect": false,
+        "description": "错误。说反了。"
+      },
+      {
+        "text": "两者都返回 draft 的 Proxy 本身",
+        "isCorrect": false,
+        "description": "错误。current 返回普通对象快照，original 返回原始基对象，都不是 draft Proxy。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：要把一个 class（类）的实例作为可被 Immer draft 的状态，需要满足什么条件？",
+    "explanation": "必须把该类标记为「可 draft」：给它设置 **`[immerable] = true`**（`import { immerable } from \"immer\"`），可以是类字段、构造函数里赋值，或 `Foo[immerable] = true` 静态赋值。否则 Immer 不会代理这个类实例。draft 会带上原型、只复制自有属性，且**构造函数不会被调用**。\n\n- 「设置 [immerable] = true」正确。\n- 「实现 toJSON()」错误：与可 draft 无关。\n- 「继承自 Immer.Record」错误：无此基类。\n- 「无需任何处理，类默认可 draft」错误：普通类默认不可 draft。",
+    "tags": [
+      "immer",
+      "中级",
+      "class",
+      "immerable"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "给类设置 [immerable] = true（来自 immer 的 immerable 符号）",
+        "isCorrect": true,
+        "description": "正确。这是让自定义类可被 Immer 代理/草稿化的标记。"
+      },
+      {
+        "text": "给类实现 toJSON() 方法",
+        "isCorrect": false,
+        "description": "错误。toJSON 与序列化有关，不能让类变得可 draft。"
+      },
+      {
+        "text": "让类继承自 Immer.Record 基类",
+        "isCorrect": false,
+        "description": "错误。Immer 没有 Record 这种基类，那是 Immutable.js。"
+      },
+      {
+        "text": "无需任何处理，所有类实例默认可被 draft",
+        "isCorrect": false,
+        "description": "错误。普通对象/数组默认可 draft，但自定义类必须显式标记 immerable。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：以下哪种数据 Immer **不**支持直接放进状态并 mutate（即便用上插件）？",
+    "explanation": "Immer 支持普通对象、数组、（启用插件后的）Map/Set、以及标记了 immerable 的类。但它**不支持 exotic（奇异）对象**——如 DOM Node、window.location、Buffer 等，也不支持子类化的 Map/Set/Array。Date 也不能原地改，应创建新实例替换。\n\n- 「DOM Node / window.location 这类 exotic 对象」正确（不支持）。\n- 「普通嵌套对象」支持。\n- 「启用 enableMapSet 后的 Map」支持。\n- 「标记 immerable 的类实例」支持。",
+    "tags": [
+      "immer",
+      "中级",
+      "限制",
+      "exotic"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "DOM Node、window.location 等 exotic（奇异）对象",
+        "isCorrect": true,
+        "description": "正确。Immer 不支持这类宿主/奇异对象，也不支持子类化的 Map/Set/Array。"
+      },
+      {
+        "text": "普通的多层嵌套对象",
+        "isCorrect": false,
+        "description": "支持。普通对象是 Immer 最基本的处理对象。"
+      },
+      {
+        "text": "调用 enableMapSet() 后的 Map 实例",
+        "isCorrect": false,
+        "description": "支持。启用插件后 Map/Set 即可作为状态。"
+      },
+      {
+        "text": "设置了 [immerable] = true 的类实例",
+        "isCorrect": false,
+        "description": "支持。标记后类实例可被 draft。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：produce 的第三个参数是什么？",
+    "explanation": "`produce(base, recipe, patchListener?)` 的第三参数是**可选的 patch 监听器**：`(patches, inversePatches) => void`。它在产出新状态时被回调，交给你这次改动对应的正向 patches 与反向 inversePatches。使用前需先 `enablePatches()`。这是除 `produceWithPatches` 外获取补丁的另一途径。\n\n- 「可选的 patchListener(patches, inversePatches)」正确。\n- 「初始状态 initialState」错误：初始状态是柯里化形式 produce(recipe, initialState) 的第二参，不是这里。\n- 「配置对象 options」错误。\n- 「错误回调 onError」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "produce",
+      "patchListener"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "一个可选的 patch 监听器 (patches, inversePatches) => void",
+        "isCorrect": true,
+        "description": "正确。它用于捕获本次改动的正向/反向补丁，需先 enablePatches()。"
+      },
+      {
+        "text": "柯里化生产者的初始状态 initialState",
+        "isCorrect": false,
+        "description": "错误。initialState 是 produce(recipe, initialState) 柯里化形式里的第二参，与此不同。"
+      },
+      {
+        "text": "一个全局配置对象 options",
+        "isCorrect": false,
+        "description": "错误。produce 没有这样的配置参数。"
+      },
+      {
+        "text": "错误回调 onError",
+        "isCorrect": false,
+        "description": "错误。第三参是 patch 监听器，不是错误处理器。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：关于 Immer 中 Map 的 key（键），下面哪种说法正确？",
+    "explanation": "Immer 文档明确：**Map 的 key 永远不会被 draft 化**。这是为了避免语义混乱、并保证 key 始终保持引用相等（referentially equal）。也就是说，遍历/读取 Map 时，key 是原始对象，value 才会按需被代理成 draft。\n\n- 「key 永远不被 draft 化，保持引用相等」正确。\n- 「key 和 value 都会被 draft 化」错误。\n- 「key 会被深拷贝」错误。\n- 「key 必须是字符串」错误：Map 的 key 可以是任意类型，这与 Immer 无关。",
+    "tags": [
+      "immer",
+      "中级",
+      "Map",
+      "key"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "Map 的 key 永远不会被 draft 化，始终保持引用相等",
+        "isCorrect": true,
+        "description": "正确。这是 Immer 刻意的设计，避免 key 语义混乱。"
+      },
+      {
+        "text": "Map 的 key 和 value 都会被 draft 化",
+        "isCorrect": false,
+        "description": "错误。只有 value 按需被代理，key 不会。"
+      },
+      {
+        "text": "Map 的 key 会被深拷贝一份",
+        "isCorrect": false,
+        "description": "错误。key 既不被代理也不被拷贝，保持原引用。"
+      },
+      {
+        "text": "Map 的 key 必须是字符串才能用 Immer",
+        "isCorrect": false,
+        "description": "错误。Map 支持任意类型的 key，与 Immer 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：以下哪种方式可以正确地把一个新对象「整体替换」当前状态（而不是改 draft）？",
+    "explanation": "在 recipe 里 **直接 return 一个新值** 即可替换整个状态——但**前提是你没有同时 mutate draft**。例如 reducer 的 `loadUsers` 分支：`return action.payload`。这适合「整状态换新」的场景。\n\n- 「return action.payload（且不改 draft）」正确。\n- 「draft = action.payload」错误：重新赋值局部变量无效。\n- 「Object.assign(draft, payload) 之后再 return payload」错误：既改又返回会报错。\n- 「throw payload」当然错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "替换状态",
+      "返回值"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "在 recipe 里直接 return 新对象（且全程不 mutate draft）",
+        "isCorrect": true,
+        "description": "正确。只 return 不 mutate，即可用新对象整体替换状态。"
+      },
+      {
+        "text": "写 draft = action.payload",
+        "isCorrect": false,
+        "description": "错误。重新给 draft 赋值是无效操作，状态不会改变。"
+      },
+      {
+        "text": "先 Object.assign(draft, payload)，再 return payload",
+        "isCorrect": false,
+        "description": "错误。既修改 draft 又 return 新值会触发 Immer 报错。"
+      },
+      {
+        "text": "throw action.payload",
+        "isCorrect": false,
+        "description": "错误。抛出值不是替换状态的方式，会中断 produce。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 recipe 里查找并修改数组中某个对象，下面哪种是推荐的高效写法（大数组场景）？",
+    "explanation": "对大数组反复 `draft.find(...)` 会为遍历到的元素创建 Proxy、且每次都从 draft 读，开销较大。官方建议：用 **index 或 Map 式查找定位**，或先用 `original(draft)` 在原始数组上做查找（不产生 draft 代理），定位到索引后再去 draft 上改。另外 v11 起可启用 array methods 插件优化 filter/find 等。\n\n- 「用 original() 在原数组上查找，再按 index 改 draft」正确。\n- 「对 draft 反复 find 嵌套 find」错误：开销大。\n- 「先 structuredClone 整个数组」错误。\n- 「直接改 baseState」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "数组",
+      "性能",
+      "original"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "用 original(draft) 在未代理的原数组上查找，定位 index 后再在 draft 上改",
+        "isCorrect": true,
+        "description": "正确。避免对大数组逐个生成 Proxy，官方推荐的优化手法。"
+      },
+      {
+        "text": "对 draft 反复 find，再对结果继续 find",
+        "isCorrect": false,
+        "description": "错误。在 draft 上重复查找会产生大量代理，性能差。"
+      },
+      {
+        "text": "先把整个数组 structuredClone 再操作",
+        "isCorrect": false,
+        "description": "错误。全量深拷贝丢失结构共享，且开销大。"
+      },
+      {
+        "text": "直接在 baseState 上查找并修改",
+        "isCorrect": false,
+        "description": "错误。改 baseState 破坏不可变性。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：要使用 produceWithPatches / applyPatches 这套补丁功能，前置条件是什么？",
+    "explanation": "必须先在应用启动时调用 **`enablePatches()`**（`import { enablePatches } from \"immer\"`）。和 Map/Set 一样，patches 是可选插件，默认不启用以保持包精简。启用后才能用 `produceWithPatches`、produce 的 patchListener、以及 `applyPatches`。\n\n- 「调用 enablePatches()」正确。\n- 「调用 enableMapSet()」错误：那是 Map/Set 的。\n- 「无需启用，默认可用」错误。\n- 「设置 setAutoFreeze(true)」错误：与补丁无关。",
+    "tags": [
+      "immer",
+      "中级",
+      "patches",
+      "enablePatches"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "在入口调用一次 enablePatches()",
+        "isCorrect": true,
+        "description": "正确。补丁是可选插件，需显式启用。"
+      },
+      {
+        "text": "调用 enableMapSet()",
+        "isCorrect": false,
+        "description": "错误。那是启用 Map/Set 支持，不影响补丁。"
+      },
+      {
+        "text": "无需任何启用，补丁功能默认开启",
+        "isCorrect": false,
+        "description": "错误。自 v6 起补丁需显式 enablePatches()。"
+      },
+      {
+        "text": "调用 setAutoFreeze(true)",
+        "isCorrect": false,
+        "description": "错误。auto-freeze 与补丁功能无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：produceWithPatches 返回什么？",
+    "explanation": "`produceWithPatches(base, recipe)` 返回一个**三元组** `[nextState, patches, inversePatches]`：新状态、正向补丁数组、反向补丁数组。patches 描述「如何从旧到新」，inversePatches 描述「如何从新回到旧」（用于撤销）。补丁是类 RFC-6902 的 JSON Patch，但 `path` 是数组形式。\n\n- 「[nextState, patches, inversePatches] 三元组」正确。\n- 「只返回 nextState」错误：那是普通 produce。\n- 「[nextState, inversePatches]」错误：少了正向 patches。\n- 「一个 Promise」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "produceWithPatches",
+      "patches"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "一个三元组 [nextState, patches, inversePatches]",
+        "isCorrect": true,
+        "description": "正确。分别是新状态、正向补丁、反向补丁。"
+      },
+      {
+        "text": "只返回 nextState（与 produce 相同）",
+        "isCorrect": false,
+        "description": "错误。produceWithPatches 额外返回两组补丁。"
+      },
+      {
+        "text": "[nextState, inversePatches] 两元组",
+        "isCorrect": false,
+        "description": "错误。正向 patches 也会一并返回。"
+      },
+      {
+        "text": "一个解析为新状态的 Promise",
+        "isCorrect": false,
+        "description": "错误。它是同步返回元组，不涉及 Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：下面关于「数据来源」的说法，哪个是正确的 Immer 行为？",
+    "explanation": "**只有来自 baseState 的数据才会被 draft 化**。如果你在 recipe 里引用了来自闭包/外部的对象，并把它塞进 draft，这个外部对象**不会被代理**（即便它成了新状态的一部分），对它的后续直接修改不会被 Immer 追踪、也可能违反冻结。稳妥做法是塞进去后通过 draft 路径再访问/修改它。\n\n- 「来自闭包/外部的数据不会被 draft 化」正确。\n- 「所有进入 draft 的数据都会被自动代理」错误。\n- 「外部数据会被自动深拷贝」错误。\n- 「引用外部数据会抛错」错误。",
+    "tags": [
+      "immer",
+      "中级",
+      "pitfall",
+      "数据来源"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "中级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "来自闭包/外部、而非源自 baseState 的数据，即使塞进 draft 也不会被 draft 化",
+        "isCorrect": true,
+        "description": "正确。Immer 只代理源自 base state 的数据；外部对象需经 draft 路径再访问才安全。"
+      },
+      {
+        "text": "任何被赋值进 draft 的对象都会被 Immer 自动代理",
+        "isCorrect": false,
+        "description": "错误。外部来源的对象不会被自动代理。"
+      },
+      {
+        "text": "外部对象会被 Immer 自动深拷贝一份",
+        "isCorrect": false,
+        "description": "错误。Immer 不会自动深拷贝外部数据。"
+      },
+      {
+        "text": "在 recipe 里引用外部对象会直接抛错",
+        "isCorrect": false,
+        "description": "错误。不会抛错，但需注意它不被追踪的语义。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：createDraft / finishDraft 这对低级 API 的典型用途是什么？它与 produce 有何关键约束？",
+    "explanation": "`createDraft(base)` 创建一个**脱离 recipe 函数**、可长期持有的 draft；改动若干次后用 `finishDraft(draft)` 终态化产出新状态。主要用于库作者构建抽象，或表达「跨时间/异步」的草稿更新。关键约束：**不能用 finishDraft 去终态化一个由 produce 产生的 draft**（会破坏 produce 的作用域生命周期）；官方也推荐应用代码优先用 produce（更不易错）。finishDraft 第二参也可传 patchListener。\n\n- 「脱离函数持有 draft、稍后 finishDraft；不能 finishDraft 一个 produce 的 draft」正确。\n- 其余把约束说反或说成等价于 produce 的均错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "createDraft",
+      "finishDraft"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "用于在函数之外持有并多次修改 draft，稍后 finishDraft 终态化；但不能对 produce 产生的 draft 调用 finishDraft",
+        "isCorrect": true,
+        "description": "正确。这对 API 面向库/异步场景，且不可混用 produce 的 draft。"
+      },
+      {
+        "text": "它和 produce 完全等价，只是写法不同，可随意互换 draft",
+        "isCorrect": false,
+        "description": "错误。produce 的 draft 不能用 finishDraft 终态化，二者作用域不同。"
+      },
+      {
+        "text": "createDraft 会自动异步执行 recipe 并返回 Promise",
+        "isCorrect": false,
+        "description": "错误。createDraft 只是同步创建 draft，不涉及 recipe 或 Promise。"
+      },
+      {
+        "text": "finishDraft 必须在另一个 produce 的 recipe 外才能调用 createDraft",
+        "isCorrect": false,
+        "description": "错误。可以在 produce 内部对快照 createDraft 并 finishDraft 内层 draft；约束是不能 finish 外层 produce 的 draft。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：关于「在 produce 里写异步逻辑（async recipe）」，正确的认识是？",
+    "explanation": "Immer 的核心 **不支持异步 recipe**：所有异步工作必须在 recipe 返回**之前**完成。draft 只在同步 produce 调用期间有效，把 draft 泄漏到 await 之后再改是反模式（异步期间发生的更新会被「丢失」）。需要异步时，官方建议**先取数据、再 draft**；若确需跨时间，用 createDraft/finishDraft，但仍推荐先 fetch 再 draft。\n\n- 「核心不支持 async recipe，异步要在 recipe 外先做完」正确。\n- 「produce 会等待 async recipe 并返回 Promise」错误。\n- 「在 draft 上 await 后继续改是推荐做法」错误：是反模式。\n- 「加 enableAsync() 即可」错误：无此 API。",
+    "tags": [
+      "immer",
+      "高级",
+      "async",
+      "反模式"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "produce 核心不支持异步 recipe；应先在 recipe 外完成异步取数，再进入 produce 修改",
+        "isCorrect": true,
+        "description": "正确。draft 仅在同步调用期有效，泄漏到 await 之后是反模式。"
+      },
+      {
+        "text": "produce 会 await 异步 recipe 并返回新状态的 Promise",
+        "isCorrect": false,
+        "description": "错误。produce 是同步的，不会等待异步 recipe。"
+      },
+      {
+        "text": "在 draft 上 await 网络请求后继续修改 draft 是官方推荐写法",
+        "isCorrect": false,
+        "description": "错误。这正是文档点名的反模式，异步期间的更新会被丢失。"
+      },
+      {
+        "text": "只要调用 enableAsync() 就能用异步 recipe",
+        "isCorrect": false,
+        "description": "错误。Immer 没有 enableAsync 这样的 API。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：当 recipe 实际上**没有对 draft 做任何改动**时，produce 返回什么？这有何性能意义？",
+    "explanation": "produce 会**原样返回传入的 baseState**（同一引用），而不是造一个内容相同的新对象。这意味着「无变更即引用不变」——下游用 `===`/memo 化做变更检测时能正确判定「没变」，从而**跳过不必要的重渲染/重算**。这也是 Immer 有时比手写 reducer 更省的原因（手写容易不小心总是返回新对象）。\n\n- 「返回原 baseState 同一引用，利于跳过重渲染」正确。\n- 「总是返回新对象」错误：无变更时不会。\n- 「返回 undefined」错误。\n- 「返回 baseState 的深拷贝」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "引用相等",
+      "性能"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "返回与传入完全相同的 baseState 引用，使「无变更」能被引用比较识别，省去重渲染",
+        "isCorrect": true,
+        "description": "正确。no-op 时 produce 返回原引用，是 memo 化友好的关键行为。"
+      },
+      {
+        "text": "无论如何都返回一个新对象",
+        "isCorrect": false,
+        "description": "错误。没有改动时返回原引用，不创建新对象。"
+      },
+      {
+        "text": "返回 undefined 表示没有改动",
+        "isCorrect": false,
+        "description": "错误。返回的是原 baseState，不是 undefined。"
+      },
+      {
+        "text": "返回 baseState 的一份深拷贝",
+        "isCorrect": false,
+        "description": "错误。无变更时不复制，直接返回原引用。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：对一个「很大且未来不会再改」的数据，要放进 Immer 状态树，性能上更优的做法是？",
+    "explanation": "auto-freeze 会**递归冻结**整棵产出结果；对一大块「以后不会改」的数据，每次让 Immer 递归扫描冻结是浪费。官方建议用 **`freeze(data, true)`** 预先（一次性）深冻结这块数据，再放进状态——之后 Immer 见它已冻结便不再重复递归处理，省下扫描开销。\n\n- 「用 freeze() 预冻结后再放进去」正确。\n- 「每次都让 produce 重新递归冻结」就是要避免的开销。\n- 「关掉所有冻结 setAutoFreeze(false) 是唯一办法」过度：可针对性 freeze 而不必全局关闭。\n- 「把大对象 JSON.parse(JSON.stringify()) 一遍」无关且低效。",
+    "tags": [
+      "immer",
+      "高级",
+      "freeze",
+      "性能"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "先用 freeze(data, true) 深冻结这块大数据，再放进状态树",
+        "isCorrect": true,
+        "description": "正确。预冻结后 Immer 不再重复递归处理，避免每次扫描的开销。"
+      },
+      {
+        "text": "不做处理，依赖 produce 每次递归冻结它",
+        "isCorrect": false,
+        "description": "对大且不变的数据，每次递归冻结是浪费，应预冻结。"
+      },
+      {
+        "text": "只能通过全局 setAutoFreeze(false) 解决",
+        "isCorrect": false,
+        "description": "过度。可针对该数据 freeze，无需全局关闭冻结保护。"
+      },
+      {
+        "text": "先 JSON.parse(JSON.stringify(data)) 再放进去",
+        "isCorrect": false,
+        "description": "错误。这是低效深拷贝，与冻结开销问题无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：把 produce 放进循环里逐次产出，例如 for (const x of items) state = produce(state, d => { d.list.push(x) })，问题在哪？",
+    "explanation": "每次循环都跑一次完整的 produce（建代理 → 终态化 → 冻结），N 个元素就是 N 次终态化，开销随规模急剧上升。正确做法是把循环**收进一次 produce**：`state = produce(state, d => { for (const x of items) d.list.push(x) })`——一次代理、一次终态化、一次冻结，批量完成。\n\n- 「每次循环都完整终态化一次，应把循环放进单个 produce」正确。\n- 「没问题，性能一样」错误。\n- 「produce 不能放循环里会报错」错误：能跑，只是慢。\n- 「应该改用 structuredClone」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "性能",
+      "批处理"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "每次迭代都完整 produce/终态化一次，开销大；应把整个循环收进一次 produce",
+        "isCorrect": true,
+        "description": "正确。批量改动放进单个 produce，只终态化一次，远比循环外层调用高效。"
+      },
+      {
+        "text": "没有任何问题，两种写法性能相同",
+        "isCorrect": false,
+        "description": "错误。循环里反复 produce 会成倍放大终态化开销。"
+      },
+      {
+        "text": "produce 不允许在循环中调用，会直接抛错",
+        "isCorrect": false,
+        "description": "错误。语法上完全允许，问题只是性能。"
+      },
+      {
+        "text": "正确做法是改用 structuredClone 逐次拷贝",
+        "isCorrect": false,
+        "description": "错误。那更慢，应合并到一次 produce 内。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在 TypeScript 中写「柯里化生产者」时，为什么常推荐显式标注状态类型（如 produce<Todo>(...) 或给 draft 标 Draft<Todo>）？",
+    "explanation": "柯里化形式 `produce(recipe)` 缺少初始状态作类型推断依据，TS 可能发生**类型变宽/变窄**或推断不出 draft 类型。因此推荐显式提供类型：要么 `produce<Todo>(draft => {...})`（得到 `(state: Todo) => Todo`），要么给参数标 `draft: Draft<Todo>`，或干脆用带 initialState 的形式让推断自动工作。带额外参数时可用元组泛型 `produce<Todo, [boolean]>(...)`。\n\n- 「缺少初始状态做推断，需显式标注以免类型变宽/变窄」正确。\n- 其余把原因归为「运行时需要」「Immer 不支持 TS」等均错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "TypeScript",
+      "curried"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "柯里化形式没有初始状态供推断，不标注易导致类型变宽/变窄，故显式给出状态类型",
+        "isCorrect": true,
+        "description": "正确。显式类型让返回的生产者签名正确，是 TS 下的推荐做法。"
+      },
+      {
+        "text": "因为运行时 Immer 需要类型信息才能工作",
+        "isCorrect": false,
+        "description": "错误。类型只在编译期；运行时不需要。标注是为推断正确，不是运行所需。"
+      },
+      {
+        "text": "因为 Immer 不支持 TypeScript，必须手动断言",
+        "isCorrect": false,
+        "description": "错误。Immer 自带完善的 TS 类型，问题只是柯里化推断需辅助。"
+      },
+      {
+        "text": "因为不标注会在运行时抛出类型错误",
+        "isCorrect": false,
+        "description": "错误。不标注顶多是编译期类型不精确，不会运行时报错。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：castDraft 和 castImmutable 这两个工具函数在运行时做了什么？",
+    "explanation": "二者都是**纯类型层面的转换、运行时是 no-op（原样返回入参）**。`castDraft` 把 immutable 类型「看作」可变，解决把 readonly 数据赋给 draft 字段时的 TS 报错；`castImmutable` 反向，把可变类型标注为 immutable。它们不改变任何运行时值，只让类型检查通过。\n\n- 「运行时 no-op，仅做类型转换」正确。\n- 「会深拷贝并冻结」错误。\n- 「会创建 draft 代理」错误。\n- 「会校验数据合法性」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "TypeScript",
+      "castDraft"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "运行时是 no-op（原样返回入参），只做编译期类型转换",
+        "isCorrect": true,
+        "description": "正确。castDraft/castImmutable 仅解决 readonly 与可变类型的赋值冲突，不动运行时值。"
+      },
+      {
+        "text": "会对入参做深拷贝并冻结",
+        "isCorrect": false,
+        "description": "错误。它们不复制也不冻结，运行时什么都不做。"
+      },
+      {
+        "text": "会把入参包成 draft 代理",
+        "isCorrect": false,
+        "description": "错误。它们不创建代理。"
+      },
+      {
+        "text": "会在运行时校验数据是否符合不可变约束",
+        "isCorrect": false,
+        "description": "错误。纯类型工具，无运行时校验。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immutable<T> 这个 TS 工具类型的作用是什么？Immer 默认会把 produce 的返回类型包成 Immutable 吗？",
+    "explanation": "`Immutable<T>` 递归地把类型的所有属性变为 `readonly`（深只读），与 Immer 运行时的深冻结相呼应。但 Immer **默认不会**自动把返回类型包成 Immutable——除非你传入的 base 类型本身就是 immutable 的。实践建议：把状态类型定义为 readonly（或用 Immutable<T>），返回类型就会如实反映冻结语义。\n\n- 「递归 readonly；默认不自动包返回类型，除非入参已是 immutable」正确。\n- 「自动把所有返回都包成 Immutable」错误。\n- 「让类型可变」错误（那是 Draft）。\n- 「运行时冻结对象」错误：它是类型，不影响运行时。",
+    "tags": [
+      "immer",
+      "高级",
+      "TypeScript",
+      "Immutable"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "把类型递归变为深 readonly；Immer 默认不自动包返回类型，除非传入的 base 类型本身已是 immutable",
+        "isCorrect": true,
+        "description": "正确。Immutable<T> 是深只读类型，返回类型是否只读取决于入参类型。"
+      },
+      {
+        "text": "Immer 会自动把每次 produce 的返回类型都包成 Immutable<T>",
+        "isCorrect": false,
+        "description": "错误。只有入参已是 immutable 时返回才会是 immutable。"
+      },
+      {
+        "text": "它让类型变为可变（去掉 readonly）",
+        "isCorrect": false,
+        "description": "错误。去 readonly 的是 Draft<T>；Immutable<T> 是加 readonly。"
+      },
+      {
+        "text": "它会在运行时冻结对象",
+        "isCorrect": false,
+        "description": "错误。它是编译期类型，不产生运行时行为。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：applyPatches 的典型用途，以及它与 inversePatches 配合能实现什么？",
+    "explanation": "`applyPatches(base, patches)` 把一组补丁**重放**到某个状态上，产出新状态。配合 produceWithPatches 得到的 inversePatches，可以实现**撤销/重做**（对当前状态 apply inversePatches 即回退）、以及**跨端增量同步**（如通过 WebSocket 只传补丁而非整状态）、调试回放。注意：Immer 不保证生成的补丁是「最小集」，需要时可自行压缩。\n\n- 「重放补丁产出新状态；配合 inversePatches 做撤销/重做与增量同步」正确。\n- 「把两个状态做 diff」错误：那是 produceWithPatches 在产出补丁，applyPatches 是反向应用。\n- 「深拷贝状态」错误。\n- 「校验补丁合法性并抛错」并非其主职。",
+    "tags": [
+      "immer",
+      "高级",
+      "applyPatches",
+      "undo-redo"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "把补丁重放到某状态上产出新状态；与 inversePatches 配合可做撤销/重做与跨端增量同步",
+        "isCorrect": true,
+        "description": "正确。这正是 patch 体系的核心价值：增量更新、回放、undo/redo。"
+      },
+      {
+        "text": "比较两个状态并生成它们之间的差异补丁",
+        "isCorrect": false,
+        "description": "错误。生成补丁是 produceWithPatches 的职责；applyPatches 是应用补丁。"
+      },
+      {
+        "text": "对传入状态做一次深拷贝",
+        "isCorrect": false,
+        "description": "错误。它应用补丁，不是深拷贝工具。"
+      },
+      {
+        "text": "校验补丁数组是否合法，否则抛错",
+        "isCorrect": false,
+        "description": "错误。校验不是它的主要用途，它的核心是重放补丁。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：以下哪条是关于 Immer「数组」的真实限制？",
+    "explanation": "对数组而言，Immer **只保证数字索引和 length 的修改被处理**；你**挂在数组上的自定义（非索引）属性不会被保留**。因为数组终态化按「索引 + length」语义重建。需要附带元数据时应放进对象而非挂到数组上。\n\n- 「数组上的自定义非索引属性不会被保留」正确。\n- 「数组完全不能在 Immer 里用」错误：数组是核心支持的。\n- 「数组必须先 enableArray()」错误：无此前置（array methods 插件是可选性能优化，非必需）。\n- 「修改数组会自动转成对象」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "数组",
+      "限制"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "挂在数组上的自定义（非数字索引）属性不会被 Immer 保留",
+        "isCorrect": true,
+        "description": "正确。Immer 只处理数组的数字索引与 length，自定义属性会丢失。"
+      },
+      {
+        "text": "数组在 Immer 中完全不被支持",
+        "isCorrect": false,
+        "description": "错误。数组是 Immer 最核心支持的结构之一。"
+      },
+      {
+        "text": "使用数组前必须先调用 enableArray()",
+        "isCorrect": false,
+        "description": "错误。数组开箱即用；array methods 是可选性能插件，非必需。"
+      },
+      {
+        "text": "在 draft 中修改数组会把它自动转成普通对象",
+        "isCorrect": false,
+        "description": "错误。数组仍是数组，不会被转换类型。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：嵌套使用 produce（在一个 recipe 内部再调用 produce）时要注意什么？",
+    "explanation": "内层 produce 会拿到「draft 的 draft」，并返回它自己的新结果——这个**内层结果必须被显式使用/合并回外层**（例如赋值给外层 draft 的某字段），否则内层产出的新状态会被丢弃。常见误用是只调内层 produce 却不接收其返回值。一般也建议尽量避免不必要的嵌套。\n\n- 「内层 produce 的返回值必须被合并回外层」正确。\n- 「内层会自动改外层 draft，无需接收返回」错误。\n- 「嵌套会直接抛错」错误。\n- 「内外层共享同一 draft，改谁都一样」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "嵌套produce",
+      "pitfall"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "内层 produce 返回的是独立的新结果，必须显式接收并合并回外层 draft，否则丢失",
+        "isCorrect": true,
+        "description": "正确。嵌套 produce 得到 draft 的 draft，其结果不会自动回写外层。"
+      },
+      {
+        "text": "内层 produce 会自动修改外层 draft，无需接收返回值",
+        "isCorrect": false,
+        "description": "错误。内层结果需显式合并，不会自动回写。"
+      },
+      {
+        "text": "在 recipe 内调用 produce 会立即抛错",
+        "isCorrect": false,
+        "description": "错误。嵌套是允许的，只是要正确处理返回值。"
+      },
+      {
+        "text": "内外层是同一个 draft，改哪个都等价",
+        "isCorrect": false,
+        "description": "错误。内层是对快照的独立 draft，与外层不是同一个。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：相比手写 reducer，Immer 在性能上的真实定位更接近以下哪种描述？",
+    "explanation": "官方基准：基于 Proxy 的 Immer 大致比纯手写 reducer **慢约 2–3 倍**，但在实践中通常**可忽略**；而且 Immer 能通过「无改动返回原引用」**避免不必要的重渲染**，有时反而整体更快。与 Immutable.js 相比速度相当，却省去了来回转换普通对象的成本。\n\n- 「比手写慢约 2–3 倍但通常可忽略，且能省重渲染」正确。\n- 「永远比手写快」错误。\n- 「比手写慢上百倍，生产不可用」错误。\n- 「与手写完全相同」错误。",
+    "tags": [
+      "immer",
+      "高级",
+      "性能",
+      "对比"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "高级"
+      ]
+    ],
+    "options": [
+      {
+        "text": "通常比手写 reducer 慢约 2–3 倍，但实践中可忽略，且因避免无谓重渲染有时整体更快",
+        "isCorrect": true,
+        "description": "正确。这是官方对 Immer 性能的客观定位。"
+      },
+      {
+        "text": "Immer 永远比手写 reducer 更快",
+        "isCorrect": false,
+        "description": "错误。Proxy 有开销，纯写性能通常略慢。"
+      },
+      {
+        "text": "Immer 比手写慢上百倍，生产环境基本不可用",
+        "isCorrect": false,
+        "description": "错误。差距是个位数倍且常可忽略，被广泛用于生产。"
+      },
+      {
+        "text": "两者性能完全一致，没有任何差异",
+        "isCorrect": false,
+        "description": "错误。基于 Proxy 的实现存在可测的额外开销。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：截至 2026 年，Immer 的当前主版本是哪个量级？v11 相对 v10 一个值得注意的变化是什么？",
+    "explanation": "Immer 当前已进入 **v11.x**（如 11.1.x）。v11.0.0（2025-11）重写了终态化系统（借鉴 Mutative 的「finalization callback」回调式做法替代递归树遍历，提升性能），并把**默认迭代模式改为 loose iteration（非严格迭代）**（破坏性变更）。v11.1.0 还新增了可选的 **array methods 插件（enableArrayMethods）** 加速数组方法。\n\n- 「v11.x；重写终态化 + 默认 loose iteration」正确。\n- 「仍停留在 v6」错误。\n- 「v11 删除了 produce」错误。\n- 「v11 强制所有项目用 Map/Set」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "版本",
+      "v11"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "已是 v11.x；v11 重写了终态化系统并把默认迭代改为 loose iteration，v11.1 新增 array methods 插件",
+        "isCorrect": true,
+        "description": "正确。这些是 v11 的核心变化，来源于官方发布日志。"
+      },
+      {
+        "text": "仍停留在 v6，多年未发大版本",
+        "isCorrect": false,
+        "description": "错误。已演进到 v11.x。"
+      },
+      {
+        "text": "v11 移除了核心 API produce",
+        "isCorrect": false,
+        "description": "错误。produce 仍是核心 API。"
+      },
+      {
+        "text": "v11 起强制所有项目都必须启用 Map/Set 支持",
+        "isCorrect": false,
+        "description": "错误。Map/Set 仍是可选插件，需显式 enableMapSet。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：enableArrayMethods()（v11 引入的 array methods 插件）启用后，filter/find/slice 这类「子集」方法的回调参数与返回值有何特别之处？",
+    "explanation": "为优化性能，启用该插件后这些被改写的方法**回调收到的是 base 值（非 draft）**——避免为遍历的每个元素都建 Proxy；但 filter/slice/find/findLast 这类「子集」方法**返回的数组里装的是指回原位置的 draft 代理**，因此**对返回项的修改仍会作用到 draft 状态**。注意区分：concat/flat 这类「变换」方法返回的是 base 值，改它们**不**回写。\n\n- 「回调收 base 值，但子集方法返回项是 draft、改之会回写」正确。\n- 其余把回调说成 draft、或说返回项改了不回写（针对 filter）均错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "enableArrayMethods",
+      "数组"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "回调参数是 base 值（不可追踪修改），但 filter/slice/find 返回的项是指回原位的 draft，改这些返回项会回写到状态",
+        "isCorrect": true,
+        "description": "正确。这是 array methods 插件的关键语义：回调取 base，子集方法的返回项仍是 draft。"
+      },
+      {
+        "text": "回调参数仍是 draft，因此在回调里直接 mutate 元素也会被追踪",
+        "isCorrect": false,
+        "description": "错误。优化的核心正是让回调收 base 值，回调里直接改不会被追踪。"
+      },
+      {
+        "text": "filter 的返回项是 base 值，修改它们不会影响状态",
+        "isCorrect": false,
+        "description": "错误。filter 属「子集」方法，返回的是 draft，修改会回写。"
+      },
+      {
+        "text": "启用后 filter/find 会完全停止工作并抛错",
+        "isCorrect": false,
+        "description": "错误。它们正常工作，只是优化了代理创建策略。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：setUseStrictShallowCopy 用来控制什么？默认值是什么？",
+    "explanation": "它控制 Immer 浅拷贝对象时**是否严格复制非可枚举（non-enumerable）属性**等。默认是**关闭（非严格）**——出于性能，默认只复制普通可枚举自有属性。当你的对象依赖非可枚举属性、或需要更贴近原对象的拷贝语义时，可开启（支持 `true` 或 `\"class_only\"` 仅对类生效）。注意：开启 strict shallow copy 时，getter 在「首次 mutation 时」被求值，而非 produce 返回时。\n\n- 「控制是否严格复制非可枚举属性，默认关闭」正确。\n- 「控制是否冻结，默认开」错误（那是 setAutoFreeze）。\n- 「控制 Map/Set，默认开」错误。\n- 「控制补丁生成，默认开」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "setUseStrictShallowCopy",
+      "配置"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "控制浅拷贝时是否严格复制非可枚举等属性；默认关闭（非严格，性能优先）",
+        "isCorrect": true,
+        "description": "正确。需要保留非可枚举属性时再开启，支持 true 或 \"class_only\"。"
+      },
+      {
+        "text": "控制是否自动冻结产出结果，默认开启",
+        "isCorrect": false,
+        "description": "错误。那是 setAutoFreeze 的职责。"
+      },
+      {
+        "text": "控制是否支持 Map/Set，默认开启",
+        "isCorrect": false,
+        "description": "错误。Map/Set 由 enableMapSet 控制且默认关闭。"
+      },
+      {
+        "text": "控制是否生成补丁，默认开启",
+        "isCorrect": false,
+        "description": "错误。补丁由 enablePatches 控制且默认关闭。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：v11 把默认迭代模式改为 loose iteration（可用 setUseStrictIteration 切换），这一改动的取舍是什么？",
+    "explanation": "loose（非严格）迭代默认只遍历**普通可枚举属性**，省去对 symbol 键、非可枚举属性的额外检查，从而**更快**；代价是若你的状态依赖「在迭代/拷贝中保留 symbol 或非可枚举属性」，默认行为可能不覆盖。需要严格语义时用 `setUseStrictIteration(true)`。这是 v11 为性能做的默认值调整（属破坏性变更）。\n\n- 「默认更快但不覆盖 symbol/非可枚举；需严格用 setUseStrictIteration(true)」正确。\n- 「loose 更慢」错误。\n- 「loose 会遍历原型链」错误。\n- 「该选项不存在」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "setUseStrictIteration",
+      "v11"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "loose 默认更快（只遍历普通可枚举属性），但不覆盖 symbol/非可枚举属性；需要时用 setUseStrictIteration(true) 切回严格",
+        "isCorrect": true,
+        "description": "正确。这是 v11 用默认行为换性能的取舍。"
+      },
+      {
+        "text": "loose 迭代比 strict 更慢，只是更安全",
+        "isCorrect": false,
+        "description": "错误。loose 的目的正是更快。"
+      },
+      {
+        "text": "loose 模式会额外遍历对象的原型链属性",
+        "isCorrect": false,
+        "description": "错误。它只遍历自有可枚举属性，不上原型链。"
+      },
+      {
+        "text": "Immer 并不存在迭代模式这样的配置",
+        "isCorrect": false,
+        "description": "错误。v10.2 引入 setUseStrictIteration，v11 改其默认。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：在什么场景下，Immer 反而可能**不是**最佳选择，直接用 structuredClone 或手写浅拷贝更合适？",
+    "explanation": "对于**一次性、浅层、改动面很大**的更新（几乎整对象都要换），Immer 的 Proxy 追踪 + 终态化 + 冻结反而是额外开销，此时直接 return 新对象或用 structuredClone 可能更简单直接。另外当状态里大量是 **exotic 对象**（DOM/Buffer 等 Immer 不支持的）或需要**真正深拷贝隔离**时，structuredClone 更合适。Immer 的甜区是「**深层、局部、频繁**的不可变更新」。\n\n- 「浅层/一次性/大面积替换、或含 exotic 对象时」正确。\n- 「深层局部频繁更新时不该用 Immer」错误：那恰是 Immer 甜区。\n- 「任何时候都别用 structuredClone」错误。\n- 「Immer 永远最优」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "structuredClone",
+      "取舍"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "当更新是浅层/一次性/大面积替换，或状态含 Immer 不支持的 exotic 对象、需要真正深拷贝隔离时",
+        "isCorrect": true,
+        "description": "正确。Immer 的优势在深层局部频繁更新；其他场景手写或 structuredClone 可能更简单高效。"
+      },
+      {
+        "text": "当更新是深层、局部、频繁发生时，应改用 structuredClone",
+        "isCorrect": false,
+        "description": "错误。这恰恰是 Immer 最擅长、最划算的场景。"
+      },
+      {
+        "text": "任何项目都不应使用 structuredClone",
+        "isCorrect": false,
+        "description": "错误。特定场景 structuredClone 反而更合适。"
+      },
+      {
+        "text": "Immer 在所有场景下都严格优于其他方案",
+        "isCorrect": false,
+        "description": "错误。没有银弹，需按更新形态权衡。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immer 假设状态是「单向树（unidirectional tree）」。如果状态里存在循环引用或同一对象在树中出现两次，会怎样？",
+    "explanation": "Immer 明确假设状态是**单向树**：同一对象不应在树中出现两次，也不应有循环引用。违反这一假设会导致行为异常/出错，因为终态化按树结构遍历与复制，重复节点会被各自独立处理、循环引用会陷入问题。需要图结构时应规范化（normalize）数据，用 id 引用替代直接对象引用。\n\n- 「违反单向树假设会出问题，应规范化数据」正确。\n- 「Immer 会自动去重/打破循环」错误。\n- 「完全支持任意图结构」错误。\n- 「会静默把重复节点合并成一个」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "单向树",
+      "限制"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "Immer 不支持这种结构：同一对象出现两次或存在循环引用会导致异常，应将数据规范化（用 id 引用）",
+        "isCorrect": true,
+        "description": "正确。Immer 假设单向树，图结构需 normalize 后再用。"
+      },
+      {
+        "text": "Immer 会自动检测并去重重复节点、打破循环引用",
+        "isCorrect": false,
+        "description": "错误。它不做这种自动处理，违反假设会出错。"
+      },
+      {
+        "text": "Immer 完整支持任意带环的图结构状态",
+        "isCorrect": false,
+        "description": "错误。它明确只支持单向树。"
+      },
+      {
+        "text": "Immer 会静默地把重复出现的节点合并为同一引用",
+        "isCorrect": false,
+        "description": "错误。终态化会各自独立处理，不会智能合并。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：为什么不能用 === 直接比较 recipe 里的 draft 与原始对象来判断「是不是同一个节点」？应该用什么？",
+    "explanation": "因为 draft 是 Proxy，`draft.users === baseState.users` 会因「代理 vs 原对象」而**不相等**，无法用来做身份判断（如在树里定位某节点）。正确做法是用 **`original(draft.x)`** 取回原始对象再比较：`original(draft.users) === baseState.users` 为 true。current() 取的是当前快照、也不等于原对象。\n\n- 「draft 是 Proxy 故 === 不等，应用 original() 比较」正确。\n- 「draft 与原对象 === 恒等」错误。\n- 「应该用 current() 比较身份」不准确：current 是改动后的快照，不用于和原对象比身份。\n- 「Immer 禁止任何比较」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "original",
+      "引用比较"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "draft 是 Proxy，与原对象 === 不相等；要判断身份应先用 original() 取回原始对象再比较",
+        "isCorrect": true,
+        "description": "正确。original(draft.x) === base.x 才成立，可用于树中节点定位。"
+      },
+      {
+        "text": "draft 与对应的原始对象用 === 永远相等",
+        "isCorrect": false,
+        "description": "错误。代理与原对象引用不同，=== 不成立。"
+      },
+      {
+        "text": "应改用 current(draft.x) 与原对象做身份比较",
+        "isCorrect": false,
+        "description": "不准确。current 是改动后的普通快照，不用于和原对象比身份。"
+      },
+      {
+        "text": "Immer 禁止在 recipe 内做任何对象比较",
+        "isCorrect": false,
+        "description": "错误。可以比较，只是要借助 original() 处理代理身份问题。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immer 生成的 patch 遵循什么格式？它与标准 JSON Patch（RFC 6902）有何不同？",
+    "explanation": "Immer 的 patch 形如 `{ op, path, value }`，op 为 \"add\"/\"replace\"/\"remove\"，**贴近 RFC 6902 JSON Patch，但 `path` 用的是数组**（如 `[\"users\", 3, \"name\"]`），而标准 JSON Patch 的 path 是斜杠分隔的字符串（如 `/users/3/name`）。需要互通时要做一次 path 形态转换。另外 Immer 不保证补丁是最小集。\n\n- 「类 RFC 6902，但 path 是数组而非字符串」正确。\n- 「与 RFC 6902 完全一致」错误：path 形态不同。\n- 「自创二进制格式」错误。\n- 「path 用点号分隔字符串」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "patches",
+      "JSON Patch"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "形如 {op, path, value}，接近 RFC 6902，但 path 是数组（如 [\"users\",3,\"name\"]）而非斜杠字符串",
+        "isCorrect": true,
+        "description": "正确。这是 Immer patch 与标准 JSON Patch 的关键差异，互通需转换 path。"
+      },
+      {
+        "text": "与 RFC 6902 JSON Patch 完全一致，可直接互通",
+        "isCorrect": false,
+        "description": "错误。path 形态不同（数组 vs 字符串），不能无脑互通。"
+      },
+      {
+        "text": "Immer 使用自创的二进制补丁格式",
+        "isCorrect": false,
+        "description": "错误。补丁是普通 JS 对象，可读且 JSON 友好。"
+      },
+      {
+        "text": "path 采用点号分隔的字符串（如 users.3.name）",
+        "isCorrect": false,
+        "description": "错误。Immer 的 path 是数组，标准 JSON Patch 才是斜杠字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：Immer 类（new Immer(config)）相对直接 import 的 produce/setAutoFreeze 等顶层 API，价值在哪？",
+    "explanation": "顶层 `produce`、`setAutoFreeze`、`setUseStrictShallowCopy` 等其实是**一个默认 Immer 单例**上的方法。`new Immer(config)` 让你创建**独立配置的实例**：它有自己的 produce/applyPatches 等绑定方法，运行时改它的 setAutoFreeze 等设置**只影响该实例**，不污染全局默认实例。适合库作者需要隔离配置、或同一进程内并存多套不同冻结/拷贝策略的场景。\n\n- 「创建配置隔离的独立实例，互不影响」正确。\n- 「功能与顶层 API 完全相同，无差别」错误（差别正是隔离性）。\n- 「new Immer 才能用 Map/Set」错误。\n- 「new Immer 会自动开启所有插件」错误。",
+    "tags": [
+      "immer",
+      "专家",
+      "Immer实例",
+      "配置隔离"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "创建配置隔离的独立 Immer 实例：改其设置只影响该实例，不影响全局默认实例",
+        "isCorrect": true,
+        "description": "正确。顶层 API 是默认单例的方法；new Immer 用于隔离配置。"
+      },
+      {
+        "text": "与顶层 API 完全等价，没有任何区别",
+        "isCorrect": false,
+        "description": "错误。核心区别就是配置隔离与独立的绑定方法。"
+      },
+      {
+        "text": "只有用 new Immer 才能启用 Map/Set 支持",
+        "isCorrect": false,
+        "description": "错误。Map/Set 由 enableMapSet 控制，与是否 new Immer 无关。"
+      },
+      {
+        "text": "new Immer 会自动启用 patches、Map/Set 等全部插件",
+        "isCorrect": false,
+        "description": "错误。它不会自动开插件，插件仍需各自启用。"
+      }
+    ]
+  },
+  {
+    "stem": "Immer：关于在 recipe 里用 void 操作符（如 produce(draft => void (draft.age += 1)))，下面说法正确的是？",
+    "explanation": "这是一个**写法捷径**：箭头函数若用表达式体（无大括号），其表达式值会被当作返回值——而 Immer 把「返回值」视为「替换整个状态」，于是 `draft => (draft.age += 1)` 会**误把赋值结果当作要替换的新状态**。用 `void` 把表达式求值后强制返回 undefined，即可既写成单行、又避免「意外返回」。官方提示：为可读性，多人协作代码仍建议用带大括号的常规写法。\n\n- 「void 让单行箭头体求值后返回 undefined，避免意外把改动结果当新状态返回」正确。\n- 「void 会跳过冻结」错误。\n- 「void 让 produce 变异步」错误。\n- 「void 是必需的，否则报错」错误：常规大括号写法更推荐。",
+    "tags": [
+      "immer",
+      "专家",
+      "void",
+      "返回值陷阱"
+    ],
+    "categories": [
+      [
+        "技术方向",
+        "Immer"
+      ],
+      [
+        "难度",
+        "专家"
+      ]
+    ],
+    "options": [
+      {
+        "text": "void 让单行箭头表达式体求值后返回 undefined，避免赋值结果被 Immer 当作「替换整个状态」的返回值",
+        "isCorrect": true,
+        "description": "正确。这是避免「意外返回新状态」的简写技巧；可读性上仍推荐大括号写法。"
+      },
+      {
+        "text": "void 会让该次 produce 跳过 auto-freeze",
+        "isCorrect": false,
+        "description": "错误。void 只影响返回值，与冻结无关。"
+      },
+      {
+        "text": "void 会把 produce 变成异步执行",
+        "isCorrect": false,
+        "description": "错误。void 不涉及异步。"
+      },
+      {
+        "text": "必须加 void，否则 produce 一定抛错",
+        "isCorrect": false,
+        "description": "错误。带大括号的常规写法无需 void，且更推荐。"
+      }
+    ]
+  }
+]

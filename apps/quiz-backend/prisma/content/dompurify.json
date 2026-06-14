@@ -1,0 +1,1583 @@
+[
+  {
+    "stem": "DOMPurify：官方对 DOMPurify 的一句话定位是什么？",
+    "explanation": "DOMPurify 官方描述为「a DOM-only, super-fast, uber-tolerant XSS sanitizer for HTML, MathML and SVG」——它是只依赖 DOM 的 XSS 净化器，把不可信的 HTML/MathML/SVG 解析成 DOM 树后，按白名单移除危险标签与属性，再序列化回安全字符串。\n\n- 「针对 HTML/MathML/SVG 的 XSS 净化器」正确。\n- 「HTTP 客户端」错误：那是 axios/fetch 之类。\n- 「模板引擎」错误：它不渲染模板。\n- 「CSS 预处理器」错误：与样式编译无关。",
+    "tags": ["DOMPurify", "入门", "定位", "XSS", "核心概念"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个面向 HTML、MathML、SVG 的 XSS 净化器，移除其中的危险内容",
+        "isCorrect": true,
+        "description": "正确。官方原文即「a DOM-only ... XSS sanitizer for HTML, MathML and SVG」。"
+      },
+      {
+        "text": "一个像 axios 一样的 HTTP 请求客户端",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 不发请求，它只清洗 HTML 字符串。"
+      },
+      {
+        "text": "一个像 Handlebars 一样的模板引擎",
+        "isCorrect": false,
+        "description": "错误。它不负责把数据渲染成 HTML，只负责净化已有 HTML。"
+      },
+      {
+        "text": "一个像 Sass 一样的 CSS 预处理器",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 与样式编译毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：净化一段不可信 HTML 字符串，最基本的调用是哪一个？",
+    "explanation": "核心 API 只有一个方法：`DOMPurify.sanitize(dirty)`。传入「脏」HTML 字符串，返回清洗后的安全 HTML 字符串。配置作为可选第二参数：`sanitize(dirty, config)`。\n\n- `DOMPurify.sanitize(dirty)` 正确。\n- `DOMPurify.clean(dirty)` 错误：没有 clean 方法。\n- `DOMPurify.escape(dirty)` 错误：DOMPurify 做的是解析+白名单净化，不是 HTML 转义，也没有 escape 方法。\n- `DOMPurify.parse(dirty)` 错误：没有公开的 parse 方法。",
+    "tags": ["DOMPurify", "入门", "sanitize", "API", "核心概念"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "DOMPurify.sanitize(dirty)",
+        "isCorrect": true,
+        "description": "正确。sanitize 是 DOMPurify 唯一的核心方法，返回净化后的字符串。"
+      },
+      {
+        "text": "DOMPurify.clean(dirty)",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 没有 clean 方法。"
+      },
+      {
+        "text": "DOMPurify.escape(dirty)",
+        "isCorrect": false,
+        "description": "错误。没有 escape；DOMPurify 是白名单净化而非字符转义。"
+      },
+      {
+        "text": "DOMPurify.parse(dirty)",
+        "isCorrect": false,
+        "description": "错误。没有公开的 parse 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在不传任何配置时，`DOMPurify.sanitize(dirty)` 默认返回的是什么类型？",
+    "explanation": "默认情况下 sanitize 返回**一个净化后的 HTML 字符串**（string）。只有显式设置 `RETURN_DOM`、`RETURN_DOM_FRAGMENT`、`RETURN_TRUSTED_TYPE` 等标志，返回类型才会变成 DOM 节点、DocumentFragment 或 TrustedHTML。\n\n- 「净化后的 HTML 字符串」正确。\n- 「DOM 节点」错误：那是 `RETURN_DOM: true` 时。\n- 「Promise」错误：sanitize 是同步的。\n- 「布尔值」错误：它返回内容而非是否安全的判断。",
+    "tags": ["DOMPurify", "入门", "返回值", "sanitize", "字符串"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个净化后的 HTML 字符串",
+        "isCorrect": true,
+        "description": "正确。默认返回 string，可直接赋给 innerHTML。"
+      },
+      {
+        "text": "一个 DOM 节点对象",
+        "isCorrect": false,
+        "description": "错误。只有 RETURN_DOM: true 时才返回 DOM 节点。"
+      },
+      {
+        "text": "一个 Promise",
+        "isCorrect": false,
+        "description": "错误。sanitize 是同步函数，不返回 Promise。"
+      },
+      {
+        "text": "一个表示是否安全的布尔值",
+        "isCorrect": false,
+        "description": "错误。它返回净化后的内容，不是布尔判断。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：对 `'<img src=x onerror=alert(1)>'` 调用默认 `sanitize`，结果最接近哪一个？",
+    "explanation": "DOMPurify 默认允许 `<img>` 标签（在 HTML 白名单内），但会移除危险的事件处理属性 `onerror`（所有 `on*` 内联事件都不在白名单）。结果保留 `<img src=\"x\">`，去掉 `onerror`。\n\n- `<img src=\"x\">`（去掉 onerror）正确。\n- 「原样保留含 onerror」错误：那就没净化了。\n- 「整个 img 被删」错误：img 是安全标签，会保留。\n- 「转义成 &lt;img...&gt; 文本」错误：DOMPurify 不做整体 HTML 转义，而是解析后按白名单清理。",
+    "tags": ["DOMPurify", "入门", "onerror", "事件属性", "净化"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "保留为 <img src=\"x\">，危险的 onerror 属性被移除",
+        "isCorrect": true,
+        "description": "正确。img 是白名单标签得以保留，on* 内联事件属性被剥离。"
+      },
+      {
+        "text": "原样返回，含 onerror 一并保留",
+        "isCorrect": false,
+        "description": "错误。那等于没净化，会留下 XSS。"
+      },
+      {
+        "text": "整个 <img> 标签被删除",
+        "isCorrect": false,
+        "description": "错误。img 是安全标签，默认保留，只去掉危险属性。"
+      },
+      {
+        "text": "把整段转义成 &lt;img src=x onerror=alert(1)&gt; 文本",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 是解析+白名单净化，不是把整段 HTML 转义为文本。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：要在 Vue 模板里安全地用 `v-html` 渲染用户提交的富文本，正确做法是什么？",
+    "explanation": "`v-html` 直接设置 `innerHTML`，不转义，对不可信内容是 XSS 入口。正确做法是**先用 `DOMPurify.sanitize` 清洗，再把结果绑定给 `v-html`**：`<div v-html=\"safeHtml\">`，其中 `safeHtml = DOMPurify.sanitize(userInput)`。\n\n- 「先 sanitize 再 v-html」正确。\n- 「直接 v-html 原始输入」错误：会执行注入脚本。\n- 「用 {{ }} 插值」会被转义成文本，HTML 不会渲染（虽安全但不满足富文本需求）。\n- 「用正则删 <script>」错误：正则绕过方式极多，不可靠。",
+    "tags": ["DOMPurify", "入门", "Vue", "v-html", "XSS"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "先用 DOMPurify.sanitize 清洗，再把结果绑定给 v-html",
+        "isCorrect": true,
+        "description": "正确。净化后的字符串才能安全交给 v-html 渲染。"
+      },
+      {
+        "text": "直接把用户原始输入绑定给 v-html",
+        "isCorrect": false,
+        "description": "错误。v-html 不转义，原始输入中的脚本会被执行。"
+      },
+      {
+        "text": "用 {{ userInput }} 双花括号插值即可",
+        "isCorrect": false,
+        "description": "错误。插值会转义成纯文本，HTML 标签不会渲染，无法满足富文本展示。"
+      },
+      {
+        "text": "用正则把 <script> 标签删掉就够了",
+        "isCorrect": false,
+        "description": "错误。正则过滤极易被绕过，必须用解析型净化器。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：与 React 的 `dangerouslySetInnerHTML` 配合时，DOMPurify 扮演什么角色？",
+    "explanation": "`dangerouslySetInnerHTML={{ __html: html }}` 会绕过 React 的自动转义，直接写入 `innerHTML`。DOMPurify 的角色是**在写入之前清洗这段 HTML**：`__html: DOMPurify.sanitize(userHtml)`，确保只有白名单内的标签/属性进入 DOM。\n\n- 「写入前先净化 HTML」正确。\n- 「替代 React 渲染」错误：它不渲染组件。\n- 「让 React 自动转义」错误：dangerouslySetInnerHTML 本就是绕过转义，DOMPurify 是补上安全这一环。\n- 「压缩 HTML 体积」错误：净化不是压缩。",
+    "tags": ["DOMPurify", "入门", "React", "dangerouslySetInnerHTML", "XSS"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在把 HTML 交给 dangerouslySetInnerHTML 之前，先净化掉危险内容",
+        "isCorrect": true,
+        "description": "正确。__html: DOMPurify.sanitize(userHtml) 是标准安全写法。"
+      },
+      {
+        "text": "替代 React 完成组件渲染",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 只净化字符串，不参与组件渲染。"
+      },
+      {
+        "text": "让 React 对这段 HTML 自动转义",
+        "isCorrect": false,
+        "description": "错误。dangerouslySetInnerHTML 本身就是绕过转义，DOMPurify 负责补上净化。"
+      },
+      {
+        "text": "对 HTML 做体积压缩以加快渲染",
+        "isCorrect": false,
+        "description": "错误。净化不等于压缩，目标是安全而非体积。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：为什么官方强调「不要用正则自己写 HTML 过滤」来防 XSS？",
+    "explanation": "HTML 解析有大量容错与畸形写法（大小写、编码实体、属性折行、注释嵌套、SVG/MathML 命名空间等），正则无法覆盖所有变体，攻击者总能构造绕过 payload。DOMPurify 借助**浏览器自身的 DOM 解析器**把输入解析成真实 DOM，再按白名单清理，从根本上消除「解析差异」带来的绕过。\n\n- 「正则覆盖不全、易被绕过，应用浏览器解析器+白名单」正确。\n- 「正则太慢」不是核心原因。\n- 「正则不能跨浏览器」表述不准。\n- 「正则会改 CSS」无关。",
+    "tags": ["DOMPurify", "入门", "正则", "为何净化", "安全原理"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "HTML 变体太多正则覆盖不全、极易被绕过；应借浏览器 DOM 解析器解析后再按白名单清理",
+        "isCorrect": true,
+        "description": "正确。这正是 DOMPurify「解析成 DOM 再白名单净化」的根本优势。"
+      },
+      {
+        "text": "正则执行速度太慢，性能不行",
+        "isCorrect": false,
+        "description": "错误。核心问题是安全性（绕过），不是性能。"
+      },
+      {
+        "text": "正则在不同浏览器结果不一致",
+        "isCorrect": false,
+        "description": "错误。正则语法跨浏览器基本一致，问题在于无法穷尽 HTML 变体。"
+      },
+      {
+        "text": "正则会意外修改页面的 CSS 样式",
+        "isCorrect": false,
+        "description": "错误。与 CSS 无关，问题是 HTML 解析绕过。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：处理流程「净化 → 插入页面」中，为什么必须是先净化、再插入，而不能反过来？",
+    "explanation": "XSS 的触发点是 HTML 被**解析并执行**的那一刻（写入 `innerHTML` 等）。若先把脏 HTML 插入 DOM 再清理，注入的脚本/事件可能在清理前就已执行，净化失去意义。所以必须**先在内存里净化好字符串，再写入页面**。\n\n- 「插入即解析执行，先净化才能拦在执行前」正确。\n- 「先插入更快」错误且危险。\n- 「顺序无所谓」错误。\n- 「先插入能保留样式」错误，与安全顺序无关。",
+    "tags": ["DOMPurify", "入门", "执行时机", "为何先净化", "XSS"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "写入页面会立即解析执行 HTML，必须在内存里先净化、把危险内容拦在执行之前",
+        "isCorrect": true,
+        "description": "正确。先插入再清理，注入代码可能已经执行，净化形同虚设。"
+      },
+      {
+        "text": "先插入再净化速度更快，所以推荐先插入",
+        "isCorrect": false,
+        "description": "错误。先插入会让脚本先执行，是危险做法。"
+      },
+      {
+        "text": "两者顺序无所谓，结果一样",
+        "isCorrect": false,
+        "description": "错误。顺序直接决定脚本是否已被执行。"
+      },
+      {
+        "text": "先插入能更好地保留内联样式",
+        "isCorrect": false,
+        "description": "错误。这与样式无关，是安全时序问题。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在现代浏览器中，ESM 方式引入 DOMPurify 的标准写法是哪一个？",
+    "explanation": "DOMPurify 提供 ESM 默认导出，标准写法是 `import DOMPurify from 'dompurify'`，随后 `DOMPurify.sanitize(...)`。它的发布产物是纯 JavaScript（源码用 TypeScript 写并自带类型声明），无需额外构建。\n\n- `import DOMPurify from 'dompurify'` 正确。\n- `import { DOMPurify } from 'dompurify'` 错误：默认导出不是具名导出。\n- `require('dompurify').sanitize` 在 CJS 下需先用 window 初始化（浏览器全局才直接可用），不是浏览器 ESM 标准写法。\n- `import sanitize from 'dompurify/sanitize'` 错误：没有该子路径。",
+    "tags": ["DOMPurify", "入门", "import", "ESM", "用法"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "import DOMPurify from 'dompurify'",
+        "isCorrect": true,
+        "description": "正确。DOMPurify 是默认导出，浏览器环境可直接 sanitize。"
+      },
+      {
+        "text": "import { DOMPurify } from 'dompurify'",
+        "isCorrect": false,
+        "description": "错误。它是默认导出，不是具名导出。"
+      },
+      {
+        "text": "import sanitize from 'dompurify/sanitize'",
+        "isCorrect": false,
+        "description": "错误。不存在 dompurify/sanitize 子路径。"
+      },
+      {
+        "text": "import DOMPurify from 'dom-purify'",
+        "isCorrect": false,
+        "description": "错误。npm 包名是 dompurify，没有连字符。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：默认配置下，下列哪类内容会被 DOMPurify 移除？",
+    "explanation": "DOMPurify 的默认白名单允许常见的安全展示标签（如 `<b>`、`<a>`、`<img>`、`<p>` 等），但会移除可执行/危险内容：`<script>`、`on*` 内联事件、`javascript:` 协议链接等。`<style>` 默认也不在 HTML 安全白名单内（除非用 profile/ADD_TAGS 放行）。\n\n- `<script>alert(1)</script>` 正确：脚本一定被移除。\n- `<b>` 不会被移除。\n- `<a href=\"https://...\">` 普通 https 链接保留。\n- `<p>段落</p>` 保留。",
+    "tags": ["DOMPurify", "入门", "script", "白名单", "默认行为"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "<script>alert(1)</script>",
+        "isCorrect": true,
+        "description": "正确。script 不在白名单，默认一定被移除。"
+      },
+      {
+        "text": "<b>加粗文字</b>",
+        "isCorrect": false,
+        "description": "错误。b 是安全标签，默认保留。"
+      },
+      {
+        "text": "<a href=\"https://example.com\">链接</a>",
+        "isCorrect": false,
+        "description": "错误。普通 https 链接是安全的，默认保留。"
+      },
+      {
+        "text": "<p>一个段落</p>",
+        "isCorrect": false,
+        "description": "错误。p 是安全标签，默认保留。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：只想保留 `<b>` 一个标签、其余标签都去掉，应使用哪个配置项？",
+    "explanation": "`ALLOWED_TAGS` 用于**整体替换**默认标签白名单：`sanitize(dirty, { ALLOWED_TAGS: ['b'] })` 表示只允许 `<b>`，其它标签都被移除（但其文本内容默认因 `KEEP_CONTENT` 保留）。\n\n- `ALLOWED_TAGS: ['b']` 正确。\n- `ADD_TAGS: ['b']` 错误：ADD_TAGS 是在默认白名单基础上**追加**，结果仍允许大量默认标签。\n- `FORBID_TAGS: ['b']` 恰好相反，是禁掉 b。\n- `ALLOWED_ATTR: ['b']` 错误：那是属性白名单，b 也不是属性。",
+    "tags": ["DOMPurify", "初级", "ALLOWED_TAGS", "白名单", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ALLOWED_TAGS: ['b']",
+        "isCorrect": true,
+        "description": "正确。ALLOWED_TAGS 整体替换标签白名单，只留 b。"
+      },
+      {
+        "text": "ADD_TAGS: ['b']",
+        "isCorrect": false,
+        "description": "错误。ADD_TAGS 是在默认白名单上追加，不会把其它标签去掉。"
+      },
+      {
+        "text": "FORBID_TAGS: ['b']",
+        "isCorrect": false,
+        "description": "错误。FORBID_TAGS 是禁用 b，与需求相反。"
+      },
+      {
+        "text": "ALLOWED_ATTR: ['b']",
+        "isCorrect": false,
+        "description": "错误。ALLOWED_ATTR 控制属性白名单，与标签无关。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`ALLOWED_TAGS` 与 `ADD_TAGS` 的根本区别是什么？",
+    "explanation": "二者作用方式不同：`ALLOWED_TAGS` 是**整体替换**默认标签白名单（你给的就是全集）；`ADD_TAGS` 是在**默认白名单基础上追加**（源码会先克隆默认集合再扩展，而非覆盖）。属性侧的 `ALLOWED_ATTR` / `ADD_ATTR` 同理。\n\n- 「ALLOWED_TAGS 替换、ADD_TAGS 追加」正确。\n- 「两者等价」错误。\n- 「ADD_TAGS 替换、ALLOWED_TAGS 追加」说反了。\n- 「ADD_TAGS 只能加一个标签」错误：可传数组。",
+    "tags": ["DOMPurify", "初级", "ALLOWED_TAGS", "ADD_TAGS", "配置语义"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ALLOWED_TAGS 整体替换默认白名单；ADD_TAGS 在默认白名单基础上追加",
+        "isCorrect": true,
+        "description": "正确。源码对 ADD_TAGS 会先克隆默认集合再扩展，ALLOWED_TAGS 则直接取代。"
+      },
+      {
+        "text": "两者完全等价，可互换",
+        "isCorrect": false,
+        "description": "错误。一个是替换、一个是追加，结果差异很大。"
+      },
+      {
+        "text": "ADD_TAGS 整体替换默认白名单；ALLOWED_TAGS 只是追加",
+        "isCorrect": false,
+        "description": "错误。语义说反了。"
+      },
+      {
+        "text": "ADD_TAGS 只能追加单个标签，不接受数组",
+        "isCorrect": false,
+        "description": "错误。ADD_TAGS 接受字符串数组。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：保留默认所有安全标签，但唯独要禁掉 `<style>` 与 `<form>`，应使用哪个配置？",
+    "explanation": "`FORBID_TAGS` 用于在白名单基础上**精确移除**特定标签，其余保持默认安全集合：`sanitize(dirty, { FORBID_TAGS: ['style', 'form'] })`。同理 `FORBID_ATTR` 移除特定属性。\n\n- `FORBID_TAGS: ['style', 'form']` 正确。\n- `ALLOWED_TAGS: ['style', 'form']` 恰好相反，是只留这两个。\n- `FORBID_ATTR` 是禁属性不是禁标签。\n- `FORBID_CONTENTS` 是控制被禁元素内部内容是否一并删除，语义不同。",
+    "tags": ["DOMPurify", "初级", "FORBID_TAGS", "黑名单", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "FORBID_TAGS: ['style', 'form']",
+        "isCorrect": true,
+        "description": "正确。FORBID_TAGS 在默认白名单上精确禁用指定标签。"
+      },
+      {
+        "text": "ALLOWED_TAGS: ['style', 'form']",
+        "isCorrect": false,
+        "description": "错误。那会变成只允许这两个标签，与需求相反。"
+      },
+      {
+        "text": "FORBID_ATTR: ['style', 'form']",
+        "isCorrect": false,
+        "description": "错误。FORBID_ATTR 禁的是属性，不是标签。"
+      },
+      {
+        "text": "FORBID_CONTENTS: ['style', 'form']",
+        "isCorrect": false,
+        "description": "错误。FORBID_CONTENTS 控制被禁元素的内部内容是否删除，不是直接禁标签。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`USE_PROFILES: { html: true }` 的作用是什么？",
+    "explanation": "`USE_PROFILES` 是一组预设白名单开关，可选 `html`、`svg`、`svgFilters`、`mathMl`。设 `{ html: true }` 表示**只启用 HTML 的标签与属性集合**，从而排除 SVG 和 MathML——是把净化范围收窄到「纯 HTML」的便捷方式。\n\n- 「只允许 HTML 标签/属性，排除 SVG、MathML」正确。\n- 「允许所有 HTML 包括 script」错误：script 仍被排除。\n- 「等价于关闭净化」错误。\n- 「只影响属性不影响标签」错误：标签和属性都受影响。",
+    "tags": ["DOMPurify", "初级", "USE_PROFILES", "html profile", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只启用 HTML 的标签与属性集合，从而排除 SVG 与 MathML",
+        "isCorrect": true,
+        "description": "正确。USE_PROFILES 的 html 选项把净化范围收窄到纯 HTML。"
+      },
+      {
+        "text": "允许所有 HTML 内容，包括 <script>",
+        "isCorrect": false,
+        "description": "错误。script 等危险内容始终被排除。"
+      },
+      {
+        "text": "等价于关闭净化，原样输出",
+        "isCorrect": false,
+        "description": "错误。它仍执行白名单净化，只是限定为 HTML 集合。"
+      },
+      {
+        "text": "只影响属性白名单，不影响标签",
+        "isCorrect": false,
+        "description": "错误。profile 同时决定标签和属性集合。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`ALLOW_DATA_ATTR` 配置项默认值是什么？它控制什么？",
+    "explanation": "`ALLOW_DATA_ATTR` 默认为 `true`，表示**默认允许 `data-*` 自定义数据属性**通过净化。把它设为 `false` 可禁止所有 `data-*` 属性。与之并列的 `ALLOW_ARIA_ATTR` 默认也是 `true`，控制 `aria-*` 属性。\n\n- 「默认 true，控制 data-* 属性」正确。\n- 「默认 false」错误。\n- 「控制 aria-* 属性」错误：那是 ALLOW_ARIA_ATTR。\n- 「控制 on* 事件」错误：on* 事件无论如何默认都被移除。",
+    "tags": ["DOMPurify", "初级", "ALLOW_DATA_ATTR", "data 属性", "默认值"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认 true，控制是否允许 data-* 自定义数据属性",
+        "isCorrect": true,
+        "description": "正确。ALLOW_DATA_ATTR 默认开启，设 false 可禁掉所有 data-* 属性。"
+      },
+      {
+        "text": "默认 false，需手动开启才允许 data-* 属性",
+        "isCorrect": false,
+        "description": "错误。它默认就是 true。"
+      },
+      {
+        "text": "默认 true，控制 aria-* 无障碍属性",
+        "isCorrect": false,
+        "description": "错误。aria-* 由 ALLOW_ARIA_ATTR 控制。"
+      },
+      {
+        "text": "默认 true，控制 on* 内联事件属性",
+        "isCorrect": false,
+        "description": "错误。on* 事件不受此项控制，始终被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：想让 sanitize 返回一个真正的 DOM 节点而不是字符串，应设置哪个配置？",
+    "explanation": "设 `RETURN_DOM: true`，sanitize 会返回一个 DOM 节点（一个 `HTMLBodyElement`）而非字符串，便于直接做 DOM 操作。默认该项为 `false`，返回字符串。\n\n- `RETURN_DOM: true` 正确。\n- `RETURN_NODE: true` 错误：没有这个选项。\n- `WHOLE_DOCUMENT: true` 是包含 `<html>` 等整文档结构，返回的仍是字符串（除非配合 RETURN_DOM）。\n- `IN_PLACE: true` 是就地净化已有节点，要求传入的本就是 Node。",
+    "tags": ["DOMPurify", "初级", "RETURN_DOM", "返回类型", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "RETURN_DOM: true",
+        "isCorrect": true,
+        "description": "正确。返回 HTMLBodyElement 形式的 DOM 节点，默认 false。"
+      },
+      {
+        "text": "RETURN_NODE: true",
+        "isCorrect": false,
+        "description": "错误。没有 RETURN_NODE 这个选项。"
+      },
+      {
+        "text": "WHOLE_DOCUMENT: true",
+        "isCorrect": false,
+        "description": "错误。它让输出包含 <html> 等整文档结构，默认仍是字符串。"
+      },
+      {
+        "text": "IN_PLACE: true",
+        "isCorrect": false,
+        "description": "错误。IN_PLACE 要求传入已有 DOM 节点并就地净化，不是把字符串转节点。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：默认配置下，`<a href=\"javascript:alert(1)\">x</a>` 会被怎样处理？",
+    "explanation": "DOMPurify 默认通过 `ALLOWED_URI_REGEXP` 限制链接协议，`javascript:` 不在允许之列，因此 `href` 属性会被移除（标签 `<a>` 与文本保留），结果类似 `<a>x</a>`。`ALLOW_UNKNOWN_PROTOCOLS` 默认为 `false`。\n\n- 「保留 a 与文本，移除 javascript: 的 href」正确。\n- 「原样保留 href」错误：那就留下了 XSS。\n- 「整个 a 标签删除」错误：a 是安全标签。\n- 「转义成文本」错误：DOMPurify 解析后按白名单清理而非整体转义。",
+    "tags": ["DOMPurify", "初级", "javascript 协议", "href", "URI"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "保留 <a> 与文本，但移除 javascript: 协议的 href 属性",
+        "isCorrect": true,
+        "description": "正确。默认 URI 白名单不含 javascript:，危险 href 被剥离。"
+      },
+      {
+        "text": "原样保留，包含 javascript: 的 href",
+        "isCorrect": false,
+        "description": "错误。这会留下点击即执行的 XSS。"
+      },
+      {
+        "text": "整个 <a> 标签被删除",
+        "isCorrect": false,
+        "description": "错误。a 是安全标签，保留，只去掉危险属性。"
+      },
+      {
+        "text": "把整段转义为纯文本",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 不做整体转义。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在 Node.js（无浏览器 DOM）环境用 DOMPurify，最经典的做法是什么？",
+    "explanation": "DOMPurify 依赖 DOM，因此在 Node.js 服务端要用 **jsdom 提供一个 window**，再用工厂函数初始化：`const window = new JSDOM('').window; const DOMPurify = createDOMPurify(window);`。之后 `DOMPurify.sanitize(...)` 即可。\n\n- 「用 jsdom 造 window 再 createDOMPurify(window)」正确。\n- 「Node 自带 DOM，直接用」错误：Node 没有 DOM。\n- 「装 puppeteer 起真实浏览器」可行但非经典/必要做法，过重。\n- 「DOMPurify 在 Node 无需任何 DOM」错误：它必须有 window/document。",
+    "tags": ["DOMPurify", "初级", "Node", "jsdom", "服务端"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 jsdom 创建一个 window，再 createDOMPurify(window) 得到实例",
+        "isCorrect": true,
+        "description": "正确。这是官方推荐的 Node 端用法，jsdom 提供必需的 DOM。"
+      },
+      {
+        "text": "Node.js 自带 DOM，直接 import 就能用",
+        "isCorrect": false,
+        "description": "错误。Node 默认没有 window/document，DOMPurify 无法工作。"
+      },
+      {
+        "text": "必须启动 puppeteer 真实浏览器才行",
+        "isCorrect": false,
+        "description": "错误。jsdom 这种轻量 DOM 实现就够了，无需起真浏览器。"
+      },
+      {
+        "text": "DOMPurify 在 Node 端不需要任何 DOM 即可净化",
+        "isCorrect": false,
+        "description": "错误。它本质依赖 DOM 解析，必须有 window。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：把内容描述为「DOMPurify 对 HTML 做转义（escape）」是否准确？为什么？",
+    "explanation": "不准确。**转义**是把 `<`、`>` 等字符变成 `&lt;`、`&gt;` 实体，使其作为纯文本显示；而 DOMPurify 做的是**解析 + 白名单净化**——把 HTML 解析成 DOM，保留安全标签（仍以 HTML 形式渲染），仅移除危险标签/属性。两者目标不同：转义让 HTML「不渲染」，净化让 HTML「安全地渲染」。\n\n- 「不准确，净化是解析+白名单清理而非字符转义」正确。\n- 「准确，本质就是转义」错误。\n- 「准确，因为都防 XSS」错误：手段与结果不同。\n- 「不准确，DOMPurify 只压缩」错误。",
+    "tags": ["DOMPurify", "初级", "净化vs转义", "概念辨析", "XSS"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不准确：净化是把 HTML 解析成 DOM 后按白名单清理，安全标签仍以 HTML 渲染，而非把字符转义成实体",
+        "isCorrect": true,
+        "description": "正确。转义让 HTML 变文本，净化让 HTML 安全地保留并渲染，二者本质不同。"
+      },
+      {
+        "text": "准确：DOMPurify 本质就是 HTML 转义",
+        "isCorrect": false,
+        "description": "错误。它不把 < > 变成实体，而是保留白名单标签。"
+      },
+      {
+        "text": "准确：只要能防 XSS，叫转义还是净化无所谓",
+        "isCorrect": false,
+        "description": "错误。手段和输出形式都不同，概念不能混用。"
+      },
+      {
+        "text": "不准确：DOMPurify 只是压缩 HTML 体积",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 与压缩无关。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：SSR/同构项目（Next.js、Nuxt 等）想在服务端与浏览器用同一套净化代码，常见选择是什么？",
+    "explanation": "`isomorphic-dompurify` 是对 DOMPurify 的同构封装：在浏览器直接用原生 DOMPurify，在 Node 端自动用 jsdom 造 DOM，**对外暴露同一套 API**（`import DOMPurify from 'isomorphic-dompurify'`），省去手写环境判断。\n\n- 「用 isomorphic-dompurify 统一两端」正确。\n- 「服务端禁用净化只在客户端做」错误且不安全。\n- 「服务端必须手写两份代码」不必要。\n- 「同构项目无法用 DOMPurify」错误。",
+    "tags": ["DOMPurify", "初级", "isomorphic-dompurify", "SSR", "同构"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 isomorphic-dompurify，浏览器用原生、Node 端自动用 jsdom，API 一致",
+        "isCorrect": true,
+        "description": "正确。它封装了两端初始化差异，一个 import 通吃 SSR/CSR。"
+      },
+      {
+        "text": "服务端跳过净化，只在客户端净化",
+        "isCorrect": false,
+        "description": "错误。服务端渲染的 HTML 同样会到达浏览器，必须净化。"
+      },
+      {
+        "text": "服务端和客户端必须各写一套完全不同的净化代码",
+        "isCorrect": false,
+        "description": "错误。isomorphic-dompurify 的意义就是免去这种重复。"
+      },
+      {
+        "text": "同构项目根本无法使用 DOMPurify",
+        "isCorrect": false,
+        "description": "错误。借助 jsdom 或 isomorphic 封装完全可用。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：设置 `RETURN_DOM_FRAGMENT: true` 时，sanitize 返回什么？它与 `RETURN_DOM` 有何内部关系？",
+    "explanation": "`RETURN_DOM_FRAGMENT: true` 让 sanitize 返回一个 `DocumentFragment`（轻量、无语义、无默认样式，适合批量插入）。内部上它会**强制把 `RETURN_DOM` 也置为 true**（fragment 是 DOM 返回的一个子类型）。\n\n- 「返回 DocumentFragment，且内部强制 RETURN_DOM=true」正确。\n- 「返回字符串」错误。\n- 「返回 HTMLBodyElement」是 RETURN_DOM（非 fragment）的结果。\n- 「与 RETURN_DOM 互斥」错误：恰恰相反，它会触发 RETURN_DOM。",
+    "tags": ["DOMPurify", "中级", "RETURN_DOM_FRAGMENT", "DocumentFragment", "返回类型"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回一个 DocumentFragment；内部会强制把 RETURN_DOM 也设为 true",
+        "isCorrect": true,
+        "description": "正确。fragment 是 DOM 返回的子类型，源码会一并打开 RETURN_DOM。"
+      },
+      {
+        "text": "返回一个净化后的字符串",
+        "isCorrect": false,
+        "description": "错误。设了该标志就不再返回字符串。"
+      },
+      {
+        "text": "返回一个 HTMLBodyElement",
+        "isCorrect": false,
+        "description": "错误。返回 HTMLBodyElement 的是 RETURN_DOM，而非 fragment。"
+      },
+      {
+        "text": "它与 RETURN_DOM 互斥，二者不能同时生效",
+        "isCorrect": false,
+        "description": "错误。它会强制触发 RETURN_DOM，并非互斥。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`KEEP_CONTENT` 配置默认值与作用是什么？",
+    "explanation": "`KEEP_CONTENT` 默认 `true`：当某个**标签本身被移除**时，**保留其文本子节点**。例如 `ALLOWED_TAGS: ['b']` 下 `<i>italic</i>` 的 `<i>` 被去掉，但文本 `italic` 仍保留。设为 `false` 则连同内容一起删掉。源码中开启它会把 `#text` 加入允许集合。\n\n- 「默认 true，移除标签时保留其文本内容」正确。\n- 「默认 false」错误。\n- 「控制是否保留属性」错误：那不是它的职责。\n- 「保留被禁标签本身」错误：保留的是内容而非标签。",
+    "tags": ["DOMPurify", "中级", "KEEP_CONTENT", "文本保留", "默认值"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 true：当标签被移除时，仍保留其内部的文本内容",
+        "isCorrect": true,
+        "description": "正确。例如禁掉 <i> 后文本仍在；设 false 则内容一并删除。"
+      },
+      {
+        "text": "默认 false：移除标签时连内容一起删掉",
+        "isCorrect": false,
+        "description": "错误。默认是 true，保留内容。"
+      },
+      {
+        "text": "控制是否保留元素的属性",
+        "isCorrect": false,
+        "description": "错误。属性由白名单控制，KEEP_CONTENT 管的是文本内容。"
+      },
+      {
+        "text": "默认 true：保留被禁用标签本身",
+        "isCorrect": false,
+        "description": "错误。保留的是内容，被禁标签本身仍被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`WHOLE_DOCUMENT: true` 与默认行为相比，输出有什么不同？",
+    "explanation": "默认 `WHOLE_DOCUMENT: false` 时，DOMPurify 只返回 body 内部的净化结果。设为 `true` 会**保留并输出完整文档结构**（包含 `<html>`、`<head>`、`<body>` 等外层标签），适合需要整页文档而非片段的场景。\n\n- 「输出包含 html/head/body 等完整文档结构」正确。\n- 「输出会去掉所有标签只剩文本」错误。\n- 「强制返回 DOM 节点」错误：返回类型仍由 RETURN_DOM 决定。\n- 「允许 script 通过」错误：它不放宽安全策略。",
+    "tags": ["DOMPurify", "中级", "WHOLE_DOCUMENT", "整文档", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "输出会包含 <html>/<head>/<body> 等完整文档外层结构，而非仅 body 内片段",
+        "isCorrect": true,
+        "description": "正确。WHOLE_DOCUMENT 让结果保留整文档结构。"
+      },
+      {
+        "text": "输出会去掉所有标签，只保留纯文本",
+        "isCorrect": false,
+        "description": "错误。它不剥离标签，只是包含完整文档层级。"
+      },
+      {
+        "text": "它会强制 sanitize 返回 DOM 节点",
+        "isCorrect": false,
+        "description": "错误。返回类型由 RETURN_DOM 系列决定，与此项无关。"
+      },
+      {
+        "text": "它会放宽安全策略，允许 <script> 通过",
+        "isCorrect": false,
+        "description": "错误。WHOLE_DOCUMENT 不削弱净化，script 仍被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：要为净化过程加自定义逻辑（如给所有外链 `<a>` 加 `target=\"_blank\" rel=\"noopener\"`），应使用什么机制？",
+    "explanation": "DOMPurify 提供 **hooks**：`DOMPurify.addHook(entryPoint, cb)`。在 `afterSanitizeAttributes` 钩子里对每个已净化节点做后处理，例如检测 `<a>` 并补 `target`/`rel`。这是官方推荐的定制方式，比净化后再用正则改字符串安全得多。\n\n- 「用 addHook，在 afterSanitizeAttributes 中处理」正确。\n- 「净化后用正则改字符串」可行但易出错、绕过净化语境，非推荐。\n- 「改 ALLOWED_ATTR 就能自动加 target」错误：白名单只控制是否允许，不会自动设值。\n- 「DOMPurify 不支持任何定制」错误。",
+    "tags": ["DOMPurify", "中级", "addHook", "afterSanitizeAttributes", "定制"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 DOMPurify.addHook，在 afterSanitizeAttributes 钩子里对节点补充 target/rel",
+        "isCorrect": true,
+        "description": "正确。hooks 是官方推荐的净化过程定制方式，可逐节点处理。"
+      },
+      {
+        "text": "净化得到字符串后再用正则把 target 插进去",
+        "isCorrect": false,
+        "description": "错误。事后改字符串脱离了净化语境、易出错，不是推荐做法。"
+      },
+      {
+        "text": "把 target 加进 ALLOWED_ATTR，就会自动给链接加上",
+        "isCorrect": false,
+        "description": "错误。白名单只决定属性是否允许保留，不会自动赋值。"
+      },
+      {
+        "text": "DOMPurify 不支持任何自定义逻辑",
+        "isCorrect": false,
+        "description": "错误。hooks 正是为定制而设。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`addHook('uponSanitizeElement', cb)` 的回调中，第二个参数 `data` 常用来做什么？",
+    "explanation": "`uponSanitizeElement` 在处理每个元素时触发，回调签名常见为 `(node, data, config)`。`data` 携带元素相关信息（如 `data.tagName`），可据此判断当前元素并对 `node` 做处理或决定去留。官方 demo 里就用 `data.tagName === 'style'` 来定制 `<style>` 的处理。\n\n- 「携带 tagName 等元素信息，用于判断/定制当前元素」正确。\n- 「它是 Promise」错误：hook 是同步的。\n- 「它是最终返回的字符串」错误。\n- 「它是整个配置对象」错误：配置是第三个参数。",
+    "tags": ["DOMPurify", "中级", "uponSanitizeElement", "hook 参数", "tagName"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "读取 data.tagName 等元素信息，据此判断并定制当前元素的处理",
+        "isCorrect": true,
+        "description": "正确。官方 demo 即用 data.tagName 判断元素（如 style）再处理 node。"
+      },
+      {
+        "text": "它是一个 Promise，需 await",
+        "isCorrect": false,
+        "description": "错误。hook 回调是同步执行的。"
+      },
+      {
+        "text": "它就是 sanitize 最终返回的字符串",
+        "isCorrect": false,
+        "description": "错误。data 是钩子事件信息，不是最终结果。"
+      },
+      {
+        "text": "它是整个 config 配置对象",
+        "isCorrect": false,
+        "description": "错误。config 是回调的第三个参数，data 是第二个。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在 `uponSanitizeAttribute` 钩子里把 `hookEvent.forceKeepAttr = true`，作用是什么？",
+    "explanation": "在 `uponSanitizeAttribute` 钩子中，可以通过修改 `hookEvent`（即回调第二参数）来影响该属性的处置。把 `hookEvent.forceKeepAttr = true` 表示**强制保留当前属性**，即使它本不在白名单内。官方 README 明确给出此用法。\n\n- 「强制保留该属性，即便不在白名单」正确。\n- 「强制删除该属性」错误，方向相反。\n- 「让属性值被转义」错误。\n- 「对所有节点全局生效」错误：它只作用于当前钩子事件对应的属性。",
+    "tags": ["DOMPurify", "中级", "forceKeepAttr", "uponSanitizeAttribute", "hook"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "强制保留当前属性，即使它本不在白名单内",
+        "isCorrect": true,
+        "description": "正确。这是 README 给出的 hookEvent 可变字段，用于放行特定属性。"
+      },
+      {
+        "text": "强制删除当前属性",
+        "isCorrect": false,
+        "description": "错误。forceKeepAttr 是保留，不是删除。"
+      },
+      {
+        "text": "把当前属性值做 HTML 转义",
+        "isCorrect": false,
+        "description": "错误。它不涉及转义，只决定属性去留。"
+      },
+      {
+        "text": "对所有元素的所有属性全局强制保留",
+        "isCorrect": false,
+        "description": "错误。它只对当前钩子事件对应的属性生效。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：净化富文本时希望支持内联 SVG 图标，应如何放开 SVG 而不牺牲安全？",
+    "explanation": "用 `USE_PROFILES: { html: true, svg: true, svgFilters: true }` 同时启用 HTML 与 SVG（及滤镜）的标签/属性集合——这些都是 DOMPurify 精心维护的安全白名单，比手动 `ADD_TAGS` 列一堆 SVG 标签更可靠。仅 `ADD_TAGS: ['svg']` 会有标签但缺少对应 SVG 属性白名单。\n\n- 「USE_PROFILES 同时开 html 与 svg」正确。\n- 「ALLOW_UNKNOWN_PROTOCOLS: true」错误且危险，与 SVG 放行无关。\n- 「关闭 SANITIZE_DOM」错误，削弱安全。\n- 「只能放弃 SVG」错误。",
+    "tags": ["DOMPurify", "中级", "SVG", "USE_PROFILES", "svgFilters"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "USE_PROFILES: { html: true, svg: true, svgFilters: true }，启用官方维护的 SVG 白名单",
+        "isCorrect": true,
+        "description": "正确。profile 提供配套的 SVG 标签与属性白名单，安全且省事。"
+      },
+      {
+        "text": "设 ALLOW_UNKNOWN_PROTOCOLS: true 放开协议限制",
+        "isCorrect": false,
+        "description": "错误。这与 SVG 无关，反而打开危险协议，削弱安全。"
+      },
+      {
+        "text": "关闭 SANITIZE_DOM 让 SVG 通过",
+        "isCorrect": false,
+        "description": "错误。SANITIZE_DOM 是防 DOM clobbering，关掉它不安全且与 SVG 无关。"
+      },
+      {
+        "text": "DOMPurify 无法安全处理 SVG，只能彻底放弃",
+        "isCorrect": false,
+        "description": "错误。SVG profile 正是为此设计。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：把净化后的字符串先存进数据库，渲染时再赋给 innerHTML——这种「先净化、之后又交给别的库改写 HTML」的链路有什么隐患？",
+    "explanation": "官方明确警告：如果**先净化、随后又用别的处理改写 HTML**，可能让净化失效——后续处理可能重新引入危险结构，或破坏净化时的安全假设。安全做法是**在最终写入 DOM 之前、紧挨着的那一步净化**，且别让其它库在净化后再乱改 HTML。\n\n- 「后续改写可能让净化失效，应在写入前最后一步净化」正确。\n- 「完全没隐患」错误。\n- 「数据库会自动再净化」错误。\n- 「只要净化过一次就永久安全」错误：净化结果可被后续处理破坏。",
+    "tags": ["DOMPurify", "中级", "净化时机", "失效风险", "最佳实践"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "净化后若再被其它处理改写 HTML，可能让净化失效；应在写入 DOM 前的最后一步净化",
+        "isCorrect": true,
+        "description": "正确。README 警告：净化后再修改 HTML 可能 void 掉净化效果。"
+      },
+      {
+        "text": "完全没有隐患，净化一次终身有效",
+        "isCorrect": false,
+        "description": "错误。后续改写可能重新引入危险内容。"
+      },
+      {
+        "text": "数据库存取时会自动再净化一遍",
+        "isCorrect": false,
+        "description": "错误。数据库不会做 HTML 净化。"
+      },
+      {
+        "text": "只要净化过，无论后面怎么处理都安全",
+        "isCorrect": false,
+        "description": "错误。净化结果可被后续库破坏，需控制处理顺序。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`DOMPurify.isSupported` 这个属性用来做什么？",
+    "explanation": "`DOMPurify.isSupported` 是个布尔属性，表示**当前运行环境是否支持 DOMPurify 进行净化**。在过于古老、缺少必要 DOM API 的环境（如老旧 MSIE），它为 `false`，此时 DOMPurify 不执行净化。生产中可据此决定降级策略（例如改用纯文本）。\n\n- 「指示当前环境是否支持净化」正确。\n- 「指示是否支持 SVG」错误。\n- 「是一个方法需调用」错误：它是属性，不是函数。\n- 「表示是否启用了 Trusted Types」错误。",
+    "tags": ["DOMPurify", "中级", "isSupported", "环境检测", "降级"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "布尔属性，指示当前运行环境是否支持 DOMPurify 净化",
+        "isCorrect": true,
+        "description": "正确。在缺少必要 DOM API 的老环境为 false，可据此降级。"
+      },
+      {
+        "text": "指示当前环境是否支持渲染 SVG",
+        "isCorrect": false,
+        "description": "错误。它衡量的是净化能力，不是 SVG 渲染。"
+      },
+      {
+        "text": "它是一个方法，需要 DOMPurify.isSupported() 调用",
+        "isCorrect": false,
+        "description": "错误。它是属性，直接读取布尔值。"
+      },
+      {
+        "text": "表示是否已启用 Trusted Types",
+        "isCorrect": false,
+        "description": "错误。Trusted Types 状态与此属性无关。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：移除之前用 addHook 注册的所有钩子，应调用哪个方法？",
+    "explanation": "DOMPurify 提供成套的钩子管理 API：`addHook` 注册、`removeHook(entryPoint)` 移除某入口最近一个、`removeHooks(entryPoint)` 移除某入口全部、`removeAllHooks()` 清空所有入口的全部钩子。要一次性清空全部，用 `removeAllHooks()`。\n\n- `removeAllHooks()` 正确。\n- `removeHook()` 只移除某入口的一个。\n- `clearHooks()` 错误：无此方法。\n- `resetHooks()` 错误：无此方法。",
+    "tags": ["DOMPurify", "中级", "removeAllHooks", "hook 管理", "API"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "DOMPurify.removeAllHooks()",
+        "isCorrect": true,
+        "description": "正确。removeAllHooks 清空所有入口点的全部钩子。"
+      },
+      {
+        "text": "DOMPurify.removeHook()",
+        "isCorrect": false,
+        "description": "错误。removeHook 只移除指定入口的最近一个钩子。"
+      },
+      {
+        "text": "DOMPurify.clearHooks()",
+        "isCorrect": false,
+        "description": "错误。没有 clearHooks 方法。"
+      },
+      {
+        "text": "DOMPurify.resetHooks()",
+        "isCorrect": false,
+        "description": "错误。没有 resetHooks 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`SAFE_FOR_TEMPLATES: true` 的作用是什么？",
+    "explanation": "`SAFE_FOR_TEMPLATES: true` 会**剥离模板语法标记**——`{{ ... }}`、`${ ... }`、`<% ... %>`，避免净化后的内容被前端模板引擎二次解释执行（一种模板注入/二次渲染风险）。默认为 `false`。\n\n- 「剥离 {{ }}、${ }、<% %> 模板语法」正确。\n- 「允许模板语法原样保留」错误，方向相反。\n- 「把内容编译成模板」错误。\n- 「等同 WHOLE_DOCUMENT」错误，两者无关。",
+    "tags": ["DOMPurify", "中级", "SAFE_FOR_TEMPLATES", "模板注入", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "剥离 {{ ... }}、${ ... }、<% ... %> 等模板语法，防止净化后被模板引擎二次解释",
+        "isCorrect": true,
+        "description": "正确。用于让输出对模板系统也安全，默认 false。"
+      },
+      {
+        "text": "保留并允许模板语法原样输出",
+        "isCorrect": false,
+        "description": "错误。它恰恰是去除这些标记。"
+      },
+      {
+        "text": "把净化结果编译成可执行模板",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 不做模板编译。"
+      },
+      {
+        "text": "等同于 WHOLE_DOCUMENT 输出整文档",
+        "isCorrect": false,
+        "description": "错误。两者用途完全不同。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：默认配置下，下面哪个属性会被保留？",
+    "explanation": "DOMPurify 默认允许常见展示性安全属性，且 `ALLOW_DATA_ATTR`、`ALLOW_ARIA_ATTR` 默认为 `true`，所以 `data-*`、`aria-*` 会保留；而 `onclick` 等 `on*` 内联事件、`style`（默认不在 HTML 安全属性集，视配置）等需谨慎。\n\n- `data-id=\"5\"` 正确：data-* 默认允许。\n- `onclick=\"f()\"` 错误：on* 事件默认移除。\n- `onmouseover=\"x\"` 错误：同上。\n- `href=\"javascript:..\"` 错误：危险协议被剥离。",
+    "tags": ["DOMPurify", "中级", "data 属性", "默认白名单", "属性"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "data-id=\"5\"",
+        "isCorrect": true,
+        "description": "正确。ALLOW_DATA_ATTR 默认 true，data-* 属性保留。"
+      },
+      {
+        "text": "onclick=\"f()\"",
+        "isCorrect": false,
+        "description": "错误。on* 内联事件属性默认一律移除。"
+      },
+      {
+        "text": "onmouseover=\"x()\"",
+        "isCorrect": false,
+        "description": "错误。所有 on* 事件处理属性默认被剥离。"
+      },
+      {
+        "text": "href=\"javascript:alert(1)\"",
+        "isCorrect": false,
+        "description": "错误。javascript: 协议不在默认 URI 白名单，被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：要彻底禁止所有 `data-*` 属性通过净化，正确配置是什么？",
+    "explanation": "`data-*` 是否允许由 `ALLOW_DATA_ATTR` 控制，默认 `true`。要全部禁止，设 `ALLOW_DATA_ATTR: false`。注意 `FORBID_ATTR` 适合按名禁具体属性，但通配所有 `data-*` 用 `ALLOW_DATA_ATTR: false` 最直接。\n\n- `ALLOW_DATA_ATTR: false` 正确。\n- `ALLOW_DATA_ATTR: true` 是默认开启，结果相反。\n- `FORBID_TAGS: ['data']` 错误：data 不是标签。\n- `ALLOWED_ATTR: []` 会禁掉所有属性而非仅 data-*，副作用过大且不精确。",
+    "tags": ["DOMPurify", "中级", "ALLOW_DATA_ATTR", "禁用属性", "配置"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ALLOW_DATA_ATTR: false",
+        "isCorrect": true,
+        "description": "正确。这是关闭全部 data-* 属性的专用开关。"
+      },
+      {
+        "text": "ALLOW_DATA_ATTR: true",
+        "isCorrect": false,
+        "description": "错误。true 是默认值，表示允许 data-*。"
+      },
+      {
+        "text": "FORBID_TAGS: ['data']",
+        "isCorrect": false,
+        "description": "错误。data 是属性前缀不是标签。"
+      },
+      {
+        "text": "ALLOWED_ATTR: []",
+        "isCorrect": false,
+        "description": "错误。这会禁掉所有属性，副作用过大且不针对 data-*。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：当前 DOMPurify 主版本（3.x）的源码语言与发布产物分别是什么？",
+    "explanation": "DOMPurify 3.x 源码用 **TypeScript** 编写（`src/purify.ts`），**自带类型声明**；但**发布到 npm 的产物是纯 JavaScript**，使用者无需自行构建，直接 `import` 即可，并能获得 TS 类型提示。\n\n- 「源码 TypeScript、发布产物纯 JS、自带类型」正确。\n- 「源码纯 JS、无类型」错误。\n- 「发布产物需使用者自行编译 TS」错误。\n- 「只提供 CommonJS、不支持 ESM」错误：ESM/CJS 都支持。",
+    "tags": ["DOMPurify", "中级", "TypeScript", "3.x", "发布产物"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "源码用 TypeScript 编写并自带类型声明，发布产物是纯 JavaScript，开箱即用",
+        "isCorrect": true,
+        "description": "正确。src/purify.ts 为 TS 源码，npm 上是编译后的 JS，附带 .d.ts。"
+      },
+      {
+        "text": "源码是纯 JavaScript，且不提供任何类型声明",
+        "isCorrect": false,
+        "description": "错误。3.x 源码是 TS 且自带类型。"
+      },
+      {
+        "text": "发布到 npm 的是 TS 源码，使用者需自行编译",
+        "isCorrect": false,
+        "description": "错误。发布的是编译好的 JS，无需用户构建。"
+      },
+      {
+        "text": "只提供 CommonJS，不支持 ESM",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 同时支持 ESM 与 CJS。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在 TypeScript 中 `const x = DOMPurify.sanitize(dirty, { RETURN_DOM: true })`，`x` 的类型会被推断为什么？",
+    "explanation": "DOMPurify 用**函数重载**精确刻画返回类型。当配置字面量包含 `RETURN_DOM: true` 时，匹配重载 `sanitize(dirty, cfg: Config & { RETURN_DOM: true }): Node`，因此 `x` 被推断为 `Node`（而非默认重载的 `string`）。\n\n- `Node` 正确。\n- `string` 错误：那是不带该标志时的默认重载。\n- `TrustedHTML` 是 `RETURN_TRUSTED_TYPE: true` 的结果。\n- `any` 错误：类型定义是精确的。",
+    "tags": ["DOMPurify", "高级", "TypeScript 重载", "RETURN_DOM", "类型推断"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Node",
+        "isCorrect": true,
+        "description": "正确。RETURN_DOM: true 字面量匹配返回 Node 的重载。"
+      },
+      {
+        "text": "string",
+        "isCorrect": false,
+        "description": "错误。string 是不含返回标志时的默认重载结果。"
+      },
+      {
+        "text": "TrustedHTML",
+        "isCorrect": false,
+        "description": "错误。TrustedHTML 对应 RETURN_TRUSTED_TYPE: true。"
+      },
+      {
+        "text": "any",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 的类型定义是精确的重载，不是 any。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：TypeScript 里 `IN_PLACE: true` 这条重载对入参 `dirty` 有什么特殊限制？",
+    "explanation": "`IN_PLACE` 表示就地净化一个已存在的 DOM 节点。对应重载是 `sanitize(dirty: Node, cfg: Config & { IN_PLACE: true }): Node`——它**要求 `dirty` 必须是 `Node`（不能是字符串）**，返回也是 `Node`。这是最严格的一条重载。\n\n- 「dirty 必须是 Node，不能是字符串」正确。\n- 「dirty 必须是字符串」错误，恰恰相反。\n- 「dirty 类型不限」错误：被收窄为 Node。\n- 「返回 string」错误：返回 Node。",
+    "tags": ["DOMPurify", "高级", "IN_PLACE", "TypeScript 重载", "Node 入参"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "dirty 必须是一个 Node（DOM 节点），不接受字符串，返回也是 Node",
+        "isCorrect": true,
+        "description": "正确。IN_PLACE 就地净化已有节点，重载签名要求入参为 Node。"
+      },
+      {
+        "text": "dirty 必须是字符串，不接受 Node",
+        "isCorrect": false,
+        "description": "错误。就地净化的对象本身就是节点，必须传 Node。"
+      },
+      {
+        "text": "dirty 类型不受限制，string 或 Node 均可",
+        "isCorrect": false,
+        "description": "错误。该重载把 dirty 收窄为 Node。"
+      },
+      {
+        "text": "返回类型是 string",
+        "isCorrect": false,
+        "description": "错误。IN_PLACE 重载返回 Node。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在启用了 Trusted Types 且 CSP 要求 `require-trusted-types-for 'script'` 的页面，如何让 sanitize 直接产出可安全赋值给 sink 的值？",
+    "explanation": "设 `RETURN_TRUSTED_TYPE: true`，sanitize 在支持 Trusted Types 的环境会返回一个 **`TrustedHTML`** 对象，而非普通字符串。该对象可直接赋给受 Trusted Types 保护的 sink（如 `innerHTML`），满足严格 CSP。TS 上也有对应重载把返回类型收窄为 `TrustedHTML`。\n\n- `RETURN_TRUSTED_TYPE: true` → 返回 TrustedHTML，正确。\n- 「RETURN_DOM: true」返回 Node，不是 TrustedHTML。\n- 「关闭 CSP」错误且违背初衷。\n- 「Trusted Types 与 DOMPurify 不兼容」错误：DOMPurify 原生支持。",
+    "tags": ["DOMPurify", "高级", "Trusted Types", "RETURN_TRUSTED_TYPE", "CSP"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "设 RETURN_TRUSTED_TYPE: true，sanitize 在支持的环境返回 TrustedHTML，可直接赋给受保护 sink",
+        "isCorrect": true,
+        "description": "正确。这是 DOMPurify 与 Trusted Types 集成的标准方式，TS 返回类型亦收窄为 TrustedHTML。"
+      },
+      {
+        "text": "设 RETURN_DOM: true 即可得到 TrustedHTML",
+        "isCorrect": false,
+        "description": "错误。RETURN_DOM 返回 Node，不是 TrustedHTML。"
+      },
+      {
+        "text": "在该页面关闭 CSP 的 Trusted Types 要求",
+        "isCorrect": false,
+        "description": "错误。关闭安全策略违背初衷，也并非 DOMPurify 的用法。"
+      },
+      {
+        "text": "Trusted Types 与 DOMPurify 不兼容，只能放弃其一",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 原生支持 Trusted Types。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：自定义 `TRUSTED_TYPES_POLICY` 时，官方提醒的一个递归陷阱是什么？",
+    "explanation": "若你创建的 Trusted Types policy 在其 `createHTML` 内部又去调用 `DOMPurify.sanitize`，而 DOMPurify 内部又使用了这个 policy，就会**无限递归**。官方提醒：不要把一个会回调 `DOMPurify.sanitize` 的 policy 再传回给 DOMPurify。\n\n- 「policy 的 createHTML 调 sanitize 而 sanitize 又用该 policy → 无限递归」正确。\n- 「policy 名必须叫 dompurify」错误。\n- 「policy 不能定义 createHTML」错误：恰恰必须定义。\n- 「Trusted Types 仅 Firefox 支持」错误。",
+    "tags": ["DOMPurify", "高级", "TRUSTED_TYPES_POLICY", "递归陷阱", "Trusted Types"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "若 policy 的 createHTML 内部调用 DOMPurify.sanitize，而 sanitize 又使用该 policy，会造成无限递归",
+        "isCorrect": true,
+        "description": "正确。官方明确提醒不要把回调 sanitize 的 policy 再交给 DOMPurify。"
+      },
+      {
+        "text": "自定义 policy 的名字必须固定叫 'dompurify'",
+        "isCorrect": false,
+        "description": "错误。policy 名可自定义，DOMPurify 也支持传入外部 policy。"
+      },
+      {
+        "text": "自定义 policy 不能定义 createHTML",
+        "isCorrect": false,
+        "description": "错误。createHTML 正是 policy 必须提供的方法。"
+      },
+      {
+        "text": "Trusted Types 只有 Firefox 支持",
+        "isCorrect": false,
+        "description": "错误。Trusted Types 主要由 Chromium 系支持，与此陷阱无关。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`SANITIZE_DOM`（默认 true）主要防御的是哪类攻击？",
+    "explanation": "`SANITIZE_DOM` 默认 `true`，用于防御 **DOM Clobbering**——攻击者用 `id`/`name` 等命名属性「覆盖」掉 `document`/`form` 上的原生属性或全局变量，从而影响脚本逻辑。更严格的隔离可叠加 `SANITIZE_NAMED_PROPS: true`（给命名属性加 `user-content-` 前缀）。\n\n- 「DOM Clobbering」正确。\n- 「SQL 注入」错误：那是后端数据库层面。\n- 「CSRF」错误：跨站请求伪造与净化无关。\n- 「点击劫持」错误：那靠 X-Frame-Options/CSP frame-ancestors。",
+    "tags": ["DOMPurify", "高级", "SANITIZE_DOM", "DOM Clobbering", "默认值"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "DOM Clobbering（用 id/name 覆盖原生属性或全局变量）",
+        "isCorrect": true,
+        "description": "正确。SANITIZE_DOM 默认开启以防 DOM clobbering，可配 SANITIZE_NAMED_PROPS 更严格。"
+      },
+      {
+        "text": "SQL 注入",
+        "isCorrect": false,
+        "description": "错误。SQL 注入是后端数据库问题，与 HTML 净化无关。"
+      },
+      {
+        "text": "CSRF 跨站请求伪造",
+        "isCorrect": false,
+        "description": "错误。CSRF 靠 token/SameSite，不在 DOMPurify 职责内。"
+      },
+      {
+        "text": "点击劫持（Clickjacking）",
+        "isCorrect": false,
+        "description": "错误。点击劫持靠 frame-ancestors/X-Frame-Options 防御。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：`SANITIZE_NAMED_PROPS: true`（默认 false）的具体做法是什么？",
+    "explanation": "`SANITIZE_NAMED_PROPS: true` 通过**给 `id`、`name` 等命名属性加上 `user-content-` 前缀**来做命名空间隔离，进一步强化 DOM Clobbering 防护——这样用户内容里的命名属性不会与页面真实的 `id`/全局命名冲突。默认关闭。\n\n- 「给命名属性加 user-content- 前缀做隔离」正确。\n- 「删除所有 id/name 属性」错误：是加前缀而非删除。\n- 「把命名属性转为 data-*」错误。\n- 「等同 ALLOW_DATA_ATTR」错误。",
+    "tags": ["DOMPurify", "高级", "SANITIZE_NAMED_PROPS", "user-content-", "DOM Clobbering"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "给 id、name 等命名属性加上 user-content- 前缀，做命名空间隔离",
+        "isCorrect": true,
+        "description": "正确。前缀隔离让用户内容的命名属性不与页面真实命名冲突。"
+      },
+      {
+        "text": "直接删除所有 id 和 name 属性",
+        "isCorrect": false,
+        "description": "错误。是加前缀保留可用性，而非一律删除。"
+      },
+      {
+        "text": "把所有命名属性改写为 data-* 属性",
+        "isCorrect": false,
+        "description": "错误。它加的是 user-content- 前缀，不是转成 data-*。"
+      },
+      {
+        "text": "等同于开启 ALLOW_DATA_ATTR",
+        "isCorrect": false,
+        "description": "错误。两者用途完全不同。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：当传给 `sanitize` 的 `dirty` 本身已经是一个 DOM 节点（而非字符串）且未设 IN_PLACE 时，内部默认怎么处理它？",
+    "explanation": "当 `dirty` 是 DOM 节点且未开 `IN_PLACE` 时，DOMPurify 默认走 **`importNode` 克隆**路径——它不会就地修改你传入的原节点，而是导入/克隆一份再净化，避免副作用。只有 `IN_PLACE: true` 才会就地改原节点。\n\n- 「克隆（importNode）后净化，不动原节点」正确。\n- 「总是就地修改原节点」错误：那是 IN_PLACE 行为。\n- 「直接抛错」错误：节点入参是合法的。\n- 「忽略节点只处理字符串」错误。",
+    "tags": ["DOMPurify", "高级", "importNode", "节点入参", "IN_PLACE"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认克隆（importNode）一份再净化，不修改你传入的原节点",
+        "isCorrect": true,
+        "description": "正确。非 IN_PLACE 时走克隆路径，避免对原节点产生副作用。"
+      },
+      {
+        "text": "总是就地修改传入的原节点",
+        "isCorrect": false,
+        "description": "错误。就地修改是 IN_PLACE: true 才有的行为。"
+      },
+      {
+        "text": "遇到节点入参直接抛出异常",
+        "isCorrect": false,
+        "description": "错误。sanitize 接受 string 或 Node。"
+      },
+      {
+        "text": "忽略该节点，只处理字符串输入",
+        "isCorrect": false,
+        "description": "错误。节点会被正常净化（克隆后）。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：默认的 `DEFAULT_ALLOWED_TAGS` 是由哪几组标签集合合并而成的（决定了不传配置时允许什么）？",
+    "explanation": "源码中 `DEFAULT_ALLOWED_TAGS` 由 `TAGS.html`、`TAGS.svg`、`TAGS.svgFilters`、`TAGS.mathMl`、`TAGS.text` 五组冻结数组合并而成。这意味着**默认就允许 HTML + SVG（含滤镜）+ MathML + 文本**；想收窄到纯 HTML 用 `USE_PROFILES: { html: true }`。\n\n- 「html + svg + svgFilters + mathMl + text」正确。\n- 「只有 html」错误：默认也含 SVG/MathML。\n- 「html + script」错误：script 从不在默认集合。\n- 「空集合」错误：默认是丰富的安全集合。",
+    "tags": ["DOMPurify", "高级", "DEFAULT_ALLOWED_TAGS", "默认白名单", "SVG MathML"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "html + svg + svgFilters + mathMl + text 五组集合合并",
+        "isCorrect": true,
+        "description": "正确。源码合并这五组冻结数组，故默认允许 HTML、SVG、MathML 与文本。"
+      },
+      {
+        "text": "只有 html 一组",
+        "isCorrect": false,
+        "description": "错误。默认还包含 SVG（含滤镜）与 MathML。"
+      },
+      {
+        "text": "html 加上 script",
+        "isCorrect": false,
+        "description": "错误。script 从不在默认允许集合内。"
+      },
+      {
+        "text": "默认是空集合，什么都不允许",
+        "isCorrect": false,
+        "description": "错误。默认是相当丰富的安全标签集合。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：要允许自定义元素（如 `<my-widget>`）通过净化，官方推荐用哪个配置项来精细控制？",
+    "explanation": "`CUSTOM_ELEMENT_HANDLING` 提供对自定义元素/属性的细粒度控制，包含 `tagNameCheck`、`attributeNameCheck`（可传正则或函数）与 `allowCustomizedBuiltInElements`。相比简单 `ADD_TAGS`，它能用**模式匹配**安全地放行一类自定义元素而非逐个列举。\n\n- `CUSTOM_ELEMENT_HANDLING` 正确。\n- `ALLOW_UNKNOWN_PROTOCOLS` 错误：那管 URL 协议。\n- `USE_PROFILES` 错误：那是预设 HTML/SVG/MathML 集合。\n- `SAFE_FOR_XML` 错误：那处理 XML 注释字符。",
+    "tags": ["DOMPurify", "高级", "CUSTOM_ELEMENT_HANDLING", "自定义元素", "tagNameCheck"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CUSTOM_ELEMENT_HANDLING（含 tagNameCheck / attributeNameCheck / allowCustomizedBuiltInElements）",
+        "isCorrect": true,
+        "description": "正确。它能用正则/函数模式匹配地放行自定义元素与属性，比逐个 ADD_TAGS 更可控。"
+      },
+      {
+        "text": "ALLOW_UNKNOWN_PROTOCOLS",
+        "isCorrect": false,
+        "description": "错误。这控制 URL 协议白名单，与自定义元素无关。"
+      },
+      {
+        "text": "USE_PROFILES",
+        "isCorrect": false,
+        "description": "错误。profile 是 HTML/SVG/MathML 预设，不处理自定义元素模式。"
+      },
+      {
+        "text": "SAFE_FOR_XML",
+        "isCorrect": false,
+        "description": "错误。SAFE_FOR_XML 处理注释中的危险字符，与自定义元素无关。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：富文本里要允许 `<iframe>` 嵌入视频，但只信任 youtube.com，最稳妥的实现思路是什么？",
+    "explanation": "先用 `ADD_TAGS: ['iframe']` + `ADD_ATTR: ['allow','allowfullscreen','frameborder','src']` 放行 iframe，再用 **hook（`uponSanitizeElement`/`afterSanitizeAttributes`）校验 `src` 域名**，非白名单域就移除该节点或清空 src。仅靠 `ADD_TAGS` 放行 iframe 而不校验 src，会放进任意可嵌入页面，风险很高。\n\n- 「放行 iframe + 用 hook 校验 src 域名」正确。\n- 「只 ADD_TAGS:['iframe'] 就够」错误：未限制来源。\n- 「ALLOW_UNKNOWN_PROTOCOLS:true」错误且危险。\n- 「iframe 绝不可能安全嵌入」过于绝对。",
+    "tags": ["DOMPurify", "高级", "iframe", "hook 校验", "域名白名单"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 ADD_TAGS/ADD_ATTR 放行 iframe，再在 hook 里校验 src 域名，非白名单域则移除",
+        "isCorrect": true,
+        "description": "正确。放行标签后必须用钩子做来源校验，才能把信任限定在 youtube.com。"
+      },
+      {
+        "text": "只设 ADD_TAGS: ['iframe'] 就足够安全",
+        "isCorrect": false,
+        "description": "错误。不校验 src 等于允许嵌入任意页面，风险很高。"
+      },
+      {
+        "text": "设 ALLOW_UNKNOWN_PROTOCOLS: true 让 iframe 通过",
+        "isCorrect": false,
+        "description": "错误。这放开危险协议，与限定来源背道而驰。"
+      },
+      {
+        "text": "iframe 无论如何都不能安全嵌入，只能放弃",
+        "isCorrect": false,
+        "description": "错误。配合域名白名单校验可安全嵌入可信来源。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：把「净化」与「内容安全策略（CSP）」的关系描述正确的是哪一项？",
+    "explanation": "二者是**纵深防御的互补层**，不能互相替代：CSP 通过限制脚本来源/禁内联脚本在「执行层」兜底；DOMPurify 在「内容层」移除注入向量。最佳实践是两者并用——即使有 CSP，仍应净化用户 HTML；即使净化了，也应配 CSP 兜底。\n\n- 「互补的纵深防御，应并用」正确。\n- 「有了 CSP 就不必净化」错误：CSP 配置疏漏仍可能被绕过。\n- 「有了净化就不必 CSP」错误。\n- 「两者冲突不能共存」错误。",
+    "tags": ["DOMPurify", "高级", "CSP", "纵深防御", "安全架构"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "二者是互补的纵深防御层，应同时使用，互不替代",
+        "isCorrect": true,
+        "description": "正确。CSP 管执行层、DOMPurify 管内容层，叠加才稳。"
+      },
+      {
+        "text": "有了 CSP 就完全不需要再净化 HTML",
+        "isCorrect": false,
+        "description": "错误。CSP 配置疏漏或允许内联时仍可能被绕过，净化不可省。"
+      },
+      {
+        "text": "有了 DOMPurify 就完全不需要 CSP",
+        "isCorrect": false,
+        "description": "错误。CSP 是重要兜底层，应一并部署。"
+      },
+      {
+        "text": "CSP 与 DOMPurify 互相冲突，不能共存",
+        "isCorrect": false,
+        "description": "错误。两者完全可以也应该共存。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：把 `ALLOW_UNKNOWN_PROTOCOLS` 设为 `true` 的安全含义是什么？默认值是多少？",
+    "explanation": "默认 `ALLOW_UNKNOWN_PROTOCOLS: false`，DOMPurify 用 `ALLOWED_URI_REGEXP` 限制链接协议（http/https/mailto/tel 等安全协议）。设为 `true` 会**放行未知协议**，可能让 `javascript:` 之外的奇异/自定义协议混入，扩大攻击面，应谨慎。\n\n- 「默认 false；设 true 放行未知协议、扩大风险」正确。\n- 「默认 true」错误。\n- 「设 true 只影响 data: 图片」错误。\n- 「与协议无关，控制标签」错误。",
+    "tags": ["DOMPurify", "高级", "ALLOW_UNKNOWN_PROTOCOLS", "URI", "默认值"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 false；设为 true 会放行未知协议的 URL，扩大攻击面，需谨慎",
+        "isCorrect": true,
+        "description": "正确。默认借 ALLOWED_URI_REGEXP 限制协议，放开未知协议风险更高。"
+      },
+      {
+        "text": "默认 true，本就放行所有协议",
+        "isCorrect": false,
+        "description": "错误。默认是 false，严格限制协议。"
+      },
+      {
+        "text": "设为 true 只会影响 data: 图片的处理",
+        "isCorrect": false,
+        "description": "错误。它影响的是各类未知/非常见协议，不限于 data:。"
+      },
+      {
+        "text": "它与协议无关，是控制允许的标签",
+        "isCorrect": false,
+        "description": "错误。它专门控制 URL 协议白名单。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：在 Node 端为防 SSRF/隐私泄露常配合的库是 jsdom，但若让 jsdom 解析时拉取外部资源会有风险。关于 DOMPurify+jsdom 的正确认识是？",
+    "explanation": "DOMPurify 只做净化逻辑，**不主动发起网络请求**；风险在于 jsdom 若配置了 `resources: 'usable'` 等会去加载外链资源。安全实践：jsdom 用最小化配置（不加载子资源、不执行脚本），仅作为 DOM 宿主供 DOMPurify 使用即可。\n\n- 「DOMPurify 本身不发请求，风险在 jsdom 资源加载配置，应最小化」正确。\n- 「DOMPurify 会自动下载 img/src」错误。\n- 「jsdom 默认会执行页面脚本」错误：默认不执行外部脚本。\n- 「Node 端无法安全使用」错误。",
+    "tags": ["DOMPurify", "专家", "jsdom", "SSRF", "服务端安全"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "DOMPurify 自身不发网络请求，风险来自 jsdom 的资源加载配置，应让 jsdom 最小化（不加载子资源/不执行脚本）",
+        "isCorrect": true,
+        "description": "正确。把 jsdom 当纯 DOM 宿主、关掉资源加载，是 Node 端的稳妥做法。"
+      },
+      {
+        "text": "DOMPurify 会自动下载 HTML 中的 img、iframe 等外链资源",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 只清洗字符串，不发任何请求。"
+      },
+      {
+        "text": "jsdom 默认就会执行页面内的外部脚本",
+        "isCorrect": false,
+        "description": "错误。jsdom 默认不执行外部脚本，需显式开启才会。"
+      },
+      {
+        "text": "DOMPurify 在 Node 端根本无法安全使用",
+        "isCorrect": false,
+        "description": "错误。配置得当完全可安全用于服务端。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：mXSS（mutation XSS）是 DOMPurify 长期对抗的高级威胁。它的本质是什么，DOMPurify 如何应对？",
+    "explanation": "mXSS 指：一段看似安全的 HTML 在被**解析→序列化→再解析**的过程中，浏览器的容错/规范化会让其「变异」成可执行的危险结构，从而绕过一次性净化。DOMPurify 通过对解析器变异行为的深入研究、必要时**多轮处理/一致性校验**等手段来缓解，并持续随浏览器变化更新规则——这也是「自己写正则净化」无法企及的。\n\n- 「解析-序列化-再解析中 HTML 变异成可执行结构，DOMPurify 针对性缓解」正确。\n- 「mXSS 就是普通 script 注入」错误：它更隐蔽。\n- 「靠 CSS 修复」错误。\n- 「与浏览器无关」错误：恰恰源于浏览器解析行为。",
+    "tags": ["DOMPurify", "专家", "mXSS", "mutation XSS", "解析变异"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "HTML 在解析→序列化→再解析中被浏览器容错规范化「变异」成可执行结构；DOMPurify 针对解析变异做缓解并随浏览器更新规则",
+        "isCorrect": true,
+        "description": "正确。mXSS 是解析变异导致的绕过，正是 DOMPurify 这类专业净化器的价值所在。"
+      },
+      {
+        "text": "mXSS 就是普通的 <script> 标签注入，没有特殊之处",
+        "isCorrect": false,
+        "description": "错误。mXSS 更隐蔽，源于解析/序列化的变异，普通净化未必能拦。"
+      },
+      {
+        "text": "mXSS 只能靠调整 CSS 来修复",
+        "isCorrect": false,
+        "description": "错误。CSS 与 mXSS 防御无关。"
+      },
+      {
+        "text": "mXSS 与浏览器解析行为无关",
+        "isCorrect": false,
+        "description": "错误。它恰恰由浏览器的 HTML 解析/规范化行为引发。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：团队封装了一个 `safeHtml(input)` 工具，内部调用 sanitize 并在模块加载时 `addHook` 注册了若干全局钩子。在大型应用里这种「全局 addHook」最该警惕什么？",
+    "explanation": "`addHook` 是注册在 **DOMPurify 实例（通常是全局单例）** 上的，会影响**该实例的每一次 sanitize 调用**。若多个模块各自 addHook，钩子会叠加且全局生效，可能彼此干扰、顺序难控、难以为不同场景定制。稳妥做法：用独立实例（如多次 `createDOMPurify(window)`）隔离，或在调用前后 `addHook`/`removeHook` 配对、或把差异化逻辑放进 config 而非全局钩子。\n\n- 「钩子全局生效、跨模块叠加、相互干扰」正确。\n- 「钩子只对下一次调用生效」错误：会持续生效直到移除。\n- 「addHook 自动去重」错误。\n- 「钩子仅在当前函数作用域内」错误：它挂在实例上。",
+    "tags": ["DOMPurify", "专家", "addHook 全局性", "实例隔离", "工程实践"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "钩子注册在实例（常为全局单例）上、对每次 sanitize 都生效，多模块叠加易相互干扰；应用独立实例或配对移除来隔离",
+        "isCorrect": true,
+        "description": "正确。全局钩子会影响所有调用，需用多实例或 add/remove 配对避免串扰。"
+      },
+      {
+        "text": "addHook 注册的钩子只对紧接着的下一次 sanitize 生效，之后自动失效",
+        "isCorrect": false,
+        "description": "错误。钩子会持续生效，直到 removeHook/removeAllHooks。"
+      },
+      {
+        "text": "DOMPurify 会自动对重复注册的钩子去重，无需担心",
+        "isCorrect": false,
+        "description": "错误。重复 addHook 会叠加多个钩子，不去重。"
+      },
+      {
+        "text": "钩子只在调用 addHook 的那个函数作用域内有效",
+        "isCorrect": false,
+        "description": "错误。钩子挂在 DOMPurify 实例上，跨作用域全局生效。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：关于 `IN_PLACE: true` 的性能与安全权衡，正确的说法是哪一项？",
+    "explanation": "`IN_PLACE: true` 直接在传入的真实节点上净化、跳过克隆，**省去 importNode 开销**（性能更好），但代价是：① 你传入的原节点会被修改（有副作用）；② 该节点若**已经在文档树中**，净化前的瞬间其危险内容可能已被浏览器解析——因此 IN_PLACE 适合用于**尚未插入文档的离线节点**。\n\n- 「省克隆开销但会改原节点，且应作用于未入文档的离线节点」正确。\n- 「IN_PLACE 更慢」错误。\n- 「IN_PLACE 适合已在页面中的节点」错误且危险。\n- 「IN_PLACE 返回字符串」错误：返回 Node。",
+    "tags": ["DOMPurify", "专家", "IN_PLACE", "性能权衡", "离线节点"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它省去克隆（importNode）开销、性能更好，但会修改原节点，且应作用于尚未插入文档的离线节点",
+        "isCorrect": true,
+        "description": "正确。IN_PLACE 跳过克隆但有副作用；对已在文档中的节点使用不安全。"
+      },
+      {
+        "text": "IN_PLACE 因为要额外克隆所以比默认更慢",
+        "isCorrect": false,
+        "description": "错误。它恰恰跳过克隆，开销更小。"
+      },
+      {
+        "text": "IN_PLACE 最适合直接净化已经渲染在页面中的节点",
+        "isCorrect": false,
+        "description": "错误。已入文档的节点其危险内容可能已被解析，应处理离线节点。"
+      },
+      {
+        "text": "IN_PLACE 会返回净化后的字符串",
+        "isCorrect": false,
+        "description": "错误。IN_PLACE 返回的是 Node。"
+      }
+    ]
+  },
+  {
+    "stem": "DOMPurify：把 DOMPurify 用在「净化 Markdown 渲染结果」时，正确的管线顺序与职责划分是什么？",
+    "explanation": "Markdown 渲染器（如 markdown-it）默认不输出原始 HTML 或仅有限处理，**本身不是净化器**；当允许内嵌 HTML（如 `html: true`）时，应在**渲染得到 HTML 字符串之后、写入 DOM 之前**用 DOMPurify 净化。顺序是：`markdown → HTML 字符串 → DOMPurify.sanitize → 插入`。\n\n- 「先渲染成 HTML，再对该 HTML 字符串净化，最后插入」正确。\n- 「先对 Markdown 源文本净化再渲染」错误：净化对象应是最终 HTML。\n- 「渲染器自带净化无需 DOMPurify」错误。\n- 「插入后再净化」错误且危险。",
+    "tags": ["DOMPurify", "专家", "Markdown", "净化管线", "markdown-it"],
+    "categories": [
+      ["技术方向", "DOMPurify"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "markdown 先渲染成 HTML 字符串，再用 DOMPurify 净化该 HTML，最后才插入 DOM",
+        "isCorrect": true,
+        "description": "正确。净化对象是最终 HTML，且必须在插入 DOM 前完成。"
+      },
+      {
+        "text": "先对 Markdown 源文本跑 DOMPurify，再交给渲染器",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 净化的是 HTML，对 Markdown 源文本净化无意义。"
+      },
+      {
+        "text": "Markdown 渲染器自带净化，无需 DOMPurify",
+        "isCorrect": false,
+        "description": "错误。markdown-it 等本身不是净化器，开启 HTML 时需外部净化。"
+      },
+      {
+        "text": "先把渲染结果插入页面，再对 DOM 跑 DOMPurify",
+        "isCorrect": false,
+        "description": "错误。插入即解析执行，必须在插入前净化。"
+      }
+    ]
+  }
+]
