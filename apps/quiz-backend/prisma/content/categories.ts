@@ -151,23 +151,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-06 收敛为 JS 四大包管理器：移除框架级/系统级中间层与跨语言叶子(pip3/Cargo)。
+            // 系统级(Homebrew/apt 等 OS 包管理器)与其他语言(Python pip / Rust Cargo)非前端选型重点，暂不立叶。
             name: "包管理器",
             sort: 4,
             children: [
-              {
-                name: "系统级（Homebrew / apt-get / yum / Chocolatey）",
-                sort: 1,
-              },
-              {
-                name: "框架级",
-                sort: 2,
-                children: [
-                  { name: "pnpm", sort: 1 },
-                  { name: "NPM", sort: 2 },
-                  { name: "pip3", sort: 3 },
-                  { name: "Cargo", sort: 4 },
-                ],
-              },
+              { name: "npm", sort: 1 },
+              { name: "pnpm", sort: 2 },
+              { name: "yarn", sort: 3 },
+              { name: "bun", sort: 4 },
             ],
           },
           {
@@ -175,10 +167,13 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             sort: 5,
             children: [
               { name: "Lodash-es", sort: 1 },
-              { name: "Day.js", sort: 2 },
-              { name: "axios", sort: 3 },
-              { name: "i18next", sort: 4 },
-              { name: "crypto.js", sort: 5 },
+              { name: "es-toolkit", sort: 2 },
+              { name: "Day.js", sort: 3 },
+              { name: "date-fns", sort: 4 },
+              { name: "Luxon", sort: 5 },
+              { name: "axios", sort: 6 },
+              { name: "i18next", sort: 7 },
+              { name: "crypto.js", sort: 8 },
             ],
           },
         ],
@@ -562,19 +557,12 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "lint-staged", sort: 5 },
             ],
           },
-          {
-            name: "依赖管理器",
-            sort: 2,
-            children: [
-              { name: "pnpm（工程）", sort: 1 },
-              { name: "Yarn", sort: 2 },
-              { name: "Bit", sort: 3 },
-            ],
-          },
-          { name: "容器（Docker）", sort: 3 },
+          // 2026-06 裁撤「依赖管理器」节(pnpm（工程）/Yarn/Bit)：pnpm 与 Web进阶「包管理器」重复，
+          // Yarn 已归位到 JS 四大包管理器；Bit 体量小不立叶。工程化组语义更聚焦 CI/容器/Monorepo。
+          { name: "容器（Docker）", sort: 2 },
           {
             name: "Monorepo",
-            sort: 4,
+            sort: 3,
             children: [
               { name: "Lerna", sort: 1 },
               { name: "Turborepo", sort: 2 },
