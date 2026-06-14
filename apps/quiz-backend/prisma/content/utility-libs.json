@@ -1,0 +1,2048 @@
+[
+  {
+    "stem": "mitt：mitt 的核心定位与体积是什么？",
+    "explanation": "mitt 是一个「Tiny (~200 bytes) functional event emitter / pubsub」——极小的函数式事件总线，零依赖、framework-agnostic。它返回一个带 on/off/emit 三个方法和 all 属性的发射器，常被用作跨组件通信的 event bus。\n\n- 「~200 字节的微型事件总线/发布订阅」正确。\n- 「Vue 专用的状态管理库」错误：它与框架无关，不是状态管理。\n- 「打包工具」「HTTP 客户端」均与其用途无关。",
+    "tags": ["mitt", "入门", "前端实用小库", "事件总线", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "约 200 字节的微型函数式事件总线（event emitter / pubsub），零依赖、与框架无关",
+        "isCorrect": true,
+        "description": "正确。官方原文即「Tiny ~200b functional event emitter / pubsub」，可作通用 event bus。"
+      },
+      {
+        "text": "Vue 3 专用的全局状态管理库，类似 Pinia",
+        "isCorrect": false,
+        "description": "错误。mitt 与框架无关，只做事件发布订阅，不是状态管理库。"
+      },
+      {
+        "text": "一个零配置的前端打包工具",
+        "isCorrect": false,
+        "description": "错误。mitt 不是构建工具，它只提供事件订阅与触发能力。"
+      },
+      {
+        "text": "基于 Promise 的 HTTP 请求客户端",
+        "isCorrect": false,
+        "description": "错误。HTTP 请求是 axios/ky 等库的职责，mitt 与网络无关。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：调用 mitt() 之后，返回的发射器对象上有哪几个成员？",
+    "explanation": "mitt() 返回的 Emitter 对象包含三个方法 on（订阅）、off（取消订阅）、emit（触发），以及一个 all 属性。on/off/emit 是函数式的、不依赖 this，可以解构后单独调用。\n\n- 「on / off / emit / all」正确。\n- 含 once 错误：mitt 没有 once，需要手动 off 实现一次性。\n- 含 dispatch / subscribe 错误：那不是 mitt 的方法名。\n- 只有 emit 一个方法错误：缺少订阅能力就无法工作。",
+    "tags": ["mitt", "入门", "前端实用小库", "API", "Emitter"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "on、off、emit 三个方法，外加 all 属性",
+        "isCorrect": true,
+        "description": "正确。Emitter 接口就是 { all, on, off, emit }，三方法均不依赖 this。"
+      },
+      {
+        "text": "on、off、emit、once 四个方法",
+        "isCorrect": false,
+        "description": "错误。mitt 故意不提供 once，一次性监听需在回调里手动调用 off。"
+      },
+      {
+        "text": "subscribe、unsubscribe、dispatch",
+        "isCorrect": false,
+        "description": "错误。这不是 mitt 的命名，mitt 用 on/off/emit。"
+      },
+      {
+        "text": "只有一个 emit 方法",
+        "isCorrect": false,
+        "description": "错误。没有 on 就无法订阅，mitt 必然提供 on/off/emit。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：要监听「所有事件」（无论事件名是什么），应该用什么作为事件类型注册？",
+    "explanation": "mitt 用通配符字符串 '*' 来监听所有事件。注册 on('*', handler) 后，任意 emit 都会调用该 handler，且回调签名是 (type, event)——第一个参数是被触发的事件名，第二个是负载。\n\n- on('*', (type, event) => ...) 正确。\n- on('all', ...) 错误：'all' 只是普通事件名，不是通配。\n- on(true, ...) / on(/.*/   , ...) 错误：mitt 不支持布尔或正则作为通配。",
+    "tags": ["mitt", "初级", "前端实用小库", "通配符", "wildcard"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "on('*', (type, event) => { ... })，通配符 '*' 捕获所有事件，回调首参为事件名",
+        "isCorrect": true,
+        "description": "正确。'*' 是 mitt 的通配监听，handler 签名为 (type, event)。"
+      },
+      {
+        "text": "on('all', handler)",
+        "isCorrect": false,
+        "description": "错误。'all' 会被当成名为 all 的普通事件，不是通配监听。"
+      },
+      {
+        "text": "on(true, handler)",
+        "isCorrect": false,
+        "description": "错误。事件类型只能是 string 或 symbol，布尔值无效。"
+      },
+      {
+        "text": "on(/.*/ , handler)",
+        "isCorrect": false,
+        "description": "错误。mitt 不支持正则匹配事件名，通配只有字符串 '*'。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：emitter.all 这个属性的真实类型是什么？",
+    "explanation": "all 是一个 Map，键为事件名（或 '*'），值为该事件的 handler 数组。它是发射器内部存储的事件处理器表，且对外暴露，可直接操作，例如 emitter.all.clear() 一次性清空所有监听。\n\n- 「Map，事件名 → handler 数组」正确（已在 v3.0.1 实测 all instanceof Map 为 true）。\n- 「普通对象」错误：是 Map 不是对象。\n- 「数组」「Set」错误。",
+    "tags": ["mitt", "中级", "前端实用小库", "all", "Map"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 Map，键是事件名（含 '*'），值是对应的 handler 数组；可直接操作，如 all.clear() 清空全部监听",
+        "isCorrect": true,
+        "description": "正确。EventHandlerMap 就是 Map，实测 emitter.all instanceof Map 为 true。"
+      },
+      {
+        "text": "一个普通对象 { [eventName]: handlers }",
+        "isCorrect": false,
+        "description": "错误。mitt 用 Map 而非普通对象存储，支持 symbol 键且可直接 clear。"
+      },
+      {
+        "text": "所有已触发事件的历史记录数组",
+        "isCorrect": false,
+        "description": "错误。all 存的是处理器表，不是事件历史。"
+      },
+      {
+        "text": "一个 Set，去重存放 handler",
+        "isCorrect": false,
+        "description": "错误。all 是 Map（事件名 → handler 数组），不是 Set。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：调用 off('foo') 但不传第二个 handler 参数，会发生什么？",
+    "explanation": "off(type, handler?) 的第二个参数可选。传 handler 时只移除该特定回调；省略 handler 时移除该事件类型下的全部回调。实测：注册了多个 'foo' 监听后调用 off('foo')，再 emit('foo') 不再触发任一 'foo' 回调（但 '*' 通配监听不受影响）。\n\n- 「移除 'foo' 下的全部 handler」正确。\n- 「抛错」「无任何效果」错误。\n- 「连 '*' 一起移除」错误：off('foo') 只针对 'foo'。",
+    "tags": ["mitt", "中级", "前端实用小库", "off", "移除监听"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "移除 'foo' 事件下注册的所有 handler（'*' 通配监听不受影响）",
+        "isCorrect": true,
+        "description": "正确。off 省略 handler 时清空该事件全部回调；实测后 emit('foo') 不再触发，但 '*' 仍在。"
+      },
+      {
+        "text": "抛出异常，因为 handler 是必填参数",
+        "isCorrect": false,
+        "description": "错误。handler 是可选参数，省略是合法用法。"
+      },
+      {
+        "text": "什么都不做，必须传 handler 才能移除",
+        "isCorrect": false,
+        "description": "错误。省略 handler 正是「移除该类型全部监听」的语义。"
+      },
+      {
+        "text": "连同 '*' 通配监听一起移除",
+        "isCorrect": false,
+        "description": "错误。off('foo') 只处理 'foo'，不会动到 '*'。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：mitt 没有提供 once（只触发一次后自动解绑）方法。要实现「一次性监听」，最常见的正确做法是什么？",
+    "explanation": "mitt 故意保持极简，不内置 once（实测 emitter.once 为 undefined）。实现一次性监听的常规做法：定义一个具名 handler，在其内部先执行逻辑，再调用 off(type, handler) 把自己解绑。\n\n- 「具名 handler 内部调用 off 解绑自身」正确。\n- 「设置 once: true 选项」错误：on 不接受这种选项。\n- 「调用 emitter.once(...)」错误：该方法不存在。\n- 「emit 时传 once 标志」错误。",
+    "tags": ["mitt", "高级", "前端实用小库", "once", "一次性监听"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "写一个具名 handler，在其内部执行逻辑后调用 off(type, handler) 把自己移除",
+        "isCorrect": true,
+        "description": "正确。mitt 无 once，靠 handler 内部 off 自身实现一次性，是官方推荐思路。"
+      },
+      {
+        "text": "调用 emitter.once(type, handler)",
+        "isCorrect": false,
+        "description": "错误。mitt 没有 once 方法，实测 emitter.once 为 undefined。"
+      },
+      {
+        "text": "on(type, handler, { once: true })",
+        "isCorrect": false,
+        "description": "错误。mitt 的 on 只接受 (type, handler)，没有 options 参数。"
+      },
+      {
+        "text": "emit 时传第三个参数 once=true",
+        "isCorrect": false,
+        "description": "错误。emit 只接收 (type, event)，没有 once 控制。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：在 Vue 3 中为什么常用 mitt 做事件总线（event bus）？",
+    "explanation": "Vue 2 的实例上有 $on/$off/$emit，可把根实例当全局事件总线。Vue 3 移除了实例的 $on/$off/$once（$emit 仅用于组件自定义事件），官方迁移指南直接建议用外部库（如 mitt）替代全局事件总线场景。mitt 体积小、API 简单、框架无关，正好胜任。\n\n- 「Vue 3 移除了实例 $on/$off，需外部库补位」正确。\n- 「Vue 3 内置了 mitt」错误。\n- 「mitt 能替代 Pinia」错误：用途不同。",
+    "tags": ["mitt", "中级", "前端实用小库", "Vue3", "event bus"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vue 3 移除了组件实例的 $on/$off/$once，全局事件总线场景需用外部库补位，mitt 小巧且框架无关，正好胜任",
+        "isCorrect": true,
+        "description": "正确。Vue 3 迁移指南建议用 mitt 等外部 emitter 替代被移除的实例事件 API。"
+      },
+      {
+        "text": "因为 Vue 3 底层就是用 mitt 实现的响应式",
+        "isCorrect": false,
+        "description": "错误。Vue 3 响应式基于 Proxy，与 mitt 无关。"
+      },
+      {
+        "text": "mitt 能直接替代 Pinia 管理全局状态",
+        "isCorrect": false,
+        "description": "错误。mitt 只做事件传递，不持有/管理状态，不能替代 Pinia。"
+      },
+      {
+        "text": "因为只有 mitt 能在 Vue 3 的 setup 里使用",
+        "isCorrect": false,
+        "description": "错误。普通 JS 库都能在 setup 里用，这不是 mitt 的独有能力。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：使用 TypeScript 时，如何为 mitt 声明强类型的事件与负载？",
+    "explanation": "mitt 是泛型函数：mitt<Events>()，其中 Events 是一个 Record，键为事件名、值为该事件负载类型。声明后，on/emit 会做类型检查——emit('foo', payload) 的 payload 必须匹配 Events['foo'] 类型，on('foo', e => ...) 中 e 也被正确推断。\n\n- 「mitt<{ foo: string; bar: number }>()」正确。\n- 「mitt() 后手动断言」可行但非推荐写法，且不是「声明」。\n- 「mitt 不支持泛型」错误。",
+    "tags": ["mitt", "高级", "前端实用小库", "TypeScript", "泛型"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "传入泛型：mitt<{ foo: string; bar?: number }>()，键是事件名、值是负载类型，on/emit 即获得类型检查",
+        "isCorrect": true,
+        "description": "正确。mitt 的类型签名为 mitt<Events extends Record<EventType, unknown>>()。"
+      },
+      {
+        "text": "mitt 不支持泛型，只能用 any",
+        "isCorrect": false,
+        "description": "错误。mitt 提供完整泛型支持，可强类型化事件映射。"
+      },
+      {
+        "text": "需要额外安装 @types/mitt",
+        "isCorrect": false,
+        "description": "错误。mitt 自带类型声明（index.d.ts），无需额外 @types 包。"
+      },
+      {
+        "text": "在 on 的回调里手动写 (e: any) 才能用",
+        "isCorrect": false,
+        "description": "错误。声明泛型后 e 会被自动推断，无需 any。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：关于 emit 时类型化 handler 与通配 '*' handler 的触发顺序，下列哪项正确？",
+    "explanation": "实测 v3.0.1：先注册 on('foo', ...) 再注册 on('*', ...)，emit('foo') 时输出顺序是「先类型化 handler，后通配 handler」。即同名事件的具体监听先执行，'*' 监听随后执行。手动 emit('*') 触发通配本身是不支持的。\n\n- 「先类型化、后通配」正确。\n- 「先通配后类型化」错误（与实测相反）。\n- 「只触发其一」错误：两者都会触发。",
+    "tags": ["mitt", "专家", "前端实用小库", "emit", "触发顺序"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "先调用该事件名对应的类型化 handler，再调用 '*' 通配 handler",
+        "isCorrect": true,
+        "description": "正确。实测 emit('foo') 输出 typed -> wild:foo，类型化先于通配。"
+      },
+      {
+        "text": "先调用 '*' 通配 handler，再调用类型化 handler",
+        "isCorrect": false,
+        "description": "错误。顺序相反，实测是类型化在前。"
+      },
+      {
+        "text": "只会触发类型化 handler，'*' 不会被触发",
+        "isCorrect": false,
+        "description": "错误。'*' 监听对所有事件都会触发。"
+      },
+      {
+        "text": "两者触发顺序随机、不可预测",
+        "isCorrect": false,
+        "description": "错误。顺序是确定的：类型化先、通配后。"
+      }
+    ]
+  },
+  {
+    "stem": "mitt：以下关于 mitt 的说法，哪一项是错误的？",
+    "explanation": "mitt 的方法不依赖 this（函数式），可以安全解构 const { on, emit } = mitt() 后单独调用——这是它的特性而非限制。其余三项均为真实事实：体积约 200B、无 once、all 是 Map。\n\n- 「解构后 on/emit 不能用」是错误说法，故为本题答案。\n- 其余三项都正确。",
+    "tags": ["mitt", "中级", "前端实用小库", "辨析", "函数式"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 on/emit 从 mitt() 结果中解构出来单独调用会报错，因为它们依赖 this",
+        "isCorrect": true,
+        "description": "这是错误说法（本题要选错误项）。mitt 方法是函数式、不依赖 this，可安全解构调用。"
+      },
+      {
+        "text": "mitt 体积约 200 字节，零依赖",
+        "isCorrect": false,
+        "description": "这是正确事实，不应作为「错误项」被选中。"
+      },
+      {
+        "text": "mitt 不提供 once 方法",
+        "isCorrect": false,
+        "description": "这是正确事实，mitt 确实没有 once。"
+      },
+      {
+        "text": "emitter.all 是一个 Map",
+        "isCorrect": false,
+        "description": "这是正确事实，all 确为 Map。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：qs 这个库的核心用途是什么？",
+    "explanation": "qs 是一个 query string（URL 查询字符串）的解析与序列化库，提供 qs.parse（字符串 → 对象）和 qs.stringify（对象 → 字符串）。它最大的卖点是支持嵌套对象和数组，并带有防 DoS 的安全限制（depth、parameterLimit 等）。\n\n- 「query string 的解析与序列化，支持嵌套」正确。\n- 「JSON schema 校验」「日期处理」「加密」均与 qs 无关。",
+    "tags": ["qs", "入门", "前端实用小库", "query string", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "解析与序列化 URL 查询字符串（query string），支持嵌套对象与数组，带安全限制",
+        "isCorrect": true,
+        "description": "正确。qs 提供 parse/stringify，核心优势是嵌套结构支持与 DoS 防护。"
+      },
+      {
+        "text": "对数据做 JSON Schema 校验",
+        "isCorrect": false,
+        "description": "错误。数据校验是 Zod/Valibot 的领域，qs 只管查询字符串。"
+      },
+      {
+        "text": "处理日期与时区",
+        "isCorrect": false,
+        "description": "错误。日期处理用 Day.js/date-fns，与 qs 无关。"
+      },
+      {
+        "text": "字符串加密与哈希",
+        "isCorrect": false,
+        "description": "错误。qs 不做加密，它只做 query string 的双向转换。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：把对象 { a: { b: 'c' } } 用 qs.stringify 序列化（默认 encode），输出最接近哪个？",
+    "explanation": "qs 默认会对输出做 URI 编码，方括号 [ ] 会被编码成 %5B %5D。所以 { a: { b: 'c' } } → 'a%5Bb%5D=c'。若加 { encode: false } 才得到可读的 'a[b]=c'。这正是 qs 相对原生 URLSearchParams 的核心能力：表达嵌套对象。\n\n- 'a%5Bb%5D=c' 正确（默认编码）。\n- 'a[b]=c' 是 encode:false 时的结果。\n- 'a.b=c' 需 allowDots。\n- 'a=%7B...%7D'（JSON 串）错误：qs 用方括号路径而非 JSON。",
+    "tags": ["qs", "初级", "前端实用小库", "stringify", "嵌套"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "a%5Bb%5D=c（方括号被默认 URI 编码为 %5B %5D）",
+        "isCorrect": true,
+        "description": "正确。默认 encode:true，[ ] 编码为 %5B %5D；encode:false 时才是 a[b]=c。"
+      },
+      {
+        "text": "a.b=c",
+        "isCorrect": false,
+        "description": "错误。点号形式需显式 allowDots:true，默认用方括号。"
+      },
+      {
+        "text": "a=%7B%22b%22%3A%22c%22%7D（把值序列化成 JSON）",
+        "isCorrect": false,
+        "description": "错误。qs 用方括号路径表达嵌套，不会把对象转成 JSON 字符串。"
+      },
+      {
+        "text": "a=c（丢弃中间层 b）",
+        "isCorrect": false,
+        "description": "错误。qs 完整保留嵌套路径，不会丢层级。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：相比浏览器原生的 URLSearchParams，qs 最关键的能力差异是什么？",
+    "explanation": "URLSearchParams 只能处理扁平的键值对，无法表达嵌套对象（如 a[b][c]=d）和复杂数组结构；qs 原生支持嵌套对象、多种数组格式，还提供 depth/arrayLimit/parameterLimit 等安全限制。这是选 qs 的首要理由。\n\n- 「qs 支持嵌套对象/数组，URLSearchParams 不支持」正确。\n- 「qs 更快」不是关键差异，且未必成立。\n- 「URLSearchParams 不能编码」错误：它会编码。\n- 「qs 只能在 Node 用」错误：qs 浏览器也能用。",
+    "tags": ["qs", "中级", "前端实用小库", "URLSearchParams", "对比"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "qs 支持嵌套对象与复杂数组（a[b][c]=d），而原生 URLSearchParams 只能处理扁平键值对",
+        "isCorrect": true,
+        "description": "正确。嵌套结构是 qs 的核心增量，URLSearchParams 无此能力。"
+      },
+      {
+        "text": "URLSearchParams 完全不会对特殊字符做 URI 编码",
+        "isCorrect": false,
+        "description": "错误。URLSearchParams 也会编码特殊字符，差异不在编码本身。"
+      },
+      {
+        "text": "qs 只能在 Node.js 运行，浏览器用不了",
+        "isCorrect": false,
+        "description": "错误。qs 浏览器与 Node 都可用。"
+      },
+      {
+        "text": "qs 比 URLSearchParams 快若干个数量级",
+        "isCorrect": false,
+        "description": "错误。性能不是关键差异，原生 API 通常更快；qs 的价值在功能。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：qs.stringify 默认的 arrayFormat（数组序列化格式）是哪一种？",
+    "explanation": "实测 qs v6.14.2：qs.stringify({ a: ['b','c'] }, { encode:false }) 输出 a[0]=b&a[1]=c，即默认 arrayFormat 为 'indices'（带数字下标）。其它可选值：'brackets'→a[]=b&a[]=c、'repeat'→a=b&a=c、'comma'→a=b,c。\n\n- 'indices'（a[0]=b&a[1]=c）正确，已本地实测确认。\n- 'brackets'/'repeat'/'comma' 都是需要显式指定的非默认值。",
+    "tags": ["qs", "中级", "前端实用小库", "arrayFormat", "数组"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "indices —— 形如 a[0]=b&a[1]=c（带数字下标）",
+        "isCorrect": true,
+        "description": "正确。实测 v6.14.2 默认输出 a[0]=b&a[1]=c，arrayFormat 默认为 indices。"
+      },
+      {
+        "text": "brackets —— 形如 a[]=b&a[]=c",
+        "isCorrect": false,
+        "description": "错误。brackets 需显式设置 arrayFormat:'brackets'，非默认。"
+      },
+      {
+        "text": "repeat —— 形如 a=b&a=c",
+        "isCorrect": false,
+        "description": "错误。repeat 是显式选项，默认是带下标的 indices。"
+      },
+      {
+        "text": "comma —— 形如 a=b,c",
+        "isCorrect": false,
+        "description": "错误。comma 需显式设置，默认是 indices。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：希望把 { a: ['x', 'y'] } 序列化成 a=x&a=y（重复键、无下标无括号），应设置哪个选项？",
+    "explanation": "qs.stringify(obj, { arrayFormat: 'repeat' }) 会把数组渲染成重复键 a=x&a=y。这是很多后端框架（如 Express/PHP 之外的一些场景）期望的数组传参格式。\n\n- arrayFormat: 'repeat' 正确（实测 a=b&a=c）。\n- 'indices' → a[0]=x&a[1]=y。\n- 'brackets' → a[]=x&a[]=y。\n- 'comma' → a=x,y。",
+    "tags": ["qs", "中级", "前端实用小库", "arrayFormat", "repeat"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "arrayFormat: 'repeat'",
+        "isCorrect": true,
+        "description": "正确。repeat 渲染为重复键 a=x&a=y，实测无误。"
+      },
+      {
+        "text": "arrayFormat: 'indices'",
+        "isCorrect": false,
+        "description": "错误。indices 会带下标：a[0]=x&a[1]=y。"
+      },
+      {
+        "text": "arrayFormat: 'brackets'",
+        "isCorrect": false,
+        "description": "错误。brackets 会带空括号：a[]=x&a[]=y。"
+      },
+      {
+        "text": "arrayFormat: 'comma'",
+        "isCorrect": false,
+        "description": "错误。comma 会合并为 a=x,y，不是重复键。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：qs.parse 默认的最大解析深度 depth 是多少？设这个上限主要为了防什么？",
+    "explanation": "qs.parse 默认 depth 为 5。超过 5 层的嵌套，剩余部分不再继续拆解而是并入键名（实测 a[b][c][d][e][f][g]=h 第 6 层起 [g] 被并进键里）。设深度上限主要为防止恶意构造的超深嵌套查询导致 CPU/内存耗尽（DoS）。\n\n- 「默认 5，防 DoS」正确，已实测。\n- 「默认无限」错误。\n- 「默认 1」「默认 100」错误。",
+    "tags": ["qs", "高级", "前端实用小库", "depth", "安全"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 depth 为 5，主要为防止超深嵌套引发的 DoS（拒绝服务）",
+        "isCorrect": true,
+        "description": "正确。实测超过 5 层后剩余路径并入键名；depth 限制是安全设计。"
+      },
+      {
+        "text": "默认无限深度，不做任何限制",
+        "isCorrect": false,
+        "description": "错误。无限深度会带来 DoS 风险，qs 默认限制为 5。"
+      },
+      {
+        "text": "默认 depth 为 1，只解析一层",
+        "isCorrect": false,
+        "description": "错误。默认是 5 层，不是 1。"
+      },
+      {
+        "text": "默认 depth 为 100",
+        "isCorrect": false,
+        "description": "错误。默认值是 5，100 远超实际默认。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：关于 qs.parse 的 parameterLimit 选项，下列描述正确的是？",
+    "explanation": "parameterLimit 限制解析的参数（键值对）最大数量，默认 1000，超出部分默认被静默忽略（实测 parameterLimit:1 时只保留第一个）。它和 depth、arrayLimit 一样属于 qs 的防 DoS 安全限制，避免攻击者用超长查询串拖垮服务。\n\n- 「限制参数数量，默认 1000，防 DoS」正确。\n- 「默认无上限」错误。\n- 「限制单个值的长度」错误：它限的是参数个数。\n- 「只对 stringify 生效」错误：parameterLimit 是 parse 选项。",
+    "tags": ["qs", "高级", "前端实用小库", "parameterLimit", "安全"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "限制可解析的参数（键值对）数量，默认 1000，超出默认被忽略，用于防 DoS",
+        "isCorrect": true,
+        "description": "正确。parameterLimit 默认 1000，实测超出被静默丢弃。"
+      },
+      {
+        "text": "限制单个参数值的字符串长度",
+        "isCorrect": false,
+        "description": "错误。它限制的是参数个数，不是值长度。"
+      },
+      {
+        "text": "默认没有上限，需手动设置",
+        "isCorrect": false,
+        "description": "错误。默认值就是 1000。"
+      },
+      {
+        "text": "它是 stringify 的选项，对 parse 无效",
+        "isCorrect": false,
+        "description": "错误。parameterLimit 是 parse 的安全选项。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：qs.parse('a[25]=x') 默认会得到什么？这与 arrayLimit 有什么关系？",
+    "explanation": "qs.parse 的 arrayLimit 默认 20：当数组的下标超过 arrayLimit 时，qs 不再把它当数组，而是转成普通对象。实测 qs.parse('a[25]=x') 得到 { a: { '25': 'x' } }（对象，键为 '25'），因为 25 > 20。这是为防止用稀疏大下标制造超大数组的 DoS 防护。\n\n- 「{ a: { '25': 'x' } } 对象，因为下标超 arrayLimit(20)」正确，已实测。\n- 「长度 26 的稀疏数组」错误：超限会转对象。",
+    "tags": ["qs", "专家", "前端实用小库", "arrayLimit", "安全"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "{ a: { '25': 'x' } }：下标 25 超过默认 arrayLimit(20)，qs 把它转成对象而非数组",
+        "isCorrect": true,
+        "description": "正确。实测得到对象 { a: { '25': 'x' } }，超 arrayLimit 转对象是防 DoS 设计。"
+      },
+      {
+        "text": "{ a: [undefined×25, 'x'] }：生成长度 26 的稀疏数组",
+        "isCorrect": false,
+        "description": "错误。超过 arrayLimit 后不再当数组，避免稀疏大数组，转成对象。"
+      },
+      {
+        "text": "抛出异常，因为下标越界",
+        "isCorrect": false,
+        "description": "错误。qs 不抛错，而是降级为对象表示。"
+      },
+      {
+        "text": "{ a: 'x' }：忽略下标",
+        "isCorrect": false,
+        "description": "错误。下标会作为对象的键保留为 '25'。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：希望用点号风格（a.b=c 而非 a[b]=c）来表达嵌套对象，应启用哪个选项？",
+    "explanation": "allowDots 选项可在 stringify 时输出点号风格（{ a: { b: 'c' } } + allowDots → a.b=c），在 parse 时也能把 a.b=c 解析回嵌套对象。默认 allowDots 为 false（用方括号）。\n\n- allowDots: true 正确。\n- dotNotation / nested / brackets 不是 qs 的选项名。",
+    "tags": ["qs", "中级", "前端实用小库", "allowDots", "点号"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "allowDots: true",
+        "isCorrect": true,
+        "description": "正确。allowDots 让 qs 用点号表达嵌套，parse/stringify 双向有效，默认 false。"
+      },
+      {
+        "text": "dotNotation: true",
+        "isCorrect": false,
+        "description": "错误。qs 没有 dotNotation 选项，正确名是 allowDots。"
+      },
+      {
+        "text": "nested: true",
+        "isCorrect": false,
+        "description": "错误。不存在 nested 选项；qs 本就支持嵌套，点号开关是 allowDots。"
+      },
+      {
+        "text": "format: 'dots'",
+        "isCorrect": false,
+        "description": "错误。format 用于 RFC3986/RFC1738 空格编码，与点号无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：默认情况下，qs.stringify({ a: 'b' }) 的输出会自动带上前导问号 ? 吗？",
+    "explanation": "默认不会。qs.stringify({ a: 'b' }) 输出 'a=b'，没有前导 ?。要加前导 ? 需显式设置 { addQueryPrefix: true }（得到 '?a=b'）；对称地，parse 时用 { ignoreQueryPrefix: true } 可自动剥掉前导 ?。\n\n- 「不带，需 addQueryPrefix 才加」正确。\n- 「总是自动带 ?」错误。\n- 「带 # 锚点」错误。",
+    "tags": ["qs", "初级", "前端实用小库", "addQueryPrefix", "前缀"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认不带；要前导 ? 需设 addQueryPrefix:true（parse 端对应 ignoreQueryPrefix）",
+        "isCorrect": true,
+        "description": "正确。默认输出无 ?；addQueryPrefix 才会前置问号。"
+      },
+      {
+        "text": "默认总是自动带上 ?",
+        "isCorrect": false,
+        "description": "错误。默认无前导 ?，需显式开启 addQueryPrefix。"
+      },
+      {
+        "text": "默认带上 # 锚点前缀",
+        "isCorrect": false,
+        "description": "错误。qs 处理 query string，不涉及 # 锚点。"
+      },
+      {
+        "text": "取决于对象是否为空",
+        "isCorrect": false,
+        "description": "错误。是否加前缀由 addQueryPrefix 决定，与对象是否为空无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qs：使用 arrayFormat: 'comma'（如 a=b,c）时，有一个需要特别注意的「往返（round-trip）」陷阱，下列哪项描述正确？",
+    "explanation": "comma 格式把数组拼成逗号分隔串（a=b,c）。但解析回来时存在歧义：单元素数组 ['b'] 序列化为 a=b，再 parse 通常得到字符串 'b' 而非数组 ['b']；且值本身含逗号时会被错误拆分。因此 comma 不保证完美往返，需配合 comma:true 解析并谨慎处理单元素/含逗号场景。\n\n- 「单元素数组往返后可能退化为字符串、值含逗号会被误拆」正确。\n- 「comma 能完美无损往返」错误。",
+    "tags": ["qs", "专家", "前端实用小库", "comma", "round-trip"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "comma 不保证无损往返：单元素数组可能 parse 回字符串，且值本身含逗号会被错误拆分",
+        "isCorrect": true,
+        "description": "正确。comma 格式有单元素退化与含逗号误拆的歧义，需谨慎使用。"
+      },
+      {
+        "text": "comma 格式能保证任何数组完美无损往返",
+        "isCorrect": false,
+        "description": "错误。正因存在歧义，comma 才有 round-trip 陷阱。"
+      },
+      {
+        "text": "comma 只能用于数字数组，字符串数组会报错",
+        "isCorrect": false,
+        "description": "错误。comma 对字符串数组同样可用，问题在歧义而非类型限制。"
+      },
+      {
+        "text": "comma 会自动对每个元素做 JSON 编码避免歧义",
+        "isCorrect": false,
+        "description": "错误。comma 不做 JSON 编码，正是缺乏转义才产生陷阱。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：JSZip 的核心用途是什么？",
+    "explanation": "JSZip 是一个用于在浏览器和 Node.js 中创建、读取、编辑 ZIP 压缩包的 JavaScript 库。通过 new JSZip() 创建实例，用 .file() 添加文件、.generateAsync() 生成压缩包、JSZip.loadAsync() 读取已有 zip。\n\n- 「浏览器/Node 创建读取 ZIP」正确。\n- 「图片压缩」「视频转码」「PDF 生成」都不是 JSZip 的职责。",
+    "tags": ["jszip", "入门", "前端实用小库", "ZIP", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在浏览器与 Node.js 中创建、读取和编辑 ZIP 压缩包",
+        "isCorrect": true,
+        "description": "正确。JSZip 专注 ZIP 文件的生成与解析，跨浏览器和 Node。"
+      },
+      {
+        "text": "对 JPEG/PNG 图片做有损压缩",
+        "isCorrect": false,
+        "description": "错误。图片压缩是图像库的事，JSZip 处理的是 ZIP 归档。"
+      },
+      {
+        "text": "把音视频转码成其他格式",
+        "isCorrect": false,
+        "description": "错误。转码与 JSZip 无关。"
+      },
+      {
+        "text": "生成 PDF 文档",
+        "isCorrect": false,
+        "description": "错误。PDF 生成用 jsPDF 等库，JSZip 只做 ZIP。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：向 zip 中添加一个名为 hello.txt、内容为 'world' 的文件，正确写法是？",
+    "explanation": "JSZip 用实例方法 .file(name, data) 添加或更新文件：zip.file('hello.txt', 'world')。data 可以是字符串、Blob、ArrayBuffer、Uint8Array、Promise 等多种类型。.file(name)（只传一个参数）则是「读取/获取」该文件对象。\n\n- zip.file('hello.txt', 'world') 正确。\n- zip.add(...) / zip.append(...) 不是 JSZip 的方法名。\n- new JSZip('hello.txt','world') 错误：构造函数不接收文件。",
+    "tags": ["jszip", "初级", "前端实用小库", "file", "添加文件"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const zip = new JSZip(); zip.file('hello.txt', 'world');",
+        "isCorrect": true,
+        "description": "正确。.file(name, data) 添加/更新文件，data 支持 string/Blob/ArrayBuffer 等。"
+      },
+      {
+        "text": "zip.add('hello.txt', 'world')",
+        "isCorrect": false,
+        "description": "错误。JSZip 没有 add 方法，添加文件用 file。"
+      },
+      {
+        "text": "zip.append('hello.txt', 'world')",
+        "isCorrect": false,
+        "description": "错误。不存在 append，正确方法是 file。"
+      },
+      {
+        "text": "new JSZip('hello.txt', 'world')",
+        "isCorrect": false,
+        "description": "错误。构造函数不接收文件参数，需用实例方法 file。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：在浏览器里生成一个可供下载的 zip（Blob 类型），应调用哪个方法、传什么 type？",
+    "explanation": "zip.generateAsync({ type: 'blob' }) 异步生成 Blob，常配合 file-saver 的 saveAs 触发下载。generateAsync 返回 Promise。type 还支持 'nodebuffer'（Node 写文件）、'base64'、'uint8array'、'arraybuffer'、'string'、'binarystring'。\n\n- generateAsync({ type: 'blob' }) 正确。\n- generate({...}) 同步方法在新版已不推荐/移除。\n- toBlob() / export() 不是 JSZip 的方法。",
+    "tags": ["jszip", "中级", "前端实用小库", "generateAsync", "blob"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await zip.generateAsync({ type: 'blob' })，返回 Promise<Blob>",
+        "isCorrect": true,
+        "description": "正确。generateAsync 异步产出，type:'blob' 适合浏览器下载，常配 file-saver。"
+      },
+      {
+        "text": "zip.toBlob()",
+        "isCorrect": false,
+        "description": "错误。JSZip 没有 toBlob，生成用 generateAsync。"
+      },
+      {
+        "text": "zip.export('blob')",
+        "isCorrect": false,
+        "description": "错误。不存在 export 方法。"
+      },
+      {
+        "text": "zip.generateAsync({ format: 'blob' })",
+        "isCorrect": false,
+        "description": "错误。选项键是 type 不是 format。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：要读取一段已有的 zip 数据（如用户上传的 ArrayBuffer），应使用哪个 API？",
+    "explanation": "JSZip.loadAsync(data) 是静态方法，异步解析已有 zip 数据（支持 ArrayBuffer、Uint8Array、Blob、base64、Node Buffer 等），返回 Promise<JSZip>。拿到实例后，可遍历 .files 或用 .file(name).async(type) 读出某个文件内容。\n\n- JSZip.loadAsync(data) 正确。\n- new JSZip(data) 错误：构造函数不解析数据。\n- JSZip.read / JSZip.parse 不存在。",
+    "tags": ["jszip", "中级", "前端实用小库", "loadAsync", "读取"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JSZip.loadAsync(data)，返回 Promise<JSZip>，再用 .file(name).async(type) 取内容",
+        "isCorrect": true,
+        "description": "正确。loadAsync 是读取已有 zip 的静态异步入口，支持多种输入类型。"
+      },
+      {
+        "text": "new JSZip(arrayBuffer)",
+        "isCorrect": false,
+        "description": "错误。构造函数不解析数据，读取需 loadAsync。"
+      },
+      {
+        "text": "JSZip.parse(data)",
+        "isCorrect": false,
+        "description": "错误。没有 parse 方法，正确是 loadAsync。"
+      },
+      {
+        "text": "JSZip.read(data)",
+        "isCorrect": false,
+        "description": "错误。不存在 read 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：关于 JSZip 的「异步」特性，下列说法正确的是？",
+    "explanation": "JSZip 的主要 I/O 操作都是异步、返回 Promise：generateAsync（生成）、loadAsync（读取）、以及 ZipObject 的 .async(type)（读出单个文件内容）。这样可避免在主线程上阻塞处理大文件。早期同步的 generate() 已不推荐。\n\n- 「generateAsync/loadAsync/async 都返回 Promise」正确。\n- 「全部同步、无 Promise」错误。\n- 「只有读取异步、生成同步」错误。",
+    "tags": ["jszip", "中级", "前端实用小库", "异步", "Promise"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "generateAsync、loadAsync 与 ZipObject.async(type) 都返回 Promise，可用 async/await",
+        "isCorrect": true,
+        "description": "正确。JSZip 的生成、读取、单文件读出均为异步 Promise，避免阻塞主线程。"
+      },
+      {
+        "text": "JSZip 所有 API 都是同步的，没有 Promise",
+        "isCorrect": false,
+        "description": "错误。核心 I/O 都是异步 Promise。"
+      },
+      {
+        "text": "只有 loadAsync 是异步，生成是同步的",
+        "isCorrect": false,
+        "description": "错误。generateAsync 同样异步。"
+      },
+      {
+        "text": "异步操作通过回调实现，不支持 Promise",
+        "isCorrect": false,
+        "description": "错误。JSZip 返回标准 Promise，可 await。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：要在 zip 内创建一个子目录并往里放文件，下面哪种写法是惯用方式？",
+    "explanation": "zip.folder('images') 返回一个「相对于该文件夹」的 JSZip 子对象，之后对它调用 .file('a.png', data) 添加的文件会自动落在 images/ 目录下。等价写法是直接 zip.file('images/a.png', data)（路径里带斜杠）。\n\n- 「const img = zip.folder('images'); img.file('a.png', data)」正确。\n- 「zip.mkdir(...)」不是 JSZip 的方法。\n- 「folder 返回布尔」错误：它返回子 JSZip 对象。",
+    "tags": ["jszip", "中级", "前端实用小库", "folder", "目录"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const img = zip.folder('images'); img.file('a.png', data); —— folder 返回相对该目录的子 JSZip",
+        "isCorrect": true,
+        "description": "正确。folder 返回子对象，往里 file 即落到该目录；也可直接用 'images/a.png'。"
+      },
+      {
+        "text": "zip.mkdir('images') 后再 zip.file('a.png', data)",
+        "isCorrect": false,
+        "description": "错误。JSZip 没有 mkdir；创建目录用 folder。"
+      },
+      {
+        "text": "zip.folder('images') 返回 true/false 表示是否创建成功",
+        "isCorrect": false,
+        "description": "错误。folder 返回的是子 JSZip 对象，不是布尔。"
+      },
+      {
+        "text": "必须先 generateAsync 才能建目录",
+        "isCorrect": false,
+        "description": "错误。建目录在生成之前，用 folder 即可，无需先生成。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：在 Node.js 中把生成的 zip 写到磁盘，generateAsync 的 type 最适合用哪个？",
+    "explanation": "Node.js 写文件需要 Buffer，所以用 zip.generateAsync({ type: 'nodebuffer' }) 拿到 Node Buffer，再 fs.writeFile/createWriteStream 写盘。浏览器下载场景才用 'blob'。\n\n- 'nodebuffer' 正确（Node 写盘）。\n- 'blob' 是浏览器场景。\n- 'file' 不是合法 type。\n- 'buffer' 不是 JSZip 的 type 名（应为 nodebuffer）。",
+    "tags": ["jszip", "高级", "前端实用小库", "nodebuffer", "Node"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "type: 'nodebuffer'，得到 Node Buffer 后用 fs 写盘",
+        "isCorrect": true,
+        "description": "正确。Node 环境写文件用 nodebuffer，配合 fs.writeFile/createWriteStream。"
+      },
+      {
+        "text": "type: 'blob'",
+        "isCorrect": false,
+        "description": "错误。blob 是浏览器对象，Node 写盘需要 nodebuffer。"
+      },
+      {
+        "text": "type: 'file'",
+        "isCorrect": false,
+        "description": "错误。JSZip 没有 'file' 这个输出类型。"
+      },
+      {
+        "text": "type: 'buffer'",
+        "isCorrect": false,
+        "description": "错误。正确名是 'nodebuffer'，不是 'buffer'。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：要遍历一个 zip 里的所有条目（文件/目录），下面哪种方式是 JSZip 提供的？",
+    "explanation": "JSZip 提供实例方法 .forEach((relativePath, zipEntry) => { ... }) 遍历所有条目；也可直接访问 .files 属性（一个对象，键是路径、值是 ZipObject）。还有 .filter(predicate) 按条件筛选。\n\n- 「zip.forEach((path, entry) => ...) 或访问 zip.files」正确。\n- 「for...of zip」错误：JSZip 实例不是可迭代对象。\n- 「zip.entries()」不是 JSZip API。",
+    "tags": ["jszip", "高级", "前端实用小库", "forEach", "遍历"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "zip.forEach((relativePath, zipEntry) => { ... })，或直接读 zip.files 对象",
+        "isCorrect": true,
+        "description": "正确。forEach 遍历条目，files 是路径→ZipObject 的映射，filter 可筛选。"
+      },
+      {
+        "text": "for (const entry of zip) { ... }",
+        "isCorrect": false,
+        "description": "错误。JSZip 实例不可直接 for...of 迭代。"
+      },
+      {
+        "text": "zip.entries().map(...)",
+        "isCorrect": false,
+        "description": "错误。没有 entries 方法，用 forEach 或 files。"
+      },
+      {
+        "text": "Object.keys(zip).forEach(...)",
+        "isCorrect": false,
+        "description": "错误。要遍历文件应用 forEach 或读 zip.files，而非枚举实例自身属性。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：从已加载的 zip 中读出某个文本文件的内容，正确的调用链是？",
+    "explanation": "先用 zip.file('a.txt') 取到 ZipObject，再调用它的 .async(type) 异步读出内容：zip.file('a.txt').async('string')。type 可为 'string'、'text'、'blob'、'arraybuffer'、'uint8array'、'nodebuffer'、'base64' 等。\n\n- zip.file('a.txt').async('string') 正确。\n- zip.file('a.txt').text() 不是 JSZip API。\n- zip.read('a.txt') 不存在。\n- zip.files['a.txt'].content 错误：内容需 async 读出。",
+    "tags": ["jszip", "高级", "前端实用小库", "async", "读内容"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const text = await zip.file('a.txt').async('string')",
+        "isCorrect": true,
+        "description": "正确。file 取 ZipObject，async(type) 异步读出内容，type 支持 string/blob 等。"
+      },
+      {
+        "text": "const text = zip.file('a.txt').text()",
+        "isCorrect": false,
+        "description": "错误。没有同步 text() 方法，读内容用 async(type)。"
+      },
+      {
+        "text": "const text = zip.read('a.txt')",
+        "isCorrect": false,
+        "description": "错误。JSZip 没有 read 方法。"
+      },
+      {
+        "text": "const text = zip.files['a.txt'].content",
+        "isCorrect": false,
+        "description": "错误。ZipObject 没有同步 content 属性，需 async 解码。"
+      }
+    ]
+  },
+  {
+    "stem": "jszip：JSZip 本身负责「打包/解包 ZIP」，但它不直接触发浏览器下载。常见的组合搭配是什么？",
+    "explanation": "JSZip 用 generateAsync({type:'blob'}) 产出 Blob，但「让浏览器弹出下载」这一步通常交给 file-saver 的 saveAs(blob, name)。即 JSZip 负责生成内容，file-saver 负责保存下载——两者职责互补、经常一起出现。\n\n- 「配合 file-saver 的 saveAs 下载」正确。\n- 「JSZip 自带 download 方法」错误。\n- 「必须配合 axios」错误。",
+    "tags": ["jszip", "中级", "前端实用小库", "file-saver", "下载"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 generateAsync 产出 Blob，再交给 file-saver 的 saveAs(blob, name) 触发下载",
+        "isCorrect": true,
+        "description": "正确。JSZip 生成内容、file-saver 负责下载，是经典互补组合。"
+      },
+      {
+        "text": "JSZip 自带 zip.download(name) 方法直接下载",
+        "isCorrect": false,
+        "description": "错误。JSZip 不提供下载方法，需借助 file-saver 或手动建 Blob URL。"
+      },
+      {
+        "text": "必须配合 axios 才能保存文件",
+        "isCorrect": false,
+        "description": "错误。下载与 axios 无关，浏览器下载常用 file-saver。"
+      },
+      {
+        "text": "调用 window.zip.save() 即可",
+        "isCorrect": false,
+        "description": "错误。不存在此 API，下载需 file-saver 或 Blob URL + a[download]。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：file-saver 这个库做的事情是什么？",
+    "explanation": "file-saver 只做一件事：在客户端触发「把一个 Blob/File 保存为文件」的下载动作。它封装了创建 Blob URL + 隐藏 <a download> + 触发点击的兼容处理，核心 API 就是 saveAs(blob, filename)。它不产生文件内容，内容由你自己（或 JSZip 等）准备。\n\n- 「触发浏览器下载，保存 Blob/File 为文件」正确。\n- 「生成/压缩文件内容」错误：那不是它的职责。\n- 「上传文件到服务器」错误。",
+    "tags": ["file-saver", "入门", "前端实用小库", "saveAs", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在浏览器端触发下载，把准备好的 Blob/File 保存为本地文件；只管「存」，不产生内容",
+        "isCorrect": true,
+        "description": "正确。file-saver 封装下载动作，核心是 saveAs(blob, filename)，内容需自备。"
+      },
+      {
+        "text": "生成并压缩文件内容（如打 zip）",
+        "isCorrect": false,
+        "description": "错误。生成/压缩内容是 JSZip 等库的事，file-saver 只负责保存。"
+      },
+      {
+        "text": "把本地文件上传到服务器",
+        "isCorrect": false,
+        "description": "错误。上传是 HTTP 库的事，file-saver 是「下载/保存」。"
+      },
+      {
+        "text": "读取用户选择的本地文件内容",
+        "isCorrect": false,
+        "description": "错误。读取本地文件用 FileReader/File API，file-saver 只做保存。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：保存一个文本 Blob 为 hello.txt，最简单的正确写法是？",
+    "explanation": "import { saveAs } from 'file-saver'; const blob = new Blob(['Hello'], { type: 'text/plain;charset=utf-8' }); saveAs(blob, 'hello.txt');。saveAs 的签名是 saveAs(Blob/File/Url, filename?, options?)。\n\n- saveAs(blob, 'hello.txt') 正确。\n- blob.saveAs('hello.txt') 错误：saveAs 不是 Blob 的方法。\n- download(blob, ...) 不是 file-saver 的 API。\n- saveAs('hello.txt', blob) 参数顺序反了。",
+    "tags": ["file-saver", "初级", "前端实用小库", "saveAs", "用法"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import { saveAs } from 'file-saver'; saveAs(blob, 'hello.txt');",
+        "isCorrect": true,
+        "description": "正确。saveAs(blob, filename) 是标准用法，第一参是 Blob/File/Url。"
+      },
+      {
+        "text": "blob.saveAs('hello.txt')",
+        "isCorrect": false,
+        "description": "错误。saveAs 是 file-saver 导出的函数，不是 Blob 的方法。"
+      },
+      {
+        "text": "saveAs('hello.txt', blob)",
+        "isCorrect": false,
+        "description": "错误。参数顺序反了，应是 saveAs(blob, filename)。"
+      },
+      {
+        "text": "FileSaver.download(blob, 'hello.txt')",
+        "isCorrect": false,
+        "description": "错误。file-saver 的方法是 saveAs，不是 download。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：saveAs 的第三个参数 { autoBom: true } 起什么作用？",
+    "explanation": "autoBom 控制是否在文件开头自动加 UTF-8 BOM（字节顺序标记）。当 Blob 的 type 含 charset=utf-8 且 autoBom 为 true 时，会写入 BOM，帮助某些程序（如 Excel 打开 CSV）正确识别 UTF-8 编码、避免中文乱码。\n\n- 「按需加 UTF-8 BOM，防中文乱码」正确。\n- 「自动压缩」错误。\n- 「弹确认框」错误。\n- 「跨域校验」错误。",
+    "tags": ["file-saver", "中级", "前端实用小库", "autoBom", "BOM"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在文件开头按需写入 UTF-8 BOM（当 blob type 含 charset=utf-8 时），帮助 Excel 等正确识别编码、避免乱码",
+        "isCorrect": true,
+        "description": "正确。autoBom 解决导出 CSV 等被 Excel 以非 UTF-8 打开导致中文乱码的问题。"
+      },
+      {
+        "text": "自动把文件内容压缩成 zip",
+        "isCorrect": false,
+        "description": "错误。autoBom 与压缩无关。"
+      },
+      {
+        "text": "下载前弹出确认对话框",
+        "isCorrect": false,
+        "description": "错误。autoBom 不控制弹窗。"
+      },
+      {
+        "text": "对跨域 URL 做安全校验",
+        "isCorrect": false,
+        "description": "错误。autoBom 只关 BOM，不做跨域校验。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：它在底层大致是怎样实现「下载」的？",
+    "explanation": "file-saver 的核心机制：用 URL.createObjectURL(blob) 生成临时对象 URL，创建一个隐藏的 <a> 元素、设置其 href 为该 URL 且带 download 属性，再程序化触发点击，最后释放 URL。它针对不同浏览器/iOS 等做了兼容回退。\n\n- 「Blob URL + <a download> + 触发点击」正确。\n- 「发起 HTTP 下载请求」错误：本地 Blob 无需网络。\n- 「写入文件系统 API」并非其主路径。",
+    "tags": ["file-saver", "高级", "前端实用小库", "实现原理", "Blob URL"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 URL.createObjectURL 造 Blob URL，建带 download 属性的隐藏 <a> 并程序化点击，再释放 URL",
+        "isCorrect": true,
+        "description": "正确。这是 file-saver 的核心套路，并对各浏览器/iOS 做兼容回退。"
+      },
+      {
+        "text": "向服务器发起一个 HTTP 下载请求",
+        "isCorrect": false,
+        "description": "错误。保存本地 Blob 不经过网络请求。"
+      },
+      {
+        "text": "调用 Node 的 fs.writeFile 写盘",
+        "isCorrect": false,
+        "description": "错误。file-saver 面向浏览器，不用 Node fs。"
+      },
+      {
+        "text": "直接修改 document.cookie 触发下载",
+        "isCorrect": false,
+        "description": "错误。下载与 cookie 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：关于不同浏览器对 saveAs 的限制，下列说法正确的是？",
+    "explanation": "不同浏览器对单个 Blob 的最大体积有上限（如 Chrome 约 2GB、Firefox 约 800MiB 等量级），超过会失败；此外 iOS Safari 对下载支持较弱，常常是「在新窗口打开」而非保存，且需用户手势触发。所以「大文件 + 跨浏览器」是 file-saver 需要注意的边界。\n\n- 「各浏览器有 Blob 体积上限，iOS 行为受限」正确。\n- 「所有浏览器无大小限制」错误。\n- 「能保存任意大小且行为完全一致」错误。",
+    "tags": ["file-saver", "高级", "前端实用小库", "浏览器限制", "兼容"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "各浏览器对单个 Blob 有体积上限（量级如 Chrome ~2GB、Firefox ~800MiB），iOS Safari 常以新窗口打开且需用户手势",
+        "isCorrect": true,
+        "description": "正确。大文件与跨浏览器（尤其 iOS）是 file-saver 的已知边界。"
+      },
+      {
+        "text": "所有现代浏览器都没有 Blob 大小限制",
+        "isCorrect": false,
+        "description": "错误。各浏览器存在不同的单 Blob 上限。"
+      },
+      {
+        "text": "在所有平台行为完全一致，包括 iOS",
+        "isCorrect": false,
+        "description": "错误。iOS Safari 的下载行为与桌面差异明显。"
+      },
+      {
+        "text": "saveAs 可以无视用户手势在任意时刻静默下载",
+        "isCorrect": false,
+        "description": "错误。多数浏览器要求下载由用户交互触发。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：把一个 <canvas> 的内容保存为 PNG 图片，下面哪种与 file-saver 配合的写法最合适？",
+    "explanation": "canvas 转图片下载的惯用法：canvas.toBlob(blob => saveAs(blob, 'image.png'))。canvas.toBlob 异步产出 Blob，再交给 file-saver 的 saveAs 触发下载。file-saver 本身不会从 canvas 取内容，内容由 canvas.toBlob 提供。\n\n- 「canvas.toBlob(cb) 里调用 saveAs」正确。\n- 「saveAs(canvas, 'image.png')」错误：saveAs 需要 Blob/File/Url，不是 canvas 元素。\n- 「saveAs(canvas.toDataURL())」可下载但传 Data URL 字符串非最佳，且本题更标准答案是 toBlob。\n- 「canvas.saveAs(...)」错误：canvas 无此方法。",
+    "tags": ["file-saver", "中级", "前端实用小库", "canvas", "toBlob"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "canvas.toBlob(blob => saveAs(blob, 'image.png')) —— 先 toBlob 拿 Blob，再 saveAs 下载",
+        "isCorrect": true,
+        "description": "正确。canvas.toBlob 产出 Blob，file-saver 负责保存，是标准组合。"
+      },
+      {
+        "text": "saveAs(canvas, 'image.png')",
+        "isCorrect": false,
+        "description": "错误。saveAs 的首参需是 Blob/File/Url，不能直接传 canvas 元素。"
+      },
+      {
+        "text": "canvas.saveAs('image.png')",
+        "isCorrect": false,
+        "description": "错误。canvas 没有 saveAs 方法，下载用 file-saver 的 saveAs。"
+      },
+      {
+        "text": "saveAs(canvas.getContext('2d'), 'image.png')",
+        "isCorrect": false,
+        "description": "错误。2d 上下文不是 Blob，无法直接保存。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：saveAs 的第一个参数除了 Blob/File，还能传一个 URL 字符串吗？",
+    "explanation": "可以。saveAs 第一个参数支持 Blob、File 或一个 URL 字符串。传 URL 时，同源 URL 走标准 <a download>；跨源 URL 则会先做 CORS 检查（同步 HEAD），支持 CORS 才能按数据下载，否则退化为普通锚点跳转。所以跨域可保存性受服务端 CORS 与浏览器策略限制。\n\n- 「能传 URL，跨源受 CORS 限制」正确。\n- 「只能传 Blob」错误。\n- 「传 URL 一定能强制下载任意跨域资源」错误。\n- 「传 URL 会自动上传」错误。",
+    "tags": ["file-saver", "高级", "前端实用小库", "URL", "CORS"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "能传 URL 字符串；同源走 <a download>，跨源需服务端 CORS 支持，否则退化为普通跳转",
+        "isCorrect": true,
+        "description": "正确。saveAs 接受 Blob/File/Url，跨域可下载性受 CORS 与浏览器策略制约。"
+      },
+      {
+        "text": "不行，saveAs 只接受 Blob 或 File",
+        "isCorrect": false,
+        "description": "错误。saveAs 也支持 URL 字符串作为首参。"
+      },
+      {
+        "text": "能传 URL，且必定能强制下载任意跨域资源",
+        "isCorrect": false,
+        "description": "错误。跨域是否能按数据下载取决于 CORS，不保证强制下载。"
+      },
+      {
+        "text": "传 URL 会把当前页面内容上传到该地址",
+        "isCorrect": false,
+        "description": "错误。file-saver 只做下载/保存，不上传。"
+      }
+    ]
+  },
+  {
+    "stem": "file-saver：在模块化项目里引入 saveAs，下列哪种导入方式是正确的？",
+    "explanation": "file-saver 既支持 ES Module 具名导入 import { saveAs } from 'file-saver'，也支持 CommonJS：const FileSaver = require('file-saver'); FileSaver.saveAs(...)（saveAs 是其导出成员）。两种写法都能拿到 saveAs。\n\n- 「import { saveAs } from 'file-saver'」正确。\n- 「import saveAs from 'file-saver'」默认导入不一定拿到函数，惯用具名导入。\n- 「window.saveAs 无需引入」仅在用 script 标签全局引入时成立，模块化项目应显式导入。\n- 「import FileSaver, 直接 FileSaver()」错误：要调用 FileSaver.saveAs。",
+    "tags": ["file-saver", "初级", "前端实用小库", "import", "导入"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import { saveAs } from 'file-saver'（或 CommonJS：const FileSaver = require('file-saver'); FileSaver.saveAs(...)）",
+        "isCorrect": true,
+        "description": "正确。ESM 用具名导入 saveAs，CJS 用 require 后取 .saveAs，两者皆可。"
+      },
+      {
+        "text": "import saveAs from 'file-saver' 默认导入后直接 saveAs()",
+        "isCorrect": false,
+        "description": "错误。惯用具名导入 { saveAs }，默认导入未必指向该函数。"
+      },
+      {
+        "text": "模块化项目里无需导入，直接用全局 window.saveAs",
+        "isCorrect": false,
+        "description": "错误。全局变量只在 <script> 直引时存在，打包项目应显式 import。"
+      },
+      {
+        "text": "import FileSaver from 'file-saver' 后调用 FileSaver()",
+        "isCorrect": false,
+        "description": "错误。应调用 FileSaver.saveAs(...)，FileSaver 本身不是可调用函数。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：node-qrcode（包名 qrcode）这个库的核心用途是什么？",
+    "explanation": "qrcode 是一个生成二维码（QR Code）的库，可在浏览器和 Node.js 中把任意文本/URL 渲染成二维码，输出到 canvas、Data URL、字符串（SVG/UTF8/terminal）或文件。\n\n- 「生成二维码，支持 canvas/DataURL/SVG/文件」正确。\n- 「扫描/解码二维码」错误：qrcode 只负责生成，解码是别的库（如 jsQR）。\n- 「条形码生成」「图片识别」非其职责。",
+    "tags": ["qrcode", "入门", "前端实用小库", "二维码", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "生成二维码：把文本/URL 渲染为 canvas、Data URL、SVG/UTF8 字符串或文件，浏览器与 Node 均可",
+        "isCorrect": true,
+        "description": "正确。qrcode 专注「生成」二维码，提供 toCanvas/toDataURL/toString/toFile 等。"
+      },
+      {
+        "text": "扫描并解码图片中的二维码",
+        "isCorrect": false,
+        "description": "错误。qrcode 只生成不解码，解码需 jsQR/zxing 等库。"
+      },
+      {
+        "text": "生成一维条形码（barcode）",
+        "isCorrect": false,
+        "description": "错误。一维条码用 JsBarcode 等，qrcode 是二维码。"
+      },
+      {
+        "text": "通用图像识别（OCR）",
+        "isCorrect": false,
+        "description": "错误。OCR 与 qrcode 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：在浏览器里把一段文本画到一个 <canvas> 元素上，应调用哪个方法？",
+    "explanation": "QRCode.toCanvas(canvasElement, text, options?, callback?) 把二维码渲染到给定 canvas 元素（浏览器与 Node 都可用，Node 需 node-canvas）。也支持 Promise 风格：await QRCode.toCanvas(canvas, text)。\n\n- toCanvas(canvas, text) 正确。\n- toImage / drawCanvas / render 不是其方法名。",
+    "tags": ["qrcode", "初级", "前端实用小库", "toCanvas", "canvas"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "QRCode.toCanvas(canvasElement, text, options?)",
+        "isCorrect": true,
+        "description": "正确。toCanvas 把二维码画到 canvas 元素，支持回调与 Promise 两种风格。"
+      },
+      {
+        "text": "QRCode.render(canvas, text)",
+        "isCorrect": false,
+        "description": "错误。没有 render 方法，画到 canvas 用 toCanvas。"
+      },
+      {
+        "text": "QRCode.drawCanvas(text, canvas)",
+        "isCorrect": false,
+        "description": "错误。方法名是 toCanvas，且 canvas 在前、text 在后。"
+      },
+      {
+        "text": "QRCode.toImage(canvas, text)",
+        "isCorrect": false,
+        "description": "错误。不存在 toImage，渲染到 canvas 用 toCanvas。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：想得到一个可直接赋给 <img src> 的二维码图片（base64），应调用哪个方法？",
+    "explanation": "QRCode.toDataURL(text, options?) 返回一个 Data URI（默认 image/png 的 base64 串），可直接 img.src = url。支持回调与 Promise：const url = await QRCode.toDataURL('hi')。\n\n- toDataURL 正确。\n- toBase64 / toImageSrc / toPng 不是其方法。",
+    "tags": ["qrcode", "初级", "前端实用小库", "toDataURL", "base64"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "QRCode.toDataURL(text, options?) —— 返回 Data URI，可直接赋给 img.src",
+        "isCorrect": true,
+        "description": "正确。toDataURL 默认产 image/png 的 base64 Data URI。"
+      },
+      {
+        "text": "QRCode.toBase64(text)",
+        "isCorrect": false,
+        "description": "错误。没有 toBase64，base64 图片用 toDataURL。"
+      },
+      {
+        "text": "QRCode.toPng(text)",
+        "isCorrect": false,
+        "description": "错误。不存在 toPng 方法。"
+      },
+      {
+        "text": "QRCode.toImageSrc(text)",
+        "isCorrect": false,
+        "description": "错误。无此方法，正确是 toDataURL。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：二维码的纠错级别（errorCorrectionLevel）有四档，从低到高分别是？大致能恢复多少比例的污损？",
+    "explanation": "纠错级别从低到高为 L、M、Q、H，可恢复的数据比例约为 L≈7%、M≈15%、Q≈25%、H≈30%。级别越高，二维码越「抗损」（即使部分被遮挡/弄脏仍可扫出），但同样数据需要更大的码或更高版本。qrcode 默认级别为 M。\n\n- 「L/M/Q/H，约 7/15/25/30%」正确。\n- 「A/B/C/D」「1/2/3/4」「Low/High 两档」均错误。",
+    "tags": ["qrcode", "中级", "前端实用小库", "errorCorrectionLevel", "纠错"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "L、M、Q、H，分别约可恢复 7%、15%、25%、30% 的污损",
+        "isCorrect": true,
+        "description": "正确。四档纠错 L/M/Q/H 对应约 7/15/25/30%，默认为 M。"
+      },
+      {
+        "text": "A、B、C、D 四档",
+        "isCorrect": false,
+        "description": "错误。纠错级别命名是 L/M/Q/H，不是 A/B/C/D。"
+      },
+      {
+        "text": "只有 Low 和 High 两档",
+        "isCorrect": false,
+        "description": "错误。共四档 L/M/Q/H。"
+      },
+      {
+        "text": "1、2、3、4 四个数字级别",
+        "isCorrect": false,
+        "description": "错误。用字母 L/M/Q/H 表示，非数字。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：在 Node.js 里把二维码保存为一个 PNG 文件，应使用哪个方法？该方法在浏览器可用吗？",
+    "explanation": "QRCode.toFile(path, text, options?) 是 Node 专用方法，直接把二维码写成文件（按扩展名或 options.type 决定 png/svg/utf8）。浏览器没有文件系统，故此方法仅 Node 可用；浏览器保存图片应用 toDataURL/toCanvas 再配合下载。\n\n- 「toFile，仅 Node 可用」正确。\n- 「toFile 浏览器也能用」错误。\n- 「saveFile / writeQR」不是其方法。",
+    "tags": ["qrcode", "中级", "前端实用小库", "toFile", "Node"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "QRCode.toFile(path, text, options?) —— 仅 Node 可用（浏览器无文件系统）",
+        "isCorrect": true,
+        "description": "正确。toFile 写盘是 Node 专用；浏览器保存改用 toDataURL/toCanvas + 下载。"
+      },
+      {
+        "text": "QRCode.toFile(...) 在浏览器和 Node 都能写本地文件",
+        "isCorrect": false,
+        "description": "错误。浏览器无文件系统，toFile 仅限 Node。"
+      },
+      {
+        "text": "QRCode.saveFile(path, text)",
+        "isCorrect": false,
+        "description": "错误。方法名是 toFile，不是 saveFile。"
+      },
+      {
+        "text": "QRCode.writeQR(path, text)",
+        "isCorrect": false,
+        "description": "错误。不存在 writeQR，写文件用 toFile。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：要生成一段 SVG 字符串形式的二维码（不依赖 DOM/canvas），应怎么调用？",
+    "explanation": "QRCode.toString(text, { type: 'svg' }) 返回 SVG 字符串。toString 的 type 还支持 'utf8'（默认，用字符块拼出二维码，适合终端）和 'terminal'。这条路不依赖 canvas/DOM，服务端渲染很方便。\n\n- toString(text, { type: 'svg' }) 正确。\n- toSVG(text) 不是其方法。\n- toString(text, { format: 'svg' }) 错误：键是 type。\n- toCanvas 产的是 canvas 不是 SVG 串。",
+    "tags": ["qrcode", "高级", "前端实用小库", "toString", "SVG"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "QRCode.toString(text, { type: 'svg' }) —— 返回 SVG 字符串",
+        "isCorrect": true,
+        "description": "正确。toString 的 type 可选 svg/utf8/terminal，svg 直出矢量串。"
+      },
+      {
+        "text": "QRCode.toSVG(text)",
+        "isCorrect": false,
+        "description": "错误。没有 toSVG，SVG 串用 toString({type:'svg'})。"
+      },
+      {
+        "text": "QRCode.toString(text, { format: 'svg' })",
+        "isCorrect": false,
+        "description": "错误。选项键是 type 不是 format。"
+      },
+      {
+        "text": "QRCode.toCanvas(text, { type: 'svg' })",
+        "isCorrect": false,
+        "description": "错误。toCanvas 产 canvas，要 SVG 字符串用 toString。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：下列哪个渲染选项可以「直接指定二维码图片的总宽度（像素）」，并会覆盖 scale？",
+    "explanation": "width 选项直接指定输出图片的宽度（像素），它会覆盖 scale（每个模块的像素数）。当只设 scale 时，最终尺寸由模块数×scale 决定；设了 width 则强制总宽。margin 控制四周静默区宽度。\n\n- width 正确。\n- scale 是每模块像素，不直接定总宽且会被 width 覆盖。\n- margin 是边距。\n- size 不是 qrcode 的选项名。",
+    "tags": ["qrcode", "高级", "前端实用小库", "options", "width"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "width —— 指定总宽度（像素），并覆盖 scale",
+        "isCorrect": true,
+        "description": "正确。width 强制总宽并优先于 scale；scale 是每个模块的像素数。"
+      },
+      {
+        "text": "scale —— 它就是总宽度",
+        "isCorrect": false,
+        "description": "错误。scale 是每个模块的像素数，会被 width 覆盖。"
+      },
+      {
+        "text": "margin —— 指定总宽度",
+        "isCorrect": false,
+        "description": "错误。margin 是四周静默区宽度，不是总宽。"
+      },
+      {
+        "text": "size —— 指定总宽度",
+        "isCorrect": false,
+        "description": "错误。qrcode 没有 size 选项，总宽用 width。"
+      }
+    ]
+  },
+  {
+    "stem": "qrcode：关于 qrcode 的 API 调用风格，下列说法正确的是？",
+    "explanation": "qrcode 的渲染方法（toCanvas/toDataURL/toString/toFile 等）同时支持「回调」与「Promise」两套风格：传 callback 即回调式；不传 callback 则返回 Promise，可 await。这让它在新旧代码里都好用。\n\n- 「回调与 Promise 两套都支持」正确。\n- 「只支持回调」「只支持 Promise」均不全面。\n- 「只能用 async/await，不支持回调」错误。",
+    "tags": ["qrcode", "中级", "前端实用小库", "API风格", "Promise"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同时支持回调式（传 callback）与 Promise 式（不传 callback 则返回 Promise）",
+        "isCorrect": true,
+        "description": "正确。qrcode 的方法两套风格皆可，按是否传 callback 切换。"
+      },
+      {
+        "text": "只支持回调，不支持 Promise",
+        "isCorrect": false,
+        "description": "错误。不传 callback 时返回 Promise，可 await。"
+      },
+      {
+        "text": "只支持 Promise，完全没有回调形式",
+        "isCorrect": false,
+        "description": "错误。它保留了传统回调形式。"
+      },
+      {
+        "text": "只支持同步返回，不涉及异步",
+        "isCorrect": false,
+        "description": "错误。渲染是异步的，提供回调/Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：chroma.js 这个库主要解决什么问题？",
+    "explanation": "chroma.js 是一个小巧的颜色处理库：构造/解析颜色、在 RGB/HSL/Lab/LCH/hex 等色彩空间之间转换、调整明度饱和度透明度、混合（mix/blend）、构建色阶（scale）做数据可视化配色，并能算 WCAG 对比度。\n\n- 「颜色解析/转换/混合/色阶/对比度」正确。\n- 「图表绘制库」错误：chroma 只管颜色，不画图。\n- 「CSS 预处理器」「图片滤镜」非其职责。",
+    "tags": ["chroma.js", "入门", "前端实用小库", "颜色", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "颜色处理：解析/转换色彩空间、调整明度饱和度/透明度、混合、构建色阶、计算 WCAG 对比度",
+        "isCorrect": true,
+        "description": "正确。chroma.js 是数据可视化配色与颜色运算的利器。"
+      },
+      {
+        "text": "绘制柱状图、折线图等图表",
+        "isCorrect": false,
+        "description": "错误。画图是 D3/ECharts 的事，chroma 只处理颜色本身。"
+      },
+      {
+        "text": "把 SCSS 编译成 CSS",
+        "isCorrect": false,
+        "description": "错误。chroma 不是 CSS 预处理器。"
+      },
+      {
+        "text": "给图片加滤镜特效",
+        "isCorrect": false,
+        "description": "错误。图片处理与 chroma 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：把十六进制颜色 '#ff0000' 转成 HSL 数组，下列哪种写法是 chroma.js 的惯用法？",
+    "explanation": "chroma(color) 构造一个颜色对象，再链式调用目标空间方法取值：chroma('#ff0000').hsl() 返回 HSL 数组 [h, s, l]。类似地 .rgb()、.lab()、.lch()、.hex()、.css() 各取不同表示。\n\n- chroma('#ff0000').hsl() 正确。\n- chroma.toHSL('#ff0000') 不是其 API。\n- chroma.convert(...) 不存在。\n- '#ff0000'.hsl() 错误：字符串没有该方法。",
+    "tags": ["chroma.js", "初级", "前端实用小库", "转换", "hsl"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "chroma('#ff0000').hsl()",
+        "isCorrect": true,
+        "description": "正确。先 chroma() 构造，再链式 .hsl() 取 HSL 数组；.rgb()/.lab() 等同理。"
+      },
+      {
+        "text": "chroma.toHSL('#ff0000')",
+        "isCorrect": false,
+        "description": "错误。转换是实例链式方法 .hsl()，不是静态 toHSL。"
+      },
+      {
+        "text": "chroma.convert('#ff0000', 'hsl')",
+        "isCorrect": false,
+        "description": "错误。没有 convert 方法。"
+      },
+      {
+        "text": "'#ff0000'.hsl()",
+        "isCorrect": false,
+        "description": "错误。字符串没有 hsl 方法，需先用 chroma() 包装。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：要在两个颜色之间「取中点混合色」，应使用哪个 API？",
+    "explanation": "chroma.mix(color1, color2, ratio?, mode?) 在两色间插值，ratio 默认 0.5（中点），mode 指定插值色彩空间。例如 chroma.mix('red', 'blue', 0.5, 'lab')。注意：chroma.mix/average 的默认插值 mode 是 'lrgb'（线性 RGB），而 chroma.scale 的默认是 'rgb'。\n\n- chroma.mix('red','blue',0.5) 正确。\n- chroma.blend 是「正片叠底」等混合模式，语义不同。\n- chroma.average 是对一组颜色求平均。\n- chroma.merge 不存在。",
+    "tags": ["chroma.js", "中级", "前端实用小库", "mix", "插值"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "chroma.mix(color1, color2, 0.5, mode?) —— ratio 默认 0.5 即中点，mode 指定插值空间",
+        "isCorrect": true,
+        "description": "正确。mix 在两色间插值，ratio 默认 0.5；mix/average 默认 mode 为 lrgb。"
+      },
+      {
+        "text": "chroma.blend(color1, color2)",
+        "isCorrect": false,
+        "description": "错误。blend 是 multiply/screen 等图层混合模式，不是线性插值取中点。"
+      },
+      {
+        "text": "chroma.average(color1, color2)",
+        "isCorrect": false,
+        "description": "错误。average 用于对一组颜色求平均，取两色中点更直接用 mix。"
+      },
+      {
+        "text": "chroma.merge(color1, color2)",
+        "isCorrect": false,
+        "description": "错误。不存在 merge 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：构建一个从白到红的连续色阶并取其中 50% 处颜色，下列哪种写法正确？",
+    "explanation": "chroma.scale([colors]) 返回一个「色阶函数」，传入 0~1 的数得到对应插值色：chroma.scale(['white','red'])(0.5) 得到中间色。再 .hex() 取十六进制。scale 还支持 .colors(n) 一次取 n 个、.mode()、.domain()、.classes()。scale 默认插值 mode 为 rgb。\n\n- chroma.scale(['white','red'])(0.5).hex() 正确。\n- chroma.gradient(...) 不存在。\n- scale.at(0.5) 不是其 API。\n- chroma(['white','red']) 错误：scale 才接收数组造色阶。",
+    "tags": ["chroma.js", "中级", "前端实用小库", "scale", "色阶"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "chroma.scale(['white', 'red'])(0.5).hex()",
+        "isCorrect": true,
+        "description": "正确。scale 返回色阶函数，传 0~1 取插值色，再 .hex() 取值；默认插值 mode 为 rgb。"
+      },
+      {
+        "text": "chroma.gradient(['white', 'red']).at(0.5)",
+        "isCorrect": false,
+        "description": "错误。没有 gradient/at，构建色阶用 chroma.scale。"
+      },
+      {
+        "text": "chroma(['white', 'red']).mix(0.5)",
+        "isCorrect": false,
+        "description": "错误。chroma() 接收单个颜色；色阶用 chroma.scale 接收数组。"
+      },
+      {
+        "text": "chroma.scale(['white', 'red']).get(0.5)",
+        "isCorrect": false,
+        "description": "错误。取色直接以函数调用 scale(0.5)，无 get 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：色阶上 scale().domain([0, 100]) 与 scale().classes(5) 分别表示什么？",
+    "explanation": "domain([min, max]) 设置色阶的「输入数值范围」——把数据域映射到 0~1 的色阶（如 domain([0,100]) 则 scale(0) 对应起色、scale(100) 对应末色，连续渐变）。classes(n) 则把连续色阶切成 n 个离散的分级颜色（阶梯/分桶），常用于分级地图/分档图例。\n\n- 「domain 设输入数值范围（连续映射）；classes 切成 n 个离散色阶」正确。\n- 把两者职责对调或混为一谈的选项错误。",
+    "tags": ["chroma.js", "高级", "前端实用小库", "domain", "classes"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "domain([0,100]) 设定输入数据的数值范围做连续映射；classes(5) 把色阶切成 5 个离散分级色（阶梯）",
+        "isCorrect": true,
+        "description": "正确。domain 管输入域→连续渐变，classes 管离散分桶，二者职责不同。"
+      },
+      {
+        "text": "domain 把色阶切成离散段；classes 设定输入范围",
+        "isCorrect": false,
+        "description": "错误。两者职责被对调了：domain 设范围、classes 才离散化。"
+      },
+      {
+        "text": "两者完全等价，只是别名",
+        "isCorrect": false,
+        "description": "错误。一个是连续输入映射、一个是离散分级，不等价。"
+      },
+      {
+        "text": "domain 设颜色透明度；classes 设饱和度",
+        "isCorrect": false,
+        "description": "错误。它们都作用于色阶映射，与透明度/饱和度无关。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：要计算两个颜色的 WCAG 对比度（判断文字是否清晰可读），应使用哪个 API？返回值大致范围是？",
+    "explanation": "chroma.contrast(color1, color2) 返回 WCAG 对比度比值，范围约 1（无对比）到 21（黑白最大对比）。WCAG 推荐正文文字与背景至少 4.5:1。它常用于无障碍配色检查。\n\n- 「chroma.contrast，约 1~21」正确。\n- 「chroma.diff，0~1」错误（那更像 deltaE 的语义且范围不对）。\n- 「chroma.luminance 算对比度」错误：luminance 是单色亮度。\n- 「contrast 返回布尔」错误。",
+    "tags": ["chroma.js", "高级", "前端实用小库", "contrast", "WCAG"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "chroma.contrast(c1, c2)，返回约 1~21 的 WCAG 对比度比值（正文建议 ≥ 4.5）",
+        "isCorrect": true,
+        "description": "正确。contrast 给出 WCAG 对比度，1 到 21，用于无障碍可读性判断。"
+      },
+      {
+        "text": "chroma.luminance(c1, c2)，返回对比度",
+        "isCorrect": false,
+        "description": "错误。luminance 是单个颜色的相对亮度，不接收两色算对比。"
+      },
+      {
+        "text": "chroma.diff(c1, c2)，返回 0~1 的对比度",
+        "isCorrect": false,
+        "description": "错误。WCAG 对比度用 contrast，范围 1~21，不是 0~1。"
+      },
+      {
+        "text": "chroma.contrast(c1, c2) 返回 true/false 表示是否达标",
+        "isCorrect": false,
+        "description": "错误。contrast 返回的是数值比值，达标与否需自行与阈值比较。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：chroma.brewer 提供的是什么？",
+    "explanation": "chroma.brewer 内置了 ColorBrewer 的一整套科学配色方案（如 'OrRd'、'Spectral'、'RdBu'、'Set1' 等），可直接 chroma.brewer.OrRd 取色组，或 chroma.scale('OrRd') 当作色阶用——是数据可视化里经过验证的成熟调色板。\n\n- 「ColorBrewer 调色板集合」正确。\n- 「随机颜色生成器」错误。\n- 「品牌主题色管理」错误。\n- 「图片取色」错误。",
+    "tags": ["chroma.js", "中级", "前端实用小库", "brewer", "调色板"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一组内置的 ColorBrewer 科学配色方案（如 OrRd、Spectral、RdBu），可直接当色阶用",
+        "isCorrect": true,
+        "description": "正确。chroma.brewer 收录 ColorBrewer 调色板，数据可视化常用。"
+      },
+      {
+        "text": "一个随机颜色生成器",
+        "isCorrect": false,
+        "description": "错误。brewer 是预定义调色板，不是随机生成。"
+      },
+      {
+        "text": "管理项目品牌主题色的工具",
+        "isCorrect": false,
+        "description": "错误。它是通用配色方案集合，不针对品牌色管理。"
+      },
+      {
+        "text": "从图片中提取主色调",
+        "isCorrect": false,
+        "description": "错误。brewer 与图片取色无关。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：要把一个颜色调暗一点并取出十六进制，下列链式调用正确的是？",
+    "explanation": "chroma 提供 .darken([amount]) 调暗、.brighten() 调亮、.saturate()/.desaturate() 调饱和度，均返回新的 chroma 对象，可继续链式 .hex()。例如 chroma('#D4F880').darken().hex()。amount 单位约为 Lab 的 1 个步进。\n\n- chroma('#D4F880').darken().hex() 正确。\n- .dark() / .makeDarker() 不是其方法。\n- chroma.darken('#...') 静态形式非惯用（darken 是实例方法）。",
+    "tags": ["chroma.js", "初级", "前端实用小库", "darken", "链式"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "chroma('#D4F880').darken().hex()",
+        "isCorrect": true,
+        "description": "正确。darken 返回新 chroma 对象，链式 .hex() 取值；brighten/saturate 同理。"
+      },
+      {
+        "text": "chroma('#D4F880').dark().hex()",
+        "isCorrect": false,
+        "description": "错误。方法名是 darken，不是 dark。"
+      },
+      {
+        "text": "chroma('#D4F880').makeDarker().toHex()",
+        "isCorrect": false,
+        "description": "错误。无 makeDarker/toHex，应是 darken().hex()。"
+      },
+      {
+        "text": "chroma.darker('#D4F880')",
+        "isCorrect": false,
+        "description": "错误。darken 是实例链式方法，且名字不是 darker。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：关于 chroma.mix 与 chroma.scale 的默认插值色彩空间（mode），下列说法正确的是？",
+    "explanation": "二者默认不同：chroma.mix（和 chroma.average）默认 mode 为 'lrgb'（线性 RGB，避免暗带）；chroma.scale 默认 mode 为 'rgb'。两者都可用 .mode()/mode 参数改成 'lab'、'lch'、'hsl' 等以获得更均匀的过渡。\n\n- 「mix 默认 lrgb、scale 默认 rgb」正确（官方文档与本次核实一致）。\n- 「都默认 lab」「都默认 hsl」「mix 默认 rgb、scale 默认 lab」均不符。",
+    "tags": ["chroma.js", "专家", "前端实用小库", "mode", "插值空间"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "chroma.mix/average 默认 mode 为 lrgb（线性 RGB），而 chroma.scale 默认 mode 为 rgb",
+        "isCorrect": true,
+        "description": "正确。官方文档明确二者默认不同：mix/average 为 lrgb，scale 为 rgb。"
+      },
+      {
+        "text": "两者都默认在 lab 空间插值",
+        "isCorrect": false,
+        "description": "错误。默认并非 lab；lab 需手动指定。"
+      },
+      {
+        "text": "两者都默认在 hsl 空间插值",
+        "isCorrect": false,
+        "description": "错误。默认不是 hsl。"
+      },
+      {
+        "text": "chroma.mix 默认 rgb，chroma.scale 默认 lab",
+        "isCorrect": false,
+        "description": "错误。恰好说反：mix 默认 lrgb，scale 默认 rgb。"
+      }
+    ]
+  },
+  {
+    "stem": "chroma.js：调整一个颜色的透明度（alpha 通道），应使用哪个方法？",
+    "explanation": "chroma(color).alpha(value) 设置透明度（0~1），返回带 alpha 的新颜色，再 .css() 可得 rgba(...)。不传参数 .alpha() 则是读取当前 alpha。\n\n- chroma('red').alpha(0.5) 正确。\n- .opacity(0.5) 不是其方法。\n- .setAlpha(...) 不是其方法。\n- .fade(...) 是 less/其他库的命名。",
+    "tags": ["chroma.js", "初级", "前端实用小库", "alpha", "透明度"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "chroma('red').alpha(0.5) —— 设 alpha 为 0.5，再 .css() 得 rgba",
+        "isCorrect": true,
+        "description": "正确。alpha(value) 设置透明度并返回新颜色，无参时读取当前 alpha。"
+      },
+      {
+        "text": "chroma('red').opacity(0.5)",
+        "isCorrect": false,
+        "description": "错误。方法名是 alpha，不是 opacity。"
+      },
+      {
+        "text": "chroma('red').setAlpha(0.5)",
+        "isCorrect": false,
+        "description": "错误。无 setAlpha，直接用 alpha(value)。"
+      },
+      {
+        "text": "chroma('red').fade(0.5)",
+        "isCorrect": false,
+        "description": "错误。fade 是 Less 等的语法，chroma 用 alpha。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：marked 这个库做什么用？",
+    "explanation": "marked 是一个快速、轻量的 Markdown 解析与编译器，把 Markdown 文本转换成 HTML 字符串。核心 API 是 marked.parse(md) 或 marked(md)。它以「快、简」著称，常用于评论、文档、富文本展示等场景。\n\n- 「Markdown → HTML」正确。\n- 「HTML → Markdown」错误（那是 turndown）。\n- 「模板引擎」「CSS 框架」非其职责。",
+    "tags": ["marked", "入门", "前端实用小库", "Markdown", "定位"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把 Markdown 文本快速编译成 HTML 字符串",
+        "isCorrect": true,
+        "description": "正确。marked 是以快、简著称的 Markdown→HTML 解析器，核心是 parse/marked()。"
+      },
+      {
+        "text": "把 HTML 反向转换成 Markdown",
+        "isCorrect": false,
+        "description": "错误。HTML→Markdown 是 turndown 的活儿，marked 是正向。"
+      },
+      {
+        "text": "一个 HTML 模板引擎（类似 Handlebars）",
+        "isCorrect": false,
+        "description": "错误。marked 解析 Markdown，不是模板引擎。"
+      },
+      {
+        "text": "一套 CSS 样式框架",
+        "isCorrect": false,
+        "description": "错误。marked 与样式框架无关。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：把一段 Markdown 字符串转成 HTML，最直接的调用是？",
+    "explanation": "marked.parse(markdownString) 返回 HTML 字符串；marked(markdownString) 是等价的简写。默认同步返回 string。\n\n- marked.parse(md) / marked(md) 正确。\n- marked.toHTML(md) 不是其 API。\n- marked.render(md) 不是顶层 API（render 是 renderer 内部概念）。\n- marked.compile(md) 不存在。",
+    "tags": ["marked", "初级", "前端实用小库", "parse", "用法"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "marked.parse(md)（或等价简写 marked(md)）",
+        "isCorrect": true,
+        "description": "正确。parse 返回 HTML 字符串，marked(md) 是其简写，默认同步。"
+      },
+      {
+        "text": "marked.toHTML(md)",
+        "isCorrect": false,
+        "description": "错误。没有 toHTML，转换用 parse 或 marked()。"
+      },
+      {
+        "text": "marked.render(md)",
+        "isCorrect": false,
+        "description": "错误。render 是 renderer 内部方法，顶层入口是 parse/marked()。"
+      },
+      {
+        "text": "marked.compile(md)",
+        "isCorrect": false,
+        "description": "错误。不存在 compile，正确是 parse。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：关于 marked 输出的安全性，下列哪一项是最关键、最容易考到的事实？",
+    "explanation": "marked 默认「不」对输出 HTML 做净化（sanitize），它会原样输出 Markdown 中内嵌的 HTML。如果直接把用户输入喂给 marked 再 innerHTML，存在 XSS 风险。官方明确：要防 XSS，必须自行用 DOMPurify（或 sanitize-html 等）对 marked 的输出做净化。早期的 sanitize/sanitizer 选项已被移除。\n\n- 「默认不净化，需配合 DOMPurify 防 XSS」正确。\n- 「默认会自动过滤所有危险 HTML」错误。\n- 「内置 sanitize 选项即可」错误：该选项已移除。",
+    "tags": ["marked", "高级", "前端实用小库", "XSS", "安全"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "marked 默认不净化 HTML，会原样输出内嵌 HTML；要防 XSS 必须自行用 DOMPurify 等净化输出",
+        "isCorrect": true,
+        "description": "正确。这是高频安全考点：marked 不负责 sanitize，旧 sanitize 选项已移除，需 DOMPurify 兜底。"
+      },
+      {
+        "text": "marked 默认会自动过滤所有危险 HTML，无需额外处理",
+        "isCorrect": false,
+        "description": "错误。marked 默认不净化，直接渲染用户输入会有 XSS 风险。"
+      },
+      {
+        "text": "只要打开内置的 sanitize: true 选项就安全了",
+        "isCorrect": false,
+        "description": "错误。sanitize/sanitizer 选项已在新版被移除，应改用 DOMPurify。"
+      },
+      {
+        "text": "marked 会自动调用浏览器的 CSP 来防注入",
+        "isCorrect": false,
+        "description": "错误。marked 不涉及 CSP，净化需外部库显式处理。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：把单个换行符渲染成 <br>（像聊天软件那样「软换行即断行」），应设置哪个选项？",
+    "explanation": "breaks 选项（默认 false）控制是否把 Markdown 中的单个换行转成 <br>。开启 marked.parse(md, { breaks: true }) 后，单行换行即换行显示。gfm 选项（默认 true）启用 GitHub Flavored Markdown（表格、删除线等）。\n\n- breaks: true 正确。\n- gfm 是 GFM 总开关，不专管软换行。\n- pedantic 是严格遵循原始 markdown.pl。\n- smartLists 不是当前换行相关选项。",
+    "tags": ["marked", "中级", "前端实用小库", "breaks", "选项"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "breaks: true",
+        "isCorrect": true,
+        "description": "正确。breaks（默认 false）把单个换行渲染为 <br>。"
+      },
+      {
+        "text": "gfm: true",
+        "isCorrect": false,
+        "description": "错误。gfm 是 GitHub Flavored Markdown 总开关（默认已 true），不专管软换行。"
+      },
+      {
+        "text": "pedantic: true",
+        "isCorrect": false,
+        "description": "错误。pedantic 让 marked 严格遵循原始 markdown.pl，与软换行无关。"
+      },
+      {
+        "text": "smartBreaks: true",
+        "isCorrect": false,
+        "description": "错误。没有 smartBreaks 选项，软换行用 breaks。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：选项 gfm 默认值是什么？它代表什么？",
+    "explanation": "gfm 默认为 true，表示启用 GitHub Flavored Markdown 规范（在原始 Markdown 上增加表格、删除线 ~~x~~、任务列表、自动链接等扩展）。多数现代场景都希望保持开启。\n\n- 「默认 true，启用 GFM」正确。\n- 「默认 false」错误。\n- 「控制是否净化」错误（那是已移除的 sanitize）。\n- 「控制异步」错误（那是 async）。",
+    "tags": ["marked", "中级", "前端实用小库", "gfm", "选项"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 true，启用 GitHub Flavored Markdown（表格、删除线、任务列表等扩展）",
+        "isCorrect": true,
+        "description": "正确。gfm 默认开启，提供 GFM 扩展语法支持。"
+      },
+      {
+        "text": "默认 false，需手动开启才支持基础 Markdown",
+        "isCorrect": false,
+        "description": "错误。gfm 默认就是 true。"
+      },
+      {
+        "text": "它控制是否净化危险 HTML",
+        "isCorrect": false,
+        "description": "错误。净化曾由已移除的 sanitize 控制，与 gfm 无关。"
+      },
+      {
+        "text": "它控制 parse 是否异步返回 Promise",
+        "isCorrect": false,
+        "description": "错误。异步由 async 选项控制，不是 gfm。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：要自定义渲染（例如给所有 <a> 链接加 target=\"_blank\"，或改代码块渲染），官方推荐的扩展入口是？",
+    "explanation": "marked.use({ renderer: { ... } }) 是注册自定义渲染器/扩展/选项的统一入口；自 v5 起，renderer 的各方法接收一个 token 对象作为参数（而非以前的多个独立参数）。也可通过 marked.use({ extensions: [...] }) 注册自定义 tokenizer/renderer 扩展。\n\n- marked.use({ renderer }) 正确。\n- new marked.Renderer() 后直接挂载在旧版可用，但当前统一走 marked.use。\n- marked.setRenderer(...) / marked.config(...) 不是当前 API。",
+    "tags": ["marked", "高级", "前端实用小库", "use", "renderer"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "marked.use({ renderer: { ... } })（v5+ renderer 方法接收 token 对象），扩展也走 marked.use({ extensions: [...] })",
+        "isCorrect": true,
+        "description": "正确。marked.use 是注册渲染器/扩展/选项的统一入口，新版 renderer 收 token 对象。"
+      },
+      {
+        "text": "marked.setRenderer(rendererFn)",
+        "isCorrect": false,
+        "description": "错误。没有 setRenderer，自定义渲染走 marked.use({ renderer })。"
+      },
+      {
+        "text": "marked.config({ renderer })",
+        "isCorrect": false,
+        "description": "错误。配置入口是 marked.use，不是 config。"
+      },
+      {
+        "text": "直接修改 marked.defaults.renderer 是唯一办法",
+        "isCorrect": false,
+        "description": "错误。官方推荐 marked.use，不是直接改内部 defaults。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：默认情况下 marked.parse(md) 是同步返回还是异步返回？什么时候会变成返回 Promise？",
+    "explanation": "默认 marked.parse(md) 同步返回 HTML 字符串。只有当设置 async: true（通常配合异步的 walkTokens 或异步扩展）时，parse 才返回 Promise<string>，需要 await。\n\n- 「默认同步返回字符串；async:true 时返回 Promise」正确。\n- 「永远返回 Promise」错误。\n- 「永远同步、无法异步」错误。\n- 「取决于输入长度」错误。",
+    "tags": ["marked", "高级", "前端实用小库", "async", "返回值"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认同步返回 HTML 字符串；设置 async: true 时才返回 Promise<string>",
+        "isCorrect": true,
+        "description": "正确。async 选项（常配合异步 walkTokens/扩展）会让 parse 变为返回 Promise。"
+      },
+      {
+        "text": "marked.parse 永远返回 Promise，必须 await",
+        "isCorrect": false,
+        "description": "错误。默认是同步返回字符串。"
+      },
+      {
+        "text": "marked.parse 永远同步，无法异步处理",
+        "isCorrect": false,
+        "description": "错误。开启 async 即可异步。"
+      },
+      {
+        "text": "返回类型取决于 Markdown 文本的长度",
+        "isCorrect": false,
+        "description": "错误。返回是否为 Promise 由 async 选项决定，与长度无关。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：在「快、简」与「插件生态」的取舍上，marked 与 markdown-it 的关系常被这样描述，哪项正确？",
+    "explanation": "通用共识：marked 更快、API 更简洁、体积小，适合「直接把 Markdown 渲染成 HTML」的场景；markdown-it 插件生态更丰富、可定制性强，适合需要大量语法扩展的场景。本站把 markdown-it 单列，此处只做对比、不展开。\n\n- 「marked 更快更简、markdown-it 插件生态更强」正确。\n- 「marked 比 markdown-it 插件更多」错误。\n- 「两者完全相同」错误。\n- 「marked 不能转 HTML」错误。",
+    "tags": ["marked", "中级", "前端实用小库", "markdown-it", "对比"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "marked 更快、更简洁；markdown-it 插件生态更丰富、可定制性更强",
+        "isCorrect": true,
+        "description": "正确。这是两者常见取舍：marked 主打快与简，markdown-it 主打可扩展。"
+      },
+      {
+        "text": "marked 的官方插件数量远多于 markdown-it",
+        "isCorrect": false,
+        "description": "错误。插件生态恰是 markdown-it 的强项。"
+      },
+      {
+        "text": "两者 API 与能力完全相同，可随意互换",
+        "isCorrect": false,
+        "description": "错误。定位与扩展机制不同，不能简单等同。"
+      },
+      {
+        "text": "marked 只能解析不能输出 HTML",
+        "isCorrect": false,
+        "description": "错误。marked 的本职就是输出 HTML。"
+      }
+    ]
+  },
+  {
+    "stem": "marked：把 marked 与 DOMPurify 一起用于「渲染用户提交的 Markdown」，正确的顺序是什么？",
+    "explanation": "正确顺序：先用 marked 把 Markdown 转成 HTML 字符串，再用 DOMPurify.sanitize(html) 净化，最后才把净化后的结果放入 DOM（innerHTML）。即 marked 负责「转」，DOMPurify 负责「清洗」，清洗必须在插入 DOM 之前。\n\n- 「marked 转 HTML → DOMPurify 净化 → 插入 DOM」正确。\n- 「先净化 Markdown 再 marked」顺序不当（DOMPurify 清的是 HTML）。\n- 「直接 innerHTML，不净化」有 XSS 风险。\n- 「只净化不转换」无法得到 HTML。",
+    "tags": ["marked", "专家", "前端实用小库", "DOMPurify", "XSS"],
+    "categories": [
+      ["技术方向", "前端实用小库"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "marked.parse(md) 得到 HTML → DOMPurify.sanitize(html) 净化 → 再写入 innerHTML",
+        "isCorrect": true,
+        "description": "正确。先转再清洗，且必须在插入 DOM 前 sanitize，杜绝 XSS。"
+      },
+      {
+        "text": "先 DOMPurify.sanitize(md) 净化 Markdown，再交给 marked",
+        "isCorrect": false,
+        "description": "错误。DOMPurify 清洗的是 HTML，应在 marked 转换之后做。"
+      },
+      {
+        "text": "直接 element.innerHTML = marked.parse(md)，无需净化",
+        "isCorrect": false,
+        "description": "错误。跳过净化会留下 XSS 漏洞，用户内容必须 sanitize。"
+      },
+      {
+        "text": "只用 DOMPurify，不用 marked",
+        "isCorrect": false,
+        "description": "错误。不经 marked 就没有 Markdown→HTML 的转换。"
+      }
+    ]
+  }
+]
