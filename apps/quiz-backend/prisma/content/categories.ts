@@ -189,7 +189,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Fuse.js", sort: 21 },
               { name: "前端实用小库", sort: 22 },
               { name: "i18next", sort: 23 },
-              { name: "crypto.js", sort: 24 },
+              { name: "crypto-js", sort: 24 },
             ],
           },
         ],
