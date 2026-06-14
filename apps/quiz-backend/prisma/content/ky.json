@@ -1,0 +1,1924 @@
+[
+  {
+    "stem": "ky：ky 在一句话定位上，最准确的描述是什么？",
+    "explanation": "ky 由 sindresorhus 出品，官方定义为「a tiny and elegant HTTP client based on the Fetch API」——它是对浏览器原生 fetch 的一层极简封装，并非另起炉灶的网络栈。它在 fetch 之上补齐了方法快捷方式、非 2xx 自动抛错、重试、超时、hooks 等能力，且零依赖、体积极小。\n\n- 「基于 Fetch API 的极简 HTTP 客户端」正确。\n- 「基于 XMLHttpRequest 封装」错误：那是 axios 在浏览器端的底层，ky 用的是 fetch。\n- 「Node.js 专用的 http 模块封装」错误：ky 浏览器优先，底层是标准 fetch。\n- 「一个完整独立的网络协议实现」错误：它复用宿主环境的 fetch，不自带协议栈。",
+    "tags": ["ky", "入门", "定位", "Fetch", "核心概念"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "基于 Fetch API 的轻量、优雅的 HTTP 客户端，是对原生 fetch 的极简封装",
+        "isCorrect": true,
+        "description": "正确。官方原文即「a tiny and elegant HTTP client based on the Fetch API」，零依赖。"
+      },
+      {
+        "text": "基于 XMLHttpRequest 封装的请求库",
+        "isCorrect": false,
+        "description": "错误。基于 XHR 的是 axios 的浏览器实现；ky 底层是标准 fetch。"
+      },
+      {
+        "text": "Node.js 专用、封装内置 http 模块的服务端请求库",
+        "isCorrect": false,
+        "description": "错误。ky 浏览器优先，复用宿主环境的 fetch，也支持现代 Node/Bun/Deno。"
+      },
+      {
+        "text": "一个自带完整网络协议栈的独立实现",
+        "isCorrect": false,
+        "description": "错误。ky 复用宿主 fetch，本身不实现协议栈，因此体积极小。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要发一个最简单的 GET 请求并把响应体按 JSON 解析，最符合 ky 风格的写法是哪个？",
+    "explanation": "ky 在返回的 Response 上挂了便捷方法，可以链式调用 `.json()`。所以典型写法是 `await ky.get(url).json()`——`ky.get(url)` 返回一个带有 `.json()/.text()/...` 的 ResponsePromise，再 `.json()` 直接拿到解析后的数据。不需要像原生 fetch 那样先 `await fetch()` 再 `await res.json()` 两段。\n\n- `await ky.get(url).json()` 正确。\n- `ky.get(url).then(r => r.body)` 错误：body 是流，不是解析结果。\n- `await ky.get(url).data` 错误：ky 没有 axios 那样的 `.data` 属性。\n- `JSON.parse(await ky.get(url))` 错误：ky 返回的是 Response/ResponsePromise，不是字符串。",
+    "tags": ["ky", "入门", "json", "快捷方法", "基础用法"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "const data = await ky.get(url).json()",
+        "isCorrect": true,
+        "description": "正确。ky.get(url) 返回带 .json() 的 ResponsePromise，可一步链式拿到解析结果。"
+      },
+      {
+        "text": "const data = await ky.get(url).then(r => r.body)",
+        "isCorrect": false,
+        "description": "错误。r.body 是 ReadableStream，不是解析后的数据。"
+      },
+      {
+        "text": "const data = await ky.get(url).data",
+        "isCorrect": false,
+        "description": "错误。ky 不像 axios 提供 .data；要用 .json() 等响应体方法。"
+      },
+      {
+        "text": "const data = JSON.parse(await ky.get(url))",
+        "isCorrect": false,
+        "description": "错误。ky.get(url) resolve 的是 Response，不是 JSON 字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：相比原生 fetch，ky「开箱即用」补齐的能力中，下面哪一项是 ky 有、而原生 fetch 默认没有的？",
+    "explanation": "ky 在 fetch 之上加了一批工程化默认能力：方法快捷方式（ky.post()）、非 2xx 自动抛 HTTPError、失败自动重试、超时、上传/下载进度、prefix/baseUrl、自定义实例、hooks、Standard Schema 校验等。原生 fetch 这些都没有——尤其「非 2xx 视为错误」「自动重试」是最常被强调的差异。\n\n- 「失败请求自动重试」正确，fetch 不会重试。\n- 「内置 Cookie 自动持久化」错误：那由浏览器/环境管理，不是 ky 特性。\n- 「自动 XSRF token 注入」错误：那是 axios 的内置行为，ky 无此默认。\n- 「自动把响应缓存到 localStorage」错误：ky 没有这种行为。",
+    "tags": ["ky", "入门", "对比", "fetch", "重试"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "对失败请求自动重试（默认会重试）",
+        "isCorrect": true,
+        "description": "正确。ky 默认对可重试方法重试 2 次；原生 fetch 不重试。"
+      },
+      {
+        "text": "内置 Cookie 自动持久化",
+        "isCorrect": false,
+        "description": "错误。Cookie 由浏览器/运行时管理，不是 ky 提供的能力。"
+      },
+      {
+        "text": "自动注入 XSRF/CSRF token",
+        "isCorrect": false,
+        "description": "错误。自动 XSRF 是 axios 的内置约定，ky 不做这件事。"
+      },
+      {
+        "text": "自动把响应缓存到 localStorage",
+        "isCorrect": false,
+        "description": "错误。ky 不会自动缓存响应到本地存储。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认情况下，当服务器返回 404 这类非 2xx 状态码时，`await ky.get(url)` 会发生什么？",
+    "explanation": "这是 ky 与原生 fetch 最关键的差异之一：ky 默认 `throwHttpErrors: true`，当（跟随重定向后）响应状态码非 2xx 时，会抛出 `HTTPError`。而原生 fetch 对 404/500 仍然 resolve（`res.ok` 为 false 但不抛），需要你手动判断。所以用 ky 时 404 会进入 catch 分支。\n\n- 「抛出 HTTPError」正确。\n- 「正常 resolve，需手动查 res.ok」是 fetch 的行为，不是 ky 默认。\n- 「返回 null」错误。\n- 「自动重定向到错误页」错误。",
+    "tags": ["ky", "初级", "HTTPError", "throwHttpErrors", "错误处理"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "抛出 HTTPError（进入 catch / 被 reject）",
+        "isCorrect": true,
+        "description": "正确。ky 默认 throwHttpErrors=true，非 2xx 抛 HTTPError。"
+      },
+      {
+        "text": "正常 resolve，需要自己检查 res.ok",
+        "isCorrect": false,
+        "description": "错误。那是原生 fetch 的行为；ky 默认会替你抛错。"
+      },
+      {
+        "text": "返回 null 表示失败",
+        "isCorrect": false,
+        "description": "错误。ky 用抛异常表达失败，不返回 null。"
+      },
+      {
+        "text": "自动跳转到浏览器错误页",
+        "isCorrect": false,
+        "description": "错误。ky 不会做页面跳转，只是抛出 HTTPError。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要发送一个 JSON 请求体（POST），ky 推荐用哪个选项，它会自动做什么？",
+    "explanation": "ky 提供 `json` 选项作为发送 JSON 的快捷方式：传入对象后，ky 会用 `JSON.stringify()` 序列化为请求体，并自动设置 `Content-Type: application/json` 头。这样就不必手动 `JSON.stringify` 再设头。注意应使用 `json` 而非 `body`——同时手动设 body 反而绕过了这层便利。\n\n- 「用 json 选项，自动序列化 + 设 Content-Type」正确。\n- 「用 body 传对象，ky 会自动转」错误：body 走原生 fetch 语义，不会自动 JSON 化对象。\n- 「用 data 选项」错误：那是 axios 的字段名，ky 没有 data 选项。\n- 「用 payload 选项」错误：ky 没有 payload 选项。",
+    "tags": ["ky", "初级", "json", "POST", "选项"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 json 选项，ky 自动 JSON.stringify 并设置 Content-Type: application/json",
+        "isCorrect": true,
+        "description": "正确。json 是发送 JSON 的快捷方式，自动序列化并设头。"
+      },
+      {
+        "text": "用 body 选项直接传对象，ky 会自动转成 JSON",
+        "isCorrect": false,
+        "description": "错误。body 沿用原生 fetch 语义，传对象不会自动 JSON 化，应用 json 选项。"
+      },
+      {
+        "text": "用 data 选项（同 axios）",
+        "isCorrect": false,
+        "description": "错误。data 是 axios 的字段，ky 用的是 json 选项。"
+      },
+      {
+        "text": "用 payload 选项",
+        "isCorrect": false,
+        "description": "错误。ky 没有 payload 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：以下哪一项准确描述了 ky 的模块格式与导入方式？",
+    "explanation": "ky 是**纯 ESM 包（ESM-only）**：它的 package.json 里 `type: \"module\"`、`exports` 只暴露 ESM 入口。因此必须用 `import ky from 'ky'`，**不能用 `require('ky')`**。在 CommonJS 项目里要用 ky，只能用动态 `import()`（`const {default: ky} = await import('ky')`）或把项目改造为 ESM。这是 sindresorhus 全家桶的常见考点。\n\n- 「纯 ESM，用 import，不能 require」正确。\n- 「同时提供 CJS 和 ESM 双格式」错误：ky 早已移除 CJS 构建。\n- 「只能用 require」恰好相反。\n- 「需要 babel 才能 import」错误：现代环境原生支持 ESM。",
+    "tags": ["ky", "初级", "ESM", "模块", "导入"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "纯 ESM 包，必须用 import；CommonJS 下不能 require，只能用动态 import()",
+        "isCorrect": true,
+        "description": "正确。ky 是 ESM-only，package.json type=module，exports 只暴露 ESM。"
+      },
+      {
+        "text": "同时提供 CommonJS 和 ESM 双入口，require / import 都行",
+        "isCorrect": false,
+        "description": "错误。ky 已是纯 ESM，不再提供 CJS 构建。"
+      },
+      {
+        "text": "只能用 require('ky')，不支持 import",
+        "isCorrect": false,
+        "description": "错误。恰好相反，ky 只支持 import（ESM）。"
+      },
+      {
+        "text": "必须经 Babel 转译才能被 import",
+        "isCorrect": false,
+        "description": "错误。现代浏览器与 Node 22+ 原生支持 ESM，无需 Babel。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：ky 提供了哪些 HTTP 方法快捷方式？",
+    "explanation": "ky 暴露的方法快捷方式与常见 HTTP 动词一一对应：`ky.get / ky.post / ky.put / ky.patch / ky.head / ky.delete`（源码 requestMethods 常量即这六个）。它们本质是把 `options.method` 设为对应动词后调用主函数。注意 `options`、`trace` 等虽是合法 HTTP 方法（也在重试默认 methods 里），但 ky 没有为它们提供同名快捷方法，需要用 `ky(url, {method:'options'})`。\n\n- 「get/post/put/patch/head/delete 六个」正确。\n- 缺少 patch 或多出 options/connect 的选项都不准确。",
+    "tags": ["ky", "初级", "方法快捷", "API", "HTTP"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "get、post、put、patch、head、delete 这六个",
+        "isCorrect": true,
+        "description": "正确。源码 requestMethods = ['get','post','put','patch','head','delete']。"
+      },
+      {
+        "text": "只有 get、post、put、delete 四个",
+        "isCorrect": false,
+        "description": "错误。还有 patch 和 head，共六个。"
+      },
+      {
+        "text": "get、post、put、patch、head、delete、options、trace 八个都有同名快捷方法",
+        "isCorrect": false,
+        "description": "错误。options/trace 是合法方法但没有同名快捷方式，需用 method 选项。"
+      },
+      {
+        "text": "get、post、connect、upgrade",
+        "isCorrect": false,
+        "description": "错误。connect/upgrade 不是 ky 的快捷方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认配置下，ky 的「每次尝试超时」时间是多少？",
+    "explanation": "ky 的 `timeout` 选项默认是 **10000 毫秒（10 秒）**，且它是「per-attempt（每次尝试）」的超时——超过则该次尝试抛 TimeoutError（在可重试条件下还可能触发重试）。把 `timeout` 设为 `false` 可关闭单次超时；该值不能超过 2147483647（32 位有符号整型上限）。\n\n- 「10000 毫秒」正确。\n- 「0（无超时）」错误：默认有 10s 超时。\n- 「30000 毫秒」错误。\n- 「由浏览器决定、ky 不设」错误：ky 明确给了 10s 默认。",
+    "tags": ["ky", "初级", "timeout", "默认值", "超时"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "10000 毫秒（10 秒）",
+        "isCorrect": true,
+        "description": "正确。timeout 默认 10000ms，是每次尝试的超时。"
+      },
+      {
+        "text": "0，即默认不超时",
+        "isCorrect": false,
+        "description": "错误。默认有 10 秒超时；要关闭需显式设 timeout:false。"
+      },
+      {
+        "text": "30000 毫秒",
+        "isCorrect": false,
+        "description": "错误。默认是 10000ms，不是 30000ms。"
+      },
+      {
+        "text": "ky 不设超时，完全交给浏览器",
+        "isCorrect": false,
+        "description": "错误。ky 自己实现了默认 10s 超时。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认情况下，ky 的 retry 会重试几次（limit 默认值）？",
+    "explanation": "`retry.limit` 默认是 **2**——即在首次请求失败后，最多再重试 2 次（合计最多 3 次尝试）。retry 选项可以直接传一个数字，此时该数字被当作 `limit`，其余 retry 子项保持默认。需要注意「重试」还受方法白名单与状态码白名单约束，不是任何失败都会重试。\n\n- 「2」正确。\n- 「0（默认不重试）」错误：ky 默认就会重试。\n- 「3」错误：默认 limit 是 2，不是 3。\n- 「无限重试」错误。",
+    "tags": ["ky", "初级", "retry", "默认值", "重试"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "2 次",
+        "isCorrect": true,
+        "description": "正确。retry.limit 默认 2，首次失败后最多再重试 2 次。"
+      },
+      {
+        "text": "0 次（默认不重试）",
+        "isCorrect": false,
+        "description": "错误。ky 默认开启重试，limit 为 2。"
+      },
+      {
+        "text": "3 次",
+        "isCorrect": false,
+        "description": "错误。默认 limit 是 2，不是 3。"
+      },
+      {
+        "text": "无限次，直到成功",
+        "isCorrect": false,
+        "description": "错误。默认最多重试 2 次。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要给某次请求附加 URL 查询参数（如 ?page=2&size=10），ky 推荐用哪个选项？",
+    "explanation": "ky 提供 `searchParams` 选项，接受 `URLSearchParams` 接受的各种形式：字符串、对象（值可为 string/number/boolean）、二维数组、或 URLSearchParams 实例。它会与 input URL 里已有的查询参数合并。对象写法最常用，如 `searchParams: {page: 2, size: 10}`。注意对象里某键设为 `undefined` 会删除该参数，`null` 会被保留并转成字符串 'null'。\n\n- 「searchParams」正确。\n- 「params（同 axios）」错误：那是 axios 的字段名，ky 用 searchParams。\n- 「query」错误：ky 没有 query 选项。\n- 「手动拼到 url 才行」不准确：ky 提供了 searchParams 专门做这件事。",
+    "tags": ["ky", "初级", "searchParams", "查询参数", "选项"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "searchParams 选项，接受对象 / 字符串 / URLSearchParams 等",
+        "isCorrect": true,
+        "description": "正确。searchParams 是 ky 处理查询参数的选项，会与 URL 中已有参数合并。"
+      },
+      {
+        "text": "params 选项（同 axios）",
+        "isCorrect": false,
+        "description": "错误。params 是 axios 的命名；ky 用 searchParams。"
+      },
+      {
+        "text": "query 选项",
+        "isCorrect": false,
+        "description": "错误。ky 没有 query 选项。"
+      },
+      {
+        "text": "只能自己把查询串拼进 url",
+        "isCorrect": false,
+        "description": "错误。ky 提供 searchParams，无需手动拼接。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：除了 `.json()`，ky 在响应上提供的便捷读取方法不包括下面哪一个？",
+    "explanation": "ky 在 ResponsePromise 上挂了与 Body 接口对应的快捷方法：`.json()`、`.text()`、`.blob()`、`.arrayBuffer()`、`.formData()`，以及（在支持的运行时）`.bytes()`（返回 Uint8Array）。这些都对应 fetch Response 的 body 方法。`.buffer()` 不是其中之一——Node Buffer 不是 Web 标准 Body 方法，ky 不提供 `.buffer()`。\n\n- `.buffer()` 是正确答案（不存在）。\n- `.text()`、`.blob()`、`.arrayBuffer()` 都是 ky 提供的。",
+    "tags": ["ky", "中级", "响应方法", "body", "API"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": ".buffer()",
+        "isCorrect": true,
+        "description": "正确（本题选不存在的）。ky 没有 .buffer()，Node Buffer 非 Web Body 方法；返回字节用 .bytes() / .arrayBuffer()。"
+      },
+      {
+        "text": ".text()",
+        "isCorrect": false,
+        "description": "错误。.text() 是 ky 提供的响应快捷方法。"
+      },
+      {
+        "text": ".blob()",
+        "isCorrect": false,
+        "description": "错误。.blob() 是 ky 提供的响应快捷方法。"
+      },
+      {
+        "text": ".arrayBuffer()",
+        "isCorrect": false,
+        "description": "错误。.arrayBuffer() 是 ky 提供的响应快捷方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要基于一组共享默认配置（如统一的 prefix、headers）创建一个「子客户端」，应该用哪个 API？",
+    "explanation": "ky 提供两个工厂方法：`ky.create(defaults)` 创建一个全新实例，**不继承**任何父级默认；`ky.extend(defaults)` 创建一个**继承父实例默认**的新实例（深合并：hooks 追加、headers/searchParams/context 合并）。要在已有实例基础上叠加配置，用 `extend`；要从零开一个独立实例，用 `create`。两者都返回带 get/post/... 的新 ky 实例。\n\n- 「ky.create 或 ky.extend」正确（题面问的是创建子客户端的 API，两者都属此族；extend 用于继承式叠加）。\n- 「ky.config」错误：无此 API。\n- 「new Ky()」错误：ky 不通过构造器暴露。\n- 「ky.instance()」错误：无此 API。",
+    "tags": ["ky", "中级", "create", "extend", "实例"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ky.create() / ky.extend()",
+        "isCorrect": true,
+        "description": "正确。create 建全新实例（不继承），extend 建继承父默认的新实例（深合并）。"
+      },
+      {
+        "text": "ky.config()",
+        "isCorrect": false,
+        "description": "错误。ky 没有 config() 方法。"
+      },
+      {
+        "text": "new Ky({ ... })",
+        "isCorrect": false,
+        "description": "错误。ky 不通过 new 构造器暴露给用户。"
+      },
+      {
+        "text": "ky.instance()",
+        "isCorrect": false,
+        "description": "错误。ky 没有 instance() 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：`ky.create()` 与 `ky.extend()` 在「默认配置继承」上的核心区别是什么？",
+    "explanation": "关键区别在「是否继承父级默认」：`ky.create(defaults)` 用传入的配置创建一个**全新的实例，完全不继承**调用它的那个 ky 的默认；而 `ky.extend(defaults)` 创建一个**继承父实例默认并与之深合并**的新实例（hooks 数组追加、headers/searchParams/context 合并）。所以想「在现有实例上再叠一层」用 extend，想「从干净状态重开」用 create。\n\n- 「create 不继承父默认；extend 继承并深合并」正确。\n- 「两者完全等价」错误。\n- 「create 继承、extend 不继承」说反了。\n- 「extend 会修改父实例」错误：extend 返回新实例，不改父级。",
+    "tags": ["ky", "高级", "create", "extend", "配置合并"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "create 不继承父实例默认（全新实例）；extend 继承父默认并深合并",
+        "isCorrect": true,
+        "description": "正确。这是两者的根本差异：是否继承+合并父级默认配置。"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。继承行为不同，不可互换。"
+      },
+      {
+        "text": "create 继承父默认，extend 不继承",
+        "isCorrect": false,
+        "description": "错误。恰好说反了。"
+      },
+      {
+        "text": "extend 会就地修改父实例的默认配置",
+        "isCorrect": false,
+        "description": "错误。extend 返回新实例，不会改动父实例。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：从 ky 1.x 升级到 2.x 时，一个常见的破坏性变更是关于「URL 前缀」选项的。1.x 里设置前缀用的是哪个选项？",
+    "explanation": "在 ky **1.x** 中，设置 URL 前缀的选项叫 **`prefixUrl`**（如 `ky('users', {prefixUrl: 'https://api.example.com'})`）。到 **2.x**，这个能力被拆分重构为两个语义更清晰的选项：`baseUrl`（按 Web 标准 URL 解析规则，等价 `new URL(input, baseUrl)`）与 `prefix`（纯字符串拼接、会剥掉 input 前导斜杠）。所以从 1.x 升 2.x 时 `prefixUrl` 不再存在，需要迁移。\n\n- 「prefixUrl」正确（这是 1.x 的选项名）。\n- 「baseURL（带大写 URL）」错误：那是 axios 的写法，ky 从来不是这个拼法。\n- 「base」单独一个词不是 ky 1.x 选项。\n- 「rootUrl」错误：ky 没有此选项。",
+    "tags": ["ky", "中级", "prefixUrl", "迁移", "版本"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "prefixUrl",
+        "isCorrect": true,
+        "description": "正确。1.x 用 prefixUrl；2.x 拆为 baseUrl + prefix。"
+      },
+      {
+        "text": "baseURL（URL 全大写，同 axios）",
+        "isCorrect": false,
+        "description": "错误。baseURL 是 axios 的命名；ky 1.x 用 prefixUrl。"
+      },
+      {
+        "text": "base",
+        "isCorrect": false,
+        "description": "错误。ky 1.x 的选项名是 prefixUrl，不是 base。"
+      },
+      {
+        "text": "rootUrl",
+        "isCorrect": false,
+        "description": "错误。ky 没有 rootUrl 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 ky 2.x 中，`baseUrl` 和 `prefix` 两个选项处理 input 前导斜杠的方式不同。下面描述正确的是？",
+    "explanation": "ky 2.x 把旧 `prefixUrl` 拆为两个语义不同的选项：`baseUrl` 遵循**标准 URL 解析规则**（等价 `new URL(input, baseUrl)`）——input 的前导斜杠表示「站点根」，会覆盖 baseUrl 的路径部分；`prefix` 做**纯字符串拼接**（在 URL 解析之前），会**剥掉 input 的前导斜杠**，因此始终追加在 prefix 之后。也就是说，对 `/users` 这种 origin-relative 路径，baseUrl 会把它解析到站点根，prefix 则会把它接在前缀后面。\n\n- 「baseUrl 按标准解析(前导/覆盖路径)，prefix 纯拼接(剥前导/)」正确。\n- 「两者行为完全一样」错误。\n- 「baseUrl 纯拼接、prefix 标准解析」说反了。\n- 「两者都忽略前导斜杠」错误：baseUrl 不忽略。",
+    "tags": ["ky", "高级", "baseUrl", "prefix", "URL解析"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "baseUrl 按标准 URL 解析（input 前导 / 覆盖 base 路径）；prefix 是纯字符串拼接（剥掉 input 前导 /，总是追加在 prefix 后）",
+        "isCorrect": true,
+        "description": "正确。这正是官方 FAQ 对 baseUrl vs prefix 的区分。"
+      },
+      {
+        "text": "两者行为完全一致，只是别名",
+        "isCorrect": false,
+        "description": "错误。一个走标准解析、一个走纯拼接，对前导斜杠处理相反。"
+      },
+      {
+        "text": "baseUrl 纯字符串拼接，prefix 走标准 URL 解析",
+        "isCorrect": false,
+        "description": "错误。说反了：baseUrl 走标准解析，prefix 纯拼接。"
+      },
+      {
+        "text": "两者都会忽略 input 的前导斜杠",
+        "isCorrect": false,
+        "description": "错误。baseUrl 不忽略——前导斜杠会让 input 指向 origin 根。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：ky 把请求/重试生命周期开放给用户的机制叫什么？以下哪个是 ky 真实提供的 hook？",
+    "explanation": "ky 通过 `hooks` 选项暴露生命周期钩子，2.x 提供五类：`init`（同步，修改 options）、`beforeRequest`（发请求前改 request，可返回 Request 替换或返回 Response 短路）、`beforeRetry`（重试前）、`beforeError`（抛错前改 error）、`afterResponse`（拿到响应后读/改，或返回 ky.retry() 强制重试）。每类是一个函数数组、按序执行、可为 async。\n\n- 「beforeRequest」正确，是 ky 的标准 hook。\n- 「onRequest / onResponse」错误：那是 ofetch/axios 风格的命名，ky 用 beforeRequest/afterResponse。\n- 「beforeSend」错误：ky 用 beforeRequest。\n- 「afterError」错误：ky 是 beforeError（抛错前），没有 afterError。",
+    "tags": ["ky", "中级", "hooks", "beforeRequest", "生命周期"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "beforeRequest",
+        "isCorrect": true,
+        "description": "正确。beforeRequest 是 ky 的标准 hook 之一，可改 request 或短路返回 Response。"
+      },
+      {
+        "text": "onRequest",
+        "isCorrect": false,
+        "description": "错误。onRequest 是 ofetch 的命名；ky 用 beforeRequest。"
+      },
+      {
+        "text": "beforeSend",
+        "isCorrect": false,
+        "description": "错误。ky 没有 beforeSend，对应的是 beforeRequest。"
+      },
+      {
+        "text": "afterError",
+        "isCorrect": false,
+        "description": "错误。ky 提供的是 beforeError（抛错前），没有 afterError。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要在每个请求发出前统一注入 Authorization 头（如鉴权 token），最贴合 ky 设计的做法是？",
+    "explanation": "标准做法是在 `beforeRequest` hook 里改 `request.headers`：该 hook 接收 `{request, options, retryCount}`，可直接 `request.headers.set('Authorization', ...)`。通常配合 `ky.extend()` 把这个 hook 固化进一个鉴权实例，所有经它发出的请求自动带头。也可用 `init` hook（同步、改 options）注入，但改 header 最直接的是 beforeRequest。\n\n- 「beforeRequest 里 request.headers.set(...)」正确。\n- 「afterResponse 里设 header」错误：响应阶段设请求头没有意义。\n- 「在 retry 选项里配 token」错误：retry 与鉴权头无关。\n- 「只能每次调用手动传 headers」不符合 ky 设计：hooks/extend 正是为此而生。",
+    "tags": ["ky", "中级", "beforeRequest", "鉴权", "headers"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 beforeRequest hook 里 request.headers.set('Authorization', token)，并用 ky.extend 固化",
+        "isCorrect": true,
+        "description": "正确。beforeRequest 拿到 request，可统一改头；用 extend 复用到整个实例。"
+      },
+      {
+        "text": "在 afterResponse hook 里设置请求头",
+        "isCorrect": false,
+        "description": "错误。afterResponse 是响应后，设请求头已无意义。"
+      },
+      {
+        "text": "在 retry 选项里配置 token",
+        "isCorrect": false,
+        "description": "错误。retry 控制重试行为，与注入鉴权头无关。"
+      },
+      {
+        "text": "没有统一手段，只能每次调用手动传 headers",
+        "isCorrect": false,
+        "description": "错误。hooks + extend 正是 ky 为统一注入提供的机制。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于 `beforeRequest` hook 的返回值，下面哪一项描述正确？",
+    "explanation": "`beforeRequest` 的签名是 `({request, options, retryCount}) => Request | Response | void`。它可以：(1) 返回一个新的 `Request` 来**替换**即将发出的请求（后续 beforeRequest 仍会基于新 request 运行）；(2) 返回一个 `Response` 来**完全跳过 HTTP 请求**（用于 mock、读内部缓存等，此时剩余 beforeRequest 被跳过）；(3) 不返回（void）则只是就地改 request。注意此 hook 里 retryCount 恒为 0。\n\n- 「可返回 Request 替换、或返回 Response 跳过实际请求」正确。\n- 「返回 false 可取消请求」错误：ky 没有用返回 false 取消的约定。\n- 「返回值会被忽略」错误：Request/Response 返回值是有意义的。\n- 「必须返回 options」错误：改 options 是 init hook 的事。",
+    "tags": ["ky", "高级", "beforeRequest", "hooks", "mock"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可返回新 Request 替换请求，或返回 Response 直接跳过 HTTP 请求（用于 mock/缓存）",
+        "isCorrect": true,
+        "description": "正确。返回 Response 会短路实际请求，返回 Request 则替换它。"
+      },
+      {
+        "text": "返回 false 即可取消本次请求",
+        "isCorrect": false,
+        "description": "错误。ky 没有「返回 false 取消」的约定。"
+      },
+      {
+        "text": "返回值会被 ky 忽略，hook 只能就地改 request",
+        "isCorrect": false,
+        "description": "错误。返回 Request/Response 是有效且有特殊语义的。"
+      },
+      {
+        "text": "必须返回 options 对象",
+        "isCorrect": false,
+        "description": "错误。改 options 是同步的 init hook 职责，不是 beforeRequest。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：`afterResponse` hook 能做的「特殊操作」中，下面哪一项是 ky 真实支持的？",
+    "explanation": "`afterResponse` 签名 `({request, options, response, retryCount}) => Response | RetryMarker | void`。它能：(1) 读取/记录响应；(2) 返回一个新的 `Response` 来**覆盖**原响应；(3) 返回 **`ky.retry(options)`** 来**基于响应内容强制重试**——即便状态码是 2xx 也能触发（例如响应体里有业务错误码 RATE_LIMIT 时重试）。这次强制重试会遵守 `retry.limit`，并能在 beforeRetry 里以 ForceRetryError 观察到。\n\n- 「返回 ky.retry() 基于响应体强制重试」正确。\n- 「返回 true 让 ky 重试」错误：要返回 ky.retry()，不是布尔。\n- 「修改请求的 method」错误：响应阶段不改请求方法。\n- 「afterResponse 不能改写响应」错误：返回 Response 即可覆盖。",
+    "tags": ["ky", "高级", "afterResponse", "ky.retry", "hooks"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 ky.retry(options) 基于响应体内容强制重试（即使状态码 2xx）",
+        "isCorrect": true,
+        "description": "正确。afterResponse 可返回 ky.retry() 触发强制重试，遵守 retry.limit。"
+      },
+      {
+        "text": "返回 true 通知 ky 进行重试",
+        "isCorrect": false,
+        "description": "错误。强制重试需返回 ky.retry()，而非布尔值。"
+      },
+      {
+        "text": "在这里修改请求的 HTTP method",
+        "isCorrect": false,
+        "description": "错误。响应阶段不用于修改请求方法。"
+      },
+      {
+        "text": "afterResponse 只能读、不能覆盖响应",
+        "isCorrect": false,
+        "description": "错误。返回 Response 实例即可覆盖原响应。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：捕获到 ky 抛出的 `HTTPError` 后，要拿到原始的 HTTP 响应对象，应访问哪个属性？",
+    "explanation": "`HTTPError` 暴露了 `response`（Response 对象）、`request`（Request 对象）、`options`（归一化后的选项）、以及 `data`（预解析的响应体）。所以拿响应用 `error.response`，可读 `error.response.status` 等。值得注意：2.x 里 ky 会预先把响应体填进 `error.data`（JSON 类型自动解析），且为此**消费了 response 的 body**——因此 `error.response.json()` 不再可用，应直接读 `error.data`。\n\n- 「error.response」正确。\n- 「error.res」错误：属性名是 response。\n- 「error.status」单独不是 HTTPError 的直接属性（状态在 error.response.status）。\n- 「error.body」错误：预解析体在 error.data。",
+    "tags": ["ky", "中级", "HTTPError", "错误处理", "response"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "error.response（Response 对象）",
+        "isCorrect": true,
+        "description": "正确。HTTPError 暴露 response/request/options/data；响应对象在 error.response。"
+      },
+      {
+        "text": "error.res",
+        "isCorrect": false,
+        "description": "错误。属性名是 response，不是 res。"
+      },
+      {
+        "text": "error.status（直接挂在 error 上）",
+        "isCorrect": false,
+        "description": "错误。状态码在 error.response.status，error 本身没有直接的 status 属性。"
+      },
+      {
+        "text": "error.body",
+        "isCorrect": false,
+        "description": "错误。预解析的响应体在 error.data，不是 error.body。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 ky 2.x 中，捕获 `HTTPError` 后想读取错误响应体（如服务端返回的 JSON 错误信息），最稳妥的做法是？",
+    "explanation": "ky 2.x 会在抛错前把响应体预解析进 `error.data`：JSON 类型（按 Content-Type 判断）用 parseJson/JSON.parse 解析、其他类型存为文本，空或解析失败则为 undefined（受请求超时和 10 MiB 体积上限约束）。**关键陷阱**：为填充 error.data，ky 已经消费了 `error.response` 的 body，所以再调 `error.response.json()` 会失败。正确做法是直接读 `error.data`。\n\n- 「读 error.data」正确。\n- 「await error.response.json()」在 2.x 会失败（body 已被消费）。\n- 「error.message 里解析 JSON」不可靠。\n- 「重新请求一次拿 body」多此一举且可能有副作用。",
+    "tags": ["ky", "专家", "HTTPError", "error.data", "陷阱"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "直接读 error.data（ky 已预解析响应体并填入）",
+        "isCorrect": true,
+        "description": "正确。2.x 在抛错前把 body 解析进 error.data；这是读错误体的标准方式。"
+      },
+      {
+        "text": "await error.response.json()",
+        "isCorrect": false,
+        "description": "错误。为填充 error.data，ky 已消费 response body，再 .json() 会失败。"
+      },
+      {
+        "text": "从 error.message 字符串里正则提取 JSON",
+        "isCorrect": false,
+        "description": "错误。message 是给人看的描述，不应据此解析结构化数据。"
+      },
+      {
+        "text": "对同一 URL 再发一次请求拿响应体",
+        "isCorrect": false,
+        "description": "错误。多余且可能有副作用；error.data 已经备好了。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认情况下，下面哪一组 HTTP 方法是 ky 会自动重试的（retry.methods 默认值）？",
+    "explanation": "`retry.methods` 默认是 `['get', 'put', 'head', 'delete', 'options', 'trace']`——都是**幂等**方法。注意 **POST 和 PATCH 默认不在其中**：因为它们通常非幂等，自动重试可能造成重复创建/修改。所以默认配置下，失败的 POST 不会被 ky 重试，除非你显式把 'post' 加进 retry.methods（需自行确认幂等性）。\n\n- 「get/put/head/delete/options/trace」正确。\n- 含 post 的组错误：POST 默认不重试。\n- 「所有方法都重试」错误。\n- 「只重试 get」错误：默认还包括 put/head/delete 等幂等方法。",
+    "tags": ["ky", "高级", "retry", "幂等", "methods"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "get、put、head、delete、options、trace（幂等方法）",
+        "isCorrect": true,
+        "description": "正确。默认 retry.methods 为这六个幂等方法，POST/PATCH 不在其中。"
+      },
+      {
+        "text": "get、post、put、patch、delete",
+        "isCorrect": false,
+        "description": "错误。POST/PATCH 默认不重试（非幂等），不在默认列表里。"
+      },
+      {
+        "text": "所有 HTTP 方法都会被默认重试",
+        "isCorrect": false,
+        "description": "错误。默认只重试幂等方法，不含 POST/PATCH。"
+      },
+      {
+        "text": "仅 get",
+        "isCorrect": false,
+        "description": "错误。默认还包括 put/head/delete/options/trace。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认情况下，ky 会对哪些 HTTP 状态码触发重试（retry.statusCodes 默认值）？",
+    "explanation": "`retry.statusCodes` 默认是 `[408, 413, 429, 500, 502, 503, 504]`——即请求超时(408)、请求体过大(413)、限流(429)、以及一组 5xx 服务端错误。这些通常是「临时性、重试有意义」的错误。普通 4xx（如 400/401/403/404）默认**不**重试，因为重发同样的错误请求通常无济于事。\n\n- 「408,413,429,500,502,503,504」正确。\n- 含 404 的组错误：404 默认不重试。\n- 「所有 4xx 和 5xx」错误：大多数 4xx 不重试。\n- 「只有 500」错误：默认是一组码，不止 500。",
+    "tags": ["ky", "高级", "retry", "statusCodes", "默认值"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "408、413、429、500、502、503、504",
+        "isCorrect": true,
+        "description": "正确。这是默认 retry.statusCodes，覆盖超时/限流/常见 5xx。"
+      },
+      {
+        "text": "400、401、403、404、500",
+        "isCorrect": false,
+        "description": "错误。普通 4xx（如 400/401/404）默认不重试。"
+      },
+      {
+        "text": "所有 4xx 与 5xx 状态码",
+        "isCorrect": false,
+        "description": "错误。多数 4xx 不在默认重试集合内。"
+      },
+      {
+        "text": "仅 500",
+        "isCorrect": false,
+        "description": "错误。默认是一组状态码，不只 500。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：当响应状态码在 `afterStatusCodes`（默认含 429、503 等）且带 `Retry-After` 头时，ky 的重试延迟会如何处理？",
+    "explanation": "对于 `afterStatusCodes`（默认 `[413, 429, 503]`）里的状态码，若响应带 `Retry-After` 头，ky 会**等待该头指定的时间**（日期或秒数）后再重试，而不是用默认的指数退避延迟。若 `Retry-After` 缺失，会尝试用非标准的 `RateLimit-Reset` 头作为后备。同时，若 Retry-After 超过 `maxRetryAfter`（默认 Infinity），则取 maxRetryAfter。这让 ky 能尊重服务端的限流节奏。\n\n- 「等待 Retry-After 指定的时间再重试」正确。\n- 「忽略 Retry-After，仍用指数退避」错误：恰恰会尊重该头。\n- 「立即重试」错误。\n- 「直接放弃不重试」错误。",
+    "tags": ["ky", "专家", "Retry-After", "限流", "重试"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "尊重 Retry-After，等待其指定的时间后再重试（缺失时回退 RateLimit-Reset，超过 maxRetryAfter 则取 maxRetryAfter）",
+        "isCorrect": true,
+        "description": "正确。这是 ky 对 afterStatusCodes + Retry-After 的处理逻辑。"
+      },
+      {
+        "text": "忽略 Retry-After，仍按默认指数退避延迟重试",
+        "isCorrect": false,
+        "description": "错误。ky 会尊重 Retry-After，而非忽略。"
+      },
+      {
+        "text": "立即重试，不等待",
+        "isCorrect": false,
+        "description": "错误。会等待 Retry-After 指定的时长。"
+      },
+      {
+        "text": "直接放弃重试并抛错",
+        "isCorrect": false,
+        "description": "错误。带 Retry-After 时 ky 仍会重试，只是延迟由该头决定。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：ky 默认的重试延迟采用什么策略？",
+    "explanation": "ky 默认的 `retry.delay` 是**指数退避**：`attemptCount => 0.3 * (2 ** (attemptCount - 1)) * 1000`（毫秒，attemptCount 从 1 起）。即第 1 次重试约 300ms、第 2 次约 600ms、第 3 次约 1200ms……可用 `backoffLimit`（默认 Infinity）给延迟封顶，用 `jitter` 加随机抖动避免「惊群」，或传自定义 `delay` 函数覆盖。\n\n- 「指数退避 0.3*2^(n-1)*1000 ms」正确。\n- 「固定 1 秒」错误：默认是指数增长，不是定值。\n- 「线性增长 n*1000」错误：是指数不是线性。\n- 「无延迟、立即重试」错误。",
+    "tags": ["ky", "高级", "retry", "backoff", "delay"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "指数退避：0.3 * 2^(attemptCount-1) * 1000 毫秒",
+        "isCorrect": true,
+        "description": "正确。这是 ky 默认 delay 公式，可用 backoffLimit 封顶、jitter 加抖动。"
+      },
+      {
+        "text": "固定每次延迟 1 秒",
+        "isCorrect": false,
+        "description": "错误。默认是指数退避，不是固定值。"
+      },
+      {
+        "text": "线性增长：attemptCount * 1000 毫秒",
+        "isCorrect": false,
+        "description": "错误。默认按 2 的幂指数增长，非线性。"
+      },
+      {
+        "text": "无延迟，失败后立即重试",
+        "isCorrect": false,
+        "description": "错误。默认有指数退避延迟。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：想给重试延迟加入随机抖动以避免大量客户端同时重试压垮服务器（thundering herd），应使用 retry 的哪个子选项？",
+    "explanation": "ky 2.x 提供 `retry.jitter` 选项专门应对「惊群效应」：设为 `true` 启用 full jitter（把延迟随机化到 0~计算值之间）；也可传函数实现自定义抖动策略（如 80%~120% 区间、±100ms 等）。默认 undefined（无抖动）。注意：当服务端给了 `Retry-After` 时不会施加 jitter，以尊重服务端的明确节奏。\n\n- 「jitter」正确。\n- 「backoffLimit」错误：那是给退避延迟封顶，不是加随机。\n- 「maxRetryAfter」错误：那是 Retry-After 的上限。\n- 「randomize」错误：ky 没有此选项名。",
+    "tags": ["ky", "专家", "jitter", "重试", "惊群"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "retry.jitter（true 为 full jitter，或传函数自定义）",
+        "isCorrect": true,
+        "description": "正确。jitter 给延迟加随机以打散同步重试；服务端给 Retry-After 时不施加。"
+      },
+      {
+        "text": "retry.backoffLimit",
+        "isCorrect": false,
+        "description": "错误。backoffLimit 是给退避延迟设上限，不引入随机。"
+      },
+      {
+        "text": "retry.maxRetryAfter",
+        "isCorrect": false,
+        "description": "错误。maxRetryAfter 限制 Retry-After 的最大值，与抖动无关。"
+      },
+      {
+        "text": "retry.randomize",
+        "isCorrect": false,
+        "description": "错误。ky 没有 randomize 子选项，对应的是 jitter。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要彻底关闭某个请求的所有 HTTP 错误抛出（让 404/500 也正常 resolve，自行检查 res.ok），应如何设置？",
+    "explanation": "把 `throwHttpErrors` 设为 `false` 即可：此时非 2xx 响应不再抛 HTTPError，而是像原生 fetch 一样正常 resolve，你需要自己检查 `response.ok`/`response.status`。这在「探测资源是否存在、本就预期错误响应」的场景很有用。注意：`throwHttpErrors:false` 时错误响应被视为成功，**也不会触发重试**。它还能传函数 `(status)=>boolean` 做选择性抛错。\n\n- 「throwHttpErrors: false」正确。\n- 「throwErrors: false」错误：选项名是 throwHttpErrors。\n- 「validateStatus: () => true」错误：那是 axios 的写法，ky 没有 validateStatus。\n- 「catchErrors: false」错误：无此选项。",
+    "tags": ["ky", "中级", "throwHttpErrors", "错误处理", "选项"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "throwHttpErrors: false",
+        "isCorrect": true,
+        "description": "正确。设为 false 后非 2xx 不抛错、正常 resolve（也不会重试），需自查 res.ok。"
+      },
+      {
+        "text": "throwErrors: false",
+        "isCorrect": false,
+        "description": "错误。正确选项名是 throwHttpErrors。"
+      },
+      {
+        "text": "validateStatus: () => true（同 axios）",
+        "isCorrect": false,
+        "description": "错误。validateStatus 是 axios 的选项，ky 用 throwHttpErrors。"
+      },
+      {
+        "text": "catchErrors: false",
+        "isCorrect": false,
+        "description": "错误。ky 没有 catchErrors 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要取消（abort）一个正在进行的 ky 请求，正确的方式是什么？",
+    "explanation": "ky 直接复用 Web 标准的 `AbortController`/`AbortSignal`：创建 `const controller = new AbortController()`，把 `controller.signal` 作为 `signal` 选项传给请求，需要取消时调用 `controller.abort()`。这与原生 fetch 完全一致——ky 没有自创取消机制（不像 axios 早期的 CancelToken）。\n\n- 「传 signal: controller.signal，调用 controller.abort()」正确。\n- 「调用 ky.cancel()」错误：无此 API。\n- 「用 CancelToken（同 axios）」错误：ky 用标准 AbortController。\n- 「Promise 没法取消」错误：通过 AbortSignal 可以取消底层请求。",
+    "tags": ["ky", "中级", "AbortController", "取消", "signal"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "传 signal: controller.signal，需要时调用 controller.abort()",
+        "isCorrect": true,
+        "description": "正确。ky 复用 Web 标准 AbortController/AbortSignal 取消请求。"
+      },
+      {
+        "text": "调用 ky.cancel(request)",
+        "isCorrect": false,
+        "description": "错误。ky 没有 cancel() 方法。"
+      },
+      {
+        "text": "使用 axios 风格的 CancelToken",
+        "isCorrect": false,
+        "description": "错误。ky 用标准 AbortController，而非 CancelToken。"
+      },
+      {
+        "text": "ky 的请求是 Promise，无法取消",
+        "isCorrect": false,
+        "description": "错误。借助 AbortSignal 可以中止底层 fetch。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 TypeScript 中，下面哪种写法能让 `.json()` 返回带类型的结果而非 unknown？",
+    "explanation": "ky 的 `.json()` 接受一个可选类型参数，默认是 **`unknown`**（刻意不用 `any`，更安全）。给它类型有两种等价写法：方法级 `ky.get<User>(url).json()`，或调用级 `ky.get(url).json<User>()`。两者都让返回值是 `User`。这种「默认 unknown 而非 any」是 ky 相比裸 fetch 的 TS 改进点之一。\n\n- 「ky.get<User>(url).json() 或 .json<User>()」正确。\n- 「.json() 默认返回 any，无需标注」错误：默认是 unknown。\n- 「as User 是唯一办法」不准确：泛型参数是更推荐的方式。\n- 「ky 不支持泛型」错误。",
+    "tags": ["ky", "中级", "TypeScript", "泛型", "json"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ky.get<User>(url).json() 或 ky.get(url).json<User>()",
+        "isCorrect": true,
+        "description": "正确。两种泛型写法都能让 .json() 返回 User；默认参数是 unknown。"
+      },
+      {
+        "text": ".json() 默认就返回 any，不用任何标注",
+        "isCorrect": false,
+        "description": "错误。ky 的 .json() 默认返回 unknown，不是 any。"
+      },
+      {
+        "text": "只能用 as User 断言，没有泛型支持",
+        "isCorrect": false,
+        "description": "错误。ky 提供泛型参数，比 as 断言更安全。"
+      },
+      {
+        "text": "ky 不支持任何 TypeScript 泛型",
+        "isCorrect": false,
+        "description": "错误。ky 用 TS 编写，提供完善泛型。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：`ky.stop` 这个 Symbol 的用途是什么？",
+    "explanation": "`ky.stop` 是一个 Symbol，可从 **`beforeRetry` hook 返回**，用来**停止重试且不抛出错误**——此时请求 Promise 会 resolve 为 `undefined`（而非抛异常）。剩余的 beforeRetry hook 会被跳过。重要限制：因为 resolve 的是 undefined，所以**不能再链式调用 `.json()` 等 body 方法**（会出错）。它适合「检测到不该再重试、又不想制造异常」的场景。\n\n- 「从 beforeRetry 返回以停止重试且不抛错（resolve 为 undefined）」正确。\n- 「全局停止所有 ky 请求」错误。\n- 「等价 AbortController.abort()」错误：语义与作用域都不同。\n- 「标记请求成功」错误。",
+    "tags": ["ky", "专家", "ky.stop", "beforeRetry", "Symbol"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "从 beforeRetry hook 返回它，可停止重试且不抛错（Promise resolve 为 undefined，且不能再 .json()）",
+        "isCorrect": true,
+        "description": "正确。ky.stop 是无异常地中止重试的信号，代价是无法再读 body。"
+      },
+      {
+        "text": "全局停止当前页面所有 ky 请求",
+        "isCorrect": false,
+        "description": "错误。ky.stop 只影响返回它的那次请求的重试，不是全局开关。"
+      },
+      {
+        "text": "等价于调用 AbortController.abort()",
+        "isCorrect": false,
+        "description": "错误。两者机制不同；ky.stop 是 beforeRetry 的返回信号。"
+      },
+      {
+        "text": "用于把请求标记为成功",
+        "isCorrect": false,
+        "description": "错误。它是停止重试的信号，resolve 值为 undefined 而非成功响应。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要监听大文件下载进度并更新进度条，ky 提供了哪个选项？",
+    "explanation": "ky 提供 `onDownloadProgress` 选项：回调签名 `(progress, chunk) => void`，其中 `progress` 含 `percent`（0~1）、`transferredBytes`、`totalBytes`（估算值，无法确定时为 0），`chunk` 是本次收到的数据（首次调用时为空）。对应地还有 `onUploadProgress`（上传进度，但需要请求流支持，部分环境会被静默忽略）。这是 ky 相比裸 fetch 的便利之一。\n\n- 「onDownloadProgress」正确。\n- 「onProgress」错误：ky 区分上传/下载，没有单一 onProgress。\n- 「onData」错误：无此选项。\n- 「progressCallback」错误：无此选项。",
+    "tags": ["ky", "中级", "onDownloadProgress", "进度", "选项"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "onDownloadProgress: (progress, chunk) => { ... }",
+        "isCorrect": true,
+        "description": "正确。progress 含 percent/transferredBytes/totalBytes；上传对应 onUploadProgress。"
+      },
+      {
+        "text": "onProgress",
+        "isCorrect": false,
+        "description": "错误。ky 区分 onDownloadProgress 与 onUploadProgress，无单一 onProgress。"
+      },
+      {
+        "text": "onData",
+        "isCorrect": false,
+        "description": "错误。ky 没有 onData 选项。"
+      },
+      {
+        "text": "progressCallback",
+        "isCorrect": false,
+        "description": "错误。ky 没有 progressCallback 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于 ky 的依赖与体积，下面哪项描述正确？",
+    "explanation": "ky 官方强调「It's just a tiny package with no dependencies」——**零运行时依赖、体积极小**。它之所以能这么小，是因为复用了宿主环境的原生 `fetch`，只在其上做薄封装，而不像 axios 那样自带一套适配器/拦截器/序列化体系。零依赖也意味着供应链面更小。\n\n- 「零依赖、体积极小」正确。\n- 「依赖 axios」错误：ky 与 axios 是同类竞品，互不依赖。\n- 「依赖 node-fetch polyfill」错误：现代环境原生有 fetch，ky 不强依赖 polyfill。\n- 「体积比 axios 大很多」错误：恰恰相反，ky 主打轻量。",
+    "tags": ["ky", "入门", "依赖", "体积", "轻量"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "零运行时依赖、体积极小（tiny, no dependencies）",
+        "isCorrect": true,
+        "description": "正确。ky 复用宿主 fetch，官方称 tiny package with no dependencies。"
+      },
+      {
+        "text": "底层依赖 axios",
+        "isCorrect": false,
+        "description": "错误。ky 与 axios 是同类竞品，不互相依赖。"
+      },
+      {
+        "text": "必须依赖 node-fetch 这类 polyfill 才能运行",
+        "isCorrect": false,
+        "description": "错误。现代浏览器/Node 22+ 原生有 fetch，ky 不强依赖 polyfill。"
+      },
+      {
+        "text": "体积比 axios 大很多",
+        "isCorrect": false,
+        "description": "错误。ky 主打轻量，体积远小于 axios。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：相比 axios，下面哪一点是「选 ky 而非 axios」时通常会看重的优势？",
+    "explanation": "ky 相对 axios 的卖点：基于 Web 标准 fetch（而非 XHR）、零依赖、体积极小、浏览器优先且天然支持现代运行时、API 更贴近平台原语（Request/Response/AbortController）。axios 的优势则在：更成熟的生态、内置 XSRF、请求/响应拦截器体系、对老旧浏览器（XHR）的天然兼容、上传进度在所有浏览器都稳。所以「轻量 + 基于 fetch 标准」是选 ky 的典型理由。\n\n- 「更轻量、基于 fetch 标准、零依赖」正确。\n- 「内置 XSRF 防护」是 axios 的优势，不是 ky。\n- 「对 IE 等老浏览器原生兼容」是 axios（XHR）的优势。\n- 「自动把所有响应转成 JSON」错误：ky 不会自动全转 JSON。",
+    "tags": ["ky", "中级", "对比", "axios", "选型"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "更轻量、零依赖、基于 Web 标准 fetch",
+        "isCorrect": true,
+        "description": "正确。这正是 ky 相对 axios 的核心卖点。"
+      },
+      {
+        "text": "内置 XSRF/CSRF token 自动防护",
+        "isCorrect": false,
+        "description": "错误。内置 XSRF 是 axios 的特性，不是选 ky 的理由。"
+      },
+      {
+        "text": "对 IE 等老浏览器有原生兼容",
+        "isCorrect": false,
+        "description": "错误。基于 fetch 的 ky 不天然兼容 IE；老浏览器兼容是 axios(XHR) 的优势。"
+      },
+      {
+        "text": "会自动把所有响应转成 JSON",
+        "isCorrect": false,
+        "description": "错误。ky 不会自动把全部响应转 JSON，需显式 .json()。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：ky 官方声明它支持的目标运行环境是哪些？",
+    "explanation": "ky 官方声明「targets modern browsers, Node.js, Bun, and Deno」——即现代浏览器、Node.js、Bun、Deno。它浏览器优先，但因为基于标准 fetch，所有内置了 fetch 的现代运行时都能跑。需要注意当前 2.x 版本要求 **Node.js 22+**（package.json engines），因为依赖较新的 fetch/AbortSignal 等 API；旧 1.x 是 Node 18+。\n\n- 「现代浏览器 + Node.js + Bun + Deno」正确。\n- 「仅浏览器」错误：也支持现代 Node 等。\n- 「仅 Node.js」错误：浏览器优先。\n- 「仅 Deno」错误。",
+    "tags": ["ky", "初级", "运行环境", "Node", "浏览器"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "现代浏览器、Node.js、Bun、Deno",
+        "isCorrect": true,
+        "description": "正确。ky 官方目标环境即这四类；2.x 要求 Node 22+。"
+      },
+      {
+        "text": "仅现代浏览器",
+        "isCorrect": false,
+        "description": "错误。ky 也支持 Node.js/Bun/Deno 等带 fetch 的运行时。"
+      },
+      {
+        "text": "仅 Node.js 服务端",
+        "isCorrect": false,
+        "description": "错误。ky 浏览器优先，并非仅服务端。"
+      },
+      {
+        "text": "仅 Deno",
+        "isCorrect": false,
+        "description": "错误。支持面远不止 Deno。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：用 `ky.extend()` 创建实例时，父实例的 `hooks` 与新传入的 `hooks` 是如何合并的？",
+    "explanation": "`ky.extend()` 对 hooks 采用「**追加（append）**」合并：每一类 hook 是一个函数数组，extend 时新实例会保留父级该类的所有 hook，并把新传入的同类 hook **追加在后面**，按序执行。这区别于「替换」。headers/searchParams/context 则是合并（merge）。若想**移除**继承来的某类 hook，可把它设为 `undefined`。\n\n- 「同类 hook 数组追加，父级在前、新增在后」正确。\n- 「新 hooks 完全替换父级 hooks」错误：默认是追加不是替换。\n- 「只保留父级、忽略新增」错误。\n- 「随机顺序执行」错误：hook 按数组顺序串行执行。",
+    "tags": ["ky", "专家", "extend", "hooks", "合并"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "同类 hook 数组追加合并：父级在前，新增的接在后面，按序执行",
+        "isCorrect": true,
+        "description": "正确。extend 对 hooks 是追加；设为 undefined 可移除继承的 hook。"
+      },
+      {
+        "text": "新传入的 hooks 完全替换父级 hooks",
+        "isCorrect": false,
+        "description": "错误。默认是追加合并，不是替换。"
+      },
+      {
+        "text": "只保留父级 hooks，忽略新增的",
+        "isCorrect": false,
+        "description": "错误。新增的会被追加执行。"
+      },
+      {
+        "text": "所有 hook 以随机顺序执行",
+        "isCorrect": false,
+        "description": "错误。hook 按数组顺序串行执行。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要在抛出错误前统一改写错误信息（如把后端返回的 message 拼进 error.message），应使用哪个 hook？",
+    "explanation": "`beforeError` hook 专门用于在错误被抛出前修改它：签名 `({request, options, error, retryCount}) => Error`，**必须返回一个 Error 实例**（可以是改过的原 error，也可以换成自定义错误类型）。它对所有错误类型（HTTPError、NetworkError、TimeoutError、ForceRetryError）都会被调用，常配合 `isHTTPError()` 等类型守卫判断后，从 `error.data` 取后端 message 拼进 `error.message`。\n\n- 「beforeError」正确。\n- 「afterResponse」错误：那是处理响应不是错误。\n- 「onError」错误：ky 用 beforeError。\n- 「catch 块里改」虽可行但不是「统一」机制；ky 为此提供了 beforeError hook。",
+    "tags": ["ky", "高级", "beforeError", "hooks", "错误处理"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "beforeError（必须返回一个 Error 实例）",
+        "isCorrect": true,
+        "description": "正确。beforeError 在抛错前统一改写/替换错误，对所有错误类型都会触发。"
+      },
+      {
+        "text": "afterResponse",
+        "isCorrect": false,
+        "description": "错误。afterResponse 处理的是响应，不是抛出的错误。"
+      },
+      {
+        "text": "onError",
+        "isCorrect": false,
+        "description": "错误。ky 没有 onError；对应的是 beforeError。"
+      },
+      {
+        "text": "ky 没有统一改写错误的 hook，只能在每个 catch 里改",
+        "isCorrect": false,
+        "description": "错误。beforeError 正是统一改写错误的机制。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 ky 2.x 中，要给所有请求统一注入一个查询参数（如 apiKey），且希望在「构造请求之前、同步地」修改 options，最合适的 hook 是？",
+    "explanation": "ky 2.x 新增了 `init` hook：它在「options 被用来构造 request 之前」运行，接收**可变的 options 对象**并就地修改（如 `options.searchParams = {apiKey: ...}`、改 headers、改 json）。与其他 hook 不同，`init` 是**同步**的，其抛出的错误会同步传播、不会被 beforeError 捕获。它是「在请求生命周期最早期改配置」的入口，常用于统一注入查询参数。\n\n- 「init hook（同步、改 options）」正确。\n- 「beforeRequest 改 options」不准确：beforeRequest 拿到的是已构造的 request（改 request 而非 options），且 searchParams 已固化进 URL。\n- 「afterResponse」错误：太晚了。\n- 「beforeError」错误：那是错误阶段。",
+    "tags": ["ky", "专家", "init", "hooks", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "init hook（同步，接收可变 options 并就地修改）",
+        "isCorrect": true,
+        "description": "正确。init 在构造 request 前同步改 options，适合统一注入 searchParams。"
+      },
+      {
+        "text": "beforeRequest hook 里改 options.searchParams",
+        "isCorrect": false,
+        "description": "错误。beforeRequest 拿到的是已构造的 request，searchParams 已进 URL，改 options 不再生效；应用 init。"
+      },
+      {
+        "text": "afterResponse hook",
+        "isCorrect": false,
+        "description": "错误。响应阶段才运行，无法影响请求构造。"
+      },
+      {
+        "text": "beforeError hook",
+        "isCorrect": false,
+        "description": "错误。那是错误抛出前阶段，与注入查询参数无关。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 ky 2.x 中，要为「整个操作（含所有重试和延迟）」设置一个总时间上限，应使用哪个选项？",
+    "explanation": "ky 2.x 区分两个超时维度：`timeout`（默认 10000ms）是**每次尝试**的超时；`totalTimeout`（默认 false）是**整个操作的总超时**——涵盖所有重试与重试间延迟，超过即抛 TimeoutError。例如 `timeout: 5000, totalTimeout: 30000` 表示每次尝试给 5s、但整体必须在 30s 内完成。这解决了「单次超时不大、但重试累计拖很久」的问题。\n\n- 「totalTimeout」正确。\n- 「timeout 就是总超时」错误：timeout 是每次尝试的。\n- 「maxDuration」错误：无此选项。\n- 「retryTimeout」错误：无此选项。",
+    "tags": ["ky", "专家", "totalTimeout", "超时", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "totalTimeout（整个操作含重试与延迟的总上限）",
+        "isCorrect": true,
+        "description": "正确。timeout 管单次尝试，totalTimeout 管含重试的整体时长。"
+      },
+      {
+        "text": "timeout 本身就是整个操作的总超时",
+        "isCorrect": false,
+        "description": "错误。timeout 是每次尝试的超时，不含重试累计。"
+      },
+      {
+        "text": "maxDuration",
+        "isCorrect": false,
+        "description": "错误。ky 没有 maxDuration 选项。"
+      },
+      {
+        "text": "retryTimeout",
+        "isCorrect": false,
+        "description": "错误。ky 没有 retryTimeout 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：默认情况下（retryOnTimeout 默认值），当某次请求因超时抛 TimeoutError 时，ky 会自动重试吗？",
+    "explanation": "ky 2.x 的 `retry.retryOnTimeout` 默认是 **false**——即**默认不会**因超时而重试。要让超时也触发重试，需显式设 `retry: { retryOnTimeout: true }`（通常配合 totalTimeout 控制整体时长）。这个默认值是有意为之：超时往往意味着服务端慢或网络差，盲目重试可能加重负担，所以交由用户显式开启。\n\n- 「默认不重试（retryOnTimeout: false）」正确。\n- 「默认会重试」错误。\n- 「超时一定重试无法关闭」错误。\n- 「取决于状态码」错误：超时没有 HTTP 状态码，由 retryOnTimeout 控制。",
+    "tags": ["ky", "高级", "retryOnTimeout", "超时", "重试"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认不会，retryOnTimeout 默认是 false，需显式开启",
+        "isCorrect": true,
+        "description": "正确。超时默认不触发重试；设 retryOnTimeout:true 才会。"
+      },
+      {
+        "text": "默认会自动重试超时的请求",
+        "isCorrect": false,
+        "description": "错误。retryOnTimeout 默认 false，默认不重试超时。"
+      },
+      {
+        "text": "超时一定会重试，且无法关闭",
+        "isCorrect": false,
+        "description": "错误。是否重试超时完全由 retryOnTimeout 控制。"
+      },
+      {
+        "text": "取决于响应状态码",
+        "isCorrect": false,
+        "description": "错误。超时没有 HTTP 状态码，由 retryOnTimeout 决定。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要完全自定义「是否重试」的判断逻辑（覆盖默认的状态码/超时规则），应使用 retry 的哪个子选项？",
+    "explanation": "ky 2.x 提供 `retry.shouldRetry`：签名 `({error, retryCount}) => boolean | undefined`（可 async）。它在「重试次数与方法校验通过后」被调用，优先级高于默认检查：返回 `true` 强制重试（绕过 retryOnTimeout/状态码等）、`false` 阻止重试、`undefined` 则回退默认逻辑。注意它与 `beforeRetry` hook 不同：shouldRetry 决定「**是否**重试」，beforeRetry 在「**确定要重试后**」运行用于改请求。\n\n- 「shouldRetry」正确。\n- 「beforeRetry」错误：那是确定重试后改请求，不决定是否重试。\n- 「retryCondition（同 axios-retry）」错误：那是 axios-retry 的命名。\n- 「canRetry」错误：无此选项。",
+    "tags": ["ky", "专家", "shouldRetry", "重试", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "retry.shouldRetry（返回 true/false/undefined 决定是否重试）",
+        "isCorrect": true,
+        "description": "正确。shouldRetry 控制是否重试，优先于默认检查；与改请求的 beforeRetry 分工不同。"
+      },
+      {
+        "text": "beforeRetry hook",
+        "isCorrect": false,
+        "description": "错误。beforeRetry 在确定重试后改请求，不负责决定是否重试。"
+      },
+      {
+        "text": "retry.retryCondition（同 axios-retry）",
+        "isCorrect": false,
+        "description": "错误。retryCondition 是 axios-retry 的命名；ky 用 shouldRetry。"
+      },
+      {
+        "text": "retry.canRetry",
+        "isCorrect": false,
+        "description": "错误。ky 没有 canRetry 子选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：当请求因网络层失败（如 DNS 解析失败、连接被拒、离线）时，ky 2.x 抛出的错误是什么类型？",
+    "explanation": "ky 2.x 引入了 `NetworkError`：当请求因网络原因失败（DNS 失败、连接被拒、离线等，底层 fetch reject 且非 HTTP 响应）时抛出 `NetworkError`，它带 `request` 和 `cause`（原始错误），且**没有 response 属性**（因为根本没收到响应）。这与 `HTTPError`（收到了非 2xx 响应）形成对比。网络错误对可重试方法会被自动重试。可用 `isNetworkError()` 守卫识别。\n\n- 「NetworkError」正确。\n- 「HTTPError」错误：HTTPError 是收到了非 2xx 响应才抛，网络失败没有响应。\n- 「TimeoutError」错误：那是超时专用。\n- 「普通 TypeError」不够准确：2.x 用专门的 NetworkError 封装。",
+    "tags": ["ky", "专家", "NetworkError", "错误类型", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "NetworkError（带 request 和 cause，无 response，可被自动重试）",
+        "isCorrect": true,
+        "description": "正确。网络层失败抛 NetworkError，区别于收到响应才抛的 HTTPError。"
+      },
+      {
+        "text": "HTTPError",
+        "isCorrect": false,
+        "description": "错误。HTTPError 针对收到的非 2xx 响应；网络失败没有响应。"
+      },
+      {
+        "text": "TimeoutError",
+        "isCorrect": false,
+        "description": "错误。TimeoutError 专指超时，不是泛指网络失败。"
+      },
+      {
+        "text": "始终是裸的 TypeError",
+        "isCorrect": false,
+        "description": "错误。2.x 用专门的 NetworkError 封装网络层失败。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 ky 2.x 中，要安全地判断一个捕获到的错误是否为 HTTPError，官方推荐的方式是？",
+    "explanation": "ky 2.x 导出了一组类型守卫：`isHTTPError`、`isNetworkError`、`isTimeoutError`、`isForceRetryError`、`isKyError`。推荐用 `isHTTPError(error)` 而非 `error instanceof HTTPError`——类型守卫在跨打包/多实例/不同模块副本的场景下更稳健（避免 instanceof 因类标识不一致而失效），同时也能正确收窄 TypeScript 类型。\n\n- 「isHTTPError(error)」正确。\n- 「typeof error === 'HTTPError'」错误：typeof 对对象返回 'object'。\n- 「error.name === 'HTTPError' 是唯一办法」不准确：官方提供了专门守卫。\n- 「ky 没有提供类型守卫」错误：2.x 明确导出了一整套。",
+    "tags": ["ky", "高级", "isHTTPError", "类型守卫", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "import { isHTTPError } from 'ky'，用 isHTTPError(error) 判断",
+        "isCorrect": true,
+        "description": "正确。2.x 导出 isHTTPError 等守卫，比 instanceof 更稳健且能收窄类型。"
+      },
+      {
+        "text": "typeof error === 'HTTPError'",
+        "isCorrect": false,
+        "description": "错误。typeof 对对象只会返回 'object'。"
+      },
+      {
+        "text": "只能靠 error.name === 'HTTPError' 字符串比较",
+        "isCorrect": false,
+        "description": "错误。官方提供了 isHTTPError 守卫，更可靠。"
+      },
+      {
+        "text": "ky 没有提供任何类型守卫",
+        "isCorrect": false,
+        "description": "错误。2.x 导出 isHTTPError/isNetworkError/isTimeoutError 等。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：ky 2.x 的 `.json()` 支持传入一个「Standard Schema」做响应校验。下面描述正确的是？",
+    "explanation": "ky 2.x 的 `.json(schema?)` 接受一个可选的 Standard Schema（如 Zod、Valibot、ArkType 等实现了 Standard Schema 规范的校验器）。传入后，ky 会用它校验解析出的 JSON，校验通过则返回**带推断类型**的数据，失败则抛 `SchemaValidationError`（带 `issues`）。这把「运行时校验 + 静态类型推断」一步合并。注意 SchemaValidationError 不属于 KyError 体系——它代表用户的 schema 拒绝，而非 ky 生命周期失败。\n\n- 「传 Standard Schema 校验，失败抛 SchemaValidationError」正确。\n- 「只能传 JSON Schema 字符串」错误：是 Standard Schema 对象。\n- 「校验失败返回 null」错误：会抛 SchemaValidationError。\n- 「ky 不支持响应校验」错误：2.x 明确支持。",
+    "tags": ["ky", "专家", "Standard Schema", "校验", "json"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "传入 Zod/Valibot 等 Standard Schema，校验通过返回带类型的数据，失败抛 SchemaValidationError",
+        "isCorrect": true,
+        "description": "正确。.json(schema) 合并运行时校验与类型推断；失败抛 SchemaValidationError（带 issues）。"
+      },
+      {
+        "text": "只能传一个 JSON Schema 字符串",
+        "isCorrect": false,
+        "description": "错误。接受的是 Standard Schema 校验器对象，不是 JSON Schema 字符串。"
+      },
+      {
+        "text": "校验失败时静默返回 null",
+        "isCorrect": false,
+        "description": "错误。失败会抛 SchemaValidationError，而非返回 null。"
+      },
+      {
+        "text": "ky 完全不支持响应校验",
+        "isCorrect": false,
+        "description": "错误。2.x 明确支持 Standard Schema 校验。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要解析 JSON 时防止「原型污染」攻击（如把响应体里的 __proto__ 安全处理），ky 提供了什么扩展点？",
+    "explanation": "ky 提供 `parseJson` 选项，允许传入自定义 JSON 解析函数（默认 `JSON.parse`），签名 `(text, {request, response}) => unknown`。典型用法是改用 `@hapi/bourne` 这类安全解析库来抵御原型污染，或借 `JSON.parse` 的 reviver 参数做转换、或在解析处记录上下文日志。对应地还有 `stringifyJson` 自定义序列化（默认 JSON.stringify）。\n\n- 「parseJson 选项（可换 bourne 等）」正确。\n- 「safeJson: true 开关」错误：ky 没有这种开关。\n- 「只能用默认 JSON.parse」不准确：parseJson 正是为定制而设。\n- 「在 afterResponse 里重新解析」可行但不是 ky 为此提供的专门入口。",
+    "tags": ["ky", "专家", "parseJson", "原型污染", "安全"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "parseJson 选项：传自定义解析函数（如用 @hapi/bourne 防原型污染）",
+        "isCorrect": true,
+        "description": "正确。parseJson 默认 JSON.parse，可替换为安全解析库；对应 stringifyJson 定制序列化。"
+      },
+      {
+        "text": "设置 safeJson: true 开关",
+        "isCorrect": false,
+        "description": "错误。ky 没有 safeJson 开关。"
+      },
+      {
+        "text": "无法定制，只能用内置 JSON.parse",
+        "isCorrect": false,
+        "description": "错误。parseJson 选项正是为定制解析而设。"
+      },
+      {
+        "text": "把整段响应当字符串、自己再 JSON.parse",
+        "isCorrect": false,
+        "description": "错误。可行但绕开了 ky 提供的 parseJson 扩展点，不是推荐做法。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要给所有请求注入「不污染 request 本身」的上下文数据（如鉴权 token、日志元信息）供 hooks 读取，ky 2.x 提供了哪个选项？",
+    "explanation": "ky 2.x 提供 `context` 选项：传入任意对象，它会被传递到所有 hook（在 hook 里通过 `options.context` 访问），且**保证始终是对象**（永不 undefined），无需可选链。它适合传鉴权 token、请求元数据、serverless 环境绑定（如 Cloudflare Workers）等，而不必把这些塞进 request。注意 context 是**浅合并**：顶层属性合并，嵌套对象会被替换。\n\n- 「context 选项」正确。\n- 「meta 选项」错误：ky 用 context。\n- 「只能挂在 request.headers 上」错误：context 正是为「不污染 request」设计。\n- 「全局变量」错误：不优雅且非 ky 机制。",
+    "tags": ["ky", "高级", "context", "hooks", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "context 选项（在 hooks 里通过 options.context 读取，保证始终是对象）",
+        "isCorrect": true,
+        "description": "正确。context 用于向 hooks 传上下文且不污染 request；浅合并。"
+      },
+      {
+        "text": "meta 选项",
+        "isCorrect": false,
+        "description": "错误。ky 用 context，不是 meta。"
+      },
+      {
+        "text": "只能把数据塞进 request.headers",
+        "isCorrect": false,
+        "description": "错误。context 正是为避免污染 request 而设计的专用通道。"
+      },
+      {
+        "text": "用模块级全局变量传递",
+        "isCorrect": false,
+        "description": "错误。全局变量易冲突且非 ky 机制；应用 context 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：把一个 ky 请求实例直接 `await`（不调用 .json()/.text()）时，得到的是什么？",
+    "explanation": "`ky.get(url)` 返回的是 ResponsePromise——既能链式 `.json()` 等，也能直接 `await`。直接 `await ky.get(url)` 得到的是一个 **`Response` 对象**（ky 增强过的 Response，带额外 body 快捷方法）。也就是说你可以 `const res = await ky.get(url); const data = await res.json();` 分两步，等价于 `await ky.get(url).json()`。\n\n- 「Response 对象」正确。\n- 「已解析的 JSON 数据」错误：要 .json() 才解析。\n- 「字符串」错误。\n- 「ReadableStream」错误：那是 response.body。",
+    "tags": ["ky", "中级", "ResponsePromise", "Response", "await"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个（增强过的）Response 对象",
+        "isCorrect": true,
+        "description": "正确。直接 await 得到 Response；再 await res.json() 才解析体。"
+      },
+      {
+        "text": "已经解析好的 JSON 数据",
+        "isCorrect": false,
+        "description": "错误。需显式 .json() 才解析；直接 await 得到的是 Response。"
+      },
+      {
+        "text": "响应体字符串",
+        "isCorrect": false,
+        "description": "错误。要 .text() 才得字符串。"
+      },
+      {
+        "text": "一个 ReadableStream",
+        "isCorrect": false,
+        "description": "错误。流是 response.body，不是 await 的结果本身。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：以下关于「ky 在 CommonJS 项目里如何引入」的说法，哪个是正确的？",
+    "explanation": "因为 ky 是纯 ESM 包，在 CommonJS（`require`）项目里**不能** `const ky = require('ky')`（会报 ERR_REQUIRE_ESM 之类错误）。可行方案：(1) 用动态导入 `const {default: ky} = await import('ky')`（CJS 里 import() 是允许的）；(2) 把项目/该文件迁移到 ESM（package.json 加 `\"type\": \"module\"` 或用 .mjs）。注意较新的 Node 已支持在 CJS 中 require ESM 的实验/逐步放开，但稳妥写法仍是动态 import 或迁 ESM。\n\n- 「用动态 import() 或迁移到 ESM」正确。\n- 「require('ky') 一直可用」错误。\n- 「装 @types/ky 就能 require」错误：类型与模块格式无关。\n- 「ky 同时发布 CJS 版」错误：已是纯 ESM。",
+    "tags": ["ky", "高级", "ESM", "CommonJS", "动态import"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用动态导入 const {default: ky} = await import('ky')，或把项目迁移到 ESM",
+        "isCorrect": true,
+        "description": "正确。纯 ESM 包在 CJS 里靠动态 import() 引入，或整体迁 ESM。"
+      },
+      {
+        "text": "直接 const ky = require('ky') 一直可用",
+        "isCorrect": false,
+        "description": "错误。ky 是 ESM-only，require 会失败。"
+      },
+      {
+        "text": "安装 @types/ky 后就能 require",
+        "isCorrect": false,
+        "description": "错误。类型声明与运行时模块格式无关，不能让 require 生效。"
+      },
+      {
+        "text": "ky 同时发布了 CommonJS 版本，require 没问题",
+        "isCorrect": false,
+        "description": "错误。ky 已移除 CJS 构建，只发布 ESM。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于 `ky.retry()`（注意是函数，不是 retry 选项）的用途，描述正确的是？",
+    "explanation": "`ky.retry(options?)` 是一个函数，用于**从 `afterResponse` hook 中强制发起一次重试**——即便响应状态码是成功的。它返回一个 RetryMarker，hook 把它返回即可触发。可传 `delay`（自定义延迟，绕过 jitter/backoffLimit）、`code`（机器可读标识，会出现在 beforeRetry 的 ForceRetryError 里）、`cause`（保留错误链）、`request`（用自定义请求重试，如切到备用端点）。它遵守 retry.limit，并跳过 shouldRetry 检查。\n\n- 「从 afterResponse 强制重试，可带 delay/code/request 等」正确。\n- 「等同于设置 retry: 1 选项」错误：ky.retry() 是运行时强制重试的函数。\n- 「取消所有重试」错误：恰恰是触发重试。\n- 「只能在 beforeRequest 用」错误：它用于 afterResponse。",
+    "tags": ["ky", "专家", "ky.retry", "afterResponse", "强制重试"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 afterResponse hook 中返回它以强制重试（可带 delay/code/cause/request），遵守 retry.limit",
+        "isCorrect": true,
+        "description": "正确。ky.retry() 基于响应内容触发强制重试，跳过 shouldRetry，但受 limit 约束。"
+      },
+      {
+        "text": "等同于把 retry 选项设为 1",
+        "isCorrect": false,
+        "description": "错误。它是运行时从 hook 触发重试的函数，与静态 retry 选项不同。"
+      },
+      {
+        "text": "用于取消当前所有重试",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它是发起一次强制重试。"
+      },
+      {
+        "text": "只能在 beforeRequest hook 里调用",
+        "isCorrect": false,
+        "description": "错误。ky.retry() 用于 afterResponse hook。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：实现「401 时自动刷新 token 并重试一次」的鉴权续期逻辑，最贴合 ky 设计的位置是？",
+    "explanation": "经典做法是在 `afterResponse` hook 里判断：若 `response.status === 401 && retryCount === 0`（只在首次 401 时续期，避免无限循环），就去刷新 token，然后返回 `ky.retry({ request: new Request(request, {headers: 带新 token}), code: 'TOKEN_REFRESHED' })` 触发带新凭据的重试。这正是官方文档给出的范式。也可在 beforeRetry 里刷新，但「基于响应状态码 401 决定续期」放在 afterResponse 最自然。\n\n- 「afterResponse 里检测 401 后 ky.retry() 带新 token」正确。\n- 「beforeRequest 里」不对：那时还没拿到 401 响应。\n- 「在全局 catch 里手动重发」可行但不优雅，未用 ky 机制。\n- 「设 retry.statusCodes 含 401 即可」不够：那只会重发同样带旧 token 的请求，不会刷新。",
+    "tags": ["ky", "专家", "afterResponse", "token刷新", "鉴权"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "afterResponse hook：检测到 401（且 retryCount===0）后刷新 token，返回 ky.retry() 带新凭据重试",
+        "isCorrect": true,
+        "description": "正确。这是官方推荐的 token 续期范式，用 retryCount 防无限循环。"
+      },
+      {
+        "text": "beforeRequest hook 里处理 401",
+        "isCorrect": false,
+        "description": "错误。beforeRequest 在请求发出前，那时还没有 401 响应可判断。"
+      },
+      {
+        "text": "在业务代码的 catch 里手动刷新并重发",
+        "isCorrect": false,
+        "description": "错误。可行但绕开 ky 机制、难以复用；hook 是更合适的位置。"
+      },
+      {
+        "text": "把 401 加进 retry.statusCodes 就够了",
+        "isCorrect": false,
+        "description": "错误。那只会用旧 token 重发同样的请求，不会刷新凭据。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在浏览器中不经打包、直接用 CDN 引入 ky，正确的方式是？",
+    "explanation": "因为 ky 是 ESM 包，浏览器里直接用时要走 ES Module 方式：通过 `<script type=\"module\">` 从 jsDelivr/unpkg/esm.sh 等 CDN 以 `import ky from 'https://esm.sh/ky'`（或对应 CDN 的 ESM URL）引入。不能用传统 `<script src>` 同步标签当成 UMD/全局变量用（ky 不提供 UMD 全局）。官方 readme 也列出了 jsdelivr、unpkg、esm.sh 等 CDN 选项。\n\n- 「<script type=module> 里从 CDN import」正确。\n- 「<script src> 后用全局 window.ky」错误：ky 无 UMD 全局。\n- 「require 引入」错误：浏览器无 require 且 ky 是 ESM。\n- 「只能打包后用，无法 CDN」错误：ESM CDN 完全可用。",
+    "tags": ["ky", "高级", "CDN", "ESM", "浏览器"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 <script type=\"module\"> 从 esm.sh/jsDelivr/unpkg 以 import ky from '...' 引入",
+        "isCorrect": true,
+        "description": "正确。ky 是 ESM，浏览器里走 type=module + CDN 的 ESM URL 引入。"
+      },
+      {
+        "text": "用普通 <script src> 后通过全局 window.ky 使用",
+        "isCorrect": false,
+        "description": "错误。ky 不提供 UMD/全局构建，没有 window.ky。"
+      },
+      {
+        "text": "在浏览器里 require('ky')",
+        "isCorrect": false,
+        "description": "错误。浏览器无 require，且 ky 是 ESM-only。"
+      },
+      {
+        "text": "ky 无法通过 CDN 使用，必须本地打包",
+        "isCorrect": false,
+        "description": "错误。通过 ESM CDN（esm.sh 等）可直接在浏览器使用。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要让某个 ky 实例使用自定义的 `fetch` 实现（如 SSR 框架提供的 fetch、或加全局埋点），应怎么做？",
+    "explanation": "ky 提供 `fetch` 选项，可传入一个与 Fetch API 兼容的自定义函数（默认是宿主原生 fetch）。常见场景：使用 SSR 框架封装的 fetch、给所有请求加统一的耗时埋点/日志、注入自定义 dispatcher 等。通常配合 `ky.create({ fetch: myFetch })` 固化到实例。这让 ky 能无缝接入各种运行时和监控体系。\n\n- 「fetch 选项传自定义实现」正确。\n- 「adapter 选项（同 axios）」错误：那是 axios 的命名。\n- 「无法替换底层 fetch」错误：fetch 选项正是为此。\n- 「改写全局 globalThis.fetch」虽影响所有库但不是 ky 的推荐定制方式。",
+    "tags": ["ky", "高级", "fetch选项", "自定义", "SSR"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "传 fetch 选项：ky.create({ fetch: 自定义fetch })",
+        "isCorrect": true,
+        "description": "正确。fetch 选项接受兼容 Fetch API 的实现，常用于 SSR/埋点。"
+      },
+      {
+        "text": "传 adapter 选项（同 axios）",
+        "isCorrect": false,
+        "description": "错误。adapter 是 axios 的概念；ky 用 fetch 选项。"
+      },
+      {
+        "text": "ky 写死了底层 fetch，无法替换",
+        "isCorrect": false,
+        "description": "错误。fetch 选项就是为替换底层实现而设。"
+      },
+      {
+        "text": "只能改写全局 globalThis.fetch",
+        "isCorrect": false,
+        "description": "错误。会影响全局其他代码；ky 提供了实例级 fetch 选项更可控。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于 ky 处理 `no-cors`（opaque）响应的行为，下面描述正确的是？",
+    "explanation": "对于 `no-cors` 请求产生的 **opaque 响应**，浏览器会隐藏真实状态码（status 表现为 0）。ky 的处理是：**直接原样返回这类 opaque 响应，不抛 HTTPError**——因为真实状态被浏览器屏蔽了，ky 无从判断是否非 2xx。这是 `throwHttpErrors` 行为的一个特例，文档明确说明。所以拿到 opaque 响应不会进 catch。\n\n- 「原样返回 opaque 响应，不抛 HTTPError」正确。\n- 「把 opaque 当 200 处理并解析 body」错误：opaque 响应体不可读。\n- 「一律抛 HTTPError」错误：恰恰是不抛。\n- 「ky 不支持 no-cors」错误：支持，只是特殊对待。",
+    "tags": ["ky", "专家", "no-cors", "opaque", "throwHttpErrors"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "原样返回 opaque 响应、不抛 HTTPError（因真实状态被浏览器隐藏）",
+        "isCorrect": true,
+        "description": "正确。opaque 响应 status 为 0、状态被屏蔽，ky 不对其抛错，直接返回。"
+      },
+      {
+        "text": "把 opaque 响应当 200 并尝试解析其 body",
+        "isCorrect": false,
+        "description": "错误。opaque 响应体不可读，ky 不会去解析。"
+      },
+      {
+        "text": "对 opaque 响应一律抛出 HTTPError",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，ky 不对 opaque 响应抛错。"
+      },
+      {
+        "text": "ky 不支持 no-cors 模式",
+        "isCorrect": false,
+        "description": "错误。ky 支持 no-cors，只是对 opaque 响应特殊处理。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要发送一个表单文件上传（multipart/form-data），正确的做法是？",
+    "explanation": "上传 FormData 时，应把 `FormData` 实例作为 `body` 传给 ky（如 `ky.post(url, { body: formData })`），**不要手动设 Content-Type**——浏览器/运行时会自动带上正确的 `multipart/form-data; boundary=...`。手动设 Content-Type 反而会破坏 boundary。注意这里用 `body`（原生 fetch 语义）而非 `json` 选项；`json` 仅用于 JSON 体。\n\n- 「body 传 FormData，不手动设 Content-Type」正确。\n- 「json 选项传 FormData」错误：json 用于 JSON，会被 JSON.stringify。\n- 「手动设 Content-Type: multipart/form-data」错误：会丢 boundary。\n- 「ky 不支持文件上传」错误。",
+    "tags": ["ky", "高级", "FormData", "上传", "body"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ky.post(url, { body: formData })，且不手动设置 Content-Type",
+        "isCorrect": true,
+        "description": "正确。FormData 走 body，运行时会自动设带 boundary 的 multipart Content-Type。"
+      },
+      {
+        "text": "用 json 选项传 FormData",
+        "isCorrect": false,
+        "description": "错误。json 用于 JSON 体，会被 JSON.stringify，破坏 FormData。"
+      },
+      {
+        "text": "手动设 headers 的 Content-Type: multipart/form-data",
+        "isCorrect": false,
+        "description": "错误。手动设会缺少 boundary，导致服务端解析失败。"
+      },
+      {
+        "text": "ky 不支持文件/表单上传",
+        "isCorrect": false,
+        "description": "错误。通过 body 传 FormData 即可上传。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 `ky.extend()` 时，如何移除一个从父实例继承来的 header？",
+    "explanation": "ky 的约定是：在 `extend()`（或 create）的 headers 里，把要移除的 header 的值设为 `undefined`。例如父实例有 `headers: {rainbow: 'x', unicorn: 'y'}`，`extend({ headers: { rainbow: undefined } })` 后，rainbow 头被移除、unicorn 保留。这利用了「值为 undefined 表示删除」的合并语义。类似地，把某类 hook 设为 undefined 可移除继承的 hook。\n\n- 「把该 header 值设为 undefined」正确。\n- 「设为 null」错误：null 不是约定的删除值。\n- 「设为空字符串」错误：空串是一个真实的头值。\n- 「无法移除继承的 header」错误。",
+    "tags": ["ky", "专家", "extend", "headers", "合并"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 extend 的 headers 里把该 header 的值设为 undefined",
+        "isCorrect": true,
+        "description": "正确。值为 undefined 即表示删除继承来的该 header。"
+      },
+      {
+        "text": "把该 header 的值设为 null",
+        "isCorrect": false,
+        "description": "错误。null 不是 ky 约定的删除标记。"
+      },
+      {
+        "text": "把该 header 的值设为空字符串 ''",
+        "isCorrect": false,
+        "description": "错误。空字符串是一个有效的头值，不会移除该头。"
+      },
+      {
+        "text": "继承来的 header 无法移除",
+        "isCorrect": false,
+        "description": "错误。设为 undefined 即可移除。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：下列关于 ky 与原生 fetch「错误语义」差异的总结，哪一项是正确的？",
+    "explanation": "核心差异：原生 fetch 只有在「网络层失败」（如断网、CORS 失败）时才 reject（抛 TypeError），对 404/500 等收到了响应的情况仍 **resolve**（`res.ok` 为 false）。而 ky 默认会把**非 2xx 响应也视为错误并抛 HTTPError**，同时把网络失败封装为 NetworkError、超时封装为 TimeoutError。也就是 ky 让「HTTP 层错误」也走异常通道，更符合直觉。\n\n- 「fetch 对非 2xx 仍 resolve；ky 默认对非 2xx 抛 HTTPError」正确。\n- 「两者都对非 2xx 抛错」错误：fetch 不抛。\n- 「两者都对非 2xx resolve」错误：ky 默认抛。\n- 「fetch 抛、ky 不抛」完全说反。",
+    "tags": ["ky", "中级", "对比", "fetch", "错误语义"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原生 fetch 对非 2xx 仍 resolve（需查 res.ok）；ky 默认对非 2xx 抛 HTTPError",
+        "isCorrect": true,
+        "description": "正确。这是两者最重要的错误语义差异，也是 ky 的核心便利。"
+      },
+      {
+        "text": "两者都会对非 2xx 自动抛错",
+        "isCorrect": false,
+        "description": "错误。原生 fetch 不会对 404/500 抛错。"
+      },
+      {
+        "text": "两者都对非 2xx 正常 resolve，从不抛错",
+        "isCorrect": false,
+        "description": "错误。ky 默认会对非 2xx 抛 HTTPError。"
+      },
+      {
+        "text": "原生 fetch 抛错，ky 反而不抛",
+        "isCorrect": false,
+        "description": "错误。完全说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：在 `beforeRetry` hook 里，如果请求**收到了响应**（如 500），传入 hook 的 error 通常是什么类型，且响应在哪里？",
+    "explanation": "`beforeRetry` 的 state 含 `error`。当本次失败是「收到了响应」（如 500）触发的重试时，error 是 `HTTPError`，对应的 `Response` 在 `error.response`、预解析的响应体在 `error.data`。若失败属于网络层（没收到响应），error 则是 `NetworkError`（无 response）。因此在 beforeRetry 里读响应应通过 `error.response`/`error.data`，并先用 isHTTPError 判断类型。\n\n- 「HTTPError，响应在 error.response」正确。\n- 「TypeError，响应在 error.body」错误。\n- 「NetworkError 总是如此」错误：收到响应时是 HTTPError。\n- 「error 为 null」错误。",
+    "tags": ["ky", "专家", "beforeRetry", "HTTPError", "hooks"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "HTTPError，响应在 error.response、预解析体在 error.data",
+        "isCorrect": true,
+        "description": "正确。收到响应触发的重试，error 为 HTTPError，含 response 与 data。"
+      },
+      {
+        "text": "TypeError，响应在 error.body",
+        "isCorrect": false,
+        "description": "错误。收到响应时是 HTTPError，且响应在 error.response。"
+      },
+      {
+        "text": "一定是 NetworkError",
+        "isCorrect": false,
+        "description": "错误。NetworkError 是没收到响应（网络失败）时；收到响应是 HTTPError。"
+      },
+      {
+        "text": "error 为 null",
+        "isCorrect": false,
+        "description": "错误。beforeRetry 一定带有触发重试的 error。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：综合判断——在以下哪个场景中，你应该优先选 axios 而不是 ky？",
+    "explanation": "ky 浏览器优先、基于 fetch、ESM-only、要求较新运行时。当项目**需要兼容很老的浏览器（如 IE11）**、或必须用 CommonJS/`require`、或重度依赖 axios 成熟生态（拦截器约定、广泛的第三方适配）时，axios（基于 XHR、提供 CJS）更合适。反之，追求轻量、零依赖、贴近 Web 标准、现代运行时，则选 ky。\n\n- 「需要兼容 IE 等老浏览器 / 必须用 CommonJS」正确——这是 ky 的短板、axios 的长处。\n- 「想要零依赖、极小体积」是选 ky 的理由。\n- 「想基于 fetch 标准」是选 ky 的理由。\n- 「想要自动非 2xx 抛错」ky 默认就有，不构成选 axios 的理由。",
+    "tags": ["ky", "高级", "选型", "axios", "对比"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "需要兼容 IE 等老旧浏览器，或项目必须用 CommonJS（require）",
+        "isCorrect": true,
+        "description": "正确。ky 基于 fetch 且 ESM-only，老浏览器/CJS 场景 axios(XHR+CJS) 更合适。"
+      },
+      {
+        "text": "想要零依赖、极小打包体积",
+        "isCorrect": false,
+        "description": "错误。这正是选 ky 的理由，不是选 axios。"
+      },
+      {
+        "text": "想紧贴 Web 标准 fetch 的 Request/Response 原语",
+        "isCorrect": false,
+        "description": "错误。基于 fetch 标准是 ky 的优势，应选 ky。"
+      },
+      {
+        "text": "想要非 2xx 自动抛错的开箱行为",
+        "isCorrect": false,
+        "description": "错误。ky 默认就提供该行为，不构成改选 axios 的理由。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：要把 retry 直接配成「最多重试 5 次，其余保持默认」，最简洁的写法是？",
+    "explanation": "ky 允许 `retry` 选项**直接传一个数字**，此时该数字被当作 `limit`，其余 retry 子项（methods、statusCodes、delay 等）保持默认。所以 `{ retry: 5 }` 即「最多重试 5 次，其余默认」。等价的对象写法是 `{ retry: { limit: 5 } }`。这是 ky 的便捷设计，不必为只改 limit 而写整个对象。\n\n- 「retry: 5」正确。\n- 「retry: { count: 5 }」错误：子选项名是 limit 不是 count。\n- 「retries: 5」错误：选项名是 retry（单数）。\n- 「maxRetries: 5」错误：无此选项。",
+    "tags": ["ky", "初级", "retry", "limit", "简写"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "retry: 5（数字会被当作 limit，其余保持默认）",
+        "isCorrect": true,
+        "description": "正确。retry 传数字即设 limit；等价 retry:{limit:5}。"
+      },
+      {
+        "text": "retry: { count: 5 }",
+        "isCorrect": false,
+        "description": "错误。子选项名是 limit，不是 count。"
+      },
+      {
+        "text": "retries: 5",
+        "isCorrect": false,
+        "description": "错误。选项名是 retry（单数），不是 retries。"
+      },
+      {
+        "text": "maxRetries: 5",
+        "isCorrect": false,
+        "description": "错误。ky 没有 maxRetries 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：把 ky 实例的 `timeout` 设为 `false` 会发生什么？",
+    "explanation": "`timeout` 接受 `number | false`。设为 `false` 表示**关闭每次尝试的超时限制**，请求会一直等待直到响应、被 abort 或底层 fetch 自身失败，不再由 ky 在 10s（默认）后主动中止。这在「确实需要长连接/长轮询、且自行用 AbortController 控制」的场景有用，但要谨慎以免请求永久挂起。\n\n- 「关闭单次尝试超时，不再主动中止」正确。\n- 「立即超时」错误：false 是关闭不是 0。\n- 「使用默认 10s」错误：false 明确关闭超时。\n- 「报类型错误」错误：false 是合法值。",
+    "tags": ["ky", "中级", "timeout", "false", "选项"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "关闭每次尝试的超时，请求不再被 ky 主动中止",
+        "isCorrect": true,
+        "description": "正确。timeout:false 取消单次超时；需配合 AbortController 自行控制。"
+      },
+      {
+        "text": "请求会立即超时失败",
+        "isCorrect": false,
+        "description": "错误。false 表示关闭超时，不是 0 毫秒。"
+      },
+      {
+        "text": "回退到默认的 10 秒超时",
+        "isCorrect": false,
+        "description": "错误。false 明确关闭超时，不会回退默认。"
+      },
+      {
+        "text": "ky 会抛出类型错误",
+        "isCorrect": false,
+        "description": "错误。false 是 timeout 的合法取值。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于 hooks 的执行特性，下面哪项描述正确？",
+    "explanation": "ky 的 hooks 有两个关键特性：(1) 每一类 hook 是一个**函数数组**，按数组顺序**串行执行**；(2) 除 `init` 是同步外，`beforeRequest/beforeRetry/beforeError/afterResponse` 都**可以是 async 函数**，ky 会 await 它们。这让你能在 hook 里做异步操作（如刷新 token、读缓存）。所以「数组、串行、可 async（init 除外）」是正确刻画。\n\n- 「数组按序串行，可为 async（init 同步除外）」正确。\n- 「所有 hook 必须同步」错误：只有 init 同步。\n- 「hook 并行执行」错误：是串行。\n- 「每类只能有一个 hook」错误：是数组，可多个。",
+    "tags": ["ky", "高级", "hooks", "async", "执行顺序"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每类 hook 是数组、按序串行执行，且除 init 外都可为 async",
+        "isCorrect": true,
+        "description": "正确。hooks 串行 await 执行；唯独 init 是同步 hook。"
+      },
+      {
+        "text": "所有 hook 都必须是同步函数",
+        "isCorrect": false,
+        "description": "错误。只有 init 同步，其余可 async。"
+      },
+      {
+        "text": "同类的多个 hook 会并行执行",
+        "isCorrect": false,
+        "description": "错误。它们按数组顺序串行执行。"
+      },
+      {
+        "text": "每类 hook 只能注册一个函数",
+        "isCorrect": false,
+        "description": "错误。每类是函数数组，可注册多个。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：综合题——下面这段代码的行为，哪一项描述正确？\n\nconst api = ky.create({ prefix: 'https://api.example.com', retry: 0 });\nawait api.get('users/1').json();",
+    "explanation": "`ky.create` 建了一个带默认 `prefix` 和 `retry: 0` 的全新实例。`prefix: 'https://api.example.com'` 会被前置到 input，`api.get('users/1')` 实际请求 `https://api.example.com/users/1`（prefix 与 input 用斜杠拼接、自动规范化）。`retry: 0` 表示该实例**不重试**。`.json()` 把响应按 JSON 解析返回。若返回非 2xx，仍会抛 HTTPError（throwHttpErrors 默认 true，与 retry 无关）。\n\n- 「请求 https://api.example.com/users/1，不重试，返回解析后的 JSON」正确。\n- 「retry:0 会关闭抛错」错误：retry 与 throwHttpErrors 是两回事。\n- 「prefix 不生效需要 baseUrl」错误：prefix 是 2.x 合法选项。\n- 「create 会继承全局默认 retry:2」错误：create 不继承，且此处显式 retry:0。",
+    "tags": ["ky", "高级", "create", "prefix", "综合"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "请求 https://api.example.com/users/1，该实例不重试，返回解析后的 JSON",
+        "isCorrect": true,
+        "description": "正确。prefix 前置成完整 URL，retry:0 关闭重试，.json() 解析响应。"
+      },
+      {
+        "text": "retry: 0 会同时关闭非 2xx 抛错",
+        "isCorrect": false,
+        "description": "错误。是否抛错由 throwHttpErrors（默认 true）控制，与 retry 无关。"
+      },
+      {
+        "text": "prefix 不是合法选项，需要改用 baseUrl 才能拼前缀",
+        "isCorrect": false,
+        "description": "错误。prefix 是 ky 2.x 的合法选项（纯字符串拼接）。"
+      },
+      {
+        "text": "create 出的实例仍会继承全局默认 retry: 2",
+        "isCorrect": false,
+        "description": "错误。create 不继承父默认，且此处显式设了 retry:0。"
+      }
+    ]
+  },
+  {
+    "stem": "ky：关于「`error.data` 的填充上限」，ky 2.x 的设计是怎样的？",
+    "explanation": "为了避免在填充 `error.data` 时「无限缓冲大响应体」或「卡住」，ky 2.x 对 error.data 的填充加了双重边界：受**请求 timeout** 约束，以及一个 **10 MiB 的响应体大小上限**。超出则不再继续缓冲。这保证了即使错误响应体异常巨大，也不会拖垮内存或长时间挂起。error.data 在 beforeError hooks 运行前就已填好，方便 hook 读取。\n\n- 「受 timeout + 10 MiB 上限约束」正确。\n- 「无上限，完整缓冲」错误：恰恰有上限。\n- 「固定 1 KB」错误：是 10 MiB。\n- 「从不填充 error.data」错误：2.x 会填充。",
+    "tags": ["ky", "专家", "error.data", "上限", "2.x"],
+    "categories": [
+      ["技术方向", "ky"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "受请求 timeout 与 10 MiB 响应体大小上限的双重约束",
+        "isCorrect": true,
+        "description": "正确。这避免填充 error.data 时无限缓冲或挂起。"
+      },
+      {
+        "text": "无任何上限，总是完整缓冲整个响应体",
+        "isCorrect": false,
+        "description": "错误。有 timeout 与 10 MiB 的边界保护。"
+      },
+      {
+        "text": "固定只读取前 1 KB",
+        "isCorrect": false,
+        "description": "错误。上限是 10 MiB，不是 1 KB。"
+      },
+      {
+        "text": "2.x 根本不填充 error.data",
+        "isCorrect": false,
+        "description": "错误。2.x 会在抛错前预填 error.data。"
+      }
+    ]
+  }
+]

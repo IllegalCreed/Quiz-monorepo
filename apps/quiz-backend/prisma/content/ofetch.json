@@ -1,0 +1,1738 @@
+[
+  {
+    "stem": "ofetch：用一句话概括，ofetch 在 JS 生态中的官方定位是什么？",
+    "explanation": "ofetch 是 unjs 出品的「a better fetch API. Works on node, browser and workers.」——它不是另起炉灶的 HTTP 客户端，而是对原生 fetch 的同构(isomorphic)封装：在 Node、浏览器、Worker 等环境用同一套代码，并补齐自动解析、自动序列化、非 2xx 抛错、重试、拦截器等 fetch 缺失的人体工学。\n\n- 「基于原生 fetch 的同构封装，补齐易用性」正确。\n- 「全新的、与 fetch 无关的网络栈」错误：它底层就是 fetch。\n- 「仅限浏览器」错误：它明确支持 node/worker。\n- 「Nuxt 专属、脱离 Nuxt 不能用」错误：它是独立通用库，Nuxt 只是其使用方。",
+    "tags": ["ofetch", "入门", "定位", "核心概念", "同构"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "基于原生 fetch 的同构封装，在 Node/浏览器/Worker 通用，补齐自动解析、抛错、重试等易用性",
+        "isCorrect": true,
+        "description": "正确。官方描述即「A better fetch API. Works on node, browser and workers.」。"
+      },
+      {
+        "text": "一个与 fetch 完全无关、自研底层网络栈的 HTTP 客户端",
+        "isCorrect": false,
+        "description": "错误。ofetch 底层默认就用 globalThis.fetch，是封装而非另起炉灶。"
+      },
+      {
+        "text": "只能在浏览器里用的前端请求库",
+        "isCorrect": false,
+        "description": "错误。ofetch 同时支持 Node 与 Worker，是同构库。"
+      },
+      {
+        "text": "Nuxt 框架专属，脱离 Nuxt 无法独立使用",
+        "isCorrect": false,
+        "description": "错误。ofetch 是独立的 unjs 通用库，Nuxt 的 $fetch 只是它的封装使用方。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：从 npm 安装并以 ESM 方式引入默认导出，最常见的写法是哪个？",
+    "explanation": "安装是 `npm install ofetch`。ofetch 同时导出具名的 `ofetch` 和别名 `$fetch`(二者指向同一个实例)。最常见写法是具名导入 `import { ofetch } from 'ofetch'`。它不是默认导出，所以 `import ofetch from 'ofetch'` 不规范(虽然打包器有时容错)。\n\n- `import { ofetch } from 'ofetch'` 正确。\n- `import ofetch from 'ofetch'`(默认导入)不是官方推荐形式，ofetch 走具名导出。\n- `require` 写法用于 CJS，不是「ESM 方式」。\n- `import { fetch } from 'ofetch'` 引入的是被 polyfill 的原生 fetch，不是增强版实例。",
+    "tags": ["ofetch", "入门", "安装", "导入", "ESM"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "import { ofetch } from 'ofetch'（具名导入，也可用别名 $fetch）",
+        "isCorrect": true,
+        "description": "正确。ofetch 走具名导出，ofetch 与 $fetch 是同一实例的两个名字。"
+      },
+      {
+        "text": "import ofetch from 'ofetch'（默认导入）",
+        "isCorrect": false,
+        "description": "错误。ofetch 是具名导出，没有 default 导出主实例。"
+      },
+      {
+        "text": "const ofetch = require('ofetch')（这是 ESM 写法）",
+        "isCorrect": false,
+        "description": "错误。require 是 CommonJS 写法，不属于「ESM 方式」。"
+      },
+      {
+        "text": "import { fetch } from 'ofetch'",
+        "isCorrect": false,
+        "description": "错误。ofetch 确实导出 fetch，但那是原生 fetch 的 polyfill，不是带自动解析/重试的增强实例。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：用原生 fetch 取 JSON 通常要 `await fetch(url).then(r => r.json())` 两步。换成 ofetch 后，`const data = await ofetch('/api/user')` 里的 data 是什么？",
+    "explanation": "ofetch 默认会**自动解析响应体**：根据响应的 content-type 智能判断，JSON 类型直接解析成对象。所以 `await ofetch(url)` 直接拿到解析后的数据，不用再 `.json()`。这正是它相对原生 fetch 最直观的便利之一。\n\n- 「已解析的 JS 对象/值」正确。\n- 「Response 对象，还需 .json()」错误：那是原生 fetch 的行为，ofetch 已替你解析(想要原始 Response 用 ofetch.raw)。\n- 「永远是字符串」错误：JSON 会被解析为对象。\n- 「Promise，需要再 await 一次」错误：一次 await 即得数据。",
+    "tags": ["ofetch", "入门", "自动解析", "json", "核心概念"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "已经解析好的 JS 对象/值（ofetch 自动按 content-type 解析，无需再 .json()）",
+        "isCorrect": true,
+        "description": "正确。ofetch 默认自动解析响应，JSON 直接得到对象。"
+      },
+      {
+        "text": "原生 Response 对象，还要自己调用 .json()",
+        "isCorrect": false,
+        "description": "错误。那是原生 fetch 的行为；ofetch 已替你解析。要原始 Response 请用 ofetch.raw()。"
+      },
+      {
+        "text": "永远是未解析的字符串",
+        "isCorrect": false,
+        "description": "错误。JSON 响应会被解析为对象，只有非 JSON/解析失败才退回字符串。"
+      },
+      {
+        "text": "一个还没 settle 的 Promise，需要再 await 一次",
+        "isCorrect": false,
+        "description": "错误。一次 await 即拿到最终数据，不需要二次 await。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：发 POST 时传一个普通对象作为 body，例如 `ofetch('/api', { method: 'POST', body: { name: 'foo' } })`，ofetch 会自动做什么？",
+    "explanation": "对可 JSON 序列化的 body(普通对象/数组等)，ofetch 会自动 `JSON.stringify`，并在没有 content-type 时自动补 `content-type: application/json`，同时(若未设置)补 `accept: application/json`。所以你直接传对象即可，无需手动 stringify、也无需手动设头。\n\n- 「自动 JSON.stringify 并补 content-type/accept 头」正确。\n- 「原样把对象塞给 fetch」错误：原生 fetch 不接受普通对象做 body，会变成 '[object Object]'。\n- 「报错，必须手动 stringify」错误：ofetch 的卖点正是免去手动序列化。\n- 「转成 FormData」错误：普通对象走 JSON 序列化，不是 FormData。",
+    "tags": ["ofetch", "入门", "自动序列化", "body", "POST"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "自动 JSON.stringify，并在缺省时补上 content-type: application/json 与 accept: application/json",
+        "isCorrect": true,
+        "description": "正确。可序列化对象会被自动 stringify，并自动设置 content-type 与 accept。"
+      },
+      {
+        "text": "原样把对象交给底层 fetch，由 fetch 处理",
+        "isCorrect": false,
+        "description": "错误。原生 fetch 不识别普通对象 body，会被强制转成 '[object Object]'。"
+      },
+      {
+        "text": "抛错，要求你必须先手动 JSON.stringify",
+        "isCorrect": false,
+        "description": "错误。免手动序列化正是 ofetch 的核心便利之一。"
+      },
+      {
+        "text": "把对象转成 FormData 再发送",
+        "isCorrect": false,
+        "description": "错误。普通对象走 JSON 序列化；FormData 是另一类 body，ofetch 不会替你转换。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：用原生 fetch 时，请求返回 404/500，fetch 也**不会**进 catch（因为 fetch 只在网络层失败才 reject）。ofetch 在这点上有什么不同？",
+    "explanation": "原生 fetch 只在网络层错误(断网、DNS 失败等)才 reject，HTTP 4xx/5xx 仍算「成功」resolve，必须自己查 `response.ok`。ofetch 改变了这个反直觉行为：当响应状态码落在 400–599，会**自动抛出 FetchError**，于是能被 try/catch 或 `.catch()` 捕获。\n\n- 「非 2xx(4xx/5xx)自动抛 FetchError」正确。\n- 「和 fetch 一样不抛，需查 response.ok」错误：ofetch 正是改掉了这点。\n- 「只对 5xx 抛、4xx 不抛」错误：400–599 都抛(除非 ignoreResponseError)。\n- 「抛的是原生 TypeError」错误：抛的是专门的 FetchError。",
+    "tags": ["ofetch", "入门", "错误处理", "FetchError", "核心概念"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "响应状态码为非 2xx（约定 400–599）时自动抛出 FetchError，可被 catch 捕获",
+        "isCorrect": true,
+        "description": "正确。ofetch 在 response.status 落在 400–599 时自动抛 FetchError，修正了 fetch 的反直觉行为。"
+      },
+      {
+        "text": "与原生 fetch 完全一致，4xx/5xx 不抛错，仍需手动判断 response.ok",
+        "isCorrect": false,
+        "description": "错误。ofetch 的核心改进之一就是非 2xx 自动抛错。"
+      },
+      {
+        "text": "只在 5xx 时抛错，4xx 视为正常",
+        "isCorrect": false,
+        "description": "错误。4xx 与 5xx（约 400–599）都会抛错。"
+      },
+      {
+        "text": "抛出原生 TypeError",
+        "isCorrect": false,
+        "description": "错误。ofetch 抛的是带丰富上下文的 FetchError，而非裸 TypeError。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：catch 到 FetchError 后，想拿到**服务端返回的错误响应体**(比如 `{ message: '...' }`)，应读哪个属性？",
+    "explanation": "FetchError 上挂着解析后的错误响应体，读 `error.data`(就是服务端 4xx/5xx 时返回的 body，已按 content-type 解析)。此外还有 `error.status`/`error.statusCode`(状态码)、`error.statusText`/`error.statusMessage`、`error.response`(原始响应)、`error.request`/`error.options`。\n\n- `error.data` 正确。\n- `error.body` 不是 ofetch 约定的字段名。\n- `error.json()` 不存在：data 已是解析好的值，不是方法。\n- `error.response` 是原始 FetchResponse，要拿解析后的体仍是 `error.data`(等价 `error.response._data`)。",
+    "tags": ["ofetch", "初级", "错误处理", "FetchError", "error.data"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "error.data —— 解析后的错误响应体",
+        "isCorrect": true,
+        "description": "正确。FetchError.data 即服务端错误响应体(按 content-type 解析)，配套还有 error.status 等。"
+      },
+      {
+        "text": "error.body",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有约定 error.body 字段，解析后的体在 error.data。"
+      },
+      {
+        "text": "调用 error.json() 方法",
+        "isCorrect": false,
+        "description": "错误。error.data 已是解析好的值，不是需要调用的方法。"
+      },
+      {
+        "text": "error.message —— 它包含完整的 JSON 错误体",
+        "isCorrect": false,
+        "description": "错误。message 是人类可读的摘要(如 [GET] \"/x\": 404 Not Found)，结构化错误体在 error.data。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：想给某次请求加查询串 `?page=2&size=10`，最符合 ofetch 习惯的写法是哪个？",
+    "explanation": "ofetch 支持 `query` 选项(底层用 ufo 把对象拼到 URL，并能与 URL 上已有的 query 合并)：`ofetch('/api/list', { query: { page: 2, size: 10 } })`。`params` 是 `query` 的**已废弃别名**，仍可用但推荐 `query`。\n\n- `{ query: { page: 2, size: 10 } }` 正确。\n- 自己手动字符串拼接也能用，但不是「最符合 ofetch 习惯」的方式，且容易漏掉编码。\n- `{ body: { page, size } }` 错误：body 是请求体，GET 不该带，且不会变成 query。\n- `{ search: {...} }` 错误：没有 search 选项。",
+    "tags": ["ofetch", "初级", "query", "params", "ufo"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch('/api/list', { query: { page: 2, size: 10 } })",
+        "isCorrect": true,
+        "description": "正确。query 选项由 ufo 拼接到 URL，并能与已有 query 合并；params 是其已废弃别名。"
+      },
+      {
+        "text": "ofetch('/api/list', { body: { page: 2, size: 10 } })",
+        "isCorrect": false,
+        "description": "错误。body 是请求体，不会变成查询串，GET 也不应带 body。"
+      },
+      {
+        "text": "ofetch('/api/list', { search: { page: 2, size: 10 } })",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有 search 选项，查询串用 query(或废弃别名 params)。"
+      },
+      {
+        "text": "只能自己手写 '/api/list?page=2&size=10'，ofetch 不支持对象形式",
+        "isCorrect": false,
+        "description": "错误。ofetch 内置 query 选项支持对象，自动编码并合并已有 query。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：项目里要给一组 API 统一加 `baseURL` 和公共请求头，避免每次重复。ofetch 提供的标准做法是？",
+    "explanation": "用 `ofetch.create(defaults)` 创建一个**预配置的实例**：可设 baseURL、headers、retry、timeout 以及共享拦截器。之后用这个实例发请求即自动套用这些默认值，类似 axios 的 `axios.create`。\n\n- `ofetch.create({ baseURL, headers })` 正确。\n- 「改全局 ofetch 的某个静态配置」错误：ofetch 没有可变的全局默认配置入口，应 create 实例。\n- 「每次调用都重复传」可行但正是要避免的事。\n- 「ofetch.config(...)」错误：没有这个 API。",
+    "tags": ["ofetch", "初级", "create", "baseURL", "实例"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const api = ofetch.create({ baseURL: '/api', headers: {...} })，之后用 api 发请求",
+        "isCorrect": true,
+        "description": "正确。ofetch.create 返回带默认值(baseURL/headers/retry/timeout/拦截器)的实例，类似 axios.create。"
+      },
+      {
+        "text": "调用 ofetch.config({ baseURL: '/api' }) 设全局配置",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有 .config() 全局配置 API，复用配置请用 .create()。"
+      },
+      {
+        "text": "直接修改 globalThis.fetch 的属性来注入 baseURL",
+        "isCorrect": false,
+        "description": "错误。baseURL 是 ofetch 选项，与 globalThis.fetch 无关，改它无效且危险。"
+      },
+      {
+        "text": "没有复用机制，只能每次调用都重复传 baseURL 和 headers",
+        "isCorrect": false,
+        "description": "错误。ofetch.create 正是为复用而设计，避免重复传参。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：默认情况下 `await ofetch(url)` 拿到的是解析后的 data。如果我**既要状态码/响应头、又要 body**，应该用什么？",
+    "explanation": "用 `ofetch.raw(url, options)`：它返回完整的 `FetchResponse` 对象——可读 `response.status`、`response.headers`，而解析后的体在 `response._data`。普通 `ofetch()` 等价于 `ofetch.raw()` 后取 `._data`。\n\n- `ofetch.raw(...)` 正确。\n- `ofetch(url, { raw: true })` 错误：没有 raw 选项，raw 是方法。\n- 「读 data.headers」错误：data 是纯数据，不带响应头。\n- 「ofetch.response(...)」错误：没有这个方法。",
+    "tags": ["ofetch", "初级", "raw", "FetchResponse", "响应头"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch.raw(url, options) —— 返回完整 FetchResponse，body 在 response._data",
+        "isCorrect": true,
+        "description": "正确。raw 返回完整响应对象，可读 status/headers，解析后的体在 _data。"
+      },
+      {
+        "text": "ofetch(url, { raw: true })",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有 raw 选项；raw 是实例上的方法 ofetch.raw()。"
+      },
+      {
+        "text": "普通 ofetch 返回的 data 上本就带 .headers 和 .status",
+        "isCorrect": false,
+        "description": "错误。普通 ofetch 返回的是纯解析数据，不含响应头/状态码。"
+      },
+      {
+        "text": "ofetch.response(url) 方法",
+        "isCorrect": false,
+        "description": "错误。没有 ofetch.response 方法，要完整响应用 ofetch.raw。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：Nuxt 应用里到处可用的全局 `$fetch`，它和 ofetch 是什么关系？",
+    "explanation": "Nuxt 官方文档明确：「Nuxt includes the ofetch library, and is auto-imported as the `$fetch` alias globally across your application.」即 Nuxt 的 `$fetch` 就是 ofetch，被自动导入为全局别名。Nuxt 的 `useFetch` 又在 `$fetch` 之上封装(做 SSR 安全的数据获取)。\n\n- 「$fetch 就是 Nuxt 自动导入的 ofetch」正确。\n- 「两者无关，恰好同名」错误：是同一个库。\n- 「ofetch 是 $fetch 的封装」方向反了：是 $fetch 基于 ofetch。\n- 「$fetch 是 axios 在 Nuxt 的别名」错误：与 axios 无关。",
+    "tags": ["ofetch", "初级", "Nuxt", "$fetch", "生态"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Nuxt 的 $fetch 就是被自动导入为全局别名的 ofetch；useFetch 再在 $fetch 之上封装",
+        "isCorrect": true,
+        "description": "正确。Nuxt 官方文档原文即 $fetch 是自动导入的 ofetch，useFetch 包装 $fetch 做 SSR 安全获取。"
+      },
+      {
+        "text": "两者毫无关系，只是恰好名字相近",
+        "isCorrect": false,
+        "description": "错误。$fetch 在 Nuxt 中就是 ofetch 实例本身。"
+      },
+      {
+        "text": "ofetch 是对 Nuxt $fetch 的二次封装",
+        "isCorrect": false,
+        "description": "错误。依赖方向相反：$fetch 基于 ofetch，而非 ofetch 基于 $fetch。"
+      },
+      {
+        "text": "$fetch 是 axios 在 Nuxt 里的别名",
+        "isCorrect": false,
+        "description": "错误。$fetch 与 axios 无关，它是 ofetch。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：原生 fetch 失败时报错信息往往很笼统。ofetch 抛的 FetchError 的 message 大致长什么样？",
+    "explanation": "ofetch 的 FetchError 提供「友好的错误信息 + 精简的调用栈」。message 形如 `[GET] \"https://api.example.com/not-found\": 404 Not Found`——把方法、URL、状态码、状态文本拼成一句，定位问题一目了然。\n\n- 「[方法] \"URL\": 状态码 状态文本」正确。\n- 「只有一句 'fetch failed'」错误：那更像原生/undici 的笼统报错。\n- 「整个响应体 JSON 字符串」错误：响应体在 error.data，不塞进 message。\n- 「空字符串」错误。",
+    "tags": ["ofetch", "初级", "FetchError", "错误信息", "调试"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "形如 [GET] \"https://api.example.com/...\": 404 Not Found，含方法、URL、状态码与状态文本",
+        "isCorrect": true,
+        "description": "正确。ofetch 把请求方法、URL、状态码、状态文本拼成友好 message，便于定位。"
+      },
+      {
+        "text": "永远只有一句笼统的 'fetch failed'",
+        "isCorrect": false,
+        "description": "错误。那是原生/undici 风格的笼统报错；ofetch 专门做了友好信息。"
+      },
+      {
+        "text": "把整个响应体序列化成 JSON 塞进 message",
+        "isCorrect": false,
+        "description": "错误。响应体放在 error.data，message 只放摘要。"
+      },
+      {
+        "text": "message 为空，所有信息只能从 error.cause 拿",
+        "isCorrect": false,
+        "description": "错误。message 本身就含方法/URL/状态信息。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：内置自动重试。对一个普通的 `ofetch('/api/data')`(GET，不显式配 retry)，默认会重试几次？",
+    "explanation": "ofetch 的默认重试次数：**GET/HEAD 等非「写」方法默认重试 1 次；POST/PUT/PATCH/DELETE 默认 0 次**(避免重复提交带来的副作用)。源码即 `retries = isPayloadMethod(method) ? 0 : 1`。显式给定 `retry: n` 则所有方法都按 n 次。\n\n- 「GET 默认 1 次」正确。\n- 「默认 3 次」错误：默认不是 3。\n- 「默认 0 次(GET 也不重试)」错误：GET 默认重试 1 次。\n- 「无限重试到成功」错误：有固定次数。",
+    "tags": ["ofetch", "中级", "retry", "默认值", "重试"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 1 次（GET/HEAD 等非写方法默认 retry=1；POST/PUT/PATCH/DELETE 默认 0）",
+        "isCorrect": true,
+        "description": "正确。源码为 isPayloadMethod(method) ? 0 : 1，GET 默认重试 1 次。"
+      },
+      {
+        "text": "默认重试 3 次",
+        "isCorrect": false,
+        "description": "错误。默认是 1（非写方法），不是 3。"
+      },
+      {
+        "text": "默认 0 次，连 GET 也不会自动重试",
+        "isCorrect": false,
+        "description": "错误。GET/HEAD 默认重试 1 次；0 次是写方法(POST 等)的默认。"
+      },
+      {
+        "text": "无限重试，直到请求成功为止",
+        "isCorrect": false,
+        "description": "错误。重试有固定上限，绝不会无限重试。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：为什么 ofetch 对 POST/PUT/PATCH/DELETE 默认**不**自动重试（retry 默认 0），而 GET 默认重试 1 次？",
+    "explanation": "因为这些是「写」方法(payload methods)，往往**非幂等**——自动重试可能造成重复下单、重复扣款等副作用。GET/HEAD 是读操作、天然幂等，重试相对安全，故默认 1 次。你可显式设 `retry: n` 强制所有方法重试，但写方法重试需自行确保幂等(如带幂等键)。\n\n- 「写方法可能非幂等，重试有副作用风险」正确。\n- 「写方法更快不需要重试」错误：与速度无关。\n- 「fetch 不允许重试 POST」错误：技术上能重试，是 ofetch 的安全默认。\n- 「写方法不会失败」错误：当然会失败。",
+    "tags": ["ofetch", "中级", "retry", "幂等", "设计"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "POST/PUT/PATCH/DELETE 通常非幂等，自动重试可能导致重复提交等副作用；GET/HEAD 幂等故默认重试",
+        "isCorrect": true,
+        "description": "正确。这是出于幂等性/副作用的安全考虑。写方法如需重试应自行保证幂等。"
+      },
+      {
+        "text": "因为写方法执行更快，不需要重试",
+        "isCorrect": false,
+        "description": "错误。与执行速度无关，原因是幂等性与副作用风险。"
+      },
+      {
+        "text": "因为底层 fetch 在技术上禁止重试 POST 请求",
+        "isCorrect": false,
+        "description": "错误。技术上完全可以重试 POST，这只是 ofetch 的安全默认策略。"
+      },
+      {
+        "text": "因为写方法永远不会失败，无需重试",
+        "isCorrect": false,
+        "description": "错误。写方法同样会失败，只是默认不自动重试以免副作用。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：自动重试并非对所有失败都触发。默认会触发重试的 HTTP 状态码集合(retryStatusCodes 默认值)是哪一组？",
+    "explanation": "ofetch 默认 `retryStatusCodes` 为 `[408, 409, 425, 429, 500, 502, 503, 504]`——即请求超时、冲突、Too Early、限流、以及 5xx 网关/服务端临时错误这类「重试可能有救」的状态。404、401、400 这类语义明确的客户端错误**不在**默认重试列表。\n\n- 「408/409/425/429/500/502/503/504」正确。\n- 「所有 4xx 和 5xx」错误：4xx 中只有 408/409/425/429 默认重试。\n- 「只有 5xx」错误：还包含若干 4xx。\n- 「404/401/403」错误：这些恰恰不在默认列表。",
+    "tags": ["ofetch", "中级", "retryStatusCodes", "默认值", "重试"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[408, 409, 425, 429, 500, 502, 503, 504]",
+        "isCorrect": true,
+        "description": "正确。这是 ofetch retryStatusCodes 的默认集合，覆盖超时/冲突/限流/5xx 等可重试场景。"
+      },
+      {
+        "text": "所有 4xx 和 5xx 状态码",
+        "isCorrect": false,
+        "description": "错误。4xx 中只有 408/409/425/429 在默认列表，404/401/400 等不重试。"
+      },
+      {
+        "text": "只有 5xx（500–599）才默认重试",
+        "isCorrect": false,
+        "description": "错误。默认列表还含 408/409/425/429 这几个 4xx。"
+      },
+      {
+        "text": "[400, 401, 403, 404]",
+        "isCorrect": false,
+        "description": "错误。这些语义明确的客户端错误恰恰不在默认重试列表。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：想给请求设 5 秒超时，超时自动中断。正确写法是哪个？",
+    "explanation": "ofetch 内置 `timeout` 选项(毫秒)：`ofetch(url, { timeout: 5000 })`。底层用一个内部 AbortController，到时 abort 请求。你也可同时传自己的 `signal` 做手动中断。原生 fetch 没有 timeout 选项，必须自己搭 AbortController + setTimeout，ofetch 把这套封装好了。\n\n- `{ timeout: 5000 }` 正确(单位毫秒)。\n- `{ timeout: 5 }` 错误：那是 5 毫秒，几乎必超时。\n- `{ timeoutMs: 5000 }` 错误：选项名是 timeout。\n- 「ofetch 不支持超时」错误：内置支持。",
+    "tags": ["ofetch", "中级", "timeout", "AbortController", "选项"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch(url, { timeout: 5000 }) —— timeout 单位是毫秒",
+        "isCorrect": true,
+        "description": "正确。timeout 以毫秒计，ofetch 内部用 AbortController 到时中断。"
+      },
+      {
+        "text": "ofetch(url, { timeout: 5 }) —— 单位是秒",
+        "isCorrect": false,
+        "description": "错误。timeout 单位是毫秒，写 5 表示 5ms，几乎必然立即超时。"
+      },
+      {
+        "text": "ofetch(url, { timeoutMs: 5000 })",
+        "isCorrect": false,
+        "description": "错误。选项名是 timeout，不是 timeoutMs。"
+      },
+      {
+        "text": "ofetch 不支持超时，必须自己写 AbortController",
+        "isCorrect": false,
+        "description": "错误。ofetch 内置 timeout 选项，底层已封装 AbortController。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：想在每个请求**发出前**统一打日志、注入 token，应该用哪个拦截器钩子？",
+    "explanation": "ofetch 的拦截器有四个：`onRequest`(请求发出前)、`onRequestError`(请求发送阶段就报错，如网络层失败)、`onResponse`(收到响应、解析后)、`onResponseError`(响应状态非 2xx)。发出前注入 token / 改 options，用 `onRequest({ request, options })`，可在此修改 `options.headers`、`options.query` 等。\n\n- `onRequest` 正确。\n- `onResponse` 是收到响应后，太晚。\n- `onResponseError` 只在响应出错时触发。\n- `beforeRequest` 错误：没有这个钩子名。",
+    "tags": ["ofetch", "中级", "拦截器", "onRequest", "钩子"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "onRequest({ request, options }) —— 在请求发出前修改 options（如加 token、改 query）",
+        "isCorrect": true,
+        "description": "正确。onRequest 在请求发出前调用，可改 options.headers / options.query 等。"
+      },
+      {
+        "text": "onResponse",
+        "isCorrect": false,
+        "description": "错误。onResponse 在收到并解析响应后触发，注入请求 token 太晚。"
+      },
+      {
+        "text": "onResponseError",
+        "isCorrect": false,
+        "description": "错误。它只在响应状态非 2xx 时触发，并非每次发请求前。"
+      },
+      {
+        "text": "beforeRequest",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有 beforeRequest 钩子，发出前钩子叫 onRequest。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：四个拦截器钩子中，专门在「响应状态码为非 2xx」时触发、适合统一处理 401 刷新 token / 全局错误提示的是哪个？",
+    "explanation": "`onResponseError({ request, response, options })` 在响应进入错误区间(状态非 2xx)时触发——是做统一错误处理的标准位置，例如检测 `response.status === 401` 去刷新 token、或弹全局错误提示。注意它在「响应已回来但状态码出错」时触发；而网络层根本没拿到响应的失败走 `onRequestError`。\n\n- `onResponseError` 正确。\n- `onRequestError` 针对请求发送阶段的错误(网络失败)，不是 HTTP 状态错误。\n- `onResponse` 对所有响应都触发，不专门针对错误。\n- `onError` 错误：没有这个统一钩子名。",
+    "tags": ["ofetch", "中级", "拦截器", "onResponseError", "401"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "onResponseError —— 响应状态非 2xx 时触发，适合统一处理 401、全局错误提示",
+        "isCorrect": true,
+        "description": "正确。onResponseError 在响应进入错误区间时触发，是全局错误处理/401 刷新的标准钩子。"
+      },
+      {
+        "text": "onRequestError",
+        "isCorrect": false,
+        "description": "错误。onRequestError 针对请求发送阶段(网络层)的失败，不是 HTTP 状态码错误。"
+      },
+      {
+        "text": "onResponse",
+        "isCorrect": false,
+        "description": "错误。onResponse 对所有响应(含成功)都触发，不专门针对错误。"
+      },
+      {
+        "text": "onError",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有 onError 钩子；错误分 onRequestError 与 onResponseError。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：默认会智能解析响应。如果我明确要把响应当**二进制 Blob** 拿(比如下载图片)，该怎么做？",
+    "explanation": "用 `responseType: 'blob'` 显式指定解析方式。ofetch 的 responseType 取值有：`json`(默认)、`text`、`blob`、`arrayBuffer`、`stream`。例如 `ofetch('/img.png', { responseType: 'blob' })` 得到 Blob。不指定时，ofetch 按 content-type 智能判断(JSON→对象、text/*→字符串、其它→blob)。\n\n- `{ responseType: 'blob' }` 正确。\n- `{ type: 'blob' }` 错误：选项名是 responseType。\n- `{ responseType: 'binary' }` 错误：没有 'binary' 这个取值。\n- 「ofetch 只能返回 JSON」错误：支持多种 responseType。",
+    "tags": ["ofetch", "中级", "responseType", "blob", "二进制"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch(url, { responseType: 'blob' })，取值还有 json/text/arrayBuffer/stream",
+        "isCorrect": true,
+        "description": "正确。responseType 显式指定解析方式，blob 用于二进制；默认按 content-type 智能判断。"
+      },
+      {
+        "text": "ofetch(url, { type: 'blob' })",
+        "isCorrect": false,
+        "description": "错误。选项名是 responseType，不是 type。"
+      },
+      {
+        "text": "ofetch(url, { responseType: 'binary' })",
+        "isCorrect": false,
+        "description": "错误。没有 'binary' 取值，二进制用 'blob' 或 'arrayBuffer'。"
+      },
+      {
+        "text": "ofetch 永远只返回 JSON，二进制只能退回原生 fetch",
+        "isCorrect": false,
+        "description": "错误。ofetch 支持 blob/arrayBuffer/text/stream 等多种 responseType。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：某接口在出错(4xx/5xx)时也会返回有意义的 JSON 体，我**不希望 ofetch 自动抛错**，想自己拿响应判断。最直接的开关是？",
+    "explanation": "设 `ignoreResponseError: true`，ofetch 就**不会**在非 2xx 时抛错，而是照常返回(解析后的)响应数据，由你自行判断。常配合 `ofetch.raw` 拿到 status 再分流处理。这是「关闭自动抛错」的官方开关。\n\n- `{ ignoreResponseError: true }` 正确。\n- `{ throwOnError: false }` 错误：ofetch 用的是 ignoreResponseError，不是 throwOnError(那是 ky 等的命名)。\n- 「try/catch 里读 error.data」也能拿到错误体，但题目要的是「不抛错」，那就用 ignoreResponseError。\n- 「retry: false」与抛不抛错无关。",
+    "tags": ["ofetch", "中级", "ignoreResponseError", "错误处理", "选项"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch(url, { ignoreResponseError: true })，非 2xx 也不抛错、照常返回",
+        "isCorrect": true,
+        "description": "正确。ignoreResponseError 关闭自动抛错，常配合 ofetch.raw 自行判断 status。"
+      },
+      {
+        "text": "ofetch(url, { throwOnError: false })",
+        "isCorrect": false,
+        "description": "错误。throwOnError 是 ky 等库的命名，ofetch 的开关是 ignoreResponseError。"
+      },
+      {
+        "text": "ofetch(url, { retry: false })",
+        "isCorrect": false,
+        "description": "错误。retry 控制重试次数，与是否抛错无关。"
+      },
+      {
+        "text": "ofetch 无法关闭自动抛错，只能 try/catch",
+        "isCorrect": false,
+        "description": "错误。ignoreResponseError 就是官方的「不抛错」开关。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：响应解析时，如果服务端返回的内容**根本不是合法 JSON**(比如返回了纯文本或空)，ofetch 默认会怎样处理？",
+    "explanation": "ofetch 默认用 `destr` 解析 JSON。destr 是「安全解析」：能解析就返回对象，**解析失败则原样返回字符串**，而不是像 `JSON.parse` 那样抛 SyntaxError。所以非法 JSON 不会让 ofetch 崩，你会拿到原始文本。\n\n- 「用 destr 安全解析，失败则返回原始字符串」正确。\n- 「抛 SyntaxError」错误：destr 不会因非法 JSON 抛错。\n- 「返回 null」错误：返回的是原始字符串，不是 null。\n- 「返回 undefined」错误。",
+    "tags": ["ofetch", "中级", "destr", "解析", "容错"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 destr 安全解析：是合法 JSON 就返回对象，否则原样返回字符串，不抛错",
+        "isCorrect": true,
+        "description": "正确。ofetch 默认解析器是 destr，对非法 JSON 不抛错而是返回原始字符串。"
+      },
+      {
+        "text": "像 JSON.parse 一样抛出 SyntaxError",
+        "isCorrect": false,
+        "description": "错误。ofetch 用 destr 而非裸 JSON.parse，正是为避免这种崩溃。"
+      },
+      {
+        "text": "解析失败时统一返回 null",
+        "isCorrect": false,
+        "description": "错误。destr 解析失败返回原始字符串，不是 null。"
+      },
+      {
+        "text": "直接丢弃响应体，返回 undefined",
+        "isCorrect": false,
+        "description": "错误。响应体不会被丢弃，会以原始字符串形式返回。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`api = ofetch.create({ baseURL: 'https://x.com/api' })` 后，调用 `api('/users')`，实际请求的 URL 是什么？",
+    "explanation": "baseURL 会被拼到相对路径前(底层用 ufo 智能处理斜杠，不会出现双斜杠或漏斜杠)。`api('/users')` 实际请求 `https://x.com/api/users`。这等价于 `ofetch('/users', { baseURL: 'https://x.com/api' })`。\n\n- `https://x.com/api/users` 正确。\n- `https://x.com/users` 错误：baseURL 的 /api 路径段不会被丢掉。\n- `/users`(没拼 baseURL)错误：baseURL 会生效。\n- 报错错误：完全合法。",
+    "tags": ["ofetch", "中级", "baseURL", "ufo", "URL拼接"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "https://x.com/api/users",
+        "isCorrect": true,
+        "description": "正确。baseURL 拼到相对路径前，ufo 智能处理斜杠，得到 https://x.com/api/users。"
+      },
+      {
+        "text": "https://x.com/users（baseURL 的 /api 被忽略）",
+        "isCorrect": false,
+        "description": "错误。baseURL 包含的 /api 路径段会被保留。"
+      },
+      {
+        "text": "/users（baseURL 不会生效）",
+        "isCorrect": false,
+        "description": "错误。create 时设的 baseURL 会作用到该实例的每次请求。"
+      },
+      {
+        "text": "会因为 baseURL 与路径都带斜杠而报错",
+        "isCorrect": false,
+        "description": "错误。ufo 会智能处理斜杠，不会因双斜杠报错。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：以下哪种 body 会被 ofetch **自动 JSON 序列化**？",
+    "explanation": "ofetch 只对「可 JSON 序列化」的 body 自动 stringify——普通对象、数组、以及带 `toJSON()` 方法的对象。而 `FormData`、`URLSearchParams`、`Blob`、`ReadableStream`、Buffer 等**不会**被 JSON 化，会原样交给 fetch(并据类型设置合适处理，如流 body 自动 `duplex:'half'`)。\n\n- 「普通对象 / 数组」正确。\n- 「FormData」错误：FormData 原样发送，由浏览器/运行时设 multipart 边界。\n- 「URLSearchParams」错误：原样发送(content-type 自动 x-www-form-urlencoded)。\n- 「ReadableStream」错误：流 body 不 JSON 化，且会自动设 duplex。",
+    "tags": ["ofetch", "高级", "body", "序列化", "FormData"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "普通对象或数组（以及带 toJSON() 的对象）",
+        "isCorrect": true,
+        "description": "正确。只有可 JSON 序列化的 body 会被自动 stringify 并补 content-type。"
+      },
+      {
+        "text": "FormData 实例",
+        "isCorrect": false,
+        "description": "错误。FormData 不会被 JSON 化，会原样发送，由运行时设置 multipart 边界。"
+      },
+      {
+        "text": "URLSearchParams 实例",
+        "isCorrect": false,
+        "description": "错误。URLSearchParams 原样发送，不走 JSON 序列化。"
+      },
+      {
+        "text": "ReadableStream 流",
+        "isCorrect": false,
+        "description": "错误。流 body 不 JSON 化，且 ofetch 会自动设置 duplex: 'half'。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：拦截器(onRequest/onResponse 等)的类型支持「单个函数」也支持「函数数组」。当用 `ofetch.create` 设了实例级 onRequest，再在单次调用里也传 onRequest，二者关系是？",
+    "explanation": "ofetch 的拦截器类型是 `MaybeArray<FetchHook>`(单个或数组)。create 的 defaults 与单次调用的 options 合并时，**同名拦截器不是覆盖，而是会合并为数组依次执行**——这正是其支持数组的意义：既能跑实例级公共逻辑，又能加本次专属逻辑。(注：这是 ofetch 对 hooks 的特殊合并语义，与普通选项的「后者覆盖前者」不同。)\n\n- 「合并为数组、依次执行(实例级 + 本次)」正确。\n- 「单次的完全覆盖实例级」错误：拦截器是合并而非覆盖。\n- 「只跑实例级、本次的被忽略」错误。\n- 「报错，不能同时设」错误。",
+    "tags": ["ofetch", "高级", "拦截器", "数组", "合并"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "二者合并成数组依次执行：先跑实例级 onRequest，再跑本次调用传入的 onRequest",
+        "isCorrect": true,
+        "description": "正确。ofetch 的 hooks 类型是 MaybeArray，合并时同名拦截器拼成数组依次执行，而非覆盖。"
+      },
+      {
+        "text": "单次调用的 onRequest 会完全覆盖实例级的那个",
+        "isCorrect": false,
+        "description": "错误。拦截器是合并执行，不会互相覆盖(这点和普通选项不同)。"
+      },
+      {
+        "text": "只执行实例级的，本次传的 onRequest 被忽略",
+        "isCorrect": false,
+        "description": "错误。两者都会执行，本次传的不会被忽略。"
+      },
+      {
+        "text": "同时设置 onRequest 会直接抛错",
+        "isCorrect": false,
+        "description": "错误。同时设置完全合法，会合并为数组。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`retryDelay` 除了给数字(固定毫秒)，还能给函数实现指数退避。下列哪种写法符合 ofetch 的 retryDelay 函数签名？",
+    "explanation": "`retryDelay` 可为 `number` 或 `(context: FetchContext) => number`。函数形式接收上下文(含 `context.options`、`context.response`、`context.error` 等)，返回本次重试前要等待的毫秒数。典型指数退避：根据剩余 `context.options.retry` 推算第几次，返回 `2 ** attempt * 1000`。\n\n- 「(context) => 毫秒数」正确。\n- 「retryDelay 只能是数字」错误：也支持函数。\n- 「函数返回 Promise」错误：返回的是 number(毫秒)，不是 Promise。\n- 「函数接收 (error, attempt) 两个参数」错误：签名是单个 context。",
+    "tags": ["ofetch", "高级", "retryDelay", "指数退避", "FetchContext"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "retryDelay: (context) => Math.pow(2, attempt) * 1000 —— 接收 FetchContext，返回毫秒数",
+        "isCorrect": true,
+        "description": "正确。retryDelay 函数签名为 (context: FetchContext) => number，可据 context.options.retry 做指数退避。"
+      },
+      {
+        "text": "retryDelay 只能是固定数字，不支持函数",
+        "isCorrect": false,
+        "description": "错误。retryDelay 类型是 number | ((context) => number)。"
+      },
+      {
+        "text": "retryDelay 函数必须返回一个 Promise<number>",
+        "isCorrect": false,
+        "description": "错误。函数返回同步的 number(毫秒)，不是 Promise。"
+      },
+      {
+        "text": "retryDelay: (error, attempt) => ... —— 接收错误和尝试次数两个参数",
+        "isCorrect": false,
+        "description": "错误。签名只接收单个 context 对象，信息(含 error、剩余 retry)都在其中。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：HEAD 请求或 204 No Content 这类「无响应体」的情况，ofetch 解析阶段会如何处理？",
+    "explanation": "ofetch 源码里维护了 `nullBodyResponses = [101, 204, 205, 304]`，并且对 `method === 'HEAD'` 直接跳过 body 解析。也就是说，这些情况下不会去读/解析响应体(读了也无意义、甚至报错)，`_data` 保持未设置。这是对 HTTP 语义的正确遵循。\n\n- 「跳过 body 解析(HEAD 及 101/204/205/304)」正确。\n- 「仍强行 .json() 导致报错」错误：ofetch 会跳过。\n- 「返回空字符串」不准确：是直接不解析。\n- 「把状态码当 body 返回」错误。",
+    "tags": ["ofetch", "高级", "HEAD", "204", "解析"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跳过响应体解析：HEAD 方法及 101/204/205/304 等无体响应不读取 body",
+        "isCorrect": true,
+        "description": "正确。ofetch 对 HEAD 及 nullBodyResponses(101/204/205/304)跳过解析，符合 HTTP 语义。"
+      },
+      {
+        "text": "仍然强行调用 .json() 解析，导致抛错",
+        "isCorrect": false,
+        "description": "错误。ofetch 会识别无体响应并跳过解析，不会强行读取。"
+      },
+      {
+        "text": "把响应状态码当作 body 数据返回",
+        "isCorrect": false,
+        "description": "错误。不会把状态码当 body，只是跳过解析。"
+      },
+      {
+        "text": "无论如何都返回空对象 {}",
+        "isCorrect": false,
+        "description": "错误。是跳过解析(data 未设置)，并非强制返回空对象。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：超时(timeout)触发时抛出的错误，其 `error.name` 是什么？这与「重试」有什么关联？",
+    "explanation": "timeout 到点时，ofetch 内部 AbortController 用一个 name 为 `'TimeoutError'`(并带 code 23)的错误去 abort；但底层 fetch 因 abort 抛出的通常表现为 `AbortError`。关键点在重试逻辑：源码判断 `isAbort = error.name === 'AbortError' && !context.options.timeout`——即**手动 abort(没设 timeout)不重试**，但**因 timeout 导致的中断仍会进入重试流程**(因为设了 timeout，isAbort 为 false)。\n\n- 「timeout 触发的中断仍可被重试；纯手动 abort(无 timeout)不重试」正确。\n- 「任何 abort 都一律重试」错误。\n- 「任何 abort 都一律不重试」错误：设了 timeout 的情况会重试。\n- 「timeout 不会抛错」错误。",
+    "tags": ["ofetch", "专家", "timeout", "AbortError", "retry"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因 timeout 导致的中断仍会进入重试流程；而未设 timeout 的纯手动 abort 不会被重试",
+        "isCorrect": true,
+        "description": "正确。源码 isAbort = name==='AbortError' && !options.timeout —— 设了 timeout 时 isAbort 为 false，故仍重试。"
+      },
+      {
+        "text": "任何 abort（含手动 signal.abort）都会一律触发重试",
+        "isCorrect": false,
+        "description": "错误。未设 timeout 的手动 abort 被判定为 isAbort，不重试。"
+      },
+      {
+        "text": "任何 abort（含 timeout）都一律不重试",
+        "isCorrect": false,
+        "description": "错误。设了 timeout 的中断 isAbort 为 false，仍会进入重试。"
+      },
+      {
+        "text": "timeout 到点不会抛任何错误，只是静默返回 undefined",
+        "isCorrect": false,
+        "description": "错误。timeout 会抛错(name 为 TimeoutError，经 abort 后通常表现为 AbortError)。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：ofetch 的核心实现依赖三个 unjs 小工具库。下面哪一组是它的真实运行时依赖？",
+    "explanation": "ofetch 的 `dependencies` 是 `destr`(安全 JSON 解析)、`node-fetch-native`(在没有原生 fetch 的旧环境提供 polyfill / Node 适配)、`ufo`(URL 工具，负责 baseURL 拼接 withBase、query 拼接 withQuery)。这三者各司其职，正好对应自动解析、同构、URL/query 处理三大能力。\n\n- 「destr + node-fetch-native + ufo」正确。\n- 「axios + qs + lodash」错误：与 axios 等无关。\n- 「undici + zod + chalk」错误：undici 只是 devDependency 兼容用，zod/chalk 无关。\n- 「ky + got + node-fetch」错误：这些是同类竞品而非依赖。",
+    "tags": ["ofetch", "专家", "依赖", "destr", "ufo"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "destr（安全解析）+ node-fetch-native（同构/polyfill）+ ufo（URL/query）",
+        "isCorrect": true,
+        "description": "正确。这三个是 ofetch 的运行时依赖，分别支撑安全解析、同构 fetch、baseURL/query 处理。"
+      },
+      {
+        "text": "axios + qs + lodash",
+        "isCorrect": false,
+        "description": "错误。ofetch 不依赖 axios 系；它本身就是 axios 的替代选项。"
+      },
+      {
+        "text": "undici + zod + chalk",
+        "isCorrect": false,
+        "description": "错误。undici 仅作开发期兼容，zod/chalk 与 ofetch 无关。"
+      },
+      {
+        "text": "ky + got + node-fetch",
+        "isCorrect": false,
+        "description": "错误。ky/got 是同类 HTTP 库(竞品)，不是 ofetch 的依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 onRequest 拦截器里要修改请求头(比如加 Authorization)。考虑到执行顺序，下面哪种说法是对的？",
+    "explanation": "在 `onRequest` 里，`context.options.headers` 此时已被规整为 `Headers` 实例(源码在调用 onRequest 后会把 headers 转成 Headers)，所以应当用 `options.headers.set('Authorization', ...)` 这样的 Headers API 来改，而不是 `options.headers.Authorization = ...`(对 Headers 实例赋属性无效)。这是初学者常踩的坑。\n\n- 「用 options.headers.set(...)」正确。\n- 「options.headers.xxx = 值 直接赋属性」错误：headers 是 Headers 实例，赋属性不生效。\n- 「onRequest 里 headers 还是普通对象」不可靠：ofetch 会把它规整为 Headers。\n- 「不能在 onRequest 改 headers」错误：正是改 headers 的标准位置。",
+    "tags": ["ofetch", "专家", "onRequest", "Headers", "拦截器"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 options.headers.set('Authorization', token)，因为 headers 此时是 Headers 实例",
+        "isCorrect": true,
+        "description": "正确。onRequest 阶段 headers 已被规整为 Headers 实例，须用 .set()/.append() 等 API 修改。"
+      },
+      {
+        "text": "直接 options.headers.Authorization = token 赋属性即可",
+        "isCorrect": false,
+        "description": "错误。对 Headers 实例直接赋属性不会写入头部，必须用 .set()。"
+      },
+      {
+        "text": "onRequest 里 headers 一定是普通对象，可随意点属性赋值",
+        "isCorrect": false,
+        "description": "错误。ofetch 会把 headers 规整为 Headers 实例，不能当普通对象用。"
+      },
+      {
+        "text": "不允许在 onRequest 里修改 headers",
+        "isCorrect": false,
+        "description": "错误。onRequest 正是修改 headers 的标准位置。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：把 ReadableStream / Node 可读流作为请求 body 上传时，ofetch 会自动设置哪个选项以满足规范要求？",
+    "explanation": "当 body 是 ReadableStream(有 `pipeTo`)或 Node 流(有 `pipe`)时，ofetch 会在未显式设置时自动补 `duplex: 'half'`。这是 Fetch 规范的要求：用流做请求体必须声明 duplex，否则部分运行时会报错。这体现了 ofetch 对同构流式上传的细节兼容。\n\n- `duplex: 'half'` 正确。\n- `duplex: 'full'` 错误：规范当前用 'half'。\n- 「设置 content-length」错误：流式上传通常不预知长度，不是它自动做的事。\n- 「转成 Blob 再发」错误：ofetch 不会把流强行转 Blob。",
+    "tags": ["ofetch", "专家", "duplex", "ReadableStream", "流式上传"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "自动设置 duplex: 'half'（流式请求体的规范要求）",
+        "isCorrect": true,
+        "description": "正确。流 body 时 ofetch 在未显式设置时自动补 duplex: 'half'，满足 Fetch 规范。"
+      },
+      {
+        "text": "自动设置 duplex: 'full'",
+        "isCorrect": false,
+        "description": "错误。Fetch 规范当前使用 'half'，ofetch 设的也是 'half'。"
+      },
+      {
+        "text": "自动计算并设置 content-length 头",
+        "isCorrect": false,
+        "description": "错误。流式上传通常无法预知长度，ofetch 不会自动设 content-length。"
+      },
+      {
+        "text": "把流读完转成 Blob 再发送",
+        "isCorrect": false,
+        "description": "错误。ofetch 不会把流缓冲成 Blob，而是流式发送并设 duplex。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：传入 body 时，若把 header `content-type` 显式设成 `application/x-www-form-urlencoded`，且 body 是普通对象，ofetch 会怎么序列化？",
+    "explanation": "源码里有个分支：当 body 可序列化且 `content-type === 'application/x-www-form-urlencoded'` 时，ofetch 用 `new URLSearchParams(body).toString()` 序列化(而非 JSON.stringify)。也就是说，显式声明该 content-type 能让对象 body 以表单 urlencoded 形式发送。其它情况(无 content-type 或其它类型)则 JSON.stringify。\n\n- 「用 URLSearchParams 序列化为 a=1&b=2」正确。\n- 「仍 JSON.stringify」错误：该 content-type 下走 urlencoded 分支。\n- 「报错」错误。\n- 「忽略 content-type 头」错误：恰恰是该头决定了序列化方式。",
+    "tags": ["ofetch", "专家", "body", "urlencoded", "序列化"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 URLSearchParams(body).toString() 序列化成表单形式（a=1&b=2）",
+        "isCorrect": true,
+        "description": "正确。content-type 为 x-www-form-urlencoded 时，ofetch 用 URLSearchParams 序列化对象 body。"
+      },
+      {
+        "text": "无视 content-type，仍然 JSON.stringify",
+        "isCorrect": false,
+        "description": "错误。该 content-type 触发 urlencoded 序列化分支，而非 JSON。"
+      },
+      {
+        "text": "抛错，因为对象不能配 urlencoded",
+        "isCorrect": false,
+        "description": "错误。这是受支持的组合，会用 URLSearchParams 处理。"
+      },
+      {
+        "text": "把对象当 FormData 发送",
+        "isCorrect": false,
+        "description": "错误。是 URLSearchParams(urlencoded)，不是 multipart FormData。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：团队在 axios 与 ofetch 之间做选型。下面哪条对 ofetch 相对 axios 的描述是**准确**的？",
+    "explanation": "ofetch 的核心卖点：基于原生 fetch、同构(Node/浏览器/Worker 一套代码)、体积极小(几 KB 量级，仅依赖 destr/ufo/node-fetch-native)、与 fetch API 对齐。axios 历史更久、生态/拦截器/取消/进度等更成熟，但基于 XHR(浏览器)且体积更大。说 ofetch「同构 + 基于 fetch + 轻量」是准确的。\n\n- 「基于原生 fetch、同构、轻量」正确。\n- 「ofetch 基于 XMLHttpRequest」错误：那是 axios(浏览器端)。\n- 「ofetch 不支持拦截器」错误：它有 onRequest/onResponse 等。\n- 「ofetch 比 axios 体积大很多」错误：恰相反，ofetch 更轻。",
+    "tags": ["ofetch", "高级", "选型", "axios", "对比"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ofetch 基于原生 fetch、同构(Node/浏览器/Worker)、体积更轻，且内置拦截器与重试",
+        "isCorrect": true,
+        "description": "正确。这正是 ofetch 相对 axios 的差异化：fetch 底座、同构、轻量、内置易用性。"
+      },
+      {
+        "text": "ofetch 和 axios 一样基于 XMLHttpRequest",
+        "isCorrect": false,
+        "description": "错误。ofetch 基于 fetch；axios 在浏览器端基于 XHR。"
+      },
+      {
+        "text": "ofetch 没有拦截器机制，axios 才有",
+        "isCorrect": false,
+        "description": "错误。ofetch 提供 onRequest/onResponse/onRequestError/onResponseError 四个拦截器。"
+      },
+      {
+        "text": "ofetch 的打包体积比 axios 大很多",
+        "isCorrect": false,
+        "description": "错误。ofetch 仅几 KB、依赖极少，比 axios 轻得多。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：与同样基于 fetch 的 ky 相比，下面哪条更贴近两者的真实定位差异？",
+    "explanation": "ky 与 ofetch 都是 fetch 的轻量封装、都带重试/钩子/前缀 URL 等。差异更多在生态归属与风格：ofetch 出自 unjs、是 Nuxt `$fetch` 的底层、强调同构(Node/浏览器/Worker)与 unjs 生态(ufo/destr)协同；ky 由 sindresorhus 维护、API 风格不同(如 `ky.extend`、`prefixUrl`、`hooks` 命名)、最初更聚焦浏览器(后也支持多环境)。说「两者都基于 fetch、都轻量，主要差异在生态与 API 风格」是准确的。\n\n- 「都基于 fetch、轻量，差异在生态/API 风格(ofetch 属 unjs/Nuxt 底层)」正确。\n- 「ofetch 基于 XHR、ky 基于 fetch」错误：两者都基于 fetch。\n- 「ky 不支持重试」错误：ky 也内置重试。\n- 「二者 API 完全相同」错误：命名与风格有别。",
+    "tags": ["ofetch", "高级", "选型", "ky", "对比"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者都基于 fetch、都轻量且带重试/钩子，主要差异在生态归属与 API 风格(ofetch 属 unjs、是 Nuxt $fetch 底层)",
+        "isCorrect": true,
+        "description": "正确。ky 与 ofetch 同为 fetch 的轻量增强，区别更多在生态与命名风格而非能力有无。"
+      },
+      {
+        "text": "ofetch 基于 XHR，ky 才基于 fetch",
+        "isCorrect": false,
+        "description": "错误。ofetch 与 ky 都基于原生 fetch。"
+      },
+      {
+        "text": "ky 完全不支持自动重试",
+        "isCorrect": false,
+        "description": "错误。ky 同样内置 retry 能力。"
+      },
+      {
+        "text": "ofetch 和 ky 的 API 命名与风格完全一致，可无缝互换",
+        "isCorrect": false,
+        "description": "错误。两者命名(如 prefixUrl vs baseURL、hooks 结构)与风格并不相同。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`error.status` 与 `error.statusCode` 这两个属性的关系是什么？",
+    "explanation": "FetchError 上同时提供了 `status` 和 `statusCode`，二者都映射到 `response.status`(同值)；类似地 `statusText` 与 `statusMessage` 都映射到 `response.statusText`。这种「双命名」是为了兼容不同生态的习惯(有人惯用 statusCode，如 Node/h3 风格；有人惯用 status，如 fetch 风格)。\n\n- 「两者同值，都来自 response.status，是兼容性双命名」正确。\n- 「status 是数字、statusCode 是字符串」错误：都是数字。\n- 「statusCode 是请求码、status 是响应码」错误：都指响应状态。\n- 「只有 status 存在」错误：statusCode 也存在。",
+    "tags": ["ofetch", "专家", "FetchError", "statusCode", "兼容"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "二者同值，都映射到 response.status；statusText/statusMessage 同理，是为兼容不同生态命名习惯",
+        "isCorrect": true,
+        "description": "正确。status 与 statusCode 取同一来源(response.status)，双命名兼容 fetch 风格与 Node/h3 风格。"
+      },
+      {
+        "text": "status 是数字，statusCode 是对应的字符串描述",
+        "isCorrect": false,
+        "description": "错误。两者都是数字状态码；字符串描述在 statusText/statusMessage。"
+      },
+      {
+        "text": "statusCode 表示请求阶段的码，status 表示响应阶段的码",
+        "isCorrect": false,
+        "description": "错误。两者都指响应状态码，无请求/响应之分。"
+      },
+      {
+        "text": "FetchError 只有 status，没有 statusCode",
+        "isCorrect": false,
+        "description": "错误。两个属性都存在且同值。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 `ofetch.create` 时通过 `onResponseError` 实现「401 自动刷新 token 并重发」时，下面哪点是需要特别注意的工程陷阱？",
+    "explanation": "拦截器里重发请求容易触发**无限循环**：若刷新后仍 401(如 refresh token 也失效)，又进 onResponseError → 又刷新 → 又重发……必须加「是否已重试过」的标记位、或在刷新失败时跳出，避免死循环。此外要注意并发请求同时 401 时刷新 token 的去重(只刷一次)。这是该模式的经典坑。\n\n- 「需防无限重试循环 + 并发刷新去重」正确。\n- 「onResponseError 里不能再发请求」错误：可以，但要防循环。\n- 「ofetch 会自动帮你刷新 token」错误：需自己实现。\n- 「401 不会进 onResponseError」错误：401 属非 2xx，会进。",
+    "tags": ["ofetch", "专家", "onResponseError", "token刷新", "工程实践"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "要防止刷新后仍失败导致的无限重试循环，并对并发请求的刷新做去重(只刷一次)",
+        "isCorrect": true,
+        "description": "正确。拦截器内重发须加重试标记与并发去重，否则刷新失败会陷入死循环。"
+      },
+      {
+        "text": "onResponseError 内部禁止再次发起任何请求",
+        "isCorrect": false,
+        "description": "错误。可以在内部重发，但必须防循环、防并发重复刷新。"
+      },
+      {
+        "text": "ofetch 内置了 401 自动刷新逻辑，无需自己写",
+        "isCorrect": false,
+        "description": "错误。ofetch 不内置 token 刷新，需在 onResponseError 自行实现。"
+      },
+      {
+        "text": "401 是认证错误，不会进入 onResponseError",
+        "isCorrect": false,
+        "description": "错误。401 属非 2xx，会触发 onResponseError。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`parseResponse` 选项的作用是什么？它与 `responseType` 有何不同？",
+    "explanation": "`parseResponse: (responseText) => any` 让你**自定义解析函数**，替换默认的 destr——典型用途如用 `JSON.parse`(严格)、用 `JSON.parse(text, reviver)` 复活 Date、或接 superjson/devalue 等。源码中只要传了 parseResponse，就走 'json' 分支并用你的函数解析文本。而 `responseType` 是在内置几种(json/text/blob/arrayBuffer/stream)里**选一种**，不是自定义函数。\n\n- 「parseResponse 是自定义解析函数；responseType 是从内置类型里选」正确。\n- 「两者等价」错误。\n- 「parseResponse 接收 Response 对象」错误：接收的是 responseText 字符串。\n- 「parseResponse 只能返回字符串」错误：可返回任意类型。",
+    "tags": ["ofetch", "专家", "parseResponse", "responseType", "自定义解析"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "parseResponse 是自定义解析函数(收 responseText 返回任意值，替换 destr)；responseType 是在内置类型中选一种",
+        "isCorrect": true,
+        "description": "正确。parseResponse 替换默认解析器并走 json 分支；responseType 是在 json/text/blob 等内置项里二选一。"
+      },
+      {
+        "text": "parseResponse 与 responseType 完全等价，可互换",
+        "isCorrect": false,
+        "description": "错误。一个是自定义函数、一个是枚举选择，语义不同。"
+      },
+      {
+        "text": "parseResponse 接收的是原始 Response 对象",
+        "isCorrect": false,
+        "description": "错误。parseResponse 接收的是 responseText 字符串，不是 Response。"
+      },
+      {
+        "text": "parseResponse 的返回值必须是字符串",
+        "isCorrect": false,
+        "description": "错误。返回值可以是对象等任意类型，会成为最终 data。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 Node 环境对接需要走 HTTP 代理或自定义连接池的场景，ofetch 暴露了哪个选项来传 undici 的 Dispatcher？",
+    "explanation": "ofetch 的 FetchOptions 有 `dispatcher` 选项(类型 `undici.Dispatcher`)，仅在 Node ≥ 18 用 undici 时支持——可传 undici 的 `ProxyAgent`、自定义连接池等。对更老的、用 node-fetch-native polyfill 的环境，则有 `agent` 选项。这让 ofetch 在 Node 端也能精细控制底层网络行为。\n\n- 「dispatcher(undici Dispatcher)」正确。\n- 「proxy(字符串)」错误：ofetch 没有直接的 proxy 字符串选项，走 dispatcher。\n- 「httpAgent / httpsAgent」错误：那是 axios 风格命名。\n- 「ofetch 在 Node 不支持代理」错误：可通过 dispatcher/agent 实现。",
+    "tags": ["ofetch", "专家", "dispatcher", "undici", "代理"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "dispatcher 选项（传 undici 的 Dispatcher，如 ProxyAgent；Node ≥18 走 undici 时支持）",
+        "isCorrect": true,
+        "description": "正确。dispatcher 接收 undici Dispatcher；更老环境用 node-fetch-native 时则用 agent 选项。"
+      },
+      {
+        "text": "proxy 选项，直接传代理 URL 字符串",
+        "isCorrect": false,
+        "description": "错误。ofetch 没有直接的 proxy 字符串选项，Node 端走 dispatcher(undici)。"
+      },
+      {
+        "text": "httpAgent / httpsAgent（同 axios）",
+        "isCorrect": false,
+        "description": "错误。那是 axios 的命名；ofetch 用 dispatcher / agent。"
+      },
+      {
+        "text": "ofetch 在 Node 端无法配置代理或连接池",
+        "isCorrect": false,
+        "description": "错误。可通过 dispatcher(undici)或 agent(polyfill)配置。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：onRequest 拦截器里如果想**取消/中止**这次请求(满足某条件就不发)，ofetch 的官方推荐做法是？",
+    "explanation": "ofetch 的拦截器没有「return false 即取消」的约定；想中止请求，标准做法是在 onRequest 里**抛出一个错误**(或借助传入的 AbortController/signal abort)。抛错会跳过实际 fetch 并按错误流程走(可被 catch)。这与 axios 老式拦截器返回特殊值取消的风格不同。\n\n- 「在 onRequest 里 throw(或 abort signal)」正确。\n- 「return false 即可取消」错误：ofetch 不识别该返回值。\n- 「删除 context.request」错误：不是支持的取消方式。\n- 「onRequest 无法中止请求」错误：抛错即可中止。",
+    "tags": ["ofetch", "专家", "onRequest", "取消请求", "拦截器"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 onRequest 中抛出错误（或通过 AbortController abort 传入的 signal）来中止",
+        "isCorrect": true,
+        "description": "正确。ofetch 拦截器靠抛错/abort 中止请求，没有 return false 取消的约定。"
+      },
+      {
+        "text": "在 onRequest 里 return false 即可取消请求",
+        "isCorrect": false,
+        "description": "错误。ofetch 不会因拦截器返回 false 而取消请求。"
+      },
+      {
+        "text": "把 context.request 设为 null",
+        "isCorrect": false,
+        "description": "错误。这不是受支持的取消方式，可能导致异常行为。"
+      },
+      {
+        "text": "onRequest 阶段无法中止请求，只能等响应回来再丢弃",
+        "isCorrect": false,
+        "description": "错误。在 onRequest 抛错即可在发出前中止。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：内容类型为 `text/event-stream`(SSE)的响应，ofetch 默认会按哪种 responseType 处理？",
+    "explanation": "源码的 `detectResponseType` 对 content-type 做判断：`application/...json` → json；`text/event-stream` → **stream**；其它 `text/*`(及 image/svg、application/xml 等)→ text；剩下 → blob。所以 SSE 默认被识别为 stream，`_data` 是响应体的 ReadableStream，便于流式逐块消费。\n\n- 「stream」正确。\n- 「text」错误：虽然是 text/ 开头，但 event-stream 被特判为 stream。\n- 「json」错误。\n- 「blob」错误。",
+    "tags": ["ofetch", "专家", "SSE", "event-stream", "responseType"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "stream —— text/event-stream 被特判为流，便于逐块消费 SSE",
+        "isCorrect": true,
+        "description": "正确。detectResponseType 把 text/event-stream 识别为 stream，_data 为 ReadableStream。"
+      },
+      {
+        "text": "text",
+        "isCorrect": false,
+        "description": "错误。虽以 text/ 开头，但 event-stream 被优先特判为 stream。"
+      },
+      {
+        "text": "json",
+        "isCorrect": false,
+        "description": "错误。只有 application/...json 才走 json。"
+      },
+      {
+        "text": "blob",
+        "isCorrect": false,
+        "description": "错误。SSE 走 stream，不是 blob。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`api.create(...)` 链式创建子实例时，子实例与父实例的默认 options 是什么关系？",
+    "explanation": "ofetch 实例的 `create` 会把父级的 globalOptions 与新传入的 defaults **合并**(浅合并 defaults，子覆盖父的同名普通选项；拦截器则按 hooks 语义合并为数组)。所以 `const adminApi = api.create({ headers: { 'X-Admin': '1' } })` 会**继承** api 的 baseURL/retry/timeout/拦截器，再叠加自己的 header。这支持「基础实例 → 派生专用实例」的分层。\n\n- 「子实例继承并合并父默认值」正确。\n- 「子实例完全独立、不继承父」错误。\n- 「子实例会清空父的拦截器」错误：拦截器会合并保留。\n- 「create 不能在实例上链式调用」错误：实例本身有 .create()。",
+    "tags": ["ofetch", "专家", "create", "继承", "分层"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "子实例继承父的默认值并合并新传入项(同名普通选项子覆盖父，拦截器合并为数组)",
+        "isCorrect": true,
+        "description": "正确。实例 .create 合并父 globalOptions 与新 defaults，支持基础实例派生专用子实例。"
+      },
+      {
+        "text": "子实例完全独立，不继承父的任何默认值",
+        "isCorrect": false,
+        "description": "错误。子实例会继承并合并父的 baseURL/retry/拦截器等。"
+      },
+      {
+        "text": "子实例会清空父实例上的所有拦截器",
+        "isCorrect": false,
+        "description": "错误。拦截器按 hooks 语义合并保留，不会被清空。"
+      },
+      {
+        "text": "ofetch 实例不支持再 .create()，只有顶层 ofetch 能 create",
+        "isCorrect": false,
+        "description": "错误。create 返回的实例本身也带 .create()，可继续派生。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：默认情况下，给一个可序列化对象 body 且**没有**设置任何 content-type 时，ofetch 除了补 content-type: application/json，还会补哪个请求头？",
+    "explanation": "源码逻辑：JSON 序列化 body 且无 content-type 时，设 `content-type: application/json`；同时若 headers 里**没有** accept，则补 `accept: application/json`。即默认既声明「我发的是 JSON」也声明「我想要 JSON」。这两个头你都可显式覆盖。\n\n- 「accept: application/json」正确。\n- 「content-length」错误：不是它自动补的。\n- 「authorization」错误：与认证无关，不会自动补。\n- 「什么都不补，只补 content-type」错误：还会补 accept。",
+    "tags": ["ofetch", "高级", "accept", "请求头", "JSON"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "accept: application/json（在未显式设置 accept 时）",
+        "isCorrect": true,
+        "description": "正确。JSON body 且缺省时，ofetch 同时补 content-type 与 accept 为 application/json。"
+      },
+      {
+        "text": "content-length",
+        "isCorrect": false,
+        "description": "错误。content-length 由底层 fetch/运行时处理，不是 ofetch 自动补的。"
+      },
+      {
+        "text": "authorization",
+        "isCorrect": false,
+        "description": "错误。认证头需自行设置，ofetch 不会凭空补 authorization。"
+      },
+      {
+        "text": "只补 content-type，不补其它任何头",
+        "isCorrect": false,
+        "description": "错误。除了 content-type，还会在缺省时补 accept: application/json。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：onResponse 拦截器拿到的 `context.response` 上，解析后的数据放在哪个字段？",
+    "explanation": "在 onResponse 阶段，body 已解析完成，存放在 `context.response._data`(这就是普通 `ofetch()` 最终返回的值)。`response.body` 仍是原始的 ReadableStream(或已被消费)。所以拦截器里要读/改解析结果，读 `response._data`(甚至可在 onResponse 里改写它来做响应转换)。\n\n- `response._data` 正确。\n- `response.data` 错误：FetchResponse 上是带下划线的 _data。\n- `response.body`(原始流)不是解析结果。\n- `response.json()`(再调一次)错误：体可能已被消费，且解析结果已在 _data。",
+    "tags": ["ofetch", "专家", "onResponse", "_data", "拦截器"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "context.response._data（带下划线），即 ofetch() 最终返回的解析结果",
+        "isCorrect": true,
+        "description": "正确。onResponse 阶段解析结果在 response._data，可读可改写以做响应转换。"
+      },
+      {
+        "text": "context.response.data（不带下划线）",
+        "isCorrect": false,
+        "description": "错误。FetchResponse 扩展的字段是 _data，带下划线。"
+      },
+      {
+        "text": "context.response.body",
+        "isCorrect": false,
+        "description": "错误。body 是原始流，解析后的数据在 _data。"
+      },
+      {
+        "text": "需要再次调用 context.response.json() 获取",
+        "isCorrect": false,
+        "description": "错误。体可能已被消费，且解析结果已存在 _data，不必再调 json()。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：以下关于「ofetch 是否处理 CORS / 携带 cookie」的说法，哪条是对的？",
+    "explanation": "ofetch 只是 fetch 的封装，**CORS、credentials(cookie) 等浏览器安全策略仍由底层 fetch / 浏览器决定**。要跨域带 cookie，需像原生 fetch 一样设 `credentials: 'include'`(ofetch 透传该选项)；CORS 是否通过取决于服务端响应头，ofetch 不能也不会绕过。\n\n- 「沿用 fetch 语义，带 cookie 需 credentials: 'include'，CORS 由服务端决定」正确。\n- 「ofetch 自动带上所有 cookie」错误：默认 same-origin 行为同 fetch。\n- 「ofetch 能绕过 CORS」错误：绝不可能。\n- 「ofetch 不支持 credentials 选项」错误：透传 fetch 选项。",
+    "tags": ["ofetch", "高级", "CORS", "credentials", "cookie"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "沿用原生 fetch 语义：跨域带 cookie 需设 credentials: 'include'，CORS 能否通过由服务端响应头决定",
+        "isCorrect": true,
+        "description": "正确。ofetch 透传 credentials 等选项，CORS/cookie 行为仍由底层 fetch 与浏览器/服务端决定。"
+      },
+      {
+        "text": "ofetch 会自动为所有请求带上全部 cookie",
+        "isCorrect": false,
+        "description": "错误。默认行为同 fetch(same-origin)，跨域带 cookie 需显式 credentials: 'include'。"
+      },
+      {
+        "text": "ofetch 能在客户端绕过 CORS 限制",
+        "isCorrect": false,
+        "description": "错误。CORS 是浏览器安全机制，任何 fetch 封装都无法绕过。"
+      },
+      {
+        "text": "ofetch 不支持 credentials 选项",
+        "isCorrect": false,
+        "description": "错误。credentials 等 fetch 选项会被透传支持。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 Worker / 边缘运行时(如 Cloudflare Workers、edge-light)中使用 ofetch，它底层用的是什么 fetch？",
+    "explanation": "ofetch 是同构设计：它默认用 `globalThis.fetch`。在浏览器/Worker/边缘运行时这类**自带 fetch**的环境，直接用平台原生 fetch(package.json 的 exports 对 worker/edge-light 等条件都指向纯 ESM 入口，不引 node 适配)。只有在缺 fetch 的老 Node 环境，才借 node-fetch-native 兜底。\n\n- 「用 globalThis.fetch(平台原生)」正确。\n- 「永远用 node-fetch-native polyfill」错误：有原生就用原生。\n- 「Worker 里不能用 ofetch」错误：明确支持 worker。\n- 「打包进自带的 fetch 实现」错误。",
+    "tags": ["ofetch", "专家", "Worker", "同构", "globalThis.fetch"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认用 globalThis.fetch；Worker/边缘等自带 fetch 的环境直接用平台原生 fetch",
+        "isCorrect": true,
+        "description": "正确。ofetch 同构，优先用 globalThis.fetch，exports 对 worker/edge 指向纯 ESM 入口。"
+      },
+      {
+        "text": "无论什么环境都强制使用 node-fetch-native polyfill",
+        "isCorrect": false,
+        "description": "错误。有原生 fetch 就用原生，polyfill 只在缺 fetch 的老 Node 兜底。"
+      },
+      {
+        "text": "Worker 环境不被 ofetch 支持",
+        "isCorrect": false,
+        "description": "错误。ofetch 明确支持 worker(官方描述即 node/browser/workers)。"
+      },
+      {
+        "text": "ofetch 内置了一份自己的 fetch 实现，不用平台的",
+        "isCorrect": false,
+        "description": "错误。ofetch 不自带网络栈，用的是平台 fetch。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：想对某个实例创建一个「带类型」的请求，比如 `ofetch<User>('/api/user')`，泛型参数 `T` 的含义是什么？",
+    "explanation": "ofetch 的调用签名是 `<T = any, R extends ResponseType = 'json'>(req, opts) => Promise<MappedResponseType<R, T>>`。当 responseType 是 json(默认)时，返回类型就是 `T`，所以 `ofetch<User>(...)` 表示「把返回 data 当作 User 类型」。注意这只是**编译期类型断言**，ofetch **不会在运行时校验**响应真的是 User(要运行时校验得自己用 zod 等)。\n\n- 「T 是 json 模式下返回 data 的类型，仅编译期断言、不做运行时校验」正确。\n- 「T 会在运行时验证响应结构」错误。\n- 「T 是请求 body 的类型」错误：是返回值类型。\n- 「T 必须是 ResponseType 之一」错误：那是第二个泛型 R。",
+    "tags": ["ofetch", "高级", "泛型", "TypeScript", "类型"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "T 是 json 模式下返回 data 的类型，仅编译期类型断言，运行时不校验响应结构",
+        "isCorrect": true,
+        "description": "正确。ofetch<User> 把返回值标注为 User，但不做运行时校验(需校验请自行用 zod 等)。"
+      },
+      {
+        "text": "T 会让 ofetch 在运行时校验响应是否真的符合该类型",
+        "isCorrect": false,
+        "description": "错误。泛型是纯编译期信息，ofetch 不做运行时结构校验。"
+      },
+      {
+        "text": "T 指定的是请求 body 的类型",
+        "isCorrect": false,
+        "description": "错误。T 是返回 data 的类型，不是 body。"
+      },
+      {
+        "text": "T 必须是 'json'|'text'|'blob' 之一",
+        "isCorrect": false,
+        "description": "错误。那是第二个泛型 R(ResponseType)；T 是数据类型。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：项目从 axios 迁到 ofetch，原来 `axios.get(url).then(r => r.data)` 的「响应体在 `.data`」习惯，迁到 ofetch 该如何对应？",
+    "explanation": "axios 的 `response.data` 对应 ofetch 的两种取法：① 直接 `await ofetch(url)` 就是解析后的 data(最常用，少一层 .data)；② 若用 `ofetch.raw(url)` 拿完整响应，则数据在 `response._data`。迁移时最大心智差异就是「ofetch 默认直接给 data，不用再 .data」。\n\n- 「直接 await ofetch(url) 即得 data；raw 时在 _data」正确。\n- 「ofetch 返回值上也有 .data」错误：普通返回就是 data 本身，没有再包一层。\n- 「必须 ofetch(url).data」错误。\n- 「ofetch 返回 axios 风格的 {data,status,headers}」错误。",
+    "tags": ["ofetch", "高级", "迁移", "axios", "data"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "直接 await ofetch(url) 拿到的就是 data(无需再 .data)；若用 ofetch.raw 则数据在 response._data",
+        "isCorrect": true,
+        "description": "正确。ofetch 默认少一层包装，返回值即解析后的数据；要完整响应用 raw，数据在 _data。"
+      },
+      {
+        "text": "ofetch(url) 返回值上同样挂着 .data 属性，写法和 axios 一样",
+        "isCorrect": false,
+        "description": "错误。普通 ofetch 返回的就是 data 本体，不会再包一层 .data。"
+      },
+      {
+        "text": "ofetch 也返回 { data, status, headers } 结构对象",
+        "isCorrect": false,
+        "description": "错误。那是 axios 的响应结构；ofetch 默认直接返回解析数据。"
+      },
+      {
+        "text": "ofetch 无法拿到响应体，只能拿状态码",
+        "isCorrect": false,
+        "description": "错误。ofetch 默认返回的正是响应体数据。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：关于「请求重试时拦截器是否会重复执行」，下面哪条描述符合 ofetch 的实现？",
+    "explanation": "ofetch 的重试是在 onError 里以「retry 减 1」重新调用 `$fetchRaw`(完整走一遍请求流程)。因此**每次重试都会重新触发 onRequest / onResponse / onResponseError 等拦截器**——这意味着拦截器里的副作用(如打日志、注入时间戳 token)在重试时会再跑一次。设计拦截器时需考虑这种重复执行的幂等性。\n\n- 「每次重试都会重新跑拦截器(完整再走一遍流程)」正确。\n- 「拦截器只在首次执行，重试不再触发」错误。\n- 「重试时只跑 onResponseError，不跑 onRequest」错误：是完整重走。\n- 「ofetch 重试不经过拦截器」错误。",
+    "tags": ["ofetch", "专家", "retry", "拦截器", "重复执行"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "每次重试都会重新完整走一遍请求流程，因此 onRequest/onResponse 等拦截器会再次触发",
+        "isCorrect": true,
+        "description": "正确。重试通过递归调用 $fetchRaw 实现，拦截器随之重复执行，设计时需注意幂等。"
+      },
+      {
+        "text": "拦截器只在首次请求执行，重试时不再触发",
+        "isCorrect": false,
+        "description": "错误。重试是完整重走流程，拦截器会再次触发。"
+      },
+      {
+        "text": "重试时只触发 onResponseError，不触发 onRequest",
+        "isCorrect": false,
+        "description": "错误。重试会从 onRequest 开始完整再走一遍。"
+      },
+      {
+        "text": "ofetch 的重试完全绕过拦截器系统",
+        "isCorrect": false,
+        "description": "错误。重试经过与首次相同的拦截器流程。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：下面关于 `ofetch.native` 的描述，哪条正确？",
+    "explanation": "`ofetch.native` 暴露的是**底层未经增强的原生 fetch**(即该实例创建时用的 fetch，默认 globalThis.fetch)。当你确实需要「原汁原味」的 fetch 行为(不自动解析、不抛错、不重试)，但又想统一从 ofetch 拿，就用 `ofetch.native(...)`。它等价于直接调用平台 fetch。\n\n- 「底层原生 fetch，不带任何增强」正确。\n- 「带增强但返回 Response」错误：那更像 ofetch.raw；native 是纯原生。\n- 「ofetch 的别名」错误。\n- 「不存在 native」错误：实例上有 native。",
+    "tags": ["ofetch", "专家", "native", "原生fetch", "API"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是底层未经增强的原生 fetch（默认 globalThis.fetch），不做自动解析/抛错/重试",
+        "isCorrect": true,
+        "description": "正确。ofetch.native 透出原始 fetch，需要原生行为时使用，等价于直接调用平台 fetch。"
+      },
+      {
+        "text": "它带自动解析但返回完整 Response",
+        "isCorrect": false,
+        "description": "错误。那更接近 ofetch.raw；native 是不带任何增强的原生 fetch。"
+      },
+      {
+        "text": "它只是 ofetch 函数的另一个别名",
+        "isCorrect": false,
+        "description": "错误。native 指向原生 fetch，不是增强后的 ofetch。"
+      },
+      {
+        "text": "ofetch 实例上没有 native 这个成员",
+        "isCorrect": false,
+        "description": "错误。$Fetch 接口包含 native 成员。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：把 ofetch 封装成项目的 HTTP 层时，下面哪种「全局错误处理」组织方式最合理？",
+    "explanation": "推荐用 `ofetch.create` 建一个项目级实例，在其 defaults 里集中放 `baseURL`、公共 headers、`onRequest`(注入 token)、`onResponseError`(统一处理 401/403/5xx、上报、弹提示)。这样所有业务请求复用同一套策略，错误处理只写一处。单次调用再按需叠加 options/拦截器(会合并执行)。\n\n- 「create 实例 + 在 defaults 里集中放拦截器」正确。\n- 「每个请求各写一遍 try/catch 和 401 处理」错误：重复且易漏。\n- 「monkey-patch 全局 ofetch」错误：应 create 实例而非改全局。\n- 「错误只能在最外层组件 catch」错误：拦截器层更合适。",
+    "tags": ["ofetch", "高级", "封装", "全局错误处理", "工程实践"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 ofetch.create 建项目级实例，在 defaults 里集中配置 baseURL、onRequest 注 token、onResponseError 统一处理错误",
+        "isCorrect": true,
+        "description": "正确。集中在实例 defaults 配置拦截器，所有请求复用一套策略，错误处理只写一处。"
+      },
+      {
+        "text": "在每个请求调用处各自写 try/catch 和 401 跳转逻辑",
+        "isCorrect": false,
+        "description": "错误。重复劳动且容易遗漏，应集中到实例拦截器。"
+      },
+      {
+        "text": "直接 monkey-patch 全局 ofetch 函数注入逻辑",
+        "isCorrect": false,
+        "description": "错误。应通过 create 派生实例，而非篡改全局函数。"
+      },
+      {
+        "text": "所有错误只能在最外层 UI 组件统一 catch",
+        "isCorrect": false,
+        "description": "错误。拦截器层(onResponseError)是更合适的统一处理位置。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`onRequestError` 与 `onResponseError` 的触发时机，根本区别是什么？",
+    "explanation": "`onRequestError` 在**请求根本没拿到响应**就失败时触发——典型如网络断开、DNS 失败、连接被拒、(未设 timeout 的)abort 等，此时 `context.error` 有值、`context.response` 没有。`onResponseError` 在**响应已经回来、但状态码非 2xx**时触发，此时 `context.response` 存在。一个是「连响应都没有」，一个是「有响应但是错误状态」。\n\n- 「onRequestError 无响应(网络层失败)；onResponseError 有响应但状态非 2xx」正确。\n- 「两者一回事」错误。\n- 「onRequestError 处理 4xx，onResponseError 处理 5xx」错误：都按有无响应分，不按状态码段分。\n- 「onRequestError 在发请求前触发」错误：是请求失败时。",
+    "tags": ["ofetch", "专家", "onRequestError", "onResponseError", "拦截器"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "onRequestError 在请求未拿到任何响应(网络层失败)时触发；onResponseError 在拿到响应但状态非 2xx 时触发",
+        "isCorrect": true,
+        "description": "正确。前者 context.response 不存在(连接/网络失败)，后者 response 存在但状态码出错。"
+      },
+      {
+        "text": "两者完全一回事，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。一个针对网络层失败、一个针对 HTTP 错误状态，时机不同。"
+      },
+      {
+        "text": "onRequestError 处理 4xx，onResponseError 处理 5xx",
+        "isCorrect": false,
+        "description": "错误。区分依据是有无响应，而非 4xx/5xx 状态段。"
+      },
+      {
+        "text": "onRequestError 在请求发出之前(还没 fetch)就触发",
+        "isCorrect": false,
+        "description": "错误。它在 fetch 抛错(请求失败)时触发，不是发出前。发出前是 onRequest。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：服务端返回了带 BOM 或前后空白的 JSON、甚至是数字/布尔字面量(如响应体就是 `42` 或 `true`)，ofetch 默认能正确解析吗？为什么？",
+    "explanation": "能。ofetch 默认解析器 destr 比 `JSON.parse` 更鲁棒：它能正确处理诸如纯数字、布尔、`\"NaN\"`/`\"Infinity\"` 之类边界，并对非法输入退回原始字符串而非抛错。所以响应体是 `42`、`true` 这种合法 JSON 标量时，destr 会解析成对应的 JS 值(数字 42、布尔 true)。\n\n- 「能，destr 比 JSON.parse 更鲁棒，标量/边界都能处理」正确。\n- 「不能，非对象 JSON 会被当字符串」错误：标量也会被解析。\n- 「不能，会抛错」错误：destr 不抛错。\n- 「只有 {} 或 [] 才解析」错误：标量同样解析。",
+    "tags": ["ofetch", "专家", "destr", "解析", "边界"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "能。destr 比 JSON.parse 更鲁棒，数字/布尔等合法标量会被解析为对应 JS 值，非法输入退回字符串",
+        "isCorrect": true,
+        "description": "正确。destr 能正确解析 JSON 标量与边界值，且对非法输入不抛错。"
+      },
+      {
+        "text": "不能，只有 JSON 对象/数组才解析，标量一律当字符串返回",
+        "isCorrect": false,
+        "description": "错误。destr 同样会把 42、true 这类标量解析为对应值。"
+      },
+      {
+        "text": "不能，遇到非对象 JSON 会抛 SyntaxError",
+        "isCorrect": false,
+        "description": "错误。destr 不会因此抛错，这正是它取代 JSON.parse 的原因。"
+      },
+      {
+        "text": "解析结果总是字符串，需要业务侧再 Number()/Boolean() 转换",
+        "isCorrect": false,
+        "description": "错误。destr 已解析为正确类型，无需手动二次转换。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：当 `retry` 设为数字(如 `retry: 2`)时，它对 GET 和 POST 的影响有何不同？",
+    "explanation": "默认值才区分方法(GET=1、写方法=0)；一旦你**显式**给 `retry: n`，则**对所有方法一视同仁**都按 n 次重试(源码：`typeof retry === 'number'` 时直接用该值，不再看方法)。所以 `retry: 2` 会让 POST 也重试 2 次——这时就需要你自己确保该 POST 幂等，否则可能重复提交。\n\n- 「显式数字对所有方法一致(POST 也按 n 次)」正确。\n- 「显式数字只对 GET 生效，POST 仍 0」错误：显式值覆盖方法默认。\n- 「retry 数字会被方法默认值覆盖」错误：方向反了。\n- 「retry: 2 表示总共请求 2 次」需澄清：是失败后额外重试 2 次(共最多 3 次)。",
+    "tags": ["ofetch", "专家", "retry", "幂等", "POST"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "显式 retry 数字对所有方法一视同仁，POST 也会按该值重试，需自行确保幂等",
+        "isCorrect": true,
+        "description": "正确。源码中 typeof retry==='number' 时直接采用该值，不再按方法区分默认。"
+      },
+      {
+        "text": "显式 retry 数字只对 GET 生效，POST 仍固定为 0 次",
+        "isCorrect": false,
+        "description": "错误。显式数字会覆盖按方法的默认，POST 同样按该值重试。"
+      },
+      {
+        "text": "显式 retry 数字会被方法默认值(写方法 0)覆盖而失效",
+        "isCorrect": false,
+        "description": "错误。方向相反——显式值优先，覆盖默认。"
+      },
+      {
+        "text": "retry 对 GET/POST 没有任何差别，因为 ofetch 不区分方法",
+        "isCorrect": false,
+        "description": "错误。仅在‘未显式设置’时按方法区分默认值；显式设置后才不区分。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 TypeScript 里，希望「下载文件得到 Blob」时返回类型也自动变成 `Blob`(而非 any)，应怎么调用？",
+    "explanation": "ofetch 的第二个泛型 `R extends ResponseType` 与 responseType 选项联动，类型 `MappedResponseType<R, T>` 会据 R 推断返回类型：`responseType: 'blob'` → 返回 `Blob`，`'arrayBuffer'` → `ArrayBuffer`，`'text'` → `string`，`'stream'` → `ReadableStream`，默认 `'json'` → `T`。所以只要传 `{ responseType: 'blob' }`，TS 就自动把返回推成 Blob，无需手动断言。\n\n- 「传 responseType:'blob'，类型自动推成 Blob」正确。\n- 「ofetch<Blob>(url) 但不传 responseType」错误：不传 responseType 仍是 json 模式，运行时拿到的不是你以为的，类型也不对。\n- 「必须 as Blob 手动断言」错误：类型会自动映射。\n- 「ofetch 对二进制不提供类型」错误。",
+    "tags": ["ofetch", "专家", "responseType", "类型推断", "Blob"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "ofetch(url, { responseType: 'blob' }) —— responseType 与返回类型联动，自动推断为 Blob",
+        "isCorrect": true,
+        "description": "正确。MappedResponseType 据 responseType 映射返回类型，blob→Blob，无需手动断言。"
+      },
+      {
+        "text": "ofetch<Blob>(url)，不传 responseType",
+        "isCorrect": false,
+        "description": "错误。不传 responseType 仍是 json 模式，运行时不会得到 Blob，类型也不匹配实际。"
+      },
+      {
+        "text": "ofetch(url) as Blob，靠手动类型断言",
+        "isCorrect": false,
+        "description": "错误。传 responseType 即可自动得到正确类型，不必手动断言。"
+      },
+      {
+        "text": "ofetch 不为二进制响应提供类型，只能 any",
+        "isCorrect": false,
+        "description": "错误。ofetch 对 blob/arrayBuffer/text/stream 都有类型映射。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：综合判断——下面哪一项**不是** ofetch 相对原生 fetch 自动补齐的能力？",
+    "explanation": "ofetch 相对 fetch 补齐了：自动解析响应、自动序列化 JSON body、非 2xx 自动抛错、内置重试、内置 timeout、baseURL/query 拼接、拦截器。但它**没有内置「上传/下载进度回调」**——原生 fetch 本身对进度支持有限(需借 ReadableStream 自行计算)，ofetch 也未提供 axios 式的 onUploadProgress/onDownloadProgress。这是它与 axios 的一个差距。\n\n- 「上传/下载进度回调(onUploadProgress 等)」正确——这是它没有的。\n- 「自动解析响应」是它有的。\n- 「非 2xx 自动抛错」是它有的。\n- 「内置重试」是它有的。",
+    "tags": ["ofetch", "高级", "对比", "进度", "局限"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "内置的上传/下载进度回调(类似 axios 的 onUploadProgress/onDownloadProgress)",
+        "isCorrect": true,
+        "description": "正确。ofetch 不提供进度回调，这是它相对 axios 的差距(需自行用流计算)。"
+      },
+      {
+        "text": "自动按 content-type 解析响应体",
+        "isCorrect": false,
+        "description": "这是 ofetch 已补齐的能力，不符合题目‘不是’的要求。"
+      },
+      {
+        "text": "非 2xx 响应自动抛出 FetchError",
+        "isCorrect": false,
+        "description": "这是 ofetch 已补齐的能力，不符合题目要求。"
+      },
+      {
+        "text": "失败请求的自动重试",
+        "isCorrect": false,
+        "description": "这是 ofetch 已补齐的能力，不符合题目要求。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：在 Nuxt 里，何时该用 `useFetch`/`useAsyncData`，何时该直接用 `$fetch`(即 ofetch)？",
+    "explanation": "Nuxt 官方：`useFetch`/`useAsyncData` 是为**组件 setup 期的 SSR 安全数据获取**设计的(会去重、在服务端取数后随 payload 水合到客户端，避免重复请求)；而 `$fetch`(ofetch) 适合**事件处理、提交表单等客户端动作**，或在已经包裹好的 composable 内部使用。直接在 setup 顶层裸用 `$fetch` 取数会导致 SSR 重复请求。\n\n- 「setup 取数用 useFetch(SSR 安全/去重)，交互动作用 $fetch」正确。\n- 「任何地方都该只用 $fetch」错误：会引发 SSR 重复请求。\n- 「useFetch 用于客户端、$fetch 用于服务端」错误：说反了语义。\n- 「两者完全等价」错误。",
+    "tags": ["ofetch", "高级", "Nuxt", "useFetch", "SSR"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "setup 期取数用 useFetch/useAsyncData(SSR 安全、去重、随 payload 水合)；事件处理/提交等动作用 $fetch",
+        "isCorrect": true,
+        "description": "正确。useFetch 包装 $fetch 做 SSR 安全获取；$fetch 适合客户端交互动作或 composable 内部。"
+      },
+      {
+        "text": "无论何处都应只用 $fetch，useFetch 是多余的",
+        "isCorrect": false,
+        "description": "错误。setup 顶层裸用 $fetch 会导致 SSR/客户端重复请求，应交给 useFetch。"
+      },
+      {
+        "text": "useFetch 只能在客户端用，$fetch 只能在服务端用",
+        "isCorrect": false,
+        "description": "错误。语义说反了；useFetch 正是为同构 SSR 取数设计。"
+      },
+      {
+        "text": "useFetch 与 $fetch 完全等价，随便用哪个",
+        "isCorrect": false,
+        "description": "错误。useFetch 在 $fetch 之上加了 SSR 安全与去重，定位不同。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：`ofetch('/api', { query: { a: 1 } })`，而 URL 本身又写成 `'/api?b=2'`，最终请求的查询串会是什么？",
+    "explanation": "ofetch 用 ufo 的 `withQuery` 合并：URL 上已有的 query 与 `query` 选项里的会被**合并**，而不是互相覆盖丢弃。所以 `'/api?b=2'` + `{ query: { a: 1 } }` → `/api?b=2&a=1`(同名键则以选项为准)。这让你既能在 URL 写死部分参数，又能动态补充。\n\n- 「合并为 b=2&a=1」正确。\n- 「只剩 a=1(选项覆盖整个 query)」错误：是合并不是整体覆盖。\n- 「只剩 b=2(选项被忽略)」错误。\n- 「报错」错误。",
+    "tags": ["ofetch", "高级", "query", "ufo", "合并"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "合并：/api?b=2&a=1（URL 已有 query 与 query 选项合并，同名键以选项为准）",
+        "isCorrect": true,
+        "description": "正确。ufo 的 withQuery 会合并两处 query，而非丢弃任何一边。"
+      },
+      {
+        "text": "只剩 a=1，URL 上的 b=2 被整体覆盖丢弃",
+        "isCorrect": false,
+        "description": "错误。是合并，URL 上的 b=2 会被保留。"
+      },
+      {
+        "text": "只剩 b=2，query 选项被忽略",
+        "isCorrect": false,
+        "description": "错误。query 选项会生效并合并进去。"
+      },
+      {
+        "text": "因为 query 同时出现在两处而抛错",
+        "isCorrect": false,
+        "description": "错误。两处共存是受支持的，会被合并。"
+      }
+    ]
+  },
+  {
+    "stem": "ofetch：把 ofetch 用在「需要兼容很老、没有全局 fetch 的 Node 版本」时，它如何保证仍能工作？",
+    "explanation": "ofetch 依赖 `node-fetch-native`：在没有原生 fetch 的环境提供 fetch polyfill / Node 适配(它会优先用 Node 内置 undici 的 fetch，没有时回退到 polyfill)。包还提供 `ofetch/node` 子入口(对应 node 条件导出)针对 Node 做适配。因此即便很老的 Node 缺 fetch，ofetch 也能正常发请求——这是它「同构」承诺的一部分。\n\n- 「靠 node-fetch-native 提供 polyfill/适配」正确。\n- 「要求用户必须升级 Node」错误：它兜底兼容老 Node。\n- 「自己实现了一套 HTTP 客户端」错误。\n- 「老 Node 完全不能用 ofetch」错误。",
+    "tags": ["ofetch", "专家", "node-fetch-native", "Node兼容", "同构"],
+    "categories": [
+      ["技术方向", "ofetch"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "借助 node-fetch-native 提供 fetch polyfill / Node 适配(优先用内置 undici，缺失则回退)",
+        "isCorrect": true,
+        "description": "正确。node-fetch-native 在缺原生 fetch 的环境兜底，ofetch/node 子入口针对 Node 适配。"
+      },
+      {
+        "text": "强制要求用户升级到自带 fetch 的 Node 版本，否则报错",
+        "isCorrect": false,
+        "description": "错误。ofetch 通过 polyfill 兼容老 Node，不强制升级。"
+      },
+      {
+        "text": "ofetch 自带一套从零实现的 HTTP 客户端",
+        "isCorrect": false,
+        "description": "错误。它不自带网络栈，缺 fetch 时用 node-fetch-native。"
+      },
+      {
+        "text": "老 Node 上 ofetch 直接不可用",
+        "isCorrect": false,
+        "description": "错误。借助 polyfill，老 Node 也能用。"
+      }
+    ]
+  }
+]
