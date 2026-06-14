@@ -1,0 +1,1738 @@
+[
+  {
+    "stem": "decimal.js：在浏览器/Node 里执行 `0.1 + 0.2 === 0.3`，结果是什么？这正是 decimal.js 要解决的核心问题。",
+    "explanation": "JavaScript 的 number 是 IEEE 754 双精度浮点数，0.1、0.2、0.3 都无法被二进制精确表示，`0.1 + 0.2` 实际得到 `0.30000000000000004`，因此 `=== 0.3` 为 `false`。decimal.js 用「任意精度十进制」表示数值，`new Decimal(0.1).plus(0.2).equals(0.3)` 返回 `true`。\n\n- `false` 正确：浮点累积误差导致不等。\n- `true` 错误：恰恰是这个反直觉结果催生了十进制库。\n- 「抛出异常」错误：JS 不会因精度问题抛错。\n- 「随运行环境而变」错误：IEEE 754 在各 JS 引擎结果一致。",
+    "tags": ["decimal.js", "入门", "浮点误差", "IEEE754", "核心概念"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "false（因为 0.1 + 0.2 实际等于 0.30000000000000004）",
+        "isCorrect": true,
+        "description": "正确。IEEE 754 双精度无法精确表示这些十进制小数，相加产生误差，故不等于 0.3。"
+      },
+      {
+        "text": "true，JavaScript 会自动做十进制修正",
+        "isCorrect": false,
+        "description": "错误。原生 number 没有十进制修正，结果就是 false，这正是要引入 decimal.js 的原因。"
+      },
+      {
+        "text": "抛出「精度丢失」异常",
+        "isCorrect": false,
+        "description": "错误。浮点运算不会抛异常，只会静默产生误差。"
+      },
+      {
+        "text": "结果随浏览器/Node 版本不同而不同",
+        "isCorrect": false,
+        "description": "错误。IEEE 754 是标准，各引擎对该表达式结果一致，都是 false。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：它的官方定位（一句话）最准确的是哪个？",
+    "explanation": "decimal.js 的官方描述是「An arbitrary-precision Decimal type for JavaScript」——为 JavaScript 提供任意精度的十进制数类型，复刻了大量 Number.prototype 与 Math 的方法（加减乘除、幂、开方、三角函数等），用于规避浮点误差、做金额/高精度计算。\n\n- 「任意精度的十进制数类型」正确。\n- 「日期处理库」错误：那是 Day.js/date-fns。\n- 「数据校验库」错误：那是 Zod/Valibot。\n- 「BigInt 的 polyfill」错误：BigInt 只处理大整数，decimal.js 处理任意精度小数。",
+    "tags": ["decimal.js", "入门", "定位", "任意精度", "核心概念"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "为 JavaScript 提供任意精度的十进制（Decimal）数类型，规避浮点误差",
+        "isCorrect": true,
+        "description": "正确。官方原文即 arbitrary-precision Decimal type，复刻 Number/Math 方法。"
+      },
+      {
+        "text": "一个轻量的日期时间处理库",
+        "isCorrect": false,
+        "description": "错误。日期处理是 Day.js / date-fns / Luxon 的领域。"
+      },
+      {
+        "text": "一个运行时数据校验（schema validation）库",
+        "isCorrect": false,
+        "description": "错误。数据校验是 Zod / Valibot 的领域。"
+      },
+      {
+        "text": "ES BigInt 的 polyfill，仅处理大整数",
+        "isCorrect": false,
+        "description": "错误。BigInt 只处理整数；decimal.js 处理任意精度的小数与整数，能力范围不同。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要创建一个值为 0.1 的 Decimal 实例，下列哪种写法最稳妥？",
+    "explanation": "构造函数 `new Decimal(value)` 接受 number、string 或另一个 Decimal。传字符串 `new Decimal('0.1')` 最稳妥——因为传 number `0.1` 时，该字面量本身已是有误差的浮点数（尽管 decimal.js 会按其精度解析，常见值通常没问题，但传字符串能 100% 避免源头误差，尤其是高精度长数字）。\n\n- `new Decimal('0.1')` 正确且最稳妥。\n- `Decimal('0.1')`（不加 new）在 decimal.js 中也可用，但题目要选「最稳妥」，加 new 的字符串写法是推荐姿势。\n- `Decimal.parse('0.1')` 错误：没有该静态方法。\n- `0.1.toDecimal()` 错误：number 上没有此方法。",
+    "tags": ["decimal.js", "入门", "构造函数", "字符串", "精度"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "new Decimal('0.1')（用字符串传入，避免源头浮点误差）",
+        "isCorrect": true,
+        "description": "正确。字符串构造从源头杜绝浮点误差，是处理高精度数值的推荐写法。"
+      },
+      {
+        "text": "Decimal.parse('0.1')",
+        "isCorrect": false,
+        "description": "错误。decimal.js 没有 parse 静态方法，构造统一用 new Decimal(value)。"
+      },
+      {
+        "text": "(0.1).toDecimal()",
+        "isCorrect": false,
+        "description": "错误。原生 number 原型上没有 toDecimal 方法。"
+      },
+      {
+        "text": "Decimal.from(0.1, { safe: true })",
+        "isCorrect": false,
+        "description": "错误。没有 Decimal.from 这个 API，也没有 safe 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：构造函数 `new Decimal()` 不能直接接受下列哪种输入？",
+    "explanation": "构造函数接受 number、string、以及另一个 Decimal 实例；字符串还支持二进制 `0b`、八进制 `0o`、十六进制 `0x` 前缀与指数记数法（如 `'1.2e3'`）。但它不接受 BigInt 字面量、对象、数组等。要把 BigInt 转进来需先 `.toString()`。\n\n- 「BigInt 字面量（如 10n）」正确——不被直接支持。\n- number（如 1.5）支持。\n- 字符串（如 '0xff'）支持（十六进制）。\n- 另一个 Decimal 实例支持（相当于克隆）。",
+    "tags": ["decimal.js", "初级", "构造函数", "输入类型", "BigInt"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "BigInt 字面量（如 10n）",
+        "isCorrect": true,
+        "description": "正确。构造函数不直接接受 BigInt，需先转成 string 或 number 再传入。"
+      },
+      {
+        "text": "number（如 1.5）",
+        "isCorrect": false,
+        "description": "错误（此项可被接受）。number 是合法输入。"
+      },
+      {
+        "text": "带进制前缀的字符串（如 '0xff'）",
+        "isCorrect": false,
+        "description": "错误（此项可被接受）。字符串支持 0b/0o/0x 前缀，'0xff' 解析为 255。"
+      },
+      {
+        "text": "另一个 Decimal 实例",
+        "isCorrect": false,
+        "description": "错误（此项可被接受）。传入 Decimal 相当于克隆出等值的新实例。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：下列哪一组方法正确对应「加、减、乘、除」？",
+    "explanation": "四则运算的主方法是 `plus`、`minus`、`times`、`dividedBy`，分别有别名 `add`、`sub`、`mul`、`div`。它们都返回新的 Decimal（不可变），可链式调用。\n\n- `plus / minus / times / dividedBy(div)` 正确。\n- `add / remove / multiply / divide` 错误：remove/multiply/divide 不是 decimal.js 方法名（虽然 add 对，但整组不对）。\n- `sum / diff / prod / quot` 错误：这些不是实例运算方法。\n- 用 `+ - * /` 运算符错误：Decimal 是对象，运算符不会做十进制运算（会触发 toString/valueOf 退回浮点）。",
+    "tags": ["decimal.js", "入门", "四则运算", "plus", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "plus、minus、times、dividedBy（别名 add、sub、mul、div）",
+        "isCorrect": true,
+        "description": "正确。这是 decimal.js 的四则运算方法及其官方别名。"
+      },
+      {
+        "text": "add、remove、multiply、divide",
+        "isCorrect": false,
+        "description": "错误。remove/multiply/divide 不是 decimal.js 的方法名。"
+      },
+      {
+        "text": "sum、diff、prod、quot",
+        "isCorrect": false,
+        "description": "错误。sum 是静态聚合方法，diff/prod/quot 不存在。"
+      },
+      {
+        "text": "直接用 +、-、*、/ 运算符即可",
+        "isCorrect": false,
+        "description": "错误。对 Decimal 对象用算术运算符会退回浮点（经 valueOf/toString），失去精度意义。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('1.5')` 调用 `.plus(1)` 后，原实例会怎样？",
+    "explanation": "Decimal 实例是**不可变（immutable）**的。所有运算方法（plus/minus/times/...）都返回**新的** Decimal，绝不修改原对象。因此 `a.plus(1)` 不改变 `a`，需要把返回值赋给变量才能用。这是 decimal.js 的基础语义，也是链式调用安全的前提。\n\n- 「原实例不变，返回新 Decimal」正确。\n- 「原实例被就地修改为 2.5」错误：违反不可变性。\n- 「报错，因为 Decimal 是只读的」错误：方法正常返回新值，不报错。\n- 「返回 number 2.5」错误：返回的是 Decimal 实例，不是原生 number。",
+    "tags": ["decimal.js", "初级", "不可变性", "immutable", "核心概念"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "原实例保持 1.5 不变，plus 返回一个新的值为 2.5 的 Decimal",
+        "isCorrect": true,
+        "description": "正确。Decimal 不可变，所有运算返回新实例，原对象不被修改。"
+      },
+      {
+        "text": "原实例被就地修改为 2.5",
+        "isCorrect": false,
+        "description": "错误。decimal.js 实例不可变，不存在就地修改。"
+      },
+      {
+        "text": "抛出错误，因为 Decimal 是只读的",
+        "isCorrect": false,
+        "description": "错误。运算正常返回新 Decimal，不会抛错。"
+      },
+      {
+        "text": "返回原生 number 2.5",
+        "isCorrect": false,
+        "description": "错误。返回的是 Decimal 实例，要拿原生数字需再调 toNumber()。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要把一个 Decimal 转成原生 JavaScript number，应调用哪个方法？",
+    "explanation": "`toNumber()` 把 Decimal 转回原生 number（可能因超出双精度范围而损失精度，仅在最终需要 number 时使用）。`toString()` 返回字符串，`toFixed(dp)` 返回定点字符串，`valueOf()` 也返回字符串（用于隐式转换，保留有符号零）。\n\n- `toNumber()` 正确，返回 number。\n- `toString()` 返回字符串，不是 number。\n- `toFixed()` 返回字符串。\n- `valueOf()` 返回字符串（不是 number）。",
+    "tags": ["decimal.js", "入门", "toNumber", "输出", "类型转换"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "toNumber()",
+        "isCorrect": true,
+        "description": "正确。toNumber() 返回原生 number（超范围会损失精度，故只在最终转换时用）。"
+      },
+      {
+        "text": "toString()",
+        "isCorrect": false,
+        "description": "错误。toString() 返回字符串，不是 number。"
+      },
+      {
+        "text": "toFixed(2)",
+        "isCorrect": false,
+        "description": "错误。toFixed 返回定点字符串，类型是 string。"
+      },
+      {
+        "text": "valueOf()",
+        "isCorrect": false,
+        "description": "错误。valueOf() 返回字符串（类似 toString，但保留有符号零），不是 number。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要把金额 `new Decimal('12345.6789')` 格式化为保留两位小数的字符串「12345.68」，最直接的方法是？",
+    "explanation": "`toFixed(2)` 返回定点表示、保留两位小数的字符串，并按当前 rounding（默认 ROUND_HALF_UP）舍入，所以 `12345.6789` → `'12345.68'`。与原生 Number.prototype.toFixed 不同，decimal.js 的 toFixed **总是返回普通记数法**且不丢精度。\n\n- `toFixed(2)` 正确。\n- `toNumber().toFixed(2)` 会先转 number 引入潜在误差，不是推荐做法。\n- `toPrecision(2)` 是保留 2 位**有效数字**（结果约 1.2e+4），语义不同。\n- `round(2)` 错误：round() 不接受位数参数，只舍入到整数。",
+    "tags": ["decimal.js", "初级", "toFixed", "金额格式化", "输出"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "toFixed(2)",
+        "isCorrect": true,
+        "description": "正确。toFixed(2) 返回保留两位小数的定点字符串，按当前 rounding 舍入，且总是普通记数法。"
+      },
+      {
+        "text": "toPrecision(2)",
+        "isCorrect": false,
+        "description": "错误。toPrecision(2) 保留 2 位有效数字，得到约 '1.2e+4'，不是两位小数。"
+      },
+      {
+        "text": "round(2)",
+        "isCorrect": false,
+        "description": "错误。round() 不接受参数，只能舍入到整数；按小数位舍入要用 toDP 或 toFixed。"
+      },
+      {
+        "text": "toNumber().toFixed(2)",
+        "isCorrect": false,
+        "description": "错误。先 toNumber 会引入浮点误差，违背用 Decimal 的初衷。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`toFixed(2)` 与 `toDecimalPlaces(2)`（toDP）的关键区别是什么？",
+    "explanation": "二者都按指定小数位、当前 rounding 舍入，但**返回类型不同**：`toFixed(2)` 返回**字符串**（且保留尾随零，如 `'1.20'`）；`toDecimalPlaces(2)`（别名 `toDP`）返回**新的 Decimal 实例**（去除尾随零，`'1.2'`），便于继续参与运算。\n\n- 「toFixed 返回字符串、toDP 返回 Decimal」正确。\n- 「两者都返回字符串」错误。\n- 「两者都返回 Decimal」错误。\n- 「toDP 不能指定舍入模式」错误：toDP(dp, rm) 可传第二参数指定舍入模式。",
+    "tags": ["decimal.js", "中级", "toFixed", "toDP", "返回类型"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "toFixed 返回字符串（保留尾随零），toDP 返回新的 Decimal 实例",
+        "isCorrect": true,
+        "description": "正确。toFixed → string（如 '1.20'），toDP → Decimal（如 1.2），后者可继续链式运算。"
+      },
+      {
+        "text": "两者都返回字符串，仅舍入规则不同",
+        "isCorrect": false,
+        "description": "错误。toDP 返回的是 Decimal 实例，不是字符串。"
+      },
+      {
+        "text": "两者都返回 Decimal，仅尾随零处理不同",
+        "isCorrect": false,
+        "description": "错误。toFixed 返回的是字符串。"
+      },
+      {
+        "text": "toDP 无法指定舍入模式，toFixed 才可以",
+        "isCorrect": false,
+        "description": "错误。toDP(dp, rm) 和 toFixed(dp, rm) 都能用第二参数指定舍入模式。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：默认配置下，`Decimal.precision` 与 `Decimal.rounding` 的值分别是多少？",
+    "explanation": "decimal.js 的默认配置：`precision = 20`（结果保留 20 位**有效数字**），`rounding = 4`（即 `ROUND_HALF_UP`，四舍五入、平局远离零）。可用 `Decimal.set({ precision, rounding })` 修改。本地用 10.6.0 实测 `Decimal.precision === 20`、`Decimal.rounding === 4`。\n\n- 「20 与 4」正确。\n- 「10 与 0」错误。\n- 「100 与 6」错误。\n- 「无限 与 4」错误：precision 默认是有限值 20，不是无限。",
+    "tags": ["decimal.js", "初级", "precision", "rounding", "默认值"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "precision 默认 20，rounding 默认 4（ROUND_HALF_UP）",
+        "isCorrect": true,
+        "description": "正确。本地 10.6.0 实测：Decimal.precision === 20，Decimal.rounding === 4。"
+      },
+      {
+        "text": "precision 默认 10，rounding 默认 0",
+        "isCorrect": false,
+        "description": "错误。默认 precision 是 20，rounding 是 4。"
+      },
+      {
+        "text": "precision 默认 100，rounding 默认 6",
+        "isCorrect": false,
+        "description": "错误。100 与 6 都不是默认值。"
+      },
+      {
+        "text": "precision 默认无限（不舍入），rounding 默认 4",
+        "isCorrect": false,
+        "description": "错误。precision 默认是有限值 20；除法等会按它舍入，并非无限精度。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：关于配置项 `precision` 的含义，下列哪个描述正确？",
+    "explanation": "这是 decimal.js 最易被误解的点：`precision` 是**有效数字（significant digits）位数**，**不是小数位数**。官方 README 明确：decimal.js 与 bignumber.js 的区别之一就是「以有效数字而非小数位指定精度，并把所有计算都舍入到该精度」。实测 `Decimal.set({precision:5})` 后 `1000/3 = '333.33'`——5 位有效数字（整数部分占了 3 位，小数只剩 2 位）。\n\n- 「有效数字位数」正确。\n- 「小数点后位数」错误：那是 toFixed/toDP 的参数语义。\n- 「整数部分位数」错误。\n- 「字节数」错误。",
+    "tags": ["decimal.js", "中级", "precision", "有效数字", "易错点"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "结果保留的有效数字（significant digits）位数，而非小数位数",
+        "isCorrect": true,
+        "description": "正确。precision 是有效数字位数；实测 precision=5 时 1000/3='333.33'（仅 2 位小数）。"
+      },
+      {
+        "text": "结果保留的小数点后位数",
+        "isCorrect": false,
+        "description": "错误。小数位是 toFixed/toDP 的概念；precision 控制的是有效数字。"
+      },
+      {
+        "text": "整数部分允许的最大位数",
+        "isCorrect": false,
+        "description": "错误。precision 同时覆盖整数与小数部分的有效数字总数。"
+      },
+      {
+        "text": "内部存储占用的字节数",
+        "isCorrect": false,
+        "description": "错误。precision 与存储字节无关，是数值有效位数。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：执行 `Decimal.set({ precision: 5 })` 后，`new Decimal(1000).dividedBy(3).toString()` 的结果是？",
+    "explanation": "precision 是有效数字位数。1000/3 = 333.333...，保留 5 位有效数字（3、3、3、3、3）即 `333.33`——整数部分 `333` 已占 3 位有效数字，小数部分只能再放 2 位。这道题直接证明 precision ≠ 小数位。本地实测结果即 `'333.33'`。\n\n- `'333.33'` 正确（5 位有效数字）。\n- `'333.33333'` 错误：那是 5 位小数（共 8 位有效数字）。\n- `'333'` 错误：那是 3 位有效数字。\n- `'333.3'` 错误：那是 4 位有效数字。",
+    "tags": ["decimal.js", "中级", "precision", "有效数字", "除法"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "'333.33'",
+        "isCorrect": true,
+        "description": "正确。5 位有效数字：整数 333 占 3 位，小数再放 2 位，得 333.33（本地实测一致）。"
+      },
+      {
+        "text": "'333.33333'",
+        "isCorrect": false,
+        "description": "错误。这是 5 位小数（共 8 位有效数字），把 precision 误当成小数位才会这么算。"
+      },
+      {
+        "text": "'333'",
+        "isCorrect": false,
+        "description": "错误。333 只有 3 位有效数字，少于 precision=5。"
+      },
+      {
+        "text": "'333.3'",
+        "isCorrect": false,
+        "description": "错误。333.3 是 4 位有效数字，仍少于 5。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要全局修改默认精度和舍入模式，官方推荐的可靠做法是？",
+    "explanation": "官方推荐用静态方法 `Decimal.set({ precision: 30, rounding: Decimal.ROUND_HALF_EVEN })` 一次性配置多个属性。虽然也能直接赋值 `Decimal.precision = 30`，但 `Decimal.set` 会做参数校验、更可靠，是文档推荐方式。`Decimal.config(...)` 是 `set` 的别名。\n\n- `Decimal.set({ precision, rounding })` 正确。\n- `new Decimal().setPrecision(30)` 错误：实例上没有这种全局配置方法。\n- `Decimal.precision(30)` 错误：precision 是属性不是函数（`Decimal.precision = 30` 才对，但题目问推荐做法）。\n- `Decimal.options = {...}` 错误：没有 options 属性。",
+    "tags": ["decimal.js", "初级", "Decimal.set", "配置", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Decimal.set({ precision: 30, rounding: Decimal.ROUND_HALF_EVEN })",
+        "isCorrect": true,
+        "description": "正确。Decimal.set（别名 config）带参数校验，是官方推荐的全局配置方式。"
+      },
+      {
+        "text": "new Decimal().setPrecision(30)",
+        "isCorrect": false,
+        "description": "错误。没有实例级 setPrecision；全局配置走 Decimal.set。"
+      },
+      {
+        "text": "Decimal.precision(30)",
+        "isCorrect": false,
+        "description": "错误。precision 是属性而非函数；可 Decimal.precision=30，但推荐用 Decimal.set。"
+      },
+      {
+        "text": "Decimal.options = { precision: 30 }",
+        "isCorrect": false,
+        "description": "错误。decimal.js 没有 options 属性。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：常量 `Decimal.ROUND_HALF_UP` 对应的数值是几？它的舍入行为是什么？",
+    "explanation": "decimal.js 的舍入模式是构造函数上的枚举常量：`ROUND_UP=0`、`ROUND_DOWN=1`、`ROUND_CEIL=2`、`ROUND_FLOOR=3`、`ROUND_HALF_UP=4`、`ROUND_HALF_DOWN=5`、`ROUND_HALF_EVEN=6`、`ROUND_HALF_CEIL=7`、`ROUND_HALF_FLOOR=8`。`ROUND_HALF_UP=4` 表示「四舍五入，平局时远离零」，是默认舍入模式。本地实测 `Decimal.ROUND_HALF_UP === 4`。\n\n- 「4，四舍五入（平局远离零）」正确。\n- 「0，远离零（任何余数都进位）」错误：那是 ROUND_UP。\n- 「6，银行家舍入」错误：那是 ROUND_HALF_EVEN。\n- 「1，向零截断」错误：那是 ROUND_DOWN。",
+    "tags": ["decimal.js", "中级", "ROUND_HALF_UP", "舍入常量", "rounding"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "值为 4，表示四舍五入（平局时远离零），是默认舍入模式",
+        "isCorrect": true,
+        "description": "正确。ROUND_HALF_UP === 4，平局远离零，是 decimal.js 的默认 rounding。"
+      },
+      {
+        "text": "值为 0，表示任何非零余数都进位（远离零）",
+        "isCorrect": false,
+        "description": "错误。任何余数都进位是 ROUND_UP（值 0），不是 HALF_UP。"
+      },
+      {
+        "text": "值为 6，表示银行家舍入（平局取偶）",
+        "isCorrect": false,
+        "description": "错误。银行家舍入是 ROUND_HALF_EVEN（值 6）。"
+      },
+      {
+        "text": "值为 1，表示向零截断",
+        "isCorrect": false,
+        "description": "错误。向零截断是 ROUND_DOWN（值 1）。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：金融场景常用「银行家舍入」（四舍六入五取偶）以减少累计偏差，应使用哪个舍入常量？",
+    "explanation": "银行家舍入（round half to even）在 decimal.js 中是 `ROUND_HALF_EVEN`，值为 6。它在平局（恰好 .5）时舍入到最近的偶数，长期统计上能抵消「逢五就进」带来的系统性偏高。例如 2.5→2、3.5→4、0.125（保留两位）→0.12。\n\n- `ROUND_HALF_EVEN`（6）正确。\n- `ROUND_HALF_UP`（4）是普通四舍五入，会有系统性偏差。\n- `ROUND_UP`（0）是任何余数都进位。\n- `ROUND_FLOOR`（3）是向负无穷。",
+    "tags": ["decimal.js", "高级", "ROUND_HALF_EVEN", "银行家舍入", "金融"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ROUND_HALF_EVEN（值 6）",
+        "isCorrect": true,
+        "description": "正确。银行家舍入即 round half to even，平局取偶，减少累计偏差。"
+      },
+      {
+        "text": "ROUND_HALF_UP（值 4）",
+        "isCorrect": false,
+        "description": "错误。这是普通四舍五入，平局总是远离零，长期会系统性偏高。"
+      },
+      {
+        "text": "ROUND_UP（值 0）",
+        "isCorrect": false,
+        "description": "错误。ROUND_UP 是任何非零余数都进位，不是银行家舍入。"
+      },
+      {
+        "text": "ROUND_FLOOR（值 3）",
+        "isCorrect": false,
+        "description": "错误。ROUND_FLOOR 总是向负无穷舍入，与银行家舍入无关。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('2.5').toDP(0, Decimal.ROUND_HALF_EVEN).toString()` 与 `new Decimal('3.5').toDP(0, Decimal.ROUND_HALF_EVEN).toString()` 分别得到？",
+    "explanation": "银行家舍入（ROUND_HALF_EVEN）在恰好 .5 时舍入到最近的**偶数**：2.5 的两侧是 2（偶）和 3（奇），取偶得 `'2'`；3.5 的两侧是 3（奇）和 4（偶），取偶得 `'4'`。这正是它区别于普通四舍五入（都会得 3 和 4）的地方。\n\n- 「'2' 和 '4'」正确。\n- 「'3' 和 '4'」错误：那是 ROUND_HALF_UP 的结果。\n- 「'2' 和 '3'」错误。\n- 「'3' 和 '3'」错误。",
+    "tags": ["decimal.js", "高级", "ROUND_HALF_EVEN", "toDP", "舍入"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "'2' 和 '4'",
+        "isCorrect": true,
+        "description": "正确。银行家舍入取偶：2.5→2（偶），3.5→4（偶）。"
+      },
+      {
+        "text": "'3' 和 '4'",
+        "isCorrect": false,
+        "description": "错误。这是普通四舍五入（ROUND_HALF_UP）的结果，不是取偶。"
+      },
+      {
+        "text": "'2' 和 '3'",
+        "isCorrect": false,
+        "description": "错误。3.5 取偶应为 4，不是 3。"
+      },
+      {
+        "text": "'3' 和 '3'",
+        "isCorrect": false,
+        "description": "错误。两者都不对，银行家舍入分别得 2 和 4。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要判断两个 Decimal 是否相等，最规范的做法是？",
+    "explanation": "比较应使用专门的方法：`equals`（别名 `eq`）判等、`comparedTo`（别名 `cmp`）返回 -1/0/1/NaN、以及 `greaterThan`/`lessThan` 等。`a.equals(b)` 返回布尔值。**不能**用 `===`，因为 Decimal 是对象，`===` 比较的是引用而非数值；也不能用 `==`（会触发隐式转换、不可靠）。\n\n- `a.equals(b)` 正确。\n- `a === b` 错误：比较引用，两个等值实例也不相等。\n- `a == b` 错误：依赖隐式转换，不可靠。\n- `Object.is(a, b)` 错误：同样比较引用。",
+    "tags": ["decimal.js", "初级", "equals", "比较", "易错点"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "a.equals(b)（或 a.eq(b) / a.comparedTo(b) === 0）",
+        "isCorrect": true,
+        "description": "正确。用 equals/eq/comparedTo 做数值比较，返回可靠结果。"
+      },
+      {
+        "text": "a === b",
+        "isCorrect": false,
+        "description": "错误。Decimal 是对象，=== 比较引用，等值的两个实例也返回 false。"
+      },
+      {
+        "text": "a == b",
+        "isCorrect": false,
+        "description": "错误。== 依赖隐式转换（valueOf/toString），不可靠。"
+      },
+      {
+        "text": "Object.is(a, b)",
+        "isCorrect": false,
+        "description": "错误。Object.is 同样按引用比较对象，不做数值比较。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('0.1').comparedTo('0.3')` 返回什么？",
+    "explanation": "`comparedTo(x)`（别名 `cmp`）返回：本值大于 x 返回 `1`，小于返回 `-1`，相等返回 `0`，任一为 NaN 返回 `NaN`。0.1 < 0.3，故返回 `-1`。本地实测 `new Decimal('0.1').comparedTo('0.3') === -1`。\n\n- `-1`（小于）正确。\n- `1`（大于）错误。\n- `0`（相等）错误。\n- `false` 错误：comparedTo 返回数值不是布尔。",
+    "tags": ["decimal.js", "中级", "comparedTo", "比较", "返回值"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "-1（表示 0.1 小于 0.3）",
+        "isCorrect": true,
+        "description": "正确。comparedTo 在本值小于参数时返回 -1，本地实测一致。"
+      },
+      {
+        "text": "1（表示大于）",
+        "isCorrect": false,
+        "description": "错误。0.1 不大于 0.3，返回的是 -1。"
+      },
+      {
+        "text": "0（表示相等）",
+        "isCorrect": false,
+        "description": "错误。0.1 与 0.3 不相等。"
+      },
+      {
+        "text": "false",
+        "isCorrect": false,
+        "description": "错误。comparedTo 返回数值（-1/0/1/NaN），equals 才返回布尔。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal(7).dividedBy(2).toString()` 的结果是？（注意 div 是否为整数除法）",
+    "explanation": "`dividedBy`（div）是**真正的除法**，不是整数除法。7/2 = 3.5，结果就是 `'3.5'`（在默认 precision 20 下精确）。整数除法需要自己用 `div(...).floor()` 或 `dividedToIntegerBy`（idiv）。本地实测 `new Decimal(7).div(2).toString() === '3.5'`。\n\n- `'3.5'` 正确。\n- `'3'` 错误：那是整数除法（idiv/floor 之后）的结果。\n- `'4'` 错误。\n- `'3.50'` 错误：toString 不保留尾随零，是 '3.5'。",
+    "tags": ["decimal.js", "初级", "dividedBy", "除法", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "'3.5'",
+        "isCorrect": true,
+        "description": "正确。dividedBy 是真除法，7/2=3.5（本地实测一致）。"
+      },
+      {
+        "text": "'3'",
+        "isCorrect": false,
+        "description": "错误。这是整数除法的结果；要整除需 dividedToIntegerBy 或 div(...).floor()。"
+      },
+      {
+        "text": "'4'",
+        "isCorrect": false,
+        "description": "错误。div 不会四舍五入到整数。"
+      },
+      {
+        "text": "'3.50'",
+        "isCorrect": false,
+        "description": "错误。toString 去除尾随零，结果是 '3.5'；要 '3.50' 用 toFixed(2)。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('1.20').toString()` 和 `new Decimal('1.20').toFixed(2)` 分别返回？",
+    "explanation": "decimal.js **内部不保留尾随的小数零**：`toString()` 返回 `'1.2'`（规范化去零）。而 `toFixed(2)` 强制定点两位、**会补尾随零**，返回 `'1.20'`。这是金额展示常见坑——想要固定两位小数必须用 toFixed/toExponential/toPrecision，而非 toString。本地实测：toString→'1.2'，toFixed(2)→'1.20'。\n\n- 「'1.2' 和 '1.20'」正确。\n- 「'1.20' 和 '1.20'」错误：toString 会去零。\n- 「'1.2' 和 '1.2'」错误：toFixed 会补零。\n- 「都抛错」错误。",
+    "tags": ["decimal.js", "中级", "尾随零", "toString", "toFixed"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "toString 返回 '1.2'，toFixed(2) 返回 '1.20'",
+        "isCorrect": true,
+        "description": "正确。decimal.js 内部不存尾随零，toString 去零得 '1.2'；toFixed(2) 补零得 '1.20'。"
+      },
+      {
+        "text": "都返回 '1.20'",
+        "isCorrect": false,
+        "description": "错误。toString 会去除尾随零，返回 '1.2'。"
+      },
+      {
+        "text": "都返回 '1.2'",
+        "isCorrect": false,
+        "description": "错误。toFixed(2) 会补足两位小数，返回 '1.20'。"
+      },
+      {
+        "text": "toString 正常，toFixed(2) 抛出异常",
+        "isCorrect": false,
+        "description": "错误。toFixed(2) 正常返回字符串，不会抛异常。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal(1).dividedBy(0)` 的结果是什么？（decimal.js 如何处理除以零）",
+    "explanation": "decimal.js **支持 NaN 与 Infinity**（与 JS 数值语义一致）。`1/0` 返回值为 `Infinity` 的 Decimal（`toString()` 为 `'Infinity'`），不抛异常；`0/0` 返回 NaN。可用 `isFinite()`/`isNaN()` 检查。本地实测 `new Decimal(1).div(0).toString() === 'Infinity'`。这点与 big.js 不同（big.js 会抛错）。\n\n- 「返回值为 Infinity 的 Decimal，不抛错」正确。\n- 「抛出除以零错误」错误：那是 big.js 的行为。\n- 「返回 0」错误。\n- 「返回 null」错误。",
+    "tags": ["decimal.js", "中级", "Infinity", "除以零", "NaN"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回一个值为 Infinity 的 Decimal（不抛异常）",
+        "isCorrect": true,
+        "description": "正确。decimal.js 支持 Infinity/NaN；1/0 得 Infinity，本地实测 toString 为 'Infinity'。"
+      },
+      {
+        "text": "抛出「Division by zero」错误",
+        "isCorrect": false,
+        "description": "错误。抛错是 big.js 的行为；decimal.js 返回 Infinity。"
+      },
+      {
+        "text": "返回值为 0 的 Decimal",
+        "isCorrect": false,
+        "description": "错误。除以零不会得 0。"
+      },
+      {
+        "text": "返回 null",
+        "isCorrect": false,
+        "description": "错误。返回的是 Decimal(Infinity)，不是 null。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要检测一个 Decimal 是否为 NaN，应使用哪个方法？",
+    "explanation": "用实例方法 `isNaN()` 检测是否为 NaN，返回布尔。类似地有 `isFinite()`、`isInteger()`/`isInt()`、`isZero()`、`isNegative()`/`isNeg()`、`isPositive()`/`isPos()`。注意不能用全局 `isNaN(decimal)`（会先 toString/toNumber，不可靠）。本地实测 `new Decimal(NaN).isNaN() === true`。\n\n- `d.isNaN()` 正确。\n- `d === NaN` 错误：NaN 与任何值（含自身）都不 ===。\n- `Number.isNaN(d)` 错误：d 是对象不是 number，返回 false。\n- `d.equals(NaN)` 错误：与 NaN 比较返回 NaN/false，不是判定手段。",
+    "tags": ["decimal.js", "初级", "isNaN", "类型检查", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "d.isNaN()",
+        "isCorrect": true,
+        "description": "正确。实例方法 isNaN() 返回布尔，本地实测 Decimal(NaN).isNaN() 为 true。"
+      },
+      {
+        "text": "d === NaN",
+        "isCorrect": false,
+        "description": "错误。NaN 不等于任何值（含自身），且 d 是对象。"
+      },
+      {
+        "text": "Number.isNaN(d)",
+        "isCorrect": false,
+        "description": "错误。d 是 Decimal 对象不是 number，Number.isNaN 返回 false。"
+      },
+      {
+        "text": "d.equals(NaN)",
+        "isCorrect": false,
+        "description": "错误。与 NaN 比较不会返回 true，不能用来判 NaN。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要对一个 Decimal 取平方根，应使用哪个方法？",
+    "explanation": "`sqrt()` 返回平方根（一个新 Decimal，按当前 precision 与 rounding）。立方根是 `cbrt()`。幂运算用 `pow(x)`（也写作 `toPower`），支持非整数指数。decimal.js 比 big.js/bignumber.js 多了 sqrt/cbrt/三角/对数等数学函数。\n\n- `d.sqrt()` 正确。\n- `d.pow(0.5)` 也能算平方根，但 sqrt() 是专用且更精确/直接的方法（pow 对非整数指数走更复杂路径）；题目问「取平方根」的标准方法是 sqrt。\n- `Math.sqrt(d)` 错误：会把 d 转成 number 丢精度。\n- `d.root(2)` 错误：没有 root 方法。",
+    "tags": ["decimal.js", "中级", "sqrt", "数学函数", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "d.sqrt()",
+        "isCorrect": true,
+        "description": "正确。sqrt() 是专用平方根方法，按当前 precision/rounding 返回新 Decimal。"
+      },
+      {
+        "text": "Math.sqrt(d)",
+        "isCorrect": false,
+        "description": "错误。Math.sqrt 会把 Decimal 转成原生 number，丢失精度。"
+      },
+      {
+        "text": "d.root(2)",
+        "isCorrect": false,
+        "description": "错误。decimal.js 没有 root 方法；开平方用 sqrt，立方根用 cbrt。"
+      },
+      {
+        "text": "d.power(0.5, true)",
+        "isCorrect": false,
+        "description": "错误。幂方法是 pow（别名 toPower），且无此签名；标准开方用 sqrt()。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：链式调用 `new Decimal(2).times('999.999999999999999').dividedBy(4).ceil()` 之所以可行，是因为？",
+    "explanation": "因为每个运算方法（times/dividedBy/ceil/...）都返回一个**新的 Decimal 实例**，于是可以在返回值上继续调用下一个方法，形成链式调用。这是不可变设计的直接好处：每一步都是纯函数式变换，互不干扰。\n\n- 「每个方法都返回新 Decimal，可继续调用」正确。\n- 「Decimal 会缓存运算队列，最后统一计算」错误：每步立即求值并返回新实例。\n- 「times 修改了原对象使其支持链式」错误：违反不可变性。\n- 「依赖 JS 运算符重载」错误：JS 不支持运算符重载，链式靠方法返回对象。",
+    "tags": ["decimal.js", "中级", "链式调用", "不可变性", "设计"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个运算方法都返回新的 Decimal 实例，可在其上继续调用方法",
+        "isCorrect": true,
+        "description": "正确。不可变设计下每步返回新实例，天然支持链式。"
+      },
+      {
+        "text": "Decimal 内部缓存运算队列，到末尾才统一计算",
+        "isCorrect": false,
+        "description": "错误。没有惰性队列，每步立即求值并返回新 Decimal。"
+      },
+      {
+        "text": "times 会就地修改原对象，从而支持继续调用",
+        "isCorrect": false,
+        "description": "错误。Decimal 不可变，不存在就地修改。"
+      },
+      {
+        "text": "依赖 JavaScript 的运算符重载机制",
+        "isCorrect": false,
+        "description": "错误。JS 不支持运算符重载；链式是靠方法返回对象实现的。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('0xff')` 解析后的值是多少？",
+    "explanation": "字符串构造支持进制前缀：`0x` 十六进制、`0o` 八进制、`0b` 二进制。`'0xff'` 即十六进制 FF = 255，所以 `new Decimal('0xff').toString()` 为 `'255'`。这点与 big.js 不同——big.js 无法解析十六进制（会抛 Invalid number）。\n\n- `255` 正确。\n- `'0xff'`（原样字符串）错误：会被解析为数值。\n- 抛错错误：decimal.js 能解析十六进制（big.js 才抛错）。\n- `NaN` 错误。",
+    "tags": ["decimal.js", "中级", "十六进制", "进制", "构造函数"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "255（十六进制 0xff 被正确解析）",
+        "isCorrect": true,
+        "description": "正确。字符串支持 0x/0o/0b 前缀，'0xff' 解析为 255。"
+      },
+      {
+        "text": "保持为字符串 '0xff'，不做数值解析",
+        "isCorrect": false,
+        "description": "错误。带 0x 前缀的字符串会被当十六进制数解析。"
+      },
+      {
+        "text": "抛出「Invalid number」错误",
+        "isCorrect": false,
+        "description": "错误。抛错是 big.js 的行为；decimal.js 支持十六进制解析。"
+      },
+      {
+        "text": "NaN",
+        "isCorrect": false,
+        "description": "错误。'0xff' 是合法十六进制，结果是 255 不是 NaN。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：实例上的只读属性 `s`、`e`、`d` 分别代表什么？",
+    "explanation": "Decimal 内部用三个只读属性表示数值：`s` = 符号（sign，-1 / 1，NaN 为 NaN）；`e` = 指数（exponent，整数）；`d` = 数字数组（digits，每个元素是 0~1e7 的整数；NaN/Infinity 时为 null）。理解它们有助于调试，但一般无需直接操作。\n\n- 「s=符号、e=指数、d=数字数组」正确。\n- 「s=字符串、e=误差、d=小数位」错误。\n- 「s=有效数字、e=是否相等、d=分母」错误。\n- 「s=精度、e=enum、d=方向」错误。",
+    "tags": ["decimal.js", "高级", "内部属性", "s/e/d", "原理"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "s 是符号（-1/1/NaN），e 是指数，d 是数字数组（NaN/Infinity 时为 null）",
+        "isCorrect": true,
+        "description": "正确。这是 decimal.js 的内部三元组表示：sign / exponent / digits。"
+      },
+      {
+        "text": "s 是字符串形式，e 是误差范围，d 是小数位数",
+        "isCorrect": false,
+        "description": "错误。s/e/d 是 sign/exponent/digits，不是字符串/误差/小数位。"
+      },
+      {
+        "text": "s 是有效数字，e 是是否相等标志，d 是分母",
+        "isCorrect": false,
+        "description": "错误。完全不符；这些不是 s/e/d 的含义。"
+      },
+      {
+        "text": "s 是精度，e 是枚举类型，d 是舍入方向",
+        "isCorrect": false,
+        "description": "错误。这些都不是内部属性的含义。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('0.0000001').toString()` 的结果是 `'1e-7'`，原因是？",
+    "explanation": "decimal.js 用 `toExpNeg`（默认 -7）和 `toExpPos`（默认 21）控制何时用指数记数法：当数值的指数 ≤ toExpNeg 或 ≥ toExpPos 时，`toString()` 自动改用指数记法。0.0000001 = 1e-7，其指数 -7 恰好达到 toExpNeg 阈值，故输出 `'1e-7'`。要强制普通记法可用 `toFixed()` 或调大 toExpNeg 的绝对值。本地实测确为 `'1e-7'`。\n\n- 「指数达到 toExpNeg(-7) 阈值，自动转指数记法」正确。\n- 「精度不足导致」错误。\n- 「toString 永远用指数记法」错误：只在阈值外才用。\n- 「这是一个 bug」错误：是设计行为。",
+    "tags": ["decimal.js", "高级", "toExpNeg", "指数记法", "toString"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "数值指数 -7 达到 toExpNeg（默认 -7）阈值，toString 自动改用指数记法",
+        "isCorrect": true,
+        "description": "正确。指数 ≤ toExpNeg 或 ≥ toExpPos 时切换指数记法；要普通记法用 toFixed()。"
+      },
+      {
+        "text": "因为精度（precision）不足以表示这么小的数",
+        "isCorrect": false,
+        "description": "错误。与 precision 无关，是 toExpNeg 阈值触发了指数记法。"
+      },
+      {
+        "text": "toString() 对任何数都用指数记法",
+        "isCorrect": false,
+        "description": "错误。只有指数超出 [toExpNeg, toExpPos] 范围时才用指数记法。"
+      },
+      {
+        "text": "这是 decimal.js 的一个已知 bug",
+        "isCorrect": false,
+        "description": "错误。这是由 toExpNeg/toExpPos 控制的预期行为。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要把一个 Decimal 用「保留 3 位有效数字」格式化，应使用哪个方法？",
+    "explanation": "`toSignificantDigits(sd, rm)`（别名 `toSD`）返回保留指定**有效数字**位数的新 Decimal；`toPrecision(sd, rm)` 返回同样按有效数字舍入的**字符串**。例如 `new Decimal('12345.6789').toSD(3)` → `12300`（3 位有效数字）。与之相对，`toDP`/`toFixed` 是按小数位。\n\n- `toSignificantDigits(3)` / `toSD(3)` 正确。\n- `toDecimalPlaces(3)` 错误：那是 3 位小数。\n- `toFixed(3)` 错误：那是 3 位小数（字符串）。\n- `precision(3)` 错误：precision() 无参时是查询有效数字位数，不接受设定参数。",
+    "tags": ["decimal.js", "中级", "toSignificantDigits", "有效数字", "格式化"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "toSignificantDigits(3)（别名 toSD(3)）",
+        "isCorrect": true,
+        "description": "正确。toSD 按有效数字舍入并返回新 Decimal；如 12345.6789→12300。"
+      },
+      {
+        "text": "toDecimalPlaces(3)",
+        "isCorrect": false,
+        "description": "错误。toDP 按小数位（小数点后 3 位）舍入，不是有效数字。"
+      },
+      {
+        "text": "toFixed(3)",
+        "isCorrect": false,
+        "description": "错误。toFixed 按小数位返回字符串，不是有效数字。"
+      },
+      {
+        "text": "precision(3)",
+        "isCorrect": false,
+        "description": "错误。precision() 用于查询当前有效数字位数，不能传参做格式化。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：在做一连串金额运算后，要正确「四舍五入到分（2 位小数）」并得到可展示的字符串，最佳实践是？",
+    "explanation": "金额场景的最佳实践：用字符串构造避免源头误差，全程用 Decimal 运算保持精度，**最后一步**才用 `toFixed(2)` 得到固定两位小数的展示字符串（按 rounding 舍入，且会补尾随零）。中途不要 toNumber，否则前功尽弃。\n\n- 「全程 Decimal 运算，最后 toFixed(2)」正确。\n- 「每步都 toNumber 再算」错误：会反复引入浮点误差。\n- 「最后 toString()」错误：toString 去尾随零，金额展示需固定两位。\n- 「用 Math.round(x*100)/100」错误：又退回浮点。",
+    "tags": ["decimal.js", "高级", "金额场景", "toFixed", "最佳实践"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "从字符串构造、全程用 Decimal 运算，最后一步用 toFixed(2) 输出展示字符串",
+        "isCorrect": true,
+        "description": "正确。源头用字符串、中途保持 Decimal、末端 toFixed(2)，精度与展示两全。"
+      },
+      {
+        "text": "每一步运算后都先 toNumber() 再继续",
+        "isCorrect": false,
+        "description": "错误。中途转 number 会反复引入浮点误差，违背用 Decimal 的目的。"
+      },
+      {
+        "text": "全程 Decimal，最后用 toString() 输出",
+        "isCorrect": false,
+        "description": "错误。toString 去尾随零（如 1.2 而非 1.20），金额展示需固定两位用 toFixed(2)。"
+      },
+      {
+        "text": "用原生 Math.round(x * 100) / 100 处理",
+        "isCorrect": false,
+        "description": "错误。这又退回浮点运算，x*100 本身就可能有误差。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`Decimal.set({ precision: 5 })` 之后，又想为「某一类计算」用 precision 40 而不影响全局，最干净的做法是？",
+    "explanation": "`Decimal.clone(config)` 创建一个**独立配置**的新 Decimal 构造函数，其 precision/rounding 等与原构造函数互不影响。例如 `const Decimal40 = Decimal.clone({ precision: 40 })`，用 `Decimal40` 算的就是 40 位精度，全局 Decimal 仍是 5。这比反复 set/恢复全局状态更安全。\n\n- `Decimal.clone({ precision: 40 })` 正确。\n- 「set 改 40 算完再 set 回 5」可行但易出错（异常/并发会泄漏状态），非「最干净」。\n- `new Decimal(x, { precision: 40 })` 错误：构造函数第二参不是配置。\n- `x.precision(40)` 错误：不能这样设定。",
+    "tags": ["decimal.js", "专家", "clone", "独立配置", "最佳实践"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 Decimal.clone({ precision: 40 }) 生成独立配置的构造函数，用它来算",
+        "isCorrect": true,
+        "description": "正确。clone 出的构造函数配置独立，不污染全局 Decimal，最干净安全。"
+      },
+      {
+        "text": "Decimal.set 改成 40，算完再 set 回 5",
+        "isCorrect": false,
+        "description": "错误。手改全局状态再恢复易因异常/嵌套泄漏，不是最干净的方案。"
+      },
+      {
+        "text": "new Decimal(x, { precision: 40 }) 传入第二参数",
+        "isCorrect": false,
+        "description": "错误。构造函数第二参数不是配置对象，无此用法。"
+      },
+      {
+        "text": "x.precision(40) 在实例上临时设定",
+        "isCorrect": false,
+        "description": "错误。precision() 用于查询，不能传参为某实例设定精度。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`pow`（幂）方法相比 big.js，一个显著能力差异是什么？",
+    "explanation": "decimal.js 的 `pow(x)`（toPower）**支持非整数指数**（如 `new Decimal(2).pow(0.5)` 求平方根、`pow(1.5)` 等），底层结合 exp/ln 计算；这是 decimal.js 比 big.js、bignumber.js 「更全」的体现之一。big.js 的 pow 只接受整数指数。\n\n- 「支持非整数（小数）指数」正确。\n- 「只支持正整数指数」错误：那更接近 big.js 的限制。\n- 「pow 会修改原对象」错误：不可变。\n- 「pow 不存在，要用 ** 运算符」错误：Decimal 有 pow，且 ** 对对象无意义。",
+    "tags": ["decimal.js", "高级", "pow", "非整数指数", "对比"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "decimal.js 的 pow 支持非整数（小数）指数，big.js 的 pow 只接受整数指数",
+        "isCorrect": true,
+        "description": "正确。decimal.js 可 pow(0.5)/pow(1.5) 等，big.js 仅整数指数，能力更窄。"
+      },
+      {
+        "text": "decimal.js 的 pow 只支持正整数指数",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，decimal.js 支持非整数指数。"
+      },
+      {
+        "text": "pow 会就地修改原 Decimal 对象",
+        "isCorrect": false,
+        "description": "错误。Decimal 不可变，pow 返回新实例。"
+      },
+      {
+        "text": "decimal.js 没有 pow，必须用 ** 运算符",
+        "isCorrect": false,
+        "description": "错误。decimal.js 有 pow/toPower；** 对 Decimal 对象无效。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：下列哪个数学函数是 decimal.js 提供、而 big.js 完全没有的？",
+    "explanation": "decimal.js 复刻了大量 Math 方法：三角函数 `sin/cos/tan`、反三角、双曲、对数 `ln/log/log2/log10`、指数 `exp`、`sqrt/cbrt` 等。big.js 极简，**只有四则运算、pow（整数）、sqrt 等少数**，没有三角函数、对数、exp。`sin()` 是 decimal.js 独有、big.js 没有的典型代表。\n\n- `sin()`（三角函数）正确——big.js 没有。\n- `plus()` 错误：big.js 也有加法。\n- `toFixed()` 错误：big.js 也有。\n- `abs()` 错误：big.js 也有 abs。",
+    "tags": ["decimal.js", "中级", "三角函数", "数学函数", "对比"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "sin()（三角函数）",
+        "isCorrect": true,
+        "description": "正确。三角/对数/exp 等是 decimal.js 独有，big.js 极简没有这些。"
+      },
+      {
+        "text": "plus()",
+        "isCorrect": false,
+        "description": "错误。加法是基础四则，big.js 也有 plus。"
+      },
+      {
+        "text": "toFixed()",
+        "isCorrect": false,
+        "description": "错误。big.js 同样提供 toFixed。"
+      },
+      {
+        "text": "abs()",
+        "isCorrect": false,
+        "description": "错误。big.js 也有 abs（绝对值）。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：官方 README 明确指出，decimal.js 与 bignumber.js 的一个关键区别是什么？",
+    "explanation": "官方 README 原文：「decimal.js differs from bignumber.js by specifying precision in **significant digits** rather than decimal places, and by rounding all calculations to the precision.」即 decimal.js 用**有效数字**指定精度（并把所有计算舍入到该精度），而 bignumber.js 的 DECIMAL_PLACES 是按**小数位**控制（主要影响除法等）。此外 decimal.js 含三角函数、支持非整数幂，因而比 bignumber.js 和 big.js 都大。\n\n- 「decimal.js 按有效数字、bignumber.js 按小数位指定精度」正确。\n- 「两者 API 完全相同」错误。\n- 「bignumber.js 不支持小数」错误。\n- 「decimal.js 不支持配置精度」错误。",
+    "tags": ["decimal.js", "高级", "bignumber.js", "有效数字", "对比"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "decimal.js 以「有效数字」指定精度并舍入所有计算；bignumber.js 以「小数位」(DECIMAL_PLACES) 控制",
+        "isCorrect": true,
+        "description": "正确。这是官方 README 明示的核心差异，也是两库行为不同的根源。"
+      },
+      {
+        "text": "两者 API 与默认值完全相同，只是名字不同",
+        "isCorrect": false,
+        "description": "错误。精度语义（有效数字 vs 小数位）不同，且 decimal.js 多三角/非整数幂。"
+      },
+      {
+        "text": "bignumber.js 不支持小数，只能处理整数",
+        "isCorrect": false,
+        "description": "错误。bignumber.js 完全支持小数运算。"
+      },
+      {
+        "text": "decimal.js 不支持配置精度，bignumber.js 才支持",
+        "isCorrect": false,
+        "description": "错误。decimal.js 用 precision 配置有效数字精度。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：同作者三库（decimal.js / big.js / bignumber.js）中，哪一个体积最小、API 最精简？",
+    "explanation": "三库均出自 Michael Mclaughlin。**big.js 最小最精简**（核心只有四则、cmp、abs、pow（整数）、sqrt、toFixed 等，无三角/对数/进制/NaN-Infinity）；**bignumber.js 介于两者之间**，支持多进制（如 `new BigNumber('ff',16)`）、有 NaN/Infinity；**decimal.js 最全**（三角、对数、exp、非整数幂、进制、NaN/Infinity）因而最大。\n\n- 「big.js 最小」正确。\n- 「decimal.js 最小」错误：它最大。\n- 「bignumber.js 最小」错误：它居中。\n- 「三者体积相同」错误。",
+    "tags": ["decimal.js", "中级", "big.js", "bignumber.js", "选型"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "big.js（最小最精简，只有基础运算）",
+        "isCorrect": true,
+        "description": "正确。big.js 极简，无三角/对数/进制/NaN-Infinity，体积最小。"
+      },
+      {
+        "text": "decimal.js（最小）",
+        "isCorrect": false,
+        "description": "错误。decimal.js 功能最全（三角/对数/非整数幂等），体积最大。"
+      },
+      {
+        "text": "bignumber.js（最小）",
+        "isCorrect": false,
+        "description": "错误。bignumber.js 功能与体积都介于 big.js 和 decimal.js 之间。"
+      },
+      {
+        "text": "三者体积与 API 数量完全相同",
+        "isCorrect": false,
+        "description": "错误。三者定位不同：big.js 最小、bignumber.js 居中、decimal.js 最全。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：三库（decimal.js / big.js / bignumber.js）中，哪一个对「多进制（二/八/十六进制 I/O）」支持最完整？",
+    "explanation": "**bignumber.js** 是三库中对多进制支持最完整的：构造可指定基数 `new BigNumber('ff', 16)`，输出可指定基数 `n.toString(16)`，覆盖 2~36 进制。decimal.js 也支持进制（构造用 0x/0o/0b 前缀，输出有 toBinary/toHex/toOctal），但 bignumber.js 的「任意基数 I/O」更通用。big.js **完全不支持**多进制（连十六进制字符串都会抛 Invalid number）。本地实测：bignumber.js `new BigNumber('ff',16)`=255、`(255).toString(16)`='ff'；big.js `new Big('0xff')` 抛错。\n\n- 「bignumber.js 支持任意基数 I/O，big.js 完全不支持」正确。\n- 「big.js 支持最完整」错误：它根本不支持。\n- 「三者都不支持进制」错误。\n- 「只有 decimal.js 支持」错误：bignumber.js 也支持且更通用。",
+    "tags": ["decimal.js", "高级", "bignumber.js", "big.js", "进制"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bignumber.js（支持任意基数 2~36 的输入/输出）；big.js 完全不支持多进制",
+        "isCorrect": true,
+        "description": "正确。bignumber.js 可 new BigNumber('ff',16) 与 toString(16)；big.js 连 '0xff' 都抛错。"
+      },
+      {
+        "text": "big.js 对进制支持最完整",
+        "isCorrect": false,
+        "description": "错误。big.js 根本不支持多进制，'0xff' 会抛 Invalid number。"
+      },
+      {
+        "text": "三者都不支持任何进制 I/O",
+        "isCorrect": false,
+        "description": "错误。bignumber.js 与 decimal.js 都支持进制，bignumber.js 最通用。"
+      },
+      {
+        "text": "只有 decimal.js 支持进制",
+        "isCorrect": false,
+        "description": "错误。bignumber.js 同样支持且其任意基数 I/O 更通用。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：对比 big.js，`Big(1).div(0)` 与 `new Decimal(1).div(0)` 的行为差异是？",
+    "explanation": "big.js **不支持 NaN/Infinity**：除以零会**抛出错误**（`[big.js] Division by zero`），传入 NaN、非法字符串也会抛 `Invalid number`。decimal.js 则**支持** NaN/Infinity，`1/0` 返回 `Infinity`（不抛错）。这是选型关键：需要静默处理 NaN/Infinity 选 decimal.js（或 bignumber.js）；想让非法运算尽早暴露成异常，big.js 的严格性反而是优点。本地实测均已验证。\n\n- 「big.js 抛错，decimal.js 返回 Infinity」正确。\n- 「都返回 Infinity」错误：big.js 抛错。\n- 「都抛错」错误：decimal.js 不抛。\n- 「都返回 NaN」错误。",
+    "tags": ["decimal.js", "高级", "big.js", "除以零", "NaN"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "big.js 抛出「Division by zero」错误；decimal.js 返回值为 Infinity 的实例",
+        "isCorrect": true,
+        "description": "正确。big.js 不支持 NaN/Infinity 会抛错；decimal.js 支持，返回 Infinity（本地实测）。"
+      },
+      {
+        "text": "两者都返回值为 Infinity 的实例",
+        "isCorrect": false,
+        "description": "错误。big.js 不支持 Infinity，会抛错。"
+      },
+      {
+        "text": "两者都抛出除以零错误",
+        "isCorrect": false,
+        "description": "错误。decimal.js 不抛错，返回 Infinity。"
+      },
+      {
+        "text": "两者都返回 NaN",
+        "isCorrect": false,
+        "description": "错误。big.js 抛错、decimal.js 返回 Infinity，都不是 NaN。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：对比 big.js，big.js 的 `Big.DP` 与 `Big.RM` 默认值分别是什么？（注意 RM 与 decimal.js 默认不同）",
+    "explanation": "big.js 默认 `Big.DP = 20`（**除法**结果的小数位数），`Big.RM = 1`（即 `roundHalfUp` 在 big.js 里是 1？不——big.js 的舍入常量是 roundDown=0、roundHalfUp=1、roundHalfEven=2、roundUp=3，默认 `RM = 1`=roundHalfUp）。本地实测 `Big.DP===20`、`Big.RM===1`。要点：big.js 的 DP 只作用于**除法/sqrt/pow**等会产生无限小数的运算，加减乘是精确的不受 DP 限制；这与 decimal.js「所有运算都舍入到 precision（有效数字）」不同。\n\n- 「DP=20，RM=1（roundHalfUp）」正确。\n- 「DP=20，RM=4」错误：4 是 decimal.js 的常量值，big.js 的 roundHalfUp 是 1。\n- 「DP=0，RM=0」错误。\n- 「DP=100，RM=6」错误。",
+    "tags": ["decimal.js", "专家", "big.js", "Big.DP", "Big.RM"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Big.DP=20（除法等的小数位），Big.RM=1（big.js 中 roundHalfUp 的值就是 1）",
+        "isCorrect": true,
+        "description": "正确。本地实测 Big.DP===20、Big.RM===1；big.js 的 DP 只约束除法/sqrt 等无限小数运算。"
+      },
+      {
+        "text": "Big.DP=20，Big.RM=4",
+        "isCorrect": false,
+        "description": "错误。4 是 decimal.js 中 ROUND_HALF_UP 的值；big.js 的 roundHalfUp 是 1。"
+      },
+      {
+        "text": "Big.DP=0，Big.RM=0",
+        "isCorrect": false,
+        "description": "错误。big.js 默认 DP 是 20，RM 是 1。"
+      },
+      {
+        "text": "Big.DP=100，Big.RM=6",
+        "isCorrect": false,
+        "description": "错误。都不是 big.js 的默认值。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：对比 big.js，关于「精度控制的语义」，下列哪个说法正确？",
+    "explanation": "核心差异：**decimal.js 用 precision（有效数字）**约束并把**所有运算**舍入到该精度；**big.js 用 DP（小数位）**且**只约束会产生无限小数的运算**（除法、sqrt、pow），加减乘保持精确、不受 DP 限制。bignumber.js 同 big.js 用 DECIMAL_PLACES（小数位）但默认对除法生效。理解这点能避免「为什么我的 decimal.js 结果被截到 20 位有效数字」的困惑。\n\n- 「decimal.js 按有效数字约束所有运算；big.js 按小数位且只约束除法等」正确。\n- 「两者都按有效数字」错误。\n- 「两者都按小数位」错误：decimal.js 是有效数字。\n- 「decimal.js 不约束、big.js 约束全部」错误。",
+    "tags": ["decimal.js", "专家", "big.js", "precision", "DP"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "decimal.js 用有效数字(precision)约束所有运算；big.js 用小数位(DP)且只约束除法/sqrt/pow 等",
+        "isCorrect": true,
+        "description": "正确。这是两库最根本的精度语义差异，直接决定结果形态。"
+      },
+      {
+        "text": "两者都用「有效数字」约束精度",
+        "isCorrect": false,
+        "description": "错误。big.js 用的是小数位(DP)，不是有效数字。"
+      },
+      {
+        "text": "两者都用「小数位」约束精度",
+        "isCorrect": false,
+        "description": "错误。decimal.js 用的是有效数字(precision)。"
+      },
+      {
+        "text": "decimal.js 不做任何精度约束，big.js 约束全部运算",
+        "isCorrect": false,
+        "description": "错误。decimal.js 把所有运算舍入到 precision；big.js 只约束无限小数运算。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：一个仅需「加减乘除 + 两位小数金额」的轻量项目，若极度在意打包体积，三库中通常更合适的选择是？",
+    "explanation": "若只做基础四则与定点金额、且追求**最小体积**，**big.js** 通常最合适——它最小最精简，覆盖加减乘除、cmp、toFixed、按 DP 控制除法精度，足够金额场景。decimal.js 功能最全但最大，用不到三角/对数时是浪费；bignumber.js 居中（需要多进制时才选它）。当然若需 NaN/Infinity 静默处理或更复杂数学，再升级到 decimal.js。\n\n- 「big.js」正确（最小，够用）。\n- 「decimal.js，因为它最全」错误：体积最大，功能过剩。\n- 「必须三个都装」错误。\n- 「用原生 number」错误：又回到浮点误差。",
+    "tags": ["decimal.js", "中级", "big.js", "选型", "体积"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "big.js（体积最小，四则 + toFixed 足够覆盖基础金额）",
+        "isCorrect": true,
+        "description": "正确。只需基础运算且在意体积时，big.js 最精简够用，无需 decimal.js 的全套数学。"
+      },
+      {
+        "text": "decimal.js，因为它功能最全",
+        "isCorrect": false,
+        "description": "错误。功能最全也意味着体积最大；基础金额用不到三角/对数，是浪费。"
+      },
+      {
+        "text": "三个库都装上以备不时之需",
+        "isCorrect": false,
+        "description": "错误。徒增体积与维护成本，应按需选一个。"
+      },
+      {
+        "text": "直接用原生 number 配 Math.round",
+        "isCorrect": false,
+        "description": "错误。这又回到浮点误差问题，正是要避免的。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要取余数（模运算），应使用哪个方法？其行为受哪个配置影响？",
+    "explanation": "模运算用 `mod(x)`，返回 `this - floor(this/x)*x` 风格的余数，具体符号由 `modulo` 配置决定（默认 `1`=ROUND_DOWN，即余数符号与被除数一致，类似 JS 的 `%`）。可设 `modulo: Decimal.EUCLID`(9) 得到始终非负的欧几里得余数。本地实测 `new Decimal(7).mod(3).toString()==='1'`、默认 `Decimal.modulo===1`。\n\n- 「mod(x)，受 modulo 配置影响」正确。\n- 「remainder(x)」错误：无此方法。\n- 「mod 行为固定不可配」错误：受 modulo 影响。\n- 「用 % 运算符」错误：对 Decimal 对象无效。",
+    "tags": ["decimal.js", "高级", "mod", "modulo", "EUCLID"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mod(x)，余数符号由 modulo 配置决定（默认 1=ROUND_DOWN，可设 EUCLID=9 取非负余数）",
+        "isCorrect": true,
+        "description": "正确。mod 取余，modulo 默认 1（同被除数符号），EUCLID 得非负欧氏余数；本地实测 7 mod 3=1。"
+      },
+      {
+        "text": "remainder(x)，行为固定",
+        "isCorrect": false,
+        "description": "错误。方法名是 mod；没有 remainder，且行为受 modulo 配置影响。"
+      },
+      {
+        "text": "mod(x)，但行为固定、不受任何配置影响",
+        "isCorrect": false,
+        "description": "错误。mod 的余数符号受 modulo 配置（含 EUCLID）控制。"
+      },
+      {
+        "text": "直接用 % 运算符",
+        "isCorrect": false,
+        "description": "错误。% 对 Decimal 对象会退回浮点，得不到精确余数。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`Decimal.random(dp)` 生成的随机数，何时会使用「加密安全」的随机源？",
+    "explanation": "`Decimal.random(dp)` 返回 [0,1) 区间、指定小数位数的随机 Decimal。默认使用 `Math.random`；当配置 `Decimal.set({ crypto: true })` 时，改用平台的加密安全随机源（浏览器 `crypto.getRandomValues`、Node `crypto.randomBytes`）。若设 `crypto: true` 但环境无可用加密源会抛错。\n\n- 「设置 crypto: true 时」正确。\n- 「总是加密安全」错误：默认用 Math.random。\n- 「从不加密安全」错误：可配。\n- 「传入第二参数 true 时」错误：random 第二参不是开关，由全局 crypto 配置控制。",
+    "tags": ["decimal.js", "专家", "random", "crypto", "配置"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "当配置 Decimal.set({ crypto: true }) 时（使用平台加密随机源）",
+        "isCorrect": true,
+        "description": "正确。crypto:true 时用 crypto.getRandomValues / randomBytes；默认用 Math.random。"
+      },
+      {
+        "text": "Decimal.random 总是使用加密安全随机源",
+        "isCorrect": false,
+        "description": "错误。默认走 Math.random，需显式开 crypto。"
+      },
+      {
+        "text": "Decimal.random 永远不会使用加密随机源",
+        "isCorrect": false,
+        "description": "错误。开启 crypto:true 即可使用加密源。"
+      },
+      {
+        "text": "给 random 传第二个参数 true 时",
+        "isCorrect": false,
+        "description": "错误。random 只接受小数位参数；加密与否由全局 crypto 配置决定。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：把 Decimal 序列化进 JSON 时，`JSON.stringify({ amount: new Decimal('1.50') })` 的 amount 会是什么形式？",
+    "explanation": "Decimal 定义了 `toJSON()`（等同 `valueOf()`/字符串形式），所以 `JSON.stringify` 会把它序列化为**字符串**。`new Decimal('1.50')` 内部去尾随零，toJSON 得 `'1.5'`，故输出 `{\"amount\":\"1.5\"}`。要保留两位小数需先 `toFixed(2)` 再放进对象。注意它是带引号的字符串而非裸数字。\n\n- 「字符串 \"1.5\"（去尾随零）」正确。\n- 「数字 1.5（无引号）」错误：toJSON 返回字符串。\n- 「\"1.50\"」错误：内部去尾随零。\n- 「序列化为 {s,e,d} 对象」错误：toJSON 覆盖了默认行为，输出字符串。",
+    "tags": ["decimal.js", "高级", "toJSON", "序列化", "JSON"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "字符串 \"1.5\"（toJSON 返回去尾随零的字符串）",
+        "isCorrect": true,
+        "description": "正确。Decimal 的 toJSON 等同 valueOf，输出字符串且去尾随零，得 \"1.5\"。"
+      },
+      {
+        "text": "数字 1.5（不带引号）",
+        "isCorrect": false,
+        "description": "错误。toJSON 返回字符串，序列化结果带引号。"
+      },
+      {
+        "text": "字符串 \"1.50\"（保留尾随零）",
+        "isCorrect": false,
+        "description": "错误。内部已去尾随零；要 \"1.50\" 需先 toFixed(2)。"
+      },
+      {
+        "text": "序列化为 { s, e, d } 内部结构对象",
+        "isCorrect": false,
+        "description": "错误。toJSON 覆盖默认行为，输出的是字符串而非内部三元组。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('123.456').toExponential(2)` 的结果是？",
+    "explanation": "`toExponential(dp, rm)` 返回**指数记数法**字符串，小数部分保留 dp 位、按 rounding 舍入。123.456 = 1.23456×10² → 保留 2 位小数 → `'1.23e+2'`。与 toFixed（定点）相对，toExponential 总是科学计数法。\n\n- `'1.23e+2'` 正确。\n- `'123.46'` 错误：那是 toFixed(2)（定点）。\n- `'1.2e+2'` 错误：那是 1 位小数。\n- `'12.3e+1'` 错误：指数记法尾数规范化为个位非零，应是 1.23e+2。",
+    "tags": ["decimal.js", "中级", "toExponential", "科学计数法", "输出"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "'1.23e+2'",
+        "isCorrect": true,
+        "description": "正确。toExponential(2) 用科学计数法、保留 2 位小数：123.456→1.23e+2。"
+      },
+      {
+        "text": "'123.46'",
+        "isCorrect": false,
+        "description": "错误。这是 toFixed(2)（定点记法）的结果，不是指数记法。"
+      },
+      {
+        "text": "'1.2e+2'",
+        "isCorrect": false,
+        "description": "错误。那是保留 1 位小数（toExponential(1)）。"
+      },
+      {
+        "text": "'12.3e+1'",
+        "isCorrect": false,
+        "description": "错误。指数记法尾数规范为个位（1.23e+2），不会写成 12.3e+1。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要对多个 Decimal 求和/取最大值，下列哪组「静态方法」是正确的？",
+    "explanation": "decimal.js 提供静态聚合方法：`Decimal.sum(...args)` 求和、`Decimal.max(...args)` 取最大、`Decimal.min(...args)` 取最小、还有 `Decimal.add/sub/mul/div`（两参版）、`Decimal.hypot`、`Decimal.sign` 等。它们接受 number/string/Decimal 混合参数，返回 Decimal。\n\n- `Decimal.sum(...)` / `Decimal.max(...)` / `Decimal.min(...)` 正确。\n- `Decimal.total/biggest` 错误：无此名。\n- `Decimal.reduce` 错误。\n- 「只能用实例方法逐个累加，没有静态聚合」错误：有 sum/max/min。",
+    "tags": ["decimal.js", "中级", "静态方法", "sum", "max"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Decimal.sum(...)、Decimal.max(...)、Decimal.min(...)",
+        "isCorrect": true,
+        "description": "正确。这些是 decimal.js 的静态聚合方法，接受混合参数返回 Decimal。"
+      },
+      {
+        "text": "Decimal.total(...)、Decimal.biggest(...)",
+        "isCorrect": false,
+        "description": "错误。没有 total/biggest，应为 sum/max。"
+      },
+      {
+        "text": "Decimal.reduce(...)、Decimal.collect(...)",
+        "isCorrect": false,
+        "description": "错误。decimal.js 无 reduce/collect 静态方法。"
+      },
+      {
+        "text": "没有静态聚合方法，只能实例逐个累加",
+        "isCorrect": false,
+        "description": "错误。decimal.js 提供 sum/max/min 等静态方法。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：在 TypeScript 中使用 decimal.js，类型与构造的正确认识是？",
+    "explanation": "decimal.js 自带 TypeScript 类型声明（包内含 `decimal.d.ts`），`import Decimal from 'decimal.js'` 即获得类型。`Decimal` 既是值（构造函数）也是类型：变量可标注 `const x: Decimal = new Decimal('1.5')`。无需额外安装 `@types/decimal.js`（官方已内置）。\n\n- 「自带类型声明，无需 @types，Decimal 既是构造函数也是类型」正确。\n- 「必须额外装 @types/decimal.js」错误：内置。\n- 「decimal.js 没有类型，只能用 any」错误。\n- 「类型名是 DecimalType 而非 Decimal」错误。",
+    "tags": ["decimal.js", "中级", "TypeScript", "类型声明", "导入"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "包内自带 .d.ts 类型，无需装 @types；Decimal 既是构造函数也是类型注解",
+        "isCorrect": true,
+        "description": "正确。decimal.js 内置 TS 声明，可 const x: Decimal = new Decimal(...)。"
+      },
+      {
+        "text": "必须额外安装 @types/decimal.js 才有类型",
+        "isCorrect": false,
+        "description": "错误。类型声明已内置在包里，无需额外安装。"
+      },
+      {
+        "text": "decimal.js 没有提供类型，只能用 any",
+        "isCorrect": false,
+        "description": "错误。它自带完整的 TypeScript 类型声明。"
+      },
+      {
+        "text": "类型名必须写成 DecimalType，Decimal 只能当值",
+        "isCorrect": false,
+        "description": "错误。Decimal 本身既是值也是类型，无 DecimalType 之说。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('0.000000000000000001').plus('0.000000000000000002')` 在默认配置下能否精确得到 `'0.000000000000000003'`？",
+    "explanation": "能。加减法在 decimal.js 中是精确的（不像除法可能无限循环需按 precision 截断），只要结果的有效数字位数不超过 precision（默认 20）。这两个数各 1 位有效数字，和也只有 1 位有效数字，远在 20 以内，故精确得到 3×10⁻¹⁸（toString 因指数 -18 < toExpNeg 会显示为 `'3e-18'`，数值精确）。\n\n- 「能精确（加减是精确运算）」正确。\n- 「不能，会被舍入丢失」错误：未超 precision。\n- 「会抛溢出错误」错误：远未到 minE/maxE。\n- 「结果为 0」错误。",
+    "tags": ["decimal.js", "高级", "加法", "精确性", "precision"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "能精确得到 3×10⁻¹⁸（加减为精确运算，有效数字未超 precision）",
+        "isCorrect": true,
+        "description": "正确。加减精确，结果仅 1 位有效数字远在 precision=20 内（toString 显示 '3e-18'）。"
+      },
+      {
+        "text": "不能，结果会被 precision 舍入丢失",
+        "isCorrect": false,
+        "description": "错误。结果有效数字远未超过 20，不会被截断。"
+      },
+      {
+        "text": "会抛出数值溢出错误",
+        "isCorrect": false,
+        "description": "错误。指数 -18 远未触及 minE（-9e15），不会溢出。"
+      },
+      {
+        "text": "结果为 0（太小被当成零）",
+        "isCorrect": false,
+        "description": "错误。decimal.js 任意精度，不会把这么大的指数当成 0。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：关于 `toFixed` 与原生 `Number.prototype.toFixed` 的差异，下列哪个正确？",
+    "explanation": "decimal.js 的 `toFixed` 与原生有两点关键差异：① **精度无损**——原生 toFixed 受双精度限制（如 `(0.1).toFixed(20)` 暴露浮点误差），decimal.js 基于任意精度十进制，结果准确；② **总是普通记数法**——原生对极大数可能给出非预期结果，decimal.js 的 toFixed 始终返回定点普通记法。此外 decimal.js 的 toFixed 还可传第二参数指定舍入模式。\n\n- 「decimal.js 的 toFixed 精度无损且总是普通记法」正确。\n- 「两者完全等价」错误。\n- 「decimal.js 的 toFixed 返回 number」错误：返回字符串。\n- 「原生 toFixed 更精确」错误。",
+    "tags": ["decimal.js", "高级", "toFixed", "原生对比", "精度"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "decimal.js 的 toFixed 精度无损、总是普通记数法，且可指定舍入模式",
+        "isCorrect": true,
+        "description": "正确。原生 toFixed 受双精度限制且对极大数行为特殊；decimal.js 准确、恒为定点记法。"
+      },
+      {
+        "text": "两者行为完全等价，可互换",
+        "isCorrect": false,
+        "description": "错误。原生受浮点限制（如 (0.1).toFixed(20) 暴露误差），decimal.js 无损。"
+      },
+      {
+        "text": "decimal.js 的 toFixed 返回 number 类型",
+        "isCorrect": false,
+        "description": "错误。和原生一样返回字符串。"
+      },
+      {
+        "text": "原生 Number.toFixed 比 decimal.js 更精确",
+        "isCorrect": false,
+        "description": "错误。原生受双精度限制，decimal.js 基于任意精度更准确。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`Decimal.set({ toExpPos: 30 })` 这一配置改变了什么？",
+    "explanation": "`toExpPos`（默认 21）是**正指数阈值**：当数值指数 ≥ toExpPos 时 `toString()`/`valueOf()` 改用指数记法。把它从 21 调到 30，意味着更大的数才会切换指数记法——例如 1e21 在默认下显示 `'1e+21'`，调到 toExpPos:30 后会显示为普通记法 `'1000000000000000000000'`。它只影响**字符串输出形式**，不影响数值本身或运算精度。\n\n- 「提高切换到指数记法的正指数阈值（影响输出形式）」正确。\n- 「提高了运算精度」错误：与 precision 无关。\n- 「限制了最大可表示数」错误：那是 maxE。\n- 「改变了舍入模式」错误。",
+    "tags": ["decimal.js", "专家", "toExpPos", "输出格式", "配置"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "提高了 toString/valueOf 切换到指数记法的正指数阈值（仅影响字符串输出形式）",
+        "isCorrect": true,
+        "description": "正确。toExpPos 控制何时用指数记法；调大后更大的数才转指数，不影响数值与精度。"
+      },
+      {
+        "text": "把运算的有效数字精度提高到 30",
+        "isCorrect": false,
+        "description": "错误。精度由 precision 控制，toExpPos 只管输出记法。"
+      },
+      {
+        "text": "把可表示的最大数限制为 10^30",
+        "isCorrect": false,
+        "description": "错误。最大/最小指数由 maxE/minE 控制，不是 toExpPos。"
+      },
+      {
+        "text": "把默认舍入模式改为第 30 号",
+        "isCorrect": false,
+        "description": "错误。舍入模式由 rounding 控制，且没有第 30 号。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：在做利息/汇率等链式计算时，若发现结果在第 20 位左右被「截断」，最可能的原因与对策是？",
+    "explanation": "默认 `precision = 20`，decimal.js 会把**每一步运算**（尤其除法、pow）的结果舍入到 20 位有效数字。链式计算里这种舍入会逐步累积，导致末位与「无限精度」略有出入。对策：用 `Decimal.set({ precision: N })` 或 `Decimal.clone({ precision: N })` 调高精度（如 40/50），在足够位数下计算，最后再 toDP/toFixed 到展示精度。\n\n- 「默认 precision=20 导致每步舍入，调高 precision 即可」正确。\n- 「decimal.js 有 bug」错误。\n- 「应改用原生 number」错误：精度更差。\n- 「toFixed 位数不够」错误：那是展示层，根因在运算精度 precision。",
+    "tags": ["decimal.js", "专家", "precision", "链式计算", "排错"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认 precision=20 使每步运算舍入到 20 位有效数字；调高 precision（如 40）即可",
+        "isCorrect": true,
+        "description": "正确。decimal.js 把所有运算舍入到 precision，链式会累积；提高 precision 解决。"
+      },
+      {
+        "text": "decimal.js 的运算实现有 bug，应换库",
+        "isCorrect": false,
+        "description": "错误。这是 precision 配置的预期行为，不是 bug。"
+      },
+      {
+        "text": "应改用原生 number 重新计算",
+        "isCorrect": false,
+        "description": "错误。原生 number 精度更差，会引入更多误差。"
+      },
+      {
+        "text": "是 toFixed 的展示位数不够，与运算无关",
+        "isCorrect": false,
+        "description": "错误。截断发生在运算层，根因是 precision；toFixed 只管最终展示。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：三库（decimal.js / big.js / bignumber.js）的「不可变性」与「同一作者」这两点，下列说法正确的是？",
+    "explanation": "三库均由 Michael Mclaughlin 编写，且**实例都是不可变的**（运算返回新实例）。它们 API 风格高度相似（plus/minus/times/div、toFixed 等），迁移成本低。区别在功能范围与精度语义：big.js 最简、bignumber.js 居中且支持多进制、decimal.js 最全（三角/对数/非整数幂、以有效数字控精度）。\n\n- 「同一作者，三者实例都不可变」正确。\n- 「不同作者，且都可变」错误。\n- 「decimal.js 可变、另两者不可变」错误：都不可变。\n- 「只有 big.js 不可变」错误。",
+    "tags": ["decimal.js", "中级", "不可变性", "同作者", "对比"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "三库同出一位作者，且实例都不可变（运算返回新实例），API 风格相近",
+        "isCorrect": true,
+        "description": "正确。Michael Mclaughlin 作品，均不可变、风格一致，迁移成本低。"
+      },
+      {
+        "text": "三库分属不同作者，且实例都可变（就地修改）",
+        "isCorrect": false,
+        "description": "错误。同一作者，且三者实例都不可变。"
+      },
+      {
+        "text": "只有 decimal.js 可变，另两者不可变",
+        "isCorrect": false,
+        "description": "错误。三者实例全部不可变。"
+      },
+      {
+        "text": "三者 API 完全不同，迁移成本极高",
+        "isCorrect": false,
+        "description": "错误。API 风格高度相似，迁移成本低。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal('12345.6789').toSignificantDigits(3).toString()` 的结果是？",
+    "explanation": "`toSignificantDigits(3)`（toSD）保留 3 位**有效数字**：12345.6789 的前 3 位有效数字是 1、2、3，第 4 位是 4（< 5，按默认 ROUND_HALF_UP 舍去），并用 0 补齐整数部分，得 `12300`。本地实测 `new Decimal('12345.6789').toSD(3).toString()==='12300'`。\n\n- `'12300'` 正确。\n- `'123'` 错误：那会丢掉数量级。\n- `'12345.679'` 错误：那是保留 3 位小数（toDP/toFixed）。\n- `'12346'` 错误：那是 5 位有效数字四舍五入。",
+    "tags": ["decimal.js", "中级", "toSignificantDigits", "有效数字", "舍入"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "'12300'",
+        "isCorrect": true,
+        "description": "正确。3 位有效数字 123，整数部分用 0 补齐数量级，得 12300（本地实测一致）。"
+      },
+      {
+        "text": "'123'",
+        "isCorrect": false,
+        "description": "错误。toSD 保留有效数字但维持数量级，不会丢成 123。"
+      },
+      {
+        "text": "'12345.679'",
+        "isCorrect": false,
+        "description": "错误。这是保留 3 位小数（toDP(3)），不是有效数字。"
+      },
+      {
+        "text": "'12346'",
+        "isCorrect": false,
+        "description": "错误。这是 5 位有效数字取整的结果，不是 3 位。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：要把一个 Decimal 表示为「最接近的简单分数」（分子/分母数组），应使用哪个方法？",
+    "explanation": "`toFraction(maxDenominator?)` 返回一个长度为 2 的数组 `[分子, 分母]`（都是 Decimal），表示最接近原值的分数；可选参数限制最大分母。例如 `new Decimal('0.5').toFraction()` → `[1, 2]`，`new Decimal('1.5').toFraction()` → `[3, 2]`。这是 decimal.js（与 bignumber.js）提供、big.js 没有的特性。\n\n- `toFraction()` 正确。\n- `toRatio()` 错误：无此方法。\n- `toFixed()` 错误：返回定点字符串。\n- `asFraction()` 错误：无此名。",
+    "tags": ["decimal.js", "高级", "toFraction", "分数", "API"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "toFraction()（返回 [分子, 分母] 数组）",
+        "isCorrect": true,
+        "description": "正确。toFraction 返回最接近的分数 [numerator, denominator]，可选限制最大分母。"
+      },
+      {
+        "text": "toRatio()",
+        "isCorrect": false,
+        "description": "错误。没有 toRatio 方法；求分数用 toFraction。"
+      },
+      {
+        "text": "toFixed()",
+        "isCorrect": false,
+        "description": "错误。toFixed 返回定点小数字符串，不是分数。"
+      },
+      {
+        "text": "asFraction()",
+        "isCorrect": false,
+        "description": "错误。方法名是 toFraction，没有 asFraction。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：当需要「极高精度的三角函数 / 对数运算」时，相比 bignumber.js 和 big.js，为何 decimal.js 是唯一合适的选择？",
+    "explanation": "因为三角函数（sin/cos/tan）、反三角、双曲、对数（ln/log/log2/log10）、指数（exp）等**只有 decimal.js 提供**——这正是它「最全也最大」的原因。big.js 极简没有这些；bignumber.js 也不含三角/对数/exp。官方 README 明确 decimal.js「includes trigonometric functions and supports non-integer powers，making it larger」。\n\n- 「只有 decimal.js 提供三角/对数/exp 等高级数学函数」正确。\n- 「三者都有，decimal.js 只是更快」错误。\n- 「bignumber.js 也有三角函数」错误。\n- 「big.js 才有最全数学函数」错误：big.js 最简。",
+    "tags": ["decimal.js", "高级", "三角函数", "对数", "选型"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "三角、反三角、双曲、对数、exp 等高级数学函数只有 decimal.js 提供",
+        "isCorrect": true,
+        "description": "正确。这些函数是 decimal.js 独有（也是它体积最大的原因），big.js/bignumber.js 都没有。"
+      },
+      {
+        "text": "三者都提供这些函数，decimal.js 只是计算更快",
+        "isCorrect": false,
+        "description": "错误。big.js/bignumber.js 根本不含三角/对数/exp。"
+      },
+      {
+        "text": "bignumber.js 也内置三角函数，与 decimal.js 等同",
+        "isCorrect": false,
+        "description": "错误。bignumber.js 不含三角函数。"
+      },
+      {
+        "text": "其实 big.js 的数学函数最全",
+        "isCorrect": false,
+        "description": "错误。big.js 最精简，数学函数最少。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：以下哪种用法会「悄悄退回浮点、丢失 decimal.js 带来的精度」，属于应避免的反模式？",
+    "explanation": "把 Decimal 提前转回 number 再参与计算，会立刻退回 IEEE 754 浮点，前面所有精度努力作废。典型反模式：`new Decimal(a).toNumber() + new Decimal(b).toNumber()`，或对 Decimal 直接用 `+`（触发 valueOf 转换）。正确做法是全程用 plus/minus/times/dividedBy 等 Decimal 方法，最后才 toNumber/toFixed。\n\n- 「先各自 toNumber 再用 + 相加」正确（这是反模式）。\n- 「用 a.plus(b)」错误（这是正确做法，不是反模式）。\n- 「用字符串构造 Decimal」错误（正确做法）。\n- 「最后才 toFixed(2)」错误（正确做法）。",
+    "tags": ["decimal.js", "中级", "反模式", "toNumber", "精度"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对两个 Decimal 先各自 toNumber()，再用 + 把原生数字相加",
+        "isCorrect": true,
+        "description": "正确（这是反模式）。提前 toNumber 退回浮点，精度尽失，应全程用 Decimal 运算。"
+      },
+      {
+        "text": "用 a.plus(b) 做加法",
+        "isCorrect": false,
+        "description": "错误（这是正确做法）。plus 保持精度，不是反模式。"
+      },
+      {
+        "text": "用字符串 new Decimal('0.1') 构造",
+        "isCorrect": false,
+        "description": "错误（这是推荐做法）。字符串构造避免源头误差。"
+      },
+      {
+        "text": "计算全程用 Decimal，最后一步才 toFixed(2)",
+        "isCorrect": false,
+        "description": "错误（这是最佳实践）。末端格式化是推荐姿势，不是反模式。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：`new Decimal(0.1).plus(0.2).toString()` 与 `new Decimal('0.1').plus('0.2').toString()` 是否都得到 `'0.3'`？",
+    "explanation": "都得到 `'0.3'`。传 number `0.1`/`0.2` 时，decimal.js 会按该浮点字面量在双精度下的「显示值」解析（对这类常见短小数，解析回的就是 0.1、0.2），相加得 0.3；传字符串则从源头精确。两种方式此例结果一致。**但**对超过 15~17 位有效数字、或依赖完整二进制展开的场景，传 number 可能引入意外——所以仍推荐字符串构造。本地实测两者 toString 均为 '0.3'。\n\n- 「都得到 '0.3'，但仍推荐字符串以防边界问题」正确。\n- 「只有字符串版得到 0.3」错误：number 版此例也对。\n- 「两者都得到 0.30000000000000004」错误。\n- 「number 版会抛错」错误。",
+    "tags": ["decimal.js", "高级", "构造函数", "number vs string", "精度"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者此例都得到 '0.3'，但传 number 在高位数边界可能出意外，故仍推荐字符串构造",
+        "isCorrect": true,
+        "description": "正确。常见短小数 number 与字符串结果一致（本地实测均 '0.3'）；但字符串更稳，是推荐姿势。"
+      },
+      {
+        "text": "只有字符串版得到 '0.3'，number 版得 0.30000000000000004",
+        "isCorrect": false,
+        "description": "错误。number 版此例也得 '0.3'，因为 decimal.js 按显示值解析常见小数。"
+      },
+      {
+        "text": "两者都得到 '0.30000000000000004'",
+        "isCorrect": false,
+        "description": "错误。decimal.js 是十进制运算，不会产生浮点尾巴。"
+      },
+      {
+        "text": "number 版会因精度问题抛出异常",
+        "isCorrect": false,
+        "description": "错误。传 number 合法，不抛异常。"
+      }
+    ]
+  },
+  {
+    "stem": "decimal.js：项目里同时需要「金额（2 位小数、银行家舍入）」和「科学计算（高精度三角函数）」两套精度策略，最佳工程实践是？",
+    "explanation": "用 `Decimal.clone(config)` 创建两个**配置独立**的构造函数：如 `const Money = Decimal.clone({ precision: 20, rounding: Decimal.ROUND_HALF_EVEN })` 与 `const Sci = Decimal.clone({ precision: 50, rounding: Decimal.ROUND_HALF_UP })`，各自管理自己的 precision/rounding，互不干扰。比全局 set 来回切换更安全、可读、并发友好。\n\n- 「用 Decimal.clone 建两套独立构造函数」正确。\n- 「全局 set 在两套策略间反复切换」错误：易泄漏状态、并发不安全。\n- 「装两份 decimal.js」错误：没必要且无法隔离配置。\n- 「金额用 decimal.js、科学用 big.js」错误：big.js 没有三角函数。",
+    "tags": ["decimal.js", "专家", "clone", "多策略", "工程实践"],
+    "categories": [
+      ["技术方向", "decimal.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 Decimal.clone 创建 Money 与 Sci 两个配置独立的构造函数，各管各的 precision/rounding",
+        "isCorrect": true,
+        "description": "正确。clone 出的构造函数配置隔离，互不污染，是多精度策略的标准做法。"
+      },
+      {
+        "text": "始终用全局 Decimal，靠 Decimal.set 在两套策略间反复切换",
+        "isCorrect": false,
+        "description": "错误。全局来回 set 易泄漏状态、并发下不安全且难维护。"
+      },
+      {
+        "text": "在项目里安装两份不同版本的 decimal.js",
+        "isCorrect": false,
+        "description": "错误。无法隔离运行时配置，且徒增依赖；应用 clone。"
+      },
+      {
+        "text": "金额用 decimal.js、科学计算改用 big.js",
+        "isCorrect": false,
+        "description": "错误。big.js 没有三角函数，无法做高精度科学计算。"
+      }
+    ]
+  }
+]

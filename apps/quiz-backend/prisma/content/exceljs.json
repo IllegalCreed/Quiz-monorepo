@@ -1,0 +1,1831 @@
+[
+  {
+    "stem": "ExcelJS：官方对 ExcelJS 的定位是什么？",
+    "explanation": "ExcelJS 是一个用于「读取、操作、写入电子表格数据与样式」到 XLSX / 兼容格式的 JavaScript 库（Read, manipulate and write spreadsheet data and styles to XLSX and JSON）。它最大的特点是对 Excel **样式与格式**（字体、填充、边框、对齐、数字格式、条件格式、数据校验等）有精细的对象化支持，能同时跑在 Node.js 和浏览器。\n\n- 「读写 XLSX 数据与样式的库」正确。\n- 「只能在浏览器里画表格 UI」错误：它不渲染 UI，而是生成/解析 xlsx 文件。\n- 「是 Excel 软件的官方 SDK」错误：它是社区开源库（MIT），与微软无关。\n- 「只能读不能写」错误：读写都支持。",
+    "tags": ["exceljs", "入门", "定位", "核心概念"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个在 Node 与浏览器中读取、操作、写入 XLSX 数据与样式的 JavaScript 库，强在精细样式控制",
+        "isCorrect": true,
+        "description": "正确。官方定位即「Read, manipulate and write spreadsheet data and styles to XLSX」，以样式精细著称。"
+      },
+      {
+        "text": "一个只在浏览器里渲染表格 UI 组件的前端库",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 不渲染界面，它生成/解析 .xlsx 文件，UI 渲染是 AG Grid 等组件库的事。"
+      },
+      {
+        "text": "微软官方发布的 Excel 操作 SDK",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 是社区维护的 MIT 开源库，并非微软官方产品。"
+      },
+      {
+        "text": "一个只能解析 xlsx、无法写出文件的只读工具",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 读写都支持，且写出时能携带完整样式。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：创建一个全新的空白工作簿，正确的写法是哪个？",
+    "explanation": "工作簿是 ExcelJS 的顶层对象，用构造函数创建：`const workbook = new ExcelJS.Workbook();`。之后通过 `workbook.addWorksheet(...)` 添加工作表、`workbook.xlsx.writeFile(...)` 写出文件。\n\n- `new ExcelJS.Workbook()` 正确。\n- `ExcelJS.createWorkbook()` 不是该库 API。\n- `new ExcelJS.Sheet()` 不存在，且工作表不是顶层对象。\n- `ExcelJS.open()` 不是创建空白工作簿的 API。",
+    "tags": ["exceljs", "入门", "Workbook", "API"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "const workbook = new ExcelJS.Workbook();",
+        "isCorrect": true,
+        "description": "正确。Workbook 是顶层对象，用 new 构造，之后再 addWorksheet。"
+      },
+      {
+        "text": "const workbook = ExcelJS.createWorkbook();",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 createWorkbook 工厂方法。"
+      },
+      {
+        "text": "const workbook = new ExcelJS.Sheet();",
+        "isCorrect": false,
+        "description": "错误。Sheet 不是顶层对象，也没有该构造函数。"
+      },
+      {
+        "text": "const workbook = ExcelJS.open();",
+        "isCorrect": false,
+        "description": "错误。读取已有文件用 workbook.xlsx.readFile，而非 ExcelJS.open。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要给工作簿添加一个名为「数据」的工作表，应调用哪个方法？",
+    "explanation": "在工作簿上调用 `workbook.addWorksheet('数据')` 添加并返回该工作表对象。它可接第二个可选配置对象，设置 `properties`（如 tabColor）、`views`、`pageSetup`、`headerFooter` 等。\n\n- `workbook.addWorksheet('数据')` 正确。\n- `workbook.addSheet(...)` 不是 ExcelJS 的方法名。\n- `workbook.createSheet(...)` 不存在。\n- `workbook.worksheets.push(...)` 不能正确创建一个被工作簿管理的工作表。",
+    "tags": ["exceljs", "入门", "Worksheet", "addWorksheet"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "workbook.addWorksheet('数据')",
+        "isCorrect": true,
+        "description": "正确。addWorksheet 创建并返回工作表，可附带配置对象。"
+      },
+      {
+        "text": "workbook.addSheet('数据')",
+        "isCorrect": false,
+        "description": "错误。方法名是 addWorksheet，不是 addSheet。"
+      },
+      {
+        "text": "workbook.createSheet('数据')",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 createSheet 方法。"
+      },
+      {
+        "text": "workbook.worksheets.push({ name: '数据' })",
+        "isCorrect": false,
+        "description": "错误。直接 push 普通对象不会创建受管理的 Worksheet 实例，应使用 addWorksheet。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：把工作簿写到磁盘上的 out.xlsx 文件，正确的 API 是哪个？",
+    "explanation": "XLSX 文件的读写都挂在 `workbook.xlsx` 命名空间下。写文件用 `await workbook.xlsx.writeFile('out.xlsx')`（返回 Promise，需 await）。读文件用 `workbook.xlsx.readFile(...)`。\n\n- `await workbook.xlsx.writeFile('out.xlsx')` 正确。\n- `workbook.save('out.xlsx')` 不是该库 API。\n- `workbook.writeFile(...)`（少了 .xlsx 命名空间）不对。\n- `ExcelJS.write(workbook, 'out.xlsx')` 不存在。",
+    "tags": ["exceljs", "入门", "文件IO", "writeFile"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "await workbook.xlsx.writeFile('out.xlsx')",
+        "isCorrect": true,
+        "description": "正确。XLSX 读写挂在 workbook.xlsx 下，writeFile 返回 Promise 需 await。"
+      },
+      {
+        "text": "workbook.save('out.xlsx')",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 workbook.save 方法。"
+      },
+      {
+        "text": "await workbook.writeFile('out.xlsx')",
+        "isCorrect": false,
+        "description": "错误。writeFile 在 workbook.xlsx 命名空间下，不直接挂在 workbook 上。"
+      },
+      {
+        "text": "ExcelJS.write(workbook, 'out.xlsx')",
+        "isCorrect": false,
+        "description": "错误。不存在这样的静态写出方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：往工作表里追加一行数据 [1, '张三', 88]，最直接的方法是哪个？",
+    "explanation": "`worksheet.addRow([1, '张三', 88])` 在已有数据末尾追加一行，按数组顺序对应到 A、B、C 列，并返回该 Row 对象。它也支持传对象（配合列的 key）。\n\n- `worksheet.addRow([1, '张三', 88])` 正确。\n- `worksheet.appendRow(...)` 不是 ExcelJS 的方法名。\n- `worksheet.rows.push(...)` 不能创建受管理的行。\n- `worksheet.insert(...)` 不是追加行的 API（插入行用 insertRow）。",
+    "tags": ["exceljs", "入门", "Row", "addRow"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.addRow([1, '张三', 88])",
+        "isCorrect": true,
+        "description": "正确。addRow 在末尾追加一行，数组按 A/B/C 列对应，返回 Row 对象。"
+      },
+      {
+        "text": "worksheet.appendRow([1, '张三', 88])",
+        "isCorrect": false,
+        "description": "错误。方法名是 addRow，没有 appendRow。"
+      },
+      {
+        "text": "worksheet.rows.push([1, '张三', 88])",
+        "isCorrect": false,
+        "description": "错误。直接 push 不会创建受管理的 Row 实例。"
+      },
+      {
+        "text": "worksheet.insert([1, '张三', 88])",
+        "isCorrect": false,
+        "description": "错误。插入行是 insertRow(pos, value)，且名称不是 insert。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要读取单元格 C3 的对象以便设置它的值或样式，应使用哪个方法？",
+    "explanation": "`worksheet.getCell('C3')` 返回该地址的 Cell 对象，可读写 `cell.value`，也可设置 `cell.font`、`cell.fill`、`cell.numFmt` 等样式。也支持 `worksheet.getCell(3, 3)`（行号、列号）。\n\n- `worksheet.getCell('C3')` 正确。\n- `worksheet.cell('C3')` 不是方法名。\n- `worksheet['C3']` 不是访问单元格的方式。\n- `worksheet.getCellByAddress('C3')` 不存在。",
+    "tags": ["exceljs", "入门", "Cell", "getCell"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.getCell('C3')",
+        "isCorrect": true,
+        "description": "正确。getCell 接受 'C3' 地址或 (row, col) 数字，返回 Cell 对象。"
+      },
+      {
+        "text": "worksheet.cell('C3')",
+        "isCorrect": false,
+        "description": "错误。方法名是 getCell，不是 cell。"
+      },
+      {
+        "text": "worksheet['C3']",
+        "isCorrect": false,
+        "description": "错误。不能用方括号属性访问单元格。"
+      },
+      {
+        "text": "worksheet.getCellByAddress('C3')",
+        "isCorrect": false,
+        "description": "错误。没有 getCellByAddress 这个 API。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格设置颜色时，颜色值通常写成 { argb: 'FFFF0000' }。这个 8 位十六进制里第一对 'FF' 代表什么？",
+    "explanation": "ExcelJS 的颜色采用 **ARGB** 格式，8 位十六进制依次是 Alpha（透明度）、Red、Green、Blue 各两位。`FFFF0000` 即 Alpha=FF（完全不透明）、Red=FF、Green=00、Blue=00，也就是不透明的纯红。这是初学者最常踩的坑：很多人误把它当成 RGB 而漏掉 alpha，导致颜色不对。\n\n- 「Alpha 透明度通道」正确。\n- 「Red 红色分量」错误：红色是第二对。\n- 「占位前缀，无意义」错误。\n- 「主题色索引」错误：主题色用的是 { theme: n } 而非 argb。",
+    "tags": ["exceljs", "初级", "颜色", "ARGB", "样式"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Alpha（透明度）通道，FF 表示完全不透明",
+        "isCorrect": true,
+        "description": "正确。ARGB 顺序为 Alpha-Red-Green-Blue，首对 FF 即完全不透明。"
+      },
+      {
+        "text": "Red 红色分量",
+        "isCorrect": false,
+        "description": "错误。红色是第二对，首对是 Alpha。"
+      },
+      {
+        "text": "纯占位前缀，没有实际含义",
+        "isCorrect": false,
+        "description": "错误。它是 alpha 通道，会影响透明度，并非占位。"
+      },
+      {
+        "text": "Excel 内置主题色的索引号",
+        "isCorrect": false,
+        "description": "错误。主题色用 { theme: n }（可配 tint），不是写在 argb 字符串里。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格 A1 设置加粗、16 号、红色字体，正确的写法是哪个？",
+    "explanation": "字体通过 `cell.font` 对象设置，常用字段：`name`、`size`、`bold`、`italic`、`underline`、`color`（用 `{ argb }` 或 `{ theme }`）等。颜色必须是对象 `{ argb: 'FFFF0000' }`，不能直接写字符串。\n\n- `cell.font = { bold: true, size: 16, color: { argb: 'FFFF0000' } }` 正确。\n- 把 color 写成字符串 'red' 无效。\n- `cell.bold = true` 这种扁平属性不存在。\n- `cell.style.font.bold = true` 直接改可能因 style 共享/未初始化而不可靠，正确方式是整体赋 font 对象。",
+    "tags": ["exceljs", "初级", "font", "样式"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "cell.font = { bold: true, size: 16, color: { argb: 'FFFF0000' } }",
+        "isCorrect": true,
+        "description": "正确。font 是对象，color 用 { argb }，整体赋值最稳妥。"
+      },
+      {
+        "text": "cell.font = { bold: true, size: 16, color: 'red' }",
+        "isCorrect": false,
+        "description": "错误。color 必须是 { argb } 或 { theme } 对象，不能是 'red' 字符串。"
+      },
+      {
+        "text": "cell.bold = true; cell.fontSize = 16;",
+        "isCorrect": false,
+        "description": "错误。不存在 cell.bold / cell.fontSize 这种扁平属性。"
+      },
+      {
+        "text": "cell.setFont('bold', 16, 'red')",
+        "isCorrect": false,
+        "description": "错误。没有 setFont 方法，字体通过 cell.font 对象设置。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格填充纯黄色背景，下面哪个 fill 写法是对的？",
+    "explanation": "纯色填充用 `type: 'pattern'` + `pattern: 'solid'`，**前景色 `fgColor` 才是实际可见的填充色**（这是 ExcelJS 最常见的坑——直觉上以为是 bgColor）。即：`{ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }`。\n\n- 用 pattern solid + fgColor 正确。\n- 只写 bgColor 而 pattern 为 solid 时，solid 填充取的是 fgColor，bgColor 不显示。\n- `cell.backgroundColor = ...` 不存在。\n- `type: 'solid'`（漏了 pattern）不是合法结构，solid 是 pattern 的取值。",
+    "tags": ["exceljs", "初级", "fill", "样式", "陷阱"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF00' } }",
+        "isCorrect": true,
+        "description": "正确。solid 填充的可见色取 fgColor，这是最常见的细节坑。"
+      },
+      {
+        "text": "cell.fill = { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFFFF00' } }",
+        "isCorrect": false,
+        "description": "错误。solid 模式下显示的是 fgColor，仅写 bgColor 不会变黄。"
+      },
+      {
+        "text": "cell.backgroundColor = 'yellow'",
+        "isCorrect": false,
+        "description": "错误。没有 backgroundColor 属性，填充通过 cell.fill 设置。"
+      },
+      {
+        "text": "cell.fill = { type: 'solid', color: { argb: 'FFFFFF00' } }",
+        "isCorrect": false,
+        "description": "错误。type 应为 'pattern'，solid 是 pattern 字段的取值，且用 fgColor。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：定义 worksheet.columns 时，每个列对象里的 key 字段有什么作用？",
+    "explanation": "`worksheet.columns = [{ header, key, width }]` 中，`header` 是表头文字，`width` 是列宽，而 **`key` 是该列的逻辑名**：设置后就能用 `worksheet.addRow({ id: 1, name: '张三' })` 这种对象形式按 key 写入数据，也能 `worksheet.getColumn('id')` 按 key 取列。\n\n- 「列的逻辑键名，供 addRow 传对象与 getColumn 按名取列」正确。\n- 「单元格显示的表头文字」错误：那是 header。\n- 「列宽」错误：那是 width。\n- 「Excel 公式引用名」错误：公式用单元格地址或 defined name。",
+    "tags": ["exceljs", "初级", "columns", "key"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "列的逻辑键名：用于 addRow 传对象按键写入、用 getColumn(key) 按键取列",
+        "isCorrect": true,
+        "description": "正确。key 把对象字段映射到列，让 addRow({key:value}) 与 getColumn('key') 成立。"
+      },
+      {
+        "text": "单元格里显示给用户看的表头文字",
+        "isCorrect": false,
+        "description": "错误。显示的表头是 header 字段，不是 key。"
+      },
+      {
+        "text": "该列的宽度",
+        "isCorrect": false,
+        "description": "错误。列宽是 width 字段。"
+      },
+      {
+        "text": "Excel 公式中引用该列的名称",
+        "isCorrect": false,
+        "description": "错误。公式引用用单元格地址或 defined name，key 只是 ExcelJS 的逻辑键。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在设置了 columns（含 key）的工作表里，下面哪种 addRow 写法能按列 key 精确写入而不必关心列顺序？",
+    "explanation": "当 `worksheet.columns` 定义了 `key` 后，`addRow` 可接收一个对象，键名对应列的 key，值写入相应列——这样即便后续调整列顺序，数据仍落到正确列。数组形式则严格按 A/B/C... 顺序对应。\n\n- `addRow({ id: 1, name: '张三', dob: new Date() })` 正确。\n- 数组形式按位置对应，列顺序变动会错位。\n- `addRow('id=1,name=张三')` 字符串不是合法入参。\n- `addRow(new Map(...))` 不被支持。",
+    "tags": ["exceljs", "初级", "addRow", "columns", "key"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.addRow({ id: 1, name: '张三', dob: new Date() })",
+        "isCorrect": true,
+        "description": "正确。对象的键对应列的 key，与列的物理顺序无关。"
+      },
+      {
+        "text": "worksheet.addRow([1, '张三', new Date()])",
+        "isCorrect": false,
+        "description": "可用但按位置对应 A/B/C，列顺序变动会错位，不满足「不关心顺序」。"
+      },
+      {
+        "text": "worksheet.addRow('id=1,name=张三')",
+        "isCorrect": false,
+        "description": "错误。addRow 不接受这种字符串格式。"
+      },
+      {
+        "text": "worksheet.addRow(new Map([['id', 1], ['name', '张三']]))",
+        "isCorrect": false,
+        "description": "错误。addRow 接收数组或普通对象，不接收 Map。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要把单元格 D1 显示为百分比（如 0.456 显示成 45.60%），应设置哪个属性？",
+    "explanation": "数字格式通过 `cell.numFmt`（number format 字符串）控制，遵循 Excel 的格式代码。百分比用 `'0.00%'`，货币如 `'\"$\"#,##0.00'`，日期如 `'yyyy-mm-dd'`。注意：numFmt 只改变**显示**，不改变单元格存储的真实数值（仍是 0.456）。\n\n- `cell.numFmt = '0.00%'` 正确。\n- `cell.format = 'percent'` 不是该库 API。\n- `cell.style = 'percentage'` 错误。\n- 把 value 直接写成 '45.60%' 会变成文本，丢失数值语义。",
+    "tags": ["exceljs", "初级", "numFmt", "数字格式"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "cell.numFmt = '0.00%'",
+        "isCorrect": true,
+        "description": "正确。numFmt 用 Excel 格式代码，'0.00%' 把 0.456 显示为 45.60%。"
+      },
+      {
+        "text": "cell.format = 'percent'",
+        "isCorrect": false,
+        "description": "错误。没有 cell.format，数字格式用 cell.numFmt。"
+      },
+      {
+        "text": "cell.style = 'percentage'",
+        "isCorrect": false,
+        "description": "错误。style 不是字符串枚举，且数字格式应用 numFmt。"
+      },
+      {
+        "text": "cell.value = '45.60%'",
+        "isCorrect": false,
+        "description": "错误。这会把单元格变成文本，丢失数值，无法参与计算。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：合并单元格 A1:C1 的正确调用是哪个？",
+    "explanation": "合并用 `worksheet.mergeCells('A1:C1')`（范围字符串），也支持 `mergeCells('A1', 'C1')`（起止单元格）或 `mergeCells(1, 1, 1, 3)`（起始行、起始列、结束行、结束列）。合并后，值与样式以**左上角单元格**为准。\n\n- `worksheet.mergeCells('A1:C1')` 正确。\n- `worksheet.merge('A1:C1')` 方法名不对。\n- `cell.merge('C1')` 不存在。\n- `worksheet.mergeCells(['A1', 'C1'])` 传数组不是支持的签名。",
+    "tags": ["exceljs", "初级", "mergeCells", "合并单元格"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.mergeCells('A1:C1')",
+        "isCorrect": true,
+        "description": "正确。可传范围字符串、起止单元格，或 (sRow,sCol,eRow,eCol) 四数字。"
+      },
+      {
+        "text": "worksheet.merge('A1:C1')",
+        "isCorrect": false,
+        "description": "错误。方法名是 mergeCells，不是 merge。"
+      },
+      {
+        "text": "worksheet.getCell('A1').merge('C1')",
+        "isCorrect": false,
+        "description": "错误。Cell 上没有 merge 方法，合并由 worksheet 负责。"
+      },
+      {
+        "text": "worksheet.mergeCells(['A1', 'C1'])",
+        "isCorrect": false,
+        "description": "错误。不支持单个数组参数，应分别传或用范围字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：合并 A1:C1 之后，要让合并区域显示「标题」，应该给哪个单元格赋值？",
+    "explanation": "合并后整个区域由**左上角单元格（master cell）**承载值与样式。所以应 `worksheet.getCell('A1').value = '标题'`。给 B1/C1 赋值会被忽略（它们指向 master），读取 B1 实际返回 A1 的值，`worksheet.getCell('B1').master === worksheet.getCell('A1')`。\n\n- 给左上角 A1 赋值正确。\n- 给 B1 赋值不会生效（合并从属单元格）。\n- 给 C1 赋值同理无效。\n- 「给任意一个都行」错误：只有 master 生效。",
+    "tags": ["exceljs", "中级", "mergeCells", "master", "合并单元格"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.getCell('A1').value = '标题'（左上角 master 单元格）",
+        "isCorrect": true,
+        "description": "正确。合并区域的值与样式由左上角 master 单元格承载。"
+      },
+      {
+        "text": "worksheet.getCell('B1').value = '标题'",
+        "isCorrect": false,
+        "description": "错误。B1 是从属单元格，赋值无效，其值实际指向 A1。"
+      },
+      {
+        "text": "worksheet.getCell('C1').value = '标题'",
+        "isCorrect": false,
+        "description": "错误。C1 同样是从属单元格，应给左上角 A1 赋值。"
+      },
+      {
+        "text": "给 A1、B1、C1 任意一个赋值都行",
+        "isCorrect": false,
+        "description": "错误。只有左上角 master 单元格的赋值会生效。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要遍历工作表里所有有数据的行，下面哪个方法最合适？",
+    "explanation": "`worksheet.eachRow((row, rowNumber) => {...})` 遍历所有「有内容」的行；默认跳过完全为空的行，传 `{ includeEmpty: true }` 才会把空行也带上。行内再用 `row.eachCell(...)` 遍历单元格。\n\n- `worksheet.eachRow((row, rowNumber) => {})` 正确。\n- `worksheet.forEach(...)` 不是 ExcelJS 的方法。\n- `worksheet.rows.map(...)` 不是公开遍历 API（rows 非数组接口）。\n- `worksheet.eachCell(...)` 不存在于 worksheet 级别（eachCell 在 row/column 上）。",
+    "tags": ["exceljs", "中级", "eachRow", "遍历"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.eachRow((row, rowNumber) => { ... })",
+        "isCorrect": true,
+        "description": "正确。eachRow 遍历有数据的行，传 { includeEmpty: true } 可含空行。"
+      },
+      {
+        "text": "worksheet.forEach((row) => { ... })",
+        "isCorrect": false,
+        "description": "错误。worksheet 没有 forEach 方法。"
+      },
+      {
+        "text": "worksheet.rows.map((row) => { ... })",
+        "isCorrect": false,
+        "description": "错误。rows 不是可直接 map 的公开数组接口，遍历用 eachRow。"
+      },
+      {
+        "text": "worksheet.eachCell((cell) => { ... })",
+        "isCorrect": false,
+        "description": "错误。eachCell 是 row / column 级方法，worksheet 上没有。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在浏览器里把生成的工作簿下载成 .xlsx 文件，标准做法的核心 API 是哪个？",
+    "explanation": "浏览器没有文件系统写入权限，不能用 `writeFile`。正确流程是 `const buffer = await workbook.xlsx.writeBuffer()` 拿到二进制，再包成 `Blob`（MIME 用 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`），最后用 a 标签或 FileSaver 触发下载。\n\n- `workbook.xlsx.writeBuffer()` 正确。\n- 浏览器里调 `writeFile` 会失败（无 fs）。\n- `workbook.download(...)` 不存在。\n- `workbook.toBlob()` 不是该库 API。",
+    "tags": ["exceljs", "中级", "浏览器", "writeBuffer", "下载"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const buffer = await workbook.xlsx.writeBuffer()，再包成 Blob 触发下载",
+        "isCorrect": true,
+        "description": "正确。浏览器用 writeBuffer 拿二进制 → Blob → a 标签/FileSaver 下载。"
+      },
+      {
+        "text": "await workbook.xlsx.writeFile('out.xlsx')",
+        "isCorrect": false,
+        "description": "错误。writeFile 依赖 Node 文件系统，浏览器中不可用。"
+      },
+      {
+        "text": "workbook.download('out.xlsx')",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 download 方法，需自行构造 Blob 下载。"
+      },
+      {
+        "text": "workbook.toBlob()",
+        "isCorrect": false,
+        "description": "错误。没有 toBlob，应先 writeBuffer 再 new Blob([buffer])。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：读取一个已有的 data.xlsx 文件到工作簿对象，正确写法是哪个？",
+    "explanation": "读文件用 `await workbook.xlsx.readFile('data.xlsx')`（Node 环境）。浏览器/内存场景用 `workbook.xlsx.load(buffer)`，从流读用 `workbook.xlsx.read(stream)`。三者都返回 Promise。\n\n- `await workbook.xlsx.readFile('data.xlsx')` 正确。\n- `ExcelJS.readFile(...)` 不是静态方法。\n- `workbook.open('data.xlsx')` 不存在。\n- `workbook.xlsx.parse('data.xlsx')` 不是该库 API。",
+    "tags": ["exceljs", "中级", "readFile", "文件IO"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await workbook.xlsx.readFile('data.xlsx')",
+        "isCorrect": true,
+        "description": "正确。Node 读文件用 xlsx.readFile；内存用 load，流用 read。"
+      },
+      {
+        "text": "ExcelJS.readFile('data.xlsx')",
+        "isCorrect": false,
+        "description": "错误。没有静态 readFile，需先 new Workbook() 再 workbook.xlsx.readFile。"
+      },
+      {
+        "text": "workbook.open('data.xlsx')",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 workbook.open 方法。"
+      },
+      {
+        "text": "workbook.xlsx.parse('data.xlsx')",
+        "isCorrect": false,
+        "description": "错误。没有 parse 方法，读取用 readFile / load / read。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：把内存中的 buffer（如上传的文件内容）解析成工作簿，应使用哪个方法？",
+    "explanation": "从 Buffer / ArrayBuffer 等内存数据载入用 `await workbook.xlsx.load(data)`。这是浏览器上传场景（FileReader 读出 ArrayBuffer 后）和服务端拿到 Buffer 时的标准入口；它还接受第二参（如 `{ ignoreNodes: ['dataValidations'] }`）跳过某些节点以加速。\n\n- `workbook.xlsx.load(buffer)` 正确。\n- `readFile` 需要文件路径，不能直接吃 buffer。\n- `workbook.xlsx.fromBuffer(...)` 不存在。\n- `ExcelJS.Workbook.from(buffer)` 不是该库 API。",
+    "tags": ["exceljs", "中级", "load", "文件IO", "Buffer"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await workbook.xlsx.load(buffer)",
+        "isCorrect": true,
+        "description": "正确。load 从 Buffer/ArrayBuffer 解析，支持 { ignoreNodes } 选项。"
+      },
+      {
+        "text": "await workbook.xlsx.readFile(buffer)",
+        "isCorrect": false,
+        "description": "错误。readFile 接受文件路径字符串，不接受 buffer。"
+      },
+      {
+        "text": "workbook.xlsx.fromBuffer(buffer)",
+        "isCorrect": false,
+        "description": "错误。没有 fromBuffer 方法，内存载入用 load。"
+      },
+      {
+        "text": "ExcelJS.Workbook.from(buffer)",
+        "isCorrect": false,
+        "description": "错误。不存在该静态方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要给单元格 A1 设置「水平居中、垂直居中、自动换行」，正确写法是哪个？",
+    "explanation": "对齐通过 `cell.alignment` 对象设置：`horizontal`（left/center/right/fill/justify/centerContinuous/distributed）、`vertical`（top/middle/bottom/distributed/justify）、`wrapText`（自动换行）、`textRotation`（旋转）、`indent`（缩进）等。垂直居中的取值是 `'middle'`（不是 'center'）。\n\n- `{ horizontal: 'center', vertical: 'middle', wrapText: true }` 正确。\n- 把 vertical 写成 'center' 不是合法取值。\n- `cell.align = ...` 属性不存在。\n- `cell.wrap = true` 单独属性不存在，换行在 alignment.wrapText。",
+    "tags": ["exceljs", "中级", "alignment", "对齐", "wrapText"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }",
+        "isCorrect": true,
+        "description": "正确。垂直居中取值为 'middle'，自动换行用 wrapText。"
+      },
+      {
+        "text": "cell.alignment = { horizontal: 'center', vertical: 'center', wrapText: true }",
+        "isCorrect": false,
+        "description": "错误。垂直方向取值是 'middle'，没有 'center'。"
+      },
+      {
+        "text": "cell.align = { h: 'center', v: 'middle' }",
+        "isCorrect": false,
+        "description": "错误。属性是 cell.alignment，字段是 horizontal/vertical。"
+      },
+      {
+        "text": "cell.alignment = 'center'; cell.wrap = true;",
+        "isCorrect": false,
+        "description": "错误。alignment 是对象不是字符串，换行用 alignment.wrapText。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格 A1 加四周细边框，正确的 border 写法是哪个？",
+    "explanation": "边框用 `cell.border` 对象，键为 `top`/`left`/`bottom`/`right`/`diagonal`，每个值是 `{ style, color }`。style 是枚举字符串，如 `'thin'`、`'medium'`、`'thick'`、`'double'`、`'dotted'`、`'dashDot'` 等；color 用 `{ argb }`。\n\n- 每个方向写 `{ style: 'thin' }` 正确。\n- `border: 'thin'`（整体字符串）不是合法结构。\n- `cell.borderStyle = 'thin'` 属性不存在。\n- style 写成 `1`（数字）无效，必须是枚举字符串。",
+    "tags": ["exceljs", "中级", "border", "边框"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }",
+        "isCorrect": true,
+        "description": "正确。border 按方向设置，每个方向是 { style, color }，style 为枚举字符串。"
+      },
+      {
+        "text": "cell.border = 'thin'",
+        "isCorrect": false,
+        "description": "错误。border 是对象，需分方向指定，不能用单字符串。"
+      },
+      {
+        "text": "cell.borderStyle = 'thin'",
+        "isCorrect": false,
+        "description": "错误。没有 borderStyle 属性，应用 cell.border。"
+      },
+      {
+        "text": "cell.border = { top: { style: 1 } }",
+        "isCorrect": false,
+        "description": "错误。style 必须是枚举字符串（thin/medium/thick…），不是数字。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：关于「样式对象按引用共享」，下面哪种说法是正确的、需要警惕的行为？",
+    "explanation": "ExcelJS 的样式对象（font/fill/border 等）是**按引用共享**的。如果把同一个 font 对象赋给多个单元格，之后修改这个对象会同时影响所有引用它的单元格。官方文档明确：需要相互独立时，要先**克隆**样式对象再赋值。这是批量设样式时极易踩的坑。\n\n- 「同一样式对象赋给多格后修改会牵连所有格，需克隆」正确。\n- 「每次赋值自动深拷贝」错误：恰恰相反。\n- 「样式不可变」错误。\n- 「只有 fill 共享，font 不共享」错误：都按引用。",
+    "tags": ["exceljs", "高级", "样式", "引用共享", "陷阱"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "样式对象按引用共享，把同一对象赋给多格后再改它会牵连所有格，需独立时要先克隆",
+        "isCorrect": true,
+        "description": "正确。官方明确样式 shared by reference，需独立须克隆，否则会互相影响。"
+      },
+      {
+        "text": "每次赋值都会自动深拷贝，互不影响",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 不自动深拷贝，赋的是同一引用。"
+      },
+      {
+        "text": "样式对象一旦赋值即不可变，无法再修改",
+        "isCorrect": false,
+        "description": "错误。可修改，且修改会影响所有共享该引用的单元格。"
+      },
+      {
+        "text": "只有 fill 会共享引用，font 总是独立的",
+        "isCorrect": false,
+        "description": "错误。font/fill/border 等都按引用共享。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：行样式与列样式同时存在时，单元格如何应用它们？",
+    "explanation": "官方说明：行和列都能设样式。当**同一种样式属性**在行和列都定义时，单元格采用**行**的设置；但如果行与列定义的是**不同**属性（如列定义 numFmt、行定义 font），则单元格**同时继承两者**。理解这点能避免「为什么我设了列样式却没生效」的困惑。\n\n- 「同属性以行为准，不同属性各自继承」正确。\n- 「永远以列为准」错误。\n- 「永远以行为准（含不同属性时丢弃列）」错误：不同属性会合并。\n- 「行列样式互斥，不能共存」错误。",
+    "tags": ["exceljs", "高级", "样式", "优先级", "行列"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同一属性以行样式为准；行与列定义的是不同属性时，单元格同时继承两者",
+        "isCorrect": true,
+        "description": "正确。冲突属性行优先，互补属性合并继承，是官方定义的优先级规则。"
+      },
+      {
+        "text": "无论什么属性都以列样式为准",
+        "isCorrect": false,
+        "description": "错误。冲突时以行为准，且不同属性会合并。"
+      },
+      {
+        "text": "无论什么属性都以行样式为准，列样式被完全丢弃",
+        "isCorrect": false,
+        "description": "错误。仅同一属性冲突时行优先；不同属性的列样式仍会继承。"
+      },
+      {
+        "text": "行样式与列样式互斥，二者不能同时存在",
+        "isCorrect": false,
+        "description": "错误。两者可共存，按上述规则合并。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要在一个单元格内对不同文字片段应用不同字体/颜色（富文本），cell.value 应赋成什么结构？",
+    "explanation": "富文本通过给 `cell.value` 赋一个含 `richText` 数组的对象实现：`{ richText: [ { font: {...}, text: '...' }, ... ] }`，每个片段独立设 font。此时 `cell.type` 变为 `ValueType.RichText`，`cell.text` 返回拼接后的纯文本。\n\n- `{ richText: [ { font, text }, ... ] }` 正确。\n- 直接写 HTML 字符串不会被解析成富文本。\n- `cell.richText = [...]`（独立属性）不是 API，富文本是 value 的一种形态。\n- 数组 `[{...}]` 直接赋给 value 缺少 richText 包裹，不正确。",
+    "tags": ["exceljs", "高级", "richText", "富文本"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cell.value = { richText: [ { font: { bold: true }, text: '红' }, { font: { italic: true }, text: '字' } ] }",
+        "isCorrect": true,
+        "description": "正确。富文本是 value 上的 { richText: [{font,text},...] } 结构，类型变 RichText。"
+      },
+      {
+        "text": "cell.value = '<b>红</b><i>字</i>'",
+        "isCorrect": false,
+        "description": "错误。HTML 字符串不会被解析为富文本，只是普通文本。"
+      },
+      {
+        "text": "cell.richText = [ { font: { bold: true }, text: '红' } ]",
+        "isCorrect": false,
+        "description": "错误。没有 cell.richText 独立属性，富文本通过 cell.value 赋值。"
+      },
+      {
+        "text": "cell.value = [ { font: { bold: true }, text: '红' } ]",
+        "isCorrect": false,
+        "description": "错误。缺少 richText 包裹键，数组本身不会被识别为富文本。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格做「下拉列表」数据校验（候选值 One/Two/Three），下面哪个 dataValidation 写法正确？",
+    "explanation": "下拉列表用 `type: 'list'`，候选值放在 `formulae` 数组里。**离散值要整体作为一个带引号的字符串**：`formulae: ['\"One,Two,Three\"']`（注意是数组里一个字符串，字符串内部用双引号包住逗号分隔的值）。也可用区域引用如 `['$D$5:$F$5']`。\n\n- `{ type: 'list', formulae: ['\"One,Two,Three\"'] }` 正确。\n- `formulae: ['One', 'Two', 'Three']`（拆成多元素）不对。\n- `values: [...]` 字段不存在，应是 formulae。\n- `type: 'dropdown'` 不是合法类型，应为 'list'。",
+    "tags": ["exceljs", "高级", "dataValidation", "数据校验", "下拉列表"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cell.dataValidation = { type: 'list', allowBlank: true, formulae: ['\"One,Two,Three\"'] }",
+        "isCorrect": true,
+        "description": "正确。list 的离散候选放在 formulae 数组的单个带引号字符串里。"
+      },
+      {
+        "text": "cell.dataValidation = { type: 'list', formulae: ['One', 'Two', 'Three'] }",
+        "isCorrect": false,
+        "description": "错误。离散值要合并成一个 '\"One,Two,Three\"' 字符串，而非多个元素。"
+      },
+      {
+        "text": "cell.dataValidation = { type: 'list', values: ['One', 'Two', 'Three'] }",
+        "isCorrect": false,
+        "description": "错误。没有 values 字段，候选值用 formulae。"
+      },
+      {
+        "text": "cell.dataValidation = { type: 'dropdown', formulae: ['One,Two,Three'] }",
+        "isCorrect": false,
+        "description": "错误。类型应为 'list'，且字符串需用双引号包裹。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要做「只允许输入 1.5 到 7 之间的小数」数据校验，type 与 operator 应是什么？",
+    "explanation": "数值范围校验：`type: 'decimal'`（小数）或 `'whole'`（整数），配 `operator: 'between'`，边界值放 `formulae: [1.5, 7]`。operator 取值还包括 notBetween、equal、notEqual、greaterThan、lessThan、greaterThanOrEqual、lessThanOrEqual。可配 showErrorMessage / errorTitle / error 自定义报错。\n\n- `type: 'decimal', operator: 'between', formulae: [1.5, 7]` 正确。\n- `type: 'number'` 不是合法类型（整数是 'whole'，小数是 'decimal'）。\n- `operator: 'range'` 不是合法 operator。\n- `type: 'decimal', formulae: ['1.5-7']` 字符串区间写法无效。",
+    "tags": ["exceljs", "高级", "dataValidation", "数据校验", "decimal"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "{ type: 'decimal', operator: 'between', formulae: [1.5, 7] }",
+        "isCorrect": true,
+        "description": "正确。小数用 type 'decimal'，区间用 operator 'between'，边界放 formulae。"
+      },
+      {
+        "text": "{ type: 'number', operator: 'between', formulae: [1.5, 7] }",
+        "isCorrect": false,
+        "description": "错误。没有 'number' 类型；整数是 'whole'，小数是 'decimal'。"
+      },
+      {
+        "text": "{ type: 'decimal', operator: 'range', formulae: [1.5, 7] }",
+        "isCorrect": false,
+        "description": "错误。没有 'range' 运算符，区间用 'between'。"
+      },
+      {
+        "text": "{ type: 'decimal', formulae: ['1.5-7'] }",
+        "isCorrect": false,
+        "description": "错误。区间需 operator 'between' + 两个数值，不能用 '1.5-7' 字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：导出几十万行的大文件时，为避免内存爆掉，应使用哪个 API？",
+    "explanation": "普通 `Workbook` 把整个文档保留在内存，大数据量会 OOM。流式写入用 `new ExcelJS.stream.xlsx.WorkbookWriter({ filename, useStyles, useSharedStrings })`：逐行 `worksheet.addRow(...).commit()`、`worksheet.commit()`、`workbook.commit()`，已 commit 的行会从内存释放。\n\n- `new ExcelJS.stream.xlsx.WorkbookWriter({...})` 正确。\n- 普通 `new ExcelJS.Workbook()` + writeFile 会把全部数据留内存。\n- `ExcelJS.bigWriter(...)` 不存在。\n- `workbook.xlsx.writeStream()` 不是流式写入入口。",
+    "tags": ["exceljs", "高级", "流式", "WorkbookWriter", "大数据"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ filename, useStyles: true, useSharedStrings: true })",
+        "isCorrect": true,
+        "description": "正确。流式 WorkbookWriter 配 commit() 逐行落盘并释放内存，适合大文件。"
+      },
+      {
+        "text": "const workbook = new ExcelJS.Workbook(); 然后 writeFile",
+        "isCorrect": false,
+        "description": "错误。普通 Workbook 把整个文档保留内存，大数据量会内存溢出。"
+      },
+      {
+        "text": "const workbook = ExcelJS.bigWriter({ filename })",
+        "isCorrect": false,
+        "description": "错误。不存在 bigWriter 这个 API。"
+      },
+      {
+        "text": "workbook.xlsx.writeStream(filename)",
+        "isCorrect": false,
+        "description": "错误。流式写入入口是 stream.xlsx.WorkbookWriter，不是 writeStream。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在流式 WorkbookWriter 模式下，对每一行调用 row.commit() 的关键效果是什么？",
+    "explanation": "流式模式靠 `commit()` 实现「写一行、放一行」：一旦某行被 commit，它的数据就被写入输出流并**从工作表内存中丢弃，不再可访问**（官方原文：once a row is committed, it is no longer accessible）。这正是流式能处理超大数据而不爆内存的原因；代价是无法回头修改已提交的行。\n\n- 「该行落盘并从内存释放、不可再访问」正确。\n- 「只是标记，数据仍全留内存」错误：那就失去流式意义。\n- 「触发整个文件保存」错误：整体保存是 workbook.commit()。\n- 「把行复制一份」错误。",
+    "tags": ["exceljs", "专家", "流式", "commit", "内存"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "该行数据被写入输出流并从内存丢弃，之后不可再访问",
+        "isCorrect": true,
+        "description": "正确。commit 后行被落盘并释放，这是流式不爆内存的核心，代价是不可回改。"
+      },
+      {
+        "text": "仅做标记，行数据仍完整保留在内存里",
+        "isCorrect": false,
+        "description": "错误。若仍全留内存就失去了流式的意义。"
+      },
+      {
+        "text": "立即把整个 xlsx 文件写盘完成",
+        "isCorrect": false,
+        "description": "错误。完成整个文件是 workbook.commit()，row.commit 只处理该行。"
+      },
+      {
+        "text": "把当前行复制一份作为备份",
+        "isCorrect": false,
+        "description": "错误。commit 是落盘+释放，不是复制备份。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要在工作簿里插入一张本地图片并贴到 B2:D6 区域，正确的两步是什么？",
+    "explanation": "图片分两步：先在**工作簿**上注册 `const imageId = workbook.addImage({ filename, extension: 'png' })`（也支持 buffer / base64），拿到 imageId；再在**工作表**上 `worksheet.addImage(imageId, 'B2:D6')` 把图贴到指定区域（也可用 `{ tl, br }` 或 `{ tl, ext }` 精确定位）。\n\n- 「workbook.addImage 拿 id → worksheet.addImage(id, 范围)」正确。\n- 直接 `worksheet.addImage({ filename })` 漏了先在 workbook 注册。\n- `cell.insertImage(...)` 不存在。\n- `workbook.addImage` 返回的是 id，不是直接贴图。",
+    "tags": ["exceljs", "高级", "addImage", "图片"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const id = workbook.addImage({ filename: 'a.png', extension: 'png' }); worksheet.addImage(id, 'B2:D6');",
+        "isCorrect": true,
+        "description": "正确。先在 workbook 注册图片拿 id，再在 worksheet 用 id 贴到区域。"
+      },
+      {
+        "text": "worksheet.addImage({ filename: 'a.png', extension: 'png', range: 'B2:D6' })",
+        "isCorrect": false,
+        "description": "错误。必须先 workbook.addImage 注册，worksheet.addImage 接收 id 而非文件描述。"
+      },
+      {
+        "text": "worksheet.getCell('B2').insertImage('a.png')",
+        "isCorrect": false,
+        "description": "错误。Cell 上没有 insertImage 方法。"
+      },
+      {
+        "text": "workbook.addImage('a.png', 'B2:D6')",
+        "isCorrect": false,
+        "description": "错误。addImage 接对象 { filename/buffer/base64, extension } 且只负责注册返回 id。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给区域 A1:E7 添加「斑马纹（隔行变色）」这类条件格式，应调用哪个方法？",
+    "explanation": "条件格式用 `worksheet.addConditionalFormatting({ ref, rules })`。ref 是作用区域，rules 是规则数组，每条规则有 `type`（expression / cellIs / colorScale / dataBar / iconSet / top10 / aboveAverage / containsText / timePeriod 等）和对应参数（如 expression 配 formulae + style）。\n\n- `worksheet.addConditionalFormatting({ ref, rules })` 正确。\n- `cell.conditionalFormat(...)` 不是 API。\n- `worksheet.addCF(...)` 名称不对。\n- `worksheet.conditionalFormatting = {...}`（直接赋属性）不是支持的用法。",
+    "tags": ["exceljs", "高级", "条件格式", "addConditionalFormatting"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.addConditionalFormatting({ ref: 'A1:E7', rules: [{ type: 'expression', formulae: ['MOD(ROW(),2)=0'], style: {...} }] })",
+        "isCorrect": true,
+        "description": "正确。addConditionalFormatting 接 { ref, rules }，规则按 type 分类配参。"
+      },
+      {
+        "text": "worksheet.getCell('A1').conditionalFormat({ ... })",
+        "isCorrect": false,
+        "description": "错误。条件格式是 worksheet 级方法，Cell 上没有 conditionalFormat。"
+      },
+      {
+        "text": "worksheet.addCF('A1:E7', rules)",
+        "isCorrect": false,
+        "description": "错误。方法名是 addConditionalFormatting，且参数是单个对象。"
+      },
+      {
+        "text": "worksheet.conditionalFormatting = { ref: 'A1:E7', rules: [...] }",
+        "isCorrect": false,
+        "description": "错误。应调用 addConditionalFormatting 方法，而非直接赋属性。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：下面关于 worksheet.getWorksheet(1) 与 workbook.worksheets[0] 的说法，哪个正确？",
+    "explanation": "官方特意提醒：两者**不等价**。`getWorksheet(1)` 是按 **id** 取表，而工作表 id 在删除某些表后可能**不连续**（非顺序）；`worksheets[0]` 是按数组下标取第一个表。因此删表后用 id=1 可能取不到你以为的那张表。要稳妥按位置取，用数组下标；按名取用 `getWorksheet('名字')`。\n\n- 「不等价，getWorksheet(1) 按可能不连续的 id，[0] 按下标」正确。\n- 「完全等价」错误。\n- 「getWorksheet(1) 取第一个、[0] 取最后一个」错误。\n- 「getWorksheet 只能传名字」错误：可传 id 或名字。",
+    "tags": ["exceljs", "专家", "getWorksheet", "工作表", "陷阱"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "二者不等价：getWorksheet(1) 按工作表 id（删表后可能不连续），worksheets[0] 按数组下标",
+        "isCorrect": true,
+        "description": "正确。id 非顺序，删表后 getWorksheet(1) 可能取不到首表，按位置应用下标。"
+      },
+      {
+        "text": "二者完全等价，都返回第一张工作表",
+        "isCorrect": false,
+        "description": "错误。id 可能不连续，删表后两者可能指向不同表。"
+      },
+      {
+        "text": "getWorksheet(1) 取第一张，worksheets[0] 取最后一张",
+        "isCorrect": false,
+        "description": "错误。worksheets[0] 取下标 0 的第一张，不是最后一张。"
+      },
+      {
+        "text": "getWorksheet 只接受工作表名字，不能传数字",
+        "isCorrect": false,
+        "description": "错误。getWorksheet 可传 id 数字或名字字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要冻结工作表的前两列和前三行（首行首列固定不滚动），worksheet.views 应如何配置？",
+    "explanation": "冻结窗格用 `views: [{ state: 'frozen', xSplit: 2, ySplit: 3 }]`：`xSplit` 是冻结的**列数**、`ySplit` 是冻结的**行数**（state 为 'frozen' 时按行列数计）。只冻结行则 xSplit 设 0。注意区分 `state: 'split'`（可独立滚动的分割窗格，此时 x/y Split 是磅值坐标）。\n\n- `{ state: 'frozen', xSplit: 2, ySplit: 3 }` 正确。\n- 把 xSplit/ySplit 当成像素坐标是 split 模式的语义，frozen 下是行列计数。\n- `freezePane: 'C4'` 不是 ExcelJS API。\n- `state: 'freeze'` 拼写错误，应为 'frozen'。",
+    "tags": ["exceljs", "专家", "views", "冻结窗格"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 3 }]",
+        "isCorrect": true,
+        "description": "正确。frozen 下 xSplit/ySplit 是冻结的列数/行数，只冻行则 xSplit=0。"
+      },
+      {
+        "text": "worksheet.views = [{ state: 'split', xSplit: 2, ySplit: 3 }]",
+        "isCorrect": false,
+        "description": "错误。split 是可独立滚动的分割窗格，且其 x/y Split 是磅值坐标，非冻结。"
+      },
+      {
+        "text": "worksheet.freezePane = 'C4'",
+        "isCorrect": false,
+        "description": "错误。没有 freezePane 属性，冻结通过 views 配置。"
+      },
+      {
+        "text": "worksheet.views = [{ state: 'freeze', x: 2, y: 3 }]",
+        "isCorrect": false,
+        "description": "错误。state 应为 'frozen'，字段是 xSplit/ySplit。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在选型时，关于 ExcelJS 与 SheetJS(xlsx) 的分工，哪种说法最准确？",
+    "explanation": "两者侧重不同：**ExcelJS** 强在**写出时的精细样式/格式**（字体、填充、边框、条件格式、数据校验、图片、流式导出），适合「生成带样式的报表」；**SheetJS** 强在**广泛的格式解析**与数据转换（支持 xlsx/xls/csv/ods 等众多格式，社区版样式写入能力有限）。需要漂亮的样式导出选 ExcelJS，需要解析各种杂格式或纯数据进出选 SheetJS。\n\n- 「ExcelJS 重样式导出、SheetJS 重广格式解析」正确。\n- 「ExcelJS 是 SheetJS 的封装」错误：两者独立。\n- 「SheetJS 样式导出更强」错误：恰相反。\n- 「功能完全等价可随意替换」错误。",
+    "tags": ["exceljs", "高级", "选型", "SheetJS", "对比"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ExcelJS 强在带样式/格式的写出（报表导出），SheetJS 强在广泛格式解析与数据转换",
+        "isCorrect": true,
+        "description": "正确。要精细样式导出选 ExcelJS，要解析多种格式/纯数据进出选 SheetJS。"
+      },
+      {
+        "text": "ExcelJS 只是 SheetJS 的一层封装，底层调用它",
+        "isCorrect": false,
+        "description": "错误。两者是各自独立实现的库，无封装关系。"
+      },
+      {
+        "text": "SheetJS 在样式写出上比 ExcelJS 更强",
+        "isCorrect": false,
+        "description": "错误。精细样式写出正是 ExcelJS 的强项，SheetJS 社区版样式写入有限。"
+      },
+      {
+        "text": "二者功能完全等价，可任意互换",
+        "isCorrect": false,
+        "description": "错误。侧重点不同，应按「样式导出 vs 广格式解析」选型。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要把第 5 列（无论它的 key 是什么）整列设置为加粗，下面哪个写法对？",
+    "explanation": "`worksheet.getColumn(5)` 按 1 基列号取列（也可传列字母 'E' 或列 key），返回 Column 对象，可整列设样式：`column.font = { bold: true }`。同理 `worksheet.getRow(n)` 取行整行设样式。注意列号是从 1 开始（A=1）。\n\n- `worksheet.getColumn(5).font = { bold: true }` 正确。\n- `worksheet.columns[5]` 直接下标访问不可靠（columns 非简单数组接口，且 0 基会偏移）。\n- `worksheet.getColumn('5')`（字符串数字）不是有效列标识。\n- `worksheet.setColumnStyle(5, ...)` 不存在。",
+    "tags": ["exceljs", "中级", "getColumn", "列样式"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.getColumn(5).font = { bold: true }",
+        "isCorrect": true,
+        "description": "正确。getColumn 接受 1 基列号/列字母/列 key，返回 Column 可整列设样式。"
+      },
+      {
+        "text": "worksheet.columns[5].font = { bold: true }",
+        "isCorrect": false,
+        "description": "错误。不应靠下标直接访问 columns，应用 getColumn(5)。"
+      },
+      {
+        "text": "worksheet.getColumn('5').font = { bold: true }",
+        "isCorrect": false,
+        "description": "错误。'5' 字符串既非列字母也非 key，应传数字 5 或 'E'。"
+      },
+      {
+        "text": "worksheet.setColumnStyle(5, { font: { bold: true } })",
+        "isCorrect": false,
+        "description": "错误。没有 setColumnStyle 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给一个区域加自动筛选（AutoFilter）到 A1:C1，正确写法是哪个？",
+    "explanation": "自动筛选通过给 `worksheet.autoFilter` 赋值：可用范围字符串 `'A1:C1'`，或对象 `{ from: 'A1', to: 'C1' }`，或行列索引 `{ from: { row: 1, column: 1 }, to: { row: 1, column: 3 } }`。\n\n- `worksheet.autoFilter = 'A1:C1'` 正确。\n- `worksheet.addAutoFilter('A1:C1')` 不是方法（autoFilter 是属性）。\n- `worksheet.filter = 'A1:C1'` 属性名不对。\n- `worksheet.setFilter(...)` 不存在。",
+    "tags": ["exceljs", "中级", "autoFilter", "自动筛选"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.autoFilter = 'A1:C1'",
+        "isCorrect": true,
+        "description": "正确。autoFilter 是可赋值属性，支持范围字符串或 { from, to } 对象。"
+      },
+      {
+        "text": "worksheet.addAutoFilter('A1:C1')",
+        "isCorrect": false,
+        "description": "错误。autoFilter 是属性赋值，不是方法调用。"
+      },
+      {
+        "text": "worksheet.filter = 'A1:C1'",
+        "isCorrect": false,
+        "description": "错误。属性名是 autoFilter，不是 filter。"
+      },
+      {
+        "text": "worksheet.setFilter('A1', 'C1')",
+        "isCorrect": false,
+        "description": "错误。没有 setFilter 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：流式读取超大 xlsx 文件，下面哪个是正确入口与用法？",
+    "explanation": "流式读取用 `new ExcelJS.stream.xlsx.WorkbookReader({ filename })`，配 `for await (const worksheet of workbook) { for await (const row of worksheet) {...} }` 逐行处理（也可监听 'worksheet'/'row' 事件）。它边读边吐行，不把整个文件载入内存。\n\n- `new ExcelJS.stream.xlsx.WorkbookReader({ filename })` + for-await 正确。\n- 普通 `workbook.xlsx.readFile` 会把整个文件读入内存。\n- `ExcelJS.stream.read(...)` 不是该 API。\n- `workbook.xlsx.readStream(...)` 不存在。",
+    "tags": ["exceljs", "专家", "流式", "WorkbookReader", "大数据"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "const workbook = new ExcelJS.stream.xlsx.WorkbookReader({ filename }); for await (const ws of workbook) for await (const row of ws) {...}",
+        "isCorrect": true,
+        "description": "正确。WorkbookReader 配 for-await（或 'worksheet'/'row' 事件）边读边处理，省内存。"
+      },
+      {
+        "text": "await workbook.xlsx.readFile(filename); 然后 eachRow",
+        "isCorrect": false,
+        "description": "错误。readFile 会把整个文件读入内存，不适合超大文件。"
+      },
+      {
+        "text": "ExcelJS.stream.read(filename)",
+        "isCorrect": false,
+        "description": "错误。流式读取入口是 stream.xlsx.WorkbookReader。"
+      },
+      {
+        "text": "workbook.xlsx.readStream(filename)",
+        "isCorrect": false,
+        "description": "错误。没有 readStream 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：用 worksheet.getCell('B2').value = new Date() 写入日期后，单元格显示成一串数字。最合理的解决办法是什么？",
+    "explanation": "ExcelJS 正确地把 Date 存为日期数值，但**显示格式**取决于 `numFmt`——没设时可能按 Excel 默认（序列号）显示。给单元格设 `cell.numFmt = 'yyyy-mm-dd'`（或其他日期格式代码）即可正常显示日期。这与「值错了」无关，是显示格式问题。\n\n- 「设置 cell.numFmt 为日期格式」正确。\n- 「把 Date 转成字符串再写」会丢失日期类型，不推荐。\n- 「值本身错了」错误：值是对的，是格式问题。\n- 「ExcelJS 不支持日期」错误：支持，且有 date1904 等设置。",
+    "tags": ["exceljs", "中级", "日期", "numFmt", "陷阱"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "给单元格设置日期数字格式，如 cell.numFmt = 'yyyy-mm-dd'",
+        "isCorrect": true,
+        "description": "正确。值已是日期，只需用 numFmt 指定显示格式即可正常呈现。"
+      },
+      {
+        "text": "把日期先 toString() 成字符串再写入单元格",
+        "isCorrect": false,
+        "description": "错误。这会变成文本，丢失日期类型与可计算性。"
+      },
+      {
+        "text": "说明 ExcelJS 写入的日期值本身是错的",
+        "isCorrect": false,
+        "description": "错误。值是正确的日期序列号，问题只在显示格式。"
+      },
+      {
+        "text": "ExcelJS 不支持日期类型，只能存文本",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 支持 Date，并有 properties.date1904 等日期基准设置。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要给单元格写入一个会被 Excel 计算的公式（如 A1 = B1 + C1），cell.value 应赋成什么？",
+    "explanation": "公式作为一种值类型，赋对象 `{ formula: 'B1+C1' }`（可选带 `result` 缓存计算结果，便于不打开 Excel 也能读到值）。例如 `cell.value = { formula: 'B1+C1', result: 7 }`。直接写字符串 `'=B1+C1'` 会被当成普通文本而非公式。\n\n- `{ formula: 'B1+C1' }` 正确。\n- `'=B1+C1'` 字符串会变成文本。\n- `cell.formula = '...'`（独立属性）不是写公式的方式。\n- `{ expr: 'B1+C1' }` 字段名不对。",
+    "tags": ["exceljs", "中级", "公式", "formula", "值类型"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cell.value = { formula: 'B1+C1', result: 7 }",
+        "isCorrect": true,
+        "description": "正确。公式是值类型 { formula, result? }，result 缓存结果便于直接读取。"
+      },
+      {
+        "text": "cell.value = '=B1+C1'",
+        "isCorrect": false,
+        "description": "错误。字符串会被当作普通文本，不会作为公式计算。"
+      },
+      {
+        "text": "cell.formula = 'B1+C1'",
+        "isCorrect": false,
+        "description": "错误。没有 cell.formula 独立属性，公式通过 value 的 { formula } 设置。"
+      },
+      {
+        "text": "cell.value = { expr: 'B1+C1' }",
+        "isCorrect": false,
+        "description": "错误。字段名是 formula，不是 expr。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要给单元格写入一个可点击的超链接（显示「官网」、跳转到 https://exceljs 文档），cell.value 应赋成什么？",
+    "explanation": "超链接是值类型，赋对象 `{ text: '官网', hyperlink: 'https://...' }`（可选 `tooltip`）。`text` 是显示文字、`hyperlink` 是目标地址。直接写网址字符串只会显示文本、不可点击。\n\n- `{ text: '官网', hyperlink: 'https://...' }` 正确。\n- 直接写 URL 字符串不会生成链接。\n- `{ link: '...' }` 字段名不对。\n- `cell.hyperlink = '...'`（独立属性）不是写法。",
+    "tags": ["exceljs", "中级", "超链接", "hyperlink", "值类型"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cell.value = { text: '官网', hyperlink: 'https://exceljs.github.io/', tooltip: '打开文档' }",
+        "isCorrect": true,
+        "description": "正确。超链接是值类型 { text, hyperlink, tooltip? }，text 显示、hyperlink 跳转。"
+      },
+      {
+        "text": "cell.value = 'https://exceljs.github.io/'",
+        "isCorrect": false,
+        "description": "错误。纯字符串只是文本，不会成为可点击链接。"
+      },
+      {
+        "text": "cell.value = { text: '官网', link: 'https://exceljs.github.io/' }",
+        "isCorrect": false,
+        "description": "错误。字段名是 hyperlink，不是 link。"
+      },
+      {
+        "text": "cell.hyperlink = 'https://exceljs.github.io/'",
+        "isCorrect": false,
+        "description": "错误。没有 cell.hyperlink 独立属性，应通过 value 设置。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在 Node 服务端把生成好的工作簿作为 HTTP 响应直接返回（不落盘），最合适的方式是哪个？",
+    "explanation": "服务端不落盘直接返回，常用 `const buffer = await workbook.xlsx.writeBuffer()` 拿到 Buffer，设置好响应头（Content-Type 为 spreadsheetml、Content-Disposition attachment）后 `res.send(buffer)`。也可用 `workbook.xlsx.write(res)` 把流直接写进响应对象。\n\n- `await workbook.xlsx.writeBuffer()` 再 res.send 正确。\n- 先 writeFile 落盘再读回再发，多此一举且有磁盘 IO。\n- `workbook.toBuffer()`（无 xlsx 命名空间）不对。\n- `res.json(workbook)` 会序列化整个对象，不是 xlsx 文件。",
+    "tags": ["exceljs", "高级", "writeBuffer", "服务端", "HTTP"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const buffer = await workbook.xlsx.writeBuffer(); res.send(buffer)（或 workbook.xlsx.write(res) 写流）",
+        "isCorrect": true,
+        "description": "正确。writeBuffer 拿二进制直接响应，或 write(res) 把流写进响应，均无需落盘。"
+      },
+      {
+        "text": "先 writeFile 到临时文件，再读回文件内容发给客户端",
+        "isCorrect": false,
+        "description": "可行但多了磁盘 IO 与清理负担，writeBuffer / write(res) 更直接。"
+      },
+      {
+        "text": "const buffer = await workbook.toBuffer(); res.send(buffer)",
+        "isCorrect": false,
+        "description": "错误。方法在 workbook.xlsx 命名空间下，是 writeBuffer。"
+      },
+      {
+        "text": "res.json(workbook)",
+        "isCorrect": false,
+        "description": "错误。这只会序列化对象结构，得不到真正的 xlsx 二进制。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：本机安装的 exceljs 当前主版本是哪个系列？（用于了解 API 基线）",
+    "explanation": "ExcelJS 当前稳定版是 **4.x**（npm latest 为 4.4.0），MIT 许可，Node 引擎要求 >=8.3.0。它依赖 jszip（打包 zip）、fast-csv（CSV）、dayjs（日期）、archiver/unzipper（流式 zip）、saxes（XML 解析）等。本套题目以 4.x 的 README/API 为基线。\n\n- 「4.x（如 4.4.0）」正确。\n- 「1.x」错误：早已是 4.x。\n- 「7.x」错误：ExcelJS 尚无 7.x。\n- 「0.x 仍在 beta」错误：它是成熟的 4.x 稳定版。",
+    "tags": ["exceljs", "入门", "版本", "事实"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "4.x（npm latest 为 4.4.0），MIT 许可",
+        "isCorrect": true,
+        "description": "正确。当前稳定版属 4.x 系列，4.4.0 为 latest，许可为 MIT。"
+      },
+      {
+        "text": "1.x",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 早已演进到 4.x。"
+      },
+      {
+        "text": "7.x",
+        "isCorrect": false,
+        "description": "错误。目前没有 7.x 版本，最新是 4.x。"
+      },
+      {
+        "text": "0.x，仍处于 beta 阶段",
+        "isCorrect": false,
+        "description": "错误。它是成熟稳定的 4.x 版本，非 beta。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要让某列宽度自适应内容（没有内置 autoFit），常见的正确做法是什么？",
+    "explanation": "ExcelJS **没有内置的列宽自适应**（autoFit）。常见做法是遍历该列每个单元格的文本长度，取最大值（加少量余量）赋给 `column.width`。例如 `let max=10; col.eachCell(c=>{ max=Math.max(max,(c.value??'').toString().length) }); col.width=max+2`。\n\n- 「遍历单元格取最大文本长度赋 width」正确。\n- 「调用 column.autoFit()」错误：无此方法。\n- 「设 width: 'auto'」错误：width 接受数字。\n- 「ExcelJS 会自动按内容撑开」错误：默认不自适应。",
+    "tags": ["exceljs", "高级", "列宽", "autoFit", "技巧"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "手动遍历该列单元格取最大文本长度，再加余量赋给 column.width",
+        "isCorrect": true,
+        "description": "正确。无内置 autoFit，需自行按最长文本估算列宽并赋值。"
+      },
+      {
+        "text": "调用 column.autoFit() 让它自动计算",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 没有 autoFit 方法。"
+      },
+      {
+        "text": "设置 column.width = 'auto'",
+        "isCorrect": false,
+        "description": "错误。width 接受数字（字符宽度单位），不接受 'auto'。"
+      },
+      {
+        "text": "什么都不用做，ExcelJS 会按内容自动撑开列宽",
+        "isCorrect": false,
+        "description": "错误。默认不会自适应，需手动计算。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：关于 cell.value、cell.text、cell.type 的区别，下面哪个说法正确？",
+    "explanation": "`cell.value` 是单元格的**原始值**（可能是数字、Date、富文本对象、公式对象、超链接对象等多种形态）；`cell.text` 是其**渲染后的字符串**形式（如富文本拼接、日期按 text 呈现）；`cell.type` 返回 `Excel.ValueType` 枚举（Number/String/Date/Formula/RichText/Hyperlink 等），用于判断值的种类。\n\n- 「value 原始值、text 字符串、type 是值类型枚举」正确。\n- 「三者都是字符串」错误。\n- 「value 永远是字符串」错误：可为多种类型。\n- 「type 返回单元格地址」错误：地址是 cell.address。",
+    "tags": ["exceljs", "中级", "value", "text", "ValueType"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "value 是原始值（可能是数字/Date/富文本/公式对象等），text 是渲染后的字符串，type 是 ValueType 枚举",
+        "isCorrect": true,
+        "description": "正确。value 形态多样，text 取其字符串呈现，type 标识值的种类。"
+      },
+      {
+        "text": "value、text、type 三者都是字符串，内容相同",
+        "isCorrect": false,
+        "description": "错误。value 可为对象，type 是枚举，三者语义不同。"
+      },
+      {
+        "text": "value 永远是字符串类型",
+        "isCorrect": false,
+        "description": "错误。value 可以是数字、Date、富文本/公式对象等。"
+      },
+      {
+        "text": "type 返回的是单元格的地址（如 'C3'）",
+        "isCorrect": false,
+        "description": "错误。地址是 cell.address，type 返回 ValueType 枚举。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：使用流式 WorkbookWriter 时，构造选项里的 useSharedStrings: true 主要带来什么影响？",
+    "explanation": "`useSharedStrings: true` 让重复的字符串走 Excel 的**共享字符串表**（shared strings），相同文本只存一份、用索引引用，能**减小文件体积**（尤其大量重复文本时）；代价是写入时要维护字符串表、略增内存/CPU。`useStyles: true` 则是让流式写入也输出样式。\n\n- 「重复字符串去重以减小文件体积」正确。\n- 「加密字符串」错误。\n- 「把数字也转成共享字符串」错误：只针对字符串。\n- 「关闭样式输出」错误：那是 useStyles 的反面，与 sharedStrings 无关。",
+    "tags": ["exceljs", "专家", "流式", "useSharedStrings", "优化"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "重复字符串走共享字符串表去重，相同文本只存一份，减小文件体积",
+        "isCorrect": true,
+        "description": "正确。sharedStrings 让重复文本以索引复用，文件更小，代价是维护字符串表。"
+      },
+      {
+        "text": "对所有字符串内容进行加密",
+        "isCorrect": false,
+        "description": "错误。共享字符串是去重机制，与加密无关。"
+      },
+      {
+        "text": "把数字单元格也转成共享字符串存储",
+        "isCorrect": false,
+        "description": "错误。共享字符串只作用于字符串，不影响数字存储。"
+      },
+      {
+        "text": "关闭工作簿的样式输出",
+        "isCorrect": false,
+        "description": "错误。样式输出由 useStyles 控制，与 useSharedStrings 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要在第 3 行之前插入一行新数据，应使用哪个方法？",
+    "explanation": "插入行用 `worksheet.insertRow(pos, value, style?)`，pos 是 1 基目标位置，原该位置及之后的行整体下移。第三个 style 参数控制新行样式继承：`'i'` 继承上一行、`'o'` 用原位置样式、`'n'`（默认）不继承。批量插入用 `insertRows`。\n\n- `worksheet.insertRow(3, [...])` 正确。\n- `addRow` 只能在末尾追加，不能插队。\n- `worksheet.rows.splice(...)` 不是公开 API。\n- `worksheet.insertAt(3, ...)` 不存在。",
+    "tags": ["exceljs", "中级", "insertRow", "插入行"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.insertRow(3, [值1, 值2, 值3])",
+        "isCorrect": true,
+        "description": "正确。insertRow(pos, value, style?) 在指定位置插入并下移后续行。"
+      },
+      {
+        "text": "worksheet.addRow([值1, 值2, 值3])",
+        "isCorrect": false,
+        "description": "错误。addRow 只在末尾追加，无法插到第 3 行前。"
+      },
+      {
+        "text": "worksheet.rows.splice(2, 0, [...])",
+        "isCorrect": false,
+        "description": "错误。rows 不是可直接 splice 的公开数组，插入用 insertRow。"
+      },
+      {
+        "text": "worksheet.insertAt(3, [...])",
+        "isCorrect": false,
+        "description": "错误。没有 insertAt 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要删除工作表里第 4 起的 3 行（剪掉 4、5、6 行），应使用哪个方法？",
+    "explanation": "删除/剪切行用 `worksheet.spliceRows(start, count)`，语义类似数组 splice：`spliceRows(4, 3)` 删掉从第 4 行起的 3 行，后续行上移。它还能在删除处插入新行：`spliceRows(start, count, ...newRows)`。\n\n- `worksheet.spliceRows(4, 3)` 正确。\n- `worksheet.removeRows(4, 3)` 不是该库方法名。\n- `worksheet.deleteRow(4, 3)` 不存在。\n- `row.delete()` 单行删除 API 不存在（应用 spliceRows）。",
+    "tags": ["exceljs", "高级", "spliceRows", "删除行"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.spliceRows(4, 3)",
+        "isCorrect": true,
+        "description": "正确。spliceRows(start, count) 删除若干行，还可在删除处插入新行。"
+      },
+      {
+        "text": "worksheet.removeRows(4, 3)",
+        "isCorrect": false,
+        "description": "错误。没有 removeRows，删除行用 spliceRows。"
+      },
+      {
+        "text": "worksheet.deleteRow(4, 3)",
+        "isCorrect": false,
+        "description": "错误。没有 deleteRow 方法。"
+      },
+      {
+        "text": "worksheet.getRow(4).delete()",
+        "isCorrect": false,
+        "description": "错误。Row 上没有 delete 方法，删除用 worksheet.spliceRows。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给工作表读写 CSV 文件，正确的命名空间是哪个？",
+    "explanation": "CSV 读写挂在 `workbook.csv` 命名空间（与 `workbook.xlsx` 平行）：`workbook.csv.writeFile(filename, options?)`、`workbook.csv.readFile(filename, options?)`。options 可配 `dateFormats`、`map`、`parserOptions`/`formatterOptions`（底层是 fast-csv）等。\n\n- `workbook.csv.writeFile / readFile` 正确。\n- `workbook.xlsx.writeCsv(...)` 不存在。\n- `ExcelJS.csv.write(...)` 静态写法不对。\n- `workbook.exportCsv(...)` 不是该 API。",
+    "tags": ["exceljs", "中级", "CSV", "csv命名空间"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "workbook.csv.writeFile(filename) / workbook.csv.readFile(filename)",
+        "isCorrect": true,
+        "description": "正确。CSV 读写在 workbook.csv 命名空间，options 透传给底层 fast-csv。"
+      },
+      {
+        "text": "workbook.xlsx.writeCsv(filename)",
+        "isCorrect": false,
+        "description": "错误。CSV 不在 xlsx 命名空间下，应用 workbook.csv。"
+      },
+      {
+        "text": "ExcelJS.csv.write(workbook, filename)",
+        "isCorrect": false,
+        "description": "错误。没有这样的静态方法。"
+      },
+      {
+        "text": "workbook.exportCsv(filename)",
+        "isCorrect": false,
+        "description": "错误。没有 exportCsv，应用 workbook.csv.writeFile。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：把单元格设为「锁定」以配合工作表保护（保护后该格不可编辑），应设置哪个属性？",
+    "explanation": "单元格保护用 `cell.protection = { locked: true, hidden: false }`（locked 表示锁定、hidden 表示隐藏公式）。但**只有在调用了工作表保护**（`await worksheet.protect(password, options)`）之后，locked 才真正生效——单纯设 locked 而不保护工作表，编辑仍不受限。\n\n- 「cell.protection.locked，且需 worksheet.protect 才生效」正确。\n- 「cell.locked = true」扁平属性不存在。\n- 「设 locked 即立刻禁止编辑」错误：需先保护工作表。\n- 「protection 在 workbook 级」错误：locked 在 cell 级。",
+    "tags": ["exceljs", "专家", "protection", "保护", "locked"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "cell.protection = { locked: true }，并需调用 worksheet.protect(...) 后才真正生效",
+        "isCorrect": true,
+        "description": "正确。locked 仅在工作表被 protect 后才约束编辑，二者需配合。"
+      },
+      {
+        "text": "cell.locked = true",
+        "isCorrect": false,
+        "description": "错误。没有 cell.locked 扁平属性，应用 cell.protection.locked。"
+      },
+      {
+        "text": "只要设了 cell.protection.locked，单元格立刻不可编辑",
+        "isCorrect": false,
+        "description": "错误。还必须 worksheet.protect 才会生效。"
+      },
+      {
+        "text": "locked 是 workbook 级属性，对整个工作簿生效",
+        "isCorrect": false,
+        "description": "错误。locked 是单元格级 protection 属性。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：在已知列 key 的前提下，下面哪种取列方式是错误的？",
+    "explanation": "`worksheet.getColumn(...)` 接受三种标识：**列 key**（如 `'id'`，前提是 columns 定义了 key）、**列字母**（如 `'B'`）、**1 基列号**（如 `3`）。不接受「0 基下标」这种约定——列号从 1 开始（A=1），传 0 不是有效列。\n\n- 「getColumn(0) 按 0 基下标」是错误用法（这是本题要选的「错误项」）。\n- getColumn('id') 按 key 正确。\n- getColumn('B') 按字母正确。\n- getColumn(3) 按 1 基列号正确。",
+    "tags": ["exceljs", "中级", "getColumn", "列标识", "易错"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.getColumn(0)（把 0 当作第一列的下标）",
+        "isCorrect": true,
+        "description": "正确（这是本题要选出的错误用法）。列号是 1 基（A=1），传 0 不是有效列。"
+      },
+      {
+        "text": "worksheet.getColumn('id')（按列 key）",
+        "isCorrect": false,
+        "description": "这是合法用法：columns 定义了 key 后可按 key 取列。"
+      },
+      {
+        "text": "worksheet.getColumn('B')（按列字母）",
+        "isCorrect": false,
+        "description": "这是合法用法：可用列字母标识列。"
+      },
+      {
+        "text": "worksheet.getColumn(3)（按 1 基列号）",
+        "isCorrect": false,
+        "description": "这是合法用法：列号从 1 开始，3 即第三列。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：设置工作簿的作者、创建时间等元数据，正确做法是哪个？",
+    "explanation": "工作簿元数据直接挂在 workbook 实例上：`workbook.creator = 'Me'`、`workbook.lastModifiedBy = '...'`、`workbook.created = new Date(...)`、`workbook.modified = new Date()`、`workbook.lastPrinted = ...`，另有 `workbook.properties.date1904`（日期基准）。\n\n- 直接 `workbook.creator = 'Me'` 等正确。\n- `workbook.setMetadata({...})` 不是 API。\n- `workbook.meta.creator = ...` 字段路径不对。\n- `workbook.info.author = ...` 不存在。",
+    "tags": ["exceljs", "初级", "元数据", "Workbook属性"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "workbook.creator = 'Me'; workbook.created = new Date(); workbook.lastModifiedBy = 'Her';",
+        "isCorrect": true,
+        "description": "正确。元数据是 workbook 实例的直接属性，赋值即可。"
+      },
+      {
+        "text": "workbook.setMetadata({ creator: 'Me' })",
+        "isCorrect": false,
+        "description": "错误。没有 setMetadata 方法。"
+      },
+      {
+        "text": "workbook.meta.creator = 'Me'",
+        "isCorrect": false,
+        "description": "错误。没有 workbook.meta，应直接用 workbook.creator。"
+      },
+      {
+        "text": "workbook.info.author = 'Me'",
+        "isCorrect": false,
+        "description": "错误。没有 workbook.info.author 这个路径。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：给单元格设置渐变填充（角度渐变，从蓝到白再到蓝），下面哪个 fill 结构正确？",
+    "explanation": "渐变填充用 `type: 'gradient'`，角度渐变设 `gradient: 'angle'` + `degree`（0 为从左到右，顺时针）+ `stops` 数组（每项 `{ position, color }`，position 为 0~1 的位置）。路径渐变则用 `gradient: 'path'` + `center`。\n\n- `{ type: 'gradient', gradient: 'angle', degree: 0, stops: [...] }` 正确。\n- `{ type: 'pattern', pattern: 'gradient' }` 结构错误（gradient 不是 pattern 取值）。\n- 用 `colors: [...]` 而非 stops 不对。\n- `type: 'linearGradient'` 不是合法取值。",
+    "tags": ["exceljs", "高级", "fill", "渐变", "gradient"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "{ type: 'gradient', gradient: 'angle', degree: 0, stops: [{ position: 0, color: { argb: 'FF0000FF' } }, { position: 1, color: { argb: 'FF0000FF' } }] }",
+        "isCorrect": true,
+        "description": "正确。角度渐变用 type 'gradient' + gradient 'angle' + degree + stops(position/color)。"
+      },
+      {
+        "text": "{ type: 'pattern', pattern: 'gradient', stops: [...] }",
+        "isCorrect": false,
+        "description": "错误。gradient 不是 pattern 的取值，渐变 type 应为 'gradient'。"
+      },
+      {
+        "text": "{ type: 'gradient', gradient: 'angle', degree: 0, colors: ['#00F', '#FFF'] }",
+        "isCorrect": false,
+        "description": "错误。渐变用 stops 数组（position+color 对象），不是 colors。"
+      },
+      {
+        "text": "{ type: 'linearGradient', stops: [...] }",
+        "isCorrect": false,
+        "description": "错误。type 取值是 'gradient'，没有 'linearGradient'。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：load 一个超大、含大量数据校验的 xlsx 时想加速解析，可用哪个 load 选项跳过某些节点？",
+    "explanation": "`workbook.xlsx.load(data, { ignoreNodes: ['dataValidations'] })` 可在解析时**跳过指定的 XML 节点**（如 dataValidations、hyperlinks 等），减少解析开销与内存——适合只关心数据、不需要这些元素的批量读取场景。\n\n- `{ ignoreNodes: ['dataValidations'] }` 正确。\n- `{ skip: ['validations'] }` 字段名不对。\n- `{ lazy: true }` 不是 load 选项。\n- `{ partial: true }` 不存在。",
+    "tags": ["exceljs", "专家", "load", "ignoreNodes", "性能"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "await workbook.xlsx.load(data, { ignoreNodes: ['dataValidations'] })",
+        "isCorrect": true,
+        "description": "正确。ignoreNodes 让解析跳过指定 XML 节点，降低开销。"
+      },
+      {
+        "text": "await workbook.xlsx.load(data, { skip: ['validations'] })",
+        "isCorrect": false,
+        "description": "错误。选项名是 ignoreNodes，值是 XML 节点名数组。"
+      },
+      {
+        "text": "await workbook.xlsx.load(data, { lazy: true })",
+        "isCorrect": false,
+        "description": "错误。没有 lazy 这个 load 选项。"
+      },
+      {
+        "text": "await workbook.xlsx.load(data, { partial: true })",
+        "isCorrect": false,
+        "description": "错误。没有 partial 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要给新建工作表设置红色标签颜色，下面哪个 addWorksheet 写法正确？",
+    "explanation": "标签颜色在 `addWorksheet` 第二参的 `properties.tabColor` 里设：`workbook.addWorksheet('表', { properties: { tabColor: { argb: 'FFC00000' } } })`。也可建表后改 `worksheet.properties.tabColor = {...}`。颜色同样用 ARGB 对象。\n\n- `{ properties: { tabColor: { argb: '...' } } }` 正确。\n- `{ tabColor: '...' }`（顶层 + 字符串）结构与类型都不对。\n- `worksheet.color = 'red'` 不存在。\n- `{ properties: { color: {...} } }` 字段名应为 tabColor。",
+    "tags": ["exceljs", "中级", "addWorksheet", "tabColor", "properties"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "workbook.addWorksheet('表', { properties: { tabColor: { argb: 'FFC00000' } } })",
+        "isCorrect": true,
+        "description": "正确。标签色在 properties.tabColor，用 ARGB 对象。"
+      },
+      {
+        "text": "workbook.addWorksheet('表', { tabColor: 'red' })",
+        "isCorrect": false,
+        "description": "错误。tabColor 要放进 properties 里，且用 { argb } 对象。"
+      },
+      {
+        "text": "const ws = workbook.addWorksheet('表'); ws.color = 'red';",
+        "isCorrect": false,
+        "description": "错误。没有 ws.color，标签色是 ws.properties.tabColor。"
+      },
+      {
+        "text": "workbook.addWorksheet('表', { properties: { color: { argb: 'FFC00000' } } })",
+        "isCorrect": false,
+        "description": "错误。字段名是 tabColor，不是 color。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：把一个单元格的文字方向设为竖排（文字从上往下排），alignment 里应怎么写？",
+    "explanation": "竖排文字用 `alignment.textRotation = 'vertical'`（特殊取值）。textRotation 还接受 `0`~`90`（向上旋转的角度）、`-1`~`-90`（向下旋转）。注意它是 alignment 的字段，不是独立属性。\n\n- `{ textRotation: 'vertical' }` 正确。\n- `{ textRotation: 90 }` 是旋转 90 度，并非「竖排」那种字符堆叠的特殊排版。\n- `{ vertical: 'text' }` 取值不对。\n- `cell.textDirection = 'vertical'` 属性不存在。",
+    "tags": ["exceljs", "高级", "alignment", "textRotation", "竖排"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cell.alignment = { textRotation: 'vertical' }",
+        "isCorrect": true,
+        "description": "正确。'vertical' 是 textRotation 的特殊取值，表示竖排字符堆叠。"
+      },
+      {
+        "text": "cell.alignment = { textRotation: 90 }",
+        "isCorrect": false,
+        "description": "错误。90 是旋转 90 度，与竖排字符堆叠的 'vertical' 不同。"
+      },
+      {
+        "text": "cell.alignment = { vertical: 'text' }",
+        "isCorrect": false,
+        "description": "错误。vertical 取 top/middle/bottom 等，没有 'text'。"
+      },
+      {
+        "text": "cell.textDirection = 'vertical'",
+        "isCorrect": false,
+        "description": "错误。没有 textDirection 属性，竖排用 alignment.textRotation。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：addRow 的第二个 style 参数传 'i' 表示什么？",
+    "explanation": "`addRow(value, style)` 的 style 参数控制新行的样式继承：`'i'` 表示**继承上一行**的样式（inherit）；`'i+'` 连空单元格也继承；`'n'`（默认）不继承。insertRow 还支持 `'o'`/`'o+'`（用原位置样式）。这让批量加行时能延续上一行的格式而不必逐格重设。\n\n- 「继承上一行样式」正确。\n- 「忽略样式（none）」是 'n' 的含义。\n- 「插入到行首」错误：style 参数与位置无关。\n- 「斜体 italic」错误：与字体无关。",
+    "tags": ["exceljs", "高级", "addRow", "style参数", "样式继承"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "新行继承上一行（above）的样式",
+        "isCorrect": true,
+        "description": "正确。'i' = inherit，沿用上一行样式；'i+' 连空单元格也继承。"
+      },
+      {
+        "text": "新行不继承任何样式",
+        "isCorrect": false,
+        "description": "错误。不继承是默认值 'n'，不是 'i'。"
+      },
+      {
+        "text": "把新行插入到表格最前面",
+        "isCorrect": false,
+        "description": "错误。style 参数只管样式继承，与插入位置无关。"
+      },
+      {
+        "text": "把新行文字设为斜体",
+        "isCorrect": false,
+        "description": "错误。'i' 指 inherit 样式，与斜体（italic）无关。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：下面关于 ExcelJS 能力边界的说法，哪个是正确的？",
+    "explanation": "ExcelJS 擅长读写 xlsx 的数据、样式、公式、图片、条件格式、数据校验，并能流式处理大文件；但它**不是计算引擎**——写入公式时不会真正求值（需自带 result 缓存或用 Excel 打开计算），也**不渲染** UI、不直接生成 .xls(旧二进制)/.numbers 等格式。\n\n- 「能写公式但不自动求值，需缓存 result 或用 Excel 计算」正确。\n- 「内置完整公式计算引擎，写公式即得结果」错误。\n- 「能直接把工作簿渲染成网页表格」错误：不渲染 UI。\n- 「原生支持读写 .numbers 文件」错误。",
+    "tags": ["exceljs", "高级", "能力边界", "公式", "选型"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它能写入公式但不会自动求值，需要时自带 result 缓存或交给 Excel 计算",
+        "isCorrect": true,
+        "description": "正确。ExcelJS 非计算引擎，公式结果靠缓存 result 或打开 Excel 后重算。"
+      },
+      {
+        "text": "它内置完整公式计算引擎，写下公式即可得到计算结果",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 不内置求值引擎，不会主动计算公式结果。"
+      },
+      {
+        "text": "它能直接把工作簿渲染成 HTML 表格界面",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 只处理文件读写，不负责 UI 渲染。"
+      },
+      {
+        "text": "它原生支持读写苹果 .numbers 文件",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 聚焦 xlsx / csv，不支持 .numbers。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：用 worksheet.columns = [...] 赋值后，关于第一行（表头）的说法哪个正确？",
+    "explanation": "给 `worksheet.columns` 赋值时，每个列对象的 `header` 会**自动写入第一行**形成表头（多行表头可把 header 设为字符串数组）。因此之后 `addRow` 添加的数据会从第二行开始。这点常让人困惑——明明只设了 columns 却发现首行已有表头文字。\n\n- 「header 自动占据第一行作为表头」正确。\n- 「columns 只设宽度不写表头」错误：header 会落到首行。\n- 「需手动再 addRow 表头」错误：header 已自动写入。\n- 「表头写在最后一行」错误。",
+    "tags": ["exceljs", "中级", "columns", "header", "表头"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "各列的 header 会自动写入第一行形成表头，addRow 的数据从第二行起",
+        "isCorrect": true,
+        "description": "正确。columns 的 header 自动占首行；多行表头可把 header 设为字符串数组。"
+      },
+      {
+        "text": "columns 只设置列宽，不会写入任何表头文字",
+        "isCorrect": false,
+        "description": "错误。header 字段会自动写入第一行。"
+      },
+      {
+        "text": "必须额外手动 addRow 一行才能得到表头",
+        "isCorrect": false,
+        "description": "错误。设了 header 后表头已自动出现在首行。"
+      },
+      {
+        "text": "header 文字会写到工作表的最后一行",
+        "isCorrect": false,
+        "description": "错误。header 在第一行，不是最后一行。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：关于在浏览器中使用 ExcelJS，下面哪个说法正确？",
+    "explanation": "ExcelJS 提供浏览器构建（`dist/exceljs.min.js`），可在前端读取上传文件（`load(arrayBuffer)`）并导出下载（`writeBuffer` → Blob）。但浏览器**没有文件系统访问**，所以 `readFile`/`writeFile` 不可用；CSV 的某些 Node 流式 API 也受限。核心样式/读写能力在浏览器同样可用。\n\n- 「浏览器可用 load/writeBuffer，但 readFile/writeFile 不可用」正确。\n- 「ExcelJS 只能在 Node 用」错误：它有浏览器构建。\n- 「浏览器里也能 writeFile 落盘」错误：无文件系统权限。\n- 「浏览器里不支持样式」错误：样式能力一致。",
+    "tags": ["exceljs", "中级", "浏览器", "能力", "writeBuffer"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器可用 load(arrayBuffer) 读、writeBuffer + Blob 写下载，但 readFile/writeFile 不可用",
+        "isCorrect": true,
+        "description": "正确。浏览器无文件系统，用 load/writeBuffer 替代 readFile/writeFile，样式能力一致。"
+      },
+      {
+        "text": "ExcelJS 只能运行在 Node.js，无法在浏览器使用",
+        "isCorrect": false,
+        "description": "错误。它提供 dist/exceljs.min.js 浏览器构建。"
+      },
+      {
+        "text": "在浏览器里也能用 writeFile 直接把文件存到磁盘",
+        "isCorrect": false,
+        "description": "错误。浏览器无文件系统写权限，需 writeBuffer → Blob 下载。"
+      },
+      {
+        "text": "在浏览器里 ExcelJS 不支持任何样式设置",
+        "isCorrect": false,
+        "description": "错误。样式（font/fill/border 等）在浏览器同样支持。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：要让冻结首行后表头始终可见、且只冻结这一行（不冻结任何列），views 应怎么配？",
+    "explanation": "只冻结首行：`views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }]`——`ySplit: 1` 冻结 1 行、`xSplit: 0` 不冻结列。反之只冻首列是 `xSplit: 1, ySplit: 0`。这是做「表头固定」最常用的配置。\n\n- `{ state: 'frozen', xSplit: 0, ySplit: 1 }` 正确。\n- `{ xSplit: 1, ySplit: 0 }` 冻的是首列不是首行。\n- `{ state: 'frozen', ySplit: 'header' }` 取值非法。\n- `worksheet.freezeFirstRow()` 不存在。",
+    "tags": ["exceljs", "高级", "views", "冻结首行", "xSplit"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]",
+        "isCorrect": true,
+        "description": "正确。ySplit:1 冻结首行、xSplit:0 不冻列，即表头固定。"
+      },
+      {
+        "text": "worksheet.views = [{ state: 'frozen', xSplit: 1, ySplit: 0 }]",
+        "isCorrect": false,
+        "description": "错误。这冻结的是首列（xSplit:1），不是首行。"
+      },
+      {
+        "text": "worksheet.views = [{ state: 'frozen', ySplit: 'header' }]",
+        "isCorrect": false,
+        "description": "错误。ySplit 是数字（冻结行数），没有 'header' 取值。"
+      },
+      {
+        "text": "worksheet.freezeFirstRow()",
+        "isCorrect": false,
+        "description": "错误。没有 freezeFirstRow 方法，冻结通过 views 配置。"
+      }
+    ]
+  },
+  {
+    "stem": "ExcelJS：批量给同一种样式应用到很多单元格，为避免「改一处全变」的引用陷阱，最稳妥的做法是什么？",
+    "explanation": "由于样式按引用共享，若把**同一个**对象赋给多格，后续改它会全体连动。稳妥做法：每次赋值用**新对象**（或对共享对象做克隆，如展开 `{ ...base }` / 深拷贝）。若确实想「一改全改」，才有意复用同一引用。理解「何时复用、何时克隆」是高级用法关键。\n\n- 「每格赋新对象 / 克隆后赋值」正确。\n- 「赋同一个对象最省事且无副作用」错误：会连动。\n- 「赋值后冻结对象即可」错误：冻结不解决共享，只是禁改。\n- 「ExcelJS 会自动隔离」错误。",
+    "tags": ["exceljs", "专家", "样式", "克隆", "引用陷阱"],
+    "categories": [
+      ["技术方向", "ExcelJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "每个单元格赋一份新的样式对象（或克隆基础样式后再赋），需要联动时才有意复用同一引用",
+        "isCorrect": true,
+        "description": "正确。新对象/克隆避免引用连动；想一改全改时才复用同一引用。"
+      },
+      {
+        "text": "给所有单元格赋同一个样式对象最省事，且没有任何副作用",
+        "isCorrect": false,
+        "description": "错误。共享同一引用时，改一处会连动所有引用它的单元格。"
+      },
+      {
+        "text": "赋值后调用 Object.freeze 冻结样式对象即可避免连动",
+        "isCorrect": false,
+        "description": "错误。冻结只是禁止修改，不改变多格共享同一引用的事实。"
+      },
+      {
+        "text": "ExcelJS 会在赋值时自动隔离每个单元格的样式",
+        "isCorrect": false,
+        "description": "错误。ExcelJS 不自动深拷贝，需自行克隆。"
+      }
+    ]
+  }
+]
