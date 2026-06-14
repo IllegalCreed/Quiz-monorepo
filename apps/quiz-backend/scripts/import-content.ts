@@ -303,10 +303,19 @@ async function main() {
   const categoryIndex = await importCategories();
 
   // 2. 扫描 content/ 目录下所有 .json 文件（题目数据）
-  const jsonFiles = fs
+  // 可选：命令行传入库名（basename，不含 .json）则只导这些库，跳过全目录扫描
+  // —— 大幅加速 + 减少远程 RDS 连接压力（避免连接池超时）。例：import:content:prod -- axios zod
+  const onlyTechs = process.argv.slice(2).filter((a) => !a.startsWith("-"));
+  let jsonFiles = fs
     .readdirSync(contentDir)
     .filter((f) => f.endsWith(".json"))
     .map((f) => path.join(contentDir, f));
+  if (onlyTechs.length > 0) {
+    jsonFiles = jsonFiles.filter((p) =>
+      onlyTechs.includes(path.basename(p, ".json")),
+    );
+    log(`仅导入指定库（${jsonFiles.length}）: ${onlyTechs.join(", ")}`);
+  }
 
   if (jsonFiles.length === 0) {
     log("content/ 目录下没有题目 JSON 文件，跳过题目导入");
