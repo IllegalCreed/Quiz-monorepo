@@ -302,6 +302,14 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "SheetJS", sort: 1 },
               { name: "ExcelJS", sort: 2 },
+              { name: "docx", sort: 3 },
+              { name: "mammoth", sort: 4 },
+              { name: "docxtemplater", sort: 5 },
+              { name: "docx-editor", sort: 6 },
+              { name: "PDF.js", sort: 7 },
+              { name: "jsPDF", sort: 8 },
+              { name: "pdf-lib", sort: 9 },
+              { name: "pptxgenjs", sort: 10 },
             ],
           },
           {

@@ -1,0 +1,1676 @@
+[
+  {
+    "stem": "mammoth：mammoth.js 的核心设计哲学是什么？",
+    "explanation": "mammoth 的官方定位是把 .docx 转成「clean and simple HTML」。它的核心理念是**按文档里的语义样式（style name，如 “Heading 1”）做映射**，而不是照搬 Word 里的直接格式（字号、颜色、缩进）。所以它的目标是产出干净、语义化的 HTML，而非像素级还原原文档外观——后者是 docx-preview 这类保真渲染库的领域。\n\n- 「按语义样式映射、产出干净 HTML」正确。\n- 「像素级还原 Word 排版」错误，那是保真渲染（docx-preview）的目标。\n- 「把 docx 转成 PDF」错误，mammoth 不做 PDF。\n- 「在线编辑 Word 文档」错误，mammoth 只做单向转换。",
+    "tags": ["mammoth", "入门", "文档处理", "定位", "核心概念"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "按文档的语义样式（如 Heading 1）映射成干净、语义化的 HTML，而非还原外观",
+        "isCorrect": true,
+        "description": "正确。官方定位是产出 clean and simple HTML，依据 style name 映射，不照搬直接格式。"
+      },
+      {
+        "text": "像素级还原 Word 的字体、颜色、缩进等排版外观",
+        "isCorrect": false,
+        "description": "错误。像素级保真是 docx-preview 等渲染库的目标，mammoth 反而刻意忽略直接格式。"
+      },
+      {
+        "text": "把 .docx 直接转换成 PDF 文件",
+        "isCorrect": false,
+        "description": "错误。mammoth 输出 HTML/Markdown，不生成 PDF。"
+      },
+      {
+        "text": "提供一个在线 Word 文档编辑器",
+        "isCorrect": false,
+        "description": "错误。mammoth 是单向的 docx → HTML 转换器，不做编辑。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：把一个 .docx 转成 HTML 字符串，应调用哪个函数？",
+    "explanation": "`mammoth.convertToHtml(input, options)` 是把 .docx 转成 HTML 的主函数，返回一个 Promise，解析出 `{ value, messages }`，其中 `value` 是生成的 HTML。`extractRawText` 只抽纯文本（丢弃所有格式），`convertToMarkdown` 输出 Markdown（已不推荐），`embedStyleMap` 是把样式映射嵌入 docx。\n\n- `convertToHtml` 正确。\n- `extractRawText` 是抽纯文本。\n- `convertToMarkdown` 输出 Markdown。\n- `renderToHtml` 不是 mammoth 的 API。",
+    "tags": ["mammoth", "入门", "文档处理", "convertToHtml", "API"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "mammoth.convertToHtml(input, options)",
+        "isCorrect": true,
+        "description": "正确。convertToHtml 是 docx → HTML 的主函数，返回 Promise<{ value, messages }>。"
+      },
+      {
+        "text": "mammoth.extractRawText(input)",
+        "isCorrect": false,
+        "description": "错误。extractRawText 只抽取纯文本，丢弃所有格式与结构。"
+      },
+      {
+        "text": "mammoth.convertToMarkdown(input)",
+        "isCorrect": false,
+        "description": "错误。它输出 Markdown，且官方已标记为 deprecated。"
+      },
+      {
+        "text": "mammoth.renderToHtml(input)",
+        "isCorrect": false,
+        "description": "错误。mammoth 没有 renderToHtml 这个函数。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：convertToHtml 返回的 Promise 解析出的结果对象，结构是怎样的？",
+    "explanation": "mammoth 的转换函数都返回一个统一的 result 对象：`{ value, messages }`。`value` 是生成的字符串（HTML 或纯文本），`messages` 是一个数组，包含转换过程中产生的 warning / error 信息（如「未识别的样式」）。这是 mammoth 一以贯之的返回形态。\n\n- `{ value, messages }` 正确。\n- 「直接返回 HTML 字符串」错误，外面还包了一层对象且是 Promise。\n- `{ html, errors }` 字段名错误。\n- `{ data, status }` 不是 mammoth 的结构。",
+    "tags": ["mammoth", "入门", "文档处理", "result", "messages"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "{ value, messages }，value 是结果字符串，messages 是警告/错误数组",
+        "isCorrect": true,
+        "description": "正确。所有转换函数都返回 Promise<{ value, messages }>。"
+      },
+      {
+        "text": "直接返回 HTML 字符串",
+        "isCorrect": false,
+        "description": "错误。它返回的是 Promise，解析出的是包含 value/messages 的对象。"
+      },
+      {
+        "text": "{ html, errors }",
+        "isCorrect": false,
+        "description": "错误。字段名是 value 和 messages，不是 html/errors。"
+      },
+      {
+        "text": "{ data, status }",
+        "isCorrect": false,
+        "description": "错误。这不是 mammoth 的返回结构。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在 Node.js 中，从磁盘读取一个 .docx 文件转换，input 应该怎么写？",
+    "explanation": "在 Node.js 里，mammoth 接受 `{ path: \"...\" }`（文件路径）或 `{ buffer: nodeBuffer }`（Node Buffer）两种输入。`{ path }` 是最直接的从磁盘读取方式。`{ arrayBuffer }` 是**浏览器**端的输入形态（Node 端用 buffer 而非 arrayBuffer）。\n\n- `{ path: 'doc.docx' }` 正确。\n- `{ file: 'doc.docx' }` 字段名错误。\n- `{ arrayBuffer }` 是浏览器端用法。\n- 直接传字符串路径错误，必须包成对象。",
+    "tags": ["mammoth", "入门", "文档处理", "input", "Node"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "mammoth.convertToHtml({ path: 'doc.docx' })",
+        "isCorrect": true,
+        "description": "正确。Node 端用 { path } 直接读磁盘，或用 { buffer }。"
+      },
+      {
+        "text": "mammoth.convertToHtml({ file: 'doc.docx' })",
+        "isCorrect": false,
+        "description": "错误。字段名是 path 不是 file。"
+      },
+      {
+        "text": "mammoth.convertToHtml({ arrayBuffer })",
+        "isCorrect": false,
+        "description": "错误。arrayBuffer 是浏览器端输入；Node 端用 path 或 buffer。"
+      },
+      {
+        "text": "mammoth.convertToHtml('doc.docx')",
+        "isCorrect": false,
+        "description": "错误。input 必须是对象，不能直接传路径字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在浏览器里转换用户上传的 .docx（一个 File 对象），input 应该传什么？",
+    "explanation": "浏览器没有文件系统，也没有 Node Buffer，所以 mammoth 浏览器版接受的输入是 `{ arrayBuffer }`。典型写法是先把 File 转成 ArrayBuffer：`mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() })`。注意浏览器要引入 `mammoth/mammoth.browser` 这个构建。\n\n- `{ arrayBuffer: await file.arrayBuffer() }` 正确。\n- `{ path }` 是 Node 端用法，浏览器没有文件路径。\n- `{ buffer }` 是 Node Buffer，浏览器没有。\n- 直接传 File 对象错误，需先转成 ArrayBuffer。",
+    "tags": ["mammoth", "初级", "文档处理", "浏览器", "arrayBuffer"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "{ arrayBuffer: await file.arrayBuffer() }",
+        "isCorrect": true,
+        "description": "正确。浏览器端用 arrayBuffer 输入，先把 File 转成 ArrayBuffer。"
+      },
+      {
+        "text": "{ path: file.name }",
+        "isCorrect": false,
+        "description": "错误。浏览器没有文件系统，path 仅 Node 可用。"
+      },
+      {
+        "text": "{ buffer: file }",
+        "isCorrect": false,
+        "description": "错误。buffer 指 Node Buffer，浏览器环境没有。"
+      },
+      {
+        "text": "直接把 File 对象传进去",
+        "isCorrect": false,
+        "description": "错误。需先 file.arrayBuffer() 拿到 ArrayBuffer，再包成 { arrayBuffer }。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在浏览器中使用 mammoth，应该引入哪个构建？",
+    "explanation": "mammoth 同时支持 Node 和浏览器，但两者是不同的构建。浏览器端要引入 `require(\"mammoth/mammoth.browser\")`（或用打包好的 `mammoth.browser.min.js`，会把 `mammoth` 挂到 window 全局）。Node 端才是默认的 `require(\"mammoth\")`。浏览器构建不含 Node 的文件系统/Buffer 依赖。\n\n- `mammoth/mammoth.browser` 正确。\n- 默认 `mammoth` 入口是 Node 版（依赖 fs 等）。\n- `mammoth/dist/web` 不是它的路径约定。\n- `@mammoth/browser` 不是它的包名。",
+    "tags": ["mammoth", "初级", "文档处理", "浏览器", "构建"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "require(\"mammoth/mammoth.browser\")（或打包好的 mammoth.browser.min.js）",
+        "isCorrect": true,
+        "description": "正确。浏览器端用 mammoth.browser 构建，不带 Node 的 fs/Buffer 依赖。"
+      },
+      {
+        "text": "require(\"mammoth\") 默认入口在浏览器里直接可用",
+        "isCorrect": false,
+        "description": "错误。默认入口是 Node 版，依赖文件系统；浏览器要用 mammoth.browser。"
+      },
+      {
+        "text": "require(\"mammoth/dist/web\")",
+        "isCorrect": false,
+        "description": "错误。这不是 mammoth 的入口路径约定。"
+      },
+      {
+        "text": "import { browser } from \"@mammoth/browser\"",
+        "isCorrect": false,
+        "description": "错误。npm 包名就是 mammoth，没有 @mammoth/browser 这个包。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，一个样式名为 “Heading 1” 的 Word 段落会被转成什么 HTML？",
+    "explanation": "mammoth 内置了一份默认样式映射（default style map）。其中 “Heading 1” 段落会映射成 `<h1>`、“Heading 2” → `<h2>`，依此类推到 h6。所以即使你不写任何 styleMap，常见的标题样式也能自动得到语义化的 `<h1>`~`<h6>`。\n\n- `<h1>` 正确。\n- `<p class=\"Heading1\">` 错误，mammoth 给的是语义化 h1 而非带 class 的 p。\n- `<div>` 错误。\n- 「保持原 Word 字号的内联样式」错误，mammoth 默认不输出直接格式。",
+    "tags": ["mammoth", "初级", "文档处理", "默认样式映射", "标题"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "<h1>（默认样式映射把 Heading 1~6 映射为 h1~h6）",
+        "isCorrect": true,
+        "description": "正确。内置默认 style map 已包含 Heading 1=>h1:fresh 等映射。"
+      },
+      {
+        "text": "<p class=\"Heading1\">",
+        "isCorrect": false,
+        "description": "错误。mammoth 输出语义化的 h1，而不是带 class 的段落。"
+      },
+      {
+        "text": "<div>",
+        "isCorrect": false,
+        "description": "错误。标题段落默认映射为 h1~h6，不是 div。"
+      },
+      {
+        "text": "带 font-size 内联样式的 <p>",
+        "isCorrect": false,
+        "description": "错误。mammoth 默认忽略直接格式（字号等），只按样式名映射。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：关于 mammoth 如何处理 Word 里的「直接格式」（手动设置的字号、字体颜色、行距等），下列说法正确的是？",
+    "explanation": "这是理解 mammoth 的关键：它**基本忽略文档里的直接（显式）格式**，只关注**样式名（style name）**。也就是说，你在 Word 里手动把一段文字调成 24px 红色，mammoth 不会照搬这些；但如果这段文字应用了名为 “Heading 1” 的样式，它就能据此映射成 `<h1>`。这正是 mammoth 产出「干净 HTML」的根本机制——倒逼作者用语义样式而非手动排版。\n\n- 「忽略直接格式，只按样式名映射」正确。\n- 「完整保留所有内联样式」错误，恰恰相反。\n- 「把字号转成 px 写进 style」错误。\n- 「直接格式优先于样式名」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "语义样式", "直接格式"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "基本忽略直接格式，只依据样式名（style name）来映射，从而产出干净语义 HTML",
+        "isCorrect": true,
+        "description": "正确。这是 mammoth 的核心机制：看样式名而非手动排版，倒逼语义化。"
+      },
+      {
+        "text": "完整保留 Word 里所有手动设置的字体、颜色、行距等内联样式",
+        "isCorrect": false,
+        "description": "错误。这与 mammoth 的设计相反，它刻意丢弃直接格式。"
+      },
+      {
+        "text": "把每段的字号都转成 px 写进 style 属性",
+        "isCorrect": false,
+        "description": "错误。mammoth 默认不输出字号等直接格式。"
+      },
+      {
+        "text": "直接格式的优先级高于样式名映射",
+        "isCorrect": false,
+        "description": "错误。mammoth 关注的是样式名，不是直接格式。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：styleMap 的一条规则 `p[style-name='Section Title'] => h1:fresh`，它的含义是？",
+    "explanation": "一条 style mapping 由「文档元素匹配器 => HTML 路径」组成。`p[style-name='Section Title']` 匹配**样式名为 “Section Title” 的段落**，`=>` 右侧 `h1:fresh` 表示生成一个 `<h1>`。这条规则把所有 “Section Title” 段落转成 h1。注意匹配的是 style **name**（Word 里显示的名字）而非 style **ID**。\n\n- 「样式名为 Section Title 的段落 → h1」正确。\n- 「class 为 Section Title 的元素」错误，方括号里是 style-name，不是 CSS class。\n- 「id 为 Section Title」错误。\n- 「文本内容等于 Section Title」错误，它匹配的是样式名。",
+    "tags": ["mammoth", "中级", "文档处理", "styleMap", "语法"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把样式名为 “Section Title” 的段落转换成 <h1> 元素",
+        "isCorrect": true,
+        "description": "正确。p 匹配段落，[style-name='...'] 按样式名匹配，=> h1 指定输出。"
+      },
+      {
+        "text": "把 CSS class 为 Section Title 的元素转成 h1",
+        "isCorrect": false,
+        "description": "错误。[style-name=...] 匹配的是 Word 样式名，不是 CSS class。"
+      },
+      {
+        "text": "把 id 为 Section Title 的元素转成 h1",
+        "isCorrect": false,
+        "description": "错误。匹配依据是样式名，与 HTML id 无关。"
+      },
+      {
+        "text": "把正文内容等于 “Section Title” 的段落转成 h1",
+        "isCorrect": false,
+        "description": "错误。它按段落应用的样式名匹配，而非段落文本内容。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：把自定义 styleMap 传给 convertToHtml 时，它与内置默认映射的关系是？",
+    "explanation": "默认情况下，自定义 styleMap 会与内置默认映射**合并**，且**用户定义的映射优先**（同一元素先匹配到用户规则）。如果想完全只用自己的映射、关闭所有内置默认规则，需要把 `includeDefaultStyleMap` 设为 `false`。\n\n- 「合并，用户映射优先；可用 includeDefaultStyleMap:false 关闭默认」正确。\n- 「自定义会完全覆盖并禁用默认」错误，默认仍生效除非显式关闭。\n- 「默认映射优先于自定义」错误，反了。\n- 「传 styleMap 后默认自动失效」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "styleMap", "includeDefaultStyleMap"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认会合并，且自定义映射优先；要关掉内置默认需设 includeDefaultStyleMap: false",
+        "isCorrect": true,
+        "description": "正确。用户映射优先匹配，默认映射仍兜底，除非显式 includeDefaultStyleMap:false。"
+      },
+      {
+        "text": "传入自定义 styleMap 会自动禁用全部内置默认映射",
+        "isCorrect": false,
+        "description": "错误。默认映射仍会作为兜底合并，除非设 includeDefaultStyleMap:false。"
+      },
+      {
+        "text": "内置默认映射的优先级高于自定义映射",
+        "isCorrect": false,
+        "description": "错误。用户定义的映射优先于默认映射。"
+      },
+      {
+        "text": "自定义和默认会冲突报错，必须二选一",
+        "isCorrect": false,
+        "description": "错误。两者合并，不会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：styleMap 里 HTML 路径上的 `:fresh` 修饰符（如 `h1:fresh`）解决的是什么问题？",
+    "explanation": "mammoth 生成 HTML 时，为了不产生冗余标签，**只在必要时才关闭一个元素**，否则会复用上一个。这意味着连续两个 “Heading 1” 段落若不加 `:fresh`，会被合并进**同一个** `<h1>`（中间用换行连接）。加上 `:fresh` 强制每个段落都生成**全新**的元素，这正是标题/段落几乎都要 `:fresh` 的原因。\n\n- 「强制为每个匹配段落生成新元素，避免被合并复用」正确。\n- 「让元素内容保持最新」错误，与「新鲜数据」无关。\n- 「清除元素的格式」错误。\n- 「刷新页面渲染」错误，这是构建期转换，无所谓刷新。",
+    "tags": ["mammoth", "高级", "文档处理", "styleMap", "fresh"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "强制为每个匹配的段落生成一个全新元素，避免相邻段落被复用合并进同一个标签",
+        "isCorrect": true,
+        "description": "正确。mammoth 默认尽量复用元素，:fresh 让每段都新开一个，常用于标题。"
+      },
+      {
+        "text": "让元素始终显示最新的数据内容",
+        "isCorrect": false,
+        "description": "错误。:fresh 与数据新鲜度无关，是控制元素是否复用。"
+      },
+      {
+        "text": "清除该元素上的所有格式",
+        "isCorrect": false,
+        "description": "错误。:fresh 不做格式清除。"
+      },
+      {
+        "text": "刷新浏览器渲染",
+        "isCorrect": false,
+        "description": "错误。这是转换阶段的规则，与浏览器刷新无关。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要让某种样式（如 “Comment”）的段落在输出 HTML 中被完全忽略/丢弃，styleMap 怎么写？",
+    "explanation": "在 style mapping 中，把右侧（HTML 路径）写成 `!` 即表示**忽略该元素**——它和它的内容都不会出现在输出里。例如 `p[style-name='Comment'] => !` 会丢弃所有 “Comment” 样式的段落。这与「映射成某个标签」相对。\n\n- `p[style-name='Comment'] => !` 正确。\n- `=> none` 错误，不是合法语法。\n- `=> hidden` 错误。\n- `=> display:none` 错误，styleMap 右侧是 HTML 路径不是 CSS。",
+    "tags": ["mammoth", "高级", "文档处理", "styleMap", "忽略元素"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "p[style-name='Comment'] => !",
+        "isCorrect": true,
+        "description": "正确。右侧写 ! 表示忽略该元素及其内容，不输出到 HTML。"
+      },
+      {
+        "text": "p[style-name='Comment'] => none",
+        "isCorrect": false,
+        "description": "错误。忽略用 !，none 不是合法的 HTML 路径。"
+      },
+      {
+        "text": "p[style-name='Comment'] => hidden",
+        "isCorrect": false,
+        "description": "错误。hidden 不是 mammoth 的忽略语法。"
+      },
+      {
+        "text": "p[style-name='Comment'] => display:none",
+        "isCorrect": false,
+        "description": "错误。=> 右侧是 HTML 路径不是 CSS 声明。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，Word 文档里的「下划线」文字会被转成什么？",
+    "explanation": "mammoth 对字符级格式的默认处理各有取舍：**下划线默认被忽略**（不输出），因为下划线在网页上极易与超链接混淆。需要保留时，可以用 styleMap 显式映射，如 `u => em` 或 `u => u`，或用 `mammoth.underline.element(...)`。相比之下，加粗默认 `<strong>`、斜体默认 `<em>`、删除线默认 `<s>`。\n\n- 「默认被忽略（避免与链接混淆）」正确。\n- 「默认转成 `<u>`」错误，默认不输出。\n- 「默认转成 `<strong>`」错误，那是加粗。\n- 「默认转成下划线内联样式」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "下划线", "字符格式"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认被忽略（不输出），因为下划线易与超链接混淆；需要时用 styleMap 显式映射",
+        "isCorrect": true,
+        "description": "正确。下划线默认忽略，可用 u => em 等规则保留。"
+      },
+      {
+        "text": "默认转成 <u> 标签",
+        "isCorrect": false,
+        "description": "错误。下划线默认是被丢弃的，不会自动输出 <u>。"
+      },
+      {
+        "text": "默认转成 <strong>",
+        "isCorrect": false,
+        "description": "错误。<strong> 是加粗的默认输出，不是下划线。"
+      },
+      {
+        "text": "默认转成带 text-decoration:underline 的内联样式",
+        "isCorrect": false,
+        "description": "错误。mammoth 默认不输出该内联样式，下划线被忽略。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，Word 里的「加粗」和「斜体」分别被转成什么 HTML 标签？",
+    "explanation": "mammoth 的字符级默认：**加粗 → `<strong>`**，**斜体 → `<em>`**。这两个是语义化标签（强调），而非纯样式的 `<b>`/`<i>`。如需改变，可用 styleMap 覆盖，例如 `b => em`、`i => strong`。\n\n- 「加粗→strong，斜体→em」正确。\n- 「加粗→b，斜体→i」错误，mammoth 用语义化的 strong/em。\n- 「都转成 span」错误。\n- 「加粗→em，斜体→strong」把两者弄反了（这其实是可通过 styleMap 自定义出来的，但非默认）。",
+    "tags": ["mammoth", "初级", "文档处理", "加粗", "斜体"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "加粗 → <strong>，斜体 → <em>",
+        "isCorrect": true,
+        "description": "正确。mammoth 默认输出语义化的 strong / em。"
+      },
+      {
+        "text": "加粗 → <b>，斜体 → <i>",
+        "isCorrect": false,
+        "description": "错误。mammoth 默认用语义化的 strong/em，而非 b/i。"
+      },
+      {
+        "text": "加粗和斜体都转成 <span>",
+        "isCorrect": false,
+        "description": "错误。它们有各自的语义标签 strong/em。"
+      },
+      {
+        "text": "加粗 → <em>，斜体 → <strong>",
+        "isCorrect": false,
+        "description": "错误。默认没有弄反；这种交换只能通过自定义 styleMap 实现。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，mammoth 如何处理文档里的图片？",
+    "explanation": "mammoth 默认会把每张图片转成一个 `<img>`，并把图片数据**以 base64 内嵌进 `src`**（即 data URI，形如 `data:image/png;base64,...`）。这个默认行为对应 `mammoth.images.dataUri` 转换器。这样输出的 HTML 自包含、无需外部图片文件，但体积会变大。\n\n- 「内嵌为 base64 data URI 的 img」正确。\n- 「自动保存为外部文件并引用」错误，那需要自定义 convertImage（CLI 的 --output-dir 才默认导出文件）。\n- 「默认丢弃所有图片」错误。\n- 「转成占位文字」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "图片", "dataUri"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把每张图片内嵌为 base64 的 data URI（<img src=\"data:image/...;base64,...\">）",
+        "isCorrect": true,
+        "description": "正确。默认转换器是 images.dataUri，图片以 base64 内嵌进 src。"
+      },
+      {
+        "text": "自动把图片存成外部文件并在 HTML 里引用其路径",
+        "isCorrect": false,
+        "description": "错误。库 API 默认内嵌 base64；要外链需自定义 convertImage。"
+      },
+      {
+        "text": "默认丢弃文档中的所有图片",
+        "isCorrect": false,
+        "description": "错误。默认会保留并内嵌图片。"
+      },
+      {
+        "text": "用一段占位文字代替图片",
+        "isCorrect": false,
+        "description": "错误。默认输出真实图片的 data URI。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要自定义图片处理（比如改成上传到服务器后引用 URL），应使用哪个选项？",
+    "explanation": "通过 `options.convertImage` 传入一个图片转换器来覆盖默认行为。最常用的是 `mammoth.images.imgElement(fn)`：回调 `fn` 接收 image 对象，可调用 `image.readAsBase64String()` / `readAsArrayBuffer()` / `readAsBuffer()` 拿到数据，再返回一个对象（如 `{ src }`）作为 `<img>` 的属性。你可以在回调里把图片上传，返回远程 URL 作为 src。\n\n- `convertImage: mammoth.images.imgElement(fn)` 正确。\n- `imageHandler` 不是它的选项名。\n- `onImage` 不是。\n- 「图片只能内嵌，无法自定义」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "convertImage", "imgElement"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "options.convertImage，配合 mammoth.images.imgElement(fn) 自定义返回的 img 属性",
+        "isCorrect": true,
+        "description": "正确。convertImage + images.imgElement(fn) 可在回调里返回自定义 src（如上传后的 URL）。"
+      },
+      {
+        "text": "options.imageHandler",
+        "isCorrect": false,
+        "description": "错误。选项名是 convertImage，没有 imageHandler。"
+      },
+      {
+        "text": "options.onImage",
+        "isCorrect": false,
+        "description": "错误。mammoth 没有 onImage 选项。"
+      },
+      {
+        "text": "图片只能内嵌为 base64，无法自定义",
+        "isCorrect": false,
+        "description": "错误。convertImage 正是用于自定义图片处理的。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在 imgElement 的回调里，下列哪个方法用于把图片读成 base64 字符串？",
+    "explanation": "image 对象提供多种读取方法：`readAsBase64String()`（返回 base64 字符串，最常用于拼 data URI）、`readAsArrayBuffer()`（返回 ArrayBuffer）、`readAsBuffer()`（返回 Node Buffer）。此外还有 `image.contentType`（如 `image/png`）。`read()` 是已废弃的旧方法。\n\n- `readAsBase64String()` 正确。\n- `toBase64()` 不是它的方法名。\n- `getBase64()` 不是。\n- `image.base64` 不是属性（要调用方法且返回 Promise）。",
+    "tags": ["mammoth", "高级", "文档处理", "图片", "readAsBase64String"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "image.readAsBase64String()",
+        "isCorrect": true,
+        "description": "正确。它返回 Promise<base64 字符串>，常用于拼 data URI。"
+      },
+      {
+        "text": "image.toBase64()",
+        "isCorrect": false,
+        "description": "错误。方法名是 readAsBase64String，不是 toBase64。"
+      },
+      {
+        "text": "image.getBase64()",
+        "isCorrect": false,
+        "description": "错误。没有 getBase64 方法。"
+      },
+      {
+        "text": "直接读 image.base64 属性",
+        "isCorrect": false,
+        "description": "错误。需调用 readAsBase64String() 方法，返回的是 Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：extractRawText 和 convertToHtml 的关键区别是什么？",
+    "explanation": "`extractRawText(input)` **抽取纯文本，丢弃所有格式与结构**——每个段落后跟两个换行，没有任何 HTML 标签。`convertToHtml` 则保留语义结构（标题、列表、加粗等）输出 HTML。当你只需要全文检索、做摘要或喂给搜索引擎时，extractRawText 更轻量。注意：extractRawText 不接受 styleMap（没有格式可映射）。\n\n- 「extractRawText 丢弃所有格式只出纯文本」正确。\n- 「两者输出相同只是字段名不同」错误。\n- 「extractRawText 输出带标签的简化 HTML」错误。\n- 「convertToHtml 才丢格式」错误，反了。",
+    "tags": ["mammoth", "初级", "文档处理", "extractRawText", "纯文本"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "extractRawText 抽取纯文本、丢弃所有格式与结构；convertToHtml 保留语义结构输出 HTML",
+        "isCorrect": true,
+        "description": "正确。extractRawText 只出纯文本（段落间两个换行），适合检索/摘要。"
+      },
+      {
+        "text": "两者输出完全相同，只是返回字段名不同",
+        "isCorrect": false,
+        "description": "错误。一个是纯文本、一个是结构化 HTML，差别很大。"
+      },
+      {
+        "text": "extractRawText 输出带少量标签的简化 HTML",
+        "isCorrect": false,
+        "description": "错误。它不含任何 HTML 标签。"
+      },
+      {
+        "text": "convertToHtml 才会丢弃格式，extractRawText 保留格式",
+        "isCorrect": false,
+        "description": "错误。说反了，丢弃格式的是 extractRawText。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：转换结果里的 `messages` 数组通常包含什么信息？",
+    "explanation": "`messages` 收集转换过程中产生的提示，每条是 `{ type, message }`（error 还带 `error` 字段）。`type` 为 `\"warning\"` 或 `\"error\"`。最常见的是 **warning：遇到未被任何 styleMap 规则识别的样式**（如 “An unrecognised paragraph style was ignored: 'Foo'”），提示你也许需要补一条映射。生产中应当检查并记录这些 messages。\n\n- 「警告/错误，如未识别样式」正确。\n- 「转换耗时统计」错误。\n- 「图片的尺寸信息」错误。\n- 「文档字数」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "messages", "warning"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "转换过程中的 warning / error，最常见的是「遇到未被 styleMap 识别的样式」",
+        "isCorrect": true,
+        "description": "正确。messages 多为未识别样式的告警，提示你可能要补映射规则。"
+      },
+      {
+        "text": "转换耗时与性能统计",
+        "isCorrect": false,
+        "description": "错误。messages 不记录性能数据。"
+      },
+      {
+        "text": "每张图片的宽高尺寸",
+        "isCorrect": false,
+        "description": "错误。messages 不是图片元数据。"
+      },
+      {
+        "text": "文档的总字数",
+        "isCorrect": false,
+        "description": "错误。messages 不统计字数。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：messages 数组中每个 message 对象的 `type` 字段可能是哪些值？",
+    "explanation": "根据类型定义，message 是 `Warning | Error`：`type` 为 `\"warning\"` 或 `\"error\"`。warning 只有 `{ type, message }`；error 额外带一个 `error` 字段（导致该消息的异常对象）。没有 `\"info\"` 或 `\"debug\"` 这样的级别。\n\n- 「warning 和 error」正确。\n- 「info / warn / error」错误，没有 info。\n- 「success / fail」错误。\n- 「只有一种 message」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "messages", "type"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "\"warning\" 或 \"error\"",
+        "isCorrect": true,
+        "description": "正确。message 类型为 Warning | Error，error 还带 error 字段。"
+      },
+      {
+        "text": "\"info\"、\"warn\"、\"error\" 三种",
+        "isCorrect": false,
+        "description": "错误。mammoth 没有 info 级别。"
+      },
+      {
+        "text": "\"success\" 或 \"fail\"",
+        "isCorrect": false,
+        "description": "错误。不存在这些值。"
+      },
+      {
+        "text": "只有一种统一的 message 类型",
+        "isCorrect": false,
+        "description": "错误。区分 warning 与 error 两类。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：你写了 `r[style-name='Strong'] => strong`，其中开头的 `r` 表示匹配什么？",
+    "explanation": "在 mammoth 的匹配器语法里，前缀字母代表文档元素类型：`p` = 段落（paragraph）、`r` = run（**文字游程**，即一段连续、格式一致的文本，是 Word 里字符级样式的载体）、`table` = 表格。`r[style-name='Strong']` 匹配应用了字符样式 “Strong” 的文字游程。\n\n- 「run（字符级文字游程）」正确。\n- 「row（表格行）」错误，r 不是行。\n- 「root（根节点）」错误。\n- 「reference（引用）」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "styleMap", "run"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "run，即字符级的文字游程（一段连续且格式一致的文本）",
+        "isCorrect": true,
+        "description": "正确。p=段落、r=run（字符级）、table=表格，是三类元素匹配前缀。"
+      },
+      {
+        "text": "row，表格的一行",
+        "isCorrect": false,
+        "description": "错误。r 指 run，不是表格行。"
+      },
+      {
+        "text": "root，文档根节点",
+        "isCorrect": false,
+        "description": "错误。没有 root 匹配前缀。"
+      },
+      {
+        "text": "reference，脚注/尾注引用",
+        "isCorrect": false,
+        "description": "错误。r 是 run；引用是通过特定样式名匹配的。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：styleMap 里 `p[style-name='Aside'] => div.aside > p:fresh` 用到的 `>`，作用是？",
+    "explanation": "HTML 路径里的 `>` 表示**元素嵌套**：左侧是外层、右侧是内层。`div.aside > p:fresh` 会把匹配的段落包进一个 `<div class=\"aside\">` 里，内部再放一个 `<p>`。相邻的、同样映射到 `div.aside` 的段落会**共享同一个外层 div**（因为只有内层 p 标了 :fresh），从而把多段聚合进一个容器。\n\n- 「元素嵌套，左外右内」正确。\n- 「兄弟选择器」错误，那是 CSS 语境，这里是生成嵌套结构。\n- 「逻辑或」错误（mammoth 里 `|` 才表示备选，如 `ul|ol`）。\n- 「管道传递」错误。",
+    "tags": ["mammoth", "专家", "文档处理", "styleMap", "嵌套"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "表示 HTML 元素嵌套（左侧为外层、右侧为内层），可把多段聚合进同一个外层容器",
+        "isCorrect": true,
+        "description": "正确。div.aside > p:fresh 生成 <div class=aside><p>…，相邻同映射段落共享外层 div。"
+      },
+      {
+        "text": "CSS 的相邻/子代选择器，用于选取已有元素",
+        "isCorrect": false,
+        "description": "错误。这里 > 是构造嵌套输出结构，不是选择已有 DOM。"
+      },
+      {
+        "text": "逻辑或（任选其一）",
+        "isCorrect": false,
+        "description": "错误。逻辑或在 mammoth 路径里是 |（如 ul|ol），不是 >。"
+      },
+      {
+        "text": "把左侧的输出当作管道传给右侧函数",
+        "isCorrect": false,
+        "description": "错误。> 表示嵌套层级，与管道无关。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要把一组 “Code Block” 段落合并进**一个** `<pre>`、且段落之间用换行分隔，下列哪种写法最合适？",
+    "explanation": "代码块的典型需求是把连续多段折叠进同一个 `<pre>` 并保留换行。这用 `separator` 修饰符：`p[style-name='Code Block'] => pre:separator('\\n')`。**注意这里不能加 `:fresh`**——`:fresh` 会让每段各自新开一个 `<pre>`，正好相反。`separator('\\n')` 指定折叠时在相邻段之间插入换行符。\n\n- `pre:separator('\\n')` 正确。\n- `pre:fresh` 错误，会拆成多个 pre。\n- `pre.code` 没有解决换行与合并。\n- `code:separator` 语义不对（代码块容器应是 pre）。",
+    "tags": ["mammoth", "专家", "文档处理", "styleMap", "separator"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "p[style-name='Code Block'] => pre:separator('\\n')",
+        "isCorrect": true,
+        "description": "正确。不加 :fresh 让多段折叠进同一个 pre，separator('\\n') 在段间插换行。"
+      },
+      {
+        "text": "p[style-name='Code Block'] => pre:fresh",
+        "isCorrect": false,
+        "description": "错误。:fresh 会让每段各开一个 pre，与「合并进一个」相反。"
+      },
+      {
+        "text": "p[style-name='Code Block'] => pre.code",
+        "isCorrect": false,
+        "description": "错误。只加 class，没解决多段合并与段间换行。"
+      },
+      {
+        "text": "p[style-name='Code Block'] => code:separator('\\n')",
+        "isCorrect": false,
+        "description": "错误。代码块容器应为 pre；单用 code 语义不当。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：关于 mammoth 的 `convertToMarkdown`，下列说法正确的是？",
+    "explanation": "`convertToMarkdown` 能把 docx 转成 Markdown，但**官方已标记为 deprecated（不推荐）**，建议改为「先用 convertToHtml 生成 HTML，再用专门的 HTML→Markdown 库转换」。原因是 Markdown 表达能力有限，mammoth 的 Markdown 写出器维护优先级低。\n\n- 「存在但已 deprecated，推荐走 HTML 再转」正确。\n- 「是推荐的主力用法」错误。\n- 「mammoth 根本没有 Markdown 能力」错误，它有但不推荐。\n- 「Markdown 输出比 HTML 更完整」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "convertToMarkdown", "deprecated"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它存在但已被官方标记 deprecated，推荐先转 HTML 再用专门库转 Markdown",
+        "isCorrect": true,
+        "description": "正确。官方建议 convertToHtml + HTML→Markdown 库，而非直接用 convertToMarkdown。"
+      },
+      {
+        "text": "convertToMarkdown 是 mammoth 推荐的主力用法",
+        "isCorrect": false,
+        "description": "错误。它已被标记为 deprecated。"
+      },
+      {
+        "text": "mammoth 完全没有 Markdown 输出能力",
+        "isCorrect": false,
+        "description": "错误。有 convertToMarkdown，只是不推荐。"
+      },
+      {
+        "text": "Markdown 输出比 HTML 输出更完整、更受推荐",
+        "isCorrect": false,
+        "description": "错误。HTML 才是主力，Markdown 表达力有限且已弃用。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：用 mammoth CLI 把图片导出为单独文件（而非内嵌 base64），用哪个参数？",
+    "explanation": "mammoth 提供命令行工具。基础用法 `mammoth document.docx output.html`。若想把图片**保存为独立文件**并在 HTML 里引用，用 `--output-dir`：`mammoth document.docx --output-dir=output-dir`，图片会写到该目录、HTML 引用其路径（已存在的文件会被覆盖）。还有 `--style-map=file` 指定外部样式映射文件、`--output-format=markdown`（已弃用）。\n\n- `--output-dir` 正确。\n- `--images-dir` 不是它的参数名。\n- `--external-images` 不是。\n- `--no-inline` 不是。",
+    "tags": ["mammoth", "高级", "文档处理", "CLI", "output-dir"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mammoth document.docx --output-dir=output-dir",
+        "isCorrect": true,
+        "description": "正确。--output-dir 把图片写成独立文件、HTML 引用其路径。"
+      },
+      {
+        "text": "mammoth document.docx --images-dir=imgs",
+        "isCorrect": false,
+        "description": "错误。CLI 参数是 --output-dir，没有 --images-dir。"
+      },
+      {
+        "text": "mammoth document.docx --external-images",
+        "isCorrect": false,
+        "description": "错误。不存在该参数。"
+      },
+      {
+        "text": "mammoth document.docx --no-inline",
+        "isCorrect": false,
+        "description": "错误。不存在该参数。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在 styleMap 里，怎样按「样式名前缀」匹配（例如匹配所有以 “Heading” 开头的样式）？",
+    "explanation": "mammoth 的匹配器支持前缀匹配，语法是 `^=`：`p[style-name^='Heading']` 会匹配 “Heading”、“Heading 1”、“Heading Subtitle” 等所有以 “Heading” 开头的样式名。这与精确匹配 `[style-name='...']` 相对，适合批量处理一类命名规律的样式。\n\n- `p[style-name^='Heading']` 正确。\n- `p[style-name*='Heading']`（包含）不是 mammoth 支持的语法。\n- `p[style-name~='Heading']` 不是。\n- `p[style-name.startsWith('Heading')]` 不是合法语法。",
+    "tags": ["mammoth", "专家", "文档处理", "styleMap", "前缀匹配"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "p[style-name^='Heading']（^= 表示前缀匹配）",
+        "isCorrect": true,
+        "description": "正确。^= 匹配所有以指定字符串开头的样式名。"
+      },
+      {
+        "text": "p[style-name*='Heading']",
+        "isCorrect": false,
+        "description": "错误。mammoth 的样式名匹配不支持 *=（包含）语法。"
+      },
+      {
+        "text": "p[style-name~='Heading']",
+        "isCorrect": false,
+        "description": "错误。不支持 ~= 语法。"
+      },
+      {
+        "text": "p[style-name.startsWith('Heading')]",
+        "isCorrect": false,
+        "description": "错误。这不是 mammoth 的匹配器语法。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：除了按样式名（style name）匹配，mammoth 还支持按「样式 ID」匹配。后者的写法是？",
+    "explanation": "mammoth 既能按样式名（`p[style-name='Heading 1']`），也能按**样式 ID** 匹配，后者用点号语法：`p.Heading1`（样式 ID 是 Word 内部标识，常无空格）。官方更推荐用 style-name（更直观、跨语言文档更稳），style ID 多见于早期写法或样式名不确定时。\n\n- `p.Heading1`（点号 + 样式 ID）正确。\n- `p#Heading1`（井号）不是它的语法。\n- `p[style-id='Heading1']` 不是它支持的属性写法。\n- `p:id(Heading1)` 不是。",
+    "tags": ["mammoth", "专家", "文档处理", "styleMap", "样式ID"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "p.Heading1（点号后跟样式 ID）",
+        "isCorrect": true,
+        "description": "正确。按样式 ID 匹配用点号语法；官方更推荐 style-name 形式。"
+      },
+      {
+        "text": "p#Heading1",
+        "isCorrect": false,
+        "description": "错误。井号不是 mammoth 的样式 ID 语法。"
+      },
+      {
+        "text": "p[style-id='Heading1']",
+        "isCorrect": false,
+        "description": "错误。属性形式用的是 style-name，ID 用点号。"
+      },
+      {
+        "text": "p:id(Heading1)",
+        "isCorrect": false,
+        "description": "错误。这不是合法语法。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，mammoth 如何处理 Word 文档里的「批注（comments）」？",
+    "explanation": "mammoth 默认**忽略批注**，它们不会出现在输出 HTML 里。若要保留，需要在 styleMap 加入对批注引用的映射，如 `comment-reference => sup`——这样批注会被附加到文档末尾，并用指定标签（如上标 `<sup>`）包裹引用链接。这体现了 mammoth「默认产出干净正文，附加内容需显式开启」的取向。\n\n- 「默认忽略，可用 comment-reference 映射保留」正确。\n- 「默认作为 HTML 注释输出」错误。\n- 「默认渲染成 tooltip」错误。\n- 「默认插入到正文行内」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "批注", "comment-reference"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认忽略；要保留需加 styleMap 规则（如 comment-reference => sup），批注会附到文末",
+        "isCorrect": true,
+        "description": "正确。批注默认不输出，映射 comment-reference 后会附加到文档末尾。"
+      },
+      {
+        "text": "默认作为 HTML 注释 <!-- --> 输出",
+        "isCorrect": false,
+        "description": "错误。默认是完全忽略，不会变成 HTML 注释。"
+      },
+      {
+        "text": "默认渲染成鼠标悬停的 tooltip",
+        "isCorrect": false,
+        "description": "错误。mammoth 不生成 tooltip。"
+      },
+      {
+        "text": "默认把批注内容插入正文行内",
+        "isCorrect": false,
+        "description": "错误。默认忽略；保留时是附到文末而非行内。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：mammoth 对 Word 表格的转换，下列描述最准确的是？",
+    "explanation": "mammoth 支持把 Word 表格转成 HTML `<table>`，**保留表格结构与单元格内的文本格式**（如单元格里的加粗会变 `<strong>`），但**表格本身的视觉样式（边框、底纹、列宽等）会被忽略**——这与它「重语义、轻外观」的一贯取向一致。需要边框等样式，应自己写 CSS。\n\n- 「转成 table 保留结构与单元格文本格式，但忽略边框/底纹等表格样式」正确。\n- 「完整保留边框、底纹、列宽」错误。\n- 「表格被转成纯文本」错误。\n- 「表格被丢弃」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "表格", "table"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "转成 <table>，保留结构与单元格内文本格式，但忽略边框/底纹/列宽等表格视觉样式",
+        "isCorrect": true,
+        "description": "正确。结构与单元格文本格式保留，表格本身的样式被忽略，需自行写 CSS。"
+      },
+      {
+        "text": "完整保留表格的边框、底纹、列宽等所有视觉样式",
+        "isCorrect": false,
+        "description": "错误。mammoth 忽略表格视觉样式，只保结构与文本。"
+      },
+      {
+        "text": "把表格内容拼成一段纯文本",
+        "isCorrect": false,
+        "description": "错误。表格会转成 <table> 结构。"
+      },
+      {
+        "text": "表格会被整体丢弃",
+        "isCorrect": false,
+        "description": "错误。表格是受支持的特性。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：mammoth 与 docx-preview 这类库的根本定位差异是什么？",
+    "explanation": "两类库目标不同：**mammoth 求「干净语义 HTML」**——丢外观、保结构，输出适合二次编辑/检索/适配你网站样式的 HTML；**docx-preview 求「保真渲染」**——尽量像素级还原 Word 在页面上的外观（字体、分页、间距）。选型取决于你要「拿到内容」还是「原样预览」。\n\n- 「mammoth 重语义干净 HTML，docx-preview 重像素保真预览」正确。\n- 「两者完全等价」错误。\n- 「mammoth 才是保真渲染」错误，反了。\n- 「docx-preview 只能转纯文本」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "docx-preview", "选型"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mammoth 求干净语义 HTML（丢外观保结构）；docx-preview 求像素级保真还原外观",
+        "isCorrect": true,
+        "description": "正确。要「内容/可二次处理」选 mammoth，要「原样预览」选 docx-preview。"
+      },
+      {
+        "text": "两者定位完全相同，可随意互换",
+        "isCorrect": false,
+        "description": "错误。一个重语义、一个重保真，目标相反。"
+      },
+      {
+        "text": "mammoth 是保真渲染库，docx-preview 是语义抽取库",
+        "isCorrect": false,
+        "description": "错误。定位说反了。"
+      },
+      {
+        "text": "docx-preview 只能把 docx 转成纯文本",
+        "isCorrect": false,
+        "description": "错误。docx-preview 做的是保真渲染，不是纯文本抽取。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要生成「带 class 的 HTML 标签」（如把样式映射成 `<h2 class=\"section-title\">`），styleMap 右侧怎么写？",
+    "explanation": "HTML 路径用 `.` 追加 CSS class：`p[style-name='Section Title'] => h2.section-title:fresh` 会生成 `<h2 class=\"section-title\">`。还能叠加多个 class（如 `h2.a.b`）或属性（`p[lang='fr']`）。修饰符如 `:fresh` 写在最后。\n\n- `h2.section-title:fresh` 正确。\n- `h2#section-title` 是 id 不是 class（且写法是另一回事）。\n- `h2[class='section-title']` 不是 mammoth 路径里加 class 的惯用写法。\n- `h2(section-title)` 不是合法语法。",
+    "tags": ["mammoth", "高级", "文档处理", "styleMap", "class"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "p[style-name='Section Title'] => h2.section-title:fresh",
+        "isCorrect": true,
+        "description": "正确。HTML 路径用 . 追加 class，生成 <h2 class=\"section-title\">。"
+      },
+      {
+        "text": "p[style-name='Section Title'] => h2#section-title",
+        "isCorrect": false,
+        "description": "错误。# 是 id；要加 class 用点号语法。"
+      },
+      {
+        "text": "p[style-name='Section Title'] => h2[class='section-title']",
+        "isCorrect": false,
+        "description": "错误。加 class 的惯用写法是 h2.section-title，而非属性形式。"
+      },
+      {
+        "text": "p[style-name='Section Title'] => h2(section-title)",
+        "isCorrect": false,
+        "description": "错误。括号不是合法的 HTML 路径语法。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：styleMap 既能写成字符串、也能写成数组。当写成单个字符串时，规则之间如何分隔、如何写注释？",
+    "explanation": "字符串形式下，**每行一条映射**（按 `\\n` 分隔），**空行被忽略**，以 `#` 开头的行被当作**注释**忽略。数组形式则每个元素是一条规则。两种形式等价。\n\n- 「每行一条、空行忽略、# 注释」正确。\n- 「用分号分隔、// 注释」错误。\n- 「用逗号分隔」错误。\n- 「整个字符串只能是一条规则」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "styleMap", "字符串格式"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每行一条映射（按换行分隔），空行被忽略，以 # 开头的行是注释",
+        "isCorrect": true,
+        "description": "正确。字符串按 \\n 拆行，空行与 # 注释行被跳过。"
+      },
+      {
+        "text": "规则之间用分号分隔，// 开头是注释",
+        "isCorrect": false,
+        "description": "错误。分隔靠换行，注释是 #，不是分号/双斜杠。"
+      },
+      {
+        "text": "规则之间用逗号分隔",
+        "isCorrect": false,
+        "description": "错误。字符串形式靠换行分隔；逗号是数组里的元素分隔（那是 JS 语法）。"
+      },
+      {
+        "text": "整个字符串只能表示一条规则",
+        "isCorrect": false,
+        "description": "错误。一个字符串可含多行多条规则。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：选项 `includeEmbeddedStyleMap` 控制的是什么？",
+    "explanation": "docx 文件里**可以内嵌一份样式映射**（通过 `mammoth.embedStyleMap` 写入）。默认 `includeEmbeddedStyleMap: true` 时，转换会把文档内嵌的样式映射也纳入（与默认/自定义映射合并）。设为 `false` 则忽略文档内嵌的映射。这让文档作者能「随文携带」转换规则。\n\n- 「是否采用文档内嵌的样式映射」正确。\n- 「是否内嵌图片」错误。\n- 「是否包含默认映射」错误，那是 includeDefaultStyleMap。\n- 「是否输出内联 CSS」错误。",
+    "tags": ["mammoth", "专家", "文档处理", "includeEmbeddedStyleMap", "embedStyleMap"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "是否采用 docx 文件里内嵌的样式映射（默认 true）",
+        "isCorrect": true,
+        "description": "正确。文档可用 embedStyleMap 内嵌映射，该选项控制转换时是否纳入它。"
+      },
+      {
+        "text": "是否把图片内嵌为 base64",
+        "isCorrect": false,
+        "description": "错误。图片内嵌由 convertImage / images.dataUri 控制。"
+      },
+      {
+        "text": "是否包含内置的默认样式映射",
+        "isCorrect": false,
+        "description": "错误。那是 includeDefaultStyleMap。"
+      },
+      {
+        "text": "是否在输出里写入内联 CSS",
+        "isCorrect": false,
+        "description": "错误。该选项与内联 CSS 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：`mammoth.embedStyleMap(input, styleMap)` 的作用是什么？",
+    "explanation": "`embedStyleMap` 把一份样式映射**写进 .docx 文件本身**，生成一个新的 docx；之后该文档被 mammoth 转换时会自动带上这份映射（无需每次再传 styleMap）。它返回的对象提供 `toBuffer()` / `toArrayBuffer()` 拿到新 docx 的字节，便于保存。适合「文档随身携带转换规则」的场景。\n\n- 「把样式映射嵌入 docx，返回带 toBuffer/toArrayBuffer 的新文件」正确。\n- 「把 docx 转成 HTML」错误，那是 convertToHtml。\n- 「读取文档已内嵌的映射」错误，那是 readEmbeddedStyleMap。\n- 「给 HTML 注入 CSS」错误。",
+    "tags": ["mammoth", "专家", "文档处理", "embedStyleMap", "API"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把样式映射写进 docx 文件本身，生成可用 toBuffer()/toArrayBuffer() 取出的新 docx",
+        "isCorrect": true,
+        "description": "正确。嵌入后该文档再被转换时会自动带上这份映射。"
+      },
+      {
+        "text": "把 docx 转换成 HTML",
+        "isCorrect": false,
+        "description": "错误。转 HTML 是 convertToHtml。"
+      },
+      {
+        "text": "读取文档中已经内嵌的样式映射",
+        "isCorrect": false,
+        "description": "错误。读取已内嵌映射用 readEmbeddedStyleMap。"
+      },
+      {
+        "text": "给生成的 HTML 注入一段 CSS",
+        "isCorrect": false,
+        "description": "错误。embedStyleMap 操作的是 docx，不注入 CSS。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：默认情况下，mammoth 会保留 Word 文档里的「空段落」吗？",
+    "explanation": "mammoth 选项 `ignoreEmptyParagraphs` 默认值为 **`true`**，即**默认忽略空段落**（不输出空的 `<p></p>`），让结果更干净。若你确实想保留空段落（比如忠实呈现间距），把它设为 `false`。\n\n- 「默认忽略空段落（ignoreEmptyParagraphs 默认 true）」正确。\n- 「默认保留所有空段落」错误。\n- 「默认把空段落转成 `<br>`」错误。\n- 「该行为无法配置」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "ignoreEmptyParagraphs", "空段落"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认忽略空段落（ignoreEmptyParagraphs 默认 true），可设 false 保留",
+        "isCorrect": true,
+        "description": "正确。默认丢弃空段落让输出更干净，需保留时显式设为 false。"
+      },
+      {
+        "text": "默认保留所有空段落",
+        "isCorrect": false,
+        "description": "错误。默认是忽略空段落。"
+      },
+      {
+        "text": "默认把每个空段落转成 <br>",
+        "isCorrect": false,
+        "description": "错误。默认是直接忽略，不输出 <br>。"
+      },
+      {
+        "text": "这是固定行为，无法通过选项调整",
+        "isCorrect": false,
+        "description": "错误。由 ignoreEmptyParagraphs 选项控制。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：选项 `idPrefix` 的用途是什么？",
+    "explanation": "`idPrefix` 是一个字符串，会被**加在所有生成的 HTML id 前面**（书签、脚注、尾注等生成的锚点 id）。当一个页面里嵌入**多个**由 mammoth 转换的文档时，给每个文档不同的 idPrefix 可避免 id 冲突（如脚注链接串到别的文档）。\n\n- 「给生成的 id 加前缀，避免同页多文档 id 冲突」正确。\n- 「给 CSS class 加前缀」错误，是 id 不是 class。\n- 「给图片文件名加前缀」错误。\n- 「设置文档标题」错误。",
+    "tags": ["mammoth", "专家", "文档处理", "idPrefix", "选项"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "给生成的 HTML id（书签/脚注/尾注锚点）统一加前缀，避免同页多文档 id 冲突",
+        "isCorrect": true,
+        "description": "正确。多份转换结果同页时，不同 idPrefix 可防止锚点 id 撞车。"
+      },
+      {
+        "text": "给所有生成元素的 CSS class 加前缀",
+        "isCorrect": false,
+        "description": "错误。idPrefix 作用于 id，不是 class。"
+      },
+      {
+        "text": "给导出的图片文件名加前缀",
+        "isCorrect": false,
+        "description": "错误。它与图片文件名无关。"
+      },
+      {
+        "text": "设置输出 HTML 文档的 <title>",
+        "isCorrect": false,
+        "description": "错误。idPrefix 不设置标题。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：关于 mammoth 与不受信任的用户文档，官方给出的关键安全提醒是？",
+    "explanation": "官方明确警告：**mammoth 不对源文档做任何消毒（no sanitisation）**，因此处理不受信任的输入要格外小心。风险包括：文档里可能含 `javascript:` 协议的链接、可能引用外部文件、某些文档可能触发病态性能问题。建议**对输出 HTML 做消毒**（如配合 DOMPurify），并对外部文件访问保持默认关闭、必要时做进程隔离。\n\n- 「mammoth 不做消毒，需自行 sanitize 输出」正确。\n- 「mammoth 已内置 XSS 防护，可直接信任输出」错误。\n- 「输出永远是纯文本，没有风险」错误。\n- 「只要文件来自 docx 就一定安全」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "安全", "sanitization"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mammoth 不对源文档做任何消毒，处理不受信任输入时应自行 sanitize 输出（如配合 DOMPurify）",
+        "isCorrect": true,
+        "description": "正确。官方明确不做 sanitisation，输出可能含 javascript: 链接等，需自行清洗。"
+      },
+      {
+        "text": "mammoth 已内置 XSS 防护，输出可直接信任",
+        "isCorrect": false,
+        "description": "错误。官方明确不做任何消毒。"
+      },
+      {
+        "text": "输出永远是纯文本，不存在任何注入风险",
+        "isCorrect": false,
+        "description": "错误。输出是 HTML，可能包含恶意链接等。"
+      },
+      {
+        "text": "只要输入是 .docx 文件就一定安全",
+        "isCorrect": false,
+        "description": "错误。docx 同样可能携带恶意内容。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：选项 `externalFileAccess`（默认 false）控制的是什么？为什么默认关闭？",
+    "explanation": "源文档可能**引用文档之外的文件**（例如外链图片）。出于安全，mammoth 默认 `externalFileAccess: false`，**禁止访问任何外部文件**，以防 SSRF/读取本地文件等风险。只有当你**信任**该文档时，才把它设为 `true` 来允许访问外部引用。\n\n- 「是否允许访问文档外部引用的文件，默认关以防安全风险」正确。\n- 「是否允许写出文件到磁盘」错误。\n- 「是否启用外部 CDN 加载」错误。\n- 「是否读取外部 styleMap 文件」错误（那是 CLI 的 --style-map）。",
+    "tags": ["mammoth", "专家", "文档处理", "externalFileAccess", "安全"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "是否允许访问文档引用的外部文件；默认 false 以防安全风险，仅信任文档时才开启",
+        "isCorrect": true,
+        "description": "正确。默认禁止外部文件访问，避免读取本地文件/SSRF 等风险。"
+      },
+      {
+        "text": "是否允许把转换结果写出到磁盘文件",
+        "isCorrect": false,
+        "description": "错误。它管的是读取外部引用，不是写出结果。"
+      },
+      {
+        "text": "是否允许从 CDN 加载 mammoth 自身资源",
+        "isCorrect": false,
+        "description": "错误。与加载库本身无关。"
+      },
+      {
+        "text": "是否读取外部的 styleMap 文件",
+        "isCorrect": false,
+        "description": "错误。读外部样式映射文件是 CLI 的 --style-map 参数。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：`transformDocument` 选项的作用是什么？官方对它的稳定性如何定调？",
+    "explanation": "`transformDocument` 接收一个函数，在转换为 HTML **之前**对解析出的文档（AST）做变换——例如「把居中且无样式的段落改判为 Heading 2」「按字体识别代码段」。官方明确这套 transform API **「应被视为不稳定（unstable），版本间可能变化」**。mammoth 还提供 `mammoth.transforms.paragraph/run` 等辅助器配合使用。\n\n- 「转换前对文档 AST 做变换；API 被官方视为 unstable」正确。\n- 「转换后对 HTML 字符串做替换」错误，它作用于 AST 而非输出字符串。\n- 「是稳定且推荐的公共 API」错误，官方说它不稳定。\n- 「用于变换 CSS」错误。",
+    "tags": ["mammoth", "专家", "文档处理", "transformDocument", "AST"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在转 HTML 前对解析出的文档（AST）做变换；官方明确该 API 不稳定、可能在版本间变化",
+        "isCorrect": true,
+        "description": "正确。常用于改判段落样式/按字体识别代码，配合 transforms.paragraph 等辅助器。"
+      },
+      {
+        "text": "在转换完成后对输出的 HTML 字符串做正则替换",
+        "isCorrect": false,
+        "description": "错误。它作用于文档 AST，而非输出的 HTML 字符串。"
+      },
+      {
+        "text": "它是 mammoth 稳定且推荐使用的公共 API",
+        "isCorrect": false,
+        "description": "错误。官方明确说明该 API 应被视为不稳定。"
+      },
+      {
+        "text": "用于变换生成的 CSS 样式表",
+        "isCorrect": false,
+        "description": "错误。mammoth 不生成 CSS，transformDocument 也不处理 CSS。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要把「所有居中且未应用任何样式的段落」改判为 Heading 2 再转换，最合适的辅助函数是？",
+    "explanation": "这是 transform 的经典用例，用 `mammoth.transforms.paragraph(fn)` 包一个段落变换函数传给 `transformDocument`。函数里判断 `element.alignment === 'center' && !element.styleId`，命中则返回带 `styleId: 'Heading2'` 的新段落。这样后续映射就能把它当 Heading 2 处理。\n\n- `mammoth.transforms.paragraph(fn)` 正确。\n- `mammoth.styleMapping(...)` 错误，该函数现已抛错（改用原始字符串）。\n- `mammoth.images.imgElement(...)` 是处理图片的。\n- `mammoth.convertToMarkdown(...)` 与此无关。",
+    "tags": ["mammoth", "专家", "文档处理", "transforms", "paragraph"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "mammoth.transforms.paragraph(fn)，在 fn 里判断居中且无 styleId 后赋予 Heading2",
+        "isCorrect": true,
+        "description": "正确。配合 transformDocument 使用，按对齐方式改判段落样式。"
+      },
+      {
+        "text": "mammoth.styleMapping(...)",
+        "isCorrect": false,
+        "description": "错误。该函数现已抛出错误，提示改用原始字符串规则。"
+      },
+      {
+        "text": "mammoth.images.imgElement(...)",
+        "isCorrect": false,
+        "description": "错误。这是图片转换器，与段落变换无关。"
+      },
+      {
+        "text": "mammoth.convertToMarkdown(...)",
+        "isCorrect": false,
+        "description": "错误。这是输出 Markdown，不做段落变换。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在 styleMap 里，匹配「显式加粗的文字」并改成 `<em>`，下列哪条规则正确？",
+    "explanation": "除按样式名/ID 外，mammoth 还能匹配**直接的字符格式**：`b`（粗）、`i`（斜）、`u`（下划线）、`strike`（删除线）等。`b => em` 表示把显式加粗的文字游程改输出成 `<em>`（覆盖默认的 `<strong>`）。注意这里的 `b` 指的是**直接加粗**（显式 bold），而非样式名。\n\n- `b => em` 正确。\n- `bold => em` 错误，关键字是 `b` 不是 `bold`。\n- `r[bold] => em` 不是合法语法。\n- `strong => em` 错误（左侧应是源文档的 `b`，不是目标标签 strong）。",
+    "tags": ["mammoth", "专家", "文档处理", "styleMap", "直接格式"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "b => em",
+        "isCorrect": true,
+        "description": "正确。b 匹配显式加粗的文字，=> em 把它输出为 em（覆盖默认 strong）。"
+      },
+      {
+        "text": "bold => em",
+        "isCorrect": false,
+        "description": "错误。关键字是 b，不是 bold。"
+      },
+      {
+        "text": "r[bold] => em",
+        "isCorrect": false,
+        "description": "错误。直接加粗用 b 匹配，没有 r[bold] 这种写法。"
+      },
+      {
+        "text": "strong => em",
+        "isCorrect": false,
+        "description": "错误。左侧应是源文档格式 b，strong 是默认输出的目标标签。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：mammoth 默认会从 Word 文档读取并保留「超链接」吗？",
+    "explanation": "会。mammoth **默认保留超链接**，把它们转成 `<a href=\"...\">`。注意默认 style map 里有一条 `r[style-name='Hyperlink'] =>`（把 Hyperlink 这个**字符样式**清空），这是为了不让 Word 给链接套的字符样式产生多余标签——链接本身仍由 mammoth 的链接处理逻辑转成 `<a>`，二者不冲突。\n\n- 「默认保留，转成 a 标签」正确。\n- 「默认丢弃所有链接」错误。\n- 「只保留链接文字、去掉 href」错误。\n- 「需显式开启才会有链接」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "超链接", "links"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认保留超链接，转成 <a href=\"...\">",
+        "isCorrect": true,
+        "description": "正确。链接默认转 a 标签；默认映射清空 Hyperlink 字符样式只为避免多余标签。"
+      },
+      {
+        "text": "默认丢弃文档里的所有超链接",
+        "isCorrect": false,
+        "description": "错误。链接是受支持且默认保留的。"
+      },
+      {
+        "text": "只保留链接的可见文字，去掉 href",
+        "isCorrect": false,
+        "description": "错误。href 会被保留在 <a> 上。"
+      },
+      {
+        "text": "必须显式配置才会输出链接",
+        "isCorrect": false,
+        "description": "错误。无需配置，默认即转 a 标签。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：把一个 Word 列表（有序/无序）转换时，mammoth 默认会输出什么结构？",
+    "explanation": "mammoth 内置了列表的默认映射：无序列表段落映射到 `ul > li`、有序列表映射到 `ol > li`，并支持多级嵌套（默认映射里覆盖了 1~5 层的 `unordered-list(n)` / `ordered-list(n)`）。所以 Word 里的项目符号/编号列表会转成语义化的 `<ul>`/`<ol>` + `<li>`。\n\n- 「ul/ol + li，支持多级嵌套」正确。\n- 「一串带缩进的 p」错误。\n- 「div 模拟列表」错误。\n- 「纯文本前加 - 符号」错误。",
+    "tags": ["mammoth", "中级", "文档处理", "列表", "ul-ol"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "语义化的 <ul>/<ol> + <li>，并支持多级嵌套",
+        "isCorrect": true,
+        "description": "正确。默认映射覆盖 1~5 层有序/无序列表，输出标准的 ul/ol/li。"
+      },
+      {
+        "text": "一串带缩进内联样式的 <p>",
+        "isCorrect": false,
+        "description": "错误。列表会转成 ul/ol，而非带缩进的段落。"
+      },
+      {
+        "text": "用 <div> 模拟的列表",
+        "isCorrect": false,
+        "description": "错误。输出的是真正的 ul/ol/li。"
+      },
+      {
+        "text": "纯文本前面加 - 或数字符号",
+        "isCorrect": false,
+        "description": "错误。convertToHtml 输出结构化列表，不是纯文本符号。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：把 mammoth 集成进一个 Vue/React 富文本工作流时，下列哪种用法符合它的设计意图？",
+    "explanation": "mammoth 的设计意图是**把 docx 转成干净语义 HTML，作为数据导入后再交由你的样式/编辑器接管**。典型做法：浏览器里 `convertToHtml({ arrayBuffer })` 拿到 HTML → 用 DOMPurify 消毒 → 注入富文本编辑器或用自己网站的 CSS 渲染。它不负责保真预览，也不替你做 XSS 防护。\n\n- 「转成干净 HTML 后消毒并用自有样式渲染/喂编辑器」正确。\n- 「用它做 docx 的像素级预览」错误，那该用 docx-preview。\n- 「直接 innerHTML 不消毒」错误，有 XSS 风险。\n- 「用它在线编辑并回存 docx」错误，mammoth 是单向转换。",
+    "tags": ["mammoth", "高级", "文档处理", "集成", "富文本"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 convertToHtml 得到干净 HTML，经 DOMPurify 消毒后用自有 CSS 渲染或注入编辑器",
+        "isCorrect": true,
+        "description": "正确。符合「导入内容 + 自己接管呈现/安全」的设计意图。"
+      },
+      {
+        "text": "用 mammoth 实现 docx 的像素级保真预览",
+        "isCorrect": false,
+        "description": "错误。保真预览应选 docx-preview，mammoth 不还原外观。"
+      },
+      {
+        "text": "把 convertToHtml 的结果直接 innerHTML，不做任何消毒",
+        "isCorrect": false,
+        "description": "错误。mammoth 不做 sanitisation，直接注入有 XSS 风险。"
+      },
+      {
+        "text": "用 mammoth 在编辑器里改完再回存为 docx",
+        "isCorrect": false,
+        "description": "错误。mammoth 只做 docx→HTML 单向转换，不回存 docx。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：下列哪一项**不是** mammoth 宣称支持的文档特性？",
+    "explanation": "mammoth 支持的特性包括：标题、列表、表格（文本格式保留、表格样式忽略）、脚注与尾注、图片、加粗/斜体/下划线/删除线/上下标、链接、换行、文本框、批注（需映射）。但它**不做**「保留 Word 的页眉/页脚分页版式、精确还原页面布局」这类**保真排版**——这与它「重语义、轻外观」的定位一致。\n\n- 「像素级保留页面分页与版式布局」正确（这正是它不做的）。\n- 脚注/尾注、表格、图片都是它支持的特性，故不选。",
+    "tags": ["mammoth", "中级", "文档处理", "特性", "边界"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "像素级保留 Word 的页面分页与版式布局",
+        "isCorrect": true,
+        "description": "正确。这是 mammoth 刻意不做的——它重语义不重保真排版。"
+      },
+      {
+        "text": "脚注与尾注",
+        "isCorrect": false,
+        "description": "错误（属于支持项）。脚注/尾注是 mammoth 支持的特性。"
+      },
+      {
+        "text": "表格（保留结构与单元格文本格式）",
+        "isCorrect": false,
+        "description": "错误（属于支持项）。表格是受支持的特性。"
+      },
+      {
+        "text": "图片",
+        "isCorrect": false,
+        "description": "错误（属于支持项）。图片是受支持的特性。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：当文档里出现一个 mammoth **没有任何规则能识别**的段落样式时，会发生什么？",
+    "explanation": "未被任何 styleMap（自定义+内嵌+默认）规则匹配的段落样式，**段落文本仍会被输出**（通常退化成普通 `<p>`，因为默认有 Normal/Body→p 兜底，否则就是段落的基础呈现），同时 mammoth 会在 `messages` 里追加一条 **warning** 告诉你「某个未识别的段落样式被忽略了」。所以不会丢内容、也不会报错中断，但你会收到提示去补映射。\n\n- 「文本照常输出 + 产生未识别样式的 warning」正确。\n- 「整段被丢弃」错误，内容不会丢。\n- 「抛异常中断转换」错误。\n- 「静默处理，无任何提示」错误，会有 warning。",
+    "tags": ["mammoth", "高级", "文档处理", "未识别样式", "messages"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "段落文本照常输出（通常退化为普通段落），同时 messages 里多出一条未识别样式的 warning",
+        "isCorrect": true,
+        "description": "正确。不丢内容、不中断，但会告警提示你可能需要补一条映射。"
+      },
+      {
+        "text": "整个段落连同文本被丢弃",
+        "isCorrect": false,
+        "description": "错误。文本仍会输出，只是没有特殊映射。"
+      },
+      {
+        "text": "抛出异常，整次转换失败",
+        "isCorrect": false,
+        "description": "错误。未识别样式不会中断转换。"
+      },
+      {
+        "text": "静默处理，不产生任何 message",
+        "isCorrect": false,
+        "description": "错误。会在 messages 里追加一条 warning。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：要从一个 .docx 中**读取它已经内嵌**的样式映射（而不做转换），用哪个 API？",
+    "explanation": "`mammoth.readEmbeddedStyleMap(input)` 专门用来**读取文档内嵌的样式映射**并返回它（若有）。它与 `embedStyleMap`（写入）相对，常用于调试「这份文档自带了什么映射」。注意区别于转换函数 convertToHtml。\n\n- `readEmbeddedStyleMap(input)` 正确。\n- `getStyleMap` 不是它的 API 名。\n- `convertToHtml` 是做转换的。\n- `extractStyleMap` 不存在。",
+    "tags": ["mammoth", "专家", "文档处理", "readEmbeddedStyleMap", "API"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "mammoth.readEmbeddedStyleMap(input)",
+        "isCorrect": true,
+        "description": "正确。它读取并返回文档内嵌的样式映射，与 embedStyleMap 相对。"
+      },
+      {
+        "text": "mammoth.getStyleMap(input)",
+        "isCorrect": false,
+        "description": "错误。没有 getStyleMap 这个 API。"
+      },
+      {
+        "text": "mammoth.convertToHtml(input)",
+        "isCorrect": false,
+        "description": "错误。这是做转换，不是单独读取内嵌映射。"
+      },
+      {
+        "text": "mammoth.extractStyleMap(input)",
+        "isCorrect": false,
+        "description": "错误。不存在该 API。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：在 imgElement 回调里读取图片数据时，浏览器端应优先使用哪种读取方法？",
+    "explanation": "image 对象的读取方法跨环境能力不同：`readAsArrayBuffer()` 和 `readAsBase64String()` 在**浏览器和 Node 都可用**；而 `readAsBuffer()` 返回 **Node Buffer**，浏览器没有 Buffer，因此**浏览器端不应依赖 readAsBuffer**。要在浏览器拼 data URI，用 `readAsBase64String()` 最直接。\n\n- 「readAsBase64String / readAsArrayBuffer（跨环境可用）」正确。\n- 「readAsBuffer（返回 Node Buffer）」在浏览器不可靠。\n- 「直接读 image.buffer 属性」错误。\n- 「用 FileReader 读 image」错误，image 已提供读取方法。",
+    "tags": ["mammoth", "专家", "文档处理", "图片", "浏览器"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "readAsBase64String() 或 readAsArrayBuffer()（两者浏览器/Node 都可用）",
+        "isCorrect": true,
+        "description": "正确。浏览器拼 data URI 优先 readAsBase64String；readAsArrayBuffer 也跨环境。"
+      },
+      {
+        "text": "readAsBuffer()，返回 Node Buffer",
+        "isCorrect": false,
+        "description": "错误。Buffer 是 Node 概念，浏览器端不应依赖 readAsBuffer。"
+      },
+      {
+        "text": "直接读取 image.buffer 属性",
+        "isCorrect": false,
+        "description": "错误。image 没有可直接读的 buffer 属性，需调用读取方法。"
+      },
+      {
+        "text": "用 FileReader 包装 image 再读",
+        "isCorrect": false,
+        "description": "错误。image 自身已提供 readAsXxx 方法，无需 FileReader。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：mammoth 把样式名为 “Normal”（正文）的段落默认转成什么？",
+    "explanation": "默认 style map 里有 `p[style-name='Normal'] => p:fresh`（以及 Apple Pages 的 `Body`），即**正文样式 “Normal” 段落默认转成 `<p>`**。这保证最常见的正文段落能直接得到干净的段落标签。\n\n- `<p>` 正确。\n- `<div>` 错误。\n- 「不输出（被忽略）」错误，正文当然要输出。\n- `<span>` 错误。",
+    "tags": ["mammoth", "初级", "文档处理", "默认样式映射", "Normal"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "<p>（默认映射 Normal => p:fresh）",
+        "isCorrect": true,
+        "description": "正确。正文 Normal 段落默认转成 p。"
+      },
+      {
+        "text": "<div>",
+        "isCorrect": false,
+        "description": "错误。正文默认转 p，不是 div。"
+      },
+      {
+        "text": "不输出，被当作空内容忽略",
+        "isCorrect": false,
+        "description": "错误。正文段落会被输出为 p。"
+      },
+      {
+        "text": "<span>",
+        "isCorrect": false,
+        "description": "错误。段落级元素是 p，不是行内的 span。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：以下关于「mammoth 适合 / 不适合的场景」，哪一组判断正确？",
+    "explanation": "适合 mammoth：把 docx **内容**导入 CMS/博客/富文本编辑器、提取正文做检索或迁移、需要语义干净且能套自家 CSS 的 HTML。不适合：要**像素级还原** Word 排版（用 docx-preview）、要把内容**回存成 docx**（用 docx / docxtemplater）、要保留复杂版式/分页。\n\n- 「内容导入/迁移用 mammoth；保真预览用 docx-preview；生成 docx 用 docx 库」正确。\n- 「保真预览也用 mammoth」错误。\n- 「mammoth 能回写 docx」错误。\n- 「任何 docx 需求都该用 mammoth」错误。",
+    "tags": ["mammoth", "高级", "文档处理", "选型", "场景"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "内容导入/迁移/检索用 mammoth；像素级预览用 docx-preview；生成/回写 docx 用 docx 等库",
+        "isCorrect": true,
+        "description": "正确。按「拿内容 / 原样预览 / 生成文档」三类需求分别选型。"
+      },
+      {
+        "text": "需要保真预览 Word 外观时也首选 mammoth",
+        "isCorrect": false,
+        "description": "错误。保真预览应选 docx-preview，mammoth 不还原外观。"
+      },
+      {
+        "text": "mammoth 可以把 HTML 回写成 docx 文件",
+        "isCorrect": false,
+        "description": "错误。mammoth 是单向 docx→HTML，不生成 docx。"
+      },
+      {
+        "text": "凡是涉及 docx 的需求都应统一用 mammoth",
+        "isCorrect": false,
+        "description": "错误。生成 docx、保真渲染等需求需用其它库。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：把删除线（strikethrough）文字改成语义化的 `<del>`（而非默认的 `<s>`），styleMap 怎么写？",
+    "explanation": "删除线默认输出 `<s>`。要改成 `<del>`，用直接格式匹配器 `strike`：`strike => del`。同理 `b`/`i`/`u` 也都能这样覆盖各自的默认输出。\n\n- `strike => del` 正确。\n- `s => del` 错误（左侧应是源格式关键字 `strike`，不是默认输出标签 `s`）。\n- `del => s` 方向反了。\n- `strikethrough => del` 错误，关键字是 `strike`。",
+    "tags": ["mammoth", "高级", "文档处理", "styleMap", "删除线"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "strike => del",
+        "isCorrect": true,
+        "description": "正确。strike 匹配删除线文字，=> del 覆盖默认的 s 输出。"
+      },
+      {
+        "text": "s => del",
+        "isCorrect": false,
+        "description": "错误。左侧应是源格式关键字 strike，而非默认输出标签 s。"
+      },
+      {
+        "text": "del => s",
+        "isCorrect": false,
+        "description": "错误。方向反了，且 del 不是源格式关键字。"
+      },
+      {
+        "text": "strikethrough => del",
+        "isCorrect": false,
+        "description": "错误。关键字是 strike，不是 strikethrough。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：mammoth 能转换的源文档，除了 Microsoft Word 生成的 .docx，还包括哪些？",
+    "explanation": "mammoth 处理的是 **.docx 这种 OOXML 格式**，而生成 .docx 的不止 Word——**Google Docs 和 LibreOffice 导出的 .docx 同样可被 mammoth 转换**。这也是它默认 style map 里专门兼容了 LibreOffice、Apple Pages 样式名的原因。但它**不直接**处理老的 `.doc`（二进制）或 `.odt`（OpenDocument）。\n\n- 「Google Docs / LibreOffice 导出的 .docx」正确。\n- 「老的二进制 .doc」错误，mammoth 不支持。\n- 「.odt（OpenDocument）」错误。\n- 「.pdf」错误。",
+    "tags": ["mammoth", "初级", "文档处理", "docx", "兼容性"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Google Docs、LibreOffice 等导出的 .docx 文件",
+        "isCorrect": true,
+        "description": "正确。只要是 .docx（OOXML），无论 Word/Google Docs/LibreOffice 生成都能转。"
+      },
+      {
+        "text": "老的二进制 .doc 文件",
+        "isCorrect": false,
+        "description": "错误。mammoth 只处理 .docx，不处理老的 .doc。"
+      },
+      {
+        "text": ".odt（OpenDocument 文本）",
+        "isCorrect": false,
+        "description": "错误。.odt 不在 mammoth 的处理范围内。"
+      },
+      {
+        "text": ".pdf 文件",
+        "isCorrect": false,
+        "description": "错误。mammoth 不处理 PDF。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：一段「按字体把等宽字体的段落识别为代码块」的需求，正确的实现思路是？",
+    "explanation": "直接格式（字体）无法用 styleMap 的样式名匹配，但可借助 transform：用 `mammoth.transforms.paragraph` + `mammoth.transforms.getDescendantsOfType(paragraph, 'run')` 取出段落里的所有 run，判断它们的 `font` 是否都是等宽字体（如 consolas/courier），若是则给该段落赋一个样式（如 `styleName: 'Code'`），再用 styleMap `p[style-name='Code'] => pre:separator('\\n')` 输出代码块。\n\n- 「用 transform 按 run 的 font 改判段落样式，再用 styleMap 输出 pre」正确。\n- 「styleMap 直接按字体匹配」错误，样式名匹配匹配不到字体。\n- 「靠 convertToMarkdown 自动识别代码」错误。\n- 「mammoth 无法基于字体处理」错误，transform 可以。",
+    "tags": ["mammoth", "专家", "文档处理", "transforms", "代码块"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 transforms.paragraph + getDescendantsOfType 取 run 判断 font，改判样式后再用 styleMap 输出 pre",
+        "isCorrect": true,
+        "description": "正确。字体属于直接格式，需经 transform 改判为样式名，再由 styleMap 映射成 pre。"
+      },
+      {
+        "text": "在 styleMap 里直接按字体名匹配段落",
+        "isCorrect": false,
+        "description": "错误。styleMap 按样式名/格式匹配，无法直接按具体字体名匹配段落。"
+      },
+      {
+        "text": "用 convertToMarkdown 让它自动识别等宽字体为代码",
+        "isCorrect": false,
+        "description": "错误。Markdown 转换不会按字体自动识别代码块。"
+      },
+      {
+        "text": "mammoth 完全无法基于字体做任何处理",
+        "isCorrect": false,
+        "description": "错误。通过 transformDocument 可以读取 run 的 font 做处理。"
+      }
+    ]
+  },
+  {
+    "stem": "mammoth：团队想「让 Word 文档作者自己决定标题/正文如何映射，无需开发者每次改代码」，最契合 mammoth 的做法是？",
+    "explanation": "mammoth 支持**把样式映射内嵌进 docx**（`embedStyleMap` 写入；转换时 `includeEmbeddedStyleMap` 默认 true 会自动采用）。于是作者可以在文档里携带自己的映射规则，开发者侧无需为每份文档单独写 styleMap。这正是「内嵌样式映射」机制的用途。\n\n- 「用 embedStyleMap 把映射内嵌进文档，转换时自动采用」正确。\n- 「每份文档都让开发者改硬编码 styleMap」与目标相反。\n- 「关闭默认映射」并不能让作者自助。\n- 「改用 convertToMarkdown」无关。",
+    "tags": ["mammoth", "专家", "文档处理", "embedStyleMap", "内嵌映射"],
+    "categories": [
+      ["技术方向", "mammoth"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 embedStyleMap 把样式映射内嵌进各自的 docx，转换时（includeEmbeddedStyleMap 默认 true）自动采用",
+        "isCorrect": true,
+        "description": "正确。内嵌映射让文档随身携带规则，开发侧无需逐份硬编码 styleMap。"
+      },
+      {
+        "text": "为每份文档在代码里硬编码一套 styleMap",
+        "isCorrect": false,
+        "description": "错误。这恰恰是要避免的「每次改代码」。"
+      },
+      {
+        "text": "把 includeDefaultStyleMap 设为 false",
+        "isCorrect": false,
+        "description": "错误。关闭默认映射不能让作者自助定义映射。"
+      },
+      {
+        "text": "改用 convertToMarkdown 输出",
+        "isCorrect": false,
+        "description": "错误。输出格式与「作者自助映射」无关。"
+      }
+    ]
+  }
+]

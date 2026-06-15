@@ -1,0 +1,2079 @@
+[
+  {
+    "stem": "pdf-lib：在本平台「文档处理」分类里，pdf-lib 与 jsPDF、PDF.js 并列。pdf-lib 区别于 jsPDF 的最核心能力是什么？",
+    "explanation": "pdf-lib 官方定位是「Create and modify PDF documents in any JavaScript environment」，其最大卖点是**修改既有 PDF**（load 一份现成 PDF 后加页、画字、填表单等）。jsPDF 只能从零**新建** PDF，不能读入并编辑一份已有 PDF；PDF.js 是 Mozilla 的**渲染/解析**库，负责把 PDF 画到 canvas，也不做编辑。\n\n- 「能加载并修改既有 PDF」正确，这是 pdf-lib 的独占生态位。\n- 「只能新建」是 jsPDF 的局限。\n- 「把 PDF 渲染成 canvas」是 PDF.js 的职责。\n- 「把 PDF 转成 Word」不是 pdf-lib 的能力。",
+    "tags": ["pdf-lib", "入门", "文档处理", "定位", "核心概念"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "能 load 一份既有 PDF 并在其上修改（加页 / 画字 / 填表单），而不只是从零新建",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 独占「修改既有 PDF」生态位，官方原文即「Create and modify PDF documents」。"
+      },
+      {
+        "text": "只能从零新建 PDF，无法读入已有 PDF 编辑",
+        "isCorrect": false,
+        "description": "错误。这是 jsPDF 的局限；pdf-lib 恰恰以 PDFDocument.load 修改既有 PDF 为核心卖点。"
+      },
+      {
+        "text": "把 PDF 渲染到 canvas 上供页面预览",
+        "isCorrect": false,
+        "description": "错误。渲染是 PDF.js（Mozilla）的职责，pdf-lib 不做页面渲染。"
+      },
+      {
+        "text": "把 PDF 转换成可编辑的 Word 文档",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不提供 PDF→Word 转换，那是 OCR/转换类工具的范畴。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要从零新建一个空白 PDF 文档对象，应调用哪个 API？",
+    "explanation": "新建用静态方法 `PDFDocument.create()`，返回一个 Promise，await 得到空文档对象，再 addPage、drawText 等。`PDFDocument.load(bytes)` 是用于**载入既有** PDF 字节的；`new PDFDocument()` 不是公开的构造方式（构造函数受保护，需用静态工厂）。\n\n- `await PDFDocument.create()` 正确。\n- `PDFDocument.load()` 是载入既有 PDF。\n- `new PDFDocument()` 不可用，须走静态工厂。\n- `PDFDocument.open()` 不存在。",
+    "tags": ["pdf-lib", "入门", "文档处理", "PDFDocument.create", "API"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "const pdfDoc = await PDFDocument.create()",
+        "isCorrect": true,
+        "description": "正确。create() 是新建空文档的静态工厂方法，返回 Promise。"
+      },
+      {
+        "text": "const pdfDoc = await PDFDocument.load(bytes)",
+        "isCorrect": false,
+        "description": "错误。load 用于载入既有 PDF 的字节，不是新建空文档。"
+      },
+      {
+        "text": "const pdfDoc = new PDFDocument()",
+        "isCorrect": false,
+        "description": "错误。PDFDocument 的构造函数受保护，必须通过 create()/load() 静态工厂创建。"
+      },
+      {
+        "text": "const pdfDoc = await PDFDocument.open()",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 open() 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要把磁盘上或网络来的一份既有 PDF 读进来准备修改，应使用哪个 API？",
+    "explanation": "载入既有 PDF 用 `PDFDocument.load(input)`，input 可以是 Uint8Array、ArrayBuffer 或 base64 字符串（含 data URI）。Node 里常配 `fs.readFileSync`，浏览器里常配 `fetch(...).arrayBuffer()`。\n\n- `await PDFDocument.load(existingBytes)` 正确。\n- `PDFDocument.create()` 是新建空文档。\n- `PDFDocument.read()` / `PDFDocument.parse()` 都不是 pdf-lib 的 API。",
+    "tags": ["pdf-lib", "入门", "文档处理", "PDFDocument.load", "API"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "const pdfDoc = await PDFDocument.load(existingBytes)",
+        "isCorrect": true,
+        "description": "正确。load 接受 Uint8Array / ArrayBuffer / base64 字符串，载入既有 PDF。"
+      },
+      {
+        "text": "const pdfDoc = await PDFDocument.create(existingBytes)",
+        "isCorrect": false,
+        "description": "错误。create 不接受既有字节，它只新建空文档。"
+      },
+      {
+        "text": "const pdfDoc = await PDFDocument.read(existingBytes)",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 read() 方法。"
+      },
+      {
+        "text": "const pdfDoc = await PDFDocument.parse(existingBytes)",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 parse() 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把内存里的 PDFDocument 序列化输出时，pdfDoc.save() 默认返回的是什么类型？",
+    "explanation": "`await pdfDoc.save()` 返回 **`Uint8Array`**（PDF 的原始字节）。拿到字节后：Node 可 `fs.writeFileSync('out.pdf', bytes)`；浏览器可包成 `Blob` 触发下载或塞进 `<iframe>`。若想直接拿 base64 字符串，用 `saveAsBase64()`。\n\n- `Uint8Array` 正确。\n- 不是 Node `Buffer`（虽然 Buffer 是 Uint8Array 子类，但 save 的声明类型是 Uint8Array，跨环境通用）。\n- 不是 `Blob`（Blob 要你自己用字节构造）。\n- 不是字符串（base64 要用 saveAsBase64）。",
+    "tags": ["pdf-lib", "入门", "文档处理", "save", "Uint8Array"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Uint8Array（PDF 原始字节）",
+        "isCorrect": true,
+        "description": "正确。save() 返回 Uint8Array，可写盘、包 Blob 下载或渲染到 iframe。"
+      },
+      {
+        "text": "字符串（base64 编码）",
+        "isCorrect": false,
+        "description": "错误。要 base64 字符串得用 saveAsBase64()；save() 返回的是字节。"
+      },
+      {
+        "text": "Blob 对象",
+        "isCorrect": false,
+        "description": "错误。Blob 需你用 save() 返回的字节自行 new Blob([bytes]) 构造。"
+      },
+      {
+        "text": "Node.js 的 Buffer",
+        "isCorrect": false,
+        "description": "错误。save() 的声明返回类型是 Uint8Array（跨浏览器/Node 通用），不是 Node 专有的 Buffer。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：用 npm 安装这个库的正确包名是哪个？",
+    "explanation": "官方包名就是 `pdf-lib`，`npm install --save pdf-lib` 即可。它自带 TypeScript 类型声明，无需额外装 @types。浏览器还可用 unpkg/jsDelivr 的 UMD 构建直接 `<script>` 引入（挂全局 `PDFLib`）。\n\n- `npm install pdf-lib` 正确。\n- `pdflib`（无连字符）不是正确包名。\n- `@pdf-lib/core` 不存在这个包（`@pdf-lib/fontkit` 才是真实的子包，用于字体）。\n- `pdf-js` 是另一个完全不同的库（PDF.js 相关命名）。",
+    "tags": ["pdf-lib", "入门", "文档处理", "安装", "npm"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "npm install --save pdf-lib",
+        "isCorrect": true,
+        "description": "正确。官方包名是 pdf-lib，自带 TS 类型，无需额外 @types。"
+      },
+      {
+        "text": "npm install --save pdflib",
+        "isCorrect": false,
+        "description": "错误。包名带连字符，是 pdf-lib 而非 pdflib。"
+      },
+      {
+        "text": "npm install --save @pdf-lib/core",
+        "isCorrect": false,
+        "description": "错误。没有 @pdf-lib/core 这个包；@pdf-lib 作用域下真实存在的是 @pdf-lib/fontkit（字体子包）。"
+      },
+      {
+        "text": "npm install --save pdf-js",
+        "isCorrect": false,
+        "description": "错误。这指向的是 PDF.js 系命名，与 pdf-lib 是不同的库。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在一个 PDFDocument 上追加一张新页面，应调用哪个方法？",
+    "explanation": "追加页面用 `pdfDoc.addPage()`：不传参用默认尺寸；传 `[width, height]` 指定尺寸；传一个 PDFPage 则把该页加到末尾。要插到指定位置用 `insertPage(index, ...)`，删除用 `removePage(index)`。\n\n- `pdfDoc.addPage()` 正确。\n- `pdfDoc.newPage()` 不存在。\n- `pdfDoc.createPage()` 不存在。\n- `page.add()` 不是 PDFDocument 上的方法。",
+    "tags": ["pdf-lib", "入门", "文档处理", "addPage", "页面"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "const page = pdfDoc.addPage()",
+        "isCorrect": true,
+        "description": "正确。addPage() 在文档末尾追加一页，可传 [w,h] 或 PDFPage。"
+      },
+      {
+        "text": "const page = pdfDoc.newPage()",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 newPage() 方法。"
+      },
+      {
+        "text": "const page = pdfDoc.createPage()",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 createPage() 方法。"
+      },
+      {
+        "text": "const page = pdfDoc.pages.push()",
+        "isCorrect": false,
+        "description": "错误。不能直接 push；增页要用 addPage / insertPage。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：往页面上写一行文字，正确的方法名是？",
+    "explanation": "在页面上写字用 `page.drawText(text, options)`，options 含 `x`、`y`、`size`、`font`、`color` 等。pdf-lib 用「在页面上 draw（画）」的统一动词：画图 `drawImage`、画矩形 `drawRectangle`、画线 `drawLine`。\n\n- `page.drawText('Hello', { x, y, size, font })` 正确。\n- `page.text(...)` 是 jsPDF 的写法，不是 pdf-lib。\n- `page.writeText(...)` 不存在。\n- `page.addText(...)` 不存在。",
+    "tags": ["pdf-lib", "入门", "文档处理", "drawText", "API"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "page.drawText('Hello', { x: 50, y: 700, size: 24, font })",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 用 drawText 在页面上写字，统一「draw + 名词」风格。"
+      },
+      {
+        "text": "page.text('Hello', 50, 700)",
+        "isCorrect": false,
+        "description": "错误。page.text(...) 是 jsPDF 的 API 风格，不是 pdf-lib。"
+      },
+      {
+        "text": "page.writeText('Hello', { x: 50, y: 700 })",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 writeText 方法。"
+      },
+      {
+        "text": "page.addText('Hello', { x: 50, y: 700 })",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 addText 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要用一个标准内置字体（如 Helvetica）来写字，前置步骤是什么？",
+    "explanation": "即便是 14 个标准字体，drawText 也要先 **embed（嵌入/取得字体对象）**：`const font = await pdfDoc.embedFont(StandardFonts.Helvetica)`（也可用 `embedStandardFont(StandardFonts.Helvetica)`），再把 `font` 传给 drawText 的 `font` 选项。标准字体无需真正写进文件，但 API 上仍需取得 PDFFont 对象。\n\n- 「await embedFont(StandardFonts.Helvetica) 取得字体对象」正确。\n- 「直接传字符串 'Helvetica' 给 drawText.font」错误：font 选项要的是 PDFFont 对象，不是字符串。\n- 「必须 registerFontkit 才能用标准字体」错误：fontkit 只在嵌入**自定义** TTF/OTF 时才需要。\n- 「标准字体不用 embed」错误：drawText 的 font 仍需一个 PDFFont 实例。",
+    "tags": ["pdf-lib", "初级", "文档处理", "embedFont", "StandardFonts"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "先 const font = await pdfDoc.embedFont(StandardFonts.Helvetica)，再把 font 传给 drawText",
+        "isCorrect": true,
+        "description": "正确。标准字体也要先 embedFont/embedStandardFont 取得 PDFFont 对象再用。"
+      },
+      {
+        "text": "直接给 drawText 传 font: 'Helvetica' 字符串即可",
+        "isCorrect": false,
+        "description": "错误。drawText 的 font 选项要 PDFFont 对象，不能传字符串名。"
+      },
+      {
+        "text": "必须先 pdfDoc.registerFontkit(fontkit) 才能用 Helvetica",
+        "isCorrect": false,
+        "description": "错误。fontkit 仅在嵌入自定义字体时需要；标准 14 字体不需要。"
+      },
+      {
+        "text": "标准字体可省略 embed，drawText 会自动加载",
+        "isCorrect": false,
+        "description": "错误。drawText 的 font 仍需一个已 embed 的 PDFFont 实例。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：drawText 的颜色通过 color 选项指定，构造一个红色应使用哪个辅助函数？",
+    "explanation": "pdf-lib 用颜色辅助函数：`rgb(r, g, b)`，三个分量都是 **0~1** 的小数（不是 0~255）。红色是 `rgb(1, 0, 0)`。另有 `cmyk(c,m,y,k)` 和 `grayscale(v)`。\n\n- `color: rgb(1, 0, 0)` 正确（0~1 区间）。\n- `rgb(255, 0, 0)` 错误：分量是 0~1，传 255 会溢出区间。\n- `'#FF0000'` 错误：color 要的是颜色对象，不是 CSS 十六进制字符串。\n- `{ r: 255, g: 0, b: 0 }` 错误：要用 rgb() 辅助函数返回的对象。",
+    "tags": ["pdf-lib", "初级", "文档处理", "rgb", "颜色"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "color: rgb(1, 0, 0)（分量取值 0~1）",
+        "isCorrect": true,
+        "description": "正确。rgb() 的三个分量是 0~1 的小数，红色为 rgb(1,0,0)。"
+      },
+      {
+        "text": "color: rgb(255, 0, 0)",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 的 rgb 分量是 0~1，不是 0~255。"
+      },
+      {
+        "text": "color: '#FF0000'",
+        "isCorrect": false,
+        "description": "错误。color 要颜色对象（rgb/cmyk/grayscale 返回值），不接受 CSS 十六进制字符串。"
+      },
+      {
+        "text": "color: { r: 255, g: 0, b: 0 }",
+        "isCorrect": false,
+        "description": "错误。须用 rgb() 辅助函数构造颜色对象，不能手写裸对象。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：关于页面坐标系，drawText 里 (x, y) 的原点和 y 轴方向是怎样的？",
+    "explanation": "pdf-lib 沿用 PDF 规范的坐标系：**原点在页面左下角，y 轴向上为正**。所以 y 越大越靠近页面顶部；要把文字放到顶部，常写 `y: height - margin`（height 由 `page.getSize()` 得到）。这与多数 Web/canvas「左上角原点、y 向下」相反，是新手最常踩的坑。\n\n- 「左下角原点、y 向上」正确。\n- 「左上角原点、y 向下」错误（那是 canvas/CSS 习惯）。\n- 「中心原点」错误。\n- 「原点可任意配置默认右上角」错误。",
+    "tags": ["pdf-lib", "初级", "文档处理", "坐标系", "核心概念"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "原点在左下角，y 轴向上为正（y 越大越靠顶部）",
+        "isCorrect": true,
+        "description": "正确。PDF 坐标系原点在左下、y 向上，放顶部常用 y = height - margin。"
+      },
+      {
+        "text": "原点在左上角，y 轴向下为正",
+        "isCorrect": false,
+        "description": "错误。那是 canvas/CSS 习惯；PDF（含 pdf-lib）是左下原点、y 向上。"
+      },
+      {
+        "text": "原点在页面中心，向四周扩展",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 坐标原点固定在左下角，不是中心。"
+      },
+      {
+        "text": "原点在右上角，y 向下",
+        "isCorrect": false,
+        "description": "错误。原点是左下角，不是右上角。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要在页面上嵌入并绘制一张 PNG 图片，正确的两步是？",
+    "explanation": "先 `const img = await pdfDoc.embedPng(pngBytes)` 把图片字节嵌入文档得到 PDFImage，再 `page.drawImage(img, { x, y, width, height })` 画上去。JPEG 用 `embedJpg`。可用 `img.scale(0.5)` 得到等比缩放后的 `{ width, height }`。\n\n- 「embedPng 再 drawImage」正确。\n- 「直接 drawImage(pngBytes)」错误：drawImage 要的是已 embed 的 PDFImage，不是裸字节。\n- 「用 embedFont 嵌图」错误：那是字体。\n- 「page.addImage」不存在。",
+    "tags": ["pdf-lib", "初级", "文档处理", "embedPng", "drawImage"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const img = await pdfDoc.embedPng(bytes)；page.drawImage(img, { x, y, width, height })",
+        "isCorrect": true,
+        "description": "正确。先 embedPng 得 PDFImage，再 drawImage 绘制；JPEG 用 embedJpg。"
+      },
+      {
+        "text": "page.drawImage(pngBytes, { x, y })，直接传字节",
+        "isCorrect": false,
+        "description": "错误。drawImage 接受的是已 embed 的 PDFImage 对象，不是裸字节。"
+      },
+      {
+        "text": "const img = await pdfDoc.embedFont(bytes)；page.drawImage(img)",
+        "isCorrect": false,
+        "description": "错误。embedFont 是嵌入字体，嵌图片要用 embedPng / embedJpg。"
+      },
+      {
+        "text": "page.addImage(pngBytes, 'PNG', x, y, w, h)",
+        "isCorrect": false,
+        "description": "错误。addImage('PNG', ...) 是 jsPDF 风格；pdf-lib 用 embedPng + drawImage。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：embedPng / embedJpg 接受的图片数据，下面哪种来源它支持？",
+    "explanation": "`embedPng`/`embedJpg` 接受 `Uint8Array`、`ArrayBuffer` 或 **base64 字符串**（也支持 data URI 形式如 `data:image/png;base64,...`）。Node 里常 `fs.readFileSync('a.png')` 拿 Buffer（Buffer 是 Uint8Array 子类），浏览器里常 `fetch().arrayBuffer()`。\n\n- 「Uint8Array / ArrayBuffer / base64 字符串」正确。\n- 「只接受 File 对象」错误：要先转成字节。\n- 「只接受图片 URL，库会自动 fetch」错误：pdf-lib 不替你发请求。\n- 「只接受 HTMLImageElement」错误。",
+    "tags": ["pdf-lib", "初级", "文档处理", "embedPng", "embedJpg"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Uint8Array / ArrayBuffer / base64 字符串（含 data URI）",
+        "isCorrect": true,
+        "description": "正确。embedPng/embedJpg 接受字节或 base64；URL 需你自己 fetch 成字节。"
+      },
+      {
+        "text": "只接受浏览器的 File 对象",
+        "isCorrect": false,
+        "description": "错误。File 要先 .arrayBuffer() 转字节，不能直接传。"
+      },
+      {
+        "text": "只接受图片 URL，库会自动下载",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不发网络请求，URL 要你自己 fetch 成 ArrayBuffer。"
+      },
+      {
+        "text": "只接受 HTMLImageElement（<img> 元素）",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 接受的是字节/ base64，不是 DOM 元素。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把一张嵌入后的图片等比缩放到 50%，最便捷的写法是？",
+    "explanation": "PDFImage 提供 `scale(factor)`，返回按比例缩放后的 `{ width, height }`，直接喂给 drawImage：`const dims = img.scale(0.5); page.drawImage(img, { x, y, width: dims.width, height: dims.height })`。还有 `img.size()` 拿原始尺寸、`img.scaleToFit(w, h)` 适配框。\n\n- `img.scale(0.5)` 正确。\n- `img.resize(0.5)` 不存在。\n- `img.setScale(0.5)` 不存在。\n- 「drawImage 传 scale: 0.5」错误：drawImage 用的是 width/height，没有 scale 选项。",
+    "tags": ["pdf-lib", "初级", "文档处理", "PDFImage", "scale"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const dims = img.scale(0.5)；再把 dims.width/height 传给 drawImage",
+        "isCorrect": true,
+        "description": "正确。PDFImage.scale(factor) 返回缩放后的 {width,height}，喂给 drawImage。"
+      },
+      {
+        "text": "img.resize(0.5)",
+        "isCorrect": false,
+        "description": "错误。PDFImage 没有 resize 方法。"
+      },
+      {
+        "text": "img.setScale(0.5)",
+        "isCorrect": false,
+        "description": "错误。PDFImage 没有 setScale 方法。"
+      },
+      {
+        "text": "page.drawImage(img, { x, y, scale: 0.5 })",
+        "isCorrect": false,
+        "description": "错误。drawImage 没有 scale 选项，缩放通过 width/height 控制。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在 Node.js 里把 save() 得到的 PDF 字节写到磁盘文件，最直接的做法是？",
+    "explanation": "save() 返回 `Uint8Array`，Node 直接 `fs.writeFileSync('out.pdf', pdfBytes)` 即可（writeFileSync 接受 Uint8Array）。无需先转 Buffer 或 base64。\n\n- `fs.writeFileSync('out.pdf', pdfBytes)` 正确。\n- 「必须先 Buffer.from 转 base64 再写」多此一举且错误。\n- 「pdfDoc.writeFile('out.pdf')」不存在：pdf-lib 不碰文件系统。\n- 「save 会自动写盘」错误：save 只返回字节，落地要你自己来。",
+    "tags": ["pdf-lib", "初级", "文档处理", "Node", "save"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const bytes = await pdfDoc.save()；fs.writeFileSync('out.pdf', bytes)",
+        "isCorrect": true,
+        "description": "正确。save() 返回 Uint8Array，fs.writeFileSync 可直接写入。"
+      },
+      {
+        "text": "await pdfDoc.writeFile('out.pdf')",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不接触文件系统，没有 writeFile 方法。"
+      },
+      {
+        "text": "save() 会按文档名自动写盘，无需 fs",
+        "isCorrect": false,
+        "description": "错误。save() 只返回字节，落地需你用 fs 自行写入。"
+      },
+      {
+        "text": "必须先 Buffer.from(bytes).toString('base64') 再写文件",
+        "isCorrect": false,
+        "description": "错误。多此一举；Uint8Array 可直接写盘，转 base64 反而写出损坏文件。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在浏览器里把 save() 的结果触发为文件下载，正确的关键步骤是？",
+    "explanation": "浏览器无文件系统：用字节构造 Blob → createObjectURL → 创建 `<a download>` → click()。即 `new Blob([bytes], { type: 'application/pdf' })`，`URL.createObjectURL(blob)`，给 `<a>` 设 `href`/`download` 后 `a.click()`。\n\n- 「Blob + createObjectURL + a.click()」正确。\n- 「fs.writeFileSync」错误：浏览器没有 fs。\n- 「window.save(bytes)」不存在。\n- 「直接把 Uint8Array 赋给 a.href」错误：href 要一个 URL，需先 createObjectURL。",
+    "tags": ["pdf-lib", "初级", "文档处理", "浏览器", "下载"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "new Blob([bytes],{type:'application/pdf'}) → URL.createObjectURL → <a download>.click()",
+        "isCorrect": true,
+        "description": "正确。浏览器用 Blob + createObjectURL + 隐藏 <a download> 触发下载。"
+      },
+      {
+        "text": "fs.writeFileSync('out.pdf', bytes)",
+        "isCorrect": false,
+        "description": "错误。浏览器没有 fs 模块，writeFileSync 只在 Node 可用。"
+      },
+      {
+        "text": "window.save(bytes, 'out.pdf')",
+        "isCorrect": false,
+        "description": "错误。不存在 window.save 这样的 API。"
+      },
+      {
+        "text": "把 Uint8Array 直接赋给 a.href 再 click()",
+        "isCorrect": false,
+        "description": "错误。a.href 需要 URL；必须先用 createObjectURL 把 Blob 转成 URL。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：pdfDoc.getPages() 返回的是什么？",
+    "explanation": "`pdfDoc.getPages()` 返回 **PDFPage 对象数组**（按页序）。改第一页就 `const first = pdfDoc.getPages()[0]`。还有 `getPage(i)` 取单页、`getPageCount()` 取页数。每个 PDFPage 有 `getSize()`/`drawText`/`drawImage` 等方法。\n\n- 「PDFPage 数组」正确。\n- 「页码数字数组」错误。\n- 「单个 PDFPage」错误（那是 getPage(i)）。\n- 「页面内容文本」错误：pdf-lib 不提供文本抽取。",
+    "tags": ["pdf-lib", "初级", "文档处理", "getPages", "PDFPage"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "PDFPage 对象的数组（按页序）",
+        "isCorrect": true,
+        "description": "正确。getPages() 返回 PDFPage[]，可对每页 drawText/drawImage 等。"
+      },
+      {
+        "text": "页码数字组成的数组，如 [1,2,3]",
+        "isCorrect": false,
+        "description": "错误。返回的是 PDFPage 对象，不是数字。"
+      },
+      {
+        "text": "单个 PDFPage 对象",
+        "isCorrect": false,
+        "description": "错误。取单页用 getPage(i)；getPages() 返回的是数组。"
+      },
+      {
+        "text": "每页提取出的纯文本字符串",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不做文本抽取，getPages 返回的是页面对象。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：拿到一个 PDFPage 后，获取它的宽高用哪个方法？",
+    "explanation": "`page.getSize()` 返回 `{ width, height }`；也可分别用 `page.getWidth()` / `page.getHeight()`。在既有 PDF 上写字常先取尺寸，再算 `y: height - margin` 把内容放到顶部。\n\n- `const { width, height } = page.getSize()` 正确。\n- `page.size` 属性不存在（是方法）。\n- `page.getBounds()` 不存在。\n- `page.dimensions()` 不存在。",
+    "tags": ["pdf-lib", "初级", "文档处理", "getSize", "PDFPage"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const { width, height } = page.getSize()",
+        "isCorrect": true,
+        "description": "正确。getSize() 返回 {width,height}，也可用 getWidth()/getHeight()。"
+      },
+      {
+        "text": "const { width, height } = page.size",
+        "isCorrect": false,
+        "description": "错误。size 是方法 getSize()，不是属性。"
+      },
+      {
+        "text": "const { width, height } = page.getBounds()",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 getBounds 方法。"
+      },
+      {
+        "text": "const { width, height } = page.dimensions()",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 dimensions 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要新建一页 A4 大小的页面，借助库导出的常量最规范的写法是？",
+    "explanation": "pdf-lib 导出 `PageSizes` 常量表，`PageSizes.A4` 是 `[595.28, 841.89]`（单位 point，72pt = 1 英寸）。`pdfDoc.addPage(PageSizes.A4)` 即新建 A4 页。也有 `PageSizes.Letter`（`[612, 792]`）等。\n\n- `addPage(PageSizes.A4)` 正确。\n- `addPage('A4')` 错误：addPage 接受 `[w,h]` 或 PDFPage，不是字符串。\n- `addPage({ size: 'A4' })` 错误：没有这种选项对象。\n- `addPage(210, 297)` 用的是毫米数且参数形式不对（应传数组且单位是 point）。",
+    "tags": ["pdf-lib", "中级", "文档处理", "PageSizes", "addPage"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const page = pdfDoc.addPage(PageSizes.A4)",
+        "isCorrect": true,
+        "description": "正确。PageSizes.A4 = [595.28, 841.89]（point），addPage 接受 [w,h] 数组。"
+      },
+      {
+        "text": "const page = pdfDoc.addPage('A4')",
+        "isCorrect": false,
+        "description": "错误。addPage 接受 [w,h] 数组或 PDFPage，不接受尺寸字符串。"
+      },
+      {
+        "text": "const page = pdfDoc.addPage({ size: 'A4' })",
+        "isCorrect": false,
+        "description": "错误。addPage 没有 {size} 选项对象这种重载。"
+      },
+      {
+        "text": "const page = pdfDoc.addPage(210, 297)",
+        "isCorrect": false,
+        "description": "错误。尺寸要以数组 [w,h] 传入且单位是 point（非毫米），210/297 是 A4 的毫米数。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要把文档 B 的第 1 页拷到文档 A 里（跨文档复制页面），正确流程是？",
+    "explanation": "跨文档复制页面用 `await docA.copyPages(docB, [0])`，返回**已属于 docA**的 PDFPage 数组，再 `docA.addPage(copiedPage)`（或 insertPage）。关键点：不能直接把 docB 的 page 对象 addPage 到 docA——必须先 copyPages「过户」，否则资源（字体/图像）引用会错乱。\n\n- 「copyPages(docB,[0]) 再 addPage」正确。\n- 「直接 docA.addPage(docB.getPages()[0])」错误：未经 copyPages 过户。\n- 「docA.merge(docB)」不存在 merge 方法。\n- 「copyPages 自动加入 docA」错误：copyPages 只返回页对象，还要你 addPage。",
+    "tags": ["pdf-lib", "中级", "文档处理", "copyPages", "合并"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const [p] = await docA.copyPages(docB, [0])；docA.addPage(p)",
+        "isCorrect": true,
+        "description": "正确。copyPages 把页面及其资源过户到 docA，再 addPage/insertPage 放入。"
+      },
+      {
+        "text": "docA.addPage(docB.getPages()[0])",
+        "isCorrect": false,
+        "description": "错误。跨文档不能直接 addPage 别人的页，必须先 copyPages 过户。"
+      },
+      {
+        "text": "await docA.merge(docB)",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 merge 方法，合并靠 copyPages + addPage 循环。"
+      },
+      {
+        "text": "copyPages 调用后页面已自动加进 docA，无需 addPage",
+        "isCorrect": false,
+        "description": "错误。copyPages 只返回过户后的页对象，仍需 addPage/insertPage 才进文档。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：合并多个 PDF（把若干文档的所有页面拼成一份）的标准做法是？",
+    "explanation": "pdf-lib 无一键 merge，标准做法是循环 copyPages：新建（或选其一作主）文档，对每个源文档 `const pages = await merged.copyPages(src, src.getPageIndices())`，再 `pages.forEach(p => merged.addPage(p))`。`getPageIndices()` 返回 `[0,1,...,n-1]` 便于复制全部页。\n\n- 「对每个源文档 copyPages(getPageIndices()) 再逐页 addPage」正确。\n- 「PDFDocument.concat([a,b])」不存在。\n- 「save 时传多个文档自动拼接」错误。\n- 「load 时传数组自动合并」错误。",
+    "tags": ["pdf-lib", "中级", "文档处理", "合并", "copyPages"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "循环每个源文档：copyPages(src, src.getPageIndices()) 后逐页 addPage 到目标文档",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 无一键合并，靠 copyPages + getPageIndices + addPage 拼接。"
+      },
+      {
+        "text": "PDFDocument.concat([docA, docB])",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 concat 静态方法。"
+      },
+      {
+        "text": "把多个文档数组传给 save() 自动拼接",
+        "isCorrect": false,
+        "description": "错误。save() 只序列化单个文档，不做拼接。"
+      },
+      {
+        "text": "PDFDocument.load([bytesA, bytesB]) 自动合并",
+        "isCorrect": false,
+        "description": "错误。load 一次只载入一份 PDF，不接受数组合并。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要嵌入一个自定义 TTF/OTF 字体（例如用于显示中文），除了 embedFont 还必须做什么？",
+    "explanation": "嵌入自定义字体前必须先注册 fontkit：`import fontkit from '@pdf-lib/fontkit'; pdfDoc.registerFontkit(fontkit);` 然后 `const font = await pdfDoc.embedFont(fontBytes)`。fontkit 是解析 TTF/OTF 字形所需的子模块，需单独 `npm i @pdf-lib/fontkit`。不注册会抛错。\n\n- 「先 registerFontkit(fontkit) 再 embedFont(fontBytes)」正确。\n- 「直接 embedFont 自定义字节即可」错误：未注册 fontkit 会失败。\n- 「自定义字体用 embedStandardFont」错误：那只接受 14 标准字体枚举。\n- 「中文要用 StandardFonts.SimSun」错误：标准字体里没有中文字体。",
+    "tags": ["pdf-lib", "中级", "文档处理", "fontkit", "中文字体"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先 pdfDoc.registerFontkit(fontkit)，再 await pdfDoc.embedFont(fontBytes)",
+        "isCorrect": true,
+        "description": "正确。自定义 TTF/OTF 需先注册 @pdf-lib/fontkit，否则 embedFont 抛错。"
+      },
+      {
+        "text": "直接 await pdfDoc.embedFont(fontBytes) 即可，无需 fontkit",
+        "isCorrect": false,
+        "description": "错误。不注册 fontkit 无法解析自定义字形，embedFont 会失败。"
+      },
+      {
+        "text": "用 pdfDoc.embedStandardFont(fontBytes) 嵌入自定义字体",
+        "isCorrect": false,
+        "description": "错误。embedStandardFont 只接受 14 个标准字体枚举，不收自定义字节。"
+      },
+      {
+        "text": "中文直接用 StandardFonts.SimSun",
+        "isCorrect": false,
+        "description": "错误。标准 14 字体只有 Latin 字体，没有任何中文字体。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：为什么用标准字体 Helvetica 写中文会乱码或报错？",
+    "explanation": "14 个标准字体（Helvetica/Times/Courier 等）只支持 **WinAnsi（Windows-1252）编码**，约 218 个 Latin 字符，根本不含中文（CJK）字形。写中文/西里尔/阿拉伯等非 Latin 字符必须嵌入支持这些字符的自定义字体（如思源黑体），并 registerFontkit。\n\n- 「标准字体只覆盖 WinAnsi/Latin，无 CJK 字形」正确。\n- 「中文要设 encoding: 'utf-8'」错误：编码不是症结，缺字形才是。\n- 「Helvetica 默认不开中文，调用 enableCJK 即可」错误：无此 API。\n- 「是字号问题」错误：与字号无关。",
+    "tags": ["pdf-lib", "中级", "文档处理", "WinAnsi", "中文字体"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "标准 14 字体只支持 WinAnsi(Latin)，不含中文字形，必须嵌入支持 CJK 的自定义字体",
+        "isCorrect": true,
+        "description": "正确。标准字体编码受限于 WinAnsi 约 218 个 Latin 字符，无 CJK，需嵌入自定义字体。"
+      },
+      {
+        "text": "只要给 drawText 传 encoding: 'utf-8' 就能显示中文",
+        "isCorrect": false,
+        "description": "错误。drawText 没有 encoding 选项；根因是标准字体缺中文字形，而非编码。"
+      },
+      {
+        "text": "调用 font.enableCJK() 打开中文支持",
+        "isCorrect": false,
+        "description": "错误。不存在 enableCJK 这类 API。"
+      },
+      {
+        "text": "是字号太小导致的渲染问题，调大 size 即可",
+        "isCorrect": false,
+        "description": "错误。与字号无关，是字体本身不含中文字形。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：嵌入中文字体后 PDF 体积暴增，embedFont 的哪个选项可显著减小体积？",
+    "explanation": "`embedFont(fontBytes, { subset: true })` 开启**字体子集化**：只把文档实际用到的字形打进 PDF，而非整套字体。中文字体动辄数 MB，全量嵌入会让 PDF 巨大，subset 后通常只剩几十 KB。注意子集化依赖 fontkit。\n\n- `{ subset: true }` 正确。\n- `{ compress: true }` 不是 embedFont 的选项。\n- `{ minify: true }` 不存在。\n- 「save 时传 fontSubset」错误：子集化在 embedFont 处控制。",
+    "tags": ["pdf-lib", "中级", "文档处理", "subset", "字体子集化"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await pdfDoc.embedFont(fontBytes, { subset: true })",
+        "isCorrect": true,
+        "description": "正确。subset:true 只嵌入用到的字形，中文字体可从数 MB 降到几十 KB。"
+      },
+      {
+        "text": "await pdfDoc.embedFont(fontBytes, { compress: true })",
+        "isCorrect": false,
+        "description": "错误。embedFont 没有 compress 选项；减小体积用 subset。"
+      },
+      {
+        "text": "await pdfDoc.embedFont(fontBytes, { minify: true })",
+        "isCorrect": false,
+        "description": "错误。没有 minify 选项。"
+      },
+      {
+        "text": "await pdfDoc.save({ fontSubset: true })",
+        "isCorrect": false,
+        "description": "错误。子集化在 embedFont 时通过 subset 控制，save 没有 fontSubset 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要测量一段文字在某字号下的渲染宽度（比如做居中或换行计算），用哪个方法？",
+    "explanation": "PDFFont 提供 `font.widthOfTextAtSize(text, size)` 返回文本宽度，`font.heightAtSize(size)` 返回行高，`font.sizeAtHeight(h)` 反算字号。居中常用 `x = (pageWidth - font.widthOfTextAtSize(text, size)) / 2`。\n\n- `font.widthOfTextAtSize(text, size)` 正确。\n- `page.measureText(text)` 不存在。\n- `font.getWidth(text)` 不存在（需带 size）。\n- `font.textWidth(text, size)` 命名不对。",
+    "tags": ["pdf-lib", "中级", "文档处理", "widthOfTextAtSize", "PDFFont"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "font.widthOfTextAtSize(text, size)",
+        "isCorrect": true,
+        "description": "正确。配合 font.heightAtSize(size) 做居中、换行、画底框等排版计算。"
+      },
+      {
+        "text": "page.measureText(text)",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 measureText；测量在 PDFFont 上。"
+      },
+      {
+        "text": "font.getWidth(text)",
+        "isCorrect": false,
+        "description": "错误。测宽必须带字号，方法名是 widthOfTextAtSize(text, size)。"
+      },
+      {
+        "text": "font.textWidth(text, size)",
+        "isCorrect": false,
+        "description": "错误。方法名是 widthOfTextAtSize，不是 textWidth。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：drawText 想让长文本在到达某宽度时自动换行，用哪个选项？",
+    "explanation": "给 drawText 传 `maxWidth` 即开启自动按词换行；配 `lineHeight` 控制行距。例如 `page.drawText(longText, { x, y, size, font, maxWidth: 200, lineHeight: 18 })`。文本里的 `\\n` 也会被识别为强制换行。\n\n- `maxWidth` 正确。\n- `wrap: true` 不存在。\n- `width` 不是 drawText 的换行选项（那是 drawImage/drawRectangle 的尺寸）。\n- `wordWrap: true` 不存在。",
+    "tags": ["pdf-lib", "中级", "文档处理", "drawText", "maxWidth"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "maxWidth（配 lineHeight 控制行距）",
+        "isCorrect": true,
+        "description": "正确。drawText 的 maxWidth 触发按词自动换行，lineHeight 控制行距。"
+      },
+      {
+        "text": "wrap: true",
+        "isCorrect": false,
+        "description": "错误。drawText 没有 wrap 选项。"
+      },
+      {
+        "text": "width: 200",
+        "isCorrect": false,
+        "description": "错误。width 用于 drawImage/drawRectangle 的尺寸，不控制文本换行。"
+      },
+      {
+        "text": "wordWrap: true",
+        "isCorrect": false,
+        "description": "错误。drawText 没有 wordWrap 选项，换行靠 maxWidth。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要在页面上画一段旋转 45° 的文字，rotate 选项的值应怎么给？",
+    "explanation": "旋转用辅助函数包装角度：`import { degrees } from 'pdf-lib'`，写 `rotate: degrees(45)`；弧度则用 `radians(...)`。直接传裸数字 `rotate: 45` 不对——选项要的是 Rotation 对象。同理 setRotation 也接受 degrees()/radians()。\n\n- `rotate: degrees(45)` 正确。\n- `rotate: 45` 错误：要 Rotation 对象。\n- `rotate: '45deg'` 错误：不接受 CSS 字符串。\n- `rotation: 45` 错误：选项名是 rotate 且需 degrees()。",
+    "tags": ["pdf-lib", "中级", "文档处理", "degrees", "旋转"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "rotate: degrees(45)（degrees 从 'pdf-lib' 导入）",
+        "isCorrect": true,
+        "description": "正确。角度需用 degrees()/radians() 包成 Rotation 对象传给 rotate。"
+      },
+      {
+        "text": "rotate: 45",
+        "isCorrect": false,
+        "description": "错误。rotate 接受 Rotation 对象，需用 degrees(45) 包装。"
+      },
+      {
+        "text": "rotate: '45deg'",
+        "isCorrect": false,
+        "description": "错误。不接受 CSS 字符串，要 degrees(45)。"
+      },
+      {
+        "text": "rotation: 45",
+        "isCorrect": false,
+        "description": "错误。选项名是 rotate，且值要 degrees(45)。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要做一个半透明的水印文字，drawText 应配合哪个选项？",
+    "explanation": "用 `opacity` 选项（0~1）控制不透明度，如 `opacity: 0.3` 得到淡淡的水印；再配 `rotate: degrees(45)` 倾斜更像水印。drawImage/drawRectangle 同样支持 opacity，图形还有 `borderOpacity`。\n\n- `opacity: 0.3` 正确。\n- `alpha: 0.3` 不是 pdf-lib 选项名。\n- `transparency: 0.3` 不存在。\n- 「用 rgb 的第四个参数设透明」错误：rgb 只有三个分量，透明走 opacity。",
+    "tags": ["pdf-lib", "中级", "文档处理", "opacity", "水印"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "opacity: 0.3（取值 0~1）",
+        "isCorrect": true,
+        "description": "正确。opacity 控制不透明度，水印常配 rotate 倾斜；图形另有 borderOpacity。"
+      },
+      {
+        "text": "alpha: 0.3",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 用 opacity，没有 alpha 选项。"
+      },
+      {
+        "text": "transparency: 0.3",
+        "isCorrect": false,
+        "description": "错误。没有 transparency 选项，透明用 opacity。"
+      },
+      {
+        "text": "color: rgb(0.5, 0.5, 0.5, 0.3)，第四个参数是透明度",
+        "isCorrect": false,
+        "description": "错误。rgb() 只有三个分量；透明度由 opacity 选项控制。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：访问一份 PDF 里的交互式表单（AcroForm），入口方法是？",
+    "explanation": "`const form = pdfDoc.getForm()` 拿到 PDFForm 对象，再用 `getTextField(name)`、`getCheckBox(name)`、`getRadioGroup(name)`、`getDropdown(name)`、`getOptionList(name)` 等按字段名取具体字段。`getFields()` 列出全部字段。\n\n- `pdfDoc.getForm()` 正确。\n- `pdfDoc.getAcroForm()` 不是公开 API 名。\n- `pdfDoc.form` 属性不存在（是方法）。\n- `pdfDoc.getFields()` 错误：getFields 在 form 上，不在 doc 上。",
+    "tags": ["pdf-lib", "中级", "文档处理", "getForm", "表单"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const form = pdfDoc.getForm()",
+        "isCorrect": true,
+        "description": "正确。getForm() 返回 PDFForm，再用 getTextField/getCheckBox 等按名取字段。"
+      },
+      {
+        "text": "const form = pdfDoc.getAcroForm()",
+        "isCorrect": false,
+        "description": "错误。公开 API 是 getForm()，不是 getAcroForm()。"
+      },
+      {
+        "text": "const form = pdfDoc.form",
+        "isCorrect": false,
+        "description": "错误。form 是方法 getForm()，不是属性。"
+      },
+      {
+        "text": "const fields = pdfDoc.getFields()",
+        "isCorrect": false,
+        "description": "错误。getFields() 在 PDFForm 上（form.getFields()），不在 PDFDocument 上。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：填写一个名为 'Age' 的文本字段，正确写法是？",
+    "explanation": "先 `const form = pdfDoc.getForm()`，再 `form.getTextField('Age').setText('24')`。文本字段用 `setText`；复选框用 `check()/uncheck()`；下拉/单选用 `select(value)`。\n\n- `form.getTextField('Age').setText('24')` 正确。\n- `form.setField('Age', '24')` 不存在。\n- `form.getTextField('Age').value = '24'` 错误：要用 setText 方法。\n- `form.fill('Age', '24')` 不存在。",
+    "tags": ["pdf-lib", "中级", "文档处理", "setText", "表单填写"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "form.getTextField('Age').setText('24')",
+        "isCorrect": true,
+        "description": "正确。文本字段用 setText 填值；复选框 check()，下拉/单选 select()。"
+      },
+      {
+        "text": "form.setField('Age', '24')",
+        "isCorrect": false,
+        "description": "错误。PDFForm 没有 setField；需先 getTextField 再 setText。"
+      },
+      {
+        "text": "form.getTextField('Age').value = '24'",
+        "isCorrect": false,
+        "description": "错误。文本字段无 value 属性赋值口，要调用 setText()。"
+      },
+      {
+        "text": "form.fill('Age', '24')",
+        "isCorrect": false,
+        "description": "错误。PDFForm 没有 fill 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把填好的表单变成「不可再编辑、内容固化为页面绘制」，应调用？",
+    "explanation": "`form.flatten()` 把所有表单字段**扁平化**：字段外观被烘焙成页面静态内容、控件被移除，PDF 不再可填写。常在生成最终交付件、防止他人改动时使用。flatten 后再 `pdfDoc.save()`。\n\n- `form.flatten()` 正确。\n- `form.lock()` 不是扁平化（且非此处 API）。\n- `form.readonly()` 不存在。\n- `pdfDoc.flatten()` 错误：flatten 在 PDFForm 上。",
+    "tags": ["pdf-lib", "中级", "文档处理", "flatten", "扁平化"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "form.flatten()",
+        "isCorrect": true,
+        "description": "正确。flatten() 把字段外观烘焙为页面内容并移除控件，PDF 不再可编辑。"
+      },
+      {
+        "text": "form.lock()",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 的扁平化是 flatten()；没有 form.lock()。"
+      },
+      {
+        "text": "form.readonly()",
+        "isCorrect": false,
+        "description": "错误。没有 form.readonly() 方法。"
+      },
+      {
+        "text": "pdfDoc.flatten()",
+        "isCorrect": false,
+        "description": "错误。flatten() 是 PDFForm 的方法，应 form.flatten()。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：填写表单时若字段值含中文，仅 setText 后保存仍显示不出中文，关键的额外步骤是？",
+    "explanation": "表单字段默认用 Helvetica（WinAnsi）生成外观，写不出中文。需嵌入支持 CJK 的自定义字体并 `form.updateFieldAppearances(customFont)` 用该字体重绘所有字段外观；嵌字体前别忘 registerFontkit。\n\n- 「embed 中文字体后 form.updateFieldAppearances(font)」正确。\n- 「只要 setText 中文就行」错误：默认字体无 CJK。\n- 「给 setText 传第二参数指定字体」错误：setText 只收文本。\n- 「save 时传 cjk: true」错误：无此选项。",
+    "tags": ["pdf-lib", "高级", "文档处理", "updateFieldAppearances", "表单中文"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "嵌入支持中文的自定义字体后，调用 form.updateFieldAppearances(customFont)",
+        "isCorrect": true,
+        "description": "正确。字段默认 Helvetica 无 CJK，需用嵌入的中文字体 updateFieldAppearances 重绘外观。"
+      },
+      {
+        "text": "只要 setText 传入中文字符串即可，无需额外处理",
+        "isCorrect": false,
+        "description": "错误。默认字段字体是 WinAnsi 的 Helvetica，写不出中文。"
+      },
+      {
+        "text": "给 setText 第二个参数传入字体对象",
+        "isCorrect": false,
+        "description": "错误。setText 只接受文本；字体通过 updateFieldAppearances 指定。"
+      },
+      {
+        "text": "await pdfDoc.save({ cjk: true })",
+        "isCorrect": false,
+        "description": "错误。save 没有 cjk 选项。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：从零创建一个表单文本字段并放到页面上，正确的 API 序列是？",
+    "explanation": "`const form = pdfDoc.getForm(); const tf = form.createTextField('user.name'); tf.setText('张三'); tf.addToPage(page, { x, y, width, height })`。创建用 `createTextField/createCheckBox/createRadioGroup/createDropdown/createOptionList`，再 `addToPage` 放置。\n\n- 「createTextField 再 addToPage」正确。\n- 「new PDFTextField()」错误：要走 form.createXxx 工厂。\n- 「form.addTextField」不存在。\n- 「page.createField」不存在。",
+    "tags": ["pdf-lib", "高级", "文档处理", "createTextField", "表单创建"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "form.createTextField('user.name') → setText(...) → addToPage(page, { x, y, width, height })",
+        "isCorrect": true,
+        "description": "正确。用 form.createXxx 工厂建字段，再 addToPage 放到页面上。"
+      },
+      {
+        "text": "new PDFTextField('user.name') 后手动挂到页面",
+        "isCorrect": false,
+        "description": "错误。字段需通过 form.createTextField 工厂创建，构造函数不公开。"
+      },
+      {
+        "text": "form.addTextField('user.name', page)",
+        "isCorrect": false,
+        "description": "错误。没有 addTextField；是 createTextField + addToPage。"
+      },
+      {
+        "text": "page.createField('text', 'user.name')",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 createField；字段创建在 PDFForm 上。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把一份 PDF 的某一页当作「图章/水印」盖到另一份 PDF 的多页上，应用哪个能力？",
+    "explanation": "用 `embedPage`：`const embedded = await pdfDoc.embedPage(somePage)`（或 `embedPdf(bytes, [idx])` 得到 PDFEmbeddedPage），再 `page.drawPage(embedded, { x, y, width, height })` 在任意页上绘制——这是 pdf-lib 的独特能力，把整页作为可重复绘制的对象。这与 copyPages（把页作为独立新页加入）不同。\n\n- 「embedPage 得 PDFEmbeddedPage，再 drawPage」正确。\n- 「copyPages 再 addPage」错误：那是把页作为新页插入，不是盖章。\n- 「drawImage 一个 page」错误：page 不是图片。\n- 「stampPage」不存在。",
+    "tags": ["pdf-lib", "高级", "文档处理", "embedPage", "drawPage"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "const ep = await pdfDoc.embedPage(srcPage)；page.drawPage(ep, { x, y, width, height })",
+        "isCorrect": true,
+        "description": "正确。embedPage/embedPdf 得到 PDFEmbeddedPage，drawPage 可在多页重复绘制，适合图章/水印。"
+      },
+      {
+        "text": "用 copyPages 再 addPage 把那一页加进来",
+        "isCorrect": false,
+        "description": "错误。copyPages 是把页作为独立新页插入文档，而非作为可叠加的图章绘制。"
+      },
+      {
+        "text": "把那一页 embedPng 后 drawImage",
+        "isCorrect": false,
+        "description": "错误。页面不是图片，不能 embedPng；整页复用要 embedPage。"
+      },
+      {
+        "text": "page.stampPage(srcPage)",
+        "isCorrect": false,
+        "description": "错误。没有 stampPage 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：load 一份加密（带打开口令/权限加密）的 PDF，默认会发生什么？",
+    "explanation": "pdf-lib **不支持解密**。load 加密 PDF 默认抛 `EncryptedPDFError`。可传 `{ ignoreEncryption: true }` 强行继续，但它**不解密**内容、可能导致后续操作结果不可预期，官方不推荐。要处理加密 PDF 通常需先用别的工具解密。\n\n- 「默认抛 EncryptedPDFError；ignoreEncryption 可绕过但不解密」正确。\n- 「自动用空口令解密」错误。\n- 「弹窗要求输入口令」错误：库无 UI。\n- 「load 时传 password 自动解密」错误：pdf-lib 不做解密。",
+    "tags": ["pdf-lib", "高级", "文档处理", "加密", "EncryptedPDFError"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认抛 EncryptedPDFError；可传 { ignoreEncryption: true } 绕过，但它不解密、结果可能异常",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 不支持解密，加密 PDF 默认报错，ignoreEncryption 仅强行解析不保证正确。"
+      },
+      {
+        "text": "自动以空口令尝试解密并正常打开",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有解密能力，不会自动解密。"
+      },
+      {
+        "text": "弹出对话框要求输入打开口令",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 是纯逻辑库，没有任何 UI 交互。"
+      },
+      {
+        "text": "传 { password: 'xxx' } 即可自动解密",
+        "isCorrect": false,
+        "description": "错误。load 没有 password 选项，pdf-lib 不做解密。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：设置文档元数据（标题、作者）的正确 API 是？",
+    "explanation": "用 `pdfDoc.setTitle('报表')`、`setAuthor('张三')`、`setSubject(...)`、`setKeywords([...])`、`setProducer(...)`、`setCreator(...)`、`setCreationDate(new Date())`、`setModificationDate(...)`。对应有 `getTitle()` 等读取。注意 setKeywords 接受**字符串数组**。\n\n- 「pdfDoc.setTitle / setAuthor」正确。\n- 「pdfDoc.metadata = {...}」不存在。\n- 「pdfDoc.setMeta('title', ...)」不存在。\n- 「在 save 选项里传 title」错误：元数据用 setXxx。",
+    "tags": ["pdf-lib", "中级", "文档处理", "元数据", "setTitle"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pdfDoc.setTitle('报表')；pdfDoc.setAuthor('张三')（setKeywords 收字符串数组）",
+        "isCorrect": true,
+        "description": "正确。元数据用 setTitle/setAuthor/setSubject/setKeywords 等，对应 getXxx 读取。"
+      },
+      {
+        "text": "pdfDoc.metadata = { title: '报表', author: '张三' }",
+        "isCorrect": false,
+        "description": "错误。没有 metadata 属性赋值口，要用 setTitle/setAuthor 等方法。"
+      },
+      {
+        "text": "pdfDoc.setMeta('title', '报表')",
+        "isCorrect": false,
+        "description": "错误。没有通用 setMeta 方法。"
+      },
+      {
+        "text": "await pdfDoc.save({ title: '报表', author: '张三' })",
+        "isCorrect": false,
+        "description": "错误。save 不接受元数据；元数据通过 setXxx 在保存前设置。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：save() 默认会用「对象流（object streams）」压缩输出。若某些老旧阅读器无法打开，可怎么关掉？",
+    "explanation": "`save({ useObjectStreams: false })` 关闭对象流。pdf-lib 默认 `useObjectStreams: true`（PDF 1.5+ 特性，体积更小），但极少数老旧/不规范阅读器不支持对象流，关掉可提升兼容性（代价是文件略大）。\n\n- `save({ useObjectStreams: false })` 正确。\n- `save({ compress: false })` 不是该选项名。\n- `save({ legacy: true })` 不存在。\n- `save({ objectStreams: false })` 选项名不对（是 useObjectStreams）。",
+    "tags": ["pdf-lib", "高级", "文档处理", "useObjectStreams", "save"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "await pdfDoc.save({ useObjectStreams: false })",
+        "isCorrect": true,
+        "description": "正确。默认 useObjectStreams:true 体积更小；关掉以兼容不支持对象流的老阅读器。"
+      },
+      {
+        "text": "await pdfDoc.save({ compress: false })",
+        "isCorrect": false,
+        "description": "错误。没有 compress 选项；对象流由 useObjectStreams 控制。"
+      },
+      {
+        "text": "await pdfDoc.save({ legacy: true })",
+        "isCorrect": false,
+        "description": "错误。没有 legacy 选项。"
+      },
+      {
+        "text": "await pdfDoc.save({ objectStreams: false })",
+        "isCorrect": false,
+        "description": "错误。选项名是 useObjectStreams，不是 objectStreams。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在 Node 服务端用 pdf-lib 生成 PDF 时，save() 是同步的吗？大文档会阻塞事件循环吗？",
+    "explanation": "`save()` 返回 Promise（异步），且内部会**分批让出事件循环**：可用 `objectsPerTick` 选项调节每个 tick 处理的对象数（默认值在数十量级），值越大越快但越易阻塞、越小越平滑。这设计正是为了在浏览器/服务端避免长时间卡死。\n\n- 「save 是异步、可用 objectsPerTick 调节让出粒度」正确。\n- 「save 完全同步、必然阻塞」错误。\n- 「save 不接受任何选项」错误。\n- 「用 saveSync 才不阻塞」错误：无 saveSync。",
+    "tags": ["pdf-lib", "高级", "文档处理", "objectsPerTick", "性能"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "save 是异步（返回 Promise），可用 objectsPerTick 调节每个 tick 处理的对象数以平衡速度与阻塞",
+        "isCorrect": true,
+        "description": "正确。save 分批让出事件循环，objectsPerTick 越大越快越易阻塞，越小越平滑。"
+      },
+      {
+        "text": "save 完全同步执行，处理大文档时必然长时间阻塞",
+        "isCorrect": false,
+        "description": "错误。save 返回 Promise 并分批让出事件循环，并非纯同步。"
+      },
+      {
+        "text": "save 不接受任何选项，无法调节性能",
+        "isCorrect": false,
+        "description": "错误。save 接受 useObjectStreams、objectsPerTick、updateFieldAppearances 等选项。"
+      },
+      {
+        "text": "要用 saveSync() 才能避免阻塞",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 saveSync；save 本身就是异步分批的。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：load 一份很大的 PDF 想加快解析（服务端不在意短暂阻塞），可调哪个选项？",
+    "explanation": "`PDFDocument.load(bytes, { parseSpeed: ParseSpeeds.Fastest })`。`ParseSpeeds` 枚举有 Slow/Medium/Fast/Fastest，越快越少让出事件循环（适合服务端批处理）。浏览器交互场景则相反，宁可慢些不卡 UI。\n\n- `{ parseSpeed: ParseSpeeds.Fastest }` 正确。\n- `{ fast: true }` 不是该选项。\n- `{ speed: 'fastest' }` 选项名/值都不对。\n- 「load 无任何性能选项」错误。",
+    "tags": ["pdf-lib", "高级", "文档处理", "parseSpeed", "性能"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "PDFDocument.load(bytes, { parseSpeed: ParseSpeeds.Fastest })",
+        "isCorrect": true,
+        "description": "正确。ParseSpeeds 枚举（Slow→Fastest）调节解析时让出事件循环的频率。"
+      },
+      {
+        "text": "PDFDocument.load(bytes, { fast: true })",
+        "isCorrect": false,
+        "description": "错误。没有 fast 选项；用 parseSpeed + ParseSpeeds 枚举。"
+      },
+      {
+        "text": "PDFDocument.load(bytes, { speed: 'fastest' })",
+        "isCorrect": false,
+        "description": "错误。选项名是 parseSpeed，值是 ParseSpeeds 枚举而非字符串。"
+      },
+      {
+        "text": "load 没有任何性能相关选项",
+        "isCorrect": false,
+        "description": "错误。load 支持 parseSpeed、ignoreEncryption、updateMetadata 等选项。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：load 既有 PDF 后再 save，默认会刷新文档的修改时间（ModDate）等元数据。如何阻止 pdf-lib 自动改元数据？",
+    "explanation": "`PDFDocument.load(bytes, { updateMetadata: false })`。默认 `updateMetadata: true`，pdf-lib 会在保存时更新 ModDate / Producer 等。若想原样保留原文件的元数据（如审计场景），把它设为 false。\n\n- `{ updateMetadata: false }` 正确。\n- `{ keepMetadata: true }` 不是该选项名。\n- `{ preserveMeta: true }` 不存在。\n- 「save 时传 noMetadata」错误：控制点在 load 选项。",
+    "tags": ["pdf-lib", "高级", "文档处理", "updateMetadata", "元数据"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "PDFDocument.load(bytes, { updateMetadata: false })",
+        "isCorrect": true,
+        "description": "正确。默认 updateMetadata:true 会刷新 ModDate/Producer，设 false 可原样保留。"
+      },
+      {
+        "text": "PDFDocument.load(bytes, { keepMetadata: true })",
+        "isCorrect": false,
+        "description": "错误。选项名是 updateMetadata（设为 false），没有 keepMetadata。"
+      },
+      {
+        "text": "PDFDocument.load(bytes, { preserveMeta: true })",
+        "isCorrect": false,
+        "description": "错误。没有 preserveMeta 选项。"
+      },
+      {
+        "text": "await pdfDoc.save({ noMetadata: true })",
+        "isCorrect": false,
+        "description": "错误。控制在 load 的 updateMetadata 选项，save 没有 noMetadata。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：以下哪一项是 pdf-lib **不**提供的能力？",
+    "explanation": "pdf-lib 是创建/修改 PDF 的库，**不做文本抽取（提取页面文字内容）**，也不做渲染。它能：画字/图/图形、嵌字体、加删页、合并、嵌页、表单填写与扁平化、设元数据、加附件。要「读出 PDF 里的文字」需用 PDF.js（getTextContent）等。\n\n- 「从 PDF 中提取页面文本内容」是 pdf-lib 不做的（正确答案）。\n- 「填写并扁平化表单」pdf-lib 支持。\n- 「合并多个 PDF」支持（copyPages）。\n- 「嵌入 PNG/JPEG 图片」支持。",
+    "tags": ["pdf-lib", "中级", "文档处理", "能力边界", "文本抽取"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从既有 PDF 中提取（读出）页面的文本内容",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 不做文本抽取，读 PDF 文字需 PDF.js 的 getTextContent 等。"
+      },
+      {
+        "text": "填写表单字段并 flatten 扁平化",
+        "isCorrect": false,
+        "description": "这是 pdf-lib 支持的能力，不是它做不到的。"
+      },
+      {
+        "text": "用 copyPages 合并多个 PDF",
+        "isCorrect": false,
+        "description": "这是 pdf-lib 支持的能力。"
+      },
+      {
+        "text": "embedPng / embedJpg 嵌入图片",
+        "isCorrect": false,
+        "description": "这是 pdf-lib 支持的能力。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要在页面上画一个带边框的矩形（如表格线/底框），用哪个方法及关键选项？",
+    "explanation": "`page.drawRectangle({ x, y, width, height, color, borderColor, borderWidth })`：`color` 填充色、`borderColor` 边框色、`borderWidth` 边框粗细；还有 `opacity`/`borderOpacity`/`rotate`。只要边框不要填充就别传 color。\n\n- `page.drawRectangle({ x, y, width, height, borderColor, borderWidth })` 正确。\n- `page.rect(...)` 是 jsPDF/canvas 风格。\n- `page.drawBox(...)` 不存在。\n- `page.addRectangle(...)` 不存在。",
+    "tags": ["pdf-lib", "初级", "文档处理", "drawRectangle", "图形"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "page.drawRectangle({ x, y, width, height, borderColor, borderWidth })",
+        "isCorrect": true,
+        "description": "正确。color 填充、borderColor/borderWidth 边框，还支持 opacity/rotate。"
+      },
+      {
+        "text": "page.rect(x, y, width, height)",
+        "isCorrect": false,
+        "description": "错误。page.rect 是 jsPDF/canvas 风格；pdf-lib 用 drawRectangle。"
+      },
+      {
+        "text": "page.drawBox({ x, y, w, h })",
+        "isCorrect": false,
+        "description": "错误。没有 drawBox 方法。"
+      },
+      {
+        "text": "page.addRectangle({ x, y, width, height })",
+        "isCorrect": false,
+        "description": "错误。没有 addRectangle 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要画一条直线（如分隔线），drawLine 的关键选项是？",
+    "explanation": "`page.drawLine({ start: { x, y }, end: { x, y }, thickness, color })`：`start`/`end` 是两端点坐标对象，`thickness` 线宽，`color` 颜色，还有 `opacity`/`dashArray`（虚线）。\n\n- `drawLine({ start, end, thickness, color })` 正确。\n- 「start/end 传 [x,y] 数组」错误：是 {x,y} 对象。\n- 「用 width 设线宽」错误：线宽是 thickness。\n- 「moveTo + lineTo」错误：那是 canvas 路径风格，pdf-lib 用 drawLine。",
+    "tags": ["pdf-lib", "中级", "文档处理", "drawLine", "图形"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "page.drawLine({ start: { x, y }, end: { x, y }, thickness, color })",
+        "isCorrect": true,
+        "description": "正确。端点用 {x,y} 对象，线宽用 thickness，还可加 dashArray 画虚线。"
+      },
+      {
+        "text": "page.drawLine({ start: [x, y], end: [x, y], width })",
+        "isCorrect": false,
+        "description": "错误。端点是 {x,y} 对象（非数组），线宽是 thickness（非 width）。"
+      },
+      {
+        "text": "page.moveTo(x1, y1); page.lineTo(x2, y2)",
+        "isCorrect": false,
+        "description": "错误。lineTo 是 canvas 路径 API；pdf-lib 画线用 drawLine。"
+      },
+      {
+        "text": "page.line(x1, y1, x2, y2)",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 page.line 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要把一段 SVG path 数据（如图标轮廓）画进 PDF，用哪个方法？",
+    "explanation": "`page.drawSvgPath(pathString, { x, y, scale, color, borderColor, borderWidth })`：传 SVG 的 `d` 属性字符串。注意 SVG 默认 y 向下、原点左上，pdf-lib 会做相应转换，通常需配 `x`/`y`/`scale` 定位与缩放。这让矢量图标无损融入 PDF。\n\n- `page.drawSvgPath(d, { ... })` 正确。\n- `page.drawSvg(svgString)` 错误：接受的是 path 的 d 字符串，不是整段 <svg>。\n- `page.path(d)` 不存在。\n- `page.drawPath(d)` 命名不对（是 drawSvgPath）。",
+    "tags": ["pdf-lib", "高级", "文档处理", "drawSvgPath", "矢量图"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "page.drawSvgPath('M 0 0 L 10 10 ...', { x, y, scale, color })",
+        "isCorrect": true,
+        "description": "正确。drawSvgPath 接受 SVG path 的 d 字符串，配 x/y/scale 定位缩放。"
+      },
+      {
+        "text": "page.drawSvg('<svg>...</svg>')",
+        "isCorrect": false,
+        "description": "错误。它接受的是 path 的 d 数据，不是整段 <svg> 标签。"
+      },
+      {
+        "text": "page.path('M 0 0 L 10 10')",
+        "isCorrect": false,
+        "description": "错误。没有 page.path 方法。"
+      },
+      {
+        "text": "page.drawPath('M 0 0 L 10 10')",
+        "isCorrect": false,
+        "description": "错误。方法名是 drawSvgPath，不是 drawPath。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把某一页旋转 90°（让内容随页面一起转向），应调用？",
+    "explanation": "`page.setRotation(degrees(90))` 设置页面旋转（值需为 90 的倍数，用 degrees()/radians() 包装）。读取用 `page.getRotation()`。这改变的是页面的 /Rotate 属性，阅读器按此呈现方向。\n\n- `page.setRotation(degrees(90))` 正确。\n- `page.rotate(90)` 不是 PDFPage 的方法。\n- `page.setRotation(90)` 错误：要 degrees(90) 包装。\n- `page.setAngle(90)` 不存在。",
+    "tags": ["pdf-lib", "中级", "文档处理", "setRotation", "页面旋转"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "page.setRotation(degrees(90))",
+        "isCorrect": true,
+        "description": "正确。setRotation 接受 degrees()/radians()，值须为 90 的倍数；getRotation 读取。"
+      },
+      {
+        "text": "page.rotate(90)",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 rotate 方法，旋转用 setRotation。"
+      },
+      {
+        "text": "page.setRotation(90)",
+        "isCorrect": false,
+        "description": "错误。需用 degrees(90) 包成 Rotation 对象，不能传裸数字。"
+      },
+      {
+        "text": "page.setAngle(90)",
+        "isCorrect": false,
+        "description": "错误。没有 setAngle 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：以下关于 pdf-lib 维护现状的说法，哪一项准确？",
+    "explanation": "截至 2026 年中，**原仓库 Hopding/pdf-lib 维护基本停滞**：npm 最新稳定版长期停在 **1.17.1**（2021 年底发布），master 最后一次提交在 2021 年，但下载量仍极高（每周数百万）。社区出现活跃 fork **`@cantoo/pdf-lib`**（持续发版，已到 2.x），常被推荐作为需要新特性/修复时的替代。\n\n- 「原库停滞在 1.17.1、有活跃 fork @cantoo/pdf-lib」正确。\n- 「仍在频繁发版」错误。\n- 「已被官方废弃并删库」错误：仓库仍在、未 archive。\n- 「@cantoo/pdf-lib 是官方新名」错误：它是社区 fork，不是官方改名。",
+    "tags": ["pdf-lib", "高级", "文档处理", "维护状态", "@cantoo/pdf-lib"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原库长期停在 1.17.1（2021 年底）、维护基本停滞，但下载量仍高；社区有活跃 fork @cantoo/pdf-lib",
+        "isCorrect": true,
+        "description": "正确。Hopding/pdf-lib 自 2021 年后基本无新版，@cantoo/pdf-lib 是持续维护的社区 fork（已 2.x）。"
+      },
+      {
+        "text": "pdf-lib 仍由原作者频繁发版，保持每月更新",
+        "isCorrect": false,
+        "description": "错误。npm 最新版长期停在 1.17.1，仓库提交也已多年停滞。"
+      },
+      {
+        "text": "pdf-lib 已被官方废弃并从 npm 删库",
+        "isCorrect": false,
+        "description": "错误。包仍在 npm 上、仓库未 archive，只是维护停滞。"
+      },
+      {
+        "text": "@cantoo/pdf-lib 是官方把 pdf-lib 改的新名字",
+        "isCorrect": false,
+        "description": "错误。@cantoo/pdf-lib 是社区维护的 fork，不是官方改名。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：项目需要 pdf-lib 没有的新特性或 bug 修复（原库已停更），社区最常见的稳妥选择是？",
+    "explanation": "切到活跃 fork **`@cantoo/pdf-lib`**：API 与原库高度兼容（同样 `PDFDocument.create/load`、drawText、表单等），但持续修 bug、加特性（已发到 2.x）。迁移通常只需换包名导入。当然也可评估别的库，但同生态最低成本的就是这个 fork。\n\n- 「换用 @cantoo/pdf-lib（API 基本兼容）」正确。\n- 「回退到更老的 0.x」错误：老版本特性更少。\n- 「自己 fork 改源码并长期维护」成本高，非「最常见稳妥」。\n- 「放弃 pdf-lib 改用 jsPDF」错误：jsPDF 不能修改既有 PDF，能力不对等。",
+    "tags": ["pdf-lib", "高级", "文档处理", "@cantoo/pdf-lib", "选型"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "改用活跃 fork @cantoo/pdf-lib，API 与原库基本兼容，迁移多半只换导入包名",
+        "isCorrect": true,
+        "description": "正确。@cantoo/pdf-lib 持续维护、API 兼容，是停更原库的最低成本替代。"
+      },
+      {
+        "text": "回退到 pdf-lib 更老的 0.x 版本",
+        "isCorrect": false,
+        "description": "错误。老版本特性更少、问题更多，不能解决「需要新特性/修复」。"
+      },
+      {
+        "text": "自己 fork 源码长期独立维护",
+        "isCorrect": false,
+        "description": "成本极高，不是社区「最常见稳妥」做法；已有现成活跃 fork 可用。"
+      },
+      {
+        "text": "换成 jsPDF",
+        "isCorrect": false,
+        "description": "错误。jsPDF 只能新建、不能修改既有 PDF，能力与 pdf-lib 不对等。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：embedJpg 用于嵌入 JPEG。下面关于它支持的 JPEG 类型，哪项正确？",
+    "explanation": "pdf-lib 的 `embedJpg` 嵌入的是 **baseline（基线）JPEG**；对 **progressive（渐进式）JPEG** 支持不佳，常见报错或显示异常。遇到渐进式 JPEG，需先转成基线 JPEG 或 PNG 再嵌。这是实战常见坑。\n\n- 「支持 baseline JPEG，渐进式 JPEG 易出问题」正确。\n- 「支持任意 JPEG 含渐进式」错误。\n- 「embedJpg 也能嵌 PNG」错误：PNG 用 embedPng。\n- 「embedJpg 会自动把渐进式转基线」错误：不会自动转。",
+    "tags": ["pdf-lib", "高级", "文档处理", "embedJpg", "JPEG"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "支持 baseline JPEG；progressive（渐进式）JPEG 易报错，需先转基线或 PNG",
+        "isCorrect": true,
+        "description": "正确。embedJpg 面向基线 JPEG，渐进式常出问题，是实战常见坑。"
+      },
+      {
+        "text": "支持任意 JPEG，包括渐进式（progressive）",
+        "isCorrect": false,
+        "description": "错误。渐进式 JPEG 支持不佳，常报错或显示异常。"
+      },
+      {
+        "text": "embedJpg 也可用来嵌入 PNG 图片",
+        "isCorrect": false,
+        "description": "错误。PNG 必须用 embedPng；embedJpg 只处理 JPEG。"
+      },
+      {
+        "text": "embedJpg 会自动把渐进式 JPEG 转成基线",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不做格式转换，渐进式需你自行预处理。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在 React Native 环境里要正常运行 pdf-lib，通常需要额外什么？",
+    "explanation": "pdf-lib 设计为「any modern JavaScript runtime」，官方在 Node/Browser/Deno/**React Native** 测试过。但 RN 缺少标准 Web 的 `atob`/`btoa`、`Uint8Array`/`encoding` 等部分基础设施，官方文档提示需引入相应 **polyfill**（如 base64、TextEncoder 等）才能稳定工作。\n\n- 「RN 下需补 base64/编码等 polyfill」正确。\n- 「RN 完全不支持」错误：官方支持，但需 polyfill。\n- 「需把 pdf-lib 跑在原生线程」错误。\n- 「RN 下要用另一个专用包」错误：同一个 pdf-lib，加 polyfill 即可。",
+    "tags": ["pdf-lib", "高级", "文档处理", "React Native", "polyfill"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "补齐 React Native 缺失的基础能力 polyfill（如 base64 的 atob/btoa、编码等）",
+        "isCorrect": true,
+        "description": "正确。官方支持 RN，但需引入 base64/编码等 polyfill 才能稳定运行。"
+      },
+      {
+        "text": "React Native 完全不被 pdf-lib 支持",
+        "isCorrect": false,
+        "description": "错误。官方明确在 RN 环境测试过，只是需要 polyfill。"
+      },
+      {
+        "text": "必须把 pdf-lib 移到原生 iOS/Android 线程执行",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 是纯 JS，不要求原生线程；补 polyfill 即可。"
+      },
+      {
+        "text": "RN 下要安装一个专门的 pdf-lib-react-native 包",
+        "isCorrect": false,
+        "description": "错误。用的还是同一个 pdf-lib，区别只在于补 polyfill。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把页面内容（坐标系）整体平移或缩放，影响后续所有绘制，下面哪个方法对？",
+    "explanation": "PDFPage 提供 `translateContent(x, y)` 平移内容、`scaleContent(x, y)` 与 `scale(x, y)`（缩放页面尺寸+内容+注释）等变换。这类方法改变页面的坐标变换，常用于整体调整既有页内容的位置/比例。\n\n- 「translateContent / scale 等内容变换方法」正确。\n- 「page.transform(matrix)」不是公开常用 API。\n- 「page.offset(x,y)」不存在。\n- 「只能逐个元素改坐标，无整体变换」错误。",
+    "tags": ["pdf-lib", "高级", "文档处理", "translateContent", "变换"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "page.translateContent(x, y) 平移内容、page.scale(x, y) 缩放页面与内容",
+        "isCorrect": true,
+        "description": "正确。PDFPage 提供 translateContent/scaleContent/scale 等坐标变换方法。"
+      },
+      {
+        "text": "page.offset(x, y)",
+        "isCorrect": false,
+        "description": "错误。没有 offset 方法；平移用 translateContent。"
+      },
+      {
+        "text": "page.transform([a,b,c,d,e,f])",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不暴露这种裸矩阵 transform 作为常用 API。"
+      },
+      {
+        "text": "pdf-lib 不支持页面整体变换，只能逐元素改坐标",
+        "isCorrect": false,
+        "description": "错误。translateContent/scale 等正是整体变换能力。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要给 PDF 添加一个文件附件（embedded file，如把发票源数据 JSON 附进 PDF），用哪个 API？",
+    "explanation": "`await pdfDoc.attach(fileBytes, 'data.json', { mimeType: 'application/json', description: '...', creationDate, modificationDate })`。attach 把任意字节作为嵌入文件附到文档级别，支持设置文件名、MIME、描述与日期。\n\n- `pdfDoc.attach(bytes, name, options)` 正确。\n- `pdfDoc.addAttachment(...)` 命名不对。\n- `pdfDoc.embedFile(...)` 不存在。\n- `page.attach(...)` 错误：附件在文档级，不在页级。",
+    "tags": ["pdf-lib", "高级", "文档处理", "attach", "附件"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "await pdfDoc.attach(fileBytes, 'data.json', { mimeType: 'application/json' })",
+        "isCorrect": true,
+        "description": "正确。attach 把字节作为嵌入文件附到文档，可设文件名、mimeType、描述、日期。"
+      },
+      {
+        "text": "pdfDoc.addAttachment(fileBytes, 'data.json')",
+        "isCorrect": false,
+        "description": "错误。方法名是 attach，不是 addAttachment。"
+      },
+      {
+        "text": "pdfDoc.embedFile(fileBytes, 'data.json')",
+        "isCorrect": false,
+        "description": "错误。没有 embedFile 方法；附件用 attach。"
+      },
+      {
+        "text": "page.attach(fileBytes, 'data.json')",
+        "isCorrect": false,
+        "description": "错误。附件挂在文档级（pdfDoc.attach），不是页级。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在浏览器 fetch 一份远程 PDF 来修改，传给 PDFDocument.load 之前要怎么处理响应？",
+    "explanation": "PDF 是二进制，必须取 `arrayBuffer()`：`const bytes = await (await fetch(url)).arrayBuffer(); const doc = await PDFDocument.load(bytes)`。**不能**用 `res.text()`（会按文本解码破坏二进制），也不必手动转 base64。\n\n- 「await res.arrayBuffer() 再 load」正确。\n- 「await res.text() 再 load」错误：文本解码会损坏 PDF。\n- 「res.json()」错误：PDF 不是 JSON。\n- 「直接 load(res)」错误：load 不接受 Response 对象。",
+    "tags": ["pdf-lib", "初级", "文档处理", "fetch", "arrayBuffer"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const bytes = await (await fetch(url)).arrayBuffer()；await PDFDocument.load(bytes)",
+        "isCorrect": true,
+        "description": "正确。PDF 是二进制，取 arrayBuffer() 再 load；切勿用 text()。"
+      },
+      {
+        "text": "const text = await res.text()；await PDFDocument.load(text)",
+        "isCorrect": false,
+        "description": "错误。res.text() 会按字符编码解码，破坏二进制 PDF 数据。"
+      },
+      {
+        "text": "const data = await res.json()；await PDFDocument.load(data)",
+        "isCorrect": false,
+        "description": "错误。PDF 不是 JSON，res.json() 会直接解析失败。"
+      },
+      {
+        "text": "await PDFDocument.load(res)，直接传 Response",
+        "isCorrect": false,
+        "description": "错误。load 接受字节/base64，不接受 Response 对象。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：drawText 默认只画一行。若文本里含 \\n 换行符，行为是怎样的？",
+    "explanation": "drawText **会**识别字符串中的 `\\n` 作为换行，按 `lineHeight`（或字号默认行距）逐行向下绘制——所以多行文本可直接传含 `\\n` 的字符串。再叠加 `maxWidth` 还能在超宽时自动按词换行。\n\n- 「\\n 被识别为换行，按 lineHeight 逐行画」正确。\n- 「\\n 被当普通字符画成方块」错误。\n- 「必须每行单独调 drawText」错误：含 \\n 即可多行。\n- 「\\n 会抛错」错误。",
+    "tags": ["pdf-lib", "中级", "文档处理", "drawText", "换行"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "drawText 识别 \\n 作为换行，按 lineHeight 逐行向下绘制",
+        "isCorrect": true,
+        "description": "正确。含 \\n 的字符串会多行绘制，配 lineHeight 控行距、maxWidth 自动换行。"
+      },
+      {
+        "text": "\\n 会被当作普通字符画成豆腐块/方块",
+        "isCorrect": false,
+        "description": "错误。drawText 会把 \\n 解释为换行，而非可见字符。"
+      },
+      {
+        "text": "必须把每一行拆开各调一次 drawText",
+        "isCorrect": false,
+        "description": "错误。一次 drawText 传含 \\n 的字符串即可多行，无需手动拆。"
+      },
+      {
+        "text": "传含 \\n 的文本会让 drawText 抛异常",
+        "isCorrect": false,
+        "description": "错误。\\n 是合法的换行输入，不会抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：drawText 的 color 默认值（不传 color 时）是什么？",
+    "explanation": "drawText 不传 `color` 时默认是**黑色**（`rgb(0, 0, 0)`）。可在页面级用 `page.setFontColor(color)` 改默认色，之后该页 drawText 不传 color 就用这个默认。\n\n- 「黑色 rgb(0,0,0)」正确。\n- 「透明」错误：默认可见黑色。\n- 「继承上一次 drawText 的颜色」错误：默认是黑，除非用 setFontColor 改页级默认。\n- 「随机色」错误。",
+    "tags": ["pdf-lib", "初级", "文档处理", "drawText", "颜色默认值"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "黑色（rgb(0, 0, 0)）",
+        "isCorrect": true,
+        "description": "正确。默认黑色；可用 page.setFontColor 改该页默认文字色。"
+      },
+      {
+        "text": "透明（不可见）",
+        "isCorrect": false,
+        "description": "错误。默认是可见的黑色，不是透明。"
+      },
+      {
+        "text": "继承本页上一次 drawText 用过的颜色",
+        "isCorrect": false,
+        "description": "错误。默认固定黑色，除非用 setFontColor 设置页级默认。"
+      },
+      {
+        "text": "由 PDF 阅读器随机决定",
+        "isCorrect": false,
+        "description": "错误。颜色由库决定，默认黑色，不存在随机。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要删除文档中第 3 页（索引 2），用哪个方法？",
+    "explanation": "`pdfDoc.removePage(2)` 删除指定索引（0 基）的页面。插入用 `insertPage(index, ...)`，追加用 `addPage()`。删除后页数与索引随之变化，连续删多页要注意索引位移（从后往前删更稳）。\n\n- `pdfDoc.removePage(2)` 正确。\n- `pdfDoc.deletePage(2)` 命名不对。\n- `page.remove()` 不是 PDFPage 方法。\n- `pdfDoc.pages.splice(2,1)` 错误：不能直接操作内部数组。",
+    "tags": ["pdf-lib", "初级", "文档处理", "removePage", "页面"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pdfDoc.removePage(2)",
+        "isCorrect": true,
+        "description": "正确。removePage(index) 按 0 基索引删页；连续删多页建议从后往前。"
+      },
+      {
+        "text": "pdfDoc.deletePage(2)",
+        "isCorrect": false,
+        "description": "错误。方法名是 removePage，不是 deletePage。"
+      },
+      {
+        "text": "pdfDoc.getPage(2).remove()",
+        "isCorrect": false,
+        "description": "错误。PDFPage 没有 remove 方法；删页在文档上 removePage。"
+      },
+      {
+        "text": "pdfDoc.pages.splice(2, 1)",
+        "isCorrect": false,
+        "description": "错误。不能直接操作内部页数组，要用 removePage。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：想直接拿到可放进 data URI 或 <iframe src> 的 base64 字符串，用哪个方法？",
+    "explanation": "`const base64 = await pdfDoc.saveAsBase64()` 返回纯 base64；传 `{ dataUri: true }` 则返回完整 `data:application/pdf;base64,...`，可直接当 `<iframe src>` 或 `<a href>` 预览/下载。普通 `save()` 给的是 Uint8Array。\n\n- `saveAsBase64({ dataUri: true })` 正确。\n- 「save() 直接给 base64」错误：save 给字节。\n- `toBase64()` 不存在。\n- `saveBase64()` 命名不对（是 saveAsBase64）。",
+    "tags": ["pdf-lib", "中级", "文档处理", "saveAsBase64", "dataUri"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await pdfDoc.saveAsBase64({ dataUri: true })",
+        "isCorrect": true,
+        "description": "正确。saveAsBase64 返回 base64；dataUri:true 给出完整 data: URI 可直接用于 iframe/href。"
+      },
+      {
+        "text": "await pdfDoc.save() 直接返回 base64 字符串",
+        "isCorrect": false,
+        "description": "错误。save() 返回 Uint8Array 字节，要 base64 用 saveAsBase64。"
+      },
+      {
+        "text": "await pdfDoc.toBase64()",
+        "isCorrect": false,
+        "description": "错误。没有 toBase64 方法。"
+      },
+      {
+        "text": "await pdfDoc.saveBase64()",
+        "isCorrect": false,
+        "description": "错误。方法名是 saveAsBase64。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：关于「在既有 PDF 上 drawText 添加内容」，下面理解正确的是？",
+    "explanation": "drawText 是**叠加绘制**——把新文字画在页面既有内容**之上**，不会替换或编辑原有文字（pdf-lib 不能修改既有文本对象）。所以「批注/盖章/补字段」可行，但「把原文里的某个词改掉」做不到（那需要先抽取定位原文本，pdf-lib 不支持）。\n\n- 「drawText 是在原内容之上叠加新内容」正确。\n- 「会替换原有文字」错误。\n- 「能就地编辑原 PDF 里已有的文字」错误：做不到。\n- 「drawText 只能用在新建文档」错误：既有 PDF 也能 drawText。",
+    "tags": ["pdf-lib", "中级", "文档处理", "drawText", "叠加绘制"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "drawText 是在页面既有内容之上叠加新文字，不替换、也无法编辑原有文字对象",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 能叠加（批注/盖章/补字段），但不能就地改写原 PDF 里已有的文字。"
+      },
+      {
+        "text": "drawText 会替换页面上原来的文字",
+        "isCorrect": false,
+        "description": "错误。drawText 只叠加新内容，不动原有内容。"
+      },
+      {
+        "text": "drawText 能就地编辑原 PDF 里已存在的某段文字",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 无法定位/改写既有文本对象，只能叠加。"
+      },
+      {
+        "text": "drawText 只能用于 create 的新文档，load 的文档不能用",
+        "isCorrect": false,
+        "description": "错误。修改既有 PDF 正是卖点，load 后照样可 drawText。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：embedFont 接受 StandardFonts 枚举或自定义字节。下面哪个是 StandardFonts 里真实存在的字体？",
+    "explanation": "标准 14 字体含：Helvetica（及 Bold/Oblique/BoldOblique）、TimesRoman（及变体）、Courier（及变体）、Symbol、ZapfDingbats。`StandardFonts.Helvetica`、`StandardFonts.TimesRoman`、`StandardFonts.Courier` 都是真值。中文/思源黑体等都**不在**标准字体里。\n\n- `StandardFonts.TimesRoman` 正确。\n- `StandardFonts.Arial` 错误：标准 14 里没有 Arial（用 Helvetica）。\n- `StandardFonts.SimHei` 错误：无中文字体。\n- `StandardFonts.Roboto` 错误：不是标准字体。",
+    "tags": ["pdf-lib", "初级", "文档处理", "StandardFonts", "字体"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "StandardFonts.TimesRoman",
+        "isCorrect": true,
+        "description": "正确。标准 14 字体含 Helvetica/TimesRoman/Courier/Symbol/ZapfDingbats 及其变体。"
+      },
+      {
+        "text": "StandardFonts.Arial",
+        "isCorrect": false,
+        "description": "错误。标准 14 字体里没有 Arial，等价无衬线字体是 Helvetica。"
+      },
+      {
+        "text": "StandardFonts.SimHei",
+        "isCorrect": false,
+        "description": "错误。标准字体全是 Latin 字体，没有任何中文字体。"
+      },
+      {
+        "text": "StandardFonts.Roboto",
+        "isCorrect": false,
+        "description": "错误。Roboto 不在标准 14 字体内，要用需自行嵌入。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：一个常见误解是「pdf-lib 能把 HTML 页面直接转成 PDF」。这是否正确？",
+    "explanation": "**不正确**。pdf-lib 是**底层**的 PDF 内容构造库（你用 drawText/drawImage/drawRectangle 等逐个画元素），它**不渲染 HTML/CSS**。要「HTML → PDF」应用别的方案：浏览器打印（`window.print` / Puppeteer 的 `page.pdf()`）、或 html2canvas 截图后嵌图等。\n\n- 「不正确，pdf-lib 不渲染 HTML，需 Puppeteer 等」正确。\n- 「正确，传 HTML 字符串即可」错误。\n- 「正确，用 fromHTML 方法」错误：无此方法。\n- 「正确，但仅支持内联样式」错误：根本不解析 HTML。",
+    "tags": ["pdf-lib", "中级", "文档处理", "能力边界", "HTML转PDF"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不正确：pdf-lib 是底层绘制库、不渲染 HTML/CSS，HTML→PDF 需 Puppeteer(page.pdf)/浏览器打印等",
+        "isCorrect": true,
+        "description": "正确。pdf-lib 逐元素绘制，不解析 HTML；HTML 转 PDF 属于无头浏览器/打印的范畴。"
+      },
+      {
+        "text": "正确：把 HTML 字符串传给 pdf-lib 就能生成 PDF",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 不接受也不解析 HTML 字符串。"
+      },
+      {
+        "text": "正确：调用 PDFDocument.fromHTML(html) 即可",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 没有 fromHTML 之类的方法。"
+      },
+      {
+        "text": "正确，但只支持内联 style 的简单 HTML",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 完全不解析 HTML/CSS，无论是否内联样式。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要画一个圆（如徽标点缀），drawCircle 的关键选项是？",
+    "explanation": "`page.drawCircle({ x, y, size, color, borderColor, borderWidth })`：`x`/`y` 是**圆心**坐标，`size` 是半径，`color` 填充、`borderColor`/`borderWidth` 描边。椭圆用 `drawEllipse({ x, y, xScale, yScale, ... })`。\n\n- `drawCircle({ x, y, size })`（x,y 为圆心、size 为半径）正确。\n- 「x,y 是外接矩形左下角」错误：是圆心。\n- 「radius 设半径」错误：选项名是 size。\n- 「drawOval」不存在（椭圆是 drawEllipse）。",
+    "tags": ["pdf-lib", "中级", "文档处理", "drawCircle", "图形"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "page.drawCircle({ x, y, size, color, borderColor })，x/y 为圆心、size 为半径",
+        "isCorrect": true,
+        "description": "正确。drawCircle 以 x/y 为圆心、size 为半径；椭圆用 drawEllipse(xScale/yScale)。"
+      },
+      {
+        "text": "page.drawCircle({ x, y, radius })，radius 设半径",
+        "isCorrect": false,
+        "description": "错误。半径选项名是 size，不是 radius。"
+      },
+      {
+        "text": "page.drawCircle({ x, y, size })，x/y 是外接矩形左下角",
+        "isCorrect": false,
+        "description": "错误。x/y 是圆心坐标，不是外接矩形角点。"
+      },
+      {
+        "text": "page.drawOval({ x, y, size })",
+        "isCorrect": false,
+        "description": "错误。没有 drawOval；圆用 drawCircle、椭圆用 drawEllipse。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：embedPdf(bytes, indices) 与 copyPages(srcDoc, indices) 都能跨文档取页，二者最主要区别是？",
+    "explanation": "`copyPages` 把源页作为**独立 PDFPage**复制进来，可 addPage/insertPage 成为新页面（成为目录里的正式页）；`embedPdf`/`embedPage` 把页变成 **PDFEmbeddedPage（可重复绘制的对象）**，用 `drawPage` 像图片一样**叠加**到任意页（适合 N-up 拼版、图章、缩略图）。\n\n- 「copyPages 得独立新页(addPage)，embedPdf 得可 drawPage 叠加的嵌入页」正确。\n- 「两者完全等价」错误。\n- 「embedPdf 只能取第一页」错误：可传 indices。\n- 「copyPages 会叠加绘制」错误：那是 embedPage 的用法。",
+    "tags": ["pdf-lib", "高级", "文档处理", "embedPdf", "copyPages"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "copyPages 得到可 addPage 的独立新页；embedPdf/embedPage 得到可 drawPage 叠加复用的嵌入页",
+        "isCorrect": true,
+        "description": "正确。前者把页变正式新页，后者把页变成像图片一样可重复绘制的对象（拼版/图章）。"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。一个产出独立页面、一个产出可叠加绘制的嵌入页，用途不同。"
+      },
+      {
+        "text": "embedPdf 只能取源文档的第一页",
+        "isCorrect": false,
+        "description": "错误。embedPdf 接受 indices 数组，可取任意多页。"
+      },
+      {
+        "text": "copyPages 用于把页叠加绘制到别的页上",
+        "isCorrect": false,
+        "description": "错误。叠加绘制是 embedPage + drawPage；copyPages 是插入独立新页。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：要做「一页 A4 上拼 2x2 共 4 个缩小版页面」（N-up 拼版），技术路线是？",
+    "explanation": "用 `embedPage`/`embedPages` 把各源页变成 PDFEmbeddedPage，在一张新 A4 页上用 `drawPage(ep, { x, y, xScale, yScale })`（或 width/height）按网格定位缩放绘制 4 次。这正是嵌入页「可重复叠加绘制」的典型用途。\n\n- 「embedPages 后在一页上 drawPage 多次按网格定位」正确。\n- 「copyPages 后 addPage 4 次」错误：那是 4 个独立页，不是拼到一页。\n- 「drawImage 4 个 page」错误：page 不是图片。\n- 「pdf-lib 不支持 N-up」错误：embedPage 正好支持。",
+    "tags": ["pdf-lib", "高级", "文档处理", "embedPages", "N-up拼版"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "embedPages 得到嵌入页，在一张新页上用 drawPage 按 2x2 网格定位并缩放绘制 4 次",
+        "isCorrect": true,
+        "description": "正确。N-up 拼版靠 embedPage/embedPages + drawPage 在同一页多次缩放叠加。"
+      },
+      {
+        "text": "copyPages 后 addPage 四次",
+        "isCorrect": false,
+        "description": "错误。那会得到 4 个独立整页，而非把 4 页拼到同一张纸上。"
+      },
+      {
+        "text": "把每个 page 用 embedPng 转图再 drawImage",
+        "isCorrect": false,
+        "description": "错误。页面不能 embedPng；整页复用要 embedPage。"
+      },
+      {
+        "text": "pdf-lib 无法实现 N-up 拼版",
+        "isCorrect": false,
+        "description": "错误。embedPage + drawPage 正是为这类整页复用而设计。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：把整份 PDF 做成「每页右下角盖统一签章图片」的批处理，最高效的图片处理方式是？",
+    "explanation": "图片只需 `embedPng`/`embedJpg` **一次**，得到的 PDFImage 可在循环里对**每一页** `drawImage` 复用——嵌入资源是文档级共享的，不会因为画多次而重复存多份。若每页都重新 embed 同一张图才会浪费体积。\n\n- 「embed 一次，循环每页 drawImage 复用同一 PDFImage」正确。\n- 「每页都重新 embedPng」错误：浪费、增大体积。\n- 「必须每页 copyPages」错误：与盖图无关。\n- 「图片要转成 SVG path」错误：没必要。",
+    "tags": ["pdf-lib", "高级", "文档处理", "drawImage", "批处理"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "embedPng 一次得到 PDFImage，循环对每页 drawImage 复用同一对象",
+        "isCorrect": true,
+        "description": "正确。嵌入资源文档级共享，一次 embed、多页 drawImage 复用，不会重复存储。"
+      },
+      {
+        "text": "对每一页都重新 embedPng 同一张图片",
+        "isCorrect": false,
+        "description": "错误。重复嵌入同一图会增大文件、浪费内存。"
+      },
+      {
+        "text": "每页都先 copyPages 再盖图",
+        "isCorrect": false,
+        "description": "错误。盖图与 copyPages 无关，徒增复杂度。"
+      },
+      {
+        "text": "必须把签章图先转成 SVG path 再 drawSvgPath",
+        "isCorrect": false,
+        "description": "错误。位图签章用 embedPng + drawImage 即可，无需转矢量。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：复选框 form.getCheckBox('agree') 取到后，勾选/取消勾选分别用？",
+    "explanation": "复选框用 `check()` 勾选、`uncheck()` 取消、`isChecked()` 读状态。单选组用 `select(value)`，下拉/列表也用 `select(value)`（可传数组多选）。文本字段用 `setText`。\n\n- `checkBox.check()` / `checkBox.uncheck()` 正确。\n- 「setChecked(true)」不存在。\n- 「checkBox.value = true」错误：用方法。\n- 「checkBox.select()」错误：select 是单选/下拉的。",
+    "tags": ["pdf-lib", "中级", "文档处理", "getCheckBox", "复选框"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "checkBox.check() 勾选、checkBox.uncheck() 取消（isChecked() 读状态）",
+        "isCorrect": true,
+        "description": "正确。复选框用 check/uncheck/isChecked；单选与下拉用 select(value)。"
+      },
+      {
+        "text": "checkBox.setChecked(true) / setChecked(false)",
+        "isCorrect": false,
+        "description": "错误。没有 setChecked 方法，用 check()/uncheck()。"
+      },
+      {
+        "text": "checkBox.value = true",
+        "isCorrect": false,
+        "description": "错误。复选框无 value 赋值口，用 check()/uncheck()。"
+      },
+      {
+        "text": "checkBox.select('on')",
+        "isCorrect": false,
+        "description": "错误。select 用于单选组/下拉/列表，复选框用 check/uncheck。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：取一个可能不存在的表单字段、避免直接抛错，应该用哪个方法？",
+    "explanation": "`form.getFieldMaybe(name)` 在字段不存在时返回 `undefined`（而非抛错），适合做存在性判断；`form.getField(name)` 找不到会抛错。还有 `form.getFields()` 列全部字段、`form.removeField(field)` 删字段。\n\n- `form.getFieldMaybe(name)` 正确。\n- `form.getField(name)` 找不到会抛错（不安全）。\n- `form.hasField(name)` 不是标准方法。\n- `form.findField(name)` 不存在。",
+    "tags": ["pdf-lib", "高级", "文档处理", "getFieldMaybe", "表单"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "form.getFieldMaybe(name)（不存在返回 undefined）",
+        "isCorrect": true,
+        "description": "正确。getFieldMaybe 找不到返回 undefined，适合存在性判断；getField 找不到会抛错。"
+      },
+      {
+        "text": "form.getField(name)，找不到会安全返回 null",
+        "isCorrect": false,
+        "description": "错误。getField 找不到字段会抛错，不是返回 null。"
+      },
+      {
+        "text": "form.hasField(name)",
+        "isCorrect": false,
+        "description": "错误。没有 hasField 方法；判断存在用 getFieldMaybe。"
+      },
+      {
+        "text": "form.findField(name)",
+        "isCorrect": false,
+        "description": "错误。没有 findField 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在前端用 Vue/React 生成并预览 PDF，常把 save() 的字节喂给 <iframe>。最简洁的 src 来源是？",
+    "explanation": "两条常见路：① `URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))` 得到 blob: URL 作 iframe src（记得适时 `revokeObjectURL` 释放）；② 直接 `await pdfDoc.saveAsBase64({ dataUri: true })` 得到 data URI 作 src。两者都行，后者更省一步构造。\n\n- 「createObjectURL(Blob) 或 saveAsBase64({dataUri:true})」正确。\n- 「把 Uint8Array 直接当 src」错误。\n- 「iframe src 设成本地文件路径」错误：浏览器拿不到。\n- 「必须先上传到服务器拿 URL」错误：本地即可生成。",
+    "tags": ["pdf-lib", "中级", "文档处理", "预览", "iframe"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}))，或 saveAsBase64({dataUri:true})",
+        "isCorrect": true,
+        "description": "正确。blob: URL 或 data: URI 都能直接作 iframe src；blob 用完记得 revokeObjectURL。"
+      },
+      {
+        "text": "把 save() 返回的 Uint8Array 直接赋给 iframe.src",
+        "isCorrect": false,
+        "description": "错误。src 需要 URL 字符串，字节要先转 blob URL 或 data URI。"
+      },
+      {
+        "text": "把 iframe.src 指向本地磁盘文件路径",
+        "isCorrect": false,
+        "description": "错误。浏览器出于安全无法直接访问本地任意文件路径。"
+      },
+      {
+        "text": "必须先把 PDF 上传到服务器换取一个 http URL",
+        "isCorrect": false,
+        "description": "错误。本地内存即可生成 blob/data URL 预览，无需上传。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：从 v0.x 升级到 v1.x，drawText 的 API 发生过什么变化（迁移要点）？",
+    "explanation": "v1.0 大幅简化了绘制 API：旧版要手动构造内容流（contentStream/addContentStreams、colorRgb 数组等），新版直接 `page.drawText(text, { x, y, size, font, color: rgb(...) })`。方法名也规范化（如 `embedPNG`→`embedPng`、`embedJPG`→`embedJpg`）。所以网上老教程的写法在 1.x 上会失效。\n\n- 「1.x 改为高层 drawText({x,y,size,font,color})，并规范化方法名」正确。\n- 「API 从未变过」错误。\n- 「1.x 反而更底层」错误：是更高层更简洁。\n- 「1.x 移除了 drawText」错误：drawText 正是新版主力 API。",
+    "tags": ["pdf-lib", "高级", "文档处理", "版本迁移", "API变化"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "v1.0 把绘制简化为高层 page.drawText({x,y,size,font,color})，并把 embedPNG/JPG 等改为 embedPng/embedJpg",
+        "isCorrect": true,
+        "description": "正确。1.x 大幅简化 API（不再手搓内容流）并规范化命名，旧教程写法会失效。"
+      },
+      {
+        "text": "drawText 的 API 从 v0.x 到 v1.x 从未变化",
+        "isCorrect": false,
+        "description": "错误。1.0 是一次重大 API 简化，老写法（contentStream 等）已不适用。"
+      },
+      {
+        "text": "v1.x 让 API 变得更底层、更繁琐",
+        "isCorrect": false,
+        "description": "错误。恰相反，1.x 更高层、更简洁直观。"
+      },
+      {
+        "text": "v1.x 移除了 drawText，改用 addText",
+        "isCorrect": false,
+        "description": "错误。drawText 正是 1.x 的核心绘制 API，未被移除。"
+      }
+    ]
+  },
+  {
+    "stem": "pdf-lib：在表单里 createTextField 后想让它显示成多行文本框，用哪个设置？",
+    "explanation": "文本字段对象提供 `enableMultiline()`（与 `disableMultiline()`）开启多行；还有 `enableCombing()`（梳状等宽格）、`setMaxLength(n)`、`setAlignment(...)`、`setFontSize(...)` 等外观/行为设置。\n\n- `textField.enableMultiline()` 正确。\n- `setMultiline(true)` 命名不对。\n- 「multiline: true 传给 createTextField」错误：createTextField 只收字段名。\n- 「addToPage 时传 multiline」错误：addToPage 收的是位置。",
+    "tags": ["pdf-lib", "高级", "文档处理", "enableMultiline", "表单字段"],
+    "categories": [
+      ["技术方向", "pdf-lib"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "textField.enableMultiline()",
+        "isCorrect": true,
+        "description": "正确。文本字段用 enableMultiline/disableMultiline，还有 enableCombing、setMaxLength 等。"
+      },
+      {
+        "text": "textField.setMultiline(true)",
+        "isCorrect": false,
+        "description": "错误。方法名是 enableMultiline()，不是 setMultiline。"
+      },
+      {
+        "text": "form.createTextField('note', { multiline: true })",
+        "isCorrect": false,
+        "description": "错误。createTextField 只接受字段名，多行通过 enableMultiline 设置。"
+      },
+      {
+        "text": "textField.addToPage(page, { multiline: true })",
+        "isCorrect": false,
+        "description": "错误。addToPage 的选项是位置/尺寸，不含 multiline。"
+      }
+    ]
+  }
+]

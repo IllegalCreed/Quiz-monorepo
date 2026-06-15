@@ -1,0 +1,1428 @@
+[
+  {
+    "stem": "docxtemplater：它的核心定位是什么？",
+    "explanation": "docxtemplater 的官方定位是「用模板生成 docx/pptx/xlsx 文档」——让非程序员在 Word/PowerPoint/Excel 里用占位符标签（如 {name}）做好模板，运行时再用 render(data) 把数据填进去。它处理的是 Office Open XML（OOXML）文档的「模板填充」，不是从零绘制文档。\n\n- 「基于模板填充生成 Office 文档」正确。\n- 「把 HTML 渲染成 PDF」错误：那是别的库的职责。\n- 「在浏览器里编辑 Word 的所见即所得编辑器」错误。\n- 「Excel 公式计算引擎」错误。",
+    "tags": ["docxtemplater", "入门", "定位", "核心概念", "模板"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个用模板填充来生成 docx/pptx/xlsx 的库：在 Office 文档里写占位符标签，再用数据渲染",
+        "isCorrect": true,
+        "description": "正确。docxtemplater 的核心就是「模板 + 数据 → 文档」，让非程序员也能维护模板。"
+      },
+      {
+        "text": "一个把 HTML/Markdown 转成 PDF 的渲染引擎",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 处理 Office OOXML 模板填充，不做 HTML→PDF。"
+      },
+      {
+        "text": "一个浏览器内的 Word 所见即所得（WYSIWYG）编辑器",
+        "isCorrect": false,
+        "description": "错误。它不是编辑器，模板用 Word 等工具制作，docxtemplater 只负责填充。"
+      },
+      {
+        "text": "一个 Excel 公式计算引擎",
+        "isCorrect": false,
+        "description": "错误。它不计算公式，只是把数据填入模板标签。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要把模板（.docx）加载进内存供其处理，官方要求搭配哪个库？",
+    "explanation": "docx/pptx/xlsx 本质都是 ZIP 压缩包（OOXML）。docxtemplater 不自带解压能力，官方要求搭配 **PizZip** 把模板读成可操作的 zip 对象，再传给 Docxtemplater。这是入门第一坑：少装 PizZip 就跑不起来。\n\n- PizZip 正确，是官方推荐的同源 zip 库（JSZip 的同步 fork）。\n- adm-zip / node-stream-zip 虽能解压 zip，但不是 docxtemplater 文档示例采用的搭配。\n- archiver 是打包库，方向相反。",
+    "tags": ["docxtemplater", "入门", "PizZip", "依赖", "zip"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "PizZip（把 docx/pptx/xlsx 这种 zip 文件读进内存）",
+        "isCorrect": true,
+        "description": "正确。官方安装命令即 npm install docxtemplater pizzip，PizZip 负责加载模板 zip。"
+      },
+      {
+        "text": "adm-zip",
+        "isCorrect": false,
+        "description": "错误。adm-zip 能解压 zip，但不是 docxtemplater 官方搭配，API 也不对接。"
+      },
+      {
+        "text": "archiver",
+        "isCorrect": false,
+        "description": "错误。archiver 用于创建压缩包，与「读取模板」方向相反。"
+      },
+      {
+        "text": "不需要任何 zip 库，docxtemplater 自带解压",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 自身不解压，必须配 PizZip（或兼容的 zip 库）。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：默认情况下，模板里用什么符号包裹一个占位符标签？",
+    "explanation": "docxtemplater 默认的分隔符是一对花括号 `{` 和 `}`。例如模板里写 `{first_name}`，render({ first_name: \"John\" }) 后就变成 John。分隔符可通过 options.delimiters 改成 `[[` `]]` 等。\n\n- `{first_name}` 正确。\n- `${first_name}`（模板字符串风格）错误，那是 JS 的语法，不是 docxtemplater 默认。\n- `{{first_name}}`（双花括号，Handlebars/Mustache 风格）错误，docxtemplater 默认是单花括号。\n- `%first_name%` 错误。",
+    "tags": ["docxtemplater", "入门", "分隔符", "占位符", "语法"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "单花括号 {first_name}",
+        "isCorrect": true,
+        "description": "正确。默认 delimiters 为 { start: '{', end: '}' }，标签写成 {tag}。"
+      },
+      {
+        "text": "双花括号 {{first_name}}（Mustache 风格）",
+        "isCorrect": false,
+        "description": "错误。那是 Mustache/Handlebars，docxtemplater 默认是单花括号。"
+      },
+      {
+        "text": "美元符模板串 ${first_name}",
+        "isCorrect": false,
+        "description": "错误。那是 JS 模板字符串语法，不是 docxtemplater 标签。"
+      },
+      {
+        "text": "百分号 %first_name%",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 不用百分号作默认分隔符。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：把数据填进模板、触发替换的核心方法是哪个？",
+    "explanation": "同步渲染用 `doc.render(data)`，它会把模板里的标签按 data 替换掉（如 {first_name} → John）。早期写法是 setData(data) 再 render()，但新版直接 render(data) 即可。\n\n- doc.render(data) 正确。\n- doc.compile() 是内部编译步骤，render 内部会调用，但它本身不填数据。\n- doc.fill(data) 不是 docxtemplater 的 API。\n- doc.toBuffer() 是渲染后导出，不负责填充。",
+    "tags": ["docxtemplater", "入门", "render", "API", "渲染"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "doc.render(data)",
+        "isCorrect": true,
+        "description": "正确。render(data) 是同步渲染、执行替换的核心方法。"
+      },
+      {
+        "text": "doc.fill(data)",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 没有 fill 方法。"
+      },
+      {
+        "text": "doc.toBuffer()",
+        "isCorrect": false,
+        "description": "错误。toBuffer 是渲染完成后导出文件字节，不做填充。"
+      },
+      {
+        "text": "doc.parse(data)",
+        "isCorrect": false,
+        "description": "错误。没有 parse(data) 这个填充入口。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：渲染完成后，在 Node 里把结果导出为可写入磁盘的 Buffer，推荐用哪个方法（docxtemplater@3.62.0+）？",
+    "explanation": "新版（3.62.0+）提供了简洁的 `doc.toBuffer()`，直接返回 Node Buffer，再 fs.writeFileSync 写盘即可。等价的老写法是 doc.getZip().generate({ type: \"nodebuffer\" })。\n\n- doc.toBuffer() 正确（新版推荐）。\n- doc.getZip().generate({ type: 'nodebuffer' }) 也能得到 Buffer（老写法，仍可用）。\n- doc.save() 不是它的 API。\n- doc.export() 不存在。",
+    "tags": ["docxtemplater", "初级", "toBuffer", "导出", "Node"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "doc.toBuffer()",
+        "isCorrect": true,
+        "description": "正确。3.62.0+ 提供 toBuffer() 直接返回 Node Buffer，是当前推荐写法。"
+      },
+      {
+        "text": "doc.save('output.docx')",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 不直接写盘，需自己拿到 Buffer 用 fs 写。"
+      },
+      {
+        "text": "doc.export()",
+        "isCorrect": false,
+        "description": "错误。没有 export() 方法。"
+      },
+      {
+        "text": "doc.getBuffer()",
+        "isCorrect": false,
+        "description": "错误。方法名是 toBuffer 而非 getBuffer。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要遍历一个数组、对每个元素重复一段内容（循环/区块），用哪种标签语法？",
+    "explanation": "docxtemplater 用「区块（section）」标签做循环：`{#users}...{/users}`。当 users 是数组时，中间内容对每个元素重复一次，且作用域切到当前元素；当 users 是真值时则相当于条件渲染。\n\n- {#users}...{/users} 正确。\n- {{#each users}}...{{/each}} 是 Handlebars 语法，不是 docxtemplater。\n- {for user in users} 不是它的语法。\n- {@users} 是 raw XML 标签，不是循环。",
+    "tags": ["docxtemplater", "初级", "循环", "section", "语法"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "{#users} ... {/users}",
+        "isCorrect": true,
+        "description": "正确。# 开区块、/ 闭区块；数组时循环、真值时条件。"
+      },
+      {
+        "text": "{{#each users}} ... {{/each}}",
+        "isCorrect": false,
+        "description": "错误。那是 Handlebars 的 each，docxtemplater 用 {#...}{/...}。"
+      },
+      {
+        "text": "{for user of users} ... {endfor}",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 没有这种 for/endfor 语法。"
+      },
+      {
+        "text": "{@users} ... {/@users}",
+        "isCorrect": false,
+        "description": "错误。{@tag} 是插入原始 XML 的标签，不是循环。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：在循环 `{#products}{name}{/products}` 内部写 {name}，它解析的是谁的属性？",
+    "explanation": "区块标签会把作用域（scope）切到当前迭代的元素。所以 {#products}...{/products} 内的 {name} 取的是「当前 product 对象的 name」，而不是顶层数据的 name。这是 docxtemplater 作用域模型的核心。\n\n- 「当前迭代 product 元素的 name」正确。\n- 「顶层数据对象的 name」错误：作用域已下沉到数组元素。\n- 「products 数组本身的 name」错误。\n- 「全局变量 name」错误。",
+    "tags": ["docxtemplater", "初级", "作用域", "scope", "循环"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "当前迭代的 product 元素的 name 属性",
+        "isCorrect": true,
+        "description": "正确。区块会把作用域切到当前元素，{name} 即 product.name。"
+      },
+      {
+        "text": "顶层数据对象的 name",
+        "isCorrect": false,
+        "description": "错误。循环内作用域已下沉，优先取当前元素的属性。"
+      },
+      {
+        "text": "products 数组对象上的 name",
+        "isCorrect": false,
+        "description": "错误。取的是元素的属性，不是数组对象的属性。"
+      },
+      {
+        "text": "始终是空字符串",
+        "isCorrect": false,
+        "description": "错误。只要元素有 name 就会正常渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：当 cond 为 false/空 时才显示一段内容（反向区块/inverted section），用什么标签？",
+    "explanation": "反向区块用 `{^cond}...{/cond}`：仅当 cond 为 falsy（false、空数组、null、undefined 等）时渲染中间内容。它和正向区块 {#cond} 互补，常用于「没有数据时显示一句提示」。\n\n- {^cond}...{/cond} 正确。\n- {!cond} 不是它的语法。\n- {#!cond} 不是合法写法。\n- {unless cond} 是 Handlebars 风格，不是 docxtemplater。",
+    "tags": ["docxtemplater", "中级", "反向区块", "条件", "语法"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "{^cond} ... {/cond}",
+        "isCorrect": true,
+        "description": "正确。^ 是反向区块，cond 为 falsy 时才渲染。"
+      },
+      {
+        "text": "{!cond} ... {/cond}",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 用 ^ 表示反向，不是 !。"
+      },
+      {
+        "text": "{#unless cond} ... {/unless}",
+        "isCorrect": false,
+        "description": "错误。unless 是 Handlebars 语法。"
+      },
+      {
+        "text": "{~cond} ... {/cond}",
+        "isCorrect": false,
+        "description": "错误。没有 ~ 这个区块前缀。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：默认解析器（不配额外 parser）下，模板里写 {user.name} 会发生什么？",
+    "explanation": "这是高频坑：**默认解析器不支持点号嵌套属性**。{user.name} 会被当成「查找一个字面名为 'user.name' 的属性」，而不是先取 user 再取 name。要支持点号、比较、运算、过滤器，必须启用 angular/expressions 解析器（docxtemplater/expressions.js，免费）。\n\n- 「被当作字面属性名 'user.name' 查找，取不到嵌套值」正确。\n- 「自动解析为 user 对象的 name」错误：那要 expressions 解析器。\n- 「直接报语法错误」错误：默认解析器不会因点号报错，只是查不到。\n- 「点号被忽略，等价于 {username}」错误。",
+    "tags": ["docxtemplater", "中级", "解析器", "嵌套属性", "坑"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认解析器会去找字面名为 'user.name' 的属性，无法访问嵌套的 user.name",
+        "isCorrect": true,
+        "description": "正确。默认解析器不支持点号，需启用 expressions 解析器才能 user→name。"
+      },
+      {
+        "text": "默认就支持点号，自动解析为 user 对象的 name 属性",
+        "isCorrect": false,
+        "description": "错误。点号嵌套属性需要 angular/expressions 解析器，默认不支持。"
+      },
+      {
+        "text": "立即抛出语法错误，模板编译失败",
+        "isCorrect": false,
+        "description": "错误。默认解析器不会因点号报编译错误，只是当作字面属性名查不到。"
+      },
+      {
+        "text": "点号被忽略，等价于 {username}",
+        "isCorrect": false,
+        "description": "错误。不会被忽略，而是当作完整字面键名。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要在标签里使用 {user.name}、{price + tax}、{users.length > 1} 这类点号/运算/比较表达式，正确做法是？",
+    "explanation": "docxtemplater 内置了基于 angular-expressions 的「表达式解析器」，但默认不启用。需 require('docxtemplater/expressions.js') 并通过 options.parser 传入（可 .configure({ filters }) 加过滤器）。它免费随包提供。\n\n- 「require expressions.js 并传给 options.parser」正确。\n- 「升级到付费版才有」错误：表达式解析器是免费功能。\n- 「默认就支持」错误：默认解析器不支持。\n- 「手动给每个嵌套字段拍平成顶层键」是绕过办法但不是「正确做法」，且不支持运算/比较。",
+    "tags": ["docxtemplater", "中级", "expressions", "解析器", "parser"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "require('docxtemplater/expressions.js') 得到表达式解析器，作为 options.parser 传入构造函数",
+        "isCorrect": true,
+        "description": "正确。expressions.js 基于 angular-expressions，免费随包提供，启用后支持点号、运算、比较、过滤器。"
+      },
+      {
+        "text": "这是 PRO 付费模块，必须买 license 才能用",
+        "isCorrect": false,
+        "description": "错误。表达式解析器是开源免费功能，不在付费模块之列。"
+      },
+      {
+        "text": "默认解析器就支持，无需任何配置",
+        "isCorrect": false,
+        "description": "错误。默认解析器不支持表达式，必须显式启用 expressions 解析器。"
+      },
+      {
+        "text": "改用双花括号 {{user.name}} 即可触发表达式解析",
+        "isCorrect": false,
+        "description": "错误。分隔符与是否解析表达式无关，换符号不会启用表达式能力。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：关于授权与「免费边界」，下面哪项描述正确？",
+    "explanation": "docxtemplater 是「开放核心（open core）」模式：**核心库免费**，采用 MIT / GPLv3 双许可（dual licensed）。围绕它的一批功能模块（image、html、chart、xlsx、slides、table、styling、footnotes 等共约 19 个）是**商业付费模块**，需购买 license。\n\n- 「核心 MIT/GPLv3 免费，功能模块多为付费」正确。\n- 「整个库完全免费，所有模块都开源」错误。\n- 「核心也要付费」错误。\n- 「只有 GPLv3 单一许可」不准确：官方是 MIT 或 GPLv3 双许可。",
+    "tags": ["docxtemplater", "中级", "授权", "免费边界", "付费模块"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "核心库免费（MIT/GPLv3 双许可），图片/HTML/图表/XLSX 等功能模块为商业付费",
+        "isCorrect": true,
+        "description": "正确。这是 open-core：核心开源免费，约 19 个功能模块需付费 license。"
+      },
+      {
+        "text": "整个库及所有模块都完全开源免费",
+        "isCorrect": false,
+        "description": "错误。image/html/chart/xlsx/slides 等模块是付费的。"
+      },
+      {
+        "text": "核心库本身就需要购买商业 license 才能用",
+        "isCorrect": false,
+        "description": "错误。核心是 MIT/GPLv3 免费的。"
+      },
+      {
+        "text": "核心库仅以 GPLv3 单许可发布，商用必须开源你的代码",
+        "isCorrect": false,
+        "description": "错误。核心是 MIT 或 GPLv3 双许可，可按 MIT 闭源商用。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：以下哪个能力属于「需要付费模块」而非免费核心？",
+    "explanation": "免费核心只做文本占位符替换、循环、条件、原始 XML 等基础模板填充。**往文档里插入图片**属于 image 模块，是付费模块。其余如插入 HTML（html 模块）、生成图表（chart 模块）、操作 XLSX 单元格（xlsx 模块）同样付费。\n\n- 「插入图片（image 模块）」正确，是付费。\n- 「{name} 文本替换」是免费核心。\n- 「{#loop}{/loop} 循环」是免费核心。\n- 「{^cond} 条件」是免费核心。",
+    "tags": ["docxtemplater", "高级", "付费模块", "image", "免费边界"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在生成的文档里插入图片（image 模块）",
+        "isCorrect": true,
+        "description": "正确。图片插入由 image 模块提供，属于付费模块。"
+      },
+      {
+        "text": "用 {name} 做文本占位符替换",
+        "isCorrect": false,
+        "description": "错误。这是免费核心最基础的能力。"
+      },
+      {
+        "text": "用 {#items}...{/items} 做数组循环",
+        "isCorrect": false,
+        "description": "错误。循环是免费核心能力。"
+      },
+      {
+        "text": "用 {^empty}...{/empty} 做反向条件",
+        "isCorrect": false,
+        "description": "错误。条件/反向区块是免费核心能力。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：以下哪一项是免费核心就支持的能力？",
+    "explanation": "免费核心支持：文本占位符、循环区块、（反向）条件、原始 XML 插入（{@rawXml}）、自定义分隔符、表达式解析器（expressions.js）。而把一段 **HTML** 转成富文本插入文档，需要付费的 html 模块。\n\n- 「{@rawXml} 插入原始 XML」正确，免费核心支持。\n- 「插入 HTML 富文本」是付费 html 模块。\n- 「插入图片」是付费 image 模块。\n- 「生成柱状图」是付费 chart 模块。",
+    "tags": ["docxtemplater", "高级", "免费边界", "rawXml", "核心能力"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 {@rawXml} 往段落里插入一段原始 OOXML",
+        "isCorrect": true,
+        "description": "正确。raw XML 标签是免费核心能力（限段落级，不能插图片等复杂元素）。"
+      },
+      {
+        "text": "把一段 HTML 作为富文本插入到 Word 里",
+        "isCorrect": false,
+        "description": "错误。HTML 插入需付费的 html 模块。"
+      },
+      {
+        "text": "把 base64 图片插入到指定位置",
+        "isCorrect": false,
+        "description": "错误。图片需付费的 image 模块。"
+      },
+      {
+        "text": "根据数据生成一个饼图",
+        "isCorrect": false,
+        "description": "错误。图表需付费的 chart 模块。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：数据里含 Promise（如要先发 HTTP 请求拿值），渲染前应如何处理？",
+    "explanation": "当数据字段是 Promise 时，不能直接 render（同步），要用异步渲染：新版 `doc.renderAsync(data)` 返回 Promise，内部会先解析所有 Promise 再渲染；老写法是 await doc.resolveData(data) 后再 doc.render()。\n\n- 「用 renderAsync(data) 或先 resolveData 再 render」正确。\n- 「直接 render，docxtemplater 会自动 await」错误：render 是同步的，不会等 Promise。\n- 「Promise 会被渲染成 [object Promise]」是错误用法的后果，不是正确做法。\n- 「把所有 Promise 手动 JSON.stringify」不对。",
+    "tags": ["docxtemplater", "高级", "renderAsync", "异步", "resolveData"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 doc.renderAsync(data)（返回 Promise，内部先解析 Promise 再渲染）；旧版用 await doc.resolveData(data) 后 doc.render()",
+        "isCorrect": true,
+        "description": "正确。异步数据必须走 renderAsync（或旧的 resolveData+render），它会先 resolve 所有 Promise。"
+      },
+      {
+        "text": "直接调用 doc.render(data)，它会自动 await 数据里的 Promise",
+        "isCorrect": false,
+        "description": "错误。render 是同步方法，不会等待 Promise，结果会出错。"
+      },
+      {
+        "text": "把每个 Promise 包成数组再传，docxtemplater 自动并行",
+        "isCorrect": false,
+        "description": "错误。包成数组改变不了同步 render 的行为，仍需 renderAsync。"
+      },
+      {
+        "text": "异步数据不被支持，只能先在外部 await 完所有值再传普通对象",
+        "isCorrect": false,
+        "description": "错误。外部 await 也行，但 docxtemplater 原生支持 renderAsync 直接吃 Promise。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：render() 抛错时，要拿到「人类可读」的全部模板错误，应读取错误对象的哪个字段？",
+    "explanation": "docxtemplater 会把多个模板错误聚合成一个 MultiError，挂在 error.properties.errors（数组）上；每个子错误的可读说明在其 properties.explanation。标准做法：catch 后 error.properties.errors.map(e => e.properties.explanation).join('\\n')。\n\n- error.properties.errors（每项的 properties.explanation）正确。\n- error.message 只是顶层概述，拿不到逐条详情。\n- error.stack 是调用栈，不是模板错误清单。\n- error.code 不是它的结构。",
+    "tags": ["docxtemplater", "高级", "错误处理", "MultiError", "properties"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "error.properties.errors，遍历每项的 properties.explanation",
+        "isCorrect": true,
+        "description": "正确。MultiError 把所有模板错误放进 properties.errors，逐条读 explanation 得可读信息。"
+      },
+      {
+        "text": "error.message",
+        "isCorrect": false,
+        "description": "错误。message 只是概述，无法拿到逐条模板错误的解释。"
+      },
+      {
+        "text": "error.stack",
+        "isCorrect": false,
+        "description": "错误。stack 是 JS 调用栈，不含模板标签错误清单。"
+      },
+      {
+        "text": "error.details",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 错误结构里没有 details 字段。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：在浏览器里，要把渲染结果触发为文件下载，常见组合是哪一项？",
+    "explanation": "浏览器里先用 PizZipUtils.getBinaryContent 拉模板，渲染后用 `doc.toBlob()`（3.62.0+）拿到 Blob，再配 FileSaver 的 `saveAs(blob, 'output.docx')` 触发下载。等价老写法是 getZip().generate({ type: 'blob' }) 再 saveAs。\n\n- 「toBlob() + FileSaver 的 saveAs」正确。\n- 「toBuffer() 直接 res.send」是 Node 服务端写法，不是浏览器下载。\n- 「fs.writeFileSync」浏览器没有 fs。\n- 「window.print()」与导出文档无关。",
+    "tags": ["docxtemplater", "高级", "浏览器", "toBlob", "下载"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "doc.toBlob() 拿到 Blob，再用 FileSaver 的 saveAs(blob, 'out.docx') 下载",
+        "isCorrect": true,
+        "description": "正确。浏览器端用 toBlob()（3.62.0+）+ saveAs，老写法是 getZip().generate({type:'blob'})。"
+      },
+      {
+        "text": "doc.toBuffer() 后 fs.writeFileSync 写到磁盘",
+        "isCorrect": false,
+        "description": "错误。浏览器没有 fs，toBuffer 面向 Node。"
+      },
+      {
+        "text": "调用 window.print() 打印当前页面",
+        "isCorrect": false,
+        "description": "错误。print 打印网页，与生成 docx 文件无关。"
+      },
+      {
+        "text": "把 doc 对象直接赋给 a 标签的 href",
+        "isCorrect": false,
+        "description": "错误。a.href 需要 Blob URL，doc 对象本身不能当链接。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：构造函数选项 `linebreaks: true` 的作用是？",
+    "explanation": "linebreaks: true 让数据值里的换行符 `\\n` 在生成文档中变成真正的换行（OOXML 的 <w:br/>），而不是被压成一行。默认 false 时，数据里的 \\n 不会产生换行效果。\n\n- 「把数据中的 \\n 渲染为文档换行」正确。\n- 「在每个段落间加空行」错误。\n- 「保留模板里的多余空格」错误。\n- 「自动给文本加项目符号」错误。",
+    "tags": ["docxtemplater", "中级", "配置", "linebreaks", "选项"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把数据值里的换行符 \\n 渲染成文档里真正的换行",
+        "isCorrect": true,
+        "description": "正确。开启后数据中的 \\n 会转成 OOXML 换行，否则会被吞掉。"
+      },
+      {
+        "text": "在每两个段落之间自动插入一个空行",
+        "isCorrect": false,
+        "description": "错误。它只处理数据值里的 \\n，不动段落间距。"
+      },
+      {
+        "text": "把模板中连续空格折叠成一个",
+        "isCorrect": false,
+        "description": "错误。与空格折叠无关。"
+      },
+      {
+        "text": "给每段文本加上项目符号列表样式",
+        "isCorrect": false,
+        "description": "错误。它不改变列表样式。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：构造函数选项 `paragraphLoop: true` 主要解决什么问题？",
+    "explanation": "当循环的开标签 {#users} 和闭标签 {/users} 各自单独占一个段落时，默认会在循环结果里留下多余的空段落/空行。paragraphLoop: true 把这种情况识别为「段落级循环」，移除多余空白，让列表更紧凑。\n\n- 「段落级循环去掉多余空行」正确。\n- 「让循环变成异步」错误。\n- 「允许嵌套循环」错误：嵌套循环默认就支持。\n- 「把每个元素渲染成新页」错误。",
+    "tags": ["docxtemplater", "高级", "配置", "paragraphLoop", "循环"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "当 {#loop} 与 {/loop} 各占一段时，去掉循环产生的多余空段落",
+        "isCorrect": true,
+        "description": "正确。paragraphLoop 把整段识别为段落循环，避免每次迭代留空行。"
+      },
+      {
+        "text": "让循环渲染变成异步操作",
+        "isCorrect": false,
+        "description": "错误。异步要用 renderAsync，与 paragraphLoop 无关。"
+      },
+      {
+        "text": "开启对嵌套循环的支持",
+        "isCorrect": false,
+        "description": "错误。嵌套循环默认即可用，不依赖此选项。"
+      },
+      {
+        "text": "让每个循环元素自动另起一页",
+        "isCorrect": false,
+        "description": "错误。它不控制分页。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要把默认分隔符从 {} 改成 [[ ]]（避免与文档里本就有的花括号冲突），怎么配置？",
+    "explanation": "通过构造函数 options.delimiters 传入 { start, end } 即可，例如 delimiters: { start: '[[', end: ']]' }。之后模板里的标签写成 [[name]]。\n\n- 「options.delimiters = { start: '[[', end: ']]' }」正确。\n- 「调用 setDelimiters('[[', ']]')」不是它的 API。\n- 「在模板首行写指令切换」虽然 docxtemplater 支持 {=[[ ]]=} 这种行内切换，但通过 options 配置才是题目所问的「全局配置」标准做法，且选项写法是更常用答案。\n- 「分隔符不可改」错误。",
+    "tags": ["docxtemplater", "高级", "配置", "delimiters", "分隔符"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在构造函数选项里设 delimiters: { start: '[[', end: ']]' }",
+        "isCorrect": true,
+        "description": "正确。options.delimiters 接收 { start, end }，全局改变标签符号。"
+      },
+      {
+        "text": "调用 doc.setDelimiters('[[', ']]')",
+        "isCorrect": false,
+        "description": "错误。没有 setDelimiters 这个方法，配置走 options.delimiters。"
+      },
+      {
+        "text": "分隔符是写死的 {}，无法修改",
+        "isCorrect": false,
+        "description": "错误。分隔符可通过 options.delimiters 自定义。"
+      },
+      {
+        "text": "把模板文件后缀改成 .tpl 即可自动切换",
+        "isCorrect": false,
+        "description": "错误。文件后缀与分隔符无关。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：模板里某个标签 {middle_name} 在数据中没有对应值（undefined）时，默认渲染成什么？要自定义这一行为用哪个选项？",
+    "explanation": "默认情况下，普通标签缺值时 docxtemplater 会渲染成字面字符串 \"undefined\"（rawxml 标签则为空串）。要改成「缺值显示空字符串或占位文案」，用 options.nullGetter 自定义返回值。\n\n- 「默认渲染 'undefined'，用 nullGetter 自定义」正确。\n- 「默认渲染空字符串」不准确：普通标签默认是 'undefined'。\n- 「默认抛错中断」错误。\n- 「用 options.fallback」错误：选项名是 nullGetter。",
+    "tags": ["docxtemplater", "高级", "nullGetter", "缺值", "配置"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认渲染成字面 'undefined'，可用 options.nullGetter 自定义缺值输出",
+        "isCorrect": true,
+        "description": "正确。普通标签默认输出 'undefined'，nullGetter 可改为空串或自定义文案。"
+      },
+      {
+        "text": "默认渲染成空字符串，用 options.emptyValue 自定义",
+        "isCorrect": false,
+        "description": "错误。普通标签默认是 'undefined' 而非空串；选项名是 nullGetter。"
+      },
+      {
+        "text": "默认直接抛错让 render 失败",
+        "isCorrect": false,
+        "description": "错误。缺值默认不抛错，而是输出 'undefined'。"
+      },
+      {
+        "text": "默认保留原标签 {middle_name} 不替换",
+        "isCorrect": false,
+        "description": "错误。默认会替换为 'undefined'，不会保留原标签。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：除了 .docx，它还能用同一套标签语法处理哪些 Office 文件类型？",
+    "explanation": "docxtemplater 的标签系统对所有 OOXML 文件通用，因此除了 Word（.docx），也能处理 PowerPoint（.pptx）和 Excel（.xlsx）模板——因为它们底层都是 zip 包的 XML。（注意：xlsx/pptx 的部分高级能力可能涉及付费模块，但基础占位符替换通用。）\n\n- 「pptx 和 xlsx」正确。\n- 「pdf」错误：PDF 不是 OOXML zip，docxtemplater 不直接生成 PDF。\n- 「html」错误。\n- 「png 图片」错误。",
+    "tags": ["docxtemplater", "初级", "pptx", "xlsx", "文件类型"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pptx（PowerPoint）和 xlsx（Excel）",
+        "isCorrect": true,
+        "description": "正确。三者都是 OOXML zip，标签语法通用（部分高级 xlsx/pptx 能力属付费模块）。"
+      },
+      {
+        "text": "pdf 文件",
+        "isCorrect": false,
+        "description": "错误。PDF 不是 OOXML zip 结构，docxtemplater 不直接处理。"
+      },
+      {
+        "text": "html 网页",
+        "isCorrect": false,
+        "description": "错误。HTML 不是它处理的模板类型。"
+      },
+      {
+        "text": "纯文本 txt",
+        "isCorrect": false,
+        "description": "错误。它面向 OOXML 文档，不是纯文本模板引擎。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：在循环里要拿到「当前迭代的下标（0,1,2…）」，启用表达式解析器后用什么变量？",
+    "explanation": "启用 angular/expressions 解析器后，循环内可用 `$index` 访问当前下标（从 0 开始）。例如 {#items}{$index}: {.}{/items}。其中 {.} 表示「当前元素本身」（对原始值数组很有用）。\n\n- $index 正确。\n- @index 是 Handlebars 风格，不是 docxtemplater。\n- loop.index 不是它的语法。\n- $i 不是约定名。",
+    "tags": ["docxtemplater", "高级", "$index", "循环", "expressions"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "$index（从 0 开始）",
+        "isCorrect": true,
+        "description": "正确。表达式解析器下循环内用 $index 取下标，{.} 取当前元素本身。"
+      },
+      {
+        "text": "@index",
+        "isCorrect": false,
+        "description": "错误。@index 是 Handlebars 的写法，不是 docxtemplater。"
+      },
+      {
+        "text": "loop.index",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 没有 loop.index 变量。"
+      },
+      {
+        "text": "this.index",
+        "isCorrect": false,
+        "description": "错误。下标变量是 $index，不是 this.index。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：在原始值数组（如 [\"a\",\"b\",\"c\"]）的循环里，引用「当前元素本身」用哪个标签？",
+    "explanation": "对原始值（字符串/数字）数组循环时，元素没有属性名可取，用 `{.}` 表示当前元素本身。例如 {#tags}{.} {/tags} 会依次输出 a b c。\n\n- {.} 正确。\n- {this} 不是它的语法。\n- {item} 只有当元素是对象且有 item 属性时才对，原始值数组不适用。\n- {$value} 不是约定。",
+    "tags": ["docxtemplater", "中级", "当前元素", "循环", "语法"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "{.}",
+        "isCorrect": true,
+        "description": "正确。{.} 表示当前作用域里的元素本身，适合原始值数组。"
+      },
+      {
+        "text": "{this}",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 用 {.} 而非 {this}。"
+      },
+      {
+        "text": "{item}",
+        "isCorrect": false,
+        "description": "错误。{item} 取元素的 item 属性，原始值没有该属性。"
+      },
+      {
+        "text": "{$current}",
+        "isCorrect": false,
+        "description": "错误。没有 $current 这个约定变量。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：为什么读取模板文件时常用 `fs.readFileSync(path, 'binary')` 而不是 'utf8'？",
+    "explanation": "docx/pptx/xlsx 是二进制 ZIP，不是文本。用 'utf8' 读会破坏二进制字节（多字节解码会损坏数据），导致 PizZip 解析失败。要用 'binary'（或读成 Buffer/Uint8Array）保持字节原样，再交给 PizZip。\n\n- 「文件是二进制 zip，utf8 会损坏字节」正确。\n- 「utf8 读更快」错误且无关。\n- 「docxtemplater 只接受字符串」错误。\n- 「二者等价，习惯而已」错误。",
+    "tags": ["docxtemplater", "中级", "读取", "binary", "PizZip"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "模板是二进制 ZIP 文件，用 'utf8' 会破坏字节导致 PizZip 解析失败",
+        "isCorrect": true,
+        "description": "正确。OOXML 是二进制 zip，必须按 binary/Buffer 读，utf8 解码会损坏数据。"
+      },
+      {
+        "text": "'binary' 比 'utf8' 读取速度更快",
+        "isCorrect": false,
+        "description": "错误。原因不是速度，而是避免二进制被文本编码破坏。"
+      },
+      {
+        "text": "docxtemplater 规定只能接受 'binary' 编码的字符串",
+        "isCorrect": false,
+        "description": "错误。也可传 Buffer/Uint8Array 给 PizZip，关键是保持字节不被破坏。"
+      },
+      {
+        "text": "两者完全等价，只是写法习惯不同",
+        "isCorrect": false,
+        "description": "错误。用 utf8 读 zip 会导致数据损坏，并不等价。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：以下关于「模板由谁制作」的说法，哪项符合它的设计理念？",
+    "explanation": "docxtemplater 的卖点正是「让非程序员维护模板」：业务/设计人员直接用 Word、PowerPoint、Excel 等熟悉的工具排版，在需要动态内容处写 {标签}，开发只负责调 render(data)。这样模板的样式排版与代码解耦。\n\n- 「非程序员用 Office 工具排版并放标签」正确。\n- 「必须用代码逐段构造文档」错误：那不是它的理念（更像 docx 库）。\n- 「必须手写 OOXML XML」错误。\n- 「模板只能是纯文本」错误。",
+    "tags": ["docxtemplater", "入门", "理念", "模板制作", "解耦"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "由非程序员在 Word/PPT/Excel 里排好版、插入 {标签}，开发只管填数据",
+        "isCorrect": true,
+        "description": "正确。模板与代码解耦、让非程序员维护排版，是 docxtemplater 的核心理念。"
+      },
+      {
+        "text": "必须由开发用代码一段段拼出整个文档结构",
+        "isCorrect": false,
+        "description": "错误。那是 docx 这类编程式生成库的路子，不是 docxtemplater。"
+      },
+      {
+        "text": "必须手写 OOXML 的 XML 才能做模板",
+        "isCorrect": false,
+        "description": "错误。模板用 Office 软件可视化制作即可。"
+      },
+      {
+        "text": "模板只能是纯文本文件",
+        "isCorrect": false,
+        "description": "错误。模板是带样式的 docx/pptx/xlsx。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：表达式解析器支持「过滤器（filter）」，下面哪种写法正确？",
+    "explanation": "启用 expressions 解析器后可用管道过滤器：`{name | upper}`、`{users | filterBy:'age':18}` 这类「值 | 过滤器:参数」语法。过滤器通过 expressionParser.configure({ filters: { upper: x => x.toUpperCase() } }) 注册。\n\n- 「{name | upper}」正确。\n- 「{upper(name)}」函数调用形式不是过滤器管道语法（虽然表达式里可调函数，但题问 filter 写法）。\n- 「{name.upper}」会被当属性访问。\n- 「{{name|upper}}」分隔符错误。",
+    "tags": ["docxtemplater", "高级", "过滤器", "filter", "expressions"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "{name | upper}（用 | 管道接过滤器，可带参数 {price | round:2}）",
+        "isCorrect": true,
+        "description": "正确。expressions 解析器用管道语法应用过滤器，过滤器经 configure({filters}) 注册。"
+      },
+      {
+        "text": "{name.filter('upper')}",
+        "isCorrect": false,
+        "description": "错误。过滤器是管道 | 语法，不是 .filter() 方法调用。"
+      },
+      {
+        "text": "{#filter upper}{name}{/filter}",
+        "isCorrect": false,
+        "description": "错误。没有这种区块式过滤器语法。"
+      },
+      {
+        "text": "{name :: upper}",
+        "isCorrect": false,
+        "description": "错误。分隔过滤器用单竖线 |，不是 ::。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要在表格里「按数据行数自动增删表格行」，免费核心通常怎么做？",
+    "explanation": "把循环区块标签放在表格行内即可：在某一行的单元格里写 {#rows}...{/rows}，docxtemplater 会按数组长度复制整行。这是免费核心能力，不需要专门的「table 模块」（table 模块解决的是更复杂的跨行合并/嵌套表格等场景）。\n\n- 「在表格行里写 {#rows}{/rows} 循环整行」正确，免费。\n- 「必须买 table 付费模块才能循环行」错误：基础行循环免费即可。\n- 「用 {@table} 注入整张表」不是常规做法。\n- 「表格不支持循环」错误。",
+    "tags": ["docxtemplater", "高级", "表格", "行循环", "免费边界"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在表格的某一行单元格里写 {#rows}...{/rows}，按数组长度自动复制该行",
+        "isCorrect": true,
+        "description": "正确。行内循环是免费核心能力；付费 table 模块面向更复杂的合并/嵌套场景。"
+      },
+      {
+        "text": "必须购买 table 付费模块，免费核心无法循环表格行",
+        "isCorrect": false,
+        "description": "错误。基础的「按数据复制表格行」用普通循环即可，免费。"
+      },
+      {
+        "text": "用 {@rows} 把整张表格当原始 XML 注入",
+        "isCorrect": false,
+        "description": "错误。{@} 是插原始 XML 的特殊用法，不是常规表格行循环。"
+      },
+      {
+        "text": "docxtemplater 完全不支持在表格中循环",
+        "isCorrect": false,
+        "description": "错误。表格内循环是常见且支持的用法。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：把 expressions 解析器传给构造函数的正确选项键名是什么？",
+    "explanation": "解析器通过构造函数选项的 `parser` 字段传入：new Docxtemplater(zip, { parser: expressionParser, paragraphLoop: true, linebreaks: true })。expressionParser 来自 require('docxtemplater/expressions.js')，可先 .configure({ filters }).\n\n- options.parser 正确。\n- options.expression 错误。\n- options.evaluator 错误。\n- options.angular 错误。",
+    "tags": ["docxtemplater", "中级", "parser", "配置", "选项"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "parser",
+        "isCorrect": true,
+        "description": "正确。new Docxtemplater(zip, { parser: expressionParser, ... })。"
+      },
+      {
+        "text": "expression",
+        "isCorrect": false,
+        "description": "错误。选项键是 parser，不是 expression。"
+      },
+      {
+        "text": "evaluator",
+        "isCorrect": false,
+        "description": "错误。没有 evaluator 选项。"
+      },
+      {
+        "text": "resolver",
+        "isCorrect": false,
+        "description": "错误。解析器走 parser 选项，不是 resolver。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：付费 image 模块往往要求异步渲染，最常见的原因是？",
+    "explanation": "图片通常通过 HTTP/异步读取获取（如从 URL 拉取或读文件），所以 image 模块的取图函数往往返回 Promise，必须配合 renderAsync（或 resolveData）来等待图片数据就绪。这也是官方在异步章节专门点出的场景。\n\n- 「图片常需异步 HTTP/读取，故配 renderAsync」正确。\n- 「图片太大必须异步压缩」不是核心原因。\n- 「image 模块本身只支持异步 API」描述不准。\n- 「同步 render 不能插入二进制」错误。",
+    "tags": ["docxtemplater", "专家", "image模块", "异步", "renderAsync"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "图片常通过 HTTP 请求或异步读取获取，取图函数返回 Promise，需 renderAsync 等待",
+        "isCorrect": true,
+        "description": "正确。官方明确：图片通常异步加载，因此 image 模块场景常配合 renderAsync/resolveData。"
+      },
+      {
+        "text": "因为图片必须在渲染时实时压缩，压缩是异步的",
+        "isCorrect": false,
+        "description": "错误。异步的根因是图片数据的获取（HTTP/IO），不是压缩。"
+      },
+      {
+        "text": "因为同步 render() 无法处理任何二进制数据",
+        "isCorrect": false,
+        "description": "错误。同步 render 能处理已就绪的数据，问题在于图片数据常需异步获取。"
+      },
+      {
+        "text": "因为 image 模块强制覆盖了 render 为异步，无法同步",
+        "isCorrect": false,
+        "description": "错误。并非强制覆盖，而是数据获取本身异步才需 renderAsync。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：下列哪一项最准确地区分了它与「docx 库」（编程式生成 Word）的取舍？",
+    "explanation": "docxtemplater 适合「已有精心排版的模板、只缺动态数据」的场景——设计稿在 Word 里做好，代码只填数据；docx（如 dolanmiu/docx）适合「完全用代码从零构造文档结构」的场景。前者样式由模板决定，后者样式由代码决定。\n\n- 「docxtemplater 填模板、docx 代码构造」正确。\n- 「两者完全等价」错误。\n- 「docxtemplater 只能生成纯文本」错误。\n- 「docx 也是模板填充库」错误。",
+    "tags": ["docxtemplater", "专家", "选型", "docx对比", "取舍"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "docxtemplater 适合「已有排版模板、只填数据」；docx 库适合「用代码从零构造文档结构」",
+        "isCorrect": true,
+        "description": "正确。模板填充 vs 编程式生成，是两者最核心的定位差异。"
+      },
+      {
+        "text": "两者功能完全等价，随便选哪个都一样",
+        "isCorrect": false,
+        "description": "错误。一个填模板、一个代码构造，定位不同。"
+      },
+      {
+        "text": "docxtemplater 只能生成无样式的纯文本 Word",
+        "isCorrect": false,
+        "description": "错误。样式由模板决定，可以很丰富。"
+      },
+      {
+        "text": "docx 库本质也是占位符模板填充，只是 API 不同",
+        "isCorrect": false,
+        "description": "错误。docx 是编程式构造，不是模板填充。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：用 {@rawXml} 插入原始 XML 有什么重要限制？",
+    "explanation": "免费核心的 raw XML 标签只在「段落级」工作：它适合插入一段段落级的 OOXML 内容，但**不能用来插入图片、复杂表格等需要专门处理的元素**。要插图片得用付费 image 模块。\n\n- 「仅段落级，不能插图片等复杂元素」正确。\n- 「可以插入任意 OOXML 包括图片」错误。\n- 「会自动转义 XML」错误：raw 就是不转义。\n- 「只能插纯文本」错误。",
+    "tags": ["docxtemplater", "专家", "rawXml", "限制", "免费边界"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它主要在段落级工作，不能用来插入图片等需专门模块处理的复杂元素",
+        "isCorrect": true,
+        "description": "正确。raw XML 适合段落级原始内容，插图片仍需付费 image 模块。"
+      },
+      {
+        "text": "它能插入任意 OOXML，包括图片和图表",
+        "isCorrect": false,
+        "description": "错误。图片/图表需对应付费模块，raw XML 不胜任。"
+      },
+      {
+        "text": "它会自动对插入的 XML 做 HTML 转义",
+        "isCorrect": false,
+        "description": "错误。raw 标签恰恰是「不转义」地插入原始内容。"
+      },
+      {
+        "text": "它只能插入纯文本，不能含任何标签",
+        "isCorrect": false,
+        "description": "错误。它插入的就是原始 XML 标签内容。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：以下哪一组功能模块，按官方授权全部属于「付费商业模块」？",
+    "explanation": "image（图片）、html（HTML 富文本）、chart（图表）、xlsx（Excel 单元格操作）、slides（PPT 幻灯片）、styling（样式）、footnotes（脚注）、table 等都是付费模块。而 expressions 解析器、raw XML、循环、条件属于免费核心。\n\n- 「image / html / chart / xlsx」正确，全是付费模块。\n- 含「expressions 解析器」的组合错误：它免费。\n- 含「循环/条件」的组合错误：免费核心。\n- 含「raw XML」的组合错误：免费核心。",
+    "tags": ["docxtemplater", "专家", "付费模块", "授权", "免费边界"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "image、html、chart、xlsx（以及 slides、styling、footnotes、table 等）",
+        "isCorrect": true,
+        "description": "正确。这些功能模块均为商业付费模块，需购买 license。"
+      },
+      {
+        "text": "image、循环区块、条件区块、raw XML",
+        "isCorrect": false,
+        "description": "错误。循环、条件、raw XML 属免费核心，不是付费模块。"
+      },
+      {
+        "text": "html、chart、expressions 解析器、自定义分隔符",
+        "isCorrect": false,
+        "description": "错误。expressions 解析器与自定义分隔符是免费的。"
+      },
+      {
+        "text": "xlsx、nullGetter、paragraphLoop、linebreaks",
+        "isCorrect": false,
+        "description": "错误。nullGetter/paragraphLoop/linebreaks 是免费核心选项。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：迁移到新版 API 后，构造与渲染的「现代写法」是下面哪一种？",
+    "explanation": "新版把 zip 和 options 一起传给构造函数，模块用 options.modules 数组传入，然后直接 renderAsync(data) 或 render(data)，最后 toBuffer()。老写法是 new Docxtemplater().attachModule().loadZip().setOptions() + compile() + resolveData() + getZip().generate()。\n\n- 「new Docxtemplater(zip, { modules:[...], parser, ... }) 然后 render/renderAsync + toBuffer」正确。\n- 「先 new() 空构造再 loadZip 再 compile」是已弃用的老链式写法。\n- 「new Docxtemplater(data)」错误：构造函数收 zip 不是 data。\n- 「Docxtemplater.create()」不存在。",
+    "tags": ["docxtemplater", "专家", "API迁移", "构造函数", "modules"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "new Docxtemplater(zip, { modules: [mod], parser, paragraphLoop: true }) → render/renderAsync(data) → toBuffer()",
+        "isCorrect": true,
+        "description": "正确。现代写法在构造时一次性传 zip+options(含 modules)，渲染后 toBuffer。"
+      },
+      {
+        "text": "new Docxtemplater().attachModule(mod).loadZip(zip).setOptions().compile().resolveData().getZip().generate()",
+        "isCorrect": false,
+        "description": "错误（已弃用）。这是旧链式 API，新版推荐构造函数一次传入。"
+      },
+      {
+        "text": "new Docxtemplater(data) 然后 doc.applyTemplate(zip)",
+        "isCorrect": false,
+        "description": "错误。构造函数接收 zip 而非 data，且没有 applyTemplate。"
+      },
+      {
+        "text": "Docxtemplater.create(zip).withData(data).build()",
+        "isCorrect": false,
+        "description": "错误。不存在这种链式工厂 API。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：模板里同一个值在文档多处出现（如页眉和正文都要 {company}），渲染时会怎样？",
+    "explanation": "docxtemplater 按标签替换，同名标签 {company} 出现几处就替换几处，全部用 data.company 的值——包括页眉、页脚、正文等文档各部分（docxtemplater 会遍历文档的多个 XML 部件）。\n\n- 「所有出现处都替换为同一值」正确。\n- 「只替换正文第一处」错误。\n- 「页眉页脚不会被替换」错误：docxtemplater 处理多个部件。\n- 「同名标签会冲突报错」错误。",
+    "tags": ["docxtemplater", "初级", "重复标签", "页眉页脚", "替换"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "所有出现 {company} 的地方（含页眉页脚正文）都替换为同一个值",
+        "isCorrect": true,
+        "description": "正确。同名标签按数据统一替换，docxtemplater 会遍历文档各 XML 部件。"
+      },
+      {
+        "text": "只替换正文里第一次出现的位置",
+        "isCorrect": false,
+        "description": "错误。所有出现处都会被替换。"
+      },
+      {
+        "text": "页眉/页脚里的标签不会被替换",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 也处理页眉页脚等部件。"
+      },
+      {
+        "text": "同名标签会被判定为冲突而报错",
+        "isCorrect": false,
+        "description": "错误。同名标签是正常用法，不会冲突。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：「标签被 Word 自动拆分」是常见疑难，根因是什么？",
+    "explanation": "在 Word 里编辑标签时，拼写检查、格式变化等会让一个 {tag} 在底层 OOXML 里被拆进多个 <w:r>（run），变成类似 {ta}{g}，导致 docxtemplater 识别不到完整标签而报错（unopened/unclosed tag）。解决：把标签一次性输入、或清除该处格式、或用记事本式纯输入。\n\n- 「Word 把标签拆进多个 run」正确。\n- 「docxtemplater 不支持中文标签」错误。\n- 「花括号必须转义」错误。\n- 「模板必须用 .dotx」错误。",
+    "tags": ["docxtemplater", "专家", "标签拆分", "run", "疑难"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Word 会因拼写检查/格式变化把一个标签拆进多个 run，破坏标签完整性",
+        "isCorrect": true,
+        "description": "正确。OOXML 把 {tag} 拆成多个 <w:r> 是经典坑，需一次性输入或清格式。"
+      },
+      {
+        "text": "docxtemplater 不支持包含字母以外字符的标签",
+        "isCorrect": false,
+        "description": "错误。根因是 run 拆分，与标签字符集无关。"
+      },
+      {
+        "text": "花括号在 Word 里必须用反斜杠转义",
+        "isCorrect": false,
+        "description": "错误。花括号无需转义，问题在 run 拆分。"
+      },
+      {
+        "text": "模板必须保存为 .dotx 模板格式才能识别标签",
+        "isCorrect": false,
+        "description": "错误。普通 .docx 即可，与后缀无关。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要在标签里写条件表达式 {#users.length > 1}有多个用户{/}，前提条件是？",
+    "explanation": ".length、比较运算（>）这类表达式需要 angular/expressions 解析器；默认解析器不支持。配好 expressions 解析器后，{#expr}...{/} 里就能写布尔表达式作条件。结尾 {/} 可省略名字、自动闭合最近的区块。\n\n- 「必须启用 expressions 解析器」正确。\n- 「默认就支持」错误。\n- 「需付费模块」错误：expressions 免费。\n- 「必须写成 {#if ...}」错误：docxtemplater 用 {#expr} 不是 {#if}。",
+    "tags": ["docxtemplater", "高级", "条件表达式", "expressions", "length"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须启用 expressions 解析器，默认解析器不支持 .length 与比较运算",
+        "isCorrect": true,
+        "description": "正确。表达式条件依赖 expressions 解析器（免费），{/} 自动闭合最近区块。"
+      },
+      {
+        "text": "默认解析器即支持任意 JS 表达式",
+        "isCorrect": false,
+        "description": "错误。默认解析器只做简单属性查找，不支持表达式。"
+      },
+      {
+        "text": "需要购买条件判断的付费模块",
+        "isCorrect": false,
+        "description": "错误。表达式解析器是免费功能，不是付费模块。"
+      },
+      {
+        "text": "必须把条件写成 {#if users.length > 1}",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 区块用 {#expr} 形式，没有 {#if} 关键字。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：结尾标签 {/} （不写名字）的含义是什么？",
+    "explanation": "{/} 表示「闭合最近打开的那个区块」，无需重复写名字。例如 {#users}...{/} 等价于 {#users}...{/users}。在嵌套或长表达式区块里特别方便。\n\n- 「自动闭合最近打开的区块」正确。\n- 「闭合所有未闭合区块」错误：只闭合最近一个。\n- 「插入一个换行」错误。\n- 「是注释标记」错误。",
+    "tags": ["docxtemplater", "中级", "闭合标签", "区块", "语法"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "闭合最近打开的那个区块（等价于带名字的 {/name}）",
+        "isCorrect": true,
+        "description": "正确。{/} 自动闭合最近的 {#...} 区块，省去重复写名字。"
+      },
+      {
+        "text": "一次性闭合当前所有未闭合的区块",
+        "isCorrect": false,
+        "description": "错误。它只闭合最近的一个区块。"
+      },
+      {
+        "text": "在该处插入一个段落换行",
+        "isCorrect": false,
+        "description": "错误。{/} 与换行无关。"
+      },
+      {
+        "text": "标记一段模板注释",
+        "isCorrect": false,
+        "description": "错误。它是闭合区块标签，不是注释。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：在服务端（如 Express）生成 docx 并直接返回给浏览器下载，正确做法是？",
+    "explanation": "服务端通常不落地磁盘：render 后用 doc.toBuffer() 拿到 Buffer，设置正确的 Content-Type（docx 的 MIME 是 application/vnd.openxmlformats-officedocument.wordprocessingml.document）和 Content-Disposition: attachment，再 res.send(buffer)。\n\n- 「toBuffer() + 设 MIME/Disposition + res.send」正确。\n- 「toBlob() 后 res.send」不对：Blob 是浏览器 API。\n- 「res.sendFile 一个临时文件」可行但非最简，且题目问直接返回。\n- 「res.json(buffer)」会损坏二进制。",
+    "tags": ["docxtemplater", "专家", "服务端", "toBuffer", "下载"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "render 后 doc.toBuffer() 得 Buffer，设 docx 的 Content-Type 与 attachment 头，再 res.send(buffer)",
+        "isCorrect": true,
+        "description": "正确。服务端用 toBuffer + 正确 MIME(...wordprocessingml.document) + Content-Disposition 直接返回。"
+      },
+      {
+        "text": "用 doc.toBlob() 拿 Blob 后 res.send(blob)",
+        "isCorrect": false,
+        "description": "错误。Blob 是浏览器端 API，Node 服务端用 toBuffer。"
+      },
+      {
+        "text": "res.json(doc.toBuffer()) 以 JSON 返回",
+        "isCorrect": false,
+        "description": "错误。JSON 序列化会破坏二进制 Buffer。"
+      },
+      {
+        "text": "把 doc 对象直接 res.send(doc)",
+        "isCorrect": false,
+        "description": "错误。doc 是实例对象，不是可发送的文件字节。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：模板编译阶段（new Docxtemplater(zip, options)）可能抛出的错误，通常属于哪类？",
+    "explanation": "构造/编译阶段如果模板本身结构非法（如标签未闭合、分隔符不匹配），会抛出 TemplateError（常聚合为 MultiError）。而数据解析/parser 执行失败的错误一般在 render() 阶段抛出。\n\n- 「TemplateError（模板结构非法）」正确。\n- 「网络错误」无关。\n- 「权限错误」无关。\n- 「render 阶段才会有任何错误」错误：编译阶段也会抛模板结构错误。",
+    "tags": ["docxtemplater", "专家", "TemplateError", "编译", "错误处理"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TemplateError（模板结构本身非法，如标签未闭合），常聚合为 MultiError",
+        "isCorrect": true,
+        "description": "正确。编译期主要抛模板结构错误；数据/解析错误多在 render 期抛出。"
+      },
+      {
+        "text": "一定是网络超时类错误",
+        "isCorrect": false,
+        "description": "错误。编译不涉及网络。"
+      },
+      {
+        "text": "文件系统权限错误",
+        "isCorrect": false,
+        "description": "错误。读文件是 fs 的事，编译错误指模板结构。"
+      },
+      {
+        "text": "编译阶段永远不会抛错，错误只在 render 出现",
+        "isCorrect": false,
+        "description": "错误。模板结构非法在构造/编译阶段就会抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：以下关于 toBuffer() / toBlob() / getZip().generate() 三者关系的说法，哪项正确？",
+    "explanation": "toBuffer()（Node，3.62.0+）与 toBlob()（浏览器，3.62.0+）是新版便捷导出方法；它们底层等价于 getZip().generate({ type: 'nodebuffer' }) / generate({ type: 'blob' })。老代码用 getZip().generate 仍然有效。\n\n- 「toBuffer/toBlob 是 generate 的便捷封装，分别面向 Node/浏览器」正确。\n- 「三者完全无关」错误。\n- 「toBuffer 在浏览器、toBlob 在 Node」说反了。\n- 「getZip().generate 已被移除」错误。",
+    "tags": ["docxtemplater", "专家", "导出", "toBuffer", "generate"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "toBuffer()(Node) 与 toBlob()(浏览器) 是 getZip().generate(...) 的便捷封装，老写法仍可用",
+        "isCorrect": true,
+        "description": "正确。新便捷方法等价于 generate({type:'nodebuffer'|'blob'})，3.62.0+ 引入。"
+      },
+      {
+        "text": "toBuffer() 用于浏览器，toBlob() 用于 Node",
+        "isCorrect": false,
+        "description": "错误。说反了：toBuffer 面向 Node，toBlob 面向浏览器。"
+      },
+      {
+        "text": "三个方法互不相关，各自实现完全不同的输出",
+        "isCorrect": false,
+        "description": "错误。toBuffer/toBlob 本质是 generate 的封装。"
+      },
+      {
+        "text": "getZip().generate() 在新版已被删除，必须用 toBuffer",
+        "isCorrect": false,
+        "description": "错误。generate 仍可用，toBuffer 只是更简洁。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：要复用一段模板逻辑/把子文档嵌进主文档，官方提供的能力是？",
+    "explanation": "把一个子模板嵌入主模板（子模板/包含）由 **subtemplate 模块**提供，属于付费模块。免费核心没有内置「include 子模板」的标签。\n\n- 「subtemplate 付费模块」正确。\n- 「免费核心的 {>partial} 标签」错误：docxtemplater 没有这个免费 include。\n- 「expressions 解析器」无关。\n- 「raw XML 自动 include」错误。",
+    "tags": ["docxtemplater", "专家", "subtemplate", "付费模块", "子模板"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "subtemplate 模块（付费），用于把子模板嵌入主文档",
+        "isCorrect": true,
+        "description": "正确。子模板/包含能力由付费的 subtemplate 模块提供。"
+      },
+      {
+        "text": "免费核心内置的 {>partial} include 标签",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 免费核心没有 Mustache 式 partial include。"
+      },
+      {
+        "text": "用 expressions 解析器的 import 函数",
+        "isCorrect": false,
+        "description": "错误。expressions 解析器不提供子模板包含。"
+      },
+      {
+        "text": "{@subdoc} 原始 XML 自动加载子文档",
+        "isCorrect": false,
+        "description": "错误。raw XML 不会自动加载并合并子文档。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：表达式解析器里 {fullName = firstName + ' ' + lastName} 这种写法属于什么能力？",
+    "explanation": "expressions 解析器支持「在模板里赋值（assignment）」：把表达式结果存进一个变量，后续标签可复用。这是 angular-expressions 提供的高级特性，免费随包。\n\n- 「模板内变量赋值」正确。\n- 「定义全局函数」错误。\n- 「导入外部模块」错误。\n- 「这是非法语法会报错」错误。",
+    "tags": ["docxtemplater", "专家", "赋值", "expressions", "变量"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "模板内变量赋值：把表达式结果存进变量供后续标签复用",
+        "isCorrect": true,
+        "description": "正确。expressions 解析器支持 assignment，免费随包提供。"
+      },
+      {
+        "text": "在模板里定义一个可被外部调用的全局函数",
+        "isCorrect": false,
+        "description": "错误。这是赋值表达式，不是定义全局函数。"
+      },
+      {
+        "text": "从另一个文件导入模块",
+        "isCorrect": false,
+        "description": "错误。模板内不做模块导入。"
+      },
+      {
+        "text": "非法语法，render 会直接报错",
+        "isCorrect": false,
+        "description": "错误。表达式解析器支持赋值，不会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：关于「在浏览器加载模板」，下面哪项是常见且正确的取模板方式？",
+    "explanation": "浏览器端常用 PizZip 的配套工具 PizZipUtils.getBinaryContent(url, cb) 以二进制方式拉取模板文件，回调里拿到 content 再 new PizZip(content)。也可用 fetch(url).then(r => r.arrayBuffer())。关键是按二进制取。\n\n- 「PizZipUtils.getBinaryContent（或 fetch+arrayBuffer）」正确。\n- 「fetch(url).then(r => r.text())」错误：text() 会破坏二进制。\n- 「require('./tpl.docx')」错误：浏览器不能 require 二进制文件。\n- 「fs.readFileSync」浏览器没有 fs。",
+    "tags": ["docxtemplater", "高级", "浏览器", "PizZipUtils", "加载"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "PizZipUtils.getBinaryContent(url, cb)，或 fetch(url).then(r => r.arrayBuffer())，按二进制取再交给 PizZip",
+        "isCorrect": true,
+        "description": "正确。浏览器端必须以二进制拉取模板（getBinaryContent / arrayBuffer），不能用 text()。"
+      },
+      {
+        "text": "fetch(url).then(r => r.text()) 拿到字符串后交给 PizZip",
+        "isCorrect": false,
+        "description": "错误。text() 按 UTF-8 解码会破坏二进制 zip。"
+      },
+      {
+        "text": "import template from './tpl.docx'",
+        "isCorrect": false,
+        "description": "错误。浏览器不能直接 import 二进制 docx 当数据用（除非打包器特殊配置）。"
+      },
+      {
+        "text": "用 localStorage 读取模板",
+        "isCorrect": false,
+        "description": "错误。localStorage 不是模板来源，且只存字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：把 chart（图表）数据绑定进 PowerPoint/Word 的原生图表，属于哪种能力？",
+    "explanation": "更新文档内原生图表的数据由 **chart 模块**提供，是付费模块。免费核心不支持图表数据绑定。要做数据驱动的图表，需购买 chart 模块（或自己用 raw XML 处理，但很繁琐且非官方推荐）。\n\n- 「chart 付费模块」正确。\n- 「免费核心自带图表绑定」错误。\n- 「expressions 解析器顺带支持」错误。\n- 「image 模块负责图表」错误：image 是插图片，不是绑图表数据。",
+    "tags": ["docxtemplater", "专家", "chart模块", "付费模块", "图表"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "chart 模块（付费），用于把数据绑定进文档内的原生图表",
+        "isCorrect": true,
+        "description": "正确。图表数据绑定由付费 chart 模块提供，免费核心不支持。"
+      },
+      {
+        "text": "免费核心内置图表数据绑定",
+        "isCorrect": false,
+        "description": "错误。图表能力属付费模块。"
+      },
+      {
+        "text": "由 image 模块负责更新图表数据",
+        "isCorrect": false,
+        "description": "错误。image 模块插图片，不绑图表数据。"
+      },
+      {
+        "text": "expressions 解析器自动渲染图表",
+        "isCorrect": false,
+        "description": "错误。表达式解析器与图表绑定无关。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：模板里要原样显示一对花括号字面量（不被当作标签），最直接的办法是？",
+    "explanation": "如果文档大量出现花括号且会与默认分隔符冲突，最干净的办法是**改分隔符**（options.delimiters 换成 [[ ]] 等），让 {} 不再具有特殊含义。docxtemplater 没有简单的「反斜杠转义单个花括号」机制。\n\n- 「改 options.delimiters 避开 {}」正确。\n- 「用 \\{ \\} 转义」错误：docxtemplater 不支持这种转义。\n- 「写成 {{ }}」错误。\n- 「无解，只能不写花括号」错误。",
+    "tags": ["docxtemplater", "专家", "字面花括号", "delimiters", "转义"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "改 options.delimiters 换一对不冲突的分隔符，让 {} 失去特殊含义",
+        "isCorrect": true,
+        "description": "正确。文档里要大量字面花括号时，最干净的方案是改分隔符避开 {}。"
+      },
+      {
+        "text": "用反斜杠 \\{ 和 \\} 转义花括号",
+        "isCorrect": false,
+        "description": "错误。docxtemplater 没有反斜杠转义单花括号的机制。"
+      },
+      {
+        "text": "把每个花括号写成 {{ 和 }}",
+        "isCorrect": false,
+        "description": "错误。叠写花括号不会被解析成字面量。"
+      },
+      {
+        "text": "无法实现，模板里不能出现字面花括号",
+        "isCorrect": false,
+        "description": "错误。换分隔符即可实现。"
+      }
+    ]
+  },
+  {
+    "stem": "docxtemplater：综合判断——一个「只需把后端 JSON 填进设计好的 Word 合同模板、含表格行循环和条件段落、纯文本无图片」的需求，授权成本如何？",
+    "explanation": "该需求只用到：占位符替换、表格行循环、（反向）条件、点号/比较（expressions 解析器）——全部属于免费核心能力，无需任何付费模块。只有当需要插图片、HTML、图表、操作 xlsx 单元格等时才需付费。\n\n- 「免费核心即可，零授权成本」正确。\n- 「必须买 PRO」错误。\n- 「必须买 table 模块」错误：行循环免费。\n- 「必须买 expressions 授权」错误：表达式解析器免费。",
+    "tags": ["docxtemplater", "专家", "选型", "免费边界", "成本"],
+    "categories": [
+      ["技术方向", "docxtemplater"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "免费核心 + 免费 expressions 解析器即可覆盖，无需购买任何付费模块",
+        "isCorrect": true,
+        "description": "正确。替换/行循环/条件/表达式都是免费能力；纯文本无图片不触发付费模块。"
+      },
+      {
+        "text": "必须购买 PRO 套餐才能跑通",
+        "isCorrect": false,
+        "description": "错误。该场景全用免费能力，无需付费。"
+      },
+      {
+        "text": "表格行循环需要付费 table 模块",
+        "isCorrect": false,
+        "description": "错误。基础行循环免费，table 模块面向复杂合并/嵌套。"
+      },
+      {
+        "text": "使用 {price > 1000} 这类条件需要单独的付费授权",
+        "isCorrect": false,
+        "description": "错误。表达式解析器是免费的。"
+      }
+    ]
+  }
+]

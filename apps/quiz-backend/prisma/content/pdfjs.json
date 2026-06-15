@@ -1,0 +1,1645 @@
+[
+  {
+    "stem": "PDF.js：PDF.js 由谁维护，它的官方一句话定位是什么？",
+    "explanation": "PDF.js 是 Mozilla 主导、社区共建的项目，官方定位是「a general-purpose, web standards-based platform for parsing and rendering PDFs」——基于 Web 标准、在浏览器里用 HTML5（主要是 Canvas）解析并渲染 PDF。它也是 Firefox 内置 PDF 阅读器的底层引擎。\n\n- 「Mozilla 维护、解析+渲染 PDF 的 Web 平台」正确。\n- 「生成 PDF 的库」错误：PDF.js 只解析/渲染，不负责创建 PDF（那是 jsPDF/pdf-lib 的事）。\n- 「Adobe 官方 SDK」错误。\n- 「仅 Node 端命令行工具」错误：它是浏览器优先、也可在 Node 用的库。",
+    "tags": ["pdfjs", "入门", "定位", "核心概念", "Mozilla"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Mozilla 主导的、基于 Web 标准解析并渲染 PDF 的平台（Firefox 内置阅读器的引擎）",
+        "isCorrect": true,
+        "description": "正确。官方原文即「general-purpose, web standards-based platform for parsing and rendering PDFs」。"
+      },
+      {
+        "text": "一个用来在浏览器里生成/创建 PDF 文件的库",
+        "isCorrect": false,
+        "description": "错误。PDF.js 只做解析与渲染，不生成 PDF；生成用 jsPDF 或 pdf-lib。"
+      },
+      {
+        "text": "Adobe 官方发布的 PDF 处理 SDK",
+        "isCorrect": false,
+        "description": "错误。PDF.js 与 Adobe 无关，由 Mozilla 与社区维护。"
+      },
+      {
+        "text": "只能在 Node.js 命令行里运行的 PDF 转换工具",
+        "isCorrect": false,
+        "description": "错误。PDF.js 是浏览器优先的库，也能在 Node 用（legacy 构建），并非命令行工具。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：从 npm 安装 PDF.js 时，正确的包名是哪个？",
+    "explanation": "PDF.js 在 npm 上的发布包名是 `pdfjs-dist`（dist 指预构建的分发版）。`import * as pdfjsLib from \"pdfjs-dist\"` 即可拿到 `getDocument`、`GlobalWorkerOptions` 等 API。直接叫 `pdf.js`/`pdfjs` 的包并不是官方分发包。\n\n- `pdfjs-dist` 正确。\n- `pdf.js` 不是官方 npm 包名。\n- `pdfjs` 不是官方包名。\n- `mozilla-pdf` 不存在。",
+    "tags": ["pdfjs", "入门", "安装", "pdfjs-dist", "npm"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pdfjs-dist",
+        "isCorrect": true,
+        "description": "正确。官方分发包名为 pdfjs-dist，含预构建的 build/pdf.mjs 与 worker。"
+      },
+      {
+        "text": "pdf.js",
+        "isCorrect": false,
+        "description": "错误。npm 上没有官方的 pdf.js 包，分发包是 pdfjs-dist。"
+      },
+      {
+        "text": "pdfjs",
+        "isCorrect": false,
+        "description": "错误。pdfjs 不是官方发布的包名。"
+      },
+      {
+        "text": "mozilla-pdf",
+        "isCorrect": false,
+        "description": "错误。不存在该包。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：加载一个 PDF 的入口 API 是 `pdfjsLib.getDocument(...)`。它的返回值是什么？",
+    "explanation": "`getDocument()` 返回一个 `PDFDocumentLoadingTask`（加载任务），真正的文档对象要通过它的 `.promise` 拿到：`const pdf = await loadingTask.promise`，`pdf` 才是 `PDFDocumentProxy`。这种「先给任务、再 await promise」的设计是为了支持进度回调（`onProgress`）与取消等。\n\n- 「返回 loadingTask，需 await .promise」正确。\n- 「直接返回 PDFDocumentProxy」错误：要再取 .promise。\n- 「返回 Canvas」错误。\n- 「返回页面数组」错误。",
+    "tags": ["pdfjs", "入门", "getDocument", "loadingTask", "核心流程"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个 PDFDocumentLoadingTask（加载任务），文档对象需通过 loadingTask.promise 取得",
+        "isCorrect": true,
+        "description": "正确。getDocument 返回 loadingTask，await loadingTask.promise 得到 PDFDocumentProxy。"
+      },
+      {
+        "text": "直接同步返回 PDFDocumentProxy 文档对象",
+        "isCorrect": false,
+        "description": "错误。它返回的是 loadingTask，需再取其 .promise 才拿到文档。"
+      },
+      {
+        "text": "一个已渲染好的 Canvas 元素",
+        "isCorrect": false,
+        "description": "错误。getDocument 只负责加载，不做渲染。"
+      },
+      {
+        "text": "该 PDF 所有页面对象组成的数组",
+        "isCorrect": false,
+        "description": "错误。页面要用 pdf.getPage(n) 按需获取。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：使用 PDF.js 渲染前，几乎必须先配置哪个全局选项，否则会因 worker 找不到而报错？",
+    "explanation": "PDF.js 把繁重的 PDF 解析放到 Web Worker 里跑，避免阻塞主线程。使用前必须告诉它 worker 脚本在哪：`pdfjsLib.GlobalWorkerOptions.workerSrc = \".../pdf.worker.mjs\"`。不配它通常会报错或退化为「fake worker」在主线程跑，性能差且常出问题。\n\n- `GlobalWorkerOptions.workerSrc` 正确。\n- `GlobalWorkerOptions.canvas` 不存在。\n- `pdfjsLib.setWorkerUrl` 不是官方 API。\n- `getDocument({ workerPath })` 不是标准配置入口。",
+    "tags": ["pdfjs", "入门", "worker", "workerSrc", "GlobalWorkerOptions"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "GlobalWorkerOptions.workerSrc（指向 pdf.worker.mjs）",
+        "isCorrect": true,
+        "description": "正确。官方明确「The workerSrc property shall be specified」，指向 worker 脚本。"
+      },
+      {
+        "text": "GlobalWorkerOptions.canvas",
+        "isCorrect": false,
+        "description": "错误。没有这个选项；canvas 是在 render 时传入的。"
+      },
+      {
+        "text": "pdfjsLib.setWorkerUrl(...)",
+        "isCorrect": false,
+        "description": "错误。配置 worker 用 GlobalWorkerOptions.workerSrc，没有 setWorkerUrl 方法。"
+      },
+      {
+        "text": "getDocument({ workerPath: '...' })",
+        "isCorrect": false,
+        "description": "错误。worker 路径通过 GlobalWorkerOptions.workerSrc 设置，不是 getDocument 的参数。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：把 worker 放进单独线程的主要目的是什么？",
+    "explanation": "PDF 的解析（解压、字体处理、构建绘制指令）是 CPU 密集的同步活儿。PDF.js 用 Web Worker 把这部分搬到后台线程，主线程只负责把指令画到 canvas，从而避免长任务卡住 UI（滚动、点击）。这就是为什么 worker 是核心机制而非可选优化。\n\n- 「把繁重解析移出主线程、避免卡 UI」正确。\n- 「为了多页并行下载」错误：那是网络层的事。\n- 「为了绕过同源策略」错误。\n- 「为了压缩 PDF 体积」错误。",
+    "tags": ["pdfjs", "初级", "worker", "性能", "架构"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把 CPU 密集的 PDF 解析放到后台线程，避免阻塞主线程导致 UI 卡顿",
+        "isCorrect": true,
+        "description": "正确。worker 承担解析，主线程只做绘制，保证页面流畅。"
+      },
+      {
+        "text": "让多个 PDF 文件能并行下载",
+        "isCorrect": false,
+        "description": "错误。并行下载属于网络层，与 worker 解析无关。"
+      },
+      {
+        "text": "绕过浏览器的同源策略加载跨域 PDF",
+        "isCorrect": false,
+        "description": "错误。跨域仍受 CORS 约束，worker 不能绕过同源策略。"
+      },
+      {
+        "text": "在加载时压缩 PDF 文件以省流量",
+        "isCorrect": false,
+        "description": "错误。PDF.js 不压缩文件，worker 只做解析。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：拿到 `pdf`（PDFDocumentProxy）后，要取第 1 页，正确写法是？",
+    "explanation": "页面按需获取：`const page = await pdf.getPage(1)`。注意 PDF.js 的页码是 **1 基**（第一页是 1，不是 0），返回 `PDFPageProxy`。文档总页数读 `pdf.numPages`。\n\n- `pdf.getPage(1)` 正确（1 基）。\n- `pdf.getPage(0)` 错误：0 不是合法页码。\n- `pdf.pages[0]` 错误：没有同步的 pages 数组。\n- `pdf.page(1)` 错误：方法名是 getPage。",
+    "tags": ["pdfjs", "初级", "getPage", "页码", "PDFPageProxy"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const page = await pdf.getPage(1)（页码 1 基）",
+        "isCorrect": true,
+        "description": "正确。getPage 接受 1 基页码，返回 PDFPageProxy 的 Promise。"
+      },
+      {
+        "text": "const page = await pdf.getPage(0)",
+        "isCorrect": false,
+        "description": "错误。PDF.js 页码从 1 开始，0 非法。"
+      },
+      {
+        "text": "const page = pdf.pages[0]",
+        "isCorrect": false,
+        "description": "错误。不存在同步的 pages 数组，需用 getPage。"
+      },
+      {
+        "text": "const page = await pdf.page(1)",
+        "isCorrect": false,
+        "description": "错误。方法名是 getPage，不是 page。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：渲染一页到 canvas 前，要先得到布局信息。下列哪步是用 `page` 计算出渲染尺寸/缩放的？",
+    "explanation": "`const viewport = page.getViewport({ scale })`。viewport 描述了在给定缩放（和可选旋转）下，该页应占的像素尺寸（`viewport.width`/`height`）与坐标变换。canvas 的宽高就按它来设。\n\n- `page.getViewport({ scale })` 正确。\n- `page.getSize()` 不是 API。\n- `page.render()` 是真正绘制，不是先算尺寸。\n- `pdf.getViewport()` 错误：viewport 属于 page 而非 document。",
+    "tags": ["pdfjs", "初级", "viewport", "getViewport", "scale"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "page.getViewport({ scale })",
+        "isCorrect": true,
+        "description": "正确。getViewport 按 scale 算出页面像素尺寸与变换，供 canvas 与 render 使用。"
+      },
+      {
+        "text": "page.getSize()",
+        "isCorrect": false,
+        "description": "错误。没有 getSize 方法，尺寸来自 viewport。"
+      },
+      {
+        "text": "page.render()",
+        "isCorrect": false,
+        "description": "错误。render 是实际绘制，需要先有 viewport 作为参数。"
+      },
+      {
+        "text": "pdf.getViewport({ scale })",
+        "isCorrect": false,
+        "description": "错误。getViewport 是 PDFPageProxy 的方法，不在 document 上。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：把一页画到 `<canvas>` 上，`page.render(...)` 的渲染参数里**必须**提供的两项是？",
+    "explanation": "最小渲染参数是：目标画布 + 视口。官方示例传 `{ canvasContext, viewport }`（新版推荐用 `canvas` 直接传画布元素，`canvasContext` 仍可用于向后兼容）。`viewport` 由 `page.getViewport({ scale })` 得到，决定画多大、怎么变换。\n\n- 「画布上下文/画布 + viewport」正确。\n- 「scale + rotation」错误：这些是算 viewport 的参数，不是 render 直接要的。\n- 「url + password」错误：那是 getDocument 的。\n- 「width + height」错误：尺寸由 viewport 与 canvas 决定。",
+    "tags": ["pdfjs", "初级", "render", "canvas", "viewport"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "画布（canvas / canvasContext）与 viewport",
+        "isCorrect": true,
+        "description": "正确。render 至少需要目标画布和 viewport；新版推荐传 canvas，canvasContext 为兼容保留。"
+      },
+      {
+        "text": "scale 与 rotation",
+        "isCorrect": false,
+        "description": "错误。scale/rotation 是 getViewport 的参数，render 接收的是算好的 viewport。"
+      },
+      {
+        "text": "url 与 password",
+        "isCorrect": false,
+        "description": "错误。url/password 属于 getDocument，不是 render。"
+      },
+      {
+        "text": "width 与 height",
+        "isCorrect": false,
+        "description": "错误。渲染尺寸由 viewport 与 canvas 的宽高承载，render 不直接收 width/height。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`page.render(renderContext)` 的返回值是什么？",
+    "explanation": "`render()` 返回一个 `RenderTask`。它有 `.promise`（渲染完成时 resolve）和 `.cancel()`（中途取消渲染）。在 SPA 里快速翻页时，用 `cancel()` 取消上一页未完成的渲染是常见且必要的做法。\n\n- 「RenderTask，含 .promise 和 .cancel()」正确。\n- 「直接返回 Promise<void>」不够准确：返回的是 RenderTask 对象（其上才有 promise）。\n- 「返回 ImageData」错误。\n- 「返回 undefined」错误。",
+    "tags": ["pdfjs", "中级", "render", "RenderTask", "cancel"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 RenderTask 对象，带 .promise（完成）与 .cancel()（取消）",
+        "isCorrect": true,
+        "description": "正确。RenderTask 让你 await 完成或在翻页时取消未完成的渲染。"
+      },
+      {
+        "text": "一个 Promise<void>，没有取消能力",
+        "isCorrect": false,
+        "description": "错误。返回的是 RenderTask，其 .promise 才是 Promise，且额外提供 cancel()。"
+      },
+      {
+        "text": "渲染结果的 ImageData",
+        "isCorrect": false,
+        "description": "错误。render 直接画到 canvas，不返回 ImageData。"
+      },
+      {
+        "text": "undefined（纯副作用）",
+        "isCorrect": false,
+        "description": "错误。它返回可用于等待/取消的 RenderTask。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在单页应用里用户快速点「下一页」，上一页 render 还没完。最稳妥的处理是？",
+    "explanation": "对同一个 canvas 不能同时跑多个 render（PDF.js 会报「Cannot use the same canvas during multiple render operations」）。正确做法是保存上一次的 `RenderTask`，翻页时先调 `renderTask.cancel()`（会抛 `RenderingCancelledException`，捕获忽略即可），再开始新页渲染。\n\n- 「保存 RenderTask 并 cancel() 旧的」正确。\n- 「无所谓，PDF.js 自动排队」错误：同 canvas 并发会报错。\n- 「每次新建 document」错误：浪费且不解决并发。\n- 「用 setTimeout 等 500ms」错误：不可靠。",
+    "tags": ["pdfjs", "高级", "RenderTask", "cancel", "并发"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "保存当前 RenderTask，翻页时先 cancel() 它，再渲染新页",
+        "isCorrect": true,
+        "description": "正确。同一 canvas 不能并发渲染，必须取消旧任务（捕获 RenderingCancelledException）。"
+      },
+      {
+        "text": "不用管，PDF.js 会自动把多个 render 排队",
+        "isCorrect": false,
+        "description": "错误。对同一 canvas 并发 render 会直接报错，不会自动排队。"
+      },
+      {
+        "text": "每次翻页都重新 getDocument 一遍",
+        "isCorrect": false,
+        "description": "错误。重新加载文档代价高，也不能解决同 canvas 并发问题。"
+      },
+      {
+        "text": "用 setTimeout 固定等 500ms 再渲染",
+        "isCorrect": false,
+        "description": "错误。靠定时延迟不可靠，正解是 cancel 上一个 RenderTask。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：关于 PDF.js 与「生成 PDF」的关系，正确的是？",
+    "explanation": "PDF.js 是**解析 + 渲染**引擎：把已有的 PDF 画到 canvas、抽取文本/元数据、渲染注解等。它**不创建新 PDF**。要在前端生成 PDF，应选 jsPDF（编程式画内容）或 pdf-lib（修改/拼接已有 PDF）。把 PDF.js 当生成器是常见误解。\n\n- 「只解析/渲染，不生成」正确。\n- 「能从 HTML 生成 PDF」错误。\n- 「能编辑并另存为新 PDF」错误（保存表单数据另说，但不是通用生成）。\n- 「内置 jsPDF」错误。",
+    "tags": ["pdfjs", "入门", "边界", "误区", "jsPDF"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "PDF.js 只负责解析与渲染 PDF，不负责生成；生成用 jsPDF / pdf-lib",
+        "isCorrect": true,
+        "description": "正确。这是 PDF.js 的核心边界，常被误当成 PDF 生成器。"
+      },
+      {
+        "text": "PDF.js 可以把任意 HTML 页面导出成 PDF",
+        "isCorrect": false,
+        "description": "错误。HTML 转 PDF 不在 PDF.js 范围内。"
+      },
+      {
+        "text": "PDF.js 主要用途就是编程式创建新的 PDF 文档",
+        "isCorrect": false,
+        "description": "错误。创建 PDF 是 jsPDF/pdf-lib 的职责。"
+      },
+      {
+        "text": "PDF.js 内部封装了 jsPDF 来生成 PDF",
+        "isCorrect": false,
+        "description": "错误。PDF.js 与 jsPDF 无依赖关系。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：react-pdf、vue-pdf-embed 这类组件与 PDF.js 是什么关系？",
+    "explanation": "react-pdf、vue-pdf-embed、ng2-pdf-viewer 等都是对 PDF.js 的**封装（wrapper）**：底层仍调用 PDF.js 的 `getDocument`/`render`，对外提供框架风格的组件（`<Document>`/`<Page>` 等），帮你处理 worker 配置、生命周期、文本层等。它们不重写 PDF 解析。\n\n- 「它们是 PDF.js 的上层封装」正确。\n- 「它们是 PDF.js 的竞品/独立实现」错误。\n- 「PDF.js 依赖它们」错误：依赖方向相反。\n- 「它们只做生成不做渲染」错误。",
+    "tags": ["pdfjs", "初级", "生态", "react-pdf", "封装"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它们是对 PDF.js 的封装，底层仍用 PDF.js 渲染，只是提供框架组件",
+        "isCorrect": true,
+        "description": "正确。react-pdf / vue-pdf-embed 等都包着 PDF.js，简化在框架中的使用。"
+      },
+      {
+        "text": "它们是 PDF.js 的竞品，各自独立实现了 PDF 解析",
+        "isCorrect": false,
+        "description": "错误。它们不重写解析，依赖 PDF.js。"
+      },
+      {
+        "text": "PDF.js 反过来依赖 react-pdf 才能渲染",
+        "isCorrect": false,
+        "description": "错误。依赖方向相反，是 wrapper 依赖 PDF.js。"
+      },
+      {
+        "text": "它们只负责生成 PDF，不做渲染",
+        "isCorrect": false,
+        "description": "错误。它们做的正是渲染/查看，且基于 PDF.js。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：要拿到一页里**可选中/可搜索的文本内容**，应调用哪个方法？",
+    "explanation": "`const textContent = await page.getTextContent()` 返回该页的文本项集合：`textContent.items` 是一组 `TextItem`，每项有 `str`（文本）、`transform`（位置/缩放矩阵）、`width`/`height`、`dir` 等。要做「文本层覆盖」实现可选中文本，再配合 `TextLayer` 类把这些项定位到 DOM。\n\n- `page.getTextContent()` 正确。\n- `page.getText()` 不是 API。\n- `page.render()` 只画图，得到的是位图，没有文本语义。\n- `pdf.getTextContent()` 错误：方法在 page 上。",
+    "tags": ["pdfjs", "中级", "getTextContent", "文本层", "TextItem"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "page.getTextContent()，返回 items（TextItem 数组）",
+        "isCorrect": true,
+        "description": "正确。getTextContent 给出每个文本片段的 str 与定位信息，用于搜索/文本层。"
+      },
+      {
+        "text": "page.getText()",
+        "isCorrect": false,
+        "description": "错误。没有 getText 方法，文本用 getTextContent 获取。"
+      },
+      {
+        "text": "page.render() 之后从 canvas 读文字",
+        "isCorrect": false,
+        "description": "错误。render 产出的是位图像素，没有文本语义，无法直接读字。"
+      },
+      {
+        "text": "pdf.getTextContent()",
+        "isCorrect": false,
+        "description": "错误。getTextContent 是 PDFPageProxy 的方法，不在 document 上。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：仅把页面 `render` 到 canvas，用户能用鼠标选中文字吗？为什么？",
+    "explanation": "不能。canvas 渲染产出的是**位图像素**，文字只是「画上去的图」，没有文本语义。要实现可选中/可复制/可搜索的文本，需要额外构建**文本层（text layer）**：用 `getTextContent()` 拿到每个文本片段，用 `TextLayer` 把透明定位的 `<span>` 叠在 canvas 之上。\n\n- 「不能，canvas 是位图，需另建文本层」正确。\n- 「能，canvas 自带文本选择」错误。\n- 「能，只要 scale 够大」错误。\n- 「不能，PDF.js 不支持取文本」错误：它支持，只是要文本层。",
+    "tags": ["pdfjs", "中级", "文本层", "canvas", "可选中"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不能。canvas 是位图，文字无语义；要可选中需另建文本层（getTextContent + TextLayer）",
+        "isCorrect": true,
+        "description": "正确。文本层把透明 span 叠在画布上，才提供选择/搜索能力。"
+      },
+      {
+        "text": "能，canvas 渲染后浏览器自带文字选择",
+        "isCorrect": false,
+        "description": "错误。canvas 上的字是像素，无法被选择。"
+      },
+      {
+        "text": "能，只要把 scale 调大就能选中",
+        "isCorrect": false,
+        "description": "错误。放大只是更清晰，仍是位图，无法选中。"
+      },
+      {
+        "text": "不能，因为 PDF.js 根本无法提取文本",
+        "isCorrect": false,
+        "description": "错误。PDF.js 能用 getTextContent 提取文本，只是需要文本层来呈现选择。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在较新版本（v4+）里，渲染文本层推荐用哪种 API 形式？",
+    "explanation": "新版用**类** `TextLayer`：`new TextLayer({ textContentSource, container, viewport })` 然后 `await textLayer.render()`。旧的函数式 `renderTextLayer(...)` 已被弃用（控制台会提示 use `TextLayer` instead）。注解层同理用 `AnnotationLayer` 类。\n\n- 「TextLayer 类」正确。\n- 「renderTextLayer 函数（现已弃用）」是旧法。\n- 「page.renderTextLayer()」不存在。\n- 「textContent 自动渲染」错误。",
+    "tags": ["pdfjs", "高级", "TextLayer", "文本层", "版本变化"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 TextLayer 类：new TextLayer({ textContentSource, container, viewport }).render()",
+        "isCorrect": true,
+        "description": "正确。v4+ 改为类式 API，旧的 renderTextLayer 函数已弃用。"
+      },
+      {
+        "text": "继续用 renderTextLayer(...) 函数（这是当前推荐）",
+        "isCorrect": false,
+        "description": "错误。renderTextLayer 已弃用，官方提示改用 TextLayer 类。"
+      },
+      {
+        "text": "调用 page.renderTextLayer()",
+        "isCorrect": false,
+        "description": "错误。PDFPageProxy 上没有 renderTextLayer 方法。"
+      },
+      {
+        "text": "getTextContent() 会自动把文本层渲染到页面上",
+        "isCorrect": false,
+        "description": "错误。getTextContent 只返回数据，渲染需自己用 TextLayer。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`page.getViewport({ scale: 2 })` 相比 `scale: 1`，会带来什么变化？",
+    "explanation": "`scale` 是线性缩放因子：`scale: 2` 让 viewport 的 `width`/`height` 都变成 2 倍，于是 canvas 也设成 2 倍像素，渲染出的位图更大更清晰（但更耗内存/算力）。它不是改变 PDF 内容，只是渲染分辨率。\n\n- 「viewport 宽高翻倍、渲染更大更清晰」正确。\n- 「页数翻倍」错误。\n- 「只放大字体不放大图」错误：整体等比放大。\n- 「无可见变化」错误。",
+    "tags": ["pdfjs", "初级", "scale", "viewport", "分辨率"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "viewport 的 width/height 翻倍，canvas 也随之变大，渲染更清晰但更耗资源",
+        "isCorrect": true,
+        "description": "正确。scale 是线性缩放因子，整体等比放大渲染分辨率。"
+      },
+      {
+        "text": "PDF 的页数变成原来的 2 倍",
+        "isCorrect": false,
+        "description": "错误。scale 与页数无关。"
+      },
+      {
+        "text": "只放大文字，不影响图片和图形",
+        "isCorrect": false,
+        "description": "错误。scale 对整页等比缩放，不区分元素类型。"
+      },
+      {
+        "text": "没有任何可见变化",
+        "isCorrect": false,
+        "description": "错误。尺寸与清晰度都会改变。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：为了在高分屏（Retina）上不糊，官方示例里 canvas 尺寸怎么处理？",
+    "explanation": "官方示例用 `outputScale = window.devicePixelRatio || 1`：把 canvas 的像素尺寸设为 `viewport.width * outputScale`（更高物理像素），而 CSS 尺寸（`canvas.style.width`）仍按 `viewport.width`（CSS 像素），并在 render 里传 `transform: [outputScale,0,0,outputScale,0,0]`。这样在 2x 屏上用 2 倍像素绘制再缩放显示，画面锐利。\n\n- 「按 devicePixelRatio 放大画布像素、CSS 尺寸不变」正确。\n- 「canvas 像素=CSS 尺寸即可」错误：高分屏会糊。\n- 「scale 设成屏幕宽度」错误。\n- 「用 image-rendering: pixelated」错误：那是放大马赛克，不解决清晰度。",
+    "tags": ["pdfjs", "高级", "HiDPI", "devicePixelRatio", "canvas"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "canvas 像素尺寸按 devicePixelRatio 放大，CSS 尺寸保持视口大小，并在 render 传对应 transform",
+        "isCorrect": true,
+        "description": "正确。这正是官方 helloworld 的 outputScale 处理，保证高分屏锐利。"
+      },
+      {
+        "text": "让 canvas 的像素尺寸直接等于 CSS 尺寸即可",
+        "isCorrect": false,
+        "description": "错误。这样在 2x/3x 屏上会模糊，需按 devicePixelRatio 提升像素。"
+      },
+      {
+        "text": "把 getViewport 的 scale 设成屏幕宽度像素值",
+        "isCorrect": false,
+        "description": "错误。scale 不该绑定屏幕宽度，HiDPI 用 outputScale 处理。"
+      },
+      {
+        "text": "加 CSS image-rendering: pixelated",
+        "isCorrect": false,
+        "description": "错误。该属性产生锐利的像素放大（马赛克），并不能提升渲染清晰度。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：除了 `url`，`getDocument` 还能直接接收哪种形式的 PDF 数据（例如已经 fetch 到内存）？",
+    "explanation": "`getDocument` 的 `DocumentInitParameters` 支持 `data`：传入 `Uint8Array`/`ArrayBuffer`/`number[]` 等二进制数据（如 `getDocument({ data: uint8array })`）。官方建议用 `Uint8Array` 以省内存；注意 TypedArray 会被「转移」给 worker（之后主线程不应再用它）。还支持 `httpHeaders`、`withCredentials`、`password` 等。\n\n- 「data: Uint8Array/ArrayBuffer」正确。\n- 「只能 url」错误。\n- 「data: Blob 直接传」不准确：通常先转 arrayBuffer。\n- 「data: base64 字符串直接传」错误：需先 atob 转二进制。",
+    "tags": ["pdfjs", "中级", "getDocument", "data", "二进制"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "data：传入 Uint8Array / ArrayBuffer 等二进制数据",
+        "isCorrect": true,
+        "description": "正确。getDocument({ data }) 可直接吃内存里的二进制 PDF，推荐 Uint8Array。"
+      },
+      {
+        "text": "只支持 url，无法传内存数据",
+        "isCorrect": false,
+        "description": "错误。除了 url 还支持 data 等多种来源。"
+      },
+      {
+        "text": "data：直接传一个 Blob 对象即可",
+        "isCorrect": false,
+        "description": "错误。一般要先 blob.arrayBuffer() 转成二进制再传，Blob 不是直接接受的形态。"
+      },
+      {
+        "text": "data：直接传 base64 字符串",
+        "isCorrect": false,
+        "description": "错误。base64 需先 atob 解成二进制串/字节再传。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：加载受密码保护的 PDF，应在 `getDocument` 的参数里提供什么？",
+    "explanation": "`getDocument({ url, password: \"...\" })` 用于解密受口令保护的文档。若不传密码，加载会以 `PasswordException` 拒绝（可据此弹框让用户输入，再用 `loadingTask.onPassword` 回调或重新 getDocument 传入密码）。\n\n- `password` 正确。\n- `decrypt: true` 不是 API。\n- `auth` 错误。\n- `httpHeaders` 是 HTTP 鉴权用的，不解 PDF 内部加密。",
+    "tags": ["pdfjs", "中级", "password", "加密", "getDocument"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "password 字段（getDocument({ url, password }))",
+        "isCorrect": true,
+        "description": "正确。password 用于解密受保护 PDF；缺失会抛 PasswordException。"
+      },
+      {
+        "text": "decrypt: true",
+        "isCorrect": false,
+        "description": "错误。没有这个布尔开关，解密靠传 password。"
+      },
+      {
+        "text": "auth: { user, pass }",
+        "isCorrect": false,
+        "description": "错误。不存在 auth 字段。"
+      },
+      {
+        "text": "httpHeaders（HTTP 认证头）",
+        "isCorrect": false,
+        "description": "错误。httpHeaders 解决服务器访问鉴权，不解 PDF 文档内部加密。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：文档里有些字符（尤其中日韩 CJK）显示成方块/乱码，常见原因与修法是什么？",
+    "explanation": "当 PDF 使用了未内嵌的 CJK 字体编码（CMap）时，PDF.js 需要预置的 Adobe CMap 数据才能正确映射字形。要配置 `getDocument({ cMapUrl: \".../cmaps/\", cMapPacked: true })`，把 pdfjs-dist 里的 `cmaps/` 资源指给它。类似地，非内嵌标准字体需要 `standardFontDataUrl`。\n\n- 「配 cMapUrl/cMapPacked（CMap 资源）」正确。\n- 「调大 scale」错误。\n- 「换 canvas 为 svg」错误。\n- 「PDF.js 不支持中文」错误：配好资源即可。",
+    "tags": ["pdfjs", "专家", "cMapUrl", "CJK", "字体"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "未内嵌 CJK 字体缺 CMap；配置 cMapUrl 与 cMapPacked 指向 pdfjs-dist 的 cmaps 资源",
+        "isCorrect": true,
+        "description": "正确。CJK 映射需 Adobe CMap 数据，cMapUrl/cMapPacked 解决方块/乱码。"
+      },
+      {
+        "text": "把 getViewport 的 scale 调大就能正常显示中文",
+        "isCorrect": false,
+        "description": "错误。乱码是字体映射问题，与缩放无关。"
+      },
+      {
+        "text": "把渲染目标从 canvas 换成 svg 即可",
+        "isCorrect": false,
+        "description": "错误。换渲染目标不解决缺字体数据的问题。"
+      },
+      {
+        "text": "PDF.js 根本不支持中文，需换库",
+        "isCorrect": false,
+        "description": "错误。配好 cMapUrl/standardFontDataUrl 后中文正常显示。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`pdfjs-dist` 同时提供「现代构建」和「legacy 构建」。legacy 构建主要面向什么场景？",
+    "explanation": "现代构建（`pdfjs-dist/build/...`）面向最新浏览器，用了较新的 JS 特性；**legacy 构建**（`pdfjs-dist/legacy/build/...`）做了向后兼容转译，面向较老的浏览器，以及在 **Node.js** 环境下使用 PDF.js 时官方推荐的入口。选错构建可能在老环境报语法错误。\n\n- 「面向较老浏览器 + Node.js」正确。\n- 「面向最新浏览器」错误：那是现代构建。\n- 「体积更小的生产版」错误。\n- 「只含 worker」错误。",
+    "tags": ["pdfjs", "高级", "legacy", "构建", "兼容性"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "较老的浏览器，以及在 Node.js 中使用 PDF.js 的场景",
+        "isCorrect": true,
+        "description": "正确。legacy 构建做了兼容转译，老浏览器与 Node 推荐用它。"
+      },
+      {
+        "text": "最新版浏览器的最优性能版本",
+        "isCorrect": false,
+        "description": "错误。最新浏览器用现代构建即可，legacy 是兼容用途。"
+      },
+      {
+        "text": "体积更小、专供生产环境的精简版",
+        "isCorrect": false,
+        "description": "错误。legacy 因含转译/polyfill 往往更大，不是为了减小体积。"
+      },
+      {
+        "text": "只包含 worker 而不含主库的特殊包",
+        "isCorrect": false,
+        "description": "错误。legacy 是完整构建，只是兼容性目标不同。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：当前主流的 `pdfjs-dist`（v4/v5/v6）发布形态主要是哪种模块格式？",
+    "explanation": "新版 pdfjs-dist 以 **ES Module（ESM）** 为主：主入口是 `build/pdf.mjs`，worker 是 `build/pdf.worker.mjs`，用 `import * as pdfjsLib from \"pdfjs-dist\"`。早期的 UMD/`.js` 形态在新版中已收敛到 ESM（v5 起更彻底）。这也是为什么 workerSrc 常指向 `.mjs`。\n\n- 「ESM（.mjs）」正确。\n- 「仅 CommonJS」错误。\n- 「仅 UMD 全局变量」错误。\n- 「AMD」错误。",
+    "tags": ["pdfjs", "高级", "ESM", "模块格式", "pdf.mjs"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ES Module（build/pdf.mjs、pdf.worker.mjs）",
+        "isCorrect": true,
+        "description": "正确。新版以 ESM 为主，入口 pdf.mjs、worker pdf.worker.mjs。"
+      },
+      {
+        "text": "仅 CommonJS（require）",
+        "isCorrect": false,
+        "description": "错误。新版主推 ESM；legacy 提供兼容入口，但主流形态是 .mjs。"
+      },
+      {
+        "text": "仅 UMD，挂在全局变量上",
+        "isCorrect": false,
+        "description": "错误。早期有 UMD，新版已收敛到 ESM。"
+      },
+      {
+        "text": "AMD（define）",
+        "isCorrect": false,
+        "description": "错误。pdfjs-dist 并非以 AMD 形态分发。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在打包器（Vite/webpack）项目里配置 worker，下面哪种做法最稳？",
+    "explanation": "因为 worker 是独立资源文件，常见稳妥做法是用打包器能识别的 URL：例如 `new URL(\"pdfjs-dist/build/pdf.worker.mjs\", import.meta.url)` 赋给 `GlobalWorkerOptions.workerSrc`，让构建工具把 worker 作为资源正确产出并指向它。直接写死相对路径在构建后常因哈希/目录变化而 404。\n\n- 「new URL(... , import.meta.url) 交给打包器」正确。\n- 「写死 ./pdf.worker.mjs 相对路径」最易在构建后失效。\n- 「不配 worker，靠 fake worker」错误：性能差且不推荐。\n- 「把 worker 内容 import 成字符串 eval」错误。",
+    "tags": ["pdfjs", "专家", "worker", "打包器", "workerSrc"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 new URL(\"pdfjs-dist/build/pdf.worker.mjs\", import.meta.url) 赋给 workerSrc",
+        "isCorrect": true,
+        "description": "正确。让打包器把 worker 作为资源正确解析与产出，避免路径错位。"
+      },
+      {
+        "text": "写死一个相对路径字符串 './pdf.worker.mjs'",
+        "isCorrect": false,
+        "description": "错误。构建后目录/哈希变化常导致 404，最不稳。"
+      },
+      {
+        "text": "干脆不配 workerSrc，让 PDF.js 用 fake worker 在主线程跑",
+        "isCorrect": false,
+        "description": "错误。fake worker 阻塞主线程、性能差，仅是退路而非推荐。"
+      },
+      {
+        "text": "把 worker 文件读成字符串再 eval 执行",
+        "isCorrect": false,
+        "description": "错误。这种做法脆弱且有安全/CSP 问题，不是推荐方式。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`getDocument` 加载远程 PDF，浏览器报跨域错误。根因通常是什么？",
+    "explanation": "PDF.js 通过 fetch/XHR 拉取远程 PDF，受浏览器**同源策略/CORS** 约束。跨域报错通常是**目标服务器未返回正确的 CORS 响应头**（如 `Access-Control-Allow-Origin`）。官方文档也提示：远程 URL 需在该服务器配置好 CORS。改 PDF.js 本身解决不了。\n\n- 「目标服务器缺 CORS 头，需服务端配置」正确。\n- 「workerSrc 配错」不是跨域根因。\n- 「PDF 文件损坏」错误。\n- 「scale 太大」错误。",
+    "tags": ["pdfjs", "高级", "CORS", "跨域", "getDocument"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "目标服务器没返回正确的 CORS 头，需在该服务器配置 Access-Control-Allow-Origin",
+        "isCorrect": true,
+        "description": "正确。跨域受 CORS 约束，须服务端放行；PDF.js 端无法绕过。"
+      },
+      {
+        "text": "workerSrc 路径配错导致跨域",
+        "isCorrect": false,
+        "description": "错误。worker 路径错是另一类问题，与远程 PDF 的 CORS 无关。"
+      },
+      {
+        "text": "PDF 文件本身损坏了",
+        "isCorrect": false,
+        "description": "错误。损坏会是解析错误而非跨域错误。"
+      },
+      {
+        "text": "getViewport 的 scale 设得太大",
+        "isCorrect": false,
+        "description": "错误。scale 与跨域无任何关系。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：读取 PDF 的标题、作者等文档信息，应调用？",
+    "explanation": "`const meta = await pdf.getMetadata()` 返回 `{ info, metadata, ... }`：`info` 含 `Title`/`Author`/`Producer`/`CreationDate` 等标准信息字典，`metadata` 是 XMP 元数据对象。这是 PDFDocumentProxy 上的方法。\n\n- `pdf.getMetadata()` 正确。\n- `pdf.info` 不是同步属性。\n- `page.getMetadata()` 错误：元数据属于 document。\n- `getDocument` 返回值里直接带 title 错误。",
+    "tags": ["pdfjs", "中级", "getMetadata", "元数据", "PDFDocumentProxy"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await pdf.getMetadata()，从返回的 info 里取 Title/Author 等",
+        "isCorrect": true,
+        "description": "正确。getMetadata 返回 info（信息字典）与 metadata（XMP）。"
+      },
+      {
+        "text": "直接读 pdf.info 同步属性",
+        "isCorrect": false,
+        "description": "错误。需调用异步的 getMetadata，没有同步 info 属性。"
+      },
+      {
+        "text": "await page.getMetadata()",
+        "isCorrect": false,
+        "description": "错误。元数据是文档级，方法在 PDFDocumentProxy 上。"
+      },
+      {
+        "text": "getDocument 的返回对象上直接有 title 字段",
+        "isCorrect": false,
+        "description": "错误。getDocument 返回 loadingTask，元数据要单独取。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：渲染表单字段（输入框、按钮）等**交互式注解**，需要在 canvas 之上再加什么层？",
+    "explanation": "注解（链接、表单控件、批注等）通过**注解层（annotation layer）**渲染：用 `page.getAnnotations()` 拿注解数据，用 `AnnotationLayer` 类把对应的 DOM 元素叠在 canvas 上。这样链接可点、表单可填。它独立于 canvas 位图层与文本层。\n\n- 「注解层（AnnotationLayer）」正确。\n- 「文本层就够了」错误：文本层只处理可选文字。\n- 「canvas 自动渲染表单」错误。\n- 「需要 jsPDF」错误。",
+    "tags": ["pdfjs", "专家", "注解层", "AnnotationLayer", "表单"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "注解层：getAnnotations() + AnnotationLayer 类，把交互 DOM 叠在 canvas 上",
+        "isCorrect": true,
+        "description": "正确。链接/表单/批注由注解层渲染，独立于位图与文本层。"
+      },
+      {
+        "text": "只要文本层就能渲染表单控件",
+        "isCorrect": false,
+        "description": "错误。文本层负责可选文字，表单交互需注解层。"
+      },
+      {
+        "text": "canvas 渲染时会自动把表单画成可交互控件",
+        "isCorrect": false,
+        "description": "错误。canvas 只画静态像素，交互需注解层 DOM。"
+      },
+      {
+        "text": "需要引入 jsPDF 来渲染注解",
+        "isCorrect": false,
+        "description": "错误。注解渲染是 PDF.js 自身能力，与 jsPDF 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：典型的「加载→渲染一页」最小流程，顺序正确的是？",
+    "explanation": "标准顺序：① 配 `GlobalWorkerOptions.workerSrc`；② `const pdf = await getDocument({url}).promise`；③ `const page = await pdf.getPage(1)`；④ `const viewport = page.getViewport({scale})` 并据此设 canvas 宽高；⑤ `await page.render({canvasContext, viewport}).promise`。\n\n- 「workerSrc → getDocument → getPage → getViewport → render」正确。\n- 其它选项把 render 提到 getPage 前、或漏掉 worker，均错。",
+    "tags": ["pdfjs", "初级", "流程", "render", "核心步骤"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "设 workerSrc → getDocument().promise → getPage → getViewport → render",
+        "isCorrect": true,
+        "description": "正确。这是官方 helloworld 的标准链路。"
+      },
+      {
+        "text": "getDocument → render → getPage → getViewport",
+        "isCorrect": false,
+        "description": "错误。必须先有 page 和 viewport 才能 render。"
+      },
+      {
+        "text": "getPage → getDocument → getViewport → render",
+        "isCorrect": false,
+        "description": "错误。getPage 是文档对象的方法，必须先 getDocument。"
+      },
+      {
+        "text": "getDocument → getViewport → getPage → render",
+        "isCorrect": false,
+        "description": "错误。getViewport 是 page 的方法，需先 getPage。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`getTextContent()` 返回的每个 `TextItem` 里，`str` 和 `transform` 分别是什么？",
+    "explanation": "`str` 是这一小段文本的字符串内容；`transform` 是该片段的变换矩阵（6 元素数组），编码了它在页面坐标系中的位置与缩放（用于把文本层 `<span>` 精确定位到 canvas 对应处）。还有 `width`/`height`/`dir`（书写方向）/`fontName` 等。\n\n- 「str=文本，transform=定位/缩放矩阵」正确。\n- 「str=字体名」错误。\n- 「transform=颜色」错误。\n- 「transform=页码」错误。",
+    "tags": ["pdfjs", "专家", "TextItem", "transform", "文本层"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "str 是该片段的文本，transform 是其位置/缩放变换矩阵",
+        "isCorrect": true,
+        "description": "正确。transform 让文本层能把 span 精确叠到 canvas 对应位置。"
+      },
+      {
+        "text": "str 是字体名，transform 是字号",
+        "isCorrect": false,
+        "description": "错误。字体名是 fontName，str 是文本内容。"
+      },
+      {
+        "text": "str 是文本，transform 是该文本的颜色",
+        "isCorrect": false,
+        "description": "错误。transform 是几何变换矩阵，不含颜色。"
+      },
+      {
+        "text": "str 是文本，transform 是它所在的页码",
+        "isCorrect": false,
+        "description": "错误。transform 是 6 元素矩阵，不是页码。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：用 PDF.js 实现「整本 PDF 搜索关键字并高亮」，技术路线大致是？",
+    "explanation": "逐页 `getTextContent()` 收集每页的文本片段（`items[].str`），在拼接/规范化后的文本里查找关键字命中位置，再把命中片段映射回**文本层**对应的 `<span>` 上加高亮样式。核心是「文本层 + getTextContent 的文本与坐标」，而不是去 canvas 像素里找字。\n\n- 「逐页 getTextContent + 文本层定位高亮」正确。\n- 「OCR 识别 canvas 像素」错误：PDF 多数有文本层，无需 OCR。\n- 「在 PDF 二进制里正则搜」错误：PDF 是压缩/编码的。\n- 「render 时传 keyword」错误：render 无此参数。",
+    "tags": ["pdfjs", "专家", "搜索", "getTextContent", "文本层"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "逐页 getTextContent 取文本与坐标，匹配关键字后在文本层对应 span 上高亮",
+        "isCorrect": true,
+        "description": "正确。基于文本层与 getTextContent 的文本/位置信息实现搜索高亮。"
+      },
+      {
+        "text": "对每页 canvas 截图做 OCR 识别后再搜索",
+        "isCorrect": false,
+        "description": "错误。大多数 PDF 自带文本，直接 getTextContent 即可，无需 OCR。"
+      },
+      {
+        "text": "直接对 PDF 文件二进制做正则匹配",
+        "isCorrect": false,
+        "description": "错误。PDF 内容经压缩/编码，二进制正则不可靠。"
+      },
+      {
+        "text": "调用 page.render({ keyword }) 让它自动高亮",
+        "isCorrect": false,
+        "description": "错误。render 没有 keyword 参数，搜索需自行实现。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`getViewport` 的 `rotation` 参数（如 90）作用是什么？要注意什么？",
+    "explanation": "`getViewport({ scale, rotation })` 控制渲染旋转角度（度，常用 0/90/180/270）。要点：`rotation` 默认取该页的**固有旋转** `page.rotate`，并且是**替换**而非叠加——你传的值会直接作为最终旋转，而不是在固有旋转上再加。要在固有基础上叠加需自己 `page.rotate + delta`。\n\n- 「设渲染旋转角，默认=page.rotate，替换式」正确。\n- 「永远从 0 起算」错误。\n- 「会改源 PDF」错误。\n- 「只能 0/90」错误：支持 270 等。",
+    "tags": ["pdfjs", "专家", "rotation", "getViewport", "旋转"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "设置渲染旋转角；默认取页面固有旋转 page.rotate，且是替换式（非叠加）",
+        "isCorrect": true,
+        "description": "正确。rotation 默认 = this.rotate，传入值替换固有旋转，叠加需自行相加。"
+      },
+      {
+        "text": "始终从 0 度开始叠加你传入的角度",
+        "isCorrect": false,
+        "description": "错误。默认基准是页面固有旋转，且传入值是替换不是叠加。"
+      },
+      {
+        "text": "会把旋转写回并修改源 PDF 文件",
+        "isCorrect": false,
+        "description": "错误。getViewport 只影响渲染，不改源文件。"
+      },
+      {
+        "text": "只支持 0 和 90 两个值",
+        "isCorrect": false,
+        "description": "错误。支持 0/90/180/270 等。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：用完一个 PDF 文档、要释放 worker 与内存，应该调用？",
+    "explanation": "`await pdf.destroy()`（PDFDocumentProxy.destroy）会清理该文档相关的资源、断开与 worker 的关联。SPA 中频繁加载不同 PDF 时，及时 destroy 旧文档能避免内存/worker 泄漏。也可在更高层 `loadingTask.destroy()`。\n\n- `pdf.destroy()` 正确。\n- `pdf.close()` 不是 API。\n- `delete pdf` 错误：不释放底层资源。\n- `GlobalWorkerOptions.workerSrc = null` 错误：那只是清配置。",
+    "tags": ["pdfjs", "高级", "destroy", "内存", "资源释放"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "await pdf.destroy()",
+        "isCorrect": true,
+        "description": "正确。destroy 释放文档资源并解除与 worker 的关联，防泄漏。"
+      },
+      {
+        "text": "pdf.close()",
+        "isCorrect": false,
+        "description": "错误。没有 close 方法，释放用 destroy。"
+      },
+      {
+        "text": "delete pdf",
+        "isCorrect": false,
+        "description": "错误。delete 变量不会释放底层 worker/内存资源。"
+      },
+      {
+        "text": "把 GlobalWorkerOptions.workerSrc 设为 null",
+        "isCorrect": false,
+        "description": "错误。那只是清空配置，不释放已加载文档的资源。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：要在加载大 PDF 时显示进度条，应使用 loadingTask 的哪个回调？",
+    "explanation": "`loadingTask.onProgress = ({ loaded, total }) => {...}`：在下载/接收数据过程中回调，给出已加载与总字节，可据此算百分比。这正是 getDocument 返回「任务对象」而非直接 Promise 的价值之一。\n\n- `loadingTask.onProgress` 正确。\n- `getDocument({ onProgress })` 不是标准放置位置（回调挂在 loadingTask 上）。\n- `page.render` 的 onProgress 错误。\n- `pdf.onProgress` 错误。",
+    "tags": ["pdfjs", "高级", "onProgress", "loadingTask", "进度"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "loadingTask.onProgress = ({ loaded, total }) => {...}",
+        "isCorrect": true,
+        "description": "正确。onProgress 在数据加载中回调 loaded/total，用于进度展示。"
+      },
+      {
+        "text": "page.render 的 onProgress 选项",
+        "isCorrect": false,
+        "description": "错误。render 没有 onProgress；进度是加载阶段的事。"
+      },
+      {
+        "text": "pdf.onProgress 属性",
+        "isCorrect": false,
+        "description": "错误。进度回调挂在 loadingTask 上，不在文档对象上。"
+      },
+      {
+        "text": "监听 window 的 progress 事件",
+        "isCorrect": false,
+        "description": "错误。PDF.js 通过 loadingTask.onProgress 提供进度，不走 window 事件。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在 Node.js 服务端用 PDF.js 抽取文本，下列哪条最符合官方建议？",
+    "explanation": "在 Node 端应使用 **legacy 构建**（`pdfjs-dist/legacy/build/pdf.mjs`），因为现代构建假定浏览器最新特性；Node 下还需注意 canvas 渲染依赖（如需要画图要装 node canvas 实现），但**纯抽文本**用 `getDocument({data}).then(...).getTextContent()` 即可，不必渲染。\n\n- 「用 legacy 构建，纯抽文本无需 canvas」正确。\n- 「现代构建直接在 Node 跑最佳」不准确。\n- 「Node 里无法用 PDF.js」错误。\n- 「必须先转成图片再 OCR」错误。",
+    "tags": ["pdfjs", "专家", "Node", "legacy", "getTextContent"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 legacy 构建（pdfjs-dist/legacy/...），纯抽文本走 getTextContent，无需 canvas",
+        "isCorrect": true,
+        "description": "正确。Node 推荐 legacy 入口；抽文本不渲染则不需要 canvas 依赖。"
+      },
+      {
+        "text": "在 Node 直接用现代构建效果最好",
+        "isCorrect": false,
+        "description": "错误。现代构建面向最新浏览器，Node 推荐 legacy。"
+      },
+      {
+        "text": "PDF.js 无法在 Node.js 里运行",
+        "isCorrect": false,
+        "description": "错误。PDF.js 可在 Node 用（legacy 构建），官方也支持 Node 22+。"
+      },
+      {
+        "text": "必须先把每页转成图片再做 OCR 才能取文本",
+        "isCorrect": false,
+        "description": "错误。有文本层的 PDF 直接 getTextContent 即可，无需 OCR。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`pdf.mjs` 与 `pdf.worker.mjs` 的版本必须一致，否则会怎样？",
+    "explanation": "主库与 worker 是配套的；版本不一致时 PDF.js 会抛错（FAQ 里典型的「The API version does not match the Worker version」）。务必让 `GlobalWorkerOptions.workerSrc` 指向**同一版本**的 worker（最好来自同一个 `pdfjs-dist` 安装）。\n\n- 「版本不匹配会报 API/Worker version 不一致错误」正确。\n- 「自动降级兼容」错误。\n- 「无影响」错误。\n- 「只影响样式」错误。",
+    "tags": ["pdfjs", "高级", "worker", "版本一致", "常见错误"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "会抛「API version does not match the Worker version」之类的版本不匹配错误",
+        "isCorrect": true,
+        "description": "正确。主库与 worker 必须同版本，否则直接报错。"
+      },
+      {
+        "text": "PDF.js 会自动降级以兼容旧 worker",
+        "isCorrect": false,
+        "description": "错误。它不会自动兼容，而是报版本不匹配。"
+      },
+      {
+        "text": "没有任何影响，能正常工作",
+        "isCorrect": false,
+        "description": "错误。版本错配会导致加载/渲染失败。"
+      },
+      {
+        "text": "只会让样式略有差异，不影响功能",
+        "isCorrect": false,
+        "description": "错误。这是会中断功能的硬错误，不是样式问题。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：官方提醒「the worker is not enabled for file:// urls, so use a server」。这说明什么？",
+    "explanation": "直接用 `file://` 打开本地 HTML 来跑 PDF.js，worker 通常无法启用（浏览器对 file 协议下的 worker/模块有安全限制），会退化或失败。应通过本地 HTTP 服务（如 `npx serve`、Vite dev server）访问页面。\n\n- 「需用 HTTP 服务，别用 file:// 直开」正确。\n- 「PDF.js 不能读本地文件」错误（能用 input/File）。\n- 「worker 只在生产可用」错误。\n- 「必须部署到线上」错误：本地起服务即可。",
+    "tags": ["pdfjs", "中级", "worker", "file协议", "本地开发"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 file:// 直接打开页面时 worker 受限，应通过本地 HTTP 服务访问",
+        "isCorrect": true,
+        "description": "正确。file 协议下 worker/模块受浏览器安全限制，需起本地服务。"
+      },
+      {
+        "text": "PDF.js 完全无法处理用户本地选的 PDF 文件",
+        "isCorrect": false,
+        "description": "错误。通过 <input type=file> 读 File 完全可以，限制的是 file:// 打开页面。"
+      },
+      {
+        "text": "worker 只能在生产环境启用",
+        "isCorrect": false,
+        "description": "错误。开发环境用本地 HTTP 服务即可启用 worker。"
+      },
+      {
+        "text": "必须把应用部署到公网才能用 worker",
+        "isCorrect": false,
+        "description": "错误。本地起一个 http 服务就够，不必上线。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：用户通过 `<input type=\"file\">` 选了本地 PDF，怎么交给 PDF.js？",
+    "explanation": "把 `File` 读成二进制再用 `data` 传：`const buf = await file.arrayBuffer(); const pdf = await getDocument({ data: buf }).promise;`（或读成 Uint8Array）。不能直接把 File 对象塞给 url。\n\n- 「file.arrayBuffer() → getDocument({data})」正确。\n- 「getDocument({ url: file })」错误。\n- 「getDocument(file)」错误。\n- 「FileReader.readAsText 再传」错误：PDF 是二进制，readAsText 会破坏它。",
+    "tags": ["pdfjs", "中级", "File", "arrayBuffer", "getDocument"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const buf = await file.arrayBuffer(); getDocument({ data: buf })",
+        "isCorrect": true,
+        "description": "正确。把 File 读成 ArrayBuffer/Uint8Array，用 data 传给 getDocument。"
+      },
+      {
+        "text": "getDocument({ url: file })",
+        "isCorrect": false,
+        "description": "错误。url 需要字符串/URL，不能直接传 File 对象。"
+      },
+      {
+        "text": "getDocument(file) 直接传 File",
+        "isCorrect": false,
+        "description": "错误。getDocument 接收参数对象，不接受裸 File。"
+      },
+      {
+        "text": "用 FileReader.readAsText 读成字符串再传",
+        "isCorrect": false,
+        "description": "错误。PDF 是二进制，readAsText 会破坏数据，应读 ArrayBuffer。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：想把某一页**导出成图片**（如 PNG），合理做法是？",
+    "explanation": "PDF.js 渲染目标是 canvas，所以「导出图片」= 先 `render` 到 canvas，再用浏览器 canvas API `canvas.toDataURL('image/png')` 或 `canvas.toBlob(...)` 拿到图片。PDF.js 本身不提供「page→PNG」一键方法。\n\n- 「render 到 canvas 后 canvas.toDataURL/toBlob」正确。\n- 「page.toPNG()」不存在。\n- 「getDocument 带 output:'png'」错误。\n- 「getTextContent 转图片」错误。",
+    "tags": ["pdfjs", "中级", "canvas", "导出图片", "toDataURL"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先 render 到 canvas，再用 canvas.toDataURL('image/png') 或 toBlob() 导出",
+        "isCorrect": true,
+        "description": "正确。借助 canvas 原生 API 把渲染结果导成图片。"
+      },
+      {
+        "text": "调用 page.toPNG() 直接得到图片",
+        "isCorrect": false,
+        "description": "错误。没有 toPNG 方法，导图依赖 canvas API。"
+      },
+      {
+        "text": "getDocument({ url, output: 'png' })",
+        "isCorrect": false,
+        "description": "错误。getDocument 不负责导出图片。"
+      },
+      {
+        "text": "用 getTextContent 的结果转成图片",
+        "isCorrect": false,
+        "description": "错误。getTextContent 是文本数据，与图片导出无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：实现一个连续滚动的多页 PDF 阅读器，性能上最该注意什么？",
+    "explanation": "一次性把所有页都 render 成全分辨率 canvas 会爆内存/卡顿。常见优化：**虚拟化/懒渲染**——只渲染视口内（及邻近）的页面，滚出视口的页释放或降级；翻页时 `cancel()` 未完成的 RenderTask；必要时用占位骨架。核心是「按需渲染 + 取消 + 回收」。\n\n- 「只渲染可见页、按需懒加载并回收」正确。\n- 「一次性全渲染最简单最好」错误。\n- 「把 scale 设到最大保证清晰」错误：更耗资源。\n- 「禁用 worker 提速」错误。",
+    "tags": ["pdfjs", "专家", "性能", "虚拟化", "懒渲染"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "虚拟化/懒渲染：只渲染视口内及邻近页，滚出后回收，翻页取消未完成渲染",
+        "isCorrect": true,
+        "description": "正确。按需渲染 + 取消 + 回收是大文档阅读器的性能关键。"
+      },
+      {
+        "text": "一次性把所有页都渲染成全分辨率 canvas",
+        "isCorrect": false,
+        "description": "错误。会占用巨量内存并卡顿，不可取。"
+      },
+      {
+        "text": "把所有页的 scale 都设到很大以保证清晰",
+        "isCorrect": false,
+        "description": "错误。高 scale 进一步加重内存与算力负担。"
+      },
+      {
+        "text": "禁用 worker 让渲染更快",
+        "isCorrect": false,
+        "description": "错误。禁用 worker 会把解析压回主线程，更卡。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`getDocument` 里 `cMapPacked: true` 配合 `cMapUrl` 时表示什么？",
+    "explanation": "`cMapUrl` 指向 Adobe CMap 文件目录；`cMapPacked` 表示这些 CMap 是否为**二进制打包**格式（pdfjs-dist 自带的 `cmaps/` 即打包格式，默认 `true`）。两者要匹配你实际提供的资源形态，否则 CJK 仍可能渲染失败。\n\n- 「CMap 是否二进制打包，默认 true」正确。\n- 「是否压缩 PDF」错误。\n- 「是否启用文本层」错误。\n- 「是否打包 worker」错误。",
+    "tags": ["pdfjs", "专家", "cMapPacked", "cMapUrl", "字体"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "表示提供的 CMap 是否为二进制打包格式（pdfjs-dist 自带的即打包格式，默认 true）",
+        "isCorrect": true,
+        "description": "正确。cMapPacked 要与 cMapUrl 指向的 CMap 形态匹配。"
+      },
+      {
+        "text": "表示是否对 PDF 文件本身做压缩",
+        "isCorrect": false,
+        "description": "错误。它只描述 CMap 资源形态，与压缩 PDF 无关。"
+      },
+      {
+        "text": "表示是否启用文本层",
+        "isCorrect": false,
+        "description": "错误。文本层与 cMapPacked 无关。"
+      },
+      {
+        "text": "表示是否把 worker 打包进主库",
+        "isCorrect": false,
+        "description": "错误。与 worker 打包无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：以下哪个不是 PDF.js（pdfjs-dist）擅长或负责的事？",
+    "explanation": "PDF.js 擅长：渲染 PDF 到 canvas、抽取文本/元数据、渲染文本层与注解层、按页懒加载。它**不负责生成/创作 PDF**（编程式产出新文档是 jsPDF；编辑/合并现有 PDF 是 pdf-lib）。\n\n- 「从零生成一个新 PDF 文档」正确（这正是它不做的）。\n- 渲染到 canvas、抽文本、渲染注解都是它做的。",
+    "tags": ["pdfjs", "初级", "边界", "能力范围", "误区"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "从零编程式生成一个全新的 PDF 文档",
+        "isCorrect": true,
+        "description": "正确。生成新 PDF 不在 PDF.js 范围内，应用 jsPDF 或 pdf-lib。"
+      },
+      {
+        "text": "把 PDF 页面渲染到 canvas",
+        "isCorrect": false,
+        "description": "这正是 PDF.js 的核心能力，属于它负责的事。"
+      },
+      {
+        "text": "提取页面文本与文档元数据",
+        "isCorrect": false,
+        "description": "PDF.js 通过 getTextContent / getMetadata 支持，属于它的能力。"
+      },
+      {
+        "text": "渲染链接、表单等注解层",
+        "isCorrect": false,
+        "description": "PDF.js 的注解层正是做这个的，属于它的能力。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：PDF.js 自带一个完整的「viewer」（如 Firefox 内置阅读器）。它与「display API」是什么层级关系？",
+    "explanation": "PDF.js 分三层：**core**（解析二进制 PDF，API 不稳定，少直接用）、**display**（易用的渲染 API：getDocument/render/getTextContent 等，应用通常用这层）、**viewer**（建立在 display 之上的完整 UI，即 Firefox 的 PDF 阅读器，也可作为 `web/` 预置查看器嵌入）。\n\n- 「viewer 建在 display 之上」正确。\n- 「display 建在 viewer 之上」错误：层级反了。\n- 「两者无关」错误。\n- 「viewer 是 core 的别名」错误。",
+    "tags": ["pdfjs", "高级", "架构", "viewer", "display层"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "viewer 建立在 display 层之上，display 提供 getDocument/render 等渲染 API",
+        "isCorrect": true,
+        "description": "正确。三层为 core→display→viewer，应用一般直接用 display 层。"
+      },
+      {
+        "text": "display 建立在 viewer 之上",
+        "isCorrect": false,
+        "description": "错误。层级相反，viewer 才是上层 UI。"
+      },
+      {
+        "text": "viewer 与 display 互不相关，各自独立",
+        "isCorrect": false,
+        "description": "错误。viewer 正是基于 display API 构建的。"
+      },
+      {
+        "text": "viewer 只是 core 层的另一个名字",
+        "isCorrect": false,
+        "description": "错误。core 是解析层，viewer 是顶层 UI，二者不同。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在 React 项目里，若不想自己处理 worker/文本层/生命周期，最省事的选择通常是？",
+    "explanation": "直接用封装库 **react-pdf**（`<Document>` + `<Page>`）：它内部用 PDF.js，处理了 worker 配置、按页渲染、文本层/注解层开关等，开箱即用。当然你也可手写 PDF.js，但要自己管这些细节。\n\n- 「用 react-pdf 封装库」正确。\n- 「必须从零手写 PDF.js」并非「最省事」。\n- 「用 jsPDF」错误：那是生成 PDF。\n- 「用 pdf-lib」错误：那是编辑/合并。",
+    "tags": ["pdfjs", "初级", "react-pdf", "生态", "封装"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 react-pdf（基于 PDF.js 的 React 封装，<Document>/<Page>）",
+        "isCorrect": true,
+        "description": "正确。react-pdf 替你处理 worker、文本/注解层与渲染细节。"
+      },
+      {
+        "text": "用 jsPDF",
+        "isCorrect": false,
+        "description": "错误。jsPDF 是生成 PDF 的库，不是查看 PDF。"
+      },
+      {
+        "text": "用 pdf-lib",
+        "isCorrect": false,
+        "description": "错误。pdf-lib 用于创建/编辑 PDF，不做渲染查看。"
+      },
+      {
+        "text": "用 SheetJS",
+        "isCorrect": false,
+        "description": "错误。SheetJS 处理电子表格，与 PDF 查看无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`getDocument` 加载需要 Cookie/鉴权头的受保护 URL，应配置哪些参数？",
+    "explanation": "跨站带凭据用 `withCredentials: true`（携带 Cookie/Authorization）；自定义请求头用 `httpHeaders: { Authorization: 'Bearer ...' }`。这些属于 HTTP 传输层鉴权，与解密 PDF 内部口令的 `password` 是两回事。\n\n- 「withCredentials + httpHeaders」正确。\n- 「password」是解 PDF 内部加密，非 HTTP 鉴权。\n- 「cors: true」不是 API。\n- 「credentials: 'include'」是 fetch 的写法，不是 getDocument 字段。",
+    "tags": ["pdfjs", "专家", "withCredentials", "httpHeaders", "鉴权"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "withCredentials: true 与 httpHeaders（如 Authorization）",
+        "isCorrect": true,
+        "description": "正确。withCredentials 带凭据、httpHeaders 加自定义头，解决 HTTP 层鉴权。"
+      },
+      {
+        "text": "password 字段",
+        "isCorrect": false,
+        "description": "错误。password 是解 PDF 内部加密的，不处理 HTTP 鉴权。"
+      },
+      {
+        "text": "cors: true",
+        "isCorrect": false,
+        "description": "错误。没有 cors 字段；跨域由服务器 CORS 头决定。"
+      },
+      {
+        "text": "credentials: 'include'",
+        "isCorrect": false,
+        "description": "错误。那是 fetch 的选项名，getDocument 用 withCredentials。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：渲染参数里有个 `intent`（如 'display' / 'print'）。它的作用是？",
+    "explanation": "`intent` 告诉 PDF.js 这次渲染的**用途**：`'display'`（屏幕显示，默认）或 `'print'`（打印，可能影响某些注解/可选内容的呈现与质量取舍），还有 `'any'`。打印场景用 `'print'` 能得到更贴合打印的输出。它影响渲染策略，而非缩放尺寸。\n\n- 「声明渲染用途：屏显或打印」正确。\n- 「设置 DPI」错误。\n- 「设置页码」错误。\n- 「设置文件名」错误。",
+    "tags": ["pdfjs", "专家", "intent", "render", "打印"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "声明本次渲染用途（display 屏显 / print 打印 / any），影响渲染策略",
+        "isCorrect": true,
+        "description": "正确。intent 让 PDF.js 针对屏显或打印做相应处理。"
+      },
+      {
+        "text": "设置渲染的 DPI 数值",
+        "isCorrect": false,
+        "description": "错误。分辨率由 scale/outputScale 决定，不是 intent。"
+      },
+      {
+        "text": "指定要渲染的页码",
+        "isCorrect": false,
+        "description": "错误。页码由 getPage 决定，与 intent 无关。"
+      },
+      {
+        "text": "指定导出文件名",
+        "isCorrect": false,
+        "description": "错误。intent 与文件名无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：关于「文本层 span 与 canvas 对不齐」的常见原因，下列哪条最相关？",
+    "explanation": "文本层用 `getTextContent` 的坐标 + 同一个 `viewport` 来定位 `<span>`，必须与 canvas 用**相同的 viewport（同 scale/rotation）**且容器尺寸/定位正确叠放。最常见错位原因是文本层与 canvas 用了不同的 scale 或没正确设置层容器的 CSS 尺寸/transform。\n\n- 「文本层与 canvas 用了不一致的 viewport/缩放」正确。\n- 「PDF 没有文本」会是没有 span，不是错位。\n- 「worker 版本不符」会报错，不是错位。\n- 「scale 必须是整数」错误。",
+    "tags": ["pdfjs", "专家", "文本层", "对齐", "viewport"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "文本层与 canvas 使用了不一致的 viewport（scale/rotation）或层容器尺寸/定位不对",
+        "isCorrect": true,
+        "description": "正确。两层必须共用同一 viewport 并正确叠放，否则文字与图错位。"
+      },
+      {
+        "text": "这页 PDF 根本没有文本",
+        "isCorrect": false,
+        "description": "错误。没文本时是没有 span，而不是 span 与 canvas 错位。"
+      },
+      {
+        "text": "worker 版本与主库不一致",
+        "isCorrect": false,
+        "description": "错误。版本不符会直接报错，不表现为文本错位。"
+      },
+      {
+        "text": "scale 必须是整数否则一定错位",
+        "isCorrect": false,
+        "description": "错误。scale 可为小数，关键是两层一致，而非整数。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：用 `getDocument` 加载一个根本不是 PDF（或损坏）的文件，会怎样？",
+    "explanation": "`loadingTask.promise` 会以错误**拒绝（reject）**，典型如 `InvalidPDFException`（无效 PDF）。健壮代码应 `try/catch await loadingTask.promise` 并给用户友好提示，而不是假设一定成功。\n\n- 「promise 拒绝并抛 InvalidPDFException 类错误」正确。\n- 「静默返回空文档」错误。\n- 「自动修复」错误。\n- 「抛出但无法捕获」错误：可 try/catch。",
+    "tags": ["pdfjs", "高级", "错误处理", "InvalidPDFException", "健壮性"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "loadingTask.promise 会 reject（如 InvalidPDFException），应 try/catch 处理",
+        "isCorrect": true,
+        "description": "正确。无效/损坏文件会让 promise 拒绝，需捕获并提示用户。"
+      },
+      {
+        "text": "静默返回一个空文档对象",
+        "isCorrect": false,
+        "description": "错误。它会抛错拒绝，而非返回空文档。"
+      },
+      {
+        "text": "PDF.js 会自动修复并照常渲染",
+        "isCorrect": false,
+        "description": "错误。它对部分错误有一定容错，但根本无效的文件会拒绝。"
+      },
+      {
+        "text": "抛出错误但无法用 try/catch 捕获",
+        "isCorrect": false,
+        "description": "错误。await loadingTask.promise 的拒绝可被 try/catch 捕获。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：`pdf.numPages` 表示什么？",
+    "explanation": "`PDFDocumentProxy.numPages` 是该文档的**总页数**（同步属性，加载完成后可直接读）。配合 `for (let i = 1; i <= pdf.numPages; i++) await pdf.getPage(i)` 遍历所有页（注意 1 基）。\n\n- 「文档总页数」正确。\n- 「当前页码」错误。\n- 「字节大小」错误。\n- 「注解数量」错误。",
+    "tags": ["pdfjs", "入门", "numPages", "PDFDocumentProxy", "页数"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "整个 PDF 文档的总页数",
+        "isCorrect": true,
+        "description": "正确。numPages 是文档总页数，遍历页面时配合 getPage（1 基）使用。"
+      },
+      {
+        "text": "当前正在显示的页码",
+        "isCorrect": false,
+        "description": "错误。它是总页数，不是当前页。"
+      },
+      {
+        "text": "PDF 文件的字节大小",
+        "isCorrect": false,
+        "description": "错误。numPages 与文件体积无关。"
+      },
+      {
+        "text": "文档里注解的数量",
+        "isCorrect": false,
+        "description": "错误。注解数量与 numPages 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：在 Vue 项目中，社区常用哪个基于 PDF.js 的「内嵌组件」来快速展示 PDF？",
+    "explanation": "vue-pdf-embed 是常见的 Vue 封装组件，内部用 PDF.js，给 `:source` 传 URL/数据即可渲染，自动处理 worker、文本层等。它和 react-pdf 在各自生态里扮演同样角色——「包着 PDF.js 的查看组件」。\n\n- 「vue-pdf-embed」正确。\n- 「jsPDF」错误：生成 PDF。\n- 「pdfmake」错误：也是生成 PDF。\n- 「xlsx/SheetJS」错误：表格库。",
+    "tags": ["pdfjs", "初级", "vue-pdf-embed", "生态", "Vue"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "vue-pdf-embed（基于 PDF.js 的 Vue 内嵌组件）",
+        "isCorrect": true,
+        "description": "正确。vue-pdf-embed 封装 PDF.js，传 source 即可渲染。"
+      },
+      {
+        "text": "jsPDF",
+        "isCorrect": false,
+        "description": "错误。jsPDF 用于生成 PDF，不是查看组件。"
+      },
+      {
+        "text": "pdfmake",
+        "isCorrect": false,
+        "description": "错误。pdfmake 也是生成 PDF 的库。"
+      },
+      {
+        "text": "SheetJS",
+        "isCorrect": false,
+        "description": "错误。SheetJS 处理电子表格，与展示 PDF 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：为什么官方推荐用 `Uint8Array` 而非普通数组/base64 字符串把数据传给 `getDocument({ data })`？",
+    "explanation": "`Uint8Array`（TypedArray）内存紧凑，且 PDF.js 会把它**转移（transfer）**给 worker 线程，减少主线程内存占用与拷贝开销（转移后主线程不应再用该数组）。base64 字符串需先 `atob` 解码，普通数组更占内存。\n\n- 「Uint8Array 紧凑且可转移给 worker，省内存」正确。\n- 「base64 最省内存」错误。\n- 「普通数组渲染更快」错误。\n- 「只有 Uint8Array 被支持」不准确：ArrayBuffer 等也行，但推荐 TypedArray。",
+    "tags": ["pdfjs", "专家", "Uint8Array", "data", "性能"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Uint8Array 内存紧凑，且会被转移给 worker 线程，降低主线程内存与拷贝开销",
+        "isCorrect": true,
+        "description": "正确。官方建议用 TypedArray 以优化内存；转移后主线程别再用它。"
+      },
+      {
+        "text": "base64 字符串才是最省内存的传法",
+        "isCorrect": false,
+        "description": "错误。base64 更占空间且需 atob 解码，并非最优。"
+      },
+      {
+        "text": "普通 number[] 数组能让渲染更快",
+        "isCorrect": false,
+        "description": "错误。普通数组更占内存，并不会更快。"
+      },
+      {
+        "text": "getDocument 只接受 Uint8Array，别的都不行",
+        "isCorrect": false,
+        "description": "错误。ArrayBuffer 等也可用，只是推荐 Uint8Array。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：把整本 PDF 的纯文本抽出来，正确的遍历思路是？",
+    "explanation": "外层循环 `for (let i = 1; i <= pdf.numPages; i++)`：每页 `const page = await pdf.getPage(i)`，`const tc = await page.getTextContent()`，把 `tc.items.map(it => it.str)` 拼起来（注意按需补空格/换行）。逐页处理，避免一次性占用过多内存。\n\n- 「按 numPages 逐页 getPage→getTextContent→取 items.str」正确。\n- 「render 后从 canvas 读字」错误。\n- 「getDocument 直接返回全文」错误。\n- 「只取第一页就代表全文」错误。",
+    "tags": ["pdfjs", "高级", "getTextContent", "遍历", "抽取文本"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "for i in 1..numPages：getPage(i) → getTextContent() → 拼接 items[].str",
+        "isCorrect": true,
+        "description": "正确。逐页提取并拼接文本片段，是抽全文的标准做法。"
+      },
+      {
+        "text": "render 每页到 canvas 后从像素里读出文字",
+        "isCorrect": false,
+        "description": "错误。canvas 是位图，无法读文字，应用 getTextContent。"
+      },
+      {
+        "text": "getDocument 加载后直接返回整本全文字符串",
+        "isCorrect": false,
+        "description": "错误。getDocument 不返回文本，需逐页 getTextContent。"
+      },
+      {
+        "text": "只取第一页的文本即可代表全文",
+        "isCorrect": false,
+        "description": "错误。必须遍历所有页才能得到全文。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：现代构建对运行环境有一定要求（如较新的 Node/浏览器）。遇到老环境报语法/特性不支持，首选的「不换库」解法是？",
+    "explanation": "切到 **legacy 构建**（`pdfjs-dist/legacy/build/...`）：它对旧环境做了转译与兼容处理，能在较老浏览器与 Node 下运行。这比降级整个 PDF.js 版本或放弃使用更合适。当然也要确保 worker 同样用 legacy 版本的对应文件。\n\n- 「改用 legacy 构建」正确。\n- 「直接降到很老的 PDF.js 版本」并非首选。\n- 「删掉 worker」错误。\n- 「改用 jsPDF」错误：用途不同。",
+    "tags": ["pdfjs", "高级", "legacy", "兼容性", "构建选择"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "改用 legacy 构建（pdfjs-dist/legacy/...），主库与 worker 都用 legacy 版本",
+        "isCorrect": true,
+        "description": "正确。legacy 构建专为旧浏览器/Node 兼容设计，是首选解法。"
+      },
+      {
+        "text": "把 PDF.js 降级到很多年前的旧版本",
+        "isCorrect": false,
+        "description": "错误。新版同时提供 legacy 构建，无需为兼容而降级整库。"
+      },
+      {
+        "text": "删掉 worker 配置以避开特性问题",
+        "isCorrect": false,
+        "description": "错误。删 worker 会退化性能且不解决环境兼容问题。"
+      },
+      {
+        "text": "改用 jsPDF 替代",
+        "isCorrect": false,
+        "description": "错误。jsPDF 是生成 PDF 的库，无法替代渲染查看。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：关于 `page.render` 新旧参数，下列说法正确的是？",
+    "explanation": "在较新版本中，渲染参数推荐直接传 **`canvas`**（DOM canvas 元素）；`canvasContext`（2D 上下文）作为**向后兼容**仍被接受，官方建议优先用 `canvas`。若只给 `canvasContext`，PDF.js 会取其关联的 canvas。两者择一提供目标画布即可，再配 `viewport`。\n\n- 「新版推荐传 canvas，canvasContext 为兼容保留」正确。\n- 「canvasContext 已被移除」错误。\n- 「必须同时传 canvas 和 canvasContext」错误。\n- 「render 不需要画布」错误。",
+    "tags": ["pdfjs", "专家", "render", "canvas", "向后兼容"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "新版推荐直接传 canvas 元素；canvasContext 仍可用，作为向后兼容",
+        "isCorrect": true,
+        "description": "正确。RenderParameters 中 canvas 为推荐项，canvasContext 兼容保留。"
+      },
+      {
+        "text": "canvasContext 已被彻底移除，只能传 canvas",
+        "isCorrect": false,
+        "description": "错误。canvasContext 仍被接受，只是不再是首选。"
+      },
+      {
+        "text": "必须同时传 canvas 和 canvasContext 才能渲染",
+        "isCorrect": false,
+        "description": "错误。两者择一提供目标画布即可。"
+      },
+      {
+        "text": "render 不需要任何画布参数",
+        "isCorrect": false,
+        "description": "错误。必须有目标画布（canvas 或 canvasContext）。"
+      }
+    ]
+  },
+  {
+    "stem": "PDF.js：综合判断——下面对 PDF.js 的描述，哪一条完全正确？",
+    "explanation": "正确认知：PDF.js 是 Mozilla 的、基于 Web 标准、用 worker 解析、把页面渲染到 canvas 的 PDF **查看/解析**引擎；可选文字/注解需额外的文本层/注解层；它不生成 PDF。\n\n- 「worker 解析 + canvas 渲染 + 文本层提供可选文字，不生成 PDF」正确。\n- 「在主线程同步解析、不用 worker」错误。\n- 「canvas 渲染自带可选文字」错误。\n- 「主要用于生成 PDF」错误。",
+    "tags": ["pdfjs", "中级", "综合", "核心概念", "总结"],
+    "categories": [
+      ["技术方向", "PDF.js"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 worker 解析、把页面渲染到 canvas；可选文字靠文本层；它不负责生成 PDF",
+        "isCorrect": true,
+        "description": "正确。完整且准确地概括了 PDF.js 的工作方式与边界。"
+      },
+      {
+        "text": "默认在主线程同步解析，不需要 worker",
+        "isCorrect": false,
+        "description": "错误。它依赖 worker 在后台解析以免阻塞主线程。"
+      },
+      {
+        "text": "canvas 渲染后文字天然可被选中复制",
+        "isCorrect": false,
+        "description": "错误。canvas 是位图，可选文字需文本层。"
+      },
+      {
+        "text": "它的主要用途是编程式生成新 PDF",
+        "isCorrect": false,
+        "description": "错误。生成 PDF 不是它的职责，它做解析与渲染。"
+      }
+    ]
+  }
+]
