@@ -396,7 +396,26 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Sublime Text", sort: 10 },
             ],
           },
-          { name: "版本控制（Git）", sort: 2 },
+          {
+            // 2026-06 由单叶占位「版本控制（Git）」扩为 7 叶工具组（方案 B）：
+            // Git 锚点 + 主流 GUI 三件 + 终端 TUI + 新一代替代 VCS。排序按
+            // 「霸主 → GUI → 终端 → 新兴」聚类，便于对比教学。旧单叶无题目挂载，无数据迁移。
+            // 边界去重：GitHub/GitLab 平台→软技能·代码仓库；CI/Hooks→工程化·DevOps；
+            // GitLens→VSCode 生态；SVN/Mercurial/Perforce 衰退遗留不立叶。
+            name: "版本控制",
+            sort: 2,
+            children: [
+              { name: "Git", sort: 1 },
+              { name: "GitHub Desktop", sort: 2 },
+              { name: "Sourcetree", sort: 3 },
+              { name: "GitKraken", sort: 4 },
+              { name: "Fork", sort: 5 },
+              { name: "lazygit", sort: 6 },
+              { name: "Jujutsu", sort: 7 },
+              // TODO（下批评估）：Sapling —— Meta 的 Git 兼容 VCS，monorepo/stacked-commits，
+              // 比 jj 更窄、社区沉淀不足，下批再评估是否立叶。
+            ],
+          },
           {
             name: "静态分析工具",
             sort: 3,
