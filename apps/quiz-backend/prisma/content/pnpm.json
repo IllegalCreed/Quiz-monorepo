@@ -1,0 +1,1459 @@
+[
+  {
+    "stem": "pnpm：官方把 pnpm 标语定为「Fast, disk space efficient package manager」。它最核心、区别于 npm/Yarn Classic 的省盘机制是什么？",
+    "explanation": "pnpm 的省盘核心是**内容寻址 store（content-addressable store）+ 硬链接**：所有包文件在磁盘上只保存一份（按内容哈希寻址），安装时各项目的 `node_modules` 通过**硬链接**指向 store 中那一份，不额外占用空间。官方原话：「All the files are saved in a single place on the disk. When packages are installed, their files are hard-linked from that single place, consuming no additional disk space.」\n\n- 「全局 store 保存一份 + 硬链接复用」正确。\n- 「把依赖压缩成 zip 缓存」是 Yarn PnP 的思路，不是 pnpm 默认机制。\n- 「每个项目各存一份但删掉重复文件」描述的是 npm 的去重，并非跨项目复用。\n- 「依赖全部走 CDN 不落盘」错误，依赖必须落到本地 store。",
+    "tags": ["pnpm", "入门", "核心概念", "store", "硬链接"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "全局内容寻址 store 只存一份文件，项目 node_modules 用硬链接复用",
+        "isCorrect": true,
+        "description": "正确。这正是官方描述的省盘原理：单点存储 + 硬链接，不占额外空间。"
+      },
+      {
+        "text": "把每个依赖压缩成单个 zip 文件缓存，运行时解压",
+        "isCorrect": false,
+        "description": "错误。zip 化是 Yarn Plug'n'Play 的做法，pnpm 默认仍用真实文件 + 硬链接。"
+      },
+      {
+        "text": "每个项目各存一份依赖，但自动删除项目内重复文件",
+        "isCorrect": false,
+        "description": "错误。这是项目内去重，pnpm 的关键是跨项目用同一份 store。"
+      },
+      {
+        "text": "依赖全部通过 CDN 在线加载，本地完全不落盘",
+        "isCorrect": false,
+        "description": "错误。依赖必须先下载到本地内容寻址 store，再硬链接到项目。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：执行 `pnpm install` 后，项目根 `node_modules` 顶层只看到自己在 `package.json` 里声明的直接依赖，而看不到它们的子依赖。这是因为 pnpm 的 node_modules 是？",
+    "explanation": "pnpm 默认采用**符号链接式（非扁平）node_modules**：顶层只放**直接依赖的符号链接**，所有包（含子依赖）实际平铺在 `node_modules/.pnpm/` 这个虚拟 store 里。npm/Yarn Classic 则是**扁平化**，把大量子依赖也提升到顶层。\n\n- 「非扁平、顶层只有直接依赖的符号链接」正确。\n- 「完全扁平、所有依赖都在顶层」是 npm 的布局，不是 pnpm。\n- 「顶层为空、全靠 .pnp.cjs」是 Yarn PnP。\n- 「每个依赖单独一个 node_modules 嵌套」是 npm v2 时代的嵌套布局，早被淘汰。",
+    "tags": ["pnpm", "入门", "node_modules", "符号链接", "对比"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "非扁平结构：顶层只放直接依赖的符号链接，其余在 .pnpm 虚拟 store",
+        "isCorrect": true,
+        "description": "正确。这是 pnpm 默认 nodeLinker=isolated 的布局，顶层只暴露直接依赖。"
+      },
+      {
+        "text": "完全扁平：所有直接与间接依赖都被提升到顶层",
+        "isCorrect": false,
+        "description": "错误。这是 npm/Yarn Classic 的扁平化布局，正是 pnpm 要规避的。"
+      },
+      {
+        "text": "顶层 node_modules 基本为空，依赖解析全靠 .pnp.cjs",
+        "isCorrect": false,
+        "description": "错误。这是 Yarn Plug'n'Play 模式，不是 pnpm 默认行为。"
+      },
+      {
+        "text": "每个包都嵌套自己的 node_modules，层层递归",
+        "isCorrect": false,
+        "description": "错误。这是 npm v2 的深度嵌套布局，存在路径过长与重复问题，早已废弃。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：「幽灵依赖（phantom dependency）」指的是什么问题，为什么 pnpm 默认能防住它？",
+    "explanation": "幽灵依赖指**代码 `import` 了一个并未写进自己 `package.json` 的包**，却因为它被提升到扁平 `node_modules` 顶层而恰好能 require 到。一旦某天该传递依赖消失或换版本，代码就会突然崩。pnpm 默认的非扁平布局让顶层**只暴露直接依赖**，未声明的传递依赖被隔离在 `.pnpm/<pkg>/node_modules/` 里、访问不到，因此从结构上杜绝了幽灵依赖。\n\n- 「用了未声明的依赖、靠扁平提升才偶然可用」正确。\n- 「依赖版本号写错」是 version 问题，不是幽灵依赖。\n- 「循环依赖」是另一类问题。\n- 「依赖装了但没用到」是冗余依赖，不会导致运行崩溃。",
+    "tags": ["pnpm", "入门", "幽灵依赖", "严格性", "node_modules"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "代码用了未在 package.json 声明的包，靠扁平提升才偶然能 require 到",
+        "isCorrect": true,
+        "description": "正确。pnpm 顶层只暴露直接依赖，传递依赖被隔离，从结构上防住幽灵依赖。"
+      },
+      {
+        "text": "在 package.json 里把依赖版本号写错导致装错版本",
+        "isCorrect": false,
+        "description": "错误。这是版本声明问题，与幽灵依赖（未声明却可用）无关。"
+      },
+      {
+        "text": "两个包互相依赖形成循环引用",
+        "isCorrect": false,
+        "description": "错误。循环依赖是模块图问题，不是幽灵依赖。"
+      },
+      {
+        "text": "依赖被安装但项目代码从未引用它",
+        "isCorrect": false,
+        "description": "错误。那是冗余/未使用依赖，不会引发运行时崩溃。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：pnpm 的依赖锁文件叫什么名字？",
+    "explanation": "pnpm 的锁文件是 **`pnpm-lock.yaml`**（YAML 格式），记录精确解析出的依赖版本与完整性哈希，应当提交到版本库以保证团队/CI 安装一致。\n\n- `pnpm-lock.yaml` 正确。\n- `package-lock.json` 是 npm 的锁文件。\n- `yarn.lock` 是 Yarn 的锁文件。\n- `bun.lockb` 是 Bun 早期的二进制锁文件。",
+    "tags": ["pnpm", "入门", "锁文件", "lockfile", "对比"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm-lock.yaml",
+        "isCorrect": true,
+        "description": "正确。pnpm 用 YAML 格式的 pnpm-lock.yaml 记录精确版本与哈希。"
+      },
+      {
+        "text": "package-lock.json",
+        "isCorrect": false,
+        "description": "错误。这是 npm 的锁文件名。"
+      },
+      {
+        "text": "yarn.lock",
+        "isCorrect": false,
+        "description": "错误。这是 Yarn 的锁文件名。"
+      },
+      {
+        "text": "bun.lockb",
+        "isCorrect": false,
+        "description": "错误。这是 Bun 早期使用的二进制锁文件。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 npm 里用 `npm install <pkg>` 添加依赖。在 pnpm 里，添加一个依赖到 `dependencies` 最常用的命令是？",
+    "explanation": "pnpm 添加依赖用 **`pnpm add <pkg>`**（对应 `npm install <pkg>`）；加 `-D` 进 `devDependencies`，`-g` 全局，`-E` 锁精确版本。`pnpm install`（无参数）是安装/同步**整个 `package.json`** 的依赖，相当于 `npm install` 无参形态，不用于新增单个包。\n\n- `pnpm add <pkg>` 正确。\n- `pnpm install <pkg>` 虽然 pnpm 也允许，但官方/惯例语义里 `add` 才是「新增依赖」的标准命令，`install` 偏向「装齐全部」。\n- `pnpm get <pkg>` 不存在。\n- `pnpm i -g <pkg>` 是全局安装，不是加进当前项目 dependencies。",
+    "tags": ["pnpm", "入门", "add", "命令", "对比"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm add <pkg>",
+        "isCorrect": true,
+        "description": "正确。add 是新增依赖的标准命令，配 -D/-g/-E 控制位置与版本。"
+      },
+      {
+        "text": "pnpm get <pkg>",
+        "isCorrect": false,
+        "description": "错误。pnpm 没有 get 命令。"
+      },
+      {
+        "text": "pnpm i -g <pkg>",
+        "isCorrect": false,
+        "description": "错误。-g 是全局安装，不会写进当前项目的 dependencies。"
+      },
+      {
+        "text": "pnpm fetch <pkg>",
+        "isCorrect": false,
+        "description": "错误。pnpm fetch 是只把依赖拉进 store（多用于 CI/Docker），不写 package.json。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：不想把某个 CLI 工具装进项目，只想临时拉下来跑一次（类似 `npx create-vue`）。pnpm 里对应的命令是？",
+    "explanation": "pnpm 用 **`pnpm dlx`**（v11 起也有简写别名 `pnx`）从 registry 临时拉取包到缓存目录、执行其二进制后即用即走，**不写入项目依赖**，对应 `npx`。例如 `pnpm dlx create-vue my-app`。当包名与 bin 名不一致时用 `--package` 指定。\n\n- `pnpm dlx <pkg>` 正确。\n- `pnpm exec <cmd>` 是执行**已安装在项目里**的二进制，不会去临时下载。\n- `pnpm run <script>` 跑 package.json 里定义的脚本。\n- `pnpm add <pkg>` 会把包写进依赖，违背「临时跑一次」的诉求。",
+    "tags": ["pnpm", "入门", "dlx", "npx", "命令"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm dlx <pkg>（v11 起亦可用别名 pnx）",
+        "isCorrect": true,
+        "description": "正确。dlx 临时拉取并执行，不写入项目依赖，对应 npx。"
+      },
+      {
+        "text": "pnpm exec <cmd>",
+        "isCorrect": false,
+        "description": "错误。exec 运行项目里已安装的二进制，不会临时去下载未安装的包。"
+      },
+      {
+        "text": "pnpm run <script>",
+        "isCorrect": false,
+        "description": "错误。run 执行 package.json scripts 字段里定义的命令。"
+      },
+      {
+        "text": "pnpm add <pkg>",
+        "isCorrect": false,
+        "description": "错误。add 会把包写进依赖，与「即用即走」相悖。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在一个 pnpm monorepo（workspace）里，定义「哪些目录算作工作区包」的文件是哪一个？",
+    "explanation": "pnpm 用项目根的 **`pnpm-workspace.yaml`** 的 `packages` 字段（glob 列表）声明工作区成员，例如 `packages/*`、`apps/*`、`!**/test/**`。这与 npm/Yarn 把 `workspaces` 写在根 `package.json` 不同——**pnpm 的工作区声明独立成文件**。\n\n- `pnpm-workspace.yaml` 正确。\n- 根 `package.json` 的 `workspaces` 字段是 npm/Yarn 的做法，pnpm 不读它来定义工作区。\n- `.pnpmrc` 不是标准文件名（pnpm 用 `.npmrc`）。\n- `lerna.json` 是 Lerna 的配置，不是 pnpm 工作区定义。",
+    "tags": ["pnpm", "初级", "monorepo", "workspace", "pnpm-workspace.yaml"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm-workspace.yaml（packages 字段用 glob 声明成员）",
+        "isCorrect": true,
+        "description": "正确。pnpm 的工作区成员独立写在 pnpm-workspace.yaml，而非 package.json。"
+      },
+      {
+        "text": "根 package.json 的 workspaces 字段",
+        "isCorrect": false,
+        "description": "错误。那是 npm/Yarn 的工作区声明方式，pnpm 不据此定义工作区。"
+      },
+      {
+        "text": ".pnpmrc",
+        "isCorrect": false,
+        "description": "错误。pnpm 的配置文件是 .npmrc，并无 .pnpmrc 这一标准文件。"
+      },
+      {
+        "text": "lerna.json",
+        "isCorrect": false,
+        "description": "错误。lerna.json 是 Lerna 的配置文件，与 pnpm 工作区定义无关。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：monorepo 里一个包要依赖同仓库的另一个本地包，pnpm 推荐在 `package.json` 里怎么写版本号？",
+    "explanation": "pnpm 提供 **`workspace:` 协议**显式声明本地工作区依赖，如 `\"@org/utils\": \"workspace:*\"`。官方：「When this protocol is used, pnpm will refuse to resolve to anything other than a local workspace package.」——它**强制**解析到本地包而非去 registry 下载；发布时 `workspace:*` / `^` / `~` 会被自动替换成真实版本号（如 `1.5.0` / `^1.5.0`）。\n\n- `\"workspace:*\"` 正确。\n- 直接写 `\"*\"` 不保证解析到本地包，可能去 registry 拉同名包。\n- `\"latest\"` 是 dist-tag，指向 registry 的最新发布版。\n- `\"file:../utils\"` 是 npm 的本地路径写法，pnpm 虽兼容但 workspace: 才是推荐且发布友好的方式。",
+    "tags": ["pnpm", "初级", "workspace协议", "monorepo", "本地依赖"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "\"workspace:*\"（workspace: 协议，强制解析到本地包，发布时自动替换为真实版本）",
+        "isCorrect": true,
+        "description": "正确。workspace: 协议保证链接本地包，且发布时替换成真实版本号。"
+      },
+      {
+        "text": "\"*\"（任意版本）",
+        "isCorrect": false,
+        "description": "错误。裸 * 不保证用本地包，可能从 registry 下载同名包。"
+      },
+      {
+        "text": "\"latest\"",
+        "isCorrect": false,
+        "description": "错误。latest 是 registry 的 dist-tag，会去远端取最新发布版，而非本地包。"
+      },
+      {
+        "text": "\"file:../utils\"",
+        "isCorrect": false,
+        "description": "错误。file: 是 npm 本地路径写法；pnpm 虽兼容，但推荐 workspace: 协议（发布更友好）。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：CI 流水线里安装依赖，为保证「严格按锁文件安装、不擅自更新、锁文件与 package.json 不一致就报错」，应加哪个标志？",
+    "explanation": "CI 中应使用 **`pnpm install --frozen-lockfile`**：它严格依据 `pnpm-lock.yaml` 安装，**不修改锁文件**，若锁文件与 `package.json` 不一致则直接失败。实践上 pnpm 在 CI 环境（检测到 `CI` 等）会默认开启该行为，但显式写出更稳妥。\n\n- `--frozen-lockfile` 正确。\n- `--no-frozen-lockfile` 恰好相反，允许更新锁文件。\n- `--force` 强制重装/重新解析，可能改动锁文件。\n- `--prefer-offline` 只影响是否优先用缓存，与锁文件冻结无关。",
+    "tags": ["pnpm", "初级", "CI", "frozen-lockfile", "lockfile"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--frozen-lockfile",
+        "isCorrect": true,
+        "description": "正确。严格按锁文件装、不改锁文件、不一致即失败，正是 CI 所需。"
+      },
+      {
+        "text": "--no-frozen-lockfile",
+        "isCorrect": false,
+        "description": "错误。这是相反语义，允许根据 package.json 更新锁文件。"
+      },
+      {
+        "text": "--force",
+        "isCorrect": false,
+        "description": "错误。--force 强制重新解析/重装，可能改动锁文件，不适合 CI 一致性校验。"
+      },
+      {
+        "text": "--prefer-offline",
+        "isCorrect": false,
+        "description": "错误。它只控制是否优先使用本地缓存，不冻结锁文件。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：执行 `pnpm install` 时 pnpm 报告某个依赖的 build/postinstall 脚本「被忽略、需要批准」。在 pnpm 10+ 里这是什么原因？",
+    "explanation": "**pnpm v10 起默认禁止依赖自动执行生命周期脚本（preinstall/install/postinstall）**，这是供应链安全（防恶意 postinstall）措施。需要让某个包跑构建脚本时，用交互式 **`pnpm approve-builds`** 批准，或在 `pnpm-workspace.yaml` 的 **`allowBuilds`** 里显式列出（v10.26/v11 起取代旧的 `onlyBuiltDependencies`）。\n\n- 「v10 起默认拦截依赖构建脚本，需 approve-builds/allowBuilds 放行」正确。\n- 「锁文件损坏」不会触发「需要批准」提示。\n- 「Node 版本过低」会报引擎错误，不是脚本批准。\n- 「网络不通」是下载失败，与脚本批准无关。",
+    "tags": ["pnpm", "初级", "安全", "approve-builds", "生命周期脚本"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm 10 起默认拦截依赖的构建脚本，需用 approve-builds 或 allowBuilds 显式放行",
+        "isCorrect": true,
+        "description": "正确。这是 v10 的安全默认，防御恶意 postinstall，需显式批准可信包。"
+      },
+      {
+        "text": "pnpm-lock.yaml 文件已损坏",
+        "isCorrect": false,
+        "description": "错误。锁文件损坏会报解析错误，不会提示「构建脚本需批准」。"
+      },
+      {
+        "text": "本机 Node.js 版本过低",
+        "isCorrect": false,
+        "description": "错误。引擎不满足会报 engines 错误，与脚本批准是两回事。"
+      },
+      {
+        "text": "registry 网络连接失败",
+        "isCorrect": false,
+        "description": "错误。网络问题导致下载失败，与脚本批准提示无关。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：要查看某个包（含传递依赖）为什么会被安装、是被谁引入的，用哪个命令？",
+    "explanation": "用 **`pnpm why <pkg>`** 打印依赖树，显示该包是被哪些（直接/间接）依赖引入的，便于排查「这个包从哪来的」「为什么有多个版本」。\n\n- `pnpm why <pkg>` 正确。\n- `pnpm list <pkg>`（`ls`）列出已安装的依赖，但 `why` 更专注「为何被引入」的反向溯源。\n- `pnpm outdated` 列出有新版本可升级的包。\n- `pnpm audit` 做安全漏洞审计。",
+    "tags": ["pnpm", "入门", "why", "依赖溯源", "命令"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm why <pkg>",
+        "isCorrect": true,
+        "description": "正确。why 反向溯源，显示该包是被哪些依赖链引入的。"
+      },
+      {
+        "text": "pnpm outdated",
+        "isCorrect": false,
+        "description": "错误。outdated 列出可升级的过期包，不解释引入来源。"
+      },
+      {
+        "text": "pnpm audit",
+        "isCorrect": false,
+        "description": "错误。audit 做安全漏洞审计，不是依赖来源溯源。"
+      },
+      {
+        "text": "pnpm prune",
+        "isCorrect": false,
+        "description": "错误。prune 移除多余包，与查询引入原因无关。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：以下哪个目录是 pnpm 在项目 `node_modules` 内部用来平铺所有包版本的「虚拟 store」？",
+    "explanation": "pnpm 把所有包（含子依赖）按 `node_modules/.pnpm/<name>@<version>/node_modules/<name>` 的规律平铺在 **`node_modules/.pnpm/`** 目录（即虚拟 store / virtual store）里，其中每个文件都是指向全局内容寻址 store 的硬链接。顶层 `node_modules` 只放指向 `.pnpm` 内对应目录的符号链接。\n\n- `node_modules/.pnpm/` 正确。\n- `node_modules/.cache/` 是各类工具的缓存目录，与 pnpm 虚拟 store 无关。\n- `node_modules/.bin/` 放可执行软链，不是包的平铺地。\n- `~/.pnpm-store/` 是**全局** store（内容寻址），不在项目 node_modules 内。",
+    "tags": ["pnpm", "入门", "虚拟store", "node_modules", ".pnpm"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "node_modules/.pnpm/",
+        "isCorrect": true,
+        "description": "正确。所有包按 <name>@<version> 平铺于此，文件硬链接自全局 store。"
+      },
+      {
+        "text": "node_modules/.cache/",
+        "isCorrect": false,
+        "description": "错误。.cache 是各工具的缓存目录，不是 pnpm 的虚拟 store。"
+      },
+      {
+        "text": "node_modules/.bin/",
+        "isCorrect": false,
+        "description": "错误。.bin 存放依赖暴露的可执行软链，不平铺包本体。"
+      },
+      {
+        "text": "~/.pnpm-store/（全局）",
+        "isCorrect": false,
+        "description": "错误。这是全局内容寻址 store，位于项目之外；项目内虚拟 store 是 .pnpm。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：关于 pnpm 与 npm 的安装速度/磁盘表现，下列哪条描述最符合 pnpm 的设计取舍？",
+    "explanation": "pnpm 因**内容寻址 store + 硬链接**，在多项目共用依赖时显著省盘；安装时若包已在 store 中则只需创建硬链接/符号链接，速度很快（尤其二次安装、CI 缓存命中）。npm 则每个项目各拷一份依赖、磁盘占用更大。pnpm 的代价是**更严格的 node_modules**，可能暴露此前被扁平化掩盖的「未声明依赖」问题。\n\n- 「跨项目省盘 + 命中 store 时安装快，代价是更严格」正确。\n- 「pnpm 永远比 npm 慢」错误。\n- 「pnpm 占盘比 npm 大」与事实相反。\n- 「pnpm 不需要锁文件」错误，它用 pnpm-lock.yaml。",
+    "tags": ["pnpm", "初级", "对比", "性能", "磁盘"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨项目共用 store 显著省盘，命中 store 时安装很快，代价是 node_modules 更严格",
+        "isCorrect": true,
+        "description": "正确。省盘+快是硬链接/内容寻址的红利，更严格的布局是其副作用。"
+      },
+      {
+        "text": "pnpm 在任何场景都比 npm 慢",
+        "isCorrect": false,
+        "description": "错误。store 命中时 pnpm 通常更快，benchmark 也长期领先。"
+      },
+      {
+        "text": "pnpm 的磁盘占用通常比 npm 更大",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，硬链接复用让 pnpm 占盘更小。"
+      },
+      {
+        "text": "pnpm 不使用锁文件，所以更快",
+        "isCorrect": false,
+        "description": "错误。pnpm 使用 pnpm-lock.yaml，速度优势来自 store 与链接机制。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 monorepo 根目录只想给名为 `@app/web` 的子包运行它的 `build` 脚本，应该用哪条命令？",
+    "explanation": "用 **`--filter`（别名 `-F`）** 选定目标包：`pnpm --filter @app/web build`（或 `pnpm -F @app/web run build`）。`--filter` 支持包名、glob（`@app/*`）、目录（`./packages/**`）、依赖图（`pkg...` / `...pkg`）和 git 变更（`[origin/main]`）等多种选择器。\n\n- `pnpm --filter @app/web build` 正确。\n- `pnpm build @app/web` 会把 `@app/web` 当作传给脚本的参数，而非选择包。\n- `cd packages/web && pnpm build` 也能工作，但题目要求「在根目录」用选择性执行。\n- `pnpm -r build` 会对**所有**包跑 build，不是只针对一个。",
+    "tags": ["pnpm", "初级", "filter", "monorepo", "选择性执行"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm --filter @app/web build",
+        "isCorrect": true,
+        "description": "正确。--filter 精确选定 @app/web 并只对它执行 build。"
+      },
+      {
+        "text": "pnpm build @app/web",
+        "isCorrect": false,
+        "description": "错误。@app/web 会被当成传给 build 脚本的参数，而非包选择器。"
+      },
+      {
+        "text": "pnpm -r build",
+        "isCorrect": false,
+        "description": "错误。-r 对工作区所有包执行 build，范围太大。"
+      },
+      {
+        "text": "pnpm build --only @app/web",
+        "isCorrect": false,
+        "description": "错误。pnpm 没有 --only 这个包选择标志，选择包用 --filter。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：`pnpm --filter \"...@app/web\" build` 中前缀 `...`（在包名前）表示选择哪些包？",
+    "explanation": "在 `--filter` 里，**`...` 前缀**（`...pkg`）表示「**该包 + 它的依赖方（dependents，含直接与间接，即「谁依赖了它」）**」。对应地：**`...` 后缀**（`pkg...`）是「该包 + 它的依赖（dependencies，即「它依赖谁」）」。所以 `...@app/web` = `@app/web` 及一切依赖了 `@app/web` 的包。\n\n- 「@app/web 及其下游依赖方（dependents）」正确。\n- 「@app/web 及其上游依赖（dependencies）」是后缀 `@app/web...` 的含义。\n- 「只选 @app/web 自己」是不加 `...` 的写法。\n- 「排除 @app/web」需用 `!` 前缀，不是 `...`。",
+    "tags": ["pnpm", "中级", "filter", "依赖图", "dependents"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "@app/web 以及所有依赖了它的包（dependents，下游）",
+        "isCorrect": true,
+        "description": "正确。前缀 ... 选「该包 + 其依赖方」，常用于「改了它就重测下游」。"
+      },
+      {
+        "text": "@app/web 以及它所依赖的包（dependencies，上游）",
+        "isCorrect": false,
+        "description": "错误。那是后缀写法 @app/web...（... 放包名之后）。"
+      },
+      {
+        "text": "只选 @app/web 本身",
+        "isCorrect": false,
+        "description": "错误。只选自己是不带 ... 的 --filter @app/web。"
+      },
+      {
+        "text": "选择除 @app/web 外的所有包",
+        "isCorrect": false,
+        "description": "错误。排除某包要用 ! 前缀（如 --filter=!@app/web）。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：CI 里只想构建「自 `origin/main` 以来发生过改动的包及其受影响的下游」，`--filter` 应该怎么写？",
+    "explanation": "pnpm 支持**基于 git 的变更过滤**：`[<ref>]` 选「自该提交/分支以来改动过的包」。要把受影响的下游也带上，再加 `...` 前缀：**`--filter \"...[origin/main]\"`**。这是 monorepo CI「只测改动相关包」的核心用法。\n\n- `--filter \"...[origin/main]\"` 正确。\n- `--filter \"[origin/main]\"` 只选改动的包本身，不含下游。\n- `--filter \"[origin/main]...\"` 是改动包 + 其**依赖**（上游），方向反了。\n- `--filter origin/main` 会被当成包名/路径，语义错误。",
+    "tags": ["pnpm", "中级", "filter", "git变更", "CI"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--filter \"...[origin/main]\"",
+        "isCorrect": true,
+        "description": "正确。[ref] 选改动包，前缀 ... 把受影响的下游 dependents 一并带上。"
+      },
+      {
+        "text": "--filter \"[origin/main]\"",
+        "isCorrect": false,
+        "description": "错误。这只选改动的包本身，不包含受影响的下游。"
+      },
+      {
+        "text": "--filter \"[origin/main]...\"",
+        "isCorrect": false,
+        "description": "错误。后缀 ... 带的是改动包的上游依赖，方向与「受影响下游」相反。"
+      },
+      {
+        "text": "--filter origin/main",
+        "isCorrect": false,
+        "description": "错误。缺少方括号，origin/main 会被当作包名或路径，无法表达 git 变更。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：catalog（版本目录）解决的核心痛点是什么？",
+    "explanation": "**catalog（版本目录）**让你在 `pnpm-workspace.yaml` 里集中定义依赖版本（单一事实来源），各子包用 `catalog:` 协议引用，从而**统一整个 monorepo 的依赖版本**。官方收益：版本一致（一个 workspace 通常只该有一个版本）、升级只改一处目录、减少 `package.json` 的合并冲突。\n\n- 「monorepo 内集中、统一依赖版本的单一来源」正确。\n- 「自动发布到 registry」是 `publish`/changesets 的事。\n- 「替代锁文件」错误，catalog 不是锁文件。\n- 「加速安装」不是 catalog 的目的（它管版本一致性）。",
+    "tags": ["pnpm", "中级", "catalog", "版本目录", "monorepo"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 monorepo 内集中定义、统一依赖版本，作为单一事实来源",
+        "isCorrect": true,
+        "description": "正确。catalog 让多个包共享同一版本号，升级只改目录、减少冲突。"
+      },
+      {
+        "text": "把工作区包自动发布到 npm registry",
+        "isCorrect": false,
+        "description": "错误。发布由 pnpm publish / changesets 负责，与 catalog 无关。"
+      },
+      {
+        "text": "替代 pnpm-lock.yaml 作为锁文件",
+        "isCorrect": false,
+        "description": "错误。catalog 是版本声明的集中处，不是锁文件。"
+      },
+      {
+        "text": "通过并行下载显著加速依赖安装",
+        "isCorrect": false,
+        "description": "错误。catalog 解决版本一致性，不以加速安装为目标。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：`pnpm-workspace.yaml` 里定义了默认 catalog `catalog: { react: ^18.2.0 }`。子包 `package.json` 里应如何引用这个目录版本？",
+    "explanation": "引用**默认 catalog**用 `catalog:`（等价于 `catalog:default`）：`\"react\": \"catalog:\"`。若是命名 catalog（写在 `catalogs:` 下，如 `react18`），则写 `\"react\": \"catalog:react18\"`。发布时 `catalog:` 会被解析成目录里的真实版本（如 `^18.2.0`）。\n\n- `\"react\": \"catalog:\"` 正确。\n- `\"react\": \"^18.2.0\"` 是直接写死版本，没用到 catalog 的集中管理。\n- `\"react\": \"workspace:*\"` 是引用**本地工作区包**的协议，react 是外部依赖、不适用。\n- `\"react\": \"catalog\"`（无冒号）不是合法协议写法。",
+    "tags": ["pnpm", "中级", "catalog", "catalog协议", "monorepo"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "\"react\": \"catalog:\"（默认目录，等价 catalog:default）",
+        "isCorrect": true,
+        "description": "正确。catalog: 引用默认目录版本，命名目录则写 catalog:<name>。"
+      },
+      {
+        "text": "\"react\": \"^18.2.0\"",
+        "isCorrect": false,
+        "description": "错误。直接写死版本就绕过了 catalog 的集中管理，失去单一来源意义。"
+      },
+      {
+        "text": "\"react\": \"workspace:*\"",
+        "isCorrect": false,
+        "description": "错误。workspace: 用于引用本地工作区包，react 是外部依赖不适用。"
+      },
+      {
+        "text": "\"react\": \"catalog\"（无冒号）",
+        "isCorrect": false,
+        "description": "错误。协议必须带冒号（catalog: 或 catalog:name），无冒号不合法。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：项目里某个**传递依赖**（比如被多个包间接依赖的 `lodash`）存在漏洞，想强制把它统一锁到安全版本。pnpm 提供哪个机制？",
+    "explanation": "用 **`overrides`**（写在 `pnpm-workspace.yaml`，或单包项目的 `package.json` 的 `pnpm.overrides`）强制指定某依赖（含传递依赖）的版本，常用于安全修复或解决版本冲突。例如 `overrides: { \"lodash\": \"^4.17.21\" }`，还可按 `\"foo@^2\": \"3\"` 这样带选择器。\n\n- `overrides` 正确。\n- `peerDependencyRules` 调的是 peer 依赖的告警/允许版本，不强制改传递依赖版本。\n- `packageExtensions` 用于给「缺声明的破损包」补依赖/peer，不是统一锁版本。\n- `catalog` 统一的是**工作区内直接声明**的版本，对深层传递依赖的强制覆盖应用 overrides。",
+    "tags": ["pnpm", "中级", "overrides", "传递依赖", "安全"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "overrides（强制指定某依赖含传递依赖的版本）",
+        "isCorrect": true,
+        "description": "正确。overrides 可把任意层级的依赖钉到指定版本，适合安全修复。"
+      },
+      {
+        "text": "peerDependencyRules",
+        "isCorrect": false,
+        "description": "错误。它管 peer 依赖的告警与允许版本，不用于强制覆盖传递依赖版本。"
+      },
+      {
+        "text": "packageExtensions",
+        "isCorrect": false,
+        "description": "错误。它给声明缺失的破损包补 dependencies/peerDependencies，非锁版本工具。"
+      },
+      {
+        "text": "catalog",
+        "isCorrect": false,
+        "description": "错误。catalog 统一工作区内直接声明的版本，覆盖深层传递依赖应用 overrides。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：某依赖声明了过窄的 peerDependencies（如只允许 `react@17`），但你确认它在 `react@18` 下可用，想消除安装时的 peer 告警/报错。应该配置什么？",
+    "explanation": "用 **`peerDependencyRules`** 调节 peer 依赖行为：`allowedVersions` 放宽允许的版本（如 `{ \"react\": \"18\" }`），`ignoreMissing` 忽略缺失 peer 的告警，`allowAny` 允许任意版本。这样无需改上游包即可消除噪音。\n\n- `peerDependencyRules.allowedVersions` 正确。\n- `overrides` 强制改的是依赖被解析到的版本，不是放宽 peer 校验。\n- `autoInstallPeers` 控制是否自动安装缺失的 peer，不放宽版本范围。\n- `shamefullyHoist` 是把依赖提升到顶层的逃生舱，与 peer 校验无关。",
+    "tags": ["pnpm", "中级", "peerDependencyRules", "peer依赖", "配置"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "peerDependencyRules.allowedVersions（放宽允许的 peer 版本）",
+        "isCorrect": true,
+        "description": "正确。allowedVersions 让你声明额外可接受的版本，消除过窄 peer 的告警。"
+      },
+      {
+        "text": "overrides",
+        "isCorrect": false,
+        "description": "错误。overrides 改的是依赖被解析到的实际版本，不是放宽 peer 校验规则。"
+      },
+      {
+        "text": "autoInstallPeers",
+        "isCorrect": false,
+        "description": "错误。它控制是否自动安装缺失 peer，与放宽版本范围不是一回事。"
+      },
+      {
+        "text": "shamefullyHoist",
+        "isCorrect": false,
+        "description": "错误。它把依赖提升到顶层 node_modules，和 peer 版本校验无关。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：默认 `nodeLinker` 是 `isolated`（符号链接式）。某个老工具假定依赖被扁平提升、否则找不到包。把 `nodeLinker` 设成什么可生成类似 npm 的扁平 `node_modules`？",
+    "explanation": "把 **`nodeLinker: hoisted`** 设进 `pnpm-workspace.yaml`（或 `.npmrc`）会生成**不带符号链接的扁平 `node_modules`**，布局接近 npm/Yarn Classic，用于兼容那些假定扁平结构的旧工具。三种取值：`isolated`（默认，符号链接 + 虚拟 store）、`hoisted`（扁平）、`pnp`（无 node_modules，Plug'n'Play）。\n\n- `hoisted` 正确。\n- `isolated` 是默认的严格符号链接布局，正是要替换掉的。\n- `pnp` 不生成 node_modules，更激进，不少工具不兼容。\n- `flat` 不是合法取值。",
+    "tags": ["pnpm", "中级", "nodeLinker", "hoisted", "兼容性"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "hoisted",
+        "isCorrect": true,
+        "description": "正确。hoisted 生成扁平、无符号链接的 node_modules，兼容旧工具假设。"
+      },
+      {
+        "text": "isolated",
+        "isCorrect": false,
+        "description": "错误。isolated 是默认的严格符号链接布局，正是需要被替换的那个。"
+      },
+      {
+        "text": "pnp",
+        "isCorrect": false,
+        "description": "错误。pnp 完全不生成 node_modules，更激进，许多旧工具不兼容。"
+      },
+      {
+        "text": "flat",
+        "isCorrect": false,
+        "description": "错误。nodeLinker 没有 flat 这个取值，扁平用 hoisted。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：你只需要让 ESLint 这类工具能在顶层 `node_modules` 找到某些插件包（如各种 `*eslint*`），而**不想**像 `shamefully-hoist` 那样把所有依赖都提升。应该用哪个设置？",
+    "explanation": "用 **`publicHoistPattern`（`.npmrc` 里 `public-hoist-pattern[]`）** 把**匹配模式的包提升到根 `node_modules`**，让任意代码（含未声明它的工具）都能访问，比如 `public-hoist-pattern[]=*eslint*`、`*prettier*`、`@types/*`。它是「定向开口子」，比 `shamefully-hoist`（等价 `publicHoistPattern: *`，全量提升）精准得多。\n\n- `publicHoistPattern` 正确。\n- `shamefullyHoist` 会提升**全部**依赖，正是题目要避免的。\n- `hoistPattern` 提升到的是 `.pnpm/node_modules`（内部可见），不是根目录的公共可见。\n- `nodeLinker: hoisted` 把整个布局改成扁平，过于全局。",
+    "tags": ["pnpm", "中级", "public-hoist-pattern", "hoist", ".npmrc"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "public-hoist-pattern（按模式把指定包提升到根 node_modules）",
+        "isCorrect": true,
+        "description": "正确。它定向把匹配的包提升到顶层公共可见，比 shamefully-hoist 精准。"
+      },
+      {
+        "text": "shamefully-hoist",
+        "isCorrect": false,
+        "description": "错误。它等价 public-hoist-pattern=*，会提升所有依赖，过于宽泛。"
+      },
+      {
+        "text": "hoist-pattern",
+        "isCorrect": false,
+        "description": "错误。hoist-pattern 提升到 .pnpm/node_modules（内部可见），非顶层公共可见。"
+      },
+      {
+        "text": "node-linker=hoisted",
+        "isCorrect": false,
+        "description": "错误。它把整体布局改成扁平，作用范围远超「定向提升少数包」。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：随着时间推移本机全局 store 里堆积了不再被任何项目引用的「孤儿」包，想清理释放磁盘。应执行什么命令？",
+    "explanation": "用 **`pnpm store prune`** 移除全局内容寻址 store 中**不再被任何项目引用**的孤儿包。官方说明这是安全操作——若将来安装又需要它们，pnpm 会重新下载。`pnpm store path` 查看 store 位置，`pnpm store status` 检查 store 中被改动的包。\n\n- `pnpm store prune` 正确。\n- `pnpm prune` 删除的是**当前项目** node_modules 里多余的包，不清全局 store。\n- `pnpm cache delete` 不是清 store 孤儿包的标准命令。\n- `pnpm store status` 只做检查不删除。",
+    "tags": ["pnpm", "中级", "store-prune", "store", "磁盘清理"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm store prune",
+        "isCorrect": true,
+        "description": "正确。它清理全局 store 里无项目引用的孤儿包，需要时会重新下载。"
+      },
+      {
+        "text": "pnpm prune",
+        "isCorrect": false,
+        "description": "错误。pnpm prune 清的是当前项目 node_modules 的多余包，不动全局 store。"
+      },
+      {
+        "text": "pnpm store status",
+        "isCorrect": false,
+        "description": "错误。status 只检查 store 中被改动的包，不执行删除。"
+      },
+      {
+        "text": "pnpm cache delete",
+        "isCorrect": false,
+        "description": "错误。这不是清理 store 孤儿包的标准命令；清孤儿用 store prune。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：用 `pnpm dlx eslint --version` 时，对包名与可执行 bin 名不一致的工具（如包 `@pnpm/meta-updater` 暴露 bin `meta-updater`），如何告诉 dlx 要安装的是哪个包？",
+    "explanation": "`pnpm dlx`（及 `pnx`）默认按命令名去找同名包，当**包名 ≠ bin 名**时用 **`--package`** 显式指定要安装的包，再写实际要跑的命令，例如 `pnpm dlx --package=@pnpm/meta-updater meta-updater --help`；可重复 `--package` 安装多个。\n\n- `--package=<pkg>` 正确。\n- `--global` 是全局安装标志，不用于 dlx 指定包。\n- `--filter` 是工作区选择器，与 dlx 临时执行无关。\n- 直接写 `pnpm dlx meta-updater` 会因找不到名为 `meta-updater` 的包而失败（实际包名不同）。",
+    "tags": ["pnpm", "初级", "dlx", "package标志", "命令"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--package=<pkg>（如 pnpm dlx --package=@pnpm/meta-updater meta-updater）",
+        "isCorrect": true,
+        "description": "正确。--package 指定实际安装的包名，命令名仍写要执行的 bin。"
+      },
+      {
+        "text": "--global",
+        "isCorrect": false,
+        "description": "错误。--global 是全局安装标志，dlx 是临时执行，不用它指定包。"
+      },
+      {
+        "text": "--filter",
+        "isCorrect": false,
+        "description": "错误。--filter 是工作区包选择器，和 dlx 临时拉取执行无关。"
+      },
+      {
+        "text": "无需任何标志，pnpm dlx meta-updater 即可",
+        "isCorrect": false,
+        "description": "错误。包名与 bin 名不同，dlx 会找不到 meta-updater 这个包而失败。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：把 monorepo 里某个子服务打包成 Docker 镜像时，想把它连同（被解析展开的）依赖产出到一个**自包含、含真实 node_modules**的独立目录。pnpm 提供哪个命令？",
+    "explanation": "**`pnpm deploy`** 把指定工作区包及其依赖（包括 `workspace:` 本地依赖，会被展开成真实 `node_modules`）复制到一个**隔离、自包含**的目标目录，适合 Docker 生产镜像。典型用法：`pnpm --filter=<pkg> --prod deploy <target-dir>`，多阶段构建里先 build 再 deploy 到精简基础镜像。\n\n- `pnpm deploy <dir>` 正确。\n- `pnpm pack` 生成的是 npm 发布用的 tarball，不展开依赖树。\n- `pnpm publish` 发布到 registry，不是产出本地部署目录。\n- `pnpm fetch` 只把依赖拉进 store，不产出自包含目录。",
+    "tags": ["pnpm", "中级", "deploy", "Docker", "monorepo"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm deploy <target-dir>（配合 --filter / --prod）",
+        "isCorrect": true,
+        "description": "正确。deploy 产出含真实 node_modules 的自包含目录，专为 Docker/生产部署设计。"
+      },
+      {
+        "text": "pnpm pack",
+        "isCorrect": false,
+        "description": "错误。pack 生成发布用 tarball，不会展开并安装整棵依赖树。"
+      },
+      {
+        "text": "pnpm publish",
+        "isCorrect": false,
+        "description": "错误。publish 发布到 registry，不产出本地可直接运行的部署目录。"
+      },
+      {
+        "text": "pnpm fetch",
+        "isCorrect": false,
+        "description": "错误。fetch 仅把依赖拉进 store（利于 Docker 缓存层），不产出自包含目录。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：需要给某个依赖打个本地补丁（改它源码里的一行 bug）并让补丁随安装持久生效。pnpm 内置的工作流是？",
+    "explanation": "pnpm 内置 **`pnpm patch <pkg>@<version>`** 把该包解压到临时目录供你编辑，改完执行 **`pnpm patch-commit <dir>`** 生成 `.patch` 文件并把记录写进 **`patchedDependencies`**（位于 `pnpm-workspace.yaml` 或 `package.json`），之后每次安装都会自动应用，无需第三方 `patch-package`。\n\n- 「pnpm patch → 编辑 → pnpm patch-commit，记录进 patchedDependencies」正确。\n- 「直接改 node_modules 里的文件」不持久，重装即丢。\n- 「fork 整个包重新发布」成本高、非内置工作流。\n- 「用 overrides 指向本地路径」是替换版本，不是打补丁。",
+    "tags": ["pnpm", "高级", "patch", "patchedDependencies", "补丁"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm patch <pkg> 编辑后 pnpm patch-commit，记录写入 patchedDependencies",
+        "isCorrect": true,
+        "description": "正确。这是 pnpm 内置补丁流程，安装时自动应用，无需 patch-package。"
+      },
+      {
+        "text": "直接编辑 node_modules 里的源文件",
+        "isCorrect": false,
+        "description": "错误。直接改不持久，下次安装会被覆盖丢失。"
+      },
+      {
+        "text": "fork 整个依赖包并重新发布到私有 registry",
+        "isCorrect": false,
+        "description": "错误。成本高、维护重，pnpm 已内置更轻量的 patch 工作流。"
+      },
+      {
+        "text": "用 overrides 把它指向一个本地文件路径",
+        "isCorrect": false,
+        "description": "错误。overrides 是替换解析到的版本/来源，不是对原包打补丁。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：关于 pnpm 默认（`isolated`）布局中 `node_modules/.pnpm/<name>@<version>/node_modules/<name>` 这种「每个包都嵌一层自己的 node_modules」的设计，下列哪条说明了它的真正用途？",
+    "explanation": "把包放进 `.pnpm/<name>@<version>/node_modules/<name>` 这层结构有两个关键目的（官方文档）：①让**包能 require 自身**（如读自己的 `package.json`）；②**避免循环符号链接**——一个包的依赖被符号链接到与它**同级**的位置（`.pnpm/<name>@<version>/node_modules/` 下），从而每个包只能访问到自己声明的依赖，强化隔离、杜绝幽灵依赖。\n\n- 「让包能引用自身 + 把其依赖放同级、避免循环链接」正确。\n- 「为了支持 Plug'n'Play」错误，PnP 是另一种无 node_modules 的模式。\n- 「为了扁平化加速」与该结构目的相反。\n- 「纯粹为了好看」显然不对。",
+    "tags": ["pnpm", "高级", "node_modules布局", "符号链接", "隔离"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让包能 require 自身，并把它的依赖放在同级目录，避免循环符号链接、强化隔离",
+        "isCorrect": true,
+        "description": "正确。这正是官方对该嵌套结构的两点解释：自引用 + 同级依赖避免循环链接。"
+      },
+      {
+        "text": "为了支持 Plug'n'Play 的零 node_modules 模式",
+        "isCorrect": false,
+        "description": "错误。PnP 是 nodeLinker=pnp 的独立模式，根本不生成这种 node_modules 目录。"
+      },
+      {
+        "text": "为了把所有依赖扁平化以加速解析",
+        "isCorrect": false,
+        "description": "错误。该结构恰恰是非扁平、强隔离的，与扁平化目的相反。"
+      },
+      {
+        "text": "没有实际用途，只是历史遗留的目录命名习惯",
+        "isCorrect": false,
+        "description": "错误。它是经过设计的：服务于自引用与避免循环链接两个明确目标。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：团队从 npm 迁到 pnpm 后，一个原本能跑的脚本突然报 `Cannot find module 'xxx'`，而 `xxx` 并不在该包的 `package.json` 里。最贴切的根因与正确处理是？",
+    "explanation": "这是 pnpm 严格 node_modules **暴露了原有的幽灵依赖**：代码用了未声明的 `xxx`，在 npm 扁平布局下被提升到顶层而恰好可用，迁到 pnpm 后顶层不再暴露它就报错。**正确做法是把 `xxx` 补进该包的 `dependencies`**（真正修复）。临时兜底可用 `public-hoist-pattern` 或 `shamefully-hoist` 提升，但那是绕过而非修复。\n\n- 「幽灵依赖暴露，补进 dependencies 才是正解」正确。\n- 「pnpm 有 bug」错误，这是它在帮你发现问题。\n- 「删掉 pnpm-lock.yaml 重装」治不了未声明依赖。\n- 「无脑开 shamefully-hoist」能掩盖但不修复，且重新引回幽灵依赖风险。",
+    "tags": ["pnpm", "高级", "幽灵依赖", "迁移", "排错"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原有幽灵依赖被 pnpm 暴露，应把 xxx 补进该包的 dependencies",
+        "isCorrect": true,
+        "description": "正确。pnpm 严格布局让未声明依赖现形，补全声明才是根治。"
+      },
+      {
+        "text": "pnpm 存在解析 bug，应回退到 npm",
+        "isCorrect": false,
+        "description": "错误。这不是 bug，恰是 pnpm 帮你发现了此前被掩盖的未声明依赖。"
+      },
+      {
+        "text": "删除 pnpm-lock.yaml 后重新安装即可",
+        "isCorrect": false,
+        "description": "错误。重装不会凭空声明 xxx，问题在于依赖未写进 package.json。"
+      },
+      {
+        "text": "直接全局开启 shamefully-hoist，无需改任何依赖声明",
+        "isCorrect": false,
+        "description": "错误。它能掩盖问题但不修复，且重新把项目暴露于幽灵依赖风险。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 GitHub Actions 里为 pnpm 项目做依赖缓存与安装，关于「缓存什么、怎么装」最合理的实践是？",
+    "explanation": "CI 推荐：用 `pnpm/action-setup` 安装 pnpm（或 corepack），缓存 **pnpm store**（`pnpm store path` 给出路径，按 `pnpm-lock.yaml` 哈希做 key），再用 **`pnpm install --frozen-lockfile`** 严格按锁文件安装。缓存 store 比缓存 `node_modules` 更通用（store 跨项目复用、安装走硬链接很快）。\n\n- 「缓存 store + frozen-lockfile 安装」正确。\n- 「缓存 node_modules、用 npm install」混用工具且 node_modules 缓存可移植性差。\n- 「每次都 --no-frozen-lockfile」会让 CI 擅自改锁文件，破坏可复现性。\n- 「禁用锁文件加速」牺牲一致性，不可取。",
+    "tags": ["pnpm", "高级", "CI", "GitHubActions", "缓存"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "缓存 pnpm store（按 lockfile 哈希做 key），用 pnpm install --frozen-lockfile",
+        "isCorrect": true,
+        "description": "正确。缓存 store 通用性最好，frozen-lockfile 保证可复现安装。"
+      },
+      {
+        "text": "缓存 node_modules，并用 npm install 安装",
+        "isCorrect": false,
+        "description": "错误。混用 npm 与 pnpm，且 node_modules 含软链/硬链，跨机缓存可移植性差。"
+      },
+      {
+        "text": "每次都加 --no-frozen-lockfile 以便自动修锁文件",
+        "isCorrect": false,
+        "description": "错误。CI 擅自改锁文件会破坏可复现性，应使用 frozen-lockfile。"
+      },
+      {
+        "text": "在 CI 里禁用锁文件以追求最快安装",
+        "isCorrect": false,
+        "description": "错误。禁用锁文件牺牲一致性，得不偿失。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：某破损的第三方包在 `package.json` 里**漏声明了一个它运行时实际需要的依赖（或 peer）**，导致在 pnpm 严格布局下报错，且上游短期不会修。pnpm 哪个机制能「就地补上这个缺失声明」？",
+    "explanation": "**`packageExtensions`** 允许你为指定包**补充缺失的 `dependencies`/`peerDependencies`** 等字段（机制借鉴自 Yarn），相当于在本地给破损包打「清单补丁」，无需等上游修复。例如给 `react-redux@1` 补 `peerDependencies: { react: \"*\" }`。\n\n- `packageExtensions` 正确。\n- `overrides` 改的是依赖版本，不能新增缺失的依赖声明。\n- `peerDependencyRules` 调的是 peer 告警/允许版本，不补「缺失的依赖项」。\n- `public-hoist-pattern` 只是提升可见性，治标不补声明。",
+    "tags": ["pnpm", "高级", "packageExtensions", "破损包", "依赖声明"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "packageExtensions（为破损包补充缺失的 dependencies/peerDependencies）",
+        "isCorrect": true,
+        "description": "正确。它给指定包打「清单补丁」补全缺失声明，无需等上游修复。"
+      },
+      {
+        "text": "overrides",
+        "isCorrect": false,
+        "description": "错误。overrides 改依赖的版本/来源，不能新增包缺失的依赖声明。"
+      },
+      {
+        "text": "peerDependencyRules",
+        "isCorrect": false,
+        "description": "错误。它调 peer 的告警与允许版本，不负责补「缺失的依赖项」。"
+      },
+      {
+        "text": "public-hoist-pattern",
+        "isCorrect": false,
+        "description": "错误。它只提升可见性，治标；补声明应用 packageExtensions。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：关于 pnpm 与 Yarn Berry（v2+）的 Plug'n'Play 在「依赖解析模型」上的本质区别，下列哪条最准确？",
+    "explanation": "pnpm 默认仍生成**真实的 `node_modules`**（用符号链接 + 硬链接，文件来自全局 store），Node 的标准模块解析照常工作；Yarn PnP 则**不生成 `node_modules`**，把依赖放进 zip 缓存并通过 `.pnp.cjs` 接管模块解析，需要运行时/工具适配。pnpm 也提供 `nodeLinker: pnp` 作为可选模式，但**默认是符号链接式的 node_modules**。\n\n- 「pnpm 默认有真实 node_modules（软/硬链接），PnP 无 node_modules 靠 .pnp.cjs 解析」正确。\n- 「两者都不生成 node_modules」错误，pnpm 默认生成。\n- 「pnpm 也默认用 .pnp.cjs」错误，那是可选模式非默认。\n- 「两者机制完全相同」错误。",
+    "tags": ["pnpm", "中级", "对比", "PnP", "解析模型"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm 默认生成真实 node_modules（软/硬链接）；Yarn PnP 不生成 node_modules，靠 .pnp.cjs 接管解析",
+        "isCorrect": true,
+        "description": "正确。pnpm 走标准 Node 解析，PnP 用清单文件接管解析、需工具适配。"
+      },
+      {
+        "text": "pnpm 与 Yarn PnP 都不生成 node_modules",
+        "isCorrect": false,
+        "description": "错误。pnpm 默认 isolated 会生成符号链接式的真实 node_modules。"
+      },
+      {
+        "text": "pnpm 默认也用 .pnp.cjs 接管模块解析",
+        "isCorrect": false,
+        "description": "错误。pnp 只是 pnpm 的可选 nodeLinker，默认是 isolated。"
+      },
+      {
+        "text": "两者底层机制完全相同，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。一个保留 node_modules 走标准解析，一个废弃它自管解析，差异本质。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 monorepo 根目录对**所有**工作区包递归执行同名脚本（如各包都跑 `test`），最直接的标志是？",
+    "explanation": "用 **`-r` / `--recursive`**：`pnpm -r test`（或 `pnpm -r run test`）会对工作区内所有包递归执行 `test`。可与 `--filter` 组合缩小范围、与 `--parallel`/`--workspace-concurrency` 控制并发。`--filter` 偏向「选子集」，`-r` 偏向「对全体（或过滤后集合）递归跑」。\n\n- `-r` / `--recursive` 正确。\n- `-g` 是全局，与递归工作区无关。\n- `--filter` 不指定具体包时不会自动对全部递归执行同名脚本（它是选择器）。\n- `--prod` 控制是否含 devDependencies，与递归执行脚本无关。",
+    "tags": ["pnpm", "初级", "recursive", "monorepo", "脚本"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "-r / --recursive（如 pnpm -r test）",
+        "isCorrect": true,
+        "description": "正确。-r 对工作区所有包递归执行同名脚本，可配 --filter 缩小范围。"
+      },
+      {
+        "text": "-g / --global",
+        "isCorrect": false,
+        "description": "错误。-g 是全局操作标志，与工作区递归执行无关。"
+      },
+      {
+        "text": "--prod",
+        "isCorrect": false,
+        "description": "错误。--prod 只决定是否包含 devDependencies，不触发递归执行。"
+      },
+      {
+        "text": "--all",
+        "isCorrect": false,
+        "description": "错误。pnpm 表达「对所有包」用 -r/--recursive，没有 --all 标志。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：CI 里执行 `pnpm install --frozen-lockfile` 时，若有人改了 `package.json` 但**忘记更新 `pnpm-lock.yaml`**，会发生什么？",
+    "explanation": "`--frozen-lockfile` 下，pnpm 检测到 `package.json` 与 `pnpm-lock.yaml` **不一致**会**直接报错退出（非零码）**，拒绝擅自更新锁文件。这正是它在 CI 的价值：强制锁文件与清单同步提交，避免「本地能装、CI 偷偷改锁」。\n\n- 「报错退出、拒绝改锁文件」正确。\n- 「自动更新锁文件继续装」是非 frozen 行为，恰被禁止。\n- 「忽略 package.json 变更静默装旧版」不符合实现（它会校验一致性并失败）。\n- 「删除锁文件重新生成」更不会。",
+    "tags": ["pnpm", "初级", "frozen-lockfile", "CI", "锁文件一致性"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "检测到锁文件与 package.json 不一致，直接报错并以非零码退出",
+        "isCorrect": true,
+        "description": "正确。frozen-lockfile 拒绝改锁文件，不一致即失败，强制二者同步提交。"
+      },
+      {
+        "text": "自动更新 pnpm-lock.yaml 后继续安装",
+        "isCorrect": false,
+        "description": "错误。那是非 frozen 行为；frozen 模式恰恰禁止改动锁文件。"
+      },
+      {
+        "text": "忽略 package.json 的改动，静默安装锁文件里的旧版本",
+        "isCorrect": false,
+        "description": "错误。pnpm 会校验一致性，不一致直接失败，不会静默放过。"
+      },
+      {
+        "text": "删除锁文件并从头重新解析生成",
+        "isCorrect": false,
+        "description": "错误。frozen 模式不会删除或重建锁文件。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：单包（非 monorepo）项目里，`overrides`、`peerDependencyRules`、`packageExtensions` 这些 pnpm 专属字段应该写在哪里？",
+    "explanation": "在**单包项目**里，这些 pnpm 专属字段写在 `package.json` 的 **`pnpm` 字段**下（如 `\"pnpm\": { \"overrides\": {...}, \"peerDependencyRules\": {...} }`）。而在 **workspace（monorepo）** 里，pnpm 10+ 推荐把它们写进根 **`pnpm-workspace.yaml`**（顶层即可，不再嵌 `pnpm:`）。\n\n- 「package.json 的 pnpm 字段（单包）」正确。\n- 写进 `.npmrc` 不行——这些是结构化配置，`.npmrc` 是 key=value。\n- 写进 `tsconfig.json` 显然无关。\n- 「只能写在 pnpm-workspace.yaml」对单包项目不成立（单包可无该文件）。",
+    "tags": ["pnpm", "初级", "配置位置", "overrides", "pnpm字段"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "package.json 的 pnpm 字段下（monorepo 则推荐放根 pnpm-workspace.yaml）",
+        "isCorrect": true,
+        "description": "正确。单包用 package.json 的 pnpm 字段，工作区用 pnpm-workspace.yaml。"
+      },
+      {
+        "text": "写进 .npmrc 文件",
+        "isCorrect": false,
+        "description": "错误。.npmrc 是 key=value 扁平配置，承载不了 overrides 这类结构化字段。"
+      },
+      {
+        "text": "写进 tsconfig.json",
+        "isCorrect": false,
+        "description": "错误。tsconfig 是 TypeScript 配置，与 pnpm 依赖规则无关。"
+      },
+      {
+        "text": "只能写在 pnpm-workspace.yaml，单包项目也必须建该文件",
+        "isCorrect": false,
+        "description": "错误。单包项目可不建该文件，直接用 package.json 的 pnpm 字段即可。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：通过 Corepack 在项目里「锁定」pnpm 版本，让团队/CI 都用同一版本。靠 `package.json` 的哪个字段实现？",
+    "explanation": "Corepack 读取 `package.json` 的 **`packageManager`** 字段（如 `\"packageManager\": \"pnpm@11.6.0\"`）来锁定并自动调用对应版本的 pnpm，保证全员一致。注意 2025 起 Corepack 因签名问题需先 `npm i -g corepack@latest` 更新；启用用 `corepack enable pnpm`。\n\n- `packageManager` 正确。\n- `engines.pnpm` 只声明可接受范围、用于校验告警，不会自动切换版本。\n- `volta` 是 Volta 工具的字段，非 Corepack。\n- `pnpm.version` 不是用于锁定 CLI 版本的标准字段。",
+    "tags": ["pnpm", "初级", "corepack", "packageManager", "版本锁定"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "packageManager（如 \"pnpm@11.6.0\"）",
+        "isCorrect": true,
+        "description": "正确。Corepack 据此字段锁定并自动调用对应版本的 pnpm。"
+      },
+      {
+        "text": "engines.pnpm",
+        "isCorrect": false,
+        "description": "错误。engines 只做版本范围声明/告警校验，不会自动切换 CLI 版本。"
+      },
+      {
+        "text": "volta",
+        "isCorrect": false,
+        "description": "错误。volta 字段属于 Volta 工具链，不是 Corepack 读取的字段。"
+      },
+      {
+        "text": "pnpm.version",
+        "isCorrect": false,
+        "description": "错误。没有这个标准字段；锁 CLI 版本用 packageManager。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：把 npm 项目迁移到 pnpm 时，想把 `package-lock.json` 转换成 `pnpm-lock.yaml` 以尽量保留已锁定的版本。pnpm 内置能力是？",
+    "explanation": "`pnpm import` 会读取项目里**其他包管理器的锁文件**（`package-lock.json`、`yarn.lock` 等）并据此生成 `pnpm-lock.yaml`，尽量保留原有版本解析，降低迁移时的版本漂移。\n\n- `pnpm import` 正确。\n- `pnpm install` 会全新解析依赖，不读旧锁文件来转换。\n- `pnpm migrate` 不是该用途的标准命令。\n- 手动改后缀名当然不行（格式完全不同）。",
+    "tags": ["pnpm", "中级", "import", "迁移", "锁文件"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm import（从 package-lock.json/yarn.lock 生成 pnpm-lock.yaml）",
+        "isCorrect": true,
+        "description": "正确。它据现有其他锁文件生成 pnpm 锁文件，尽量保留版本解析。"
+      },
+      {
+        "text": "pnpm install",
+        "isCorrect": false,
+        "description": "错误。install 会重新解析依赖，不以转换旧锁文件为目的。"
+      },
+      {
+        "text": "pnpm migrate",
+        "isCorrect": false,
+        "description": "错误。这不是 pnpm 用于锁文件转换的标准命令。"
+      },
+      {
+        "text": "把 package-lock.json 改名为 pnpm-lock.yaml",
+        "isCorrect": false,
+        "description": "错误。两者格式（JSON vs YAML、结构）完全不同，改名无效。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：关于「`pnpm install` 命中 store 时为何很快」与硬链接的关系，下列哪条最准确？",
+    "explanation": "当所需包版本已在全局内容寻址 store 中时，安装的「链接」阶段只需把文件**硬链接**到项目 `node_modules/.pnpm/` 对应位置（再补符号链接），**几乎不复制文件内容、不重新下载**，因此很快。硬链接让同一物理文件被多处引用，省盘又省时。注意硬链接受**同一文件系统/分区**限制（跨盘需复制或 reflink）。\n\n- 「命中时用硬链接、不复制内容、不重下，故快」正确。\n- 「每次都重新下载解压」与 store 复用相反。\n- 「靠把依赖压成 zip」是 PnP。\n- 「全靠内存缓存」不准确，关键是磁盘硬链接复用。",
+    "tags": ["pnpm", "初级", "硬链接", "性能", "store"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "命中 store 时只创建硬链接、不复制文件内容也不重新下载，所以快",
+        "isCorrect": true,
+        "description": "正确。硬链接让文件多处引用，链接阶段开销极小，省盘又省时。"
+      },
+      {
+        "text": "每次安装都重新下载并解压依赖，只是网络快",
+        "isCorrect": false,
+        "description": "错误。这与 store 复用、硬链接的设计完全相反。"
+      },
+      {
+        "text": "靠把依赖压缩成 zip 直接挂载，无需链接",
+        "isCorrect": false,
+        "description": "错误。zip 化挂载是 Yarn PnP，不是 pnpm 的硬链接机制。"
+      },
+      {
+        "text": "完全依赖内存缓存，与磁盘无关",
+        "isCorrect": false,
+        "description": "错误。核心是磁盘上的硬链接复用，而非内存缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：你想确认本机 pnpm 全局 store 到底在哪个目录（比如要排查磁盘占用或配置共享盘）。用哪条命令？",
+    "explanation": "用 **`pnpm store path`** 直接打印当前生效的全局内容寻址 store 目录路径。store 位置可由 `store-dir` 配置；默认通常位于用户主目录下与 pnpm 关联的位置（如 `~/.local/share/pnpm/store` 之类，随平台而异），但**以 `pnpm store path` 的实际输出为准**。\n\n- `pnpm store path` 正确。\n- `pnpm config get store-dir` 也能看配置值，但若未显式设置则不一定反映实际默认路径；`store path` 给的是「实际生效路径」。\n- `pnpm root` 打印的是 node_modules 路径，不是 store。\n- `pnpm bin` 打印的是 bin 目录。",
+    "tags": ["pnpm", "中级", "store-path", "store", "命令"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pnpm store path",
+        "isCorrect": true,
+        "description": "正确。它直接输出当前生效的全局 store 目录路径。"
+      },
+      {
+        "text": "pnpm root",
+        "isCorrect": false,
+        "description": "错误。pnpm root 打印的是项目 node_modules 路径，不是全局 store。"
+      },
+      {
+        "text": "pnpm bin",
+        "isCorrect": false,
+        "description": "错误。pnpm bin 打印可执行文件目录，与 store 位置无关。"
+      },
+      {
+        "text": "pnpm where",
+        "isCorrect": false,
+        "description": "错误。pnpm 没有 where 这个命令；查 store 路径用 store path。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：截至 2026 年 6 月，关于 pnpm 与 npm 的「当前大版本」，下列哪条正确？",
+    "explanation": "截至 2026-06：**pnpm 最新稳定大版本是 11.x**（`latest` 约 11.6.x），**npm 最新大版本是 11.x**（`latest` 约 11.17.x，随 Node.js 22+ 分发）。两者恰好都到 11.x，但属不同项目、版本号互不相关。pnpm 11 沿用并强化了 v10 的安全默认（默认拦截依赖构建脚本、`allowBuilds`/`approve-builds`）。\n\n- 「pnpm 11.x、npm 11.x」正确。\n- 「pnpm 还停在 8.x」过时。\n- 「npm 已到 20.x」错误（版本号没那么高）。\n- 「pnpm 与 npm 共用同一版本号体系」错误，二者是独立项目。",
+    "tags": ["pnpm", "入门", "版本", "时效", "npm"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pnpm 当前为 11.x，npm 当前为 11.x（独立项目、版本号巧合相同）",
+        "isCorrect": true,
+        "description": "正确。2026-06 两者 latest 均在 11 系，但属各自独立的版本线。"
+      },
+      {
+        "text": "pnpm 仍停留在 8.x",
+        "isCorrect": false,
+        "description": "错误。pnpm 早已演进到 10/11 系，8.x 已是旧版本。"
+      },
+      {
+        "text": "npm 已发布到 20.x",
+        "isCorrect": false,
+        "description": "错误。npm 当前在 11.x 量级，并无 20.x。"
+      },
+      {
+        "text": "pnpm 与 npm 共用同一套版本号，永远一致",
+        "isCorrect": false,
+        "description": "错误。二者是独立项目，版本号各自演进，此处只是恰好都到 11。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：默认情况下 pnpm 工作区只生成**一个**根 `pnpm-lock.yaml`（shared lockfile）。这样设计相比「每个子包各自一个锁文件」的主要好处是？",
+    "explanation": "共享单一根锁文件（`sharedWorkspaceLockfile` 默认 `true`）让**整个工作区的每个依赖成为单例（singleton）**、版本解析全局一致，安装更快、更易做整体去重与缓存；也便于一次性审计与提交。官方：「every dependency is a singleton」「faster installations in a monorepo」。\n\n- 「依赖单例、版本一致、安装更快」正确。\n- 「每个包能各装不同版本互不影响」与单例化目标相反（且更易膨胀）。\n- 「便于把子包单独发布到不同 registry」与锁文件粒度无关。\n- 「减小 .git 体积」不是主因（单锁文件甚至可能较大，但带来一致性）。",
+    "tags": ["pnpm", "高级", "shared-lockfile", "monorepo", "单例"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "整个工作区每个依赖成为单例、版本解析一致，安装更快、便于整体去重",
+        "isCorrect": true,
+        "description": "正确。共享锁文件让依赖单例化、版本统一，是 monorepo 安装提速的关键。"
+      },
+      {
+        "text": "让每个子包都能各自安装不同版本、互不影响",
+        "isCorrect": false,
+        "description": "错误。这与单例化目标相反，反而更易造成多版本膨胀。"
+      },
+      {
+        "text": "方便把每个子包发布到不同的私有 registry",
+        "isCorrect": false,
+        "description": "错误。发布目标 registry 与锁文件粒度无关。"
+      },
+      {
+        "text": "显著减小 Git 仓库体积",
+        "isCorrect": false,
+        "description": "错误。减小仓库体积不是共享锁文件的主要目的，一致性与提速才是。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 pnpm 10/11 里，关于「依赖构建脚本批准」的最新机制，下列哪条描述最准确？",
+    "explanation": "演进脉络（需精确）：**v10.0** 起默认禁止依赖自动跑生命周期脚本（安全），当时用 `onlyBuiltDependencies`/`neverBuiltDependencies`/`ignoredBuiltDependencies` 列白/黑名单；**v10.26/v11** 引入统一的 **`allowBuilds`（map 形式，如 `esbuild: true`/`core-js: false`）取代上述旧字段**，并配合交互式 **`pnpm approve-builds`** 写入；要全局放开（不推荐）可用 `dangerouslyAllowAllBuilds`。\n\n- 「v10 默认拦截；v11 用 allowBuilds 取代 onlyBuiltDependencies，配 approve-builds」正确。\n- 「pnpm 一直自动跑所有 postinstall」错误，v10 起默认拦截。\n- 「allowBuilds 是数组，列包名即可」不准确——它是 map（包名→true/false）。\n- 「approve-builds 已被移除」错误，它是现行的交互批准命令。",
+    "tags": ["pnpm", "专家", "allowBuilds", "approve-builds", "安全"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "v10 起默认拦截依赖构建脚本；v11 用 allowBuilds（map）取代 onlyBuiltDependencies，并配 pnpm approve-builds 写入",
+        "isCorrect": true,
+        "description": "正确。这是 v10→v11 的精确演进：默认拦截 + allowBuilds 统一 + approve-builds 交互批准。"
+      },
+      {
+        "text": "pnpm 一直默认自动执行所有依赖的 postinstall，从无拦截",
+        "isCorrect": false,
+        "description": "错误。v10.0 起默认拦截依赖生命周期脚本，正是为防恶意 postinstall。"
+      },
+      {
+        "text": "allowBuilds 是一个数组，只需列出包名即可",
+        "isCorrect": false,
+        "description": "错误。allowBuilds 是 map（包名→true/false），可精确到版本，不是纯数组。"
+      },
+      {
+        "text": "pnpm approve-builds 命令在新版本里已被彻底移除",
+        "isCorrect": false,
+        "description": "错误。approve-builds 正是当前用于交互式批准并写入 allowBuilds 的命令。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：为缓解供应链投毒（如恶意新发布版本），pnpm 提供 `minimumReleaseAge` 设置。它的作用是？",
+    "explanation": "**`minimumReleaseAge`** 让 pnpm **拒绝安装发布时间太「新」的版本**（默认配置语义为按分钟计的最小发布年龄，文档示例如 1440 分钟=1 天），给社区留出发现并下架恶意包的窗口期，降低「刚发布即被装」的风险。这是 pnpm 近年强化的供应链安全设置之一（连同默认拦截构建脚本、`blockExoticSubdeps` 等）。\n\n- 「拒绝安装发布过新的版本，留检测窗口」正确。\n- 「限制单个包大小」无关。\n- 「强制最低 Node 版本」是 engines 的事。\n- 「限制安装频率」并非该设置含义。",
+    "tags": ["pnpm", "专家", "minimumReleaseAge", "供应链安全", "设置"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "拒绝安装发布时间过新的版本，给社区留出发现/下架恶意包的窗口",
+        "isCorrect": true,
+        "description": "正确。它按「最小发布年龄」拦截刚发布的版本，缓解供应链投毒。"
+      },
+      {
+        "text": "限制单个依赖包允许的最大体积",
+        "isCorrect": false,
+        "description": "错误。它针对发布时间而非包体积。"
+      },
+      {
+        "text": "强制项目使用的最低 Node.js 版本",
+        "isCorrect": false,
+        "description": "错误。最低 Node 版本由 engines 字段约束，与此设置无关。"
+      },
+      {
+        "text": "限制 pnpm install 的执行频率以防滥用",
+        "isCorrect": false,
+        "description": "错误。它与执行频率无关，针对的是依赖版本的发布年龄。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：大型 monorepo 里发现同一个库（如 `@types/node`）因不同包声明了不同范围而被解析出**多个版本**，想尽量收敛成一个版本。下列手段中，哪一种是「集中声明、从源头统一各包直接依赖版本」的最佳实践？",
+    "explanation": "最贴合「集中、从源头统一各包**直接声明**版本」的是 **catalog（版本目录）**：在 `pnpm-workspace.yaml` 定义一次，各包都写 `catalog:` 引用，天然只有一个版本、升级改一处。`overrides` 更适合**强制压制传递依赖**（兜底），但它是「覆盖」而非「让各包共享同一声明」；`dedupePeerDependents` 只针对 peer 场景去重；删 node_modules 重装不解决版本声明分裂。\n\n- 「catalog 集中声明各包共享同一版本」正确（最佳实践）。\n- `overrides` 是强制覆盖（尤其传递依赖），非「各包共享声明」的首选。\n- `dedupePeerDependents` 范围有限（peer）。\n- 「删 node_modules 重装」治标不治本。",
+    "tags": ["pnpm", "高级", "catalog", "版本收敛", "monorepo"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 catalog 在 pnpm-workspace.yaml 集中声明版本，各包用 catalog: 引用",
+        "isCorrect": true,
+        "description": "正确。catalog 让各包共享单一声明，天然单版本、升级改一处，最契合需求。"
+      },
+      {
+        "text": "对该库逐个用 overrides 强制覆盖",
+        "isCorrect": false,
+        "description": "次优。overrides 偏「强制压制（尤其传递依赖）」的兜底，不是让各包共享声明的首选。"
+      },
+      {
+        "text": "打开 dedupePeerDependents 即可彻底收敛",
+        "isCorrect": false,
+        "description": "错误。它主要针对 peer 依赖去重，范围有限，不能通治直接依赖版本分裂。"
+      },
+      {
+        "text": "删除所有 node_modules 后重新安装",
+        "isCorrect": false,
+        "description": "错误。重装不会改变各包不同的版本声明，问题会复现。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：Docker 多阶段构建里，为最大化利用层缓存、避免每次改动业务代码都重装依赖，结合 `pnpm fetch` 的推荐做法是？",
+    "explanation": "推荐：先只 `COPY pnpm-lock.yaml`，运行 **`pnpm fetch`** 把依赖**仅依据锁文件**拉进虚拟 store（不需要 `package.json`、与源码解耦）——这一层只在锁文件变化时失效，缓存命中率极高；之后再 `COPY` 源码并 `pnpm install --offline`（或 `--frozen-lockfile`）从本地 store 离线装齐。这样业务代码改动不会击穿依赖层缓存。\n\n- 「先 fetch（只靠锁文件）建缓存层，再 copy 源码离线 install」正确。\n- 「每阶段都 pnpm install 全量」无法复用缓存。\n- 「先 copy 全部源码再 install」会让任意代码改动都使依赖层失效。\n- 「不用锁文件直接装」破坏可复现与缓存。",
+    "tags": ["pnpm", "专家", "fetch", "Docker", "层缓存"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "先只 COPY 锁文件并 pnpm fetch 建缓存层，再 COPY 源码后 pnpm install --offline",
+        "isCorrect": true,
+        "description": "正确。fetch 仅依据锁文件拉 store，与源码解耦，业务改动不击穿依赖层缓存。"
+      },
+      {
+        "text": "在每个构建阶段都重新 pnpm install 全量依赖",
+        "isCorrect": false,
+        "description": "错误。重复全量安装无法复用层缓存，违背多阶段构建优化初衷。"
+      },
+      {
+        "text": "先 COPY 整个源码目录，再 pnpm install",
+        "isCorrect": false,
+        "description": "错误。源码任意改动都会让依赖安装层缓存失效，命中率低。"
+      },
+      {
+        "text": "构建中不使用锁文件以便总是装最新依赖",
+        "isCorrect": false,
+        "description": "错误。这破坏可复现性，也无法稳定命中缓存层。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：发布一个用了 `\"@org/utils\": \"workspace:^\"` 的工作区包时，假设所有包当前版本都是 `1.5.0`。发布到 registry 后，该依赖在已发布包的 `package.json` 里会变成什么？",
+    "explanation": "发布时 pnpm 会把 `workspace:` 协议**替换成真实版本范围**：`workspace:*` → `1.5.0`、`workspace:~` → `~1.5.0`、`workspace:^` → `^1.5.0`。所以 `workspace:^` 在版本 `1.5.0` 下会变成 **`^1.5.0`**，从而对外可正常从 registry 解析，而开发期又能链接本地包。\n\n- `^1.5.0` 正确。\n- `workspace:^`（原样保留）错误——发布前必被替换，否则使用方无法解析。\n- `1.5.0`（精确）是 `workspace:*` 的结果，不是 `^`。\n- `~1.5.0` 是 `workspace:~` 的结果。",
+    "tags": ["pnpm", "专家", "workspace协议", "发布", "版本替换"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "^1.5.0",
+        "isCorrect": true,
+        "description": "正确。发布时 workspace:^ 按当前版本替换为 ^1.5.0，对外可从 registry 解析。"
+      },
+      {
+        "text": "保持原样 workspace:^",
+        "isCorrect": false,
+        "description": "错误。workspace: 协议是 pnpm 私有的，发布前必被替换，否则使用方无法解析。"
+      },
+      {
+        "text": "1.5.0（精确版本）",
+        "isCorrect": false,
+        "description": "错误。精确 1.5.0 是 workspace:* 的替换结果，不是 workspace:^。"
+      },
+      {
+        "text": "~1.5.0",
+        "isCorrect": false,
+        "description": "错误。~1.5.0 对应的是 workspace:~，不是 workspace:^。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：关于 `pnpm install`（无参数）与 `npm install`（无参数）在「默认是否改动锁文件 / 是否能引入幽灵依赖」上的对比，最准确的是？",
+    "explanation": "两者无参时都会按 `package.json` 安装并在需要时更新各自锁文件（非 frozen 模式）。**关键差异在 node_modules 布局**：pnpm 默认**严格非扁平**，不会把未声明的传递依赖暴露到可被 `import` 的位置，从结构上**防幽灵依赖**；npm 默认**扁平化**，常把传递依赖提升到顶层，**可能让幽灵依赖「恰好可用」**。\n\n- 「都可能更新各自锁文件；pnpm 严格防幽灵、npm 扁平易现幽灵」正确。\n- 「pnpm 无参绝不碰锁文件」不准确（那是 frozen 行为）。\n- 「npm 也默认非扁平防幽灵」错误。\n- 「两者 node_modules 布局相同」错误。",
+    "tags": ["pnpm", "中级", "对比", "幽灵依赖", "install"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者无参都可能更新各自锁文件；但 pnpm 默认严格非扁平防幽灵，npm 默认扁平易暴露幽灵依赖",
+        "isCorrect": true,
+        "description": "正确。锁文件行为类似，本质差异在布局：pnpm 严格隔离、npm 扁平提升。"
+      },
+      {
+        "text": "pnpm install 无参时绝不会改动 pnpm-lock.yaml",
+        "isCorrect": false,
+        "description": "错误。无参非 frozen 模式下需要时会更新锁文件；不改锁是 --frozen-lockfile。"
+      },
+      {
+        "text": "npm install 默认也是非扁平布局，同样防幽灵依赖",
+        "isCorrect": false,
+        "description": "错误。npm 默认扁平化提升传递依赖，正是幽灵依赖的温床。"
+      },
+      {
+        "text": "两者的 node_modules 布局完全一致，无差异",
+        "isCorrect": false,
+        "description": "错误。pnpm 默认符号链接非扁平，npm 默认扁平，布局本质不同。"
+      }
+    ]
+  },
+  {
+    "stem": "pnpm：在 pnpm workspace 中，命名 catalog 与默认 catalog 可以并存。下列写法哪一组是「合法地同时定义默认目录和一个名为 `react17` 的命名目录」？",
+    "explanation": "`pnpm-workspace.yaml` 里**默认目录**用单数 `catalog:`，**命名目录**用复数 `catalogs:` 下挂名字。二者可并存：\n```yaml\ncatalog:\n  react: ^18.2.0\ncatalogs:\n  react17:\n    react: ^17.0.2\n```\n包内分别用 `catalog:`（默认）与 `catalog:react17` 引用。\n\n- 「`catalog:` + `catalogs: { react17: ... }`」正确。\n- 「两个都写 `catalog:`」错误，命名目录必须放在复数 `catalogs:` 下。\n- 「都写 `catalogs:`」则没有默认目录入口。\n- 「用 `catalog.default` / `catalog.react17` 这种点号键」不是 pnpm 的 YAML 结构。",
+    "tags": ["pnpm", "专家", "catalog", "命名目录", "pnpm-workspace.yaml"],
+    "categories": [
+      ["技术方向", "pnpm"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "单数 catalog: 定义默认目录，复数 catalogs: 下定义 react17 命名目录",
+        "isCorrect": true,
+        "description": "正确。默认用 catalog:，命名目录挂在 catalogs: 之下，二者并存。"
+      },
+      {
+        "text": "默认与命名目录都写在 catalog:（单数）下",
+        "isCorrect": false,
+        "description": "错误。命名目录必须放在复数 catalogs: 下，单数 catalog: 仅承载默认目录。"
+      },
+      {
+        "text": "默认与命名目录都写在 catalogs:（复数）下",
+        "isCorrect": false,
+        "description": "错误。这样就没有默认目录入口；默认目录要用单数 catalog:。"
+      },
+      {
+        "text": "用 catalog.default 和 catalog.react17 这样的点号键名",
+        "isCorrect": false,
+        "description": "错误。pnpm 不用点号键名表达目录，结构是 catalog: 与 catalogs: 两个字段。"
+      }
+    ]
+  }
+]

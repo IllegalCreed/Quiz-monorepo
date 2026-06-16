@@ -1,0 +1,1155 @@
+[
+  {
+    "stem": "bun：在本平台里 Bun 既出现在「后端框架 > 基础框架」(作为 Node.js 替代运行时)，也出现在「包管理器」分类。就「包管理器」这个角色而言，bun install 的官方定位是什么？",
+    "explanation": "Bun 是 all-in-one 工具箱(runtime + bundler + test runner + 包管理器)。就包管理器角色，官方定义 bun install 是「a Node.js-compatible package manager designed to be a dramatically faster replacement for npm, yarn, and pnpm」，且是独立工具——即便项目不用 Bun 运行时，只要有 package.json，bun install 也能直接加速依赖安装。\n\n- 「兼容 Node 的包管理器，npm/yarn/pnpm 的高速替代」正确。\n- 「只能在 Bun 运行时项目里用」错误：它能用在任何现有 Node.js 项目。\n- 「会改写 package.json 格式」错误：它读写标准 package.json 与 node_modules。\n- 「只是 npm 的别名封装」错误：它是独立实现的原生工具。",
+    "tags": ["bun", "入门", "包管理器", "定位", "核心概念"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个兼容 Node.js 的包管理器，定位为 npm/yarn/pnpm 的高速替代，可直接用在现有 Node 项目",
+        "isCorrect": true,
+        "description": "正确。官方原文即「Node.js-compatible package manager」「dramatically faster replacement for npm, yarn, and pnpm」。"
+      },
+      {
+        "text": "只能在以 Bun 为运行时的项目里使用，普通 Node 项目无法用",
+        "isCorrect": false,
+        "description": "错误。bun install 是 standalone 工具，只要有 package.json 就能用，与是否用 Bun 运行时无关。"
+      },
+      {
+        "text": "会把 package.json 改写成 Bun 专有格式才能安装",
+        "isCorrect": false,
+        "description": "错误。Bun 读写标准 package.json 和 node_modules，完全兼容 npm 生态。"
+      },
+      {
+        "text": "它本质是 npm 的一层别名封装，底层仍调用 npm",
+        "isCorrect": false,
+        "description": "错误。Bun 的包管理器是用 Zig 原生实现的，并不调用 npm。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：要安装当前项目 package.json 里声明的全部依赖，最直接的命令是哪个？",
+    "explanation": "`bun install`(可简写 `bun i`)会安装 dependencies、devDependencies、optionalDependencies，并默认安装 peerDependencies，同时把锁文件写为 `bun.lock`。`bun add <pkg>` 是新增某个依赖并写进 package.json，不是用于「安装现有全部依赖」。\n\n- `bun install` 正确。\n- `bun add` 是新增依赖。\n- `bun run install` 会去找名为 install 的脚本，语义完全不同。\n- `bun get` 不是合法命令。",
+    "tags": ["bun", "入门", "包管理器", "bun install", "命令"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bun install（可简写 bun i）",
+        "isCorrect": true,
+        "description": "正确。bun install 安装 package.json 声明的全部依赖并写 bun.lock。"
+      },
+      {
+        "text": "bun add",
+        "isCorrect": false,
+        "description": "错误。bun add <pkg> 用于新增一个依赖到 package.json，不是安装已声明的全部依赖。"
+      },
+      {
+        "text": "bun run install",
+        "isCorrect": false,
+        "description": "错误。bun run install 会执行名为 install 的 npm 脚本，而非安装依赖。"
+      },
+      {
+        "text": "bun get",
+        "isCorrect": false,
+        "description": "错误。Bun 没有 get 子命令。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：官方反复强调「up to ~25x faster than npm」。bun install 之所以快，最核心的两个机制是什么？",
+    "explanation": "Bun 的安装速度来自两点结合：① 一个全局共享缓存(`~/.bun/install/cache`)，同一个包不重复下载；② 用 OS 级的快速文件复制把缓存「物化」到 node_modules——macOS 默认 `clonefile`(写时复制)，Linux 默认 `hardlink`(硬链接)，避免逐字节拷贝。再叠加 Zig 原生实现与高并发网络请求。\n\n- 「全局缓存 + clonefile/hardlink」正确。\n- 「把所有依赖打成单个二进制」错误：那是 bundler 行为，与 install 无关。\n- 「跳过依赖直接 mock」错误。\n- 「靠 CDN 边缘节点」错误：与本地文件系统机制无关。",
+    "tags": ["bun", "入门", "包管理器", "性能", "缓存"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "全局共享缓存(不重复下载) + 用 clonefile(macOS)/hardlink(Linux)把缓存快速物化到 node_modules",
+        "isCorrect": true,
+        "description": "正确。全局 cache 避免重复下载，OS 级 clonefile/hardlink 避免逐字节拷贝，是 Bun 安装快的核心。"
+      },
+      {
+        "text": "安装时把所有依赖打包成单个二进制文件",
+        "isCorrect": false,
+        "description": "错误。打包是 bundler(bun build)的事，包管理器 bun install 仍生成标准 node_modules。"
+      },
+      {
+        "text": "跳过真实依赖，安装时用 mock 占位",
+        "isCorrect": false,
+        "description": "错误。Bun 安装的是真实包，不存在 mock 占位。"
+      },
+      {
+        "text": "完全依赖自建 CDN 边缘节点加速下载",
+        "isCorrect": false,
+        "description": "错误。速度主要来自本地缓存与文件系统机制，而非自建 CDN。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：从 Bun 1.2 起，bun install 默认生成的锁文件是哪一个？",
+    "explanation": "Bun 1.2 把默认锁文件改为**文本格式 `bun.lock`**(JSONC，类似 tsconfig 可带注释)。在此之前默认是二进制 `bun.lockb`。文本锁文件的好处：PR 里能看 diff、合并冲突更好解、第三方工具(GitHub diff、Dependabot)能直接读。\n\n- `bun.lock`(文本/JSONC)正确。\n- `bun.lockb`(二进制)是 1.2 之前的默认，现已非默认。\n- `package-lock.json` 是 npm 的。\n- `yarn.lock` 是 Yarn 的(Bun 可选生成，但非默认)。",
+    "tags": ["bun", "入门", "包管理器", "lockfile", "bun.lock"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bun.lock(文本格式，JSONC)",
+        "isCorrect": true,
+        "description": "正确。Bun 1.2 起默认文本锁文件 bun.lock，采用 JSONC，便于 diff 与合并。"
+      },
+      {
+        "text": "bun.lockb(二进制格式)",
+        "isCorrect": false,
+        "description": "错误。bun.lockb 是 1.2 之前的默认二进制锁文件，现已不是默认。"
+      },
+      {
+        "text": "package-lock.json",
+        "isCorrect": false,
+        "description": "错误。package-lock.json 是 npm 的锁文件。"
+      },
+      {
+        "text": "yarn.lock",
+        "isCorrect": false,
+        "description": "错误。yarn.lock 是 Yarn 的；Bun 可用 --yarn 额外生成它，但默认是 bun.lock。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：要把一个包加入项目依赖并写进 package.json，应使用下列哪个命令？",
+    "explanation": "`bun add <pkg>` 解析版本、安装、并把条目写入 package.json 的 dependencies(默认)。`bun install <pkg>` 在 Bun 里实际也能加包，但规范且语义清晰的「新增依赖」命令是 `bun add`。`bun new`/`bun create` 是脚手架命令，与新增依赖无关。\n\n- `bun add lodash` 正确。\n- `bun new lodash` 错误，不是加依赖。\n- `bun create lodash` 是用模板创建项目。\n- `bun import lodash` 不是合法命令。",
+    "tags": ["bun", "入门", "包管理器", "bun add", "命令"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bun add lodash",
+        "isCorrect": true,
+        "description": "正确。bun add 新增依赖、安装并写入 package.json。"
+      },
+      {
+        "text": "bun new lodash",
+        "isCorrect": false,
+        "description": "错误。Bun 没有 new 子命令用于加依赖。"
+      },
+      {
+        "text": "bun create lodash",
+        "isCorrect": false,
+        "description": "错误。bun create 是用模板脚手架新建项目，不是加依赖。"
+      },
+      {
+        "text": "bun import lodash",
+        "isCorrect": false,
+        "description": "错误。import 不是 Bun 的依赖管理子命令。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：把一个包加到 devDependencies(开发依赖)，应给 bun add 加哪个标志？",
+    "explanation": "`bun add -d <pkg>`(等价 `--dev`/`-D`)把包写入 devDependencies。`--optional` 写入 optionalDependencies，`--peer` 写入 peerDependencies，`-g`/`--global` 全局安装。\n\n- `-d`/`--dev` 正确。\n- `--peer` 是 peerDependencies。\n- `-g` 是全局。\n- `--save` 在 Bun 里默认就开着，且不区分 dev/prod。",
+    "tags": ["bun", "入门", "包管理器", "bun add", "devDependencies"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bun add -d typescript（或 --dev / -D）",
+        "isCorrect": true,
+        "description": "正确。-d/--dev/-D 把依赖写入 devDependencies。"
+      },
+      {
+        "text": "bun add --peer typescript",
+        "isCorrect": false,
+        "description": "错误。--peer 写入 peerDependencies。"
+      },
+      {
+        "text": "bun add -g typescript",
+        "isCorrect": false,
+        "description": "错误。-g/--global 是全局安装 CLI 工具，不写进本项目 devDependencies。"
+      },
+      {
+        "text": "bun add --save typescript",
+        "isCorrect": false,
+        "description": "错误。Bun 默认即保存到 package.json，且 --save 不指定 dev 仍进 dependencies。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：要从项目中卸载一个已安装的依赖，正确命令是？",
+    "explanation": "`bun remove <pkg>`(可简写 `bun rm`)卸载依赖并从 package.json 移除、更新锁文件。`bun uninstall` 不是 Bun 的子命令。\n\n- `bun remove` 正确。\n- `bun uninstall` 错误(那是 npm 的写法)。\n- `bun delete` 不存在。\n- `bun add --remove` 不是合法用法。",
+    "tags": ["bun", "入门", "包管理器", "bun remove", "命令"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bun remove lodash（或 bun rm lodash）",
+        "isCorrect": true,
+        "description": "正确。bun remove 卸载依赖、从 package.json 删除并更新锁文件。"
+      },
+      {
+        "text": "bun uninstall lodash",
+        "isCorrect": false,
+        "description": "错误。uninstall 是 npm 的子命令，Bun 用 remove。"
+      },
+      {
+        "text": "bun delete lodash",
+        "isCorrect": false,
+        "description": "错误。Bun 没有 delete 子命令。"
+      },
+      {
+        "text": "bun add --remove lodash",
+        "isCorrect": false,
+        "description": "错误。bun add 用于新增，不存在 --remove 反向用法。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：相比 npm，Bun 在「依赖的生命周期脚本(如 postinstall)」上有一个重要的安全默认。下列哪项正确描述了它？",
+    "explanation": "出于供应链安全，Bun **默认不执行被安装依赖的任意生命周期脚本**(如 postinstall)——这正是 npm 长期被诟病的攻击面。要放行某个包的脚本，需把它列入 package.json 的 `trustedDependencies`(或用 `--trust` 添加)。注意：项目**自身**的 pre/post install/prepare 脚本仍会跑。\n\n- 「默认不跑依赖的生命周期脚本，需 trustedDependencies 放行」正确。\n- 「和 npm 一样默认全跑」错误。\n- 「永远不跑任何脚本」错误：自身脚本会跑、白名单内依赖也会跑。\n- 「只在生产模式不跑」错误：与 --production 无关。",
+    "tags": ["bun", "初级", "包管理器", "trustedDependencies", "安全"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认不执行被安装依赖的生命周期脚本，需要把包列入 trustedDependencies 才放行",
+        "isCorrect": true,
+        "description": "正确。这是 Bun 的供应链安全默认，针对 postinstall 等脚本的攻击面。"
+      },
+      {
+        "text": "和 npm 一样，默认执行所有依赖的生命周期脚本",
+        "isCorrect": false,
+        "description": "错误。Bun 恰恰相反——默认不跑依赖脚本。"
+      },
+      {
+        "text": "无论是否信任，永远不执行任何生命周期脚本",
+        "isCorrect": false,
+        "description": "错误。项目自身脚本会跑，白名单(trustedDependencies)内的依赖脚本也会跑。"
+      },
+      {
+        "text": "只有在 --production 模式下才不执行脚本",
+        "isCorrect": false,
+        "description": "错误。该行为与 --production 无关，是默认的安全策略。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：你要让某个确实需要 postinstall 的依赖(例如自带原生编译步骤的包)能在安装时跑脚本。下列哪种做法符合 Bun 的设计？",
+    "explanation": "把包名加入 package.json 的 `trustedDependencies` 数组后重装，Bun 会读取该字段并为这些包运行生命周期脚本；命令行上也可用 `bun add <pkg> --trust` 一步添加并安装。还可用 `bun pm untrusted` 查看被拦下的脚本、`bun pm trust <names>` 事后放行。\n\n- 「加入 trustedDependencies 或用 --trust」正确。\n- 「全局关闭安全检查」不是推荐做法且不是该机制。\n- 「把包装进 dependencies 就会自动跑」错误：放不放在 dependencies 都不影响脚本默认被拦。\n- 「改用 npm 装这个包」是绕过而非 Bun 的设计。",
+    "tags": ["bun", "初级", "包管理器", "trustedDependencies", "生命周期脚本"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把包名加入 package.json 的 trustedDependencies(或用 bun add <pkg> --trust)，再重装",
+        "isCorrect": true,
+        "description": "正确。trustedDependencies 是官方放行机制，--trust 可一步添加并安装。"
+      },
+      {
+        "text": "把包放进 dependencies(而非 devDependencies)，脚本就会自动执行",
+        "isCorrect": false,
+        "description": "错误。依赖类型不影响默认拦截，仍需 trustedDependencies 放行。"
+      },
+      {
+        "text": "设置环境变量全局关闭 Bun 的所有安全检查",
+        "isCorrect": false,
+        "description": "错误。这并非 Bun 的放行机制，且会削弱供应链安全。"
+      },
+      {
+        "text": "这个包只能改用 npm 安装",
+        "isCorrect": false,
+        "description": "错误。Bun 通过 trustedDependencies 本就支持放行，无需换工具。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：CI 流水线里希望「严格按锁文件复现安装、若 package.json 与 bun.lock 不一致就报错且不改锁文件」。应使用哪个标志？",
+    "explanation": "`bun install --frozen-lockfile` 会严格按 `bun.lock` 安装精确版本；若 package.json 与锁文件不一致则报错退出，且**不更新锁文件**——正是可复现 CI 安装的做法。Bun 还提供等价别名 `bun ci`。\n\n- `--frozen-lockfile` 正确。\n- `--force` 反而强制拉最新并重装，破坏复现。\n- `--production` 只控制是否装 devDependencies，不保证锁文件一致性。\n- `--no-save` 是不写 package.json/锁文件，语义不同。",
+    "tags": ["bun", "初级", "包管理器", "frozen-lockfile", "CI"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "bun install --frozen-lockfile（等价 bun ci）",
+        "isCorrect": true,
+        "description": "正确。严格按 bun.lock 安装，package.json 不一致即报错且不更新锁文件。"
+      },
+      {
+        "text": "bun install --force",
+        "isCorrect": false,
+        "description": "错误。--force 强制向 registry 请求最新并重装所有依赖，破坏可复现性。"
+      },
+      {
+        "text": "bun install --production",
+        "isCorrect": false,
+        "description": "错误。--production 只是不装 devDependencies，不保证与锁文件严格一致。"
+      },
+      {
+        "text": "bun install --no-save",
+        "isCorrect": false,
+        "description": "错误。--no-save 是不更新 package.json/锁文件，不会做一致性校验报错。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：生产部署时只想安装 dependencies、排除 devDependencies(与 optionalDependencies)。最贴切的命令是？",
+    "explanation": "`bun install --production` 等价于不安装 devDependencies 与 optionalDependencies，用于生产部署。也可在 bunfig.toml 里 `[install] production = true`。更细粒度可用 `--omit dev|optional|peer`。\n\n- `--production` 正确。\n- `--frozen-lockfile` 只保证锁文件一致，不排除 dev 依赖。\n- `--global` 是全局安装。\n- `--dry-run` 只是模拟不实际安装。",
+    "tags": ["bun", "初级", "包管理器", "production", "部署"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "bun install --production",
+        "isCorrect": true,
+        "description": "正确。--production 跳过 devDependencies 与 optionalDependencies，适合生产部署。"
+      },
+      {
+        "text": "bun install --frozen-lockfile",
+        "isCorrect": false,
+        "description": "错误。它保证锁文件一致，但不会排除 devDependencies。"
+      },
+      {
+        "text": "bun install --global",
+        "isCorrect": false,
+        "description": "错误。--global 是把包装到全局，不是生产模式安装本项目。"
+      },
+      {
+        "text": "bun install --dry-run",
+        "isCorrect": false,
+        "description": "错误。--dry-run 只模拟、不真正安装任何东西。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在 macOS 上 bun install 默认用 clonefile，在 Linux 上默认用 hardlink。这两种「backend」本质上是在做什么？",
+    "explanation": "二者都是把全局缓存里的包**快速物化**进 node_modules 的文件系统机制：`clonefile`(macOS) 是写时复制(copy-on-write)，`hardlink`(Linux) 是硬链接，都避免逐字节拷贝，因而极快。当不可用或出错时回退到 `copyfile`。可用 `--backend` 显式指定。\n\n- 「快速把缓存文件物化到 node_modules 的 OS 级机制」正确。\n- 「压缩算法」错误。\n- 「网络协议」错误。\n- 「锁文件格式」错误。",
+    "tags": ["bun", "初级", "包管理器", "backend", "clonefile"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把全局缓存中的包以写时复制/硬链接的方式快速物化进 node_modules 的文件系统机制",
+        "isCorrect": true,
+        "description": "正确。clonefile(CoW) 与 hardlink 都避免逐字节拷贝，是 Bun 安装快的底层手段。"
+      },
+      {
+        "text": "下载包时使用的压缩算法",
+        "isCorrect": false,
+        "description": "错误。backend 关乎文件物化方式，与压缩无关。"
+      },
+      {
+        "text": "与 registry 通信的网络协议",
+        "isCorrect": false,
+        "description": "错误。backend 是本地文件系统层面的，不是网络协议。"
+      },
+      {
+        "text": "锁文件的序列化格式",
+        "isCorrect": false,
+        "description": "错误。锁文件格式是 bun.lock/bun.lockb，与 backend 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：Bun 把从 npm 下载的包缓存到本地的全局目录，默认位置是哪里？",
+    "explanation": "Bun 把安装的 npm 包缓存到 `~/.bun/install/cache/${name}@${version}`。这是一个**全局共享缓存**——多个项目复用同一份缓存，避免重复下载。清缓存可用 `bun pm cache rm` 或 `rm -rf ~/.bun/install/cache`。\n\n- `~/.bun/install/cache` 正确。\n- `./node_modules/.cache` 是项目内构建缓存，不是 Bun 全局包缓存。\n- `~/.npm` 是 npm 的缓存。\n- `/tmp/bun` 不是默认缓存目录。",
+    "tags": ["bun", "初级", "包管理器", "缓存", "全局cache"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "~/.bun/install/cache（全局共享，多项目复用）",
+        "isCorrect": true,
+        "description": "正确。Bun 把包缓存到 ~/.bun/install/cache，全局共享避免重复下载。"
+      },
+      {
+        "text": "项目内的 ./node_modules/.cache",
+        "isCorrect": false,
+        "description": "错误。那通常是构建工具的项目级缓存，不是 Bun 的全局包缓存。"
+      },
+      {
+        "text": "~/.npm（npm 的缓存目录）",
+        "isCorrect": false,
+        "description": "错误。~/.npm 是 npm 的缓存，Bun 用自己的 ~/.bun/install/cache。"
+      },
+      {
+        "text": "/tmp/bun",
+        "isCorrect": false,
+        "description": "错误。/tmp 是临时目录，不是 Bun 的默认全局缓存位置。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：用来配置 bun install 行为(registry、缓存、linker、frozenLockfile 等)的配置文件叫什么，相关配置写在哪个段落下？",
+    "explanation": "Bun 用 `bunfig.toml` 配置，安装相关项写在 `[install]` 段(如 `optional/dev/peer`、`production`、`linker`、`frozenLockfile`、`saveTextLockfile`、`registry`、`[install.scopes]`、`[install.cache]`、`[install.lockfile]`)。Bun 追求零配置，但需要时用 bunfig.toml 覆盖默认。\n\n- `bunfig.toml` 的 `[install]` 正确。\n- `.npmrc` 的 `[install]` 错误：.npmrc 没有 TOML 段，Bun 兼容 .npmrc 但自身配置在 bunfig.toml。\n- `package.json` 的 install 字段错误。\n- `bun.config.ts` 不是包管理配置文件。",
+    "tags": ["bun", "初级", "包管理器", "bunfig.toml", "配置"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "bunfig.toml 的 [install] 段",
+        "isCorrect": true,
+        "description": "正确。bunfig.toml 的 [install] 段集中配置安装行为，并有 scopes/cache/lockfile 子段。"
+      },
+      {
+        "text": ".npmrc 的 [install] 段",
+        "isCorrect": false,
+        "description": "错误。.npmrc 是 key=value 无 TOML 段；Bun 兼容读 .npmrc，但其专有配置在 bunfig.toml。"
+      },
+      {
+        "text": "package.json 的 install 字段",
+        "isCorrect": false,
+        "description": "错误。package.json 没有用于配置安装行为的 install 段。"
+      },
+      {
+        "text": "bun.config.ts 的 install 导出",
+        "isCorrect": false,
+        "description": "错误。Bun 的包管理配置不在 bun.config.ts，而在 bunfig.toml。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在 monorepo 里只想为某个子包(如 ./packages/pkg-a)安装依赖，应给 bun install 加哪个标志？",
+    "explanation": "`bun install --filter './packages/pkg-a'` 只为匹配的工作区安装依赖；`--filter '!pkg-c'` 可排除某个包。`--filter` 同样适用于 `bun outdated`、以及 `bun run`(跨工作区跑脚本)。\n\n- `--filter` 正确。\n- `--workspace` 不是 Bun 的安装过滤标志。\n- `--only` 不存在该语义。\n- `--scope` 是 npm/Lerna 风格，不是 Bun 的标志。",
+    "tags": ["bun", "中级", "包管理器", "workspaces", "filter"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bun install --filter './packages/pkg-a'",
+        "isCorrect": true,
+        "description": "正确。--filter 支持按包名/glob/路径筛选要安装的工作区，也支持 ! 排除。"
+      },
+      {
+        "text": "bun install --workspace pkg-a",
+        "isCorrect": false,
+        "description": "错误。Bun 用 --filter 做工作区筛选，没有 --workspace 这个安装标志。"
+      },
+      {
+        "text": "bun install --only pkg-a",
+        "isCorrect": false,
+        "description": "错误。--only 不是 Bun 的工作区筛选标志。"
+      },
+      {
+        "text": "bun install --scope pkg-a",
+        "isCorrect": false,
+        "description": "错误。--scope 是其他工具的风格，Bun 用 --filter。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在 monorepo 的根 package.json 里声明工作区，正确的字段与典型写法是？",
+    "explanation": "Bun 在根 package.json 用 `\"workspaces\": [\"packages/*\"]` 声明工作区(支持 glob 与 `!` 负向模式)。包之间用 `workspace:*`(或 `workspace:^`/`workspace:~`)协议互相引用；根目录跑一次 `bun install` 即为所有工作区安装并去重。\n\n- `\"workspaces\": [\"packages/*\"]` 正确。\n- `\"packages\": [...]` 顶层字段错误(那是 pnpm-workspace.yaml 的风格)。\n- `\"monorepo\": true` 不存在。\n- 在 bunfig.toml 配 workspaces 错误：工作区声明在 package.json。",
+    "tags": ["bun", "中级", "包管理器", "workspaces", "monorepo"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "根 package.json 中 \"workspaces\": [\"packages/*\"]，包间用 workspace:* 互相引用",
+        "isCorrect": true,
+        "description": "正确。workspaces 数组支持 glob 与负向模式，workspace: 协议链接本地包。"
+      },
+      {
+        "text": "根 package.json 顶层 \"packages\": [\"packages/*\"]",
+        "isCorrect": false,
+        "description": "错误。顶层 packages 是 pnpm-workspace.yaml 的写法，Bun 用 package.json 的 workspaces。"
+      },
+      {
+        "text": "根 package.json 中 \"monorepo\": true",
+        "isCorrect": false,
+        "description": "错误。不存在 monorepo 布尔字段。"
+      },
+      {
+        "text": "在 bunfig.toml 的 [workspaces] 段声明",
+        "isCorrect": false,
+        "description": "错误。工作区在 package.json 声明，不在 bunfig.toml。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：Bun 支持两种安装策略：hoisted 与 isolated。关于 isolated installs，下列哪项描述正确？",
+    "explanation": "isolated installs 类似 pnpm：在 `node_modules/.bun/` 建一个中心化的 package store，顶层 node_modules 里放指向 store 的符号链接(symlink)，从而**严格隔离**——包只能访问自己声明过的依赖，杜绝「幻影依赖(phantom dependencies)」。hoisted 则是传统 npm/Yarn 的扁平化。可用 `--linker isolated|hoisted` 或 bunfig 的 `[install] linker` 切换。\n\n- 「.bun 中心 store + symlink，防幻影依赖」正确。\n- 「把所有依赖扁平铺平」是 hoisted。\n- 「不生成 node_modules」错误。\n- 「等于 --production」错误，两者维度不同。",
+    "tags": [
+      "bun",
+      "中级",
+      "包管理器",
+      "isolated installs",
+      "phantom dependencies"
+    ],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 node_modules/.bun 建中心 store，顶层用 symlink 指向它，严格隔离以防幻影依赖",
+        "isCorrect": true,
+        "description": "正确。这正是 isolated(pnpm 式)的核心：包只能访问已声明依赖，杜绝 phantom dependencies。"
+      },
+      {
+        "text": "把所有依赖扁平铺到一个共享 node_modules 顶层",
+        "isCorrect": false,
+        "description": "错误。这描述的是 hoisted 策略，不是 isolated。"
+      },
+      {
+        "text": "不生成 node_modules 目录，直接从缓存运行",
+        "isCorrect": false,
+        "description": "错误。isolated 仍生成 node_modules，只是用 .bun store + symlink 结构。"
+      },
+      {
+        "text": "isolated 等同于 --production，只装 dependencies",
+        "isCorrect": false,
+        "description": "错误。linker 策略与是否装 dev 依赖是两个维度，互不等同。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：新建一个 Bun 项目时，hoisted 与 isolated 谁是默认 linker？官方文档怎么说？",
+    "explanation": "默认 linker 取决于场景与锁文件的 `configVersion`：**新建的 workspaces/monorepo → 默认 isolated**(防幻影依赖)；**新建的单包项目 → 默认 hoisted**(传统 npm 行为)；**v1.3.2 之前创建的老项目 → 保持 hoisted**(向后兼容)。\n\n- 「新 monorepo 默认 isolated，新单包默认 hoisted」正确。\n- 「一律默认 isolated」错误。\n- 「一律默认 hoisted」忽略了新 monorepo 的差异。\n- 「随机决定」错误。",
+    "tags": ["bun", "中级", "包管理器", "linker", "默认行为"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "新建 workspaces/monorepo 默认 isolated；新建单包项目默认 hoisted；老项目保持 hoisted",
+        "isCorrect": true,
+        "description": "正确。默认由 configVersion 与是否含 workspaces 决定，与官方文档一致。"
+      },
+      {
+        "text": "所有新项目一律默认 isolated",
+        "isCorrect": false,
+        "description": "错误。单包新项目默认仍是 hoisted。"
+      },
+      {
+        "text": "所有项目一律默认 hoisted",
+        "isCorrect": false,
+        "description": "错误。新建的 workspaces/monorepo 默认是 isolated。"
+      },
+      {
+        "text": "由 Bun 随机在两者间选择",
+        "isCorrect": false,
+        "description": "错误。默认是确定性的，由 configVersion 与项目形态决定。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在 monorepo 里统一管理某个依赖的版本(多个子包共用同一版本)，Bun 支持的机制是什么？",
+    "explanation": "Bun 支持 **catalog / catalogs**：在根 package.json 的 workspaces 下定义 `catalog`(默认目录)与命名 `catalogs`，子包用 `catalog:` 或 `catalog:<name>` 协议引用，从而**一处定义、多处复用**版本，避免版本漂移。这与 pnpm 的 catalog 思路一致，Bun 从 pnpm 迁移时也会保留它。\n\n- 「catalog/catalogs + catalog: 协议」正确。\n- 「overrides 强制覆盖元依赖版本」是另一回事(管的是依赖的依赖)。\n- 「engines 字段」是限制运行时版本。\n- 「peerDependencies」语义不同。",
+    "tags": ["bun", "中级", "包管理器", "catalog", "monorepo"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "catalog/catalogs：根 package.json 定义一次，子包用 catalog: 协议引用同一版本",
+        "isCorrect": true,
+        "description": "正确。catalog 让多个工作区共用集中定义的版本，避免版本漂移。"
+      },
+      {
+        "text": "overrides：强制覆盖某个依赖的版本",
+        "isCorrect": false,
+        "description": "错误。overrides 管的是「依赖的依赖(元依赖)」版本，不是工作区共享直接依赖版本的机制。"
+      },
+      {
+        "text": "engines 字段限制版本",
+        "isCorrect": false,
+        "description": "错误。engines 约束的是 Node/Bun 运行时版本，不是共享依赖版本。"
+      },
+      {
+        "text": "把版本写进 peerDependencies",
+        "isCorrect": false,
+        "description": "错误。peerDependencies 表达对宿主的版本期望，不是 monorepo 版本目录机制。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：查看当前项目已安装依赖及其解析版本的命令是？想包含传递依赖该加什么？",
+    "explanation": "`bun pm ls` 打印当前项目已安装依赖及解析版本；加 `--all` 连传递依赖一起列出。这属于 `bun pm` 工具子命令族(还有 cache、hash、whoami、bin、pkg、version、trust 等)。\n\n- `bun pm ls`，`--all` 含传递依赖，正确。\n- `bun list` 不是 Bun 命令。\n- `bun ls --deep` 标志名不对。\n- `bun pm tree` 不是 Bun 的子命令。",
+    "tags": ["bun", "中级", "包管理器", "bun pm", "ls"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bun pm ls，加 --all 包含传递依赖",
+        "isCorrect": true,
+        "description": "正确。bun pm ls 列直接依赖，--all 连传递依赖一并列出。"
+      },
+      {
+        "text": "bun list --deep",
+        "isCorrect": false,
+        "description": "错误。Bun 没有顶层 list 子命令，列依赖用 bun pm ls。"
+      },
+      {
+        "text": "bun ls --all",
+        "isCorrect": false,
+        "description": "错误。需通过 bun pm 命名空间，即 bun pm ls。"
+      },
+      {
+        "text": "bun pm tree",
+        "isCorrect": false,
+        "description": "错误。Bun 用 bun pm ls(--all)，没有 pm tree 子命令。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：想在不动 package.json 范围(semver range)的前提下，把依赖升级到范围内的最新版本，应使用哪个命令？",
+    "explanation": "`bun update`(可带包名)把依赖升级到 package.json 中 semver range **允许范围内**的最新版本，并更新锁文件。若要**突破**范围升到绝对最新版(并改写 package.json 的 range)，加 `--latest`。查看哪些有新版可用则用 `bun outdated`。\n\n- `bun update` 正确(范围内升级)。\n- `bun upgrade` 是升级 Bun 自身这个可执行文件，不是升级依赖。\n- `bun install --latest` 不是标准升级语义。\n- `bun add <pkg>@latest` 只针对单包且会写死。",
+    "tags": ["bun", "中级", "包管理器", "bun update", "升级"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bun update（升到 package.json range 内最新；加 --latest 才突破 range）",
+        "isCorrect": true,
+        "description": "正确。bun update 默认在 semver range 内升级，--latest 才会突破并改写 range。"
+      },
+      {
+        "text": "bun upgrade",
+        "isCorrect": false,
+        "description": "错误。bun upgrade 升级的是 Bun 可执行文件本身，不是项目依赖。"
+      },
+      {
+        "text": "bun install --latest",
+        "isCorrect": false,
+        "description": "错误。升级依赖用 bun update；--latest 是配合 update 使用的标志。"
+      },
+      {
+        "text": "bun add lodash@latest（对每个依赖逐个执行）",
+        "isCorrect": false,
+        "description": "错误。这会逐个写死版本，不是批量在范围内升级的正解。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：想查看项目里「哪些依赖有更新可用」(列出 Current/Update/Latest 三列表格)，用哪个命令？",
+    "explanation": "`bun outdated` 打印一张表，列出 Current(当前)、Update(范围内可升到)、Latest(绝对最新) 三列，帮你决定升级。它也支持 `--filter` 只看某些工作区。\n\n- `bun outdated` 正确。\n- `bun update` 是执行升级而非仅展示。\n- `bun pm ls` 只列已装版本，不比对最新。\n- `bun check` 不是该用途命令。",
+    "tags": ["bun", "中级", "包管理器", "bun outdated", "升级"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bun outdated",
+        "isCorrect": true,
+        "description": "正确。bun outdated 以表格列出 Current/Update/Latest，便于评估升级。"
+      },
+      {
+        "text": "bun update",
+        "isCorrect": false,
+        "description": "错误。bun update 会实际执行升级，而非仅展示可升级项。"
+      },
+      {
+        "text": "bun pm ls",
+        "isCorrect": false,
+        "description": "错误。bun pm ls 只列当前解析版本，不比对 registry 上的最新版本。"
+      },
+      {
+        "text": "bun check",
+        "isCorrect": false,
+        "description": "错误。Bun 没有用于此用途的 check 子命令。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在本机把一个正在开发的本地包链接给其它项目调试，符合 Bun 用法的两步操作是？",
+    "explanation": "与 npm link 类似：先在该本地包目录里 `bun link` 把它注册为「可链接」包；再到目标项目里 `bun link <pkg-name>`，Bun 会在目标项目 node_modules 建一个指向本地目录的 symlink。加 `--save` 会把它以 `link:<pkg>` 写进 dependencies。注销用 `bun unlink`。\n\n- 「本地包目录 bun link → 目标项目 bun link <name>」正确。\n- 「两边都 bun add」错误，那是装 registry 版本。\n- 「bun link --global 安装」混淆了概念。\n- 「复制 node_modules」错误。",
+    "tags": ["bun", "中级", "包管理器", "bun link", "本地开发"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在本地包目录执行 bun link 注册；再到目标项目执行 bun link <pkg-name> 建立 symlink",
+        "isCorrect": true,
+        "description": "正确。这正是 Bun 的本地包链接两步法，行为类似 npm link。"
+      },
+      {
+        "text": "在两个项目里都执行 bun add <pkg-name>",
+        "isCorrect": false,
+        "description": "错误。bun add 安装的是 registry 上的版本，不会链接本地开发目录。"
+      },
+      {
+        "text": "执行 bun install -g <本地路径> 全局安装",
+        "isCorrect": false,
+        "description": "错误。链接本地包用 bun link，而非全局安装路径。"
+      },
+      {
+        "text": "手动把本地包目录复制进目标项目的 node_modules",
+        "isCorrect": false,
+        "description": "错误。手动拷贝无法保持实时联动，应使用 bun link 的 symlink。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：团队从 pnpm 迁移到 Bun。仓库里有 pnpm-lock.yaml 但没有 bun.lock，直接跑 bun install 会发生什么？",
+    "explanation": "Bun 内置 pnpm 迁移：当检测到 `pnpm-lock.yaml` 且**不存在** `bun.lock` 时，`bun install` 会自动把锁文件迁移成 `bun.lock`(原 pnpm-lock.yaml 保持不变)；`pnpm-workspace.yaml` 的 packages/catalog 会迁进根 package.json 的 workspaces。对 npm 的 package-lock.json、Yarn v1 的 yarn.lock 同样支持自动迁移。注意迁移仅在 bun.lock 缺失时触发。\n\n- 「自动迁移为 bun.lock、原文件不动」正确。\n- 「报错要求先删 pnpm-lock」错误。\n- 「忽略锁文件全部重装最新」错误：会尽量保留版本与关系。\n- 「需手动跑转换工具」错误：是自动的。",
+    "tags": ["bun", "高级", "包管理器", "迁移", "lockfile"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动把 pnpm-lock.yaml 迁移成 bun.lock(保留版本/依赖关系)，原 pnpm 文件保持不变",
+        "isCorrect": true,
+        "description": "正确。Bun 在 bun.lock 缺失时自动迁移 pnpm/npm/yarn 锁文件，并迁移 workspace 与 catalog。"
+      },
+      {
+        "text": "报错，要求先手动删除 pnpm-lock.yaml",
+        "isCorrect": false,
+        "description": "错误。无需手动删除，Bun 会自动迁移并保留原文件供核对。"
+      },
+      {
+        "text": "忽略锁文件，把所有依赖重新解析到最新版",
+        "isCorrect": false,
+        "description": "错误。迁移会尽量保留原锁定的版本与依赖关系，而非全部升最新。"
+      },
+      {
+        "text": "需要先用单独的转换工具把 pnpm-lock 转成 bun.lock",
+        "isCorrect": false,
+        "description": "错误。迁移是 bun install 内置且自动的(也可用 bun pm migrate 仅迁移不安装)。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：手里有一个旧的二进制 bun.lockb，想升级成文本 bun.lock。官方推荐的转换命令是？",
+    "explanation": "官方给出的升级方式：`bun install --save-text-lockfile --frozen-lockfile --lockfile-only`，它在不改变已解析版本(frozen)、不实际装包(lockfile-only)的前提下，按文本格式输出 `bun.lock`；随后删除旧的 `bun.lockb` 即可。\n\n- 该组合标志正确。\n- 「直接重命名 .lockb 为 .lock」错误：格式不同，不能改后缀。\n- 「删了 lockb 重新 install」可行但会重解析、非「等价转换」官方推荐式。\n- 「bun pm hash」是算锁文件哈希，与转换无关。",
+    "tags": ["bun", "高级", "包管理器", "lockfile", "迁移"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bun install --save-text-lockfile --frozen-lockfile --lockfile-only，然后删除 bun.lockb",
+        "isCorrect": true,
+        "description": "正确。这是官方推荐的二进制→文本锁文件升级方式，保版本且不实际安装。"
+      },
+      {
+        "text": "直接把 bun.lockb 重命名为 bun.lock",
+        "isCorrect": false,
+        "description": "错误。二进制与文本格式完全不同，改后缀会得到无法解析的文件。"
+      },
+      {
+        "text": "用 bun pm hash 把锁文件转成文本",
+        "isCorrect": false,
+        "description": "错误。bun pm hash 只计算/打印锁文件哈希，不做格式转换。"
+      },
+      {
+        "text": "Bun 不支持转换，只能从零重建依赖树",
+        "isCorrect": false,
+        "description": "错误。官方明确提供 --save-text-lockfile 等组合做无损升级。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在私有 registry 场景下，团队希望让 @myorg 作用域走公司 registry 并带 token。在 bunfig.toml 里正确的配置位置是？",
+    "explanation": "bunfig.toml 用 `[install.scopes]` 配置按作用域(scope)的 registry 与鉴权，例如 `myorg = { token = \"$npm_token\", url = \"https://registry.myorg.com/\" }`；默认 registry 则用 `[install]` 下的 `registry`。Bun 也兼容读取 `.npmrc` 里的 registry/scope 设置。\n\n- `[install.scopes]` 正确。\n- `[scopes]` 顶层段名不对。\n- `[registry]` 不是合法段。\n- 写进 package.json 的 publishConfig 不能让 install 走私有源(那是发布用)。",
+    "tags": ["bun", "高级", "包管理器", "scopes", "私有registry"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bunfig.toml 的 [install.scopes] 段，按作用域配 url 与 token",
+        "isCorrect": true,
+        "description": "正确。[install.scopes] 支持 myorg = { token, url }，并可用环境变量插值。"
+      },
+      {
+        "text": "bunfig.toml 顶层 [scopes] 段",
+        "isCorrect": false,
+        "description": "错误。作用域配置在 [install.scopes] 之下，而非顶层 [scopes]。"
+      },
+      {
+        "text": "bunfig.toml 的 [registry] 段",
+        "isCorrect": false,
+        "description": "错误。默认 registry 写在 [install].registry，按作用域的写在 [install.scopes]，没有独立 [registry] 段。"
+      },
+      {
+        "text": "package.json 的 publishConfig 字段",
+        "isCorrect": false,
+        "description": "错误。publishConfig 影响发布去向，不能让 install 从私有源安装。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：CI 里希望「package.json 与锁文件不同步就直接让构建失败」，Bun 提供了一个语义化的专用命令。它是？",
+    "explanation": "`bun ci` 等价于 `bun install --frozen-lockfile`：从 `bun.lock` 安装精确版本，若 package.json 与锁文件不一致则失败退出。使用前提是把 `bun.lock` 提交进版本控制。这对位 npm 的 `npm ci`。\n\n- `bun ci` 正确。\n- `bun install --ci` 不是标准标志。\n- `bun verify` 不存在该用途。\n- `bun audit` 是安全审计，不做锁文件一致性失败。",
+    "tags": ["bun", "初级", "包管理器", "bun ci", "CI"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "bun ci（等价 bun install --frozen-lockfile）",
+        "isCorrect": true,
+        "description": "正确。bun ci 按 bun.lock 装精确版本，不一致即失败，适合 CI 复现构建。"
+      },
+      {
+        "text": "bun install --ci",
+        "isCorrect": false,
+        "description": "错误。Bun 提供的是 bun ci 子命令(或 --frozen-lockfile)，没有 --ci 标志。"
+      },
+      {
+        "text": "bun verify",
+        "isCorrect": false,
+        "description": "错误。Bun 没有用于此用途的 verify 子命令。"
+      },
+      {
+        "text": "bun audit",
+        "isCorrect": false,
+        "description": "错误。audit 关注安全漏洞，不是用于锁文件一致性校验并失败。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：关于 bun.lock 跨平台/跨架构的稳定性，下列哪项描述符合官方行为？",
+    "explanation": "Bun 把规范化后的 `cpu`/`os` 值连同已解析包一起存进锁文件，并在运行时跳过对当前平台禁用的包。其结果是：**即便不同平台/架构最终装的包不同，bun.lock 本身在各平台之间不会变化**——保证锁文件可跨平台提交、复现。\n\n- 「锁文件跨平台不变，实际安装按平台跳过」正确。\n- 「每个平台生成不同锁文件」错误。\n- 「锁文件不记录平台信息」错误。\n- 「需为每个 OS 各跑一次生成」错误。",
+    "tags": ["bun", "高级", "包管理器", "lockfile", "跨平台"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "锁文件存了规范化的 cpu/os 信息，跨平台保持不变；安装时按当前平台跳过被禁用的包",
+        "isCorrect": true,
+        "description": "正确。这保证 bun.lock 可在不同平台/架构间一致提交与复现。"
+      },
+      {
+        "text": "每个平台会生成内容不同的 bun.lock",
+        "isCorrect": false,
+        "description": "错误。官方明确锁文件在平台/架构间不变，变的是最终安装的包。"
+      },
+      {
+        "text": "bun.lock 不记录任何平台相关信息",
+        "isCorrect": false,
+        "description": "错误。它存了规范化的 cpu/os 值用于跳过不适用的包。"
+      },
+      {
+        "text": "必须在每个目标 OS 上各生成一份锁文件再合并",
+        "isCorrect": false,
+        "description": "错误。一份 bun.lock 即可跨平台使用，无需逐 OS 生成。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：Bun 1.3 引入「minimum release age(最小发布时长)」来抵御供应链攻击。它的作用是什么，怎么配置？",
+    "explanation": "针对「恶意包被快速发布」的供应链攻击，Bun 可设置一个最小发布时长(秒)，**过滤掉发布时间太新的版本**——例如只装至少发布满 3 天的版本。命令行 `--minimum-release-age 259200`，或 bunfig.toml `[install] minimumReleaseAge = 259200`，并可用 `minimumReleaseAgeExcludes` 排除信任的包(如 @types/node、typescript)。它只影响新解析，已在 bun.lock 的包不变。\n\n- 「过滤发布过新的版本(可配秒数与排除项)」正确。\n- 「限制下载速度」错误。\n- 「限制包体积」错误。\n- 「锁定 Node 版本」错误。",
+    "tags": ["bun", "专家", "包管理器", "minimumReleaseAge", "供应链安全"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按发布时间过滤——只安装发布满指定秒数的版本；用 --minimum-release-age 或 bunfig 的 minimumReleaseAge，配 minimumReleaseAgeExcludes 排除信任包",
+        "isCorrect": true,
+        "description": "正确。这是 Bun 抵御「快速发布恶意版本」的时间闸门，仅影响新解析。"
+      },
+      {
+        "text": "限制每个包的下载速度以防滥用带宽",
+        "isCorrect": false,
+        "description": "错误。它与下载速度无关，过滤的是版本的发布时间。"
+      },
+      {
+        "text": "拒绝安装体积超过阈值的包",
+        "isCorrect": false,
+        "description": "错误。minimumReleaseAge 关乎发布时长，不是包体积。"
+      },
+      {
+        "text": "把项目锁定到某个最小 Node.js 版本",
+        "isCorrect": false,
+        "description": "错误。锁定运行时版本是 engines 的事，与该特性无关。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：CI 缓存优化时有人困惑——为什么 Bun 在「bun.lock 存在且 package.json 未变」时安装特别快？官方描述的机制是？",
+    "explanation": "官方说明：当 `bun.lock` 存在且 package.json 未改动时，Bun **惰性下载缺失依赖**——若 node_modules 里已存在 name/version 匹配的包就**不再下载 tarball**(它用一个只读到 name/version 就停的定制 JSON 解析器来判断是否需要安装)。反之，锁文件不存在或依赖有变时，会在解析阶段**急切**下载解压。这解释了二次安装为何近乎瞬时。\n\n- 「锁文件命中且未变 → 惰性、按需、跳过已存在的包」正确。\n- 「每次都全量重下」错误。\n- 「把 node_modules 整体打成压缩包缓存」不是该机制。\n- 「依赖 registry 推送增量」错误。",
+    "tags": ["bun", "专家", "包管理器", "缓存", "惰性安装"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "锁文件命中且 package.json 未变时，Bun 惰性下载缺失依赖，对 node_modules 中已匹配 name/version 的包跳过下载",
+        "isCorrect": true,
+        "description": "正确。官方用「只读到 name/version 即停」的解析器判断是否需装，命中即跳过 tarball 下载。"
+      },
+      {
+        "text": "无论锁文件是否命中，Bun 每次都全量重新下载所有依赖",
+        "isCorrect": false,
+        "description": "错误。命中锁文件且无变更时是惰性、按需的，不会全量重下。"
+      },
+      {
+        "text": "Bun 把整个 node_modules 打成压缩包缓存到 registry",
+        "isCorrect": false,
+        "description": "错误。Bun 缓存的是单个包到 ~/.bun/install/cache，并非整包 node_modules 推到 registry。"
+      },
+      {
+        "text": "依赖 npm registry 主动推送增量更新",
+        "isCorrect": false,
+        "description": "错误。速度来自本地缓存与按需下载，不靠 registry 推送增量。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：关于 bun.lock 的文本化(取代 bun.lockb)，下列对其「格式与收益」的描述哪项最准确？",
+    "explanation": "`bun.lock` 采用 **JSONC**(JSON with Comments，类似 tsconfig)，可被编辑器语法高亮、被工具直接读取。文本化的收益：PR 里能渲染 diff、合并冲突更易解决、生态工具(GitHub diff、Dependabot)能接入；官方还提到换成文本后**缓存命中的 bun install 反而快了约 30%**。它在 1.1.39 经 `--save-text-lockfile` 引入，1.2 成为默认。\n\n- 「JSONC，利于 diff/合并/工具接入，且性能未退反进」正确。\n- 「YAML 格式」错误。\n- 「纯二进制更难读但更快」与现状相反。\n- 「与 package-lock.json 同构」错误。",
+    "tags": ["bun", "专家", "包管理器", "bun.lock", "JSONC"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "采用 JSONC，便于 PR diff、合并冲突与第三方工具接入；切到文本后缓存安装性能不降反升",
+        "isCorrect": true,
+        "description": "正确。bun.lock 为 JSONC，可读可 diff，官方称缓存安装还快了约 30%。"
+      },
+      {
+        "text": "采用 YAML 格式，与 pnpm-lock.yaml 完全一致",
+        "isCorrect": false,
+        "description": "错误。bun.lock 是 JSONC，不是 YAML，也不与 pnpm 锁文件同构。"
+      },
+      {
+        "text": "仍是纯二进制，只是换了文件名",
+        "isCorrect": false,
+        "description": "错误。bun.lock 是文本(JSONC)，二进制是旧的 bun.lockb。"
+      },
+      {
+        "text": "与 npm 的 package-lock.json 结构完全相同",
+        "isCorrect": false,
+        "description": "错误。两者格式不同，bun.lock 是 Bun 自有的 JSONC 锁文件。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：下列关于 bun pm 子命令的说法，哪一项是错误的？",
+    "explanation": "逐项核对官方 `bun pm`：`bun pm cache rm` 清除全局缓存；`bun pm hash` 生成/显示锁文件哈希；`bun pm bin` 输出 node_modules/.bin 路径(加 -g 为全局 bin)；`bun pm pkg get/set/delete/fix` 读写 package.json。**错误项是「bun pm whoami 用来修改 npm 用户名」**——它只是打印当前登录的 npm 用户名(需先 bunx npm login)，并不能修改用户名。\n\n- 「whoami 修改用户名」错误(本题要选的错误项)。\n- cache rm / hash / pkg 三项均为正确描述。",
+    "tags": ["bun", "中级", "包管理器", "bun pm", "辨析"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bun pm whoami 用来修改你的 npm 用户名",
+        "isCorrect": true,
+        "description": "这是错误描述(本题要选的)。whoami 只打印当前登录的 npm 用户名，不能修改它。"
+      },
+      {
+        "text": "bun pm cache rm 用来清除 Bun 的全局模块缓存",
+        "isCorrect": false,
+        "description": "这是正确描述。bun pm cache 显示缓存路径，cache rm 清除缓存。"
+      },
+      {
+        "text": "bun pm hash 用来生成/显示当前锁文件的哈希",
+        "isCorrect": false,
+        "description": "这是正确描述。bun pm hash(及 hash-string/hash-print)处理锁文件哈希。"
+      },
+      {
+        "text": "bun pm pkg get/set/delete/fix 用来读写 package.json 字段",
+        "isCorrect": false,
+        "description": "这是正确描述。bun pm pkg 支持点/括号路径读写并能 fix 常见问题。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：Bun 兼容 npm 生态。下列关于「Bun 与 npm 共存/混用」的说法，哪项不准确？",
+    "explanation": "Bun 读标准 package.json、写标准 node_modules，能用在现有 Node 项目，也兼容读取 `.npmrc`(registry/scope/鉴权)。但**「同一个 commit 里同时提交 bun.lock 与 package-lock.json 是推荐做法」并不准确**——双锁文件会带来不一致风险，团队应择一为准(用 Bun 就以 bun.lock 为单一事实来源)。\n\n- 「双锁文件并存是推荐做法」不准确(本题要选)。\n- 「读 package.json/写 node_modules」准确。\n- 「兼容 .npmrc」准确。\n- 「可用在现有 Node 项目而不必换运行时」准确。",
+    "tags": ["bun", "专家", "包管理器", "npm兼容", "辨析"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "同一仓库里同时提交 bun.lock 和 package-lock.json 是官方推荐的稳妥做法",
+        "isCorrect": true,
+        "description": "这是不准确的(本题要选)。双锁文件易不一致，应择一为单一事实来源。"
+      },
+      {
+        "text": "Bun 读取标准 package.json 并生成标准 node_modules，可用于现有 Node 项目",
+        "isCorrect": false,
+        "description": "这是准确的。Bun 的包管理器完全兼容 npm 的 package.json/node_modules。"
+      },
+      {
+        "text": "Bun 兼容读取 .npmrc 中的 registry/scope/鉴权配置",
+        "isCorrect": false,
+        "description": "这是准确的。Bun 兼容 .npmrc，也可在 bunfig.toml 配置 registry/scopes。"
+      },
+      {
+        "text": "用 bun install 不要求把项目运行时切换成 Bun",
+        "isCorrect": false,
+        "description": "这是准确的。bun install 是独立工具，运行时仍可用 Node.js。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：要把一个本地包对依赖打补丁(临时修复某个 npm 包的 bug 并固化进项目)，Bun 提供的命令是？",
+    "explanation": "`bun patch <pkg>` 用于给已安装的依赖打补丁——它把包准备成可编辑状态，改完用 `bun patch --commit` 生成补丁并记录到 package.json 的 `patchedDependencies`，后续安装会自动应用。这是「上游未修、本地先修」的标准做法。\n\n- `bun patch` 正确。\n- `bun fix` 不是该用途(`bun pm pkg fix` 是修 package.json)。\n- `bun override` 不是命令(overrides 是 package.json 字段)。\n- `bun edit` 不存在。",
+    "tags": ["bun", "高级", "包管理器", "bun patch", "patchedDependencies"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bun patch <pkg>，改完用 bun patch --commit 固化到 patchedDependencies",
+        "isCorrect": true,
+        "description": "正确。bun patch 给依赖打补丁并记录到 patchedDependencies，后续安装自动应用。"
+      },
+      {
+        "text": "bun fix <pkg>",
+        "isCorrect": false,
+        "description": "错误。没有 bun fix；bun pm pkg fix 是修 package.json，不是给依赖打补丁。"
+      },
+      {
+        "text": "bun override <pkg>",
+        "isCorrect": false,
+        "description": "错误。overrides 是 package.json 字段(改版本)，不是给源码打补丁的命令。"
+      },
+      {
+        "text": "bun edit <pkg>",
+        "isCorrect": false,
+        "description": "错误。Bun 没有 edit 子命令。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：在 monorepo 里想「按依赖拓扑顺序，对所有工作区并行执行 build 脚本」，符合 Bun 用法的命令是？",
+    "explanation": "`bun run --filter '*' build`(也可写 `bun --filter '*' build`)会在所有匹配工作区跑 build，并提供可视化终端 UI；对构建脚本 Bun 会做**拓扑排序**——被依赖的包先构建，再构建依赖它的包。`--filter` 还支持按名/glob/路径筛选、`!` 排除、`--if-present` 跳过无该脚本的包。\n\n- `bun run --filter '*' build` 正确。\n- `bun build --all` 是 bundler，不是跑工作区脚本。\n- `bun install --filter '*'` 是装依赖不是跑脚本。\n- `bun exec build` 语义不符。",
+    "tags": ["bun", "高级", "包管理器", "filter", "monorepo"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "bun run --filter '*' build（Bun 会按依赖拓扑顺序执行）",
+        "isCorrect": true,
+        "description": "正确。--filter 跨工作区跑脚本，构建脚本会按拓扑序先构建被依赖包。"
+      },
+      {
+        "text": "bun build --all",
+        "isCorrect": false,
+        "description": "错误。bun build 是 bundler(打包单个入口)，不是跨工作区跑 npm 脚本。"
+      },
+      {
+        "text": "bun install --filter '*'",
+        "isCorrect": false,
+        "description": "错误。这是为所有工作区安装依赖，不会执行 build 脚本。"
+      },
+      {
+        "text": "bun exec build",
+        "isCorrect": false,
+        "description": "错误。bun exec 执行命令，不具备跨工作区按拓扑跑脚本的语义。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：你想确认 Bun「默认会不会安装 peerDependencies」。依据官方文档，正确答案是？",
+    "explanation": "官方明确：`bun install` **默认会安装 peerDependencies**(handled similarly to yarn)；若某 peer 在 `peerDependenciesMeta` 标记为 optional，则在可能时复用已有依赖。这与一些工具默认不装 peer 的行为不同。可在 bunfig.toml `[install] peer = false` 关闭。\n\n- 「默认安装 peerDependencies」正确。\n- 「默认不安装」错误。\n- 「只在 --production 安装」错误。\n- 「peer 必须手动逐个装」错误。",
+    "tags": ["bun", "初级", "包管理器", "peerDependencies", "默认行为"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认会安装 peerDependencies（可在 bunfig.toml 关闭 peer）",
+        "isCorrect": true,
+        "description": "正确。Bun 默认安装 peerDependencies，类似 yarn 的处理方式。"
+      },
+      {
+        "text": "默认不安装 peerDependencies，需手动安装",
+        "isCorrect": false,
+        "description": "错误。Bun 默认就会安装 peerDependencies。"
+      },
+      {
+        "text": "只有加 --production 时才安装 peerDependencies",
+        "isCorrect": false,
+        "description": "错误。peer 的安装与 --production 无关，默认即装。"
+      },
+      {
+        "text": "peerDependencies 永远被忽略",
+        "isCorrect": false,
+        "description": "错误。Bun 不会忽略 peer，默认会安装。"
+      }
+    ]
+  },
+  {
+    "stem": "bun：临时跑一个 CLI 工具(如脚手架)但不想把它装进项目依赖，Bun 对位 npx 的命令是？",
+    "explanation": "`bunx <pkg>`(等价 `bun x`)用于一次性执行某个包提供的可执行文件——若本地/全局没有会临时下载到缓存后执行，对位 `npx`。例如 `bunx cowsay 'Hello'`。它不会把包写进 package.json 依赖。\n\n- `bunx create-vite` 正确。\n- `bun add create-vite` 会把它装进依赖，不符合「临时跑」。\n- `bun run create-vite` 是跑脚本/本地 bin，未必能临时拉取。\n- `bun exec` 执行命令字符串，不是 npx 等价物。",
+    "tags": ["bun", "入门", "包管理器", "bunx", "npx"],
+    "categories": [
+      ["技术方向", "bun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "bunx create-vite（等价 bun x，对位 npx）",
+        "isCorrect": true,
+        "description": "正确。bunx 一次性执行包的可执行文件，必要时临时下载，不写进依赖。"
+      },
+      {
+        "text": "bun add create-vite",
+        "isCorrect": false,
+        "description": "错误。bun add 会把包安装进 package.json 依赖，不是「临时跑」。"
+      },
+      {
+        "text": "bun run create-vite",
+        "isCorrect": false,
+        "description": "错误。bun run 跑的是脚本或本地 bin，不是 npx 那种临时拉取执行。"
+      },
+      {
+        "text": "bun exec create-vite",
+        "isCorrect": false,
+        "description": "错误。bun exec 执行给定命令，不是 npx 的对位命令(那是 bunx)。"
+      }
+    ]
+  }
+]
