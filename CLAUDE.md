@@ -162,7 +162,7 @@ presetIcons({
 
 - **Quiz 题目**：**重质不限量**——题量按内容深度给足（宁多勿少，不设上限），但每题的题干、解析、选项解析都必须准确、有信息量，杜绝凑数与模板化重复。每道 `stem` 须含技术名前缀；`categories` 叶子名须与 `content/categories.ts` 完全一致。
 - **Slidev 幻灯片**：**必须过每页高度校验防溢出**。`pnpm -C packages/{x}-slide run build` 后跑 `node scripts/check-slidev-overflow.mjs {x}-slide`，**0 溢出**才算完成；有溢出按报告逐页精简（代码行≈22px / 表格行≈33px / 正文行≈26px）。"build 通过 ≠ 不溢出"。
-- **VitePress 笔记**：**context7 + 网页浏览双重校验**。两路独立信源都支持才能下笔；不一致时以"官方网页 + 本地验证"为准。context7 未接入时，用等效的库文档源（如 zread 直读 GitHub 仓库的文档/源码/issue）替代。
+- **VitePress 笔记**：①**速查表强制**——除 `index.md` 概览页（一句话定义 + 评价 + 链接）外，**每个内容页**（`getting-started.md` 及**每个** `guide-line/*.md` 深度页）都必须在 `# 标题` + `> 基于X版本` 之后紧跟 `## 速查` 段，要点式浓缩本页核心 API/命令/配置/版本/链接（用户常只读速查表，漏掉即不算完成）。②**context7 + 网页浏览双重校验**：两路独立信源都支持才能下笔；不一致时以"官方网页 + 本地验证"为准。context7 未接入时，用等效的库文档源（如 zread 直读 GitHub 仓库的文档/源码/issue）替代。
 
 ## 相关文档
 
