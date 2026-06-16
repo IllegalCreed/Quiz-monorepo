@@ -91,48 +91,47 @@ function log(msg: string) {
 // ============================================
 
 /**
- * 递归创建分类节点，已存在则跳过
+ * 递归创建分类节点；先查内存索引，未命中才 create（已存在则跳过）
+ *
+ * 性能：用预加载的 nodeIndex 取代逐节点 `findFirst`。原实现对几百个分类节点
+ * 各发一次 findFirst，远程 RDS 下 = 几百次串行查询 × 网络往返，耗时数分钟；
+ * 改为内存命中后仅对缺失节点 create，整树查询压成上层一次 findMany。
+ *
+ * @param nodeIndex key=`${groupId}:${parentId??0}:${name}` → categoryId
  * @returns 创建或找到的节点 ID
  */
 async function upsertCategoryNode(
   node: CategoryNode,
   groupId: number,
   parentId: number | null,
+  nodeIndex: Map<string, number>,
 ): Promise<number> {
-  // 按 name + groupId + parentId 查找，确保树结构唯一
-  const existing = await prisma.category.findFirst({
-    where: { name: node.name, groupId, parentId: parentId ?? undefined },
-  });
+  // key 由 groupId + parentId + name 组成，确保树结构唯一
+  const key = `${groupId}:${parentId ?? 0}:${node.name}`;
+  let id = nodeIndex.get(key);
 
-  if (existing) {
-    // 递归处理子节点
-    if (node.children?.length) {
-      for (const child of node.children) {
-        await upsertCategoryNode(child, groupId, existing.id);
-      }
-    }
-    return existing.id;
+  if (id === undefined) {
+    const created = await prisma.category.create({
+      data: {
+        name: node.name,
+        groupId,
+        parentId: parentId ?? undefined,
+        sort: node.sort ?? 0,
+      },
+    });
+    id = created.id;
+    nodeIndex.set(key, id);
+    log(`  创建分类节点: ${node.name} (id=${id})`);
   }
 
-  const created = await prisma.category.create({
-    data: {
-      name: node.name,
-      groupId,
-      parentId: parentId ?? undefined,
-      sort: node.sort ?? 0,
-    },
-  });
-
-  log(`  创建分类节点: ${node.name} (id=${created.id})`);
-
-  // 递归处理子节点
+  // 递归处理子节点（命中与否都要递归，确保新增的子节点被创建）
   if (node.children?.length) {
     for (const child of node.children) {
-      await upsertCategoryNode(child, groupId, created.id);
+      await upsertCategoryNode(child, groupId, id, nodeIndex);
     }
   }
 
-  return created.id;
+  return id;
 }
 
 /**
@@ -142,6 +141,16 @@ async function upsertCategoryNode(
 async function importCategories(): Promise<CategoryIndex> {
   log("=== 开始导入分类体系 ===");
   const index: CategoryIndex = {};
+
+  // 预加载所有现有分类到内存索引，避免逐节点 findFirst
+  // （远程 RDS 下几百节点 × 串行查询 × 网络往返会极慢，这里压成 1 次 findMany）
+  const existingCats = await prisma.category.findMany({
+    select: { id: true, name: true, groupId: true, parentId: true },
+  });
+  const nodeIndex = new Map<string, number>();
+  for (const c of existingCats) {
+    nodeIndex.set(`${c.groupId}:${c.parentId ?? 0}:${c.name}`, c.id);
+  }
 
   for (const groupDef of CONTENT_CATEGORY_GROUPS) {
     // 创建或找到维度
@@ -160,7 +169,7 @@ async function importCategories(): Promise<CategoryIndex> {
 
     // 递归创建分类树
     for (const node of groupDef.categories) {
-      await upsertCategoryNode(node, group.id, null);
+      await upsertCategoryNode(node, group.id, null, nodeIndex);
     }
   }
 
