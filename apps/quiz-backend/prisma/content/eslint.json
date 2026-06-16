@@ -1238,5 +1238,191 @@
         "description": "import 时已是全名"
       }
     ]
+  },
+  {
+    "stem": "ESLint flat config 中多个配置对象命中同一文件做级联合并时，`languageOptions.globals` 与 `rules` 两个字段的合并方式分别是？",
+    "explanation": "官方原文：configuration objects are merged with later objects overriding previous objects when there is a conflict。但「合并」对不同字段粒度不同：`languageOptions.globals` 这类对象会逐键深合并（两个对象的 globals 累加，如 `**/*.js` 给 `MY_CUSTOM_GLOBAL`、`tests/**/*.js` 再叠加 `it`/`describe`，两者并存）；而 `rules` 中某条规则一旦在后面对象重新声明，是「整条替换」——后者的 severity 与选项数组完全顶掉前者，**不会把选项数组逐项合并**。这是排查「为什么我在第二个块只想改 severity，结果把第一个块给的规则选项也清空了」的关键。",
+    "tags": ["eslint", "专家", "flat-config", "merge"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "globals 逐键深合并（累加并存）；rules 中同名规则整条替换（severity + 选项一起被顶掉，不逐项合并选项）",
+        "isCorrect": true,
+        "description": "官方示例：tests 目录的 globals 在通用 globals 上叠加；而重声明规则会整体覆盖"
+      },
+      {
+        "text": "两者都逐键深合并，rules 的选项数组会逐项合并",
+        "isCorrect": false,
+        "description": "rules 是整条替换，不会逐项合并选项数组"
+      },
+      {
+        "text": "两者都整条替换，后一个对象的 globals 会清空前面所有 globals",
+        "isCorrect": false,
+        "description": "globals 是合并累加，不是清空"
+      },
+      {
+        "text": "globals 整条替换，rules 逐项合并",
+        "isCorrect": false,
+        "description": "方向恰好相反"
+      }
+    ]
+  },
+  {
+    "stem": "在 ESLint flat config 的 `files` 字段里写 `files: [[\"src/**\", \"**/*.ts\"]]`（注意是数组套数组），它的匹配语义是？",
+    "explanation": "flat config 的 `files` 顶层数组各元素之间是「或」（命中任一即匹配），但当某个元素本身又是一个字符串数组时，这层内部数组表示「与」——官方说明：a file is both inside of the `src` directory and also ends with `.js`（此处即「既在 `src/` 目录下，又以 `.ts` 结尾」才命中）。因此 `[[\"src/**\", \"**/*.ts\"]]` 只命中 `src` 下的 `.ts` 文件，而 `[\"src/**\", \"**/*.ts\"]`（无内层嵌套）则是「`src` 下任意文件，或任意 `.ts` 文件」。",
+    "tags": ["eslint", "专家", "files", "glob"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "内层数组是「与」：只命中既在 `src/` 下、又以 `.ts` 结尾的文件",
+        "isCorrect": true,
+        "description": "顶层数组元素之间是「或」，元素内嵌套数组是「与」"
+      },
+      {
+        "text": "和 `[\"src/**\", \"**/*.ts\"]` 完全等价，都是「或」",
+        "isCorrect": false,
+        "description": "嵌套层引入了「与」语义，二者不等价"
+      },
+      {
+        "text": "嵌套数组是非法写法，ESLint 会报配置错误",
+        "isCorrect": false,
+        "description": "这是官方支持的 AND 语法，合法"
+      },
+      {
+        "text": "内层数组表示「先匹配 src，匹配不到再退化到 .ts」的回退顺序",
+        "isCorrect": false,
+        "description": "没有回退语义，是逻辑与"
+      }
+    ]
+  },
+  {
+    "stem": "ESLint v9.x 新增的 `basePath` 配置字段，配合 `extends` 时最大的便利是什么？",
+    "explanation": "`basePath` 让一个配置对象（及其相对 glob）作用于某个子目录（含其子目录），路径解析以该子目录为基准。它的关键便利是：当一个对象用 `extends` 继承一组配置数组并想整体限定到某子目录时，只需在外层写一次 `basePath`，被 `extends` 进来的所有配置都会一并落到该子目录，无需在每个子配置里重复 `files: ['packages/foo/**']` 这类前缀。这在 monorepo 里给某个包套用一整套预设时尤其省事。",
+    "tags": ["eslint", "专家", "basePath", "monorepo"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只需写一次 `basePath`，被 `extends` 进来的整组配置都自动限定到该子目录",
+        "isCorrect": true,
+        "description": "省去在每个子配置重复目录前缀，monorepo 给单包套预设很方便"
+      },
+      {
+        "text": "`basePath` 会自动忽略该目录外的所有文件，等价全局 ignores",
+        "isCorrect": false,
+        "description": "它是限定作用范围，不是全局忽略其它目录"
+      },
+      {
+        "text": "`basePath` 让相对路径以 `process.cwd()` 解析而非配置文件位置",
+        "isCorrect": false,
+        "description": "它是把基准设为指定子目录，而非 cwd"
+      },
+      {
+        "text": "`basePath` 允许在 flat config 里继续使用字符串预设 `eslint:recommended`",
+        "isCorrect": false,
+        "description": "与字符串预设无关，那在 flat config 仍需 import"
+      }
+    ]
+  },
+  {
+    "stem": "编写 ESLint 自定义规则时，若规则会从配置里读取选项（`context.options`），但 `meta.schema` 完全没声明，会发生什么？",
+    "explanation": "官方明确：For rules that don't specify a `meta.schema` property, ESLint throws errors when any options are passed。也就是说「不写 schema」不等于「接受任意选项」，而是「不接受任何选项」——一旦用户给该规则传了选项，ESLint 在校验阶段直接报错。要接受选项必须显式声明 `meta.schema`（JSON Schema 数组）。若想完全不校验、放行任意选项，可显式写 `meta.schema: false`。这也是为什么第三方规则报「该规则不接受选项」时，根因往往是规则作者漏写了 schema。",
+    "tags": ["eslint", "专家", "custom-rule", "meta.schema"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只要给该规则传了选项，ESLint 在校验阶段直接抛错（没声明 schema = 不接受任何选项）",
+        "isCorrect": true,
+        "description": "想接受选项须显式 meta.schema；放行任意选项用 meta.schema: false"
+      },
+      {
+        "text": "ESLint 会默默接受并把选项原样传给规则，不做任何校验",
+        "isCorrect": false,
+        "description": "无 schema 时传选项是直接报错，不是默默放行"
+      },
+      {
+        "text": "ESLint 自动从规则代码里推断出一个 schema 来校验",
+        "isCorrect": false,
+        "description": "不存在自动推断 schema 的机制"
+      },
+      {
+        "text": "选项会被静默丢弃，规则按默认值运行且无任何提示",
+        "isCorrect": false,
+        "description": "不是静默丢弃，而是抛配置错误"
+      }
+    ]
+  },
+  {
+    "stem": "在 ESLint flat config 中通过 `plugins` 注册自定义插件 / 自定义 processor 时，官方强调插件对象上务必带 `meta`（`name` + `version`）的直接原因是？",
+    "explanation": "迁移到 flat config 后，ESLint 不再能从包名推断插件元信息，必须由插件对象显式提供 `meta: { name, version }`。官方原文指出这对 `--cache` 与 `--print-config` 至关重要：缓存需要插件标识与版本来判断缓存是否失效，`--print-config` 需要它来标识配置来源；processor 同理也应各自带 `meta`。缺失 `meta` 会导致缓存命中判断不可靠或调试输出无法定位插件，并非只是「美观」。",
+    "tags": ["eslint", "专家", "plugin", "meta"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "flat config 无法再从包名推断元信息，`meta` 的 name/version 是 `--cache` 缓存失效判断与 `--print-config` 来源标识所必需",
+        "isCorrect": true,
+        "description": "processor 也应各自带 meta，否则缓存/调试不可靠"
+      },
+      {
+        "text": "`meta` 仅用于在文档站展示规则说明，对运行无影响",
+        "isCorrect": false,
+        "description": "它实际影响 --cache 与 --print-config 的正确性"
+      },
+      {
+        "text": "`meta` 用于声明插件依赖的 ESLint 版本范围，缺失会拒绝加载",
+        "isCorrect": false,
+        "description": "name/version 是插件自身标识，不是依赖范围声明"
+      },
+      {
+        "text": "`meta` 决定插件规则的默认 severity，缺失则全部按 error 运行",
+        "isCorrect": false,
+        "description": "severity 由用户配置决定，与 meta 无关"
+      }
+    ]
+  },
+  {
+    "stem": "团队从 `eslint-config-foo`（导出 flat config 数组）用 ESLint 的 `extends` 引入时，借助 `defineConfig` 为这些被继承的配置统一加 `name` 前缀有什么实际价值？",
+    "explanation": "`defineConfig()` 处理 `extends` 时，会把被继承配置的 `name` 与当前对象的 `name` 用 `/` 拼接，形成层级化命名（如 `my-app/foo/recommended`）。`name` 会出现在错误信息与 config inspector 中，用于标识「究竟是哪一个配置对象命中了当前文件」。官方虽不强制 `name` 唯一，但推荐唯一以免混淆。当多个共享预设叠加、出现规则冲突或排查某规则来源时，清晰的层级 `name` 能直接定位到具体来源，是调试大型组合配置的利器。",
+    "tags": ["eslint", "专家", "defineConfig", "extends"],
+    "categories": [
+      ["技术方向", "ESLint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "被继承配置的 name 会与当前 name 以 `/` 拼成层级名，出现在报错与 config inspector 里，便于定位规则来源",
+        "isCorrect": true,
+        "description": "官方推荐 name 唯一以免混淆；调试组合配置时极有用"
+      },
+      {
+        "text": "`name` 会改变配置的合并优先级，前缀越长优先级越高",
+        "isCorrect": false,
+        "description": "优先级只看数组顺序，与 name 无关"
+      },
+      {
+        "text": "`name` 是运行时强制唯一的，重复会导致 ESLint 启动报错",
+        "isCorrect": false,
+        "description": "官方明确不在运行时强制唯一，只是推荐唯一"
+      },
+      {
+        "text": "加 `name` 前缀后才能让被继承的规则生效，否则会被忽略",
+        "isCorrect": false,
+        "description": "规则生效与否和 name 无关，name 仅作标识"
+      }
+    ]
   }
 ]

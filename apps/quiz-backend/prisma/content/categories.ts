@@ -417,14 +417,31 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-06 选型调研定稿：5 叶 → 10 叶。新增 oxlint（Oxc 用户主力 / ESLint 替代，
+            // 32M；oxc-parser 63M 多为传递依赖，故以 oxlint 立叶不以 oxc 立）、Knip（35M，
+            // dead-code/未用依赖导出检测事实标准，已取代 depcheck/ts-prune）、commitlint
+            //（33M，commit message 校验）、secretlint（4.1M，硬编码密钥 pre-commit/CI 门禁）、
+            // publint（3.2M，npm 包发布前 package.json 兼容性校验）。本章语义扩为「代码质量 +
+            // 提交/发布前静态门禁全集」。排序按「JS lint → 一体化 → format → CSS lint →
+            // 项目清理 → 提交/密钥/发布门禁 → 编辑器配置」聚类。
+            // 边界去重：commitlint/secretlint 校验本体入本章，Husky/lint-staged 仍归 工程化·DevOps
+            //（hooks 管理器 / 暂存调度器，非校验本体）；publint 搭档 arethetypeswrong(1.54M) 暂不立；
+            // madge/dependency-cruiser→架构下批评估；react-doctor（1.76M，React 专属 + AI agent 安全网）
+            // 归「大语言模型与生成式 AI」分类（见该组 TODO），不在本章立叶；
+            // dprint(0.74M)/ls-lint/markuplint(<1M)/jshint/standard/xo/ts-prune/rome 衰退或小众不立。
             name: "静态分析工具",
             sort: 3,
             children: [
               { name: "ESLint", sort: 1 },
-              { name: "Prettier", sort: 2 },
+              { name: "oxlint", sort: 2 },
               { name: "Biome", sort: 3 },
-              { name: "StyleLint", sort: 4 },
-              { name: "EditorConfig", sort: 5 },
+              { name: "Prettier", sort: 4 },
+              { name: "StyleLint", sort: 5 },
+              { name: "Knip", sort: 6 },
+              { name: "commitlint", sort: 7 },
+              { name: "secretlint", sort: 8 },
+              { name: "publint", sort: 9 },
+              { name: "EditorConfig", sort: 10 },
             ],
           },
           { name: "在线编辑器（StackBlitz / CodeSandbox / Expo）", sort: 4 },
@@ -819,6 +836,11 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Stitch", sort: 4 },
               { name: "Claude Design", sort: 5 },
               { name: "NotebookLM", sort: 6 },
+              // TODO（下批评估）：react-doctor —— 1.76M/月，Million.js 团队出品的 React 代码
+              // 体检 CLI（0-100 健康分，60+ 规则覆盖性能/架构/安全/a11y，亦查未用文件/导出/重复）。
+              // 核心定位是给 coding agent（Claude Code/Cursor/Codex/OpenCode）当安全网并提供修复 skill，
+              // 属 AI 辅助开发新物种。React 专属 + 功能与 ESLint/Knip 重叠，故归本 AI 分类而非「静态分析工具」。
+              // 具体子组/叶子位置待下批做 AI 工程工具时定（可能需新建「AI 辅助开发工具」子组）。
             ],
           },
           {

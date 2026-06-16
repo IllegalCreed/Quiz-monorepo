@@ -1,0 +1,901 @@
+[
+  {
+    "stem": "publint 是用来做什么的工具？",
+    "explanation": "publint 是一个 npm 包的 linter，专门校验「包发布出去后能否在尽可能广的环境（Vite / Webpack / Rollup / Node.js 等）被正确解析」。它检查 `package.json` 的 `exports`/`main`/`module`/`types` 等字段、文件是否真实存在、ESM/CJS 互操作与类型导出是否正确。它面向的是库/包作者的发布前检查，而非应用代码的 lint。",
+    "tags": ["publint", "概念", "发布"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "校验 npm 包的发布正确性（package.json 字段、文件存在性、ESM/CJS 兼容）",
+        "isCorrect": true,
+        "description": "确保包在 Vite/Webpack/Rollup/Node 等环境都能被正确解析"
+      },
+      {
+        "text": "像 ESLint 那样检查业务源码的代码风格与 bug",
+        "isCorrect": false,
+        "description": "那是 ESLint/oxlint 的职责，publint 只看「包能否被正确消费」"
+      },
+      {
+        "text": "压缩并打包你的库产物",
+        "isCorrect": false,
+        "description": "打包是 Rollup/tsup 等工具的事，publint 不产出构建物"
+      },
+      {
+        "text": "把 CommonJS 自动转换成 ESM",
+        "isCorrect": false,
+        "description": "publint 只报告问题，不做任何代码转换"
+      }
+    ]
+  },
+  {
+    "stem": "publint 主要校验 `package.json` 中的哪一类字段？",
+    "explanation": "publint 的核心是检查与「包入口解析」相关的字段：`exports`、`main`、`module`、`types`/`typings`、`browser`、`bin`、`files` 等，确认它们指向的文件存在、条件顺序正确、ESM/CJS 与类型都能被各打包器/Node 正确解析。它不关心 `scripts`、`devDependencies` 这类与「被消费」无关的字段。",
+    "tags": ["publint", "package.json", "字段"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "exports / main / module / types 等入口与解析相关字段",
+        "isCorrect": true,
+        "description": "这些字段决定包被各环境如何解析"
+      },
+      {
+        "text": "scripts 里的 npm 脚本是否规范",
+        "isCorrect": false,
+        "description": "脚本与「包能否被正确导入」无关，不在校验范围"
+      },
+      {
+        "text": "devDependencies 的版本是否过期",
+        "isCorrect": false,
+        "description": "依赖过期检查是 npm outdated 等工具的事"
+      },
+      {
+        "text": "README 的 Markdown 语法",
+        "isCorrect": false,
+        "description": "publint 不检查文档内容"
+      }
+    ]
+  },
+  {
+    "stem": "publint 官方一句话定位是「确保包在哪些环境下的最广兼容性」？",
+    "explanation": "publint 官网原话是 “lints npm packages to ensure the widest compatibility across environments, such as Vite, Webpack, Rollup, Node.js, etc.”。它的目标就是让你的包在主流打包器与 Node 运行时下都能被正确解析，而不是只在你本地的某一种构建链路下「碰巧能用」。",
+    "tags": ["publint", "定位", "兼容性"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Vite / Webpack / Rollup / Node.js 等主流环境",
+        "isCorrect": true,
+        "description": "官方明确列举的目标环境，主打「最广兼容」"
+      },
+      {
+        "text": "只针对 Deno 和 Bun 这类新运行时",
+        "isCorrect": false,
+        "description": "它覆盖主流打包器与 Node，并不局限于新运行时"
+      },
+      {
+        "text": "只针对浏览器原生 ESM（无打包）",
+        "isCorrect": false,
+        "description": "打包器与 Node 都在其关注范围内"
+      },
+      {
+        "text": "只针对 React Native 的 Metro 打包器",
+        "isCorrect": false,
+        "description": "publint 不是某一框架/打包器专属"
+      }
+    ]
+  },
+  {
+    "stem": "不安装、想立刻用 publint 检查某个已发布的 npm 包，最快的方式是？",
+    "explanation": "publint 提供网页版 publint.dev：直接粘贴 npm 包名、npmjs.com 链接或 pkg.pr.new 链接即可。它会在浏览器的 Web Worker 里下载该包的 tarball 并就地分析，无需本地安装任何东西，非常适合快速体检一个第三方包或自己刚发布的版本。",
+    "tags": ["publint", "网页版", "playground"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "打开 publint.dev 网页版，粘贴包名或 npm 链接",
+        "isCorrect": true,
+        "description": "在浏览器 Web Worker 中下载 tarball 并分析，零安装"
+      },
+      {
+        "text": "必须先 git clone 该包的仓库再跑",
+        "isCorrect": false,
+        "description": "网页版直接拉取已发布 tarball，无需源码仓库"
+      },
+      {
+        "text": "只能在该包目录里本地安装后运行",
+        "isCorrect": false,
+        "description": "本地 CLI 是一种方式，但网页版无需安装"
+      },
+      {
+        "text": "publint 没有网页版，只能用 CLI",
+        "isCorrect": false,
+        "description": "publint.dev 正是其网页版入口"
+      }
+    ]
+  },
+  {
+    "stem": "在自己的库项目目录里用 CLI 跑 publint，最常见的命令是？",
+    "explanation": "在库的根目录直接 `npx publint` 即可（或把 `\"lint:package\": \"publint\"` 加进 scripts）。不带参数时默认 lint 当前目录。也可以 `npx publint ./packages/my-lib` 指定某个子目录。注意：publint 检查的是「将要发布的文件」，所以应在构建产物生成之后再跑。",
+    "tags": ["publint", "CLI", "用法"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "npx publint（默认检查当前目录）",
+        "isCorrect": true,
+        "description": "也可 npx publint ./path 指定目录"
+      },
+      {
+        "text": "npx publint --build",
+        "isCorrect": false,
+        "description": "publint 不负责构建，没有 --build 选项"
+      },
+      {
+        "text": "npx publint init",
+        "isCorrect": false,
+        "description": "publint 无需初始化配置文件，没有 init 子命令"
+      },
+      {
+        "text": "npx publint lint .",
+        "isCorrect": false,
+        "description": "命令是 publint [path]，没有 lint 子命令"
+      }
+    ]
+  },
+  {
+    "stem": "publint 检查的应该是「源码」还是「将要发布的产物」？因此使用上要注意什么？",
+    "explanation": "publint 关心的是「用户 npm install 后实际拿到的东西」，即将要发布的文件。所以应当在构建（生成 dist 等产物）之后再跑 publint；否则 `exports`/`main` 指向的产物还不存在，会误报 `FILE_DOES_NOT_EXIST`。在 CI 里通常把它放在 `prepublishOnly` 或 build 步骤之后。",
+    "tags": ["publint", "构建", "顺序"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "检查发布产物，应在 build 之后再跑 publint",
+        "isCorrect": true,
+        "description": "否则入口指向的 dist 还不存在，会误报文件缺失"
+      },
+      {
+        "text": "检查源码，必须在 build 之前跑",
+        "isCorrect": false,
+        "description": "源码里入口产物尚未生成，反而会误报"
+      },
+      {
+        "text": "无所谓顺序，publint 会自动构建",
+        "isCorrect": false,
+        "description": "publint 不会触发构建，顺序很关键"
+      },
+      {
+        "text": "只检查 node_modules，与构建无关",
+        "isCorrect": false,
+        "description": "它检查的是当前包将发布的文件"
+      }
+    ]
+  },
+  {
+    "stem": "publint 的报告把问题分成哪三个严重级别？",
+    "explanation": "publint 的消息分为三档：`error`（错误，很可能导致部分环境无法解析，应当修复）、`warning`（警告，潜在兼容问题或不推荐写法）、`suggestion`（建议，最佳实践提示，如补 `license`、`files` 字段）。CLI 的 `--level` 用来过滤要显示的最低级别。",
+    "tags": ["publint", "级别", "severity"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "error / warning / suggestion",
+        "isCorrect": true,
+        "description": "从严重到温和：错误、警告、建议"
+      },
+      {
+        "text": "off / warn / error",
+        "isCorrect": false,
+        "description": "那是 ESLint 风格的严重级，不是 publint 的"
+      },
+      {
+        "text": "low / medium / high",
+        "isCorrect": false,
+        "description": "publint 用 error/warning/suggestion 命名"
+      },
+      {
+        "text": "info / debug / fatal",
+        "isCorrect": false,
+        "description": "并无这套日志级别命名"
+      }
+    ]
+  },
+  {
+    "stem": "publint CLI 的 `--level` 选项作用是什么？默认值是？",
+    "explanation": "`--level <suggestion|warning|error>` 控制要打印的最低消息级别，默认是 `suggestion`（即全部显示）。例如 `publint --level warning` 会忽略 suggestion，只显示 warning 和 error，适合在嫌建议太啰嗦时收敛输出。注意它只影响「显示」，不改变退出码语义。",
+    "tags": ["publint", "CLI", "--level"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "过滤要显示的最低消息级别，默认 suggestion（全显示）",
+        "isCorrect": true,
+        "description": "如 --level warning 只看 warning 与 error"
+      },
+      {
+        "text": "把指定级别以下的问题自动修复",
+        "isCorrect": false,
+        "description": "publint 不做自动修复，--level 只过滤显示"
+      },
+      {
+        "text": "设置 publint 的日志详细程度（verbose）",
+        "isCorrect": false,
+        "description": "它过滤的是问题级别，不是日志 verbosity"
+      },
+      {
+        "text": "默认值是 error，只显示错误",
+        "isCorrect": false,
+        "description": "默认是 suggestion，三档全显示"
+      }
+    ]
+  },
+  {
+    "stem": "在 CI 中希望「连警告也视为失败」，publint 应加哪个标志？",
+    "explanation": "加 `--strict`。默认情况下只有 `error` 级问题会让 publint 以非零退出码失败；`--strict` 会把 `warning` 也当作错误对待，从而让流水线在出现警告时也失败。这是把发布质量门禁卡得更严的常用做法。",
+    "tags": ["publint", "CLI", "--strict", "CI"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--strict，把 warning 也当作 error",
+        "isCorrect": true,
+        "description": "默认只有 error 致失败，strict 把警告也算上"
+      },
+      {
+        "text": "--max-warnings=0",
+        "isCorrect": false,
+        "description": "那是 ESLint/oxlint 的参数，publint 用 --strict"
+      },
+      {
+        "text": "--level error",
+        "isCorrect": false,
+        "description": "--level 只过滤显示，不改变失败判定"
+      },
+      {
+        "text": "--fail-on-warn",
+        "isCorrect": false,
+        "description": "publint 用 --strict 实现该效果"
+      }
+    ]
+  },
+  {
+    "stem": "publint CLI 的 `--pack` 选项（默认 `auto`）控制的是什么？",
+    "explanation": "`--pack <auto|npm|yarn|pnpm|bun|false>` 指定用哪个包管理器来「打包」出将要发布的文件清单——publint 借助 `npm pack` 之类的机制确定真正会被发布的文件，再据此检查文件存在性等。默认 `auto` 会自动探测当前项目的包管理器；设为 `false` 则不打包（直接基于目录推断）。",
+    "tags": ["publint", "CLI", "--pack"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用哪个包管理器来确定「将发布的文件清单」（默认 auto 自动探测）",
+        "isCorrect": true,
+        "description": "可选 npm/yarn/pnpm/bun/false，影响文件存在性判定的依据"
+      },
+      {
+        "text": "把包发布（publish）到指定的 registry",
+        "isCorrect": false,
+        "description": "publint 不做发布，--pack 只决定打包用的 PM"
+      },
+      {
+        "text": "选择把产物打包成 tar 还是 zip",
+        "isCorrect": false,
+        "description": "它选的是包管理器，不是压缩格式"
+      },
+      {
+        "text": "指定 Webpack 还是 Rollup 来构建",
+        "isCorrect": false,
+        "description": "与构建打包器无关，是 npm 包管理器的 pack"
+      }
+    ]
+  },
+  {
+    "stem": "publint CLI 的位置参数 `[path]` 除了传目录，还能传什么？",
+    "explanation": "`publint [path]` 的 path 既可以是一个目录（lint 该目录的包），也可以直接是一个 **tarball 文件路径**（如 `publint ./mylib-1.0.0.tgz`），让 publint 直接分析已经 `npm pack` 出来的压缩包。这对「检查最终将上传的那个 tgz」很有用。",
+    "tags": ["publint", "CLI", "tarball"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 tarball（.tgz）文件路径，直接分析打包后的压缩包",
+        "isCorrect": true,
+        "description": "如 publint ./mylib-1.0.0.tgz"
+      },
+      {
+        "text": "一个 npm 包名（在线拉取）",
+        "isCorrect": false,
+        "description": "在线拉取包名是网页版的能力，CLI 的 path 是本地路径/tgz"
+      },
+      {
+        "text": "一个 Git 仓库 URL",
+        "isCorrect": false,
+        "description": "CLI 不接受远程 Git URL 作为 path"
+      },
+      {
+        "text": "一个 glob 通配模式",
+        "isCorrect": false,
+        "description": "path 是目录或 tgz，不是 glob"
+      }
+    ]
+  },
+  {
+    "stem": "publint 的最低 Node.js 版本要求是？",
+    "explanation": "publint 当前要求 Node.js **>= 18**（`engines.node` 字段如此声明），且自身是纯 ESM 包（`\"type\": \"module\"`）。支持的包管理器为 npm v9+、yarn v3+、pnpm v8+、bun；明确不支持 yarn 1（classic）。",
+    "tags": ["publint", "node", "环境要求"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Node.js >= 18",
+        "isCorrect": true,
+        "description": "且 publint 自身是 ESM 包，不支持 yarn 1"
+      },
+      {
+        "text": "Node.js >= 12",
+        "isCorrect": false,
+        "description": "要求比这高，是 >= 18"
+      },
+      {
+        "text": "Node.js >= 20",
+        "isCorrect": false,
+        "description": "门槛是 18 而非 20"
+      },
+      {
+        "text": "无 Node 版本要求，纯浏览器运行",
+        "isCorrect": false,
+        "description": "CLI 跑在 Node 上，要求 >= 18"
+      }
+    ]
+  },
+  {
+    "stem": "publint 的 JavaScript API 入口及返回值是？",
+    "explanation": "`import { publint } from 'publint'`，调用 `await publint(options)` 返回一个对象 `{ messages, pkg }`：`messages` 是问题数组，`pkg` 是解析后的 `package.json` 对象（便于配合 `formatMessage` 使用）。这套 API 用于把 publint 集成进自定义脚本或工具链。",
+    "tags": ["publint", "API", "编程接口"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "publint(options) 返回 { messages, pkg }",
+        "isCorrect": true,
+        "description": "messages 是问题数组，pkg 是解析后的 package.json"
+      },
+      {
+        "text": "publint(options) 直接返回一个布尔值是否通过",
+        "isCorrect": false,
+        "description": "返回的是含 messages 与 pkg 的结果对象"
+      },
+      {
+        "text": "publint(options) 返回一段格式化好的字符串",
+        "isCorrect": false,
+        "description": "格式化需另用 formatMessage，API 返回结构化数据"
+      },
+      {
+        "text": "需要 new Publint() 实例化后调用",
+        "isCorrect": false,
+        "description": "它是函数式 API，直接 await publint() 即可"
+      }
+    ]
+  },
+  {
+    "stem": "publint 编程式 API 中，单条 `Message` 对象包含哪些关键字段？",
+    "explanation": "每条 `Message` 形如 `{ code, args, path, type }`：`code` 是规则码（如 `EXPORTS_TYPES_SHOULD_BE_FIRST`），`args` 是用于填充消息模板的参数，`path` 是定位到 `package.json` 中具体字段的键路径数组（如 `['exports', '.', 'types']`），`type` 是 `'suggestion' | 'warning' | 'error'`。",
+    "tags": ["publint", "API", "Message"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "code、args、path（键路径数组）、type（级别）",
+        "isCorrect": true,
+        "description": "path 定位到 package.json 中的字段，type 是三档级别之一"
+      },
+      {
+        "text": "line、column、message、ruleId",
+        "isCorrect": false,
+        "description": "那更像 ESLint 的消息结构；publint 用 code/args/path/type"
+      },
+      {
+        "text": "file、severity、fix、suggestions",
+        "isCorrect": false,
+        "description": "publint 不提供 fix 字段，结构是 code/args/path/type"
+      },
+      {
+        "text": "只有一个 text 字符串字段",
+        "isCorrect": false,
+        "description": "Message 是结构化对象，含 code/args/path/type"
+      }
+    ]
+  },
+  {
+    "stem": "publint API 返回的 `Message` 是结构化对象，想打印成人类可读文本应该用什么？",
+    "explanation": "用 `publint/utils` 导出的 `formatMessage(message, pkg)`：传入单条 message 与 `publint()` 返回的 `pkg`，得到一段可读字符串。CLI 内部正是这样把结构化消息渲染成终端输出的。结构化 + 格式化分离，便于你自定义展示。",
+    "tags": ["publint", "API", "formatMessage"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "publint/utils 的 formatMessage(message, pkg)",
+        "isCorrect": true,
+        "description": "传入 message 与 pkg，返回可读字符串"
+      },
+      {
+        "text": "JSON.stringify(message) 就够了",
+        "isCorrect": false,
+        "description": "那只是序列化，不会展开成可读的问题描述"
+      },
+      {
+        "text": "message.toString()",
+        "isCorrect": false,
+        "description": "Message 是普通对象，需用 formatMessage 渲染"
+      },
+      {
+        "text": "console.table(message)",
+        "isCorrect": false,
+        "description": "渲染人类可读文本应使用 formatMessage"
+      }
+    ]
+  },
+  {
+    "stem": "现代 npm 包定义入口的「权威」字段是哪个？publint 会重点围绕它检查？",
+    "explanation": "是 `exports` 字段。它能按条件（`import`/`require`/`types`/`browser`/`node`/`default`）和子路径精确声明入口，是 Node 与各打包器解析包的现代权威机制。publint 大量规则围绕 `exports` 的条件顺序、值合法性、与 `types`/`browser` 的一致性展开。",
+    "tags": ["publint", "exports", "package.json"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "exports 字段（条件导出，现代权威入口机制）",
+        "isCorrect": true,
+        "description": "publint 的大量规则都围绕 exports 展开"
+      },
+      {
+        "text": "main 字段（始终优先于 exports）",
+        "isCorrect": false,
+        "description": "当 exports 存在时，它优先于 main"
+      },
+      {
+        "text": "homepage 字段",
+        "isCorrect": false,
+        "description": "homepage 与入口解析无关"
+      },
+      {
+        "text": "private 字段",
+        "isCorrect": false,
+        "description": "private 控制是否可发布，不是入口字段"
+      }
+    ]
+  },
+  {
+    "stem": "publint 规则 `EXPORTS_TYPES_SHOULD_BE_FIRST` 说的是什么问题？",
+    "explanation": "在 `exports` 的条件对象里，`types` 条件应当**写在最前面**。因为条件是按书写顺序匹配的，TypeScript 解析类型时若 `types` 不在前，可能先命中 `import`/`require` 等 JS 条件而拿不到类型声明。正确写法是 `{ \"types\": \"./x.d.ts\", \"import\": \"...\", \"require\": \"...\" }`。",
+    "tags": ["publint", "exports", "types", "规则"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "exports 条件中 types 必须放在最前，否则可能匹配不到类型",
+        "isCorrect": true,
+        "description": "条件按顺序匹配，types 在前才能优先命中"
+      },
+      {
+        "text": "types 字段必须放在 package.json 最顶部",
+        "isCorrect": false,
+        "description": "说的是 exports 条件内部的顺序，不是字段在文件中的位置"
+      },
+      {
+        "text": "types 必须最后，作为兜底",
+        "isCorrect": false,
+        "description": "兜底的是 default，types 应当最前"
+      },
+      {
+        "text": "必须删除 types 条件改用顶层 types",
+        "isCorrect": false,
+        "description": "规则是调整顺序，并非禁用 types 条件"
+      }
+    ]
+  },
+  {
+    "stem": "publint 规则 `EXPORTS_DEFAULT_SHOULD_BE_LAST` 的含义是？",
+    "explanation": "`exports` 条件对象中的 `default` 条件必须放在**最后**，作为所有更具体条件都未命中时的兜底。由于条件按顺序匹配，若 `default` 写在前面，会抢先命中、使后面更精确的 `import`/`require`/`node` 等条件永远不会生效。",
+    "tags": ["publint", "exports", "default", "规则"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "default 条件必须最后，作为兜底；否则会抢先命中",
+        "isCorrect": true,
+        "description": "条件按顺序匹配，default 在前会让后续条件失效"
+      },
+      {
+        "text": "default 必须最前，优先级最高",
+        "isCorrect": false,
+        "description": "恰好相反，default 是兜底应放最后"
+      },
+      {
+        "text": "default 条件是可选的，写哪都行",
+        "isCorrect": false,
+        "description": "若存在，其位置必须在最后，顺序有语义"
+      },
+      {
+        "text": "default 只能用于 browser 条件之后",
+        "isCorrect": false,
+        "description": "规则是「default 放最后」，不是相对 browser"
+      }
+    ]
+  },
+  {
+    "stem": "publint 规则 `EXPORTS_MODULE_SHOULD_PRECEDE_REQUIRE` 提示什么？",
+    "explanation": "若 `exports` 同时含 `module` 与 `require` 条件，`module`（指向 ESM）应排在 `require`（指向 CJS）**之前**。这样支持 `module` 条件的打包器会优先拿到 ESM 版本（利于 tree-shaking），只把 CJS 留给走 `require` 的旧环境。顺序反了会让本可用 ESM 的工具退回 CJS。",
+    "tags": ["publint", "exports", "module", "规则"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "module 条件应排在 require 之前，让打包器优先拿 ESM",
+        "isCorrect": true,
+        "description": "顺序反了会让支持 module 的工具退回 CJS"
+      },
+      {
+        "text": "require 必须排在 module 之前",
+        "isCorrect": false,
+        "description": "正好相反，module 应在 require 前"
+      },
+      {
+        "text": "module 和 require 不能同时出现",
+        "isCorrect": false,
+        "description": "可以共存，规则只约束二者顺序"
+      },
+      {
+        "text": "module 条件已废弃，应删除",
+        "isCorrect": false,
+        "description": "module 条件仍有用，规则是调整其顺序"
+      }
+    ]
+  },
+  {
+    "stem": "publint 报 `FILE_DOES_NOT_EXIST`，最可能的根因是？",
+    "explanation": "`package.json` 里某字段（如 `main`、`exports` 的某条目）指向了一个**实际不存在的文件**。最常见原因是：还没构建就跑了 publint，或构建输出路径与字段里写的不一致，或忘了把该文件包含进 `files`。修法是先 build、核对产物路径与 `exports` 一致。",
+    "tags": ["publint", "FILE_DOES_NOT_EXIST", "规则"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "字段指向的文件不存在（常因未 build 或路径写错）",
+        "isCorrect": true,
+        "description": "先构建并核对 exports/main 指向的产物路径"
+      },
+      {
+        "text": "依赖没装，node_modules 缺文件",
+        "isCorrect": false,
+        "description": "它检查的是本包自己声明的入口文件，不是依赖"
+      },
+      {
+        "text": "package.json 有语法错误",
+        "isCorrect": false,
+        "description": "JSON 语法错会是另一类报错，这条是入口文件缺失"
+      },
+      {
+        "text": "文件存在但权限不足",
+        "isCorrect": false,
+        "description": "该规则判定的是「文件是否存在」"
+      }
+    ]
+  },
+  {
+    "stem": "publint 报 `FILE_NOT_PUBLISHED`（文件存在但不会被发布）通常和哪个字段有关？",
+    "explanation": "和 `files` 字段（或 `.npmignore`）有关：入口指向的文件在本地存在，但因为没被 `files` 白名单包含（或被 ignore 排除），`npm publish` 时不会进入 tarball，用户装下来就缺这个文件。修法是把该文件/目录补进 `files`。publint 借助 `--pack` 推断真实会发布的文件来发现这点。",
+    "tags": ["publint", "files", "FILE_NOT_PUBLISHED"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "files 字段（或 .npmignore）漏掉了该文件，发布时不会被打包",
+        "isCorrect": true,
+        "description": "本地有但进不了 tarball，需补进 files 白名单"
+      },
+      {
+        "text": "dependencies 写错导致文件丢失",
+        "isCorrect": false,
+        "description": "与依赖无关，是发布白名单 files 的问题"
+      },
+      {
+        "text": "version 号没递增",
+        "isCorrect": false,
+        "description": "版本号与文件是否被发布无关"
+      },
+      {
+        "text": "publishConfig.registry 配置错误",
+        "isCorrect": false,
+        "description": "这是「文件未被打进发布物」，与 registry 无关"
+      }
+    ]
+  },
+  {
+    "stem": "publint 的 `FILE_INVALID_FORMAT` 警告指向什么问题？",
+    "explanation": "文件的**实际内容格式与它被解释成的格式不符**。文件该按 ESM 还是 CJS 解释，由其扩展名（`.mjs`/`.cjs`）或最近的 `package.json` 的 `\"type\"` 决定。例如在 `\"type\": \"module\"` 下，一个 `.js` 文件却写了 `require(...)`/`module.exports`（CJS 语法），就会触发——因为它被当作 ESM，但内容是 CJS。",
+    "tags": ["publint", "FILE_INVALID_FORMAT", "ESM/CJS"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "文件实际内容（CJS/ESM）与它被解释的格式不一致",
+        "isCorrect": true,
+        "description": "格式由扩展名或最近的 type 字段决定，内容须匹配"
+      },
+      {
+        "text": "文件用了 Tab 而非空格缩进",
+        "isCorrect": false,
+        "description": "publint 不管代码风格，管的是模块格式"
+      },
+      {
+        "text": "文件超过了大小限制",
+        "isCorrect": false,
+        "description": "与文件大小无关"
+      },
+      {
+        "text": "文件编码不是 UTF-8",
+        "isCorrect": false,
+        "description": "指的是 ESM/CJS 模块格式不匹配，非字符编码"
+      }
+    ]
+  },
+  {
+    "stem": "TypeScript 5.0+ 下，publint 的 `TYPES_NOT_EXPORTED` 警告说明什么？",
+    "explanation": "当包用了 `exports` 字段时，类型声明也必须通过 `exports` 的 `types` 条件（或紧邻 JS 文件的同名 `.d.ts`）显式导出。否则在 `moduleResolution: \"bundler\"`/`\"node16\"` 等现代解析模式下，TS 找不到类型。仅靠顶层 `types` 字段在有 `exports` 时可能不够——这正是该规则要提醒的。",
+    "tags": ["publint", "types", "TYPES_NOT_EXPORTED"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "有 exports 时类型也需经 exports 的 types 条件导出，否则现代解析下找不到类型",
+        "isCorrect": true,
+        "description": "node16/bundler 解析模式只认 exports 内的 types"
+      },
+      {
+        "text": "包里完全没有任何 .d.ts 文件",
+        "isCorrect": false,
+        "description": "可能有 .d.ts，问题是没经 exports 正确导出"
+      },
+      {
+        "text": "types 字段写成了 typings",
+        "isCorrect": false,
+        "description": "两者都被识别，问题是 exports 未导出类型"
+      },
+      {
+        "text": "TypeScript 版本过低无法识别类型",
+        "isCorrect": false,
+        "description": "规则正是针对 TS 5.0+ 的现代解析要求"
+      }
+    ]
+  },
+  {
+    "stem": "publint 规则 `EXPORTS_TYPES_INVALID_FORMAT` 关心 ESM 与 CJS 的类型文件应当怎样区分？",
+    "explanation": "当为 ESM 与 CJS 分别提供类型时，类型文件的扩展名应与其格式匹配：ESM 用 `.d.mts`、CJS 用 `.d.cts`（或在对应 `\"type\"` 上下文下的 `.d.ts`）。若给 `import` 条件配了 CJS 风格的类型、或反之，类型在不同 `moduleResolution` 下会「张冠李戴」。这类「类型伪装（masquerading）」也是 attw 重点检查的问题。",
+    "tags": ["publint", "types", "d.mts", "d.cts"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "ESM/CJS 应有各自格式的类型文件（.d.mts / .d.cts）",
+        "isCorrect": true,
+        "description": "类型文件格式须与对应 import/require 条件匹配"
+      },
+      {
+        "text": "所有类型都必须合并进一个 .d.ts",
+        "isCorrect": false,
+        "description": "恰恰要按 ESM/CJS 分别提供匹配格式的类型"
+      },
+      {
+        "text": "类型文件必须放进 src 目录",
+        "isCorrect": false,
+        "description": "与目录无关，关键是扩展名/格式匹配"
+      },
+      {
+        "text": "禁止为 CJS 提供任何类型",
+        "isCorrect": false,
+        "description": "CJS 可有类型，但应是 .d.cts 之类匹配格式"
+      }
+    ]
+  },
+  {
+    "stem": "publint 报 `DEPRECATED_FIELD_JSNEXT`，建议怎么改？",
+    "explanation": "`jsnext:main`（以及 `jsnext:module`）是早期约定的 ESM 入口字段，现已废弃。应改用标准的 `module` 字段，或更进一步用 `exports` 的 `import` 条件来声明 ESM 入口。publint 会把这类历史遗留字段标记出来，提示迁移到现代写法。",
+    "tags": ["publint", "deprecated", "jsnext"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 module 字段（或 exports 的 import 条件）替代废弃的 jsnext:main",
+        "isCorrect": true,
+        "description": "jsnext:main 是早期约定，已被 module/exports 取代"
+      },
+      {
+        "text": "保留 jsnext:main，它仍是推荐写法",
+        "isCorrect": false,
+        "description": "它已废弃，应迁移到 module/exports"
+      },
+      {
+        "text": "改名为 main:next",
+        "isCorrect": false,
+        "description": "没有 main:next 这种字段"
+      },
+      {
+        "text": "删除所有入口字段即可",
+        "isCorrect": false,
+        "description": "应改用现代字段，而非删光入口"
+      }
+    ]
+  },
+  {
+    "stem": "publint 的 `suggestion` 级规则 `USE_TYPE` 建议给 `package.json` 加 `\"type\"` 字段，理由是？",
+    "explanation": "显式声明 `\"type\": \"module\"` 或 `\"type\": \"commonjs\"`，能让 Node 与工具**省去对每个 `.js` 文件逐一探测模块格式的开销**，也让意图更明确、减少歧义。不写时默认按 CJS 处理，但显式声明是更稳妥、更高效的现代实践，故 publint 以建议级提示。",
+    "tags": ["publint", "USE_TYPE", "type"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "显式 type 省去逐文件探测模块格式的开销，意图更明确",
+        "isCorrect": true,
+        "description": "不写默认按 CJS，显式声明更高效稳妥"
+      },
+      {
+        "text": "不写 type 字段包根本无法发布",
+        "isCorrect": false,
+        "description": "可以发布，只是缺少显式声明，故仅为建议级"
+      },
+      {
+        "text": "type 字段能自动把 CJS 转成 ESM",
+        "isCorrect": false,
+        "description": "它只声明默认格式，不做任何转换"
+      },
+      {
+        "text": "type 字段决定包的 semver 版本策略",
+        "isCorrect": false,
+        "description": "与版本策略无关，是模块格式声明"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪一项最准确描述 publint 与 `@arethetypeswrong/cli`（attw）的关系？",
+    "explanation": "二者**互补**，官方推荐一起用。publint 用自己的静态分析检查发布正确性，覆盖面**不止 package.json**（还查文件格式、文件存在性等）；attw 则借助 **TypeScript 编译器**，在各种 `moduleResolution` 下检查类型解析问题（如 ESM/CJS 类型伪装）。两者有重叠，但 attw 能发现一些 publint 发现不了的类型问题，反之亦然，故「想抓全所有问题就两个都跑」。",
+    "tags": ["publint", "attw", "arethetypeswrong"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "互补：publint 做自有静态分析+查文件，attw 用 TS 编译器查类型解析，推荐同时使用",
+        "isCorrect": true,
+        "description": "两者覆盖各有侧重，官方建议一起跑以抓全问题"
+      },
+      {
+        "text": "attw 是 publint 的一个内置子命令",
+        "isCorrect": false,
+        "description": "它们是两个独立工具，只是常搭配使用"
+      },
+      {
+        "text": "publint 已完全取代 attw，无需再用 attw",
+        "isCorrect": false,
+        "description": "二者互补，attw 能发现 publint 发现不了的类型问题"
+      },
+      {
+        "text": "两者功能完全重叠，择一即可",
+        "isCorrect": false,
+        "description": "有重叠但侧重不同，官方建议两个都用"
+      }
+    ]
+  },
+  {
+    "stem": "把 publint 接入 CI / 发布流程，较稳妥的做法是？",
+    "explanation": "典型做法：先 build 产物，再跑 publint（常配 `--strict` 让警告也致失败），并把它放进 `prepublishOnly` 或 release 工作流，确保「构建后、发布前」一定体检一遍。也可与 attw 一起跑以覆盖类型问题。关键是顺序——必须在产物就绪之后执行，否则会误报文件缺失。",
+    "tags": ["publint", "CI", "发布流程"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "build 之后、publish 之前跑（常配 --strict），放进 prepublishOnly/CI",
+        "isCorrect": true,
+        "description": "保证产物就绪后体检，可与 attw 同跑"
+      },
+      {
+        "text": "在 install 阶段（postinstall）跑给使用者",
+        "isCorrect": false,
+        "description": "publint 是给作者发布前用的，不该塞进用户安装钩子"
+      },
+      {
+        "text": "只在本地随手跑，CI 不用接",
+        "isCorrect": false,
+        "description": "发布门禁更适合放进 CI 自动执行"
+      },
+      {
+        "text": "build 之前跑以尽早发现问题",
+        "isCorrect": false,
+        "description": "产物未生成会误报，应在 build 之后"
+      }
+    ]
+  },
+  {
+    "stem": "一个只发布 CJS、没有 `exports` 也没有 `types` 字段的老包，跑 publint 大概率会得到哪类提示？",
+    "explanation": "多为 `suggestion`/`warning` 级的现代化建议，例如 `HAS_MODULE_BUT_NO_EXPORTS`/`HAS_ESM_MAIN_BUT_NO_EXPORTS`（建议用 `exports`）、`USE_TYPE`（加 `\"type\"`）、`USE_LICENSE`/`USE_FILES`、以及类型相关的 `TYPES_NOT_EXPORTED` 等。publint 倾向于推动包采用 `exports` + 正确的类型导出等现代最佳实践，而非直接判其「不可用」。",
+    "tags": ["publint", "最佳实践", "现代化"],
+    "categories": [
+      ["技术方向", "publint"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "推动现代化的建议/警告（用 exports、加 type/license/files、正确导出类型）",
+        "isCorrect": true,
+        "description": "publint 引导采用 exports + 正确类型导出等现代实践"
+      },
+      {
+        "text": "一律 error，直接判定该包不可发布",
+        "isCorrect": false,
+        "description": "老式 CJS 包仍可用，多为建议/警告而非硬错误"
+      },
+      {
+        "text": "提示代码里有未使用的变量",
+        "isCorrect": false,
+        "description": "那是代码 linter 的事，publint 不看源码逻辑"
+      },
+      {
+        "text": "提示依赖版本需要升级",
+        "isCorrect": false,
+        "description": "依赖升级不在 publint 关注范围"
+      }
+    ]
+  }
+]

@@ -928,5 +928,253 @@
         "description": "禁用后还能调 Prettier"
       }
     ]
+  },
+  {
+    "stem": "Prettier v3.5 新增的 `objectWrap` 选项默认值是 `“preserve”`，它的判定依据是？",
+    "explanation": "`objectWrap` 控制对象字面量是否换行，默认 `“preserve”`：以「源码里第一个属性之前是否已有换行」为信号——若原对象写成多行（`{` 后立刻换行），即使内容能塞进 `printWidth` 也保持多行；若原本单行则尝试折叠。这把「是否多行」的控制权交还给作者，常用于「希望某些配置对象固定竖排」。另一取值 `“collapse”`：只要能放进 `printWidth` 就压成单行，忽略原排版。注意它判定的是「第一个属性前」的换行，而非对象里随便哪处换行。",
+    "tags": ["prettier", "专家", "objectWrap", "v3.5"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "preserve：看源码中第一个属性前是否已有换行——有则保持多行，无则尝试折叠",
+        "isCorrect": true,
+        "description": "把竖排/单排的决定权交还作者；collapse 则一律按 printWidth 压缩"
+      },
+      {
+        "text": "preserve：永远保持对象原样，从不重排任何对象",
+        "isCorrect": false,
+        "description": "它只依据第一个属性前的换行决定，仍会在该信号下重排"
+      },
+      {
+        "text": "默认是 collapse：只要能放下就压成单行",
+        "isCorrect": false,
+        "description": "默认是 preserve，不是 collapse"
+      },
+      {
+        "text": "它判定的是对象内部任意位置是否存在换行",
+        "isCorrect": false,
+        "description": "判定点明确是「第一个属性之前」，不是任意位置"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说 Prettier 的 `printWidth` 不是「硬性行宽上限」？下列哪条描述最贴合官方说法？",
+    "explanation": "官方原文：It is not the hard upper allowed line length limit. It is a way to say to Prettier roughly how long you'd like lines to be. Prettier will make both shorter and longer lines, but generally strive to meet the specified printWidth。`printWidth` 是「期望的大致行长」这一布局倾向，Prettier 据此决定在哪些「可折叠点」换行；但对不可拆分的元素——一条很长的字符串字面量、长正则、长 URL、长导入路径——它无法也不会强行断开，结果就是该行超出 `printWidth`。因此把它当成「绝不超过 N 列」的硬约束是误解，真正的硬约束应交给 lint 规则（如 `max-len`）。",
+    "tags": ["prettier", "专家", "printWidth"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它只是「期望的大致行长」倾向，对长字符串、长正则等不可拆元素无法强行断开，故会超出",
+        "isCorrect": true,
+        "description": "官方称会产生比 printWidth 更长或更短的行；硬性行宽应交给 lint 规则"
+      },
+      {
+        "text": "它是硬上限，超过的行 Prettier 会报错拒绝格式化",
+        "isCorrect": false,
+        "description": "Prettier 不会因超宽报错，它本就允许超出"
+      },
+      {
+        "text": "它只对 JS 生效，对 CSS/Markdown 是硬上限",
+        "isCorrect": false,
+        "description": "对各语言都是倾向值，并非某些语言变硬上限"
+      },
+      {
+        "text": "超过 printWidth 时 Prettier 会强行在字符串中间插入换行符",
+        "isCorrect": false,
+        "description": "它不会破坏字符串语义去强行断行"
+      }
+    ]
+  },
+  {
+    "stem": "像 `prettier-plugin-tailwindcss`、import 排序类插件能「重排代码顺序」，这与 Prettier 核心「只改格式不改语义」的边界如何理解？",
+    "explanation": "Prettier 核心只重排空白/换行等不改变 AST 语义的格式；但插件可介入打印流程，对 AST 节点做有限「重排序」（如 Tailwind 类名顺序、import 顺序）。这类重排被视为「不改变运行结果的等价变换」才被接受。其代价是：多个会动 AST 顺序的插件叠加时彼此可能争抢同一段输出，官方建议把 Tailwind 这类「消费上游结果」的插件放在 `plugins` 数组末尾，让它在其它插件处理完后再排序，避免顺序被后续插件再次打乱。所以它不是「Prettier 核心在排 class」，而是插件在打印阶段重排，且对顺序敏感。",
+    "tags": ["prettier", "专家", "plugin", "ast"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "插件在打印流程里对 AST 做「等价重排序」；多个此类插件叠加敏感，Tailwind 这类应放 plugins 数组末尾",
+        "isCorrect": true,
+        "description": "核心只动空白，重排由插件负责且对加载顺序敏感"
+      },
+      {
+        "text": "是 Prettier 核心内置的类名排序能力，插件只是开关",
+        "isCorrect": false,
+        "description": "核心不做语义重排，排序逻辑在插件内"
+      },
+      {
+        "text": "插件顺序无所谓，Prettier 会自动协调多个插件的重排",
+        "isCorrect": false,
+        "description": "顺序敏感，官方建议把消费型插件放末尾"
+      },
+      {
+        "text": "重排会改变代码语义，因此这类插件被官方禁止",
+        "isCorrect": false,
+        "description": "它们做的是不改变运行结果的等价重排，未被禁止"
+      }
+    ]
+  },
+  {
+    "stem": "Prettier 官方不再推荐 `eslint-plugin-prettier`（把 Prettier 当成一条 ESLint 规则跑）的根本问题，下列哪条最准确？",
+    "explanation": "`eslint-plugin-prettier` 让 ESLint 对每个文件先跑一遍 Prettier、再把「与 Prettier 输出的差异」逐处当作 lint 报错（红波浪线）抛出。问题有三：①性能——每个文件多跑一次完整 Prettier；②噪音——满屏格式 error 淹没真正的代码质量问题，且报错定位到「差异处」而非人类直觉位置；③心智——格式问题本该一键 `--write` 修复，不该以「lint 违规」形式打断。官方推荐改用 `eslint-config-prettier`（只关闭与 Prettier 冲突的 ESLint 规则），让 Prettier 经 `prettier --write/--check` 独立运行。注意：`eslint-config-prettier` 不会去跑 Prettier，它只负责「关规则」。",
+    "tags": ["prettier", "专家", "eslint", "反模式"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它把格式差异当 lint error 抛出：多跑一遍 Prettier 拖慢、满屏噪音淹没真问题、报错定位差；应改用 eslint-config-prettier + 独立跑 Prettier",
+        "isCorrect": true,
+        "description": "config 只关冲突规则、不跑 Prettier；格式问题该用 --write 修而非当 lint 违规"
+      },
+      {
+        "text": "它会修改代码语义，导致 ESLint 误报",
+        "isCorrect": false,
+        "description": "问题在性能/噪音/定位，不是改变语义"
+      },
+      {
+        "text": "它和 eslint-config-prettier 二选一，但 plugin 更快更准",
+        "isCorrect": false,
+        "description": "plugin 恰恰更慢更吵，官方不推荐"
+      },
+      {
+        "text": "ESLint v9 起已内置 Prettier，使该插件冗余",
+        "isCorrect": false,
+        "description": "ESLint 并未内置 Prettier，这是错误前提"
+      }
+    ]
+  },
+  {
+    "stem": "编辑器集成里调用 Prettier 时，为「保存即格式化但光标不乱跳」，应使用哪个 API 及哪个选项？",
+    "explanation": "应使用 `prettier.formatWithCursor(source, options)` 并传入 `cursorOffset`。官方说明：该 API both formats the code, and translates a cursor position from unformatted code to formatted code，对编辑器集成 useful for editor integrations, to prevent the cursor from moving when code is formatted。它返回 `{ formatted, cursorOffset }`——`formatted` 是结果文本，`cursorOffset` 是「光标在格式化后文本中的新位置」，编辑器据此把光标放回原逻辑处。普通 `prettier.format` 只返回字符串，无法回传光标新位置。v3 起这些 API 均为异步，需 `await`。",
+    "tags": ["prettier", "专家", "api", "cursorOffset"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`await prettier.formatWithCursor(src, { cursorOffset, parser })`，从返回对象读回 `cursorOffset` 把光标放回原处",
+        "isCorrect": true,
+        "description": "返回 { formatted, cursorOffset }；format 则无法回传光标新位置"
+      },
+      {
+        "text": "`prettier.format(src, { keepCursor: true })`",
+        "isCorrect": false,
+        "description": "format 无 keepCursor 选项，也不回传光标位置"
+      },
+      {
+        "text": "`prettier.formatSync` 配合 `--cursor` 标志",
+        "isCorrect": false,
+        "description": "主包无 formatSync；cursor 是 API 选项不是这种写法"
+      },
+      {
+        "text": "无需特殊 API，Prettier 默认保持光标不动",
+        "isCorrect": false,
+        "description": "默认不会，需专门的 formatWithCursor + cursorOffset"
+      }
+    ]
+  },
+  {
+    "stem": "对一个混杂多种扩展名、且包含 Prettier 不认识类型的目录跑 `prettier --write .`，要避免它对未知类型「找不到 parser」而报错中断，应加什么标志？",
+    "explanation": "加 `--ignore-unknown`（简写 `-u`）。官方说明：prettier will ignore unknown files matched by patterns——当用 `.` / 通配符批量匹配时，Prettier 会跳过那些无法推断出 parser 的文件（如 `.lock`、二进制、未知扩展名），而不是抛错终止整批处理。这在「无脑格式化整个仓库」时几乎必加。它与 `--no-error-on-unmatched-pattern`（解决「glob 没匹配到任何文件」的报错）是两个不同问题：前者管「匹配到但不认识的文件」，后者管「没匹配到文件」。",
+    "tags": ["prettier", "专家", "cli", "ignore-unknown"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`--ignore-unknown`（`-u`）：通配匹配到但无法推断 parser 的文件直接跳过，不报错中断",
+        "isCorrect": true,
+        "description": "批量格式化整库几乎必加；与 --no-error-on-unmatched-pattern 解决的是不同问题"
+      },
+      {
+        "text": "`--no-error-on-unmatched-pattern`：它专门跳过未知扩展名文件",
+        "isCorrect": false,
+        "description": "那个解决的是「glob 没匹配到文件」，不是「匹配到但不认识」"
+      },
+      {
+        "text": "`--skip-binary`：跳过所有非文本文件",
+        "isCorrect": false,
+        "description": "不存在该标志"
+      },
+      {
+        "text": "无需标志，Prettier 默认就忽略未知类型",
+        "isCorrect": false,
+        "description": "默认会对未知 parser 文件报错，需显式 -u"
+      }
+    ]
+  },
+  {
+    "stem": "把 Prettier 升级到 v3 后，原先同步写法 `const out = prettier.format(src, opts); use(out)` 为什么坏了，正确改法是？",
+    "explanation": "v3 起 Prettier 所有公共 API 都是异步的（our public APIs are all asynchronous），`prettier.format` 返回的是 `Promise<string>` 而非字符串。旧同步写法里 `out` 拿到的是一个 Promise 对象，传给下游当字符串用就会出错（如打印出 `[object Promise]`）。正确改法是 `const out = await prettier.format(src, opts)`，并把外层函数标记为 `async`。如果运行环境实在无法异步（如某些同步插桩点），官方提供独立包 `@prettier/sync` 暴露同步版本，但主包不再有 `formatSync`。",
+    "tags": ["prettier", "高级", "v3", "async"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "v3 起 format 返回 Promise，`out` 实为 Promise 对象；改成 `await prettier.format(...)` 并让外层函数 async，必要时用 @prettier/sync",
+        "isCorrect": true,
+        "description": "主包已无 formatSync；同步需求走独立的 @prettier/sync 包"
+      },
+      {
+        "text": "v3 把 format 改名为 formatText，换名即可",
+        "isCorrect": false,
+        "description": "仍叫 format，问题在它变成了异步"
+      },
+      {
+        "text": "v3 的 format 第二参数顺序变了，调换参数即可",
+        "isCorrect": false,
+        "description": "参数语义未变，变的是返回 Promise"
+      },
+      {
+        "text": "主包新增了 `prettier.formatSync`，直接换用它即可",
+        "isCorrect": false,
+        "description": "主包没有 formatSync，同步要用 @prettier/sync"
+      }
+    ]
+  },
+  {
+    "stem": "Prettier v3.6 引入的实验性选项 `experimentalOperatorPosition` 用来控制什么？默认取值是？",
+    "explanation": "`experimentalOperatorPosition` 控制「当二元表达式（如长的 `&&` / `+` / `||` 链）被换行折叠时，运算符落在行首还是行尾」。默认 `“end”`：运算符留在上一行末尾（`a +\\n  b`）；可选 `“start”`：运算符移到下一行开头（`a\\n  + b`，类似某些团队偏好的「运算符前置」风格）。它是 experimental（实验性）选项，行为可能在后续版本调整。注意它只影响「断行后运算符的位置」，不影响是否断行，也不改变运算优先级或语义。",
+    "tags": ["prettier", "高级", "experimentalOperatorPosition", "v3.6"],
+    "categories": [
+      ["技术方向", "Prettier"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "控制二元表达式换行时运算符在行尾还是行首，默认 `“end”`（运算符留行尾）",
+        "isCorrect": true,
+        "description": "可选 “start” 让运算符前置；实验性，仅影响位置不改语义"
+      },
+      {
+        "text": "控制赋值运算符 `=` 两侧是否加空格，默认加",
+        "isCorrect": false,
+        "description": "它针对断行时的运算符位置，不是空格"
+      },
+      {
+        "text": "控制三元运算符的格式化，默认把 `?` 放行首",
+        "isCorrect": false,
+        "description": "三元由 experimentalTernaries 管，与此选项无关"
+      },
+      {
+        "text": "决定是否在长表达式处换行，默认不换",
+        "isCorrect": false,
+        "description": "它只决定运算符位置，不决定是否换行"
+      }
+    ]
   }
 ]
