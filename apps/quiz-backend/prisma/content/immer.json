@@ -2,21 +2,10 @@
   {
     "stem": "Immer：用一句话概括，Immer 这个库的核心定位是什么？",
     "explanation": "Immer（德语「always」）是一个微小的库，让你用「直接修改」的可变写法去产出不可变（immutable）数据。你在一个临时的 draft（草稿）上随意 mutate，Immer 记录这些改动并据此生成全新的不可变 nextState，原 state 不受影响。它不引入新的数据结构，用的就是普通 JS 对象/数组/Map/Set。\n\n- 「用可变写法产出不可变数据」正确。\n- 「一个新的不可变数据结构库（类似 Immutable.js 的 List/Map）」错误：Immer 用原生结构，不造新结构。\n- 「一个深拷贝工具」错误：它靠结构共享只拷贝改动的部分。\n- 「一个状态管理库（类似 Redux）」错误：它只负责不可变更新，不是状态容器。",
-    "tags": [
-      "immer",
-      "入门",
-      "定位",
-      "核心概念"
-    ],
+    "tags": ["immer", "入门", "定位", "核心概念"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -44,21 +33,10 @@
   {
     "stem": "Immer：最核心的 API 是哪个函数？",
     "explanation": "`produce` 是 Immer 的核心 API。典型签名 `produce(baseState, recipe)`：第一个参数是基础状态，第二个是 recipe（配方）函数，Immer 给 recipe 传入一个 draft，你在 draft 上做改动，Immer 返回新的不可变状态。\n\n- `produce` 正确。\n- `immer()` 不是导出的函数（`Immer` 是用于创建独立实例的构造器）。\n- `draft()` 不存在。\n- `mutate()` 不存在。",
-    "tags": [
-      "immer",
-      "入门",
-      "produce",
-      "API"
-    ],
+    "tags": ["immer", "入门", "produce", "API"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -86,21 +64,10 @@
   {
     "stem": "Immer：在 recipe 函数里，你拿到的 `draft` 本质上是什么？",
     "explanation": "draft 是对 baseState 的一个 **Proxy（代理）**。你对 draft 的读写都会被 Proxy 的 trap 拦截：读取时按需把子对象也包成 draft，写入时记录「这里改了」。recipe 结束后，Immer 据此只复制被改动的节点、生成新状态，其余部分与原状态结构共享。\n\n- 「baseState 的 Proxy 代理」正确。\n- 「baseState 的深拷贝」错误：不会一上来就深拷贝，是按需 + 写时复制。\n- 「baseState 本身」错误：直接改 baseState 会破坏不可变性，Immer 不会让你改到原对象。\n- 「一个空对象」错误：draft 反映的是 baseState 的内容。",
-    "tags": [
-      "immer",
-      "入门",
-      "draft",
-      "Proxy"
-    ],
+    "tags": ["immer", "入门", "draft", "Proxy"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -128,21 +95,10 @@
   {
     "stem": "Immer：下面这段代码执行后，baseState 会被改变吗？\nconst next = produce(baseState, draft => { draft.done = true })",
     "explanation": "不会。Immer 的根本承诺就是**原状态不可变**：你在 draft（代理）上写 `draft.done = true`，改动只反映在返回的 next 上，baseState 保持原样。这正是不可变更新的意义——旧引用不变，便于变更检测与时间旅行。\n\n- 「baseState 不变，next 是新状态」正确。\n- 「baseState 被原地修改」错误：那恰恰是 Immer 要避免的。\n- 「baseState 和 next 是同一个对象」错误：有改动时 next 是新对象。\n- 「会抛错」错误：这是完全合法的标准用法。",
-    "tags": [
-      "immer",
-      "入门",
-      "不可变",
-      "核心概念"
-    ],
+    "tags": ["immer", "入门", "不可变", "核心概念"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -170,21 +126,10 @@
   {
     "stem": "Immer：不用 Immer 时，要「不可变地」更新嵌套对象的某个深层字段，通常得怎么写？",
     "explanation": "手写不可变更新需要**逐层浅拷贝**被改动路径上的每一层（典型是层层 `...` 展开），再替换目标字段。层级一深就极其啰嗦且易错（漏拷一层就会意外共享并埋下 bug）。Immer 把这套样板代码全部消除——你只管 mutate draft。\n\n- 「逐层用扩展运算符浅拷贝路径上每一层」正确。\n- 「直接改原对象的深层字段」错误：那会破坏不可变性。\n- 「对整个对象做深拷贝再改」可行但浪费：未改动部分也被全量复制，丢失结构共享。\n- 「不可能做到」错误：手写当然能做，只是繁琐。",
-    "tags": [
-      "immer",
-      "入门",
-      "手写不可变",
-      "对比"
-    ],
+    "tags": ["immer", "入门", "手写不可变", "对比"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -212,21 +157,10 @@
   {
     "stem": "Immer：如何从 immer 包中正确导入 produce？",
     "explanation": "produce 是命名导出（named export）：`import { produce } from \"immer\"`。Immer 同时也提供 produce 作为默认导出以兼容历史用法，但官方文档与现代写法统一用命名导入。其他 API（current、original、enableMapSet 等）也都是命名导出。\n\n- `import { produce } from \"immer\"` 正确。\n- `import produce from \"immer\"`（默认导入）历史上能用，但非文档推荐写法。\n- `const produce = require(\"produce\")` 错误：包名是 immer。\n- `import * as produce` 错误：那拿到的是整个命名空间对象，不是函数。",
-    "tags": [
-      "immer",
-      "入门",
-      "导入",
-      "produce"
-    ],
+    "tags": ["immer", "入门", "导入", "produce"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -254,21 +188,10 @@
   {
     "stem": "Immer：在 recipe 里向数组追加一个元素，最符合 Immer 习惯的写法是？",
     "explanation": "Immer 的卖点就是用**原生可变 API**：直接 `draft.push(item)` 即可，Immer 会记录这次改动并产出新数组，原数组不变。不需要 `return [...draft, item]` 这类手写不可变写法。\n\n- `draft.list.push(item)` 正确。\n- `return [...draft.list, item]`（在改动 draft 之外单独 return）可行但违背 Immer 初衷，且若同时改了 draft 还会冲突。\n- `draft.list = draft.list.concat(item)` 能工作但啰嗦，未用上 Immer 的简洁。\n- `draft.list[draft.list.length] = item` 虽可行但不如 push 直观。",
-    "tags": [
-      "immer",
-      "入门",
-      "数组",
-      "push"
-    ],
+    "tags": ["immer", "入门", "数组", "push"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -296,21 +219,10 @@
   {
     "stem": "Immer：Immer 能直接用普通的 JavaScript 对象和数组吗？需要先转换成专用数据结构吗？",
     "explanation": "不需要任何转换。Immer 直接作用于普通 JS 对象、数组（以及启用插件后的 Map/Set），这正是它相对 Immutable.js 的最大优势之一——「No new APIs or mutation patterns to learn」。状态进出都是 plain object，与 JSON、网络传输、React props 无缝衔接。\n\n- 「直接用普通对象/数组，无需转换」正确。\n- 「必须先转成 Immer.Map / Immer.List」错误：Immer 没有这类结构。\n- 「必须调用 toImmutable() 包装」错误：无此 API。\n- 「只支持数组不支持对象」错误：对象、数组都支持。",
-    "tags": [
-      "immer",
-      "入门",
-      "原生结构",
-      "对比"
-    ],
+    "tags": ["immer", "入门", "原生结构", "对比"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "入门"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "入门"]
     ],
     "options": [
       {
@@ -338,21 +250,10 @@
   {
     "stem": "Immer：关于「结构共享（structural sharing）」，下面哪种说法正确？",
     "explanation": "结构共享指：Immer 只对**被改动路径上的节点**创建新副本，**未改动的子树**则与旧状态**共享同一引用**。因此 next 与 base 的未变部分 `===` 仍相等，变更检测可以靠浅比较（引用比较）高效完成——这也是 React/Redux memo 化的基础。\n\n- 「只复制改动的节点，未改动部分共享引用」正确。\n- 「整棵树全部重新创建」错误：那是深拷贝，不是结构共享。\n- 「什么都不复制，原地改」错误：那破坏不可变性。\n- 「只共享顶层，深层全拷」错误：共享发生在所有未改动的子树。",
-    "tags": [
-      "immer",
-      "初级",
-      "结构共享",
-      "核心概念"
-    ],
+    "tags": ["immer", "初级", "结构共享", "核心概念"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -380,21 +281,10 @@
   {
     "stem": "Immer：默认情况下，produce 返回的新状态会被「冻结」吗？",
     "explanation": "会。Immer **默认开启 auto-freeze**：produce 产出的状态树（以及新加入结果的普通对象/数组）会被**递归深冻结**（`Object.freeze`）。之后若在 recipe 之外试图修改它，严格模式下会抛错。这是为了从根本上防止意外 mutate 破坏不可变性。可用 `setAutoFreeze(false)` 关闭。\n\n- 「会，默认递归冻结产出结果」正确。\n- 「不会，需要手动 freeze」错误：默认就冻结。\n- 「只冻结顶层」错误：是递归深冻结。\n- 「只在 production 冻结」错误：默认在各环境都冻结（冻结本身始终生效，只是越界修改的报错主要在严格模式可见）。",
-    "tags": [
-      "immer",
-      "初级",
-      "auto-freeze",
-      "冻结"
-    ],
+    "tags": ["immer", "初级", "auto-freeze", "冻结"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -422,21 +312,10 @@
   {
     "stem": "Immer：要把一个包加进项目，安装命令是？",
     "explanation": "Immer 是标准 npm 包，用任意包管理器安装即可，如 `npm install immer`（或 `pnpm add immer` / `yarn add immer` / `bun add immer`）。它体积很小（约 3KB gzipped）。\n\n- `npm install immer` 正确。\n- `npm install @immer/core` 错误：包名就是 immer，没有这个 scope 包。\n- `npm install immerjs` 错误：npm 上的包名是 immer 不是 immerjs（immerjs 是 GitHub 组织名）。\n- 「Immer 内置于 Node，无需安装」错误。",
-    "tags": [
-      "immer",
-      "初级",
-      "安装",
-      "包管理"
-    ],
+    "tags": ["immer", "初级", "安装", "包管理"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -464,21 +343,10 @@
   {
     "stem": "Immer：当第一个参数传给 produce 的是一个**函数**而不是状态时，会得到什么？",
     "explanation": "这叫 **curried producer（柯里化生产者）**：`produce(recipe)` 不立即对某个状态执行，而是返回一个**可复用的函数**，之后把状态传给它即可。常用于 reducer 或事件处理器，例如 `const toggle = produce(draft => { draft.done = !draft.done })`，再 `toggle(state)`。recipe 的额外参数会成为返回函数的额外参数。\n\n- 「返回一个可复用的柯里化生产者函数」正确。\n- 「立即报错」错误。\n- 「立即对 undefined 执行 recipe」错误。\n- 「返回 Promise」错误。",
-    "tags": [
-      "immer",
-      "初级",
-      "curried",
-      "produce"
-    ],
+    "tags": ["immer", "初级", "curried", "produce"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -506,21 +374,10 @@
   {
     "stem": "Immer：Redux Toolkit（RTK）与 Immer 是什么关系？",
     "explanation": "RTK **内置了 Immer**：`createReducer`、`createSlice` 的 case reducer 内部就用 produce 包裹，所以你可以在 reducer 里**直接 mutate state**（如 `state.value += 1`），而仍得到不可变更新。这是 RTK 官方文档明确的特性。截至当前 RTK 2.x 依赖 immer 11.x。\n\n- 「RTK 内置 Immer，slice reducer 里可直接 mutate」正确。\n- 「两者无关，需手动集成」错误。\n- 「RTK 禁止使用 Immer」错误。\n- 「只有装了额外插件才支持」错误：开箱即用。",
-    "tags": [
-      "immer",
-      "初级",
-      "Redux Toolkit",
-      "集成"
-    ],
+    "tags": ["immer", "初级", "Redux Toolkit", "集成"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -548,22 +405,10 @@
   {
     "stem": "Immer：要在浏览器/Node 里用 Map 和 Set 作为 Immer 的状态，必须先做什么？",
     "explanation": "从 Immer 6 起，Map/Set 支持是**可选插件**，必须在应用启动时**显式调用 `enableMapSet()`**（`import { enableMapSet } from \"immer\"`）。不调用就直接把 Map/Set 放进状态并 mutate 会报错。这样设计是为了让默认包保持精简（tree-shaking 友好）。\n\n- 「调用 enableMapSet()」正确。\n- 「无需任何操作，默认支持」错误：默认不支持，需启用。\n- 「装单独的 immer-map-set 包」错误：插件就在 immer 主包内。\n- 「调用 enablePatches()」错误：那是开启 patches 的。",
-    "tags": [
-      "immer",
-      "初级",
-      "Map",
-      "Set",
-      "enableMapSet"
-    ],
+    "tags": ["immer", "初级", "Map", "Set", "enableMapSet"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -591,21 +436,10 @@
   {
     "stem": "Immer：在 React 函数组件里配合 useState 用 Immer，下面哪种写法是惯用的？",
     "explanation": "利用 curried produce 可以把 produce 直接传给 setState：`setTodos(produce(draft => { ... }))`。因为 `produce(recipe)` 返回 `(state) => nextState`，正好符合 setState 的「函数式更新」签名，React 会把当前 state 传进去得到新 state。若嫌啰嗦，可用 `use-immer` 的 `useImmer`，它把 produce 自动包好。\n\n- `setTodos(produce(draft => { draft.push(x) }))` 正确。\n- 直接 `state.push(x)` 错误：直接 mutate React state 是 bug。\n- `setTodos(produce(state, draft => ...))` 在 setState 里不如柯里化形式自然（拿不到最新 state，易闭包陈旧）。\n- `produce(setTodos, ...)` 顺序完全错。",
-    "tags": [
-      "immer",
-      "初级",
-      "React",
-      "useState"
-    ],
+    "tags": ["immer", "初级", "React", "useState"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -633,21 +467,10 @@
   {
     "stem": "Immer：在 recipe 里删除对象的某个属性，正确写法是？",
     "explanation": "用原生 `delete` 操作符：`delete draft.someKey`。Immer 会记录这次删除并在新状态里移除该属性，原对象不变。数组删元素则用 splice/pop/shift 等，或重新赋值过滤后的数组。\n\n- `delete draft.user.token` 正确。\n- `draft.user.token = undefined` 错误地把它设为 undefined 而非删除键（键仍存在）。\n- `draft.remove(\"token\")` 错误：普通对象没有 remove 方法。\n- `Reflect.deleteProperty(baseState, ...)` 错误：应作用于 draft，且 delete 更直接。",
-    "tags": [
-      "immer",
-      "初级",
-      "delete",
-      "对象"
-    ],
+    "tags": ["immer", "初级", "delete", "对象"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -675,21 +498,10 @@
   {
     "stem": "Immer：produce 的 recipe 如果什么都不返回（return 一个 undefined），Immer 会怎么处理？",
     "explanation": "完全没问题。recipe **通常不需要 return**——Immer 会自动返回 draft 终态化后的结果。一个不写 return 的函数在 JS 里返回 undefined，Immer 据此判定为「你只是改了 draft，没有要替换整个状态」，于是返回基于 draft 改动的新状态。\n\n- 「正常返回基于 draft 改动的新状态」正确。\n- 「返回 undefined 作为新状态」错误：return undefined 被当作「没替换」，不是把状态变 undefined（要变 undefined 需 return nothing）。\n- 「抛错」错误。\n- 「返回原 baseState 不做任何改动」错误：draft 的改动仍会生效。",
-    "tags": [
-      "immer",
-      "初级",
-      "返回值",
-      "recipe"
-    ],
+    "tags": ["immer", "初级", "返回值", "recipe"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -717,21 +529,10 @@
   {
     "stem": "Immer：Immer 打包体积大约是多少？这对它的定位意味着什么？",
     "explanation": "Immer 核心约 **3KB gzipped**，非常轻量。这与它「复用原生结构、不造新数据结构」的设计一致——只带一层 Proxy 逻辑，而不是一整套不可变集合实现。可选插件（Map/Set、patches、array methods）按需再各加约 1–2KB。\n\n- 「约 3KB gzipped」正确。\n- 「约 300KB」错误：差两个数量级。\n- 「0KB，浏览器原生」错误：它是第三方库。\n- 「约 50KB」错误：高估了。",
-    "tags": [
-      "immer",
-      "初级",
-      "体积",
-      "tree-shaking"
-    ],
+    "tags": ["immer", "初级", "体积", "tree-shaking"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "初级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "初级"]
     ],
     "options": [
       {
@@ -759,21 +560,10 @@
   {
     "stem": "Immer：下面这个 recipe 有什么问题？\nproduce(state, draft => { draft = { ...draft, done: true } })",
     "explanation": "**重新给 draft 整体赋值（draft = ...）是无效的**，等于什么都没做。Immer 追踪的是「对 draft 所指对象的修改」，而 `draft = newObj` 只是把局部变量 draft 重新指向另一个对象，Immer 完全看不到、也不会采纳。正确做法要么 mutate 现有 draft（`draft.done = true`），要么 **return** 新对象（且不能同时改 draft）。\n\n- 「重新赋值 draft 无效，相当于没改」正确。\n- 「会深拷贝并生效」错误。\n- 「会抛错」错误：它静默无效，更隐蔽。\n- 「会修改 baseState」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "pitfall",
-      "draft 赋值"
-    ],
+    "tags": ["immer", "中级", "pitfall", "draft 赋值"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -801,21 +591,10 @@
   {
     "stem": "Immer：在一个 recipe 里，既修改了 draft，又 return 了一个全新对象，会发生什么？",
     "explanation": "这是被明确禁止的：**不能同时 mutate draft 又 return 新值**，Immer 会抛错（An immer producer returned a new value *and* modified its draft）。因为两种意图冲突——Immer 无法判断你到底想要 draft 的改动还是返回的新对象。正确：要么只 mutate 不 return，要么只 return 不 mutate。\n\n- 「抛错（既改又返回是冲突的）」正确。\n- 「优先采用 return 的值，忽略 draft 改动」错误：实际是报错。\n- 「把两者合并」错误。\n- 「优先采用 draft 改动」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "pitfall",
-      "返回值"
-    ],
+    "tags": ["immer", "中级", "pitfall", "返回值"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -843,21 +622,10 @@
   {
     "stem": "Immer：要让一个 recipe 产出的新状态值是 `undefined`，应该怎么写？",
     "explanation": "直接 `return undefined` 不行——因为「没写 return 的函数也返回 undefined」，Immer 无法区分「想替换成 undefined」和「只是改了 draft」。为此 Immer 提供哨兵值 **`nothing`**：`return nothing`（`import { nothing } from \"immer\"`）明确表示「请产出 undefined」。注意：只有 undefined 有此歧义，null 等其他值正常 return 即可。\n\n- 「return nothing」正确。\n- 「return undefined」错误：被当作「未替换」。\n- 「draft = undefined」错误：重新赋值 draft 无效。\n- 「return null」错误：那产出的是 null 不是 undefined。",
-    "tags": [
-      "immer",
-      "中级",
-      "nothing",
-      "返回值"
-    ],
+    "tags": ["immer", "中级", "nothing", "返回值"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -885,21 +653,10 @@
   {
     "stem": "Immer：current(draft) 与 original(draft) 的区别是什么？",
     "explanation": "二者都用于在 recipe **内部**审视 draft，但取的「时点」不同：\n- `original(draft)`：返回**基础状态**里对应的**原始对象**（改动前的样子），常用于严格相等比较（如树搜索）。\n- `current(draft)`：返回 draft **当前改动后**状态的一份**普通（未冻结、非 Proxy）快照**，常用于调试打印中间态。\n两者都不能用于非 draft 对象。\n\n- 「original 取改动前原值，current 取当前改动后的快照」正确。\n- 把两者说反、或说成相同、或说成都返回 Proxy 都错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "current",
-      "original"
-    ],
+    "tags": ["immer", "中级", "current", "original"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -927,21 +684,10 @@
   {
     "stem": "Immer：要把一个 class（类）的实例作为可被 Immer draft 的状态，需要满足什么条件？",
     "explanation": "必须把该类标记为「可 draft」：给它设置 **`[immerable] = true`**（`import { immerable } from \"immer\"`），可以是类字段、构造函数里赋值，或 `Foo[immerable] = true` 静态赋值。否则 Immer 不会代理这个类实例。draft 会带上原型、只复制自有属性，且**构造函数不会被调用**。\n\n- 「设置 [immerable] = true」正确。\n- 「实现 toJSON()」错误：与可 draft 无关。\n- 「继承自 Immer.Record」错误：无此基类。\n- 「无需任何处理，类默认可 draft」错误：普通类默认不可 draft。",
-    "tags": [
-      "immer",
-      "中级",
-      "class",
-      "immerable"
-    ],
+    "tags": ["immer", "中级", "class", "immerable"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -969,21 +715,10 @@
   {
     "stem": "Immer：以下哪种数据 Immer **不**支持直接放进状态并 mutate（即便用上插件）？",
     "explanation": "Immer 支持普通对象、数组、（启用插件后的）Map/Set、以及标记了 immerable 的类。但它**不支持 exotic（奇异）对象**——如 DOM Node、window.location、Buffer 等，也不支持子类化的 Map/Set/Array。Date 也不能原地改，应创建新实例替换。\n\n- 「DOM Node / window.location 这类 exotic 对象」正确（不支持）。\n- 「普通嵌套对象」支持。\n- 「启用 enableMapSet 后的 Map」支持。\n- 「标记 immerable 的类实例」支持。",
-    "tags": [
-      "immer",
-      "中级",
-      "限制",
-      "exotic"
-    ],
+    "tags": ["immer", "中级", "限制", "exotic"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1011,21 +746,10 @@
   {
     "stem": "Immer：produce 的第三个参数是什么？",
     "explanation": "`produce(base, recipe, patchListener?)` 的第三参数是**可选的 patch 监听器**：`(patches, inversePatches) => void`。它在产出新状态时被回调，交给你这次改动对应的正向 patches 与反向 inversePatches。使用前需先 `enablePatches()`。这是除 `produceWithPatches` 外获取补丁的另一途径。\n\n- 「可选的 patchListener(patches, inversePatches)」正确。\n- 「初始状态 initialState」错误：初始状态是柯里化形式 produce(recipe, initialState) 的第二参，不是这里。\n- 「配置对象 options」错误。\n- 「错误回调 onError」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "produce",
-      "patchListener"
-    ],
+    "tags": ["immer", "中级", "produce", "patchListener"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1053,21 +777,10 @@
   {
     "stem": "Immer：关于 Immer 中 Map 的 key（键），下面哪种说法正确？",
     "explanation": "Immer 文档明确：**Map 的 key 永远不会被 draft 化**。这是为了避免语义混乱、并保证 key 始终保持引用相等（referentially equal）。也就是说，遍历/读取 Map 时，key 是原始对象，value 才会按需被代理成 draft。\n\n- 「key 永远不被 draft 化，保持引用相等」正确。\n- 「key 和 value 都会被 draft 化」错误。\n- 「key 会被深拷贝」错误。\n- 「key 必须是字符串」错误：Map 的 key 可以是任意类型，这与 Immer 无关。",
-    "tags": [
-      "immer",
-      "中级",
-      "Map",
-      "key"
-    ],
+    "tags": ["immer", "中级", "Map", "key"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1095,21 +808,10 @@
   {
     "stem": "Immer：以下哪种方式可以正确地把一个新对象「整体替换」当前状态（而不是改 draft）？",
     "explanation": "在 recipe 里 **直接 return 一个新值** 即可替换整个状态——但**前提是你没有同时 mutate draft**。例如 reducer 的 `loadUsers` 分支：`return action.payload`。这适合「整状态换新」的场景。\n\n- 「return action.payload（且不改 draft）」正确。\n- 「draft = action.payload」错误：重新赋值局部变量无效。\n- 「Object.assign(draft, payload) 之后再 return payload」错误：既改又返回会报错。\n- 「throw payload」当然错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "替换状态",
-      "返回值"
-    ],
+    "tags": ["immer", "中级", "替换状态", "返回值"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1137,22 +839,10 @@
   {
     "stem": "Immer：在 recipe 里查找并修改数组中某个对象，下面哪种是推荐的高效写法（大数组场景）？",
     "explanation": "对大数组反复 `draft.find(...)` 会为遍历到的元素创建 Proxy、且每次都从 draft 读，开销较大。官方建议：用 **index 或 Map 式查找定位**，或先用 `original(draft)` 在原始数组上做查找（不产生 draft 代理），定位到索引后再去 draft 上改。另外 v11 起可启用 array methods 插件优化 filter/find 等。\n\n- 「用 original() 在原数组上查找，再按 index 改 draft」正确。\n- 「对 draft 反复 find 嵌套 find」错误：开销大。\n- 「先 structuredClone 整个数组」错误。\n- 「直接改 baseState」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "数组",
-      "性能",
-      "original"
-    ],
+    "tags": ["immer", "中级", "数组", "性能", "original"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1180,21 +870,10 @@
   {
     "stem": "Immer：要使用 produceWithPatches / applyPatches 这套补丁功能，前置条件是什么？",
     "explanation": "必须先在应用启动时调用 **`enablePatches()`**（`import { enablePatches } from \"immer\"`）。和 Map/Set 一样，patches 是可选插件，默认不启用以保持包精简。启用后才能用 `produceWithPatches`、produce 的 patchListener、以及 `applyPatches`。\n\n- 「调用 enablePatches()」正确。\n- 「调用 enableMapSet()」错误：那是 Map/Set 的。\n- 「无需启用，默认可用」错误。\n- 「设置 setAutoFreeze(true)」错误：与补丁无关。",
-    "tags": [
-      "immer",
-      "中级",
-      "patches",
-      "enablePatches"
-    ],
+    "tags": ["immer", "中级", "patches", "enablePatches"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1222,21 +901,10 @@
   {
     "stem": "Immer：produceWithPatches 返回什么？",
     "explanation": "`produceWithPatches(base, recipe)` 返回一个**三元组** `[nextState, patches, inversePatches]`：新状态、正向补丁数组、反向补丁数组。patches 描述「如何从旧到新」，inversePatches 描述「如何从新回到旧」（用于撤销）。补丁是类 RFC-6902 的 JSON Patch，但 `path` 是数组形式。\n\n- 「[nextState, patches, inversePatches] 三元组」正确。\n- 「只返回 nextState」错误：那是普通 produce。\n- 「[nextState, inversePatches]」错误：少了正向 patches。\n- 「一个 Promise」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "produceWithPatches",
-      "patches"
-    ],
+    "tags": ["immer", "中级", "produceWithPatches", "patches"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1264,21 +932,10 @@
   {
     "stem": "Immer：下面关于「数据来源」的说法，哪个是正确的 Immer 行为？",
     "explanation": "**只有来自 baseState 的数据才会被 draft 化**。如果你在 recipe 里引用了来自闭包/外部的对象，并把它塞进 draft，这个外部对象**不会被代理**（即便它成了新状态的一部分），对它的后续直接修改不会被 Immer 追踪、也可能违反冻结。稳妥做法是塞进去后通过 draft 路径再访问/修改它。\n\n- 「来自闭包/外部的数据不会被 draft 化」正确。\n- 「所有进入 draft 的数据都会被自动代理」错误。\n- 「外部数据会被自动深拷贝」错误。\n- 「引用外部数据会抛错」错误。",
-    "tags": [
-      "immer",
-      "中级",
-      "pitfall",
-      "数据来源"
-    ],
+    "tags": ["immer", "中级", "pitfall", "数据来源"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "中级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "中级"]
     ],
     "options": [
       {
@@ -1306,21 +963,10 @@
   {
     "stem": "Immer：createDraft / finishDraft 这对低级 API 的典型用途是什么？它与 produce 有何关键约束？",
     "explanation": "`createDraft(base)` 创建一个**脱离 recipe 函数**、可长期持有的 draft；改动若干次后用 `finishDraft(draft)` 终态化产出新状态。主要用于库作者构建抽象，或表达「跨时间/异步」的草稿更新。关键约束：**不能用 finishDraft 去终态化一个由 produce 产生的 draft**（会破坏 produce 的作用域生命周期）；官方也推荐应用代码优先用 produce（更不易错）。finishDraft 第二参也可传 patchListener。\n\n- 「脱离函数持有 draft、稍后 finishDraft；不能 finishDraft 一个 produce 的 draft」正确。\n- 其余把约束说反或说成等价于 produce 的均错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "createDraft",
-      "finishDraft"
-    ],
+    "tags": ["immer", "高级", "createDraft", "finishDraft"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1348,21 +994,10 @@
   {
     "stem": "Immer：关于「在 produce 里写异步逻辑（async recipe）」，正确的认识是？",
     "explanation": "Immer 的核心 **不支持异步 recipe**：所有异步工作必须在 recipe 返回**之前**完成。draft 只在同步 produce 调用期间有效，把 draft 泄漏到 await 之后再改是反模式（异步期间发生的更新会被「丢失」）。需要异步时，官方建议**先取数据、再 draft**；若确需跨时间，用 createDraft/finishDraft，但仍推荐先 fetch 再 draft。\n\n- 「核心不支持 async recipe，异步要在 recipe 外先做完」正确。\n- 「produce 会等待 async recipe 并返回 Promise」错误。\n- 「在 draft 上 await 后继续改是推荐做法」错误：是反模式。\n- 「加 enableAsync() 即可」错误：无此 API。",
-    "tags": [
-      "immer",
-      "高级",
-      "async",
-      "反模式"
-    ],
+    "tags": ["immer", "高级", "async", "反模式"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1390,21 +1025,10 @@
   {
     "stem": "Immer：当 recipe 实际上**没有对 draft 做任何改动**时，produce 返回什么？这有何性能意义？",
     "explanation": "produce 会**原样返回传入的 baseState**（同一引用），而不是造一个内容相同的新对象。这意味着「无变更即引用不变」——下游用 `===`/memo 化做变更检测时能正确判定「没变」，从而**跳过不必要的重渲染/重算**。这也是 Immer 有时比手写 reducer 更省的原因（手写容易不小心总是返回新对象）。\n\n- 「返回原 baseState 同一引用，利于跳过重渲染」正确。\n- 「总是返回新对象」错误：无变更时不会。\n- 「返回 undefined」错误。\n- 「返回 baseState 的深拷贝」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "引用相等",
-      "性能"
-    ],
+    "tags": ["immer", "高级", "引用相等", "性能"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1432,21 +1056,10 @@
   {
     "stem": "Immer：对一个「很大且未来不会再改」的数据，要放进 Immer 状态树，性能上更优的做法是？",
     "explanation": "auto-freeze 会**递归冻结**整棵产出结果；对一大块「以后不会改」的数据，每次让 Immer 递归扫描冻结是浪费。官方建议用 **`freeze(data, true)`** 预先（一次性）深冻结这块数据，再放进状态——之后 Immer 见它已冻结便不再重复递归处理，省下扫描开销。\n\n- 「用 freeze() 预冻结后再放进去」正确。\n- 「每次都让 produce 重新递归冻结」就是要避免的开销。\n- 「关掉所有冻结 setAutoFreeze(false) 是唯一办法」过度：可针对性 freeze 而不必全局关闭。\n- 「把大对象 JSON.parse(JSON.stringify()) 一遍」无关且低效。",
-    "tags": [
-      "immer",
-      "高级",
-      "freeze",
-      "性能"
-    ],
+    "tags": ["immer", "高级", "freeze", "性能"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1474,21 +1087,10 @@
   {
     "stem": "Immer：把 produce 放进循环里逐次产出，例如 for (const x of items) state = produce(state, d => { d.list.push(x) })，问题在哪？",
     "explanation": "每次循环都跑一次完整的 produce（建代理 → 终态化 → 冻结），N 个元素就是 N 次终态化，开销随规模急剧上升。正确做法是把循环**收进一次 produce**：`state = produce(state, d => { for (const x of items) d.list.push(x) })`——一次代理、一次终态化、一次冻结，批量完成。\n\n- 「每次循环都完整终态化一次，应把循环放进单个 produce」正确。\n- 「没问题，性能一样」错误。\n- 「produce 不能放循环里会报错」错误：能跑，只是慢。\n- 「应该改用 structuredClone」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "性能",
-      "批处理"
-    ],
+    "tags": ["immer", "高级", "性能", "批处理"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1516,21 +1118,10 @@
   {
     "stem": "Immer：在 TypeScript 中写「柯里化生产者」时，为什么常推荐显式标注状态类型（如 produce<Todo>(...) 或给 draft 标 Draft<Todo>）？",
     "explanation": "柯里化形式 `produce(recipe)` 缺少初始状态作类型推断依据，TS 可能发生**类型变宽/变窄**或推断不出 draft 类型。因此推荐显式提供类型：要么 `produce<Todo>(draft => {...})`（得到 `(state: Todo) => Todo`），要么给参数标 `draft: Draft<Todo>`，或干脆用带 initialState 的形式让推断自动工作。带额外参数时可用元组泛型 `produce<Todo, [boolean]>(...)`。\n\n- 「缺少初始状态做推断，需显式标注以免类型变宽/变窄」正确。\n- 其余把原因归为「运行时需要」「Immer 不支持 TS」等均错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "TypeScript",
-      "curried"
-    ],
+    "tags": ["immer", "高级", "TypeScript", "curried"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1558,21 +1149,10 @@
   {
     "stem": "Immer：castDraft 和 castImmutable 这两个工具函数在运行时做了什么？",
     "explanation": "二者都是**纯类型层面的转换、运行时是 no-op（原样返回入参）**。`castDraft` 把 immutable 类型「看作」可变，解决把 readonly 数据赋给 draft 字段时的 TS 报错；`castImmutable` 反向，把可变类型标注为 immutable。它们不改变任何运行时值，只让类型检查通过。\n\n- 「运行时 no-op，仅做类型转换」正确。\n- 「会深拷贝并冻结」错误。\n- 「会创建 draft 代理」错误。\n- 「会校验数据合法性」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "TypeScript",
-      "castDraft"
-    ],
+    "tags": ["immer", "高级", "TypeScript", "castDraft"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1600,21 +1180,10 @@
   {
     "stem": "Immer：Immutable<T> 这个 TS 工具类型的作用是什么？Immer 默认会把 produce 的返回类型包成 Immutable 吗？",
     "explanation": "`Immutable<T>` 递归地把类型的所有属性变为 `readonly`（深只读），与 Immer 运行时的深冻结相呼应。但 Immer **默认不会**自动把返回类型包成 Immutable——除非你传入的 base 类型本身就是 immutable 的。实践建议：把状态类型定义为 readonly（或用 Immutable<T>），返回类型就会如实反映冻结语义。\n\n- 「递归 readonly；默认不自动包返回类型，除非入参已是 immutable」正确。\n- 「自动把所有返回都包成 Immutable」错误。\n- 「让类型可变」错误（那是 Draft）。\n- 「运行时冻结对象」错误：它是类型，不影响运行时。",
-    "tags": [
-      "immer",
-      "高级",
-      "TypeScript",
-      "Immutable"
-    ],
+    "tags": ["immer", "高级", "TypeScript", "Immutable"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1642,21 +1211,10 @@
   {
     "stem": "Immer：applyPatches 的典型用途，以及它与 inversePatches 配合能实现什么？",
     "explanation": "`applyPatches(base, patches)` 把一组补丁**重放**到某个状态上，产出新状态。配合 produceWithPatches 得到的 inversePatches，可以实现**撤销/重做**（对当前状态 apply inversePatches 即回退）、以及**跨端增量同步**（如通过 WebSocket 只传补丁而非整状态）、调试回放。注意：Immer 不保证生成的补丁是「最小集」，需要时可自行压缩。\n\n- 「重放补丁产出新状态；配合 inversePatches 做撤销/重做与增量同步」正确。\n- 「把两个状态做 diff」错误：那是 produceWithPatches 在产出补丁，applyPatches 是反向应用。\n- 「深拷贝状态」错误。\n- 「校验补丁合法性并抛错」并非其主职。",
-    "tags": [
-      "immer",
-      "高级",
-      "applyPatches",
-      "undo-redo"
-    ],
+    "tags": ["immer", "高级", "applyPatches", "undo-redo"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1684,21 +1242,10 @@
   {
     "stem": "Immer：以下哪条是关于 Immer「数组」的真实限制？",
     "explanation": "对数组而言，Immer **只保证数字索引和 length 的修改被处理**；你**挂在数组上的自定义（非索引）属性不会被保留**。因为数组终态化按「索引 + length」语义重建。需要附带元数据时应放进对象而非挂到数组上。\n\n- 「数组上的自定义非索引属性不会被保留」正确。\n- 「数组完全不能在 Immer 里用」错误：数组是核心支持的。\n- 「数组必须先 enableArray()」错误：无此前置（array methods 插件是可选性能优化，非必需）。\n- 「修改数组会自动转成对象」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "数组",
-      "限制"
-    ],
+    "tags": ["immer", "高级", "数组", "限制"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1726,21 +1273,10 @@
   {
     "stem": "Immer：嵌套使用 produce（在一个 recipe 内部再调用 produce）时要注意什么？",
     "explanation": "内层 produce 会拿到「draft 的 draft」，并返回它自己的新结果——这个**内层结果必须被显式使用/合并回外层**（例如赋值给外层 draft 的某字段），否则内层产出的新状态会被丢弃。常见误用是只调内层 produce 却不接收其返回值。一般也建议尽量避免不必要的嵌套。\n\n- 「内层 produce 的返回值必须被合并回外层」正确。\n- 「内层会自动改外层 draft，无需接收返回」错误。\n- 「嵌套会直接抛错」错误。\n- 「内外层共享同一 draft，改谁都一样」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "嵌套produce",
-      "pitfall"
-    ],
+    "tags": ["immer", "高级", "嵌套produce", "pitfall"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1768,21 +1304,10 @@
   {
     "stem": "Immer：相比手写 reducer，Immer 在性能上的真实定位更接近以下哪种描述？",
     "explanation": "官方基准：基于 Proxy 的 Immer 大致比纯手写 reducer **慢约 2–3 倍**，但在实践中通常**可忽略**；而且 Immer 能通过「无改动返回原引用」**避免不必要的重渲染**，有时反而整体更快。与 Immutable.js 相比速度相当，却省去了来回转换普通对象的成本。\n\n- 「比手写慢约 2–3 倍但通常可忽略，且能省重渲染」正确。\n- 「永远比手写快」错误。\n- 「比手写慢上百倍，生产不可用」错误。\n- 「与手写完全相同」错误。",
-    "tags": [
-      "immer",
-      "高级",
-      "性能",
-      "对比"
-    ],
+    "tags": ["immer", "高级", "性能", "对比"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "高级"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "高级"]
     ],
     "options": [
       {
@@ -1810,21 +1335,10 @@
   {
     "stem": "Immer：截至 2026 年，Immer 的当前主版本是哪个量级？v11 相对 v10 一个值得注意的变化是什么？",
     "explanation": "Immer 当前已进入 **v11.x**（如 11.1.x）。v11.0.0（2025-11）重写了终态化系统（借鉴 Mutative 的「finalization callback」回调式做法替代递归树遍历，提升性能），并把**默认迭代模式改为 loose iteration（非严格迭代）**（破坏性变更）。v11.1.0 还新增了可选的 **array methods 插件（enableArrayMethods）** 加速数组方法。\n\n- 「v11.x；重写终态化 + 默认 loose iteration」正确。\n- 「仍停留在 v6」错误。\n- 「v11 删除了 produce」错误。\n- 「v11 强制所有项目用 Map/Set」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "版本",
-      "v11"
-    ],
+    "tags": ["immer", "专家", "版本", "v11"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -1852,21 +1366,10 @@
   {
     "stem": "Immer：enableArrayMethods()（v11 引入的 array methods 插件）启用后，filter/find/slice 这类「子集」方法的回调参数与返回值有何特别之处？",
     "explanation": "为优化性能，启用该插件后这些被改写的方法**回调收到的是 base 值（非 draft）**——避免为遍历的每个元素都建 Proxy；但 filter/slice/find/findLast 这类「子集」方法**返回的数组里装的是指回原位置的 draft 代理**，因此**对返回项的修改仍会作用到 draft 状态**。注意区分：concat/flat 这类「变换」方法返回的是 base 值，改它们**不**回写。\n\n- 「回调收 base 值，但子集方法返回项是 draft、改之会回写」正确。\n- 其余把回调说成 draft、或说返回项改了不回写（针对 filter）均错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "enableArrayMethods",
-      "数组"
-    ],
+    "tags": ["immer", "专家", "enableArrayMethods", "数组"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -1894,21 +1397,10 @@
   {
     "stem": "Immer：setUseStrictShallowCopy 用来控制什么？默认值是什么？",
     "explanation": "它控制 Immer 浅拷贝对象时**是否严格复制非可枚举（non-enumerable）属性**等。默认是**关闭（非严格）**——出于性能，默认只复制普通可枚举自有属性。当你的对象依赖非可枚举属性、或需要更贴近原对象的拷贝语义时，可开启（支持 `true` 或 `\"class_only\"` 仅对类生效）。注意：开启 strict shallow copy 时，getter 在「首次 mutation 时」被求值，而非 produce 返回时。\n\n- 「控制是否严格复制非可枚举属性，默认关闭」正确。\n- 「控制是否冻结，默认开」错误（那是 setAutoFreeze）。\n- 「控制 Map/Set，默认开」错误。\n- 「控制补丁生成，默认开」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "setUseStrictShallowCopy",
-      "配置"
-    ],
+    "tags": ["immer", "专家", "setUseStrictShallowCopy", "配置"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -1936,21 +1428,10 @@
   {
     "stem": "Immer：v11 把默认迭代模式改为 loose iteration（可用 setUseStrictIteration 切换），这一改动的取舍是什么？",
     "explanation": "loose（非严格）迭代默认只遍历**普通可枚举属性**，省去对 symbol 键、非可枚举属性的额外检查，从而**更快**；代价是若你的状态依赖「在迭代/拷贝中保留 symbol 或非可枚举属性」，默认行为可能不覆盖。需要严格语义时用 `setUseStrictIteration(true)`。这是 v11 为性能做的默认值调整（属破坏性变更）。\n\n- 「默认更快但不覆盖 symbol/非可枚举；需严格用 setUseStrictIteration(true)」正确。\n- 「loose 更慢」错误。\n- 「loose 会遍历原型链」错误。\n- 「该选项不存在」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "setUseStrictIteration",
-      "v11"
-    ],
+    "tags": ["immer", "专家", "setUseStrictIteration", "v11"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -1978,21 +1459,10 @@
   {
     "stem": "Immer：在什么场景下，Immer 反而可能**不是**最佳选择，直接用 structuredClone 或手写浅拷贝更合适？",
     "explanation": "对于**一次性、浅层、改动面很大**的更新（几乎整对象都要换），Immer 的 Proxy 追踪 + 终态化 + 冻结反而是额外开销，此时直接 return 新对象或用 structuredClone 可能更简单直接。另外当状态里大量是 **exotic 对象**（DOM/Buffer 等 Immer 不支持的）或需要**真正深拷贝隔离**时，structuredClone 更合适。Immer 的甜区是「**深层、局部、频繁**的不可变更新」。\n\n- 「浅层/一次性/大面积替换、或含 exotic 对象时」正确。\n- 「深层局部频繁更新时不该用 Immer」错误：那恰是 Immer 甜区。\n- 「任何时候都别用 structuredClone」错误。\n- 「Immer 永远最优」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "structuredClone",
-      "取舍"
-    ],
+    "tags": ["immer", "专家", "structuredClone", "取舍"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -2020,21 +1490,10 @@
   {
     "stem": "Immer：Immer 假设状态是「单向树（unidirectional tree）」。如果状态里存在循环引用或同一对象在树中出现两次，会怎样？",
     "explanation": "Immer 明确假设状态是**单向树**：同一对象不应在树中出现两次，也不应有循环引用。违反这一假设会导致行为异常/出错，因为终态化按树结构遍历与复制，重复节点会被各自独立处理、循环引用会陷入问题。需要图结构时应规范化（normalize）数据，用 id 引用替代直接对象引用。\n\n- 「违反单向树假设会出问题，应规范化数据」正确。\n- 「Immer 会自动去重/打破循环」错误。\n- 「完全支持任意图结构」错误。\n- 「会静默把重复节点合并成一个」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "单向树",
-      "限制"
-    ],
+    "tags": ["immer", "专家", "单向树", "限制"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -2062,21 +1521,10 @@
   {
     "stem": "Immer：为什么不能用 === 直接比较 recipe 里的 draft 与原始对象来判断「是不是同一个节点」？应该用什么？",
     "explanation": "因为 draft 是 Proxy，`draft.users === baseState.users` 会因「代理 vs 原对象」而**不相等**，无法用来做身份判断（如在树里定位某节点）。正确做法是用 **`original(draft.x)`** 取回原始对象再比较：`original(draft.users) === baseState.users` 为 true。current() 取的是当前快照、也不等于原对象。\n\n- 「draft 是 Proxy 故 === 不等，应用 original() 比较」正确。\n- 「draft 与原对象 === 恒等」错误。\n- 「应该用 current() 比较身份」不准确：current 是改动后的快照，不用于和原对象比身份。\n- 「Immer 禁止任何比较」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "original",
-      "引用比较"
-    ],
+    "tags": ["immer", "专家", "original", "引用比较"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -2104,21 +1552,10 @@
   {
     "stem": "Immer：Immer 生成的 patch 遵循什么格式？它与标准 JSON Patch（RFC 6902）有何不同？",
     "explanation": "Immer 的 patch 形如 `{ op, path, value }`，op 为 \"add\"/\"replace\"/\"remove\"，**贴近 RFC 6902 JSON Patch，但 `path` 用的是数组**（如 `[\"users\", 3, \"name\"]`），而标准 JSON Patch 的 path 是斜杠分隔的字符串（如 `/users/3/name`）。需要互通时要做一次 path 形态转换。另外 Immer 不保证补丁是最小集。\n\n- 「类 RFC 6902，但 path 是数组而非字符串」正确。\n- 「与 RFC 6902 完全一致」错误：path 形态不同。\n- 「自创二进制格式」错误。\n- 「path 用点号分隔字符串」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "patches",
-      "JSON Patch"
-    ],
+    "tags": ["immer", "专家", "patches", "JSON Patch"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -2146,21 +1583,10 @@
   {
     "stem": "Immer：Immer 类（new Immer(config)）相对直接 import 的 produce/setAutoFreeze 等顶层 API，价值在哪？",
     "explanation": "顶层 `produce`、`setAutoFreeze`、`setUseStrictShallowCopy` 等其实是**一个默认 Immer 单例**上的方法。`new Immer(config)` 让你创建**独立配置的实例**：它有自己的 produce/applyPatches 等绑定方法，运行时改它的 setAutoFreeze 等设置**只影响该实例**，不污染全局默认实例。适合库作者需要隔离配置、或同一进程内并存多套不同冻结/拷贝策略的场景。\n\n- 「创建配置隔离的独立实例，互不影响」正确。\n- 「功能与顶层 API 完全相同，无差别」错误（差别正是隔离性）。\n- 「new Immer 才能用 Map/Set」错误。\n- 「new Immer 会自动开启所有插件」错误。",
-    "tags": [
-      "immer",
-      "专家",
-      "Immer实例",
-      "配置隔离"
-    ],
+    "tags": ["immer", "专家", "Immer实例", "配置隔离"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
@@ -2188,21 +1614,10 @@
   {
     "stem": "Immer：关于在 recipe 里用 void 操作符（如 produce(draft => void (draft.age += 1)))，下面说法正确的是？",
     "explanation": "这是一个**写法捷径**：箭头函数若用表达式体（无大括号），其表达式值会被当作返回值——而 Immer 把「返回值」视为「替换整个状态」，于是 `draft => (draft.age += 1)` 会**误把赋值结果当作要替换的新状态**。用 `void` 把表达式求值后强制返回 undefined，即可既写成单行、又避免「意外返回」。官方提示：为可读性，多人协作代码仍建议用带大括号的常规写法。\n\n- 「void 让单行箭头体求值后返回 undefined，避免意外把改动结果当新状态返回」正确。\n- 「void 会跳过冻结」错误。\n- 「void 让 produce 变异步」错误。\n- 「void 是必需的，否则报错」错误：常规大括号写法更推荐。",
-    "tags": [
-      "immer",
-      "专家",
-      "void",
-      "返回值陷阱"
-    ],
+    "tags": ["immer", "专家", "void", "返回值陷阱"],
     "categories": [
-      [
-        "技术方向",
-        "Immer"
-      ],
-      [
-        "难度",
-        "专家"
-      ]
+      ["技术方向", "Immer"],
+      ["难度", "专家"]
     ],
     "options": [
       {
