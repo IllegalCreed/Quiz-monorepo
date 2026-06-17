@@ -444,7 +444,22 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "EditorConfig", sort: 10 },
             ],
           },
-          { name: "在线编辑器（StackBlitz / CodeSandbox / Expo）", sort: 4 },
+          {
+            // 2026-06-17 选型调研定稿：占位单叶 → 5 叶。判据＝「浏览器内、手写代码、即时跑/分享」。
+            // 排序按机制聚类：WebContainers(跑 Node) → 服务端 microVM → 纯前端 iframe → RN 垂直 → 框架官方编译。
+            // 边界去重：bolt.new/v0/Lovable/Replit Agent(prompt-to-app)→ 大语言模型·AI 应用生成器；
+            // Gitpod(Ona)/GitHub Codespaces(云开发环境)、val.town(serverless)、Firebase Studio(2027 停运)、
+            // Glitch(2025-07 关停) 均不立叶；JSFiddle 并入 CodePen 对比带过；Replit 本体转 AI 不单列。
+            name: "在线编辑器",
+            sort: 4,
+            children: [
+              { name: "StackBlitz", sort: 1 },
+              { name: "CodeSandbox", sort: 2 },
+              { name: "CodePen", sort: 3 },
+              { name: "Expo Snack", sort: 4 },
+              { name: "框架官方 Playground", sort: 5 },
+            ],
+          },
           {
             name: "文档生成器",
             sort: 5,
@@ -822,13 +837,29 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
-            name: "编排工具",
+            // 2026-06-17 选型调研新增子组：AI 应用生成器（prompt-to-app / vibe coding）。
+            // bolt.new（StackBlitz 出品，复用自家 WebContainers 浏览器内跑 Node）、v0（Vercel
+            // 旗舰，agentic 全栈生成 + 一键部署 Vercel）、Lovable（2025-12 估值 $6.6B、$200M ARR）
+            // 三家均「自然语言 → 可运行全栈应用」，受众含大量非编码者，是区别于 Agent（改你
+            // 代码库的 coding agent）与「前端开发工具 > 在线编辑器」（手写代码的浏览器内 playground）
+            // 的新物种。边界互斥：凡主轴是「自然语言生成应用」的归此组，不入在线编辑器章。
+            // TODO（下批评估）：Replit Agent（Replit 已整体转型 AI 应用生成）亦属此组，待评估立叶。
+            name: "AI 应用生成器",
             sort: 3,
+            children: [
+              { name: "bolt.new", sort: 1 },
+              { name: "v0", sort: 2 },
+              { name: "Lovable", sort: 3 },
+            ],
+          },
+          {
+            name: "编排工具",
+            sort: 4,
             children: [{ name: "Dify", sort: 1 }],
           },
           {
             name: "其他工具",
-            sort: 4,
+            sort: 5,
             children: [
               { name: "RAG", sort: 1 },
               { name: "LangChain", sort: 2 },
@@ -845,7 +876,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           },
           {
             name: "提示词工程",
-            sort: 5,
+            sort: 6,
             children: [
               { name: "基础提示设计", sort: 1 },
               { name: "高级提示技巧", sort: 2 },
@@ -853,12 +884,12 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           },
           {
             name: "MCP",
-            sort: 6,
+            sort: 7,
             children: [{ name: "Brave Search", sort: 1 }],
           },
           {
             name: "Skills",
-            sort: 7,
+            sort: 8,
             children: [
               { name: "Superpowers", sort: 1 },
               { name: "Everything Claude Code", sort: 2 },
