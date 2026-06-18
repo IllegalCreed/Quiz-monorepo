@@ -461,11 +461,22 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-06-18 选型调研定稿：占位 2 叶 → 7 叶。判据＝「读代码注释/类型 或 API 规范，产出 API 文档」。
+            // 排序按「代码文档（JS 锚点→TS 主力→库契约→注释规范）→ OpenAPI 文档（参考实现→只读经典→新一代）」聚类。
+            // 边界去重：站点型 SSG（VitePress/Docusaurus/Nextra/Starlight/Fumadocs/Mintlify）→ 前端框架·静态网站框架；
+            // 组件文档（Storybook/Styleguidist/dumi/Ladle/Docz）→ 架构设计·组件设计；
+            // documentation.js（更新放缓）/ESDoc（弃用）被 TypeDoc+JSDoc 覆盖，不立叶；
+            // api-documenter 并入 API Extractor 叶（其 Markdown 输出环节）；RapiDoc/Stoplight Elements 小众不立。
             name: "文档生成器",
             sort: 5,
             children: [
               { name: "JSDoc", sort: 1 },
               { name: "TypeDoc", sort: 2 },
+              { name: "API Extractor", sort: 3 },
+              { name: "TSDoc", sort: 4 },
+              { name: "Swagger UI", sort: 5 },
+              { name: "Redoc", sort: 6 },
+              { name: "Scalar", sort: 7 },
             ],
           },
         ],

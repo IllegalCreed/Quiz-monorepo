@@ -1,0 +1,1738 @@
+[
+  {
+    "stem": "JSDoc 中可选参数有三种语法，关于 `@param {string=} p2`、`@param {string} [p3]`、`@param {string} [p4=“x”]`，下列辨析正确的是？",
+    "explanation": "三者都表示参数可选：类型后缀 `=`（如 `{string=}`）是 Closure 风格；参数名加方括号 `[p3]` 是 JSDoc 风格；`[p4=“x”]` 在方括号内额外给出默认值 `x`。前两者仅标记可选，第三种还携带默认值信息，三种写法在工具链中等价表达可选性。",
+    "tags": ["jsdoc", "param", "可选参数"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`{string=}` 与 `[p3]` 仅标记可选，`[p4=“x”]` 在方括号内额外带默认值",
+        "isCorrect": true,
+        "description": "类型后 `=` 与参数名方括号都表可选，方括号内 `=值` 再补默认值"
+      },
+      {
+        "text": "三者语义不同：`=` 表非空、`[]` 表可空、`[=]` 表只读",
+        "isCorrect": false,
+        "description": "三者都表可选；非空是 `!`、可空是 `?`、只读是 `@readonly`，与此无关"
+      },
+      {
+        "text": "只有 `[p3]` 合法，`{string=}` 是 TypeScript 才有的写法",
+        "isCorrect": false,
+        "description": "`{string=}` 是 Closure 风格的合法 JSDoc 写法，并非 TS 专属"
+      },
+      {
+        "text": "`[p4=“x”]` 会让 JSDoc 在运行时给参数赋默认值 `x`",
+        "isCorrect": false,
+        "description": "JSDoc 纯静态，不在运行时赋值；默认值仅作文档与类型提示"
+      }
+    ]
+  },
+  {
+    "stem": "在 JSDoc 类型表达式中写 `{!number}`（非空），当 TypeScript 通过 `@ts-check` 消费该 `.js` 文件时会怎样？",
+    "explanation": "`!` 前缀是 Closure 的非空标记，在纯 JSDoc 语义里表示该值绝不为 `null`。但 TypeScript 在解析 JSDoc 类型时会忽略 `!`，把 `{!number}` 直接当作 `number` 处理。也就是说该非空约束在 TS 检查链路里不产生额外效果。",
+    "tags": ["jsdoc", "typescript", "non-nullable"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TS 忽略 `!`，把 `{!number}` 当作普通的 `number`",
+        "isCorrect": true,
+        "description": "TS 解析 JSDoc 时不识别 Closure 的非空 `!`，等价于 `number`"
+      },
+      {
+        "text": "TS 会把它解析为 `NonNullable<number>` 并强制排除 null",
+        "isCorrect": false,
+        "description": "TS 直接忽略前缀 `!`，不会生成 NonNullable 包装"
+      },
+      {
+        "text": "TS 报语法错误，因为 `!` 在类型位置非法",
+        "isCorrect": false,
+        "description": "TS 能解析但忽略 `!`，不会因此报错"
+      },
+      {
+        "text": "TS 把它当作可空类型 `number | null`",
+        "isCorrect": false,
+        "description": "`!` 是非空；可空才是 `?`，且即便 `?` 在 TS 里也另有讲究"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 里写 `{?number}`（可空），在 TypeScript 消费时，关于其语义官方建议是？",
+    "explanation": "`?` 前缀表示可空（`number` 或 `null`）。TS 解析 JSDoc 时确实把它视作 `number | null`，但该可空性仅在开启 `strictNullChecks` 时才真正约束；未开严格空检查时 `null` 本就可赋给任意类型。因此 TS 官方建议直接写 `number | null` 表达可空，语义更清晰、可移植。",
+    "tags": ["jsdoc", "typescript", "nullable", "strictNullChecks"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "其可空性仅在 `strictNullChecks` 下有意义，官方更建议写 `number | null`",
+        "isCorrect": true,
+        "description": "未开严格空检查时 null 可赋给任意类型，官方推荐显式联合 `number | null`"
+      },
+      {
+        "text": "无论是否开启 `strictNullChecks`，`?` 都强制排除 null",
+        "isCorrect": false,
+        "description": "`?` 是可空（含 null），不是排除 null；排除 null 是 `!`"
+      },
+      {
+        "text": "TS 完全无法识别 `?`，必须改成 `.ts` 文件",
+        "isCorrect": false,
+        "description": "TS 能识别 `?`，无需迁移到 `.ts`"
+      },
+      {
+        "text": "`?` 在 TS 里等价于把参数标为可选",
+        "isCorrect": false,
+        "description": "可空与可选是两个维度：可选用 `[name]`，可空才是 `?`"
+      }
+    ]
+  },
+  {
+    "stem": "当 TypeScript 通过 `checkJs` 消费 `.js` 中的 JSDoc 时，下列哪一组标签是 TypeScript 不支持（不会被识别为类型信息）的？",
+    "explanation": "TypeScript 对 JSDoc 的支持是子集。`@memberof`、`@yields`、`@member`、`@async` 这类纯文档组织/语义标签 TS 并不消费——它们不影响类型推断。相对地，`@param`、`@returns`、`@type`、`@typedef`、`@template`、`@enum` 等才是 TS 会读取的类型相关标签。",
+    "tags": ["jsdoc", "typescript", "标签支持"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`@memberof`、`@yields`、`@member`、`@async`",
+        "isCorrect": true,
+        "description": "这些是文档组织/语义标签，TS 不将其作为类型信息消费"
+      },
+      {
+        "text": "`@param`、`@returns`、`@type`、`@typedef`",
+        "isCorrect": false,
+        "description": "这些是 TS 重点识别的核心类型标签"
+      },
+      {
+        "text": "`@template`、`@enum`、`@satisfies`、`@import`",
+        "isCorrect": false,
+        "description": "它们都被 TS 识别，分别用于泛型、枚举、断言校验与类型导入"
+      },
+      {
+        "text": "`@type`、`@callback`、`@property`、`@overload`",
+        "isCorrect": false,
+        "description": "这些都参与 TS 的类型推断，并非不支持"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 文档注释要被解析，必须以特定序列开头；下列哪种注释会被 JSDoc 直接忽略（不进入解析器）？",
+    "explanation": "JSDoc 只识别以 `/**`（斜杠加两个星号）开头的注释。这是区分文档注释与普通注释的硬约定：普通块注释 `/*`、行注释 `//`、以及压缩工具保留注释 `/*!` 都不会被 JSDoc 解析。这是新手最常踩的第一道坎——少打一个星号，整段文档凭空消失。",
+    "tags": ["jsdoc", "注释语法"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`/*` 开头的普通块注释",
+        "isCorrect": true,
+        "description": "单星号块注释不被 JSDoc 解析，只有 `/**` 才进解析器"
+      },
+      {
+        "text": "`/**` 开头的注释",
+        "isCorrect": false,
+        "description": "这正是 JSDoc 唯一识别的文档注释起始序列"
+      },
+      {
+        "text": "`/** @param ... */` 多行注释",
+        "isCorrect": false,
+        "description": "以 `/**` 起始，会被正常解析"
+      },
+      {
+        "text": "紧贴函数上方的 `/**` 注释",
+        "isCorrect": false,
+        "description": "位置正确且以 `/**` 起始，会被解析并关联到该函数"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的内联标签（inline tag）与块标签（block tag）写法不同；下列哪一项不属于 JSDoc 的内联标签？",
+    "explanation": "JSDoc 内联标签只有 4 个：`{@link}`、`{@linkcode}`（等宽渲染）、`{@linkplain}`（纯文本渲染）、`{@tutorial}`。它们写在花括号里、嵌入描述文本中。而 `@returns` 是块标签——以 `@` 起行、独占一行。把块标签误当内联标签写进花括号会导致解析异常。",
+    "tags": ["jsdoc", "内联标签", "块标签"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`{@returns}`",
+        "isCorrect": true,
+        "description": "`@returns` 是块标签，不能作为内联标签写进花括号"
+      },
+      {
+        "text": "`{@link}`",
+        "isCorrect": false,
+        "description": "标准内联标签之一，正文中插入符号或 URL 链接"
+      },
+      {
+        "text": "`{@linkcode}`",
+        "isCorrect": false,
+        "description": "内联标签，以等宽字体渲染链接文本"
+      },
+      {
+        "text": "`{@tutorial}`",
+        "isCorrect": false,
+        "description": "内联标签，链接到 tutorial 教程页"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中 `{@linkcode}` 与 `{@linkplain}` 相比普通的 `{@link}`，差异在哪里？",
+    "explanation": "三者都是生成链接的内联标签，区别在渲染样式：`{@link}` 按模板默认风格渲染；`{@linkcode}` 强制以等宽（代码）字体显示链接文本；`{@linkplain}` 强制以普通正文字体显示。当全局开启 `cleverLinks`/`monospaceLinks` 时，用 `{@linkcode}`/`{@linkplain}` 可在单处覆盖该全局风格。",
+    "tags": ["jsdoc", "link", "内联标签"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`{@linkcode}` 以等宽字体、`{@linkplain}` 以普通正文渲染链接文本",
+        "isCorrect": true,
+        "description": "二者用于覆盖默认/全局链接渲染风格，分别走等宽与纯文本"
+      },
+      {
+        "text": "`{@linkcode}` 链接到源码行，`{@linkplain}` 链接到文档页",
+        "isCorrect": false,
+        "description": "二者都生成同类链接，差异只在文本渲染样式而非目标"
+      },
+      {
+        "text": "`{@linkcode}` 只能链外部 URL，`{@linkplain}` 只能链内部符号",
+        "isCorrect": false,
+        "description": "两者都可链接符号或 URL，限制不在目标类型"
+      },
+      {
+        "text": "三者完全等价，仅名字不同",
+        "isCorrect": false,
+        "description": "渲染样式不同：默认风格 / 等宽 / 纯文本"
+      }
+    ]
+  },
+  {
+    "stem": "用 JSDoc 执行 `jsdoc book.js` 后未指定输出目录，生成的 HTML 文档默认会出现在哪里？如何改变它？",
+    "explanation": "JSDoc 默认把文档输出到当前目录下的 `out/` 文件夹（不是 `dist/` 也不是 `docs/`）。可用命令行 `-d <dir>`（即 `--destination`）或配置文件中的 `opts.destination` 改写。新手常因记成 `docs/` 而找不到产物。",
+    "tags": ["jsdoc", "命令行", "输出目录"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认在 `out/`，用 `-d` 或 `opts.destination` 修改",
+        "isCorrect": true,
+        "description": "JSDoc 默认输出目录是 `out/`，命令行 `-d` 或配置 destination 可覆盖"
+      },
+      {
+        "text": "默认在 `docs/`，用 `-o` 修改",
+        "isCorrect": false,
+        "description": "默认是 `out/` 不是 `docs/`；改目录用 `-d` 而非 `-o`"
+      },
+      {
+        "text": "默认在 `dist/`，由打包工具决定",
+        "isCorrect": false,
+        "description": "`dist/` 是构建工具惯例，与 JSDoc 默认无关"
+      },
+      {
+        "text": "默认就地写回 `book.js` 同目录的同名 `.html`",
+        "isCorrect": false,
+        "description": "JSDoc 生成独立站点到 `out/`，不在源文件旁就地写"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 命令行参数与配置文件（`-c jsdoc.json`）同时指定了输出目录时，哪个生效？",
+    "explanation": "JSDoc 的优先级是命令行参数高于配置文件。若 `jsdoc.json` 中 `opts.destination` 为 `./docs/`，而命令行又传了 `-d build/`，最终输出到 `build/`。这点在 CI 脚本里临时覆盖配置时很关键——命令行能就地推翻配置文件的设定。",
+    "tags": ["jsdoc", "配置", "命令行优先级"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "命令行参数优先，覆盖配置文件中的同名设定",
+        "isCorrect": true,
+        "description": "JSDoc 优先级：命令行 > 配置文件，便于 CI 临时覆盖"
+      },
+      {
+        "text": "配置文件优先，命令行只能补充未设项",
+        "isCorrect": false,
+        "description": "恰恰相反，命令行能覆盖配置文件"
+      },
+      {
+        "text": "两者冲突时 JSDoc 直接报错退出",
+        "isCorrect": false,
+        "description": "不会报错，按优先级取命令行值"
+      },
+      {
+        "text": "取两者目录的并集，向多处都输出",
+        "isCorrect": false,
+        "description": "只输出到一个目录，由优先级决定"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置文件 `jsdoc.json` 中 `source.excludePattern` 默认会跳过哪类文件？",
+    "explanation": "`source.excludePattern` 是一个正则，匹配到的文件会被排除出扫描。其默认值 `(^|\\/|\\\\)_` 会跳过以下划线 `_` 开头的文件（路径段以 `_` 起头）。与之配套的还有 `includePattern`（默认匹配 `.js`/`.jsdoc`/`.jsx`），共同界定扫描范围。",
+    "tags": ["jsdoc", "配置", "excludePattern"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认跳过以下划线 `_` 开头的文件",
+        "isCorrect": true,
+        "description": "默认 excludePattern 匹配下划线开头文件，将其排除扫描"
+      },
+      {
+        "text": "默认跳过所有测试文件 `*.test.js`",
+        "isCorrect": false,
+        "description": "默认并不针对测试文件，需自行配置正则"
+      },
+      {
+        "text": "默认跳过 `node_modules` 之外的全部文件",
+        "isCorrect": false,
+        "description": "扫描范围由 include/exclude 决定，默认排除的是下划线文件"
+      },
+      {
+        "text": "默认跳过 `.d.ts` 声明文件",
+        "isCorrect": false,
+        "description": "默认 includePattern 本就不含 `.d.ts`，与 excludePattern 默认值无关"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置中 `recurseDepth` 字段的作用是？它与命令行哪个开关相关？",
+    "explanation": "`recurseDepth`（3.5.0 起）控制递归扫描子目录的深度，默认值为 10，仅在开启递归（命令行 `-r`/`--recurse` 或 `opts.recurse: true`）时生效。若目录层级很深而默认 10 层不够，可调大该值；不开递归时此字段无效。",
+    "tags": ["jsdoc", "配置", "recurseDepth"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "限制递归扫描子目录的最大深度（默认 10），需配合 `-r` 才生效",
+        "isCorrect": true,
+        "description": "recurseDepth 默认 10，只在开启递归时约束扫描层数"
+      },
+      {
+        "text": "限制单个注释里块标签的最大数量",
+        "isCorrect": false,
+        "description": "它管目录递归深度，与注释内标签数量无关"
+      },
+      {
+        "text": "限制 `@typedef` 类型嵌套引用的层数",
+        "isCorrect": false,
+        "description": "它针对文件系统递归，不限制类型嵌套"
+      },
+      {
+        "text": "设置文档站点导航树展开的层级",
+        "isCorrect": false,
+        "description": "它影响扫描而非导航渲染"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置 `tags.dictionaries` 默认包含哪两套字典？它们各自带来什么？",
+    "explanation": "`tags.dictionaries` 默认是 `[“jsdoc”, “closure”]`：`jsdoc` 提供标准标签集；`closure` 引入 Closure Compiler 风格的标签与类型语法（如非空 `!`、可空 `?` 等修饰符）。两者默认都启用，所以 `{!string}`/`{?number}` 这类 Closure 语法开箱可用。若只想用标准集可显式裁剪该数组。",
+    "tags": ["jsdoc", "配置", "dictionaries", "closure"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认 `jsdoc` + `closure`：前者标准标签，后者带来 `!`/`?` 等 Closure 语法",
+        "isCorrect": true,
+        "description": "两套默认都开，Closure 字典提供非空/可空等类型修饰"
+      },
+      {
+        "text": "默认只有 `jsdoc` 一套，`closure` 需手动开启",
+        "isCorrect": false,
+        "description": "默认两套都启用，`closure` 无需额外开"
+      },
+      {
+        "text": "`dictionaries` 配置的是文档界面多语言翻译词典",
+        "isCorrect": false,
+        "description": "它指标签字典来源，与界面语言翻译无关"
+      },
+      {
+        "text": "默认 `jsdoc` + `typescript` 两套",
+        "isCorrect": false,
+        "description": "没有 `typescript` 字典，默认是 `jsdoc` 与 `closure`"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置 `tags.allowUnknownTags` 取值与行为，下列说法正确的是？",
+    "explanation": "`allowUnknownTags` 默认为 `true`，即允许出现未知标签而不报错。它也可以传入字符串数组，表示只放行数组里列出的那些未知标签名、其余未知标签则告警。把它设为 `false` 则任何字典外的标签都会触发告警，可用于约束团队只用规范内标签。",
+    "tags": ["jsdoc", "配置", "allowUnknownTags"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "可为布尔或字符串数组：数组表示只放行其中列出的未知标签",
+        "isCorrect": true,
+        "description": "默认 true；传数组可白名单式放行特定未知标签，其余告警"
+      },
+      {
+        "text": "只能是布尔值，不接受数组",
+        "isCorrect": false,
+        "description": "它支持字符串数组形式做未知标签白名单"
+      },
+      {
+        "text": "默认为 false，未知标签一律导致生成失败",
+        "isCorrect": false,
+        "description": "默认是 true，且通常只告警不致命失败"
+      },
+      {
+        "text": "它控制是否允许内联标签，与块标签无关",
+        "isCorrect": false,
+        "description": "它针对未知标签整体，不区分内联/块"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@returns` 与 `@return` 两个标签之间是什么关系？",
+    "explanation": "`@returns` 与 `@return` 完全等价、互为别名，用于描述函数返回值。官方文档和社区示例两种都用——很多官方示例恰恰写的是 `@return`。无需纠结选哪个，团队统一即可；`eslint-plugin-jsdoc` 可强制其中一种风格。",
+    "tags": ["jsdoc", "returns", "别名"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "完全等价、互为别名，效果一致",
+        "isCorrect": true,
+        "description": "两者是同一标签的别名，描述返回值的效果相同"
+      },
+      {
+        "text": "`@returns` 描述同步返回，`@return` 描述异步返回",
+        "isCorrect": false,
+        "description": "二者不区分同步异步，语义完全一致"
+      },
+      {
+        "text": "`@return` 已废弃，只能用 `@returns`",
+        "isCorrect": false,
+        "description": "`@return` 仍合法，官方示例也在用"
+      },
+      {
+        "text": "`@returns` 用于函数，`@return` 用于 getter",
+        "isCorrect": false,
+        "description": "没有这种用途区分，两者通用且等价"
+      }
+    ]
+  },
+  {
+    "stem": "在 JSDoc 类型里，`Array.<number>`（注意类名与尖括号间的点）与 `number[]` 的关系是？",
+    "explanation": "两者完全等价，都表示元素为 `number` 的数组。`Array.<number>` 是 Closure 泛型式写法，类名 `Array` 与尖括号之间带一个点 `.`；`number[]` 是简写。新手常漏掉那个点写成 `Array<number>`——在 JSDoc 经典语法里该点是泛型应用的标志（如 `Object.<string, number>` 同理）。",
+    "tags": ["jsdoc", "类型表达式", "array"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者等价；`Array.<number>` 是带点的泛型式，`number[]` 是简写",
+        "isCorrect": true,
+        "description": "JSDoc 经典泛型写法 `Type.<...>` 带点，`number[]` 是等价简写"
+      },
+      {
+        "text": "`Array.<number>` 是只读数组，`number[]` 是可变数组",
+        "isCorrect": false,
+        "description": "二者都不带只读语义，仅写法不同"
+      },
+      {
+        "text": "`Array.<number>` 表示固定长度，`number[]` 表示动态长度",
+        "isCorrect": false,
+        "description": "两者均不约束长度，语义相同"
+      },
+      {
+        "text": "`Array.<number>` 是元组，`number[]` 是普通数组",
+        "isCorrect": false,
+        "description": "二者都是普通数组，元组是另外的写法"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 类型 `Object.<string, number>` 与对象字面量类型 `{{a: number, b: string}}` 在表达对象时的本质差异是？",
+    "explanation": "`Object.<键类型, 值类型>` 描述键值映射（字典）——键的集合是开放的，只约束键类型与值类型；而 `{{a: number, b: string}}` 是对象类型字面量，描述结构固定、属性名确定的对象。前者适合任意 `string` 键的映射，后者适合形状已知的内联对象。",
+    "tags": ["jsdoc", "类型表达式", "object"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "前者是开放键的键值映射，后者是属性固定的对象形状",
+        "isCorrect": true,
+        "description": "`Object.<K,V>` 约束键值类型，字面量 `{{...}}` 列举确定属性"
+      },
+      {
+        "text": "两者等价，可互相替换",
+        "isCorrect": false,
+        "description": "一个描述任意键映射，一个描述固定属性，语义不同"
+      },
+      {
+        "text": "前者是数组，后者是对象",
+        "isCorrect": false,
+        "description": "`Object.<K,V>` 是映射对象不是数组"
+      },
+      {
+        "text": "后者是 JSON 字符串，前者是运行时对象",
+        "isCorrect": false,
+        "description": "二者都是类型声明，不是字符串值"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 类型表达式 `{function(string, number): boolean}` 描述的是？",
+    "explanation": "这是函数类型字面量：圆括号内是按序的形参类型（`string`, `number`），冒号后是返回值类型（`boolean`）。它能在不另写 `@callback` 的情况下，内联描述一个函数类型，常用于回调参数。若需要复用或带文档，则提升为 `@callback` 命名类型更佳。",
+    "tags": ["jsdoc", "类型表达式", "function"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "接受 `string`、`number` 两个参数并返回 `boolean` 的函数类型",
+        "isCorrect": true,
+        "description": "`function(参数类型...): 返回类型` 是内联函数类型写法"
+      },
+      {
+        "text": "一次函数调用的实际返回结果",
+        "isCorrect": false,
+        "description": "它是类型声明，不是某次调用的结果值"
+      },
+      {
+        "text": "`string`、`number`、`boolean` 三者之一的联合类型",
+        "isCorrect": false,
+        "description": "整体是单个函数类型，冒号后才是返回类型"
+      },
+      {
+        "text": "三个并列的独立参数声明",
+        "isCorrect": false,
+        "description": "它描述一个函数类型，不是多个参数"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@typedef` 配合 `@property` 时，下面定义里 `@property {boolean} [hasWisdom]` 的方括号意味着什么？",
+    "explanation": "在 `@typedef {Object}` 下用 `@property` 逐条描述属性时，给属性名加方括号（如 `[hasWisdom]`）表示该属性可选。这与 `@param` 的可选写法一致——方括号即可选。没有方括号的属性则视为必有。这是描述部分可选对象形状的标准手段。",
+    "tags": ["jsdoc", "typedef", "property", "可选"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "该属性是可选的（方括号表可选）",
+        "isCorrect": true,
+        "description": "`@property` 名加方括号表可选，与 `@param` 可选写法一致"
+      },
+      {
+        "text": "该属性是只读的",
+        "isCorrect": false,
+        "description": "只读用 `@readonly`，方括号表达的是可选"
+      },
+      {
+        "text": "该属性是数组类型",
+        "isCorrect": false,
+        "description": "数组在类型里写，方括号包名是可选标记"
+      },
+      {
+        "text": "该属性已被弃用",
+        "isCorrect": false,
+        "description": "弃用用 `@deprecated`，与方括号无关"
+      }
+    ]
+  },
+  {
+    "stem": "想在 `.js` 文件中跨文件复用另一个文件里 JSDoc `@typedef` 定义的类型，且让 TypeScript 也认，经典做法是？",
+    "explanation": "可用类型导入语法 `@typedef {import('./types').Pet} Pet` 在本文件引入并起别名，随后在 `@param`/`@type` 中按名引用。较新的 JSDoc/TS 还提供独立的 `@import` 块标签：`@import {Pet} from './types'`，运行时是 no-op，仅供类型工具消费。两种方式都能让 TS 跨文件解析类型。",
+    "tags": ["jsdoc", "typedef", "import", "typescript"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 `@typedef {import('./types').Pet} Pet` 或 `@import {Pet} from './types'` 引入",
+        "isCorrect": true,
+        "description": "import 类型语法或 `@import` 块标签都能跨文件复用且被 TS 识别"
+      },
+      {
+        "text": "必须把两个文件合并成一个才能引用",
+        "isCorrect": false,
+        "description": "通过类型导入即可跨文件引用，无需合并"
+      },
+      {
+        "text": "把类型定义复制粘贴到每个用到的文件",
+        "isCorrect": false,
+        "description": "复制粘贴失去复用价值，应用 import 语法引用"
+      },
+      {
+        "text": "改用 `require()` 在注释里导入类型",
+        "isCorrect": false,
+        "description": "类型导入用 `import('...')`，注释里不写 `require`"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc/TypeScript 里类型断言（type casting）的正确写法是？例如把某值断言为 `number`。",
+    "explanation": "JSDoc 的类型断言写法是把 `@type` 注释紧跟一个用圆括号包裹的表达式：`const n = /** @type {number} */ (someValue);`。关键有二——`@type` 写在注释里、被断言的表达式必须用圆括号括起来。漏掉圆括号断言不生效。这是在 `.js` 中绕过类型推断、向 TS 表明确切类型的标准手段。",
+    "tags": ["jsdoc", "type", "类型断言", "casting"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`const n = /** @type {number} */ (someValue);`（表达式必须用圆括号包裹）",
+        "isCorrect": true,
+        "description": "`@type` 注释紧跟圆括号包裹的表达式即断言，圆括号不可少"
+      },
+      {
+        "text": "`const n = someValue as number;`",
+        "isCorrect": false,
+        "description": "`as` 是 TS 语法，不能直接写在 `.js` 源码里"
+      },
+      {
+        "text": "`const n = /** @cast {number} */ someValue;`",
+        "isCorrect": false,
+        "description": "没有 `@cast` 标签，断言用 `@type` + 圆括号"
+      },
+      {
+        "text": "`const n = /** @type {number} */ someValue;`（不加圆括号）",
+        "isCorrect": false,
+        "description": "缺少圆括号包裹，断言不会对该表达式生效"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc/TypeScript 中 `@satisfies` 标签解决什么问题？",
+    "explanation": "`@satisfies` 让一个值在满足某约束类型校验的同时，保留其自身更窄的字面量推断类型——校验但不拓宽类型。例如 `/** @satisfies {Record<string, number>} */ const cfg = { a: 1 };` 会确认 `cfg` 符合该 Record，但 `cfg.a` 仍被推断为字面量而非泛泛的 `number`。对照之下，用 `@type` 注解会把类型直接锁成约束类型、丢失字面量精度。",
+    "tags": ["jsdoc", "satisfies", "typescript"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "校验值符合某约束类型，同时保留更精确的字面量推断",
+        "isCorrect": true,
+        "description": "`@satisfies` 做约束检查但不把类型拓宽成约束类型"
+      },
+      {
+        "text": "在运行时断言值满足某 schema，否则抛错",
+        "isCorrect": false,
+        "description": "它是静态类型检查，不在运行时校验或抛错"
+      },
+      {
+        "text": "把值的类型强制锁定为约束类型，丢弃字面量信息",
+        "isCorrect": false,
+        "description": "那是 `@type` 的效果；`@satisfies` 恰恰保留字面量精度"
+      },
+      {
+        "text": "声明该值实现了某个接口契约",
+        "isCorrect": false,
+        "description": "实现接口用 `@implements`，与 `@satisfies` 不同"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 里 legacy 类型同义词 `Object`（大写）在开启 TypeScript `noImplicitAny` 时会发生什么？",
+    "explanation": "JSDoc 存在一批 legacy 同义词：`String→string`、`Number→number`、`Boolean→boolean`，而 `Object`/`object` 会退化为 `any`。在 TS `noImplicitAny: true` 下，这种隐式 `any` 会被报错，逼你写出确切类型（如 `Record<string, unknown>` 或具体对象形状）。这是从老代码迁移类型检查时的高频踩坑点。",
+    "tags": ["jsdoc", "typescript", "noImplicitAny", "legacy"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Object` 退化为隐式 `any`，在 `noImplicitAny` 下被报错",
+        "isCorrect": true,
+        "description": "legacy 同义词 `Object`→any，严格模式下触发隐式 any 报错"
+      },
+      {
+        "text": "`Object` 被精确解析为所有对象的安全超类型，不报错",
+        "isCorrect": false,
+        "description": "它退化成 any 而非安全超类型，故会触发严格报错"
+      },
+      {
+        "text": "`Object` 被解析为 `{}` 空对象类型且总是安全",
+        "isCorrect": false,
+        "description": "JSDoc 这里把 `Object` 当 any，并非 `{}`"
+      },
+      {
+        "text": "TS 直接忽略 `Object`，把参数当 `unknown`",
+        "isCorrect": false,
+        "description": "退化为 any 而非 unknown，且会被 noImplicitAny 拦截"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 legacy 类型同义词中，`String`、`Number`、`Boolean`（首字母大写）分别对应 TypeScript 推荐的什么类型？",
+    "explanation": "大写的 `String`/`Number`/`Boolean` 在 JS 里是装箱包装对象类型，并非原始类型。JSDoc 把它们当作 legacy 同义词，对应的现代/推荐写法是小写原始类型 `string`/`number`/`boolean`。TS 生态强烈建议用小写原始类型，避免包装对象带来的类型陷阱。",
+    "tags": ["jsdoc", "typescript", "legacy", "原始类型"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "分别对应小写原始类型 `string` / `number` / `boolean`",
+        "isCorrect": true,
+        "description": "大写是包装对象，推荐用小写原始类型"
+      },
+      {
+        "text": "它们才是正确写法，小写形式是错误的",
+        "isCorrect": false,
+        "description": "恰恰相反，推荐小写原始类型，大写是 legacy"
+      },
+      {
+        "text": "它们都退化为 `any`",
+        "isCorrect": false,
+        "description": "退化为 any 的是 `Object`/`object`，这三者对应小写原始类型"
+      },
+      {
+        "text": "它们对应数组类型 `string[]` 等",
+        "isCorrect": false,
+        "description": "它们是标量类型同义词，与数组无关"
+      }
+    ]
+  },
+  {
+    "stem": "在 ES2015 `class` 语法下使用 JSDoc，关于 `@class`/`@constructor` 标签下列说法最准确的是？",
+    "explanation": "对 ES2015 的 `class`，JSDoc 通常能自动识别类、构造函数、静态方法与继承（`extends`），无需到处显式写 `@class`/`@constructor`。开发者主要补 `@param`/`@returns`/`@type` 来描述类型。`@class`/`@constructor` 更多用于老式构造函数（用普通 `function` 当类用）那种 JSDoc 难以自动判定的场景。",
+    "tags": ["jsdoc", "class", "es2015"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ES2015 `class` 通常被自动识别，重点是补 `@param`/`@returns` 等类型",
+        "isCorrect": true,
+        "description": "class 结构自动识别，无需到处显式 `@class`/`@constructor`"
+      },
+      {
+        "text": "每个 class 都必须显式写 `@class` 才会被识别",
+        "isCorrect": false,
+        "description": "ES2015 class 能自动识别，无需逐个显式标注"
+      },
+      {
+        "text": "class 内每个方法都要写 `@constructor`",
+        "isCorrect": false,
+        "description": "`@constructor` 标的是构造函数，不该标到每个方法"
+      },
+      {
+        "text": "JSDoc 不支持 class，只能用函数式写法",
+        "isCorrect": false,
+        "description": "JSDoc 完整支持 ES2015 class 语法"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中表达「类 `Dot` 继承自类 `Point`」的标签，下列哪两个互为别名？",
+    "explanation": "`@extends` 与 `@augments` 互为别名，用于显式声明继承关系（如 `@extends Point`）。ES2015 的 `extends` 通常能被 JSDoc 自动识别继承，但在自动识别不到位或老式继承时可显式标注。与之相关的 `@implements`（实现接口）语义不同，不能混用。",
+    "tags": ["jsdoc", "extends", "augments", "继承"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`@extends` 与 `@augments`",
+        "isCorrect": true,
+        "description": "二者互为别名，均声明类的继承关系"
+      },
+      {
+        "text": "`@extends` 与 `@implements`",
+        "isCorrect": false,
+        "description": "`@implements` 是实现接口，语义不同于继承类"
+      },
+      {
+        "text": "`@inherits` 与 `@parent`",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@inherits`/`@parent` 标签"
+      },
+      {
+        "text": "`@super` 与 `@base`",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@super`/`@base` 标签"
+      }
+    ]
+  },
+  {
+    "stem": "在 JSDoc 命名路径（namepath）中，`#`、`.`、`~` 三个符号分别表示哪类成员？",
+    "explanation": "命名路径用符号标识成员归属：`#` 表示实例成员（如 `Book#title`）、`.` 表示静态成员（如 `Point.fromString`）、`~` 表示内部成员（inner，定义在外层函数内部、外部不可直接访问，如 `Person~say`）。三者共同精确定位文档中的符号，是 `@see`/`{@link}` 等引用时的寻址基础。",
+    "tags": ["jsdoc", "namepath", "成员"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`#` 实例成员、`.` 静态成员、`~` 内部成员",
+        "isCorrect": true,
+        "description": "实例用 `#`、静态用 `.`、内部(inner)用 `~`"
+      },
+      {
+        "text": "`#` 私有、`.` 公开、`~` 受保护",
+        "isCorrect": false,
+        "description": "命名路径符号表归属层级，不表可见性"
+      },
+      {
+        "text": "`#` 静态、`.` 实例、`~` 全局",
+        "isCorrect": false,
+        "description": "记反了：实例是 `#`、静态是 `.`"
+      },
+      {
+        "text": "三者等价，可互换使用",
+        "isCorrect": false,
+        "description": "三者语义不同，不能互换"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 命名路径中 `module:`、`external:`、`event:` 这三个前缀分别用于标识什么？",
+    "explanation": "这些前缀给命名路径加上来源限定：`module:`（如 `module:foo/bar`）指向用 `@module` 声明的模块；`external:`（如 `external:String`）指向内置或外部对象；`event:`（如 `module:foo/bar.event:MyEvent`）指向事件。它们让跨模块、跨外部对象、事件的引用得以唯一寻址，避免与普通成员混淆。",
+    "tags": ["jsdoc", "namepath", "module", "event"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "分别标识模块、外部/内置对象、事件",
+        "isCorrect": true,
+        "description": "`module:` 模块、`external:` 外部对象、`event:` 事件"
+      },
+      {
+        "text": "分别标识公有、私有、受保护成员",
+        "isCorrect": false,
+        "description": "可见性由 `@private` 等表达，不靠这些前缀"
+      },
+      {
+        "text": "分别标识同步、异步、并发函数",
+        "isCorrect": false,
+        "description": "这些前缀是来源限定，与执行模型无关"
+      },
+      {
+        "text": "都是 TypeScript 专属语法，JSDoc 不支持",
+        "isCorrect": false,
+        "description": "它们正是 JSDoc 命名路径语法的一部分"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 命名路径里若成员名本身含特殊字符（如井号开头的频道名 `#channel`），正确的引用写法是？",
+    "explanation": "当名称含点、井号、波浪号等会被命名路径误读的特殊字符时，需用双引号把该段名称包裹（内部若有引号再转义）。例如频道 `#channel` 作为 `chat` 的成员，要把名称段用双引号括起来再接在 `chat.` 之后。否则 `#` 会被当成实例成员分隔符而解析错误。",
+    "tags": ["jsdoc", "namepath", "转义"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用双引号把特殊名称段包裹起来，再接在父名后（如 `chat.` 后跟被双引号括起的 `#channel`）",
+        "isCorrect": true,
+        "description": "含特殊字符的名称段需加引号，避免 `#` 被当分隔符"
+      },
+      {
+        "text": "直接写 `chat.#channel` 即可，JSDoc 会自动处理",
+        "isCorrect": false,
+        "description": "未加引号时 `#` 会被解析成实例成员分隔符，出错"
+      },
+      {
+        "text": "把特殊字符删掉再引用",
+        "isCorrect": false,
+        "description": "删字符会改变名称，正确做法是加引号包裹"
+      },
+      {
+        "text": "用方括号包裹，如 `chat[#channel]`",
+        "isCorrect": false,
+        "description": "命名路径转义用引号而非方括号"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中 `@module color/mixer` 声明后，该文件内导出符号的命名路径会有什么变化？",
+    "explanation": "`@module` 把文件标记为模块，其内部符号的命名路径会带上 `module:` 前缀。例如模块 `color/mixer` 里的 `blend` 函数，命名路径变为 `module:color/mixer.blend`（静态导出用 `.`）。这样跨模块引用时能唯一定位，支持 CommonJS/ES2015/AMD 各种模块形态。",
+    "tags": ["jsdoc", "module", "namepath"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "符号命名路径带上 `module:` 前缀，如 `module:color/mixer.blend`",
+        "isCorrect": true,
+        "description": "`@module` 后符号归入该模块命名空间，前缀 `module:`"
+      },
+      {
+        "text": "文件被强制转为 ES Module 并改变运行时行为",
+        "isCorrect": false,
+        "description": "它只影响文档组织，不改运行时模块形态"
+      },
+      {
+        "text": "所有符号自动变为私有不进文档",
+        "isCorrect": false,
+        "description": "声明模块不会让符号变私有，隐藏要用 `@ignore`"
+      },
+      {
+        "text": "符号命名路径加上 `#` 实例前缀",
+        "isCorrect": false,
+        "description": "模块前缀是 `module:`，`#` 是实例成员分隔符"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@callback` 相比直接用 `{function(...): ...}` 内联函数类型，主要优势是什么？",
+    "explanation": "`@callback` 定义一个具名的回调类型，可附 `@param`/`@returns` 逐项写文档，并在多处按名引用复用；内联的 `{function(string): boolean}` 虽简洁，但无法给参数加描述、也难复用。当回调签名复杂或需在文档中解释每个参数含义时，`@callback` 更清晰可维护。",
+    "tags": ["jsdoc", "callback", "typedef"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可命名复用、并为回调的每个参数与返回值单独写文档",
+        "isCorrect": true,
+        "description": "`@callback` 具名可复用且能逐项加描述，内联类型做不到"
+      },
+      {
+        "text": "`@callback` 会在运行时校验回调签名",
+        "isCorrect": false,
+        "description": "JSDoc 不做运行时校验，二者都仅是类型文档"
+      },
+      {
+        "text": "`@callback` 能让回调自动变成异步函数",
+        "isCorrect": false,
+        "description": "它只描述签名，不改变同步/异步性质"
+      },
+      {
+        "text": "内联函数类型在 JSDoc 中非法，必须用 `@callback`",
+        "isCorrect": false,
+        "description": "内联 `{function(...): ...}` 合法，只是不便复用与加文档"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc/TypeScript 中 `@template` 的 `@template {string} K` 与 `@template [T=object]` 两种写法分别表达什么？",
+    "explanation": "`@template {string} K` 给类型参数 `K` 加约束——`K` 必须是 `string` 的子类型（注意约束只作用于紧随的首个类型参数）；`@template [T=object]` 给类型参数 `T` 设默认类型 `object`。前者约束、后者默认，二者是泛型表达力的关键，TS 在 `.js` 里也能识别它们做泛型推断。",
+    "tags": ["jsdoc", "template", "泛型", "typescript"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "前者约束 `K` 须为 `string`，后者给 `T` 设默认类型 `object`",
+        "isCorrect": true,
+        "description": "`{约束}` 限定类型参数，`[T=默认]` 提供默认类型"
+      },
+      {
+        "text": "两者都只是声明泛型参数名，无约束与默认之分",
+        "isCorrect": false,
+        "description": "一个带约束、一个带默认，并非仅声明名字"
+      },
+      {
+        "text": "前者把 `K` 设默认 `string`，后者约束 `T` 为 `object`",
+        "isCorrect": false,
+        "description": "说反了：花括号是约束，方括号 `=` 是默认"
+      },
+      {
+        "text": "`@template` 不被 TS 识别，仅供 JSDoc 文档",
+        "isCorrect": false,
+        "description": "TS 能识别 `@template` 并参与泛型类型检查"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中用 `@param` 描述一个对象参数的内部属性（解构参数），正确写法是？",
+    "explanation": "对解构对象参数，先用 `@param {Object} opts` 声明整体，再用点号路径逐条声明其属性：`@param {string} opts.name`、`@param {number} [opts.age]`（方括号表可选）。这种 `父名.属性名` 写法让 JSDoc 与 TS 都能正确关联到解构出的字段，常见于配置对象。",
+    "tags": ["jsdoc", "param", "解构"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先 `@param {Object} opts`，再 `@param {string} opts.name` 逐项展开",
+        "isCorrect": true,
+        "description": "用 `父名.属性名` 路径逐条声明解构对象的字段"
+      },
+      {
+        "text": "在一个 `@param` 里用花括号列出全部属性即可，不能展开",
+        "isCorrect": false,
+        "description": "可用 `opts.xxx` 逐项展开，更利于文档与可选标记"
+      },
+      {
+        "text": "解构参数必须改用 `@typedef` 才能描述",
+        "isCorrect": false,
+        "description": "`@param opts.xxx` 即可，`@typedef` 是另一种可选方式"
+      },
+      {
+        "text": "用 `@destructure` 标签描述解构",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@destructure` 标签"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@enum` 相比普通常量描述，特别之处在于？常配合哪个标签？",
+    "explanation": "`@enum {类型}` 用于描述一组同类型的命名常量（枚举），写在一个对象上后，JSDoc 会把对象各属性都按该类型记录为枚举成员，无需逐个 `@property`。它常配合 `@readonly` 表明这些常量不应被修改。值得注意的是 `@enum` 的类型可以是任意类型（如 `@enum {number}` 或 `@enum {string}`），不限于数字。",
+    "tags": ["jsdoc", "enum", "readonly"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把对象各属性统一记为某类型的枚举成员，常配 `@readonly`",
+        "isCorrect": true,
+        "description": "`@enum {type}` 批量描述同类型常量，常搭 `@readonly`"
+      },
+      {
+        "text": "强制枚举值在运行时不可变",
+        "isCorrect": false,
+        "description": "JSDoc 不强制运行时，`@readonly` 也只是文档语义"
+      },
+      {
+        "text": "`@enum` 只支持数字类型，不能用于字符串",
+        "isCorrect": false,
+        "description": "`@enum` 类型任意，可用于 string 等"
+      },
+      {
+        "text": "`@enum` 会自动生成 TypeScript 的 `enum` 代码",
+        "isCorrect": false,
+        "description": "它只做文档/类型标注，不生成运行时枚举代码"
+      }
+    ]
+  },
+  {
+    "stem": "想隐藏某个内部符号、让它不出现在 JSDoc 生成的文档中，最直接的标签是？它与 `@private` 有何区别？",
+    "explanation": "`@ignore` 让 JSDoc 在生成文档时完全跳过该符号，是隐藏内部实现的直接手段。`@private` 则是把符号标为私有可见性——默认模板下私有成员通常也不展示，但语义上 `@private` 表达的是访问级别，符号仍存在于文档模型中（某些配置/模板可显示私有）。要彻底不进文档用 `@ignore` 更稳妥。",
+    "tags": ["jsdoc", "ignore", "private", "可见性"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `@ignore`：它直接跳过该符号；`@private` 表达的是可见性级别",
+        "isCorrect": true,
+        "description": "`@ignore` 彻底排除出文档，`@private` 是访问语义"
+      },
+      {
+        "text": "用 `@hidden`：它是 JSDoc 唯一的隐藏标签",
+        "isCorrect": false,
+        "description": "JSDoc 标准隐藏用 `@ignore`，并非 `@hidden` 唯一"
+      },
+      {
+        "text": "用 `@skip`：跳过该符号",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@skip` 标签"
+      },
+      {
+        "text": "用 `@internal`：JSDoc 默认会隐藏它",
+        "isCorrect": false,
+        "description": "`@internal` 是 TSDoc/api-extractor 概念，JSDoc 隐藏用 `@ignore`"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中 `@readonly`、`@private`/`@protected`/`@public` 这些标签的约束力如何？",
+    "explanation": "这些都是文档层面的语义标注：`@readonly` 表示只读、访问标签表示可见性级别。它们影响文档呈现以及某些模板/工具的过滤行为，但都不在 JavaScript 运行时强制——真正的运行时私有要靠类的 `#` 私有字段，真正的只读要靠 `Object.freeze` 或 getter。把它们当运行时约束是常见误解。",
+    "tags": ["jsdoc", "readonly", "access", "可见性"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "纯文档语义，不在运行时强制；运行时私有需 `#` 字段",
+        "isCorrect": true,
+        "description": "它们只影响文档/工具，运行时约束另需语言机制"
+      },
+      {
+        "text": "它们会让 JS 引擎在运行时阻止写入或外部访问",
+        "isCorrect": false,
+        "description": "JSDoc 不参与运行时，不会阻止访问或写入"
+      },
+      {
+        "text": "它们由 Babel 编译为运行时校验代码",
+        "isCorrect": false,
+        "description": "JSDoc 注释不被编译为运行时校验逻辑"
+      },
+      {
+        "text": "它们决定变量的内存分配与作用域",
+        "isCorrect": false,
+        "description": "与内存/作用域无关，仅文档语义"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中描述异步函数及其返回，正确的标签搭配是？",
+    "explanation": "`@async` 标记函数为异步，但其结果仍用 `@returns` 写成 Promise，如 `@returns {Promise<string>}`——`@async` 本身不描述返回类型。对生成器函数则用 `@generator` 配合 `@yields` 描述每次产出值。注意 `@async`、`@yields` 这类标签 TS 并不消费，仅供文档；异步类型信息真正靠 `@returns {Promise<...>}` 传达。",
+    "tags": ["jsdoc", "async", "generator", "yields"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`@async` 标记异步，结果仍用 `@returns {Promise<...>}` 描述",
+        "isCorrect": true,
+        "description": "异步函数的返回类型写在 `@returns` 的 Promise 里"
+      },
+      {
+        "text": "异步函数必须用 `@await` 描述其等待值",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@await` 标签"
+      },
+      {
+        "text": "异步结果只能用 `@yields` 描述",
+        "isCorrect": false,
+        "description": "`@yields` 用于生成器产出，异步结果用 `@returns`"
+      },
+      {
+        "text": "用 `@promise` 标签声明返回的 Promise 类型",
+        "isCorrect": false,
+        "description": "没有 `@promise` 标签，Promise 写进 `@returns` 类型"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中生成器函数用 `@generator` 配合 `@yields` 描述产出值；下列说法正确的是？",
+    "explanation": "`@generator` 标记函数为生成器，`@yields`（别名 `@yield`）描述每次 `yield` 产出的值类型与说明，如 `@yields {number} 下一个序号`。这与 `@returns` 不同——`@returns` 描述生成器对象最终返回值，`@yields` 描述迭代过程中逐个产出的值。注意 `@yields` 属于 TS 不消费的标签，纯文档用途。",
+    "tags": ["jsdoc", "generator", "yields"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`@yields` 描述每次 `yield` 产出的值，区别于 `@returns` 的最终返回",
+        "isCorrect": true,
+        "description": "产出值用 `@yields`，最终返回值才用 `@returns`"
+      },
+      {
+        "text": "`@yields` 与 `@returns` 等价，可互换",
+        "isCorrect": false,
+        "description": "产出值与最终返回值语义不同，不可互换"
+      },
+      {
+        "text": "生成器不需要 `@generator`，写 `@async` 即可",
+        "isCorrect": false,
+        "description": "生成器用 `@generator`，`@async` 是异步函数"
+      },
+      {
+        "text": "`@yields` 是 TypeScript 重点消费的类型标签",
+        "isCorrect": false,
+        "description": "`@yields` 属于 TS 不消费的标签，仅供文档"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 中 `@interface` 与 `@implements` 如何配合表达面向接口的设计？",
+    "explanation": "`@interface` 把某结构声明为接口（只定义形状、不含具体实现），`@implements {接口名}` 标注某个类实现了该接口。二者配合在文档中体现「契约—实现」关系。它与继承类的 `@extends`/`@augments` 不同——一个是实现接口契约，一个是继承父类成员。",
+    "tags": ["jsdoc", "interface", "implements"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`@interface` 定义接口形状，`@implements` 标注类实现了它",
+        "isCorrect": true,
+        "description": "接口契约用 `@interface`，实现方类用 `@implements`"
+      },
+      {
+        "text": "`@interface` 定义实现，`@implements` 定义接口",
+        "isCorrect": false,
+        "description": "角色说反了：接口是 `@interface`"
+      },
+      {
+        "text": "两者都用于声明继承父类",
+        "isCorrect": false,
+        "description": "继承用 `@extends`/`@augments`，与实现接口语义不同"
+      },
+      {
+        "text": "`@implements` 只能用在函数参数上",
+        "isCorrect": false,
+        "description": "它用于类对接口的实现关系，不限于参数"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@exports` 标签在模块文档中解决什么问题？",
+    "explanation": "`@exports` 用于显式标注模块导出的对象，尤其在一个文件定义多个模块或导出形态复杂、JSDoc 难以自动识别时，用 `@exports 模块名` 帮助其正确归类导出成员。它只影响文档归类，不改变运行时的 `module.exports` 行为；方向与导入外部依赖的 `@requires` 相反。",
+    "tags": ["jsdoc", "exports", "module"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在导出形态复杂时显式声明模块导出，辅助 JSDoc 正确归类",
+        "isCorrect": true,
+        "description": "`@exports` 纠正/指定模块导出对象的文档归类"
+      },
+      {
+        "text": "在运行时把对象挂到 `module.exports`",
+        "isCorrect": false,
+        "description": "它只影响文档，不改变运行时导出"
+      },
+      {
+        "text": "声明本模块需要导入的外部依赖",
+        "isCorrect": false,
+        "description": "导入外部用 `@requires`，方向相反"
+      },
+      {
+        "text": "把符号导出到全局命名空间",
+        "isCorrect": false,
+        "description": "全局用 `@global`，`@exports` 针对模块导出"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@summary` 与注释正文（`@description`）在生成文档中的呈现差异是？",
+    "explanation": "注释开头的正文即 `@description`，提供完整说明；`@summary` 是一句话精简摘要，供文档的列表/索引/概览处展示。二者并存时，摘要用于快速浏览（如成员列表里的简短行），详述用于该符号的正文区块。合理使用能让 API 列表更易扫读。",
+    "tags": ["jsdoc", "summary", "description"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`@summary` 作一句话摘要供列表/概览，`@description` 提供完整正文",
+        "isCorrect": true,
+        "description": "摘要用于索引概览，描述用于详细正文"
+      },
+      {
+        "text": "两者完全等价，仅名字不同",
+        "isCorrect": false,
+        "description": "用途有别：一个精简概览、一个详尽正文"
+      },
+      {
+        "text": "`@summary` 描述参数，`@description` 描述返回值",
+        "isCorrect": false,
+        "description": "二者都描述符号本身，不绑定参数/返回值"
+      },
+      {
+        "text": "`@description` 必须写在 `@summary` 之前才生效",
+        "isCorrect": false,
+        "description": "书写顺序无此硬性要求"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 内置插件 `plugins/markdown`（在配置的 `plugins` 数组里加入 `plugins/markdown`）的作用是？",
+    "explanation": "`plugins/markdown` 是 JSDoc 自带插件，启用后会把注释描述里的 Markdown 语法（列表、强调、链接、代码块等）渲染成 HTML，让文档描述支持富文本。注意它是渲染注释内的 Markdown，而非把整套文档导出为 `.md` 文件。`plugins` 数组里的路径是相对 JSDoc 安装目录的。",
+    "tags": ["jsdoc", "插件", "markdown"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把注释描述中的 Markdown 语法渲染为 HTML",
+        "isCorrect": true,
+        "description": "markdown 插件让描述支持 Markdown 富文本渲染"
+      },
+      {
+        "text": "把整套文档导出成 Markdown 文件",
+        "isCorrect": false,
+        "description": "它渲染注释内 Markdown，而非导出 `.md`"
+      },
+      {
+        "text": "校验注释是否符合 Markdown 规范",
+        "isCorrect": false,
+        "description": "校验注释规范一般用 eslint-plugin-jsdoc"
+      },
+      {
+        "text": "压缩生成 HTML 的体积",
+        "isCorrect": false,
+        "description": "与压缩无关，仅做 Markdown 渲染"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 默认模板之外，下列哪些是常见的社区第三方模板，可用 `-t` 或 `opts.template` 切换？",
+    "explanation": "JSDoc 自带默认模板，社区另有 `docdash`、`better-docs`、`minami` 等第三方模板美化或定制界面，通过命令行 `-t <dir>` 或配置 `opts.template` 切换。模板只决定外观与结构，不定义新标签语义（标签语义由字典/插件管）。",
+    "tags": ["jsdoc", "模板"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`docdash`、`better-docs`、`minami`",
+        "isCorrect": true,
+        "description": "常见社区模板，用 `-t` 或 `opts.template` 切换外观"
+      },
+      {
+        "text": "`webpack`、`rollup`、`vite`",
+        "isCorrect": false,
+        "description": "这些是打包工具，不是 JSDoc 模板"
+      },
+      {
+        "text": "`prettier`、`eslint`、`stylelint`",
+        "isCorrect": false,
+        "description": "这些是格式化/lint 工具，与 JSDoc 模板无关"
+      },
+      {
+        "text": "`vitepress`、`docusaurus`、`nextra`",
+        "isCorrect": false,
+        "description": "这些是文档站点 SSG，与 JSDoc 渲染模板不同层"
+      }
+    ]
+  },
+  {
+    "stem": "团队要在 CI 中校验 JSDoc 注释「每个参数都有 `@param`、类型语法是否规范、注释是否完整」，最合适的工具是？",
+    "explanation": "`eslint-plugin-jsdoc` 是一套 ESLint 规则集，能校验 JSDoc 注释的格式、标签使用与完整性（如要求每个参数都有 `@param`、检查类型语法、统一 `@returns`/`@return` 风格等），天然接入 lint 流程做门禁。JSDoc 本体只负责生成文档，没有这类注释规范校验开关；Prettier 只管排版，TypeDoc 是另一套文档生成器。",
+    "tags": ["jsdoc", "eslint-plugin-jsdoc", "校验"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`eslint-plugin-jsdoc`",
+        "isCorrect": true,
+        "description": "提供 ESLint 规则校验 JSDoc 注释规范，适合 CI 门禁"
+      },
+      {
+        "text": "JSDoc 本体的 `--validate` 开关",
+        "isCorrect": false,
+        "description": "JSDoc 没有这样的注释规范校验开关"
+      },
+      {
+        "text": "Prettier",
+        "isCorrect": false,
+        "description": "Prettier 只管排版格式，不校验标签完整性"
+      },
+      {
+        "text": "TypeDoc",
+        "isCorrect": false,
+        "description": "TypeDoc 是 TS 文档生成器，非 JSDoc 注释 lint"
+      }
+    ]
+  },
+  {
+    "stem": "在工具链坐标上，JSDoc、TypeDoc、TypeScript 编译器三者的关系最准确的描述是？",
+    "explanation": "三者互补而非互斥：JSDoc 注释驱动，主战场是纯 JavaScript，从 `/**` 注释生成 HTML 文档；TypeDoc 从 TypeScript 的类型系统读信息生成文档，TS 项目用它更省注释；TypeScript 编译器则能反过来消费 `.js` 里的 JSDoc 类型注解做类型检查（`@ts-check`/`checkJs`）。理解这层分工才能在不同项目选对工具。",
+    "tags": ["jsdoc", "typedoc", "typescript", "对比"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JSDoc 注释驱动主纯 JS，TypeDoc 读 TS 类型，TS 又能消费 JSDoc 注解",
+        "isCorrect": true,
+        "description": "三者互补：注释驱动 / 类型驱动 / 编译器消费 JSDoc"
+      },
+      {
+        "text": "TypeDoc 是 JSDoc 的新版本，已取代 JSDoc",
+        "isCorrect": false,
+        "description": "二者是不同项目，定位不同，非取代关系"
+      },
+      {
+        "text": "用 TypeScript 后就完全无法使用 JSDoc 注释",
+        "isCorrect": false,
+        "description": "TS 官方支持在 `.js` 里用 JSDoc 标注类型"
+      },
+      {
+        "text": "三者功能完全重叠，任选其一即可",
+        "isCorrect": false,
+        "description": "分工与适用场景不同，并非完全重叠"
+      }
+    ]
+  },
+  {
+    "stem": "微软的 TSDoc 与 API Extractor，相对 JSDoc 在工具链中扮演什么角色？",
+    "explanation": "TSDoc 是微软提出的 TypeScript 注释规范（是规范，不是文档生成器），用于统一 TS 注释语法，被 API Extractor 等工具读取。API Extractor 则面向库作者，做 `.d.ts` rollup、生成 API 报告并对破坏性变更做门禁，常搭 api-documenter 输出 Markdown。它们与 JSDoc（纯 JS 注释生成器）定位不同，更偏 TS 库工程化。",
+    "tags": ["jsdoc", "tsdoc", "api-extractor", "对比"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 是 TS 注释规范，API Extractor 做 `.d.ts` rollup 与 API 报告门禁",
+        "isCorrect": true,
+        "description": "TSDoc 规范化注释，API Extractor 面向库作者做 API 管理"
+      },
+      {
+        "text": "TSDoc 和 API Extractor 都是 JSDoc 的内置插件",
+        "isCorrect": false,
+        "description": "二者是微软独立项目，非 JSDoc 插件"
+      },
+      {
+        "text": "TSDoc 是文档生成器，直接替代 JSDoc 输出 HTML",
+        "isCorrect": false,
+        "description": "TSDoc 是规范不是生成器，不直接产出文档"
+      },
+      {
+        "text": "API Extractor 只用于纯 JavaScript 项目",
+        "isCorrect": false,
+        "description": "它面向 TS 库的 `.d.ts`，主战场是 TS"
+      }
+    ]
+  },
+  {
+    "stem": "关于 JSDoc 当前的版本与维护现状，下列说法最准确的是？",
+    "explanation": "JSDoc 当前为 4.0.5，引擎要求 Node `>=12`。它成熟稳定、功能基本完备（feature-complete），更新节奏较慢但并非停滞或弃用。相比之下 TypeDoc 0.28.x 活跃、紧跟 TS 版本。把「更新慢」误读成「已弃用」是常见误判——JSDoc 仍是纯 JS 文档与 `.js` 类型标注的主流选择。",
+    "tags": ["jsdoc", "版本", "现状"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "当前约 4.x、要求 Node `>=12`，成熟稳定、更新慢但未弃用",
+        "isCorrect": true,
+        "description": "JSDoc 4.0.5、Node>=12，feature-complete 而非停滞"
+      },
+      {
+        "text": "JSDoc 已被官方弃用，不应在新项目使用",
+        "isCorrect": false,
+        "description": "并未弃用，仍是纯 JS 文档/类型标注主流工具"
+      },
+      {
+        "text": "JSDoc 仅支持 Node 6 及以下的老环境",
+        "isCorrect": false,
+        "description": "引擎要求是 Node `>=12`"
+      },
+      {
+        "text": "JSDoc 已合并进 TypeScript 仓库统一维护",
+        "isCorrect": false,
+        "description": "JSDoc 是独立项目，与 TS 仓库分开"
+      }
+    ]
+  },
+  {
+    "stem": "TypeScript 消费 JSDoc 时，对象类型字面量里的后缀 `=` 可选属性写法（如 `{{ b: number= }}`）会怎样？应改用什么？",
+    "explanation": "在对象类型字面量里用后缀 `=` 标记可选属性（如 `{{ b: number= }}`）是 Closure 风格，TypeScript 并不支持这种写法。在 TS 语境下应改用问号 `?`：写成对象字面量 `{ b?: number }` 或在 `@typedef`/`@property` 上用 `[b]` 方括号表可选。混用 Closure 的 `=` 可选属性会让 TS 解析不到预期效果。",
+    "tags": ["jsdoc", "typescript", "可选属性", "语法差异"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TS 不支持后缀 `=` 可选属性，应改用 `?`（或 `@property` 的方括号）",
+        "isCorrect": true,
+        "description": "Closure 的 `=` 可选属性 TS 不认，TS 语境用 `?`"
+      },
+      {
+        "text": "TS 完全支持后缀 `=`，与 `?` 等价",
+        "isCorrect": false,
+        "description": "TS 不支持对象字面量里的后缀 `=` 可选写法"
+      },
+      {
+        "text": "后缀 `=` 在 TS 里表示该属性只读",
+        "isCorrect": false,
+        "description": "它本意是可选；只读是 `readonly`，且 TS 不识别此 `=`"
+      },
+      {
+        "text": "TS 会把带 `=` 的属性当作默认值赋值",
+        "isCorrect": false,
+        "description": "类型层不赋默认值，且 TS 不支持该写法"
+      }
+    ]
+  },
+  {
+    "stem": "对 JSDoc 类型检查，在 `.js` 文件顶部加 `// @ts-check` 与在 `tsconfig.json` 设 `checkJs: true`，二者作用范围有何不同？",
+    "explanation": "`// @ts-check` 是单文件粒度——只让加了该注释的那个 `.js` 文件接受基于 JSDoc 的类型检查；`tsconfig.json` 里 `checkJs: true`（通常配 `allowJs: true`）则是项目级——让所有 `.js` 文件统一开启检查。前者适合渐进式给个别文件加类型守护，后者适合全项目一次性纳入类型检查。",
+    "tags": ["jsdoc", "typescript", "ts-check", "checkJs"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`// @ts-check` 仅作用于该单文件，`checkJs` 作用于全项目所有 `.js`",
+        "isCorrect": true,
+        "description": "前者单文件粒度，后者项目级开启 JS 类型检查"
+      },
+      {
+        "text": "两者范围相同，都是项目级",
+        "isCorrect": false,
+        "description": "`// @ts-check` 只管它所在的那个文件"
+      },
+      {
+        "text": "`// @ts-check` 全项目生效，`checkJs` 只管单文件",
+        "isCorrect": false,
+        "description": "范围说反了"
+      },
+      {
+        "text": "两者都需安装 jsdoc 包才能工作",
+        "isCorrect": false,
+        "description": "类型检查由 TS 完成，与是否装 jsdoc 无关"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 的 `@inheritdoc` 标签在覆盖父类方法时起什么作用？",
+    "explanation": "`@inheritdoc` 表示该成员的文档继承自它所覆盖的父类成员或所实现的接口，免去重复书写相同说明——生成文档时沿用被覆盖成员的描述与参数文档。它只继承文档文本，不改动源码，也不表示禁止继承。适合子类方法签名与父类一致、文档无需重写的场景。",
+    "tags": ["jsdoc", "inheritdoc", "继承"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "让该成员沿用其覆盖的父类成员/接口的文档，避免重复",
+        "isCorrect": true,
+        "description": "`@inheritdoc` 复用父级文档说明，减少重复书写"
+      },
+      {
+        "text": "把父类所有成员复制进子类源码",
+        "isCorrect": false,
+        "description": "它只继承文档文本，不修改源码"
+      },
+      {
+        "text": "声明该方法不可被进一步覆盖",
+        "isCorrect": false,
+        "description": "与禁止覆盖无关，仅继承文档"
+      },
+      {
+        "text": "自动导入父类所在模块",
+        "isCorrect": false,
+        "description": "与模块导入无关"
+      }
+    ]
+  },
+  {
+    "stem": "下面这段 JSDoc 里，`@throws {RangeError} amount 为负时抛出` 的作用是？它和 `@returns` 的 Promise 拒绝有何关系？",
+    "explanation": "`@throws`（别名 `@exception`）声明函数在何种条件下可能抛出何种错误类型，让调用方了解失败场景，如 `@throws {RangeError} amount 为负时抛出`。它描述的是同步抛出。对异步函数而言，Promise 的拒绝（reject）通常并不用单独标签，而是在 `@returns {Promise<...>}` 的描述里说明；JSDoc 没有 `@reject` 标签。",
+    "tags": ["jsdoc", "throws", "exception"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明可能抛出的异常类型与条件；Promise 拒绝在 `@returns` 里说明，无 `@reject`",
+        "isCorrect": true,
+        "description": "`@throws` 记同步抛错；异步拒绝在 Promise 返回类型处描述"
+      },
+      {
+        "text": "`@throws` 会让函数在运行时自动抛出该错误",
+        "isCorrect": false,
+        "description": "它只是文档声明，不触发运行时抛错"
+      },
+      {
+        "text": "异步失败必须用 `@reject` 标签描述",
+        "isCorrect": false,
+        "description": "JSDoc 没有 `@reject`，异步失败在 `@returns` 描述"
+      },
+      {
+        "text": "`@throws` 等价于 `@returns`，描述正常返回值",
+        "isCorrect": false,
+        "description": "二者语义相反：一个是异常路径，一个是正常返回"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置文件除 JSON 外还可以是 CommonJS 模块；关于配置文件格式与传入方式，下列说法正确的是？",
+    "explanation": "JSDoc 配置文件可用 JSON（3.3.0+ 还允许在 JSON 里写注释）或 CommonJS 模块（3.5.0+，即导出配置对象的 `.js`）。通过命令行 `-c <file>`（`--configure`）传入。用 CJS 模块形式时可在配置里写逻辑（如按环境拼路径），比纯 JSON 更灵活。",
+    "tags": ["jsdoc", "配置", "格式"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可为 JSON（可含注释）或 CommonJS 模块，用 `-c` 传入",
+        "isCorrect": true,
+        "description": "两种格式皆可，命令行 `-c` 指定配置文件路径"
+      },
+      {
+        "text": "只能是严格 JSON，不允许注释也不支持 JS",
+        "isCorrect": false,
+        "description": "3.3.0+ JSON 可带注释，3.5.0+ 还支持 CJS 模块"
+      },
+      {
+        "text": "必须命名为 `jsdoc.json` 且放项目根，无法用 `-c` 指定",
+        "isCorrect": false,
+        "description": "文件名/位置可自定，用 `-c` 传入任意路径"
+      },
+      {
+        "text": "配置只能写在 `package.json` 的 jsdoc 字段里",
+        "isCorrect": false,
+        "description": "JSDoc 用独立配置文件，通过 `-c` 指定"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 配置里 `sourceType` 字段的取值与默认值是？",
+    "explanation": "`sourceType` 控制 JSDoc 解析源码时按何种模块语义处理，取值 `module`（默认）或 `script`。默认 `module` 适配 ES Module/现代代码；当处理仅用全局脚本、不含 import/export 的老式代码时可设为 `script`。设错可能导致顶层语法被按错误模式解析。",
+    "tags": ["jsdoc", "配置", "sourceType"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "取 `module`（默认）或 `script`，控制按模块还是脚本语义解析",
+        "isCorrect": true,
+        "description": "默认 `module`，老式全局脚本可设 `script`"
+      },
+      {
+        "text": "取 `commonjs` 或 `esm`，默认 `commonjs`",
+        "isCorrect": false,
+        "description": "取值是 `module`/`script`，默认 `module`"
+      },
+      {
+        "text": "它指定生成文档的字符编码",
+        "isCorrect": false,
+        "description": "编码是 `opts.encoding`，sourceType 管解析模式"
+      },
+      {
+        "text": "它决定输出是 HTML 还是 JSON",
+        "isCorrect": false,
+        "description": "与输出格式无关，控制源码解析语义"
+      }
+    ]
+  },
+  {
+    "stem": "把多个块标签写进同一段 JSDoc 注释时，关于它们的排布，下列要求正确的是？",
+    "explanation": "块标签（如 `@param`、`@returns`、`@throws`）每个都以 `@` 起行、独占一行，多个块标签之间通过换行分隔，不能挤在同一行。而内联标签（`{@link}` 等）才嵌在描述文本中间。把两个块标签写在一行会破坏解析。描述前若有 `}` 字符还需用反斜杠转义。",
+    "tags": ["jsdoc", "块标签", "语法"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "每个块标签独占一行，彼此用换行分隔",
+        "isCorrect": true,
+        "description": "块标签以 `@` 起行且独占一行，不能同行堆叠"
+      },
+      {
+        "text": "多个块标签可以用逗号写在同一行",
+        "isCorrect": false,
+        "description": "块标签必须各占一行，逗号同行会解析失败"
+      },
+      {
+        "text": "块标签必须全部包在一对花括号里",
+        "isCorrect": false,
+        "description": "花括号内是内联标签，块标签直接以 `@` 起行"
+      },
+      {
+        "text": "块标签之间不能换行，否则注释中断",
+        "isCorrect": false,
+        "description": "恰恰要换行分隔，每个块标签独占一行"
+      }
+    ]
+  },
+  {
+    "stem": "JSDoc 描述文本中若需要出现字面的右花括号 `}` 字符，应如何处理以免干扰内联标签解析？",
+    "explanation": "因为内联标签用花括号定界（如 `{@link ...}`），描述文本里若出现裸的 `}` 可能被解析器误判为内联标签结束。官方做法是用反斜杠转义该字符，写成 `\\}`。这样 JSDoc 会把它当作普通字符渲染，而不破坏周围的内联标签语法。",
+    "tags": ["jsdoc", "转义", "内联标签"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用反斜杠转义，写成 `\\}`",
+        "isCorrect": true,
+        "description": "转义后 JSDoc 把 `}` 当普通字符，不破坏内联标签解析"
+      },
+      {
+        "text": "用两个连续的 `}}` 表示一个字面花括号",
+        "isCorrect": false,
+        "description": "JSDoc 用反斜杠转义，而非双写"
+      },
+      {
+        "text": "把 `}` 替换成 HTML 实体即可，JSDoc 无需转义",
+        "isCorrect": false,
+        "description": "标准做法是反斜杠转义，而非依赖 HTML 实体"
+      },
+      {
+        "text": "无需任何处理，JSDoc 能自动区分",
+        "isCorrect": false,
+        "description": "裸 `}` 可能被当内联标签结束，需转义"
+      }
+    ]
+  },
+  {
+    "stem": "文档站点型 SSG（如 VitePress、Docusaurus）与 JSDoc 在「文档」领域处于什么关系？",
+    "explanation": "二者不是同一层：VitePress/Docusaurus/Nextra 等 SSG 把人手写的 Markdown 渲染成站点（指南、博客、手册）；JSDoc 则是从源代码注释自动生成 API 参考文档。前者是「叙述型文档站点」，后者是「从代码抽取的 API 文档」。实践中常组合——用 SSG 写教程，用 JSDoc/TypeDoc 出 API 参考，再嵌入站点。",
+    "tags": ["jsdoc", "ssg", "对比"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SSG 渲染手写 Markdown 成站点，JSDoc 从代码注释抽 API 文档，二者不同层",
+        "isCorrect": true,
+        "description": "叙述型站点 vs 代码抽取 API 文档，常组合使用"
+      },
+      {
+        "text": "VitePress 是 JSDoc 的默认模板",
+        "isCorrect": false,
+        "description": "VitePress 是 SSG，与 JSDoc 模板无关"
+      },
+      {
+        "text": "JSDoc 已被这些 SSG 取代，无需再用",
+        "isCorrect": false,
+        "description": "SSG 不从代码抽 API，JSDoc 仍有其位置"
+      },
+      {
+        "text": "二者完全等价，都从源码生成 API 文档",
+        "isCorrect": false,
+        "description": "SSG 渲染手写 Markdown，不从源码抽 API"
+      }
+    ]
+  },
+  {
+    "stem": "对一个内部辅助函数（inner function），JSDoc 命名路径用 `~` 表示其归属（如 `Person~say`）。`~` 内部成员相比 `#` 实例、`.` 静态成员，语义特征是？",
+    "explanation": "`~` 表示内部成员（inner）——定义在某个外层函数/作用域内部、外部无法直接访问的符号，如 `Person~say` 指 `Person` 内部的 `say`。它强调「封装在内部、对外不可见」的作用域归属，区别于挂在实例上的 `#`（`Book#title`）和挂在构造器/对象上的静态 `.`（`Point.fromString`）。三者刻画的是符号在结构中的不同位置。",
+    "tags": ["jsdoc", "namepath", "inner"],
+    "categories": [
+      ["技术方向", "JSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`~` 指外层作用域内部、外部不可直接访问的成员",
+        "isCorrect": true,
+        "description": "inner 成员封装在内部，区别于实例 `#` 与静态 `.`"
+      },
+      {
+        "text": "`~` 与 `#` 等价，都指实例成员",
+        "isCorrect": false,
+        "description": "`#` 才是实例成员，`~` 是内部成员"
+      },
+      {
+        "text": "`~` 表示该成员已弃用",
+        "isCorrect": false,
+        "description": "弃用用 `@deprecated`，`~` 表内部归属"
+      },
+      {
+        "text": "`~` 表示静态成员，与 `.` 同义",
+        "isCorrect": false,
+        "description": "静态是 `.`，`~` 是内部成员，二者不同"
+      }
+    ]
+  }
+]
