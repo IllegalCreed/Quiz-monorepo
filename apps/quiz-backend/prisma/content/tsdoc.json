@@ -1,0 +1,1707 @@
+[
+  {
+    "stem": "TSDoc 在工具链中的本质定位是什么？",
+    "explanation": "TSDoc 官方首页明确把自己描述为“a proposal to standardize the doc comments used in TypeScript code”，是一个开源、社区驱动的注释语法标准/规范，本身不产出任何 HTML/Markdown 文档。它解决的是“同一份 /** */ 注释能被多种工具无歧义解析”的互操作问题。真正生成文档的是 TypeDoc、API Extractor 等下游消费方。把 TSDoc 当文档生成器是最常见的认知错误。",
+    "tags": ["tsdoc", "定位", "标准"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "TypeScript 文档注释的标准化语法规范，本身不生成文档",
+        "isCorrect": true,
+        "description": "官方原话是 proposal to standardize doc comments，定位是标准/规范"
+      },
+      {
+        "text": "一个把 TS 源码编译成 HTML 文档站的端到端生成器",
+        "isCorrect": false,
+        "description": "出文档站的是 TypeDoc 等下游，TSDoc 只定义注释语法"
+      },
+      {
+        "text": "TypeScript 编译器内置的一个 doc 生成命令",
+        "isCorrect": false,
+        "description": "TSDoc 是独立标准与 npm 解析器，不是 tsc 的子命令"
+      },
+      {
+        "text": "替代 .d.ts 的类型声明格式",
+        "isCorrect": false,
+        "description": "TSDoc 管注释语法，与 .d.ts 声明文件是两回事"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 与 TypeDoc / API Extractor / JSDoc 的关系，下列哪种概括最准确？",
+    "explanation": "TSDoc 是“怎么写注释”的语法标准；TypeDoc、API Extractor 是“消费这份注释去产出文档/报告”的工具。JSDoc 是更老的注释约定，TSDoc 在 TS 场景下对其重新设计、严格化（官方称 TSDoc 是 standardized syntax that extends JSDoc）。因此 TSDoc 与这些工具不是竞争关系，而是“规范 ↔ 实现/消费者”的关系：API Extractor 还是 TSDoc 标准的主要推动者与参考实现。",
+    "tags": ["tsdoc", "工具链", "边界"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 定义注释语法标准，TypeDoc/API Extractor 消费它产出文档/报告，是规范与实现的关系",
+        "isCorrect": true,
+        "description": "TSDoc 管规范，下游工具管产出，并非互相替代"
+      },
+      {
+        "text": "TSDoc 是 TypeDoc 的一个内置主题（theme）",
+        "isCorrect": false,
+        "description": "TSDoc 是独立标准，不是 TypeDoc 的主题"
+      },
+      {
+        "text": "四者是四个互相竞争的文档生成器，功能重叠",
+        "isCorrect": false,
+        "description": "只有 TypeDoc 等是生成器，TSDoc 是标准、本身不生成"
+      },
+      {
+        "text": "API Extractor 是 TSDoc 的反对者，刻意不兼容它",
+        "isCorrect": false,
+        "description": "恰相反，API Extractor 是 TSDoc 标准的主要推动者与参考实现"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 与 JSDoc 在 @param 写法上的关键区别是什么？",
+    "explanation": "tsdoc.org 的 @param 页明确规定：@param 后跟“参数名 + 连字符 - + 描述”，官方示例为 @param x - The first input number。连字符在 TSDoc 里是语法约定（用于分隔名与描述、便于机读）。而 JSDoc 里这个连字符是可选的、仅为可读性。这是 TSDoc“严格化、可机读”理念的具体体现，也是迁移时最常被解析器（如 eslint-plugin-tsdoc）挑出的差异。",
+    "tags": ["tsdoc", "param", "jsdoc-diff"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 要求 @param 名后必须有连字符（@param 名 - 描述），JSDoc 里连字符可选",
+        "isCorrect": true,
+        "description": "官方示例 @param x - The first input number，连字符是 TSDoc 约定"
+      },
+      {
+        "text": "TSDoc 的 @param 不写类型而 JSDoc 必须写 {类型}",
+        "isCorrect": false,
+        "description": "TS 类型来自签名，但区别重点是连字符；该说法不是 @param 页强调的核心差异"
+      },
+      {
+        "text": "TSDoc 用 @arg 替代了 @param",
+        "isCorrect": false,
+        "description": "TSDoc 标准标签是 @param，没有用 @arg 替代"
+      },
+      {
+        "text": "两者 @param 语法完全相同，无任何差异",
+        "isCorrect": false,
+        "description": "连字符的强制性不同，正是高频差异点"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说“TSDoc build 通过就等于文档已生成”这句话本身就是个伪命题？",
+    "explanation": "因为 TSDoc 根本没有 build/生成文档这一步——它不是生成器。@microsoft/tsdoc 是一个解析器（parser），把注释解析成 AST/DocNode 供其他工具使用；要得到文档站，必须再经 TypeDoc 或 API Extractor + api-documenter 这类消费方。把“跑了 tsdoc 就有文档”当成事实，是把标准/解析器误当成端到端生成器。",
+    "tags": ["tsdoc", "解析器", "认知"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 不生成文档，只提供解析器；文档须由 TypeDoc/API Extractor 等消费方产出",
+        "isCorrect": true,
+        "description": "@microsoft/tsdoc 是 parser，不产文档站"
+      },
+      {
+        "text": "TSDoc build 会直接在 out/ 输出 HTML",
+        "isCorrect": false,
+        "description": "TSDoc 没有 build 步骤，也不输出 HTML，那是 JSDoc 的行为"
+      },
+      {
+        "text": "TSDoc 编译 .ts 为 .d.ts 后即得文档",
+        "isCorrect": false,
+        "description": "编译 .d.ts 是 tsc 的事，与 TSDoc 产文档无关"
+      },
+      {
+        "text": "只要装了 @microsoft/tsdoc，VS Code 就会自动渲染文档站",
+        "isCorrect": false,
+        "description": "VS Code 只是消费注释做悬浮提示，不渲染文档站"
+      }
+    ]
+  },
+  {
+    "stem": "根据 TSDoc 官方首页，下列哪一组是 TSDoc 的主要“消费方/实现者”？",
+    "explanation": "tsdoc.org 首页列出 TSDoc 的使用者：API Extractor（参考实现）、TypeDoc、eslint-plugin-tsdoc，以及 VS Code（编辑器消费注释做智能提示）。这些工具读取同一份符合 TSDoc 的注释，因此“注释一次、多工具一致解析”成为可能。这正是 TSDoc 作为互操作标准存在的价值。",
+    "tags": ["tsdoc", "消费方", "生态"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "API Extractor、TypeDoc、eslint-plugin-tsdoc、VS Code",
+        "isCorrect": true,
+        "description": "官方首页点名的四类消费方/实现者"
+      },
+      {
+        "text": "Webpack、Vite、esbuild、Rollup",
+        "isCorrect": false,
+        "description": "这些是打包器，与解析文档注释无关"
+      },
+      {
+        "text": "Jest、Vitest、Mocha、Cypress",
+        "isCorrect": false,
+        "description": "测试框架不消费 TSDoc 注释"
+      },
+      {
+        "text": "Prettier、Stylelint、PostCSS、Babel",
+        "isCorrect": false,
+        "description": "这些是格式化/转译工具，非 TSDoc 消费方"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的“参考实现 / 参考解析器”指的是哪个包？",
+    "explanation": "tsdoc.org 的 using_tsdoc 页把 @microsoft/tsdoc 称为 “professional quality parser”，它是 TSDoc 标准的参考解析器，供其他工具在其之上构建。API Extractor 内置依赖它（~0.16.0）来解析注释。换句话说，想自己写消费 TSDoc 的工具，正确做法是基于 @microsoft/tsdoc 解析，而不是自己手写正则解析注释。",
+    "tags": ["tsdoc", "参考实现", "包"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "@microsoft/tsdoc（官方参考解析器，供其他工具构建）",
+        "isCorrect": true,
+        "description": "官方称其为 professional quality parser，是参考实现"
+      },
+      {
+        "text": "typescript（TS 编译器内置 TSDoc 解析器）",
+        "isCorrect": false,
+        "description": "TS 编译器不是 TSDoc 的参考解析器，TSDoc 解析在独立包里"
+      },
+      {
+        "text": "@types/tsdoc（类型定义包）",
+        "isCorrect": false,
+        "description": "这不是参考实现，解析逻辑在 @microsoft/tsdoc"
+      },
+      {
+        "text": "jsdoc（老牌 JS 文档工具）",
+        "isCorrect": false,
+        "description": "jsdoc 是另一个工具，不是 TSDoc 的参考解析器"
+      }
+    ]
+  },
+  {
+    "stem": "eslint-plugin-tsdoc 在 TSDoc 生态里扮演什么角色？",
+    "explanation": "eslint-plugin-tsdoc 是 ESLint 插件，提供 tsdoc/syntax 规则，对注释是否符合 TSDoc 语法做静态校验（如 @param 缺连字符、未知标签、内联标签括号不闭合等）。它是把“注释合规”纳入 CI 门禁的手段——TSDoc 标准本身和 @microsoft/tsdoc 解析器并不强制你在 lint 阶段报错，这个能力由该插件补上。当前版本 0.5.2。",
+    "tags": ["tsdoc", "eslint", "校验"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "提供 tsdoc/syntax 规则，在 ESLint 阶段校验注释是否符合 TSDoc 语法",
+        "isCorrect": true,
+        "description": "它把注释合规做成可挂 CI 的 lint 规则"
+      },
+      {
+        "text": "把 TSDoc 注释自动转换成 Markdown 文档",
+        "isCorrect": false,
+        "description": "它只做校验，不产出文档"
+      },
+      {
+        "text": "替 TypeScript 编译器补充类型检查",
+        "isCorrect": false,
+        "description": "类型检查是 tsc 的事，插件只查注释语法"
+      },
+      {
+        "text": "生成 tsdoc.json 配置文件",
+        "isCorrect": false,
+        "description": "生成/解析 tsdoc.json 是 @microsoft/tsdoc-config 的事"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 规范把标签分成哪三类（kinds of tags）？",
+    "explanation": "tsdoc.org 的 tag_kinds 页原句：“TSDoc distinguishes three kinds of tags: Block tags, modifier tags, and inline tags.” 块标签（block）独占段落引导一段内容（如 @param、@returns、@remarks）；修饰标签（modifier）是布尔语义、只表标记（如 @public、@sealed）；内联标签（inline）写在描述文本中、用花括号 { } 包裹（如 {@link}、{@inheritDoc}）。这是 TSDoc 解析模型的基石。",
+    "tags": ["tsdoc", "标签分类", "spec"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "块标签 block、修饰标签 modifier、内联标签 inline",
+        "isCorrect": true,
+        "description": "官方 tag_kinds 页明确的三类"
+      },
+      {
+        "text": "公开标签、私有标签、保护标签",
+        "isCorrect": false,
+        "description": "这是访问可见性，不是 TSDoc 的标签三分类"
+      },
+      {
+        "text": "类型标签、值标签、函数标签",
+        "isCorrect": false,
+        "description": "TSDoc 并不按这种维度分类标签"
+      },
+      {
+        "text": "核心标签、扩展标签、废弃标签",
+        "isCorrect": false,
+        "description": "Core/Extended 是标准化分组，不是标签的种类（kind）划分"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 中，下列哪些标签属于“内联标签（inline tag）”？",
+    "explanation": "内联标签写在描述文本中、用花括号包裹（surrounded by { and }）。{@link}（交叉引用）、{@inheritDoc}（继承文档）、{@label}（给声明打标签供链接引用重载）都是内联标签。而 @param、@remarks 是块标签，@public、@sealed 是修饰标签。识别内联标签的关键标志就是那对花括号。",
+    "tags": ["tsdoc", "inline", "标签分类"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "{@link}、{@inheritDoc}、{@label}",
+        "isCorrect": true,
+        "description": "均用花括号包裹、写在文本中，属内联标签"
+      },
+      {
+        "text": "@param、@returns、@remarks",
+        "isCorrect": false,
+        "description": "这些独占段落，是块标签"
+      },
+      {
+        "text": "@public、@beta、@sealed",
+        "isCorrect": false,
+        "description": "这些是布尔语义的修饰标签"
+      },
+      {
+        "text": "@example、@defaultValue、@deprecated",
+        "isCorrect": false,
+        "description": "这些是块标签，不是内联标签"
+      }
+    ]
+  },
+  {
+    "stem": "@public、@beta、@alpha、@internal 这组发布标签，在 TSDoc 的三分类里属于哪一类？",
+    "explanation": "它们属于修饰标签（modifier tags）——本质是布尔语义的标记，附加在声明上表达“这个 API 的发布成熟度”，不引导一段描述内容，也不写在文本中。修饰标签的特征就是“贴一个标记位”。API Extractor 据此对 .d.ts rollup 做裁剪、对报告分变体。把它们误当块标签（以为后面要跟一段描述）是常见错误。",
+    "tags": ["tsdoc", "modifier", "发布标签"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "修饰标签 modifier（布尔语义的标记）",
+        "isCorrect": true,
+        "description": "发布标签是只表标记的 modifier"
+      },
+      {
+        "text": "块标签 block（引导一段描述内容）",
+        "isCorrect": false,
+        "description": "它们不引导段落内容，是 modifier 而非 block"
+      },
+      {
+        "text": "内联标签 inline（写在文本中、花括号包裹）",
+        "isCorrect": false,
+        "description": "它们不写在描述文本中、无花括号"
+      },
+      {
+        "text": "既不是标签也不是注释，是 TS 关键字",
+        "isCorrect": false,
+        "description": "它们是 TSDoc 注释里的修饰标签，不是语言关键字"
+      }
+    ]
+  },
+  {
+    "stem": "在 TSDoc 里如何从语法形态上一眼区分“内联标签”和“块/修饰标签”？",
+    "explanation": "最直接的形态判据是：内联标签写在一段描述文本之内、用花括号 { } 包裹，例如句子中插入 {@link Widget.draw}；块标签与修饰标签都以 @ 起头但不被花括号包裹，块标签独占段落引导内容、修饰标签只表标记。因此看到 {@...} 就是内联，看到裸 @... 则是块或修饰（再按是否引导一段内容细分）。",
+    "tags": ["tsdoc", "标签分类", "语法"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "内联标签被花括号 { } 包裹并嵌在文本中；块/修饰标签是裸 @ 开头不带花括号",
+        "isCorrect": true,
+        "description": "花括号是内联标签的形态标志"
+      },
+      {
+        "text": "内联标签必须大写、块标签必须小写",
+        "isCorrect": false,
+        "description": "TSDoc 标签大小写敏感但不是按内联/块区分大小写"
+      },
+      {
+        "text": "内联标签以 # 开头，块标签以 @ 开头",
+        "isCorrect": false,
+        "description": "内联标签也以 @ 开头，只是外面包花括号"
+      },
+      {
+        "text": "三类标签语法形态完全一样，只能靠语义记忆",
+        "isCorrect": false,
+        "description": "花括号给了内联标签明确的形态区分"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的“标准化分组（standardization groups）”分为哪三级？",
+    "explanation": "tsdoc.org 的 standardization_groups 页定义三级：Core（核心，所有文档工具都应识别并按规范处理）、Extended（扩展，可选支持，但若实现则须符合规范语义）、Discretionary（自由裁量，可选，且其语义可因实现而异）。这三级回答的是“某个标签是否被普遍支持、行为是否一致”，与 block/modifier/inline 的“标签种类”是两个正交维度。",
+    "tags": ["tsdoc", "标准化级别", "spec"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Core（核心）/ Extended（扩展）/ Discretionary（自由裁量）",
+        "isCorrect": true,
+        "description": "官方 standardization_groups 页定义的三级"
+      },
+      {
+        "text": "Stable（稳定）/ Beta（测试）/ Experimental（实验）",
+        "isCorrect": false,
+        "description": "这是发布渠道式叫法，非 TSDoc 标准化分组"
+      },
+      {
+        "text": "Required（必填）/ Optional（可选）/ Deprecated（弃用）",
+        "isCorrect": false,
+        "description": "TSDoc 标准化分组不用这套命名"
+      },
+      {
+        "text": "Block / Modifier / Inline",
+        "isCorrect": false,
+        "description": "这是标签种类（kind），不是标准化分组（group）"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 标准化分组中 Core 与 Discretionary 在“工具支持与语义一致性”上的关键差异是什么？",
+    "explanation": "Core 组要求“every documentation tool is expected to recognize them”，即所有工具都应识别并按规范统一处理，语义一致；Discretionary 组是可选支持，且官方明确其 semantics 是 implementation-specific（因实现而异）。因此依赖 Discretionary 标签的注释，换一个工具可能解释不同甚至忽略，而 Core 标签可放心跨工具使用。这是判断“某标签能不能跨工具安全使用”的依据。",
+    "tags": ["tsdoc", "core-vs-discretionary", "标准化"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Core 要求所有工具识别且语义一致；Discretionary 可选支持且语义因实现而异",
+        "isCorrect": true,
+        "description": "官方对两组的支持要求与语义保证不同"
+      },
+      {
+        "text": "Core 是可选的、Discretionary 是必须的",
+        "isCorrect": false,
+        "description": "正好相反，Core 才是普遍要求识别的那一档"
+      },
+      {
+        "text": "两组都强制所有工具实现且语义完全一致",
+        "isCorrect": false,
+        "description": "Discretionary 既非强制、语义也允许实现差异"
+      },
+      {
+        "text": "Core 仅指内联标签，Discretionary 仅指块标签",
+        "isCorrect": false,
+        "description": "标准化分组与标签种类正交，不按 inline/block 划分"
+      }
+    ]
+  },
+  {
+    "stem": "团队跨多种工具（TypeDoc + API Extractor）共用一套 TSDoc 注释时，优先依赖哪一档标准化分组的标签最稳妥？",
+    "explanation": "应优先用 Core 组标签。Core 被定义为“所有文档工具都应识别并按规范处理”，跨工具行为最一致、最可移植；Extended 是“可选但若实现须合规”，多数主流工具支持但不保证全覆盖；Discretionary 语义因实现而异，跨工具最不可靠。要保证 TypeDoc 与 API Extractor 对同一注释解释一致，Core 标签是最安全的选择。",
+    "tags": ["tsdoc", "标准化级别", "互操作"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Core 组标签（被要求所有工具识别、语义一致、最可移植）",
+        "isCorrect": true,
+        "description": "跨工具一致性最高，符合 TSDoc 互操作初衷"
+      },
+      {
+        "text": "Discretionary 组标签（语义因实现而异）",
+        "isCorrect": false,
+        "description": "语义因实现而异，跨工具最不可靠"
+      },
+      {
+        "text": "自定义标签（tagDefinitions 里新定义的）",
+        "isCorrect": false,
+        "description": "自定义标签默认其他工具不认识，更不可移植"
+      },
+      {
+        "text": "完全不用标签，只写纯文本",
+        "isCorrect": false,
+        "description": "放弃标签会丢失结构化信息，且并非互操作问题的正解"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 {@inheritDoc} 内联标签从被引用 API 那里继承的是什么、不继承的是什么？",
+    "explanation": "tsdoc.org 的 inheritdoc 页规定：{@inheritDoc} 复制目标的 summary 摘要、@remarks、@param/@params、@typeParam、@returns 等“文档文字”，但类型签名（参数类型、返回类型、声明本身）从不在被继承之列。也就是说它只搬运文档描述，不复制/合成类型与签名——签名仍由该声明自身决定。误以为 {@inheritDoc} 会连参数类型一起搬过来，是典型错误。",
+    "tags": ["tsdoc", "inheritDoc", "语义"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "继承 summary/@remarks/@param/@typeParam/@returns 等文档文字，不继承类型签名",
+        "isCorrect": true,
+        "description": "官方明确类型签名从不在被复制之列"
+      },
+      {
+        "text": "连同参数类型、返回类型和完整签名一起复制过来",
+        "isCorrect": false,
+        "description": "类型签名不被继承，只搬文字描述"
+      },
+      {
+        "text": "只继承 @example 示例代码，不继承其它",
+        "isCorrect": false,
+        "description": "继承的是 summary/@remarks/@params/@typeParam/@returns 等，并非只 @example"
+      },
+      {
+        "text": "把目标声明整体替换成被引用的声明",
+        "isCorrect": false,
+        "description": "它不替换声明，只复用文档文字"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 {@link} 内联标签的作用与基本写法是什么？",
+    "explanation": "{@link} 是声明引用（declaration reference）类内联标签，用于交叉引用其他 API 成员或外部 URL，例如 {@link Widget.draw} 引用成员、{@link https://example.com | 显示文本} 用竖线分隔链接与展示文字。它写在描述文本中、由花括号包裹。下游工具（TypeDoc/API Extractor）据此渲染成可点击链接。它是 TSDoc“声明引用语法”的主入口。",
+    "tags": ["tsdoc", "link", "inline"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "内联标签，用于交叉引用 API 成员或 URL，如 {@link Widget.draw}",
+        "isCorrect": true,
+        "description": "{@link} 做声明引用/外链，是内联标签"
+      },
+      {
+        "text": "块标签，用于声明函数的返回值",
+        "isCorrect": false,
+        "description": "返回值用 @returns，且 {@link} 是内联非块标签"
+      },
+      {
+        "text": "修饰标签，用于标记 API 为公开",
+        "isCorrect": false,
+        "description": "公开用 @public，{@link} 不是修饰标签"
+      },
+      {
+        "text": "配置字段，写在 tsdoc.json 里",
+        "isCorrect": false,
+        "description": "{@link} 是注释里的标签，不是配置字段"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的声明引用（declaration reference）语法里，引用“某个包的某个成员”和“类的实例成员”分别怎么表达？",
+    "explanation": "TSDoc 声明引用支持用 package#member 形式跨包引用（井号 # 后接成员），以及用 (类名:instance) 这类选择器区分静态/实例成员等命名空间。例如可写 {@link some-package#SomeClass} 指向某包导出的类，或用实例选择器精确定位实例成员。这套语法让 {@link} 能无歧义地指向跨包、重载、静态/实例等不同声明，是 TSDoc 相对随意 JSDoc 链接的严格之处。",
+    "tags": ["tsdoc", "link", "declaration-reference"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "跨包用 package#member（# 接成员），实例成员可用 (类名:instance) 选择器区分命名空间",
+        "isCorrect": true,
+        "description": "声明引用用 # 和选择器精确定位"
+      },
+      {
+        "text": "跨包用 package.member（点号），实例成员用 package/member（斜杠）",
+        "isCorrect": false,
+        "description": "TSDoc 用 # 接成员，不是点号/斜杠这套"
+      },
+      {
+        "text": "所有引用都只能写裸成员名，不支持跨包或区分静态/实例",
+        "isCorrect": false,
+        "description": "TSDoc 声明引用正是为消歧而设计，支持跨包与选择器"
+      },
+      {
+        "text": "引用语法与 import 路径完全一致，写相对路径即可",
+        "isCorrect": false,
+        "description": "声明引用用符号语义（#、选择器），不是文件相对路径"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 {@label} 内联标签和 {@link} 配合解决的是什么问题？",
+    "explanation": "{@label} 给某个声明（尤其是函数重载）打上一个标签名，之后 {@link} 可通过 #label 形式精确引用到那个被标注的重载，而不至于在多个同名重载间产生歧义。这属于 TSDoc 声明引用消歧能力的一部分：重载众多时，靠 {@label} + #label 让链接稳定地指向预期的那一个。",
+    "tags": ["tsdoc", "label", "inline"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "{@label} 给声明（如重载）打标签，{@link} 用 #label 精确引用到它，消除重载歧义",
+        "isCorrect": true,
+        "description": "二者配合解决重载引用的歧义"
+      },
+      {
+        "text": "{@label} 给文档分章节，{@link} 跳转章节",
+        "isCorrect": false,
+        "description": "{@label} 是声明级标签，不是文档章节锚点"
+      },
+      {
+        "text": "{@label} 标记弃用，{@link} 指向替代品",
+        "isCorrect": false,
+        "description": "弃用用 @deprecated，{@label} 与弃用无关"
+      },
+      {
+        "text": "二者都是块标签，无配合关系",
+        "isCorrect": false,
+        "description": "二者都是内联标签且确有配合关系"
+      }
+    ]
+  },
+  {
+    "stem": "解析 TSDoc 的 tsdoc.json 配置文件、加载自定义标签定义的官方包是哪一个？",
+    "explanation": "是 @microsoft/tsdoc-config（当前 0.18.1）。@microsoft/tsdoc 提供核心解析器，而读取/解析项目根的 tsdoc.json（含 tagDefinitions、extends、supportForTags 等）由 @microsoft/tsdoc-config 负责。API Extractor 在 7.57.6 起把 tsdoc-config 升到 ~0.18.1 以修复 CVE-2025-69873。要让工具识别自定义标签，正确路径就是经 tsdoc.json + 该配置包。",
+    "tags": ["tsdoc", "tsdoc-config", "包"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "@microsoft/tsdoc-config",
+        "isCorrect": true,
+        "description": "专门解析 tsdoc.json 与自定义标签，当前 0.18.1"
+      },
+      {
+        "text": "@microsoft/tsdoc（核心解析器即可读取 tsdoc.json）",
+        "isCorrect": false,
+        "description": "核心解析器不负责读 tsdoc.json，由 tsdoc-config 负责"
+      },
+      {
+        "text": "@microsoft/api-extractor-config",
+        "isCorrect": false,
+        "description": "并不存在这个解析 tsdoc.json 的官方包"
+      },
+      {
+        "text": "eslint-plugin-tsdoc",
+        "isCorrect": false,
+        "description": "它做语法校验，不是 tsdoc.json 的加载器"
+      }
+    ]
+  },
+  {
+    "stem": "在 TSDoc 的 tsdoc.json 里声明一个自定义标签，应使用哪个字段，且需要指明什么？",
+    "explanation": "在 tsdoc.json 的 \"tagDefinitions\" 数组里添加一项，给出标签名 \"tagName\"（如 \"@myTag\"）和它的种类 \"syntaxKind\"（block / modifier / inline 之一）。因为 TSDoc 解析器必须知道这个新标签该按块、修饰还是内联来解析。只声明名字而不给 syntaxKind，解析器无法确定其语法形态。配置文件顶部通常还会带 \"$schema\" 指向 tsdoc.schema.json 以获得编辑器校验。",
+    "tags": ["tsdoc", "tagDefinitions", "配置"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 tagDefinitions 中加一项，给出 tagName 和 syntaxKind（block/modifier/inline）",
+        "isCorrect": true,
+        "description": "解析器需要知道标签名与它的语法种类"
+      },
+      {
+        "text": "在 plugins 数组里写标签名即可，无需 syntaxKind",
+        "isCorrect": false,
+        "description": "tsdoc.json 用 tagDefinitions 声明标签，且必须指明 syntaxKind"
+      },
+      {
+        "text": "直接在注释里用新标签，TSDoc 会自动登记，无需配置",
+        "isCorrect": false,
+        "description": "未声明的标签会被当作未知标签报警，须在 tsdoc.json 登记"
+      },
+      {
+        "text": "在 compilerOptions 里开启 allowCustomTags",
+        "isCorrect": false,
+        "description": "那是 tsconfig 的虚构字段，自定义标签靠 tsdoc.json"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 tsdoc.json 的 \"extends\" 字段用来做什么？",
+    "explanation": "\"extends\" 让一个 tsdoc.json 继承另一份配置（例如团队共享的基线配置或某 npm 包内置的 tsdoc.json），从而在 monorepo / 多包项目里共用同一套自定义标签与开关，避免每个包重复声明。这与 API Extractor 的 extends、tsconfig 的 extends 思路一致：把通用配置抽到一处、各处继承。",
+    "tags": ["tsdoc", "extends", "配置"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "继承另一份 tsdoc.json（共享基线配置/某包内置配置），便于多包统一标签集",
+        "isCorrect": true,
+        "description": "extends 用于配置继承与复用"
+      },
+      {
+        "text": "指定 TypeScript 版本",
+        "isCorrect": false,
+        "description": "TS 版本与 tsdoc.json 的 extends 无关"
+      },
+      {
+        "text": "扩展 ESLint 规则集",
+        "isCorrect": false,
+        "description": "那是 .eslintrc 的 extends，不是 tsdoc.json"
+      },
+      {
+        "text": "声明输出的文档目录",
+        "isCorrect": false,
+        "description": "tsdoc.json 不配置输出目录，TSDoc 也不产文档"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 tsdoc.json 顶部 \"$schema\" 字段的主要价值是什么？",
+    "explanation": "\"$schema\" 指向 TSDoc 配置的 JSON Schema（tsdoc.schema.json），让编辑器（如 VS Code）对 tsdoc.json 提供自动补全、字段校验和错误提示。它不改变运行时行为，但能在写配置时及早发现拼写/结构错误。这是几乎所有 *.json 配置（tsconfig、api-extractor.json 等）通用的“可选但强烈建议”的字段。",
+    "tags": ["tsdoc", "schema", "配置"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "指向 JSON Schema，让编辑器对 tsdoc.json 提供补全与校验",
+        "isCorrect": true,
+        "description": "$schema 提供编辑期校验/补全，不改运行时行为"
+      },
+      {
+        "text": "指定解析器版本，强制锁定 @microsoft/tsdoc 的版本",
+        "isCorrect": false,
+        "description": "$schema 不锁定解析器版本"
+      },
+      {
+        "text": "声明文档的主题样式",
+        "isCorrect": false,
+        "description": "TSDoc 不产文档，更无主题样式配置"
+      },
+      {
+        "text": "定义自定义标签，等价于 tagDefinitions",
+        "isCorrect": false,
+        "description": "自定义标签用 tagDefinitions，$schema 只管校验"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 tsdoc.json 中用来“启用/禁用某些（已定义的）标签”的字段是哪一个？",
+    "explanation": "是 \"supportForTags\"——一个“标签名 → 布尔值”的映射，用于在本项目里打开或关闭对某些标签的支持（比如继承了基线配置后，想在子包里关掉某个标签）。tagDefinitions 负责“定义新标签”，supportForTags 负责“开关已定义/已知标签”，二者职责不同、常配合使用。",
+    "tags": ["tsdoc", "supportForTags", "配置"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "supportForTags（标签名到布尔的映射，开关对标签的支持）",
+        "isCorrect": true,
+        "description": "用于启用/禁用已知标签，区别于定义新标签"
+      },
+      {
+        "text": "tagDefinitions（定义新标签）",
+        "isCorrect": false,
+        "description": "tagDefinitions 是定义新标签，不是开关"
+      },
+      {
+        "text": "enabledTags（一个标签名数组）",
+        "isCorrect": false,
+        "description": "tsdoc.json 的开关字段是 supportForTags 映射，不是该数组"
+      },
+      {
+        "text": "messages（消息级别）",
+        "isCorrect": false,
+        "description": "messages 是 api-extractor.json 的字段，不是 tsdoc.json 的标签开关"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @sealed 修饰标签表达什么语义？",
+    "explanation": "@sealed 是修饰标签，声明某个类或成员不可被继承/重写（sealed 即“封口”）。它与 @virtual（成员可被子类重写）、@override（成员重写了基类成员）构成一组描述继承/重写关系的修饰标签。这些是文档语义层面的约定，供工具在文档中呈现和供 API 审查者理解契约，并不在运行时强制。",
+    "tags": ["tsdoc", "sealed", "modifier"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "类或成员不可被继承/重写（封口）",
+        "isCorrect": true,
+        "description": "@sealed 表示禁止继承/重写"
+      },
+      {
+        "text": "类必须被继承后才能实例化（抽象）",
+        "isCorrect": false,
+        "description": "那接近 @abstract 语义，不是 @sealed"
+      },
+      {
+        "text": "成员是只读的",
+        "isCorrect": false,
+        "description": "只读用 @readonly，@sealed 关乎继承/重写"
+      },
+      {
+        "text": "成员是私有的",
+        "isCorrect": false,
+        "description": "私有是访问可见性，@sealed 关乎继承封口"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @eventProperty 修饰标签用于标记什么样的成员？",
+    "explanation": "@eventProperty 标记某个属性是“事件”——即该属性（通常是 getter）返回一个事件对象，供使用者订阅/监听。它是修饰标签，提示文档工具把该成员归类/呈现为事件而非普通属性。这类语义标签让生成的 API 文档能正确区分“事件”和“普通数据属性”。",
+    "tags": ["tsdoc", "eventProperty", "modifier"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "标记属性是事件（通常 getter 返回事件对象，供订阅）",
+        "isCorrect": true,
+        "description": "@eventProperty 把属性标注为事件"
+      },
+      {
+        "text": "标记属性是异步的",
+        "isCorrect": false,
+        "description": "异步与 @eventProperty 无关"
+      },
+      {
+        "text": "标记属性会触发重新渲染",
+        "isCorrect": false,
+        "description": "这是框架概念，TSDoc 不涉及渲染"
+      },
+      {
+        "text": "标记属性为只读常量",
+        "isCorrect": false,
+        "description": "只读用 @readonly，@eventProperty 表事件"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @virtual 与 @override 这两个修饰标签分别描述继承关系的哪一侧？",
+    "explanation": "@virtual 标在基类成员上，表示“该成员允许被子类重写”；@override 标在子类成员上，表示“该成员重写了基类的同名成员”。一个声明“可被重写”的能力，一个声明“正在重写”的事实，二者描述继承/重写关系的相对两侧。它们都是文档语义层面的修饰标签，供工具呈现与审查理解，不做运行时强制。",
+    "tags": ["tsdoc", "virtual-override", "modifier"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "@virtual 表基类成员可被重写；@override 表子类成员重写了基类成员",
+        "isCorrect": true,
+        "description": "一个标可重写、一个标正在重写，方向相对"
+      },
+      {
+        "text": "@virtual 表子类正在重写；@override 表基类允许重写",
+        "isCorrect": false,
+        "description": "方向说反了"
+      },
+      {
+        "text": "二者等价，都表示“可被重写”",
+        "isCorrect": false,
+        "description": "@override 表已重写的事实，与 @virtual 不等价"
+      },
+      {
+        "text": "@virtual 表只读、@override 表只写",
+        "isCorrect": false,
+        "description": "二者与读写无关，描述的是继承/重写"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @privateRemarks 块标签与 @remarks 的关键区别是什么？",
+    "explanation": "@remarks 是公开的补充说明，会进入生成的文档/.api.json；@privateRemarks 则是仅供维护者可见的备注，不进入文档模型（.api.json）/对外文档——用于写“给团队内部看的实现注记”。把内部 TODO、设计权衡写进 @privateRemarks，对外发布的文档里不会泄露。混用二者会导致内部信息意外暴露或对外说明缺失。",
+    "tags": ["tsdoc", "privateRemarks", "block"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "@remarks 公开进文档；@privateRemarks 仅维护者可见、不进 .api.json/对外文档",
+        "isCorrect": true,
+        "description": "二者可见性不同，privateRemarks 不外泄"
+      },
+      {
+        "text": "二者完全等价，只是别名",
+        "isCorrect": false,
+        "description": "可见性不同，并非别名"
+      },
+      {
+        "text": "@privateRemarks 会让整个成员从文档消失",
+        "isCorrect": false,
+        "description": "它只是隐藏该段备注，不隐藏成员本身"
+      },
+      {
+        "text": "@remarks 不进文档而 @privateRemarks 进文档",
+        "isCorrect": false,
+        "description": "方向相反，@remarks 才是进文档的那个"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @packageDocumentation 修饰标签应放在哪里、起什么作用？",
+    "explanation": "@packageDocumentation 放在包的入口文件（如 src/index.ts）顶部的一段 /** */ 注释里，用于提供“包级文档”（整个 npm 包的总体说明），而非某个具体导出的文档。工具据此把这段注释识别为包的概述。放错位置（如放到某个普通函数上）会让包级说明无法被正确识别。",
+    "tags": ["tsdoc", "packageDocumentation", "modifier"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "放入口文件顶部注释，提供整个包的包级文档",
+        "isCorrect": true,
+        "description": "它标记的是包级总体说明，位置在入口文件顶部"
+      },
+      {
+        "text": "放每个函数上，生成函数级文档",
+        "isCorrect": false,
+        "description": "函数级文档无需它，它是包级标签"
+      },
+      {
+        "text": "放 package.json 里作为字段",
+        "isCorrect": false,
+        "description": "它是注释里的标签，不是 package.json 字段"
+      },
+      {
+        "text": "放 tsdoc.json 里启用包文档",
+        "isCorrect": false,
+        "description": "它是注释标签，不写在 tsdoc.json"
+      }
+    ]
+  },
+  {
+    "stem": "截至 2026 年中，TSDoc 生态的 @microsoft/tsdoc、@microsoft/tsdoc-config、eslint-plugin-tsdoc 当前版本各是多少？",
+    "explanation": "经 npm 实测（2026-06-18）：@microsoft/tsdoc 为 0.16.0，@microsoft/tsdoc-config 为 0.18.1，eslint-plugin-tsdoc 为 0.5.2。三者都还在 0.x，主版本未到 1.0。引用版本号时应标注取数日期，因为这类包随上游滚动发新 minor，过段时间数字会再涨。",
+    "tags": ["tsdoc", "版本", "现状"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "tsdoc 0.16.0 / tsdoc-config 0.18.1 / eslint-plugin-tsdoc 0.5.2",
+        "isCorrect": true,
+        "description": "2026-06-18 npm 实测的当前版本"
+      },
+      {
+        "text": "tsdoc 1.2.0 / tsdoc-config 1.0.0 / eslint-plugin-tsdoc 1.0.0",
+        "isCorrect": false,
+        "description": "三者均未到 1.0，仍是 0.x"
+      },
+      {
+        "text": "tsdoc 3.9.0 / tsdoc-config 3.0.0 / eslint-plugin-tsdoc 2.0.0",
+        "isCorrect": false,
+        "description": "版本号严重偏高，与实测不符"
+      },
+      {
+        "text": "三者尚未在 npm 发布，只能从源码构建",
+        "isCorrect": false,
+        "description": "它们早已发布在 npm，可直接安装"
+      }
+    ]
+  },
+  {
+    "stem": "“TSDoc 已经发布 1.0 正式版、规范定稿”这一说法对吗？",
+    "explanation": "不对。TSDoc 解析器 @microsoft/tsdoc 当前仍是 0.16.0，主版本号没破 1.0；其 roadmap 还列着“收集 RFC、把设计规范上站、补全形式文法”等待办，说明规范仍在演进、未定稿。因此应把 TSDoc 视为“仍是 0.x 草案阶段的活跃标准”，而不是已冻结的 1.0 正式规范。",
+    "tags": ["tsdoc", "版本", "草案"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不对，TSDoc 仍是 0.x（0.16.0）、规范仍在演进，未发布 1.0",
+        "isCorrect": true,
+        "description": "版本与 roadmap 都表明仍是草案阶段"
+      },
+      {
+        "text": "对，TSDoc 早已 1.0 定稿并冻结",
+        "isCorrect": false,
+        "description": "主版本未到 1.0，规范仍在演进"
+      },
+      {
+        "text": "对，TSDoc 跟随 TypeScript 版本号同步到 5.x",
+        "isCorrect": false,
+        "description": "TSDoc 有独立的 0.x 版本线，不与 TS 同号"
+      },
+      {
+        "text": "TSDoc 没有版本号，不是 npm 包",
+        "isCorrect": false,
+        "description": "它是 npm 包且有明确 0.x 版本"
+      }
+    ]
+  },
+  {
+    "stem": "API Extractor 内置依赖的 TSDoc 解析器 @microsoft/tsdoc 版本范围大致是？这说明了什么协作关系？",
+    "explanation": "API Extractor 把 @microsoft/tsdoc 作为内置依赖（约 ~0.16.0），并随上游升级（如 7.57.6 升 tsdoc-config 到 ~0.18.1 修 CVE）。这说明 API Extractor 是 TSDoc 标准的参考实现/主要推动者：它直接内置解析器来解析注释，而非自己另写一套。理解这一点，就明白“TSDoc 的语义在 API Extractor 里能得到第一手、最完整的落地”。",
+    "tags": ["tsdoc", "api-extractor", "依赖"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "~0.16.0 内置依赖；API Extractor 是 TSDoc 的参考实现，直接内置解析器",
+        "isCorrect": true,
+        "description": "AE 内置 @microsoft/tsdoc 并随之升级"
+      },
+      {
+        "text": "API Extractor 不依赖 @microsoft/tsdoc，自己重写了解析器",
+        "isCorrect": false,
+        "description": "它正是内置依赖 @microsoft/tsdoc 作为参考实现"
+      },
+      {
+        "text": "依赖固定在 3.0.0",
+        "isCorrect": false,
+        "description": "@microsoft/tsdoc 仍是 0.x，不存在 3.0.0"
+      },
+      {
+        "text": "二者无任何依赖或协作关系",
+        "isCorrect": false,
+        "description": "AE 是 TSDoc 主要推动者并内置其解析器"
+      }
+    ]
+  },
+  {
+    "stem": "如果团队只想“一条命令把 TS 项目变成 HTML 文档站”，而不需要契约/裁剪，应选哪个工具？TSDoc 在其中是什么角色？",
+    "explanation": "应选 TypeDoc——它是端到端文档站生成器，直接读 TS 类型系统一步出 HTML。TSDoc 在这里不是被选中的“工具”，而是 TypeDoc 注释所遵循/兼容的语法标准。也就是说你写 TSDoc 风格注释、用 TypeDoc 生成站点。把 TSDoc 当成“能直接出站点的工具”去选型是错的，它没有生成能力。",
+    "tags": ["tsdoc", "选型", "typedoc"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "选 TypeDoc 出站点；TSDoc 只是其注释遵循的语法标准，本身不出站",
+        "isCorrect": true,
+        "description": "TypeDoc 端到端生成，TSDoc 提供注释规范"
+      },
+      {
+        "text": "选 TSDoc，它能一条命令出 HTML 站",
+        "isCorrect": false,
+        "description": "TSDoc 不生成文档，无此能力"
+      },
+      {
+        "text": "选 API Extractor，它默认输出 HTML 站",
+        "isCorrect": false,
+        "description": "API Extractor 不直接出站点，需 api-documenter/自建管线"
+      },
+      {
+        "text": "选 eslint-plugin-tsdoc，它会渲染站点",
+        "isCorrect": false,
+        "description": "该插件只校验注释，不渲染站点"
+      }
+    ]
+  },
+  {
+    "stem": "下列关于“TSDoc 之于 JSDoc”的描述，哪一项最贴合官方表述？",
+    "explanation": "TSDoc 官方与 context7 条目都把 TSDoc 描述为“standardized syntax for TypeScript documentation comments that extends JSDoc”——它在 JSDoc 基础上扩展、并针对 TypeScript 重新设计得更严格、可机读、强调类型与跨工具一致解析。所以它不是抛弃 JSDoc，而是对 JSDoc 在 TS 场景的严格化与标准化。把二者当成毫不相干或纯粹替代关系都不准确。",
+    "tags": ["tsdoc", "jsdoc", "关系"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 在 JSDoc 基础上扩展、为 TS 重新设计得更严格、可机读、跨工具一致",
+        "isCorrect": true,
+        "description": "官方称其为 extends JSDoc 的标准化语法"
+      },
+      {
+        "text": "TSDoc 与 JSDoc 毫无关系，是从零另起的语法",
+        "isCorrect": false,
+        "description": "官方明确 TSDoc extends JSDoc，并非毫无关系"
+      },
+      {
+        "text": "TSDoc 只是 JSDoc 的一个别名",
+        "isCorrect": false,
+        "description": "二者语义/严格度不同，不是别名"
+      },
+      {
+        "text": "TSDoc 比 JSDoc 更宽松随意",
+        "isCorrect": false,
+        "description": "恰相反，TSDoc 更严格、更可机读"
+      }
+    ]
+  },
+  {
+    "stem": "把“TSDoc / TypeDoc / API Extractor / api-documenter”按角色归位，哪一组对应正确？",
+    "explanation": "TSDoc = 注释语法标准（不产出）；TypeDoc = 端到端文档站生成器（读 TS 类型，一步出 HTML）；API Extractor = 库作者向的 API 分析工具（产 .api.md 报告 + .d.ts rollup + .api.json 模型）；api-documenter = API Extractor 的配套，消费 .api.json 出 Markdown/DocFX。四者各司其职，TSDoc 是它们共同遵循的注释规范层。",
+    "tags": ["tsdoc", "工具链", "归位"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc=注释标准；TypeDoc=文档站生成器；API Extractor=API 分析(报告/rollup/模型)；api-documenter=消费 .api.json 出文档",
+        "isCorrect": true,
+        "description": "四者角色各异，TSDoc 是规范层"
+      },
+      {
+        "text": "四者都是文档站生成器，可任意互换",
+        "isCorrect": false,
+        "description": "只有 TypeDoc 等是生成器，TSDoc 是标准不可替换其余"
+      },
+      {
+        "text": "TSDoc 产报告、API Extractor 定标准",
+        "isCorrect": false,
+        "description": "角色对调了，标准是 TSDoc、报告是 API Extractor"
+      },
+      {
+        "text": "api-documenter 是注释标准，TSDoc 出 HTML",
+        "isCorrect": false,
+        "description": "完全错位，TSDoc 是标准且不出 HTML"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说“TSDoc 不在工具链里做类型检查、也不做破坏性变更门禁”？这两件事分别由谁负责？",
+    "explanation": "因为 TSDoc 只是注释语法标准，不读类型系统、不比对 API 快照。类型检查由 TypeScript 编译器负责；破坏性变更门禁（API 契约 diff）由 API Extractor 的 .api.md 报告 + CI 比对负责。TSDoc 提供的是“注释怎么写”的规范，至多由 eslint-plugin-tsdoc 校验注释语法本身。把类型检查或契约门禁的期望放到 TSDoc 上是定位错误。",
+    "tags": ["tsdoc", "边界", "职责"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 只管注释语法；类型检查归 tsc，破坏性变更门禁归 API Extractor 报告",
+        "isCorrect": true,
+        "description": "三件事职责分明，TSDoc 不承担后两者"
+      },
+      {
+        "text": "TSDoc 同时负责类型检查和契约门禁",
+        "isCorrect": false,
+        "description": "二者均非 TSDoc 职责"
+      },
+      {
+        "text": "类型检查归 TSDoc，契约门禁归 TypeDoc",
+        "isCorrect": false,
+        "description": "类型检查是 tsc、门禁是 API Extractor，均非如此"
+      },
+      {
+        "text": "这三件事都由 eslint-plugin-tsdoc 一手包办",
+        "isCorrect": false,
+        "description": "该插件只校验注释语法，不做类型检查/契约门禁"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 的 @deprecated 块标签的推荐用法是什么？",
+    "explanation": "@deprecated 标记某 API 已弃用，最佳实践是在标签后附上一段说明：为何弃用、以及推荐的替代方案（例如“改用 newApi() 代替”）。它是块标签，工具会在文档中醒目呈现弃用提示。只写 @deprecated 不给替代说明，会让使用者知道“不该用”却不知道“该用什么”。",
+    "tags": ["tsdoc", "deprecated", "block"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "标记弃用并附说明（原因 + 推荐替代方案）",
+        "isCorrect": true,
+        "description": "弃用同时给出迁移指引最有价值"
+      },
+      {
+        "text": "把成员从文档中彻底删除",
+        "isCorrect": false,
+        "description": "它仍会显示，只是标注为弃用"
+      },
+      {
+        "text": "在运行时抛出弃用错误",
+        "isCorrect": false,
+        "description": "它是文档语义，不在运行时抛错"
+      },
+      {
+        "text": "将成员标记为只读",
+        "isCorrect": false,
+        "description": "只读用 @readonly，与弃用无关"
+      }
+    ]
+  },
+  {
+    "stem": "一段 TSDoc 注释里，“主摘要（summary）”与 @remarks 的分工是什么？",
+    "explanation": "注释开头未被任何块标签引导的第一段文字是“主摘要 summary”，应是一句话/简短的核心说明；更长、更详细的补充论述放进 @remarks 块。工具通常在列表/概览处只显示 summary，在详情页才展开 @remarks。这种分工让概览简洁、详情完整。把长篇大论全堆在 summary 会破坏概览的可读性。",
+    "tags": ["tsdoc", "summary-remarks", "结构"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "开头未被标签引导的首段是 summary（简短核心）；@remarks 放更长的详细补充",
+        "isCorrect": true,
+        "description": "summary 简、remarks 详，分别用于概览与详情"
+      },
+      {
+        "text": "summary 和 @remarks 必须内容完全一致",
+        "isCorrect": false,
+        "description": "二者分工不同，不要求一致"
+      },
+      {
+        "text": "@remarks 必须写在注释最前面，summary 在最后",
+        "isCorrect": false,
+        "description": "summary 是开头首段，@remarks 是其后的块"
+      },
+      {
+        "text": "没有 @remarks 标签，详细说明只能写进 @example",
+        "isCorrect": false,
+        "description": "@remarks 标签存在且正是放详细说明之处"
+      }
+    ]
+  },
+  {
+    "stem": "未在 tsdoc.json 中登记的“未知标签”被 TSDoc 解析器遇到时，典型结果是什么？",
+    "explanation": "解析器会产生一条 tsdoc-* 类的告警/消息（例如“未定义的标签”），提示这个标签不被识别。要消除告警，要么在 tsdoc.json 的 tagDefinitions 里把它定义为某种 syntaxKind，要么调整消息级别。这正是 TSDoc“严格、可机读”的体现——不像某些工具默默吞掉未知标签，而是显式报出，便于发现拼写错误或漏配置。",
+    "tags": ["tsdoc", "未知标签", "解析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "产生 tsdoc-* 告警提示标签未定义；需在 tagDefinitions 登记或调消息级别",
+        "isCorrect": true,
+        "description": "未知标签被显式报出，而非静默忽略"
+      },
+      {
+        "text": "解析器崩溃、无法继续解析整个文件",
+        "isCorrect": false,
+        "description": "只是告警，不会崩溃"
+      },
+      {
+        "text": "自动把未知标签当作 @public 处理",
+        "isCorrect": false,
+        "description": "不会臆测语义，而是报未知标签"
+      },
+      {
+        "text": "静默忽略，永远不产生任何提示",
+        "isCorrect": false,
+        "description": "TSDoc 会显式报告未知标签"
+      }
+    ]
+  },
+  {
+    "stem": "VS Code 在不安装任何额外文档插件时，与 TSDoc 注释发生关系的方式是？",
+    "explanation": "VS Code（基于 TypeScript 语言服务）会读取符合 TSDoc/JSDoc 风格的 /** */ 注释，在悬浮提示、参数提示、补全里展示这些文档文字。这就是“注释一次、编辑器即时受益”的体现——它是 TSDoc 官方点名的消费方之一。注意它消费的是注释里的描述文字，并不“生成文档站”，也不强校验 TSDoc 语法合规（语法校验由 eslint-plugin-tsdoc 负责）。",
+    "tags": ["tsdoc", "vscode", "消费方"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "读取 /** */ 注释，在悬浮/补全/参数提示里展示文档文字",
+        "isCorrect": true,
+        "description": "VS Code 经 TS 语言服务消费注释做智能提示"
+      },
+      {
+        "text": "自动把注释编译成 HTML 文档站",
+        "isCorrect": false,
+        "description": "VS Code 不生成站点"
+      },
+      {
+        "text": "强制校验注释是否符合 TSDoc 语法并报错",
+        "isCorrect": false,
+        "description": "语法校验靠 eslint-plugin-tsdoc，VS Code 默认不强校验"
+      },
+      {
+        "text": "把注释写回 tsdoc.json",
+        "isCorrect": false,
+        "description": "VS Code 不修改 tsdoc.json"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪一项是对“TSDoc 标签种类（kind）”和“标准化分组（group）”关系的正确理解？",
+    "explanation": "二者是正交的两个维度：种类（block/modifier/inline）描述“标签的语法形态怎么写、怎么解析”；标准化分组（Core/Extended/Discretionary）描述“标签被工具支持的普遍程度与语义一致性”。同一个标签既有它的 kind，也有它的 group。例如 @param 是 block 标签且属 Core 组。把两个维度混为一谈（如以为 Core 就等于 block）是常见误解。",
+    "tags": ["tsdoc", "kind-vs-group", "辨析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "种类（语法形态）与标准化分组（支持程度/语义一致性）是正交两维，同一标签都各有其值",
+        "isCorrect": true,
+        "description": "kind 与 group 互相独立，可组合"
+      },
+      {
+        "text": "种类和分组是同一回事，只是叫法不同",
+        "isCorrect": false,
+        "description": "二者是不同维度，并非同义"
+      },
+      {
+        "text": "Core 分组只包含 inline 标签",
+        "isCorrect": false,
+        "description": "分组与种类正交，Core 不等于某一种 kind"
+      },
+      {
+        "text": "所有 block 标签都属 Discretionary 分组",
+        "isCorrect": false,
+        "description": "如 @param 是 block 却属 Core，反例即破"
+      }
+    ]
+  },
+  {
+    "stem": "团队想强制“所有公共 API 的注释都符合 TSDoc 语法、否则 CI 失败”，正确的落地手段是什么？",
+    "explanation": "在 ESLint 配置里启用 eslint-plugin-tsdoc 的 tsdoc/syntax 规则，并把该规则设为 error，再把 ESLint 纳入 CI——这样注释不合 TSDoc 语法时 lint 报错、CI 失败。TSDoc 标准本体与 @microsoft/tsdoc 解析器只“能解析/能报消息”，把“不合规即阻断”做成硬门禁需要这个 ESLint 插件。注意它校验的是注释语法，不校验“是否写了注释”这类完整性策略（那需更细的规则集）。",
+    "tags": ["tsdoc", "ci", "eslint"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "启用 eslint-plugin-tsdoc 的 tsdoc/syntax 规则并设为 error，纳入 CI",
+        "isCorrect": true,
+        "description": "用该插件把注释合规做成 CI 硬门禁"
+      },
+      {
+        "text": "在 tsconfig 里开 strict 即可强制注释合规",
+        "isCorrect": false,
+        "description": "tsconfig strict 管类型，不管注释语法"
+      },
+      {
+        "text": "让 TypeDoc 在生成时报错阻断",
+        "isCorrect": false,
+        "description": "TypeDoc 出文档，不是注释语法的 CI 门禁工具"
+      },
+      {
+        "text": "在 tsdoc.json 里设 failOnError: true",
+        "isCorrect": false,
+        "description": "tsdoc.json 无此门禁字段，门禁靠 ESLint 插件"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 TSDoc 强调“严格、可机读”的语法，比 JSDoc 相对宽松的约定更适合多工具协作？",
+    "explanation": "因为当 TypeDoc、API Extractor、VS Code、ESLint 都要解析同一份注释时，任何歧义（如 @param 是否要连字符、链接如何消歧重载、未知标签如何处理）都会让不同工具得出不同结果。TSDoc 用严格、可机读的规则消除这些歧义，使“注释一次、多工具一致解析”成为可能——这正是它作为互操作标准的核心目标。JSDoc 偏宽松的约定在单工具下够用，但跨工具一致性弱。",
+    "tags": ["tsdoc", "互操作", "设计理念"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "严格语法消除歧义，使多工具对同一注释解析一致，达成互操作",
+        "isCorrect": true,
+        "description": "互操作正是 TSDoc 严格化的根本动机"
+      },
+      {
+        "text": "严格只是为了让注释更难写、筛掉新手",
+        "isCorrect": false,
+        "description": "目的是互操作一致，不是抬高门槛"
+      },
+      {
+        "text": "JSDoc 其实更适合多工具协作，TSDoc 是倒退",
+        "isCorrect": false,
+        "description": "跨工具一致性上 TSDoc 更强，并非倒退"
+      },
+      {
+        "text": "严格与否对多工具解析没有任何影响",
+        "isCorrect": false,
+        "description": "歧义会让不同工具结果不一致，严格性很关键"
+      }
+    ]
+  },
+  {
+    "stem": "下列对 TSDoc 参考解析器 @microsoft/tsdoc 输出的描述，哪一项正确？",
+    "explanation": "@microsoft/tsdoc 把一段 doc 注释解析成结构化的文档节点树（DocNode/AST），下游工具遍历这棵树取出 summary、各块标签内容、内联链接等，再决定如何渲染或如何做 API 报告。它输出的是“解析结果（AST）”，不是 HTML，也不是 Markdown。理解这一点就明白：要消费 TSDoc，正确姿势是基于这棵 AST，而非对注释字符串做正则。",
+    "tags": ["tsdoc", "parser", "ast"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把注释解析成结构化文档节点树（DocNode/AST），供工具遍历取内容",
+        "isCorrect": true,
+        "description": "解析器产 AST，不直接产 HTML/Markdown"
+      },
+      {
+        "text": "直接输出渲染好的 HTML 文档",
+        "isCorrect": false,
+        "description": "它产 AST，不渲染 HTML"
+      },
+      {
+        "text": "输出 .api.json 文档模型",
+        "isCorrect": false,
+        "description": ".api.json 是 API Extractor 的产物，不是 tsdoc 解析器的直接输出"
+      },
+      {
+        "text": "输出一份 tsdoc.json 配置",
+        "isCorrect": false,
+        "description": "tsdoc.json 是输入配置，不是解析器输出"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 中 @returns 后跟描述是块标签用法；那 {@link} 出现在 @returns 的描述文字里又算哪类标签？",
+    "explanation": "{@link} 即使出现在某个块标签（如 @returns）的描述文字中，它仍然是内联标签——因为它被花括号包裹、嵌在文本流里。块标签引导一段内容，而这段内容里可以再嵌内联标签。所以“@returns 引导的段落里有 {@link Foo}”是完全正常的：外层是块标签的内容区，内层是内联引用。二者层级不同、不矛盾。",
+    "tags": ["tsdoc", "inline-in-block", "辨析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仍是内联标签——内联标签可嵌在块标签引导的描述文字内",
+        "isCorrect": true,
+        "description": "块标签的内容区里可再嵌内联标签"
+      },
+      {
+        "text": "此时 {@link} 升级为块标签",
+        "isCorrect": false,
+        "description": "形态没变（仍带花括号、嵌在文本），仍是内联"
+      },
+      {
+        "text": "这是非法写法，块标签内不许出现内联标签",
+        "isCorrect": false,
+        "description": "块标签描述里嵌内联标签是合法常见用法"
+      },
+      {
+        "text": "{@link} 在 @returns 里会被忽略",
+        "isCorrect": false,
+        "description": "它会被正常解析为内联引用，不被忽略"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 相关的 tsdoc-metadata.json 与 tsdoc.json 是同一个东西吗？各自作用是什么？",
+    "explanation": "不是。tsdoc.json 是项目的 TSDoc 配置输入（声明自定义标签 tagDefinitions、extends、supportForTags 等），由 @microsoft/tsdoc-config 读取；tsdoc-metadata.json 则是产出物——它向下游声明“本 npm 包支持哪些 TSDoc 标签”，常由 API Extractor 的 tsdocMetadata 配置节生成。一个是“我怎么解析注释”的配置，一个是“我这个包支持哪些标签”的元数据声明，方向相反。",
+    "tags": ["tsdoc", "metadata-vs-config", "辨析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "不同：tsdoc.json 是配置输入；tsdoc-metadata.json 是产出，向下游声明本包支持的标签",
+        "isCorrect": true,
+        "description": "一个是输入配置、一个是输出元数据"
+      },
+      {
+        "text": "是同一个文件的两个名字",
+        "isCorrect": false,
+        "description": "二者文件不同、作用方向相反"
+      },
+      {
+        "text": "tsdoc-metadata.json 是配置、tsdoc.json 是产物",
+        "isCorrect": false,
+        "description": "方向说反了"
+      },
+      {
+        "text": "两者都由 eslint-plugin-tsdoc 生成",
+        "isCorrect": false,
+        "description": "tsdoc.json 人写，metadata 多由 API Extractor 生成"
+      }
+    ]
+  },
+  {
+    "stem": "TSDoc 注释若把所有内容（详细原理、示例、参数说明）都堆在主摘要里、不用任何块标签，会有什么后果？",
+    "explanation": "工具通常在概览/列表处只展示 summary（主摘要），把长篇内容塞进 summary 会让概览臃肿难读，且参数说明、示例、补充论述无法被工具识别为 @param/@example/@remarks 而分区呈现——文档结构丢失。正确做法是 summary 一句话点题，细节用 @remarks，参数用 @param，示例用 @example，让结构化标签各归其位。这关乎生成文档的可读性与可导航性。",
+    "tags": ["tsdoc", "结构化", "最佳实践"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "概览会臃肿，且参数/示例/补充无法被识别分区，文档结构丢失",
+        "isCorrect": true,
+        "description": "不用块标签会丧失结构化呈现"
+      },
+      {
+        "text": "完全没影响，工具会自动拆分主摘要",
+        "isCorrect": false,
+        "description": "工具不会自动把摘要拆成各块标签"
+      },
+      {
+        "text": "会导致编译失败",
+        "isCorrect": false,
+        "description": "这是文档质量问题，不影响编译"
+      },
+      {
+        "text": "反而更好，因为信息都集中在一处",
+        "isCorrect": false,
+        "description": "集中堆叠损害概览与导航，并非更好"
+      }
+    ]
+  },
+  {
+    "stem": "在 monorepo 多包项目里，想让所有子包共用同一套自定义 TSDoc 标签与开关，最贴合 TSDoc 配置体系的做法是？",
+    "explanation": "把通用的 tagDefinitions / supportForTags 抽到一份基线 tsdoc.json，各子包用 \"extends\" 继承它（可指向相对路径或某共享 npm 包内置的 tsdoc.json）。这样新增/调整自定义标签只改一处、全仓库一致，避免每个包重复声明、彼此漂移。这与 API Extractor extends、tsconfig extends 是同一套“配置继承”思路。",
+    "tags": ["tsdoc", "monorepo", "extends"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "抽出基线 tsdoc.json，子包用 extends 继承，集中维护标签集",
+        "isCorrect": true,
+        "description": "extends 实现多包配置复用与一致"
+      },
+      {
+        "text": "每个子包各自维护一份完整 tsdoc.json，手动保持同步",
+        "isCorrect": false,
+        "description": "重复且易漂移，不是推荐做法"
+      },
+      {
+        "text": "把标签定义写进根 package.json",
+        "isCorrect": false,
+        "description": "标签定义在 tsdoc.json 的 tagDefinitions，不在 package.json"
+      },
+      {
+        "text": "用环境变量在运行时注入标签",
+        "isCorrect": false,
+        "description": "TSDoc 标签由 tsdoc.json 声明，不靠环境变量"
+      }
+    ]
+  },
+  {
+    "stem": "关于“TSDoc 注释的放置位置”，哪种说法正确？",
+    "explanation": "与 JSDoc 一致，TSDoc 注释须是 /** */（斜杠加两个星号开头）的块注释，并紧贴在被记录的声明（函数/类/属性等）正上方，解析器据此把注释与紧随的符号关联。普通块注释 /*（单星）或行注释 // 不会被当作文档注释解析。位置或起始标记写错，注释就不会被识别为文档。",
+    "tags": ["tsdoc", "注释放置", "基础"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "须用 /** 开头并紧贴声明正上方，解析器据此关联符号",
+        "isCorrect": true,
+        "description": "起始标记与位置都决定注释能否被识别"
+      },
+      {
+        "text": "可用 // 行注释，紧贴声明即可",
+        "isCorrect": false,
+        "description": "行注释不会被当文档注释解析"
+      },
+      {
+        "text": "可放在声明下方，工具会向上关联",
+        "isCorrect": false,
+        "description": "约定是紧贴在声明正上方"
+      },
+      {
+        "text": "放在文件任意位置都会被自动关联到最近的声明",
+        "isCorrect": false,
+        "description": "需紧贴目标声明上方，并非任意位置"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说“TSDoc 是 API Extractor、TypeDoc 共同的‘普通话’”这个比喻抓住了它的价值？",
+    "explanation": "因为 API Extractor、TypeDoc、VS Code、ESLint 各自是不同工具，若各说各的“方言”（各自一套注释解析规则），同一份注释在不同工具下会被理解得不一样。TSDoc 提供一套统一的、严格可机读的注释语法（普通话），让这些工具对同一注释取得一致理解，从而“写一次注释，多工具受益且一致”。这就是它作为互操作标准的核心价值，也解释了为何它本身不需要、也不做“生成文档”这件事。",
+    "tags": ["tsdoc", "互操作", "价值"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它给多种工具提供统一可机读的注释语法，使同一注释被一致解析（互操作）",
+        "isCorrect": true,
+        "description": "统一语法消歧、达成跨工具一致，是其价值核心"
+      },
+      {
+        "text": "因为它最终会把所有工具合并成一个",
+        "isCorrect": false,
+        "description": "它是规范层，不合并工具"
+      },
+      {
+        "text": "因为它能替所有工具生成各自的文档",
+        "isCorrect": false,
+        "description": "它不生成文档，只统一注释语法"
+      },
+      {
+        "text": "因为它强制所有工具使用相同的输出主题",
+        "isCorrect": false,
+        "description": "它不规定输出，只规范注释语法"
+      }
+    ]
+  },
+  {
+    "stem": "把 @param 的描述写成 “@param x The first number”（缺连字符）在严格 TSDoc 校验下会怎样？",
+    "explanation": "在符合 TSDoc 的严格解析/校验（如 eslint-plugin-tsdoc 的 tsdoc/syntax）下，@param 期望“名 - 描述”的连字符形式，缺连字符会被报为语法问题。官方 @param 示例正是 @param x - The first input number。这与 JSDoc 容忍省略连字符不同，是迁移到 TSDoc 体系时最常见的 lint 报错之一。补上 “ - ” 即可。",
+    "tags": ["tsdoc", "param", "校验"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "会被 TSDoc 语法校验报为问题，因为 @param 期望“名 - 描述”的连字符形式",
+        "isCorrect": true,
+        "description": "连字符是 TSDoc 约定，缺失被报错"
+      },
+      {
+        "text": "完全合法，TSDoc 和 JSDoc 一样不要求连字符",
+        "isCorrect": false,
+        "description": "TSDoc 要求连字符，与 JSDoc 不同"
+      },
+      {
+        "text": "会导致 TypeScript 编译失败",
+        "isCorrect": false,
+        "description": "这是注释语法问题，不影响编译"
+      },
+      {
+        "text": "会被自动补上连字符，无任何提示",
+        "isCorrect": false,
+        "description": "校验会显式报出，而非静默补全"
+      }
+    ]
+  },
+  {
+    "stem": "团队从 JSDoc 注释迁移到严格 TSDoc 时，最可能被 eslint-plugin-tsdoc 报出的两类问题是？",
+    "explanation": "一是 @param/@returns 等的写法不合 TSDoc 规范（典型是 @param 缺连字符）；二是使用了未在 tsdoc.json 登记的未知标签（JSDoc 时代随手用的非标准标签）。前者按“名 - 描述”补连字符，后者要么去掉非标准标签、要么在 tagDefinitions 里登记并指定 syntaxKind。这两类正是 JSDoc 宽松约定与 TSDoc 严格语法之间的主要摩擦点。",
+    "tags": ["tsdoc", "迁移", "eslint"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "@param 缺连字符等不合规写法，以及未登记的未知标签",
+        "isCorrect": true,
+        "description": "连字符与未知标签是迁移两大高频报错"
+      },
+      {
+        "text": "类型注解缺失与缩进错误",
+        "isCorrect": false,
+        "description": "类型来自 TS 签名、缩进非 tsdoc/syntax 关注重点"
+      },
+      {
+        "text": "文件编码与换行符问题",
+        "isCorrect": false,
+        "description": "那是 git/格式问题，非 tsdoc/syntax 校验内容"
+      },
+      {
+        "text": "import 路径错误",
+        "isCorrect": false,
+        "description": "import 是模块问题，与 TSDoc 注释校验无关"
+      }
+    ]
+  },
+  {
+    "stem": "下列对“TSDoc 解析器 @microsoft/tsdoc 与 TypeScript 编译器关系”的描述，哪一项正确？",
+    "explanation": "@microsoft/tsdoc 是独立的注释解析器，它解析 /** */ 注释文本本身，与 TypeScript 编译器是两回事：tsc 负责类型检查与生成 .d.ts，tsdoc 负责把注释解析成 AST。下游工具（如 API Extractor）会同时用到 TS 编译器（分析 .d.ts 签名）和 tsdoc 解析器（分析注释），把“签名 + 文档”合起来。但 tsdoc 本身不依赖 tsc 去解析注释，二者职责清晰分离。",
+    "tags": ["tsdoc", "parser-vs-tsc", "辨析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "tsdoc 是独立注释解析器，解析注释文本；类型/.d.ts 归 tsc，二者职责分离",
+        "isCorrect": true,
+        "description": "解析注释与类型检查是两套独立职责"
+      },
+      {
+        "text": "tsdoc 是 TypeScript 编译器内部的一个模块",
+        "isCorrect": false,
+        "description": "它是独立 npm 包，不在 tsc 内部"
+      },
+      {
+        "text": "tsdoc 解析注释必须先调用 tsc 编译",
+        "isCorrect": false,
+        "description": "解析注释文本不需要先编译"
+      },
+      {
+        "text": "tsc 负责解析注释、tsdoc 负责类型检查",
+        "isCorrect": false,
+        "description": "职责对调了"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 @internal 这类发布标签虽是 TSDoc 修饰标签，其“裁剪/可见性”效果却主要在 API Extractor 中体现？",
+    "explanation": "TSDoc 负责“定义这些发布标签（@public/@beta/@alpha/@internal）的语义与语法形态（修饰标签）”，但“按标签裁剪 .d.ts rollup、生成不同变体报告”这类动作是消费方 API Extractor 实现的功能。也就是说 TSDoc 给出标签的含义，API Extractor 把含义落地为实际的裁剪与门禁。理解“规范定义语义、工具落地行为”这条分工，就不会期待 TSDoc 本身去裁剪什么。",
+    "tags": ["tsdoc", "release-tag", "分工"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 定义标签语义/形态，按标签裁剪与出报告由消费方 API Extractor 落地",
+        "isCorrect": true,
+        "description": "规范定义语义、工具实现行为，分工清晰"
+      },
+      {
+        "text": "TSDoc 自己会裁剪 .d.ts，API Extractor 只是转发",
+        "isCorrect": false,
+        "description": "裁剪是 API Extractor 的功能，TSDoc 不做"
+      },
+      {
+        "text": "发布标签不是 TSDoc 标签，是 API Extractor 私有的",
+        "isCorrect": false,
+        "description": "它们是 TSDoc 修饰标签，语义由 TSDoc 定义"
+      },
+      {
+        "text": "裁剪由 TypeScript 编译器根据标签完成",
+        "isCorrect": false,
+        "description": "tsc 不按文档标签裁剪，由 API Extractor 完成"
+      }
+    ]
+  },
+  {
+    "stem": "综合判断：下列关于 TSDoc 的四条陈述，哪一条完全正确？",
+    "explanation": "正确陈述：TSDoc 是 TS 文档注释的标准化语法、把标签分为 block/modifier/inline、把标准化分组分为 Core/Extended/Discretionary、当前仍是 0.x（如 0.16.0）。其余陈述各含硬伤：TSDoc 不生成 HTML（它不是生成器）；它不内置于 tsc；它已远不止“仅 @param 一个标签”。综合辨析能检验是否真正建立了 TSDoc 的整体认知而非碎片记忆。",
+    "tags": ["tsdoc", "综合", "辨析"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TSDoc 是注释语法标准，标签分 block/modifier/inline，标准化分 Core/Extended/Discretionary，仍处 0.x",
+        "isCorrect": true,
+        "description": "四个要点都与官方一致"
+      },
+      {
+        "text": "TSDoc 跑一次就在 out/ 生成 HTML 文档站",
+        "isCorrect": false,
+        "description": "TSDoc 不生成文档，无此行为"
+      },
+      {
+        "text": "TSDoc 内置于 tsc，随 TypeScript 一起发布",
+        "isCorrect": false,
+        "description": "它是独立 npm 包，不内置于 tsc"
+      },
+      {
+        "text": "TSDoc 目前只定义了 @param 一个标签",
+        "isCorrect": false,
+        "description": "它定义了大量块/修饰/内联标签，远不止一个"
+      }
+    ]
+  },
+  {
+    "stem": "下列关于 {@linkcode} 的判断中，哪一项最稳妥地体现了 TSDoc 的“互操作 / 标准化分组”意识？",
+    "explanation": "等宽链接这类“锦上添花”的内联标签（如某些工具支持的 {@linkcode}/{@linkplain}）在不同工具间支持度与语义未必一致，更可能落在 Extended/Discretionary 而非 Core。稳妥做法是：跨多工具时优先用被普遍要求识别的 Core 标签（如 {@link}），对支持度不确定的标签先确认目标工具是否支持，再决定是否使用，而不是想当然认为所有工具都按同一语义渲染。这正是用标准化分组意识指导取舍。",
+    "tags": ["tsdoc", "互操作", "标准化级别"],
+    "categories": [
+      ["技术方向", "TSDoc"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "支持度不确定的内联标签应先确认目标工具支持，跨工具优先用 Core 的 {@link}",
+        "isCorrect": true,
+        "description": "用标准化分组意识指导标签取舍"
+      },
+      {
+        "text": "所有工具一定都按相同语义渲染任意内联标签",
+        "isCorrect": false,
+        "description": "非 Core 标签语义可因实现而异，不能想当然"
+      },
+      {
+        "text": "只要是内联标签就属于 Core，可放心跨工具用",
+        "isCorrect": false,
+        "description": "内联≠Core，二者是不同维度"
+      },
+      {
+        "text": "不确定就一律不写任何链接",
+        "isCorrect": false,
+        "description": "可用 Core 的 {@link}，无需一律弃用链接"
+      }
+    ]
+  }
+]
