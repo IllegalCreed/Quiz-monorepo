@@ -412,8 +412,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Fork", sort: 5 },
               { name: "lazygit", sort: 6 },
               { name: "Jujutsu", sort: 7 },
-              // TODO（下批评估）：Sapling —— Meta 的 Git 兼容 VCS，monorepo/stacked-commits，
-              // 比 jj 更窄、社区沉淀不足，下批再评估是否立叶。
+              // 2026-06-18 Sapling 立叶（sort 8，内容待产）：Meta 的 Git 兼容 VCS，monorepo/stacked-commits。
+              { name: "Sapling", sort: 8 },
             ],
           },
           {
@@ -843,13 +843,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             // 三家均「自然语言 → 可运行全栈应用」，受众含大量非编码者，是区别于 Agent（改你
             // 代码库的 coding agent）与「前端开发工具 > 在线编辑器」（手写代码的浏览器内 playground）
             // 的新物种。边界互斥：凡主轴是「自然语言生成应用」的归此组，不入在线编辑器章。
-            // TODO（下批评估）：Replit Agent（Replit 已整体转型 AI 应用生成）亦属此组，待评估立叶。
+            // 2026-06-18 Replit Agent 立叶（sort 4）：Replit 已整体转型 AI 应用生成（Agent 4，
+            // 人在回路 + 并行 agent/kanban），执行在服务端 Docker+Nix 容器（非浏览器 WASM），同属此组。
             name: "AI 应用生成器",
             sort: 3,
             children: [
               { name: "bolt.new", sort: 1 },
               { name: "v0", sort: 2 },
               { name: "Lovable", sort: 3 },
+              { name: "Replit Agent", sort: 4 },
             ],
           },
           {
@@ -864,14 +866,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "RAG", sort: 1 },
               { name: "LangChain", sort: 2 },
               { name: "OpenRouter", sort: 3 },
-              { name: "Stitch", sort: 4 },
-              { name: "Claude Design", sort: 5 },
-              { name: "NotebookLM", sort: 6 },
-              // TODO（下批评估）：react-doctor —— 1.76M/月，Million.js 团队出品的 React 代码
-              // 体检 CLI（0-100 健康分，60+ 规则覆盖性能/架构/安全/a11y，亦查未用文件/导出/重复）。
-              // 核心定位是给 coding agent（Claude Code/Cursor/Codex/OpenCode）当安全网并提供修复 skill，
-              // 属 AI 辅助开发新物种。React 专属 + 功能与 ESLint/Knip 重叠，故归本 AI 分类而非「静态分析工具」。
-              // 具体子组/叶子位置待下批做 AI 工程工具时定（可能需新建「AI 辅助开发工具」子组）。
+              { name: "NotebookLM", sort: 4 },
             ],
           },
           {
@@ -885,7 +880,18 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           {
             name: "MCP",
             sort: 7,
-            children: [{ name: "Brave Search", sort: 1 }],
+            children: [
+              { name: "Brave Search", sort: 1 },
+              { name: "GitHub MCP", sort: 2 },
+              { name: "Context7 MCP", sort: 3 },
+              { name: "Playwright MCP", sort: 4 },
+              { name: "Chrome DevTools MCP", sort: 5 },
+              { name: "Figma MCP", sort: 6 },
+              { name: "Blender MCP", sort: 7 },
+              { name: "Notion MCP", sort: 8 },
+              { name: "Sentry MCP", sort: 9 },
+              { name: "Supabase MCP", sort: 10 },
+            ],
           },
           {
             name: "Skills",
@@ -893,6 +899,24 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "Superpowers", sort: 1 },
               { name: "Everything Claude Code", sort: 2 },
+            ],
+          },
+          {
+            // 2026-06-18 新建子组：AI 辅助开发工具（给 coding agent 当安全网 / 提供修复 skill 的新物种）。
+            // react-doctor（Million.js 团队，React 代码体检 CLI，0-100 健康分 + 60+ 规则覆盖性能/架构/安全/a11y）：
+            // React 专属 + 功能与 ESLint/Knip 重叠，但定位是 AI 辅助开发，故归本 AI 章而非「静态分析工具」。内容待产。
+            name: "AI 辅助开发工具",
+            sort: 9,
+            children: [{ name: "react-doctor", sort: 1 }],
+          },
+          {
+            // 2026-06-18 新建子组：AI 设计（prompt/截图 → UI 设计稿/可导 Figma，产出设计而非可运行 app）。
+            // 从「其他工具」迁出 Stitch（Google AI UI 设计）、Claude Design；与 AI 应用生成器（出可运行全栈 app）区分。
+            name: "AI 设计",
+            sort: 10,
+            children: [
+              { name: "Stitch", sort: 1 },
+              { name: "Claude Design", sort: 2 },
             ],
           },
         ],
