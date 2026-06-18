@@ -164,6 +164,16 @@ presetIcons({
 - **Slidev 幻灯片**：**必须过每页高度校验防溢出**。`pnpm -C packages/{x}-slide run build` 后跑 `node scripts/check-slidev-overflow.mjs {x}-slide`，**0 溢出**才算完成；有溢出按报告逐页精简（代码行≈22px / 表格行≈33px / 正文行≈26px）。"build 通过 ≠ 不溢出"。
 - **VitePress 笔记**：①**速查表强制**——除 `index.md` 概览页（一句话定义 + 评价 + 链接）外，**每个内容页**（`getting-started.md` 及**每个** `guide-line/*.md` 深度页）都必须在 `# 标题` + `> 基于X版本` 之后紧跟 `## 速查` 段，要点式浓缩本页核心 API/命令/配置/版本/链接（用户常只读速查表，漏掉即不算完成）。②**context7 + 网页浏览双重校验**：两路独立信源都支持才能下笔；不一致时以"官方网页 + 本地验证"为准。context7 未接入时，用等效的库文档源（如 zread 直读 GitHub 仓库的文档/源码/issue）替代。
 
+## 题目入库规范（强制 · 不可擅自变更）
+
+三件套中的 **Quiz 题目**写好 JSON 后，入库**只更新生产库、增量更新**：
+
+- **目标库 = 生产库**：`pnpm -C apps/quiz-backend run import:content:prod`。**所有题目更新都直接增量更新到 prod 库**，这是唯一的题目入库目标。
+- **增量更新**：`import-content.ts` 幂等设计——**只增不删、按 stem 去重、已存在则更新、已完整则跳过**，可安全重跑，不会破坏库里已有题目。
+- **dev / test 库禁放正式题目**：dev 库只用测试数据（`db:seed:dev` 的用户/角色/权限），**严禁 `import:content:dev` 灌入正式题目**；dev 库需还原时用测试数据 seed 还原。
+- **执行前必须经用户确认**：导入生产库前先报用户、得到明确同意才执行，**绝不擅自跑任何 `import:content:*`**。
+- **分类「移动」坑**：import 按 key=`groupId:parentId:name` 只增不删——改叶子名 / 把叶子移到新父节点会留旧节点 + 建新节点 = **重复**，须手动 `update` prod 的 `parentId` 或先删旧节点（详见部署记忆 `content-deploy-workflow`）。
+
 ## 相关文档
 
 - [docs/product.md](./docs/product.md) - 产品需求 + 路线图
