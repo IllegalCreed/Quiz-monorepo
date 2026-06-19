@@ -1,0 +1,1366 @@
+[
+  {
+    "stem": "MSW（Mock Service Worker）的核心定位是什么？",
+    "explanation": "MSW 是 API mocking 的工业标准，在**网络层**拦截请求（浏览器用 Service Worker、Node.js 用对原生 http/https 的拦截器），不 patch fetch/axios、不侵入业务代码，因此 fetch、axios、ky 等全部通吃。",
+    "tags": ["msw", "定位"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在网络层拦截请求的 API mock 库，不侵入业务代码",
+        "isCorrect": true,
+        "description": "fetch / axios / ky 通吃"
+      },
+      {
+        "text": "一个真实的后端服务器框架",
+        "isCorrect": false,
+        "description": "它不启动真实服务器，只拦截请求"
+      },
+      {
+        "text": "一个测试运行器",
+        "isCorrect": false,
+        "description": "运行器是 Vitest / Jest；MSW 负责 mock 网络"
+      },
+      {
+        "text": "一个打包工具",
+        "isCorrect": false,
+        "description": "与打包无关"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 相比绑定特定 HTTP 客户端的 mock 方案，最大的优势是什么？",
+    "explanation": "MSW 在网络层拦截，**不绑定任何 HTTP 客户端**——fetch、axios、ky、got 都适用；且业务代码照常发请求，无需依赖注入 mock 客户端。同一套 handlers 还能跨测试、开发、Storybook 复用。",
+    "tags": ["msw", "优势"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "网络层拦截，客户端无关、不侵入代码、多环境复用",
+        "isCorrect": true,
+        "description": "fetch / axios 等通吃，handlers 可复用"
+      },
+      {
+        "text": "只能配合 axios 使用",
+        "isCorrect": false,
+        "description": "那是 axios-mock-adapter 的局限，MSW 不绑定客户端"
+      },
+      {
+        "text": "需要手动 patch 全局 fetch",
+        "isCorrect": false,
+        "description": "MSW 在网络层拦截，不 patch fetch"
+      },
+      {
+        "text": "必须改写每个请求调用",
+        "isCorrect": false,
+        "description": "业务代码无需改动"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 在浏览器和 Node.js 两种环境分别靠什么机制拦截请求？",
+    "explanation": "浏览器用 **Service Worker** 在真实网络层拦截；Node.js 用 `@mswjs/interceptors`（继承扩展原生 http/https 模块，非 monkey-patch）。Vitest / Jest 测试走 Node 这条路径。",
+    "tags": ["msw", "拦截原理"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器用 Service Worker，Node 用对 http/https 的拦截器",
+        "isCorrect": true,
+        "description": "两套机制，测试走 Node 路径"
+      },
+      {
+        "text": "两种环境都用 Service Worker",
+        "isCorrect": false,
+        "description": "Node 没有 Service Worker，用 interceptor"
+      },
+      {
+        "text": "两种环境都靠 monkey-patch 全局 fetch",
+        "isCorrect": false,
+        "description": "MSW 不 patch fetch"
+      },
+      {
+        "text": "靠修改浏览器源码",
+        "isCorrect": false,
+        "description": "用标准 Service Worker API，不改浏览器"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中只在浏览器里 mock（开发 / Storybook）需要先执行什么命令生成 Service Worker 文件？",
+    "explanation": "`npx msw init public/ --save` 在 Vite 的 `public/` 目录生成 `mockServiceWorker.js`，`--save` 会记录 workerDirectory。注意：Vitest / Jest 的 Node 测试用 setupServer，**不需要**这个文件。",
+    "tags": ["msw", "安装", "init"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "npx msw init public/ --save",
+        "isCorrect": true,
+        "description": "生成 mockServiceWorker.js（仅浏览器需要）"
+      },
+      {
+        "text": "npx msw build",
+        "isCorrect": false,
+        "description": "无此命令"
+      },
+      {
+        "text": "npx msw start",
+        "isCorrect": false,
+        "description": "无此命令；浏览器用 worker.start()"
+      },
+      {
+        "text": "测试也必须先 init",
+        "isCorrect": false,
+        "description": "Node 测试用 setupServer，无需 SW 文件"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 中定义一个「GET /api/user 返回 JSON」的 handler，正确写法是？",
+    "explanation": "v2 用 `http.get(url, resolver)`，resolver 返回 `HttpResponse.json(data)`：`http.get(\"/api/user\", () => HttpResponse.json({ id: \"1\" }))`。v1 的 `rest.get` + `res(ctx.json())` 已废弃。",
+    "tags": ["msw", "handler", "v2"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "http.get(\"/api/user\", () => HttpResponse.json({ id: \"1\" }))",
+        "isCorrect": true,
+        "description": "v2 的 http + HttpResponse 写法"
+      },
+      {
+        "text": "rest.get(\"/api/user\", (req, res, ctx) => res(ctx.json(...)))",
+        "isCorrect": false,
+        "description": "这是已废弃的 v1 写法"
+      },
+      {
+        "text": "mock.get(\"/api/user\").reply(200, {...})",
+        "isCorrect": false,
+        "description": "那是 axios-mock-adapter 的写法"
+      },
+      {
+        "text": "fetch.mock(\"/api/user\", {...})",
+        "isCorrect": false,
+        "description": "无此 API"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中在 Vitest / Jest（Node 环境）测试里，应从哪里导入并用什么创建拦截实例？",
+    "explanation": "从 `msw/node` 导入 `setupServer`：`setupServer(...handlers)`。它通过拦截 Node 的 http/https 工作，**不启动真实服务器**、在当前进程内同步拦截。浏览器才用 `msw/browser` 的 `setupWorker`。",
+    "tags": ["msw", "setupServer", "测试"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import { setupServer } from \"msw/node\"，setupServer(...handlers)",
+        "isCorrect": true,
+        "description": "Node 测试用 setupServer"
+      },
+      {
+        "text": "import { setupWorker } from \"msw/browser\"",
+        "isCorrect": false,
+        "description": "那是浏览器用的"
+      },
+      {
+        "text": "需要先 node server.js 启动真实服务",
+        "isCorrect": false,
+        "description": "setupServer 不启动真实服务器"
+      },
+      {
+        "text": "import { setupServer } from \"msw\"",
+        "isCorrect": false,
+        "description": "要从 msw/node 子路径导入"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 在 Vitest 里的标准「生命周期三步」是？",
+    "explanation": "`beforeAll(() => server.listen())` 开始拦截、`afterEach(() => server.resetHandlers())` 重置运行时 handler 防污染、`afterAll(() => server.close())` 关闭拦截还原原生模块。",
+    "tags": ["msw", "生命周期", "测试"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "beforeAll: listen / afterEach: resetHandlers / afterAll: close",
+        "isCorrect": true,
+        "description": "拦截 → 每测试后重置 → 结束关闭"
+      },
+      {
+        "text": "beforeEach: listen / afterEach: close",
+        "isCorrect": false,
+        "description": "listen/close 应在 All 级别，每测试只 resetHandlers"
+      },
+      {
+        "text": "只需 server.listen() 一次，无需 reset / close",
+        "isCorrect": false,
+        "description": "缺 resetHandlers 会导致测试间污染"
+      },
+      {
+        "text": "在每个 it 里手动 start / stop",
+        "isCorrect": false,
+        "description": "用钩子统一管理，不手动逐个"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 测试中为何推荐 `server.listen({ onUnhandledRequest: \"error\" })`？",
+    "explanation": "`onUnhandledRequest: \"error\"` 让任何**未被 handler 匹配**的请求直接抛错、测试失败，从而暴露遗漏的 mock（避免请求悄悄发到真实网络）。Vitest 官方明确推荐此设置。",
+    "tags": ["msw", "onUnhandledRequest"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让未匹配的请求直接报错，暴露遗漏的 mock",
+        "isCorrect": true,
+        "description": "避免请求悄悄发真实网络"
+      },
+      {
+        "text": "让所有请求都跳过拦截",
+        "isCorrect": false,
+        "description": "那是 \"bypass\"，与 \"error\" 相反"
+      },
+      {
+        "text": "自动为未匹配请求生成 mock",
+        "isCorrect": false,
+        "description": "不会自动生成，而是报错"
+      },
+      {
+        "text": "关闭所有日志",
+        "isCorrect": false,
+        "description": "与日志无关"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中在单个测试里临时让某接口返回 500（测异常路径），应该用？",
+    "explanation": "用 `server.use(http.get(\"/api/user\", () => new HttpResponse(null, { status: 500 })))` 运行时覆盖该 handler；`afterEach` 的 `resetHandlers()` 会自动清除这个覆盖，不影响其它测试。",
+    "tags": ["msw", "server.use", "运行时覆盖"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "server.use(...) 运行时覆盖该 handler",
+        "isCorrect": true,
+        "description": "resetHandlers 会自动清除"
+      },
+      {
+        "text": "修改初始 handlers 文件",
+        "isCorrect": false,
+        "description": "会影响所有测试，应用 server.use 局部覆盖"
+      },
+      {
+        "text": "重新 setupServer 一个新实例",
+        "isCorrect": false,
+        "description": "繁琐且不必要"
+      },
+      {
+        "text": "MSW 无法模拟错误响应",
+        "isCorrect": false,
+        "description": "可以，返回对应状态码即可"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 handler 中读取路径参数（如 /posts/:id 的 id），正确方式是？",
+    "explanation": "v2 的 resolver 接收解构对象，从 `params` 取路径参数：`http.get(\"/posts/:id\", ({ params }) => ... params.id)`。`params` 值都是字符串（或字符串数组）。",
+    "tags": ["msw", "路径参数", "params"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从 resolver 的 params 取：({ params }) => params.id",
+        "isCorrect": true,
+        "description": "v2 解构 params"
+      },
+      {
+        "text": "req.params.id（v1 写法）",
+        "isCorrect": false,
+        "description": "v2 不再用 req.params"
+      },
+      {
+        "text": "request.id",
+        "isCorrect": false,
+        "description": "无此属性"
+      },
+      {
+        "text": "手动正则解析 url",
+        "isCorrect": false,
+        "description": "MSW 已提供 params，无需手动解析"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 handler 中读取查询参数（如 ?id=1）的正确方式是？",
+    "explanation": "v2 的 `request.url` 是**字符串**，需手动 `new URL(request.url)` 再取 `searchParams`：`new URL(request.url).searchParams.get(\"id\")`；多值用 `getAll`。",
+    "tags": ["msw", "查询参数"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "new URL(request.url).searchParams.get(\"id\")",
+        "isCorrect": true,
+        "description": "request.url 是字符串，需 new URL"
+      },
+      {
+        "text": "request.query.id",
+        "isCorrect": false,
+        "description": "无此属性"
+      },
+      {
+        "text": "params.id",
+        "isCorrect": false,
+        "description": "params 是路径参数，不是查询参数"
+      },
+      {
+        "text": "request.url.searchParams（直接访问）",
+        "isCorrect": false,
+        "description": "v2 的 request.url 是字符串，不能直接 .searchParams"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 handler 中读取 POST 请求的 JSON 请求体，正确方式是？",
+    "explanation": "v2 完全遵循 Fetch API 标准，用 `await request.json()`（异步）读取 JSON 体；还有 `request.formData()` / `request.text()`。v1 的 `req.body`（自动解析）已废弃。",
+    "tags": ["msw", "请求体"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await request.json()",
+        "isCorrect": true,
+        "description": "Fetch 标准，异步读取"
+      },
+      {
+        "text": "req.body（同步自动解析）",
+        "isCorrect": false,
+        "description": "v1 写法，v2 已废弃"
+      },
+      {
+        "text": "request.body.name 直接读",
+        "isCorrect": false,
+        "description": "需 await request.json() 解析"
+      },
+      {
+        "text": "JSON.parse(request)",
+        "isCorrect": false,
+        "description": "应调用 request.json()"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `setupServer` 的命名容易误解，下面哪条正确？",
+    "explanation": "`setupServer` 名字带 server，但它**不启动任何真实服务器**，完全在当前 Node 进程内同步拦截 http/https 请求。它只是「设置一个请求拦截层」。",
+    "tags": ["msw", "setupServer"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它不启动真实服务器，只在进程内拦截请求",
+        "isCorrect": true,
+        "description": "名字带 server 但无真实服务"
+      },
+      {
+        "text": "它会在某端口启动一个 HTTP 服务器",
+        "isCorrect": false,
+        "description": "不监听端口、不起真实服务"
+      },
+      {
+        "text": "它必须配合 express 一起用",
+        "isCorrect": false,
+        "description": "与具体框架无关"
+      },
+      {
+        "text": "它只能在浏览器用",
+        "isCorrect": false,
+        "description": "setupServer 是 Node 用的"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `HttpResponse.error()` 与 `new HttpResponse(null, { status: 500 })` 的区别是？",
+    "explanation": "`HttpResponse.error()` 模拟**网络错误**（连接中断，触发 `TypeError: Failed to fetch`，请求根本没拿到响应）；`new HttpResponse(null, { status: 500 })` 是**服务器返回的 HTTP 错误响应**（拿到了响应，状态码 500）。",
+    "tags": ["msw", "错误", "HttpResponse"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "前者是网络错误（连接中断），后者是 HTTP 错误响应（拿到 500）",
+        "isCorrect": true,
+        "description": "一个没响应，一个有 5xx 响应"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "语义不同：网络层 vs 应用层错误"
+      },
+      {
+        "text": "error() 返回 200",
+        "isCorrect": false,
+        "description": "error() 是连接失败，不是 200"
+      },
+      {
+        "text": "status 500 会触发 Failed to fetch",
+        "isCorrect": false,
+        "description": "500 是正常响应；Failed to fetch 是 error() 的效果"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 handler 中读取请求 cookie，正确方式是？",
+    "explanation": "v2 的 resolver 解构对象里有 `cookies`（已解析的请求 cookie）：`http.get(\"/api/user\", ({ cookies }) => cookies.authToken ? ... : new HttpResponse(null, { status: 403 }))`。",
+    "tags": ["msw", "cookie"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从 resolver 解构 cookies：({ cookies }) => cookies.authToken",
+        "isCorrect": true,
+        "description": "v2 提供解析后的 cookies"
+      },
+      {
+        "text": "req.cookies.token（v1 写法）",
+        "isCorrect": false,
+        "description": "v2 改为解构参数 cookies"
+      },
+      {
+        "text": "document.cookie",
+        "isCorrect": false,
+        "description": "Node 测试里没有 document"
+      },
+      {
+        "text": "手动解析 request.headers 的 Cookie",
+        "isCorrect": false,
+        "description": "MSW 已解析好 cookies，无需手动"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 `http.get<...>()` 泛型参数（按顺序）通常包括？",
+    "explanation": "`http.*` 接受四个类型参数（按需）：路径参数类型、请求体类型、响应体类型、（可选）路径字符串字面量。如 `http.post<{ postId: string }, { comment: string }, { commentUrl: string }>(...)`。",
+    "tags": ["msw", "typescript", "泛型"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "路径参数、请求体、响应体（+ 可选路径字面量）",
+        "isCorrect": true,
+        "description": "四个类型参数按需提供"
+      },
+      {
+        "text": "只有响应体一个类型参数",
+        "isCorrect": false,
+        "description": "支持多个类型参数"
+      },
+      {
+        "text": "MSW 不支持 TypeScript 泛型",
+        "isCorrect": false,
+        "description": "v2 对 TS 支持良好"
+      },
+      {
+        "text": "第一个参数是 HTTP 方法类型",
+        "isCorrect": false,
+        "description": "方法由 http.get/post 决定，不是泛型"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中拦截一个名为 ListUsers 的 GraphQL query，应该用？",
+    "explanation": "用 `graphql.query(\"ListUsers\", resolver)`，按 operation name 匹配；mutation 用 `graphql.mutation(\"Name\", ...)`，变量从 resolver 的 `variables` 取。",
+    "tags": ["msw", "graphql"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "graphql.query(\"ListUsers\", () => HttpResponse.json({ data: {...} }))",
+        "isCorrect": true,
+        "description": "按 operation name 匹配 query"
+      },
+      {
+        "text": "http.get(\"ListUsers\", ...)",
+        "isCorrect": false,
+        "description": "GraphQL 用 graphql.* 而非 http.*"
+      },
+      {
+        "text": "graphql.get(\"ListUsers\", ...)",
+        "isCorrect": false,
+        "description": "是 graphql.query / mutation"
+      },
+      {
+        "text": "MSW 不支持 GraphQL",
+        "isCorrect": false,
+        "description": "MSW 原生支持 GraphQL"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 GraphQL handler 返回数据时，相比 v1 有什么变化？",
+    "explanation": "v1 的 `ctx.data({...})` 会自动包一层 `data` 根字段；v2 取消该特殊处理，必须在 `HttpResponse.json({ data: {...} })` 里**显式写 `data` 根字段**（错误则写 `errors`）。",
+    "tags": ["msw", "graphql", "v2"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须显式写 data 根字段：HttpResponse.json({ data: {...} })",
+        "isCorrect": true,
+        "description": "v2 取消了 ctx.data 的自动包裹"
+      },
+      {
+        "text": "仍自动包裹，直接返回业务对象即可",
+        "isCorrect": false,
+        "description": "v2 不再自动包 data"
+      },
+      {
+        "text": "必须用 ctx.data()",
+        "isCorrect": false,
+        "description": "ctx 体系在 v2 已移除"
+      },
+      {
+        "text": "GraphQL 响应不能用 HttpResponse.json",
+        "isCorrect": false,
+        "description": "正是用 HttpResponse.json"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中模拟一个「响应慢 1 秒」的接口，handler 里应该？",
+    "explanation": "用 `await delay(1000)` 再返回响应：`http.get(\"/slow\", async () => { await delay(1000); return HttpResponse.json(...) })`。`delay()` 无参为随机真实延迟（Node 测试中自动变 0）。",
+    "tags": ["msw", "delay"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await delay(1000) 后再 return 响应",
+        "isCorrect": true,
+        "description": "delay 来自 msw，毫秒精确延迟"
+      },
+      {
+        "text": "setTimeout 包裹 return",
+        "isCorrect": false,
+        "description": "应直接 await delay，更简洁可靠"
+      },
+      {
+        "text": "ctx.delay(1000)（v1 写法）",
+        "isCorrect": false,
+        "description": "v2 用独立的 delay() 函数"
+      },
+      {
+        "text": "MSW 无法模拟延迟",
+        "isCorrect": false,
+        "description": "delay 正为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中测试「请求永远挂起」（超时场景），delay 应该传什么？",
+    "explanation": "`await delay(\"infinite\")` 让响应无限挂起、永不返回，用于测试请求超时 / loading 态。",
+    "tags": ["msw", "delay", "超时"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "delay(\"infinite\")",
+        "isCorrect": true,
+        "description": "无限挂起，测超时 / loading"
+      },
+      {
+        "text": "delay(0)",
+        "isCorrect": false,
+        "description": "0 是立即返回，不挂起"
+      },
+      {
+        "text": "delay(-1)",
+        "isCorrect": false,
+        "description": "无此用法"
+      },
+      {
+        "text": "不返回任何东西",
+        "isCorrect": false,
+        "description": "应显式 delay(\"infinite\")"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中让某个被拦截的请求「直接放行到真实网络」，用？",
+    "explanation": "在 handler 里 `return passthrough()`，放行当前被拦截的请求到真实网络（不产生额外请求）。常用于条件性放行（如带特定 header 时走真实接口）。",
+    "tags": ["msw", "passthrough"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "return passthrough()",
+        "isCorrect": true,
+        "description": "放行当前请求到真实网络"
+      },
+      {
+        "text": "return null",
+        "isCorrect": false,
+        "description": "返回 null 不等于放行"
+      },
+      {
+        "text": "不写 handler",
+        "isCorrect": false,
+        "description": "不写则触发 onUnhandledRequest"
+      },
+      {
+        "text": "return HttpResponse.error()",
+        "isCorrect": false,
+        "description": "那是模拟网络错误，不是放行"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `passthrough()` 与 `bypass()` 的区别是？",
+    "explanation": "`passthrough()` 放行**当前被拦截的**请求到真实网络；`bypass(request)` 用于在 handler 内部发起一个**额外的、不被拦截的**真实请求（如先取真实数据再加工）。",
+    "tags": ["msw", "passthrough", "bypass"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "passthrough 放行当前请求；bypass 用于发额外真实请求",
+        "isCorrect": true,
+        "description": "一个放行当前，一个发额外"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "用途不同"
+      },
+      {
+        "text": "bypass 会阻止所有请求",
+        "isCorrect": false,
+        "description": "bypass 是让某请求不被拦截"
+      },
+      {
+        "text": "passthrough 会发两个请求",
+        "isCorrect": false,
+        "description": "passthrough 不产生额外请求"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中让一个 `server.use` 覆盖「只生效一次」，怎么写？",
+    "explanation": "给 handler 传第三个参数 `{ once: true }`：`server.use(http.get(\"/api/user\", resolver, { once: true }))`，该覆盖只匹配一次，之后回退到初始 handler。",
+    "tags": ["msw", "server.use", "once"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "handler 第三参数 { once: true }",
+        "isCorrect": true,
+        "description": "只生效一次后回退"
+      },
+      {
+        "text": "res.once(...)（v1 写法）",
+        "isCorrect": false,
+        "description": "v2 改为 { once: true } 选项"
+      },
+      {
+        "text": "server.useOnce(...)",
+        "isCorrect": false,
+        "description": "无此 API"
+      },
+      {
+        "text": "无法只生效一次",
+        "isCorrect": false,
+        "description": "{ once: true } 正为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中运行时 handler（server.use 添加）与初始 handler（setupServer 传入）的优先级关系是？",
+    "explanation": "运行时 handler **优先于**初始 handler；`resetHandlers()` 只清除运行时 handler，初始 handler 不受影响。这让「正常路径放初始、异常路径用 server.use 临时覆盖」成为标准模式。",
+    "tags": ["msw", "handler", "优先级"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "运行时 handler 优先；resetHandlers 只清运行时",
+        "isCorrect": true,
+        "description": "初始 handler 不受 reset 影响"
+      },
+      {
+        "text": "初始 handler 优先",
+        "isCorrect": false,
+        "description": "运行时覆盖优先级更高"
+      },
+      {
+        "text": "resetHandlers 会清掉初始 handler",
+        "isCorrect": false,
+        "description": "只清运行时 handler"
+      },
+      {
+        "text": "两者冲突时报错",
+        "isCorrect": false,
+        "description": "不报错，运行时覆盖生效"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中在浏览器（开发 / Storybook）启用 mock，用什么创建并启动？",
+    "explanation": "从 `msw/browser` 导入 `setupWorker`：`const worker = setupWorker(...handlers)`，再 `await worker.start()`（返回 Promise，须 await，否则有竞态）。成功时控制台出现 `[MSW] Mocking enabled.`。",
+    "tags": ["msw", "setupWorker", "浏览器"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "setupWorker(...handlers) + await worker.start()",
+        "isCorrect": true,
+        "description": "浏览器用 msw/browser 的 setupWorker"
+      },
+      {
+        "text": "setupServer(...handlers).listen()",
+        "isCorrect": false,
+        "description": "那是 Node 测试用的"
+      },
+      {
+        "text": "直接 import handlers 就生效",
+        "isCorrect": false,
+        "description": "需 setupWorker + start"
+      },
+      {
+        "text": "worker.start() 是同步的，无需 await",
+        "isCorrect": false,
+        "description": "start() 返回 Promise，须 await"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `afterEach(() => server.resetHandlers())` 的作用是？",
+    "explanation": "重置在测试中用 `server.use` 添加的**运行时 handler**，确保测试之间互不污染（一个测试的临时覆盖不会泄漏到下一个）；初始 handler 不受影响。",
+    "tags": ["msw", "resetHandlers", "测试隔离"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "清除运行时覆盖，防止测试间污染",
+        "isCorrect": true,
+        "description": "初始 handler 保留"
+      },
+      {
+        "text": "关闭整个拦截层",
+        "isCorrect": false,
+        "description": "那是 server.close()"
+      },
+      {
+        "text": "删除所有 handler 包括初始",
+        "isCorrect": false,
+        "description": "只清运行时，初始保留"
+      },
+      {
+        "text": "重启 Service Worker",
+        "isCorrect": false,
+        "description": "与 SW 无关，是清运行时 handler"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 从 1.x 迁移到 2.x，REST handler 的命名空间有什么变化？",
+    "explanation": "1.x 的 `rest.get/post/...` 在 2.x 改为 `http.get/post/...`。这是 2.x 拥抱 Fetch API 标准重构的一部分。",
+    "tags": ["msw", "迁移", "v2"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "rest.* → http.*",
+        "isCorrect": true,
+        "description": "2.x 用 http 命名空间"
+      },
+      {
+        "text": "rest.* → mock.*",
+        "isCorrect": false,
+        "description": "是 http，不是 mock"
+      },
+      {
+        "text": "没有变化",
+        "isCorrect": false,
+        "description": "2.x 已从 rest 改为 http"
+      },
+      {
+        "text": "rest.* → api.*",
+        "isCorrect": false,
+        "description": "是 http"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 1.x 的 `return res(ctx.json({ id: 1 }))` 在 2.x 应改写为？",
+    "explanation": "2.x 用 `HttpResponse` 工厂替代 `res(ctx.*)` 链：`return HttpResponse.json({ id: 1 })`。状态码、头等也都通过 `HttpResponse` / `new HttpResponse(body, init)` 表达。",
+    "tags": ["msw", "迁移", "HttpResponse"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "return HttpResponse.json({ id: 1 })",
+        "isCorrect": true,
+        "description": "2.x 用 HttpResponse 工厂"
+      },
+      {
+        "text": "仍写 res(ctx.json(...))",
+        "isCorrect": false,
+        "description": "ctx / res 体系在 2.x 已移除"
+      },
+      {
+        "text": "return { id: 1 }",
+        "isCorrect": false,
+        "description": "需返回 HttpResponse"
+      },
+      {
+        "text": "return ctx.json({ id: 1 })",
+        "isCorrect": false,
+        "description": "ctx 已移除"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 1.x 的 resolver 签名 `(req, res, ctx)` 在 2.x 变成了什么？",
+    "explanation": "2.x 的 resolver 接收**单个解构对象** `({ request, params, cookies, requestId })`，不再有 `res` / `ctx`。响应通过返回 `HttpResponse` 表达。",
+    "tags": ["msw", "迁移", "resolver"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "单参数解构对象 ({ request, params, cookies })",
+        "isCorrect": true,
+        "description": "返回 HttpResponse，不再有 res/ctx"
+      },
+      {
+        "text": "仍是 (req, res, ctx)",
+        "isCorrect": false,
+        "description": "2.x 已改为单参数"
+      },
+      {
+        "text": "(request, response)",
+        "isCorrect": false,
+        "description": "是单个解构对象，且无 response 参数"
+      },
+      {
+        "text": "() 无参数",
+        "isCorrect": false,
+        "description": "有一个解构对象参数（可按需省略）"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 2.x 中浏览器端 `setupWorker` 的导入路径是？",
+    "explanation": "2.x 把浏览器集成拆到子路径：`import { setupWorker } from \"msw/browser\"`（1.x 是从 `\"msw\"` 直接导入）。Node 端 `setupServer` 仍从 `\"msw/node\"` 导入。",
+    "tags": ["msw", "迁移", "导入路径"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "from \"msw/browser\"",
+        "isCorrect": true,
+        "description": "2.x 浏览器集成在 msw/browser"
+      },
+      {
+        "text": "from \"msw\"（1.x 写法）",
+        "isCorrect": false,
+        "description": "2.x 已拆到 msw/browser"
+      },
+      {
+        "text": "from \"msw/worker\"",
+        "isCorrect": false,
+        "description": "是 msw/browser"
+      },
+      {
+        "text": "from \"msw/node\"",
+        "isCorrect": false,
+        "description": "那是 setupServer 的路径"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 与 axios-mock-adapter 的本质区别是？",
+    "explanation": "MSW 在**网络层**拦截，不绑定 HTTP 客户端（fetch/axios/ky 通吃）；axios-mock-adapter 在 **axios adapter 层**工作，仅对 axios 生效，项目换成 fetch 即失效。",
+    "tags": ["msw", "axios-mock-adapter", "对比"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "MSW 网络层、客户端无关；axios-mock-adapter 绑定 axios adapter 层",
+        "isCorrect": true,
+        "description": "MSW 通吃，后者仅 axios"
+      },
+      {
+        "text": "两者都绑定 axios",
+        "isCorrect": false,
+        "description": "MSW 不绑定任何客户端"
+      },
+      {
+        "text": "MSW 只能 mock axios",
+        "isCorrect": false,
+        "description": "MSW 对 fetch / axios / ky 都生效"
+      },
+      {
+        "text": "两者拦截层相同",
+        "isCorrect": false,
+        "description": "一个网络层、一个 adapter 层"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 与 axios-mock-adapter 选型时，axios-mock-adapter 的维护现状（截至 2026）是？",
+    "explanation": "axios-mock-adapter 自 2024-10 起零 commit、实质停滞，且只服务 axios。新项目应选 MSW（有 HTTP 调用的集成测试）或 Vitest 内置 `vi.mock`（纯函数 / 模块级）。",
+    "tags": ["msw", "axios-mock-adapter", "选型"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "已停滞（2024-10 起零 commit），新项目不推荐",
+        "isCorrect": true,
+        "description": "且仅服务 axios"
+      },
+      {
+        "text": "仍在活跃维护，优于 MSW",
+        "isCorrect": false,
+        "description": "已停止维护"
+      },
+      {
+        "text": "是 MSW 的官方推荐替代",
+        "isCorrect": false,
+        "description": "恰相反，MSW 是更优选择"
+      },
+      {
+        "text": "支持所有 HTTP 客户端",
+        "isCorrect": false,
+        "description": "只支持 axios"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 与 Vitest 内置 `vi.mock` 在测试中的分工是？",
+    "explanation": "`vi.mock` 是**模块级** mock，适合无网络的纯函数 / 依赖隔离单测，最轻量；MSW 是**网络层** mock，适合有 HTTP 调用的集成 / 组件测试。二者互补：纯逻辑用 vi.mock，涉及真实请求用 MSW。",
+    "tags": ["msw", "vi.mock", "对比"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "vi.mock 管模块级 / 纯函数；MSW 管网络层 / HTTP 调用",
+        "isCorrect": true,
+        "description": "互补，按是否涉及网络选择"
+      },
+      {
+        "text": "两者完全重叠，二选一",
+        "isCorrect": false,
+        "description": "层级不同，常配合使用"
+      },
+      {
+        "text": "MSW 能取代所有 vi.mock 场景",
+        "isCorrect": false,
+        "description": "纯函数 mock 用 vi.mock 更轻"
+      },
+      {
+        "text": "vi.mock 能拦截真实 HTTP 请求",
+        "isCorrect": false,
+        "description": "网络层拦截是 MSW 的强项"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 官方反对的一个测试反模式是？",
+    "explanation": "MSW 官方不推荐**断言「某请求被发了几次 / 带了什么参数」**。正确做法是在 handler 内体现业务校验（参数不对返回 400），再通过 UI 行为（错误提示、按钮禁用）断言。第三方打点类请求可用 `server.events` 生命周期 API。",
+    "tags": ["msw", "最佳实践", "反模式"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "断言请求被发了几次 / 参数是什么",
+        "isCorrect": true,
+        "description": "应改为 handler 内校验 + UI 行为断言"
+      },
+      {
+        "text": "在 handler 内返回 mock 数据",
+        "isCorrect": false,
+        "description": "这正是 MSW 的正常用法"
+      },
+      {
+        "text": "用 server.use 覆盖异常路径",
+        "isCorrect": false,
+        "description": "这是推荐做法"
+      },
+      {
+        "text": "开启 onUnhandledRequest: error",
+        "isCorrect": false,
+        "description": "这是推荐做法"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 的「一套 handlers 多处复用」通常如何组织文件？",
+    "explanation": "把 `handlers` 数组单独放一个文件，再分别建 `node.ts`（`setupServer`，给 Vitest/Jest）和 `browser.ts`（`setupWorker`，给开发/Storybook），共用同一组 handlers。这样测试、开发、Storybook、Playwright 复用同一套 mock。",
+    "tags": ["msw", "最佳实践", "复用"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "handlers 单独一文件，node.ts / browser.ts 分别 setup，共用 handlers",
+        "isCorrect": true,
+        "description": "测试 / 开发 / Storybook 复用同一套"
+      },
+      {
+        "text": "每个测试文件各写一套 handlers",
+        "isCorrect": false,
+        "description": "重复且难维护，应复用"
+      },
+      {
+        "text": "浏览器和测试必须用不同的 handlers",
+        "isCorrect": false,
+        "description": "可共用同一套 handlers"
+      },
+      {
+        "text": "handlers 只能写在 setupServer 调用里",
+        "isCorrect": false,
+        "description": "应抽成独立数组以便复用"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中匹配「任意 HTTP 方法」的请求，用哪个 handler？",
+    "explanation": "用 `http.all(url, resolver)` 匹配该 URL 的所有方法（GET/POST/PUT/...）。其余 `http.get/post/put/patch/delete/head/options` 匹配特定方法。",
+    "tags": ["msw", "handler", "http.all"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "http.all(url, resolver)",
+        "isCorrect": true,
+        "description": "匹配该 URL 的任意方法"
+      },
+      {
+        "text": "http.any(url, resolver)",
+        "isCorrect": false,
+        "description": "是 http.all，不是 any"
+      },
+      {
+        "text": "http.* (字面量星号)",
+        "isCorrect": false,
+        "description": "无此写法"
+      },
+      {
+        "text": "无法匹配任意方法",
+        "isCorrect": false,
+        "description": "http.all 正为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `server.close()` 通常放在哪个测试钩子里，作用是什么？",
+    "explanation": "放 `afterAll`，停止请求拦截并还原 Node 原生 http/https 模块，避免拦截层泄漏到后续测试文件 / 进程。",
+    "tags": ["msw", "server.close", "生命周期"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "afterAll，停止拦截并还原原生模块",
+        "isCorrect": true,
+        "description": "收尾清理，防泄漏"
+      },
+      {
+        "text": "afterEach，每个测试后都 close",
+        "isCorrect": false,
+        "description": "每测试只 resetHandlers；close 放 afterAll"
+      },
+      {
+        "text": "beforeAll，测试前 close",
+        "isCorrect": false,
+        "description": "beforeAll 是 listen，不是 close"
+      },
+      {
+        "text": "不需要 close",
+        "isCorrect": false,
+        "description": "应在 afterAll 关闭以还原模块"
+      }
+    ]
+  },
+  {
+    "stem": "MSW「不侵入业务代码」的本质含义是？",
+    "explanation": "业务代码里的 `fetch()` / `axios.get()` 调用**完全不用改动**，也无需依赖注入 mock 客户端——请求照常从业务代码发出，MSW 在网络层拦截并返回 mock 响应。",
+    "tags": ["msw", "不侵入"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "业务的 fetch / axios 调用无需改动，请求照常发出后被网络层拦截",
+        "isCorrect": true,
+        "description": "无需 DI 注入 mock 客户端"
+      },
+      {
+        "text": "需要把所有请求改成 msw.fetch",
+        "isCorrect": false,
+        "description": "不需要改任何调用"
+      },
+      {
+        "text": "需要给每个组件注入 mock 客户端",
+        "isCorrect": false,
+        "description": "MSW 不需要依赖注入"
+      },
+      {
+        "text": "需要在生产代码里加 if (test) 分支",
+        "isCorrect": false,
+        "description": "业务代码无需感知测试"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中返回纯文本响应，用哪个 API？",
+    "explanation": "用 `HttpResponse.text(\"Hello\")`（自动设 text/plain）；还有 `HttpResponse.html(...)`、`HttpResponse.json(...)`，以及 `new HttpResponse(body, init)` 自定义。",
+    "tags": ["msw", "HttpResponse"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "HttpResponse.text(\"Hello\")",
+        "isCorrect": true,
+        "description": "纯文本响应"
+      },
+      {
+        "text": "res(ctx.text(\"Hello\"))",
+        "isCorrect": false,
+        "description": "v1 写法，已废弃"
+      },
+      {
+        "text": "return \"Hello\"",
+        "isCorrect": false,
+        "description": "需返回 HttpResponse"
+      },
+      {
+        "text": "HttpResponse.string(\"Hello\")",
+        "isCorrect": false,
+        "description": "是 text，不是 string"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 中 `HttpResponse.json({ id: 1 })` 相比手动 `new HttpResponse(JSON.stringify(...))` 的便利是？",
+    "explanation": "`HttpResponse.json()` 会自动序列化对象并设置 `Content-Type: application/json`，无需手动 `JSON.stringify` 和写 header，是返回 JSON 的推荐方式。",
+    "tags": ["msw", "HttpResponse"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "自动序列化并设 Content-Type: application/json",
+        "isCorrect": true,
+        "description": "省去手动 stringify 与设头"
+      },
+      {
+        "text": "没有区别，纯语法糖且不设头",
+        "isCorrect": false,
+        "description": "它会自动设 JSON 的 Content-Type"
+      },
+      {
+        "text": "会自动加密响应体",
+        "isCorrect": false,
+        "description": "不涉及加密"
+      },
+      {
+        "text": "只能返回数组",
+        "isCorrect": false,
+        "description": "任意可序列化对象均可"
+      }
+    ]
+  },
+  {
+    "stem": "MSW v2 的 handler 中读取 FormData 表单请求体，用？",
+    "explanation": "用 `await request.formData()`（Fetch 标准），再 `data.get(\"email\")` 取字段。适合测试表单提交类接口。",
+    "tags": ["msw", "请求体", "formData"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "await request.formData()，再 data.get(\"字段\")",
+        "isCorrect": true,
+        "description": "Fetch 标准 FormData 读取"
+      },
+      {
+        "text": "req.body.email（v1 写法）",
+        "isCorrect": false,
+        "description": "v2 用 request.formData()"
+      },
+      {
+        "text": "request.form.email",
+        "isCorrect": false,
+        "description": "无此属性"
+      },
+      {
+        "text": "MSW 不支持 FormData",
+        "isCorrect": false,
+        "description": "支持，用 request.formData()"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 路径 `/settings/:segments+` 中带 `+` 后缀的参数，`params.segments` 的类型是？",
+    "explanation": "`+` 后缀表示「重复参数」，匹配一段或多段路径，`params.segments` 是 `string[]`（如 `/settings/user/privacy` → `[\"user\", \"privacy\"]`）。`?` 后缀表示可选参数。",
+    "tags": ["msw", "路径参数"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "string[]（数组，匹配多段路径）",
+        "isCorrect": true,
+        "description": "+ 后缀是重复参数"
+      },
+      {
+        "text": "string（单个字符串）",
+        "isCorrect": false,
+        "description": "+ 后缀返回数组"
+      },
+      {
+        "text": "number",
+        "isCorrect": false,
+        "description": "params 都是字符串 / 字符串数组"
+      },
+      {
+        "text": "undefined",
+        "isCorrect": false,
+        "description": "匹配到则为数组"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 的同一套 handlers 可以在哪些工具间复用？",
+    "explanation": "同一组 handlers 可跨 **Vitest/Jest**（`setupServer`）、**浏览器开发 / Storybook**（`setupWorker` + `msw-storybook-addon`）、**Playwright** 等复用——这是 MSW「在网络层定义 mock」带来的核心优势。",
+    "tags": ["msw", "复用", "生态"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vitest/Jest、浏览器开发/Storybook、Playwright 等",
+        "isCorrect": true,
+        "description": "一套 handlers 多处复用"
+      },
+      {
+        "text": "只能用于 Vitest",
+        "isCorrect": false,
+        "description": "可跨多种工具"
+      },
+      {
+        "text": "只能用于浏览器",
+        "isCorrect": false,
+        "description": "Node 测试同样可用"
+      },
+      {
+        "text": "每个工具需重写 handlers",
+        "isCorrect": false,
+        "description": "正是无需重写、可复用"
+      }
+    ]
+  },
+  {
+    "stem": "MSW 的 `setupServer`（Node）拦截请求是同步还是异步进行的？",
+    "explanation": "`setupServer` 在**当前进程线程内同步拦截**（通过继承扩展 Node 原生 http/https 模块），不跨进程、不启动真实服务器，因此测试里拦截行为可预测、无需额外等待拦截器就绪。",
+    "tags": ["msw", "setupServer", "原理"],
+    "categories": [
+      ["技术方向", "MSW"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在当前进程内同步拦截，不跨进程、不起真实服务",
+        "isCorrect": true,
+        "description": "继承扩展原生模块，行为可预测"
+      },
+      {
+        "text": "启动一个子进程做拦截",
+        "isCorrect": false,
+        "description": "在当前进程内，不开子进程"
+      },
+      {
+        "text": "通过监听某端口拦截",
+        "isCorrect": false,
+        "description": "不监听端口"
+      },
+      {
+        "text": "依赖浏览器 Service Worker",
+        "isCorrect": false,
+        "description": "Node 端用 interceptor，非 SW"
+      }
+    ]
+  }
+]
