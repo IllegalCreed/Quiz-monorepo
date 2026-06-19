@@ -487,26 +487,44 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         name: "前端测试",
         sort: 6,
         children: [
+          // 测试类型（按"测什么范围"分）：单元 → 组件 → 端到端
           {
             name: "单元测试",
             sort: 1,
             children: [
-              { name: "Jest", sort: 1 },
-              { name: "Vitest", sort: 2 },
-              { name: "Vue Test Utils", sort: 3 },
-              { name: "MSW", sort: 4 },
-              { name: "Testing Library", sort: 5 },
+              { name: "Vitest", sort: 1 },
+              { name: "Jest", sort: 2 },
+              { name: "MSW", sort: 3 },
+            ],
+          },
+          {
+            name: "组件测试",
+            sort: 2,
+            children: [
+              { name: "Vue Test Utils", sort: 1 },
+              { name: "Testing Library", sort: 2 },
+              { name: "@pinia/testing", sort: 3 },
+              { name: "Vitest Browser Mode", sort: 4 },
             ],
           },
           {
             name: "端到端测试",
-            sort: 2,
+            sort: 3,
             children: [
               { name: "Cypress", sort: 1 },
               { name: "Playwright", sort: 2 },
             ],
           },
-          { name: "其他工具（Mailtrap）", sort: 3 },
+          // 横切技术（按"怎么测得好"分），与测试类型维度正交
+          {
+            name: "测试方法与质量",
+            sort: 4,
+            children: [
+              { name: "代码覆盖率", sort: 1 },
+              { name: "快照测试", sort: 2 },
+            ],
+          },
+          { name: "其他工具（Mailtrap）", sort: 5 },
         ],
       },
 
