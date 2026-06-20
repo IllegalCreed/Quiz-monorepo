@@ -513,6 +513,9 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "Cypress", sort: 1 },
               { name: "Playwright", sort: 2 },
+              { name: "Selenium", sort: 3 },
+              { name: "WebdriverIO", sort: 4 },
+              { name: "Puppeteer", sort: 5 },
             ],
           },
           // 横切技术（按"怎么测得好"分），与测试类型维度正交
