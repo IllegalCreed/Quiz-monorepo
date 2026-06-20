@@ -62,7 +62,7 @@
 | 叶          | VitePress 笔记 | Slidev 幻灯片 | Quiz 题库 | prod 导入 |
 | ----------- | -------------- | ------------- | --------- | --------- |
 | Cypress     | ✅ 8页         | ✅ 22页0溢出  | ✅ 49题   | ✅ id=442 |
-| Playwright  | ☐              | ☐             | ☐         | ☐         |
+| Playwright  | ✅ 8页         | ✅ 25页0溢出  | ✅ 44题   | ✅ id=443 |
 | Selenium    | ☐              | ☐             | ☐         | ☐         |
 | WebdriverIO | ☐              | ☐             | ☐         | ☐         |
 | Puppeteer   | ☐              | ☐             | ☐         | ☐         |
