@@ -1,0 +1,1304 @@
+[
+  {
+    "stem": "视觉回归测试（Visual Regression Testing）捕获并比对的是什么？",
+    "explanation": "视觉回归测试把页面或组件渲染成真实像素图（通常 PNG），再对截图做像素级 diff，捕捉的是「肉眼可见的外观变化」——颜色、字体、间距、布局漂移。它的强项正是：DOM 结构没变、但 CSS 改了导致外观变了，这种变化也能被抓到。",
+    "tags": ["visual-regression", "概念"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "渲染出的真实像素图，做像素级 diff 比对外观",
+        "isCorrect": true,
+        "description": "捕捉颜色、字体、间距、布局等肉眼可见变化"
+      },
+      {
+        "text": "组件序列化后的 DOM 文本结构",
+        "isCorrect": false,
+        "description": "那是 DOM 快照测试比对的对象，不渲染像素"
+      },
+      {
+        "text": "页面的 HTTP 请求与响应",
+        "isCorrect": false,
+        "description": "那是网络层断言，与外观无关"
+      },
+      {
+        "text": "组件的 props 与 state 数值",
+        "isCorrect": false,
+        "description": "那更接近单元测试的范畴"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试与「快照测试（Snapshot Testing）」最本质的区别是什么？",
+    "explanation": "二者不是同义词。「快照测试」默认指把组件/数据序列化为「文本」（DOM 结构、渲染树、数据结构）存成 `.snap` 文件逐字符比对，比的是结构/文本，不渲染像素；视觉回归则把页面渲染成「像素图」做像素级 diff，比的是外观。最关键的差异：DOM 不变但 CSS 变了（如颜色、间距改动），DOM 快照抓不到，只有视觉回归能抓到。",
+    "tags": ["visual-regression", "快照测试", "对比"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "快照测试比序列化的「文本/DOM 结构」，视觉回归比渲染出的「像素图」",
+        "isCorrect": true,
+        "description": "DOM 不变但样式变了，只有视觉回归能抓到"
+      },
+      {
+        "text": "两者都是比像素图，只是文件格式不同",
+        "isCorrect": false,
+        "description": "快照测试比的是文本而非像素，不是格式差异"
+      },
+      {
+        "text": "快照测试比像素，视觉回归比 DOM 文本",
+        "isCorrect": false,
+        "description": "说反了——视觉回归才是比像素"
+      },
+      {
+        "text": "两者完全等价，只是叫法不同",
+        "isCorrect": false,
+        "description": "二者捕获维度不同，绝非同义词"
+      }
+    ]
+  },
+  {
+    "stem": "下面哪种变化，DOM/序列化「快照测试」抓不到、但「视觉回归测试」能抓到？",
+    "explanation": "DOM 快照只看序列化后的结构/文本。若 DOM 标签、属性、文本内容都没变，仅仅是 CSS 改了（比如把按钮背景色从蓝改成绿、把 padding 从 8px 改成 4px），序列化文本完全一致，快照测试发现不了；但渲染出来的像素不同，视觉回归会立刻报 diff。这正是视觉回归不可被快照替代的核心价值。",
+    "tags": ["visual-regression", "对比", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "DOM 不变、仅 CSS 改动导致的颜色/间距/布局漂移",
+        "isCorrect": true,
+        "description": "序列化文本一致但像素不同，只有视觉回归能发现"
+      },
+      {
+        "text": "组件多渲染了一个 <span> 子节点",
+        "isCorrect": false,
+        "description": "DOM 结构变了，快照测试也能抓到"
+      },
+      {
+        "text": "文本内容从「确定」改成「提交」",
+        "isCorrect": false,
+        "description": "序列化文本变了，快照测试同样能发现"
+      },
+      {
+        "text": "某个 aria 属性被删除",
+        "isCorrect": false,
+        "description": "属性变化会反映在序列化结构里，快照可见"
+      }
+    ]
+  },
+  {
+    "stem": "pixelmatch 判定两个像素是否「不同」时，使用的色差度量基于什么色彩空间？",
+    "explanation": "pixelmatch（Playwright 等工具的 diff 引擎）并非简单地把 RGB 三通道相减算欧氏距离，而是用 YIQ NTSC 色彩空间的「感知色差」度量（基于 Kotsarenko & Ramos 2010 论文）。YIQ 把亮度（Y）与色度（I、Q）分离，更贴近人眼对「看得出的差异」的判断，因此能在「人眼几乎无感的渲染噪声」上少报误差。",
+    "tags": ["pixelmatch", "原理", "纠偏"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "YIQ 色彩空间的感知色差度量",
+        "isCorrect": true,
+        "description": "分离亮度与色度，贴近人眼感知，而非 RGB 直减"
+      },
+      {
+        "text": "RGB 三通道的欧氏距离",
+        "isCorrect": false,
+        "description": "pixelmatch 恰恰不用简单 RGB 相减"
+      },
+      {
+        "text": "HSL 的色相差",
+        "isCorrect": false,
+        "description": "pixelmatch 用的是 YIQ 而非 HSL"
+      },
+      {
+        "text": "灰度化后的亮度直方图",
+        "isCorrect": false,
+        "description": "它是逐像素 YIQ 色差，不是整图直方图"
+      }
+    ]
+  },
+  {
+    "stem": "关于 pixelmatch 的 `includeAA` 选项（默认 `false`），下列说法正确的是？",
+    "explanation": "`includeAA` 默认 `false`，含义是「默认自动检测并忽略抗锯齿（anti-aliasing）边缘像素」（基于 Vyšniauskas 的抗锯齿与强度斜率检测算法）。也就是说默认情况下抗锯齿像素不计入 diff——这是视觉回归「少误报」的关键机制之一。把它设为 `true` 才会把抗锯齿像素也算进差异。常见误解是把「默认 false」理解成「默认包含抗锯齿」，恰好相反。",
+    "tags": ["pixelmatch", "anti-aliasing", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认 false = 自动检测并「忽略」抗锯齿像素，减少误报",
+        "isCorrect": true,
+        "description": "设为 true 才把抗锯齿像素也算进 diff"
+      },
+      {
+        "text": "默认 false = 默认就「包含」抗锯齿像素到 diff 里",
+        "isCorrect": false,
+        "description": "理解反了，false 是忽略不是包含"
+      },
+      {
+        "text": "它控制是否输出抗锯齿像素的着色，与是否计入 diff 无关",
+        "isCorrect": false,
+        "description": "着色由 aaColor 控制，includeAA 决定计不计入差异"
+      },
+      {
+        "text": "它只在 SSIM 比较模式下生效",
+        "isCorrect": false,
+        "description": "includeAA 是 pixelmatch 自身的抗锯齿处理开关，与 SSIM 无关"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试的基线（baseline/golden）工作流，标准的五个步骤顺序是？",
+    "explanation": "标准流程是 capture（首跑生成基线）→ compare（后续跑与基线 diff）→ review（人工查看 diff 图）→ approve/accept（确认是预期变更则签核）→ update（把基线更新为新图）。理解这套闭环有助于把视觉回归正确纳入团队协作，diff 不是机器自动通过，而是人工签核。",
+    "tags": ["visual-regression", "baseline", "流程"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "capture → compare → review → approve → update",
+        "isCorrect": true,
+        "description": "首跑落基线，后续比对，人工签核后更新基线"
+      },
+      {
+        "text": "compare → capture → update → review → approve",
+        "isCorrect": false,
+        "description": "顺序错乱，必须先 capture 才有基线可 compare"
+      },
+      {
+        "text": "update → approve → review → compare → capture",
+        "isCorrect": false,
+        "description": "完全倒置了整个流程"
+      },
+      {
+        "text": "capture → approve → update → compare → review",
+        "isCorrect": false,
+        "description": "未经 compare/review 就 approve 不合理"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试「首次运行、还没有任何基线」时，预期会发生什么？",
+    "explanation": "首次运行没有基线可比，工具会「先生成基线并把本次标记为失败」——这是设计而非 bug。生成的基线需要先提交入库（或在云端签核），后续运行才有可比对象、才可能通过。把首跑失败误当作工具坏了，是新手常见困惑。",
+    "tags": ["visual-regression", "baseline", "流程"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "工具生成基线并把本次标记为失败，这是设计行为",
+        "isCorrect": true,
+        "description": "需先提交基线，后续运行才有可比对象"
+      },
+      {
+        "text": "工具直接判为通过，因为没有差异",
+        "isCorrect": false,
+        "description": "没有基线就无从比较，不会判通过"
+      },
+      {
+        "text": "工具报配置错误并中断",
+        "isCorrect": false,
+        "description": "无基线是正常首跑情形，不是配置错误"
+      },
+      {
+        "text": "工具跳过该用例不做任何事",
+        "isCorrect": false,
+        "description": "它会落盘基线，而非跳过"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试为什么「易 flaky（不稳定、间歇性误报）」？下列哪项是其主要诱因？",
+    "explanation": "视觉回归 flaky 的常见诱因包括：跨 OS/浏览器字体渲染不一致、动画/过渡未冻结、时间/日期/随机数等动态内容、滚动条、光标闪烁、requestAnimationFrame 时序、子像素抗锯齿差异、GPU/无头模式渲染差异。其中「跨 OS 字体渲染差异」尤其典型，也正因如此基线要按 OS/浏览器分文件存。",
+    "tags": ["visual-regression", "flaky", "原理"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨 OS/浏览器的字体渲染与抗锯齿差异、未冻结的动画、动态内容等",
+        "isCorrect": true,
+        "description": "渲染环境与时序的细微差异会造成像素噪声"
+      },
+      {
+        "text": "测试断言写得不够多",
+        "isCorrect": false,
+        "description": "flaky 源于渲染噪声，与断言数量无关"
+      },
+      {
+        "text": "源代码注释里有中文",
+        "isCorrect": false,
+        "description": "注释不影响渲染像素，与 flaky 无关"
+      },
+      {
+        "text": "网络带宽不足",
+        "isCorrect": false,
+        "description": "带宽不是像素级 diff 不稳定的主因"
+      }
+    ]
+  },
+  {
+    "stem": "为稳定视觉回归测试、减少 flaky，下列哪一组手段是恰当的？",
+    "explanation": "针对 flaky 诱因，稳定化手段包括：冻结动画/过渡、隐藏光标、mask（遮罩）动态区域、固定渲染环境（如统一 Docker 镜像）、按 OS/浏览器分别存基线、连拍直到两帧一致再比对。这些都是从「消除渲染噪声、统一环境」入手，而非靠无脑放大全局阈值。",
+    "tags": ["visual-regression", "flaky", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "冻结动画、隐藏光标、mask 动态区域、固定渲染环境、按 OS 分基线、连拍稳定",
+        "isCorrect": true,
+        "description": "从消除噪声与统一环境入手，对症下药"
+      },
+      {
+        "text": "把全局 threshold 调到接近 1 让几乎一切都通过",
+        "isCorrect": false,
+        "description": "过松会同时放过真实回归，治标害本"
+      },
+      {
+        "text": "删掉所有有动画的组件不测",
+        "isCorrect": false,
+        "description": "因噎废食，动画可冻结而非弃测"
+      },
+      {
+        "text": "每次运行都重新生成基线",
+        "isCorrect": false,
+        "description": "那等于从不比对，失去回归意义"
+      }
+    ]
+  },
+  {
+    "stem": "Chromatic 的出品方是谁？",
+    "explanation": "Chromatic 由 Storybook 团队出品（「the team behind Storybook」）。正因如此，它与 Storybook 深度集成：Storybook 的每个 story 都可被 Chromatic 自动转成视觉测试用例，是 Storybook 官方推荐的视觉测试云方案。",
+    "tags": ["chromatic", "概念"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Storybook 团队",
+        "isCorrect": true,
+        "description": "因此与 Storybook story 深度集成"
+      },
+      {
+        "text": "Microsoft（Playwright 团队）",
+        "isCorrect": false,
+        "description": "那是 Playwright 的出品方，不是 Chromatic"
+      },
+      {
+        "text": "BrowserStack",
+        "isCorrect": false,
+        "description": "BrowserStack 旗下是 Percy，不是 Chromatic"
+      },
+      {
+        "text": "Cypress.io",
+        "isCorrect": false,
+        "description": "Cypress 与 Chromatic 无出品关系"
+      }
+    ]
+  },
+  {
+    "stem": "Storybook 官方的视觉测试方案是什么？Storybook 自身是否内建像素 diff？",
+    "explanation": "Storybook 官方的视觉测试方案就是 Chromatic（通过 `@chromatic-com/storybook` addon 接入 Chromatic 云）。Storybook 本身「不内建像素 diff」——它负责把组件以 story 形式隔离渲染，真正的拍照、比对、基线托管交给 Chromatic 云端完成。",
+    "tags": ["chromatic", "storybook", "关系"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "官方方案是 Chromatic；Storybook 自身不内建像素 diff",
+        "isCorrect": true,
+        "description": "Storybook 出 story，拍照比对交给 Chromatic"
+      },
+      {
+        "text": "Storybook 内建了像素 diff，无需任何外部服务",
+        "isCorrect": false,
+        "description": "它不做像素 diff，需配 Chromatic"
+      },
+      {
+        "text": "官方方案是 BackstopJS",
+        "isCorrect": false,
+        "description": "官方搭配是 Chromatic，不是 BackstopJS"
+      },
+      {
+        "text": "官方方案是 Percy",
+        "isCorrect": false,
+        "description": "Percy 可接 Storybook，但官方方案是 Chromatic"
+      }
+    ]
+  },
+  {
+    "stem": "Chromatic 单次运行会同时产出哪几类测试？",
+    "explanation": "Chromatic 把每个 Storybook story 当作测试用例，单次运行同时做三类测试：视觉测试（外观变化）、交互测试（基于 story 的 play 函数模拟交互）、可访问性测试（在内部跑 axe 引擎）。所以它不是「只做视觉」，story 即测试用例是它的核心理念。",
+    "tags": ["chromatic", "story", "特性"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "视觉测试 + 交互测试（play 函数）+ 可访问性测试（axe）",
+        "isCorrect": true,
+        "description": "一次运行三类一起出，story 即测试用例"
+      },
+      {
+        "text": "只有视觉测试",
+        "isCorrect": false,
+        "description": "它同时还做交互与 a11y，不止视觉"
+      },
+      {
+        "text": "视觉测试 + 性能测试 + 安全测试",
+        "isCorrect": false,
+        "description": "Chromatic 不做性能与安全测试"
+      },
+      {
+        "text": "单元测试 + 集成测试 + E2E 测试",
+        "isCorrect": false,
+        "description": "这三类不是 Chromatic 的产出维度"
+      }
+    ]
+  },
+  {
+    "stem": "Chromatic 在 GitHub Actions 里集成时，下面哪个配置是「TurboSnap 必需」的？",
+    "explanation": "TurboSnap 依赖完整的 Git 历史来定位祖先构建、比对变更，因此 `actions/checkout` 必须配 `fetch-depth: 0`（拉取完整历史）。若用默认浅克隆，TurboSnap 拿不到完整历史就无法正确做增量。同时 token 走 `CHROMATIC_PROJECT_TOKEN` secret 传给 `chromaui/action`。",
+    "tags": ["chromatic", "turbosnap", "CI", "配置"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`actions/checkout` 配 `fetch-depth: 0`，拉取完整 Git 历史",
+        "isCorrect": true,
+        "description": "TurboSnap 需完整历史定位祖先构建与变更"
+      },
+      {
+        "text": "把 `fetch-depth` 设为 1 做浅克隆以加速",
+        "isCorrect": false,
+        "description": "浅克隆会让 TurboSnap 拿不到完整历史而失效"
+      },
+      {
+        "text": "必须使用 `pull_request` 而非 `push` 触发",
+        "isCorrect": false,
+        "description": "触发事件不是 TurboSnap 的硬性前提"
+      },
+      {
+        "text": "必须把 token 明文写进 workflow yaml",
+        "isCorrect": false,
+        "description": "token 应走 secret，明文是安全反模式"
+      }
+    ]
+  },
+  {
+    "stem": "Chromatic 的 TurboSnap 是「靠什么」来判定一次提交受影响的 story、从而做增量快照的？",
+    "explanation": "TurboSnap 不是简单地「看哪个文件名变了」。它的流程是：从 commit 历史定位祖先构建 → 比对 Git 变更 → 查 Webpack/Vite 的依赖图，定位受这些变更影响的 story 文件 → 只对这些 story（外加之前被 deny 的）拍快照，未变 story 从上次基线复制。关键在「依赖图 + Git diff」联合判定。启用方式是 `--only-changed` / `onlyChanged: true`。",
+    "tags": ["chromatic", "turbosnap", "特性", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Git 变更 + Webpack/Vite 依赖图，联合定位受影响的 story",
+        "isCorrect": true,
+        "description": "顺着依赖图找下游受影响 story，而非只看文件名"
+      },
+      {
+        "text": "只看哪个 `.stories.ts` 文件名发生了改动",
+        "isCorrect": false,
+        "description": "改动的工具/样式文件会经依赖图波及多个 story"
+      },
+      {
+        "text": "靠文件修改时间戳排序",
+        "isCorrect": false,
+        "description": "时间戳不能反映依赖影响范围"
+      },
+      {
+        "text": "每次都全量重拍再对比挑差异",
+        "isCorrect": false,
+        "description": "那就不是增量了，与 TurboSnap 的目的相悖"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Chromatic 的 modes（多视口/多主题），下列说法正确的是？",
+    "explanation": "在 `.storybook/modes.ts` 里定义 `allModes`（如 mobile、dark desktop 等），story 用 `parameters.chromatic.modes` 引用。关键点：每个 mode 有「独立的基线与独立的签核」，且按 mode「名字」而非底层值区分——这意味着重命名一个 mode 等于产生一条全新基线。可在 project/component/story 层叠加，用 `disable: true` 关掉上层 mode。",
+    "tags": ["chromatic", "modes", "特性", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每个 mode 名对应一条独立基线与独立签核，改 mode 名 = 新基线",
+        "isCorrect": true,
+        "description": "按 mode 名而非底层值区分，重命名即新基线"
+      },
+      {
+        "text": "所有 mode 共用同一条基线，只是渲染参数不同",
+        "isCorrect": false,
+        "description": "每个 mode 各自独立基线与签核"
+      },
+      {
+        "text": "mode 只能在 project 层定义，不能在 story 层覆盖",
+        "isCorrect": false,
+        "description": "可在 project/component/story 层叠加并 disable"
+      },
+      {
+        "text": "mode 按底层值（如 viewport 像素）而非名字区分基线",
+        "isCorrect": false,
+        "description": "是按 mode 名区分，改名即重置基线"
+      }
+    ]
+  },
+  {
+    "stem": "`@chromatic-com/storybook` 这个 addon 与 Chromatic 云端的关系，下列描述正确的是？",
+    "explanation": "`@chromatic-com/storybook` 是官方 Visual Tests addon，安装后在 Storybook 内增加一个 Visual Tests 面板，点 ▶️ 把 story 送到云端拍照、在面板内看像素 diff、直接 Accept 更新基线。但它只是「Storybook 内的入口」——实际的拍照、比对、基线托管都在 Chromatic 云端，因此必须配 project token。装了 addon 却没配 token 就无法真正跑（正是本项目当前状态）。",
+    "tags": ["chromatic", "addon", "关系", "纠偏"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "addon 只是 Storybook 内的入口面板，拍照/比对/基线托管都在 Chromatic 云端，需 project token",
+        "isCorrect": true,
+        "description": "装了 addon 没配 token 仍跑不起来"
+      },
+      {
+        "text": "addon 在本地完成像素 diff，无需任何云端服务",
+        "isCorrect": false,
+        "description": "实际拍照与比对都在 Chromatic 云端"
+      },
+      {
+        "text": "addon 会把基线 PNG 自动入库到 Git 仓库",
+        "isCorrect": false,
+        "description": "云端方案基线托管在云端，不入库"
+      },
+      {
+        "text": "装了 addon 就能跑，无需 token",
+        "isCorrect": false,
+        "description": "云端拍照需 CHROMATIC_PROJECT_TOKEN"
+      }
+    ]
+  },
+  {
+    "stem": "Chromatic 的 TurboSnap 在计费与某些提交上有什么需要注意的特性？",
+    "explanation": "被 TurboSnap「跳过」（从上次基线复制）的快照，计费为常规快照的 1/5，能显著省钱。但对 merge / rebase 类提交，TurboSnap 会保守处理、可能多拍一些以保安全。此外，version 改动且无有效 lockfile、Storybook 配置改动、`preview.js` 引入文件改动、static 目录改动、`--force-rebuild` 等都会触发全量重建。",
+    "tags": ["chromatic", "turbosnap", "计费", "原理"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "被跳过的快照按常规 1/5 计费，但 merge/rebase 提交会保守多拍",
+        "isCorrect": true,
+        "description": "省钱的同时对风险提交保守处理保安全"
+      },
+      {
+        "text": "被跳过的快照完全不计费，且对任何提交都激进跳过",
+        "isCorrect": false,
+        "description": "是 1/5 计费，且对 merge/rebase 保守"
+      },
+      {
+        "text": "TurboSnap 跳过的快照计费翻倍",
+        "isCorrect": false,
+        "description": "恰相反，是常规的 1/5"
+      },
+      {
+        "text": "修改 `preview.js` 引入的文件不会影响快照范围",
+        "isCorrect": false,
+        "description": "preview.js 引入文件改动会触发全量重建"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright 视觉对比中，做「截图视觉比对」应使用哪个断言？",
+    "explanation": "`expect(page).toHaveScreenshot()` 才是做截图视觉比对的断言，它自带稳定化重试（连拍直到两帧一致）。而 `expect(value).toMatchSnapshot()` 比的是文本/任意二进制数据，没有截图稳定化重试。二者不是同名同义——视觉回归用 `toHaveScreenshot`，文本/数据快照用 `toMatchSnapshot`，混用是常见错误。",
+    "tags": ["playwright-visual", "toHaveScreenshot", "对比", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`expect(page).toHaveScreenshot()`",
+        "isCorrect": true,
+        "description": "截图视觉比对，自带连拍稳定化重试"
+      },
+      {
+        "text": "`expect(value).toMatchSnapshot()`",
+        "isCorrect": false,
+        "description": "那是文本/二进制快照，无截图稳定化"
+      },
+      {
+        "text": "`expect(page).toHaveURL()`",
+        "isCorrect": false,
+        "description": "那是断言 URL，与视觉无关"
+      },
+      {
+        "text": "`expect(locator).toBeVisible()`",
+        "isCorrect": false,
+        "description": "那是断言元素可见性，不做像素比对"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright 的 `toHaveScreenshot()` 中，`threshold` 选项的默认值是多少？",
+    "explanation": "这是高频易错点。Playwright `toHaveScreenshot` 的 `threshold` 默认是 0.2（基于 YIQ 色彩空间，0 最严格、1 最宽松），它表示单个像素被判「不同」的色差容忍度。注意：底层 pixelmatch 库自己的 threshold 默认是 0.1——Playwright 覆盖了 pixelmatch 的默认值。二者都用 YIQ，但默认数值不同，极易混淆。问「Playwright 视觉对比默认 threshold」就答 0.2。",
+    "tags": ["playwright-visual", "threshold", "纠偏", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "0.2",
+        "isCorrect": true,
+        "description": "Playwright 覆盖了 pixelmatch 默认，定为 0.2"
+      },
+      {
+        "text": "0.1",
+        "isCorrect": false,
+        "description": "那是底层 pixelmatch 库自身的默认，不是 Playwright 的"
+      },
+      {
+        "text": "0",
+        "isCorrect": false,
+        "description": "0 是最严格，不是默认值"
+      },
+      {
+        "text": "1",
+        "isCorrect": false,
+        "description": "1 是最宽松，不是默认值"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright `toHaveScreenshot` 的 `threshold` 默认 0.2，而底层 pixelmatch 库的 threshold 默认 0.1——对这一「双标」最准确的解释是？",
+    "explanation": "二者都用 YIQ 色彩空间来度量单像素色差，但默认数值不同：pixelmatch 库默认 0.1，而 Playwright 在封装时把 `toHaveScreenshot` 的 `threshold` 默认覆盖为 0.2（更宽松一点，以降低渲染噪声误报）。因此谈「默认 threshold」时必须分清「谁的默认」，否则容易答错。",
+    "tags": ["playwright-visual", "pixelmatch", "threshold", "专家"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "都用 YIQ 度量，但 Playwright 把默认覆盖为 0.2，pixelmatch 自身是 0.1",
+        "isCorrect": true,
+        "description": "同一色彩空间、不同默认值，须分清谁的默认"
+      },
+      {
+        "text": "两者用的色彩空间不同，所以默认值不同",
+        "isCorrect": false,
+        "description": "都是 YIQ，差异在默认值而非色彩空间"
+      },
+      {
+        "text": "Playwright 不用 pixelmatch，所以默认值天然不同",
+        "isCorrect": false,
+        "description": "Playwright 的 diff 引擎正是 pixelmatch"
+      },
+      {
+        "text": "0.2 与 0.1 表示不同单位，无法比较",
+        "isCorrect": false,
+        "description": "都是 0~1 的同义色差阈值，可直接比较"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright `toHaveScreenshot` 里，`threshold` 与 `maxDiffPixels` / `maxDiffPixelRatio` 的语义差别是什么？",
+    "explanation": "这是常被混淆的两类参数。`threshold`（0~1，默认 0.2）是「单个像素」被判为不同的 YIQ 色差容忍度——决定每个像素算不算「差异像素」。`maxDiffPixels`（差异像素数上限）/ `maxDiffPixelRatio`（差异像素占比上限）则是「整张图」允许的差异规模——决定整图差异多大才算测试失败。前者是逐像素阈值，后者是全图容差，配合使用能既忽略单像素噪声又限制整体漂移。",
+    "tags": ["playwright-visual", "threshold", "配置", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "threshold 是「单像素」色差容忍，maxDiffPixels/Ratio 是「整图」允许差异的像素数/比例",
+        "isCorrect": true,
+        "description": "一个管单像素判定，一个管全图容差，语义不同"
+      },
+      {
+        "text": "三者是同一个意思，只是写法不同",
+        "isCorrect": false,
+        "description": "前者逐像素、后者全图规模，并非同义"
+      },
+      {
+        "text": "threshold 管整图，maxDiffPixels 管单像素",
+        "isCorrect": false,
+        "description": "说反了，threshold 才是单像素级"
+      },
+      {
+        "text": "maxDiffPixelRatio 控制截图的缩放比例",
+        "isCorrect": false,
+        "description": "缩放由 scale 控制，Ratio 是差异像素占比"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright `toHaveScreenshot` 的下列默认值中，哪一组是正确的？",
+    "explanation": "Playwright 为减少 flaky 内建了一批稳定化默认：`animations` 默认 `'disabled'`（冻结 CSS 动画/过渡）、`caret` 默认 `'hide'`（隐藏文本光标）、`maskColor` 默认 `#FF00FF`（品红，遮罩颜色）、`scale` 默认 `'css'`、`fullPage` 默认 `false`。这些默认值正是「开箱即少误报」的关键。",
+    "tags": ["playwright-visual", "默认值", "配置"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "animations='disabled'、caret='hide'、maskColor='#FF00FF'",
+        "isCorrect": true,
+        "description": "内建稳定化默认：冻动画、隐光标、品红遮罩"
+      },
+      {
+        "text": "animations='allow'、caret='initial'、fullPage=true",
+        "isCorrect": false,
+        "description": "这些都不是默认值，反而更易 flaky"
+      },
+      {
+        "text": "threshold=0.1、scale='device'、caret='show'",
+        "isCorrect": false,
+        "description": "threshold 默认 0.2、scale 默认 css、无 show 取值"
+      },
+      {
+        "text": "maskColor='#000000'、animations='disabled'、caret='hide'",
+        "isCorrect": false,
+        "description": "maskColor 默认是品红 #FF00FF 而非黑色"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright 生成的视觉基线 golden 文件，命名里为什么包含浏览器名和平台（如 `*-chromium-darwin.png`）？",
+    "explanation": "Playwright 基线命名形如 `{testName}-{browserName}-{platform}.png`（例 `example-test-1-chromium-darwin.png`），按「浏览器 + 平台」分文件。原因是字体渲染、抗锯齿在不同浏览器/操作系统上不一致，同一组件在 chromium-darwin 与 chromium-linux 上像素并不相同，必须各存各的基线。这也意味着 macOS（darwin）生成的基线在 Linux CI 上后缀不同、且渲染不一致，会找不到/对不上。",
+    "tags": ["playwright-visual", "命名", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为字体/抗锯齿渲染跨浏览器与 OS 不同，须按浏览器+平台分别存基线",
+        "isCorrect": true,
+        "description": "darwin 基线在 linux 上后缀不同且渲染不一致"
+      },
+      {
+        "text": "只是为了文件名好看，无实际作用",
+        "isCorrect": false,
+        "description": "后缀是按渲染环境区分基线的必要信息"
+      },
+      {
+        "text": "为了区分不同测试人员",
+        "isCorrect": false,
+        "description": "后缀编码的是浏览器与平台，与人员无关"
+      },
+      {
+        "text": "因为不同浏览器截图的文件格式不同",
+        "isCorrect": false,
+        "description": "都是 PNG，差异在渲染像素而非格式"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright 视觉对比中，要更新（接受新外观为新基线）应运行什么命令？",
+    "explanation": "当设计有意变更、人工确认 diff 是「改进」后，用 `npx playwright test --update-snapshots` 重新生成基线（PNG），然后把更新后的基线提交入库。绝不要手动用图像编辑器改 PNG。Playwright 的 diff 引擎是 pixelmatch。",
+    "tags": ["playwright-visual", "流程", "命令"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`npx playwright test --update-snapshots`",
+        "isCorrect": true,
+        "description": "重生成基线后提交入库，勿手改 PNG"
+      },
+      {
+        "text": "`npx playwright test --headed`",
+        "isCorrect": false,
+        "description": "那只是带界面跑测，不更新基线"
+      },
+      {
+        "text": "手动用图像编辑器修改基线 PNG",
+        "isCorrect": false,
+        "description": "应由工具重生成，手改极易出错"
+      },
+      {
+        "text": "`npx playwright install`",
+        "isCorrect": false,
+        "description": "那是安装浏览器，与更新基线无关"
+      }
+    ]
+  },
+  {
+    "stem": "Playwright `toHaveScreenshot` 的 `mask` 选项用来做什么？",
+    "explanation": "`mask` 接收一个 Locator 数组，对应区域会被 `maskColor`（默认品红 `#FF00FF`）覆盖后再截图，用来遮挡动态内容（时间戳、随机头像、广告、轮播等），让这些区域不参与 diff。这是处理动态内容的正确做法——只遮局部，而不是为了一个动态时间就放松整图的全局 threshold。",
+    "tags": ["playwright-visual", "mask", "配置"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 maskColor 覆盖指定 Locator 区域，遮挡动态内容使其不参与 diff",
+        "isCorrect": true,
+        "description": "局部遮罩动态内容，胜过放松全局阈值"
+      },
+      {
+        "text": "把整张截图打码用于隐私保护",
+        "isCorrect": false,
+        "description": "mask 是局部遮罩动态区域，不是整图打码"
+      },
+      {
+        "text": "标记需要重点比对的区域",
+        "isCorrect": false,
+        "description": "恰相反，被 mask 的区域是「不比对」"
+      },
+      {
+        "text": "裁剪截图到指定区域",
+        "isCorrect": false,
+        "description": "裁剪是 clip 选项，mask 是覆盖遮罩"
+      }
+    ]
+  },
+  {
+    "stem": "BackstopJS 在 2026 年的当前状态如何？把它当作「新项目首选视觉回归工具」是否合适？",
+    "explanation": "BackstopJS 是曾经经典的开源像素 diff 工具（基于 Puppeteer/Playwright 截图 + 图像比对，配 `backstop.json` 定义场景，本地/自托管）。但其最新版停在 6.3.25（2024-09-07），已停滞约 21 个月无新版。它适合作「曾经经典但已停更」的反例，提示新项目优先选 Playwright（本地）或 Chromatic（云），不应把它当当前推荐。",
+    "tags": ["backstopjs", "版本", "纠偏"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "最新版停在 6.3.25（2024-09）、已停滞，不宜当新项目首选，优先 Playwright/Chromatic",
+        "isCorrect": true,
+        "description": "经典但停更的反例，新项目另选活跃方案"
+      },
+      {
+        "text": "仍是最活跃、最推荐的视觉回归工具",
+        "isCorrect": false,
+        "description": "已约 21 个月无新版，称不上最活跃"
+      },
+      {
+        "text": "它是云端 SaaS 工具，由 BrowserStack 维护",
+        "isCorrect": false,
+        "description": "它是本地/自托管 OSS，非 BrowserStack 云"
+      },
+      {
+        "text": "它从不截图，只比对 DOM 结构",
+        "isCorrect": false,
+        "description": "它正是截图做像素 diff 的工具"
+      }
+    ]
+  },
+  {
+    "stem": "Cypress 在视觉回归方面的能力，下列描述正确的是？",
+    "explanation": "Cypress 自身「没有原生视觉回归」能力——`cy.screenshot()` 只负责截图，不做任何像素比对。要做视觉 diff 必须装第三方插件。维护版插件是 `@simonsmith/cypress-image-snapshot`（v10，活跃），它提供 `cy.matchImageSnapshot()` 命令。",
+    "tags": ["cypress-image-snapshot", "边界", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Cypress 无原生视觉回归，`cy.screenshot()` 只截图不比对，需第三方插件",
+        "isCorrect": true,
+        "description": "视觉 diff 靠插件（如 simonsmith 的 v10 fork）"
+      },
+      {
+        "text": "Cypress 内建像素 diff，开箱即用",
+        "isCorrect": false,
+        "description": "它没有原生视觉回归，需插件补足"
+      },
+      {
+        "text": "`cy.screenshot()` 会自动与上次截图比对并报 diff",
+        "isCorrect": false,
+        "description": "它只截图，不做任何比对"
+      },
+      {
+        "text": "Cypress 视觉回归由官方云服务托管",
+        "isCorrect": false,
+        "description": "官方无内建视觉云方案，需第三方"
+      }
+    ]
+  },
+  {
+    "stem": "要在 Cypress 里做图像快照视觉测试，应该选用哪个包？",
+    "explanation": "应认准维护版 `@simonsmith/cypress-image-snapshot`（v10，最新 10.0.4，活跃）。原版 `cypress-image-snapshot`（jaredpalmer 出品）停在 4.0.1（2021-01），README 已明确「active development has ceased」，simonsmith 版是其 rewrite/fork。底层基于 jest-image-snapshot（其内部用 pixelmatch），并支持透传如 `comparisonMethod: 'ssim'` 等选项。",
+    "tags": ["cypress-image-snapshot", "版本", "纠偏"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`@simonsmith/cypress-image-snapshot`（v10 维护版）",
+        "isCorrect": true,
+        "description": "原版 jaredpalmer 4.0.1 已弃，认准这个 fork"
+      },
+      {
+        "text": "`cypress-image-snapshot`（jaredpalmer 原版）",
+        "isCorrect": false,
+        "description": "停在 2021 的 4.0.1，已停止维护"
+      },
+      {
+        "text": "Cypress 内置的 `cy.matchImageSnapshot()`",
+        "isCorrect": false,
+        "description": "该命令来自插件而非 Cypress 内置"
+      },
+      {
+        "text": "`@playwright/test`",
+        "isCorrect": false,
+        "description": "那是 Playwright 的包，不用于 Cypress"
+      }
+    ]
+  },
+  {
+    "stem": "`@simonsmith/cypress-image-snapshot` 的底层比对引擎是？",
+    "explanation": "该插件底层基于 jest-image-snapshot（jest-image-snapshot 内部默认用 pixelmatch 做像素 diff），并支持透传 jest-image-snapshot 的选项，例如把比对方法切到 `comparisonMethod: 'ssim'`。因此严谨的措辞是「基于 jest-image-snapshot（内部用 pixelmatch）」，而非直接说「用 pixelmatch」。",
+    "tags": ["cypress-image-snapshot", "原理", "专家"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "基于 jest-image-snapshot（其内部用 pixelmatch），可透传 ssim 等选项",
+        "isCorrect": true,
+        "description": "经 jest-image-snapshot 间接用 pixelmatch"
+      },
+      {
+        "text": "自研的逐像素 RGB 比对，无第三方依赖",
+        "isCorrect": false,
+        "description": "它复用 jest-image-snapshot，并非自研"
+      },
+      {
+        "text": "直接调用 Chromatic 云端比对",
+        "isCorrect": false,
+        "description": "它是本地比对，不依赖 Chromatic"
+      },
+      {
+        "text": "用 Playwright 的 toHaveScreenshot 引擎",
+        "isCorrect": false,
+        "description": "与 Playwright 无关，底层是 jest-image-snapshot"
+      }
+    ]
+  },
+  {
+    "stem": "Percy（BrowserStack 旗下）在视觉测试领域的定位是？",
+    "explanation": "Percy 是 BrowserStack 旗下的云端视觉测试服务：捕获快照后在云端跨多浏览器/响应式宽度比对、像素级高亮 diff、提供 Web UI 评审签核与 CI 集成，SDK 覆盖 Selenium/Playwright/Cypress/Puppeteer/Storybook 等，`@percy/cli`（活跃）提供较无侵入的接入。它属于「企业向云对照」一档（与 Applitools 同类），区别于 Playwright/BackstopJS 的本地像素 diff。",
+    "tags": ["percy", "定位", "对比"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "企业向云端视觉测试，跨多浏览器/响应式比对 + Web UI 签核，SDK 覆盖多框架",
+        "isCorrect": true,
+        "description": "云对照一档，区别于本地像素 diff 工具"
+      },
+      {
+        "text": "纯本地、自托管的开源像素 diff CLI",
+        "isCorrect": false,
+        "description": "Percy 是云端 SaaS，不是本地自托管"
+      },
+      {
+        "text": "只是一个 Storybook addon，不能脱离 Storybook 使用",
+        "isCorrect": false,
+        "description": "其 SDK 覆盖多框架，不限于 Storybook"
+      },
+      {
+        "text": "Vue 官方出品的视觉测试方案",
+        "isCorrect": false,
+        "description": "Percy 属 BrowserStack，与 Vue 官方无关"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Applitools Eyes 的「Visual AI」，下列说法正确的是？",
+    "explanation": "Applitools 的 Visual AI 是经十余年迭代的图像比对算法，核心理念是「模拟人眼」，只报告「人会注意到的有意义差异」，从而降低误报、在跨浏览器/设备/OS 上更稳——它不是逐像素硬比。这与 pixelmatch 类逐像素 diff 的取向不同，是企业向云方案的卖点之一。",
+    "tags": ["applitools", "visual-ai", "概念"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "模拟人眼，只报「人会注意到的有意义差异」，降低误报、跨端更稳",
+        "isCorrect": true,
+        "description": "非逐像素硬比，强调感知层面的有意义差异"
+      },
+      {
+        "text": "就是把 pixelmatch 换了个名字",
+        "isCorrect": false,
+        "description": "Visual AI 是另一套感知算法，非逐像素硬比"
+      },
+      {
+        "text": "只能比对静态图片，不能比对网页",
+        "isCorrect": false,
+        "description": "它正是面向网页/应用 UI 的视觉测试"
+      },
+      {
+        "text": "完全不需要基线即可判断回归",
+        "isCorrect": false,
+        "description": "仍是基线比对范式，只是比对更智能"
+      }
+    ]
+  },
+  {
+    "stem": "Applitools Eyes 的 Match Level 中，「默认」级别是哪个？另外哪个是「逐像素硬比、常规不推荐」的？",
+    "explanation": "Applitools 默认 Match Level 是 Strict（人眼级一致，检测文本/字体/颜色/图形/位置变化）。而 Exact 是逐像素硬比，对人眼不可见的渲染差异也敏感，反而「不推荐常规使用」。此外还有 Layout（只看相对布局、忽略内容/颜色，适合动态内容）、Content（类 Strict 但忽略颜色）、Ignore Colors（忽略颜色仍验内容与布局，适合换肤）、Dynamic（自动抑制动态数据差异）。",
+    "tags": ["applitools", "match-level", "对比", "易错"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认是 Strict（人眼级）；Exact 是逐像素硬比、常规不推荐",
+        "isCorrect": true,
+        "description": "Strict 默认贴近人眼，Exact 过敏易误报"
+      },
+      {
+        "text": "默认是 Exact（逐像素），Strict 才是常规不推荐的",
+        "isCorrect": false,
+        "description": "说反了，Strict 是默认、Exact 不推荐常规用"
+      },
+      {
+        "text": "默认是 Layout，只看布局不看内容",
+        "isCorrect": false,
+        "description": "Layout 适合动态内容场景，但不是默认"
+      },
+      {
+        "text": "默认是 Ignore Colors，忽略一切颜色",
+        "isCorrect": false,
+        "description": "Ignore Colors 用于换肤，并非默认级别"
+      }
+    ]
+  },
+  {
+    "stem": "对一个 Vue 3 + Vite 项目做组件视觉回归，常见的两条技术路线是？",
+    "explanation": "两条主流路线：路线 A——用 Playwright 把 Vue 组件挂到独立页面（或直接截 Storybook 的 iframe 页/应用页），用 `toHaveScreenshot()` 拍图比对，基线随仓库走（`*-chromium-darwin.png`），适合本地免费、纳入现有 Playwright E2E。路线 B——Storybook + Chromatic：每个 `*.stories.ts` 即测试用例，addon 在 Storybook 内跑/看 diff，CI 用 `chromaui/action`，基线托管云端、团队签核。",
+    "tags": ["vue", "实战", "选型"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Playwright 截组件页（本地、基线入库）/ Storybook + Chromatic（云、基线托管）",
+        "isCorrect": true,
+        "description": "一本地一云端，按需不需要云端签核/跨端矩阵选"
+      },
+      {
+        "text": "只能用 Jest 的 toMatchSnapshot 比 DOM",
+        "isCorrect": false,
+        "description": "那是 DOM 快照，抓不到 CSS 级外观变化"
+      },
+      {
+        "text": "只能买 Applitools 企业版，别无选择",
+        "isCorrect": false,
+        "description": "本地 Playwright 即可免费做视觉回归"
+      },
+      {
+        "text": "用 Vite 内置的视觉测试命令",
+        "isCorrect": false,
+        "description": "Vite 没有内置视觉测试能力"
+      }
+    ]
+  },
+  {
+    "stem": "一个 Vue 3 + Storybook 项目已装好 `@chromatic-com/storybook` addon，但视觉测试还跑不起来。最可能缺的两步是？",
+    "explanation": "addon 只是 Storybook 内的入口，真正拍照与基线托管在 Chromatic 云端，因此还需要：①配置 `CHROMATIC_PROJECT_TOKEN`（项目 token）；②在 CI 里加 `chromaui/action` 的 workflow（并配 checkout `fetch-depth: 0`）。这正是本项目当前的状态——addon 已装，只差 token + CI workflow。",
+    "tags": ["chromatic", "实战", "项目相关"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "配置 CHROMATIC_PROJECT_TOKEN + 在 CI 加 chromaui/action workflow",
+        "isCorrect": true,
+        "description": "addon 已装，云端拍照还差 token 与 CI 接入"
+      },
+      {
+        "text": "把所有 story 删掉重写一遍",
+        "isCorrect": false,
+        "description": "story 是测试用例，删掉反而无可测"
+      },
+      {
+        "text": "升级 Node 到最新大版本",
+        "isCorrect": false,
+        "description": "缺的是 token 与 CI，而非 Node 版本"
+      },
+      {
+        "text": "改用 Playwright 重写所有组件测试",
+        "isCorrect": false,
+        "description": "已选 Chromatic 路线，补齐 token+CI 即可"
+      }
+    ]
+  },
+  {
+    "stem": "把视觉回归测试「纳入 CI」时，下列哪种实践更合理？",
+    "explanation": "视觉回归更适合在「组件/设计系统层」做：在组件库稳定后纳入，由 PR 触发视觉测试，diff 交给 reviewer 签核（Chromatic 逐快照 Accept/Deny，或 Playwright 审 PNG 的 Git diff），而不是一股脑堆进单元测试、或对每个业务页都跑大而全的整页视觉测试。这样既能守住外观质量，又控制噪声与维护成本。",
+    "tags": ["visual-regression", "CI", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在组件/设计系统层做、PR 触发、diff 由 reviewer 签核",
+        "isCorrect": true,
+        "description": "小粒度 + 人工签核，守外观又控噪声"
+      },
+      {
+        "text": "把视觉断言全塞进单元测试里一起跑",
+        "isCorrect": false,
+        "description": "视觉慢且 flaky，混进单元测试拖累全套"
+      },
+      {
+        "text": "对每个业务页都跑整页视觉测试且自动合并基线",
+        "isCorrect": false,
+        "description": "整页视觉是反模式，自动更新基线等于不审"
+      },
+      {
+        "text": "让 CI 一发现 diff 就自动更新基线后通过",
+        "isCorrect": false,
+        "description": "自动更新等于绕过人工签核，失去回归意义"
+      }
+    ]
+  },
+  {
+    "stem": "「对整页做 `fullPage` 全站截图来跑视觉回归」为什么是反模式？",
+    "explanation": "对整页大图做视觉回归，任意一处小改动都会触发整张图的 diff，导致噪声爆炸、定位困难、审图疲劳（看不清到底哪儿变了）。正确做法是「按组件/区块粒度截小图」——Storybook 的 story 级正好就是这个粒度，既稳定又便于定位是哪个组件变了。",
+    "tags": ["visual-regression", "反模式", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "整页任意小改动都触发整图 diff，噪声大、难定位，应按组件/story 粒度截小图",
+        "isCorrect": true,
+        "description": "小粒度截图更稳定，也便于定位变更来源"
+      },
+      {
+        "text": "fullPage 截图会泄露用户隐私",
+        "isCorrect": false,
+        "description": "反模式的原因是噪声与定位，而非隐私"
+      },
+      {
+        "text": "fullPage 截图根本无法生成 PNG",
+        "isCorrect": false,
+        "description": "技术上可生成，只是不适合做视觉回归"
+      },
+      {
+        "text": "整页截图比组件截图更省存储",
+        "isCorrect": false,
+        "description": "整页大图反而更占空间且噪声更大"
+      }
+    ]
+  },
+  {
+    "stem": "本地视觉回归（如 Playwright）中，「开发机 macOS 生成的基线在 Linux CI 上频繁误报」的根因与对策是什么？",
+    "explanation": "根因是字体渲染、抗锯齿在 macOS（`*-darwin.png`）与 Linux（`*-linux.png`）上不一致，同一组件的像素并不相同，于是开发机基线拿到 CI 就报 diff。最佳对策是：用与 CI 完全一致的 Docker 镜像生成/更新基线（Playwright 官方提供容器镜像），让基线渲染环境与 CI 一致；或干脆只在 CI 容器内生成/更新基线。",
+    "tags": ["visual-regression", "docker", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跨 OS 字体/抗锯齿渲染不同；对策是用与 CI 一致的 Docker 镜像生成基线",
+        "isCorrect": true,
+        "description": "统一渲染环境，基线与 CI 一致才不误报"
+      },
+      {
+        "text": "CI 机器内存不足；对策是加大 runner 配置",
+        "isCorrect": false,
+        "description": "误报源于渲染环境差异，非内存问题"
+      },
+      {
+        "text": "Git 把 PNG 当文本损坏了；对策是改用 SVG",
+        "isCorrect": false,
+        "description": "二进制提交不损坏，根因是跨 OS 渲染"
+      },
+      {
+        "text": "threshold 设太高；对策是设为 0",
+        "isCorrect": false,
+        "description": "设为 0 反而更敏感、误报更多"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试的基线该「入库（提交到 Git）」还是「托管在云端」？正确的区分原则是？",
+    "explanation": "按工具类型区分：本地像素工具（Playwright / BackstopJS）的基线 PNG「入库」，随 PR 一起 review，但必须固定渲染环境否则跨机噪声大；云端工具（Chromatic / Percy）的基线「托管在云端、不入库」，以避免大量二进制污染仓库、并规避跨机渲染分歧。一句话：本地工具基线入库（+固定环境），云端工具基线托管云端。",
+    "tags": ["visual-regression", "baseline", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "本地工具（Playwright/BackstopJS）基线入库；云端工具（Chromatic/Percy）基线托管云端",
+        "isCorrect": true,
+        "description": "本地随 PR review、固定环境；云端不污染仓库"
+      },
+      {
+        "text": "所有工具的基线都应入库到 Git",
+        "isCorrect": false,
+        "description": "云端工具基线托管云端，入库会污染仓库"
+      },
+      {
+        "text": "所有工具的基线都不应入库",
+        "isCorrect": false,
+        "description": "本地工具基线需入库以便随 PR review"
+      },
+      {
+        "text": "基线一律放到对象存储，不区分工具",
+        "isCorrect": false,
+        "description": "应按本地/云端工具区分存放策略"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试中，页面里有时间戳、随机头像、轮播等动态内容导致截图误报，最佳处理方式是？",
+    "explanation": "正确做法是「局部遮罩/忽略动态区域」——Playwright 用 `mask`、Applitools 用 ignore region、cypress-image-snapshot 可调 `comparisonMethod` 等，把动态区域排除在 diff 之外。而「放松全局 threshold」是错误对策：它会在放过动态噪声的同时，也放过页面其它地方的真实回归。",
+    "tags": ["visual-regression", "mask", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 mask/ignore region 局部遮掉动态区域，而非放松全局 threshold",
+        "isCorrect": true,
+        "description": "局部排除动态内容，保留对其余区域的灵敏度"
+      },
+      {
+        "text": "把全局 threshold 调大，让动态区域不报错",
+        "isCorrect": false,
+        "description": "会同时放过其它地方的真实回归"
+      },
+      {
+        "text": "干脆不测有动态内容的页面",
+        "isCorrect": false,
+        "description": "遮罩局部即可，无需放弃整页测试"
+      },
+      {
+        "text": "每次跑前手动 P 掉截图里的动态部分",
+        "isCorrect": false,
+        "description": "不可维护，应用 mask 自动处理"
+      }
+    ]
+  },
+  {
+    "stem": "关于「视觉回归测试能否替代单元测试和快照测试」，正确的认识是？",
+    "explanation": "三者互补、各司其职，视觉回归「不能替代」单元/快照测试。单元测试快、定位准，验逻辑/纯函数/状态；快照测试比 DOM/序列化文本，验组件输出结构没乱、无像素噪声；视觉回归验外观/样式/布局没坏，抓 CSS 级肉眼可见变化，但它慢、易 flaky、定位粗。把视觉回归当成唯一测试或拿它替代单元/快照，是典型误区。",
+    "tags": ["visual-regression", "分工", "纠偏"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "三者互补，视觉回归慢且 flaky、定位粗，不能替代单元/快照测试",
+        "isCorrect": true,
+        "description": "各管一层：逻辑/结构/外观，缺一不可"
+      },
+      {
+        "text": "视觉回归最全面，可替代单元与快照测试",
+        "isCorrect": false,
+        "description": "它慢、易 flaky、定位粗，替代不了另两类"
+      },
+      {
+        "text": "有了单元测试就不需要视觉回归",
+        "isCorrect": false,
+        "description": "单元测试抓不到 CSS 级外观变化"
+      },
+      {
+        "text": "三者完全重叠，做一种即可",
+        "isCorrect": false,
+        "description": "三者维度不同、互补而非重叠"
+      }
+    ]
+  },
+  {
+    "stem": "视觉回归测试的 `threshold` 该「调松还是调紧」？把它设得太紧或太松各有什么坏处？",
+    "explanation": "threshold 需按项目权衡：太紧（→0）会让抗锯齿/亚像素噪声触发海量误报、测试变 flaky；太松（→1）则会漏掉真实回归。实践上常配合 `maxDiffPixelRatio` 兜底——容忍少量像素差异，但限制整图差异占比，从而既压住噪声又不放过明显回归。",
+    "tags": ["visual-regression", "threshold", "权衡"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "太紧致噪声误报/flaky，太松致漏报真实回归；常配 maxDiffPixelRatio 兜底",
+        "isCorrect": true,
+        "description": "两端都有害，需按项目调并加全图容差兜底"
+      },
+      {
+        "text": "越紧越好，设为 0 最可靠",
+        "isCorrect": false,
+        "description": "设为 0 会被亚像素噪声淹没成 flaky"
+      },
+      {
+        "text": "越松越好，设为 1 最省心",
+        "isCorrect": false,
+        "description": "设为 1 几乎放过一切，等于不测"
+      },
+      {
+        "text": "threshold 大小不影响结果，随便设",
+        "isCorrect": false,
+        "description": "它直接决定单像素判定灵敏度，影响很大"
+      }
+    ]
+  },
+  {
+    "stem": "设计师有意调整了某组件外观，视觉测试因此报出 diff。团队应如何处理，才符合视觉回归的正确流程？",
+    "explanation": "有意的设计变更应走「人工确认 + 更新基线」流程：人工查看 diff，确认这是「改进」而非回归后，Chromatic 路线点 Accept 签核更新云端基线，Playwright 路线跑 `--update-snapshots` 重生成本地基线并提交。绝不能直接手改 PNG，也不该为了让它过就无脑放松 threshold。",
+    "tags": ["visual-regression", "流程", "最佳实践"],
+    "categories": [
+      ["技术方向", "视觉回归测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "人工确认是改进后更新基线：Chromatic 点 Accept / Playwright 跑 --update-snapshots",
+        "isCorrect": true,
+        "description": "签核后更新基线并提交，别手改 PNG"
+      },
+      {
+        "text": "直接用图像编辑器把基线 PNG 改成新样子",
+        "isCorrect": false,
+        "description": "应由工具重生成基线，手改易错且不可追溯"
+      },
+      {
+        "text": "把这条视觉测试删掉以免再报错",
+        "isCorrect": false,
+        "description": "删测会丢失对该组件外观的保护"
+      },
+      {
+        "text": "把全局 threshold 调到 1 让它永远通过",
+        "isCorrect": false,
+        "description": "会放过未来的真实回归，治标害本"
+      }
+    ]
+  }
+]

@@ -525,9 +525,18 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "代码覆盖率", sort: 1 },
               { name: "快照测试", sort: 2 },
+              { name: "可访问性测试", sort: 3 },
+              { name: "视觉回归测试", sort: 4 },
+              { name: "变异测试", sort: 5 },
+              { name: "属性测试", sort: 6 },
             ],
           },
-          { name: "其他工具（Mailtrap）", sort: 5 },
+          // 其他工具：兜底组（原 Mailtrap 占位经核实价值不足已删，改挂 Faker.js）
+          {
+            name: "其他工具",
+            sort: 5,
+            children: [{ name: "Faker.js", sort: 1 }],
+          },
         ],
       },
 

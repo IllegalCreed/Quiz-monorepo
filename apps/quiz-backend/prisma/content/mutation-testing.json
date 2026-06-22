@@ -1,0 +1,1273 @@
+[
+  {
+    "stem": "变异测试（Mutation Testing）的核心做法是什么？",
+    "explanation": "变异测试自动在源代码里注入一个个微小的人为缺陷（称为 mutant / 变异体，例如把 + 改成 -、< 改成 <=、true 改成 false），再用你现有的测试套件去跑。若某个变异体导致至少一个测试失败，说明测试抓到了这个缺陷（被 killed）；若所有测试照样通过，说明测试有盲区（变异体 survived）。",
+    "tags": ["mutation-testing", "概念"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "往源码注入微小缺陷生成变异体，用现有测试去跑，看测试能否发现",
+        "isCorrect": true,
+        "description": "测试发现缺陷则变异体被杀，没发现则存活，暴露测试盲区"
+      },
+      {
+        "text": "随机修改测试用例的断言，看源码会不会报错",
+        "isCorrect": false,
+        "description": "方向反了——变异的是源码，不是测试；跑的是原测试"
+      },
+      {
+        "text": "对源码做静态分析，统计圈复杂度等度量",
+        "isCorrect": false,
+        "description": "那是静态分析，变异测试要真正运行测试套件"
+      },
+      {
+        "text": "统计测试执行时跑到了多少行源代码",
+        "isCorrect": false,
+        "description": "那是代码覆盖率，衡量执行而非缺陷检测能力"
+      }
+    ]
+  },
+  {
+    "stem": "为什么变异测试常被称为「测试你的测试」（testing your tests）？",
+    "explanation": "普通单元测试在检验业务代码对不对；变异测试则故意把代码改坏，看测试套件能否发现——它检验的是「你的测试本身够不够好」。存活的变异体就是测试套件的漏洞清单。StrykerJS 社区口号即「Who's testing the tests?」。",
+    "tags": ["mutation-testing", "概念"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它故意改坏源码，检验测试套件能否发现缺陷，即评估测试本身的有效性",
+        "isCorrect": true,
+        "description": "存活变异体 = 测试盲区清单，衡量的是测试质量"
+      },
+      {
+        "text": "它会自动帮你重写并优化测试代码",
+        "isCorrect": false,
+        "description": "Stryker 不改测试，只改源码并运行你既有的测试"
+      },
+      {
+        "text": "它专门测试测试框架（如 Vitest）自身的 bug",
+        "isCorrect": false,
+        "description": "对象是你写的测试用例，不是测试框架实现"
+      },
+      {
+        "text": "它通过测试覆盖率来反推测试数量是否足够",
+        "isCorrect": false,
+        "description": "数量不是重点，断言强度才是；且它不靠覆盖率反推"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，一个变异体（mutant）被判定为 killed（被杀死）的标准是？",
+    "explanation": "Killed 的判定标准是：该变异体激活时，测试套件里「至少一个」测试失败。反之 Survived（存活）的判定是「所有」测试都通过。这一「至少一个 vs 全部」的差异是基本概念。",
+    "tags": ["mutation-testing", "mutant-states"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "该变异体激活时，至少有一个测试失败",
+        "isCorrect": true,
+        "description": "只要一个测试红了就算抓到，判 killed"
+      },
+      {
+        "text": "该变异体激活时，所有测试都失败",
+        "isCorrect": false,
+        "description": "无须全失败，一个失败即可；全通过才叫存活"
+      },
+      {
+        "text": "该变异体导致编译报错",
+        "isCorrect": false,
+        "description": "编译错属 invalid 状态，不计入分数，更不算 killed"
+      },
+      {
+        "text": "该变异体被某个测试覆盖到（执行到）",
+        "isCorrect": false,
+        "description": "被执行到不等于被检测到，断言不够仍会存活"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试里，一个变异体被标记为 survived（存活）意味着什么？",
+    "explanation": "Survived 表示该变异体激活后，所有测试依然通过——即把代码改坏了测试也没发现。它属于 undetected，计入 mutation score 的分母，拖低分数，本质是测试套件的盲区清单，应优先去补断言。",
+    "tags": ["mutation-testing", "mutant-states"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "代码被改坏后测试仍全绿，暴露了测试盲区，应补断言",
+        "isCorrect": true,
+        "description": "属 undetected，计入分母拖低分数"
+      },
+      {
+        "text": "该变异体语法非法，无法运行",
+        "isCorrect": false,
+        "description": "语法非法属编译错（invalid），不是 survived"
+      },
+      {
+        "text": "测试质量很好，恰好杀掉了它",
+        "isCorrect": false,
+        "description": "杀掉叫 killed；survived 恰恰说明测试没抓到"
+      },
+      {
+        "text": "该行代码根本没被任何测试覆盖",
+        "isCorrect": false,
+        "description": "那是 No coverage 状态；survived 指被覆盖但未被检测"
+      }
+    ]
+  },
+  {
+    "stem": "关于变异测试的 mutation score（变异分数）官方精确公式，下列哪项正确？",
+    "explanation": "官方公式是 mutation score = detected / valid × 100，其中 detected = killed + timeout，valid = detected + undetected = killed + timeout + survived + noCoverage。常见简化口径 killed/(killed+survived) 只是直觉版，仅当不存在 timeout 和 no coverage 时才退化成立，并非官方精确公式。",
+    "tags": ["mutation-testing", "mutation-score", "公式"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "detected / valid，其中 detected = killed + timeout，valid 还包含 survived 与 no coverage",
+        "isCorrect": true,
+        "description": "官方精确公式：(killed+timeout) / (killed+timeout+survived+noCoverage)"
+      },
+      {
+        "text": "killed / (killed + survived)",
+        "isCorrect": false,
+        "description": "常见简化版，漏了 timeout 和 no coverage，非官方精确口径"
+      },
+      {
+        "text": "killed / total，total 含所有状态",
+        "isCorrect": false,
+        "description": "分母不能含 invalid / ignored / pending，否则被噪音稀释"
+      },
+      {
+        "text": "(killed + survived) / valid",
+        "isCorrect": false,
+        "description": "分子应是 detected（killed+timeout），survived 属未检测不进分子"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，常见的口径「mutation score = killed / (killed + survived)」相对官方公式有什么问题？",
+    "explanation": "这个口径是「简化直觉版」，方向对但不精确。官方分子是 detected = killed + timeout（timeout 也算被检测到），分母 valid 还包含 no coverage。只有当既无 timeout 又无 no coverage 时，它才退化为官方公式。出题时它常作为「易错简化项」。",
+    "tags": ["mutation-testing", "mutation-score", "纠偏"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它漏算了 timeout（应进分子）和 no coverage（应进分母），只是退化的近似",
+        "isCorrect": true,
+        "description": "无 timeout、无 no coverage 时才与官方公式相等"
+      },
+      {
+        "text": "它完全错误，方向都反了",
+        "isCorrect": false,
+        "description": "方向是对的（杀得越多分越高），只是不精确"
+      },
+      {
+        "text": "它把分子分母写反了",
+        "isCorrect": false,
+        "description": "分子分母位置正确，问题在遗漏了两个状态"
+      },
+      {
+        "text": "它多算了 runtime error，导致分数虚高",
+        "isCorrect": false,
+        "description": "该口径根本没涉及 runtime error；invalid 本就不计分"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，Timeout（超时）状态的变异体对 mutation score 的影响是？",
+    "explanation": "这是高频纠偏点：Timeout 计为 detected（被检测到），对分数有正贡献，与 killed 一样进入分子。直觉解释是变异体导致测试卡死/死循环触发了超时，等于测试以某种方式察觉到了异常。但它的状态名独立叫 Timeout，并不叫 Killed。",
+    "tags": ["mutation-testing", "timeout", "纠偏"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "计为 detected，进入分子对分数有正贡献，但状态名独立叫 Timeout 而非 Killed",
+        "isCorrect": true,
+        "description": "detected = killed + timeout，timeout 等同被检测到"
+      },
+      {
+        "text": "计为 survived，拖低分数",
+        "isCorrect": false,
+        "description": "恰相反，timeout 是被检测到的一侧，不是存活"
+      },
+      {
+        "text": "属 invalid，不计入分数",
+        "isCorrect": false,
+        "description": "invalid 是 runtime/compile error；timeout 正常计分且进分子"
+      },
+      {
+        "text": "状态名就是 Killed，二者完全等同",
+        "isCorrect": false,
+        "description": "计分等同（都进 detected），但状态名是独立的 Timeout"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，No coverage（无覆盖）状态的变异体是怎么回事？",
+    "explanation": "No coverage 表示该变异体所在代码没有被任何测试覆盖，因此变异后自然存活。它属于 undetected，计入 mutation score 的分母，拖低分数——而不是「没测到就不算」。它和 survived 一样是测试盲区，但盲区原因是「根本没测到」而非「测了但断言不够」。",
+    "tags": ["mutation-testing", "no-coverage", "mutant-states"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "该变异体没被任何测试覆盖而存活，属 undetected，计入分母拖低分数",
+        "isCorrect": true,
+        "description": "无覆盖也算未检测到，照样拉低分数"
+      },
+      {
+        "text": "没被覆盖所以不计入分数，不影响分母",
+        "isCorrect": false,
+        "description": "易错点：no coverage 仍进分母，会拖低分数"
+      },
+      {
+        "text": "等同于 killed，因为没测到就当作通过",
+        "isCorrect": false,
+        "description": "正相反，它属未检测到的一侧，拉低分数"
+      },
+      {
+        "text": "属于 invalid（无效变异体），既不进分子也不进分母",
+        "isCorrect": false,
+        "description": "invalid 是编译/运行时错误；no coverage 是有效变异体"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，Runtime error（运行时错误）与 Compile error（编译错误）状态的变异体如何参与计分？",
+    "explanation": "这两类都属于 invalid（无效变异体），既不进分子也不进分母，完全不计入 mutation score。invalid = runtime errors + compile errors。它们不同于 survived/no coverage（后两者计入分母拖低分数）。TS 项目常用 typescript-checker 在测试前剔除编译错变异体以减少 invalid。",
+    "tags": ["mutation-testing", "invalid", "mutant-states"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "二者均属 invalid，既不进分子也不进分母，完全不计分",
+        "isCorrect": true,
+        "description": "invalid = runtime errors + compile errors，不计入分数"
+      },
+      {
+        "text": "二者都计入分母，拖低分数",
+        "isCorrect": false,
+        "description": "拖低分数的是 survived 和 no coverage，不是 invalid"
+      },
+      {
+        "text": "二者都算 detected，进入分子",
+        "isCorrect": false,
+        "description": "detected 是 killed+timeout；invalid 根本不参与计分"
+      },
+      {
+        "text": "Runtime error 算 killed，Compile error 算 survived",
+        "isCorrect": false,
+        "description": "两者同属 invalid，不拆成 killed/survived"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，「基于覆盖代码的变异分数（mutation score based on covered code）」与标准分数的关键差异是？",
+    "explanation": "标准分数分母 valid 包含 no coverage；而「基于覆盖代码」的分数分母 covered = detected + survived（= killed + timeout + survived），把 no coverage 从分母剔除，只衡量被测试覆盖到的那部分代码的测试质量，因此通常比标准分数更高。",
+    "tags": ["mutation-testing", "mutation-score", "covered"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它把 no coverage 从分母剔除（covered = detected + survived），通常分数更高",
+        "isCorrect": true,
+        "description": "只衡量已覆盖代码的测试质量，分母不含无覆盖项"
+      },
+      {
+        "text": "它把 timeout 从分子剔除，因此分数更低",
+        "isCorrect": false,
+        "description": "timeout 仍在 detected 分子里，未被剔除"
+      },
+      {
+        "text": "它和标准分数完全相等",
+        "isCorrect": false,
+        "description": "只要存在 no coverage，两者就不同"
+      },
+      {
+        "text": "它的分母还额外加上了 invalid 变异体",
+        "isCorrect": false,
+        "description": "covered 不含 invalid；invalid 任何分数都不计"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试的 mutation score 与代码覆盖率（Code Coverage）在「衡量对象」上的本质区别是？",
+    "explanation": "覆盖率衡量代码「有没有被执行到」，变异分数衡量测试「能不能抓到被注入的缺陷」。一个空断言（无 expect）的测试照样能拿到高覆盖率，却拿不到高变异分数——前者是「跑没跑到」，后者是「测得准不准/断言够不够强」。",
+    "tags": ["mutation-testing", "code-coverage", "对比"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "覆盖率看代码是否被执行，变异分数看测试能否检测出注入的缺陷",
+        "isCorrect": true,
+        "description": "一个看「跑没跑到」，一个看「断言够不够强」"
+      },
+      {
+        "text": "两者衡量的是同一件事，只是单位不同",
+        "isCorrect": false,
+        "description": "对象不同：执行 vs 检测能力，不能互相替代"
+      },
+      {
+        "text": "覆盖率衡量断言强度，变异分数衡量代码行数",
+        "isCorrect": false,
+        "description": "完全说反了：断言强度恰是变异分数关注的"
+      },
+      {
+        "text": "变异分数只是覆盖率的另一种百分比表示",
+        "isCorrect": false,
+        "description": "二者各自独立，高覆盖率不蕴含高变异分数"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，「某模块代码覆盖率 100%，但变异分数偏低」最可能说明什么？",
+    "explanation": "这是变异测试相对覆盖率的核心价值场景：代码每一行都被执行过了（覆盖率 100%），但断言不充分——测试只是「调用了」代码，没真正校验返回值/行为。把 return a + b 改成 return a - b 测试依旧绿，就是典型「有覆盖、没断言」的假绿测试。",
+    "tags": ["mutation-testing", "code-coverage", "假绿测试"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "代码被执行到了但断言不足，存在「有覆盖、没断言」的假绿测试",
+        "isCorrect": true,
+        "description": "改坏返回值测试仍绿，正是变异测试能揪出的盲区"
+      },
+      {
+        "text": "覆盖率工具统计出错了",
+        "isCorrect": false,
+        "description": "两者本就度量不同，不是统计错误"
+      },
+      {
+        "text": "说明测试又快又好，无需改进",
+        "isCorrect": false,
+        "description": "低变异分数恰恰表明断言需要加强"
+      },
+      {
+        "text": "说明变异测试不适用于该模块",
+        "isCorrect": false,
+        "description": "正相反，这正是变异测试发挥价值的地方"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，「代码覆盖率 100% 能否保证变异分数也是 100%」？",
+    "explanation": "不能。覆盖率 100% 只保证每行代码都被执行过，但执行 ≠ 断言充分。即使所有行、所有分支都覆盖，只要断言不够强（甚至完全没断言），大量变异体仍会存活，变异分数照样低。覆盖率是变异测试的必要不充分条件。",
+    "tags": ["mutation-testing", "code-coverage", "误区"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不能，覆盖率 100% 只代表被执行，断言不足时变异分数仍会低",
+        "isCorrect": true,
+        "description": "执行到 ≠ 断言到，假绿测试照样刷满覆盖率"
+      },
+      {
+        "text": "能，覆盖率 100% 必然变异分数 100%",
+        "isCorrect": false,
+        "description": "无断言的测试可刷满覆盖率却杀不死任何变异体"
+      },
+      {
+        "text": "能，但仅当 Branches 覆盖率也 100% 时",
+        "isCorrect": false,
+        "description": "即便分支全覆盖，断言不足仍有大量存活变异体"
+      },
+      {
+        "text": "不能，因为覆盖率最高只能到 80%",
+        "isCorrect": false,
+        "description": "覆盖率可达 100%，问题不在数值上限而在断言"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，变异算子（mutator）把 `a < b` 改写为 `a <= b`，属于哪一类算子？",
+    "explanation": "把 < 改成 <= 或 >=、把 == 改成 != 这类「边界/相等」改写属于 Equality Operator（相等/边界算子）。它专门攻击边界条件，常因为缺少边界断言而存活，是定位「漏测边界」的利器。",
+    "tags": ["mutation-testing", "mutator", "equality-operator"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Equality Operator（相等/边界算子）",
+        "isCorrect": true,
+        "description": "< → <= / >= 是典型边界变异，攻击边界条件"
+      },
+      {
+        "text": "Arithmetic（算术算子）",
+        "isCorrect": false,
+        "description": "算术是 + → - 这类运算符替换，不改比较关系"
+      },
+      {
+        "text": "Logical Operator（逻辑算子）",
+        "isCorrect": false,
+        "description": "逻辑算子改的是 && / ||，不是比较运算"
+      },
+      {
+        "text": "Conditional Expression（条件表达式算子）",
+        "isCorrect": false,
+        "description": "那类把整个条件替换成 true/false，而非改比较符"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，把 `function f() { doSomething(); }` 的函数体清空成 `function f() {}`，属于哪类变异算子？",
+    "explanation": "清空整个块/函数体属于 Block Statement（块语句算子）。它直接删掉块内所有逻辑，若函数有副作用或返回值而测试没有校验，这种变异体就会存活，从而暴露「调用了但没验证效果」的测试。",
+    "tags": ["mutation-testing", "mutator", "block-statement"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Block Statement（块语句算子）",
+        "isCorrect": true,
+        "description": "清空函数体/块内逻辑，专揭未校验副作用的测试"
+      },
+      {
+        "text": "Method Expression（方法算子）",
+        "isCorrect": false,
+        "description": "方法算子改的是方法调用本身，如 sort 互换，不清空块"
+      },
+      {
+        "text": "Object Literal（对象字面量算子）",
+        "isCorrect": false,
+        "description": "那是把 { foo: 'bar' } 改成 {}，针对对象字面量"
+      },
+      {
+        "text": "Unary Operator（一元算子）",
+        "isCorrect": false,
+        "description": "一元算子改的是 +a / -a 这类前缀，不涉及块"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，把 `foo?.bar` 改写为 `foo.bar`（去掉可选链）属于哪类变异算子？",
+    "explanation": "去掉可选链 ?.（foo?.bar → foo.bar、foo?.[1] → foo[1]）属于 Optional Chaining（可选链算子）。当 foo 可能为 null/undefined 而测试没覆盖这种情况时，去掉 ?. 的变异体若不报错就会存活，暴露对空值路径的漏测。",
+    "tags": ["mutation-testing", "mutator", "optional-chaining"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Optional Chaining（可选链算子）",
+        "isCorrect": true,
+        "description": "去掉 ?. 专攻对 null/undefined 路径的漏测"
+      },
+      {
+        "text": "Equality Operator（相等/边界算子）",
+        "isCorrect": false,
+        "description": "相等算子改比较运算符，与可选链无关"
+      },
+      {
+        "text": "Method Expression（方法算子）",
+        "isCorrect": false,
+        "description": "方法算子针对方法调用，?. 不是方法"
+      },
+      {
+        "text": "Unary Operator（一元算子）",
+        "isCorrect": false,
+        "description": "一元算子是 +a/-a，与可选链无关"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，StrykerJS 把空字符串 `\"\"` 变异成 `\"Stryker was here!\"`，属于哪类算子，又有何含义？",
+    "explanation": "String Literal（字符串字面量算子）的「反向」变异：\"foo\" → \"\"，而 \"\" → \"Stryker was here!\"。这是 Stryker 的标志性彩蛋式变异。若测试没校验字符串内容，这种变异体就会存活，提示字符串相关断言不足。",
+    "tags": ["mutation-testing", "mutator", "string-literal"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "String Literal 算子的反向变异，空串被填成标志性字符串，揭示字符串断言不足",
+        "isCorrect": true,
+        "description": "「Stryker was here!」是其彩蛋式字符串变异"
+      },
+      {
+        "text": "属于 Object Literal 算子",
+        "isCorrect": false,
+        "description": "对象字面量算子针对 {} ，不处理字符串"
+      },
+      {
+        "text": "属于 Regex 算子",
+        "isCorrect": false,
+        "description": "正则算子改的是正则模式，不是普通字符串字面量"
+      },
+      {
+        "text": "这是一个 bug，不是有意设计的变异",
+        "isCorrect": false,
+        "description": "它是官方有意设计的 String Literal 反向变异"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，等价变异体（equivalent mutant）指的是什么？",
+    "explanation": "等价变异体 = 变异后的代码与原代码功能完全等价（行为没有任何可观测差异），因此理论上任何测试都无法杀死它。它是变异测试无法达到 100% 分数的根本原因之一。经典例子：求 max 的 return a < b ? b : a 把 < 改成 <=，当 a == b 时两者结果都返回 a，对所有输入输出相同。",
+    "tags": ["mutation-testing", "equivalent-mutant", "概念"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "变异后行为与原码完全等价、任何测试都杀不死的变异体",
+        "isCorrect": true,
+        "description": "是 100% 分数常不可达的根因之一"
+      },
+      {
+        "text": "两个内容完全相同、重复生成的变异体",
+        "isCorrect": false,
+        "description": "重复无关；关键在「行为等价、无可观测差异」"
+      },
+      {
+        "text": "被 typescript-checker 提前剔除的编译错变异体",
+        "isCorrect": false,
+        "description": "那是 invalid 变异体，与等价变异体是两回事"
+      },
+      {
+        "text": "因 no coverage 而存活的变异体",
+        "isCorrect": false,
+        "description": "no coverage 是没测到；等价变异体是测了也杀不死"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，对求 max 写法 `return a < b ? b : a`，把 `<` 变成 `<=` 后这个变异体会怎样？",
+    "explanation": "这是等价变异体的经典例子。当 a < b 与 a <= b 唯一不同点在 a == b 时：原式返回 a，变异式返回 b，但此时 a == b，结果都是同一个值。对所有输入输出完全相同，任何断言都无法区分，因此它是等价变异体，会永远存活。",
+    "tags": ["mutation-testing", "equivalent-mutant", "案例"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是等价变异体，对所有输入输出相同，任何测试都杀不死，会永久存活",
+        "isCorrect": true,
+        "description": "a == b 时原式与变异式都返回同一个值"
+      },
+      {
+        "text": "补一个 a == b 的边界用例就能稳定杀死它",
+        "isCorrect": false,
+        "description": "a == b 时两式结果相同，断言无法区分，杀不死"
+      },
+      {
+        "text": "它会被判为 timeout",
+        "isCorrect": false,
+        "description": "没有死循环或超时，只是行为等价而存活"
+      },
+      {
+        "text": "它会被判为 compile error",
+        "isCorrect": false,
+        "description": "语法合法可编译，只是语义等价"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，发现等价变异体（确认无法被任何测试杀死）后，推荐的处理方式是？",
+    "explanation": "正确处理是用源码注释指令带原因显式标记忽略，如 // Stryker disable next-line EqualityOperator: 等价变异体，无法区分。而不是硬写一个无意义的测试去「凑」杀死它。反模式则是把自己没写好的测试当等价变异体随手 disable——只有真正功能等价才该忽略。",
+    "tags": ["mutation-testing", "equivalent-mutant", "disable"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 // Stryker disable next-line <算子>: 原因 显式标记并写明原因",
+        "isCorrect": true,
+        "description": "带 reason 标记忽略，保持团队可追溯"
+      },
+      {
+        "text": "硬写一个无意义测试把它「凑」杀掉",
+        "isCorrect": false,
+        "description": "等价变异体杀不死，凑出的测试无意义且误导"
+      },
+      {
+        "text": "直接降低 thresholds.break 把分数门槛拉到 0",
+        "isCorrect": false,
+        "description": "掩盖问题且削弱整体门禁，不是针对性处理"
+      },
+      {
+        "text": "删除这段源代码",
+        "isCorrect": false,
+        "description": "代码本身没问题，删掉会破坏业务逻辑"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的配置项 `coverageAnalysis` 默认值（v5 起）是哪个？",
+    "explanation": "coverageAnalysis 默认是 perTest（自 Stryker v5 起，旧版默认是 off）。perTest 会记录每个测试覆盖了哪些代码，每个变异体只跑覆盖它的那些测试，是三档里最快的，但要求测试相互独立、无共享状态泄漏。",
+    "tags": ["mutation-testing", "stryker", "coverageAnalysis"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "perTest",
+        "isCorrect": true,
+        "description": "v5 起默认，每个变异体只跑覆盖它的测试，最快"
+      },
+      {
+        "text": "off",
+        "isCorrect": false,
+        "description": "off 是旧默认，每个变异体跑全部测试，最慢"
+      },
+      {
+        "text": "all",
+        "isCorrect": false,
+        "description": "all 会跳过无覆盖变异体，但不是默认值"
+      },
+      {
+        "text": "auto",
+        "isCorrect": false,
+        "description": "并无 auto 这一档"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的 `coverageAnalysis: perTest` 模式有什么前提要求？",
+    "explanation": "perTest 记录「每个测试覆盖了哪些代码」，再对每个变异体只跑覆盖它的测试，因此要求测试之间相互独立、无共享状态泄漏。若测试间有状态泄漏（如共享可变全局），perTest 可能漏跑覆盖映射不准的测试，导致结果不准确。",
+    "tags": ["mutation-testing", "stryker", "perTest", "前提"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "测试必须相互独立、无共享状态泄漏，否则覆盖映射不准会漏跑测试",
+        "isCorrect": true,
+        "description": "perTest 依赖精确的「测试↔覆盖代码」映射"
+      },
+      {
+        "text": "必须关闭所有并发（concurrency 设为 1）",
+        "isCorrect": false,
+        "description": "perTest 与并发无强绑定，前提是测试独立"
+      },
+      {
+        "text": "必须使用 istanbul 覆盖率 provider",
+        "isCorrect": false,
+        "description": "无此强制要求，前提在于测试独立性"
+      },
+      {
+        "text": "源码里不能有任何条件分支",
+        "isCorrect": false,
+        "description": "毫无关系；分支正是变异测试要考察的对象"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的 `thresholds` 里，三个值中哪一个才决定 CI 是否失败（退出码 1）？",
+    "explanation": "高频纠偏点：thresholds 里只有 break 决定退出码——分数 < break 则进程退出码 1（CI 失败）。high 和 low 仅影响报告配色（high 绿、low~high 黄/橙）。break 默认是 null，意味着「永不让构建失败」，要做 CI 门禁必须显式设 break。",
+    "tags": ["mutation-testing", "stryker", "thresholds", "CI"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "break：分数低于它则退出码 1；high/low 仅控制报告配色",
+        "isCorrect": true,
+        "description": "默认 break: null 永不 fail，门禁须显式设 break"
+      },
+      {
+        "text": "high：分数低于 high 就让 CI 失败",
+        "isCorrect": false,
+        "description": "high 只决定绿色着色，不影响退出码"
+      },
+      {
+        "text": "low：分数低于 low 就让 CI 失败",
+        "isCorrect": false,
+        "description": "low 只决定黄/橙着色，不影响退出码"
+      },
+      {
+        "text": "三个值任意一个不达标都会让 CI 失败",
+        "isCorrect": false,
+        "description": "只有 break 影响退出码，high/low 纯染色"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的配置项 `mutate` 与 `ignorePatterns` 在职责上的区别是？",
+    "explanation": "mutate 用 glob 选「要被变异的源文件」（默认排除测试文件，还支持 src/app.js:1-11 这种范围语法）；ignorePatterns 选「不复制进沙箱的目录」（如 dist、coverage，用于减小沙箱体积/加速）。两者目的不同，不可混淆。",
+    "tags": ["mutation-testing", "stryker", "mutate", "ignorePatterns"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "mutate 圈定「要被变异的源文件」，ignorePatterns 圈定「不复制进沙箱的目录」",
+        "isCorrect": true,
+        "description": "一个决定变异范围，一个决定沙箱内容"
+      },
+      {
+        "text": "两者等价，都是排除测试文件",
+        "isCorrect": false,
+        "description": "职责不同，且 mutate 默认本就排除测试文件"
+      },
+      {
+        "text": "mutate 排除目录，ignorePatterns 选择变异文件",
+        "isCorrect": false,
+        "description": "说反了：mutate 选变异文件，ignorePatterns 排沙箱目录"
+      },
+      {
+        "text": "ignorePatterns 用于忽略某些变异算子",
+        "isCorrect": false,
+        "description": "忽略算子靠 // Stryker disable 注释，不靠 ignorePatterns"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 在 TS 项目里，配置项 `disableTypeChecks` 默认值（v7 起）及其作用是？",
+    "explanation": "disableTypeChecks 默认是 true（自 v7 起）。它会在文件顶部自动插入 // @ts-nocheck，关闭类型检查，防止变异（如改了类型不匹配的代码）引发 TS 编译错误、把本可有效的变异体变成 invalid。也可传 glob 选择性关闭。",
+    "tags": ["mutation-testing", "stryker", "disableTypeChecks", "typescript"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 true，自动插 // @ts-nocheck 防止变异触发 TS 编译错误",
+        "isCorrect": true,
+        "description": "减少因类型不匹配产生的 invalid 变异体"
+      },
+      {
+        "text": "默认 false，需手动开启才会跳过类型检查",
+        "isCorrect": false,
+        "description": "v7 起默认就是 true，自动跳过"
+      },
+      {
+        "text": "它会彻底删除项目里的 tsconfig.json",
+        "isCorrect": false,
+        "description": "只在沙箱副本插 @ts-nocheck，不动你的 tsconfig"
+      },
+      {
+        "text": "它用于开启更严格的类型检查以发现更多变异",
+        "isCorrect": false,
+        "description": "正相反，它是关闭类型检查，避免编译错"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 中，TS 项目想在「跑测试之前」就剔除会导致编译错误的变异体，应如何配置？",
+    "explanation": "配置 checkers: [\"typescript\"] 并安装 @stryker-mutator/typescript-checker 插件。它作为校验器在测试前对变异体做类型检查，把会编译报错的变异体提前剔除（标为 compile error / invalid），从而减少在它们身上浪费的测试时间。",
+    "tags": ["mutation-testing", "stryker", "typescript-checker", "checkers"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "设 checkers: [\"typescript\"] 并装 @stryker-mutator/typescript-checker",
+        "isCorrect": true,
+        "description": "校验器在测试前剔除编译错变异体，减少 invalid 浪费"
+      },
+      {
+        "text": "把 disableTypeChecks 设为 false 即可",
+        "isCorrect": false,
+        "description": "那只是恢复类型检查，不会在测试前剔除变异体"
+      },
+      {
+        "text": "在 reporters 里加上 \"typescript\"",
+        "isCorrect": false,
+        "description": "reporters 控制报告输出，与剔除变异体无关"
+      },
+      {
+        "text": "把 testRunner 改成 \"typescript\"",
+        "isCorrect": false,
+        "description": "没有 typescript 这个 testRunner，校验靠 checkers"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 用 Vitest 跑变异测试时，对应的官方 runner 插件包名是哪个？",
+    "explanation": "Vitest 的官方插件是 @stryker-mutator/vitest-runner（带 @stryker-mutator/ scope、用连字符而非驼峰）。同理 Jest 是 @stryker-mutator/jest-runner、Mocha 是 @stryker-mutator/mocha-runner、Karma 是 @stryker-mutator/karma-runner。",
+    "tags": ["mutation-testing", "stryker", "vitest-runner", "包名"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "@stryker-mutator/vitest-runner",
+        "isCorrect": true,
+        "description": "带 @stryker-mutator/ scope，连字符命名"
+      },
+      {
+        "text": "@stryker/vitest",
+        "isCorrect": false,
+        "description": "scope 是 @stryker-mutator 不是 @stryker"
+      },
+      {
+        "text": "stryker-vitest-runner",
+        "isCorrect": false,
+        "description": "缺少 @stryker-mutator/ scope 前缀"
+      },
+      {
+        "text": "@stryker-mutator/vitestRunner",
+        "isCorrect": false,
+        "description": "用连字符 vitest-runner，不是驼峰"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的 `@stryker-mutator/vitest-runner` 对 vitest 的 peerDependencies 要求是什么？",
+    "explanation": "vitest-runner 不内置 vitest，需项目自带；其 peerDependencies 写的是 vitest >= 2.0.0（兼容 v2/v3/v4）。v9.4.0 起新增了对 Vitest v4 的支持，但这并不意味着「只支持 v4」——peer 范围仍是 >= 2.0.0。",
+    "tags": ["mutation-testing", "stryker", "vitest-runner", "peer"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "vitest >= 2.0.0（兼容 v2/v3/v4），需项目自带 vitest",
+        "isCorrect": true,
+        "description": "v9.4+ 新增 v4 支持，但 peer 范围仍是 >=2"
+      },
+      {
+        "text": "只支持 vitest v4，低版本不可用",
+        "isCorrect": false,
+        "description": "peer 是 >=2.0.0，v2/v3 同样兼容"
+      },
+      {
+        "text": "vitest 已内置在 runner 里，无需安装",
+        "isCorrect": false,
+        "description": "vitest 是 peer，必须项目自带"
+      },
+      {
+        "text": "vitest >= 1.0.0 即可",
+        "isCorrect": false,
+        "description": "下限是 2.0.0，不是 1.0.0"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 用 `@stryker-mutator/vitest-runner` 时，配置里的 `coverageAnalysis` 字段会怎样？",
+    "explanation": "高频限制：vitest-runner 会忽略 coverageAnalysis 字段，始终强制使用 perTest。所以即便你写 off 或 all 也无效。这是 Vitest runner 的三大限制之一（另两条：仅支持 threads: true 模式；不支持 Browser Mode，以 runner 文档为准）。",
+    "tags": ["mutation-testing", "stryker", "vitest-runner", "限制"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "被忽略，vitest-runner 始终强制 perTest，写 off/all 无效",
+        "isCorrect": true,
+        "description": "Vitest runner 的标志性限制之一"
+      },
+      {
+        "text": "必须显式设为 off，否则 runner 会报错",
+        "isCorrect": false,
+        "description": "不会报错，字段直接被忽略并恒用 perTest"
+      },
+      {
+        "text": "默认会被改写为 all 以提升兼容性",
+        "isCorrect": false,
+        "description": "恒为 perTest，不是 all"
+      },
+      {
+        "text": "完全生效，可自由切换三档",
+        "isCorrect": false,
+        "description": "Vitest runner 下该字段无效，不能切换"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 启动变异测试运行的命令是哪一条？",
+    "explanation": "运行命令是 npx stryker run（带 run 子命令），不是 stryker 裸跑。初始化用 npm init stryker@latest（交互式生成 stryker.config.mjs）；调试可加 --logLevel trace；增量模式加 --incremental。",
+    "tags": ["mutation-testing", "stryker", "cli"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "npx stryker run",
+        "isCorrect": true,
+        "description": "带 run 子命令，增量加 --incremental，调试加 --logLevel trace"
+      },
+      {
+        "text": "npx stryker",
+        "isCorrect": false,
+        "description": "需要 run 子命令，裸跑 stryker 不会启动运行"
+      },
+      {
+        "text": "npx stryker mutate",
+        "isCorrect": false,
+        "description": "无 mutate 子命令；mutate 是配置字段，运行用 run"
+      },
+      {
+        "text": "npx stryker test",
+        "isCorrect": false,
+        "description": "子命令是 run 而非 test"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的源码注释禁用指令里，下面哪条能「只关闭下一行某算子」并写明原因？",
+    "explanation": "格式为 // Stryker [disable|restore] [next-line] <算子列表>[: 原因]。注释必须以大写 // Stryker 开头。next-line 限定只作用于下一行；省略 next-line 则从该行起持续生效直到对应 restore。带 : 原因 推荐用于可追溯。",
+    "tags": ["mutation-testing", "stryker", "disable-mutants"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "// Stryker disable next-line EqualityOperator: 等价变异体，无法区分",
+        "isCorrect": true,
+        "description": "大写 Stryker + disable + next-line + 算子 + : 原因"
+      },
+      {
+        "text": "// stryker-disable-next-line EqualityOperator",
+        "isCorrect": false,
+        "description": "格式错：须大写 // Stryker 开头并用空格分词"
+      },
+      {
+        "text": "/* Stryker: disable EqualityOperator */",
+        "isCorrect": false,
+        "description": "语法不符；指令是行注释 // Stryker disable 形式"
+      },
+      {
+        "text": "// @stryker-disable EqualityOperator next-line",
+        "isCorrect": false,
+        "description": "无 @stryker-disable 写法，且 next-line 位置也不对"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的 HTML 报告中，解读时最该重点盯哪两类状态的变异体？",
+    "explanation": "HTML 报告把每个文件按行展示，把 survived（存活）和 no coverage（无覆盖）定位到具体行列——它们就是测试盲区清单。解读重点是盯这两类：survived 优先补断言杀掉，no coverage 说明该处根本没被测试覆盖。",
+    "tags": ["mutation-testing", "stryker", "html-report"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Survived 与 No coverage——它们是定位到行列的测试盲区清单",
+        "isCorrect": true,
+        "description": "survived 补断言，no coverage 补覆盖"
+      },
+      {
+        "text": "Killed 与 Timeout——重点确认它们被正确杀死",
+        "isCorrect": false,
+        "description": "这两类已是 detected，盯它们意义不大"
+      },
+      {
+        "text": "Compile error 与 Runtime error——它们拉低了分数",
+        "isCorrect": false,
+        "description": "二者属 invalid 不计分，不是测试盲区重点"
+      },
+      {
+        "text": "Pending 与 Ignored——它们最影响最终分数",
+        "isCorrect": false,
+        "description": "两者都不计分；盲区是 survived/no coverage"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 中，面对一个 survived（存活）的变异体，最优先的处理方式是？",
+    "explanation": "首选是补断言：survived 说明测试没校验到这块逻辑，去对应测试加/加强断言把它杀掉。只有当确属等价变异体或确实不该测时，才用 // Stryker disable 标记忽略并写明 reason。直接调低门槛或删代码都是错误处理。",
+    "tags": ["mutation-testing", "stryker", "survived", "处理"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "去对应测试补强断言，把它杀掉",
+        "isCorrect": true,
+        "description": "survived 的本质是断言不足，补断言最对症"
+      },
+      {
+        "text": "一律用 // Stryker disable 忽略掉",
+        "isCorrect": false,
+        "description": "只有真正等价变异体才该忽略，否则掩盖盲区"
+      },
+      {
+        "text": "把 thresholds.break 调低让分数达标",
+        "isCorrect": false,
+        "description": "调门槛是掩耳盗铃，没解决测试盲区"
+      },
+      {
+        "text": "删掉这段源码以消除变异体",
+        "isCorrect": false,
+        "description": "代码可能是有用逻辑，删它破坏功能"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS + Vitest + TS 最小可用配置里，下面哪份 `stryker.config.json` 是合理的？",
+    "explanation": "最小配置需指定 testRunner: \"vitest\" 并加载 @stryker-mutator/vitest-runner 插件，建议带 $schema 头获得 IDE 智能提示。注意 testRunner 默认是 command（仅看退出码、性能差），必须显式换成 vitest 专用插件。",
+    "tags": ["mutation-testing", "stryker", "vitest", "配置"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "{ \"testRunner\": \"vitest\", \"plugins\": [\"@stryker-mutator/vitest-runner\"] }",
+        "isCorrect": true,
+        "description": "指定 vitest runner 并加载对应插件，最小可用"
+      },
+      {
+        "text": "{ \"testRunner\": \"command\" }（保留默认即可）",
+        "isCorrect": false,
+        "description": "command 只看退出码、性能差，未接 Vitest 专用插件"
+      },
+      {
+        "text": "{ \"runner\": \"vitest\" }",
+        "isCorrect": false,
+        "description": "字段名是 testRunner 不是 runner"
+      },
+      {
+        "text": "{ \"testRunner\": \"vitest\", \"coverageAnalysis\": \"off\" }",
+        "isCorrect": false,
+        "description": "缺插件且 vitest 下 coverageAnalysis 被忽略，off 无效"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试中，对断言不足的 clamp 测试（只测了区间内一条路径），变异测试相比覆盖率多暴露了什么？",
+    "explanation": "对 clamp(value,min,max)，若测试只断言 clamp(5,0,10)===5，没覆盖 value<min、value>max 两条边界分支。把 if (value < min) 的 < 改成 <=（Equality Operator），测试依旧全绿 → 该变异体 survived。HTML 报告会把那两行标为存活，提示「这里缺边界断言」——这正是变异测试比覆盖率多抓到的部分。",
+    "tags": ["mutation-testing", "vitest", "案例", "边界"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "边界变异体存活，揭示缺少 value<min / value>max 的边界断言",
+        "isCorrect": true,
+        "description": "补 clamp(-3,0,10)===0、clamp(99,0,10)===10 即可杀死"
+      },
+      {
+        "text": "暴露出代码有性能瓶颈",
+        "isCorrect": false,
+        "description": "变异测试不测性能，而是测断言强度"
+      },
+      {
+        "text": "暴露出 clamp 函数本身有 bug",
+        "isCorrect": false,
+        "description": "暴露的是测试盲区，不是源码 bug"
+      },
+      {
+        "text": "什么都没多暴露，覆盖率已能发现一切",
+        "isCorrect": false,
+        "description": "覆盖率发现不了「执行到但断言不足」的边界盲区"
+      }
+    ]
+  },
+  {
+    "stem": "变异测试运行很慢的根本原因，以及常用的提速手段，下列哪项最准确？",
+    "explanation": "慢的根因是「N 个变异体 × 测试套件」——一个文件可能生成几十上百个变异体，每个都要跑测试，比普通测试慢一两个数量级。提速三板斧：coverageAnalysis: perTest（只跑覆盖该变异体的测试）、incremental 增量（只重测变化部分）、缩小 mutate 范围（只对核心逻辑跑），再配合 concurrency 并行。",
+    "tags": ["mutation-testing", "性能", "提速"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "根因是 N 个变异体×测试套件；提速靠 perTest + incremental + 缩小 mutate + 并发",
+        "isCorrect": true,
+        "description": "从「跑多少测试」「测多少范围」「是否复用」三方向降本"
+      },
+      {
+        "text": "根因是磁盘 IO；提速靠把项目放进内存盘",
+        "isCorrect": false,
+        "description": "瓶颈是反复跑测试，不是磁盘 IO"
+      },
+      {
+        "text": "根因是网络请求；提速靠 mock 网络",
+        "isCorrect": false,
+        "description": "变异测试本地运行，与网络无关"
+      },
+      {
+        "text": "根因是 TS 类型检查太慢；提速靠开启 disableTypeChecks",
+        "isCorrect": false,
+        "description": "disableTypeChecks 是防编译错，不是主要提速来源"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 的 `incremental`（增量）模式主要解决什么问题？",
+    "explanation": "incremental 模式把上次运行的结果存进增量文件（默认 reports/stryker-incremental.json），后续运行只重测发生变化的部分，从而大幅缩短 CI/本地反复运行的时长。命令行用 --incremental 开启，增量文件可纳入 CI 缓存复用。",
+    "tags": ["mutation-testing", "stryker", "incremental", "性能"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "存结果到增量文件，后续只重测变化部分以加速反复运行",
+        "isCorrect": true,
+        "description": "默认文件 reports/stryker-incremental.json，可纳入缓存"
+      },
+      {
+        "text": "把变异体增量地分批生成以省内存",
+        "isCorrect": false,
+        "description": "它复用历史结果减少重跑，不是分批生成省内存"
+      },
+      {
+        "text": "逐步提高 thresholds.break 以渐进提升门槛",
+        "isCorrect": false,
+        "description": "与阈值无关，是结果复用的提速机制"
+      },
+      {
+        "text": "增量地把报告上传到 dashboard",
+        "isCorrect": false,
+        "description": "上传 dashboard 是 reporter 的事，与增量模式无关"
+      }
+    ]
+  },
+  {
+    "stem": "团队要把变异测试纳入实践，「与代码覆盖率配合的推荐顺序」是？",
+    "explanation": "推荐先覆盖率、后变异：覆盖率先保证「代码被执行到」（便宜、快），变异测试再保证「断言够强」（贵、慢）。两者是「广度→深度」的递进。跳过覆盖率直接上变异测试会在大量 no coverage 上浪费算力。",
+    "tags": ["mutation-testing", "code-coverage", "最佳实践", "顺序"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先用覆盖率保证「执行到」，再用变异测试保证「断言强」，广度到深度递进",
+        "isCorrect": true,
+        "description": "覆盖率快而便宜，变异慢而贵，应先广后深"
+      },
+      {
+        "text": "先变异测试，后覆盖率",
+        "isCorrect": false,
+        "description": "跳过覆盖率会在大量 no coverage 上白跑变异，浪费算力"
+      },
+      {
+        "text": "两者互斥，有了变异测试就不需要覆盖率",
+        "isCorrect": false,
+        "description": "二者互补：一个保证执行，一个保证断言"
+      },
+      {
+        "text": "只用覆盖率即可，变异测试可有可无",
+        "isCorrect": false,
+        "description": "覆盖率发现不了假绿测试，变异测试不可替代"
+      }
+    ]
+  },
+  {
+    "stem": "关于变异分数（mutation score）的定位，下列哪种态度是合理的？",
+    "explanation": "应把变异分数当「质量信号」用来发现测试盲区、指导补断言，而不是当成硬性 KPI 盲目追 100%。由于等价变异体的存在，100% 往往不可达；为刷分硬写无意义测试、把等价变异体也硬测，都是反模式。",
+    "tags": ["mutation-testing", "mutation-score", "最佳实践"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "当作质量信号用于发现盲区、指导补断言，不盲目把它当 KPI 追 100%",
+        "isCorrect": true,
+        "description": "等价变异体令 100% 常不可达，硬刷会逼出无意义测试"
+      },
+      {
+        "text": "必须强制达到 100%，否则视为测试不合格",
+        "isCorrect": false,
+        "description": "等价变异体使 100% 常不可达，强制会逼出垃圾测试"
+      },
+      {
+        "text": "分数只是好玩，没有任何指导意义",
+        "isCorrect": false,
+        "description": "它是定位测试盲区的有效信号，不该忽视"
+      },
+      {
+        "text": "分数越低越好，说明代码越简单",
+        "isCorrect": false,
+        "description": "低分意味着测试盲区多，方向理解反了"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 9.x 的运行环境要求中，对 Node.js 的最低版本要求是？",
+    "explanation": "Stryker v9.0.0（2025-05-13）起放弃 Node 18，要求 Node >= 20.0.0。npm view @stryker-mutator/core engines 实测为 { node: '>=20.0.0' }。升级 9.x 前需确认 CI/本地 Node 已是 20+。",
+    "tags": ["mutation-testing", "stryker", "node", "版本"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Node >= 20.0.0",
+        "isCorrect": true,
+        "description": "v9.0.0 起放弃 Node 18，要求 20+"
+      },
+      {
+        "text": "Node >= 18.0.0",
+        "isCorrect": false,
+        "description": "v9 起已放弃 Node 18，下限提到 20"
+      },
+      {
+        "text": "Node >= 16.0.0",
+        "isCorrect": false,
+        "description": "过旧，9.x 要求 Node 20+"
+      },
+      {
+        "text": "Node >= 22.0.0",
+        "isCorrect": false,
+        "description": "下限是 20，不是 22"
+      }
+    ]
+  },
+  {
+    "stem": "StrykerJS 9.6 起，`concurrency` 配置项新增了什么写法？",
+    "explanation": "v9.6.0（2026-02-27）起 concurrency 支持百分比字符串，如 \"50%\"（按 CPU 核数的百分比计算 worker 数，最小为 1）。此前只能写数字。默认值仍是 cpu<=4 ? cpu : cpu-1。",
+    "tags": ["mutation-testing", "stryker", "concurrency", "版本"],
+    "categories": [
+      ["技术方向", "变异测试"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "支持百分比字符串如 \"50%\"（按 CPU 核数百分比算 worker，最小 1）",
+        "isCorrect": true,
+        "description": "v9.6 新特性，此前只能写数字"
+      },
+      {
+        "text": "支持写成 \"auto\" 让 Stryker 自动调优",
+        "isCorrect": false,
+        "description": "新增的是百分比写法，并无 \"auto\" 选项"
+      },
+      {
+        "text": "支持负数表示预留的核数",
+        "isCorrect": false,
+        "description": "无负数语义，新增的是百分比字符串"
+      },
+      {
+        "text": "改成必须写 CPU 核名而非数字",
+        "isCorrect": false,
+        "description": "数字依然可用，只是额外支持百分比"
+      }
+    ]
+  }
+]
