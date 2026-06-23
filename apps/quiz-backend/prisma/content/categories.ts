@@ -546,8 +546,22 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         sort: 7,
         children: [
           {
-            name: "浏览器工具（Chrome DevTools / Firefox Developer Tools / React DevTools / Vue DevTools）",
+            // 2026-06-23 选型调研定稿：占位单叶 → 7 叶。判据＝「浏览器内置 DevTools 或框架/状态调试扩展（调试·审查类，非审计类）」。
+            // 排序按机制聚类：内置 DevTools（三大渲染引擎 Blink→Gecko→WebKit）→ 框架组件树扩展（React→Vue→Angular）→ 状态调试扩展（Redux）。
+            // 边界去重：审计类 Lighthouse/Webpack Bundle Analyzer/rollup-plugin-visualizer → 性能优化·性能评估；
+            // 可访问性自动化（axe 等）→ 前端测试·可访问性测试；
+            // Edge DevTools 同属 Chromium、与 Chrome 高度重叠，并入 Chrome DevTools 笔记对比带过（3D View/CSS Overview/Memory Detached elements），不单列。
+            name: "浏览器工具",
             sort: 1,
+            children: [
+              { name: "Chrome DevTools", sort: 1 },
+              { name: "Firefox Developer Tools", sort: 2 },
+              { name: "Safari Web Inspector", sort: 3 },
+              { name: "React DevTools", sort: 4 },
+              { name: "Vue DevTools", sort: 5 },
+              { name: "Angular DevTools", sort: 6 },
+              { name: "Redux DevTools", sort: 7 },
+            ],
           },
           {
             name: "性能优化（异步组件 / 按需引入 / 虚拟化 / 事件及属性优化 / 性能评估）",
