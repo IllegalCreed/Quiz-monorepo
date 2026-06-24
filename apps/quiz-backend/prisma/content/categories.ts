@@ -51,9 +51,55 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "三大语言",
             sort: 1,
             children: [
-              { name: "HTML", sort: 1 },
-              { name: "JavaScript", sort: 2 },
-              { name: "CSS", sort: 3 },
+              {
+                // 2026-06-24 三大语言开篇章：HTML 由单叶升级为父节点，下挂 7 聚焦子叶
+                //（spec: docs/plans/20260624-web-base-three-languages-trilogy.md）。
+                // 叶子名带「HTML」前缀保证组内唯一（import 按 groupName+leafName 定位）。
+                name: "HTML",
+                sort: 1,
+                children: [
+                  { name: "HTML 文档结构与元数据", sort: 1 },
+                  { name: "HTML 语义化与文档大纲", sort: 2 },
+                  { name: "HTML 文本内容与超链接", sort: 3 },
+                  { name: "HTML 表单与约束校验", sort: 4 },
+                  { name: "HTML 图片与多媒体", sort: 5 },
+                  { name: "HTML 表格", sort: 6 },
+                  { name: "HTML 交互元素与全局属性", sort: 7 },
+                ],
+              },
+              {
+                // JavaScript 父节点 · 9 聚焦子叶（DOM/事件留本章 J9，事件循环归 J7 异步）
+                name: "JavaScript",
+                sort: 2,
+                children: [
+                  { name: "JavaScript 语言基础与类型系统", sort: 1 },
+                  { name: "JavaScript 函数与作用域", sort: 2 },
+                  { name: "JavaScript 对象与原型继承", sort: 3 },
+                  { name: "JavaScript 类与面向对象", sort: 4 },
+                  { name: "JavaScript 数组与可迭代协议", sort: 5 },
+                  { name: "JavaScript 内建对象与数据结构", sort: 6 },
+                  { name: "JavaScript 异步编程", sort: 7 },
+                  { name: "JavaScript 生成器与元编程", sort: 8 },
+                  { name: "JavaScript DOM 与事件", sort: 9 },
+                ],
+              },
+              {
+                // CSS 父节点 · 10 聚焦子叶（含独立排版叶 C10）
+                name: "CSS",
+                sort: 3,
+                children: [
+                  { name: "CSS 选择器与层叠", sort: 1 },
+                  { name: "CSS 盒模型与尺寸", sort: 2 },
+                  { name: "CSS 定位与层叠上下文", sort: 3 },
+                  { name: "CSS Flexbox 弹性布局", sort: 4 },
+                  { name: "CSS Grid 网格布局", sort: 5 },
+                  { name: "CSS 响应式与现代查询", sort: 6 },
+                  { name: "CSS 颜色与背景", sort: 7 },
+                  { name: "CSS 过渡、动画与视觉", sort: 8 },
+                  { name: "CSS 自定义属性、函数与工程化", sort: 9 },
+                  { name: "CSS 文字排版与字体", sort: 10 },
+                ],
+              },
             ],
           },
           {
