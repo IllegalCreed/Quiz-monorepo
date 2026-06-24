@@ -1,0 +1,1676 @@
+[
+  {
+    "stem": "JavaScript 是单线程的，但能并发处理网络请求、定时器等任务，靠的是什么机制？",
+    "explanation": "JavaScript 引擎本身单线程、同一时刻只跑一段代码，但运行时（浏览器/Node）提供「事件循环（Event Loop）」配合宿主环境的多线程能力：耗时操作（网络、定时器、I/O）交给宿主异步执行，完成后把回调塞进任务队列，事件循环在调用栈空闲时取出执行，从而实现非阻塞并发。",
+    "tags": ["javascript", "event-loop", "并发模型"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "事件循环不断从任务队列取回调，在调用栈空闲时执行",
+        "isCorrect": true,
+        "description": "耗时操作交给宿主，完成后回调入队，主线程不被阻塞"
+      },
+      {
+        "text": "JavaScript 引擎内部开了多个线程并行跑用户代码",
+        "isCorrect": false,
+        "description": "引擎执行用户代码是单线程，同一刻只跑一段"
+      },
+      {
+        "text": "靠操作系统的进程调度切换 JS 函数",
+        "isCorrect": false,
+        "description": "并发由事件循环 + 队列实现，非进程切换"
+      },
+      {
+        "text": "每个 async 函数会自动新建一个 Worker 线程",
+        "isCorrect": false,
+        "description": "async 函数仍在主线程，不会自动开 Worker"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中「调用栈（call stack）」溢出（栈满）最常见的直接原因是？",
+    "explanation": "调用栈记录函数调用的嵌套关系，每调用一个函数就压一帧，函数返回才弹出。无终止条件的递归会不断压栈、永不弹出，最终超出引擎栈容量抛出 `RangeError: Maximum call stack size exceeded`。这是同步代码的栈，与异步任务队列无关。",
+    "tags": ["javascript", "call-stack", "递归"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无终止条件的深递归不断压栈、永不弹出",
+        "isCorrect": true,
+        "description": "抛 `RangeError: Maximum call stack size exceeded`"
+      },
+      {
+        "text": "微任务队列里堆积了太多 Promise",
+        "isCorrect": false,
+        "description": "那会撑爆内存或饿死渲染，但不属于调用栈溢出"
+      },
+      {
+        "text": "setTimeout 设置的延迟过长",
+        "isCorrect": false,
+        "description": "延迟长短与调用栈深度无关"
+      },
+      {
+        "text": "声明了过多的全局变量",
+        "isCorrect": false,
+        "description": "全局变量占的是堆/作用域，不压调用栈"
+      }
+    ]
+  },
+  {
+    "stem": "在 JavaScript 事件循环中，下列哪一项属于「宏任务（macrotask）」而非微任务？",
+    "explanation": "宏任务（也叫 task）包括：整段脚本执行、`setTimeout`/`setInterval` 回调、用户事件（click、mousemove）、I/O 与网络请求回调等。微任务（microtask）则是 Promise 的 `.then/catch/finally` 回调、`queueMicrotask()` 入队的函数、以及 `await` 之后的续体。",
+    "tags": ["javascript", "macrotask", "microtask"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`setTimeout` 的回调",
+        "isCorrect": true,
+        "description": "setTimeout/setInterval 回调是典型宏任务"
+      },
+      {
+        "text": "`Promise.resolve().then()` 的回调",
+        "isCorrect": false,
+        "description": "Promise then 回调是微任务"
+      },
+      {
+        "text": "`queueMicrotask()` 入队的函数",
+        "isCorrect": false,
+        "description": "顾名思义入的是微任务队列"
+      },
+      {
+        "text": "`await` 表达式之后的续体",
+        "isCorrect": false,
+        "description": "await 续体本质走微任务队列"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 事件循环处理「宏任务」与「微任务」的核心顺序规则是？",
+    "explanation": "事件循环算法可概括为：① 取出并执行最旧的一个宏任务；② 执行直到清空整个微任务队列（期间新产生的微任务也要一并执行完）；③ 需要时进行渲染；④ 等待并执行下一个宏任务，循环往复。即「每跑完一个宏任务，就把当前所有微任务清空」。",
+    "tags": ["javascript", "event-loop", "执行顺序"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每执行完一个宏任务，就清空当前全部微任务，再进入下一个宏任务",
+        "isCorrect": true,
+        "description": "微任务队列要在下一个宏任务前彻底排空"
+      },
+      {
+        "text": "宏任务和微任务严格交替执行，各跑一个",
+        "isCorrect": false,
+        "description": "并非一对一交替，微任务要一次性全清空"
+      },
+      {
+        "text": "先把所有宏任务跑完，再统一处理微任务",
+        "isCorrect": false,
+        "description": "顺序相反，微任务优先在宏任务间隙清空"
+      },
+      {
+        "text": "微任务和宏任务谁先入队谁先执行，不分优先级",
+        "isCorrect": false,
+        "description": "微任务整体优先级高于下一个宏任务"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 代码 `console.log(1); setTimeout(() => console.log(2)); Promise.resolve().then(() => console.log(3)); console.log(4);` 的输出顺序是？",
+    "explanation": "同步代码先全部执行：先打印 1，再打印 4。随后清空微任务队列，打印 Promise 的 3。最后进入下一个宏任务，打印 setTimeout 的 2。所以是 `1 → 4 → 3 → 2`。同步 > 微任务 > 宏任务。",
+    "tags": ["javascript", "执行顺序", "microtask"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "1 → 4 → 3 → 2",
+        "isCorrect": true,
+        "description": "同步(1,4) → 微任务(3) → 宏任务(2)"
+      },
+      {
+        "text": "1 → 2 → 3 → 4",
+        "isCorrect": false,
+        "description": "按书写顺序是错的，异步回调要延后"
+      },
+      {
+        "text": "1 → 4 → 2 → 3",
+        "isCorrect": false,
+        "description": "微任务 3 应早于宏任务 2"
+      },
+      {
+        "text": "1 → 3 → 4 → 2",
+        "isCorrect": false,
+        "description": "同步的 4 早于微任务 3 执行"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `queueMicrotask(fn)` 与 `setTimeout(fn, 0)` 相比，关键区别是？",
+    "explanation": "`queueMicrotask` 把回调放进**微任务队列**，会在当前宏任务结束后、下一个宏任务（含渲染）之前立即执行；`setTimeout(fn, 0)` 放进**宏任务队列**，要等当前所有微任务清空、可能还经过渲染后才轮到，且受最小延迟钳制。因此前者执行更早、优先级更高。",
+    "tags": ["javascript", "queueMicrotask", "setTimeout"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "queueMicrotask 入微任务队列，比 setTimeout(0) 的宏任务更早执行",
+        "isCorrect": true,
+        "description": "微任务在下一个宏任务与渲染之前清空"
+      },
+      {
+        "text": "两者都入宏任务队列，执行时机完全相同",
+        "isCorrect": false,
+        "description": "queueMicrotask 入的是微任务队列"
+      },
+      {
+        "text": "queueMicrotask 会同步立即执行回调",
+        "isCorrect": false,
+        "description": "仍是异步，只是排在微任务队列"
+      },
+      {
+        "text": "setTimeout(0) 比 queueMicrotask 先执行",
+        "isCorrect": false,
+        "description": "顺序相反，微任务优先"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 浏览器环境中，连续嵌套的 `setTimeout(fn, 0)` 实际最小延迟约为多少？",
+    "explanation": "HTML 规范规定：当 `setTimeout`/`setInterval` 嵌套层级超过 5 层后，浏览器会把延迟钳制到至少 4ms。所以即使写 `setTimeout(fn, 0)`，深层嵌套时每次大约也有 4ms（或更多）的最小间隔，这是浏览器的限制（Node 环境无此约束）。",
+    "tags": ["javascript", "setTimeout", "4ms-clamp"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "深层嵌套时约 4ms 的最小延迟",
+        "isCorrect": true,
+        "description": "嵌套超 5 层后浏览器钳制到至少 4ms"
+      },
+      {
+        "text": "始终精确为 0ms，立即执行",
+        "isCorrect": false,
+        "description": "0 只是请求值，实际有最小钳制"
+      },
+      {
+        "text": "固定 10ms",
+        "isCorrect": false,
+        "description": "规范规定的下限是 4ms 而非 10ms"
+      },
+      {
+        "text": "固定 16ms（约一帧）",
+        "isCorrect": false,
+        "description": "16ms 是帧间隔，与 setTimeout 钳制无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中浏览器的「渲染（重新绘制页面）」发生在事件循环的哪个时机？",
+    "explanation": "渲染只发生在**宏任务之间**，绝不会在一个宏任务执行途中插入；对 DOM 的改动也只有在当前任务（含其触发的全部微任务）完成后才会被绘制。所以在一个同步长任务里多次改 DOM，用户只会看到最后一次结果——任务没结束前不会重绘。",
+    "tags": ["javascript", "event-loop", "渲染时机"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在两个宏任务之间，且当前微任务清空之后",
+        "isCorrect": true,
+        "description": "任务执行途中不重绘，DOM 改动结束后才绘制"
+      },
+      {
+        "text": "每执行一行 JS 就重绘一次",
+        "isCorrect": false,
+        "description": "渲染不会在任务执行途中逐行插入"
+      },
+      {
+        "text": "在每个微任务执行之间都会渲染",
+        "isCorrect": false,
+        "description": "微任务清空期间不渲染，整体清空后才可能渲染"
+      },
+      {
+        "text": "只在页面首次加载时渲染一次",
+        "isCorrect": false,
+        "description": "渲染随宏任务循环持续发生"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中一个微任务回调里又用 `queueMicrotask` 添加新的微任务，本轮会怎样处理？",
+    "explanation": "事件循环在清空微任务队列时，会一直执行到队列彻底为空——包括执行过程中**新追加**的微任务，全部在进入下一个宏任务（和渲染）之前处理完。因此微任务里无限产生新微任务会「饿死」宏任务与渲染，造成页面卡死。",
+    "tags": ["javascript", "microtask", "饥饿"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "新微任务也在本轮一并执行完，才进入下一个宏任务",
+        "isCorrect": true,
+        "description": "微任务队列要排空，含执行中新加入的"
+      },
+      {
+        "text": "新微任务延后到下一个宏任务之后再执行",
+        "isCorrect": false,
+        "description": "本轮就会处理，不会跨到下个宏任务"
+      },
+      {
+        "text": "新微任务被忽略，不会执行",
+        "isCorrect": false,
+        "description": "一定会执行，且优先于宏任务"
+      },
+      {
+        "text": "新微任务自动降级为宏任务",
+        "isCorrect": false,
+        "description": "不存在自动降级，仍是微任务"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中所谓「回调地狱（callback hell / 厄运金字塔）」指的是什么问题？",
+    "explanation": "在 Promise 出现前，多个相互依赖的异步操作只能层层嵌套回调，代码向右形成「金字塔」，每层都要单独处理错误（重复传 `failureCallback`），可读性与可维护性极差。Promise 链与 async/await 把它拉平成线性流程，正是为了解决这个问题。",
+    "tags": ["javascript", "callback-hell", "可维护性"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "依赖的异步操作层层嵌套回调，代码向右堆成金字塔、难维护",
+        "isCorrect": true,
+        "description": "错误处理分散重复，可读性差"
+      },
+      {
+        "text": "回调函数执行速度太慢导致页面卡顿",
+        "isCorrect": false,
+        "description": "指的是代码结构问题，不是性能问题"
+      },
+      {
+        "text": "回调函数无法访问外层变量",
+        "isCorrect": false,
+        "description": "闭包可访问外层变量，与此无关"
+      },
+      {
+        "text": "同一个回调被注册了多次",
+        "isCorrect": false,
+        "description": "重复注册是另一类 bug，非回调地狱"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 传统回调风格相比 Promise，存在一个被称为「控制反转（inversion of control）」的信任问题，它指的是？",
+    "explanation": "把回调交给第三方库后，「何时调、调几次、传什么参数、出错时还调不调」全由对方控制，你失去了对自己代码执行的掌控，这就是控制反转带来的信任问题（可能不调、调多次、调过早/过晚）。Promise 通过「一次性 settle、状态不可变、回调由可信的引擎调度」把控制权交还给你。",
+    "tags": ["javascript", "控制反转", "promise"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "回调何时调、调几次由第三方掌控，你失去对执行的控制权",
+        "isCorrect": true,
+        "description": "Promise 用「状态不可变、引擎可信调度」修复该问题"
+      },
+      {
+        "text": "回调函数会反转参数的传递顺序",
+        "isCorrect": false,
+        "description": "与参数顺序无关，指的是控制权归属"
+      },
+      {
+        "text": "回调让 this 指向发生反转",
+        "isCorrect": false,
+        "description": "this 绑定是另一回事，非控制反转含义"
+      },
+      {
+        "text": "回调强制把同步代码变成异步",
+        "isCorrect": false,
+        "description": "并非该术语所指的信任问题"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中一个 Promise 有哪三种状态？",
+    "explanation": "Promise 有三种互斥状态：`pending`（待定，初始状态，异步操作未完成）、`fulfilled`（已兑现，操作成功并带有结果值）、`rejected`（已拒绝，操作失败并带有原因）。一旦从 pending 落定（settle）为 fulfilled 或 rejected，状态就永久固定、不可再变。",
+    "tags": ["javascript", "promise", "状态"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pending（待定）、fulfilled（已兑现）、rejected（已拒绝）",
+        "isCorrect": true,
+        "description": "落定后状态永久不可变"
+      },
+      {
+        "text": "pending、resolved、error",
+        "isCorrect": false,
+        "description": "成功态规范名是 fulfilled，失败态是 rejected"
+      },
+      {
+        "text": "open、closed、failed",
+        "isCorrect": false,
+        "description": "并非 Promise 的状态命名"
+      },
+      {
+        "text": "loading、success、timeout",
+        "isCorrect": false,
+        "description": "这是业务状态，不是 Promise 规范状态"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中关于 Promise 状态「落定（settle）」，下列说法正确的是？",
+    "explanation": "Promise 一旦从 `pending` 变为 `fulfilled` 或 `rejected` 就算落定，此后状态与结果值永久固定，再调用 `resolve`/`reject` 都无效。这种「一次性、不可变」是 Promise 区别于回调的关键保证，使后续注册的回调拿到的结果是确定的。",
+    "tags": ["javascript", "promise", "不可变"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "落定后状态和结果永久固定，再次 resolve/reject 无效",
+        "isCorrect": true,
+        "description": "一次性、不可逆是 Promise 的核心保证"
+      },
+      {
+        "text": "fulfilled 之后还能再转回 pending 重试",
+        "isCorrect": false,
+        "description": "状态不可逆，重试要新建 Promise"
+      },
+      {
+        "text": "可以先 resolve 再 reject 来覆盖结果",
+        "isCorrect": false,
+        "description": "首次落定后第二次调用被忽略"
+      },
+      {
+        "text": "落定后调用 then 会报错",
+        "isCorrect": false,
+        "description": "对已落定 Promise 仍可注册 then，异步拿到结果"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.prototype.then()` 的返回值是什么？这对链式调用意味着什么？",
+    "explanation": "`then()` 总是**返回一个新的 Promise**，代表其回调执行的结果。正因如此才能 `.then().then()` 链式书写：上一个 then 回调的返回值会成为下一个 then 收到的值。`.catch()` 是 `.then(null, onRejected)` 的简写，同样返回新 Promise。",
+    "tags": ["javascript", "promise", "链式调用"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回一个全新的 Promise，因此可以继续链式 then",
+        "isCorrect": true,
+        "description": "上个回调返回值流入下个 then"
+      },
+      {
+        "text": "返回原来那个 Promise 本身",
+        "isCorrect": false,
+        "description": "是新 Promise，不是原对象"
+      },
+      {
+        "text": "返回回调函数的返回值本身（非 Promise）",
+        "isCorrect": false,
+        "description": "返回的是包装了该值的新 Promise"
+      },
+      {
+        "text": "返回 undefined",
+        "isCorrect": false,
+        "description": "then 始终返回新 Promise"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `.then()` 回调里 `return` 一个普通值与 `return` 一个 Promise，行为有何不同？",
+    "explanation": "若回调返回普通值，该值直接成为新 Promise 的兑现值；若返回的是一个 Promise，链会**等待这个 Promise 落定**，并采用它的结果（兑现值或拒绝原因）继续往下传。这正是异步操作能在 then 链里串联等待的原理。",
+    "tags": ["javascript", "promise", "return流动"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回 Promise 时链会等它落定并采用其结果，普通值则直接传下去",
+        "isCorrect": true,
+        "description": "返回 Promise 实现了链内的异步等待"
+      },
+      {
+        "text": "两者都不等待，立即把对象原样传给下一个 then",
+        "isCorrect": false,
+        "description": "返回 Promise 会被「展开」并等待"
+      },
+      {
+        "text": "返回 Promise 会让链立即报错",
+        "isCorrect": false,
+        "description": "返回 Promise 是正常且常用的写法"
+      },
+      {
+        "text": "返回普通值会被忽略，下一个 then 收到 undefined",
+        "isCorrect": false,
+        "description": "普通值会成为下个 then 的入参"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript Promise 链中：`doSomething().then(url => { fetch(url); }).then(res => ...)`，为什么第二个 then 收到的 `res` 是 `undefined`？",
+    "explanation": "第一个 then 回调里 `fetch(url)` 前**漏写了 `return`**，于是这个 fetch Promise「悬空（floating）」——链不会等它，回调隐式返回 `undefined`，下个 then 自然收到 `undefined`，还可能引发竞态。正确写法是 `return fetch(url)` 把它接回链上。",
+    "tags": ["javascript", "promise", "悬空promise"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "回调漏写 return，fetch 的 Promise 悬空，链未等待它",
+        "isCorrect": true,
+        "description": "应写 `return fetch(url)` 把它接回链"
+      },
+      {
+        "text": "fetch 本身不返回 Promise",
+        "isCorrect": false,
+        "description": "fetch 返回 Promise，问题在没 return"
+      },
+      {
+        "text": "then 不能用于处理 fetch",
+        "isCorrect": false,
+        "description": "then 完全可处理 fetch，关键是 return"
+      },
+      {
+        "text": "fetch 失败被自动吞掉了",
+        "isCorrect": false,
+        "description": "res 为 undefined 是没 return 导致，非吞错"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Promise 链的错误是如何传播（冒泡）的？",
+    "explanation": "Promise 链中任一环节抛出异常或返回拒绝的 Promise，错误会**沿链向下冒泡**，跳过中间所有的 `onFulfilled` 回调，直到遇到最近的 `.catch()`（或带第二参数的 then）才被捕获。这类似同步 `try/catch` 一次性兜住多步的错误。",
+    "tags": ["javascript", "promise", "错误冒泡"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "错误沿链向下冒泡，跳过中间成功回调，直到被 catch 捕获",
+        "isCorrect": true,
+        "description": "一个 catch 可兜住其上游多步的错误"
+      },
+      {
+        "text": "错误只在抛出的那个 then 内有效，不会传给后续",
+        "isCorrect": false,
+        "description": "错误会继续往下冒泡寻找处理器"
+      },
+      {
+        "text": "错误会向上冒泡到链的起点",
+        "isCorrect": false,
+        "description": "Promise 错误是向下游传播，非向上"
+      },
+      {
+        "text": "错误自动被忽略，链照常往下走成功分支",
+        "isCorrect": false,
+        "description": "未捕获会触发 unhandledrejection，不会走成功分支"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中在 `.catch()` 之后继续 `.then()`，且 catch 没有再抛错，那个 then 会执行吗？",
+    "explanation": "`.catch()` 捕获错误后若正常返回（不再抛出），它返回的 Promise 是**兑现**状态，相当于「错误已恢复」，于是其后的 `.then()` 会正常执行。这让我们能在链中途处理掉错误并继续后续流程，是 Promise 链恢复机制的体现。",
+    "tags": ["javascript", "promise", "catch恢复"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "会执行，catch 正常返回后链恢复为兑现状态",
+        "isCorrect": true,
+        "description": "catch 不再抛错即视为错误已处理"
+      },
+      {
+        "text": "不会执行，catch 之后链就终止了",
+        "isCorrect": false,
+        "description": "catch 返回新 Promise，链可继续"
+      },
+      {
+        "text": "只有 catch 里再抛错，后续 then 才执行",
+        "isCorrect": false,
+        "description": "再抛错反而会跳过成功的 then"
+      },
+      {
+        "text": "后续 then 会同步立即执行",
+        "isCorrect": false,
+        "description": "仍是异步微任务，不会同步执行"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.prototype.finally(fn)` 的回调有什么特点？",
+    "explanation": "`finally` 无论 Promise 兑现还是拒绝都会执行，常用于清理（关 loading、释放资源）。它的回调**不接收**结果参数；且默认会**原样透传**上游的兑现值或拒绝原因——除非 finally 自身抛错或返回拒绝的 Promise，否则不会改变最终结果。",
+    "tags": ["javascript", "promise", "finally"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无论成功失败都执行，不接收参数，并透传上游结果",
+        "isCorrect": true,
+        "description": "适合清理，不改变最终兑现值/拒绝原因"
+      },
+      {
+        "text": "只在 Promise 兑现时执行",
+        "isCorrect": false,
+        "description": "拒绝时同样执行"
+      },
+      {
+        "text": "会接收上游的结果值作为参数",
+        "isCorrect": false,
+        "description": "finally 回调不接收结果参数"
+      },
+      {
+        "text": "会把上游结果替换成自己的返回值",
+        "isCorrect": false,
+        "description": "默认透传，除非自身抛错/返回拒绝"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `new Promise(executor)` 的执行器（executor）函数何时运行？",
+    "explanation": "传给 `new Promise` 的执行器函数会在构造 Promise 时**同步立即执行**（拿到 `resolve`、`reject` 两个参数）。常见用法是在里面发起异步操作，完成后调用 `resolve(value)` 或 `reject(error)` 改变状态。注意执行器体是同步的，只有 resolve/reject 触发的回调才是异步。",
+    "tags": ["javascript", "promise", "executor"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "构造 Promise 时同步立即执行，参数是 resolve 和 reject",
+        "isCorrect": true,
+        "description": "执行器体同步运行，then 回调才异步"
+      },
+      {
+        "text": "等到第一次调用 .then() 时才执行",
+        "isCorrect": false,
+        "description": "执行器在 new 的瞬间就跑了"
+      },
+      {
+        "text": "作为微任务异步执行",
+        "isCorrect": false,
+        "description": "执行器是同步的，非微任务"
+      },
+      {
+        "text": "在事件循环的下一个宏任务执行",
+        "isCorrect": false,
+        "description": "构造时同步执行，不延后"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用 Promise 封装老式回调 API（如 `setTimeout`）的标准做法是？",
+    "explanation": "把基于回调的旧 API 包进 `new Promise` 的执行器里，在回调触发处调用 `resolve`/`reject`。例如 `const wait = ms => new Promise(resolve => setTimeout(resolve, ms))`，就把定时器「Promise 化」，之后即可 `wait(1000).then(...)` 或 `await wait(1000)`，这叫 promisify。",
+    "tags": ["javascript", "promise", "promisify"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 `new Promise` 执行器里调用旧 API，回调中触发 resolve/reject",
+        "isCorrect": true,
+        "description": "如 `new Promise(r => setTimeout(r, ms))`"
+      },
+      {
+        "text": "直接给旧 API 加 `await` 前缀即可",
+        "isCorrect": false,
+        "description": "await 只对 Promise/thenable 有意义，回调 API 不行"
+      },
+      {
+        "text": "用 `.then()` 包裹回调函数",
+        "isCorrect": false,
+        "description": "then 在 Promise 上调用，回调 API 没有 then"
+      },
+      {
+        "text": "把回调函数返回值强制转 Promise",
+        "isCorrect": false,
+        "description": "回调通过参数返回结果，无返回值可转"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.all([p1, p2, p3])` 的兑现与拒绝规则是？",
+    "explanation": "`Promise.all` 在**所有**输入 Promise 都兑现时才兑现，结果是与输入**顺序一致**的兑现值数组；只要**任意一个**拒绝，它就立即拒绝（fail-fast），拒绝原因是第一个拒绝者的原因（其余 Promise 仍会继续跑完，只是结果被忽略）。适合「全部成功才算成功」的并发场景。",
+    "tags": ["javascript", "promise-all", "并发"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "全部兑现才兑现（按序返回值数组），任一拒绝则立即拒绝",
+        "isCorrect": true,
+        "description": "fail-fast：第一个拒绝者的原因即整体原因"
+      },
+      {
+        "text": "任一兑现就兑现，全部拒绝才拒绝",
+        "isCorrect": false,
+        "description": "那是 Promise.any 的语义"
+      },
+      {
+        "text": "等所有 Promise 都落定后再决定，从不拒绝",
+        "isCorrect": false,
+        "description": "那是 Promise.allSettled 的语义"
+      },
+      {
+        "text": "返回最先落定的那个结果",
+        "isCorrect": false,
+        "description": "那是 Promise.race 的语义"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.race([p1, p2, ...])` 何时落定、取哪个结果？",
+    "explanation": "`Promise.race` 采用**最先落定**的那个 Promise 的结果——无论它是兑现还是拒绝。也就是说，只要有一个先兑现就兑现、有一个先拒绝就拒绝。常用于「谁先到用谁」，例如给请求加超时：让请求与一个超时拒绝的 Promise 竞速。",
+    "tags": ["javascript", "promise-race", "竞速"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "采用最先落定者的结果，无论它是兑现还是拒绝",
+        "isCorrect": true,
+        "description": "先兑现则兑现，先拒绝则拒绝"
+      },
+      {
+        "text": "采用最先「兑现」的，忽略先拒绝的",
+        "isCorrect": false,
+        "description": "那是 Promise.any，race 不区分成败"
+      },
+      {
+        "text": "等全部落定后取最快的那个",
+        "isCorrect": false,
+        "description": "race 在第一个落定时就结束"
+      },
+      {
+        "text": "返回所有结果组成的数组",
+        "isCorrect": false,
+        "description": "race 只返回单个结果"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.allSettled([...])` 与 `Promise.all` 的关键区别是？",
+    "explanation": "`Promise.allSettled` 等**所有**输入 Promise 都落定后才兑现，且**永不拒绝**；结果是每项的状态对象数组：成功为 `{status:\"fulfilled\", value}`，失败为 `{status:\"rejected\", reason}`。与 `all` 的 fail-fast 不同，它能拿到「每个任务各自成败」的完整结果，适合批量上报、互不影响的场景。",
+    "tags": ["javascript", "promise-allSettled", "并发"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "等全部落定且永不拒绝，返回每项 {status, value/reason} 数组",
+        "isCorrect": true,
+        "description": "能拿到每个任务各自的成败，互不影响"
+      },
+      {
+        "text": "任一拒绝就立即整体拒绝",
+        "isCorrect": false,
+        "description": "那是 Promise.all，allSettled 从不拒绝"
+      },
+      {
+        "text": "只返回成功的那些结果，过滤掉失败",
+        "isCorrect": false,
+        "description": "失败项也在结果里，以 rejected 对象呈现"
+      },
+      {
+        "text": "返回最先落定者的结果",
+        "isCorrect": false,
+        "description": "那是 Promise.race"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.any([...])` 在所有输入都被拒绝时，会以什么作为拒绝原因？",
+    "explanation": "`Promise.any` 在**第一个兑现**时立即兑现（取那个兑现值）；只有当**所有**输入都被拒绝时它才拒绝，拒绝原因是一个 `AggregateError`，其 `.errors` 属性是包含所有拒绝原因的数组。它是「只要有一个成功就行」的语义，与不区分成败的 race 相对。",
+    "tags": ["javascript", "promise-any", "AggregateError"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "以 `AggregateError` 拒绝，其 `.errors` 收集所有拒绝原因",
+        "isCorrect": true,
+        "description": "any 取第一个兑现，全拒才拒绝"
+      },
+      {
+        "text": "以第一个拒绝者的原因拒绝",
+        "isCorrect": false,
+        "description": "那是 Promise.all 的拒绝行为"
+      },
+      {
+        "text": "以最后一个拒绝者的原因拒绝",
+        "isCorrect": false,
+        "description": "any 用 AggregateError 聚合，非取最后一个"
+      },
+      {
+        "text": "返回一个 undefined 的兑现值",
+        "isCorrect": false,
+        "description": "全拒绝时是拒绝而非兑现"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中需要「等一批异步任务全部跑完、即使有失败也要拿到每个结果」，最合适的方法是？",
+    "explanation": "这种「不因个别失败而中断、要看每个任务各自成败」的需求正是 `Promise.allSettled` 的用武之地——它等全部落定、永不拒绝、返回每项状态对象。用 `Promise.all` 会因任一失败而 fail-fast 丢失其它结果，不符合要求。",
+    "tags": ["javascript", "promise-allSettled", "选型"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Promise.allSettled",
+        "isCorrect": true,
+        "description": "全部落定、永不拒绝、保留每项成败"
+      },
+      {
+        "text": "Promise.all",
+        "isCorrect": false,
+        "description": "任一失败即 fail-fast，丢失其它结果"
+      },
+      {
+        "text": "Promise.race",
+        "isCorrect": false,
+        "description": "只取最先落定的一个结果"
+      },
+      {
+        "text": "Promise.any",
+        "isCorrect": false,
+        "description": "只取第一个成功，不返回全部结果"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中要对一大批 URL 发请求但又不想同时并发太多（限流），下列哪种思路最合理？",
+    "explanation": "并发限流的常见做法是维持一个固定大小的「工作池」：同时只跑 N 个任务，每完成一个就从队列取下一个补位（如用 N 个 worker 各自 `while` 取任务，或递归补位）。直接 `Promise.all` 全量并发会瞬时打满连接/触发限频；纯串行又太慢。限流 = 受控并发。",
+    "tags": ["javascript", "并发限流", "工作池"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "维持固定大小工作池，完成一个就取下一个补位",
+        "isCorrect": true,
+        "description": "受控并发，既不打满也不至于太慢"
+      },
+      {
+        "text": "把所有请求一次性塞进 Promise.all 全量并发",
+        "isCorrect": false,
+        "description": "会瞬时打满连接/触发限频，正是要避免的"
+      },
+      {
+        "text": "用 await 严格一个接一个串行发完",
+        "isCorrect": false,
+        "description": "完全串行太慢，没利用并发"
+      },
+      {
+        "text": "给每个请求随机加 setTimeout 延迟错开",
+        "isCorrect": false,
+        "description": "随机延迟无法精确控制并发上限"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中一个 `async` 函数的返回值一定是什么？",
+    "explanation": "`async` 关键字保证函数**总是返回一个 Promise**：若函数体 `return` 普通值，会被自动包成 `Promise.resolve(值)`；若 `throw`，则返回一个被拒绝的 Promise。因此调用 async 函数后必须用 `.then`/`await` 取结果，不能当普通同步函数直接拿返回值。",
+    "tags": ["javascript", "async", "返回值"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一定是 Promise；普通返回值被自动包成已兑现的 Promise",
+        "isCorrect": true,
+        "description": "throw 则返回被拒绝的 Promise"
+      },
+      {
+        "text": "返回值类型由 return 的内容决定，可能不是 Promise",
+        "isCorrect": false,
+        "description": "async 强制把返回值包成 Promise"
+      },
+      {
+        "text": "总是返回 undefined",
+        "isCorrect": false,
+        "description": "返回的是包含该值的 Promise"
+      },
+      {
+        "text": "返回一个生成器对象",
+        "isCorrect": false,
+        "description": "那是 generator 函数，不是 async 函数"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `await` 关键字本质上做了什么？它能用在哪里？",
+    "explanation": "`await` 暂停所在 async 函数的执行，等待其后的 Promise 落定后再以结果继续（不阻塞主线程，让出执行权）；底层就是把后续代码注册为该 Promise 的微任务续体。它只能用在 `async` 函数内部，或 ES 模块的顶层（顶层 await）；用在普通函数里是语法错误。",
+    "tags": ["javascript", "await", "本质"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "暂停 async 函数等 Promise 落定再以结果续行，只能用于 async 函数或模块顶层",
+        "isCorrect": true,
+        "description": "续体走微任务，不阻塞主线程"
+      },
+      {
+        "text": "阻塞整个主线程直到 Promise 完成",
+        "isCorrect": false,
+        "description": "它是让出执行权，不阻塞主线程"
+      },
+      {
+        "text": "可以在任意普通函数里直接使用",
+        "isCorrect": false,
+        "description": "普通函数里用 await 是语法错误"
+      },
+      {
+        "text": "把异步 Promise 变成真正的同步执行",
+        "isCorrect": false,
+        "description": "只是写法像同步，底层仍异步"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `await` 一个被拒绝（rejected）的 Promise 会发生什么？",
+    "explanation": "`await` 一个拒绝的 Promise 时，会像在该行执行了 `throw` 一样**抛出拒绝原因**。因此可以用熟悉的 `try/catch` 捕获异步错误：`try { await fn() } catch(e) {...}`。这正是 async/await 把异步错误处理拉回同步式语法的关键。",
+    "tags": ["javascript", "await", "错误处理"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "如同在该行 throw 拒绝原因，可被 try/catch 捕获",
+        "isCorrect": true,
+        "description": "异步错误以同步 throw 的形式呈现"
+      },
+      {
+        "text": "返回 undefined，继续往下执行",
+        "isCorrect": false,
+        "description": "会抛错而非静默返回 undefined"
+      },
+      {
+        "text": "自动重试该 Promise",
+        "isCorrect": false,
+        "description": "不会自动重试，直接抛错"
+      },
+      {
+        "text": "把拒绝原因打印到控制台后忽略",
+        "isCorrect": false,
+        "description": "会抛出供 try/catch 处理，未捕获才触发全局告警"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用 `await fetch(url)` 请求，服务器返回 HTTP 404，try/catch 会捕获到错误吗？",
+    "explanation": "不会。MDN 明确：`fetch()` 的 Promise **不会**因为 404、500 等 HTTP 错误状态而拒绝——它只在网络故障、URL 非法、被 abort 等情况下才拒绝。HTTP 错误属于「请求成功送达、服务器回了错误码」，需手动检查 `response.ok`（状态 200–299 为 true）或 `response.status` 并自行抛错。",
+    "tags": ["javascript", "fetch", "response.ok"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不会，fetch 不因 4xx/5xx 拒绝，需手动检查 response.ok / status",
+        "isCorrect": true,
+        "description": "只有网络故障、URL 非法、被 abort 才拒绝"
+      },
+      {
+        "text": "会，404 会让 fetch 的 Promise 拒绝并被 catch 捕获",
+        "isCorrect": false,
+        "description": "这是常见误解，HTTP 错误码不触发拒绝"
+      },
+      {
+        "text": "会，fetch 对所有非 200 状态都抛错",
+        "isCorrect": false,
+        "description": "fetch 不会自动对非 200 抛错"
+      },
+      {
+        "text": "fetch 会自动重定向到错误页，不抛错也不返回",
+        "isCorrect": false,
+        "description": "fetch 正常返回 Response，由你判断 status"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `const a = await taskA(); const b = await taskB();`（两任务互不依赖）相比并行写法的问题是？",
+    "explanation": "两个 `await` 顺序书写会**串行**执行：必须等 taskA 落定后才开始 taskB，总耗时是两者之和。若它们互不依赖，应改为并行：`const [a,b] = await Promise.all([taskA(), taskB()])`，两个请求同时发出，总耗时约等于较慢的那个。顺序 await 在无依赖时是常见性能陷阱。",
+    "tags": ["javascript", "顺序vs并行", "Promise.all"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它会串行执行、总耗时是两者之和，无依赖时应改用 Promise.all 并行",
+        "isCorrect": true,
+        "description": "并行后总耗时约等于较慢的那个"
+      },
+      {
+        "text": "两个 await 本来就是并行的，没有问题",
+        "isCorrect": false,
+        "description": "顺序 await 是串行，不会自动并行"
+      },
+      {
+        "text": "await 会导致 taskB 永远不执行",
+        "isCorrect": false,
+        "description": "taskA 落定后 taskB 会照常执行"
+      },
+      {
+        "text": "串行写法更快，因为减少了并发开销",
+        "isCorrect": false,
+        "description": "无依赖时并行通常更快"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `for (const url of urls) { await fetch(url); }` 这种「循环里 await」的执行特点是？",
+    "explanation": "循环体内 `await` 会让每次迭代**等上一个请求完成**再发下一个，整体是**串行**的，总耗时随数量线性增长。若各请求互不依赖且想并发，应先把它们映射成 Promise 数组再 `await Promise.all(urls.map(u => fetch(u)))`。「循环 + await」适合需要严格顺序或限速的场景。",
+    "tags": ["javascript", "循环await", "串行"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "逐个等待、串行执行，想并发应改用 Promise.all 映射",
+        "isCorrect": true,
+        "description": "循环 await 总耗时随数量线性增长"
+      },
+      {
+        "text": "所有请求会自动并发同时发出",
+        "isCorrect": false,
+        "description": "循环里的 await 是逐个等待，非并发"
+      },
+      {
+        "text": "只会发出第一个请求，其余被跳过",
+        "isCorrect": false,
+        "description": "每轮都会执行，只是串行"
+      },
+      {
+        "text": "await 在循环里是语法错误",
+        "isCorrect": false,
+        "description": "for...of 循环体内可用 await（async 函数中）"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中「顶层 await（top-level await）」是哪个版本引入的？有什么使用限制？",
+    "explanation": "顶层 await 是 **ES2022** 正式纳入的特性，允许在 **ES 模块（ESM）的最外层**直接写 `await`，无需包一层 async IIFE。限制：仅限模块顶层，普通 `<script>`、CommonJS 模块不支持；并且它会让该模块的求值变成异步，可能延后依赖它的模块的加载。",
+    "tags": ["javascript", "顶层await", "es2022"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ES2022 引入，仅可用于 ES 模块顶层",
+        "isCorrect": true,
+        "description": "普通脚本、CommonJS 不支持"
+      },
+      {
+        "text": "ES2015（ES6）随 Promise 一起引入",
+        "isCorrect": false,
+        "description": "ES6 只有 Promise，顶层 await 晚得多"
+      },
+      {
+        "text": "任何 `<script>` 标签里都能直接用",
+        "isCorrect": false,
+        "description": "需是模块（type=module），普通脚本不行"
+      },
+      {
+        "text": "它能在 CommonJS 模块顶层使用",
+        "isCorrect": false,
+        "description": "顶层 await 面向 ESM，CJS 不支持"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `AbortController` 与 `AbortSignal` 配合，主要用来做什么？",
+    "explanation": "`AbortController` 提供一个 `signal`（`AbortSignal`）和一个 `abort()` 方法。把 `signal` 传给支持它的异步 API（如 `fetch(url, { signal })`），调用 `controller.abort()` 即可**取消**该操作——fetch 会以 `AbortError` 拒绝。这弥补了 Promise 本身没有内建取消能力的不足，是实现请求取消、超时的标准机制。",
+    "tags": ["javascript", "AbortController", "取消"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "取消进行中的异步操作，如 abort() 让 fetch 以 AbortError 拒绝",
+        "isCorrect": true,
+        "description": "弥补 Promise 无内建取消能力的不足"
+      },
+      {
+        "text": "暂停并稍后恢复一个 Promise",
+        "isCorrect": false,
+        "description": "Promise 不能暂停恢复，abort 是取消"
+      },
+      {
+        "text": "给 Promise 增加自动重试",
+        "isCorrect": false,
+        "description": "与重试无关，是取消机制"
+      },
+      {
+        "text": "控制多个 Promise 的执行顺序",
+        "isCorrect": false,
+        "description": "顺序由 await/链控制，非 AbortController 职责"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中被 `AbortController.abort()` 取消的 `fetch`，其 Promise 会以什么方式结束？",
+    "explanation": "当传入的 `signal` 被 abort，`fetch` 的 Promise 会**拒绝**，错误的 `name` 为 `\"AbortError\"`（一个 DOMException）。因此取消请求时应在 `catch` 中判断 `if (err.name === \"AbortError\")` 以区分「主动取消」与真正的网络错误，避免误报。",
+    "tags": ["javascript", "AbortError", "fetch取消"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Promise 拒绝，错误 name 为 \"AbortError\"",
+        "isCorrect": true,
+        "description": "catch 中据此区分主动取消与网络错误"
+      },
+      {
+        "text": "Promise 兑现，返回一个空 Response",
+        "isCorrect": false,
+        "description": "取消是拒绝，不会兑现空响应"
+      },
+      {
+        "text": "Promise 永远保持 pending",
+        "isCorrect": false,
+        "description": "abort 后会立即拒绝，非挂起"
+      },
+      {
+        "text": "抛出一个 SyntaxError",
+        "isCorrect": false,
+        "description": "是 AbortError，不是 SyntaxError"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `AbortSignal.timeout(5000)` 的作用是什么？超时后以何种错误中止？",
+    "explanation": "`AbortSignal.timeout(ms)` 返回一个会在指定毫秒后**自动中止**的 `AbortSignal`，省去手动建 controller + setTimeout 的样板。超时触发时，信号以 `TimeoutError`（DOMException）中止——注意不是 `AbortError`。它是 Baseline 2024 的特性，常配合 `fetch(url, { signal: AbortSignal.timeout(5000) })` 做请求超时。",
+    "tags": ["javascript", "AbortSignal-timeout", "es2024"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回到点自动中止的 signal，超时以 TimeoutError 中止",
+        "isCorrect": true,
+        "description": "Baseline 2024；非 AbortError，注意区分"
+      },
+      {
+        "text": "超时后以 AbortError 中止，与手动 abort 相同",
+        "isCorrect": false,
+        "description": "超时是 TimeoutError，手动 abort 才是 AbortError"
+      },
+      {
+        "text": "它会让当前线程睡眠 5 秒",
+        "isCorrect": false,
+        "description": "不阻塞线程，只是到点中止信号"
+      },
+      {
+        "text": "返回一个在 5 秒后兑现的 Promise",
+        "isCorrect": false,
+        "description": "返回的是 AbortSignal，不是 Promise"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `AbortSignal.any([signalA, signalB])` 的语义是什么？",
+    "explanation": "`AbortSignal.any([...])` 把多个信号「或」起来，返回一个组合信号：**只要其中任意一个被中止**，组合信号就立即中止（中止原因取自首个被中止者）。典型用途是同时受「用户手动取消」和「超时」控制：`AbortSignal.any([controller.signal, AbortSignal.timeout(5000)])`。",
+    "tags": ["javascript", "AbortSignal-any", "组合信号"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任一输入信号中止，组合信号就立即中止",
+        "isCorrect": true,
+        "description": "可同时绑定手动取消与超时"
+      },
+      {
+        "text": "所有输入信号都中止后，组合信号才中止",
+        "isCorrect": false,
+        "description": "是「任一」即中止，非「全部」"
+      },
+      {
+        "text": "它返回一个 Promise 数组",
+        "isCorrect": false,
+        "description": "返回的是单个组合 AbortSignal"
+      },
+      {
+        "text": "它会取消传入的所有信号",
+        "isCorrect": false,
+        "description": "它只是监听并组合，不主动取消输入"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.withResolvers()`（ES2024）解决了什么书写痛点？",
+    "explanation": "`Promise.withResolvers()` 一次性返回 `{ promise, resolve, reject }`，把 `resolve`/`reject` **暴露到执行器作用域之外**。以前要在外部控制 Promise，得先 `let resolve; const p = new Promise(r => resolve = r)` 这样赋值「漏出」函数；新 API 让这种「在别处落定 Promise」的场景（如事件驱动、封装 emitter）写起来更干净。",
+    "tags": ["javascript", "withResolvers", "es2024"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一次返回 {promise, resolve, reject}，免去把 resolve 漏出执行器的样板",
+        "isCorrect": true,
+        "description": "便于在执行器外部落定 Promise"
+      },
+      {
+        "text": "让 Promise 支持取消",
+        "isCorrect": false,
+        "description": "取消用 AbortController，与此无关"
+      },
+      {
+        "text": "把多个 Promise 合并成一个",
+        "isCorrect": false,
+        "description": "合并用 all/race 等，非此 API 用途"
+      },
+      {
+        "text": "让 then 回调变成同步执行",
+        "isCorrect": false,
+        "description": "不改变 then 的异步语义"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中所谓异步操作的「竞态（race condition）」问题，一个典型场景是？",
+    "explanation": "竞态指多个异步操作的完成顺序不确定、互相干扰结果。典型如「搜索联想」：用户快速输入触发多次请求，若**先发的请求后返回**，旧结果会覆盖新结果，界面显示过期数据。常见解法是给请求编号/用 `AbortController` 取消上一次请求，只采用最新一次的结果。",
+    "tags": ["javascript", "竞态", "AbortController"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先发的请求后返回，旧结果覆盖新结果，显示过期数据",
+        "isCorrect": true,
+        "description": "可用编号或 AbortController 取消旧请求修复"
+      },
+      {
+        "text": "两个 Promise 抢占同一个 CPU 核心",
+        "isCorrect": false,
+        "description": "JS 主线程单线程，不涉及核心抢占"
+      },
+      {
+        "text": "Promise 数量太多导致内存溢出",
+        "isCorrect": false,
+        "description": "那是资源问题，非竞态"
+      },
+      {
+        "text": "await 写错导致语法报错",
+        "isCorrect": false,
+        "description": "竞态是运行时结果错乱，非语法错误"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中一个 Promise 被拒绝却始终没有 `.catch()`（或对应处理器），会怎样？",
+    "explanation": "未被处理的拒绝会冒泡为「未处理拒绝（unhandled rejection）」：浏览器触发全局 `unhandledrejection` 事件并在控制台报错；Node.js 触发 `process` 的 `unhandledRejection`，且较新版本默认会让进程退出。可监听该事件做统一兜底（如上报），但根本上应给每条链补上错误处理。",
+    "tags": ["javascript", "unhandledrejection", "错误处理"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "触发全局 unhandledrejection 事件并在控制台报错",
+        "isCorrect": true,
+        "description": "Node 较新版本默认还会让进程退出"
+      },
+      {
+        "text": "错误被静默吞掉，毫无任何迹象",
+        "isCorrect": false,
+        "description": "会有全局事件与控制台告警，非完全静默"
+      },
+      {
+        "text": "引擎自动补一个 catch 并打印 undefined",
+        "isCorrect": false,
+        "description": "引擎不会自动补 catch"
+      },
+      {
+        "text": "立即抛出导致整段同步代码崩溃",
+        "isCorrect": false,
+        "description": "是异步告警，不会打断当前同步执行"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 代码 `async function f(){ console.log(1); await null; console.log(2); } console.log(0); f(); console.log(3);` 的输出顺序是？",
+    "explanation": "调用前先打印 0。进入 f 同步打印 1，遇 `await null`（null 被包成已兑现 Promise）后，函数**暂停**、把后续 `console.log(2)` 排进微任务队列，控制权交回，继续同步打印 3。同步代码跑完后清微任务，打印 2。故顺序为 `0 → 1 → 3 → 2`。",
+    "tags": ["javascript", "async-await", "执行顺序"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "0 → 1 → 3 → 2",
+        "isCorrect": true,
+        "description": "await 后的代码作为微任务，晚于同步的 3"
+      },
+      {
+        "text": "0 → 1 → 2 → 3",
+        "isCorrect": false,
+        "description": "await 让 2 延后到微任务，3 先打印"
+      },
+      {
+        "text": "0 → 3 → 1 → 2",
+        "isCorrect": false,
+        "description": "f() 调用时会同步执行到 await，1 早于 3"
+      },
+      {
+        "text": "1 → 0 → 3 → 2",
+        "isCorrect": false,
+        "description": "f() 在 console.log(0) 之后才调用，0 最先"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 代码 `setTimeout(()=>console.log(\"timeout\"),0); queueMicrotask(()=>console.log(\"micro\")); console.log(\"sync\");` 的输出顺序是？",
+    "explanation": "先执行同步代码打印 `sync`；当前宏任务结束后清空微任务队列，打印 `queueMicrotask` 的 `micro`；最后才进入下一个宏任务，打印 `setTimeout` 的 `timeout`。顺序为 `sync → micro → timeout`，体现「同步 > 微任务 > 宏任务」。",
+    "tags": ["javascript", "执行顺序", "queueMicrotask"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "sync → micro → timeout",
+        "isCorrect": true,
+        "description": "同步 → 微任务 → 宏任务"
+      },
+      {
+        "text": "sync → timeout → micro",
+        "isCorrect": false,
+        "description": "微任务 micro 应早于宏任务 timeout"
+      },
+      {
+        "text": "micro → sync → timeout",
+        "isCorrect": false,
+        "description": "同步 sync 一定最先打印"
+      },
+      {
+        "text": "timeout → micro → sync",
+        "isCorrect": false,
+        "description": "完全颠倒了优先级"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中把多步 Promise 链 `a().then(b).then(c).catch(e)` 改写成 async/await，最贴切的等价写法是？",
+    "explanation": "等价写法是用 `try/catch` 包住顺序的 await：`try { const r1 = await a(); const r2 = await b(r1); await c(r2); } catch(err) { e(err); }`。async/await 是 Promise 的语法糖，语义完全一致——顺序 then 对应顺序 await，链尾 catch 对应包裹整体的 try/catch。",
+    "tags": ["javascript", "async-await", "等价改写"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 try/catch 包住顺序的 `await a()`、`await b(...)`、`await c(...)`",
+        "isCorrect": true,
+        "description": "顺序 then 对应顺序 await，catch 对应 try/catch"
+      },
+      {
+        "text": "把每个 await 各自单独包一个 try/catch 才等价",
+        "isCorrect": false,
+        "description": "一个 try/catch 即可对应链尾单个 catch"
+      },
+      {
+        "text": "async/await 无法表达带 catch 的链",
+        "isCorrect": false,
+        "description": "try/catch 正是其错误处理方式"
+      },
+      {
+        "text": "需要把三步放进 Promise.all 才等价",
+        "isCorrect": false,
+        "description": "原链是顺序依赖，不能用并行的 all 替代"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.resolve(42).then(v => v + 1).then(v => console.log(v))` 会打印什么？",
+    "explanation": "`Promise.resolve(42)` 以 42 兑现；第一个 then 回调返回 `42 + 1 = 43`，这个返回值成为下一个 then 的入参；第二个 then 打印 43。这演示了 then 回调返回值在链中的流动：上一步的返回值即下一步的输入。",
+    "tags": ["javascript", "promise", "return流动"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "43",
+        "isCorrect": true,
+        "description": "42 经第一个 then 变 43 流入第二个 then"
+      },
+      {
+        "text": "42",
+        "isCorrect": false,
+        "description": "第一个 then 已把值改成 43"
+      },
+      {
+        "text": "undefined",
+        "isCorrect": false,
+        "description": "第一个 then 有 return，值正常流动"
+      },
+      {
+        "text": "[object Promise]",
+        "isCorrect": false,
+        "description": "then 会展开 Promise，打印的是值 43"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `await` 不仅能等 Promise，还能等所谓「thenable」，thenable 指的是？",
+    "explanation": "thenable 是**任何带有可调用 `then` 方法的对象**——不一定是原生 Promise。`await`（以及 Promise 解析过程）会调用其 `then(resolve, reject)`，按它回调的方式落定。这使不同库的「类 Promise」对象能与原生异步机制互操作，是 Promise/A+ 规范的兼容设计。",
+    "tags": ["javascript", "thenable", "互操作"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任何拥有可调用 then 方法的对象，不限于原生 Promise",
+        "isCorrect": true,
+        "description": "await 会调用其 then 来落定"
+      },
+      {
+        "text": "只有用 new Promise 创建的对象",
+        "isCorrect": false,
+        "description": "thenable 范围更广，含第三方类 Promise"
+      },
+      {
+        "text": "带有 catch 方法的对象",
+        "isCorrect": false,
+        "description": "判定标准是 then 方法，而非 catch"
+      },
+      {
+        "text": "实现了迭代器协议的对象",
+        "isCorrect": false,
+        "description": "那是 iterable，与 thenable 无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中给 `fetch` 加「请求超时」最简洁的现代写法是？",
+    "explanation": "最简洁的是 `fetch(url, { signal: AbortSignal.timeout(ms) })`——`AbortSignal.timeout(ms)` 返回到点自动中止的信号，超时时 fetch 以 `TimeoutError` 拒绝，无需手写 controller + setTimeout。它是 Baseline 2024 特性；旧环境可退化为 `AbortController` + `setTimeout(() => controller.abort(), ms)`。",
+    "tags": ["javascript", "fetch超时", "AbortSignal-timeout"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`fetch(url, { signal: AbortSignal.timeout(ms) })`",
+        "isCorrect": true,
+        "description": "到点自动中止，超时以 TimeoutError 拒绝"
+      },
+      {
+        "text": "给 fetch 传一个 `timeout` 选项字段",
+        "isCorrect": false,
+        "description": "fetch 没有内建 timeout 选项"
+      },
+      {
+        "text": "用 `setTimeout` 包住 fetch 即可超时",
+        "isCorrect": false,
+        "description": "单纯 setTimeout 不会真正中止请求"
+      },
+      {
+        "text": "把 fetch 放进 Promise.all 配一个延时 Promise",
+        "isCorrect": false,
+        "description": "all 不会取消请求；超时竞速应用 race，但中止才是正解"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用 `Promise.race` 给请求加超时（让 fetch 与一个「定时拒绝」的 Promise 竞速），它和 `AbortSignal.timeout` 方案的本质差异是？",
+    "explanation": "`Promise.race([fetch(...), timeoutReject])` 只是让超时「先落定」从而让 await 抛错，但**底层 fetch 仍在后台继续跑**、未被真正取消，浪费连接与带宽。而 `AbortSignal.timeout`/`AbortController` 是**真正中止**底层请求。race 方案能感知超时但不释放资源，abort 方案才彻底。",
+    "tags": ["javascript", "promise-race", "超时取消"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "race 只让超时先落定，底层 fetch 仍在跑；abort 才真正取消请求",
+        "isCorrect": true,
+        "description": "race 不释放资源，abort 方案才彻底"
+      },
+      {
+        "text": "两者完全等价，都会中止底层请求",
+        "isCorrect": false,
+        "description": "race 不会中止 fetch，请求仍后台进行"
+      },
+      {
+        "text": "race 方案更省资源，因为它取消了请求",
+        "isCorrect": false,
+        "description": "恰恰相反，race 不取消、更费资源"
+      },
+      {
+        "text": "AbortSignal.timeout 无法中止 fetch",
+        "isCorrect": false,
+        "description": "它正是用来真正中止 fetch 的"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.all([])`（传入空数组）的结果是什么？",
+    "explanation": "`Promise.all` 传入空可迭代对象时，会**立即以空数组兑现**（`[]`）——因为「所有（零个）Promise 都已兑现」这一条件平凡成立。类似地 `Promise.allSettled([])` 也兑现为 `[]`；但 `Promise.any([])` 会以 `AggregateError` 拒绝（没有任何可兑现的输入）。",
+    "tags": ["javascript", "promise-all", "空数组"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "立即以空数组 `[]` 兑现",
+        "isCorrect": true,
+        "description": "「零个都兑现」平凡成立；any([]) 则会拒绝"
+      },
+      {
+        "text": "保持 pending 永不落定",
+        "isCorrect": false,
+        "description": "空输入会立即兑现，非挂起"
+      },
+      {
+        "text": "以 AggregateError 拒绝",
+        "isCorrect": false,
+        "description": "那是 Promise.any([]) 的行为"
+      },
+      {
+        "text": "抛出 TypeError",
+        "isCorrect": false,
+        "description": "空数组是合法输入，不报错"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `async` 函数体内 `return await somePromise` 与直接 `return somePromise`，通常有何差别？",
+    "explanation": "两者最终结果一致，但 `return await p` 会**多一次微任务等待**（先 await 解包再被 async 包回 Promise），略慢一拍；不过它有实用价值：当外层有 `try/catch` 时，`return await p` 能让 p 的拒绝在**本函数内**被 catch 捕获，而 `return p` 会把拒绝交给调用方处理。因此「需要本地 try/catch 兜错」时应保留 `await`。",
+    "tags": ["javascript", "return-await", "错误处理"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "结果相同，但 return await 能让拒绝被本函数的 try/catch 捕获",
+        "isCorrect": true,
+        "description": "代价是多一次微任务等待"
+      },
+      {
+        "text": "return somePromise 会丢失 Promise 的结果",
+        "isCorrect": false,
+        "description": "不会丢失，async 会正常透传该 Promise"
+      },
+      {
+        "text": "return await 会把异步变成同步执行",
+        "isCorrect": false,
+        "description": "仍是异步，只是多等一个微任务"
+      },
+      {
+        "text": "两者在任何情况下完全没有区别",
+        "isCorrect": false,
+        "description": "在 try/catch 场景下捕获行为不同"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `.catch(fn)` 与给 `.then(onFulfilled, onRejected)` 传第二个参数，在「捕获范围」上的细微差别是？",
+    "explanation": "`.then(f, g)` 中的 `g` 只能捕获**它之前**的链（即 `f` 同级的上游）的拒绝，**捕获不到同一个 then 里 `f` 自身抛出的错误**；而 `.then(f).catch(g)` 因为是下一环，能捕获包括 `f` 在内的整条上游的错误。这是推荐用独立 `.catch()` 而非 then 第二参数的原因之一。",
+    "tags": ["javascript", "promise", "catch范围"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "then 第二参数捕获不到同一 then 里成功回调自身的抛错，独立 catch 可以",
+        "isCorrect": true,
+        "description": "故常推荐用链尾独立 .catch()"
+      },
+      {
+        "text": "两者捕获范围完全相同，可随意互换",
+        "isCorrect": false,
+        "description": "对「同 then 内成功回调抛错」的捕获不同"
+      },
+      {
+        "text": "then 第二参数能捕获后续所有 then 的错误",
+        "isCorrect": false,
+        "description": "它只管其之前的上游，不管后续"
+      },
+      {
+        "text": ".catch() 无法捕获成功回调里的抛错",
+        "isCorrect": false,
+        "description": "下一环的 catch 恰能捕获上游成功回调的抛错"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 async/await 出现后，是否就完全不需要 `Promise.all` 等组合方法了？",
+    "explanation": "不是。async/await 只是更顺手地**消费**单个 Promise（顺序等待、try/catch），但「并发跑多个任务并汇总」仍要靠 `Promise.all`/`allSettled`/`race`/`any` 这些组合器。最佳实践是二者结合：`const [a, b] = await Promise.all([taskA(), taskB()])`，既并发又写法清爽。",
+    "tags": ["javascript", "async-await", "promise组合"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仍需要：并发汇总靠 Promise.all 等，常与 await 结合使用",
+        "isCorrect": true,
+        "description": "`await Promise.all([...])` 兼顾并发与可读性"
+      },
+      {
+        "text": "完全不需要了，await 能取代所有组合方法",
+        "isCorrect": false,
+        "description": "await 不提供并发汇总能力"
+      },
+      {
+        "text": "Promise.all 已被废弃，应改用 await",
+        "isCorrect": false,
+        "description": "Promise.all 并未废弃，仍是并发标准手段"
+      },
+      {
+        "text": "组合方法只能用 then，不能和 await 混用",
+        "isCorrect": false,
+        "description": "可以 await 一个组合器返回的 Promise"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Promise.resolve(thenable)` 传入一个「thenable」对象时的行为是？",
+    "explanation": "`Promise.resolve(x)` 若 `x` 是 thenable（带 then 方法），会返回一个**跟随该 thenable 落定**的新 Promise（即调用其 then 来决定状态），而非把它原样包一层。若 `x` 本身就是原生 Promise，则直接返回它本身。这保证了「解析」语义的一致性，避免 Promise 套 Promise。",
+    "tags": ["javascript", "promise-resolve", "thenable"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回跟随该 thenable 落定的新 Promise，而非原样包一层",
+        "isCorrect": true,
+        "description": "传入原生 Promise 则直接返回它本身"
+      },
+      {
+        "text": "把 thenable 当普通值包进已兑现 Promise",
+        "isCorrect": false,
+        "description": "thenable 会被「解析」而非原样包裹"
+      },
+      {
+        "text": "抛出 TypeError，因为不是真正的 Promise",
+        "isCorrect": false,
+        "description": "thenable 是合法输入，不报错"
+      },
+      {
+        "text": "返回一个永远 pending 的 Promise",
+        "isCorrect": false,
+        "description": "会按 thenable 的 then 回调落定"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中「`await` 让出执行权但不阻塞主线程」，下列哪种描述最准确？",
+    "explanation": "`await` 暂停的只是**当前 async 函数**：它把函数后续登记为待执行的微任务续体，然后**把控制权交还事件循环**，主线程可继续处理其它任务（响应点击、跑其它代码）。等被等待的 Promise 落定，续体才作为微任务恢复。所以是「协作式让出」，绝非把整个线程卡死等待。",
+    "tags": ["javascript", "await", "非阻塞"],
+    "categories": [
+      ["技术方向", "JavaScript 异步编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只暂停当前 async 函数并交还控制权，主线程继续处理其它任务",
+        "isCorrect": true,
+        "description": "续体作为微任务在 Promise 落定后恢复"
+      },
+      {
+        "text": "冻结整个页面，直到 Promise 完成才解冻",
+        "isCorrect": false,
+        "description": "await 不阻塞主线程，页面仍可响应"
+      },
+      {
+        "text": "新开一个线程去等待 Promise",
+        "isCorrect": false,
+        "description": "不开线程，靠事件循环调度续体"
+      },
+      {
+        "text": "让该 async 函数内的代码并行执行",
+        "isCorrect": false,
+        "description": "函数内仍顺序执行，await 处暂停而非并行"
+      }
+    ]
+  }
+]

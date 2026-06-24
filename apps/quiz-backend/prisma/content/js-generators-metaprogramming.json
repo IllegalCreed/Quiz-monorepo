@@ -1,0 +1,1831 @@
+[
+  {
+    "stem": "JavaScript 中用 `function*` 声明的生成器函数，调用后会立即执行函数体吗？",
+    "explanation": "调用生成器函数**不会**执行函数体，而是返回一个 Generator 对象（同时也是迭代器）。函数体被「冻结」在最开始，直到第一次调用 `next()` 才从头执行到第一个 `yield` 暂停。这正是生成器实现惰性求值的基础。",
+    "tags": ["javascript", "generator", "function*"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不会，调用只返回一个 Generator 对象，函数体尚未运行",
+        "isCorrect": true,
+        "description": "首次 `next()` 才开始执行到第一个 `yield`"
+      },
+      {
+        "text": "会，函数体立即从头执行到结尾",
+        "isCorrect": false,
+        "description": "那是普通函数的行为，生成器是惰性的"
+      },
+      {
+        "text": "会执行到第一个 `yield` 处再暂停",
+        "isCorrect": false,
+        "description": "执行到首个 `yield` 发生在第一次 `next()`，不是调用时"
+      },
+      {
+        "text": "取决于函数内是否含 `await`",
+        "isCorrect": false,
+        "description": "与 `await` 无关，同步生成器同样惰性"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 生成器函数中 `yield` 关键字的作用是什么？",
+    "explanation": "`yield` 暂停生成器执行，并把其右侧的值通过迭代器协议返回给调用方（作为 `next()` 结果的 `value`）。下次 `next()` 时从暂停处继续。它让函数能「分多次」交还控制权，是生成器的核心。",
+    "tags": ["javascript", "generator", "yield"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "暂停执行并把值作为 `next()` 结果的 `value` 返回给调用方",
+        "isCorrect": true,
+        "description": "下次 `next()` 从暂停处恢复"
+      },
+      {
+        "text": "立即结束生成器，等同于 `return`",
+        "isCorrect": false,
+        "description": "`yield` 是暂停不是结束，`return` 才结束"
+      },
+      {
+        "text": "异步等待一个 Promise 完成",
+        "isCorrect": false,
+        "description": "那是 `await`，`yield` 不等待 Promise"
+      },
+      {
+        "text": "声明一个局部变量",
+        "isCorrect": false,
+        "description": "`yield` 是表达式/语句，不声明变量"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中迭代器（iterator）必须实现的方法及其返回值形状是？",
+    "explanation": "迭代器是带有 `next()` 方法的对象，`next()` 返回形如 `{ value, done }` 的结果对象：`value` 是当前值，`done` 为布尔表示是否已迭代完毕。`return()` 与 `throw()` 是可选方法。",
+    "tags": ["javascript", "iterator", "protocol"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`next()`，返回 `{ value, done }`",
+        "isCorrect": true,
+        "description": "`done` 为 `true` 时迭代结束"
+      },
+      {
+        "text": "`hasNext()` 与 `getNext()`",
+        "isCorrect": false,
+        "description": "那是 Java 风格，JS 迭代器协议用 `next()`"
+      },
+      {
+        "text": "`[Symbol.iterator]()`，返回数组",
+        "isCorrect": false,
+        "description": "`[Symbol.iterator]` 属于「可迭代」协议且返回迭代器"
+      },
+      {
+        "text": "`forEach(callback)`",
+        "isCorrect": false,
+        "description": "`forEach` 是数组方法，不是迭代器协议"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中一个对象要成为「可迭代对象」（iterable），需满足什么条件？",
+    "explanation": "可迭代协议要求对象实现 `[Symbol.iterator]()` 方法并返回一个迭代器。`Array` / `String` / `Map` / `Set` / `TypedArray` 都在原型上带有该方法，所以天生可迭代，可用于 `for...of`、展开语法等。",
+    "tags": ["javascript", "iterable", "symbol-iterator"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "实现 `[Symbol.iterator]()` 方法并返回一个迭代器",
+        "isCorrect": true,
+        "description": "`for...of`、展开、解构都依赖它"
+      },
+      {
+        "text": "拥有 `length` 属性和数字索引",
+        "isCorrect": false,
+        "description": "那是「类数组」，类数组不一定可迭代"
+      },
+      {
+        "text": "直接实现 `next()` 方法",
+        "isCorrect": false,
+        "description": "带 `next()` 的是迭代器，可迭代要的是 `[Symbol.iterator]`"
+      },
+      {
+        "text": "继承自 `Array.prototype`",
+        "isCorrect": false,
+        "description": "无需继承数组，自定义对象也能可迭代"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用生成器为自定义对象实现 `[Symbol.iterator]` 的最简写法是？",
+    "explanation": "在对象字面量里用 `*[Symbol.iterator]() { ... }` 定义一个生成器方法，里面 `yield` 出每个值即可。生成器本身就是迭代器，省去手写 `next()` 与维护 `{ value, done }` 的样板。",
+    "tags": ["javascript", "iterable", "generator"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`*[Symbol.iterator]() { yield 1; yield 2; }`",
+        "isCorrect": true,
+        "description": "生成器即迭代器，无需手写 `next()`"
+      },
+      {
+        "text": "`[Symbol.iterator]: [1, 2, 3]`",
+        "isCorrect": false,
+        "description": "`[Symbol.iterator]` 必须是返回迭代器的函数，不能是数组"
+      },
+      {
+        "text": "`next() { return [1, 2]; }`",
+        "isCorrect": false,
+        "description": "缺少 `[Symbol.iterator]`，且 `next` 应返回 `{value,done}`"
+      },
+      {
+        "text": "`Symbol.iterator = function() {}`（不带 `*`，且空实现）",
+        "isCorrect": false,
+        "description": "空函数不返回迭代器，会让 `for...of` 报错"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 生成器对象被遍历一次后，再次用 `for...of` 遍历同一个生成器对象，结果是？",
+    "explanation": "生成器对象的 `[Symbol.iterator]()` 返回它自身，因此**只能消费一次**。一旦迭代完毕（`done` 为 `true`），再次遍历不会重新开始，得到空序列。要可重复迭代，应每次调用生成器函数获取新的生成器对象。",
+    "tags": ["javascript", "generator", "迭代一次"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "得到空序列，因为生成器只能消费一次",
+        "isCorrect": true,
+        "description": "`gen[Symbol.iterator]() === gen`，迭代完即耗尽"
+      },
+      {
+        "text": "从头重新产出所有值",
+        "isCorrect": false,
+        "description": "生成器不会自动重置，需重新调用生成器函数"
+      },
+      {
+        "text": "抛出 `TypeError`",
+        "isCorrect": false,
+        "description": "不会报错，只是直接得到 `done: true`"
+      },
+      {
+        "text": "产出最后一个值后停止",
+        "isCorrect": false,
+        "description": "已耗尽的生成器一个值都不再产出"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中下面这个无限序列生成器为什么不会让程序卡死？\n```js\nfunction* naturals() {\n  let n = 0;\n  while (true) yield n++;\n}\n```",
+    "explanation": "尽管是 `while (true)`，生成器是**惰性求值**的：每次 `next()` 只推进到下一个 `yield` 就暂停，不会一次性算出无限多个值。只要消费方按需取有限个（如配合 `take(n)` 或 `for...of` 里 `break`），就不会死循环。",
+    "tags": ["javascript", "generator", "惰性求值"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为生成器惰性求值，每次 `next()` 只推进到下一个 `yield`",
+        "isCorrect": true,
+        "description": "无限序列只在被消费时按需产出"
+      },
+      {
+        "text": "因为引擎检测到死循环会自动跳出",
+        "isCorrect": false,
+        "description": "引擎不会自动跳出，是惰性机制使然"
+      },
+      {
+        "text": "因为 `while (true)` 在生成器里等价于 `if`",
+        "isCorrect": false,
+        "description": "语义不变，关键在 `yield` 暂停执行"
+      },
+      {
+        "text": "因为生成器最多只产出 1000 个值",
+        "isCorrect": false,
+        "description": "没有这种隐式上限，由消费方决定取多少"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `yield* iterable` 的语义是什么？",
+    "explanation": "`yield*`（委托）会把右侧可迭代对象的每个值依次产出，相当于「展开」一个子序列到当前生成器。它常用于组合多个生成器；委托对象若是生成器，其 `return` 值会成为 `yield*` 表达式的求值结果。",
+    "tags": ["javascript", "generator", "yield-star"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "依次产出右侧可迭代对象的每个值，实现委托/组合",
+        "isCorrect": true,
+        "description": "如 `yield* [1,2,3]` 会逐个产出 1、2、3"
+      },
+      {
+        "text": "把整个可迭代对象作为单个值一次性产出",
+        "isCorrect": false,
+        "description": "那是 `yield iterable`，`yield*` 是逐个产出"
+      },
+      {
+        "text": "并行运行右侧的生成器",
+        "isCorrect": false,
+        "description": "没有并行，仍是同步逐个委托"
+      },
+      {
+        "text": "对右侧每个值乘以二后产出",
+        "isCorrect": false,
+        "description": "`*` 不是乘法，是委托语法"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 生成器中，`const x = yield` 这行的 `x` 从何处取值？",
+    "explanation": "`yield` 是表达式，其求值结果是**下一次** `next(value)` 传入的实参。即调用 `gen.next(42)` 会让上一个暂停的 `yield` 表达式求值为 `42`，从而 `x` 得到 `42`。这实现了调用方向生成器内部「回灌」数据的双向通信。",
+    "tags": ["javascript", "generator", "双向通信"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "取自下一次 `next(value)` 传入的实参",
+        "isCorrect": true,
+        "description": "`gen.next(42)` 让该 `yield` 求值为 `42`"
+      },
+      {
+        "text": "取自 `yield` 右侧表达式的值",
+        "isCorrect": false,
+        "description": "此处 `yield` 无右值；右值是产出给调用方的"
+      },
+      {
+        "text": "总是 `undefined`",
+        "isCorrect": false,
+        "description": "若 `next` 带参就不是 `undefined`"
+      },
+      {
+        "text": "取自生成器函数的参数",
+        "isCorrect": false,
+        "description": "函数参数在调用时绑定，与 `yield` 回灌无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 生成器双向通信中，传给**第一次** `next()` 的参数会怎样？",
+    "explanation": "规范规定：传给**第一次** `next()` 的值**总是被忽略**。因为首次 `next()` 之前没有任何挂起的 `yield` 表达式可以接收这个值，生成器只是从头执行到第一个 `yield`。要向生成器灌入数据，需从第二次 `next()` 起。",
+    "tags": ["javascript", "generator", "首个-next-忽略"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "被忽略，因为此时没有挂起的 `yield` 来接收它",
+        "isCorrect": true,
+        "description": "首次 `next` 只是启动执行到第一个 `yield`"
+      },
+      {
+        "text": "成为生成器函数的第一个参数",
+        "isCorrect": false,
+        "description": "函数参数在调用生成器函数时就已绑定"
+      },
+      {
+        "text": "成为第一个 `yield` 表达式的值",
+        "isCorrect": false,
+        "description": "第一个 `yield` 尚未被求值，无从接收"
+      },
+      {
+        "text": "导致抛出 `TypeError`",
+        "isCorrect": false,
+        "description": "不会报错，只是静默忽略"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中调用 `generator.return(value)` 会发生什么？",
+    "explanation": "`return(value)` 会让生成器在当前挂起点「提前结束」，立即返回 `{ value, done: true }`。若生成器内有包裹挂起 `yield` 的 `try...finally`，其 `finally` 块仍会执行（可用于清理资源）。之后再 `next()` 都返回 `done: true`。",
+    "tags": ["javascript", "generator", "return"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "提前结束生成器，返回 `{ value, done: true }`，并触发挂起处的 `finally`",
+        "isCorrect": true,
+        "description": "适合做提前终止与资源清理"
+      },
+      {
+        "text": "重置生成器到初始状态",
+        "isCorrect": false,
+        "description": "不会重置，而是终结生成器"
+      },
+      {
+        "text": "把 `value` 追加为下一个产出值后继续",
+        "isCorrect": false,
+        "description": "它是终结而非继续产出"
+      },
+      {
+        "text": "什么都不做，仅返回 `value`",
+        "isCorrect": false,
+        "description": "会改变生成器状态为已完成"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `generator.throw(err)` 的行为是？",
+    "explanation": "`throw(err)` 在生成器**当前挂起的位置**抛出异常，如同那一行 `yield` 处发生了错误。若生成器内用 `try...catch` 捕获，可继续运行；若未捕获，异常会沿 `throw()` 调用向上传播，且之后 `next()` 返回 `done: true`。",
+    "tags": ["javascript", "generator", "throw"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在当前挂起的 `yield` 处抛出异常，可被生成器内 `try...catch` 捕获",
+        "isCorrect": true,
+        "description": "未捕获则向 `throw()` 调用方传播"
+      },
+      {
+        "text": "向调用方返回一个 rejected Promise",
+        "isCorrect": false,
+        "description": "同步生成器不涉及 Promise"
+      },
+      {
+        "text": "把异常存入下次 `next()` 的 `value`",
+        "isCorrect": false,
+        "description": "是抛出异常而非作为值返回"
+      },
+      {
+        "text": "静默忽略该异常",
+        "isCorrect": false,
+        "description": "异常会被注入挂起点，不会静默"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中异步生成器用什么语法声明，又怎样消费？",
+    "explanation": "异步生成器用 `async function*` 声明，函数体内可同时使用 `await` 和 `yield`。它返回 AsyncGenerator，每次 `next()` 返回一个 resolve 为 `{ value, done }` 的 Promise，最适合用 `for await...of` 消费。常用于分页拉取、流式读取等异步数据源。",
+    "tags": ["javascript", "async-generator", "for-await-of"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`async function*` 声明，用 `for await...of` 消费",
+        "isCorrect": true,
+        "description": "函数体内可同时 `await` 与 `yield`"
+      },
+      {
+        "text": "`function*` 声明，用普通 `for...of` 消费",
+        "isCorrect": false,
+        "description": "那是同步生成器，不能 `await`"
+      },
+      {
+        "text": "`async function` 声明，用 `await` 消费",
+        "isCorrect": false,
+        "description": "缺少 `*` 就不是生成器，不能 `yield` 多值"
+      },
+      {
+        "text": "`function async*` 声明，用 `.then()` 链消费",
+        "isCorrect": false,
+        "description": "语法应为 `async function*`，顺序不能颠倒"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 异步生成器中，调用 `asyncGen.next()` 的返回值类型是？",
+    "explanation": "异步生成器的 `next()` 返回的是一个 **Promise**，它 resolve 为迭代结果对象 `{ value, done }`。这与同步生成器直接返回 `{ value, done }` 不同。因此需 `await asyncGen.next()` 或用 `for await...of` 自动处理这些 Promise。",
+    "tags": ["javascript", "async-generator", "promise"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 resolve 为 `{ value, done }` 的 Promise",
+        "isCorrect": true,
+        "description": "需 `await` 或 `for await...of` 处理"
+      },
+      {
+        "text": "直接返回 `{ value, done }` 对象",
+        "isCorrect": false,
+        "description": "那是同步生成器，异步生成器返回 Promise"
+      },
+      {
+        "text": "返回 `value` 本身",
+        "isCorrect": false,
+        "description": "`next()` 始终返回结果对象（这里是其 Promise）"
+      },
+      {
+        "text": "返回一个新的异步生成器",
+        "isCorrect": false,
+        "description": "`next()` 推进迭代，不返回新生成器"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `for await...of` 相比 `for...of` 的关键差异是？",
+    "explanation": "`for await...of` 会在每次取值时 `await` 迭代结果，可消费**异步可迭代对象**（实现 `[Symbol.asyncIterator]`）；若元素是 Promise，也会等待其完成再进入循环体。`for...of` 不会等待，拿到的是 Promise 本身。",
+    "tags": ["javascript", "for-await-of", "async-iterator"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它会 `await` 每次迭代结果，能消费异步可迭代对象",
+        "isCorrect": true,
+        "description": "查找 `[Symbol.asyncIterator]`，逐个等待"
+      },
+      {
+        "text": "它能并行消费所有元素",
+        "isCorrect": false,
+        "description": "仍是顺序逐个，不是并行"
+      },
+      {
+        "text": "它只能用于数组",
+        "isCorrect": false,
+        "description": "面向异步可迭代对象，不限于数组"
+      },
+      {
+        "text": "它与 `for...of` 完全等价",
+        "isCorrect": false,
+        "description": "差异在于是否等待每次迭代结果"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中异步可迭代对象通过哪个 well-known symbol 暴露其异步迭代器？",
+    "explanation": "异步可迭代协议要求实现 `[Symbol.asyncIterator]()`，返回一个异步迭代器（其 `next()` 返回 Promise）。`for await...of` 优先查找 `Symbol.asyncIterator`。同步可迭代对象用的是 `Symbol.iterator`，两者分属不同协议。",
+    "tags": ["javascript", "symbol-asyncIterator", "async-iterable"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Symbol.asyncIterator`",
+        "isCorrect": true,
+        "description": "`for await...of` 优先查找它"
+      },
+      {
+        "text": "`Symbol.iterator`",
+        "isCorrect": false,
+        "description": "那是同步可迭代协议用的"
+      },
+      {
+        "text": "`Symbol.for(\"asyncIterator\")`",
+        "isCorrect": false,
+        "description": "well-known symbol 是 `Symbol.asyncIterator`，不在全局注册表"
+      },
+      {
+        "text": "`Symbol.await`",
+        "isCorrect": false,
+        "description": "不存在 `Symbol.await`"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用异步生成器实现分页/流式拉取数据的典型优势是？",
+    "explanation": "异步生成器把「异步获取」与「按需产出」结合：可以一边 `await fetch(下一页)` 一边 `yield` 当前页结果，调用方用 `for await...of` 逐页处理，**无需一次性把所有数据载入内存**，天然适合分页 API、日志流、大文件分块读取等背压场景。",
+    "tags": ["javascript", "async-generator", "流式"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按需逐批产出，避免一次性把全部数据载入内存",
+        "isCorrect": true,
+        "description": "适合分页、日志流、大文件分块"
+      },
+      {
+        "text": "自动并发请求所有分页以最快加载",
+        "isCorrect": false,
+        "description": "异步生成器是顺序按需，不自动并发全部"
+      },
+      {
+        "text": "无需 `await`，自动同步返回数据",
+        "isCorrect": false,
+        "description": "网络获取仍是异步，需 `await`"
+      },
+      {
+        "text": "能绕过浏览器同源策略",
+        "isCorrect": false,
+        "description": "与同源策略无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中下列哪些语法会消费可迭代对象（即依赖 `Symbol.iterator`）？",
+    "explanation": "`for...of`、展开语法 `[...iter]`、数组/对象解构、`yield*`、`Array.from(iter)`、`new Map(iter)` / `new Set(iter)`、`Promise.all(iter)` 等都消费可迭代对象。而 `for...in` 遍历的是对象**可枚举键**，不走可迭代协议。",
+    "tags": ["javascript", "iterable", "for-of"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`for...of`、展开语法 `[...iter]` 与解构",
+        "isCorrect": true,
+        "description": "它们都通过 `Symbol.iterator` 取值"
+      },
+      {
+        "text": "`for...in` 循环",
+        "isCorrect": false,
+        "description": "`for...in` 遍历可枚举键，不用迭代协议"
+      },
+      {
+        "text": "`Object.keys()`",
+        "isCorrect": false,
+        "description": "返回键数组，本身不依赖目标的迭代协议"
+      },
+      {
+        "text": "`JSON.stringify()`",
+        "isCorrect": false,
+        "description": "序列化基于对象属性，不走迭代协议"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Proxy` 构造函数接收哪两个参数？",
+    "explanation": "`new Proxy(target, handler)`：`target` 是被代理的原始对象，`handler` 是定义各种「陷阱」（trap）的对象。对代理的操作会被转交给 handler 中对应的 trap；未定义的 trap 则透明转发到 target。",
+    "tags": ["javascript", "proxy", "target-handler"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`target`（被代理对象）和 `handler`（陷阱集合）",
+        "isCorrect": true,
+        "description": "`new Proxy(target, handler)`"
+      },
+      {
+        "text": "`getter` 和 `setter`",
+        "isCorrect": false,
+        "description": "拦截逻辑放在 handler 的 trap 里，而非两个函数"
+      },
+      {
+        "text": "`object` 和 `schema`",
+        "isCorrect": false,
+        "description": "没有 schema 参数"
+      },
+      {
+        "text": "只接收一个 `target` 参数",
+        "isCorrect": false,
+        "description": "必须同时传 target 和 handler"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Proxy` 一共支持多少种陷阱（trap）？",
+    "explanation": "Proxy 对应 13 个对象内部方法，共 **13 种 trap**：`get`、`set`、`has`、`deleteProperty`、`ownKeys`、`getOwnPropertyDescriptor`、`defineProperty`、`getPrototypeOf`、`setPrototypeOf`、`isExtensible`、`preventExtensions`、`apply`、`construct`。每个 trap 拦截一类基础操作。",
+    "tags": ["javascript", "proxy", "13-trap"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "13 种",
+        "isCorrect": true,
+        "description": "对应对象的 13 个内部方法"
+      },
+      {
+        "text": "5 种",
+        "isCorrect": false,
+        "description": "远不止 5 种"
+      },
+      {
+        "text": "8 种",
+        "isCorrect": false,
+        "description": "实际是 13 种"
+      },
+      {
+        "text": "无限种，可自定义任意 trap 名",
+        "isCorrect": false,
+        "description": "trap 名是固定的 13 个，自定义名无效"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的 `get` trap 签名是 `get(target, prop, receiver)`，其中 `prop` 代表什么？",
+    "explanation": "`get` trap 拦截属性读取。`target` 是原对象，`prop` 是被访问的**属性键**（字符串或 Symbol），`receiver` 通常是代理本身（或继承自它的对象）。返回值即此次属性访问的结果。",
+    "tags": ["javascript", "proxy", "get-trap"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "被访问的属性键（字符串或 Symbol）",
+        "isCorrect": true,
+        "description": "如读 `p.name` 时 `prop` 为 `\"name\"`"
+      },
+      {
+        "text": "属性的当前值",
+        "isCorrect": false,
+        "description": "`get` 拦截读取，值由 trap 返回而非传入"
+      },
+      {
+        "text": "代理对象本身",
+        "isCorrect": false,
+        "description": "那是 `receiver` 参数"
+      },
+      {
+        "text": "属性描述符对象",
+        "isCorrect": false,
+        "description": "描述符出现在 `getOwnPropertyDescriptor` trap"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的 `set` trap 必须返回什么类型的值？",
+    "explanation": "`set(target, prop, value, receiver)` 必须返回一个**布尔值**表示赋值是否成功。在严格模式下返回 `false` 会抛 `TypeError`。同理 `has`、`deleteProperty`、`defineProperty` 等也要求返回布尔。忘记 `return true` 是常见 bug。",
+    "tags": ["javascript", "proxy", "set-trap"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "布尔值，表示赋值是否成功",
+        "isCorrect": true,
+        "description": "严格模式下返回 `false` 会抛 `TypeError`"
+      },
+      {
+        "text": "被赋的值 `value`",
+        "isCorrect": false,
+        "description": "返回值用于表示成功与否，不是回传值"
+      },
+      {
+        "text": "`undefined` 即可，无返回要求",
+        "isCorrect": false,
+        "description": "缺少 `return true` 可能导致严格模式报错"
+      },
+      {
+        "text": "修改后的 `target`",
+        "isCorrect": false,
+        "description": "应返回布尔，而非对象"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的 `has` trap 拦截哪个操作？",
+    "explanation": "`has(target, prop)` 拦截 `in` 运算符（如 `\"x\" in proxy`），返回布尔。它也影响 `with` 语句中的变量查找，但**不**拦截 `for...in` 的枚举（那由 `ownKeys` 等参与）。",
+    "tags": ["javascript", "proxy", "has-trap"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`in` 运算符",
+        "isCorrect": true,
+        "description": "如 `\"x\" in proxy` 会触发 `has`"
+      },
+      {
+        "text": "`delete` 运算符",
+        "isCorrect": false,
+        "description": "那是 `deleteProperty` trap"
+      },
+      {
+        "text": "属性读取 `proxy.x`",
+        "isCorrect": false,
+        "description": "属性读取由 `get` trap 拦截"
+      },
+      {
+        "text": "`typeof proxy`",
+        "isCorrect": false,
+        "description": "`typeof` 不可被 Proxy 拦截"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中要拦截被代理函数的「调用」与「new 实例化」，分别用哪两个 trap？",
+    "explanation": "`apply(target, thisArg, argsList)` 拦截函数调用 `proxy(...)`；`construct(target, argsList, newTarget)` 拦截 `new proxy(...)`。这两个 trap 仅在 target 本身是函数 / 构造函数时才有效，否则相应操作会抛错。",
+    "tags": ["javascript", "proxy", "apply-construct"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`apply` 拦截调用，`construct` 拦截 `new`",
+        "isCorrect": true,
+        "description": "target 须为函数/构造函数才生效"
+      },
+      {
+        "text": "`call` 拦截调用，`new` 拦截实例化",
+        "isCorrect": false,
+        "description": "trap 名为 `apply` 与 `construct`，无 `call`/`new` trap"
+      },
+      {
+        "text": "`get` 拦截调用，`set` 拦截 `new`",
+        "isCorrect": false,
+        "description": "`get`/`set` 针对属性，不针对调用"
+      },
+      {
+        "text": "`invoke` 拦截调用，`instantiate` 拦截 `new`",
+        "isCorrect": false,
+        "description": "不存在这两个 trap 名"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的 `ownKeys` trap 会影响下列哪些操作？",
+    "explanation": "`ownKeys(target)` 拦截「获取自有属性键」的操作，影响 `Object.keys()`、`Object.getOwnPropertyNames()`、`Object.getOwnPropertySymbols()`、`Reflect.ownKeys()` 以及 `for...in` 的键收集等。它必须返回一个由字符串/Symbol 组成的数组，且需满足相关不变量。",
+    "tags": ["javascript", "proxy", "ownKeys"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Object.keys()`、`for...in`、`Object.getOwnPropertyNames()` 等键枚举",
+        "isCorrect": true,
+        "description": "须返回字符串/Symbol 数组并满足不变量"
+      },
+      {
+        "text": "仅 `proxy.length` 的读取",
+        "isCorrect": false,
+        "description": "那由 `get` 拦截，与键枚举无关"
+      },
+      {
+        "text": "`JSON.parse()`",
+        "isCorrect": false,
+        "description": "解析字符串不涉及目标键枚举"
+      },
+      {
+        "text": "`proxy === target` 的比较",
+        "isCorrect": false,
+        "description": "相等比较不可被 Proxy 拦截"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的 handler 没有定义某个 trap（如未写 `set`）时会怎样？",
+    "explanation": "未定义的 trap 会**默认转发到 target**，即执行该操作的标准行为。例如空 handler 的代理 `new Proxy(obj, {})` 对它赋值，会直接落到 `obj` 上。这让你可以只拦截关心的少数操作，其余保持原样。",
+    "tags": ["javascript", "proxy", "默认转发"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "该操作默认转发到 target，执行标准行为",
+        "isCorrect": true,
+        "description": "可只拦截关心的操作，其余原样透传"
+      },
+      {
+        "text": "该操作抛出 `TypeError`",
+        "isCorrect": false,
+        "description": "缺 trap 不报错，而是透传"
+      },
+      {
+        "text": "该操作返回 `undefined` 且无副作用",
+        "isCorrect": false,
+        "description": "会真实作用到 target，并非无副作用"
+      },
+      {
+        "text": "必须为全部 13 个 trap 都提供实现",
+        "isCorrect": false,
+        "description": "无此要求，按需提供即可"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Reflect` 对象的基本性质是？",
+    "explanation": "`Reflect` 是一个**内置命名空间对象**（类似 `Math`），不是构造函数，不能 `new`，也不能作为函数调用，所有方法都是静态方法。它提供与对象内部方法一一对应的 13 个静态方法，常作为 Proxy trap 的默认实现。",
+    "tags": ["javascript", "reflect", "命名空间"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它是命名空间对象（类似 `Math`），不可 `new`，方法皆为静态",
+        "isCorrect": true,
+        "description": "提供 13 个与内部方法对应的静态方法"
+      },
+      {
+        "text": "它是一个构造函数，可用 `new Reflect()`",
+        "isCorrect": false,
+        "description": "`Reflect` 不可被构造"
+      },
+      {
+        "text": "它可以像函数一样直接调用 `Reflect(obj)`",
+        "isCorrect": false,
+        "description": "`Reflect` 不可调用"
+      },
+      {
+        "text": "它有 `Reflect.prototype` 供继承",
+        "isCorrect": false,
+        "description": "没有 prototype，不用于继承"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Reflect.get(target, prop, receiver)` 相比 `target[prop]` 的独特能力是？",
+    "explanation": "`Reflect.get` 支持传入 `receiver` 作为 getter 执行时的 `this`。当属性是一个 getter 且定义在原型链上时，`receiver` 决定 getter 内部 `this` 指向谁。普通的 `target[prop]` 无法指定这个 `this`。这正是它与 Proxy `get` trap 配合的关键。",
+    "tags": ["javascript", "reflect", "receiver"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可通过 `receiver` 指定 getter 执行时的 `this`",
+        "isCorrect": true,
+        "description": "`target[prop]` 的 `this` 固定为 `target`"
+      },
+      {
+        "text": "读取速度比 `target[prop]` 快",
+        "isCorrect": false,
+        "description": "二者无性能差异，区别在语义"
+      },
+      {
+        "text": "能读取私有字段 `#x`",
+        "isCorrect": false,
+        "description": "私有字段不能这样访问"
+      },
+      {
+        "text": "属性不存在时返回 `null` 而非 `undefined`",
+        "isCorrect": false,
+        "description": "不存在仍返回 `undefined`"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中为什么 Proxy trap 内推荐用 `Reflect` 完成默认行为，如 `return Reflect.get(target, prop, receiver)`？",
+    "explanation": "`Reflect` 的方法与 Proxy 的 13 个 trap 一一对应、签名一致，能精确复刻默认内部行为；尤其在 `get`/`set` 中转发 `receiver`，可正确处理原型链上的 getter/setter 的 `this`。手写 `target[prop]` 会丢失 `receiver`，导致继承场景下 `this` 错误。",
+    "tags": ["javascript", "reflect", "proxy-配合"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "方法与 trap 一一对应，且能正确转发 `receiver` 保持 `this` 语义",
+        "isCorrect": true,
+        "description": "避免原型链 getter/setter 的 `this` 错乱"
+      },
+      {
+        "text": "`Reflect` 会自动缓存结果提升性能",
+        "isCorrect": false,
+        "description": "没有自动缓存，理由是语义正确"
+      },
+      {
+        "text": "不用 `Reflect` 就无法返回值",
+        "isCorrect": false,
+        "description": "可返回任意值，`Reflect` 关乎正确性而非可行性"
+      },
+      {
+        "text": "`Reflect` 能阻止 trap 再次被触发",
+        "isCorrect": false,
+        "description": "不阻止，反而需小心自引用导致的递归"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Reflect.defineProperty()` 与 `Object.defineProperty()` 在「失败时」的行为差异是？",
+    "explanation": "二者参数相同，但失败时表现不同：`Object.defineProperty` 失败会**抛异常**并返回对象（成功时）；`Reflect.defineProperty` 失败时**返回 `false`**、成功返回 `true`，不抛异常。后者更适合需要根据结果分支处理而非用 try/catch 的场景。",
+    "tags": ["javascript", "reflect", "defineProperty"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Reflect.defineProperty` 失败返回 `false`，`Object.defineProperty` 失败抛异常",
+        "isCorrect": true,
+        "description": "前者用返回值表达成败，便于分支判断"
+      },
+      {
+        "text": "两者失败都抛异常",
+        "isCorrect": false,
+        "description": "`Reflect` 版以布尔返回值表达成败"
+      },
+      {
+        "text": "两者失败都静默返回 `undefined`",
+        "isCorrect": false,
+        "description": "`Object` 版会抛异常"
+      },
+      {
+        "text": "`Object.defineProperty` 返回布尔，`Reflect` 版返回对象",
+        "isCorrect": false,
+        "description": "恰好相反"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Reflect.construct(target, argsList, newTarget)` 的独特价值是？",
+    "explanation": "`Reflect.construct` 是**唯一**能在构造时显式指定 `new.target`（即第三个参数 `newTarget`）的方式。直接 `new Foo()` 时 `new.target` 永远是 `Foo` 本身。这在自定义继承、内置对象子类化等需要控制 `new.target` 的元编程场景中很关键。",
+    "tags": ["javascript", "reflect", "construct"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可显式指定构造过程中的 `new.target`",
+        "isCorrect": true,
+        "description": "直接 `new` 无法改写 `new.target`"
+      },
+      {
+        "text": "构造时不会调用类的构造函数",
+        "isCorrect": false,
+        "description": "仍会调用构造函数"
+      },
+      {
+        "text": "能同步构造异步对象",
+        "isCorrect": false,
+        "description": "与异步无关"
+      },
+      {
+        "text": "总是返回 `null`",
+        "isCorrect": false,
+        "description": "返回新构造的实例"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 响应式系统（如 Vue 3）用 Proxy 实现依赖收集，`get` 与 `set` trap 分别承担什么角色？",
+    "explanation": "Vue 3 的响应式骨架里：`get` trap 负责 **track（依赖收集）**——读取属性时记录当前正在运行的副作用（effect）依赖了该属性；`set` trap 负责 **trigger（派发更新）**——属性变更时重新运行依赖它的副作用。Proxy 能拦截属性新增/删除，弥补了旧版 `Object.defineProperty` 的局限。",
+    "tags": ["javascript", "proxy", "响应式-vue3"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`get` 做 track 依赖收集，`set` 做 trigger 派发更新",
+        "isCorrect": true,
+        "description": "读时记录依赖，写时通知依赖更新"
+      },
+      {
+        "text": "`get` 做 trigger，`set` 做 track",
+        "isCorrect": false,
+        "description": "角色恰好相反"
+      },
+      {
+        "text": "两者都只负责数据校验",
+        "isCorrect": false,
+        "description": "响应式核心是 track/trigger，而非校验"
+      },
+      {
+        "text": "`set` 负责把数据写入 localStorage",
+        "isCorrect": false,
+        "description": "持久化不是响应式 trap 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Vue 3 用 Proxy 取代 Vue 2 的 `Object.defineProperty` 做响应式，主要解决了什么短板？",
+    "explanation": "`Object.defineProperty` 只能劫持**已存在的属性**，无法侦测对象属性的**新增/删除**，也不能直接拦截数组下标赋值与 `length` 变化（Vue 2 需 `Vue.set`/重写数组方法绕过）。Proxy 在更底层拦截，新增/删除属性、数组索引修改都能被捕获，无需特殊 API。",
+    "tags": ["javascript", "proxy", "vue3-响应式"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "能侦测属性的新增/删除与数组索引变化，无需 `Vue.set` 之类特殊 API",
+        "isCorrect": true,
+        "description": "`defineProperty` 只能劫持已有属性"
+      },
+      {
+        "text": "让响应式数据可以被 `JSON.stringify` 序列化",
+        "isCorrect": false,
+        "description": "序列化能力与是否用 Proxy 无关"
+      },
+      {
+        "text": "使所有计算属性自动变成异步",
+        "isCorrect": false,
+        "description": "计算属性并不因此变异步"
+      },
+      {
+        "text": "彻底移除了对依赖收集的需要",
+        "isCorrect": false,
+        "description": "仍需 track/trigger 收集与派发依赖"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Proxy.revocable(target, handler)` 返回什么，有何用途？",
+    "explanation": "它返回 `{ proxy, revoke }`：`proxy` 是可被「吊销」的代理，`revoke` 是一个无参函数。调用 `revoke()` 后，对该 proxy 的任何基础操作都会抛 `TypeError`。适合在权限/生命周期到期后**主动断开**对底层对象的访问能力。",
+    "tags": ["javascript", "proxy", "revocable"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 `{ proxy, revoke }`，调用 `revoke()` 后代理操作全部抛 `TypeError`",
+        "isCorrect": true,
+        "description": "用于到期主动断开访问"
+      },
+      {
+        "text": "返回一个永不失效的只读代理",
+        "isCorrect": false,
+        "description": "它的特点正是可被吊销"
+      },
+      {
+        "text": "返回原始 target 的深拷贝",
+        "isCorrect": false,
+        "description": "不复制对象，仍代理同一 target"
+      },
+      {
+        "text": "返回一个 Promise",
+        "isCorrect": false,
+        "description": "返回的是含 proxy 与 revoke 的对象"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 对私有字段（`#field`）或内置对象（如 `Map`）做无操作转发时，为何会抛错？",
+    "explanation": "私有字段与某些内置对象依赖**内部槽 / 对象标识**，方法执行时 `this` 必须是「真正拥有该槽的对象」。无操作转发让 `this` 变成代理（不同身份），于是 `proxy.size`（Map）或读私有字段会抛 `TypeError`。解决办法是在 `get` trap 里把方法 `bind` 回原 target，或返回 `target[prop]`。",
+    "tags": ["javascript", "proxy", "内部槽"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为代理与 target 身份不同，方法的 `this` 不再是拥有内部槽的对象",
+        "isCorrect": true,
+        "description": "需在 `get` 里把方法绑回原 target"
+      },
+      {
+        "text": "因为 Proxy 不支持任何内置对象",
+        "isCorrect": false,
+        "description": "支持，只是需正确处理 `this` 绑定"
+      },
+      {
+        "text": "因为私有字段会被自动公开",
+        "isCorrect": false,
+        "description": "私有字段不会公开，反而无法跨身份访问"
+      },
+      {
+        "text": "因为 `Map` 不能被赋值给变量",
+        "isCorrect": false,
+        "description": "与赋值无关，是内部槽身份问题"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 的「不变量（invariant）」机制是指什么？",
+    "explanation": "为防止 trap 返回与对象真实状态矛盾的结果，规范对部分 trap 设了**不变量**约束。例如：若 target 某属性是不可配置且不可写的数据属性，`get` trap 就**不能**返回与该属性真实值不同的值，否则抛 `TypeError`。不变量保证了语言层面的一致性，代理无法「撒谎」到破坏底层语义。",
+    "tags": ["javascript", "proxy", "invariant"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对 trap 返回值的约束，违反时抛 `TypeError` 以保持与 target 真实状态一致",
+        "isCorrect": true,
+        "description": "如不可配置不可写属性的 `get` 不能改值"
+      },
+      {
+        "text": "Proxy 永远不会修改 target 的任何属性",
+        "isCorrect": false,
+        "description": "Proxy 可修改 target，不变量限制的是矛盾返回"
+      },
+      {
+        "text": "所有 trap 都必须返回布尔值",
+        "isCorrect": false,
+        "description": "不同 trap 返回类型不同，并非都返回布尔"
+      },
+      {
+        "text": "代理对象的属性数量必须固定不变",
+        "isCorrect": false,
+        "description": "属性可增减，不变量另有所指"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中实现 Proxy `get` trap 时若写成 `return target[prop]` 处理一切，常见隐患是什么？",
+    "explanation": "用 `target[prop]` 会绕过 `receiver`：当属性是定义在原型上的 getter、或代理被作为原型链一环访问时，getter 内 `this` 会指向 `target` 而非真正的接收者，导致依赖 `this` 的派生逻辑出错。规范推荐 `Reflect.get(target, prop, receiver)` 以正确转发 `receiver`。",
+    "tags": ["javascript", "proxy", "receiver-陷阱"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "丢失 `receiver`，原型链上的 getter 的 `this` 会错指向 target",
+        "isCorrect": true,
+        "description": "应改用 `Reflect.get(target, prop, receiver)`"
+      },
+      {
+        "text": "会导致属性被永久删除",
+        "isCorrect": false,
+        "description": "读取不会删除属性"
+      },
+      {
+        "text": "会让代理变成异步",
+        "isCorrect": false,
+        "description": "与异步无关"
+      },
+      {
+        "text": "完全没有问题，等价于 `Reflect.get`",
+        "isCorrect": false,
+        "description": "缺少 `receiver` 转发，并不等价"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 的 well-known symbol `Symbol.toPrimitive` 用来定制什么？",
+    "explanation": "对象上的 `[Symbol.toPrimitive](hint)` 方法定制**对象到原始值的转换**。当对象参与需要原始值的运算时被调用，`hint` 取 `\"number\"`、`\"string\"` 或 `\"default\"`，方法须返回一个原始值，否则抛 `TypeError`。它优先级高于 `valueOf` 和 `toString`。",
+    "tags": ["javascript", "symbol-toPrimitive", "类型转换"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对象转换为原始值（number/string/default）的行为",
+        "isCorrect": true,
+        "description": "优先于 `valueOf` 与 `toString`"
+      },
+      {
+        "text": "对象被 `JSON.stringify` 时的序列化",
+        "isCorrect": false,
+        "description": "那是 `toJSON` 方法，不是 `toPrimitive`"
+      },
+      {
+        "text": "对象的 `instanceof` 判断",
+        "isCorrect": false,
+        "description": "那由 `Symbol.hasInstance` 定制"
+      },
+      {
+        "text": "对象在 `for...of` 中的迭代",
+        "isCorrect": false,
+        "description": "迭代由 `Symbol.iterator` 定制"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中模板字符串 `${obj}` 触发对象转原始值时，传给 `[Symbol.toPrimitive]` 的 `hint` 是？",
+    "explanation": "不同上下文传不同 hint：模板字符串、字符串拼接到 `String()` 等场景传 `\"string\"`；一元 `+` 或算术运算传 `\"number\"`；而 `+`（加法）、`==` 等「不偏向」的场景传 `\"default\"`。所以 `${obj}` 走 `\"string\"` 分支。",
+    "tags": ["javascript", "symbol-toPrimitive", "hint"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`\"string\"`",
+        "isCorrect": true,
+        "description": "模板字符串偏好字符串形式"
+      },
+      {
+        "text": "`\"number\"`",
+        "isCorrect": false,
+        "description": "`\"number\"` 用于一元 `+` 等算术场景"
+      },
+      {
+        "text": "`\"default\"`",
+        "isCorrect": false,
+        "description": "`\"default\"` 用于二元 `+`、`==` 等"
+      },
+      {
+        "text": "`\"template\"`",
+        "isCorrect": false,
+        "description": "没有 `\"template\"` 这个 hint 值"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Symbol.toStringTag` 定制的是什么？",
+    "explanation": "对象的 `[Symbol.toStringTag]` 字符串会决定 `Object.prototype.toString.call(obj)` 返回的 `[object XXX]` 中的标签 `XXX`。例如给对象设 `[Symbol.toStringTag] = \"MyType\"`，`toString` 就返回 `\"[object MyType]\"`。许多内置类型（如 `Map`、`Promise`）正是靠它产生各自的标签。",
+    "tags": ["javascript", "symbol-toStringTag", "toString"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`Object.prototype.toString` 返回的 `[object XXX]` 中的标签",
+        "isCorrect": true,
+        "description": "如设为 `\"MyType\"` 得 `\"[object MyType]\"`"
+      },
+      {
+        "text": "对象在控制台 `console.log` 的展开格式",
+        "isCorrect": false,
+        "description": "控制台格式由宿主决定，非此 symbol"
+      },
+      {
+        "text": "对象转数字时的结果",
+        "isCorrect": false,
+        "description": "那与 `Symbol.toPrimitive`/`valueOf` 有关"
+      },
+      {
+        "text": "对象的属性枚举顺序",
+        "isCorrect": false,
+        "description": "枚举顺序与该 symbol 无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Symbol.hasInstance` 的作用是？",
+    "explanation": "在某个构造器/对象上定义 `[Symbol.hasInstance](value)` 方法，可**定制 `instanceof` 的行为**。`x instanceof C` 实际调用 `C[Symbol.hasInstance](x)` 并取其布尔结果。借此可让 `instanceof` 基于鸭子类型等自定义规则判断，而不局限于原型链。",
+    "tags": ["javascript", "symbol-hasInstance", "instanceof"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "定制 `instanceof` 运算符的判断逻辑",
+        "isCorrect": true,
+        "description": "`x instanceof C` 调用 `C[Symbol.hasInstance](x)`"
+      },
+      {
+        "text": "定制 `typeof` 运算符的返回值",
+        "isCorrect": false,
+        "description": "`typeof` 不可被这样定制"
+      },
+      {
+        "text": "定制对象的浅拷贝行为",
+        "isCorrect": false,
+        "description": "与拷贝无关"
+      },
+      {
+        "text": "定制 `in` 运算符",
+        "isCorrect": false,
+        "description": "`in` 对对象可由 Proxy `has` 定制，与此无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `Symbol.for(\"foo\")` 与直接写 `Symbol(\"foo\")` 的关键区别是？",
+    "explanation": "`Symbol(\"foo\")` 每次都创建**全新且唯一**的 symbol，描述只是说明。`Symbol.for(\"foo\")` 在**全局 symbol 注册表**中按键查找：已存在则复用，不存在则创建并登记，因此跨 realm/模块用相同键能拿到同一个 symbol。`Symbol.keyFor` 可反查注册表里 symbol 的键。",
+    "tags": ["javascript", "symbol", "global-registry"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`Symbol.for` 在全局注册表按键复用同一 symbol；`Symbol()` 每次都新建唯一值",
+        "isCorrect": true,
+        "description": "`Symbol.keyFor` 可反查注册键"
+      },
+      {
+        "text": "两者完全等价，只是写法不同",
+        "isCorrect": false,
+        "description": "一个共享一个唯一，语义不同"
+      },
+      {
+        "text": "`Symbol.for` 创建的 symbol 可被枚举到，`Symbol()` 不行",
+        "isCorrect": false,
+        "description": "二者都不会出现在常规枚举里"
+      },
+      {
+        "text": "`Symbol()` 共享、`Symbol.for` 唯一",
+        "isCorrect": false,
+        "description": "恰好说反了"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 well-known symbol 与「用 Symbol 作为对象属性键」共同解决的问题是？",
+    "explanation": "Symbol 作为属性键**不与字符串键冲突**，且默认不被 `for...in` / `Object.keys` 枚举，适合给对象挂「元数据 / 协议钩子」而不污染常规属性。well-known symbol（如 `Symbol.iterator`）正是用这种唯一键，让对象以标准方式接入语言内建协议（迭代、转换等）。",
+    "tags": ["javascript", "symbol", "唯一键"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "提供不与字符串键冲突、默认不被枚举的唯一键，用于挂协议钩子/元数据",
+        "isCorrect": true,
+        "description": "如 `Symbol.iterator` 接入内建迭代协议"
+      },
+      {
+        "text": "让对象属性自动变为只读",
+        "isCorrect": false,
+        "description": "Symbol 键不隐含只读"
+      },
+      {
+        "text": "使属性值被加密存储",
+        "isCorrect": false,
+        "description": "Symbol 不提供加密"
+      },
+      {
+        "text": "让属性可被 `JSON.stringify` 序列化",
+        "isCorrect": false,
+        "description": "Symbol 键反而会被 `JSON.stringify` 忽略"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 的 `using` 声明（显式资源管理）作用是什么？",
+    "explanation": "`using x = res;` 声明一个块级绑定，当离开其所在块作用域时，自动调用 `res[Symbol.dispose]()` 同步释放资源（如关闭文件句柄、释放锁）。它属于「显式资源管理」提案，资源对象需实现 `[Symbol.dispose]`。",
+    "tags": ["javascript", "using", "resource-management"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在离开块作用域时自动调用 `[Symbol.dispose]()` 释放资源",
+        "isCorrect": true,
+        "description": "资源对象须实现 `Symbol.dispose`"
+      },
+      {
+        "text": "声明一个全局常量",
+        "isCorrect": false,
+        "description": "`using` 是块级且会触发清理，并非声明全局常量"
+      },
+      {
+        "text": "导入一个模块（类似 import）",
+        "isCorrect": false,
+        "description": "与模块导入无关"
+      },
+      {
+        "text": "把变量标记为响应式",
+        "isCorrect": false,
+        "description": "`using` 与响应式无关"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中同一块内声明多个 `using` 资源，它们的释放顺序是？",
+    "explanation": "`using` 资源按声明的**逆序**（LIFO，后声明先释放）依次 dispose，如同栈。这样可保证后声明的资源若依赖先声明的资源，在自身清理时先声明者仍然有效。`await using` 同理，只是调用 `[Symbol.asyncDispose]()` 并等待。",
+    "tags": ["javascript", "using", "lifo"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "逆序释放（后声明的先 dispose），如同栈 LIFO",
+        "isCorrect": true,
+        "description": "保证依赖项在清理时仍有效"
+      },
+      {
+        "text": "按声明顺序释放（先声明先 dispose）",
+        "isCorrect": false,
+        "description": "实际是逆序"
+      },
+      {
+        "text": "并行同时释放",
+        "isCorrect": false,
+        "description": "是有序逐个，不是并行"
+      },
+      {
+        "text": "随机顺序释放",
+        "isCorrect": false,
+        "description": "顺序确定为逆序"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `await using` 与普通 `using` 的区别是？",
+    "explanation": "`await using x = res;` 用于**异步可释放**资源：离开作用域时调用 `res[Symbol.asyncDispose]()` 并 `await` 其完成（适合异步关闭数据库连接等）。普通 `using` 调用同步的 `[Symbol.dispose]()`。`await using` 只能用在允许 `await` 的上下文。",
+    "tags": ["javascript", "await-using", "asyncDispose"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`await using` 调用并等待 `[Symbol.asyncDispose]()`，用于异步资源释放",
+        "isCorrect": true,
+        "description": "普通 `using` 用同步 `Symbol.dispose`"
+      },
+      {
+        "text": "`await using` 会等待资源被创建完成",
+        "isCorrect": false,
+        "description": "差异在释放阶段调用异步 dispose，而非创建"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "一个同步释放一个异步释放"
+      },
+      {
+        "text": "`await using` 只能用于数组",
+        "isCorrect": false,
+        "description": "面向可异步释放对象，不限数组"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 的「显式资源管理」（`using` / `Symbol.dispose` / `DisposableStack`）在 2026 年的标准与可用性现状是？",
+    "explanation": "该提案已纳入 ECMAScript 2026（语言规范层面）。但据 MDN，截至当前它**仍属「有限可用」（Limited availability），不是 Baseline**——部分主流浏览器尚未支持。工程上若要在浏览器广泛使用，通常需 TypeScript 5.2+ 降级编译或 core-js 等 polyfill。",
+    "tags": ["javascript", "using", "es2026-现状"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "已进入 ECMAScript 2026，但 MDN 标其为 Limited availability、尚非 Baseline，需 polyfill/转译",
+        "isCorrect": true,
+        "description": "规范已收录，浏览器支持仍不完整"
+      },
+      {
+        "text": "已是 Baseline 广泛可用，所有主流浏览器原生支持",
+        "isCorrect": false,
+        "description": "MDN 明确其尚非 Baseline"
+      },
+      {
+        "text": "仍是 Stage 1 早期提案，语法随时可能大改",
+        "isCorrect": false,
+        "description": "已进入正式规范，并非早期阶段"
+      },
+      {
+        "text": "已被 TC39 撤回，不会进入标准",
+        "isCorrect": false,
+        "description": "未撤回，反而已纳入 ES2026"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `DisposableStack`（显式资源管理）解决的是什么场景？",
+    "explanation": "`DisposableStack` 用于**手动**聚合管理多个可释放资源，同时保留与 `using` 一致的错误聚合语义。用 `stack.use(res)` / `stack.adopt(value, onDispose)` / `stack.defer(fn)` 登记，调用 `stack[Symbol.dispose]()` 时按逆序统一释放；它本身也可配合 `using` 使用。对应异步版是 `AsyncDisposableStack`。",
+    "tags": ["javascript", "DisposableStack", "资源聚合"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "手动聚合多个资源并统一逆序释放，保留 `using` 的错误聚合语义",
+        "isCorrect": true,
+        "description": "用 `use`/`adopt`/`defer` 登记，异步版为 `AsyncDisposableStack`"
+      },
+      {
+        "text": "实现一个先进先出的任务队列",
+        "isCorrect": false,
+        "description": "它是资源释放栈，不是任务队列"
+      },
+      {
+        "text": "存储调用栈帧用于调试",
+        "isCorrect": false,
+        "description": "与调用栈/调试无关"
+      },
+      {
+        "text": "替代数组的 `push`/`pop`",
+        "isCorrect": false,
+        "description": "并非通用栈数据结构"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `WeakRef.prototype.deref()` 的返回值可能是什么？",
+    "explanation": "`WeakRef` 持有对目标对象的**弱引用**，不阻止其被垃圾回收。`deref()` 返回目标对象本身（若仍存活），或返回 `undefined`（若已被回收）。因此使用前必须判空。它属于 ES2021，主要用于缓存等可选的内存优化。",
+    "tags": ["javascript", "weakref", "deref"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "目标对象（若仍存活）或 `undefined`（若已被回收）",
+        "isCorrect": true,
+        "description": "使用前必须判空，不阻止 GC"
+      },
+      {
+        "text": "始终返回目标对象的深拷贝",
+        "isCorrect": false,
+        "description": "返回的是原对象引用，且可能已被回收"
+      },
+      {
+        "text": "返回一个 Promise",
+        "isCorrect": false,
+        "description": "`deref` 同步返回，不是 Promise"
+      },
+      {
+        "text": "返回对象被引用的次数",
+        "isCorrect": false,
+        "description": "不提供引用计数"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 `FinalizationRegistry` 的清理回调有什么重要约束？",
+    "explanation": "`FinalizationRegistry` 在对象被垃圾回收后**可能**触发清理回调，但规范明确：回调的执行时机**不确定，甚至可能永远不触发**，不能用于关键业务逻辑。它仅适合「可选」的内存优化收尾，MDN 也建议尽量避免使用。它与 `WeakRef` 同属 ES2021。",
+    "tags": ["javascript", "FinalizationRegistry", "非确定"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "回调执行时机不确定、可能根本不触发，不能依赖它做关键逻辑",
+        "isCorrect": true,
+        "description": "仅适合可选的内存优化收尾"
+      },
+      {
+        "text": "对象一被回收就立即同步触发回调",
+        "isCorrect": false,
+        "description": "时机非确定，且绝不会同步触发"
+      },
+      {
+        "text": "保证每个注册对象的回调都恰好执行一次",
+        "isCorrect": false,
+        "description": "不保证一定执行"
+      },
+      {
+        "text": "可阻止注册对象被垃圾回收",
+        "isCorrect": false,
+        "description": "它不持有强引用，不阻止 GC"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中为什么说 `WeakRef` / `FinalizationRegistry` 引入了「非确定性」，应谨慎使用？",
+    "explanation": "二者的行为取决于**垃圾回收器何时运行**，而 GC 时机由引擎自行决定、不可预测且各引擎不同。因此对象是否/何时被回收、回调是否/何时触发都不确定。让程序正确性依赖 GC 时机会得到不可靠的结果，故仅作可选优化、能避免则避免。",
+    "tags": ["javascript", "weakref", "gc-非确定"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "其行为取决于 GC 时机，而 GC 由引擎决定、不可预测且因引擎而异",
+        "isCorrect": true,
+        "description": "正确性不应依赖 GC，能避免则避免"
+      },
+      {
+        "text": "因为它们是异步 API，回调进入微任务队列",
+        "isCorrect": false,
+        "description": "根因是 GC 时机不确定，而非微任务排队"
+      },
+      {
+        "text": "因为它们只在 Node.js 可用，浏览器不支持",
+        "isCorrect": false,
+        "description": "浏览器同样支持，问题在 GC 非确定性"
+      },
+      {
+        "text": "因为它们会随机修改对象的属性",
+        "isCorrect": false,
+        "description": "不会修改对象属性"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中下面用生成器实现的「惰性 take」哪一处是关键？\n```js\nfunction* take(iter, n) {\n  let i = 0;\n  for (const v of iter) {\n    if (i++ >= n) return;\n    yield v;\n  }\n}\n```",
+    "explanation": "`take` 把任意（可能无限的）可迭代对象包装为只产出前 `n` 个值的新生成器。关键在于它是惰性的：`for (const v of iter)` 配合 `yield` 按需从源拉取，取够 `n` 个就 `return` 提前结束，对无限序列也不会耗尽内存或死循环。",
+    "tags": ["javascript", "generator", "take-惰性"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "惰性按需从 `iter` 拉取并 `yield`，取够 `n` 个即 `return`，可安全处理无限序列",
+        "isCorrect": true,
+        "description": "不一次性消费源，故无限序列也安全"
+      },
+      {
+        "text": "它会先把 `iter` 全部展开成数组再截取",
+        "isCorrect": false,
+        "description": "并未全量展开，正因如此才能处理无限源"
+      },
+      {
+        "text": "它必须要求 `iter` 是数组",
+        "isCorrect": false,
+        "description": "任意可迭代对象皆可，包括生成器"
+      },
+      {
+        "text": "它会并行拉取多个值",
+        "isCorrect": false,
+        "description": "同步顺序按需拉取，无并行"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用 Proxy 实现「属性访问默认值」（读不存在的属性返回 0 而非 `undefined`）应在哪个 trap 处理？",
+    "explanation": "在 `get(target, prop, receiver)` 里判断 `prop` 是否存在于 target：存在则正常返回（推荐 `Reflect.get(target, prop, receiver)`），不存在则返回默认值（如 `0`）。这是元编程里以 Proxy 定制读取语义的经典用法。",
+    "tags": ["javascript", "proxy", "默认值"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`get` trap：不存在的键返回默认值，存在则用 `Reflect.get` 透传",
+        "isCorrect": true,
+        "description": "经典的读取语义定制"
+      },
+      {
+        "text": "`set` trap",
+        "isCorrect": false,
+        "description": "`set` 拦截写入，与读默认值无关"
+      },
+      {
+        "text": "`has` trap",
+        "isCorrect": false,
+        "description": "`has` 影响 `in`，不改变读取返回值"
+      },
+      {
+        "text": "`ownKeys` trap",
+        "isCorrect": false,
+        "description": "`ownKeys` 影响键枚举，不影响单次读取"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中关于「迭代器」与「可迭代对象」的关系，下列说法正确的是？",
+    "explanation": "「可迭代对象」实现 `[Symbol.iterator]()` 并返回一个「迭代器」；「迭代器」则实现 `next()`。两者是不同协议但常合二为一：生成器对象既是迭代器（有 `next`），其 `[Symbol.iterator]()` 又返回自身，所以同时是可迭代对象。这种「自迭代」也是它只能消费一次的原因。",
+    "tags": ["javascript", "iterator", "iterable-关系"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可迭代对象的 `[Symbol.iterator]()` 返回迭代器；生成器对象二者兼具（自迭代）",
+        "isCorrect": true,
+        "description": "自迭代特性导致其只能消费一次"
+      },
+      {
+        "text": "迭代器和可迭代对象是同一个概念的两个名字",
+        "isCorrect": false,
+        "description": "分属两个不同协议，只是常合一"
+      },
+      {
+        "text": "可迭代对象必须实现 `next()`",
+        "isCorrect": false,
+        "description": "`next()` 是迭代器的要求"
+      },
+      {
+        "text": "迭代器必须实现 `[Symbol.iterator]`",
+        "isCorrect": false,
+        "description": "迭代器只需 `next()`；实现 `[Symbol.iterator]` 的是可迭代迭代器"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中用 `Reflect.ownKeys(obj)` 相比 `Object.keys(obj)`，能多拿到什么？",
+    "explanation": "`Object.keys` 只返回**可枚举的字符串键**；`Reflect.ownKeys` 返回对象**全部自有键**，既包含不可枚举的字符串键，也包含 **Symbol 键**。它等价于 `Object.getOwnPropertyNames` 与 `Object.getOwnPropertySymbols` 的合集，在做完整的元编程/克隆时很有用。",
+    "tags": ["javascript", "reflect", "ownKeys"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "包含不可枚举键与 Symbol 键的全部自有键",
+        "isCorrect": true,
+        "description": "等于字符串键 + Symbol 键的合集"
+      },
+      {
+        "text": "包含原型链上继承来的键",
+        "isCorrect": false,
+        "description": "`ownKeys` 只含自有键，不含继承键"
+      },
+      {
+        "text": "只返回 Symbol 键",
+        "isCorrect": false,
+        "description": "字符串键与 Symbol 键都返回"
+      },
+      {
+        "text": "与 `Object.keys` 完全相同",
+        "isCorrect": false,
+        "description": "多了不可枚举键与 Symbol 键"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中把 `Symbol.iterator` 实现为**普通函数**（每次返回一个全新迭代器），相比直接复用生成器对象本身，好处是？",
+    "explanation": "若 `[Symbol.iterator]()` 每次调用都创建并返回一个新的迭代器（如内部 `return makeIterator()` 或返回新生成器），则该对象可被**反复、独立地多次迭代**，两次 `for...of` 互不影响。而直接以生成器对象充当可迭代对象，因其 `[Symbol.iterator]` 返回自身，只能消费一次。",
+    "tags": ["javascript", "iterable", "可重复迭代"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对象可被反复独立迭代，多次 `for...of` 互不干扰",
+        "isCorrect": true,
+        "description": "每次迭代拿到全新迭代器"
+      },
+      {
+        "text": "迭代速度更快",
+        "isCorrect": false,
+        "description": "差异在可重复性，而非速度"
+      },
+      {
+        "text": "能让迭代变成异步",
+        "isCorrect": false,
+        "description": "同步可迭代不因此变异步"
+      },
+      {
+        "text": "自动去重迭代出的值",
+        "isCorrect": false,
+        "description": "不会自动去重"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中 Proxy 与 Reflect 配合时，下列哪种写法最容易引入**无限递归**？",
+    "explanation": "若在 `get` trap 内用 `proxy[prop]`（或对代理自身再做会被同一 trap 拦截的操作）来取值，就会再次触发 `get` trap，造成无限递归。正确做法是操作 **target**（如 `Reflect.get(target, prop, receiver)`），而非操作代理本身。",
+    "tags": ["javascript", "proxy", "无限递归"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 `get` trap 内用 `proxy[prop]` 取值（再次触发自身 trap）",
+        "isCorrect": true,
+        "description": "应操作 target，如 `Reflect.get(target, prop, receiver)`"
+      },
+      {
+        "text": "在 `get` trap 内用 `Reflect.get(target, prop, receiver)`",
+        "isCorrect": false,
+        "description": "操作 target，不会回到 trap，是正确做法"
+      },
+      {
+        "text": "在 `get` trap 内 `return target[prop]`",
+        "isCorrect": false,
+        "description": "操作 target 不递归（但会丢 `receiver`）"
+      },
+      {
+        "text": "在 `get` trap 内返回常量字符串",
+        "isCorrect": false,
+        "description": "返回常量不触发任何 trap"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中下面代码的输出是什么？\n```js\nfunction* g() {\n  const a = yield 1;\n  const b = yield a + 1;\n  return a + b;\n}\nconst it = g();\nit.next();      // A\nit.next(10);    // B\nit.next(20);    // C\n```",
+    "explanation": "首个 `next()`（A）执行到 `yield 1`，返回 `{value:1}`，传参被忽略；`next(10)`（B）令 `a = 10`，执行到 `yield a+1` 即 `yield 11`，返回 `{value:11}`；`next(20)`（C）令 `b = 20`，执行到 `return a+b` 即 `return 30`，返回 `{value:30, done:true}`。",
+    "tags": ["javascript", "generator", "双向通信-推演"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "A=`{value:1,done:false}`，B=`{value:11,done:false}`，C=`{value:30,done:true}`",
+        "isCorrect": true,
+        "description": "首个 next 忽略传参；a=10、b=20，故 return 30"
+      },
+      {
+        "text": "A=`{value:1}`，B=`{value:2}`，C=`{value:3}`",
+        "isCorrect": false,
+        "description": "忽略了 `next` 回灌的 10 与 20"
+      },
+      {
+        "text": "A=`{value:11}`，B=`{value:21}`，C=`{value:30}`",
+        "isCorrect": false,
+        "description": "首个 next 不接收参数，A 应为 1"
+      },
+      {
+        "text": "三次都返回 `{value:undefined,done:true}`",
+        "isCorrect": false,
+        "description": "生成器会逐步产出 1、11、30"
+      }
+    ]
+  },
+  {
+    "stem": "JavaScript 中元编程语境下，Proxy 适合做日志/校验/访问控制等横切关注点的原因是？",
+    "explanation": "Proxy 能在**不改动原对象代码**的前提下，于 `get`/`set`/`apply` 等 trap 中插入日志、参数校验、权限检查、惰性加载等逻辑，把这些「横切关注点」与业务逻辑解耦。配合 `Reflect` 保持默认语义，便能透明地包裹任意对象/函数。",
+    "tags": ["javascript", "proxy", "横切关注点"],
+    "categories": [
+      ["技术方向", "JavaScript 生成器与元编程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可在不改原对象的情况下，于 trap 中插入日志/校验/权限等逻辑并保持默认语义",
+        "isCorrect": true,
+        "description": "把横切关注点与业务解耦"
+      },
+      {
+        "text": "Proxy 会让原对象的方法自动并行执行",
+        "isCorrect": false,
+        "description": "Proxy 不改变同步/并行特性"
+      },
+      {
+        "text": "Proxy 能把对象自动持久化到数据库",
+        "isCorrect": false,
+        "description": "持久化需自行在 trap 中实现，非内置"
+      },
+      {
+        "text": "Proxy 会自动为对象生成 TypeScript 类型",
+        "isCorrect": false,
+        "description": "与类型生成无关"
+      }
+    ]
+  }
+]
