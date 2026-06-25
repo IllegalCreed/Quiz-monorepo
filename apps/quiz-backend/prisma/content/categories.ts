@@ -103,35 +103,26 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-06-25 重构：旧 3 父节点（网络模型/网络协议/网络设备）结构倒挂——
+            // 传输层 TCP/UDP 整缺、HTTP 压成 1/4 叶、DNS 错挂网络层、跨域无处安放。
+            // 重构为扁平 11 叶（spec: docs/plans/20260625-web-base-computer-network-trilogy.md）。
+            // 自底向上排序：模型→链路→网络→传输→应用各协议→接入层。
+            // 叶子名组内唯一（自带 HTTP/TCP/DNS 等技术语义），无需前缀。
+            // prod 旧 7 节点（id 23-29，全 0 题）须于落地时手动删除，避免分类移动坑残留。
             name: "计算机网络基础",
             sort: 2,
             children: [
-              {
-                name: "网络模型",
-                sort: 1,
-                children: [
-                  { name: "OSI 模型", sort: 1 },
-                  { name: "TCP/IP 模型", sort: 2 },
-                ],
-              },
-              {
-                name: "网络协议",
-                sort: 2,
-                children: [
-                  {
-                    name: "网络层及以下（ICMP / ARP / DNS）",
-                    sort: 1,
-                  },
-                  {
-                    name: "应用层（HTTP/HTTPS / WebSocket / SSL/TLS）",
-                    sort: 2,
-                  },
-                ],
-              },
-              {
-                name: "网络设备（路由器 / 交换机 / 网关 / 移动网络）",
-                sort: 3,
-              },
+              { name: "网络分层模型", sort: 1 },
+              { name: "链路层与局域网", sort: 2 },
+              { name: "网络层与路由", sort: 3 },
+              { name: "传输层 TCP 与 UDP", sort: 4 },
+              { name: "DNS 域名系统", sort: 5 },
+              { name: "HTTP 协议基础", sort: 6 },
+              { name: "HTTP 演进与性能", sort: 7 },
+              { name: "HTTPS 与传输安全", sort: 8 },
+              { name: "跨域与同源策略", sort: 9 },
+              { name: "实时通信协议", sort: 10 },
+              { name: "接入与移动网络", sort: 11 },
             ],
           },
           {
