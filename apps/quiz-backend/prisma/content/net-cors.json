@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "同源策略（Same-Origin Policy, SOP）是浏览器最核心的安全模型，它的核心作用是以下哪一项？",
+    "explanation": "**SOP** 是浏览器内置、默认开启的安全机制：它限制由某个「源」加载的文档或脚本，去**读取**另一个「源」的资源，防止恶意站点窃取你在其他站点的登录态与数据。它的核心**不是「不让你发请求」，而是「不让你读跨源的响应内容」**——请求往往照常发出、服务端也照常处理，只是浏览器在把响应交给脚本前拦了一道。",
+    "tags": ["cors", "sop", "security"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "限制脚本读取跨源资源，防止恶意站点窃取你在其他站点的数据",
+        "isCorrect": true,
+        "description": "正确。SOP 把每个源的脚本关进自己的笼子：可以发请求，但默认读不到别人的响应、Cookie 和 DOM。"
+      },
+      {
+        "text": "禁止页面向任何其他域名发送网络请求",
+        "isCorrect": false,
+        "description": "错误。SOP 不阻止发送请求，跨源请求照常发出，它拦的是脚本对跨源响应的读取。"
+      },
+      {
+        "text": "加密所有跨域传输的数据以防止中间人窃听",
+        "isCorrect": false,
+        "description": "错误。加密是 HTTPS/TLS 的职责，SOP 是浏览器侧的访问隔离策略，不负责加密。"
+      },
+      {
+        "text": "压缩跨域响应以节省带宽并加速页面加载",
+        "isCorrect": false,
+        "description": "错误。这是内容编码（如 gzip）的作用，与 SOP 这个安全策略毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "同源策略中的「源（origin）」由哪三个部分共同决定？",
+    "explanation": "**「源」= 协议 + 域名 + 端口**三元组（scheme + host + port），三者**全部相同**才算同源。比较的是 URL 的这三段，**路径（path）、查询串（query）、片段（hash）都不参与**判定。端口省略时取协议默认端口（`http` → 80，`https` → 443）。",
+    "tags": ["cors", "origin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "协议、域名、端口",
+        "isCorrect": true,
+        "description": "正确。源是 scheme + host + port 三元组，三者全等才同源，路径不参与判定。"
+      },
+      {
+        "text": "协议、域名、路径",
+        "isCorrect": false,
+        "description": "错误。路径不参与源的判定，`/dir1` 与 `/dir2` 在同协议同域同端口下仍是同源。"
+      },
+      {
+        "text": "域名、端口、查询字符串",
+        "isCorrect": false,
+        "description": "错误。缺了协议，且查询字符串不参与判定，组合不正确。"
+      },
+      {
+        "text": "协议、IP 地址、Cookie",
+        "isCorrect": false,
+        "description": "错误。判定看主机名而非具体 IP，Cookie 更不是源的组成部分。"
+      }
+    ]
+  },
+  {
+    "stem": "以 `http://store.company.com/dir/page.html` 为基准，下列哪个 URL 与它**同源**？",
+    "explanation": "源只看**协议 + 域名 + 端口**，路径不参与判定。`http://store.company.com/dir2/other.html` 仅路径从 `/dir/` 变为 `/dir2/`，协议、域名、端口全部一致，因此**同源**。其余三项分别在协议（`https`）、端口（`:81`）、域名（`news`）上与基准不同，均为跨源。",
+    "tags": ["cors", "origin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "http://store.company.com/dir2/other.html",
+        "isCorrect": true,
+        "description": "正确。仅路径不同，协议/域名/端口完全一致，路径不参与源判定，故同源。"
+      },
+      {
+        "text": "https://store.company.com/secure.html",
+        "isCorrect": false,
+        "description": "错误。协议从 `http` 变为 `https`，协议不同即跨源。"
+      },
+      {
+        "text": "http://store.company.com:81/dir/etc.html",
+        "isCorrect": false,
+        "description": "错误。端口 81 与默认的 80 不同，端口不同即跨源。"
+      },
+      {
+        "text": "http://news.company.com/dir/other.html",
+        "isCorrect": false,
+        "description": "错误。主机名从 `store` 变为 `news`（子域不同），域名不同即跨源。"
+      }
+    ]
+  },
+  {
+    "stem": "同源策略主要拦截的是跨源的「读取」操作，下列哪一项**不在** SOP 拦截的三类读取之列？",
+    "explanation": "SOP 主要拦三类**跨源读取**：① 跨源 **DOM** 访问（读另一窗口/iframe 的文档内容）；② 读取跨源 **AJAX/fetch 响应体**；③ 读取跨源的 **Cookie / localStorage / IndexedDB** 等存储。而**跨源表单提交（写入）属于被放行**的操作——`<form action>` 可以提交到任意源，正因如此才有 CSRF 这类攻击。",
+    "tags": ["cors", "sop"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "跨源表单提交（`<form>` 向其他源 POST 数据）",
+        "isCorrect": true,
+        "description": "正确。表单跨源提交属于「写入」，被 SOP 放行，不在三类读取限制中，这也是 CSRF 的根源。"
+      },
+      {
+        "text": "读取跨源窗口或 iframe 的 DOM 内容",
+        "isCorrect": false,
+        "description": "错误。这正是 SOP 拦的第一类：跨源 DOM 访问会被拦截抛错。"
+      },
+      {
+        "text": "读取跨源 fetch / XMLHttpRequest 的响应体",
+        "isCorrect": false,
+        "description": "错误。这是 SOP 拦的第二类，前端最常撞墙之处，需 CORS 授权才能读。"
+      },
+      {
+        "text": "读取跨源的 Cookie 或 localStorage",
+        "isCorrect": false,
+        "description": "错误。这是 SOP 拦的第三类：Cookie / localStorage 等存储按源隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "前端开发联调时，`http://localhost:3000` 与 `http://127.0.0.1:3000` 之间是什么关系？",
+    "explanation": "尽管 `localhost` 通常解析到 `127.0.0.1`、指向同一台机器，但 SOP 只认 URL 的**字面三元组**（协议+主机名+端口）。`localhost` 与 `127.0.0.1` 是**两个不同的主机名字符串**，因此浏览器视为**不同源**。这是本地联调的高频坑：前端配 `localhost`、后端 CORS 白名单写 `127.0.0.1`，照样跨域报错，二者必须统一。",
+    "tags": ["cors", "origin", "localhost"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨源——主机名字面不同，即便指向同一台机器",
+        "isCorrect": true,
+        "description": "正确。SOP 比较主机名字符串，`localhost` ≠ `127.0.0.1`，故跨源；联调时要统一。"
+      },
+      {
+        "text": "同源——它们解析到同一个 IP，浏览器视为相同",
+        "isCorrect": false,
+        "description": "错误。浏览器不做 DNS 解析后再比较，只比对 URL 中的字面主机名。"
+      },
+      {
+        "text": "同源——端口相同就算同源，主机名无所谓",
+        "isCorrect": false,
+        "description": "错误。端口只是三元组之一，主机名不同照样跨源。"
+      },
+      {
+        "text": "无法判定——取决于操作系统的 hosts 配置",
+        "isCorrect": false,
+        "description": "错误。源判定不依赖 hosts 解析结果，仅看 URL 字面，结论是确定的跨源。"
+      }
+    ]
+  },
+  {
+    "stem": "企业内有 `https://www.example.com` 和 `https://api.example.com` 两个应用，从「源」的角度它们是什么关系？",
+    "explanation": "源比较的是完整主机名。`www.example.com` 与 `api.example.com` 虽同属 `example.com` 这个父域，但**主机名只要有一个字符不同就是不同源**——**子域之间互为跨源**。所以二者跨源，互调 fetch 受 SOP 限制、需 CORS。（注意：子域之间可以是「同站」，那是另一把尺子，用于 Cookie 的 SameSite。）",
+    "tags": ["cors", "origin", "subdomain"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨源——不同子域属于不同源，互调受 SOP 限制",
+        "isCorrect": true,
+        "description": "正确。主机名 `www` 与 `api` 不同即跨源；它们虽同站，但 CORS 仍按源判定。"
+      },
+      {
+        "text": "同源——共享同一个父域 `example.com`",
+        "isCorrect": false,
+        "description": "错误。源看完整主机名，共享父域不代表同源，子域之间是跨源。"
+      },
+      {
+        "text": "同源——只要协议和端口一致就算同源",
+        "isCorrect": false,
+        "description": "错误。主机名也是三元组之一，主机名不同照样跨源。"
+      },
+      {
+        "text": "无关——源只比较顶级域名 `.com`",
+        "isCorrect": false,
+        "description": "错误。源比较的是完整主机名，绝非只看顶级域名。"
+      }
+    ]
+  },
+  {
+    "stem": "页面 `https://app.com` 用 `<img>` 加载了 CDN 上的跨源图片并能正常显示，下列说法正确的是？",
+    "explanation": "「**能加载 ≠ 能读**」是 SOP 的关键认知。跨源 `<img>` 会被**显示**、跨源 `<script>` 会被**执行**，但 JS **拿不到**其源码或像素数据。典型例证：把跨源图片画进 `<canvas>` 后，canvas 会被标记为「**已污染（tainted）**」，再调 `getImageData()` 就会抛安全错误——浏览器允许「看/用」，但不允许脚本「读出内容」。",
+    "tags": ["cors", "canvas", "tainted"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "图片能显示，但画进 canvas 后 `getImageData()` 会因画布被污染而报错",
+        "isCorrect": true,
+        "description": "正确。能加载不等于能读：跨源图片可显示，但脚本读其像素会触发污染画布的安全错误。"
+      },
+      {
+        "text": "既然能显示，JS 就能通过 canvas 自由读取它的像素数据",
+        "isCorrect": false,
+        "description": "错误。跨源图片画入 canvas 会污染画布，`getImageData()` 会抛安全错误，读不到像素。"
+      },
+      {
+        "text": "跨源图片根本无法用 `<img>` 加载，会被 SOP 拦截",
+        "isCorrect": false,
+        "description": "错误。`<img>` 跨源加载是被放行的，图片能正常显示，受限的只是脚本读取内容。"
+      },
+      {
+        "text": "图片能显示说明 CDN 一定返回了 `Access-Control-Allow-Origin`",
+        "isCorrect": false,
+        "description": "错误。`<img>` 显示不需要 CORS 头；是否带 CORS 头只影响能否无污染地读取像素。"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪一种跨源操作**不会**被同源策略拦截（属于被放行的跨源嵌入/写入）？",
+    "explanation": "SOP 放行很多跨源的**嵌入（embed）与写入（write）**，这也是页面能加载 CDN 资源的原因：`<img src>`、`<script src>`、`<link rel=stylesheet>`、`<video>`/`<audio>`、`@font-face`、`<iframe>`（可加载但读不到其 DOM）都可跨源嵌入；表单可跨源提交；超链接/重定向可跨源跳转。而**用 fetch 读跨源响应体**则被拦，需 CORS 授权。",
+    "tags": ["cors", "sop", "embed"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `<script src>` 加载并执行另一个源上的脚本",
+        "isCorrect": true,
+        "description": "正确。跨源 `<script>` 嵌入被放行、会被执行，这正是 CDN 引脚本能用的原因（但 JS 读不到其源码）。"
+      },
+      {
+        "text": "用 `fetch()` 读取另一个源 API 的 JSON 响应体",
+        "isCorrect": false,
+        "description": "错误。读取跨源 fetch 响应体被 SOP 拦截，需服务端 CORS 头授权才能读。"
+      },
+      {
+        "text": "读取跨源 `<iframe>` 内文档的 `document.body`",
+        "isCorrect": false,
+        "description": "错误。跨源 iframe 可加载，但读其 DOM 被拦截，会抛安全错误。"
+      },
+      {
+        "text": "读取另一个源的 `localStorage` 中的键值",
+        "isCorrect": false,
+        "description": "错误。localStorage 按源隔离，跨源读取被 SOP 拦截。"
+      }
+    ]
+  },
+  {
+    "stem": "跨源的 fetch 请求最常见的报错 `No 'Access-Control-Allow-Origin' header is present`，其根因是什么？",
+    "explanation": "这是 CORS 最高频的报错，根因是**服务端响应里完全没有 `Access-Control-Allow-Origin` 头**——通常是后端没开 CORS，或没对该路由/该方法生效。浏览器在收到响应后发现缺少匹配的 `Access-Control-Allow-Origin`，便把响应丢弃、不交给 JS，并在控制台打印此错误。修复方向几乎都在**后端补对响应头**。",
+    "tags": ["cors", "error", "header"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "服务端响应里没有 `Access-Control-Allow-Origin` 头（后端没开 CORS）",
+        "isCorrect": true,
+        "description": "正确。响应缺该头，浏览器据此拦截 JS 读取；修复在后端补响应头。"
+      },
+      {
+        "text": "前端 `fetch` 没有手动设置 `Origin` 请求头",
+        "isCorrect": false,
+        "description": "错误。`Origin` 由浏览器自动设置且不能被 JS 伪造，与该报错无关。"
+      },
+      {
+        "text": "网络断开或服务器宕机导致请求没发出去",
+        "isCorrect": false,
+        "description": "错误。该报错恰恰说明响应回来了，只是缺 CORS 头；断网是另一类 `Failed to fetch`。"
+      },
+      {
+        "text": "请求的 URL 路径写错了，返回了 404",
+        "isCorrect": false,
+        "description": "错误。404 是业务/路由问题，与缺 `Access-Control-Allow-Origin` 这一 CORS 根因不同。"
+      }
+    ]
+  },
+  {
+    "stem": "跨域与同源策略中流传一句经验：「同源一定同站，同站未必同源」。下列哪组 URL 正好体现「跨源但同站」？",
+    "explanation": "「跨域」按**源**（协议+域名+端口）算，「跨站」按**站点 = eTLD+1**（可注册域）算，后者更宽松。`https://login.example.com` 与 `https://www.example.com`：子域不同 → **跨源**；但 eTLD+1 都是 `example.com` → **同站**。这正是 `SameSite=Lax` 的 Cookie 能在 `www` 与 `login` 子域间携带、而 CORS 仍把它们当跨源拦着的原因。",
+    "tags": ["cors", "site", "same-site"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "https://login.example.com 与 https://www.example.com",
+        "isCorrect": true,
+        "description": "正确。子域不同 → 跨源；eTLD+1 同为 `example.com` → 同站，恰是「跨源但同站」。"
+      },
+      {
+        "text": "https://www.example.com 与 https://www.example.com",
+        "isCorrect": false,
+        "description": "错误。完全相同，既同源又同站，谈不上「跨源」。"
+      },
+      {
+        "text": "https://www.example.com 与 https://www.evil.com",
+        "isCorrect": false,
+        "description": "错误。可注册域不同（`example.com` ≠ `evil.com`），既跨源又跨站。"
+      },
+      {
+        "text": "http://www.example.com 与 https://www.example.com",
+        "isCorrect": false,
+        "description": "错误。协议不同 → 跨源；且 schemeful same-site 下也算跨站，不是「同站」。"
+      }
+    ]
+  },
+  {
+    "stem": "站点（site）由「公共后缀列表（Public Suffix List）」决定 eTLD。`https://www.example.co.uk` 的站点（eTLD+1）是哪一个？",
+    "explanation": "**eTLD（有效顶级域）**由 [公共后缀列表](https://publicsuffix.org/) 决定——`.co.uk` 整体是一个公共后缀（而非只看 `.uk`）。**eTLD+1** 是在公共后缀前再加一级可注册域，因此 `www.example.co.uk` 的站点是 `example.co.uk`。如果误以为 eTLD 是 `.uk`，会错算成 `co.uk`，但 `co.uk` 在 PSL 里是公共后缀、不能注册。",
+    "tags": ["cors", "site", "etld", "psl"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "example.co.uk",
+        "isCorrect": true,
+        "description": "正确。`.co.uk` 整体是公共后缀（eTLD），eTLD+1 即在其前加一级 → `example.co.uk`。"
+      },
+      {
+        "text": "co.uk",
+        "isCorrect": false,
+        "description": "错误。`co.uk` 本身是 PSL 中的公共后缀（不可注册），不是 eTLD+1。"
+      },
+      {
+        "text": "www.example.co.uk",
+        "isCorrect": false,
+        "description": "错误。这是完整主机名（含 `www` 子域），不是站点；站点不含子域。"
+      },
+      {
+        "text": "example.uk",
+        "isCorrect": false,
+        "description": "错误。PSL 把 `.co.uk` 整体视为后缀，不能跳过 `co` 只取 `.uk`。"
+      }
+    ]
+  },
+  {
+    "stem": "现代「同站」定义引入了 schemeful same-site（带协议判定）。`http://www.shop.com` 与 `https://www.shop.com` 是什么关系？",
+    "explanation": "自 2019 年起，现代「同站」定义带上了协议（**schemeful same-site**）：站点 = **协议 + eTLD+1**。两个 URL 域名与子域完全相同，但协议一个是 `http`、一个是 `https`，在 schemeful 规则下属于**跨站**（自然也跨源）。这是为防止 http 到 https 的降级攻击而收紧的判定。",
+    "tags": ["cors", "schemeful-same-site", "site"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "既跨源又跨站——schemeful same-site 把不同协议视为跨站",
+        "isCorrect": true,
+        "description": "正确。协议不同必跨源；现代同站带协议，故 http 与 https 也算跨站。"
+      },
+      {
+        "text": "跨源但同站——站点判定从不考虑协议",
+        "isCorrect": false,
+        "description": "错误。这是旧的 schemeless 观念；现代 schemeful same-site 已把协议纳入站点判定。"
+      },
+      {
+        "text": "同源但跨站——协议不影响源，只影响站点",
+        "isCorrect": false,
+        "description": "错误。协议恰恰是源的组成部分，协议不同必然跨源。"
+      },
+      {
+        "text": "既同源又同站——只要域名相同就一切相同",
+        "isCorrect": false,
+        "description": "错误。域名相同但协议不同，源与站点都不相同。"
+      }
+    ]
+  },
+  {
+    "stem": "前端最关键的 CORS 认知是：跨域 fetch 报错时，请求和服务器到底发生了什么？",
+    "explanation": "对于简单请求，真实流程是：浏览器**照常把请求发出去**（带 `Origin` 头）→ 服务器**收到并正常处理**、返回 200 和数据（后端日志里清清楚楚）→ 响应回到浏览器后，浏览器检查 `Access-Control-Allow-Origin`，**没匹配就丢弃响应、不交给 JS**，并在控制台报错。所以「**报错是浏览器拦截 JS 读取，请求其实已达服务器**」——这也意味着写操作（如 POST 提交）可能已在服务端执行。",
+    "tags": ["cors", "browser", "request"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "请求已发到服务器并被正常处理，只是浏览器拦截 JS 读取响应",
+        "isCorrect": true,
+        "description": "正确。CORS 报错是浏览器侧拦截读取的行为，后端日志能看到该请求被 200 处理。"
+      },
+      {
+        "text": "浏览器在发出前就拦截了请求，服务器根本没收到",
+        "isCorrect": false,
+        "description": "错误。简单请求会照常送达服务器，拦截发生在响应回来之后、交给 JS 之前。"
+      },
+      {
+        "text": "服务器主动拒绝了请求并返回了 CORS 错误码",
+        "isCorrect": false,
+        "description": "错误。CORS 不是服务端的拦截，是浏览器执行的安全策略；服务端可能返回了正常 200。"
+      },
+      {
+        "text": "请求被发往了错误的域名，永远到不了目标服务器",
+        "isCorrect": false,
+        "description": "错误。请求正确送达了目标服务器，问题在于浏览器不让 JS 读取其响应。"
+      }
+    ]
+  },
+  {
+    "stem": "同一个跨域接口，用 Postman 或 curl 请求一切正常，但在网页里用 fetch 却报 CORS 错误。为什么？",
+    "explanation": "**CORS 是浏览器的安全策略，不是后端的「拦截」**。Postman、curl、以及任何服务端代码都**不执行浏览器的同源策略**，因此它们请求任何接口**永远不会**有 CORS 报错。「Postman 能通、网页报跨域」是再正常不过的现象。这也提醒：要验证浏览器行为，必须在浏览器里复现并看 Network，用 Postman 验证后就以为没问题是排查时的常见误区。",
+    "tags": ["cors", "postman", "curl"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CORS 是浏览器的策略，Postman / curl 不执行同源策略，故不报错",
+        "isCorrect": true,
+        "description": "正确。同源策略只在浏览器里生效，非浏览器客户端请求任何接口都不会触发 CORS。"
+      },
+      {
+        "text": "Postman 自动帮你绕过了后端的 CORS 拦截逻辑",
+        "isCorrect": false,
+        "description": "错误。CORS 不是后端的拦截逻辑，没有可绕过的对象；是浏览器侧才执行该策略。"
+      },
+      {
+        "text": "Postman 默认携带了正确的 `Access-Control-Allow-Origin` 请求头",
+        "isCorrect": false,
+        "description": "错误。`Access-Control-Allow-Origin` 是响应头而非请求头，由服务端返回，与 Postman 无关。"
+      },
+      {
+        "text": "网页里的接口地址和 Postman 里填的不是同一个",
+        "isCorrect": false,
+        "description": "错误。本题前提是同一接口，差异纯粹来自是否执行浏览器同源策略。"
+      }
+    ]
+  },
+  {
+    "stem": "用 DevTools 排查 CORS 问题时，在 Network 面板里看到真实的 GET 请求 **Status 是 200、响应体也有数据**，但 Console 仍报 CORS 错误。如何理解？",
+    "explanation": "这正是「**请求已达服务器、被浏览器拦在 JS 之外**」的铁证：真实请求 200 说明服务端正常处理并返回了数据，但浏览器因响应缺少匹配的 `Access-Control-Allow-Origin` 而拦截了 JS 的读取。**状态码 200 不代表 CORS 通过**。排查时要把真实请求的 Response Headers 翻出来看是否有 `Access-Control-Allow-*`，而不能只看状态码就判定接口正常。",
+    "tags": ["cors", "devtools", "network"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "服务端正常返回了 200，但响应缺 CORS 头，浏览器拦截了 JS 读取",
+        "isCorrect": true,
+        "description": "正确。200 只说明服务端处理了请求，是否通过 CORS 取决于响应头，二者要分开看。"
+      },
+      {
+        "text": "Status 200 说明 CORS 已通过，Console 的报错是误报",
+        "isCorrect": false,
+        "description": "错误。状态码 200 不代表 CORS 通过，Console 的报错是真实拦截，并非误报。"
+      },
+      {
+        "text": "DevTools 显示的 200 是缓存的旧响应，与本次无关",
+        "isCorrect": false,
+        "description": "错误。这是本次真实往返的响应，恰好说明请求送达了服务器；与缓存无关。"
+      },
+      {
+        "text": "响应体有数据说明 JS 已经成功拿到了数据",
+        "isCorrect": false,
+        "description": "错误。Network 面板能看到响应体，但浏览器并不会把它交给被拦截的 JS。"
+      }
+    ]
+  },
+  {
+    "stem": "用 DevTools Network 面板排查 CORS 时，看到目标接口前**多出一条 `OPTIONS` 请求**，这通常意味着什么？",
+    "explanation": "多出的 `OPTIONS` 是 **CORS 预检请求（preflight）**：浏览器在发真实请求前，先用 OPTIONS 向服务端询问「这个方法/这些头允不允许」。看到 OPTIONS 说明这是带预检的请求，问题大概率出在**预检环节**（如 `PUT`/`DELETE` 方法或 `Authorization` 等自定义头没进白名单、OPTIONS 没返 2xx）；若**没有 OPTIONS** 则是简单请求，问题在真实请求响应缺 `Access-Control-Allow-Origin`。",
+    "tags": ["cors", "preflight", "options"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "这是 CORS 预检请求，问题大概率在预检（方法/自定义头未放行等）",
+        "isCorrect": true,
+        "description": "正确。OPTIONS 是预检，浏览器先问后端是否允许；有 OPTIONS 就重点查预检环节。"
+      },
+      {
+        "text": "OPTIONS 是前端代码写错多发的冗余请求，删掉即可",
+        "isCorrect": false,
+        "description": "错误。预检由浏览器自动发起，不是前端代码 bug，无法也不该手动删除。"
+      },
+      {
+        "text": "OPTIONS 是服务器主动推送的探测请求",
+        "isCorrect": false,
+        "description": "错误。预检由浏览器发起，不是服务器推送。"
+      },
+      {
+        "text": "出现 OPTIONS 说明 CORS 一定已经配置成功了",
+        "isCorrect": false,
+        "description": "错误。OPTIONS 只是预检请求的存在，预检本身可能失败，不代表配置成功。"
+      }
+    ]
+  },
+  {
+    "stem": "跨域 fetch 失败时，`fetch(...).catch(err => ...)` 里拿到的 `err.message` 通常是什么？这说明了什么？",
+    "explanation": "出于安全，**CORS 失败的具体原因不暴露给 JS**，`fetch` 的 `catch` 只拿到一个笼统的 `TypeError: Failed to fetch`——拿不到状态码、响应体或具体 CORS 原因。这意味着**不能用 `fetch().catch()` 区分「CORS 失败」还是「断网/超时」**（两者都只是 `Failed to fetch`），必须去浏览器 Console 看红字、去 Network 看真实往返才能定位根因。",
+    "tags": ["cors", "fetch", "error"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "笼统的 `TypeError: Failed to fetch`，CORS 细节不暴露给 JS",
+        "isCorrect": true,
+        "description": "正确。出于安全，JS 拿不到具体 CORS 原因，也无法据此区分跨域失败与断网超时。"
+      },
+      {
+        "text": "包含 `Access-Control-Allow-Origin` 缺失等完整 CORS 原因的报错对象",
+        "isCorrect": false,
+        "description": "错误。CORS 细节出于安全不会暴露给脚本，`catch` 只能拿到笼统的 TypeError。"
+      },
+      {
+        "text": "服务端返回的 HTTP 状态码（如 403），可据此判断",
+        "isCorrect": false,
+        "description": "错误。被 CORS 拦截时 JS 拿不到状态码，`catch` 里没有状态信息。"
+      },
+      {
+        "text": "一个值为 `null` 的响应对象，可继续 `.json()` 解析",
+        "isCorrect": false,
+        "description": "错误。失败会进入 `catch` 分支并抛 TypeError，根本走不到 `.then` 的解析。"
+      }
+    ]
+  },
+  {
+    "stem": "排查「缺少 `Access-Control-Allow-Origin`」的跨域报错时，下列哪种做法**方向错误**、几乎无效？",
+    "explanation": "绝大多数「缺 `Allow-Origin`」的根因在**后端**，前端怎么改 `fetch` 配置都没用。尤其要点：**`Origin` 请求头由浏览器控制，不能用 JS 伪造**——试图在前端手动 set `Origin`、或改各种 fetch 选项来「骗过」CORS 都是徒劳。正确方向是**后端补对响应头**，或在开发环境走代理（Vite `server.proxy` / Nginx 反代）把请求变成同源。",
+    "tags": ["cors", "debug", "origin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在前端 `fetch` 里手动设置 `Origin` 头，试图绕过浏览器校验",
+        "isCorrect": true,
+        "description": "正确，这是错误方向。`Origin` 由浏览器控制、不能被 JS 伪造，前端改它无效，根因在后端。"
+      },
+      {
+        "text": "在后端为该路由补上正确的 `Access-Control-Allow-Origin` 响应头",
+        "isCorrect": false,
+        "description": "这是正确做法。缺该头的根因在后端，补对响应头是标准修复方式。"
+      },
+      {
+        "text": "开发环境配 Vite `server.proxy` 把请求代理成同源",
+        "isCorrect": false,
+        "description": "这是正确做法。走代理让浏览器看到的是同源请求，从根上规避 CORS。"
+      },
+      {
+        "text": "用 Nginx 反向代理把前端和接口收敛到同一个源",
+        "isCorrect": false,
+        "description": "这是正确做法。反代使前后端同源，是生产常用的跨域规避方案。"
+      }
+    ]
+  },
+  {
+    "stem": "带 Cookie 的跨域请求（`credentials: 'include'`）失败，报错抱怨 `Access-Control-Allow-Origin` 的值是通配符 `*`。正确的修复是什么？",
+    "explanation": "携带凭证（Cookie）的跨域请求有严格约束：**`Access-Control-Allow-Origin` 不能是 `*`，必须回显具体的源**，同时后端还要补 `Access-Control-Allow-Credentials: true`，且 `Allow-Headers`/`Allow-Methods` 也不能用 `*`（这就是「凭证四件套」）。报错 `...must not be the wildcard '*' when the request's credentials mode is 'include'` 正是因为带凭证时返回了通配符。",
+    "tags": ["cors", "credentials", "cookie"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "后端把 `Allow-Origin` 改为回显具体源，并补 `Allow-Credentials: true`",
+        "isCorrect": true,
+        "description": "正确。带凭证时 `Allow-Origin` 必须是具体源而非 `*`，并需声明 `Allow-Credentials: true`。"
+      },
+      {
+        "text": "前端去掉 `credentials: 'include'`，但仍要求服务端带上 Cookie",
+        "isCorrect": false,
+        "description": "错误。去掉 include 就不会携带 Cookie，与「仍要带 Cookie」的诉求自相矛盾。"
+      },
+      {
+        "text": "后端把 `Allow-Origin` 继续设为 `*`，再加 `Allow-Credentials: true`",
+        "isCorrect": false,
+        "description": "错误。带凭证时 `*` 与 `Allow-Credentials: true` 不能共存，浏览器仍会拦截。"
+      },
+      {
+        "text": "前端在请求头里手动加一个 `Access-Control-Allow-Origin: 当前源`",
+        "isCorrect": false,
+        "description": "错误。`Access-Control-Allow-Origin` 是响应头，由服务端返回，前端加请求头无效。"
+      }
+    ]
+  },
+  {
+    "stem": "沙箱 `<iframe>`（带 `sandbox` 但未加 `allow-same-origin`）或 `file:` 等场景会得到「不透明源（opaque origin）」。关于它的描述，哪一项正确？",
+    "explanation": "**不透明源（opaque origin）** 序列化为字符串 `null`，且**与任何源（包括其他不透明源、甚至它自己再次取到的不透明源）都不相等**。这是一种最严格的隔离：沙箱 iframe 里的脚本被视为来自一个谁都匹配不上的源，无法与父页面或任何站点同源，从而最大化限制其能力。常见来源有 `sandbox` iframe、`file:` 协议、`data:` URL 等。",
+    "tags": ["cors", "opaque-origin", "iframe", "sandbox"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它序列化为 `null`，与任何源（含其他不透明源）都不相等",
+        "isCorrect": true,
+        "description": "正确。不透明源是最严格隔离，`null` 序列化且永不与任何源相等，包括其它不透明源。"
+      },
+      {
+        "text": "它等同于父页面的源，因此可自由读取父页面 DOM",
+        "isCorrect": false,
+        "description": "错误。不透明源与父页面不同源，正是为了隔离，无法自由读取父页面 DOM。"
+      },
+      {
+        "text": "两个不透明源只要来自同一文件路径就互相同源",
+        "isCorrect": false,
+        "description": "错误。不透明源彼此也不相等，不存在「同一路径就同源」的说法。"
+      },
+      {
+        "text": "它的源就是字符串 `null`，因此与所有 `null` 源都同源",
+        "isCorrect": false,
+        "description": "错误。序列化为 `null` 只是表示形式，不透明源之间仍互不相等，不会因都显示 `null` 而同源。"
+      }
+    ]
+  },
+  {
+    "stem": "历史上 `document.domain` 曾被用来放宽同源限制（让 `a.example.com` 与 `b.example.com` 互访 DOM）。现代浏览器对它的态度是？",
+    "explanation": "`document.domain` 通过把两个子域的域名「降级」到共同父域来放宽同源 DOM 访问，但它**已被废弃、不建议使用**：它会破坏源的安全边界（让同站不同子域共享 DOM），现代浏览器在开启站点隔离/`Origin-Agent-Cluster` 等机制下已默认禁用或限制其效果。要做合法的跨源/跨窗口通信，应改用 **`postMessage`**、**CORS**、**反向代理**等手段，而非 `document.domain`。",
+    "tags": ["cors", "document-domain", "deprecated"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "已废弃、不建议使用，应改用 postMessage / CORS / 反向代理",
+        "isCorrect": true,
+        "description": "正确。`document.domain` 破坏源边界、现代已默认禁用或限制，合法跨源通信另有手段。"
+      },
+      {
+        "text": "仍是放宽跨子域同源限制的推荐做法，应优先使用",
+        "isCorrect": false,
+        "description": "错误。它已被废弃，因破坏安全边界而不再推荐，现代浏览器多已禁用。"
+      },
+      {
+        "text": "可让任意两个不同站点的页面相互读取 DOM",
+        "isCorrect": false,
+        "description": "错误。它至多放宽同一父域下的子域，从不能跨不同可注册域，且现已弃用。"
+      },
+      {
+        "text": "它能替代 CORS，让 fetch 读取任意跨源 API 的响应",
+        "isCorrect": false,
+        "description": "错误。`document.domain` 只关乎 DOM 访问，与 fetch 跨源读取（CORS 管辖）无关。"
+      }
+    ]
+  },
+  {
+    "stem": "突破同源策略的合法手段有多种。下列哪一项**不是**用于合法实现跨源能力的正当机制？",
+    "explanation": "合法突破 SOP 的手段包括：**CORS**（服务端授权跨源读取响应）、**`postMessage`**（跨窗口/iframe 安全通信）、**反向代理**（把跨源请求在服务端转成同源）。而「**关闭浏览器同源策略**」（如启动带 `--disable-web-security` 的 Chrome）只是开发期临时绕过，会让浏览器丧失安全隔离，**绝不是面向用户的正当方案**，生产环境严禁依赖。",
+    "tags": ["cors", "postmessage", "proxy"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让用户启动带 `--disable-web-security` 的浏览器来关闭同源策略",
+        "isCorrect": true,
+        "description": "正确，这不是正当机制。关闭 SOP 会丧失安全隔离，仅限本地临时调试，生产严禁。"
+      },
+      {
+        "text": "CORS——服务端用响应头授权特定源跨源读取响应",
+        "isCorrect": false,
+        "description": "这是正当机制。CORS 是 W3C 标准，由服务端显式授权跨源访问。"
+      },
+      {
+        "text": "postMessage——在不同窗口/iframe 之间安全传递消息",
+        "isCorrect": false,
+        "description": "这是正当机制。`postMessage` 提供受控的跨源跨窗口通信通道。"
+      },
+      {
+        "text": "反向代理——在服务端把跨源请求转发成对前端同源",
+        "isCorrect": false,
+        "description": "这是正当机制。Nginx/Vite 代理让浏览器看到同源请求，是常用方案。"
+      }
+    ]
+  },
+  {
+    "stem": "跨域排查的决策树里，「响应里有 `Access-Control-Allow-Origin`，但其值与当前页面的 `Origin` 不一致」最可能对应哪种后端问题？",
+    "explanation": "报错 `The 'Access-Control-Allow-Origin' header has a value '...' that is not equal to the supplied origin` 的根因是：后端**写死了某一个源**，或在**多源场景下没有动态回显当前请求的 `Origin`**。修复方式是后端按请求 `Origin` 做白名单匹配后动态回显该源，并配上 `Vary: Origin` 防止缓存把一个源的响应错误地复用给另一个源。",
+    "tags": ["cors", "debug", "vary"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "后端写死了单个源或多源时没动态回显当前 `Origin`",
+        "isCorrect": true,
+        "description": "正确。值不匹配通常因后端固定返回某源；多源应按 `Origin` 白名单动态回显并加 `Vary: Origin`。"
+      },
+      {
+        "text": "前端 fetch 没设置 `mode: 'cors'`，导致 Origin 发错",
+        "isCorrect": false,
+        "description": "错误。`mode` 默认即为 cors，且 `Origin` 由浏览器按当前页面自动设置，不会发错。"
+      },
+      {
+        "text": "服务器完全没有开启 CORS",
+        "isCorrect": false,
+        "description": "错误。那对应的是「缺少 `Allow-Origin` 头」；本题前提是头存在但值不匹配。"
+      },
+      {
+        "text": "预检 OPTIONS 返回了 404",
+        "isCorrect": false,
+        "description": "错误。那是预检未成功（`It does not have HTTP ok status`）一类问题，与值不匹配根因不同。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS（跨源资源共享）机制中，决定浏览器是否把跨源响应交给页面脚本的「授权方」是谁？",
+    "explanation": "CORS 是浏览器与服务器之间的协商协议：浏览器照常发出跨源请求并带上 `Origin` 头，由**服务器在响应里用一组 `Access-Control-*` 头声明允许哪个源访问**，浏览器再据此决定是否把响应交给脚本。授权方是服务器、执行方是浏览器。",
+    "tags": ["cors", "concept"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "服务器（通过响应里的 `Access-Control-*` 头声明授权）",
+        "isCorrect": true,
+        "description": "正确。服务器是授权方，用响应头声明允许哪个源；浏览器只是执行者。"
+      },
+      {
+        "text": "浏览器（自己判断该不该放行跨源响应）",
+        "isCorrect": false,
+        "description": "错误。浏览器是执行方，它依据服务器返回的头做放行判断，不自行决定授权。"
+      },
+      {
+        "text": "DNS 服务器（在解析阶段决定跨源访问权限）",
+        "isCorrect": false,
+        "description": "错误。DNS 只负责域名解析，与 CORS 授权毫无关系。"
+      },
+      {
+        "text": "操作系统的网络防火墙",
+        "isCorrect": false,
+        "description": "错误。CORS 是浏览器层面的机制，与系统防火墙无关。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 的核心授权响应头是哪一个？它声明了允许读取响应的源。",
+    "explanation": "CORS 最核心的授权头是 `Access-Control-Allow-Origin`，取值为**具体源**（如 `https://foo.example`）或通配 `*`。浏览器拿到响应后比对请求的 `Origin` 与该头，匹配（或为 `*`）则放行，不匹配则拦截并报 CORS 错误。",
+    "tags": ["cors", "headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`Access-Control-Allow-Origin`",
+        "isCorrect": true,
+        "description": "正确。它声明哪个源可读取响应，是 CORS 授权的核心头。"
+      },
+      {
+        "text": "`Origin`",
+        "isCorrect": false,
+        "description": "错误。`Origin` 是浏览器自动加在请求上的头，表明请求来源，不是服务器的授权头。"
+      },
+      {
+        "text": "`Host`",
+        "isCorrect": false,
+        "description": "错误。`Host` 标识目标主机，与 CORS 授权无关。"
+      },
+      {
+        "text": "`Referer`",
+        "isCorrect": false,
+        "description": "错误。`Referer` 表示来源页面 URL，不参与 CORS 授权决策。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 的保护对象是谁？关于「CORS 保护谁、能否当鉴权」下列说法正确的是？",
+    "explanation": "CORS 保护的是**用户**——防止恶意站点借用户身份偷读其他站点的数据，而不是保护服务器、也不是接口鉴权。绕过浏览器的客户端（如 curl、服务端请求）根本不受 CORS 约束，所以把 CORS 当成接口安全防线是错误的。",
+    "tags": ["cors", "concept"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "CORS 保护的是用户，而非服务器，也不能当作接口鉴权",
+        "isCorrect": true,
+        "description": "正确。它防恶意站点借用户身份偷读跨源数据；curl 等非浏览器客户端不受其约束。"
+      },
+      {
+        "text": "CORS 是一种服务器端的接口鉴权机制",
+        "isCorrect": false,
+        "description": "错误。CORS 不做鉴权，绕过浏览器即可无视它，不能替代登录态校验。"
+      },
+      {
+        "text": "CORS 能阻止 curl、Postman 等工具访问接口",
+        "isCorrect": false,
+        "description": "错误。CORS 只在浏览器中生效，非浏览器客户端完全不受限制。"
+      },
+      {
+        "text": "CORS 的作用是加密跨源请求的传输内容",
+        "isCorrect": false,
+        "description": "错误。加密由 TLS/HTTPS 负责，CORS 只管「脚本能否读响应」的授权。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 把跨源请求分为「简单请求」和「需预检请求」，简单请求的方法只能是以下哪三者之一？",
+    "explanation": "按 Fetch 标准，简单请求的方法必须属于 CORS 安全方法：`GET`、`HEAD`、`POST` 三者之一。使用 `PUT`、`DELETE`、`PATCH` 等其他方法会触发预检。",
+    "tags": ["cors", "simple-request", "method"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`GET`、`HEAD`、`POST`",
+        "isCorrect": true,
+        "description": "正确。这三者是 CORS 安全方法，是构成简单请求的方法条件。"
+      },
+      {
+        "text": "`GET`、`POST`、`PUT`",
+        "isCorrect": false,
+        "description": "错误。`PUT` 不是 CORS 安全方法，会触发预检。"
+      },
+      {
+        "text": "`GET`、`HEAD`、`OPTIONS`",
+        "isCorrect": false,
+        "description": "错误。`OPTIONS` 是预检本身使用的方法，不在简单请求允许的方法集合里。"
+      },
+      {
+        "text": "`GET`、`POST`、`DELETE`",
+        "isCorrect": false,
+        "description": "错误。`DELETE` 会触发预检，不属于简单请求方法。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 简单请求要求请求头只包含「CORS 安全头」，下列哪一组全部属于 CORS 安全头？",
+    "explanation": "CORS 安全头（CORS-safelisted request-header）包括 `Accept`、`Accept-Language`、`Content-Language`、`Content-Type`（取值受限）、`Range`（仅限简单范围值）。`Authorization`、`X-Requested-With` 等自定义头不在其中，携带它们会触发预检。",
+    "tags": ["cors", "simple-request", "headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`Accept`、`Accept-Language`、`Content-Language`、`Content-Type`、`Range`",
+        "isCorrect": true,
+        "description": "正确。这五个就是 CORS 安全头，其中 `Content-Type` 取值还受三种限制。"
+      },
+      {
+        "text": "`Accept`、`Authorization`、`Content-Type`",
+        "isCorrect": false,
+        "description": "错误。`Authorization` 是非安全的自定义认证头，会触发预检。"
+      },
+      {
+        "text": "`Accept`、`X-Requested-With`、`Range`",
+        "isCorrect": false,
+        "description": "错误。`X-Requested-With` 属于自定义头，不在安全头清单内。"
+      },
+      {
+        "text": "`Content-Type`、`Cookie`、`Origin`",
+        "isCorrect": false,
+        "description": "错误。`Cookie` 是凭证类头，且这里混入非安全头，不构成简单请求。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 简单请求对 `Content-Type` 的取值有限制，下列哪一组是它允许的三种值？",
+    "explanation": "简单请求的 `Content-Type` 只能是 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain` 三者之一。其他类型（最典型的 `application/json`）会触发预检。",
+    "tags": ["cors", "simple-request", "content-type"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain`",
+        "isCorrect": true,
+        "description": "正确。这三种是简单请求允许的 `Content-Type`，超出即触发预检。"
+      },
+      {
+        "text": "`application/json`、`text/plain`、`multipart/form-data`",
+        "isCorrect": false,
+        "description": "错误。`application/json` 不在允许之列，含它会触发预检。"
+      },
+      {
+        "text": "`application/xml`、`text/html`、`text/plain`",
+        "isCorrect": false,
+        "description": "错误。`application/xml`、`text/html` 都不属于这三种允许值。"
+      },
+      {
+        "text": "`application/x-www-form-urlencoded`、`application/json`、`text/csv`",
+        "isCorrect": false,
+        "description": "错误。`application/json` 与 `text/csv` 都会让请求脱离简单请求范畴。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中，前端用 `POST` 发送 `Content-Type: application/json` 的请求体，会发生什么？（高频坑）",
+    "explanation": "虽然 `POST` 是 CORS 安全方法，但 `application/json` **不在** `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain` 三种允许值里——它卡住了简单请求的第三个条件，因此会**触发预检**。很多人误以为「POST 就是简单请求」，实际是被 `Content-Type` 卡住的。",
+    "tags": ["cors", "preflight", "content-type"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "触发预检请求，因为 `application/json` 不在简单请求允许的三种 `Content-Type` 里",
+        "isCorrect": true,
+        "description": "正确。方法虽是 `POST`，但 `application/json` 卡住简单请求条件，先发 OPTIONS 预检。"
+      },
+      {
+        "text": "属于简单请求，因为方法是 `POST`，直接发出不预检",
+        "isCorrect": false,
+        "description": "错误。简单请求三条件须同时满足，`Content-Type` 这一条不达标即不是简单请求。"
+      },
+      {
+        "text": "请求被浏览器直接拒绝发送",
+        "isCorrect": false,
+        "description": "错误。浏览器不会拒发，而是先发预检 OPTIONS 探路。"
+      },
+      {
+        "text": "自动把 `Content-Type` 改写成 `text/plain` 后作为简单请求发出",
+        "isCorrect": false,
+        "description": "错误。浏览器不会篡改你设置的 `Content-Type`，而是触发预检。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 预检请求使用的 HTTP 方法是哪一个？",
+    "explanation": "预检（preflight）请求固定使用 `OPTIONS` 方法，在真实请求之前先发出，用来向服务器「探路」——询问真实请求的方法与自定义头是否被允许。",
+    "tags": ["cors", "preflight", "method"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`OPTIONS`",
+        "isCorrect": true,
+        "description": "正确。预检固定用 `OPTIONS`，在真实请求前探询服务器是否放行。"
+      },
+      {
+        "text": "`HEAD`",
+        "isCorrect": false,
+        "description": "错误。`HEAD` 用于只取响应头不取体，不是预检方法。"
+      },
+      {
+        "text": "`TRACE`",
+        "isCorrect": false,
+        "description": "错误。`TRACE` 用于回显请求做诊断，与预检无关。"
+      },
+      {
+        "text": "`CONNECT`",
+        "isCorrect": false,
+        "description": "错误。`CONNECT` 用于建立隧道（如 HTTPS 代理），不是预检方法。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 预检的 `OPTIONS` 请求中，浏览器用哪两个请求头「预告」真实请求将使用的方法和自定义头？",
+    "explanation": "预检请求通过两个专用请求头预告真实请求形态：`Access-Control-Request-Method`（真实请求将用的方法）和 `Access-Control-Request-Headers`（真实请求将带的自定义头清单，逗号分隔）。",
+    "tags": ["cors", "preflight", "headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`Access-Control-Request-Method` 与 `Access-Control-Request-Headers`",
+        "isCorrect": true,
+        "description": "正确。前者预告真实方法，后者预告真实请求的自定义头清单。"
+      },
+      {
+        "text": "`Access-Control-Allow-Methods` 与 `Access-Control-Allow-Headers`",
+        "isCorrect": false,
+        "description": "错误。这两个是服务器的响应头，用来回答预检，不是浏览器发的请求头。"
+      },
+      {
+        "text": "`Allow` 与 `Accept`",
+        "isCorrect": false,
+        "description": "错误。`Allow` 是响应里声明资源支持的方法，`Accept` 是内容协商头，都不预告真实请求形态。"
+      },
+      {
+        "text": "`X-Request-Method` 与 `X-Request-Headers`",
+        "isCorrect": false,
+        "description": "错误。不存在这两个标准头，预检用的是 `Access-Control-Request-*`。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 预检通过的判定条件是什么？服务器用 `Access-Control-Allow-Methods` / `Access-Control-Allow-Headers` 应答。",
+    "explanation": "只有当真实请求的**方法被 `Access-Control-Allow-Methods` 覆盖**、**所有自定义头被 `Access-Control-Allow-Headers` 覆盖**（且 `Access-Control-Allow-Origin` 匹配）时，预检才算通过，浏览器才会发真实请求；否则浏览器拦下、报 CORS 错误，真实请求根本不发。",
+    "tags": ["cors", "preflight", "headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "真实方法被 `Allow-Methods` 覆盖、且所有自定义头被 `Allow-Headers` 覆盖",
+        "isCorrect": true,
+        "description": "正确。方法与头都被覆盖（且 Origin 匹配）预检才过，浏览器才发真实请求。"
+      },
+      {
+        "text": "只要服务器对 `OPTIONS` 返回 200 即视为通过",
+        "isCorrect": false,
+        "description": "错误。状态码不是判据，关键看 `Allow-Methods`/`Allow-Headers`/`Allow-Origin` 是否覆盖。"
+      },
+      {
+        "text": "只要 `Allow-Methods` 覆盖了真实方法即可，头无需声明",
+        "isCorrect": false,
+        "description": "错误。真实请求携带的自定义头也必须被 `Allow-Headers` 覆盖，缺一不可。"
+      },
+      {
+        "text": "只要响应里含 `Content-Type` 头即视为通过",
+        "isCorrect": false,
+        "description": "错误。`Content-Type` 与预检放行判定无关。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中 `Access-Control-Max-Age` 响应头的作用，以及为何设很大也未必生效？",
+    "explanation": "`Access-Control-Max-Age: <秒>` 让浏览器把预检结果缓存指定秒数，期内对**同一 URL、同一方法与头组合**的请求不再重复预检。但浏览器对该值设有**上限**，超出会被截断（如 Chromium 系封顶 7200 秒 / 2 小时，Firefox 为 86400 秒），设得再大也以浏览器上限为准。省略时默认仅缓存约 5 秒。",
+    "tags": ["cors", "preflight", "max-age"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "缓存预检结果若干秒，期内同类请求不再预检；但浏览器对该值有上限，超出被截断",
+        "isCorrect": true,
+        "description": "正确。它缓存预检；Chromium 封顶 7200s、Firefox 86400s，超出按上限截断。"
+      },
+      {
+        "text": "设置真实请求的超时时间，超时则中断连接",
+        "isCorrect": false,
+        "description": "错误。它与请求超时无关，只缓存预检结果。"
+      },
+      {
+        "text": "设置 Cookie 的最大存活秒数",
+        "isCorrect": false,
+        "description": "错误。Cookie 存活由 `Max-Age`/`Expires` 属性控制，与该 CORS 头无关。"
+      },
+      {
+        "text": "数值越大缓存越久，没有任何上限限制",
+        "isCorrect": false,
+        "description": "错误。浏览器有硬上限，超出会被截断，并非无限。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中服务器按请求 `Origin` 动态回显具体源（而非固定 `*`）时，为什么必须额外加 `Vary: Origin`？",
+    "explanation": "若服务器按 `Origin` 动态回显具体源，响应必须带 `Vary: Origin`。否则中间缓存（CDN/代理/浏览器缓存）会把「为 A 源生成的 `Access-Control-Allow-Origin: https://a.example` 响应」原样缓存并复用给 B 源的请求，造成跨源缓存污染——B 源要么被错误放行，要么拿到只对 A 源有效的头而报错。`Vary: Origin` 告诉缓存按 `Origin` 分桶存储。",
+    "tags": ["cors", "vary", "cache"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让缓存按 `Origin` 请求头分桶存储，避免把为 A 源生成的响应错发给 B 源",
+        "isCorrect": true,
+        "description": "正确。动态回显具体源时不加 `Vary: Origin` 会导致跨源缓存污染。"
+      },
+      {
+        "text": "告诉浏览器这是一个需要预检的请求",
+        "isCorrect": false,
+        "description": "错误。是否预检由请求本身的方法/头/Content-Type 决定，与 `Vary` 无关。"
+      },
+      {
+        "text": "声明响应允许携带凭证",
+        "isCorrect": false,
+        "description": "错误。凭证由 `Access-Control-Allow-Credentials: true` 声明，不是 `Vary`。"
+      },
+      {
+        "text": "禁止任何中间缓存缓存该响应",
+        "isCorrect": false,
+        "description": "错误。禁缓存应用 `Cache-Control: no-store` 等，`Vary` 是按头分桶而非禁缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中「简单请求」与「需预检请求」在失败时的副作用差异，下列说法正确的是？",
+    "explanation": "简单请求**不预检**，浏览器直接发出真实请求，失败时（Allow-Origin 不匹配）请求其实**已抵达服务器、副作用可能已发生**（如写库），只是脚本读不到响应。预检请求若不通过，浏览器**不会**发真实请求，因此无业务副作用。这是排查铁律：简单请求失败时请求已送达，预检失败时真实请求根本没发。",
+    "tags": ["cors", "simple-request", "preflight"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "简单请求失败时请求已送达、副作用可能已发生；预检失败时真实请求根本不发出",
+        "isCorrect": true,
+        "description": "正确。简单请求直接发已抵达服务器；预检不过则拦在真实请求之前，无副作用。"
+      },
+      {
+        "text": "两者失败时请求都不会到达服务器",
+        "isCorrect": false,
+        "description": "错误。简单请求失败时其实已经到达服务器，只是脚本读不到响应。"
+      },
+      {
+        "text": "两者失败时副作用都可能已经发生",
+        "isCorrect": false,
+        "description": "错误。预检失败时真实请求未发出，不会产生业务副作用。"
+      },
+      {
+        "text": "预检失败会回滚已经产生的服务器副作用",
+        "isCorrect": false,
+        "description": "错误。预检失败只是不发真实请求，谈不上回滚；它本就没产生副作用。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 排查中，前端报跨源错误但后端日志只看到一条 `OPTIONS`、看不到真实的 `POST`，最可能的原因是？",
+    "explanation": "若预检不通过（缺 `Access-Control-Allow-Methods`/`Allow-Headers`、或 `Allow-Origin` 不匹配），浏览器**不会**发真实请求，控制台报 CORS 错误。此时后端日志里只看得到一条 `OPTIONS`，看不到真实的 `POST`——排查时要先看 OPTIONS 的响应头是否齐全，而不是盯着业务接口。",
+    "tags": ["cors", "preflight", "debug"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "预检 `OPTIONS` 未通过，浏览器没有发出真实请求",
+        "isCorrect": true,
+        "description": "正确。预检不过浏览器就不发真实请求，日志只剩一条 OPTIONS，应先查其响应头。"
+      },
+      {
+        "text": "真实 `POST` 被服务器执行后日志写入失败",
+        "isCorrect": false,
+        "description": "错误。真实 POST 根本没发出，谈不上执行或写日志失败。"
+      },
+      {
+        "text": "浏览器把 `POST` 自动降级成了 `OPTIONS`",
+        "isCorrect": false,
+        "description": "错误。浏览器不会降级方法，OPTIONS 是独立的预检请求，真实 POST 待预检通过才发。"
+      },
+      {
+        "text": "后端把 `POST` 记成了 `OPTIONS`",
+        "isCorrect": false,
+        "description": "错误。两者是不同请求，真实 POST 因预检未过而从未到达后端。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中「带凭证的请求（credentials）」明确包含哪三类信息？",
+    "explanation": "跨域请求默认是匿名的（不带凭证）。这里的「凭证」明确指三类：**Cookie**（最常见，会话态全靠它）、**HTTP 认证信息**（如 `Authorization: Basic/Bearer`）、**TLS 客户端证书**（双向 TLS 场景）。开启 `credentials: 'include'` 后它们按浏览器策略整体携带。",
+    "tags": ["cors", "credentials"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Cookie、HTTP 认证信息（如 `Authorization`）、TLS 客户端证书",
+        "isCorrect": true,
+        "description": "正确。CORS 凭证就是这三类，开启 include 后按浏览器策略整体携带。"
+      },
+      {
+        "text": "Cookie、`User-Agent`、`Referer`",
+        "isCorrect": false,
+        "description": "错误。`User-Agent`、`Referer` 是普通请求头，不属于 CORS 凭证。"
+      },
+      {
+        "text": "Cookie、`Origin` 头、CSRF Token",
+        "isCorrect": false,
+        "description": "错误。`Origin` 是来源标识，CSRF Token 是应用层防护，均非 CORS 凭证三类。"
+      },
+      {
+        "text": "Cookie、`Content-Type`、`Accept`",
+        "isCorrect": false,
+        "description": "错误。`Content-Type`、`Accept` 是内容协商相关头，不是凭证。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中要让跨域请求携带 Cookie，前端用 `fetch` 时正确的写法是？",
+    "explanation": "现代浏览器 `fetch` 的 `credentials` 默认是 `same-origin`（同源带、跨域不带）。跨域要带 Cookie 必须显式写 `credentials: 'include'`；`omit` 表示不带、`same-origin` 仅同源带。XHR 对应 `xhr.withCredentials = true`。漏写 `include` 是登录态丢失的高频原因。",
+    "tags": ["cors", "credentials", "fetch"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`fetch(url, { credentials: 'include' })`",
+        "isCorrect": true,
+        "description": "正确。跨域带 Cookie 必须显式设 `include`，默认的 `same-origin` 跨域不带。"
+      },
+      {
+        "text": "`fetch(url, { credentials: 'same-origin' })`",
+        "isCorrect": false,
+        "description": "错误。`same-origin` 只在同源时带凭证，跨域不带。"
+      },
+      {
+        "text": "`fetch(url, { withCredentials: true })`",
+        "isCorrect": false,
+        "description": "错误。`withCredentials` 是 XMLHttpRequest 的属性，fetch 用的是 `credentials` 选项。"
+      },
+      {
+        "text": "`fetch(url, { cookie: true })`",
+        "isCorrect": false,
+        "description": "错误。不存在 `cookie` 这个 fetch 选项，正确的是 `credentials: 'include'`。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中 XMLHttpRequest 要让跨域请求携带凭证，应设置哪个属性为 `true`？",
+    "explanation": "XMLHttpRequest 开启跨域凭证的关键开关是 `xhr.withCredentials = true`。它与 fetch 的 `credentials: 'include'`、EventSource 的 `{ withCredentials: true }` 作用相同——让请求带上 Cookie 等凭证。",
+    "tags": ["cors", "credentials", "xhr"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`xhr.withCredentials = true`",
+        "isCorrect": true,
+        "description": "正确。这是 XHR 携带跨域凭证的关键开关。"
+      },
+      {
+        "text": "`xhr.credentials = 'include'`",
+        "isCorrect": false,
+        "description": "错误。`credentials: 'include'` 是 fetch 的写法，XHR 用 `withCredentials`。"
+      },
+      {
+        "text": "`xhr.sendCookie = true`",
+        "isCorrect": false,
+        "description": "错误。不存在该属性，XHR 凭证开关是 `withCredentials`。"
+      },
+      {
+        "text": "`xhr.setRequestHeader('Cookie', ...)`",
+        "isCorrect": false,
+        "description": "错误。`Cookie` 是浏览器禁止脚本手动设置的受控头，凭证应通过 `withCredentials` 开启。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中服务端放行凭证的响应头 `Access-Control-Allow-Credentials`，它的合法取值及缺省处理是？",
+    "explanation": "`Access-Control-Allow-Credentials` 的**唯一合法值就是字符串 `true`**。不需要时应**直接省略**该头，而不是写 `false`。非预检请求若响应缺这个头，浏览器会直接丢弃响应并报错；预检请求只有带了它，真实请求才会携带凭证。",
+    "tags": ["cors", "credentials", "headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "唯一合法值是 `true`；不需要时直接省略，而非写 `false`",
+        "isCorrect": true,
+        "description": "正确。该头只接受 `true`，不放行凭证就省略它，写 `false` 是无意义的反模式。"
+      },
+      {
+        "text": "可取 `true` 或 `false`，写 `false` 表示明确禁止凭证",
+        "isCorrect": false,
+        "description": "错误。规范只认 `true`，不放行就省略该头，`false` 并非标准用法。"
+      },
+      {
+        "text": "可取具体源，如 `https://foo.example`",
+        "isCorrect": false,
+        "description": "错误。具体源是 `Access-Control-Allow-Origin` 的取值，本头只接受 `true`。"
+      },
+      {
+        "text": "可取允许携带的凭证类型列表，如 `cookie, cert`",
+        "isCorrect": false,
+        "description": "错误。该头不列举凭证类型，唯一合法值就是 `true`。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中当请求带凭证（`credentials: 'include'`）时，`Access-Control-Allow-Origin` 为什么不能用 `*`？（高频坑）",
+    "explanation": "带凭证意味着响应里可能含**用户专属的敏感数据**。若允许 `*`，等于让任意源都能携带受害者的 Cookie 读取响应，相当于放开 CSRF 式数据窃取。所以规范规定：带凭证时浏览器把 `*` 当作**字面意义的星号源**去和 `Origin` 做精确字符串匹配，几乎必然失配，于是抛出 `Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'`。正确做法是按白名单回显具体源。",
+    "tags": ["cors", "credentials", "wildcard"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "带凭证时 `*` 被当作字面星号源做精确匹配，几乎必然失配，故必须回显具体源",
+        "isCorrect": true,
+        "description": "正确。允许 `*` 等于让任意源借用户 Cookie 偷读响应，规范因此禁止，须回显具体源。"
+      },
+      {
+        "text": "因为 `*` 会让响应体积变大，影响性能",
+        "isCorrect": false,
+        "description": "错误。这与性能、体积无关，纯粹是凭证场景的安全约束。"
+      },
+      {
+        "text": "因为带凭证时浏览器不再发送 `Origin` 头",
+        "isCorrect": false,
+        "description": "错误。带凭证时 `Origin` 头照常发送，问题在于 `*` 不再被当通配符。"
+      },
+      {
+        "text": "因为 `*` 只能用于预检，不能用于带凭证的真实请求",
+        "isCorrect": false,
+        "description": "错误。`*` 在匿名请求中处处可用；限制的本质是「带凭证 + `*`」冲突，而非预检/真实之分。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中带凭证请求，除了 `Access-Control-Allow-Origin` 不能用 `*`，下列哪些头同样不能用 `*`？（凭证+通配符冲突）",
+    "explanation": "带凭证时**所有放行头都不能用 `*`**，必须逐项列举：`Access-Control-Allow-Origin`（回显具体源）、`Access-Control-Allow-Methods`（逐个列方法）、`Access-Control-Allow-Headers`（逐个列首部）、`Access-Control-Expose-Headers`（逐个列首部）。它们在匿名请求中都可用 `*`，但带凭证时 `*` 一律失效。",
+    "tags": ["cors", "credentials", "wildcard"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Allow-Methods`、`Allow-Headers`、`Expose-Headers` 都不能用 `*`，须逐项列举",
+        "isCorrect": true,
+        "description": "正确。带凭证时这三者连同 `Allow-Origin` 都不能用 `*`，必须显式逐项列出。"
+      },
+      {
+        "text": "只有 `Allow-Origin` 不能用 `*`，其余头照常可用 `*`",
+        "isCorrect": false,
+        "description": "错误。带凭证时 Methods/Headers/Expose-Headers 同样不能用 `*`。"
+      },
+      {
+        "text": "`Allow-Credentials` 不能用 `*`，其余头不受影响",
+        "isCorrect": false,
+        "description": "错误。`Allow-Credentials` 本就只接受 `true`；真正受 `*` 约束的是 Origin/Methods/Headers/Expose-Headers。"
+      },
+      {
+        "text": "`Max-Age` 不能用 `*`，其余头可用 `*`",
+        "isCorrect": false,
+        "description": "错误。`Max-Age` 取秒数本就不用 `*`；受 `*` 限制的是放行类头。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 带凭证请求中出现报错 `Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'`，正确的修复做法是？",
+    "explanation": "不能图省事写 `*`，也不能无脑回显任意 `Origin`（等于对所有源开放）。正确姿势是：维护**源白名单**，命中才把请求的 `Origin` 原样回显到 `Access-Control-Allow-Origin`，同时配 `Access-Control-Allow-Credentials: true` 并补 `Vary: Origin`（缓存按 Origin 分桶）。",
+    "tags": ["cors", "credentials", "wildcard"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "维护源白名单，命中才回显具体 `Origin`，并配 `Allow-Credentials: true` 与 `Vary: Origin`",
+        "isCorrect": true,
+        "description": "正确。白名单命中后回显具体源、加凭证头与 `Vary: Origin`，既安全又能带凭证。"
+      },
+      {
+        "text": "把 `Access-Control-Allow-Origin` 改成 `null`",
+        "isCorrect": false,
+        "description": "错误。`null` 源同样有被滥用风险，且不能解决带凭证需具体源的要求。"
+      },
+      {
+        "text": "无条件回显任意请求的 `Origin`，对所有源开放",
+        "isCorrect": false,
+        "description": "错误。无脑回显等于对所有源放开凭证访问，是严重安全漏洞，必须配白名单。"
+      },
+      {
+        "text": "去掉前端的 `credentials: 'include'` 并保留 `*`",
+        "isCorrect": false,
+        "description": "错误。去掉 include 虽可消错，但也丢失了携带凭证的能力，并未真正放行带凭证访问。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 中若不配置 `Access-Control-Expose-Headers`，跨域响应里 JS 默认只能读到 7 个 CORS 安全响应首部，下列哪一组是这 7 个？",
+    "explanation": "不配 `Expose-Headers` 时，跨域响应里 JS（`getResponseHeader()` / `response.headers.get()`）只能读到 7 个 CORS 安全响应首部：`Cache-Control`、`Content-Language`、`Content-Length`、`Content-Type`、`Expires`、`Last-Modified`、`Pragma`。要读 `X-Total-Count`、`X-Request-Id` 等自定义头，必须显式 allowlist 暴露。",
+    "tags": ["cors", "expose-headers"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`Cache-Control`、`Content-Language`、`Content-Length`、`Content-Type`、`Expires`、`Last-Modified`、`Pragma`",
+        "isCorrect": true,
+        "description": "正确。这 7 个是 CORS 安全响应首部，不配 `Expose-Headers` 时 JS 默认只能读到它们。"
+      },
+      {
+        "text": "`Content-Type`、`Set-Cookie`、`Authorization`、`ETag`、`Date`、`Server`、`Location`",
+        "isCorrect": false,
+        "description": "错误。`Set-Cookie`、`Authorization`、`ETag` 等都不在默认可读的 7 个安全首部里。"
+      },
+      {
+        "text": "`Content-Type`、`Content-Length`、`X-Total-Count`、`X-Request-Id`、`ETag`、`Date`、`Vary`",
+        "isCorrect": false,
+        "description": "错误。`X-Total-Count`、`X-Request-Id` 等自定义头默认读不到，需显式 `Expose-Headers`。"
+      },
+      {
+        "text": "`Cache-Control`、`Content-Type`、`Cookie`、`Origin`、`Host`、`Accept`、`Referer`",
+        "isCorrect": false,
+        "description": "错误。`Cookie`、`Origin`、`Host` 等是请求头，与可读的响应首部清单无关。"
+      }
+    ]
+  },
+  {
+    "stem": "CORS 预检与凭证的关系，下列说法正确的是？",
+    "explanation": "`OPTIONS` 预检本身**从不携带凭证**（不带 Cookie）。只有当预检响应带了 `Access-Control-Allow-Credentials: true`（且 Allow-Origin 为具体源等条件满足），随后的**真实请求才会携带凭证**。所以「预检请求里带不带 Cookie」的答案是：预检不带，真实请求才带。",
+    "tags": ["cors", "preflight", "credentials"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`OPTIONS` 预检本身从不带凭证；预检响应放行后，真实请求才携带凭证",
+        "isCorrect": true,
+        "description": "正确。预检不带 Cookie，待 `Allow-Credentials: true` 等条件满足，真实请求才带凭证。"
+      },
+      {
+        "text": "预检 `OPTIONS` 会照常携带 Cookie 等凭证",
+        "isCorrect": false,
+        "description": "错误。预检本身从不携带凭证，凭证只在真实请求中出现。"
+      },
+      {
+        "text": "只要前端设了 `include`，预检和真实请求都带凭证",
+        "isCorrect": false,
+        "description": "错误。即便设了 include，预检仍不带凭证，只有真实请求才带。"
+      },
+      {
+        "text": "预检带凭证，真实请求反而不带",
+        "isCorrect": false,
+        "description": "错误。恰好相反：预检不带，真实请求（在放行后）才带。"
+      }
+    ]
+  },
+  {
+    "stem": "JSONP 之所以能绕过同源策略，根本原因是它利用了浏览器哪一项特性？",
+    "explanation": "同源策略限制的是 `XMLHttpRequest`、`fetch` 这类脚本发起的跨源数据请求；而 `<script>`、`<img>`、`<link>` 等标签加载资源不受 SOP 限制（CDN 能跨域加载脚本正源于此）。JSONP 正是钻这个空子：动态插入 `<script src>` 指向跨域接口，服务器返回一段调用回调函数的 JS。",
+    "tags": ["jsonp", "sop", "cors"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`<script>` 标签加载资源不受同源策略限制",
+        "isCorrect": true,
+        "description": "正确。脚本、图片、样式等标签的资源加载本就允许跨域，JSONP 借此豁免。"
+      },
+      {
+        "text": "`fetch` 默认允许读取任意跨域响应",
+        "isCorrect": false,
+        "description": "错误。`fetch` 受同源策略约束，跨域读取需服务器通过 CORS 显式放行。"
+      },
+      {
+        "text": "浏览器对 GET 请求一律不做同源检查",
+        "isCorrect": false,
+        "description": "错误。同源检查与方法无关，`fetch` 发 GET 同样受限；不受限的是标签加载。"
+      },
+      {
+        "text": "JSONP 会自动附加 `Access-Control-Allow-Origin` 头",
+        "isCorrect": false,
+        "description": "错误。JSONP 与 CORS 响应头无关，它根本不走 CORS 协商通道。"
+      }
+    ]
+  },
+  {
+    "stem": "JSONP 中前端向接口传入回调名，服务器返回的响应体本质是什么？",
+    "explanation": "JSONP 服务器不返回纯 JSON，而是返回「用回调函数包裹数据」的一段 JS，形如 `handleData({...})`。浏览器把它当脚本加载并立即执行，预先定义在全局的回调函数被调用，前端就拿到了数据。",
+    "tags": ["jsonp", "callback"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一段调用前端回调函数并把数据作为实参传入的 JavaScript",
+        "isCorrect": true,
+        "description": "正确。形如 `__cb__(JSON数据)`，脚本加载即执行，回调被调用拿到数据。"
+      },
+      {
+        "text": "标准的纯 JSON 文本",
+        "isCorrect": false,
+        "description": "错误。纯 JSON 作为脚本加载会直接语法报错，必须用回调包裹。"
+      },
+      {
+        "text": "一段 HTML 片段",
+        "isCorrect": false,
+        "description": "错误。`<script>` 期望的是 JS，返回 HTML 无法被执行成数据。"
+      },
+      {
+        "text": "带 `Access-Control-Allow-Origin` 的空响应",
+        "isCorrect": false,
+        "description": "错误。JSONP 不依赖 CORS 头，响应体必须是「回调包裹数据」的 JS。"
+      }
+    ]
+  },
+  {
+    "stem": "反向代理能解决跨域问题，是因为同源策略本质上是一种什么层面的限制？",
+    "explanation": "同源策略是「浏览器」对 JS 发起跨源请求的限制，它管不着服务器之间的通信。反向代理利用这一点：浏览器只与同源代理对话（不算跨域），代理在服务器侧把请求转发到真正的目标服务器，整条链路没有任何一步是浏览器发起的跨源请求。",
+    "tags": ["proxy", "sop"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器对脚本发起的跨源请求的限制，不约束服务器间通信",
+        "isCorrect": true,
+        "description": "正确。SOP 是浏览器侧的安全策略，服务器与服务器之间的通信不受其约束。"
+      },
+      {
+        "text": "操作系统对网络套接字的限制",
+        "isCorrect": false,
+        "description": "错误。SOP 是浏览器实现的策略，与操作系统网络层无关。"
+      },
+      {
+        "text": "TCP 协议栈对端口的强制隔离",
+        "isCorrect": false,
+        "description": "错误。SOP 在应用层由浏览器执行，并非 TCP 协议层的机制。"
+      },
+      {
+        "text": "服务器对所有外来请求的统一拦截",
+        "isCorrect": false,
+        "description": "错误。SOP 不在服务器侧执行，服务器默认并不因「跨源」而拦截请求。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 JSONP 支持的 HTTP 方法，下列说法正确的是？",
+    "explanation": "JSONP 借助 `<script>` 标签发起请求，而该标签只能发起 GET 请求，无法 POST/PUT/DELETE，也无法携带自定义请求头。这是 JSONP 相比 CORS 的核心局限之一——CORS 支持所有 HTTP 方法。",
+    "tags": ["jsonp", "method"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只能发 GET 请求，无法 POST/PUT/DELETE，也不能自定义请求头",
+        "isCorrect": true,
+        "description": "正确。`<script src>` 本质是 GET 资源加载，无法切换方法或加自定义头。"
+      },
+      {
+        "text": "支持 GET 和 POST 两种方法",
+        "isCorrect": false,
+        "description": "错误。`<script>` 标签无法发起 POST，JSONP 仅限 GET。"
+      },
+      {
+        "text": "支持全部 HTTP 方法，与 CORS 一致",
+        "isCorrect": false,
+        "description": "错误。支持全部方法的是 CORS；JSONP 仅 GET，这正是它被取代的原因之一。"
+      },
+      {
+        "text": "方法由 `callback` 参数的值决定",
+        "isCorrect": false,
+        "description": "错误。`callback` 只是回调函数名，与请求方法无关。"
+      }
+    ]
+  },
+  {
+    "stem": "JSONP 最严重的安全隐患来自哪里？",
+    "explanation": "浏览器会无条件执行服务器返回的 JS。一旦目标域被攻破或本就恶意，等于在你的页面里执行任意脚本（XSS / 数据投毒），因此使用 JSONP 必须完全信任目标域。这是它被 CORS 取代的关键安全原因。",
+    "tags": ["jsonp", "security", "xss"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器会无条件执行第三方返回的任意 JS，存在 XSS / 数据投毒风险",
+        "isCorrect": true,
+        "description": "正确。JSONP 把响应当脚本执行，必须完全信任目标域，否则等于任人注入代码。"
+      },
+      {
+        "text": "回调参数会被明文写进 URL 导致泄密",
+        "isCorrect": false,
+        "description": "错误。回调名写进 URL 并非主要风险，真正危险的是执行第三方任意 JS。"
+      },
+      {
+        "text": "JSONP 会强制关闭 HTTPS 加密",
+        "isCorrect": false,
+        "description": "错误。JSONP 与传输层加密无关，不会影响 HTTPS。"
+      },
+      {
+        "text": "JSONP 必然绕过浏览器的 Cookie 机制",
+        "isCorrect": false,
+        "description": "错误。JSONP 的 `<script>` 请求仍按规则带 Cookie，核心风险不在此。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite 的 `server.proxy` 反向代理配置，在生产环境中表现如何？",
+    "explanation": "dev server 代理只在本地开发生效，打包产物里没有它。Vite `server.proxy` / webpack `devServer.proxy` 是开发期把某前缀转发到后端的便捷手段；生产环境的同源代理需在部署层（如 nginx）单独配置。",
+    "tags": ["proxy", "vite", "devserver"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "完全不生效，它只在本地开发的 dev server 中起作用",
+        "isCorrect": true,
+        "description": "正确。`server.proxy` 不会打包进产物，生产需用 nginx 等部署层代理替代。"
+      },
+      {
+        "text": "会被自动编译进打包产物，生产同样生效",
+        "isCorrect": false,
+        "description": "错误。代理逻辑由 dev server 提供，构建产物里并不包含它。"
+      },
+      {
+        "text": "生产环境自动切换为 CORS 头注入",
+        "isCorrect": false,
+        "description": "错误。Vite 不会在生产替你注入 CORS，代理只是开发期能力。"
+      },
+      {
+        "text": "需要在 `vite preview` 时手动开启才生效",
+        "isCorrect": false,
+        "description": "错误。`vite preview` 仅伺服静态产物，并不还原 dev server 代理。"
+      }
+    ]
+  },
+  {
+    "stem": "nginx 中用 `location /api/ { proxy_pass http://127.0.0.1:3000/; }` 做反向代理，浏览器视角下前端与 API 的关系是？",
+    "explanation": "生产部署常把前端静态资源和 API 放在同一域名下，由 nginx 按路径分流。浏览器始终只请求同一域名（同源），nginx 在服务器侧把 `/api/` 转发到后端。前端与 API 同源，CORS 从此与你无关。",
+    "tags": ["proxy", "nginx"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "同源，浏览器只与同一域名通信，不触发 CORS",
+        "isCorrect": true,
+        "description": "正确。前端与 `/api/` 同协议同域名同端口，浏览器视为同源，无 CORS 问题。"
+      },
+      {
+        "text": "跨源，但 nginx 自动加了 CORS 响应头放行",
+        "isCorrect": false,
+        "description": "错误。代理让请求不再跨源，无需也不依赖 CORS 头。"
+      },
+      {
+        "text": "跨源，浏览器会先发预检请求",
+        "isCorrect": false,
+        "description": "错误。同域名同端口属于同源，不会触发预检。"
+      },
+      {
+        "text": "同站但跨源，需要 SameSite=None",
+        "isCorrect": false,
+        "description": "错误。同一 origin 直接同源，与 SameSite 的同站判定无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 的 `SameSite=None` 取值，浏览器有什么强制要求？",
+    "explanation": "`SameSite=None` 表示跨站、同站都携带 Cookie，但必须同时设置 `Secure`（只能走 HTTPS），否则浏览器拒绝写入这枚 Cookie。这是跨站嵌入、第三方 SSO、跨域 API 鉴权场景的必备配置。",
+    "tags": ["samesite", "cookie", "secure"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "必须同时设置 `Secure`，否则浏览器拒绝写入该 Cookie",
+        "isCorrect": true,
+        "description": "正确。`None` 允许跨站携带，浏览器强制要求配 `Secure`（仅 HTTPS）。"
+      },
+      {
+        "text": "必须同时设置 `HttpOnly`",
+        "isCorrect": false,
+        "description": "错误。`HttpOnly` 与 `SameSite=None` 无强制绑定关系。"
+      },
+      {
+        "text": "必须把 `Domain` 设为顶级域",
+        "isCorrect": false,
+        "description": "错误。`None` 没有对 `Domain` 的强制要求，强制项是 `Secure`。"
+      },
+      {
+        "text": "无任何附加要求，与 `Lax` 等价",
+        "isCorrect": false,
+        "description": "错误。`None` 必须配 `Secure`，且语义比 `Lax` 宽松得多。"
+      }
+    ]
+  },
+  {
+    "stem": "JSONP 在错误处理方面的局限是什么？",
+    "explanation": "JSONP 只能监听脚本的 `onerror`，拿不到 HTTP 状态码与错误体；超时、重试都得自己造轮子。相比之下 CORS 有标准的错误语义，能区分网络错误、状态码等，这是 JSONP 被淘汰的局限之一。",
+    "tags": ["jsonp", "error"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只能监听脚本 `onerror`，拿不到 HTTP 状态码和错误体，超时需自己实现",
+        "isCorrect": true,
+        "description": "正确。`<script>` 加载失败只暴露 `onerror`，无法获知 404/500 等具体信息。"
+      },
+      {
+        "text": "错误会以 Promise reject 的形式带回完整状态码",
+        "isCorrect": false,
+        "description": "错误。即便手写 Promise 封装，底层也拿不到状态码，只知道「加载失败」。"
+      },
+      {
+        "text": "JSONP 失败时浏览器会自动重试三次",
+        "isCorrect": false,
+        "description": "错误。没有内建重试机制，重试逻辑需开发者自行实现。"
+      },
+      {
+        "text": "错误体会写入 `window.onerror` 的第二个参数",
+        "isCorrect": false,
+        "description": "错误。脚本加载错误拿不到来自服务器的错误体内容。"
+      }
+    ]
+  },
+  {
+    "stem": "Vite 代理配置中 `changeOrigin: true` 的作用是什么？",
+    "explanation": "`changeOrigin: true` 会把转发请求的 `Origin`/`Host` 头改写成 `target`，让后端把它当同源请求处理，从而避免后端的来源校验或 CORS 拦截。它是对象写法代理中的关键选项之一。",
+    "tags": ["proxy", "vite", "changeorigin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把转发请求的 Origin/Host 改写为 target，让后端按同源看待",
+        "isCorrect": true,
+        "description": "正确。改写来源头可绕过后端的来源校验或自带 CORS 拦截。"
+      },
+      {
+        "text": "修改浏览器地址栏显示的源",
+        "isCorrect": false,
+        "description": "错误。它改的是转发到后端那一跳的请求头，与浏览器地址栏无关。"
+      },
+      {
+        "text": "强制把目标响应头改成 `Access-Control-Allow-Origin: *`",
+        "isCorrect": false,
+        "description": "错误。它改的是请求侧的来源头，不负责注入响应侧 CORS 头。"
+      },
+      {
+        "text": "把请求方法统一改写为 GET",
+        "isCorrect": false,
+        "description": "错误。该选项只影响来源头，不会改动请求方法。"
+      }
+    ]
+  },
+  {
+    "stem": "SameSite 比较的是「站点（site）」，下列哪组属于「同站但不同源」？",
+    "explanation": "源（origin）= scheme + host + port 三者全等；站点（site）= scheme + 可注册域（eTLD+1），不看子域、不看端口。因此 `https://app.example.com` 与 `https://api.example.com` 同站（同为 example.com）但不同源（host 不同）。",
+    "tags": ["samesite", "site", "origin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`https://app.example.com` 与 `https://api.example.com`",
+        "isCorrect": true,
+        "description": "正确。两者 host 不同（不同源），但同为可注册域 example.com（同站）。"
+      },
+      {
+        "text": "`https://example.com` 与 `http://example.com`",
+        "isCorrect": false,
+        "description": "错误。现代浏览器采用 schemeful same-site，scheme 不同即不同站。"
+      },
+      {
+        "text": "`https://example.com` 与 `https://other.com`",
+        "isCorrect": false,
+        "description": "错误。可注册域不同，既不同源也不同站。"
+      },
+      {
+        "text": "`https://example.com` 与 `https://example.com`",
+        "isCorrect": false,
+        "description": "错误。三要素全等，是完全同源（也同站），不符合「不同源」。"
+      }
+    ]
+  },
+  {
+    "stem": "现代浏览器中，未显式声明 `SameSite` 的 Cookie 默认按哪种取值处理？",
+    "explanation": "现代浏览器把未显式写 `SameSite` 的 Cookie 按 `Lax` 处理。但「默认 Lax」比「显式 Lax」更宽松：Cookie 在设置后 2 分钟内仍会随跨站 `POST` 发送（兼容老式表单跳转）。因此不应依赖隐式默认，需要时应显式声明。",
+    "tags": ["samesite", "cookie", "default"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按 `Lax` 处理",
+        "isCorrect": true,
+        "description": "正确。现代浏览器默认值是 `Lax`，但隐式默认比显式 `Lax` 略宽松。"
+      },
+      {
+        "text": "按 `Strict` 处理",
+        "isCorrect": false,
+        "description": "错误。默认值是 `Lax` 而非最严格的 `Strict`。"
+      },
+      {
+        "text": "按 `None` 处理（跨站照常携带）",
+        "isCorrect": false,
+        "description": "错误。默认绝非 `None`，否则跨站会无差别带 Cookie，CSRF 风险极高。"
+      },
+      {
+        "text": "完全禁止该 Cookie 写入",
+        "isCorrect": false,
+        "description": "错误。Cookie 正常写入，只是按 `Lax` 规则决定是否随跨站请求发送。"
+      }
+    ]
+  },
+  {
+    "stem": "`SameSite=Lax` 只在同时满足哪两个条件的跨站请求上携带 Cookie？",
+    "explanation": "`Lax` 仅放行「顶级导航 + 安全方法（GET/HEAD）」携带 Cookie。顶级导航指会改变地址栏 URL 的请求（点链接、`document.location` 赋值、`<form>` 提交），排除 `fetch`、`<img>`/`<script>` 子资源、`<iframe>` 内导航；安全方法排除 POST/PUT/DELETE。",
+    "tags": ["samesite", "lax", "navigation"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶级导航（改变地址栏 URL）且使用安全方法（GET/HEAD）",
+        "isCorrect": true,
+        "description": "正确。二者缺一不可，子资源请求或 POST 等都不会带 Cookie。"
+      },
+      {
+        "text": "任意跨站 GET 请求（含 `<img>`、`fetch`）",
+        "isCorrect": false,
+        "description": "错误。`<img>`、`fetch` 等子资源即便是 GET 也被 `Lax` 排除。"
+      },
+      {
+        "text": "顶级导航即可，方法不限",
+        "isCorrect": false,
+        "description": "错误。还需是安全方法；跨站 POST 顶级导航不带 Cookie。"
+      },
+      {
+        "text": "`<iframe>` 内部导航且使用 GET",
+        "isCorrect": false,
+        "description": "错误。iframe 内导航不算顶级导航，被 `Lax` 排除。"
+      }
+    ]
+  },
+  {
+    "stem": "`Cross-Origin-Resource-Policy`（CORP）响应头的三个取值中，哪一个允许同站跨源页面引用本资源？",
+    "explanation": "CORP 三值：`same-origin`（仅同源页面可引用）、`same-site`（同站即 scheme + eTLD+1 即可引用，允许同站跨源）、`cross-origin`（任意源都可引用，如公共 CDN）。CORP 用于拦截 no-cors 模式的跨源读取，缓解 Spectre 类侧信道。",
+    "tags": ["corp", "cross-origin"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`same-site`",
+        "isCorrect": true,
+        "description": "正确。`same-site` 允许同站（含同站跨源子域）引用，比 `same-origin` 宽。"
+      },
+      {
+        "text": "`same-origin`",
+        "isCorrect": false,
+        "description": "错误。`same-origin` 仅允许完全同源的页面引用，跨子域不行。"
+      },
+      {
+        "text": "`cross-origin`",
+        "isCorrect": false,
+        "description": "错误。`cross-origin` 放行任意源，范围比「同站」更宽。"
+      },
+      {
+        "text": "`include-credentials`",
+        "isCorrect": false,
+        "description": "错误。CORP 没有这个取值，它不是合法的 CORP 值。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 postMessage 与 AJAX 跨域，下列说法正确的是？",
+    "explanation": "postMessage 是用于跨窗口/iframe 之间安全通信的窗口间通信机制（如父页面与嵌入的第三方 iframe 互传消息），属于「窗口间」通信而非「请求跨域」。它与 CORS、JSONP、反向代理解决的「AJAX 跨域读取数据」是两回事。",
+    "tags": ["postmessage", "window"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是跨窗口/iframe 间的通信机制，与 AJAX 请求跨域是两回事",
+        "isCorrect": true,
+        "description": "正确。postMessage 解决「窗口间消息传递」，不用于替代 CORS 取数据。"
+      },
+      {
+        "text": "它是 CORS 的底层实现，每个跨域 fetch 都会用到",
+        "isCorrect": false,
+        "description": "错误。CORS 由浏览器与服务器协商，与 postMessage 无关。"
+      },
+      {
+        "text": "它能让 `fetch` 直接读取跨域响应体",
+        "isCorrect": false,
+        "description": "错误。读取跨域响应靠 CORS 授权，postMessage 不参与 AJAX 数据请求。"
+      },
+      {
+        "text": "它只能在同源的两个窗口间使用",
+        "isCorrect": false,
+        "description": "错误。postMessage 恰恰用于跨源窗口间通信，并可校验 `origin`。"
+      }
+    ]
+  },
+  {
+    "stem": "`SameSite` 是如何「缓解 CSRF」的？以下描述最准确的是？",
+    "explanation": "CSRF 的本质是攻击者诱导你在已登录站点发出非预期的状态变更请求，浏览器自动带上 Cookie。`Strict`/`Lax` 下，攻击者页面里的跨站 POST、fetch 等状态变更请求不会自动携带目标站 Cookie，伪造请求落到服务端是「未登录」状态被拒。但它是纵深防御一层，不能取代 CSRF Token。",
+    "tags": ["samesite", "csrf"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跨站状态变更请求不自动带 Cookie，伪造请求到服务端呈未登录态被拒",
+        "isCorrect": true,
+        "description": "正确。从「带不带 Cookie」一层切断 CSRF，但属纵深防御，仍需 Token 兜底。"
+      },
+      {
+        "text": "它会对每个请求自动附加随机 CSRF Token",
+        "isCorrect": false,
+        "description": "错误。SameSite 不生成 Token，它只控制 Cookie 是否随跨站请求发送。"
+      },
+      {
+        "text": "它彻底杜绝一切 CSRF，可完全取代 Token",
+        "isCorrect": false,
+        "description": "错误。它是纵深防御一层，同站子域被攻破或 `None` 场景仍需 Token。"
+      },
+      {
+        "text": "它通过校验 Referer 头来阻断跨站请求",
+        "isCorrect": false,
+        "description": "错误。SameSite 基于站点判定 Cookie 携带，并不依赖 Referer 校验。"
+      }
+    ]
+  },
+  {
+    "stem": "页面进入「跨源隔离」状态（`self.crossOriginIsolated === true`）能解锁下列哪项能力？",
+    "explanation": "当顶级文档同时返回 `Cross-Origin-Opener-Policy: same-origin` 与 `Cross-Origin-Embedder-Policy: require-corp` 时，页面进入跨源隔离状态，解锁 `SharedArrayBuffer`（WebAssembly 多线程依赖它）、高精度 `performance.now()`（提升到 5µs 级）、`measureUserAgentSpecificMemory()`。这些曾被 Spectre 用作侧信道放大器，故需隔离后才放开。",
+    "tags": ["coop", "coep", "crossoriginisolated", "sharedarraybuffer"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`SharedArrayBuffer` 与高精度计时器",
+        "isCorrect": true,
+        "description": "正确。跨源隔离解锁 `SharedArrayBuffer`、5µs 级 `performance.now()` 等。"
+      },
+      {
+        "text": "无需 CORS 即可读取任意跨域响应",
+        "isCorrect": false,
+        "description": "错误。跨源隔离与 CORS 是不同机制，不会让你绕过 CORS 读取响应。"
+      },
+      {
+        "text": "自动为所有 Cookie 加上 `SameSite=None`",
+        "isCorrect": false,
+        "description": "错误。隔离状态与 Cookie 的 SameSite 属性无关。"
+      },
+      {
+        "text": "允许 `<script>` 跨域写入 localStorage",
+        "isCorrect": false,
+        "description": "错误。localStorage 始终按 origin 隔离，跨源隔离不会打通它。"
+      }
+    ]
+  },
+  {
+    "stem": "`Cross-Origin-Opener-Policy: same-origin`（COOP）对跨源打开的窗口产生什么效果？",
+    "explanation": "COOP 控制本页与「打开它的窗口/它打开的窗口」是否同处一个浏览上下文组（BCG）——同组才能通过 `window.opener` 互访。`same-origin` 下，跨源打开的页面与本页不在同一 BCG，`window.opener` 互访被切断（跨源时表现为 `null`），防止恶意页面经 opener 篡改你的页面（tabnabbing）。",
+    "tags": ["coop", "opener", "tabnabbing"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "切断与跨源窗口的 `window.opener` 互访（跨源时表现为 null）",
+        "isCorrect": true,
+        "description": "正确。COOP same-origin 把本页放入独立 BCG，跨源 opener 引用被切断，防 tabnabbing。"
+      },
+      {
+        "text": "禁止页面加载任何跨源子资源",
+        "isCorrect": false,
+        "description": "错误。管控跨源子资源加载的是 COEP（require-corp），不是 COOP。"
+      },
+      {
+        "text": "强制所有跨源请求携带凭证",
+        "isCorrect": false,
+        "description": "错误。COOP 管的是 window 间隔离，与请求是否带凭证无关。"
+      },
+      {
+        "text": "把同源策略放宽到同站级别",
+        "isCorrect": false,
+        "description": "错误。COOP 是收紧隔离而非放宽同源策略。"
+      }
+    ]
+  },
+  {
+    "stem": "`Cross-Origin-Embedder-Policy: require-corp`（COEP）对页面的跨源子资源提出什么要求？",
+    "explanation": "COEP `require-corp` 要求页面加载的每个跨源子资源都必须带 `CORP` 头或通过 CORS（`crossorigin` 属性），否则被拦。另有 `credentialless` 值则以「不带凭证」方式加载跨源资源，无需对方提供 CORP。开启后漏一个资源授权就整页加载失败，建议先用 Report-Only 跑报告。",
+    "tags": ["coep", "require-corp", "corp"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每个跨源子资源都必须带 CORP 头或通过 CORS，否则拒载",
+        "isCorrect": true,
+        "description": "正确。`require-corp` 要求跨源子资源显式授权，漏一个就整页加载失败。"
+      },
+      {
+        "text": "禁止页面与跨源 opener 窗口互访",
+        "isCorrect": false,
+        "description": "错误。切断 opener 互访是 COOP 的职责，不是 COEP。"
+      },
+      {
+        "text": "要求所有 Cookie 设置 `Secure`",
+        "isCorrect": false,
+        "description": "错误。COEP 管跨源子资源加载，与 Cookie 的 Secure 标志无关。"
+      },
+      {
+        "text": "把所有跨源 GET 请求升级为预检请求",
+        "isCorrect": false,
+        "description": "错误。COEP 不改变 CORS 预检规则，它要求子资源带 CORP/CORS 授权。"
+      }
+    ]
+  },
+  {
+    "stem": "在反向代理与 CORS 的对比中，下列哪一项是反向代理相对 CORS 的关键优势？",
+    "explanation": "CORS 需目标服务器配合加 `Access-Control-*` 响应头来显式授权浏览器跨源访问；反向代理则让请求不再跨源，目标服务器无需任何改动。因此自有后端或要对接「无法改动、不支持 CORS」的第三方接口时，代理更省事。",
+    "tags": ["proxy", "cors", "comparison"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "目标服务器无需任何改动，可对接不支持 CORS 的第三方接口",
+        "isCorrect": true,
+        "description": "正确。代理在服务器侧转发，不要求目标加 CORS 头，适配无法改动的接口。"
+      },
+      {
+        "text": "代理比 CORS 更安全，能防住 XSS",
+        "isCorrect": false,
+        "description": "错误。二者解决的是跨域而非 XSS，安全维度不同，不能简单说更安全。"
+      },
+      {
+        "text": "代理支持的 HTTP 方法比 CORS 多",
+        "isCorrect": false,
+        "description": "错误。CORS 同样支持全部 HTTP 方法，方法数量上二者无差别。"
+      },
+      {
+        "text": "代理能让浏览器跳过同源策略检查",
+        "isCorrect": false,
+        "description": "错误。代理不是「跳过」SOP，而是让请求本就同源，根本不触发 SOP。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说「依赖 GET 做状态变更是危险的」，这与 SameSite 有何关系？",
+    "explanation": "`SameSite=Lax`（现代默认）仍放行顶级 GET 导航携带 Cookie。若服务端用 GET 实现状态变更（如删除、转账），攻击者只需诱导用户点击一个跨站链接（顶级 GET 导航），Cookie 就会被带上、变更被执行——Lax 拦不住它。这正是「GET 必须幂等安全」的安全意义。",
+    "tags": ["samesite", "lax", "csrf", "get"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Lax 仍放行顶级 GET 导航带 Cookie，GET 改状态会被跨站链接触发",
+        "isCorrect": true,
+        "description": "正确。攻击者用一个跨站链接即可触发带 Cookie 的 GET 变更，Lax 不拦它。"
+      },
+      {
+        "text": "GET 请求不能携带任何 Cookie，必然失败",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，顶级 GET 导航在 Lax 下会带 Cookie，所以才危险。"
+      },
+      {
+        "text": "因为 GET 请求体无法加密",
+        "isCorrect": false,
+        "description": "错误。危险源于 Lax 放行 GET 导航带 Cookie，与加密无关。"
+      },
+      {
+        "text": "因为 `SameSite=Strict` 会阻止所有 GET 请求",
+        "isCorrect": false,
+        "description": "错误。问题出在 Lax 默认放行 GET 导航，且本题讨论的不是 Strict 行为。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 JSONP 与 CORS 的取代关系，下列说法正确的是？",
+    "explanation": "CORS 出现后一举解决了 JSONP 的痛点：CORS 由浏览器原生把关，支持所有 HTTP 方法、有标准的错误语义、可携带身份凭证，且无需 `<script>` 黑科技与服务端的非标准包裹格式。因此现代项目首选 CORS，JSONP 仅作为面向极老旧浏览器或历史接口的兜底。",
+    "tags": ["jsonp", "cors", "comparison"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CORS 支持全部方法、有标准错误语义、可带凭证，已基本取代 JSONP",
+        "isCorrect": true,
+        "description": "正确。CORS 由浏览器原生把关，无需回调包裹，JSONP 仅作历史兜底。"
+      },
+      {
+        "text": "JSONP 比 CORS 更现代，应优先选用",
+        "isCorrect": false,
+        "description": "错误。JSONP 是历史方案且有安全风险，新项目应首选 CORS。"
+      },
+      {
+        "text": "CORS 和 JSONP 都需要服务端返回 `callback` 包裹格式",
+        "isCorrect": false,
+        "description": "错误。包裹格式是 JSONP 独有的；CORS 直接返回标准响应 + 授权头。"
+      },
+      {
+        "text": "CORS 只支持 GET，所以不能完全取代 JSONP",
+        "isCorrect": false,
+        "description": "错误。只支持 GET 的是 JSONP；CORS 支持全部 HTTP 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "团队要落地 COEP `require-corp` 以开启跨源隔离，最稳妥的上线顺序是？",
+    "explanation": "开 `require-corp` 后，页面里所有跨源资源（图片、脚本、字体、iframe）都需带 CORP 或走 CORS，漏一个就整页加载失败。官方建议先用 `Cross-Origin-Embedder-Policy-Report-Only: require-corp` 跑报告、补齐资源授权，再切正式头，避免直接上线导致整页崩。",
+    "tags": ["coep", "require-corp", "rollout"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "先用 Report-Only 模式跑报告补齐资源授权，再切正式头",
+        "isCorrect": true,
+        "description": "正确。Report-Only 不拦载只报告，便于发现漏授权的跨源资源后再正式启用。"
+      },
+      {
+        "text": "直接上线正式头，靠用户反馈逐个修复",
+        "isCorrect": false,
+        "description": "错误。漏一个跨源资源就整页加载失败，直接上线风险极高。"
+      },
+      {
+        "text": "先关闭 COOP，只单独上 COEP 即可隔离",
+        "isCorrect": false,
+        "description": "错误。跨源隔离需 COOP same-origin 与 COEP require-corp 同时满足，缺一不可。"
+      },
+      {
+        "text": "把所有跨源资源改为同源后就无需 COEP",
+        "isCorrect": false,
+        "description": "错误。即便全同源，开启跨源隔离仍须显式返回 COEP 头，浏览器才置位。"
+      }
+    ]
+  },
+  {
+    "stem": "某第三方资源响应头为 `Cross-Origin-Resource-Policy: same-origin`，你的页面（不同源、同站子域）用 `<img>` 引用它，结果如何？且这与 CORS 是什么关系？",
+    "explanation": "CORP 由资源所有者声明「谁可以引用我」，拦截 no-cors 模式（如 `<img>`、`<script>`）的跨源/跨站读取。`same-origin` 仅允许完全同源的页面引用，因此同站跨源子域的 `<img>` 引用会被拦截。CORP 与 CORS 互补：CORS 管「请求方想读跨源响应」，CORP 管「资源方声明谁能引用我」，针对的正是 CORS 管不到的 no-cors 引用。",
+    "tags": ["corp", "cors", "no-cors"],
+    "categories": [
+      ["技术方向", "跨域与同源策略"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "引用被拦截；CORP 补的正是 CORS 管不到的 no-cors 引用那部分",
+        "isCorrect": true,
+        "description": "正确。`same-origin` 拒绝同站跨源子域引用；CORP 与 CORS 互补，针对 no-cors 引用。"
+      },
+      {
+        "text": "引用成功；因为同站子域属于 `same-origin` 允许范围",
+        "isCorrect": false,
+        "description": "错误。`same-origin` 仅放行完全同源，同站跨子域不在其内，会被拦。"
+      },
+      {
+        "text": "引用成功；CORP 只对 `fetch` 生效，对 `<img>` 无效",
+        "isCorrect": false,
+        "description": "错误。CORP 恰恰针对 `<img>`、`<script>` 这类 no-cors 引用生效。"
+      },
+      {
+        "text": "引用被拦截；但只要加 `Access-Control-Allow-Origin` 就能绕过 CORP",
+        "isCorrect": false,
+        "description": "错误。CORP 与 CORS 是两套机制，CORS 响应头不能替资源「解禁」CORP 限制。"
+      }
+    ]
+  }
+]
