@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "HTTP 协议在实时通信场景下有一个结构性限制，这个限制具体是指什么？",
+    "explanation": "HTTP 是**请求-响应（request-response）**模型，连接**只能由客户端发起**，服务器是被动的一方——没有客户端的请求，服务器**无法主动把数据送达浏览器**。这正是聊天新消息、行情推送等实时需求在原生 HTTP 下「做不到」的根因，也是后续所有实时方案要绕开或突破的限制。",
+    "tags": ["http", "realtime"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "连接只能由客户端发起，服务器无法主动把数据推给客户端",
+        "isCorrect": true,
+        "description": "正确。HTTP 是请求-响应模型，服务器被动应答，没有请求就无法主动推送。"
+      },
+      {
+        "text": "HTTP 一次只能传输一个文件，无法传输多个资源",
+        "isCorrect": false,
+        "description": "错误。一个页面可发起多次 HTTP 请求获取多个资源，这与「服务器能否主动推」无关。"
+      },
+      {
+        "text": "HTTP 报文必须是纯文本，无法承载实时数据",
+        "isCorrect": false,
+        "description": "错误。HTTP 消息体可承载任意类型数据，限制不在数据格式而在「谁能发起」。"
+      },
+      {
+        "text": "HTTP 连接建立后会立即关闭，无法保持打开",
+        "isCorrect": false,
+        "description": "错误。Keep-Alive 可让连接保持打开，真正的限制是连接只能由客户端发起。"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 实时通信中常说的「拉（pull）」与「推（push）」两种模型，下列对应关系正确的是？",
+    "explanation": "**拉（pull）**指客户端按需主动取数据，代表是普通 HTTP、短轮询、长轮询——它们都是「客户端反复拉」来**模拟**推送的体感；**推（push）**指服务器主动把数据送达客户端，代表是 **SSE**（服务器→客户端单向）与 **WebSocket**（全双工）。理解推与拉的分界是理解所有实时方案的钥匙：轮询家族本质仍是拉。",
+    "tags": ["realtime", "push", "pull"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "短轮询、长轮询属于「拉」，SSE、WebSocket 属于「推」",
+        "isCorrect": true,
+        "description": "正确。轮询家族是客户端反复拉以模拟推送，SSE/WebSocket 才是真正的服务器主动推。"
+      },
+      {
+        "text": "短轮询属于「推」，因为它能收到服务器的新数据",
+        "isCorrect": false,
+        "description": "错误。短轮询是客户端定时发请求去「拉」，收到数据不等于服务器主动「推」。"
+      },
+      {
+        "text": "长轮询属于「推」，因为服务器 hold 住了连接",
+        "isCorrect": false,
+        "description": "错误。长轮询本质仍是客户端发起请求的「拉」，只是用 hold 手法逼近推送体感。"
+      },
+      {
+        "text": "SSE 属于「拉」，因为它基于普通 HTTP",
+        "isCorrect": false,
+        "description": "错误。SSE 虽基于 HTTP，但服务器在一条长响应里主动写事件，属于「推」。"
+      }
+    ]
+  },
+  {
+    "stem": "短轮询（short polling）的基本工作方式是怎样的？",
+    "explanation": "**短轮询**是最朴素的实时模拟方案：客户端每隔固定间隔（如 3 秒）**定时发一次请求**问「有新数据吗」，服务器**不管有没有都立刻返回**（有就回数据，没有就回空）。它实现极简——前端一个定时器 + 一个普通接口即可，对现有 HTTP 基建零侵入，但延迟与开销问题突出。",
+    "tags": ["short-polling", "realtime"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "客户端定时发请求，服务器无论有无新数据都立即返回",
+        "isCorrect": true,
+        "description": "正确。短轮询靠客户端定时轮询，服务器随到随答、不挂起连接。"
+      },
+      {
+        "text": "客户端只发一次请求，服务器持续往同一响应里写数据",
+        "isCorrect": false,
+        "description": "错误。这是 SSE / HTTP 流式的做法，短轮询是反复发独立请求。"
+      },
+      {
+        "text": "服务器 hold 住请求直到有数据才返回",
+        "isCorrect": false,
+        "description": "错误。这是长轮询的做法，短轮询的服务器会立即返回。"
+      },
+      {
+        "text": "客户端与服务器先握手升级为持久连接再双向收发",
+        "isCorrect": false,
+        "description": "错误。这是 WebSocket 的做法，短轮询不涉及协议升级。"
+      }
+    ]
+  },
+  {
+    "stem": "短轮询（short polling）「调小轮询间隔」能否同时解决「延迟高」和「开销大」两个问题？",
+    "explanation": "**不能**。短轮询永远在「实时性」与「开销」之间二选一：**缩短间隔** → 延迟降低，但**空请求暴涨**、QPS 飙升；**拉长间隔** → 请求变少省开销，但**延迟变差**。调间隔治不了本病——这个无法两全的痛点正是长轮询要解决的核心问题。",
+    "tags": ["short-polling", "latency"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不能，缩短间隔降延迟但空请求暴涨，拉长间隔省请求但延迟变差",
+        "isCorrect": true,
+        "description": "正确。短轮询在实时性与开销间无法两全，调间隔只是在两个痛点间移动。"
+      },
+      {
+        "text": "能，只要把间隔调到足够小就能兼顾低延迟和低开销",
+        "isCorrect": false,
+        "description": "错误。间隔越小空请求越多、开销越大，无法兼顾。"
+      },
+      {
+        "text": "能，把间隔调大既省请求又因批量返回降低了延迟",
+        "isCorrect": false,
+        "description": "错误。间隔调大会让延迟变差，并不会降低延迟。"
+      },
+      {
+        "text": "能，间隔与延迟、开销三者互不相关",
+        "isCorrect": false,
+        "description": "错误。间隔与延迟、开销强相关且方向相反，正是矛盾所在。"
+      }
+    ]
+  },
+  {
+    "stem": "短轮询（short polling）「空轮询浪费」的核心代价是什么？",
+    "explanation": "短轮询绝大多数请求**返回空**，但每个空请求照样付出**完整的 HTTP 开销**：TCP/TLS 建连（若每次重连）、HTTP 首部、Cookie、鉴权校验、一次服务器处理。更糟的是开销随规模**线性膨胀**——N 个在线客户端 × 每秒 `1/间隔` 次请求 = 巨大的**恒定 QPS**，且**与是否真有数据无关**，绝大部分算力都浪费在「问了却没有」上。",
+    "tags": ["short-polling", "overhead"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "绝大多数请求返回空，却照样付出完整 HTTP 往返与首部开销，QPS 随客户端数线性膨胀",
+        "isCorrect": true,
+        "description": "正确。空请求也要走完整 HTTP 流程，规模越大恒定 QPS 越高，浪费严重。"
+      },
+      {
+        "text": "服务器要长时间挂起大量连接占用内存",
+        "isCorrect": false,
+        "description": "错误。挂起连接是长轮询的代价，短轮询服务器立即返回不挂起。"
+      },
+      {
+        "text": "消息体过大导致带宽被有效数据占满",
+        "isCorrect": false,
+        "description": "错误。短轮询的浪费恰恰在空响应，有效数据反而很少。"
+      },
+      {
+        "text": "客户端无法解析服务器返回的空响应",
+        "isCorrect": false,
+        "description": "错误。空响应（如 200 []）是正常可解析的，问题在于这类请求大量且无效。"
+      }
+    ]
+  },
+  {
+    "stem": "长轮询（long polling）相比短轮询，关键改动是哪一处？",
+    "explanation": "长轮询只改一处关键动作：**服务器收到请求后不立即回，而是把连接「挂起（hold）」**，直到**有新数据**或**到达超时**才返回；客户端一拿到响应，**立刻发起下一个请求**接着等。这一改动带来两点质变——几乎每个请求都带回有效数据（消灭空响应），且延迟接近实时（数据就绪即返回）。",
+    "tags": ["long-polling", "realtime"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "服务器把请求 hold 住不立即返回，直到有新数据或超时才响应",
+        "isCorrect": true,
+        "description": "正确。挂起连接等数据就绪再返回，是长轮询区别于短轮询的核心改动。"
+      },
+      {
+        "text": "客户端把轮询间隔缩短到毫秒级以降低延迟",
+        "isCorrect": false,
+        "description": "错误。缩短间隔仍是短轮询思路，会让空请求暴涨。"
+      },
+      {
+        "text": "服务器升级为 WebSocket 后双向收发",
+        "isCorrect": false,
+        "description": "错误。长轮询本质仍是 HTTP，不做协议升级。"
+      },
+      {
+        "text": "客户端改用 POST 而非 GET 发起轮询",
+        "isCorrect": false,
+        "description": "错误。请求方法无关紧要，关键是服务器是否挂起请求。"
+      }
+    ]
+  },
+  {
+    "stem": "长轮询（long polling）在「没有新数据」的情况下，服务器到达超时时通常会怎么做？",
+    "explanation": "长轮询的标准流程中，服务器用 `Keep-Alive` 保持连接并设一个**很长的超时**，期间挂起不响应；一旦有数据立即返回。但若**超时仍未等到数据**，服务器会**返回一个空响应**（而非无限期挂着），目的是**避免连接被中间的反向代理/负载均衡按空闲超时掐断**；客户端收到这个空响应后，会**立刻再发**一个请求续上下一轮等待。",
+    "tags": ["long-polling", "timeout"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回一个空响应，客户端收到后立即再发起下一轮请求",
+        "isCorrect": true,
+        "description": "正确。超时空返回可避免连接被中间设备掐断，客户端随即续上新一轮。"
+      },
+      {
+        "text": "无限期继续挂起，直到真的有数据为止",
+        "isCorrect": false,
+        "description": "错误。无限挂起会被代理/负载均衡的空闲超时掐断，所以要主动空返回。"
+      },
+      {
+        "text": "返回 101 状态码将连接升级为 WebSocket",
+        "isCorrect": false,
+        "description": "错误。长轮询不做协议升级，101 是 WebSocket 握手的产物。"
+      },
+      {
+        "text": "主动断开 TCP 连接且不通知客户端",
+        "isCorrect": false,
+        "description": "错误。正常做法是返回空响应让客户端续轮，而非静默断连。"
+      }
+    ]
+  },
+  {
+    "stem": "长轮询（long polling）虽然消灭了空轮询，但「本质仍是 HTTP」带来的代价，下列哪一项不属于此类？",
+    "explanation": "长轮询没改变底层是 HTTP 这一事实，代价依旧：**头部重复开销**（每条消息一次完整请求-响应，反复带相同首部/Cookie/鉴权，高频小消息时首部占比可能远超载荷）、**连接长时间占用**（挂起海量连接抬高内存与文件描述符消耗）、**无多路复用**（无法在一条连接上复用多路消息）、**消息顺序/可靠性无保证**。而「自带断线自动重连」是 **SSE** 的内建能力，长轮询并不具备，需自行处理重连与丢消息。",
+    "tags": ["long-polling", "overhead"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "天然内建断线自动重连，无需任何客户端代码",
+        "isCorrect": true,
+        "description": "正确（即「不属于长轮询代价」的选项）。自动重连是 SSE 的内建能力，长轮询并不具备。"
+      },
+      {
+        "text": "每条消息一次完整请求-响应，反复携带相同首部与 Cookie",
+        "isCorrect": false,
+        "description": "错误（这确实是长轮询的代价）。HTTP 头部重复开销在高频小消息时尤为明显。"
+      },
+      {
+        "text": "需长时间挂起大量连接，抬高内存与文件描述符消耗",
+        "isCorrect": false,
+        "description": "错误（这确实是长轮询的代价）。海量并发挂起连接显著抬高服务端负载。"
+      },
+      {
+        "text": "无法在一条连接上多路复用多条消息",
+        "isCorrect": false,
+        "description": "错误（这确实是长轮询的代价）。长轮询不像 WebSocket 那样支持连接复用。"
+      }
+    ]
+  },
+  {
+    "stem": "长轮询（long polling）存在「丢消息窗口」，这个窗口具体出现在什么时机？",
+    "explanation": "长轮询是「一问一答、答完即断、再发起下一次」。在客户端**收到上一个响应**到**下一个请求真正发出**之间存在一段**间隙**，若服务端恰好在这段间隙里产生了新消息，由于此刻没有挂起的连接接收，消息就可能漏掉——这就是「丢消息窗口」。补救手段是用 `since`/消息序号 + 服务端缓冲，让客户端带上「我已收到的位置」从断点继续取。",
+    "tags": ["long-polling", "reliability"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在客户端「收到响应」到「下一个请求发出」之间的间隙，此时新消息无连接可接收",
+        "isCorrect": true,
+        "description": "正确。这段没有挂起连接的间隙是丢消息窗口，需用序号 + 服务端缓冲补救。"
+      },
+      {
+        "text": "在 TCP 三次握手期间，握手包丢失导致消息丢失",
+        "isCorrect": false,
+        "description": "错误。握手丢包由 TCP 重传处理，与长轮询的应用层丢消息窗口无关。"
+      },
+      {
+        "text": "在服务器挂起连接等待数据的整个期间",
+        "isCorrect": false,
+        "description": "错误。挂起期间连接正开着，新数据能立即返回，恰恰不是丢消息窗口。"
+      },
+      {
+        "text": "在浏览器渲染响应内容的过程中",
+        "isCorrect": false,
+        "description": "错误。渲染属前端环节，与服务端消息是否被接收无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在实时通信发展史中，Comet 指的是什么？",
+    "explanation": "**Comet** 是 SSE/WebSocket 标准化之前，一切**在 HTTP 之上模拟服务器推送**的技术统称，主要有三类：**长轮询（long polling）**（hold 住请求直到有数据）、**HTTP 流式（streaming）**（服务器保持一个长开响应持续写数据块，常见实现有 hidden iframe 与 XHR streaming）、**BOSH**（Bidirectional-streams Over Synchronous HTTP，长轮询的双向流式替代，曾广泛用于 XMPP）。它们都是「巧劲」，本质仍受 HTTP 单向请求模型约束，正是 SSE/WebSocket 要替代的对象。",
+    "tags": ["comet", "realtime", "history"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SSE/WebSocket 普及前，在 HTTP 上模拟服务器推送的一类技术（长轮询、HTTP 流式、BOSH 等）的统称",
+        "isCorrect": true,
+        "description": "正确。Comet 泛指标准化推送出现前的各种 HTTP「伪推送」技巧。"
+      },
+      {
+        "text": "一种取代 HTTP 的全新二进制实时传输协议",
+        "isCorrect": false,
+        "description": "错误。Comet 不是新协议，而是基于现有 HTTP 的一组模拟推送技术。"
+      },
+      {
+        "text": "WebSocket 协议握手阶段使用的子协议名称",
+        "isCorrect": false,
+        "description": "错误。Comet 与 WebSocket 子协议无关，且早于 WebSocket 出现。"
+      },
+      {
+        "text": "浏览器内建的 SSE 客户端 API 的旧称",
+        "isCorrect": false,
+        "description": "错误。SSE 的客户端 API 是 EventSource，Comet 不是其别称。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE（Server-Sent Events）的核心定位是什么？",
+    "explanation": "**SSE（Server-Sent Events，服务器发送事件）** 是 W3C / WHATWG HTML 标准的一部分，让网页能从服务器**单向、持续地接收文本事件流**。它解决「服务器有新数据时主动告知浏览器」的需求，无需客户端反复轮询。一句话概括：SSE = **HTTP + 一条不结束的响应 + 约定好的文本格式 + 浏览器内建的自动重连**，是「轻量服务器推送」的标准答案。",
+    "tags": ["sse", "realtime"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "基于 HTTP 的服务器→客户端单向文本推送标准",
+        "isCorrect": true,
+        "description": "正确。SSE 是 HTML 标准的一部分，复用 HTTP 实现服务器单向推送文本。"
+      },
+      {
+        "text": "客户端向服务器单向上报数据的协议",
+        "isCorrect": false,
+        "description": "错误。SSE 方向是服务器→客户端，并非客户端上报。"
+      },
+      {
+        "text": "服务器与客户端全双工双向通信的协议",
+        "isCorrect": false,
+        "description": "错误。全双工是 WebSocket，SSE 是单向的。"
+      },
+      {
+        "text": "一种二进制数据帧的传输格式",
+        "isCorrect": false,
+        "description": "错误。SSE 传纯文本 UTF-8，不是二进制帧格式。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 在建立连接时，与 WebSocket 的「Upgrade 握手」有什么本质不同？",
+    "explanation": "SSE **不做协议升级**（不像 WebSocket 需要 `Upgrade: websocket` 握手再切换协议），它就是**一次普通的 HTTP 请求/响应**——客户端发一个普通 `GET`（`Accept: text/event-stream`），服务器以 `200 OK` 回应并**让响应迟迟不结束**，持续往这条响应流里写事件。因此 SSE 能直接复用现有 HTTP 基建（CDN、鉴权、压缩、HTTP/2）。",
+    "tags": ["sse", "http"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "SSE 不做协议升级，就是一次普通 HTTP 请求，只是响应迟迟不结束",
+        "isCorrect": true,
+        "description": "正确。SSE 复用普通 HTTP 请求-响应，靠「响应不结束」持续推送，无需升级握手。"
+      },
+      {
+        "text": "SSE 也需要 `Upgrade: websocket` 头切换协议",
+        "isCorrect": false,
+        "description": "错误。Upgrade 握手是 WebSocket 专属，SSE 不需要。"
+      },
+      {
+        "text": "SSE 必须先建立独立 TCP 连接再发 HTTP 请求",
+        "isCorrect": false,
+        "description": "错误。SSE 复用普通 HTTP 连接，没有独立于 HTTP 的建连步骤。"
+      },
+      {
+        "text": "SSE 用 UDP 而非 TCP 以降低延迟",
+        "isCorrect": false,
+        "description": "错误。SSE 基于 HTTP，运行在 TCP 之上，与 UDP 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流的响应头中，标识「这是一条事件流」的 `Content-Type` 应当是哪个值？",
+    "explanation": "SSE 事件流的 MIME 类型**固定为 `text/event-stream`**，必须 UTF-8 编码。典型响应头还会配合 `Cache-Control: no-cache`（避免缓存）与 `Connection: keep-alive`（保持连接）；在反向代理后还常加 `X-Accel-Buffering: no` 关闭缓冲，防止 Nginx 等「攒一批才下发」破坏实时性。浏览器正是看到 `text/event-stream` 才以事件流方式解析响应。",
+    "tags": ["sse", "content-type", "header"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`text/event-stream`",
+        "isCorrect": true,
+        "description": "正确。SSE 事件流的 MIME 类型固定为 text/event-stream，浏览器据此按事件流解析。"
+      },
+      {
+        "text": "`application/json`",
+        "isCorrect": false,
+        "description": "错误。这是普通 JSON 响应类型，浏览器不会以事件流方式处理。"
+      },
+      {
+        "text": "`text/plain`",
+        "isCorrect": false,
+        "description": "错误。纯文本类型不会触发 EventSource 的事件流解析。"
+      },
+      {
+        "text": "`application/octet-stream`",
+        "isCorrect": false,
+        "description": "错误。这是二进制流类型，SSE 只传文本且类型必须是 text/event-stream。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流格式中，一个事件的分发（dispatch）是由什么触发的？",
+    "explanation": "SSE 事件流是**纯文本、逐行**的格式，每行形如 `字段名: 值`。**一个空行（连续两个换行 `\\n\\n`）触发一次事件分发**——即解析器读到空行时，把此前累积的字段组装成一个事件交给浏览器。因此多条 `data:` 行只要中间没有空行，就会被拼成同一个事件的数据。",
+    "tags": ["sse", "event-stream", "format"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "读到一个空行（连续两个换行 `\\n\\n`）时触发一次事件分发",
+        "isCorrect": true,
+        "description": "正确。空行是事件边界，此前累积的字段被组装为一个事件分发出去。"
+      },
+      {
+        "text": "每读到一行 `data:` 就立即分发一次事件",
+        "isCorrect": false,
+        "description": "错误。多条连续 data: 行会拼成同一事件，分发由空行触发而非每行。"
+      },
+      {
+        "text": "收到 `event: end` 字段时才分发",
+        "isCorrect": false,
+        "description": "错误。没有 event: end 这种约定，分发由空行触发。"
+      },
+      {
+        "text": "连接关闭时一次性分发所有累积事件",
+        "isCorrect": false,
+        "description": "错误。SSE 是实时逐事件分发，依据是空行而非连接关闭。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流中给出如下片段，浏览器最终解析出的 `data` 数据是什么？\n\n```text\ndata: 第二条消息\ndata: 它跨了两行\n```",
+    "explanation": "SSE 规范规定：**多条连续 `data:` 行用换行拼接成一段数据，末尾的换行被去掉**。所以上面两行 `data:` 会被拼成 `第二条消息\\n它跨了两行`（中间一个换行连接，结尾不带多余换行）。这让单个事件可以携带多行文本而无需转义。",
+    "tags": ["sse", "data", "format"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`第二条消息\\n它跨了两行`（两行用换行拼接，末尾换行被去掉）",
+        "isCorrect": true,
+        "description": "正确。连续 data: 行按换行拼接成一段，结尾换行被规范去掉。"
+      },
+      {
+        "text": "只取最后一行，即 `它跨了两行`",
+        "isCorrect": false,
+        "description": "错误。多条 data: 行会拼接而非覆盖，不会只保留最后一行。"
+      },
+      {
+        "text": "被解析为两个独立的 `message` 事件",
+        "isCorrect": false,
+        "description": "错误。中间没有空行，二者属于同一个事件，不会拆成两个。"
+      },
+      {
+        "text": "`第二条消息它跨了两行`（直接首尾相连无换行）",
+        "isCorrect": false,
+        "description": "错误。拼接时行间会保留一个换行，并非无分隔地直接相连。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流中不写 `event:` 字段时，该事件的类型默认是什么、由哪个回调接收？",
+    "explanation": "SSE 的 `event:` 字段指定**事件类型名**，**省略时默认类型为 `message`**，由 `EventSource.onmessage`（即 `onmessage` 回调）接收；若写了 `event: price` 这类**命名事件**，则需用 `addEventListener` 监听具名事件 `price`。另外要注意 `data` 始终是字符串，传 JSON 需自己 `JSON.parse`。",
+    "tags": ["sse", "event", "onmessage"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认类型为 `message`，由 `onmessage` 接收",
+        "isCorrect": true,
+        "description": "正确。省略 event: 时事件类型默认 message，对应 EventSource.onmessage。"
+      },
+      {
+        "text": "默认类型为 `default`，由 `ondefault` 接收",
+        "isCorrect": false,
+        "description": "错误。不存在 default 类型或 ondefault 回调，默认是 message。"
+      },
+      {
+        "text": "默认无类型，必须显式 `addEventListener` 才能收到",
+        "isCorrect": false,
+        "description": "错误。默认类型是 message，onmessage 即可直接接收，无需具名监听。"
+      },
+      {
+        "text": "默认类型为 `data`，由 `ondata` 接收",
+        "isCorrect": false,
+        "description": "错误。data 是字段名而非事件类型，也无 ondata 回调。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流里以冒号开头的行（如 `: ping`）有什么作用？",
+    "explanation": "在 SSE 事件流中，**冒号开头的行是注释**，会被解析器**整行忽略**、不产生任何事件。它最常见的用途是**心跳保活（keep-alive）**：服务器周期性发送 `: ping` 之类的注释行，让连接上有数据流动，从而**防止中间代理/负载均衡按空闲超时掐断**这条长连接，又不会污染真正的事件数据。",
+    "tags": ["sse", "comment", "keepalive"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是注释行，整行被忽略，常用作心跳保活防止连接被空闲超时掐断",
+        "isCorrect": true,
+        "description": "正确。冒号开头行不触发事件，发 : ping 可保活长连接而不污染数据。"
+      },
+      {
+        "text": "它声明一个名为 `ping` 的命名事件",
+        "isCorrect": false,
+        "description": "错误。命名事件用 event: 字段声明，冒号开头行是注释会被忽略。"
+      },
+      {
+        "text": "它表示事件流结束，浏览器收到后停止接收",
+        "isCorrect": false,
+        "description": "错误。注释行不表示结束，浏览器会忽略它继续接收后续事件。"
+      },
+      {
+        "text": "它设置下次重连的等待毫秒数",
+        "isCorrect": false,
+        "description": "错误。重连等待由 retry: 字段设置，注释行不影响重连。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 的自动重连机制中，浏览器重连时如何告诉服务器「我上次收到的位置」，从而实现断点续传？",
+    "explanation": "SSE 断点续传靠 `id:` 与请求头 `Last-Event-ID` 配合：① 服务器为事件附带 `id:`，浏览器把它记作「最后事件 ID」；② 连接非正常中断后浏览器**自动重连**，并在请求头里**自动带上 `Last-Event-ID: <上次的 id>`**；③ 服务器读取该头，从断点之后继续推送，避免漏发或重发。整个过程无需任何客户端代码——这是 SSE 最实用的内建能力。",
+    "tags": ["sse", "reconnect", "last-event-id"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器自动在请求头带上 `Last-Event-ID`，值为上次收到事件的 `id`",
+        "isCorrect": true,
+        "description": "正确。id: 写入浏览器的「最后事件 ID」，重连时经 Last-Event-ID 头回传给服务器续传。"
+      },
+      {
+        "text": "浏览器在 URL 查询参数里附加 `?offset=` 告诉服务器",
+        "isCorrect": false,
+        "description": "错误。SSE 标准用 Last-Event-ID 请求头而非查询参数传递断点。"
+      },
+      {
+        "text": "客户端需手写代码在 Cookie 里保存进度并回传",
+        "isCorrect": false,
+        "description": "错误。Last-Event-ID 由浏览器自动维护与回传，无需手写代码。"
+      },
+      {
+        "text": "服务器主动记忆每个客户端的进度，客户端无需回传任何信息",
+        "isCorrect": false,
+        "description": "错误。重连可能落到不同实例，标准做法是客户端经 Last-Event-ID 回传位置。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 的「自动重连」并非「永不掉线」。下列哪种服务器响应会让浏览器停止重连？",
+    "explanation": "SSE 浏览器只在连接**「非正常关闭」**（网络抖动、服务器重启、代理超时）时自动重连；但若服务器**主动以 `204 No Content` 或以非 `text/event-stream` 类型响应**，浏览器会**停止重连**——这相当于服务器表态「不再有事件流了」。`retry:` 字段只是调整重连前的等待毫秒数，并不会阻止重连。要实现真正可靠的续传，服务端还需为事件分配单调 ID 并按 `Last-Event-ID` 正确补发。",
+    "tags": ["sse", "reconnect", "204"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "服务器以 `204 No Content` 或非 `text/event-stream` 类型响应",
+        "isCorrect": true,
+        "description": "正确。204 或非事件流类型相当于服务器表态「不再有流」，浏览器据此停止重连。"
+      },
+      {
+        "text": "服务器发送一条 `retry: 10000` 字段",
+        "isCorrect": false,
+        "description": "错误。retry: 只调整重连等待时长，不会让浏览器停止重连。"
+      },
+      {
+        "text": "网络抖动导致 TCP 连接被动断开",
+        "isCorrect": false,
+        "description": "错误。这正是「非正常关闭」，浏览器会自动重连而非停止。"
+      },
+      {
+        "text": "服务器发送一条以冒号开头的注释行",
+        "isCorrect": false,
+        "description": "错误。注释行被忽略，不影响连接状态，更不会停止重连。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 与 WebSocket 在「数据方向」与「数据类型」上的关键差异，下列描述正确的是？",
+    "explanation": "二者定位迥异：**方向上** SSE 是**单向**（服务器→客户端），WebSocket 是**全双工**双向；**数据类型上** SSE 只传**纯文本 UTF-8**（传二进制须先 Base64 等编码，有体积与 CPU 开销），WebSocket 则同时支持**文本与二进制**。此外 SSE 自带浏览器内建重连（含 Last-Event-ID），WebSocket 需自己实现重连。一句话选型：只需单向推文本选 SSE，需双向/低延迟/二进制选 WebSocket。",
+    "tags": ["sse", "websocket", "comparison"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SSE 单向且只传文本，WebSocket 全双工且支持文本与二进制",
+        "isCorrect": true,
+        "description": "正确。方向上 SSE 单向 / WebSocket 双向，类型上 SSE 纯文本 / WebSocket 文本+二进制。"
+      },
+      {
+        "text": "SSE 全双工而 WebSocket 单向，二者都只能传文本",
+        "isCorrect": false,
+        "description": "错误。方向说反了——SSE 单向、WebSocket 全双工，且 WebSocket 还能传二进制。"
+      },
+      {
+        "text": "两者都是单向，但 SSE 能传二进制而 WebSocket 只能传文本",
+        "isCorrect": false,
+        "description": "错误。WebSocket 是双向且能传二进制，SSE 才是单向且只传文本。"
+      },
+      {
+        "text": "两者都全双工，差异仅在 SSE 走 HTTP、WebSocket 走 UDP",
+        "isCorrect": false,
+        "description": "错误。SSE 是单向，WebSocket 经 HTTP 握手后走 TCP 而非 UDP。"
+      }
+    ]
+  },
+  {
+    "stem": "下列实时场景中，最适合用 SSE（而非 WebSocket）的一组是？",
+    "explanation": "SSE 适合的典型场景共性是「**服务器主动推、客户端只读、内容是文本**」：通知/提醒（站内信、系统公告、订单状态）、实时行情（股价/汇率/加密货币）、日志/进度流（构建日志、部署输出、长任务进度）、**AI 流式输出**（大模型逐 token 返回，许多 LLM 接口的流式响应正是 SSE 格式）。而聊天、协同编辑、在线游戏、信令这类**需要双向、低延迟或二进制**的场景应选 WebSocket。",
+    "tags": ["sse", "scenario", "websocket"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "系统通知推送、实时股价刷新、AI 大模型流式逐 token 输出",
+        "isCorrect": true,
+        "description": "正确。三者都是服务器单向推文本、客户端只读，正是 SSE 的拿手场景。"
+      },
+      {
+        "text": "多人在线对战游戏的实时状态同步",
+        "isCorrect": false,
+        "description": "错误。游戏需高频双向、低延迟交互，应选 WebSocket。"
+      },
+      {
+        "text": "协同文档的多人光标与编辑实时互发",
+        "isCorrect": false,
+        "description": "错误。协同编辑要双向收发，超出 SSE 单向能力，宜用 WebSocket。"
+      },
+      {
+        "text": "聊天室中用户之间实时收发消息",
+        "isCorrect": false,
+        "description": "错误。聊天是典型双向交互，SSE 无法在同一流回传，应选 WebSocket。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 在 HTTP/1.1 下存在「连接数限制」的局限，切到 HTTP/2 为何能有效缓解？",
+    "explanation": "**HTTP/1.1** 下浏览器对**每个域**的并发 HTTP 连接有上限（Chrome、Firefox 约 **6 条**），多个标签页各开一条 SSE 很容易耗尽——该限制被标记为「不修复」。切到 **HTTP/2** 后，同一域的多条 SSE 可**复用单条 TCP 连接的多路流（multiplexing）**，上限由 `SETTINGS_MAX_CONCURRENT_STREAMS` 决定（默认约 **100**），远高于 6 条，基本消除「开几个标签页就连不上」的窘境。这也是生产环境部署 SSE 强烈建议启用 HTTP/2 的原因。",
+    "tags": ["sse", "http2", "multiplexing"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "HTTP/2 多路复用让多条 SSE 共用单条 TCP 连接，并发流上限（约 100）远高于 HTTP/1.1 每域约 6 条",
+        "isCorrect": true,
+        "description": "正确。多路复用把「每域约 6 连接」放宽为单连接上约 100 路流，缓解连接耗尽。"
+      },
+      {
+        "text": "HTTP/2 取消了 SSE 的单向限制，使其可双向收发",
+        "isCorrect": false,
+        "description": "错误。SSE 单向是协议设计，与 HTTP/2 无关，HTTP/2 不会让它变双向。"
+      },
+      {
+        "text": "HTTP/2 把 SSE 的文本流改为二进制流从而减少连接数",
+        "isCorrect": false,
+        "description": "错误。HTTP/2 帧是二进制，但 SSE 仍传文本，缓解连接数靠的是多路复用而非数据格式。"
+      },
+      {
+        "text": "HTTP/2 为每个标签页单独分配一个新域名以绕过上限",
+        "isCorrect": false,
+        "description": "错误。绕过手段是单连接多路复用，并非分配新域名。"
+      }
+    ]
+  },
+  {
+    "stem": "SSE 事件流的 `retry:` 字段作用是什么？对其取值有何要求？",
+    "explanation": "`retry:` 字段用于**设置浏览器在连接断开后、重新发起请求前等待的毫秒数**，即覆盖浏览器默认的重连等待时间。规范要求其值**仅当全为 ASCII 数字时才生效**（如 `retry: 10000` 表示 10 秒），含非数字字符的值会被忽略。注意它只调整「等多久再重连」，并不能阻止重连，也不影响是否续传（续传由 `id:` 与 `Last-Event-ID` 负责）。",
+    "tags": ["sse", "retry", "reconnect"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "设置断线后重连前等待的毫秒数，仅当值全为 ASCII 数字时生效",
+        "isCorrect": true,
+        "description": "正确。retry: 覆盖默认重连等待时间，取值须为纯 ASCII 数字否则被忽略。"
+      },
+      {
+        "text": "设置事件的最大重发次数，超过则丢弃",
+        "isCorrect": false,
+        "description": "错误。retry: 控制的是重连等待时长，与事件重发次数无关。"
+      },
+      {
+        "text": "设置连接的总存活时间，到点自动关闭",
+        "isCorrect": false,
+        "description": "错误。retry: 不是连接寿命，而是断线后下次重连的等待毫秒数。"
+      },
+      {
+        "text": "设置每条事件的字符数上限，可为任意字符串",
+        "isCorrect": false,
+        "description": "错误。retry: 与事件长度无关，且取值必须为 ASCII 数字才有效。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 协议（RFC 6455）相比传统 HTTP 请求—响应模型，最核心的能力是什么？",
+    "explanation": "WebSocket 在一条 TCP 连接上实现「全双工双向通信」——握手成功后，客户端与服务端可以在任意时刻各自主动向对方推送消息，互不阻塞，彻底摆脱了 HTTP「一问一答」的轮询模型。这正是聊天、协同编辑、实时游戏等场景需要的能力。",
+    "tags": ["websocket", "rfc6455", "fullduplex"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在单条 TCP 连接上实现全双工双向通信，双方可随时主动推送消息",
+        "isCorrect": true,
+        "description": "正确。这是 WebSocket 的根本特征，区别于 SSE 的单向推与 HTTP 的半双工请求—响应。"
+      },
+      {
+        "text": "让服务端可以单向持续向客户端推送数据，但客户端只能在建连时发一次",
+        "isCorrect": false,
+        "description": "错误。这描述的是 SSE（服务器发送事件），它是单向的；WebSocket 是双向的。"
+      },
+      {
+        "text": "通过压缩 HTTP 首部来降低每个请求的传输开销",
+        "isCorrect": false,
+        "description": "错误。首部压缩是 HTTP/2 的 HPACK 特性，与 WebSocket 的双向通信能力无关。"
+      },
+      {
+        "text": "自动为每条消息提供端到端加密，无需 TLS",
+        "isCorrect": false,
+        "description": "错误。WebSocket 本身不提供加密，传输安全靠 `wss://`（TLS），明文 `ws://` 不加密。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 的 URI 方案 `ws://` 与 `wss://` 默认端口分别是多少？",
+    "explanation": "WebSocket 有两种 URI 方案，与 HTTP/HTTPS 一一对应：`ws://` 默认端口 80（明文 TCP，类比 HTTP），`wss://` 默认端口 443（先做 TLS 握手再跑 WebSocket，类比 HTTPS）。因为握手本身是 HTTP，WebSocket 天然复用 80/443，无需单开端口，便于穿过防火墙与代理。",
+    "tags": ["websocket", "port", "wss"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`ws://` 默认 80，`wss://` 默认 443",
+        "isCorrect": true,
+        "description": "正确。分别对应 HTTP 的 80 与 HTTPS 的 443，复用同一套端口。"
+      },
+      {
+        "text": "`ws://` 默认 8080，`wss://` 默认 8443",
+        "isCorrect": false,
+        "description": "错误。8080/8443 只是常见的开发自定义端口，不是 WebSocket 的协议默认值。"
+      },
+      {
+        "text": "`ws://` 默认 443，`wss://` 默认 80",
+        "isCorrect": false,
+        "description": "错误。端口对应关系反了，加密的 `wss://` 才对应 443。"
+      },
+      {
+        "text": "两者都默认使用 3000 端口",
+        "isCorrect": false,
+        "description": "错误。3000 是某些框架的开发端口，与 WebSocket 协议默认端口无关。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 帧的 opcode 字段中，表示「文本帧」和「二进制帧」的值分别是哪一组？",
+    "explanation": "RFC 6455 定义的数据帧 opcode 中，`0x1` 表示 Text（UTF-8 文本），`0x2` 表示 Binary（任意二进制数据）；`0x0` 是续帧（分片用）。而 `0x8`/`0x9`/`0xA` 分别是关闭/Ping/Pong 控制帧。",
+    "tags": ["websocket", "frame", "opcode"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "文本 `0x1`，二进制 `0x2`",
+        "isCorrect": true,
+        "description": "正确。`0x1` 为 Text、`0x2` 为 Binary，二者同属数据帧。"
+      },
+      {
+        "text": "文本 `0x0`，二进制 `0x1`",
+        "isCorrect": false,
+        "description": "错误。`0x0` 是续帧（Continuation），不是文本帧。"
+      },
+      {
+        "text": "文本 `0x8`，二进制 `0x9`",
+        "isCorrect": false,
+        "description": "错误。`0x8` 是关闭帧、`0x9` 是 Ping，都属于控制帧而非数据帧。"
+      },
+      {
+        "text": "文本 `0x2`，二进制 `0x1`",
+        "isCorrect": false,
+        "description": "错误。值对调了，文本应为 `0x1`、二进制应为 `0x2`。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 握手时，客户端发起的是怎样一个 HTTP 请求？",
+    "explanation": "WebSocket 复用 HTTP 发起握手：客户端发一个方法必须为 `GET`、HTTP 版本至少 1.1 的请求，带上 `Upgrade: websocket`、`Connection: Upgrade`、`Sec-WebSocket-Key`（随机 nonce）与 `Sec-WebSocket-Version: 13`。借助 HTTP 的 `Upgrade` 升级机制，连接得以共用 80/443 端口。",
+    "tags": ["websocket", "handshake", "upgrade"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一个带 `Upgrade: websocket` 与 `Connection: Upgrade` 首部的 `GET` 请求",
+        "isCorrect": true,
+        "description": "正确。方法必须是 GET，并通过 Upgrade/Connection 首部声明协议升级意图。"
+      },
+      {
+        "text": "一个 `POST` 请求，请求体里携带握手参数",
+        "isCorrect": false,
+        "description": "错误。握手方法必须是 GET，握手参数放在首部而非请求体。"
+      },
+      {
+        "text": "一个带 `Connection: keep-alive` 的 `GET` 请求",
+        "isCorrect": false,
+        "description": "错误。这是普通 HTTP 持久连接，不会触发协议升级，缺少 `Upgrade: websocket`。"
+      },
+      {
+        "text": "一个特殊的 `CONNECT` 请求（HTTP/1.1 隧道）",
+        "isCorrect": false,
+        "description": "错误。经典 WebSocket 握手用 GET + Upgrade；扩展 CONNECT 是 HTTP/2 上 RFC 8441 的另一套机制。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 握手成功时，服务端返回的 HTTP 状态码是什么？",
+    "explanation": "服务端同意升级时返回「101 Switching Protocols」，并带回 `Upgrade: websocket`、`Connection: Upgrade` 与 `Sec-WebSocket-Accept`。这个 101 是握手的灵魂——它告诉客户端「我同意切换协议，从现在起这条 TCP 连接讲 WebSocket」。客户端须校验状态码确为 101 才算握手成功。",
+    "tags": ["websocket", "handshake", "status-code"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "101 Switching Protocols",
+        "isCorrect": true,
+        "description": "正确。101 表示「切换协议」，是 WebSocket 握手成功的标志状态码。"
+      },
+      {
+        "text": "200 OK",
+        "isCorrect": false,
+        "description": "错误。200 是普通请求成功，握手成功不会用 200，否则客户端会按失败处理。"
+      },
+      {
+        "text": "204 No Content",
+        "isCorrect": false,
+        "description": "错误。204 表示无响应体，与协议升级无关。"
+      },
+      {
+        "text": "426 Upgrade Required",
+        "isCorrect": false,
+        "description": "错误。426 是服务端要求客户端升级协议时返回的，不是握手成功的响应。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 握手中的 `Sec-WebSocket-Accept` 是如何由服务端计算出来的？",
+    "explanation": "服务端取客户端发来的 `Sec-WebSocket-Key` 字符串，直接拼接 RFC 6455 写死的魔术字符串 `258EAFA5-E914-47DA-95CA-C5AB0DC85B11`（不解码 Base64），对拼接结果做 SHA-1 得 20 字节摘要，再 Base64 编码，即为 `Sec-WebSocket-Accept`。它只用来防止「意外升级」，并非安全机制。",
+    "tags": ["websocket", "handshake", "sec-websocket-accept"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 `Sec-WebSocket-Key` 拼接固定魔术串，做 SHA-1 再 Base64 编码",
+        "isCorrect": true,
+        "description": "正确。Key 直接拼魔术串 `258EAFA5-...` → SHA-1 → Base64，全世界实现都用同一个魔术串。"
+      },
+      {
+        "text": "对 `Sec-WebSocket-Key` 直接做 Base64 编码",
+        "isCorrect": false,
+        "description": "错误。缺了拼魔术串与 SHA-1 两步，且 Key 本身已是 Base64。"
+      },
+      {
+        "text": "用服务端私钥对 `Sec-WebSocket-Key` 做 RSA 签名",
+        "isCorrect": false,
+        "description": "错误。算法是确定性的 SHA-1，不涉及任何密钥；它也不提供认证。"
+      },
+      {
+        "text": "对 `Sec-WebSocket-Key` 拼接客户端时间戳后做 MD5",
+        "isCorrect": false,
+        "description": "错误。用的是固定魔术串而非时间戳，哈希算法是 SHA-1 而非 MD5。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 握手成功之后，这条连接进入什么状态？",
+    "explanation": "握手成功后这条 TCP 连接不会关闭，而是被 WebSocket「接管」：不再有 HTTP 请求行/状态行/首部，改用紧凑的 WebSocket 帧；复用握手所用的同一条 TCP 连接做双向数据通道，无需另开连接；连接持久存活，直到任意一方发关闭帧或 TCP 断开。这正是 WebSocket「一次握手、长期复用」高效的根源。",
+    "tags": ["websocket", "tcp", "connection-reuse"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "脱离 HTTP 报文，复用同一条 TCP 连接按帧收发数据",
+        "isCorrect": true,
+        "description": "正确。握手后不再有 HTTP 头，直接在原 TCP 连接上以 WebSocket 帧双向通信。"
+      },
+      {
+        "text": "关闭握手用的 TCP 连接，另起一条新的 TCP 连接传数据",
+        "isCorrect": false,
+        "description": "错误。WebSocket 复用握手那条连接，不会另开新连接。"
+      },
+      {
+        "text": "继续走 HTTP，每条消息都包一个完整的 HTTP 请求/响应",
+        "isCorrect": false,
+        "description": "错误。握手后脱离 HTTP，正是为了省掉每条消息的 HTTP 头开销。"
+      },
+      {
+        "text": "升级为 HTTP/2 连接，后续消息走 H2 流",
+        "isCorrect": false,
+        "description": "错误。经典 WebSocket 跑在 HTTP/1.1 的 TCP 上，与 HTTP/2 流是 RFC 8441 的另一套机制。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 帧首字节的最高位 `FIN` 标志位的含义是什么？",
+    "explanation": "帧首字节结构为 `FIN`(1) + `RSV1~3`(3) + `opcode`(4)。`FIN=1` 表示这是一条消息的最后一帧（消息结束）；`FIN=0` 表示后面还有分片续帧。配合 `opcode=0x0`（续帧），WebSocket 可以把一条大消息拆成多个分片传输。",
+    "tags": ["websocket", "frame", "fin"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "标志该帧是否为一条消息的最后一帧（1=结束，0=后面还有续帧）",
+        "isCorrect": true,
+        "description": "正确。FIN 用于消息分片：1 表示消息到此结束，0 表示还有后续分片帧。"
+      },
+      {
+        "text": "标志该帧是否被掩码处理",
+        "isCorrect": false,
+        "description": "错误。是否掩码由 `MASK` 位（次字节最高位）表示，不是 FIN。"
+      },
+      {
+        "text": "标志该帧是否为控制帧",
+        "isCorrect": false,
+        "description": "错误。帧是数据帧还是控制帧由 opcode 决定，与 FIN 无关。"
+      },
+      {
+        "text": "标志该帧是否携带掩码键",
+        "isCorrect": false,
+        "description": "错误。是否携带掩码键取决于 MASK 位，FIN 只表示分片是否结束。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 帧格式中关于「掩码（masking）」的规定，下列哪一项正确？",
+    "explanation": "WebSocket 对掩码有一条方向非对称的硬规定：客户端→服务端的每一帧都必须掩码（`MASK=1`，带 4 字节随机键）；服务端→客户端的帧绝不能掩码（`MASK=0`）。掩码就是把载荷每字节与掩码键循环 XOR。服务端收到未掩码的客户端帧必须按协议错误关闭连接，反之亦然。",
+    "tags": ["websocket", "frame", "masking"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "客户端发出的每一帧都必须掩码，服务端发出的帧绝不能掩码",
+        "isCorrect": true,
+        "description": "正确。掩码是方向非对称的强制要求：客户端必掩码、服务端不掩码，违反则按协议错误关闭。"
+      },
+      {
+        "text": "服务端发出的每一帧都必须掩码，客户端发出的帧不能掩码",
+        "isCorrect": false,
+        "description": "错误。方向反了，是客户端必须掩码、服务端不能掩码。"
+      },
+      {
+        "text": "通信双方的每一帧都必须掩码",
+        "isCorrect": false,
+        "description": "错误。只有客户端方向强制掩码，服务端方向严禁掩码。"
+      },
+      {
+        "text": "掩码是可选的，双方协商后决定是否启用",
+        "isCorrect": false,
+        "description": "错误。掩码不是协商项，对客户端方向是强制的、对服务端方向是禁止的。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 协议为什么要求「客户端发出的帧必须掩码」？",
+    "explanation": "强制客户端掩码是为防御「缓存投毒攻击」：恶意页面若能让浏览器发出「看起来像合法 HTTP 请求」的字节流，可能毒化中间代理的缓存。强制客户端用随机掩码键异或载荷，使攻击者无法预测最终上线的字节，从而堵死这类攻击。它不是为了加密（XOR 用明文掩码键传输，不提供保密性）。",
+    "tags": ["websocket", "masking", "security"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "防御缓存投毒攻击——用随机掩码使代理无法预测上线字节",
+        "isCorrect": true,
+        "description": "正确。随机掩码让恶意页面无法构造可预测的字节流去毒化中间代理缓存。"
+      },
+      {
+        "text": "对载荷加密，保证数据在传输途中不被窃听",
+        "isCorrect": false,
+        "description": "错误。掩码键随帧明文传输，XOR 不提供保密性；加密靠 `wss://` 的 TLS。"
+      },
+      {
+        "text": "对载荷做完整性校验，防止数据被篡改",
+        "isCorrect": false,
+        "description": "错误。掩码不是校验和，不提供完整性保证。"
+      },
+      {
+        "text": "压缩载荷以减小帧体积",
+        "isCorrect": false,
+        "description": "错误。掩码是 XOR 变换，不改变数据长度，与压缩无关。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 帧次字节中的 7 位 `Payload len` 字段取值为 `126` 时，意味着什么？",
+    "explanation": "载荷长度分三档编码：7 位值 0~125 直接就是长度；等于 126 时要再读后续 2 字节（16 位无符号）作为真实长度（最大 65535）；等于 127 时读后续 8 字节（64 位无符号，最高位为 0）。规范要求用能表达的最短编码，例如 124 字节只能编成 124，不能写成 126,0,124。",
+    "tags": ["websocket", "frame", "payload-length"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "真实长度由后续的 16 位（2 字节）扩展长度字段给出",
+        "isCorrect": true,
+        "description": "正确。126 是哨兵值，触发读取后续 2 字节作为 16 位无符号的真实长度。"
+      },
+      {
+        "text": "载荷长度就是 126 字节",
+        "isCorrect": false,
+        "description": "错误。126 是哨兵值而非真实长度；直接表达的范围是 0~125。"
+      },
+      {
+        "text": "真实长度由后续的 64 位（8 字节）扩展长度字段给出",
+        "isCorrect": false,
+        "description": "错误。触发 64 位扩展长度的是 127，不是 126。"
+      },
+      {
+        "text": "表示这是一个不带载荷的控制帧",
+        "isCorrect": false,
+        "description": "错误。126 与帧类型无关，它只是长度编码的哨兵值。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 中关闭帧、Ping 帧、Pong 帧的 opcode 分别是哪一组？",
+    "explanation": "三个控制帧 opcode 为：关闭 Close = `0x8`、Ping = `0x9`、Pong = `0xA`。它们都属于控制帧，载荷必须 ≤125 字节且不可分片，以保证心跳与关闭信令能被立刻、完整地处理，不被大消息的分片卡住。",
+    "tags": ["websocket", "frame", "control-frame"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "关闭 `0x8`、Ping `0x9`、Pong `0xA`",
+        "isCorrect": true,
+        "description": "正确。这三个是控制帧，载荷须 ≤125 字节且不可分片。"
+      },
+      {
+        "text": "关闭 `0x0`、Ping `0x1`、Pong `0x2`",
+        "isCorrect": false,
+        "description": "错误。`0x0`/`0x1`/`0x2` 是续帧/文本/二进制等数据帧，不是控制帧。"
+      },
+      {
+        "text": "关闭 `0xA`、Ping `0x8`、Pong `0x9`",
+        "isCorrect": false,
+        "description": "错误。顺序错乱，关闭应为 `0x8`、Ping 为 `0x9`、Pong 为 `0xA`。"
+      },
+      {
+        "text": "关闭 `0x9`、Ping `0xA`、Pong `0x8`",
+        "isCorrect": false,
+        "description": "错误。值对应错误，`0x9` 是 Ping、`0xA` 是 Pong、`0x8` 才是关闭。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 WebSocket 长连接需要应用层「主动探活」而不能只依赖 TCP 自身？",
+    "explanation": "TCP 不会主动告诉你对端已经没了。对端进程崩溃、手机切后台被杀、网线被拔、NAT 映射超时被回收时，往往没有任何 FIN/RST 包发回来，本侧 socket 仍是 ESTABLISHED，`send()` 也不报错，但对端永远收不到——这就是「半开连接」。纯靠系统级 TCP Keepalive（默认 2 小时才探测）根本来不及发现，必须靠「发心跳 + 限时等回包」主动探活。",
+    "tags": ["websocket", "heartbeat", "half-open"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "存在「半开连接」：对端已死却无 FIN/RST，本侧 socket 仍显示正常",
+        "isCorrect": true,
+        "description": "正确。半开连接下 send 不报错但对端收不到，须靠应用层发心跳并限时等回包来探测。"
+      },
+      {
+        "text": "TCP 不支持长连接，超过一定时间会强制断开",
+        "isCorrect": false,
+        "description": "错误。TCP 支持长连接，问题在于它无法及时感知对端的异常消失。"
+      },
+      {
+        "text": "WebSocket 帧没有校验和，必须靠心跳补充完整性",
+        "isCorrect": false,
+        "description": "错误。心跳是为探测连接存活，而非做数据完整性校验。"
+      },
+      {
+        "text": "浏览器会在空闲时自动关闭所有 WebSocket 连接",
+        "isCorrect": false,
+        "description": "错误。浏览器不会无故关闭活跃连接；探活是为应对网络层面的静默断连。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器端用 WebSocket 实现心跳保活时，前端开发者唯一可控的手段是什么？",
+    "explanation": "浏览器的 WebSocket API 不暴露收发协议级 Ping 的能力：JS 里无法主动发 Ping，浏览器收到 Ping 也只是自动回 Pong、不通知页面。因此前端唯一可控的心跳是「应用层心跳」——双方约定一条普通 text 帧的业务消息（如 `{ type: ping }` / `{ type: pong }`）。协议级 Ping/Pong 主要由服务端、网关、Node 等非浏览器端使用。",
+    "tags": ["websocket", "heartbeat", "browser"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在业务 text 帧上自定义「应用层心跳」消息（如 `{ type: ping }`）",
+        "isCorrect": true,
+        "description": "正确。浏览器不开放收发协议级 Ping 的 API，应用层心跳是前端唯一可控的探活方式。"
+      },
+      {
+        "text": "在 JS 里调用 `socket.ping()` 主动发送协议级 Ping 帧",
+        "isCorrect": false,
+        "description": "错误。浏览器 WebSocket API 没有这样的方法，JS 无法主动发协议级 Ping。"
+      },
+      {
+        "text": "监听 `onping` 事件并手动回复 Pong",
+        "isCorrect": false,
+        "description": "错误。浏览器收到 Ping 自动回 Pong 且不通知页面，没有 `onping` 事件可监听。"
+      },
+      {
+        "text": "设置 `socket.keepAlive = true` 开启系统级 TCP Keepalive",
+        "isCorrect": false,
+        "description": "错误。浏览器 API 不提供该属性；且 TCP Keepalive 默认数小时才探测，无法满足实时探活。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 协议级控制帧 Ping（`0x9`）与 Pong（`0xA`）有哪些规则？",
+    "explanation": "控制帧载荷必须 ≤125 字节且不可分片。任意一方可在握手后随时发 Ping，收到方必须尽快回 Pong，且 Pong 的 payload 要与 Ping 完全相同；也允许发未经请求的（unsolicited）Pong 作为单向保活信号，对端可忽略。MDN 补充：若攒了多个 Ping，只回最后一个 Pong 即可。",
+    "tags": ["websocket", "ping-pong", "control-frame"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "收到 Ping 须尽快回 Pong，且 Pong 的 payload 要与 Ping 完全相同",
+        "isCorrect": true,
+        "description": "正确。Pong 须回显 Ping 的 payload；控制帧载荷 ≤125 字节、不可分片。"
+      },
+      {
+        "text": "只有服务端能发 Ping，客户端只能被动回 Pong",
+        "isCorrect": false,
+        "description": "错误。协议上任意一方都可随时发 Ping（尽管浏览器 JS 不开放该能力）。"
+      },
+      {
+        "text": "Ping/Pong 帧可以分片，且载荷无大小限制",
+        "isCorrect": false,
+        "description": "错误。所有控制帧载荷必须 ≤125 字节且不可分片。"
+      },
+      {
+        "text": "Pong 的 payload 必须为空，否则视为协议错误",
+        "isCorrect": false,
+        "description": "错误。Pong 须回显 Ping 的 payload，而非要求为空。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 断线后立即无脑重连可能引发什么问题，正确的重连策略是什么？",
+    "explanation": "服务端重启的瞬间，成千上万客户端同时回连会形成「重连风暴」（thundering herd），把刚起来的服务再次打垮。正确做法是「指数退避 + 随机抖动」：第 n 次等待 = min(base·2^n, cap) + random(0, jitter)，上限 cap 一般 30s。抖动不可省——纯指数退避会让所有客户端步调一致地在同一时刻重连，抖动才能真正削峰。",
+    "tags": ["websocket", "reconnect", "backoff"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "会引发「重连风暴」，应采用指数退避 + 随机抖动",
+        "isCorrect": true,
+        "description": "正确。指数增长间隔避免高频重连，随机抖动把回连时刻打散以削平同步尖峰。"
+      },
+      {
+        "text": "没有问题，固定每 100ms 重连一次最快恢复",
+        "isCorrect": false,
+        "description": "错误。高频同步重连正是「重连风暴」的成因，会把刚恢复的服务再次压垮。"
+      },
+      {
+        "text": "应只重连一次，失败后永久放弃",
+        "isCorrect": false,
+        "description": "错误。这会牺牲可用性；正确做法是带退避地持续重试。"
+      },
+      {
+        "text": "纯指数退避即可，随机抖动是多余的",
+        "isCorrect": false,
+        "description": "错误。纯指数退避会让客户端步调一致同时重连，抖动正是用来削峰的关键。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 的 `onclose` 给出关闭码 `1006` 时，通常意味着什么、应如何处理？",
+    "explanation": "`1006` 表示异常断开（abnormal closure，没有收到 Close 帧），是「网络掉了」的典型信号，应进入重连流程，它是重连的主要触发器；而 `1000`（正常关闭）通常是业务主动关，不该重连。服务端过载时可用 `1013`（Try Again Later）显式要求客户端退避后再来。",
+    "tags": ["websocket", "close-code", "reconnect"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "异常断开（无 Close 帧），是「网络掉了」的信号，应进入重连",
+        "isCorrect": true,
+        "description": "正确。1006 表示未收到 Close 帧的异常断开，是重连的主要触发器。"
+      },
+      {
+        "text": "正常关闭，业务已主动关闭连接，不应重连",
+        "isCorrect": false,
+        "description": "错误。正常关闭是 `1000`；`1006` 恰恰是异常断开，应重连。"
+      },
+      {
+        "text": "服务端过载，要求客户端退避后再来",
+        "isCorrect": false,
+        "description": "错误。过载退避用的是 `1013`（Try Again Later），不是 `1006`。"
+      },
+      {
+        "text": "端点离开（如页面关闭或服务端下线）",
+        "isCorrect": false,
+        "description": "错误。端点离开对应 `1001`；`1006` 专指无 Close 帧的异常断开。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 WebSocket 的消息可靠性，下列说法正确的是？",
+    "explanation": "WebSocket 只保证帧按序到达、不保证应用层送达——`socket.send(msg)` 成功只是把数据交给本地发送缓冲区，应用层是否处理、断线瞬间在途的消息是否丢失，协议一概不保证。要做到「不丢不重不乱」，必须在应用层自建消息序号（seq/id）、ACK 确认、超时重发，断线期间靠服务端缓冲 + 重连后按 last-seen-id 补偿。",
+    "tags": ["websocket", "reliability", "ack"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "协议不保证应用层送达，需自建 ACK + 序号 + 重发机制",
+        "isCorrect": true,
+        "description": "正确。send 成功 ≠ 对端已处理；可靠投递须在应用层用 ACK、消息序号、超时重发与断线补偿实现。"
+      },
+      {
+        "text": "`send()` 返回成功即代表对端已经收到并处理了消息",
+        "isCorrect": false,
+        "description": "错误。send 只是交给本地发送缓冲区，不代表对端已收到、更不代表已处理。"
+      },
+      {
+        "text": "WebSocket 内置了消息级 ACK，断线消息会自动重发",
+        "isCorrect": false,
+        "description": "错误。协议没有应用层 ACK 与自动重发，这些都需开发者自建。"
+      },
+      {
+        "text": "帧可能乱序到达，所以才需要应用层重排",
+        "isCorrect": false,
+        "description": "错误。WebSocket 基于 TCP，帧本身是按序到达的；不保证的是应用层送达。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Nginx 等反向代理后部署 WebSocket，最关键的配置是什么？",
+    "explanation": "WebSocket 握手是一次带 `Upgrade: websocket` 的 HTTP 请求，而很多反向代理/LB 默认不会透传 `Upgrade`/`Connection` 这两个逐跳头，导致握手在中途被「降级」成普通 HTTP 而失败。以 Nginx 为例，关键是 `proxy_http_version 1.1` 并显式设置 `proxy_set_header Upgrade $http_upgrade` 与 `proxy_set_header Connection upgrade`，同时拉长 `proxy_read_timeout` 配合心跳。",
+    "tags": ["websocket", "proxy", "nginx"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "显式转发 `Upgrade` 与 `Connection` 头，并使用 HTTP/1.1、拉长读超时",
+        "isCorrect": true,
+        "description": "正确。逐跳头默认不透传，必须显式转发并用 HTTP/1.1，否则握手被降级为普通 HTTP 而失败。"
+      },
+      {
+        "text": "关闭所有缓存，确保每个 WebSocket 帧都不被缓存",
+        "isCorrect": false,
+        "description": "错误。问题核心是握手的逐跳头透传，而非缓存配置。"
+      },
+      {
+        "text": "把 `proxy_http_version` 设为 2.0 以启用多路复用",
+        "isCorrect": false,
+        "description": "错误。经典 WebSocket 握手需 HTTP/1.1 的 Upgrade；设为 2.0 反而无法完成 Upgrade 握手。"
+      },
+      {
+        "text": "为每个客户端分配独立端口避免冲突",
+        "isCorrect": false,
+        "description": "错误。WebSocket 复用 80/443 即可，无需为每个客户端单开端口。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器环境下，为什么 WebSocket 握手鉴权常用 Cookie 或 URL ticket，而不用 `Authorization` 头？",
+    "explanation": "握手虽是标准 HTTP 请求，但浏览器的 WebSocket API 不允许自定义请求头——`Authorization` 以及任何 `Sec-*` 头都设不了（RFC 6455 明确 `Sec-` 开头的头无法被网页 JS 设置）。因此浏览器侧常用：① Cookie（同源自动带上，服务端校验 session）；② URL query 中的 token，宜用短期一次性 ticket；③ 把 token 塞进 `Sec-WebSocket-Protocol` 夹带。非浏览器客户端则可自由设 `Authorization`。",
+    "tags": ["websocket", "auth", "browser"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器 WebSocket API 不允许自定义握手请求头，设不了 `Authorization`",
+        "isCorrect": true,
+        "description": "正确。浏览器不能自定义握手头，故改用同源自动携带的 Cookie 或 URL ticket、子协议夹带 token。"
+      },
+      {
+        "text": "`Authorization` 头在 WebSocket 协议中被明确禁止使用",
+        "isCorrect": false,
+        "description": "错误。协议本身不禁止；非浏览器客户端可自由设置，限制只在浏览器 API 层。"
+      },
+      {
+        "text": "Cookie 比 `Authorization` 头更安全，所以协议强制使用 Cookie",
+        "isCorrect": false,
+        "description": "错误。并非安全性强制，而是浏览器无法自定义握手头才退而用 Cookie / ticket。"
+      },
+      {
+        "text": "握手是 `GET` 请求，HTTP 规定 `GET` 不能携带 `Authorization` 头",
+        "isCorrect": false,
+        "description": "错误。HTTP 的 GET 完全可带 `Authorization`；限制来自浏览器 WebSocket API，而非 GET 方法。"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket 的子协议（`Sec-WebSocket-Protocol`）是如何协商的？",
+    "explanation": "客户端在握手头里列出可接受的子协议（如 `v2.chat.example.com, v1.chat.example.com`），服务端从中选一个回显在 101 响应里（或不回表示都不选），最多回一个。它用于协商消息格式/版本（如 WAMP、STOMP 或自定义协议版本），推荐用域名式命名防冲突；客户端若没拿到想要的子协议，可以直接关闭连接。",
+    "tags": ["websocket", "subprotocol", "negotiation"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "客户端列出候选，服务端从中选一个回显（或不回表示都不选）",
+        "isCorrect": true,
+        "description": "正确。客户端给候选列表，服务端最多回显一个；用于协商消息格式/版本。"
+      },
+      {
+        "text": "服务端列出候选，客户端从中选择一个使用",
+        "isCorrect": false,
+        "description": "错误。方向反了，是客户端提候选、服务端选一个回显。"
+      },
+      {
+        "text": "客户端和服务端可以同时使用多个子协议",
+        "isCorrect": false,
+        "description": "错误。服务端最多只回显一个子协议，一条连接只用一个。"
+      },
+      {
+        "text": "子协议由 TCP 层自动协商，与握手头无关",
+        "isCorrect": false,
+        "description": "错误。子协议通过握手的 `Sec-WebSocket-Protocol` 头协商，与 TCP 层无关。"
+      }
+    ]
+  },
+  {
+    "stem": "RFC 8441《Bootstrapping WebSockets with HTTP/2》让 WebSocket 跑在 HTTP/2 上，采用了什么机制？",
+    "explanation": "经典 WebSocket 跑在 HTTP/1.1 的 `Upgrade` 上、每条连接独占一条 TCP，无法复用 HTTP/2 连接。RFC 8441 用「扩展 CONNECT（Extended CONNECT）」解决：新增 SETTINGS 参数 `SETTINGS_ENABLE_CONNECT_PROTOCOL`（服务端发 =1 表示支持），客户端用扩展 CONNECT 携带新伪头 `:protocol`（对 WebSocket 其值必须为 `websocket`），握手成功后这条 H2 流就当作那条 TCP 连接来用，复用同一条 H2 连接、免去单独的 TCP+TLS 握手。HTTP/3 由 RFC 9220 对应支持。",
+    "tags": ["websocket", "http2", "rfc8441"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用扩展 CONNECT（伪头 `:protocol = websocket`），把 WS 映射到单条 H2 流",
+        "isCorrect": true,
+        "description": "正确。RFC 8441 借扩展 CONNECT + `SETTINGS_ENABLE_CONNECT_PROTOCOL`，让 WS 帧在一条 H2 流内收发，复用连接。"
+      },
+      {
+        "text": "继续用 HTTP/1.1 的 `Upgrade: websocket` 头在 HTTP/2 上升级",
+        "isCorrect": false,
+        "description": "错误。HTTP/2 明确禁止用 `Upgrade` 升级，正因如此才需要 RFC 8441 的扩展 CONNECT。"
+      },
+      {
+        "text": "为 WebSocket 单独开一条新的 TCP 连接，绕过 HTTP/2",
+        "isCorrect": false,
+        "description": "错误。RFC 8441 的目的恰恰是复用 H2 连接、避免单独的 TCP/TLS 握手。"
+      },
+      {
+        "text": "把 WebSocket 帧封装进 HTTP/2 的 DATA 帧并广播到所有流",
+        "isCorrect": false,
+        "description": "错误。WS 被映射到单条 H2 流内收发，并非广播到所有流。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么在 HTTP/2 连接上无法用经典 WebSocket 的 `Upgrade` 机制发起握手？",
+    "explanation": "协议升级机制是 HTTP/1.1 专属——HTTP/2 明确禁止用 `Upgrade` 首部升级协议（HTTP/2 没有 `Upgrade` 语义，连接已是多路复用的二进制分帧）。因此 HTTP/2 上的 WebSocket 改用 RFC 8441 的扩展 CONNECT（伪头 `:protocol = websocket`），是另一套机制。传统 HTTP/1.1 Upgrade 仍是兼容性最广的方案。",
+    "tags": ["websocket", "http2", "upgrade"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`Upgrade` 升级是 HTTP/1.1 专属机制，HTTP/2 明确禁止使用它",
+        "isCorrect": true,
+        "description": "正确。HTTP/2 无 `Upgrade` 语义，故 WS 在 H2 上改用 RFC 8441 的扩展 CONNECT。"
+      },
+      {
+        "text": "HTTP/2 的加密要求与 WebSocket 握手冲突，无法兼容",
+        "isCorrect": false,
+        "description": "错误。冲突根源是 HTTP/2 取消了 `Upgrade` 升级语义，与加密要求无关。"
+      },
+      {
+        "text": "HTTP/2 不支持长连接，无法承载 WebSocket",
+        "isCorrect": false,
+        "description": "错误。HTTP/2 本身就是多路复用的长连接；问题在于它不再支持 `Upgrade` 升级。"
+      },
+      {
+        "text": "WebSocket 帧格式与 HTTP/2 二进制分帧不兼容，无法共存",
+        "isCorrect": false,
+        "description": "错误。RFC 8441 正是把 WS 帧映射进 H2 流，证明二者可共存；障碍只在握手的 `Upgrade` 机制。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 是什么类型的实时通信框架？",
+    "explanation": "WebRTC（Web Real-Time Communication）是浏览器原生的**点对点（P2P）实时通信**框架，无需任何插件即可在两个对端之间**直接**传输音视频与任意数据：媒体走 SRTP（加密 RTP），数据走 DataChannel（基于 SCTP over DTLS）。它与 SSE、WebSocket 这类「客户端↔服务器、数据必经服务器中转」的方案根本不同——WebRTC 追求的是两端直连，把延迟压到最低、把服务器带宽成本降到几乎为零。",
+    "tags": ["webrtc", "p2p", "realtime"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器原生的点对点（P2P）实时音视频与数据传输框架",
+        "isCorrect": true,
+        "description": "正确。WebRTC 让两个浏览器直连，音视频与数据尽量不经服务器中转。"
+      },
+      {
+        "text": "一种由服务器单向向客户端推送文本流的协议",
+        "isCorrect": false,
+        "description": "错误。这是 SSE 的描述；WebRTC 是端到端双向、且传媒体与任意二进制数据。"
+      },
+      {
+        "text": "一个运行在服务器端的消息队列中间件",
+        "isCorrect": false,
+        "description": "错误。WebRTC 是浏览器侧的实时通信标准，不是服务端消息队列。"
+      },
+      {
+        "text": "替代 HTTP 的新一代网页传输协议",
+        "isCorrect": false,
+        "description": "错误。WebRTC 不替代 HTTP；它仅在信令阶段借助 HTTP/WebSocket，媒体走 UDP。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 实现浏览器间 P2P 直连，最根本的障碍是什么？",
+    "explanation": "家庭/办公网络里，设备拿到的几乎都是**私有 IP**（如 `192.168.x.x`），对外共享路由器的一个公网 IP——这是 **NAT（网络地址转换）** 的工作方式。NAT 带来一个对 P2P 致命的副作用：**外部无法主动连入内网设备**。双方都躲在各自 NAT 后、持有不可被外部直连的私有 IP，彼此既不知道对方的公网映射地址，NAT 也默认拒绝未经内部发起的入站包——这正是 STUN/TURN/ICE 要解决的问题。",
+    "tags": ["webrtc", "nat", "p2p"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "双方都在 NAT 后、持有私有 IP，外部无法主动连入对方",
+        "isCorrect": true,
+        "description": "正确。NAT 使内网设备只有私有 IP，默认拒绝未经内部发起的入站连接。"
+      },
+      {
+        "text": "浏览器不支持 UDP，只能用 TCP 传输媒体",
+        "isCorrect": false,
+        "description": "错误。WebRTC 媒体恰恰优先走 UDP；UDP 支持不是障碍。"
+      },
+      {
+        "text": "HTTP 协议本身不允许任何形式的长连接",
+        "isCorrect": false,
+        "description": "错误。HTTP 支持长连接（如 SSE、WebSocket 握手），且与 P2P 直连难点无关。"
+      },
+      {
+        "text": "音视频数据量太大，公网带宽不足以传输",
+        "isCorrect": false,
+        "description": "错误。带宽不是 P2P 建连的根本障碍，NAT 阻断直连才是核心难点。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，「服务器单向把数据推给客户端」这一需求的首选方案是哪个？",
+    "explanation": "选型先分**拉/推**，再分**单向/双向/端到端**。只需「服务器 → 客户端」单向推送时，首选 **SSE**：`EventSource` 自带断线重连与 `Last-Event-ID` 续传，纯文本、最省心，且正搭 AI 流式输出（逐 token 推送）强势回潮。双向交互才用 WebSocket，浏览器间 P2P 媒体才用 WebRTC——能用 SSE 就别上 WebSocket，避免过度设计。",
+    "tags": ["realtime", "sse", "selection"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SSE（Server-Sent Events）",
+        "isCorrect": true,
+        "description": "正确。单向服务器推送首选 SSE，原生重连+续传、纯文本最省心。"
+      },
+      {
+        "text": "WebRTC",
+        "isCorrect": false,
+        "description": "错误。WebRTC 用于浏览器间 P2P 媒体，单向通知用它属于过度设计。"
+      },
+      {
+        "text": "短轮询",
+        "isCorrect": false,
+        "description": "错误。短轮询定时拉取、产生大量无效请求，不是真推送，仅作低频兼容兜底。"
+      },
+      {
+        "text": "HTTP/2 Server Push",
+        "isCorrect": false,
+        "description": "错误。Server Push 是预推静态资源、已被废弃，并非业务数据实时推送方案。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 中的「信令（signaling）」主要用来交换什么信息？",
+    "explanation": "WebRTC 自己**不传递**建连所需的元信息，把这一步称作**信令（signaling）**。连接前必须先经信令通道交换两类数据：① **SDP 会话描述**（RFC 8866 定义的纯文本格式，描述媒体类型、编解码器、加密参数、网络地址端口，即「我能收发什么、用什么格式」）；② **ICE 候选地址**（各端探测到的可达地址）。信令服务器只在建连阶段牵线，连上之后媒体/数据走 P2P 直连，不再经过它。",
+    "tags": ["webrtc", "signaling", "sdp"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "SDP 会话描述与 ICE 候选地址",
+        "isCorrect": true,
+        "description": "正确。信令交换 SDP（媒体能力描述）与 ICE 候选（可达地址）。"
+      },
+      {
+        "text": "实际的音视频媒体流数据",
+        "isCorrect": false,
+        "description": "错误。媒体流走 P2P 直连（SRTP），不经信令通道传输。"
+      },
+      {
+        "text": "用户的登录凭证与会话 Cookie",
+        "isCorrect": false,
+        "description": "错误。信令交换的是建连元信息（SDP/候选），不是鉴权凭证本身。"
+      },
+      {
+        "text": "TURN 服务器转发的中继数据包",
+        "isCorrect": false,
+        "description": "错误。中继数据走 TURN，与信令交换的连接协商信息无关。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 WebRTC 的信令通道，下列说法正确的是？",
+    "explanation": "WebRTC **刻意不规定**信令通道用什么协议，由开发者自选。工程上最常用 **WebSocket**——因为信令要求双向、低延迟、可即时推送（对端的 Offer/候选随时可能到来），这正是 WebSocket 的强项；用 HTTP 轮询也能做，但实时性差。注意信令服务器只在建连阶段牵线，连上之后媒体/数据走 P2P 直连，不再经过它。",
+    "tags": ["webrtc", "signaling", "websocket"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "WebRTC 不规定信令通道，工程上常用 WebSocket 来实现",
+        "isCorrect": true,
+        "description": "正确。信令协议由你自选，WebSocket 因双向低延迟成为最常见选择。"
+      },
+      {
+        "text": "WebRTC 标准强制规定信令必须走 HTTPS 的 POST 请求",
+        "isCorrect": false,
+        "description": "错误。WebRTC 刻意不规定信令通道，没有强制协议要求。"
+      },
+      {
+        "text": "信令通道在媒体连接建立后仍需持续传输音视频",
+        "isCorrect": false,
+        "description": "错误。信令只在建连阶段牵线，连上后媒体走 P2P 直连，不再经过它。"
+      },
+      {
+        "text": "信令必须由 STUN 服务器统一负责转发",
+        "isCorrect": false,
+        "description": "错误。STUN 用于发现公网映射地址，与信令交换是两回事。"
+      }
+    ]
+  },
+  {
+    "stem": "STUN 服务器在 WebRTC 中的核心作用是什么？",
+    "explanation": "**STUN（Session Traversal Utilities for NAT，NAT 会话穿越工具）** 解决「我经过 NAT 后对外长什么样」。客户端向公网上的 STUN 服务器发一个 **Binding Request**，服务器原样回看到的源地址端口（放在 `XOR-MAPPED-ADDRESS` 属性里）——这就是该端的 `srflx` **公网映射候选**。拿到双方公网映射后即可尝试 UDP 打洞。STUN 轻量、不占服务器带宽，是首选方案。",
+    "tags": ["stun", "nat", "webrtc"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "帮助设备发现自己经 NAT 后的公网映射地址",
+        "isCorrect": true,
+        "description": "正确。STUN 通过 Binding Request 回送源地址，得到 srflx 公网映射候选。"
+      },
+      {
+        "text": "全程中继转发双方的音视频流量",
+        "isCorrect": false,
+        "description": "错误。中继转发是 TURN 的职责；STUN 不转发业务流量。"
+      },
+      {
+        "text": "为双方交换 SDP Offer 与 Answer",
+        "isCorrect": false,
+        "description": "错误。交换 SDP 是信令服务器的工作，不是 STUN。"
+      },
+      {
+        "text": "对媒体流进行 SRTP 加密与解密",
+        "isCorrect": false,
+        "description": "错误。媒体加密由 DTLS/SRTP 在两端完成，与 STUN 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "TURN 服务器在 WebRTC 连接中扮演的角色是什么？",
+    "explanation": "**TURN（Traversal Using Relays around NAT，绕 NAT 的中继）** 是 STUN 打洞失败后的**兜底**：客户端在 TURN 服务器上申请一个**中继地址（Relayed Transport Address）**，之后双方都把流量发给 TURN，由它转发给对端。因为所有媒体/数据都过这台服务器，TURN **保证连通**，但代价明显——额外延迟、占用服务器带宽与算力（音视频流量可观，TURN 带宽成本是部署 WebRTC 的主要开销）。所以 ICE 把 `relay` 候选排在最后，只有 host/srflx 全走不通时才落到它。",
+    "tags": ["turn", "relay", "webrtc"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "打洞失败时充当中继服务器，转发双方全部流量",
+        "isCorrect": true,
+        "description": "正确。TURN 是兜底中继，保证连通但耗带宽、增延迟。"
+      },
+      {
+        "text": "仅在建连时告诉客户端它的公网映射地址",
+        "isCorrect": false,
+        "description": "错误。那是 STUN 的功能；TURN 是全程中继转发流量。"
+      },
+      {
+        "text": "作为信令服务器交换 Offer/Answer",
+        "isCorrect": false,
+        "description": "错误。交换 SDP 由信令通道负责，与 TURN 中继职责不同。"
+      },
+      {
+        "text": "对 ICE 候选对进行连通性检查并择优",
+        "isCorrect": false,
+        "description": "错误。连通性检查与择优是 ICE 框架的工作，TURN 只负责中继。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，「客户端 ⇄ 服务器」双向、低延迟交互（如聊天、协作编辑）最合适的方案是哪个？",
+    "explanation": "需要「客户端 ⇄ 服务器」双向、低延迟交互（聊天、协作编辑、多人游戏状态、实时仪表盘指令）时，首选 **WebSocket**：全双工、低延迟、支持二进制帧，生态最成熟。SSE 只能单向（服务器→客户端），WebRTC 是浏览器之间直连而非客户端↔服务器，轮询则不是真推送。选型核心是「通信形态决定方案，而非越新越好」。",
+    "tags": ["realtime", "websocket", "selection"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "WebSocket",
+        "isCorrect": true,
+        "description": "正确。双向全双工、低延迟、支持二进制帧，是双向交互的主力方案。"
+      },
+      {
+        "text": "SSE",
+        "isCorrect": false,
+        "description": "错误。SSE 只能服务器单向推，无法承载客户端到服务器的双向交互。"
+      },
+      {
+        "text": "WebRTC",
+        "isCorrect": false,
+        "description": "错误。WebRTC 是浏览器之间端到端直连，不是客户端↔服务器交互的常规选择。"
+      },
+      {
+        "text": "长轮询",
+        "isCorrect": false,
+        "description": "错误。长轮询是「伪推送」，实时性与双向能力都不如 WebSocket。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 的 SDP Offer/Answer 协商流程，下列描述正确的是？",
+    "explanation": "SDP 的核心是 **Offer/Answer 协商**：发起方 A `createOffer()` 生成 Offer 并 `setLocalDescription`，经信令发给对端；对端 B `setRemoteDescription(offer)` 后 `createAnswer()` 生成 Answer 并 `setLocalDescription`，再经信令回传给 A；A `setRemoteDescription(answer)`。每端维护**本地描述（local）**与**远端描述（remote）**两份 SDP；只有双方都拿到对方描述，才知道该用什么编解码、往哪里发包。",
+    "tags": ["webrtc", "sdp", "signaling"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "发起方生成 Offer，应答方回 Answer，双方各存本地与远端两份描述",
+        "isCorrect": true,
+        "description": "正确。Offer/Answer 经信令往返，每端维护 local 与 remote 两份 SDP。"
+      },
+      {
+        "text": "Offer 与 Answer 都由 STUN 服务器自动生成并下发",
+        "isCorrect": false,
+        "description": "错误。Offer/Answer 由两端的 RTCPeerConnection 生成，经信令交换。"
+      },
+      {
+        "text": "只有发起方需要设置远端描述，应答方不需要",
+        "isCorrect": false,
+        "description": "错误。双方都要 setRemoteDescription 对方的 SDP 才能确定编解码与发包地址。"
+      },
+      {
+        "text": "Answer 必须在所有 ICE 候选收集完毕后才能发出",
+        "isCorrect": false,
+        "description": "错误。Trickle ICE 允许候选边收集边交换，SDP 协商不必等候选收齐。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 中 ICE（交互式连接建立）的职责，下列描述最准确的是？",
+    "explanation": "**ICE（Interactive Connectivity Establishment）** 不是单一协议，而是一个**框架**，统筹「**收集候选 → 经信令交换 → 连通性检查 → 择优提名**」这一整套流程，调度 STUN、TURN 协同工作：靠 STUN/TURN 拿到可用地址（host/srflx/relay 候选），把本地候选与远端候选两两配成候选对，用带认证的 STUN 包逐对探测，最后从能通的候选对里选出最佳一对作为 Selected Pair。",
+    "tags": ["ice", "webrtc", "nat"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "统筹收集候选、连通性检查与择优，调度 STUN/TURN 找出能通的路径",
+        "isCorrect": true,
+        "description": "正确。ICE 是框架，分四阶段：收集→交换→连通性检查→择优提名。"
+      },
+      {
+        "text": "ICE 本身是一个独立的中继服务器，负责转发媒体",
+        "isCorrect": false,
+        "description": "错误。中继是 TURN；ICE 是统筹建连流程的框架，不转发媒体。"
+      },
+      {
+        "text": "ICE 负责把音视频编码成 SRTP 帧",
+        "isCorrect": false,
+        "description": "错误。媒体编码与加密由编解码器和 DTLS/SRTP 处理，不属于 ICE。"
+      },
+      {
+        "text": "ICE 只负责生成 SDP Offer，不参与地址探测",
+        "isCorrect": false,
+        "description": "错误。ICE 恰恰核心就是地址候选收集与连通性探测。"
+      }
+    ]
+  },
+  {
+    "stem": "在 WebRTC 的 ICE 候选类型中，`srflx`（server reflexive）候选的来源是什么？",
+    "explanation": "ICE 候选分四类：`host`（本机网卡的私有/本地 IP，同一局域网内可直连）、`srflx`（server reflexive，由 **STUN** 服务器返回的 NAT 之外的**公网映射地址**）、`prflx`（peer reflexive，连通检查中发现的对端经 NAT 反射出的地址，常见于 Trickle ICE）、`relay`（由 **TURN** 服务器分配的中继地址，所有流量经它转发）。`srflx` 正是 STUN 通过 `XOR-MAPPED-ADDRESS` 告诉客户端的公网映射。",
+    "tags": ["ice", "candidate", "stun"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "由 STUN 服务器返回的、NAT 之外看到的公网映射地址",
+        "isCorrect": true,
+        "description": "正确。srflx 即 STUN 通过 XOR-MAPPED-ADDRESS 回送的公网映射候选。"
+      },
+      {
+        "text": "本机网卡上的私有/本地 IP 地址",
+        "isCorrect": false,
+        "description": "错误。本机网卡地址是 host 候选，不是 srflx。"
+      },
+      {
+        "text": "TURN 服务器分配的中继地址",
+        "isCorrect": false,
+        "description": "错误。TURN 分配的是 relay 候选，不是 srflx。"
+      },
+      {
+        "text": "连通性检查中从对端反射发现的地址",
+        "isCorrect": false,
+        "description": "错误。连通检查中发现的对端反射地址是 prflx（peer reflexive）候选。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 的 DataChannel 底层基于什么协议，有何特点？",
+    "explanation": "**DataChannel** 在同一条已建立的 P2P 通道上传输**任意数据**（文本、二进制、文件分片、游戏状态等），底层基于 **SCTP over DTLS**。因而它：① **加密**——复用 DTLS，传输默认加密；② **可配传输语义**——既可像 TCP 那样可靠+有序，也可配成不可靠/无序（牺牲重传换更低延迟，适合实时游戏、状态同步）；③ **复用同一条 ICE 通路**——和媒体共用前面打通的连接，无需另开 NAT 穿透。",
+    "tags": ["webrtc", "datachannel", "sctp"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "基于 SCTP over DTLS，默认加密且可配可靠/有序或不可靠/无序",
+        "isCorrect": true,
+        "description": "正确。DataChannel 走 SCTP/DTLS，传输语义可调，复用同一条 ICE 通路。"
+      },
+      {
+        "text": "基于 TCP，只能可靠有序传输，无法配置为不可靠",
+        "isCorrect": false,
+        "description": "错误。DataChannel 走 SCTP，可配成不可靠/无序以换更低延迟。"
+      },
+      {
+        "text": "基于 HTTP/2 多路复用流传输任意数据",
+        "isCorrect": false,
+        "description": "错误。DataChannel 不走 HTTP，底层是 SCTP over DTLS。"
+      },
+      {
+        "text": "需要为数据单独再建立一条 NAT 穿透通路",
+        "isCorrect": false,
+        "description": "错误。DataChannel 复用媒体已打通的同一条 ICE 连接，无需另开穿透。"
+      }
+    ]
+  },
+  {
+    "stem": "STUN 的 UDP 打洞（hole punching）能成功穿透 NAT，依赖的前提是什么？",
+    "explanation": "拿到双方公网映射后，ICE 尝试 **UDP 打洞**：两端几乎同时向对方的公网映射地址发包，先发出的包会在自己的 NAT 上建立一条出站映射，当对端的包随后到达，恰好命中这条已存在的映射而被放行——双向通路就此凿通。打洞成立的前提是**「对同一个内部源，NAT 对外用的公网端口可预测/一致」**：即客户端问 STUN 时用的公网端口，和它真正发给对端时用的端口要一致，对端才能拿这个地址打进来。",
+    "tags": ["stun", "nat", "hole-punching"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "NAT 对同一内部源对外用的公网端口可预测/一致",
+        "isCorrect": true,
+        "description": "正确。端口映射一致，对端才能用「问 STUN 时的地址」打进来。"
+      },
+      {
+        "text": "双方必须使用相同的 STUN 服务器",
+        "isCorrect": false,
+        "description": "错误。打洞成败取决于 NAT 端口映射行为，与是否同一 STUN 服务器无关。"
+      },
+      {
+        "text": "两端的私有 IP 必须处于同一网段",
+        "isCorrect": false,
+        "description": "错误。同网段可直接走 host 候选，打洞针对的恰是跨 NAT 的场景。"
+      },
+      {
+        "text": "防火墙必须完全关闭所有端口过滤",
+        "isCorrect": false,
+        "description": "错误。打洞正是在不关闭防火墙的前提下，借出站映射「凿」出通路。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，「浏览器 ⇄ 浏览器」端到端、媒体级低延迟（如音视频通话、屏幕共享、P2P 文件直传）应选哪个方案？",
+    "explanation": "需要「浏览器 ⇄ 浏览器」端到端、媒体级低延迟（音视频通话、屏幕共享、P2P 文件直传）时，选 **WebRTC**：数据不经服务器中转、延迟最低，但代价是要自己搭信令通道并做 STUN/TURN 的 NAT 穿透。SSE/WebSocket 都是客户端↔服务器、数据必经服务器中转，无法实现真正的端到端直连。选型口诀：先分拉/推，再分单向/双向/端到端。",
+    "tags": ["realtime", "webrtc", "selection"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "WebRTC",
+        "isCorrect": true,
+        "description": "正确。端到端 P2P 媒体直连用 WebRTC，延迟最低，代价是信令+NAT 穿透。"
+      },
+      {
+        "text": "WebSocket",
+        "isCorrect": false,
+        "description": "错误。WebSocket 数据必经服务器中转，做不到浏览器间端到端直连。"
+      },
+      {
+        "text": "SSE",
+        "isCorrect": false,
+        "description": "错误。SSE 只能服务器单向推文本，无法承载端到端音视频。"
+      },
+      {
+        "text": "长轮询",
+        "isCorrect": false,
+        "description": "错误。长轮询是 HTTP 伪推送，与端到端媒体直连毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，关于 WebSocket 与 SSE 的关键差异，下列说法正确的是？",
+    "explanation": "二者最常被拿来对比，差异集中在三点：① **方向与格式**——SSE 单向、仅 UTF-8 文本，WebSocket 双向、支持二进制帧（要发图片/音频分片等二进制 SSE 直接出局）；② **重连成本**——SSE 由 `EventSource` 原生自动重连并用 `Last-Event-ID` 从断点续传，WebSocket 断开即彻底丢失、重连得自己写逻辑或借 Socket.IO；③ **连接数限制**——HTTP/1.1 下 SSE 同源最多 6 条并发，切到 HTTP/2 多路复用即解除，WebSocket 无此每源上限。",
+    "tags": ["sse", "websocket", "selection"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SSE 单向/纯文本/原生自动重连，WebSocket 双向/支持二进制/重连需自己实现",
+        "isCorrect": true,
+        "description": "正确。三点差异：方向与格式、重连成本、连接数限制。"
+      },
+      {
+        "text": "SSE 双向且支持二进制帧，WebSocket 只能单向传文本",
+        "isCorrect": false,
+        "description": "错误。说反了：SSE 单向纯文本，WebSocket 双向且支持二进制。"
+      },
+      {
+        "text": "WebSocket 自带 Last-Event-ID 断点续传，SSE 没有重连机制",
+        "isCorrect": false,
+        "description": "错误。Last-Event-ID 续传是 SSE 的特性；WebSocket 重连要自己实现。"
+      },
+      {
+        "text": "两者都只能跑在 HTTP/1.1 上，无法升级到 HTTP/2",
+        "isCorrect": false,
+        "description": "错误。SSE 切到 HTTP/2 可解除 6 条并发限制，并非只能跑 HTTP/1.1。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 的 ICE 在挑选最终通信路径时，候选类型的优先级总体顺序是怎样的？",
+    "explanation": "ICE 在连通性检查后，从所有通过检查的候选对里**择优提名（nominate）**为 Selected Pair，媒体/数据自此走这条路。优先级总体是 **host > srflx > relay**、且 **UDP > TCP**——能直连（host/srflx）绝不走中继。因为 relay（TURN 中继）要全程经服务器转发、耗带宽增延迟，ICE 把它排在最后，只有 host/srflx 全都走不通时才落到 relay。",
+    "tags": ["ice", "candidate", "webrtc"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "host > srflx > relay，且 UDP 优先于 TCP",
+        "isCorrect": true,
+        "description": "正确。能直连绝不走中继，relay 只作最后选项；UDP 优先于 TCP。"
+      },
+      {
+        "text": "relay > srflx > host，优先用最稳的中继",
+        "isCorrect": false,
+        "description": "错误。relay 耗带宽增延迟，ICE 把它排最后，而非最优先。"
+      },
+      {
+        "text": "srflx > host > relay，公网映射地址最优先",
+        "isCorrect": false,
+        "description": "错误。host（本机直连）优先级高于 srflx，同网段直连最划算。"
+      },
+      {
+        "text": "优先级完全随机，由两端协商时抽签决定",
+        "isCorrect": false,
+        "description": "错误。ICE 有明确的优先级规则，并非随机。"
+      }
+    ]
+  },
+  {
+    "stem": "STUN vs TURN：为什么对称型（Symmetric）NAT 几乎必须依赖 TURN 才能建立 WebRTC 连接？",
+    "explanation": "打洞成立的前提是「对同一个内部源，NAT 对外用的公网端口可预测/一致」。**对称型（Symmetric）NAT** 偏偏对**不同目的地启用不同的公网端口映射**——客户端问 STUN 时用的端口，和它真正发给对端时用的端口**不一样**，于是对端拿着「问 STUN 时的地址」根本打不进来。双方都是对称型 NAT 时，STUN 打洞基本必然失败，只能退而求其次走 **TURN** 中继兜底（保连通但耗带宽）。全锥/受限锥/端口受限锥多能靠 STUN 打洞成功。",
+    "tags": ["stun", "turn", "nat"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对称型 NAT 对不同目的地用不同公网端口，STUN 拿到的地址打洞失效",
+        "isCorrect": true,
+        "description": "正确。端口映射随目的地变化，对端用「问 STUN 时的地址」打不进来，只能走 TURN。"
+      },
+      {
+        "text": "对称型 NAT 完全禁止 UDP，只能用 TCP 中继",
+        "isCorrect": false,
+        "description": "错误。对称型 NAT 并非禁止 UDP，问题在于端口映射不一致导致打洞失败。"
+      },
+      {
+        "text": "对称型 NAT 不支持 STUN 协议本身",
+        "isCorrect": false,
+        "description": "错误。STUN 仍能发现某个映射地址，只是该地址对其他目的地无效。"
+      },
+      {
+        "text": "TURN 能修改对称型 NAT 的端口映射规则",
+        "isCorrect": false,
+        "description": "错误。TURN 无法修改 NAT 行为，它只是提供一个公网中继地址绕开穿透难题。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 中的 Trickle ICE 相比「收集完全部候选再交换」的传统方式，主要优势是什么？",
+    "explanation": "**Trickle ICE** 指 ICE 候选**边收集边发送**，每收集到一个候选就经信令发给对端，不等全部收齐。相比传统的「一次性收齐所有候选再交换」，它能让连通性检查尽早开始，**显著缩短建连时间**。连通检查中由此还可能发现对端经 NAT 反射出的 `prflx`（peer reflexive）候选。",
+    "tags": ["ice", "trickle", "webrtc"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "候选边收集边发送、不等收齐，显著缩短建连时间",
+        "isCorrect": true,
+        "description": "正确。Trickle ICE 让连通性检查尽早开始，加快建连。"
+      },
+      {
+        "text": "把所有候选压缩进一个数据包，节省带宽",
+        "isCorrect": false,
+        "description": "错误。Trickle 的核心是「逐个尽早发送」而非压缩打包。"
+      },
+      {
+        "text": "彻底省去 STUN/TURN，直接用本机地址连通",
+        "isCorrect": false,
+        "description": "错误。Trickle 不改变候选来源，STUN/TURN 仍照常使用。"
+      },
+      {
+        "text": "让媒体流在候选交换期间就开始传输",
+        "isCorrect": false,
+        "description": "错误。媒体要等 Selected Pair 选定后才走，Trickle 加速的是候选交换本身。"
+      }
+    ]
+  },
+  {
+    "stem": "实时方案的底层协议归属：下列关于五种方案「跑在什么协议上」的描述，正确的是？",
+    "explanation": "底层协议归属：**轮询与 SSE 完全是 HTTP**（复用现有 HTTP 基础设施，SSE 只是把响应体做成 `text/event-stream` 的长连接）；**WebSocket 借 HTTP 起步**——靠 `Upgrade: websocket` 头完成一次性握手，之后切换为独立的 `ws`/`wss` 帧协议（基于 TCP），不再是 HTTP；**WebRTC 基本脱离 HTTP**——媒体与数据走 UDP（SRTP/DTLS，带拥塞控制与丢包恢复），HTTP 仅用于信令交换（SDP/ICE）这一辅助环节。",
+    "tags": ["realtime", "protocol", "comparison"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "轮询与 SSE 跑在 HTTP 上，WebSocket 握手后切到 ws/wss（TCP），WebRTC 媒体走 UDP",
+        "isCorrect": true,
+        "description": "正确。三类协议归属清晰：HTTP / ws-wss(TCP) / UDP(SRTP-DTLS)。"
+      },
+      {
+        "text": "五种方案全部基于 UDP 传输",
+        "isCorrect": false,
+        "description": "错误。轮询、SSE 跑在 HTTP（TCP）上，WebSocket 也是 TCP，只有 WebRTC 媒体走 UDP。"
+      },
+      {
+        "text": "WebSocket 全程都是标准 HTTP 请求响应",
+        "isCorrect": false,
+        "description": "错误。WebSocket 仅握手借 HTTP，之后切为独立的 ws/wss 帧协议。"
+      },
+      {
+        "text": "SSE 基于独立的二进制帧协议，与 HTTP 无关",
+        "isCorrect": false,
+        "description": "错误。SSE 完全是 HTTP，响应体为 text/event-stream 的长连接。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，关于 HTTP/2 Server Push 与「服务器实时推送业务数据」的关系，正确的是？",
+    "explanation": "很多人把 **HTTP/2 Server Push** 误当成「服务器实时推送」方案，这是常见混淆：① **它不是实时通信**——Server Push 是服务器随某次 HTTP 响应用 `PUSH_PROMISE` 帧**预推静态资源**（如 CSS/JS），目的是省掉客户端的二次请求，与持续把业务数据推给前端无关；② **它已被废弃**——因采用率极低（约 0.7%-1.25%）、收益小且常引发缓存与性能问题，**Chrome 106（2022）已默认移除**，现代替代是 `103 Early Hints`；③ 要服务器单向推业务数据，请用 **SSE**。",
+    "tags": ["http2", "server-push", "sse"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Server Push 是预推静态资源、已被废弃，推业务数据应改用 SSE",
+        "isCorrect": true,
+        "description": "正确。Server Push 与实时推送无关且 Chrome 106 已默认移除，业务推送用 SSE。"
+      },
+      {
+        "text": "Server Push 是目前服务器实时推送业务数据的最佳实践",
+        "isCorrect": false,
+        "description": "错误。它只是资源预加载优化、已废弃，不是业务数据实时推送方案。"
+      },
+      {
+        "text": "Server Push 至今仍是 Chrome 默认开启的核心特性",
+        "isCorrect": false,
+        "description": "错误。Chrome 106（2022）已默认移除 Server Push。"
+      },
+      {
+        "text": "Server Push 与 SSE 功能完全等价，可互相替换",
+        "isCorrect": false,
+        "description": "错误。一个是预推静态资源、一个是持续事件流推送，用途根本不同。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信的现代趋势中，WebTransport 被视为「WebSocket 的 UDP 化继任者」，它跑在什么协议之上、有何关键能力？",
+    "explanation": "**WebTransport** 是 WebSocket 的 UDP 化继任者，跑在 **HTTP/3（QUIC/UDP）** 上，已达 Baseline 2026（2026-03 起主流浏览器可用）。关键能力：① **多路复用流 + 不可靠数据报**——既能像 WebSocket 那样开多条双向流，又能像 UDP 那样发「不可靠、无序」的 datagram（适合游戏位置同步、实时媒体这类「丢了就丢了、要的是新鲜」的数据）；② **更低延迟 + 连接迁移**——继承 QUIC 的 0-RTT 重连、流间无队头阻塞、切换 Wi-Fi/4G 不断连等红利。短期内 WebSocket 仍是双向实时主力，WebTransport 适合对延迟极致敏感的新项目先行尝试。",
+    "tags": ["webtransport", "http3", "quic"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "跑在 HTTP/3（QUIC/UDP）上，支持多路复用双向流 + 不可靠数据报",
+        "isCorrect": true,
+        "description": "正确。WebTransport over HTTP/3，兼具多条双向流与不可靠 datagram，且继承 QUIC 红利。"
+      },
+      {
+        "text": "跑在 HTTP/1.1 上，仅支持单向文本流",
+        "isCorrect": false,
+        "description": "错误。WebTransport 基于 HTTP/3（QUIC/UDP），能力远超单向文本流。"
+      },
+      {
+        "text": "它是 WebRTC 的别名，专为 P2P 音视频设计",
+        "isCorrect": false,
+        "description": "错误。WebTransport 是客户端↔服务器协议、WebSocket 的继任者，不是 WebRTC。"
+      },
+      {
+        "text": "它跑在 TCP 上，因而无法发送不可靠数据报",
+        "isCorrect": false,
+        "description": "错误。WebTransport 跑在 QUIC/UDP 上，正因此才能发不可靠、无序的 datagram。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，关于「现代趋势」与 SSE 在 AI 场景的应用，下列说法正确的是？",
+    "explanation": "大模型逐 token 输出天然契合 SSE 的「服务器单向推文本流」模型：**Vercel AI SDK 默认即用 SSE 作为传输**，前端用 `EventSource` 或 `fetch` 流式读取即可实现打字机效果，因此 SSE 因 AI 流式输出强势回潮。但 SSE 的**单向性**在「Agent 化」场景成为瓶颈——工具调用、中途取消、多设备续传、离线后台任务等需要客户端**反向发信号**，此时要么补 WebSocket，要么靠服务端 resume token 续传机制兜底。",
+    "tags": ["sse", "ai-streaming", "trend"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "AI 逐 token 流式输出契合 SSE 单向推，但 Agent 化场景需双向时要补 WebSocket",
+        "isCorrect": true,
+        "description": "正确。SSE 因 AI 流式回潮，单向性在需客户端反向发信号时成为瓶颈。"
+      },
+      {
+        "text": "AI 流式输出必须用 WebRTC 才能实现打字机效果",
+        "isCorrect": false,
+        "description": "错误。打字机效果用 SSE 单向推文本流即可，无需 WebRTC。"
+      },
+      {
+        "text": "SSE 天生支持双向，Agent 工具调用无需任何补充",
+        "isCorrect": false,
+        "description": "错误。SSE 是单向的，Agent 化的反向信号需要 WebSocket 或 resume token 兜底。"
+      },
+      {
+        "text": "Vercel AI SDK 默认用 WebSocket 而非 SSE 做流式传输",
+        "isCorrect": false,
+        "description": "错误。Vercel AI SDK 默认即用 SSE 作为流式传输。"
+      }
+    ]
+  },
+  {
+    "stem": "实时通信选型中，长轮询（long polling）相比短轮询（short polling）的主要改进是什么？",
+    "explanation": "短轮询是客户端按固定间隔反复发请求拉取数据，无论有没有新数据都要问一遍，产生大量无效请求、服务器开销高、实时性受轮询间隔限制。长轮询则是客户端发请求后服务器**挂起连接**直到有新数据（或超时）才响应，响应后客户端立即再发起下一个请求——它省去了大量空轮询的无效请求，实时性更好，但本质仍是「客户端拉」、是**伪推送**，每次拿到数据后仍需重新建立请求，并非真正的服务器主动推送。",
+    "tags": ["realtime", "polling", "selection"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "服务器挂起连接直到有新数据才响应，省去大量空轮询的无效请求",
+        "isCorrect": true,
+        "description": "正确。长轮询用挂起减少无效请求、提升实时性，但仍是客户端拉的伪推送。"
+      },
+      {
+        "text": "长轮询升级为真正的服务器主动推送，无需客户端再发请求",
+        "isCorrect": false,
+        "description": "错误。长轮询本质仍是客户端拉，拿到数据后还要再发起下一个请求。"
+      },
+      {
+        "text": "长轮询改用 UDP 传输，因而比短轮询延迟更低",
+        "isCorrect": false,
+        "description": "错误。长轮询仍跑在 HTTP（TCP）上，改进点在挂起连接而非换协议。"
+      },
+      {
+        "text": "长轮询支持双向二进制帧，可替代 WebSocket",
+        "isCorrect": false,
+        "description": "错误。长轮询是单向拉取的 HTTP 请求，不具备 WebSocket 的双向二进制能力。"
+      }
+    ]
+  },
+  {
+    "stem": "WebRTC 中信令服务器与媒体连接的关系，下列描述正确的是？",
+    "explanation": "信令服务器只在**建连阶段**牵线：双方各自连上同一个信令服务器，借它来回转发 SDP（Offer/Answer）与 ICE 候选。一旦 ICE 完成连通性检查、选定 Selected Pair，媒体与数据就走 P2P 直连（host/srflx 直连或 relay 中继），**不再经过信令服务器**。这正是 WebRTC「数据尽量不经服务器中转、把延迟与带宽成本压到最低」的体现——信令服务器只是建连期的「介绍人」，连上后即可功成身退。",
+    "tags": ["webrtc", "signaling", "p2p"],
+    "categories": [
+      ["技术方向", "实时通信协议"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "信令服务器只在建连阶段牵线，连上后媒体/数据走 P2P 直连不再经过它",
+        "isCorrect": true,
+        "description": "正确。信令是建连期的介绍人，连通后媒体走 P2P，延迟与带宽成本最低。"
+      },
+      {
+        "text": "信令服务器全程转发音视频流，与 TURN 中继职责相同",
+        "isCorrect": false,
+        "description": "错误。全程转发媒体是 TURN 的兜底职责；信令只在建连期工作。"
+      },
+      {
+        "text": "媒体连接建立后，所有数据仍必须回经信令服务器中转",
+        "isCorrect": false,
+        "description": "错误。连上后走 P2P 直连，正是为了不再经过服务器、降低延迟。"
+      },
+      {
+        "text": "信令服务器负责对每个媒体包做 SRTP 加密",
+        "isCorrect": false,
+        "description": "错误。媒体加密由两端的 DTLS/SRTP 完成，与信令服务器无关。"
+      }
+    ]
+  }
+]
