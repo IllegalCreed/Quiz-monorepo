@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "micro-app 最鲜明的技术路线，是借鉴了 WebComponent 的哪一部分来包装微前端能力？",
+    "explanation": "micro-app（`@micro-zoe/micro-app`）是**京东开源**的微前端框架，最鲜明的路线是**借鉴 WebComponent 的 CustomElement（自定义元素）思想**：用浏览器原生的 `window.customElements.define` 把能力包装成一个 `<micro-app>` HTML 标签，主应用只写 `<micro-app name url>` **一行标签**即可接入，因此自我标榜**接入成本全场最低**。要澄清的是它是**类 WebComponent**——只借「自定义标签」这一层，**默认并不用 Shadow DOM**。",
+    "tags": ["micro-app", "定位", "webcomponent"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "CustomElement（自定义元素）——用 `customElements.define` 把能力封装成 `<micro-app>` 标签",
+        "isCorrect": true,
+        "description": "正确。micro-app 只取 WebComponent 的 CustomElement 一层，把微前端封装成一个真标签。"
+      },
+      {
+        "text": "Shadow DOM——默认把子应用塞进 `shadowRoot` 做物理隔离",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认**不用** Shadow DOM，那是 wujie 的默认路线。"
+      },
+      {
+        "text": "HTML Templates（`<template>`）——用模板克隆子应用 DOM",
+        "isCorrect": false,
+        "description": "错误。micro-app 没有用 WebComponent 三件套里的 HTML Templates 那一块。"
+      },
+      {
+        "text": "iframe——默认用 iframe 承载子应用整个运行时",
+        "isCorrect": false,
+        "description": "错误。iframe 沙箱是 1.0 起的**可选**模式，且不属于 WebComponent 标准。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `<micro-app>` 自定义标签，是靠哪个浏览器原生 API 注册出来的？",
+    "explanation": "`microApp.start()` 的作用之一，就是用浏览器原生的 **`window.customElements.define('micro-app', …)`** 把 `<micro-app>` 注册成一个合法的自定义 HTML 元素。于是浏览器「认识」了这个标签，它的**插入/移除/属性变化**天然映射到子应用的**加载/卸载/重载**——这就是「组件化接入」的底层机制。也因此运行环境**必须支持 CustomElements**（可 polyfill）。",
+    "tags": ["micro-app", "custom-element", "start"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`window.customElements.define`",
+        "isCorrect": true,
+        "description": "正确。`microApp.start()` 内部用它把 `<micro-app>` 定义为自定义元素。"
+      },
+      {
+        "text": "`document.registerElement`（已废弃的旧 API）",
+        "isCorrect": false,
+        "description": "错误。这是废弃的 v0 API，micro-app 用的是标准 `customElements.define`。"
+      },
+      {
+        "text": "`new MutationObserver` 监听 DOM 插入后手动接管",
+        "isCorrect": false,
+        "description": "错误。标签是通过 `customElements.define` 注册的，不是靠 MutationObserver。"
+      },
+      {
+        "text": "`Vue.component` / `app.component` 注册全局组件",
+        "isCorrect": false,
+        "description": "错误。`<micro-app>` 是原生自定义元素，不依赖任何框架的组件注册。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `<micro-app>` 标签上，`name` 与 `url` 两个必填属性分别代表什么？",
+    "explanation": "`name` 是子应用的**唯一标识**，**必填**、须**字母开头**（不能有特殊字符，连字符/下划线除外）；`url` 是子应用**地址**，**必填**、指向子应用的 `index.html`。二者是 `<micro-app>` 仅有的两个必填属性，其余（`baseroute`/`iframe`/`keep-alive` 等）都有默认值、按需开启。",
+    "tags": ["micro-app", "custom-element", "name-url"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`name` 是子应用唯一标识（必填、字母开头），`url` 是子应用 `index.html` 地址（必填）",
+        "isCorrect": true,
+        "description": "正确。这是 `<micro-app>` 仅有的两个必填属性。"
+      },
+      {
+        "text": "`name` 是子应用类名前缀，`url` 是子应用的 API 网关地址",
+        "isCorrect": false,
+        "description": "错误。`name` 是应用标识不是类名前缀，`url` 指向 `index.html` 不是接口网关。"
+      },
+      {
+        "text": "两者都可选，不填时 micro-app 自动生成随机标识与本地地址",
+        "isCorrect": false,
+        "description": "错误。`name` 与 `url` 都是**必填**，缺一不可。"
+      },
+      {
+        "text": "`name` 是路由路径，`url` 是打包产物的 CDN 目录",
+        "isCorrect": false,
+        "description": "错误。路由由 `baseroute` 管，`name` 是标识；`url` 指向 `index.html`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的标准渲染流程会在 `<micro-app>` 元素上依次派发哪五个生命周期事件？",
+    "explanation": "micro-app 的生命周期**不是让子应用导出函数**，而是**在 `<micro-app>` 元素上派发 DOM 事件**，标准五个按序为：**`created`**（元素初始化后、加载资源前）→ **`beforemount`**（资源加载完、渲染前）→ **`mounted`**（渲染结束）→ **`unmount`**（卸载时）→ **`error`**（渲染终止型错误）。",
+    "tags": ["micro-app", "lifecycle", "events"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`created` → `beforemount` → `mounted` → `unmount` → `error`",
+        "isCorrect": true,
+        "description": "正确。这是 micro-app 挂在元素上的五个标准生命周期事件。"
+      },
+      {
+        "text": "`bootstrap` → `mount` → `update` → `unmount` → `destroy`",
+        "isCorrect": false,
+        "description": "错误。那是 single-spa/qiankun 要求**子应用导出**的生命周期函数，不是 micro-app 的 DOM 事件。"
+      },
+      {
+        "text": "`beforeCreate` → `created` → `mounted` → `updated` → `destroyed`",
+        "isCorrect": false,
+        "description": "错误。那是 Vue 组件的生命周期钩子。"
+      },
+      {
+        "text": "`init` → `load` → `render` → `hide` → `remove`",
+        "isCorrect": false,
+        "description": "错误。这些是虚构的事件名，micro-app 无此约定。"
+      }
+    ]
+  },
+  {
+    "stem": "在 micro-app 里，`<micro-app>` 之所以能直接写进 Vue/React 模板当普通组件用，根本原因是什么？",
+    "explanation": "因为 `<micro-app>` 是一个**用 CustomElement 定义出来的真 HTML 标签**，天然能写进任何框架模板，像用业务组件一样使用——`:url` 动态绑定、`data` 传数据、`@事件` 监听生命周期。子应用出现在页面上的时机，就是 `<micro-app>` 元素出现在 DOM 上的时机。这与 single-spa/qiankun 要在 JS 里 `registerMicroApps` 注册再做路由适配形成对比。",
+    "tags": ["micro-app", "组件化", "custom-element"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`<micro-app>` 是真实自定义 HTML 元素，可像原生标签一样嵌入任意框架模板",
+        "isCorrect": true,
+        "description": "正确。它就是个原生元素，写进模板即用。"
+      },
+      {
+        "text": "micro-app 为每个框架提供了专门的 `MicroApp` 组件包",
+        "isCorrect": false,
+        "description": "错误。无需框架专用组件包，它本身就是原生自定义元素。"
+      },
+      {
+        "text": "它是一段被编译成虚拟 DOM 的 JSX 片段",
+        "isCorrect": false,
+        "description": "错误。它是原生 DOM 元素，不是虚拟 DOM。"
+      },
+      {
+        "text": "micro-app 通过 Babel 插件把标签转译成框架组件",
+        "isCorrect": false,
+        "description": "错误。无需任何转译，浏览器原生识别该标签。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `baseroute` 属性设置后，会被注入为子应用里的哪个全局变量？",
+    "explanation": "`baseroute` 用于设置子应用的**基础路由**（子应用路由的 `base`），micro-app 会把它注入为子应用里的 `__MICRO_APP_BASE_ROUTE__` 全局变量。子应用把路由 `base` 设为该变量，即可在主应用的路由前缀下正确工作。默认值为空字符串。",
+    "tags": ["micro-app", "baseroute", "注入变量"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.__MICRO_APP_BASE_ROUTE__`",
+        "isCorrect": true,
+        "description": "正确。`baseroute` 对应注入的路由 base 变量。"
+      },
+      {
+        "text": "`window.__MICRO_APP_PUBLIC_PATH__`",
+        "isCorrect": false,
+        "description": "错误。那是 publicPath，供 `__webpack_public_path__` 用。"
+      },
+      {
+        "text": "`window.__MICRO_APP_NAME__`",
+        "isCorrect": false,
+        "description": "错误。那注入的是子应用的 `name`。"
+      },
+      {
+        "text": "`window.__webpack_public_path__`",
+        "isCorrect": false,
+        "description": "错误。那是 webpack 运行时公共路径，不是路由 base。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的子应用无需导出 `bootstrap/mount/unmount`，那主应用靠什么感知子应用挂载完成？",
+    "explanation": "micro-app 把生命周期做成了**挂在 `<micro-app>` 元素上的 DOM 事件**，主应用用 `addEventListener('mounted', …)` 或框架的 `@mounted` 监听即可——**不需要子应用导出任何函数**。这正是它「接入成本最低」的机制之一：qiankun 要求子应用导出 `mount/unmount`，micro-app 靠「元素插入/移除」驱动加载/卸载，主应用只监听事件。",
+    "tags": ["micro-app", "lifecycle", "接入"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "监听 `<micro-app>` 元素上派发的 `mounted` 等 DOM 事件",
+        "isCorrect": true,
+        "description": "正确。生命周期是 DOM 事件，主应用监听即可。"
+      },
+      {
+        "text": "轮询子应用导出的 `window.__mounted__` 标志位",
+        "isCorrect": false,
+        "description": "错误。micro-app 无此约定，靠 DOM 事件而非轮询标志位。"
+      },
+      {
+        "text": "调用子应用必须导出的 `mount()` 返回的 Promise",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认**不要求**子应用导出 `mount`。"
+      },
+      {
+        "text": "通过 `postMessage` 等子应用主动发消息通知",
+        "isCorrect": false,
+        "description": "错误。感知靠元素上的 DOM 事件，不是 postMessage。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 开启 `keep-alive` 保活后，子应用侧要从哪个事件读取前后台切换状态？",
+    "explanation": "保活模式下子应用不销毁、只在前后台切换，micro-app 会额外派发 `beforeshow`/`aftershow`/`afterhidden` 三个事件；**子应用侧统一监听 `window` 上的 `appstate-change` 事件**，通过 `e.detail.appState`（值为 `beforeshow`/`aftershow`/`afterhidden`）判断当前切换状态。",
+    "tags": ["micro-app", "keep-alive", "appstate-change"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`window` 上的 `appstate-change` 事件，读 `e.detail.appState`",
+        "isCorrect": true,
+        "description": "正确。保活状态统一从 `appstate-change` 的 `e.detail.appState` 取。"
+      },
+      {
+        "text": "`window` 上的 `visibilitychange` 事件，读 `document.hidden`",
+        "isCorrect": false,
+        "description": "错误。那是浏览器原生页面可见性 API，不是 micro-app 保活专用事件。"
+      },
+      {
+        "text": "`<micro-app>` 上的 `unmount` 事件",
+        "isCorrect": false,
+        "description": "错误。保活不销毁、不触发 `unmount`。"
+      },
+      {
+        "text": "子应用导出的 `activated`/`deactivated` 钩子函数",
+        "isCorrect": false,
+        "description": "错误。那是 Vue keep-alive 的钩子；micro-app 靠事件而非导出函数。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `MicroAppElement` 里，子应用的加载与卸载分别绑在自定义元素的哪两个回调上？",
+    "explanation": "`<micro-app>` 继承自 `HTMLElement`，元素被**插入文档**时触发 **`connectedCallback`**——在此读 `name`/`url` 并拉取、挂载子应用，派发 `created`/`beforemount`/`mounted`；元素被**移除**时触发 **`disconnectedCallback`**——在此卸载子应用、清理并派发 `unmount`。这是自定义元素标准回调，也是「元素在不在 DOM 上」决定子应用存亡的底层实现。",
+    "tags": ["micro-app", "custom-element", "callback"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "插入用 `connectedCallback`、移除用 `disconnectedCallback`",
+        "isCorrect": true,
+        "description": "正确。这是自定义元素标准生命周期回调。"
+      },
+      {
+        "text": "插入用 `attachedCallback`、移除用 `detachedCallback`",
+        "isCorrect": false,
+        "description": "错误。那是已废弃的 v0 命名。"
+      },
+      {
+        "text": "插入用 `mountedCallback`、移除用 `unmountedCallback`",
+        "isCorrect": false,
+        "description": "错误。这是虚构的回调名。"
+      },
+      {
+        "text": "都在 `attributeChangedCallback` 里根据属性变化处理",
+        "isCorrect": false,
+        "description": "错误。`attributeChangedCallback` 只负责属性变化触发重载，不管插入/移除。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 号称「类 WebComponent」，为何说它默认并没享受到 Shadow DOM 的天然隔离？",
+    "explanation": "WebComponent 标准由三块组成：**Custom Elements + Shadow DOM + HTML Templates**。micro-app **只取第一块**——把 `<micro-app>` 注册成真标签，但**默认把子应用 DOM 直接渲染在元素内部（Light DOM），并不套 `shadowRoot`**。因此样式/元素隔离要**另做**（scopedcss + 元素隔离），而非白嫖 Shadow DOM 的天然封闭。`shadowDOM` 属性只是可选增强。",
+    "tags": ["micro-app", "shadow-dom", "隔离"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它只借用了 CustomElement 一层，默认把子应用挂在 Light DOM 而非 `shadowRoot`",
+        "isCorrect": true,
+        "description": "正确。借标签不借影子树，隔离另由 scopedcss + 元素隔离负责。"
+      },
+      {
+        "text": "它用了 Shadow DOM，但设为 `mode: 'open'` 所以隔离失效",
+        "isCorrect": false,
+        "description": "错误。默认根本没开 Shadow DOM，与 open/closed 无关。"
+      },
+      {
+        "text": "浏览器对自定义元素默认禁用 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。浏览器不禁用 Shadow DOM，是 micro-app 自己默认不套。"
+      },
+      {
+        "text": "Shadow DOM 只隔离 JS 不隔离样式，所以形同虚设",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 主要提供的正是样式封闭，说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `<micro-app>` 上 `error` 生命周期事件，触发范围有什么需要注意的限定？",
+    "explanation": "`error` 在加载/渲染出错时触发，但它**仅针对「渲染终止型」错误**——即导致子应用无法继续渲染的致命错误，才会派发 `error` 供主应用兜底 UI、上报。子应用运行期的普通 JS 异常、非致命报错并不都走这个事件。理解这一限定，才能正确设计错误兜底：`error` 是「渲染挂了」的信号，不是「子应用任何报错」的全量捕获。",
+    "tags": ["micro-app", "lifecycle", "error"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仅在「渲染终止型」错误（导致无法继续渲染）时触发",
+        "isCorrect": true,
+        "description": "正确。`error` 只覆盖致命的渲染终止型错误。"
+      },
+      {
+        "text": "子应用内任何 JS 异常都会冒泡触发 `error`",
+        "isCorrect": false,
+        "description": "错误。普通运行期异常不都触发，仅限渲染终止型。"
+      },
+      {
+        "text": "只在资源 404 时触发，渲染阶段错误不触发",
+        "isCorrect": false,
+        "description": "错误。加载与渲染出错都可能触发，但限定为渲染终止型。"
+      },
+      {
+        "text": "只要子应用 `console.error` 就会触发",
+        "isCorrect": false,
+        "description": "错误。与 `console.error` 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 想统一监听「所有子应用」的生命周期，该用什么方式、回调能拿到什么？",
+    "explanation": "两种监听方式：**元素级**用 `el.addEventListener('mounted', …)`（细粒度、单应用）；**全局级**用 `microApp.start({ lifeCycles: { mounted(e, appName){} } })`，一处声明即统一监听所有子应用，回调收到 **`(e, appName)`** 两个参数——`e` 是事件对象、`appName` 标识哪个子应用。要「统一监听所有」就用全局 `lifeCycles`。",
+    "tags": ["micro-app", "lifecycle", "lifeCycles"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "全局 `microApp.start({ lifeCycles })`，回调收 `(e, appName)`",
+        "isCorrect": true,
+        "description": "正确。全局 `lifeCycles` 统一监听所有子应用，回调带 `appName`。"
+      },
+      {
+        "text": "给 `document` 绑一个 `mounted` 监听，靠冒泡统一捕获",
+        "isCorrect": false,
+        "description": "错误。micro-app 无此冒泡约定，统一监听走 `lifeCycles`。"
+      },
+      {
+        "text": "在每个子应用里导出统一的生命周期函数",
+        "isCorrect": false,
+        "description": "错误。micro-app 不靠子应用导出函数。"
+      },
+      {
+        "text": "用 `microApp.on('mounted')` 订阅全局事件总线",
+        "isCorrect": false,
+        "description": "错误。无 `microApp.on` 这样的 API，用 `lifeCycles` 配置。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 官方敢说「只需一行代码」，从工程契约看它相比 qiankun 到底省掉了什么？",
+    "explanation": "qiankun 的接入是一套**双端契约**：主应用要 `registerMicroApps([...])` 注册 + 路由适配，子应用**必须导出 `bootstrap/mount/unmount`** 并改打包为 **UMD**。micro-app 把这套契约**收敛成「写标签 + 监听事件」**——「放哪、何时渲染」交给模板的条件渲染/路由（元素在不在 DOM 上），「生命周期」变成元素上的 DOM 事件，子应用侧只剩 CORS 与 public-path 两件小事。**省掉的正是「主应用注册 + 子应用导出 + 约定 UMD」这套双端契约**，代价是默认 with 软沙箱隔离不及 iframe。",
+    "tags": ["micro-app", "接入成本", "qiankun", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "省掉了「主应用注册 + 子应用导出生命周期 + 约定 UMD」这套双端契约，收敛成写标签 + 监听事件",
+        "isCorrect": true,
+        "description": "正确。契约被压缩到「标签 + 事件」，这是接入成本最低的本质。"
+      },
+      {
+        "text": "省掉了子应用的打包步骤，micro-app 在运行时替子应用编译源码",
+        "isCorrect": false,
+        "description": "错误。micro-app 不替子应用编译，子应用照常自己打包。"
+      },
+      {
+        "text": "省掉了 CORS 配置，micro-app 用 `postMessage` 绕过跨域",
+        "isCorrect": false,
+        "description": "错误。子应用仍需开 CORS，micro-app 从主应用 `fetch` 拉资源。"
+      },
+      {
+        "text": "省掉了沙箱，micro-app 默认不做任何隔离所以更轻",
+        "isCorrect": false,
+        "description": "错误。默认有 with 沙箱，隔离照做，省的是接入契约不是隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 在不加任何配置时，默认使用哪一种 JS 沙箱？",
+    "explanation": "micro-app 的**默认沙箱是 with 沙箱**：把子应用的每段脚本包进 `with(proxyWindow){…}`，用 **`Proxy`** 拦截对 `window`/`document` 的读写，造一个「相对独立的运行空间」。iframe 沙箱是 **1.0 起新增的可选**强隔离模式，要加 `iframe` 属性才启用，并非默认。",
+    "tags": ["micro-app", "with-sandbox", "default"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "with 沙箱（`Proxy` + `with`）",
+        "isCorrect": true,
+        "description": "正确。micro-app 默认走 with 沙箱。"
+      },
+      {
+        "text": "iframe 沙箱（同域 iframe 原生上下文）",
+        "isCorrect": false,
+        "description": "错误。iframe 沙箱是 1.0 可选模式，需加 `iframe` 属性，非默认。"
+      },
+      {
+        "text": "快照沙箱（snapshot diff）",
+        "isCorrect": false,
+        "description": "错误。那是 qiankun 单例场景的 legacy 快照沙箱。"
+      },
+      {
+        "text": "ShadowRealm 沙箱",
+        "isCorrect": false,
+        "description": "错误。ShadowRealm 是前瞻方案，micro-app 未用作默认。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 with 沙箱下，子应用执行 `window.token = 'sub'`，主应用的 `window.token` 会怎样？",
+    "explanation": "with 沙箱用 `Proxy` 拦截：**写只落到子应用的「假 window」，不污染主应用真 `window`**。所以子应用 `window.token = 'sub'` 只写进代理 window，主应用 `window.token` **完全看不见**（仍是 `undefined`）；子应用卸载时代理连同其上的全局一起回收，无需像快照沙箱那样 diff 恢复。这就是「全局变量隔离」。",
+    "tags": ["micro-app", "with-sandbox", "全局隔离"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "主应用的 `window.token` 看不到，写只落在子应用的代理 window 上",
+        "isCorrect": true,
+        "description": "正确。写时隔离，子应用全局不污染主应用真 window。"
+      },
+      {
+        "text": "主应用的 `window.token` 同步变成 `sub`（共享同一个 window）",
+        "isCorrect": false,
+        "description": "错误。二者隔离，不共享同一个 window。"
+      },
+      {
+        "text": "会抛出「不可写」错误",
+        "isCorrect": false,
+        "description": "错误。可写，只是写落到假 window，不报错。"
+      },
+      {
+        "text": "主应用能读到，但子应用卸载后自动清空",
+        "isCorrect": false,
+        "description": "错误。主应用根本读不到，隔离是即时的。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 with 沙箱里，`proxyWindow` 这个 `Proxy` 对「读」和「写」分别怎么处理？",
+    "explanation": "核心是「**读回退、写隔离**」：`get` 时**优先读假 window，未覆盖的键回退到真 `window`**（这样 `document`、`setTimeout` 等原生能力仍可用）；`set` 时**只写进子应用的假 window**，不碰真 `window`（实现写时隔离）。于是子应用「以为」在操作 `window`，实际操作的是专属代理。",
+    "tags": ["micro-app", "with-sandbox", "proxy"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "读优先假 window、未覆盖回退真 window；写只落假 window",
+        "isCorrect": true,
+        "description": "正确。读回退、写隔离是 with 沙箱的核心策略。"
+      },
+      {
+        "text": "读写都直接作用于真 window，仅记录变更用于卸载还原",
+        "isCorrect": false,
+        "description": "错误。那更像快照沙箱的思路，不是 Proxy 写时隔离。"
+      },
+      {
+        "text": "读只读真 window、写只写真 window（完全透明）",
+        "isCorrect": false,
+        "description": "错误。完全透明就没有隔离了。"
+      },
+      {
+        "text": "读只读假 window（不回退），写落真 window",
+        "isCorrect": false,
+        "description": "错误。读要回退真 window、写要隔离到假 window，此项说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 子应用配 `public-path.js` 时，把 `__webpack_public_path__` 赋值成注入的哪个全局变量？",
+    "explanation": "micro-app 向子应用注入一批全局变量，其中 `window.__MICRO_APP_PUBLIC_PATH__` 就是给 webpack 用的 publicPath。子应用在入口第一行引入的 `public-path.js` 里写 `__webpack_public_path__ = window.__MICRO_APP_PUBLIC_PATH__`，让静态资源按正确的绝对地址加载。这是子应用改造清单里的核心两件事之一（另一件是开 CORS）。",
+    "tags": ["micro-app", "public-path", "注入变量"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.__MICRO_APP_PUBLIC_PATH__`",
+        "isCorrect": true,
+        "description": "正确。它就是 micro-app 注入的 publicPath。"
+      },
+      {
+        "text": "`window.__MICRO_APP_BASE_ROUTE__`",
+        "isCorrect": false,
+        "description": "错误。那是路由 base，不是 publicPath。"
+      },
+      {
+        "text": "`window.__MICRO_APP_NAME__`",
+        "isCorrect": false,
+        "description": "错误。那注入的是子应用名。"
+      },
+      {
+        "text": "`window.__POWERED_BY_QIANKUN__`",
+        "isCorrect": false,
+        "description": "错误。那是 qiankun 的注入变量，不是 micro-app 的。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 子应用想判断自己是「独立运行」还是「被嵌入」，该读哪个注入变量？",
+    "explanation": "`window.__MICRO_APP_ENVIRONMENT__` 标识**是否运行在 micro-app 环境**。子应用用 `if (window.__MICRO_APP_ENVIRONMENT__) { … }` 判断被嵌入与否，据此切换渲染逻辑（如改 publicPath、设路由 base）；独立运行时该变量为假，走原有逻辑。这让同一份子应用代码既能「独立跑」也能「被嵌入跑」。",
+    "tags": ["micro-app", "注入变量", "environment"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.__MICRO_APP_ENVIRONMENT__`",
+        "isCorrect": true,
+        "description": "正确。它标识子应用是否运行在 micro-app 环境。"
+      },
+      {
+        "text": "`window.__MICRO_APP_BASE_APPLICATION__`",
+        "isCorrect": false,
+        "description": "错误。那标识的是「是否为主应用」，不是「是否被嵌入」。"
+      },
+      {
+        "text": "`window.parent !== window`",
+        "isCorrect": false,
+        "description": "错误。那是判断是否处于 iframe 里（iframe 沙箱 `window.stop` 用），不是 with 环境判断。"
+      },
+      {
+        "text": "`process.env.NODE_ENV`",
+        "isCorrect": false,
+        "description": "错误。那是构建时环境变量，与运行时是否被嵌入无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 with 沙箱下，子应用顶层写 `var globalCfg = { a: 1 }`，之后 `window.globalCfg` 得到什么？",
+    "explanation": "这是 with 沙箱**最容易踩的坑**：子应用代码被包进 `with(proxyWindow){ (function(){…})() }` 这类作用域，顶层 `var`/`function` 声明落在**函数作用域**里，**并没有真正挂到 window 上**。所以 `window.globalCfg` 是 **`undefined`**（不是 `{ a: 1 }`）。凡是「声明一个全局、再用 `window.全局` 去读」的库（老 UMD/CDN 全局库）都会因此失效。",
+    "tags": ["micro-app", "with-sandbox", "顶层变量"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`undefined`——顶层声明落在函数作用域，没挂到 window",
+        "isCorrect": true,
+        "description": "正确。这是 with 沙箱经典坑，顶层声明不挂 window。"
+      },
+      {
+        "text": "`{ a: 1 }`——顶层 var 照常成为 window 属性",
+        "isCorrect": false,
+        "description": "错误。with 沙箱下顶层声明**不会**挂到 window。"
+      },
+      {
+        "text": "抛 `ReferenceError`",
+        "isCorrect": false,
+        "description": "错误。读取未定义属性返回 `undefined`，不报错。"
+      },
+      {
+        "text": "`null`",
+        "isCorrect": false,
+        "description": "错误。是 `undefined` 不是 `null`。"
+      }
+    ]
+  },
+  {
+    "stem": "在 micro-app 里为解决「顶层变量不挂 window」，webpack 侧可把库产物的挂载目标设成什么？",
+    "explanation": "官方给的三种解法之一是 webpack 把 `output.library.type` 设为 **`'window'`**，让库产物**显式挂到 window** 上（适合 dll / module federation 等打包出全局库的场景）。另两种解法：源码里手动 `window.x = x`；或用 micro-app 的**插件系统**在加载子应用代码时运行时改写。",
+    "tags": ["micro-app", "with-sandbox", "解法", "webpack"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`output.library.type` 设为 `'window'`",
+        "isCorrect": true,
+        "description": "正确。让库产物显式挂到 window，绕过顶层不挂 window 的坑。"
+      },
+      {
+        "text": "`output.libraryTarget` 设为 `'commonjs2'`",
+        "isCorrect": false,
+        "description": "错误。那把产物挂到 `module.exports`，不是 window。"
+      },
+      {
+        "text": "`output.publicPath` 设为 `'auto'`",
+        "isCorrect": false,
+        "description": "错误。那解决的是资源路径，不是全局挂载。"
+      },
+      {
+        "text": "`optimization.runtimeChunk` 设为 `'single'`",
+        "isCorrect": false,
+        "description": "错误。与顶层变量挂载无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 with 沙箱下，子应用要拿「未被代理的真实 window」，官方逃逸口是什么？",
+    "explanation": "micro-app 提供逃逸口：子应用用 **`window.rawWindow`** / **`window.rawDocument`** 拿到**未经 `Proxy` 代理的真实主应用** `window`/`document`（比如挂真正全局的监听、改主文档标题）。它们是**有意的隔离缺口**——用它意味着「我知道我在突破沙箱」，日常应避免，仅在明确需要跨界时使用。",
+    "tags": ["micro-app", "with-sandbox", "rawWindow", "逃逸"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`window.rawWindow` / `window.rawDocument`",
+        "isCorrect": true,
+        "description": "正确。这是 with 沙箱有意保留的逃逸口。"
+      },
+      {
+        "text": "`window.top` / `window.parent`",
+        "isCorrect": false,
+        "description": "错误。那是窗口层级引用，不是 micro-app 的真实对象逃逸口。"
+      },
+      {
+        "text": "`window.__MICRO_APP_BASE_APPLICATION__`",
+        "isCorrect": false,
+        "description": "错误。那是布尔标识，不是真实 window。"
+      },
+      {
+        "text": "`window.globalThis`",
+        "isCorrect": false,
+        "description": "错误。沙箱里 `globalThis` 仍是代理 window，拿不到真实对象。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的沙箱既然有了 `Proxy`，为什么还要额外套一层 `with(proxyWindow)`？",
+    "explanation": "单靠 `Proxy` 只能拦截「显式 `window.x`」的访问；但子应用源码里大量是**裸写的全局名**（`document`、`location`、`setTimeout`、自定义全局……）。**`with(proxyWindow)` 改写作用域链**，让这些裸全局名在查找时**先落到 `proxyWindow`** 而非真 `window`——这样 `Proxy` 的拦截才能覆盖到裸全局名。这也是它叫「**with 沙箱**」而非纯 proxy 沙箱的原因，代价是「顶层声明不挂 window」的坑。",
+    "tags": ["micro-app", "with-sandbox", "作用域链"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`with` 改作用域链，让裸写的全局名也先落到代理 window，`Proxy` 才拦得到",
+        "isCorrect": true,
+        "description": "正确。`with` 负责收敛裸全局名的查找，与 `Proxy` 配合。"
+      },
+      {
+        "text": "`with` 用来提升子应用执行性能",
+        "isCorrect": false,
+        "description": "错误。`with` 反而不利于性能，作用是改作用域而非提速。"
+      },
+      {
+        "text": "`with` 负责在卸载时自动清空全局变量",
+        "isCorrect": false,
+        "description": "错误。清理靠卸载时回收代理，不是 `with` 干的。"
+      },
+      {
+        "text": "`with` 是为了兼容不支持 `Proxy` 的浏览器",
+        "isCorrect": false,
+        "description": "错误。`Proxy` 必须原生支持，`with` 不能替代它。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 注入的 `__MICRO_APP_BASE_APPLICATION__` 变量，是用来标识什么的？",
+    "explanation": "`window.__MICRO_APP_BASE_APPLICATION__` 标识**当前是否为「主应用」**（执行过 `start()` 后为真）。当主/子应用**共用同一份代码**时，可用它分支处理——主应用里为真、被当子应用嵌入时为假。它和 `__MICRO_APP_ENVIRONMENT__`（是否被嵌入）、`__MICRO_APP_NAME__`（应用名）、`__MICRO_APP_PUBLIC_PATH__`（publicPath）、`__MICRO_APP_BASE_ROUTE__`（路由 base）一起构成注入的约定全局变量集。",
+    "tags": ["micro-app", "注入变量", "base-application"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "标识当前是否为主应用（`start()` 后为真），供主子共用代码时分支",
+        "isCorrect": true,
+        "description": "正确。它区分主应用与被嵌入的子应用上下文。"
+      },
+      {
+        "text": "标识子应用的基础路由 base",
+        "isCorrect": false,
+        "description": "错误。那是 `__MICRO_APP_BASE_ROUTE__`。"
+      },
+      {
+        "text": "标识子应用的 publicPath",
+        "isCorrect": false,
+        "description": "错误。那是 `__MICRO_APP_PUBLIC_PATH__`。"
+      },
+      {
+        "text": "标识 micro-app 的版本号",
+        "isCorrect": false,
+        "description": "错误。它不表示版本号。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 with 沙箱与 qiankun 的 proxySandbox 都用 `Proxy` 造假 window，最关键的机制差别在哪？",
+    "explanation": "两者是「近亲」——**都是「用 `Proxy` 造假 window 的软隔离」**（防意外不防恶意、卸载回收代理）。关键差别是：**micro-app 额外套了 `with(proxyWindow)` 改写作用域链**收敛裸全局名的查找，qiankun 的 proxySandbox 无 `with`、靠打包/执行时注入 `window` 变量。代价对称：micro-app 因 `with` 有「顶层 `var`/`function` 不挂 window」的坑。",
+    "tags": ["micro-app", "with-sandbox", "qiankun", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "micro-app 额外用 `with` 改作用域链，qiankun proxySandbox 无 `with`",
+        "isCorrect": true,
+        "description": "正确。差别就在 micro-app 叠了 `with` 这一层。"
+      },
+      {
+        "text": "micro-app 用 `Proxy`、qiankun 用快照 diff，机制完全不同",
+        "isCorrect": false,
+        "description": "错误。qiankun 的 proxySandbox 同样是 `Proxy`，快照是其另一种 legacy 沙箱。"
+      },
+      {
+        "text": "micro-app 是物理隔离、qiankun 是软隔离",
+        "isCorrect": false,
+        "description": "错误。with 沙箱与 proxySandbox 都是软隔离。"
+      },
+      {
+        "text": "micro-app 不回收代理、qiankun 卸载回收",
+        "isCorrect": false,
+        "description": "错误。两者卸载都回收代理。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `disable-sandbox` 属性能关 JS 沙箱，官方对此持什么态度、关掉会怎样？",
+    "explanation": "`disable-sandbox` 能关闭 JS 沙箱，但**官方不推荐**——关掉后**全局隔离失效**，子应用的全局变量会污染主应用真 `window`，多实例/通信也要改用 `EventCenterForMicroApp` 手动隔离。此外 micro-app 依赖 **`Proxy`（必须原生、不可 polyfill）**，这是它除 IE 外全兼容、但**必须 Proxy** 的根因；`Proxy` 正是 with 沙箱的实现基石。",
+    "tags": ["micro-app", "disable-sandbox", "proxy"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "官方不推荐，关掉会丢失隔离、全局互相污染",
+        "isCorrect": true,
+        "description": "正确。关沙箱等于放弃全局隔离，官方不推荐。"
+      },
+      {
+        "text": "官方推荐关掉以提升性能，无副作用",
+        "isCorrect": false,
+        "description": "错误。官方不推荐，且关掉有丢隔离的副作用。"
+      },
+      {
+        "text": "关掉后自动切换到 iframe 沙箱兜底",
+        "isCorrect": false,
+        "description": "错误。不会自动切换，是彻底没有 JS 沙箱。"
+      },
+      {
+        "text": "关掉只影响样式隔离，JS 隔离仍在",
+        "isCorrect": false,
+        "description": "错误。`disable-sandbox` 关的正是 JS 沙箱。"
+      }
+    ]
+  },
+  {
+    "stem": "从执行机制上讲，micro-app 的 with 沙箱里子应用顶层 `var`/`function` 为何偏偏不挂到 `window`？",
+    "explanation": "正常浏览器里，顶层 `var x`/`function f(){}` 会因**全局代码在全局作用域执行**而成为 `window` 的属性。但 micro-app 把子应用代码包进 **`with(proxyWindow){ (function(){ … })() }`** 这类结构——代码实际在**一个函数作用域内**执行，顶层 `var`/`function` 声明按 JS 规则**绑定到该函数作用域**（而非全局对象），因此并没有真正挂到（代理的）window 上。`with` 只改「读取」全局名的查找链，改变不了「声明」的绑定归属，这就是坑的根因。",
+    "tags": ["micro-app", "with-sandbox", "作用域", "机制"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "代码被包进函数作用域执行，`var`/`function` 声明绑定到函数作用域而非全局对象",
+        "isCorrect": true,
+        "description": "正确。声明的绑定归属由作用域决定，`with` 改不了它。"
+      },
+      {
+        "text": "`Proxy` 的 `set` 拦截主动拦截了顶层声明的写入",
+        "isCorrect": false,
+        "description": "错误。顶层声明不经 `set`，是作用域绑定问题不是拦截问题。"
+      },
+      {
+        "text": "`with` 语句会把顶层声明重定向到 `rawWindow`",
+        "isCorrect": false,
+        "description": "错误。`with` 不会把声明重定向到真实 window。"
+      },
+      {
+        "text": "顶层声明被 micro-app 在编译时删除了",
+        "isCorrect": false,
+        "description": "错误。声明并未被删除，只是绑定到了函数作用域。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 要为某个子应用启用 iframe 沙箱，最简单的开启方式是什么？",
+    "explanation": "iframe 沙箱是 **1.0 起新增的可选强隔离模式**，默认仍是 with 沙箱。开启只需**加一个 `iframe` 属性**：`<micro-app name url iframe></micro-app>`；或全局 `microApp.start({ iframe: true })` 让所有子应用都用。切换成本极低——只是把「JS 跑在代理 window 还是 iframe 原生 window」这一层换掉。",
+    "tags": ["micro-app", "iframe-sandbox", "开启"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "给 `<micro-app>` 加 `iframe` 属性，或全局 `start({ iframe: true })`",
+        "isCorrect": true,
+        "description": "正确。一个 `iframe` 属性即切换到 iframe 沙箱。"
+      },
+      {
+        "text": "把子应用用 `<iframe>` 标签手动包起来",
+        "isCorrect": false,
+        "description": "错误。无需手动包 iframe，micro-app 内部管理。"
+      },
+      {
+        "text": "设置 `router-mode='iframe'`",
+        "isCorrect": false,
+        "description": "错误。`router-mode` 无 `iframe` 值，那是虚拟路由模式。"
+      },
+      {
+        "text": "安装额外的 `@micro-zoe/iframe-sandbox` 插件",
+        "isCorrect": false,
+        "description": "错误。无此包，iframe 沙箱是内置能力。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 iframe 沙箱相比默认 with 沙箱，隔离性质上的根本提升是什么？",
+    "explanation": "iframe 沙箱把子应用 JS 注入一个**同域 iframe** 里跑，拿 iframe **原生的** `window`/`document`/`history`/`location`——是**物理隔离**，比 with「`Proxy` 造假 window」的**软隔离**强。全局变量、定时器、事件、路由栈全在 iframe 自己的上下文里。代价是同域约束与每应用一个 iframe 的开销。",
+    "tags": ["micro-app", "iframe-sandbox", "物理隔离"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "从软隔离升级为物理隔离（iframe 原生上下文）",
+        "isCorrect": true,
+        "description": "正确。iframe 拿原生 window，是物理隔离。"
+      },
+      {
+        "text": "从物理隔离降级为软隔离以提升性能",
+        "isCorrect": false,
+        "description": "错误。方向说反了，iframe 是更强的物理隔离。"
+      },
+      {
+        "text": "隔离强度不变，只是换了实现写法",
+        "isCorrect": false,
+        "description": "错误。iframe 沙箱隔离明显更强。"
+      },
+      {
+        "text": "增加了对 IE 的兼容",
+        "isCorrect": false,
+        "description": "错误。micro-app 除 IE 外全支持，iframe 沙箱也不兼容 IE。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 开启 iframe 沙箱后，子应用的真实 DOM 渲染在哪里？",
+    "explanation": "**关键点**：即便开了 iframe 沙箱，子应用的 **DOM 仍渲染在 `<micro-app>` 元素里**（不是渲染在 iframe 内）。iframe 只当「**JS 运行时**」，micro-app 依旧靠 CustomElement 容器承载视图。这与 wujie「JS 在 iframe、DOM 在 `<wujie>` WebComponent」的分工相通。",
+    "tags": ["micro-app", "iframe-sandbox", "dom"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "仍在 `<micro-app>` 元素内，iframe 只当 JS 运行时",
+        "isCorrect": true,
+        "description": "正确。DOM 不进 iframe，iframe 只跑 JS。"
+      },
+      {
+        "text": "渲染在 iframe 内部，与 JS 一起",
+        "isCorrect": false,
+        "description": "错误。DOM 仍在 `<micro-app>` 元素里，不进 iframe。"
+      },
+      {
+        "text": "渲染在一个新的 `shadowRoot` 里",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认不用 Shadow DOM。"
+      },
+      {
+        "text": "渲染在 `document.body` 末尾的浮层里",
+        "isCorrect": false,
+        "description": "错误。就在 `<micro-app>` 元素内部渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 iframe 沙箱有一条硬约束：这个 iframe 必须与主应用满足什么条件？",
+    "explanation": "**同域是硬约束**：iframe 必须与主应用**同源**，micro-app 才能桥接、通信、互访 `window`；**跨域会被浏览器同源策略（SOP）拦死**。这也是 iframe 沙箱「初始化误载主应用资源」坑的来源——因为它本就是个真同域 iframe。",
+    "tags": ["micro-app", "iframe-sandbox", "同域"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "必须与主应用同源（同域）",
+        "isCorrect": true,
+        "description": "正确。同域才能桥接与通信，跨域被 SOP 拦死。"
+      },
+      {
+        "text": "必须与子应用 `url` 同源即可，与主应用无关",
+        "isCorrect": false,
+        "description": "错误。约束是与**主应用**同域。"
+      },
+      {
+        "text": "必须跨域以触发沙箱隔离",
+        "isCorrect": false,
+        "description": "错误。跨域会被同源策略拦死，恰恰不行。"
+      },
+      {
+        "text": "域名无所谓，micro-app 用 `postMessage` 绕过",
+        "isCorrect": false,
+        "description": "错误。同域是硬约束，不能绕。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 iframe 沙箱初始化可能「误加载主应用资源」，用 `iframeSrc` 的解法是指向什么？",
+    "explanation": "因为是同域 iframe、初始 src 可能落到主应用上下文，导致主应用脚本在子应用 iframe 里**重复执行、报错**。解法 A：建一个几乎空的 `empty.html`，用 **`iframeSrc` 让沙箱 iframe 初始化指向它**（`microApp.start({ iframe: true, iframeSrc: location.origin + '/empty.html' })`），避免加载多余内容。",
+    "tags": ["micro-app", "iframe-sandbox", "iframeSrc", "坑"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "指向一个同域的空白页面（如 `empty.html`），避免误载主应用资源",
+        "isCorrect": true,
+        "description": "正确。用同域空页做干净的初始页。"
+      },
+      {
+        "text": "指向子应用的 `url`，让 iframe 直接加载子应用",
+        "isCorrect": false,
+        "description": "错误。那反而会重复加载，DOM 也不该在 iframe 内。"
+      },
+      {
+        "text": "指向 `about:blank`（跨上下文，无法桥接）",
+        "isCorrect": false,
+        "description": "错误。官方给的是同域空页而非 `about:blank`。"
+      },
+      {
+        "text": "指向主应用首页以复用其资源",
+        "isCorrect": false,
+        "description": "错误。恰恰要避开主应用资源，指向主应用首页会重复执行。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 iframe 沙箱另一解法是在主应用 `<head>` 最前插脚本，它的判断与动作是什么？",
+    "explanation": "解法 B：在主应用 `index.html` 的 `<head>` **最前面**插脚本——`if (window.parent !== window) { window.stop() }`。因为**沙箱 iframe 里 `window.parent !== window`**（不是顶层窗口），一旦命中就 `window.stop()` **立刻停止加载**，阻止主应用内容在子应用 iframe 里继续加载执行。",
+    "tags": ["micro-app", "iframe-sandbox", "window.stop"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`if (window.parent !== window) { window.stop() }`——非顶层窗口就停止加载",
+        "isCorrect": true,
+        "description": "正确。iframe 内 `parent !== window`，命中即 `window.stop()`。"
+      },
+      {
+        "text": "`if (window.top === window) { window.stop() }`——顶层窗口就停止",
+        "isCorrect": false,
+        "description": "错误。判断反了，顶层窗口不该停。"
+      },
+      {
+        "text": "`window.close()` 直接关闭 iframe",
+        "isCorrect": false,
+        "description": "错误。用的是 `window.stop()` 停止加载，不是 `close()`。"
+      },
+      {
+        "text": "`document.write('')` 清空文档",
+        "isCorrect": false,
+        "description": "错误。解法是 `window.stop()`，不是清空文档。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 在 with 与 iframe 沙箱之间取舍，本质是在权衡哪两件事？",
+    "explanation": "选 with 还是 iframe，本质是**「兼容/性能」与「隔离强度」的权衡**：with 沙箱**性能好、兼容广、无 iframe 开销**，但软隔离、有「顶层变量不挂 window」的坑；iframe 沙箱**隔离更强**（`document`/`location`/`history` 都独立、顶层变量接近原生），但**有 iframe 创建/常驻开销、受同域约束、部分 API 行为差异**。",
+    "tags": ["micro-app", "iframe-sandbox", "取舍"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "「兼容/性能」与「隔离强度」的权衡",
+        "isCorrect": true,
+        "description": "正确。with 换性能兼容，iframe 换隔离强度。"
+      },
+      {
+        "text": "「打包体积」与「首屏速度」的权衡",
+        "isCorrect": false,
+        "description": "错误。取舍维度不是打包体积与首屏。"
+      },
+      {
+        "text": "「SEO 友好」与「SSR 支持」的权衡",
+        "isCorrect": false,
+        "description": "错误。与 SEO/SSR 无关。"
+      },
+      {
+        "text": "「兼容 IE」与「兼容移动端」的权衡",
+        "isCorrect": false,
+        "description": "错误。两种沙箱都不支持 IE。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 官方建议「默认留在 with 沙箱」，命中哪种情况才考虑切 iframe？",
+    "explanation": "决策清单——命中任一再切 iframe：① **顽固的全局污染/顶层变量问题**（with「顶层 var/function 不挂 window」的坑在某些三方库上绕不过去）；② **强隔离诉求**（子应用来源不完全可信、或需独立 `history`/`location`）；③ **with 沙箱跑不通**（个别子应用兼容问题，官方原话「with 沙箱不工作时」用 iframe 兜底）。大多数内部可信、追求性能的场景应留在默认 with。",
+    "tags": ["micro-app", "iframe-sandbox", "决策"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "with 沙箱下顶层变量污染绕不过、或子应用需要强隔离/独立 history 时",
+        "isCorrect": true,
+        "description": "正确。这些是官方给的切 iframe 判据。"
+      },
+      {
+        "text": "子应用体积很大、想减小打包产物时",
+        "isCorrect": false,
+        "description": "错误。切沙箱与打包体积无关。"
+      },
+      {
+        "text": "想让子应用支持 IE 时",
+        "isCorrect": false,
+        "description": "错误。iframe 沙箱同样不支持 IE。"
+      },
+      {
+        "text": "子应用需要更快首屏时（iframe 更快）",
+        "isCorrect": false,
+        "description": "错误。iframe 有创建/常驻开销，对首屏不利。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 iframe 沙箱把「JS 放 iframe、DOM 放 `<micro-app>`」拆开，这分工与哪个框架的默认设计相通？",
+    "explanation": "micro-app 的 iframe 沙箱里，**iframe 只当「JS 运行时」，DOM 仍在 `<micro-app>` 元素里**——这与 **wujie「JS 在 iframe、DOM 在 `<wujie>` WebComponent」**的分工相通。差别是：wujie 天生 iframe-only（默认就走这条路），micro-app 是「with 为主、iframe 可选」。两者都用同域 iframe 拿物理隔离。",
+    "tags": ["micro-app", "iframe-sandbox", "wujie", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "与 wujie 的「JS 在 iframe、DOM 在 WebComponent」分工相通",
+        "isCorrect": true,
+        "description": "正确。都把 JS 与 DOM 分置于 iframe 与容器元素。"
+      },
+      {
+        "text": "与 qiankun 的「JS 与 DOM 都在 Proxy 沙箱内」相同",
+        "isCorrect": false,
+        "description": "错误。qiankun 无 iframe，机制不同。"
+      },
+      {
+        "text": "与 single-spa 的「只做路由编排、不隔离」相同",
+        "isCorrect": false,
+        "description": "错误。single-spa 不做隔离。"
+      },
+      {
+        "text": "与 Module Federation 的「运行时加载远程模块」相同",
+        "isCorrect": false,
+        "description": "错误。MF 是模块共享，不是沙箱分工。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app「双沙箱可选」带来一条低成本的工程路径，它具体指什么？",
+    "explanation": "因为 `iframe` 属性**只切换「JS 沙箱的实现」、其余能力与用法完全不变**，「选 with 还是 iframe」是一个**局部决策**——不需要为切沙箱重写通信、路由或样式代码。于是「**先用 with 快速跑通、遇到隔离问题再局部切 iframe**」成为低成本的渐进路径，这也是 micro-app 相对 wujie「iframe only」的灵活之处。",
+    "tags": ["micro-app", "iframe-sandbox", "渐进"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先用 with 快速跑通，遇到隔离问题再局部切 iframe，其余代码不用改",
+        "isCorrect": true,
+        "description": "正确。切沙箱是局部决策，渐进路径成本低。"
+      },
+      {
+        "text": "先用 iframe 保证隔离，稳定后再切回 with 提速（需重写通信）",
+        "isCorrect": false,
+        "description": "错误。切换本就不需重写通信，且路径方向通常相反。"
+      },
+      {
+        "text": "同一子应用同时开 with 和 iframe 双沙箱叠加",
+        "isCorrect": false,
+        "description": "错误。二选一，不是叠加。"
+      },
+      {
+        "text": "用 with 沙箱做开发、iframe 沙箱做生产的强制约定",
+        "isCorrect": false,
+        "description": "错误。无此强制约定。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 从 with 切到 iframe 沙箱，为什么说对上层「近乎透明」、几乎不用改其他代码？",
+    "explanation": "因为 `iframe` 属性**只切换「JS 隔离的实现」这一层**，micro-app 的**其余能力全部不变**：DOM 仍渲染在 `<micro-app>` 元素内、样式隔离仍走 scopedcss、元素隔离仍是 DOM 作用域代理（`removeDomScope` 一致）、数据通信仍是同一套 `window.microApp` API、生命周期事件与虚拟路由 `microApp.router` 都不受沙箱选择影响。所以切沙箱是**局部替换**，通信/路由/样式代码原样保留——这正是「近乎透明」的含义。",
+    "tags": ["micro-app", "iframe-sandbox", "机制", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只有「JS 隔离」这一层被替换，DOM 位置/样式/元素隔离/通信/路由/生命周期都不变",
+        "isCorrect": true,
+        "description": "正确。切沙箱只换 JS 隔离层，上层能力全不变。"
+      },
+      {
+        "text": "因为 iframe 沙箱会自动把旧的通信/路由代码迁移改写",
+        "isCorrect": false,
+        "description": "错误。不存在迁移改写，是这些能力本就不依赖沙箱选择。"
+      },
+      {
+        "text": "因为切换后 micro-app 会重新编译整个子应用",
+        "isCorrect": false,
+        "description": "错误。不会重新编译子应用。"
+      },
+      {
+        "text": "因为 with 和 iframe 沙箱共用同一个假 window 对象",
+        "isCorrect": false,
+        "description": "错误。iframe 用的是原生 window，不是假 window。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的元素隔离下，子应用执行 `document.querySelector('#root')` 的查找范围是什么？",
+    "explanation": "因为默认不套 Shadow DOM，micro-app 做了**元素隔离**——代理子应用里的 DOM 查询方法，**把作用域限定在 `<micro-app>` 元素这棵子树内**。所以子应用 `document.querySelector('#root')` **只在 `<micro-app>` 边界内找**，找不到主应用的 `#root`。官方定义：「元素不会逃离 `<micro-app>` 元素边界，子应用只能对自身元素增删改查」。",
+    "tags": ["micro-app", "元素隔离", "dom-scope"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只在 `<micro-app>` 元素这棵子树内查找",
+        "isCorrect": true,
+        "description": "正确。元素隔离把子应用查询圈进容器边界。"
+      },
+      {
+        "text": "在整个主文档 `document` 里查找",
+        "isCorrect": false,
+        "description": "错误。查询被圈进 `<micro-app>` 边界，查不到主应用。"
+      },
+      {
+        "text": "在一个独立的 `shadowRoot` 里查找",
+        "isCorrect": false,
+        "description": "错误。默认非 Shadow DOM，是代理查询实现的隔离。"
+      },
+      {
+        "text": "在 iframe 的 document 里查找",
+        "isCorrect": false,
+        "description": "错误。默认 with 沙箱下无 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 scopedcss 样式隔离，会把子应用的 `.test { color: red }` 改写成什么？",
+    "explanation": "样式隔离默认开启，机制是**把子应用的每条 CSS 选择器加上 `<micro-app>` 的属性前缀**（`xxx` 为子应用 `name`）：`.test {}` → **`micro-app[name=xxx] .test {}`**，让它只在本容器内生效，不污染主应用或别的子应用。这是「运行时给选择器加作用域前缀」路线的落地。",
+    "tags": ["micro-app", "scopedcss", "样式隔离"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`micro-app[name=xxx] .test { color: red }`",
+        "isCorrect": true,
+        "description": "正确。scopedcss 给选择器加 `micro-app[name=xxx]` 属性前缀。"
+      },
+      {
+        "text": "`.test[data-v-xxx] { color: red }`（scoped 属性哈希）",
+        "isCorrect": false,
+        "description": "错误。那是 Vue scoped 的做法；micro-app 用元素属性前缀。"
+      },
+      {
+        "text": "`:host .test { color: red }`（Shadow DOM 语法）",
+        "isCorrect": false,
+        "description": "错误。默认非 Shadow DOM，不用 `:host`。"
+      },
+      {
+        "text": "`.micro-app-xxx-test { color: red }`（类名哈希）",
+        "isCorrect": false,
+        "description": "错误。是加属性选择器前缀，不是把类名改写成哈希。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的元素隔离有一处「主子不对称」，具体指什么？",
+    "explanation": "**不对称**：**子应用 → 主应用不可见**（子应用查询被圈在自己边界内，碰不到主应用元素）；**主应用 → 子应用可见**（因为「主应用拥有统筹全局的作用」，主应用可正常查到、操作子应用 `<micro-app>` 内部的元素）。这与真 Shadow DOM 的**双向封闭**不同——那是里外都互不可见。",
+    "tags": ["micro-app", "元素隔离", "不对称"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "主应用能访问子应用元素，子应用不能访问主应用元素",
+        "isCorrect": true,
+        "description": "正确。主可访子、子不可访主的单向关系。"
+      },
+      {
+        "text": "子应用能访问主应用元素，主应用不能访问子应用元素",
+        "isCorrect": false,
+        "description": "错误。方向说反了。"
+      },
+      {
+        "text": "主子互相都不可见（双向封闭）",
+        "isCorrect": false,
+        "description": "错误。那是真 Shadow DOM 的双向封闭，不是 micro-app。"
+      },
+      {
+        "text": "主子互相都可见（无隔离）",
+        "isCorrect": false,
+        "description": "错误。子应用访问被圈住，不是无隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 想对某一个子应用整体关闭样式隔离，用哪个标签属性？",
+    "explanation": "关样式隔离有四级粒度，其中**单应用级**用 `<micro-app disable-scopecss>` 属性（只这个子应用不隔离）；**全局级**用 `microApp.start({ disableScopecss: true })`（所有子应用都不隔离）。更细的还有文件级 `/*! scopecss-disable */`、行级 `/*! scopecss-disable-next-line */`。",
+    "tags": ["micro-app", "scopedcss", "disable-scopecss"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`disable-scopecss` 属性",
+        "isCorrect": true,
+        "description": "正确。单应用级用 `disable-scopecss` 属性关样式隔离。"
+      },
+      {
+        "text": "`disable-sandbox` 属性",
+        "isCorrect": false,
+        "description": "错误。那关的是 JS 沙箱，不是样式隔离。"
+      },
+      {
+        "text": "`shadowDOM` 属性",
+        "isCorrect": false,
+        "description": "错误。那是开更强的样式隔离，方向相反。"
+      },
+      {
+        "text": "`no-style` 属性",
+        "isCorrect": false,
+        "description": "错误。无此属性。"
+      }
+    ]
+  },
+  {
+    "stem": "在 micro-app 里，子应用想临时让 DOM 操作指向主应用（如挂全局弹层），用哪个 API？",
+    "explanation": "元素隔离的**逃逸口是 `removeDomScope`**：`removeDomScope(true)` **解绑作用域**（后续 DOM 操作指向主应用）、`removeDomScope(false)` **恢复绑定**。子应用侧用 `window.microApp.removeDomScope(true/false)`，主应用侧从包里 `import { removeDomScope }`。适合子应用要往主应用 `document.body` 挂真正全局的弹层等场景。",
+    "tags": ["micro-app", "元素隔离", "removeDomScope"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`removeDomScope(true)` 解绑、`removeDomScope(false)` 恢复",
+        "isCorrect": true,
+        "description": "正确。它是元素作用域的解绑/恢复逃逸口。"
+      },
+      {
+        "text": "`disableScopecss()`",
+        "isCorrect": false,
+        "description": "错误。那关的是样式隔离，不是元素作用域。"
+      },
+      {
+        "text": "`rawDocument.appendChild()` 直接绕过（无法恢复作用域）",
+        "isCorrect": false,
+        "description": "错误。题问的是解绑作用域 API，正解是 `removeDomScope`。"
+      },
+      {
+        "text": "`shadowRoot.host`（Shadow DOM 才有）",
+        "isCorrect": false,
+        "description": "错误。默认非 Shadow DOM，无 `shadowRoot`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 已给子应用样式加了前缀，为何官方仍说「主应用的样式依然会影响子应用」？",
+    "explanation": "因为 scopedcss **只改写了「子应用的样式」**（给它加前缀圈住），它**管不到主应用**——主应用的全局样式（尤其 `*`、标签选择器、`body`/`a`/`h1` 这类）会照常**下渗**到 `<micro-app>` 内部的子应用元素上。这是**单向隔离**：圈住子应用、但挡不住主应用下渗。对策是主应用样式收敛 + 子应用 CSS Modules。",
+    "tags": ["micro-app", "scopedcss", "样式下渗"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "scopedcss 只圈子应用样式，主应用全局样式不受它约束、照常下渗",
+        "isCorrect": true,
+        "description": "正确。这是 micro-app 样式隔离的单向边界。"
+      },
+      {
+        "text": "scopedcss 前缀写错了会失效，属于 bug",
+        "isCorrect": false,
+        "description": "错误。这是设计边界不是 bug。"
+      },
+      {
+        "text": "因为子应用没开 `disable-scopecss`",
+        "isCorrect": false,
+        "description": "错误。恰恰开着隔离才有前缀，主应用下渗仍在。"
+      },
+      {
+        "text": "因为主应用也被加了子应用的前缀",
+        "isCorrect": false,
+        "description": "错误。主应用样式不被改写，正因如此才会下渗。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 用 CSS 注释做样式放行，为什么注释必须写成 `/*! scopecss-disable */` 带感叹号？",
+    "explanation": "控制注释必须以 **`/*!`（带感叹号）** 开头。因为**构建压缩（cssnano 的 `discardComments`）默认会删掉普通 `/* */` 注释**，只有 `/*!` 这类「重要注释（important comments）」会被保留——若写成普通注释，隔离开关在**生产构建里就没了**。这是文件级/选择器级/行级放行注释的共同要求。",
+    "tags": ["micro-app", "scopedcss", "注释", "cssnano"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`/*!` 是「重要注释」，cssnano 压缩时会保留它，普通注释会被删掉",
+        "isCorrect": true,
+        "description": "正确。`/*!` 躲过 `discardComments`，注释在生产构建里才不丢。"
+      },
+      {
+        "text": "`/*!` 是 CSS 规范里唯一合法的注释写法",
+        "isCorrect": false,
+        "description": "错误。普通 `/* */` 也合法，只是会被压缩删除。"
+      },
+      {
+        "text": "`!` 表示 `!important`，提升选择器优先级",
+        "isCorrect": false,
+        "description": "错误。这里的 `!` 与 `!important` 无关。"
+      },
+      {
+        "text": "`/*!` 是 micro-app 私有语法，浏览器不认",
+        "isCorrect": false,
+        "description": "错误。`/*!` 是通用的重要注释约定，浏览器/压缩器都认。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 提供可选的 `shadowDOM` 属性做更强隔离，它为何不是默认、有什么代价？",
+    "explanation": "开 `shadowDOM` 后子应用渲染进真正的 `shadowRoot`，样式获得 Shadow DOM 级封闭。但它**不是默认**，因为代价不小：**部分第三方 UI 库/弹窗依赖挂到 `document.body`，进了 Shadow DOM 会逃逸受限、定位错乱**；一些依赖全局选择器的样式方案也会失效。默认的 scopedcss 是更普适的折中，`shadowDOM` 是「明确需要强封闭且能接受副作用」时才开。",
+    "tags": ["micro-app", "shadow-dom", "代价"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "第三方弹窗/UI 库进 Shadow DOM 后会逃逸受限、定位错乱",
+        "isCorrect": true,
+        "description": "正确。这是 `shadowDOM` 不作默认的主要代价。"
+      },
+      {
+        "text": "Shadow DOM 会显著拖慢 JS 执行性能",
+        "isCorrect": false,
+        "description": "错误。主要问题是弹窗逃逸/样式失效，不是 JS 性能。"
+      },
+      {
+        "text": "Shadow DOM 不被现代浏览器支持",
+        "isCorrect": false,
+        "description": "错误。现代浏览器支持 Shadow DOM。"
+      },
+      {
+        "text": "开了 `shadowDOM` 就无法再用数据通信 API",
+        "isCorrect": false,
+        "description": "错误。通信 API 不受样式隔离方式影响。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的元素隔离达到「类似 ShadowDOM」的效果，但实现上与真 Shadow DOM 有何本质不同？",
+    "explanation": "元素隔离的效果**像 ShadowDOM**（子应用查询被圈进边界），但**实现是「代理子应用的 DOM 查询/操作方法」而非真影子树**——micro-app 代理了 `document.querySelector`/`getElementById` 等，把作用域限定在 `<micro-app>` 子树内。真 Shadow DOM 是浏览器原生的影子树边界。所以它是「模拟 ShadowDOM 的效果，用代理查询实现」。",
+    "tags": ["micro-app", "元素隔离", "shadow-dom"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "靠代理子应用的 DOM 查询方法来限定作用域，不是浏览器原生影子树",
+        "isCorrect": true,
+        "description": "正确。是代理查询模拟，而非真 Shadow DOM。"
+      },
+      {
+        "text": "就是用了真 Shadow DOM，只是 API 名字不同",
+        "isCorrect": false,
+        "description": "错误。默认并非真 Shadow DOM。"
+      },
+      {
+        "text": "靠给每个元素加 `data-micro-app` 属性做过滤",
+        "isCorrect": false,
+        "description": "错误。是代理查询方法，不是给元素打属性过滤。"
+      },
+      {
+        "text": "靠 iframe 把子应用 DOM 物理隔开",
+        "isCorrect": false,
+        "description": "错误。DOM 在 `<micro-app>` 内，不在 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 与 wujie 都号称「WebComponent 化」，在「DOM 装在哪」上二者本质区别是什么？",
+    "explanation": "**micro-app 的 `<micro-app>` 默认非 Shadow DOM**——子应用 DOM 直接挂在元素内部（Light DOM），隔离靠元素隔离 + scopedcss 自己实现；**wujie 的 `<wujie>` 真的把 DOM 塞进 `shadowRoot`**，白嫖 Shadow DOM 的天然样式封闭。这是两者最大的实现差异：micro-app「借标签、不借影子树」，wujie「标签 + 影子树都用」。",
+    "tags": ["micro-app", "shadow-dom", "wujie", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "micro-app 默认把 DOM 挂在 Light DOM，wujie 真的塞进 `shadowRoot`",
+        "isCorrect": true,
+        "description": "正确。借标签不借影子树 vs 标签加影子树。"
+      },
+      {
+        "text": "两者都用 `shadowRoot`，只是 mode 不同",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认不用 `shadowRoot`。"
+      },
+      {
+        "text": "micro-app 用 `shadowRoot`，wujie 用 Light DOM",
+        "isCorrect": false,
+        "description": "错误。说反了。"
+      },
+      {
+        "text": "两者都用 Light DOM，靠 scopedcss 隔离",
+        "isCorrect": false,
+        "description": "错误。wujie 用的是 `shadowRoot`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 里偶尔出现「主应用元素被错误插入子应用内部」，通常成因与纠正手段是什么？",
+    "explanation": "由于**元素作用域的绑定/解绑是异步管理的**，偶尔会出现主应用创建的元素被错误插入子应用边界内的「元素错位」。遇到这类错位，通常就是要**在恰当时机显式调用 `removeDomScope`** 来纠正 DOM 操作的指向（解绑到主应用）。这属于元素隔离的边角坑，理解「作用域异步管理」即可对症。",
+    "tags": ["micro-app", "元素隔离", "removeDomScope", "坑"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "作用域绑定/解绑是异步的导致错位，在恰当时机显式 `removeDomScope` 纠正",
+        "isCorrect": true,
+        "description": "正确。异步管理引发错位，用 `removeDomScope` 纠正指向。"
+      },
+      {
+        "text": "子应用 `url` 配错导致，改 `url` 即可",
+        "isCorrect": false,
+        "description": "错误。与 `url` 无关，是作用域异步管理问题。"
+      },
+      {
+        "text": "必须开 `shadowDOM` 才能避免",
+        "isCorrect": false,
+        "description": "错误。靠 `removeDomScope` 纠正即可，不必开 Shadow DOM。"
+      },
+      {
+        "text": "是浏览器 bug，无法规避",
+        "isCorrect": false,
+        "description": "错误。可用 `removeDomScope` 显式纠正。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 默认不用 Shadow DOM，改用「元素隔离 + scopedcss」，在「隔离方向」上付出的本质代价是什么？",
+    "explanation": "真 Shadow DOM 是**双向封闭**（里外样式/元素互不影响）；micro-app 的默认方案是**单向隔离**——scopedcss 给子应用选择器加前缀能「**圈住子应用、不让它外泄**」，但**管不到主应用**，于是**主应用全局样式仍会下渗子应用**；元素隔离同理是「子不可访主、主可访子」的单向。付出的本质代价就是「**挡得住子应用外泄、挡不住主应用下渗**」，工程上靠主应用样式收敛 + 子应用 CSS Modules 补，而这正是换取「免去 Shadow DOM 兼容代价（弹窗逃逸等）」的折中。",
+    "tags": ["micro-app", "shadow-dom", "隔离", "机制"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "隔离变成单向：圈得住子应用外泄，却挡不住主应用样式/访问下渗",
+        "isCorrect": true,
+        "description": "正确。单向隔离是不用 Shadow DOM 的本质代价。"
+      },
+      {
+        "text": "隔离完全失效，主子样式毫无边界",
+        "isCorrect": false,
+        "description": "错误。子应用外泄是被圈住的，不是完全失效。"
+      },
+      {
+        "text": "隔离变成双向封闭，比 Shadow DOM 还强",
+        "isCorrect": false,
+        "description": "错误。是单向，弱于 Shadow DOM 的双向封闭。"
+      },
+      {
+        "text": "只隔离 JS 不隔离样式",
+        "isCorrect": false,
+        "description": "错误。样式有 scopedcss 圈子应用，只是单向。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 主应用给子应用「下行」传数据，最声明式的方式是在 `<micro-app>` 上绑哪个属性？",
+    "explanation": "**声明式下行**：在 `<micro-app :data='obj'>` 上绑定 `data` 属性，**数据变化自动下发给子应用**。命令式则用 `microApp.setData(name, data, cb)`。注意 **`data` 只接受对象**。这是父子解耦的主通道，下行数据变化会触发子应用的数据监听器。",
+    "tags": ["micro-app", "通信", "data", "下行"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`data` 属性（`:data='obj'`，只接受对象）",
+        "isCorrect": true,
+        "description": "正确。`data` 是声明式下行的主通道。"
+      },
+      {
+        "text": "`props` 属性",
+        "isCorrect": false,
+        "description": "错误。`props` 是 wujie 的注入方式，micro-app 用 `data`。"
+      },
+      {
+        "text": "`state` 属性",
+        "isCorrect": false,
+        "description": "错误。micro-app 无 `state` 通信属性。"
+      },
+      {
+        "text": "`payload` 属性",
+        "isCorrect": false,
+        "description": "错误。micro-app 无 `payload` 属性。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 子应用要读取主应用下发的数据并订阅变化，用注入的哪个对象、什么方法？",
+    "explanation": "子应用通过注入的全局对象 **`window.microApp`** 收数据：**`window.microApp.getData()`** 一次性拿当前值；**`window.microApp.addDataListener(fn, autoTrigger)`** 订阅变化（`autoTrigger=true` 会立即用当前值触发一次）。不再需要时用 `removeDataListener`/`clearDataListener` 解绑防泄漏。",
+    "tags": ["micro-app", "通信", "getData", "addDataListener"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.microApp.getData()` 取值、`window.microApp.addDataListener(fn)` 订阅",
+        "isCorrect": true,
+        "description": "正确。子应用侧走注入的 `window.microApp`。"
+      },
+      {
+        "text": "`window.parent.getData()`",
+        "isCorrect": false,
+        "description": "错误。那是访问父窗口，子应用用注入的 `window.microApp`。"
+      },
+      {
+        "text": "`this.$emit('getData')`",
+        "isCorrect": false,
+        "description": "错误。收数据不是靠框架事件。"
+      },
+      {
+        "text": "`microApp.getData()`（主应用侧 API）",
+        "isCorrect": false,
+        "description": "错误。那是主应用侧；子应用侧用 `window.microApp.getData()`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 子应用要把数据「上行」派发回主应用，用 `window.microApp` 上的哪个方法？",
+    "explanation": "**子 → 父（上行）**用 **`window.microApp.dispatch(data, callback)`** 把数据派发回主应用；相同数据默认不重复触发，需要强制时用 `forceDispatch`。主应用侧可监听 `<micro-app>` 的 `datachange` 事件，或用 `microApp.addDataListener(name, fn)` 接收。",
+    "tags": ["micro-app", "通信", "dispatch", "上行"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.microApp.dispatch(data, cb)`",
+        "isCorrect": true,
+        "description": "正确。`dispatch` 是子应用上行派发数据的方法。"
+      },
+      {
+        "text": "`window.microApp.setData(data)`",
+        "isCorrect": false,
+        "description": "错误。`setData` 是主应用给子应用下发，不是子应用上行。"
+      },
+      {
+        "text": "`window.postMessage(data)`",
+        "isCorrect": false,
+        "description": "错误。micro-app 用 `dispatch`，不是 postMessage。"
+      },
+      {
+        "text": "`window.microApp.emit(data)`",
+        "isCorrect": false,
+        "description": "错误。无 `emit` 方法，上行是 `dispatch`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 要广播一份「所有应用都能读到」的全局数据，用哪组 API？",
+    "explanation": "**全局数据**用 `microApp.setGlobalData({…})` 写入、`getGlobalData()` 读、`addGlobalDataListener(fn)` 订阅——**跨所有应用广播**，子应用侧走 `window.microApp.setGlobalData/...`。适合登录态、主题、语言这类全局共享，但用多了会变「隐形全局状态」，建议只放真正全局的少量状态。",
+    "tags": ["micro-app", "通信", "globalData"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`microApp.setGlobalData` / `getGlobalData` / `addGlobalDataListener`",
+        "isCorrect": true,
+        "description": "正确。这组 API 跨所有应用广播全局数据。"
+      },
+      {
+        "text": "`microApp.setData` / `getData`",
+        "isCorrect": false,
+        "description": "错误。那是父子定向通信，不是全局广播。"
+      },
+      {
+        "text": "`localStorage.setItem`",
+        "isCorrect": false,
+        "description": "错误。那是浏览器存储，不是 micro-app 的通信广播。"
+      },
+      {
+        "text": "`microApp.dispatch`",
+        "isCorrect": false,
+        "description": "错误。`dispatch` 是子应用上行，不是全局广播。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 中主应用连续两次 `setData` 传入相同数据、子应用监听默认不触发，想强制触发怎么办？",
+    "explanation": "micro-app 的通信默认**相同数据不重复触发**监听器（去抖）。要在相同值也强制触发时：主应用下行用 **`microApp.forceSetData(name, data)`**，子应用上行用 **`window.microApp.forceDispatch(data)`**，全局用 `forceSetGlobalData`。这组 `forceXxx` 就是为「相同值也要触发一次」的场景准备的。",
+    "tags": ["micro-app", "通信", "forceSetData"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `forceSetData`（子应用上行则用 `forceDispatch`）强制触发",
+        "isCorrect": true,
+        "description": "正确。`forceXxx` 系列用于相同值强制触发。"
+      },
+      {
+        "text": "每次传数据时改一个时间戳字段绕过（唯一手段）",
+        "isCorrect": false,
+        "description": "错误。官方有 `forceSetData`，不必用改字段的 hack。"
+      },
+      {
+        "text": "先 `clearData` 再 `setData`",
+        "isCorrect": false,
+        "description": "错误。清理不是强制触发的正解，正解是 `forceSetData`。"
+      },
+      {
+        "text": "相同数据无法触发，是设计死限制",
+        "isCorrect": false,
+        "description": "错误。`forceSetData` 可强制触发，非死限制。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 主应用接收子应用 `dispatch` 上报的数据，除了 `addDataListener`，还能在元素上监听什么事件？",
+    "explanation": "主应用侧接收上行数据有两种方式：① 在 `<micro-app>` 元素上监听 **`datachange`** 事件，`e.detail.data` 就是子应用派发的数据；② 命令式 `microApp.addDataListener('app1', fn, autoTrigger)` 订阅指定子应用，或 `microApp.getData('app1')` 主动读。",
+    "tags": ["micro-app", "通信", "datachange"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`<micro-app>` 元素上的 `datachange` 事件，读 `e.detail.data`",
+        "isCorrect": true,
+        "description": "正确。`datachange` 是接收上行数据的元素事件。"
+      },
+      {
+        "text": "`<micro-app>` 元素上的 `mounted` 事件",
+        "isCorrect": false,
+        "description": "错误。`mounted` 是生命周期事件，不携带上报数据。"
+      },
+      {
+        "text": "`window` 上的 `message` 事件",
+        "isCorrect": false,
+        "description": "错误。micro-app 不走 postMessage 的 `message` 事件。"
+      },
+      {
+        "text": "`<micro-app>` 元素上的 `dispatch` 事件",
+        "isCorrect": false,
+        "description": "错误。元素上没有 `dispatch` 事件，接收用 `datachange`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 在什么场景下父子通信不能直接用 `window.microApp`，而要改用 `EventCenterForMicroApp`？",
+    "explanation": "当子应用**关闭了沙箱**（`disable-sandbox`），或以 **UMD 多实例**方式在同页跑多份时，micro-app 注入的全局 `window.microApp` **无法为每个实例做隔离**——这时用 `new EventCenterForMicroApp(appName)` 建**独立事件中心**（`window.eventCenterForAppxx`）手动为每个应用建一套通信通道。开沙箱（默认）用 `window.microApp` 就够了。",
+    "tags": ["micro-app", "通信", "EventCenterForMicroApp"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "关沙箱（`disable-sandbox`）或 UMD 多实例，`window.microApp` 无法为每实例隔离时",
+        "isCorrect": true,
+        "description": "正确。这类特殊场景才需要独立事件中心。"
+      },
+      {
+        "text": "任何父子通信都必须用它，`window.microApp` 已废弃",
+        "isCorrect": false,
+        "description": "错误。默认开沙箱时 `window.microApp` 就够了。"
+      },
+      {
+        "text": "只在跨域子应用时才需要",
+        "isCorrect": false,
+        "description": "错误。与跨域无关，是关沙箱/多实例场景。"
+      },
+      {
+        "text": "只在 iframe 沙箱模式下才需要",
+        "isCorrect": false,
+        "description": "错误。与是否 iframe 沙箱无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `addDataListener(fn, autoTrigger)` 第二个参数传 `true` 有什么效果？",
+    "explanation": "`autoTrigger=true` 会在**注册监听的当下，立即用「当前已有的数据值」触发一次回调**。用途是：订阅者晚于数据写入才挂上监听时，不会漏掉「当前值」——注册即先跑一次拿现状，之后再随变化触发。不传或传 `false` 则只在**后续数据变化**时触发。",
+    "tags": ["micro-app", "通信", "autoTrigger"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "注册监听时立即用当前值触发一次回调，避免漏掉已有数据",
+        "isCorrect": true,
+        "description": "正确。`autoTrigger=true` 在注册时先触发一次。"
+      },
+      {
+        "text": "让监听器每隔一段时间自动轮询数据",
+        "isCorrect": false,
+        "description": "错误。不是轮询，是注册时触发一次。"
+      },
+      {
+        "text": "自动在卸载时移除该监听器",
+        "isCorrect": false,
+        "description": "错误。移除靠 `removeDataListener`，与它无关。"
+      },
+      {
+        "text": "强制相同数据也触发",
+        "isCorrect": false,
+        "description": "错误。相同值强制触发是 `forceXxx` 的职责。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 中主应用想让子应用「跳到某个路由页」，按官方分工正确做法是什么？",
+    "explanation": "micro-app 的设计是**「传值归通信 API、导航归 `microApp.router`」**：要让子应用跳页/控制路由，用 **`microApp.router.push({ name, path })`** / `replace` / `go` / `back`，或 `beforeEach`/`afterEach` 守卫。**反例是「把目标路由塞进 `data` 让子应用自己 `router.push`」**——能用但绕，会把路由混进数据流造成耦合。",
+    "tags": ["micro-app", "通信", "router", "分工"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 `microApp.router.push({ name, path })` 驱动导航",
+        "isCorrect": true,
+        "description": "正确。导航归虚拟路由 `microApp.router`。"
+      },
+      {
+        "text": "用 `microApp.setData` 把目标路由塞进 `data`，让子应用自己跳",
+        "isCorrect": false,
+        "description": "错误。这是官方反例，能用但绕、造成耦合。"
+      },
+      {
+        "text": "用 `microApp.setGlobalData` 广播路由",
+        "isCorrect": false,
+        "description": "错误。全局数据不是导航的正解。"
+      },
+      {
+        "text": "直接改 `window.location.href`",
+        "isCorrect": false,
+        "description": "错误。会破坏虚拟路由的隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的全局数据很方便，但官方建议「只放真正全局的少量状态」，为什么？",
+    "explanation": "全局数据一处写、所有应用可读可订阅，方便；但**用多了会变成「隐形全局状态」，容易埋下耦合**——谁都能改、谁都在听，数据流向变得难追踪，和定向 `data`/`dispatch`「耦合小、语义清」相反。所以只放登录态、主题、语言这类**真正全局的少量状态**，业务数据优先走父子定向通道。",
+    "tags": ["micro-app", "通信", "globalData", "取舍"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "全局数据用多了变「隐形全局状态」，埋下难追踪的耦合",
+        "isCorrect": true,
+        "description": "正确。滥用全局数据会让数据流难以追踪。"
+      },
+      {
+        "text": "全局数据有条数上限，超了会报错",
+        "isCorrect": false,
+        "description": "错误。问题是耦合，不是条数上限。"
+      },
+      {
+        "text": "全局数据不支持对象，只能存字符串",
+        "isCorrect": false,
+        "description": "错误。全局数据可存对象。"
+      },
+      {
+        "text": "全局数据在子应用卸载后会丢失",
+        "isCorrect": false,
+        "description": "错误。问题在于耦合，不是卸载丢失。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 里为什么「开沙箱」一个 `window.microApp` 就够，「关沙箱/UMD 多实例」却要每应用一套 `EventCenterForMicroApp`？",
+    "explanation": "开沙箱（默认）时，**每个子应用跑在各自的沙箱里**，micro-app 注入的 `window.microApp` 天然是「**每个沙箱一份、自带隔离**」的——通信通道随沙箱天然区分。一旦**关沙箱**（`disable-sandbox`）或**UMD 多实例同页跑多份**，多个实例**共享同一个真实 `window`**，注入的 `window.microApp` **无法再为每个实例区分**、通信会串。此时必须用 `new EventCenterForMicroApp(appName)` **按 name 手动建独立事件中心**，把「沙箱本来提供的隔离」用手动隔离补回来。",
+    "tags": ["micro-app", "通信", "EventCenterForMicroApp", "机制"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "开沙箱时 `window.microApp` 随沙箱天然每实例隔离；关沙箱/多实例共享真 window，需手动建独立通道",
+        "isCorrect": true,
+        "description": "正确。沙箱天然隔离通信，失去沙箱就得手动隔离。"
+      },
+      {
+        "text": "关沙箱后 `window.microApp` 被删除，只能换 API",
+        "isCorrect": false,
+        "description": "错误。不是被删除，是无法为多实例隔离。"
+      },
+      {
+        "text": "`EventCenterForMicroApp` 性能更好，所以多实例才用",
+        "isCorrect": false,
+        "description": "错误。用它是为了隔离，不是性能。"
+      },
+      {
+        "text": "多实例时 `window.microApp` 变成异步的，必须换同步 API",
+        "isCorrect": false,
+        "description": "错误。是隔离问题，与同步/异步无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app（`@micro-zoe/micro-app`）是由哪家公司开源的微前端框架？",
+    "explanation": "micro-app 由**京东**开源（GitHub 组织 `jd-opensource`，前身名为 **micro-zoe**，故包名仍是 `@micro-zoe/micro-app`），是京东内部微前端的主力方案之一。约 **6.2k star**、京东多条业务线在用——「大厂内部大规模生产验证」是它区别于个人项目的可靠性来源。",
+    "tags": ["micro-app", "现状", "京东"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "京东（`jd-opensource`，前身 micro-zoe）",
+        "isCorrect": true,
+        "description": "正确。micro-app 是京东开源，前身 micro-zoe。"
+      },
+      {
+        "text": "腾讯",
+        "isCorrect": false,
+        "description": "错误。腾讯出品的是 wujie。"
+      },
+      {
+        "text": "阿里",
+        "isCorrect": false,
+        "description": "错误。阿里出品的是 qiankun/icestark。"
+      },
+      {
+        "text": "字节跳动",
+        "isCorrect": false,
+        "description": "错误。字节出品的是 Garfish。"
+      }
+    ]
+  },
+  {
+    "stem": "截至 2026-07，micro-app 的版本长期停留在什么状态？",
+    "explanation": "micro-app 一个绕不开的话题：**它长期是 `1.0.0-rc`（release candidate），没有「正式的 1.0」**。2021-06 建库，此后版本号一直在 `1.0.0-rc.x` 上递增，当前最新 **`1.0.0-rc.32`（2026-06-25）**。要点是「**RC 不等于不稳定/别用**」——它更像「实际稳定、被大规模用着、只是版本号迟迟不跳到正式」。",
+    "tags": ["micro-app", "现状", "版本"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "长期停在 `1.0.0-rc`（当前 rc.32），未发正式 1.0",
+        "isCorrect": true,
+        "description": "正确。2021 建库至今仍是 1.0 的 RC。"
+      },
+      {
+        "text": "已发布稳定的 3.0 正式版",
+        "isCorrect": false,
+        "description": "错误。它长期是 1.0 RC，未转正。"
+      },
+      {
+        "text": "仍在 `0.x` 早期实验阶段",
+        "isCorrect": false,
+        "description": "错误。是 `1.0.0-rc` 而非 `0.x`。"
+      },
+      {
+        "text": "已停止维护、最后停在 rc.10",
+        "isCorrect": false,
+        "description": "错误。持续发版到 rc.32，仍活跃。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 内建的虚拟路由系统提供了几种 `router-mode`，默认是哪种？",
+    "explanation": "micro-app 的**虚拟路由系统**拦截浏览器路由、给子应用一套隔离的 `location`/`history`，核心是 **5 种 `router-mode`**：`search`（**默认**，路由投影到主应用 URL 的 query）、`native`（共享浏览器路由）、`native-scope`（类 native 但域名指向子应用自己）、`pure`（完全脱离浏览器路由）、`state`（用 `history.state` 记录、不改地址栏）。",
+    "tags": ["micro-app", "虚拟路由", "router-mode"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "5 种，默认 `search`",
+        "isCorrect": true,
+        "description": "正确。5 种 router-mode，默认 `search`。"
+      },
+      {
+        "text": "2 种，默认 `hash`",
+        "isCorrect": false,
+        "description": "错误。是 5 种，默认 `search`。"
+      },
+      {
+        "text": "3 种，默认 `history`",
+        "isCorrect": false,
+        "description": "错误。是 5 种，默认 `search`。"
+      },
+      {
+        "text": "5 种，默认 `pure`",
+        "isCorrect": false,
+        "description": "错误。种数对，但默认是 `search` 不是 `pure`。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 相比 qiankun 2.x 的一个关键优势，是对哪类子应用「原生友好」？",
+    "explanation": "qiankun 2.x 最大的痛点是 `import-html-entry` 的 eval 执行模型**接不了 `type=module`**，导致 **Vite/ESM 子应用**要么沙箱失效、要么上社区插件。micro-app **原生亲和 Vite/ESM**——Vite 子应用零沙箱插件即可接入。这与 wujie 一样，是选型「子应用用 Vite」场景下相对 qiankun 的关键优势。",
+    "tags": ["micro-app", "vite", "esm", "qiankun"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Vite/ESM（`type=module`）子应用，零沙箱插件即可接入",
+        "isCorrect": true,
+        "description": "正确。micro-app 原生亲和 Vite/ESM。"
+      },
+      {
+        "text": "只有 webpack 打包的子应用",
+        "isCorrect": false,
+        "description": "错误。优势恰恰在 Vite/ESM 友好。"
+      },
+      {
+        "text": "只有 UMD 格式的子应用",
+        "isCorrect": false,
+        "description": "错误。micro-app 不强制 UMD。"
+      },
+      {
+        "text": "只有 React 子应用",
+        "isCorrect": false,
+        "description": "错误。micro-app 技术栈无关。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 的 `router-mode` 里 `pure` 与 `state` 都不污染主应用 URL，二者区别是什么？",
+    "explanation": "**`pure`**：子应用**完全脱离浏览器路由**——不改 URL、也**不进历史栈**；**`state`**：用 **`history.state` 记录路由、不改地址栏**，但仍在历史栈里留痕（比 iframe 式路由更干净）。共同点是都不把子应用路由投影到地址栏 query（那是默认 `search` 的行为）；区别在 `pure` 连历史栈都不进，`state` 靠 `history.state` 记录。",
+    "tags": ["micro-app", "虚拟路由", "router-mode"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`pure` 完全脱离浏览器路由（不进历史栈），`state` 用 `history.state` 记录不改地址栏",
+        "isCorrect": true,
+        "description": "正确。`pure` 连历史栈都不进，`state` 靠 `history.state` 记。"
+      },
+      {
+        "text": "`pure` 用 hash 记录，`state` 用 query 记录",
+        "isCorrect": false,
+        "description": "错误。`pure` 不记录到 URL，`state` 用 `history.state`。"
+      },
+      {
+        "text": "两者完全等价，只是别名",
+        "isCorrect": false,
+        "description": "错误。二者行为不同。"
+      },
+      {
+        "text": "`pure` 改地址栏，`state` 不改",
+        "isCorrect": false,
+        "description": "错误。`pure` 也不改地址栏。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 中主应用想预声明「多个子应用共用的 JS/CSS」以避免重复加载，用哪个配置？",
+    "explanation": "主应用可通过 `microApp.start({ globalAssets: { js: [], css: [] } })` **预声明多个子应用共用的 JS/CSS**，避免每个子应用重复加载同一份依赖——这是「依赖共享」通论在 micro-app 里的一个轻量落点。另外 micro-app 默认还会**自动把子应用相对资源地址补全为绝对地址**（`disable-patch-request` 可关），一起构成「子应用资源零改动或极少改动」的基础。",
+    "tags": ["micro-app", "globalAssets", "资源"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`microApp.start({ globalAssets: { js, css } })`",
+        "isCorrect": true,
+        "description": "正确。`globalAssets` 预声明共用资源避免重复加载。"
+      },
+      {
+        "text": "`microApp.start({ prefetch: [...] })`",
+        "isCorrect": false,
+        "description": "错误。`prefetch` 是预加载子应用，不是共用资源声明。"
+      },
+      {
+        "text": "`microApp.setGlobalData({ assets })`",
+        "isCorrect": false,
+        "description": "错误。那是全局数据通信，不是资源共享。"
+      },
+      {
+        "text": "`<micro-app shared-assets>` 属性",
+        "isCorrect": false,
+        "description": "错误。无此属性。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app、wujie、qiankun 三者选型里，micro-app 占据的位置最准确的一句话是什么？",
+    "explanation": "三者不是替代关系，是「场景匹配」：**要最低接入成本、快速试点、内部可信子应用 → micro-app**（默认 with 沙箱够用，必要时切 iframe）；**要最强隔离、复杂/不可信子应用 → wujie**（默认 iframe 物理隔离）；**存量 webpack、生态最大 → qiankun**。micro-app 的位置是「**接入最轻的那一个**」。",
+    "tags": ["micro-app", "选型", "定位"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "接入成本最低、组件化用法、快速试点/渐进接入的那一个",
+        "isCorrect": true,
+        "description": "正确。micro-app 的位置是「接入最轻」。"
+      },
+      {
+        "text": "隔离最强、最适合不可信子应用的那一个",
+        "isCorrect": false,
+        "description": "错误。最强隔离是 wujie。"
+      },
+      {
+        "text": "生态最大、存量 webpack 首选的那一个",
+        "isCorrect": false,
+        "description": "错误。生态最大是 qiankun。"
+      },
+      {
+        "text": "只做路由编排、不含沙箱的底座",
+        "isCorrect": false,
+        "description": "错误。那是 single-spa。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 长期是 `1.0.0-rc`，为什么工程上仍可把它当「成熟框架」看待？",
+    "explanation": "判据不在「它叫 rc」，而在实际状态：**京东多条业务线大规模生产在用 + 2021 年至今持续提交发版（大致月度） + 官方逐框架接入指南 + 近期还在跟进 Tailwind 4/Worker/Electron 等真实业务坑**。这些放一起，画像是「务实、稳定、只是不执着于版本号仪式」。选型时真正要评估的是「这套接入方式、隔离强度、生态配不配我的场景」，而非版本号。",
+    "tags": ["micro-app", "现状", "rc"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "京东大规模生产在用 + 持续发版 + 跟进 Tailwind4/Worker 等真实坑，稳定性有背书",
+        "isCorrect": true,
+        "description": "正确。实际状态而非版本号决定它的成熟度。"
+      },
+      {
+        "text": "因为 rc 版本比正式版更稳定，是行业惯例",
+        "isCorrect": false,
+        "description": "错误。无此惯例，靠的是实际生产背书。"
+      },
+      {
+        "text": "因为它已经改名发布了 2.0 正式版",
+        "isCorrect": false,
+        "description": "错误。它仍是 1.0 RC。"
+      },
+      {
+        "text": "因为 rc 版本不允许有 bug",
+        "isCorrect": false,
+        "description": "错误。rc 无此保证，判据是实际使用与维护。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 与 wujie 都走「组件化 + Vite 友好」，二者「默认 JS 沙箱」的本质区别是什么？",
+    "explanation": "二者同属「组件化 + Vite 友好」阵营，但默认沙箱不同：**micro-app 默认 with 软沙箱**（`Proxy`+`with` 模拟，轻、接入成本低、软隔离）；**wujie 默认 iframe 物理隔离**（同域 iframe 原生 window，隔离最强、有 iframe 开销）。micro-app 也能用 `iframe` 属性切到强隔离，wujie 则天生 iframe。一句话：micro-app 用软沙箱换最低成本，wujie 用 iframe 换最强隔离。",
+    "tags": ["micro-app", "wujie", "沙箱", "对比"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "micro-app 默认 with 软沙箱，wujie 默认 iframe 物理隔离",
+        "isCorrect": true,
+        "description": "正确。默认沙箱一软一强，是两者的本质差别。"
+      },
+      {
+        "text": "两者默认都是 iframe 沙箱",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认是 with 沙箱。"
+      },
+      {
+        "text": "两者默认都是 with 沙箱",
+        "isCorrect": false,
+        "description": "错误。wujie 默认是 iframe 物理隔离。"
+      },
+      {
+        "text": "micro-app 默认 iframe，wujie 默认 with",
+        "isCorrect": false,
+        "description": "错误。说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "从隔离策略灵活性看，micro-app「with 为主、iframe 可选」相比 wujie「iframe only」，本质优势与代价各是什么？",
+    "explanation": "micro-app 把 JS 隔离做成**可切换的一层**（`iframe` 属性），且切换对通信/路由/样式**近乎透明**，于是能走「**先用 with 低成本快速跑通、命中强隔离诉求再局部切 iframe**」的**渐进路径**——默认省掉 iframe 的内存开销与同域约束，需要时又能拿物理隔离。**对照**：wujie「iframe only」一步到位拿最强隔离、无需在两套沙箱间权衡，但也就**没有 with 那种轻量默认**、始终背着 iframe 开销。本质是「**灵活性（按需选强度）vs 一致性（永远最强隔离）**」的取舍，也是 micro-app 定位「接入最轻」的一部分。",
+    "tags": ["micro-app", "选型", "沙箱", "wujie"],
+    "categories": [
+      ["技术方向", "micro-app"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "micro-app 可按需在软/强隔离间渐进切换（灵活、默认轻），代价是要自己权衡；wujie 永远最强隔离但始终背 iframe 开销",
+        "isCorrect": true,
+        "description": "正确。灵活性 vs 一致性的取舍。"
+      },
+      {
+        "text": "micro-app 双沙箱会同时运行两套隔离，比 wujie 更耗内存",
+        "isCorrect": false,
+        "description": "错误。双沙箱是二选一，不是同时运行。"
+      },
+      {
+        "text": "wujie 的 iframe-only 无法做物理隔离，不如 micro-app",
+        "isCorrect": false,
+        "description": "错误。wujie 正是靠 iframe 拿最强物理隔离。"
+      },
+      {
+        "text": "micro-app 切 iframe 需要重写通信与路由，反而更重",
+        "isCorrect": false,
+        "description": "错误。切换对上层近乎透明，无需重写。"
+      }
+    ]
+  }
+]
