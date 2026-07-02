@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "qiankun 的官方定位可以用一句话概括，下列哪一项最准确地描述了它与 single-spa 的关系？",
+    "explanation": "qiankun 是蚂蚁集团开源、**基于 single-spa 的上层封装**，一句话定位就是 **qiankun = single-spa + HTML entry + JS 沙箱 + 样式隔离**。single-spa 只做「按路由把子应用 mount/unmount」的编排，故意留白隔离与资源加载；qiankun 在其之上补齐三样能力：**HTML entry**（`entry` 填 HTML 地址）、**JS 沙箱**（Proxy 代理 window）、**样式隔离**（Shadow DOM / 属性改写）。",
+    "tags": ["qiankun", "定位", "single-spa"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "qiankun 是 single-spa 之上的封装，补齐了 HTML entry、JS 沙箱、样式隔离三样能力",
+        "isCorrect": true,
+        "description": "正确。single-spa 只负责路由编排，qiankun 把它留白的三件事做成开箱即用。"
+      },
+      {
+        "text": "qiankun 与 single-spa 是相互竞争的两个独立框架，实现完全无关",
+        "isCorrect": false,
+        "description": "错误。二者不是竞品而是分层，qiankun 内部拿 single-spa 当路由编排底座。"
+      },
+      {
+        "text": "qiankun 是 single-spa 的前身，single-spa 在 qiankun 基础上重写而来",
+        "isCorrect": false,
+        "description": "错误。恰好相反，single-spa 是底座、qiankun 是其上层封装。"
+      },
+      {
+        "text": "qiankun 完全抛弃了 single-spa，自研了一套路由编排内核",
+        "isCorrect": false,
+        "description": "错误。qiankun 复用 single-spa 的生命周期与路由编排，并未自研替代。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 主应用完成最小接入只需两步 API 调用，正确的组合是哪一对？",
+    "explanation": "qiankun 主应用只做两件事：先用 **`registerMicroApps([{ name, entry, container, activeRule }])`** 登记子应用清单，再用 **`start()`** 拉闸启动。在 `start()` 之前，`registerMicroApps` 只是登记、不会真正加载；`start()` 之后，路由命中某子应用的 `activeRule` 就会自动 fetch、执行、挂载它。",
+    "tags": ["qiankun", "接入", "registerMicroApps"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`registerMicroApps(apps)` 注册子应用清单 + `start()` 启动",
+        "isCorrect": true,
+        "description": "正确。注册只登记、start 才拉闸让 qiankun 按路由自动加载。"
+      },
+      {
+        "text": "`loadMicroApp(app)` + `mount()`",
+        "isCorrect": false,
+        "description": "错误。loadMicroApp 是命令式手动加载路线，不是路由型最小接入的标准两步。"
+      },
+      {
+        "text": "`registerApplication(app)` + `singleSpaStart()`",
+        "isCorrect": false,
+        "description": "错误。这是 single-spa 的 API，qiankun 对外暴露的是 registerMicroApps/start。"
+      },
+      {
+        "text": "`initGlobalState(state)` + `start()`",
+        "isCorrect": false,
+        "description": "错误。initGlobalState 是通信 API，与注册子应用清单无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 子应用要被主应用接管，必须完成三项改造，下列哪一组是官方要求的三件事？",
+    "explanation": "子应用三件事：① **导出 `bootstrap`/`mount`/`unmount` 三个返回 Promise 的生命周期**（与 single-spa 一致的框架无关契约）；② **打包成 UMD**（`libraryTarget: 'umd'` + 唯一 `library` 名）供 qiankun 取生命周期；③ **修 publicPath**（入口顶部 `__webpack_public_path__ = window.__INJECTED_PUBLIC_PATH_BY_QIANKUN__`）。",
+    "tags": ["qiankun", "子应用", "生命周期"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "导出生命周期 + 打包成 UMD + 修正 publicPath",
+        "isCorrect": true,
+        "description": "正确。三件事分别解决「取生命周期」「格式可读」「资源基准」三个问题。"
+      },
+      {
+        "text": "安装 qiankun 依赖 + 配置路由守卫 + 注册 Vuex 模块",
+        "isCorrect": false,
+        "description": "错误。这些都不是 qiankun 对子应用的硬性接入要求。"
+      },
+      {
+        "text": "改用 Shadow DOM 渲染 + 关闭沙箱 + 内联所有样式",
+        "isCorrect": false,
+        "description": "错误。样式隔离由主应用 start 配置决定，不是子应用改造清单。"
+      },
+      {
+        "text": "导出 default 组件 + 打包成 ESM + 配置 import maps",
+        "isCorrect": false,
+        "description": "错误。qiankun 2.x 要 UMD 不认 ESM，import maps 是 single-spa 路线。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `registerMicroApps` 中，每个子应用配置对象的四个必填字段是哪些？",
+    "explanation": "每个 app 的四个必填字段：**`name`**（子应用唯一名，qiankun 据此取生命周期、命名沙箱）、**`entry`**（HTML 地址或 `{ scripts, styles }` 清单）、**`container`**（挂载到主应用哪个 DOM 节点）、**`activeRule`**（激活规则）。可选字段有 `loader`（loading 回调）与 `props`（透传数据）。",
+    "tags": ["qiankun", "registerMicroApps", "配置"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`name`、`entry`、`container`、`activeRule`",
+        "isCorrect": true,
+        "description": "正确。四者分别定义身份、来源、挂载点、激活时机。"
+      },
+      {
+        "text": "`name`、`url`、`selector`、`path`",
+        "isCorrect": false,
+        "description": "错误。qiankun 的字段名是 entry/container/activeRule，不是 url/selector/path。"
+      },
+      {
+        "text": "`name`、`entry`、`props`、`loader`",
+        "isCorrect": false,
+        "description": "错误。props 与 loader 是可选字段，container/activeRule 才是必填。"
+      },
+      {
+        "text": "`id`、`entry`、`container`、`route`",
+        "isCorrect": false,
+        "description": "错误。唯一名字段叫 name 不叫 id，激活规则叫 activeRule 不叫 route。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，子应用配置里的 `activeRule` 起什么作用？",
+    "explanation": "`activeRule` 是子应用的**激活规则**——当前 URL 命中它时 qiankun 就加载并挂载对应子应用，离开时自动 unmount。它可写成**前缀字符串**（如 `/react`）、**`(location) => boolean` 函数**（如按 `location.hash` 判定）、或**数组**（命中其一即激活）。它其实就是 single-spa 的 `activeWhen` 换了个名字。",
+    "tags": ["qiankun", "activeRule", "路由"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "定义子应用在什么路由条件下被激活挂载，可为前缀串、函数或数组",
+        "isCorrect": true,
+        "description": "正确。它决定「什么 URL 下显示哪个子应用」，本质是 single-spa 的 activeWhen。"
+      },
+      {
+        "text": "定义子应用打包产物的输出路径",
+        "isCorrect": false,
+        "description": "错误。那是构建工具的 publicPath/output，与 activeRule 无关。"
+      },
+      {
+        "text": "定义子应用之间相互调用的权限规则",
+        "isCorrect": false,
+        "description": "错误。qiankun 没有此类权限机制，activeRule 只管路由激活。"
+      },
+      {
+        "text": "定义子应用 UMD 打包的库名",
+        "isCorrect": false,
+        "description": "错误。库名由 `output.library` 指定，activeRule 与打包无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，只调用了 `registerMicroApps` 但一直没调用 `start`，会发生什么？",
+    "explanation": "`registerMicroApps` **只是登记子应用清单，不会真正加载与挂载**；真正拉闸的是 **`start()`**。没有 `start()`，即使路由命中某子应用的 `activeRule`，qiankun 也不会去 fetch entry、执行脚本、挂载子应用。所以最小接入必须「注册 + 启动」成对出现。",
+    "tags": ["qiankun", "start", "生命周期"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用只是被登记，不会被加载挂载——因为 `start()` 才是真正启动 qiankun 的开关",
+        "isCorrect": true,
+        "description": "正确。注册与启动分离，start 前一切按兵不动。"
+      },
+      {
+        "text": "子应用会在页面加载后立即全部挂载",
+        "isCorrect": false,
+        "description": "错误。没有 start 不会挂载；即便 start 后也是按路由激活而非全部立即挂载。"
+      },
+      {
+        "text": "第一个子应用会自动挂载，其余等待路由",
+        "isCorrect": false,
+        "description": "错误。没有 start 一个都不会挂载。"
+      },
+      {
+        "text": "会抛出 `You need to call start` 异常并阻塞渲染",
+        "isCorrect": false,
+        "description": "错误。qiankun 不会因缺少 start 抛错，只是静默不加载。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `registerMicroApps(apps, lifeCycles)` 第二个参数 `lifeCycles` 有什么特点？",
+    "explanation": "全局 `lifeCycles` 包含 **`beforeLoad`/`beforeMount`/`afterMount`/`beforeUnmount`/`afterUnmount`** 五个钩子，它们对**所有**子应用统一生效（区别于 app 内针对单个子应用的配置），适合做统一埋点、loading、鉴权拦截。每个钩子既可传单个函数，也可传**函数数组**按序执行。",
+    "tags": ["qiankun", "lifeCycles", "钩子"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "含 beforeLoad/beforeMount/afterMount/beforeUnmount/afterUnmount，对所有子应用统一生效，每个可为函数或函数数组",
+        "isCorrect": true,
+        "description": "正确。它是全局级钩子，做统一拦截最合适。"
+      },
+      {
+        "text": "只对第一个注册的子应用生效",
+        "isCorrect": false,
+        "description": "错误。lifeCycles 是全局的，对全部子应用生效。"
+      },
+      {
+        "text": "只能传单个函数，不支持函数数组",
+        "isCorrect": false,
+        "description": "错误。每个钩子支持函数数组按序执行。"
+      },
+      {
+        "text": "就是 created/mounted/updated/destroyed 四个 Vue 组件钩子",
+        "isCorrect": false,
+        "description": "错误。那是 Vue 组件钩子，qiankun 的全局钩子是 beforeLoad 等五个。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `start({ singular })` 默认值是什么，它决定了怎样的挂载语义？",
+    "explanation": "路由型接入 `start` 的 **`singular` 默认为 `true`**，语义是**单实例——同一时刻只挂载一个子应用**：路由切到新子应用时，qiankun 会**先把当前子应用 `unmount`、再挂新的**。这符合「页面主区域同时只显示一个子应用」的常见场景，也让沙箱走单实例的 `legacyProxySandbox`。要让多个子应用同屏并存必须显式设 `singular: false`。",
+    "tags": ["qiankun", "singular", "单实例"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 `true`，表示单实例——同一时刻只挂一个子应用，切换时先卸旧再挂新",
+        "isCorrect": true,
+        "description": "正确。这是路由型的默认互斥语义，也决定沙箱走单实例。"
+      },
+      {
+        "text": "默认 `false`，表示允许任意多个子应用同屏并存",
+        "isCorrect": false,
+        "description": "错误。默认是 true 单实例，设 false 才允许并存。"
+      },
+      {
+        "text": "默认 `true`，表示同一子应用只能被注册一次",
+        "isCorrect": false,
+        "description": "错误。singular 管的是「同时挂几个实例」，不是「注册几次」。"
+      },
+      {
+        "text": "默认 `'auto'`，由 qiankun 按屏幕尺寸自动决定",
+        "isCorrect": false,
+        "description": "错误。singular 是 boolean 或函数，没有 'auto' 取值。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，需要在同一页面同时并排渲染同一个子应用的多个独立实例，应该用哪个 API？",
+    "explanation": "**`loadMicroApp(app, config?)`** 是命令式手动加载路线，**天生支持多实例**——不参与 `singular` 的「切换即互斥」逻辑，对**同一个**子应用 `loadMicroApp` 多次就能得到多个独立实例并排渲染，每个实例一个独立沙箱。代价是**生命周期自管**：qiankun 不会替你在路由离开时卸载，忘了 `unmount` 就内存泄漏。",
+    "tags": ["qiankun", "loadMicroApp", "多实例"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`loadMicroApp`——它天生多实例，同一子应用可加载多次得到多个独立实例，但生命周期需自己管理",
+        "isCorrect": true,
+        "description": "正确。手动型换来多实例能力，代价是要自己 unmount。"
+      },
+      {
+        "text": "`registerMicroApps` 配 `singular: true`",
+        "isCorrect": false,
+        "description": "错误。singular:true 是单实例、切换即互斥，无法同屏并存。"
+      },
+      {
+        "text": "`setDefaultMountApp` 调用多次",
+        "isCorrect": false,
+        "description": "错误。它只设置首次进站默认挂载哪个子应用，与多实例无关。"
+      },
+      {
+        "text": "`prefetchApps` 预取多次",
+        "isCorrect": false,
+        "description": "错误。prefetchApps 只是预取资源，不负责挂载实例。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `loadMicroApp` 返回的 `MicroApp` 句柄上，调用 `update(customProps)` 生效的前提是什么？",
+    "explanation": "`loadMicroApp` 返回的 `MicroApp` 句柄含 `mount`/`unmount`/**`update`**/`getStatus` 及各阶段 Promise。其中 **`update(customProps)` 要生效，子应用必须导出 `update` 生命周期**——qiankun 把新 props 推给子应用的 `update` 函数，子应用没导出它就无从响应。这是手动型独有的「推新数据」能力。",
+    "tags": ["qiankun", "loadMicroApp", "update"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "子应用必须额外导出 `update` 生命周期，qiankun 才能把新 props 推给它",
+        "isCorrect": true,
+        "description": "正确。没有 update 生命周期，update() 调用无处落地。"
+      },
+      {
+        "text": "只要子应用导出了 `mount` 即可，`update` 会复用 `mount`",
+        "isCorrect": false,
+        "description": "错误。update 是独立生命周期，不会自动复用 mount。"
+      },
+      {
+        "text": "必须先调用 `unmount` 再调用 `update`",
+        "isCorrect": false,
+        "description": "错误。update 用于运行中推新 props，不需要先卸载。"
+      },
+      {
+        "text": "必须在 `start({ singular: false })` 下才能用 `update`",
+        "isCorrect": false,
+        "description": "错误。loadMicroApp 不受 singular 约束，update 与 singular 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `setDefaultMountApp` 与 `runAfterFirstMounted` 分别解决什么时机问题？",
+    "explanation": "**`setDefaultMountApp(appLink)`**：主应用启动、浏览器**首次打开**时默认跳转/挂载到哪个子应用的路由（如根路径 `/` 默认进 `/home`）。**`runAfterFirstMounted(effect)`**：**第一个**子应用挂载**完成后**执行一次回调，最常见用途是移除全局骨架屏 loading、上报首屏时间。一个管「首次进站去哪」，一个管「首挂之后做什么」。",
+    "tags": ["qiankun", "setDefaultMountApp", "runAfterFirstMounted"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前者设置首次进站默认挂载哪个子应用，后者在首个子应用挂载完成后执行一次回调",
+        "isCorrect": true,
+        "description": "正确。一个定「去哪」、一个定「挂好后干什么」。"
+      },
+      {
+        "text": "前者在每次路由切换后执行，后者在每个子应用卸载后执行",
+        "isCorrect": false,
+        "description": "错误。setDefaultMountApp 只作用于首次进站，runAfterFirstMounted 只触发一次。"
+      },
+      {
+        "text": "两者都是用来注册全局错误处理器的",
+        "isCorrect": false,
+        "description": "错误。全局错误兜底是 addGlobalUncaughtErrorHandler，与这两个无关。"
+      },
+      {
+        "text": "前者预取子应用资源，后者初始化全局状态",
+        "isCorrect": false,
+        "description": "错误。预取是 prefetch/prefetchApps，全局状态是 initGlobalState。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 与 single-spa 的关系，从实现层面看下列哪种描述最准确？",
+    "explanation": "qiankun 和 single-spa **不是竞品，是分层**——qiankun 内部就是拿 single-spa 当路由编排底座：**`registerMicroApps` 底层调的就是 single-spa 的 `registerApplication`**，`start` 里也会调 single-spa 的 `start`，qiankun 只是把 `activeWhen` 换名叫 `activeRule`。懂了 single-spa 的生命周期与状态机，就懂了 qiankun 路由那一半；qiankun 独有的是 HTML entry、沙箱、样式隔离那一半。",
+    "tags": ["qiankun", "single-spa", "底座"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "qiankun 内部以 single-spa 为路由编排底座，`registerMicroApps` 底层就是 single-spa 的 `registerApplication`",
+        "isCorrect": true,
+        "description": "正确。二者是分层复用而非竞争。"
+      },
+      {
+        "text": "qiankun 只是抄了 single-spa 的 API 命名，内部完全独立实现了一套编排",
+        "isCorrect": false,
+        "description": "错误。qiankun 真正复用 single-spa 的编排与生命周期，不是仅抄命名。"
+      },
+      {
+        "text": "qiankun 与 single-spa 运行时互斥，同一项目只能引入其一的编排内核",
+        "isCorrect": false,
+        "description": "错误。qiankun 本就内置 single-spa，谈不上互斥。"
+      },
+      {
+        "text": "single-spa 依赖 qiankun 提供的沙箱才能运行",
+        "isCorrect": false,
+        "description": "错误。方向反了，是 qiankun 依赖 single-spa，且 single-spa 本身不做沙箱。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 路由型接入下想让两个子应用同屏并存，却发现总是「挂新的把旧的卸了」，最可能是哪个配置导致的？",
+    "explanation": "路由型默认 **`singular: true`（单实例）**——同一时刻只挂一个子应用，切到新子应用时会**先 unmount 当前子应用再挂新的**，因此两个子应用无法同屏并存。要并存必须显式 **`start({ singular: false })`**，此时沙箱走多实例 `proxySandbox`，每个子应用一个独立 `fakeWindow`。这条因果要想清：没开 `singular: false` 就别指望两个子应用同时正常并存。",
+    "tags": ["qiankun", "singular", "并存"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 `singular: true` 单实例导致切换即互斥，需显式设 `singular: false` 才能同屏并存",
+        "isCorrect": true,
+        "description": "正确。单实例语义天然会卸掉旧的。"
+      },
+      {
+        "text": "是 `prefetch: true` 把旧子应用资源清掉了",
+        "isCorrect": false,
+        "description": "错误。prefetch 只预取资源，不会卸载已挂载子应用。"
+      },
+      {
+        "text": "是 `sandbox: true` 强制单实例",
+        "isCorrect": false,
+        "description": "错误。sandbox 管 JS/样式隔离，单/多实例由 singular 决定。"
+      },
+      {
+        "text": "是没有调用 `setDefaultMountApp` 导致的",
+        "isCorrect": false,
+        "description": "错误。setDefaultMountApp 只管首次进站，与并存互斥无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，`start({ singular: true })` 已开启单实例，但用 `loadMicroApp` 同时加载了两个子应用却能并存，为什么？",
+    "explanation": "**`loadMicroApp` 天生多实例，不参与 `singular` 的「切换即互斥」逻辑**——`singular` 只约束**路由型**（`registerMicroApps` + `start`）的自动挂载：切路由时单实例会先卸旧再挂新。而 `loadMicroApp` 是命令式手动加载，什么时候加载、加载到哪、什么时候卸载全由你调 API 决定，qiankun 不会因为 `singular: true` 就替你把已手动加载的实例卸掉。代价是生命周期完全自管，忘了 `unmount` 就泄漏。",
+    "tags": ["qiankun", "loadMicroApp", "singular"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`singular` 只约束路由型的自动挂载互斥，`loadMicroApp` 是命令式手动加载、天生多实例、不受其约束",
+        "isCorrect": true,
+        "description": "正确。两条线语义独立，手动型自管生命周期。"
+      },
+      {
+        "text": "因为 `loadMicroApp` 会自动把 `singular` 覆写为 `false`",
+        "isCorrect": false,
+        "description": "错误。loadMicroApp 不改全局 singular，它本就不参与该逻辑。"
+      },
+      {
+        "text": "因为 `singular: true` 只在没有 `start` 时才生效",
+        "isCorrect": false,
+        "description": "错误。singular 正是 start 的配置项，此说法不成立。"
+      },
+      {
+        "text": "因为两个子应用 `name` 不同就自动解除了单实例限制",
+        "isCorrect": false,
+        "description": "错误。路由型即便 name 不同，singular:true 仍会切换互斥。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 2.x 内置了三个 JS 沙箱实现，它们分别叫什么？",
+    "explanation": "qiankun 2.x 内置三沙箱：**`proxySandbox`**（多实例，每应用一个 `fakeWindow`）、**`legacyProxySandbox`**（单实例，Proxy 记差异但写仍落真 window）、**`snapshotSandbox`**（快照沙箱，无 Proxy 的旧环境降级）。它们对应沙箱通论里的前两代方案（快照 + Proxy）。",
+    "tags": ["qiankun", "沙箱", "三沙箱"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`proxySandbox`、`legacyProxySandbox`、`snapshotSandbox`",
+        "isCorrect": true,
+        "description": "正确。分别对应多实例 Proxy、单实例 Proxy、快照降级。"
+      },
+      {
+        "text": "`iframeSandbox`、`shadowSandbox`、`realmSandbox`",
+        "isCorrect": false,
+        "description": "错误。这些不是 qiankun 2.x 的沙箱名；iframe 沙箱是 wujie 路线。"
+      },
+      {
+        "text": "`strictSandbox`、`experimentalSandbox`、`legacySandbox`",
+        "isCorrect": false,
+        "description": "错误。strict/experimental 是样式隔离开关名，不是 JS 沙箱。"
+      },
+      {
+        "text": "`vmSandbox`、`workerSandbox`、`evalSandbox`",
+        "isCorrect": false,
+        "description": "错误。qiankun 没有这些沙箱实现。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 JS 沙箱内核，官方 FAQ 一句话概括是靠什么技术实现的？",
+    "explanation": "qiankun FAQ 说得很直白：沙箱内核是**用 `Proxy` 去代理父页面的 `window`**。子应用代码里访问 `window.Vue`，实际访问的是被 qiankun 代理过的 window——Proxy 会先查代理对象上有没有该属性，**读先假后真、写落假对象**（`proxySandbox`）或写真 window 并记差异（`legacyProxySandbox`）。",
+    "tags": ["qiankun", "沙箱", "Proxy"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 `Proxy` 代理父页面的 `window`，子应用访问的其实是被代理的 window",
+        "isCorrect": true,
+        "description": "正确。这是 qiankun 主流沙箱的内核。"
+      },
+      {
+        "text": "用 iframe 把子应用装进独立的 `window` 上下文",
+        "isCorrect": false,
+        "description": "错误。iframe 物理隔离是 wujie 路线，qiankun 主用 Proxy 软隔离。"
+      },
+      {
+        "text": "用 Web Worker 把子应用脚本跑在独立线程",
+        "isCorrect": false,
+        "description": "错误。Worker 没有 DOM，qiankun 子应用需操作 DOM，不走这条路。"
+      },
+      {
+        "text": "用 `Object.freeze` 冻结 `window` 阻止一切写入",
+        "isCorrect": false,
+        "description": "错误。冻结会让子应用无法正常运行，qiankun 用 Proxy 拦截而非冻结。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，`snapshotSandbox`（快照沙箱）会在什么情况下被启用？",
+    "explanation": "**`snapshotSandbox` 是给不支持 `Proxy` 的旧环境（如 IE）的降级方案**——`window.Proxy` 不存在时 qiankun 才用它，并**强制单实例**。它的机制是「激活时拍 window 快照、失活时 diff 恢复」，代价是每次都要全量遍历 window，且只能单实例。现代浏览器都支持 Proxy，一般走 `legacyProxySandbox`/`proxySandbox`。",
+    "tags": ["qiankun", "snapshotSandbox", "降级"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器不支持 `Proxy`（如 IE）时降级启用，并强制单实例",
+        "isCorrect": true,
+        "description": "正确。它是老浏览器兜底方案。"
+      },
+      {
+        "text": "只要开启 `sandbox: true` 就默认优先用快照沙箱",
+        "isCorrect": false,
+        "description": "错误。默认优先用 Proxy 系沙箱，快照只是无 Proxy 时的降级。"
+      },
+      {
+        "text": "在 `singular: false` 多实例场景下专门启用",
+        "isCorrect": false,
+        "description": "错误。快照只能单实例，多实例走 proxySandbox。"
+      },
+      {
+        "text": "在需要 Shadow DOM 样式隔离时启用",
+        "isCorrect": false,
+        "description": "错误。样式隔离与选哪个 JS 沙箱是两件事。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `start({ sandbox })` 分别设为 `true` 和 `false` 时行为有何不同？",
+    "explanation": "**`sandbox: true`（默认）**：开 JS 沙箱 + 默认样式隔离（动态样式表劫持）——子应用全局写入被代理、卸载时清理。**`sandbox: false`**：**完全关闭沙箱**，子应用直接裸跑在真 `window` 上，全局污染、事件/定时器残留、动态样式都不再被记账清理，仅在确知子应用之间无冲突时才该用。",
+    "tags": ["qiankun", "sandbox", "开关"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`true` 开 JS 沙箱与默认样式隔离；`false` 完全关闭、子应用裸跑真 window",
+        "isCorrect": true,
+        "description": "正确。false 意味着放弃隔离与卸载清理。"
+      },
+      {
+        "text": "`true` 与 `false` 只影响样式隔离，JS 沙箱始终开启",
+        "isCorrect": false,
+        "description": "错误。sandbox:false 连 JS 沙箱一起关。"
+      },
+      {
+        "text": "`false` 会启用更严格的 iframe 物理隔离",
+        "isCorrect": false,
+        "description": "错误。false 是关闭隔离，不是切到 iframe。"
+      },
+      {
+        "text": "`true` 会强制所有子应用单实例",
+        "isCorrect": false,
+        "description": "错误。单/多实例由 singular 决定，与 sandbox 布尔值无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 JS 沙箱能接管并在卸载时清理下列哪一类副作用？",
+    "explanation": "qiankun 沙箱**拦得住并卸载清理**四类：**全局变量读写**（Proxy 代理 window）、**window 事件**（劫持 `addEventListener`/`removeEventListener` 记账，卸载统一移除）、**定时器**（劫持 `setTimeout`/`setInterval` 记账，卸载统一 clear）、**动态样式/脚本**（劫持 `appendChild`/`insertBefore` 记账子应用插入的 `<style>`/`<link>`/`<script>`，卸载移除、再挂载重建）。",
+    "tags": ["qiankun", "沙箱", "劫持"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用通过 `addEventListener` 注册的 window 事件监听——卸载时被统一移除",
+        "isCorrect": true,
+        "description": "正确。qiankun 劫持并记账，卸载时清理残留监听。"
+      },
+      {
+        "text": "子应用通过 `window.top` 访问顶层窗口的行为",
+        "isCorrect": false,
+        "description": "错误。window.top 指向真实窗口、不经代理，属于拦不住的逃逸面。"
+      },
+      {
+        "text": "子应用对 `Element.prototype` 原型方法的修改",
+        "isCorrect": false,
+        "description": "错误。原生构造函数与原型是共享的，改原型全局生效、沙箱拦不住。"
+      },
+      {
+        "text": "子应用闭包里缓存的原生对象引用",
+        "isCorrect": false,
+        "description": "错误。闭包缓存的引用不再走 window 访问，代理插不进去。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 会按什么条件在三个沙箱之间自动选择？",
+    "explanation": "自动选择逻辑：**① `window.Proxy` 不支持（老 IE）→ `snapshotSandbox`（并强制单实例）**；② 支持 Proxy 且 **`singular: true`（路由型默认）→ `legacyProxySandbox`**（单实例 Proxy）；③ 支持 Proxy 且 **`singular: false` → `proxySandbox`**（多实例，每应用一个 `fakeWindow`）。即按「有无 Proxy + `singular` 取值」两维决定，无需手选。",
+    "tags": ["qiankun", "沙箱", "自动选择"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按「浏览器是否支持 Proxy」+「`singular` 取值」两维自动决定，无需手动指定",
+        "isCorrect": true,
+        "description": "正确。无 Proxy 走快照，有 Proxy 再按 singular 分单/多实例。"
+      },
+      {
+        "text": "由开发者在 `start` 里用 `sandboxType` 字段显式指定",
+        "isCorrect": false,
+        "description": "错误。qiankun 没有 sandboxType 字段，是自动选择。"
+      },
+      {
+        "text": "永远优先用 `proxySandbox`，除非它抛错才降级",
+        "isCorrect": false,
+        "description": "错误。单实例默认走 legacyProxySandbox 而非 proxySandbox。"
+      },
+      {
+        "text": "按子应用框架（React/Vue）自动匹配不同沙箱",
+        "isCorrect": false,
+        "description": "错误。选择只看 Proxy 能力与 singular，与子应用框架无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 子应用里写 `window.onresize = fn` 发现回调不触发，正确的修法是什么？",
+    "explanation": "这是 FAQ 明列的**高频坑**：子应用访问的 window 是 qiankun 代理后的对象，**直接给 `window.onXxx` 赋值会失效**（这是属性 set，落到假对象、真 window 上没挂上）。正解是改用 **`window.addEventListener('resize', fn)`**——`addEventListener` 是被 qiankun 专门劫持记账的方法调用，既能生效又能在卸载时被统一清理。",
+    "tags": ["qiankun", "onXxx", "addEventListener"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "改用 `window.addEventListener('resize', fn)`——它被 qiankun 劫持记账，能生效且卸载时自动清理",
+        "isCorrect": true,
+        "description": "正确。方法调用被专门劫持，属性赋值则被代理拦下。"
+      },
+      {
+        "text": "改用 `document.onresize = fn`",
+        "isCorrect": false,
+        "description": "错误。resize 事件在 window 上，且属性赋值同样受代理影响。"
+      },
+      {
+        "text": "在 `start` 里设 `sandbox: false` 关闭沙箱",
+        "isCorrect": false,
+        "description": "错误。关沙箱会丢掉隔离与卸载清理，属因噎废食。"
+      },
+      {
+        "text": "把 `window.onresize` 改成 `globalThis.onresize`",
+        "isCorrect": false,
+        "description": "错误。globalThis 在子应用里同样指向被代理的 window，赋值仍失效。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `proxySandbox`（多实例沙箱）是如何做到多个子应用同屏并存互不干扰的？",
+    "explanation": "`proxySandbox` 给**每个子应用分配一个独立的 `fakeWindow`**——子应用的**写操作落到自己的 `fakeWindow`（假对象）、读则先查假对象再回落真 window（读先假后真）**。因为各自写各自的 fakeWindow、互不可见，多个子应用可同屏并存互不污染。它在支持 Proxy 且 `singular: false` 时启用。",
+    "tags": ["qiankun", "proxySandbox", "fakeWindow"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个子应用一个独立 `fakeWindow`，写落假对象、读先假后真，因此互不可见",
+        "isCorrect": true,
+        "description": "正确。写隔离到各自 fakeWindow 是多实例并存的关键。"
+      },
+      {
+        "text": "所有子应用共用一份被代理的真 window，靠加锁串行访问",
+        "isCorrect": false,
+        "description": "错误。那是单实例思路，proxySandbox 是每应用一个 fakeWindow。"
+      },
+      {
+        "text": "把每个子应用装进独立 iframe 实现物理隔离",
+        "isCorrect": false,
+        "description": "错误。proxySandbox 用 Proxy 软隔离，不是 iframe。"
+      },
+      {
+        "text": "靠给每个全局变量名加子应用前缀避免冲突",
+        "isCorrect": false,
+        "description": "错误。qiankun 不做变量名改写，是 fakeWindow 写隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 沙箱的逃逸面中，下列哪一项属于它无法隔离的情形？",
+    "explanation": "qiankun 的非 iframe 沙箱是**尽力而为的软隔离**，有明确逃逸面：**`window.top`/`window.parent`**（指向真实顶层窗口、不经代理）、**原生构造函数与原型**（`Object`/`Array`/`Element.prototype` 共享，改原型全局生效）、**闭包缓存的引用**（不再走 window 访问，代理插不进去）、未被专门处理的边角 API。它防的是自家子应用间的意外冲突，不是恶意代码。",
+    "tags": ["qiankun", "沙箱", "逃逸面"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "子应用修改 `Array.prototype` 上的方法——原生原型共享，改动全局生效",
+        "isCorrect": true,
+        "description": "正确。原生构造函数与原型是逃逸面，沙箱拦不住。"
+      },
+      {
+        "text": "子应用调用 `setInterval` 开的轮询定时器",
+        "isCorrect": false,
+        "description": "错误。定时器被劫持记账，卸载时统一 clear。"
+      },
+      {
+        "text": "子应用运行期 `appendChild` 插入的 `<style>` 标签",
+        "isCorrect": false,
+        "description": "错误。动态样式被记账，卸载时移除。"
+      },
+      {
+        "text": "子应用给 window 赋值的一个自定义全局变量",
+        "isCorrect": false,
+        "description": "错误。全局变量读写被 Proxy 代理接管。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `legacyProxySandbox` 与 `proxySandbox` 在「写操作落到哪里」上有何本质区别？",
+    "explanation": "两者都用 Proxy，但**写操作落点不同**：**`legacyProxySandbox`（单实例）写操作仍落真 `window`、只记录差异，卸载时把差异恢复**（还原真 window）；**`proxySandbox`（多实例）写操作落到各自的 `fakeWindow`（假对象）、真 window 不被污染，卸载时直接丢弃 fakeWindow**。正因写落 fakeWindow，proxySandbox 才能多实例并存；legacyProxySandbox 写真 window 决定了它只能单实例。",
+    "tags": ["qiankun", "legacyProxySandbox", "proxySandbox"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`legacyProxySandbox` 写落真 window 并记差异、卸载恢复；`proxySandbox` 写落各自 `fakeWindow`、卸载丢弃",
+        "isCorrect": true,
+        "description": "正确。写落点差异正是单实例与多实例的分野。"
+      },
+      {
+        "text": "两者都写 `fakeWindow`，只是 `legacyProxySandbox` 的 fakeWindow 是只读的",
+        "isCorrect": false,
+        "description": "错误。legacyProxySandbox 写的是真 window 而非 fakeWindow。"
+      },
+      {
+        "text": "`legacyProxySandbox` 写落 fakeWindow，`proxySandbox` 写落真 window",
+        "isCorrect": false,
+        "description": "错误。方向反了。"
+      },
+      {
+        "text": "两者都写真 window，区别只在读取顺序不同",
+        "isCorrect": false,
+        "description": "错误。proxySandbox 写的是 fakeWindow，不落真 window。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 Proxy 沙箱为何被定性为「防意外不防恶意」的软隔离，而非物理隔离？",
+    "explanation": "因为 qiankun 用 Proxy 代理 window 只能接管「走 window 访问」的那部分，**`window.top`/`window.parent`、原生构造函数与原型、闭包缓存引用等逃逸面绕过代理**——恶意代码可顺着这些摸到真 window、改共享原型。它的设计目标是**防自家子应用间的意外冲突**，不是防越权。要连 `history`/`location` 都独立的**物理隔离**得走 iframe 路线（如 wujie）。",
+    "tags": ["qiankun", "软隔离", "安全"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Proxy 只能拦「走 window 的访问」，`window.top`、共享原型、闭包引用等逃逸面绕得过去，故只防意外冲突",
+        "isCorrect": true,
+        "description": "正确。软隔离有天然逃逸面，防不住蓄意越权。"
+      },
+      {
+        "text": "因为 Proxy 性能太差，qiankun 主动放弃了大部分拦截",
+        "isCorrect": false,
+        "description": "错误。不是性能取舍，是 Proxy 软隔离本身有逃逸面。"
+      },
+      {
+        "text": "因为 qiankun 默认关闭沙箱，需手动开启才拦截",
+        "isCorrect": false,
+        "description": "错误。sandbox 默认 true，沙箱是开的，只是软隔离有边界。"
+      },
+      {
+        "text": "因为它只隔离样式不隔离 JS",
+        "isCorrect": false,
+        "description": "错误。JS 沙箱确实隔离 JS 全局，只是隔离不彻底而已。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 中，从代理层看，`window.onresize = fn`（失效）与 `window.addEventListener('resize', fn)`（生效）为何结果不同？",
+    "explanation": "深层是两种操作在代理层的处理不同：**`onXxx = fn` 是属性 set**——被 Proxy 当普通属性写入，落到假对象或未真正挂到目标 window 上，浏览器实际派发事件时读的是真 window 的 `onresize`，因而不触发；**`addEventListener` 是方法调用**——qiankun **专门劫持了它并记账**子应用注册的监听（既真正注册到位、又能在卸载时统一移除）。前者是被动的属性拦截，后者是主动的方法接管。",
+    "tags": ["qiankun", "onXxx", "代理层"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`onXxx=fn` 是属性 set、被代理拦到假对象未真正生效；`addEventListener` 是被 qiankun 专门劫持记账的方法调用，故生效并可卸载清理",
+        "isCorrect": true,
+        "description": "正确。属性写入与方法调用在代理层待遇不同。"
+      },
+      {
+        "text": "因为 `onresize` 是只读属性，浏览器根本不允许赋值",
+        "isCorrect": false,
+        "description": "错误。onresize 本身可写，问题出在被代理后没挂到真 window。"
+      },
+      {
+        "text": "因为 `addEventListener` 绕过了沙箱直接操作真 window 而不记账",
+        "isCorrect": false,
+        "description": "错误。它恰恰被 qiankun 劫持并记账，才能卸载时清理。"
+      },
+      {
+        "text": "两者其实都失效，必须关闭沙箱才能生效",
+        "isCorrect": false,
+        "description": "错误。addEventListener 是官方推荐的生效写法，无需关沙箱。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 只要开启了 `sandbox: true`（默认），在样式方面已经默认做了什么？",
+    "explanation": "开沙箱默认就做**动态样式表劫持**：劫持子应用运行期插入的 `<style>`/`<link>`，记账归属，**卸载时移除**——从而自动隔离**微应用「之间」**的样式（A 卸载后不污染 B）。FAQ 原话是「自动隔离微应用之间的样式」。但注意边界：**主应用样式不经沙箱、不受管辖**，主/子应用冲突要主应用自己解决。",
+    "tags": ["qiankun", "样式隔离", "默认"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "自动隔离微应用「之间」的样式——劫持子应用插入的样式表，卸载时移除",
+        "isCorrect": true,
+        "description": "正确。默认行为管的是子应用互相之间，不管主应用。"
+      },
+      {
+        "text": "把每个子应用都包进 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 需显式开 strictStyleIsolation，不是默认行为。"
+      },
+      {
+        "text": "自动给所有 CSS 选择器加子应用前缀",
+        "isCorrect": false,
+        "description": "错误。属性改写需显式开 experimentalStyleIsolation，默认不改写。"
+      },
+      {
+        "text": "隔离主应用与子应用之间的全部样式冲突",
+        "isCorrect": false,
+        "description": "错误。默认只管「子应用之间」，主应用样式不受管辖。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `strictStyleIsolation: true` 用什么浏览器原生技术来隔离子应用样式？",
+    "explanation": "`start({ sandbox: { strictStyleIsolation: true } })` 让 qiankun 把每个子应用的容器转成 **Shadow DOM**——这是浏览器唯一原生的**双向隔离**：主应用样式选不中子应用、子应用样式也出不去。彻底但有死穴：组件库弹窗挂 body 会逃出 shadow tree 丢样式。",
+    "tags": ["qiankun", "strictStyleIsolation", "ShadowDOM"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 **Shadow DOM** 包裹子应用容器，实现双向样式隔离",
+        "isCorrect": true,
+        "description": "正确。这是浏览器原生的双向隔离手段。"
+      },
+      {
+        "text": "用运行时属性选择器改写子应用的每条规则",
+        "isCorrect": false,
+        "description": "错误。那是 experimentalStyleIsolation 的机制，不是 strict。"
+      },
+      {
+        "text": "用 iframe 把子应用样式关进独立文档",
+        "isCorrect": false,
+        "description": "错误。qiankun 用 Shadow DOM 而非 iframe 做样式隔离。"
+      },
+      {
+        "text": "用 CSS `@scope` at-rule 限定作用域",
+        "isCorrect": false,
+        "description": "错误。@scope 是 3.0 规划方向，2.x 的 strict 用 Shadow DOM。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `strictStyleIsolation`（Shadow DOM）提供的是单向还是双向隔离？",
+    "explanation": "`strictStyleIsolation` 是**双向隔离（进不来出不去）**：主应用样式选不中子应用内部，子应用样式也泄漏不出去。这是 Shadow DOM 的原生能力。相比之下 `experimentalStyleIsolation`（属性改写）是**单向**（只防子应用泄漏，不防主应用进入）。不过双向隔离也带来弹窗逃逸的死穴。",
+    "tags": ["qiankun", "strictStyleIsolation", "双向"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "双向隔离——主应用样式进不来、子应用样式也出不去",
+        "isCorrect": true,
+        "description": "正确。Shadow DOM 是双向的。"
+      },
+      {
+        "text": "单向隔离——只防子应用样式泄漏出去",
+        "isCorrect": false,
+        "description": "错误。那是 experimentalStyleIsolation 的特性，strict 是双向。"
+      },
+      {
+        "text": "无隔离——只做样式表卸载清理",
+        "isCorrect": false,
+        "description": "错误。卸载清理是默认行为，strict 额外上了 Shadow DOM 双向隔离。"
+      },
+      {
+        "text": "三向隔离——连主应用之间也隔离",
+        "isCorrect": false,
+        "description": "错误。主应用只有一个、不存在「主应用之间」，且 strict 也管不到主应用样式自身。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `experimentalStyleIsolation: true` 在运行时对子应用 CSS 做了什么处理？",
+    "explanation": "`experimentalStyleIsolation` **不建边界，而是运行时改写选择器**：给子应用每条规则加一个属性选择器限定，把 `.app-main` 改写成 `div[data-qiankun-xxx] .app-main`（官方示例格式如 `div[data-qiankun-react16] .app-main`），等效 Vue scoped 的运行时版。它是**单向隔离**——防子应用泄漏，但主应用样式仍能进来。",
+    "tags": ["qiankun", "experimentalStyleIsolation", "属性改写"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "运行时把子应用每条规则改写成带 `div[data-qiankun-xxx]` 属性前缀的选择器",
+        "isCorrect": true,
+        "description": "正确。等效 Vue scoped 的运行时版，单向隔离。"
+      },
+      {
+        "text": "把子应用容器转成 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。那是 strictStyleIsolation 的机制。"
+      },
+      {
+        "text": "把子应用所有样式内联到元素 style 属性上",
+        "isCorrect": false,
+        "description": "错误。它改写选择器而非内联样式。"
+      },
+      {
+        "text": "在构建时给子应用 CSS 类名做哈希",
+        "isCorrect": false,
+        "description": "错误。它是运行时改写，不是构建时哈希（那是 CSS Modules）。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 默认样式隔离所说的「自动隔离微应用之间的样式」，那个「之间」划出了怎样的边界？",
+    "explanation": "「之间」的边界很清楚：**管得着子应用 A ↔ 子应用 B**（A 卸载后样式随 A 走、不污染 B）；**管不着主应用 ↔ 子应用**（主应用样式不经沙箱、无从记账）。所以主/子应用的样式冲突默认不被解决，得靠**主应用自己自治**（如改组件库前缀）。",
+    "tags": ["qiankun", "样式隔离", "边界"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只管子应用彼此之间，不管主应用与子应用之间——主应用样式不经沙箱",
+        "isCorrect": true,
+        "description": "正确。默认隔离的作用域是子应用互相之间。"
+      },
+      {
+        "text": "既管子应用之间也管主应用与子应用之间",
+        "isCorrect": false,
+        "description": "错误。主应用样式不受沙箱管辖。"
+      },
+      {
+        "text": "只管主应用与子应用之间，不管子应用彼此",
+        "isCorrect": false,
+        "description": "错误。恰好相反，默认管的是子应用彼此。"
+      },
+      {
+        "text": "只在开启 Shadow DOM 后才管子应用之间",
+        "isCorrect": false,
+        "description": "错误。子应用之间的默认隔离靠动态样式表劫持，不需要 Shadow DOM。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 开了 `strictStyleIsolation` 后，子应用里 antd 的 Modal 弹窗样式全丢、裸奔，根本原因是什么？",
+    "explanation": "这是 Shadow DOM 的**弹窗逃逸死穴**：子应用与其样式被关进 shadow tree，而组件库的 Dialog/Select/Tooltip/message 为躲 `overflow: hidden` 与 `z-index`，默认 `appendChild` 到 **`document.body`**——弹窗节点**物理离开了 shadow tree**，树内样式出不去，弹窗一丝样式都拿不到。这不是 bug，是双向隔离的逻辑必然。只要子应用用了 antd/element 这类弹窗挂 body 的组件库，`strictStyleIsolation` 就基本不可用。",
+    "tags": ["qiankun", "strictStyleIsolation", "弹窗逃逸"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "弹窗默认挂到 `document.body`，物理离开了 shadow tree，导致 shadow 内的样式作用不到它",
+        "isCorrect": true,
+        "description": "正确。挂 body 使弹窗逃出 shadow 边界丢样式。"
+      },
+      {
+        "text": "Shadow DOM 会主动删除弹窗节点的所有 class",
+        "isCorrect": false,
+        "description": "错误。class 还在，是样式规则被 shadow 边界挡在外面作用不到。"
+      },
+      {
+        "text": "antd 的样式在构建时被 qiankun 剔除了",
+        "isCorrect": false,
+        "description": "错误。qiankun 不剔除样式，是弹窗逃出 shadow tree 后规则作用不到。"
+      },
+      {
+        "text": "弹窗被渲染进了另一个子应用的 shadow tree",
+        "isCorrect": false,
+        "description": "错误。弹窗挂的是 document.body，不在任何子应用的 shadow tree 内。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `experimentalStyleIsolation` 有一条硬限制：哪些 CSS at-rule 不会被属性改写？",
+    "explanation": "硬限制是 **`@keyframes`、`@font-face`、`@import`、`@page` 不被改写**。原因：属性改写的操作对象是**元素选择器**，而这几个 at-rule 定义的是**全局命名空间里的名字**（动画名、字体族名），没有「作用于哪个元素」的概念，语法上无处安放属性限定。后果：两个子应用定义同名动画/字体照样互踩，仍要靠**命名约定**（加团队前缀）兜底。",
+    "tags": ["qiankun", "experimentalStyleIsolation", "at-rule"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`@keyframes`、`@font-face`、`@import`、`@page`——它们是全局命名空间的名字，无处安放属性限定",
+        "isCorrect": true,
+        "description": "正确。动画名/字体名重名照样互踩，需命名约定兜底。"
+      },
+      {
+        "text": "`@media`、`@supports` 这类条件规则",
+        "isCorrect": false,
+        "description": "错误。条件规则内仍是元素选择器，可正常改写。"
+      },
+      {
+        "text": "所有 at-rule 都会被正常改写，无例外",
+        "isCorrect": false,
+        "description": "错误。存在 @keyframes 等明确不被改写的硬限制。"
+      },
+      {
+        "text": "只有 `@charset` 一条不被改写",
+        "isCorrect": false,
+        "description": "错误。不被改写的是 @keyframes/@font-face/@import/@page 这一组。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `experimentalStyleIsolation` 相比 Shadow DOM，在隔离方向上是「单向」，具体指什么？",
+    "explanation": "`experimentalStyleIsolation` 靠给子应用规则加属性前缀，只能保证**子应用的样式作用范围被限定在自己容器内（防泄漏出去）**，但**主应用的样式仍能进入子应用（不设防）**——所以叫**单向隔离**。相比 Shadow DOM 的双向隔离，它对主应用样式「入侵」不设防，但也因此对弹窗稍宽容（不把子应用关进 shadow tree）。",
+    "tags": ["qiankun", "experimentalStyleIsolation", "单向"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只防子应用样式泄漏出去，但主应用样式仍能进入子应用（不防入侵）",
+        "isCorrect": true,
+        "description": "正确。属性改写只限定子应用侧，管不了主应用进入。"
+      },
+      {
+        "text": "只防主应用样式进入子应用，但子应用样式能泄漏出去",
+        "isCorrect": false,
+        "description": "错误。方向反了，它防的是子应用泄漏。"
+      },
+      {
+        "text": "既防泄漏也防入侵，与 Shadow DOM 等价",
+        "isCorrect": false,
+        "description": "错误。那是双向，experimental 只是单向。"
+      },
+      {
+        "text": "既不防泄漏也不防入侵，只是改个类名",
+        "isCorrect": false,
+        "description": "错误。它确实防子应用样式泄漏，只是不防主应用进入。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的样式隔离开关都管不到主应用样式，主/子应用都用 antd 时，主应用最标准的避让做法是什么？",
+    "explanation": "主应用样式不经沙箱、qiankun 隔离不到它，得**主应用自己自治**——最标准的动作是**给主应用的 antd 改前缀**：webpack less-loader 里 `modifyVars: { '@ant-prefix': 'yourPrefix' }`（把 `.ant-*` 改成 `.yourPrefix-*`），再配运行时 `<ConfigProvider prefixCls>` 让组件生成的类名也换前缀。这样主应用的 `.yourPrefix-*` 与子应用的 `.ant-*` 天然不撞车。",
+    "tags": ["qiankun", "主应用", "prefixCls"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `@ant-prefix` less 变量 + `<ConfigProvider prefixCls>` 把主应用 antd 的类名前缀改掉",
+        "isCorrect": true,
+        "description": "正确。改前缀让主/子应用 antd 类名错开。"
+      },
+      {
+        "text": "给主应用也开 `strictStyleIsolation` 把它包进 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。样式隔离开关管的是子应用，主应用样式不受其管辖。"
+      },
+      {
+        "text": "把主应用的 antd 样式全部删掉",
+        "isCorrect": false,
+        "description": "错误。删样式会让主应用自身失去样式，不是解法。"
+      },
+      {
+        "text": "让子应用改前缀即可，主应用无需处理",
+        "isCorrect": false,
+        "description": "错误。冲突的是主应用侧不受管辖的 antd，需主应用改前缀。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `strictStyleIsolation` 弹窗样式丢失，为何说这是「双向隔离的逻辑必然」而非可修的 bug？",
+    "explanation": "Shadow DOM 的**双向隔离**意味着 shadow tree 内外样式互相作用不到——这是它隔离能力的来源。而组件库弹窗为躲 `overflow`/`z-index` 必须挂到 `document.body`（shadow tree 之外）。两个事实叠加，结论唯一：**挂到 body 的弹窗既然在 shadow tree 外，就必然拿不到 tree 内的样式**。想让弹窗有样式就得让样式出得去，可样式出得去就不叫隔离了——所以这是双向隔离与「弹窗挂 body」的必然矛盾，不是实现缺陷。",
+    "tags": ["qiankun", "strictStyleIsolation", "逻辑必然"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "双向隔离本就让 shadow 内外样式互不作用，弹窗挂 body 后在 tree 外必然拿不到 tree 内样式——是逻辑矛盾非实现缺陷",
+        "isCorrect": true,
+        "description": "正确。隔离能力与弹窗逃逸是同一枚硬币的两面。"
+      },
+      {
+        "text": "是 qiankun 处理 Shadow DOM 时的一个已知 bug，新版已修复",
+        "isCorrect": false,
+        "description": "错误。它是双向隔离的逻辑必然，非可修 bug。"
+      },
+      {
+        "text": "因为 antd 的样式写得不规范，换组件库就没问题",
+        "isCorrect": false,
+        "description": "错误。任何「弹窗挂 body」的组件库都会踩，与组件库规范无关。"
+      },
+      {
+        "text": "因为 qiankun 没有把主应用样式注入 shadow tree",
+        "isCorrect": false,
+        "description": "错误。问题在弹窗逃出 shadow tree，与主应用样式是否注入无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `experimentalStyleIsolation` 能给 `.btn` 加 `div[data-qiankun-x] .btn` 限定，却为何对 `@keyframes fade` 无能为力？",
+    "explanation": "属性改写的操作对象是**元素选择器**——它靠在选择器前拼一个属性限定（`div[data-qiankun-x] ...`）把规则约束到某个 DOM 子树。但 `@keyframes`/`@font-face` 定义的是**全局命名空间里的一个名字**（动画名、字体族名），本身**没有「作用于哪个元素」的语义**，语法上无处插入属性限定。于是这类名字仍是全局的，两个子应用同名就互相覆盖，只能靠命名约定加前缀兜底。",
+    "tags": ["qiankun", "experimentalStyleIsolation", "keyframes"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "属性限定只能拼在元素选择器前；`@keyframes` 定义的是全局命名空间的名字、无「作用于哪个元素」的语义，无处插入限定",
+        "isCorrect": true,
+        "description": "正确。改写机制对「名字」类 at-rule 天然无效。"
+      },
+      {
+        "text": "因为 `@keyframes` 的优先级高于属性选择器，改写被覆盖",
+        "isCorrect": false,
+        "description": "错误。不是优先级问题，是语法上无处安放限定。"
+      },
+      {
+        "text": "因为 qiankun 故意跳过动画以提升性能",
+        "isCorrect": false,
+        "description": "错误。是机制无法处理，而非性能取舍。"
+      },
+      {
+        "text": "因为 `@keyframes` 只能写在主应用里，子应用里无效",
+        "isCorrect": false,
+        "description": "错误。子应用可写 @keyframes，只是改写救不了重名互踩。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 3.0 规划弃用 Shadow DOM、转向原生 CSS `@scope` 做样式隔离，背后的核心动机是什么？",
+    "explanation": "Shadow DOM 因**弹窗逃逸**（挂 body 丢样式）和组件库兼容问题被大量项目弃用，`experimentalStyleIsolation` 又有 `@keyframes`/`@font-face` 不被改写的硬限制——两条老路都不完美。3.0 转向原生 CSS **`@scope`**（`@scope (.container) { ... }` 能把样式作用域限定在某个 DOM 子树内），它比运行时字符串改写**更接近浏览器原生能力、更好处理边界**，试图根治两条老路的缺陷。但这属于 3.0 规划、尚未 stable，2.x 仍是「两开关 + 默认劫持」。",
+    "tags": ["qiankun", "scope", "3.0"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Shadow DOM 弹窗逃逸、属性改写不支持 `@keyframes`，两条老路都不完美；`@scope` 更接近原生能力、更好处理边界",
+        "isCorrect": true,
+        "description": "正确。用原生作用域机制根治老方案缺陷。"
+      },
+      {
+        "text": "因为 Shadow DOM 已被浏览器废弃、不再支持",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 仍是标准，是 qiankun 因兼容问题主动弃用。"
+      },
+      {
+        "text": "因为 `@scope` 能在构建时静态提取样式、无需运行时",
+        "isCorrect": false,
+        "description": "错误。@scope 是运行时的原生 CSS 能力，非构建时提取。"
+      },
+      {
+        "text": "因为 `@scope` 能顺带解决 JS 沙箱的隔离问题",
+        "isCorrect": false,
+        "description": "错误。@scope 只管样式作用域，与 JS 沙箱无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 主应用注册子应用时，`entry` 字段最典型填的是什么？",
+    "explanation": "qiankun 相比 single-spa 最省事的一点，就是 `entry` 只填子应用的 **HTML 地址**（如 `//localhost:7101/`）——qiankun 会 `fetch` 回这个 HTML、用 import-html-entry 解析出 `<script>`/`<link>`、在沙箱里执行、从中取生命周期。也可给 `{ scripts, styles, html }` 显式清单。这就是 HTML entry：子应用「像 iframe 一样」被引入。",
+    "tags": ["qiankun", "HTMLentry", "entry"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "子应用的 HTML 地址（qiankun 会 fetch 回来解析出脚本与样式）",
+        "isCorrect": true,
+        "description": "正确。HTML entry 让 entry 只填 HTML 地址。"
+      },
+      {
+        "text": "子应用导出生命周期的那个 JS 模块的 import 路径",
+        "isCorrect": false,
+        "description": "错误。那是 single-spa 的 JS entry 思路，qiankun 用 HTML entry。"
+      },
+      {
+        "text": "子应用的 npm 包名",
+        "isCorrect": false,
+        "description": "错误。entry 是运行时可 fetch 的地址，不是包名。"
+      },
+      {
+        "text": "主应用给子应用分配的路由前缀",
+        "isCorrect": false,
+        "description": "错误。路由前缀是 activeRule，entry 是资源地址。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 注入的全局标记 `window.__POWERED_BY_QIANKUN__`，子应用用它来判断什么？",
+    "explanation": "`window.__POWERED_BY_QIANKUN__` 是 qiankun 注入的**独立/嵌入判别标记**：子应用靠它判断「我是**独立运行**还是**被 qiankun 嵌入**」，据此切换**路由 `base`**、**publicPath**（是否修）、**是否自己 `render`**（独立时自己挂载，嵌入时等 qiankun 调 `mount`）。",
+    "tags": ["qiankun", "POWERED_BY_QIANKUN", "判别"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "判断子应用当前是独立运行还是被 qiankun 嵌入，从而切换路由 base、publicPath、是否自渲染",
+        "isCorrect": true,
+        "description": "正确。它是子应用适配两种运行态的开关。"
+      },
+      {
+        "text": "判断子应用用的是 React 还是 Vue",
+        "isCorrect": false,
+        "description": "错误。它只标记是否被 qiankun 嵌入，与框架无关。"
+      },
+      {
+        "text": "判断 qiankun 版本是 2.x 还是 3.0",
+        "isCorrect": false,
+        "description": "错误。它不携带版本信息，只表示是否被 qiankun 接管。"
+      },
+      {
+        "text": "判断沙箱是 proxySandbox 还是 snapshotSandbox",
+        "isCorrect": false,
+        "description": "错误。它与沙箱选型无关，只表示独立/嵌入。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 子应用必须打包成 UMD，webpack 里对应的关键配置是哪一项？",
+    "explanation": "qiankun 要从子应用**入口脚本的导出对象**上取 `bootstrap`/`mount`/`unmount`，为此子应用必须打成 **UMD**：webpack 里设 **`output.libraryTarget: 'umd'`**（配 `output.library` 唯一名）。若打成 CommonJS/AMD，qiankun 读不到导出，会报 `You need to export the functional lifecycles`。",
+    "tags": ["qiankun", "UMD", "libraryTarget"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`output.libraryTarget: 'umd'`（配 `output.library` 唯一库名）",
+        "isCorrect": true,
+        "description": "正确。UMD 才能让 qiankun 从全局取到导出的生命周期。"
+      },
+      {
+        "text": "`output.libraryTarget: 'commonjs2'`",
+        "isCorrect": false,
+        "description": "错误。CommonJS 产物 qiankun 读不到导出，会报 export lifecycles。"
+      },
+      {
+        "text": "`output.module: true`（ESM 输出）",
+        "isCorrect": false,
+        "description": "错误。qiankun 2.x 不认 ESM 入口，必须 UMD。"
+      },
+      {
+        "text": "`optimization.runtimeChunk: 'single'`",
+        "isCorrect": false,
+        "description": "错误。这与代码分割有关，不是 UMD 打包要求。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 主应用的 `entry: '//localhost:7101'` 漏了末尾的 `/`，可能引发什么问题？",
+    "explanation": "`entry` 填 HTML 地址时**末尾 `/` 不能省**——否则 qiankun 对子应用 **publicPath 的推断会出错**，进而导致子应用动态资源路径不对。正确写法是 `entry: '//localhost:7101/'`。这是接入清单里一条容易忽略的硬约束。",
+    "tags": ["qiankun", "entry", "斜杠"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "publicPath 推断出错，导致子应用资源路径不正确",
+        "isCorrect": true,
+        "description": "正确。末尾斜杠影响 qiankun 对资源基准的推断。"
+      },
+      {
+        "text": "activeRule 会自动失效",
+        "isCorrect": false,
+        "description": "错误。activeRule 是独立的激活规则，与 entry 末尾斜杠无关。"
+      },
+      {
+        "text": "子应用会被强制单实例",
+        "isCorrect": false,
+        "description": "错误。单/多实例由 singular 决定，与末尾斜杠无关。"
+      },
+      {
+        "text": "沙箱会自动降级为 snapshotSandbox",
+        "isCorrect": false,
+        "description": "错误。沙箱选型看 Proxy 与 singular，与 entry 斜杠无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 加载跨域子应用时，为什么子应用的静态资源服务器必须开启 CORS？",
+    "explanation": "qiankun 区别于 iframe 的关键是**用 `fetch` 拉子应用的 HTML 与静态资源**（拿到内容才能在沙箱里执行）——而 `fetch` 跨域受同源策略限制，所以**跨域资源必须返回 `Access-Control-Allow-Origin`**（开发时 devServer 加 `headers: { 'Access-Control-Allow-Origin': '*' }`）。带 cookie 的 entry 还需自定义 `fetch` 加 `credentials: 'include'`。",
+    "tags": ["qiankun", "CORS", "fetch"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "qiankun 用 `fetch` 拉子应用 HTML 与静态资源，跨域 fetch 必须有 CORS 响应头才能读到内容",
+        "isCorrect": true,
+        "description": "正确。fetch 加载模型决定了 CORS 是硬要求。"
+      },
+      {
+        "text": "因为子应用要跨域写主应用的 Cookie",
+        "isCorrect": false,
+        "description": "错误。CORS 是为了让 fetch 能读到跨域资源，不是为写 Cookie。"
+      },
+      {
+        "text": "因为 Shadow DOM 要求跨域资源带 CORS 头",
+        "isCorrect": false,
+        "description": "错误。CORS 需求来自 fetch 加载，与 Shadow DOM 无关。"
+      },
+      {
+        "text": "因为 UMD 打包会强制校验跨域来源",
+        "isCorrect": false,
+        "description": "错误。UMD 打包不涉及跨域校验，CORS 来自运行时 fetch。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 接入多个 webpack 子应用时，为什么 `output.library` 与 `chunkLoadingGlobal` 都要「唯一」？",
+    "explanation": "两个「唯一」防多子应用互踩：**`output.library` 唯一**——多个子应用若同名，UMD 挂到 window 的键冲突，qiankun 取错生命周期（约定用 `${packageName}-[name]` 派生）；**`chunkLoadingGlobal`（webpack4 `jsonpFunction`）唯一**——webpack 异步 chunk 靠一个全局数组（默认 `webpackJsonp`）通信，多子应用共用默认名会**互相覆盖对方的 chunk**，表现为莫名其妙加载失败/白屏（改成 `webpackJsonp_${packageName}` 隔离）。",
+    "tags": ["qiankun", "library", "chunkLoadingGlobal"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`library` 同名会让 UMD 挂 window 的键冲突取错生命周期；`chunkLoadingGlobal` 同名会让多子应用的异步 chunk 全局数组互相覆盖",
+        "isCorrect": true,
+        "description": "正确。两者都因全局命名冲突导致子应用互踩。"
+      },
+      {
+        "text": "两者唯一只是为了日志里好区分子应用，无功能影响",
+        "isCorrect": false,
+        "description": "错误。不唯一会真的导致取错生命周期与 chunk 覆盖。"
+      },
+      {
+        "text": "只有 `library` 需要唯一，`chunkLoadingGlobal` 用默认值即可",
+        "isCorrect": false,
+        "description": "错误。chunkLoadingGlobal 默认名共用会导致 chunk 互相覆盖。"
+      },
+      {
+        "text": "两者唯一是为了让沙箱能区分不同子应用的 fakeWindow",
+        "isCorrect": false,
+        "description": "错误。fakeWindow 按子应用 name 区分，与这两个 output 配置无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `entry` 指向的 HTML 里有多个 `<script>`，qiankun 如何确定哪个是入口脚本（从哪个取生命周期）？",
+    "explanation": "规则是：以 HTML 里**标了 `entry` 属性的 `<script>`** 作为入口脚本；**没标时则取最后一个 `<script>`**。qiankun 从这个入口脚本的 UMD 导出上取 `bootstrap`/`mount`/`unmount`。所以显式给入口脚本加 `entry` 属性（`<script src=... entry>`）能避免 qiankun 认错入口。",
+    "tags": ["qiankun", "entryscript", "入口"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "取标了 `entry` 属性的 `<script>`；没有标记时取最后一个 `<script>`",
+        "isCorrect": true,
+        "description": "正确。这是 qiankun 识别入口脚本的规则。"
+      },
+      {
+        "text": "取第一个 `<script>`",
+        "isCorrect": false,
+        "description": "错误。默认取最后一个，或显式标 entry 的那个。"
+      },
+      {
+        "text": "取 `src` 里含 `main` 字样的 `<script>`",
+        "isCorrect": false,
+        "description": "错误。qiankun 不按文件名猜，靠 entry 属性或「最后一个」。"
+      },
+      {
+        "text": "把所有 `<script>` 的导出合并后取生命周期",
+        "isCorrect": false,
+        "description": "错误。只从单个入口脚本取生命周期，不做合并。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 子应用修 publicPath 用的 `public-path.js`，为什么必须在入口的最顶部、早于其他 import 执行？",
+    "explanation": "`public-path.js` 里 `if (window.__POWERED_BY_QIANKUN__) { __webpack_public_path__ = window.__INJECTED_PUBLIC_PATH_BY_QIANKUN__ }` 用 qiankun 注入的动态值改 webpack 运行时 publicPath。**它必须最先执行**——因为一旦其他 chunk 开始按 publicPath 加载资源，改晚了就来不及了。所以要 `import './public-path'` 放在入口第一行，早于任何其他 import。",
+    "tags": ["qiankun", "publicPath", "public-path"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "要在其他 chunk 按 publicPath 加载资源之前就把 publicPath 改好，否则改晚了来不及",
+        "isCorrect": true,
+        "description": "正确。publicPath 必须在资源加载前就位。"
+      },
+      {
+        "text": "因为 `__POWERED_BY_QIANKUN__` 只在入口第一行有效，之后就被删除",
+        "isCorrect": false,
+        "description": "错误。该标记全程有效、不会被删；顺序要求是为了赶在资源加载前改好。"
+      },
+      {
+        "text": "因为 webpack 要求所有魔法变量必须写在第一行",
+        "isCorrect": false,
+        "description": "错误。webpack 无此规定，是逻辑上要抢在资源加载前。"
+      },
+      {
+        "text": "因为晚 import 会触发沙箱把 publicPath 锁死",
+        "isCorrect": false,
+        "description": "错误。沙箱不锁 publicPath，顺序要求纯粹是加载时序。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 接入子应用报 `You need to export the functional lifecycles in xxx entry`，最常见的原因是什么？",
+    "explanation": "这个报错意味着 qiankun **从子应用入口脚本的导出对象上没取到 `bootstrap`/`mount`/`unmount`**——多半是：子应用**没打成 UMD**（打成了 CommonJS/AMD，qiankun 读不到导出）、生命周期**没具名导出**、或 **entry script 没被识别**。FAQ 给的解法就是把 `libraryTarget` 改成 `umd`（或退一步 `window`）、确认 `export bootstrap/mount/unmount`。",
+    "tags": ["qiankun", "报错", "lifecycles"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "子应用没打成 UMD / 生命周期没具名导出 / 入口脚本没被识别，导致 qiankun 取不到生命周期",
+        "isCorrect": true,
+        "description": "正确。核心是导出对象上拿不到三个生命周期。"
+      },
+      {
+        "text": "子应用没开启 CORS",
+        "isCorrect": false,
+        "description": "错误。CORS 问题通常报 `died in LOADING_SOURCE_CODE`，不是 export lifecycles。"
+      },
+      {
+        "text": "主应用漏调了 `start()`",
+        "isCorrect": false,
+        "description": "错误。漏调 start 是不加载，不会报「导出生命周期」。"
+      },
+      {
+        "text": "activeRule 与真实路径冲突",
+        "isCorrect": false,
+        "description": "错误。那会导致自激活死循环，不是 export lifecycles 报错。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 为什么要在运行时注入 `__INJECTED_PUBLIC_PATH_BY_QIANKUN__`，而不能让子应用用构建时写死的相对 publicPath？",
+    "explanation": "子应用独立运行时，动态 chunk（懒加载路由、图片）从子应用**自己的域名**取；一旦被嵌进主应用，**页面地址变成主应用的**，webpack 若用相对 publicPath 就会**把资源指错到主应用域名下导致 404**。构建时无法预知子应用最终被嵌到哪个主应用、哪个路径下，所以 qiankun 在**挂载前运行时**注入正确的动态 publicPath，子应用据此修正资源基准。（部署地址固定时也可构建时写死绝对 publicPath 作为替代。）",
+    "tags": ["qiankun", "publicPath", "运行时注入"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "子应用被嵌入后页面地址变成主应用的，相对 publicPath 会把动态 chunk 指错到主应用域名致 404；构建时无法预知嵌入位置，只能运行时注入",
+        "isCorrect": true,
+        "description": "正确。嵌入位置构建期未知，必须运行时给基准。"
+      },
+      {
+        "text": "因为 webpack 不支持在构建时设置绝对 publicPath",
+        "isCorrect": false,
+        "description": "错误。webpack 支持写死绝对 publicPath，这正是另一种可选做法。"
+      },
+      {
+        "text": "因为运行时注入能顺便绕过 CORS 限制",
+        "isCorrect": false,
+        "description": "错误。publicPath 注入解决的是资源基准，与 CORS 无关。"
+      },
+      {
+        "text": "因为每次挂载子应用的 publicPath 都会随机变化",
+        "isCorrect": false,
+        "description": "错误。它不是随机，是随「嵌入到哪个主应用/路径」而定，构建期不可知。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 项目里多个 webpack 子应用出现「随机某个子应用加载失败/白屏」，最可能的根因是什么？",
+    "explanation": "多半是 **`chunkLoadingGlobal`（webpack4 `jsonpFunction`）没设唯一**——webpack 异步 chunk 靠一个**全局数组**（默认名 `webpackJsonp`）通信，多个子应用共用默认名时会**互相覆盖对方的 chunk 注册**，表现就是「莫名其妙、随机的加载失败/白屏」。解法是每个子应用用包名派生唯一名（`webpackJsonp_${packageName}`），并确认 `package.json` 的 `name` 唯一、`output.library` 也唯一。",
+    "tags": ["qiankun", "chunkLoadingGlobal", "白屏"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`chunkLoadingGlobal` 未设唯一，多子应用的异步 chunk 全局数组同名互相覆盖",
+        "isCorrect": true,
+        "description": "正确。全局 chunk 数组冲突导致随机加载失败。"
+      },
+      {
+        "text": "主应用 `start` 的 `prefetch` 设成了 `'all'`",
+        "isCorrect": false,
+        "description": "错误。prefetch 只是预取策略，不会导致 chunk 互相覆盖。"
+      },
+      {
+        "text": "子应用没开 `strictStyleIsolation`",
+        "isCorrect": false,
+        "description": "错误。样式隔离与 chunk 加载失败无关。"
+      },
+      {
+        "text": "activeRule 写成了函数而非字符串",
+        "isCorrect": false,
+        "description": "错误。activeRule 形态不影响 chunk 全局冲突。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 子应用出现「路由自激活死循环」，与 `activeRule` 有什么关系？",
+    "explanation": "Cookbook 明确约束：**`activeRule` 不能等于子应用的真实访问路径**。若两者相同，qiankun 激活子应用 → 子应用内部路由跳到该真实路径 → 又命中同一个 `activeRule` → 再次触发激活……形成**自激活死循环/冲突**。解法是让 `activeRule`（主应用分配的激活前缀）与子应用真实路径**错开**。这是接入约束里容易忽略但很致命的一条。",
+    "tags": ["qiankun", "activeRule", "死循环"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`activeRule` 等于子应用真实访问路径时会反复自命中、形成自激活死循环，需让二者错开",
+        "isCorrect": true,
+        "description": "正确。激活前缀与真实路径必须区分。"
+      },
+      {
+        "text": "`activeRule` 必须与真实路径完全一致才不会死循环",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，一致才会死循环。"
+      },
+      {
+        "text": "死循环是 `singular: true` 导致的，与 activeRule 无关",
+        "isCorrect": false,
+        "description": "错误。根因是 activeRule 与真实路径重合，与 singular 无关。"
+      },
+      {
+        "text": "死循环是 prefetch 反复预取导致的",
+        "isCorrect": false,
+        "description": "错误。prefetch 不触发激活，与自激活死循环无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 2.x 在国内最常被吐槽的最大痛点是什么？",
+    "explanation": "qiankun 2.x 最大痛点是**接不了 Vite / 不支持 ESM 入口**：它基于 import-html-entry，**不支持 `<script type=module>`**，而 Vite 的产物默认以 ESM 为中心，所以 **Vite 子应用无法原生接入 qiankun 2.x**。这不是配置没调对，而是架构层面的不兼容。",
+    "tags": ["qiankun", "Vite", "ESM"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不支持 ESM 入口、接不了 Vite 子应用",
+        "isCorrect": true,
+        "description": "正确。这是 qiankun 2.x 架构级的最大痛点。"
+      },
+      {
+        "text": "不支持 React 子应用",
+        "isCorrect": false,
+        "description": "错误。qiankun 对 React/Vue 等框架无关，痛点在 ESM/Vite 而非某框架。"
+      },
+      {
+        "text": "不支持样式隔离",
+        "isCorrect": false,
+        "description": "错误。qiankun 有样式隔离（虽不完美），痛点是 ESM/Vite。"
+      },
+      {
+        "text": "不支持多个子应用同时注册",
+        "isCorrect": false,
+        "description": "错误。qiankun 支持注册多个子应用，痛点在 Vite/ESM。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 2.x 的 HTML entry 加载能力底层依赖哪个库来实现？",
+    "explanation": "qiankun 2.x 的 HTML entry 靠 **import-html-entry** 实现——它 `fetch` 回子应用 HTML、用正则解析出 `<script>` 标签、把脚本内容 fetch 回来得到 JS 字符串、再用 `eval`/`new Function` 同步执行（外包一层沙箱的 `with(proxyWindow){}`）。正是这套「fetch + eval」模型决定了它不认 ESM。",
+    "tags": ["qiankun", "import-html-entry", "加载"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import-html-entry",
+        "isCorrect": true,
+        "description": "正确。它是 qiankun 2.x HTML entry 的底层加载库。"
+      },
+      {
+        "text": "SystemJS",
+        "isCorrect": false,
+        "description": "错误。SystemJS 是 single-spa 常配的模块加载器，不是 qiankun 2.x 的 HTML entry 底层。"
+      },
+      {
+        "text": "es-module-shims",
+        "isCorrect": false,
+        "description": "错误。那是 ESM/import maps 的 polyfill，不是 qiankun 的加载库。"
+      },
+      {
+        "text": "webpack Module Federation",
+        "isCorrect": false,
+        "description": "错误。MF 是另一套微前端方案，qiankun 2.x 用 import-html-entry。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 生态里让 Vite 子应用接进来的 `vite-plugin-qiankun`，它的身份定位是怎样的？",
+    "explanation": "`vite-plugin-qiankun` 是**第三方、非官方**的社区插件——它把 Vite 子应用「伪装」成 qiankun 认得的形式硬接进来。因为非官方维护，它**跟随 qiankun 版本更新有滞后风险**，官方一动可能失配，出问题得自己啃。它更像「存量项目里非塞 Vite 不可时的权宜之计」，而非推荐姿势。",
+    "tags": ["qiankun", "vite-plugin-qiankun", "第三方"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "第三方、非官方维护的社区插件，跟随 qiankun 更新有滞后风险",
+        "isCorrect": true,
+        "description": "正确。它是社区权宜方案，非官方出品。"
+      },
+      {
+        "text": "qiankun 官方团队维护的一等公民插件",
+        "isCorrect": false,
+        "description": "错误。它是第三方插件，非官方维护。"
+      },
+      {
+        "text": "Vite 官方提供的微前端集成插件",
+        "isCorrect": false,
+        "description": "错误。它既非 qiankun 官方也非 Vite 官方。"
+      },
+      {
+        "text": "wujie 团队为兼容 qiankun 而出的适配层",
+        "isCorrect": false,
+        "description": "错误。它与 wujie 无关，是独立第三方插件。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 2.x 执行子应用脚本的模型可概括为「fetch + eval」，具体是怎样的流程？",
+    "explanation": "import-html-entry 的加载模型是：**① `fetch` 回子应用 HTML；② 用正则解析出 `<script>` 标签；③ 把脚本内容 `fetch` 回来得到一段 JS 字符串；④ 用 `eval`/`new Function` 把字符串同步执行**（外面包一层沙箱的 `with(proxyWindow){}`）。这套模型对 IIFE/UMD 格式的脚本天然合适（它们就是「能被 eval 的自执行字符串」），但与 ESM 根本对不上。",
+    "tags": ["qiankun", "fetch-eval", "模型"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "fetch 回 HTML → 正则解析出 `<script>` → 把脚本 fetch 成字符串 → 用 eval/new Function 同步执行（外包 with 沙箱）",
+        "isCorrect": true,
+        "description": "正确。这是 import-html-entry 的核心模型。"
+      },
+      {
+        "text": "用浏览器原生 `import()` 动态导入子应用模块",
+        "isCorrect": false,
+        "description": "错误。那是 ESM 的加载方式，恰恰是 qiankun 2.x 不支持的。"
+      },
+      {
+        "text": "把子应用打进 iframe 由浏览器加载执行",
+        "isCorrect": false,
+        "description": "错误。iframe 是 wujie 路线，qiankun 用 fetch + eval。"
+      },
+      {
+        "text": "用 Web Worker 在后台线程编译执行脚本",
+        "isCorrect": false,
+        "description": "错误。qiankun 在主线程 eval 执行，不走 Worker。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `with(proxyWindow){}` 沙箱包裹为什么与 ESM 天生互斥？",
+    "explanation": "qiankun 的 with/eval 沙箱在**非严格模式**下运行（`with` 语句本身在**严格模式下是语法错误**）。而 **ESM 模块天然强制严格模式**——把 ESM 塞进 `with(proxyWindow){}` 直接语法冲突。所以沙箱与 ESM 天生互斥，这也是 qiankun 2.x 接不了 ESM 的原因之一（叠加在 `import`/`export` 语法不能 eval 之上）。",
+    "tags": ["qiankun", "with", "严格模式"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`with` 在严格模式下是语法错误，而 ESM 天然强制严格模式，二者直接冲突",
+        "isCorrect": true,
+        "description": "正确。with 沙箱与 ESM 的强制严格模式互斥。"
+      },
+      {
+        "text": "ESM 会禁用 Proxy，导致 with 沙箱无法代理 window",
+        "isCorrect": false,
+        "description": "错误。ESM 不禁用 Proxy，冲突点在 with 与严格模式。"
+      },
+      {
+        "text": "with 只能包裹异步代码，而 ESM 是同步的",
+        "isCorrect": false,
+        "description": "错误。冲突与同步/异步无关，在于严格模式禁用 with。"
+      },
+      {
+        "text": "ESM 要求所有变量用 var 声明，与 with 的块级作用域冲突",
+        "isCorrect": false,
+        "description": "错误。这不是真实原因，真实冲突是严格模式禁用 with。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `vite-plugin-qiankun` 让 Vite 子应用「跑起来」的核心思路是什么？",
+    "explanation": "它的思路是**把 Vite 子应用伪装成 qiankun 认得的样子**：① **注入判别标记**（模拟 `__POWERED_BY_QIANKUN__`、`__INJECTED_PUBLIC_PATH_BY_QIANKUN__` 等全局变量）；② **改写生命周期导出**（把 `bootstrap/mount/unmount` 挂到 `window` 上用约定 key，让 qiankun 从全局取而非从 UMD 导出取）；③ **开发态特殊处理**（Vite dev 用原生 `type=module`，插件让 qiankun 绕过对这段脚本的沙箱执行，直接用浏览器原生 ESM 加载）。",
+    "tags": ["qiankun", "vite-plugin-qiankun", "原理"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "伪装成 qiankun 认得的形式——注入判别标记、把生命周期挂到 window、开发态绕过沙箱走原生 ESM",
+        "isCorrect": true,
+        "description": "正确。它用「伪装 + 绕沙箱」让 Vite 子应用跑起来。"
+      },
+      {
+        "text": "给 Vite 加一个把产物转成 UMD 的编译步骤，正常走 qiankun 沙箱",
+        "isCorrect": false,
+        "description": "错误。它没把产物转 UMD 正常走沙箱，而是绕过沙箱走原生 ESM。"
+      },
+      {
+        "text": "把 qiankun 的 import-html-entry 替换成支持 ESM 的加载器",
+        "isCorrect": false,
+        "description": "错误。它不改 qiankun 内核，是在子应用侧伪装。"
+      },
+      {
+        "text": "启动一个 iframe 把 Vite 子应用装进去",
+        "isCorrect": false,
+        "description": "错误。iframe 是 wujie，vite-plugin-qiankun 走伪装 + 原生 ESM。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 用 `vite-plugin-qiankun` 硬接 Vite 子应用后，最核心的代价（局限）是什么？",
+    "explanation": "最核心的代价是**沙箱基本失效**——Vite 子应用走原生 ESM、**绕过了 qiankun 的 with/eval 沙箱**，JS 全局隔离几乎裸奔、样式隔离也大打折扣，「跑起来」不等于「隔离住」。其余局限：需按插件约定改入口（侵入）、生产 build 与 dev 行为不一致有额外坑、非官方更新滞后。所以若隔离对你重要，它的「沙箱失效」是硬伤。",
+    "tags": ["qiankun", "vite-plugin-qiankun", "局限"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "沙箱基本失效——Vite 子应用绕过 with/eval 沙箱走原生 ESM，JS 全局隔离几乎裸奔",
+        "isCorrect": true,
+        "description": "正确。硬接的代价是丢掉隔离。"
+      },
+      {
+        "text": "会导致主应用无法使用路由型注册",
+        "isCorrect": false,
+        "description": "错误。它不影响主应用注册方式，代价是子应用沙箱失效。"
+      },
+      {
+        "text": "会强制所有子应用打包成 UMD",
+        "isCorrect": false,
+        "description": "错误。它恰恰让 Vite 子应用不走 UMD、走原生 ESM。"
+      },
+      {
+        "text": "会使 prefetch 预取功能永久关闭",
+        "isCorrect": false,
+        "description": "错误。它与 prefetch 无关，核心代价是沙箱失效。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 2.x 中，把一个未做特殊处理的 Vite 子应用的 `entry` 直接填进去，为什么脚本执行不了、白屏或报错？",
+    "explanation": "因为 Vite 产物是 **ESM（`<script type=module>`）**，而 qiankun 2.x 的 import-html-entry 是「fetch 脚本回来当**字符串同步 `eval`**」——**ESM 的 `import`/`export` 是模块级语法，不能被 `eval` 当普通脚本执行**（`eval` 一段 import 语句直接语法错误），且 ESM 是浏览器原生异步加载、强制严格模式（还与 with 沙箱互斥）。加载模型与 ESM 世界观根本对不上，于是取不到生命周期（`export lifecycles` 报错）或脚本压根跑不起来 → 白屏。",
+    "tags": ["qiankun", "Vite", "白屏"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Vite 产物是 ESM，`import`/`export` 无法被 qiankun 的 eval 当字符串同步执行，加载模型与 ESM 根本不兼容",
+        "isCorrect": true,
+        "description": "正确。fetch+eval 模型吃不下 ESM。"
+      },
+      {
+        "text": "因为 Vite 的端口和主应用冲突了",
+        "isCorrect": false,
+        "description": "错误。这是架构级不兼容，与端口无关。"
+      },
+      {
+        "text": "因为 Vite 子应用没开 CORS",
+        "isCorrect": false,
+        "description": "错误。即便开了 CORS，ESM 也无法被 eval 执行，根因在加载模型。"
+      },
+      {
+        "text": "因为 qiankun 默认关闭了对 Vite 的沙箱",
+        "isCorrect": false,
+        "description": "错误。不存在「对 Vite 关沙箱」的默认项，根因是 ESM 不能 eval。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 选型中，子应用是 Vite 主力、且要求真正的沙箱隔离，按笔记的建议应优先考虑什么？",
+    "explanation": "笔记的硬判据是「**先看构建工具与隔离要求**」：Vite 主力且要真沙箱，应换**原生 Vite 友好**的方案——**wujie**（iframe 沙箱，天生把 ESM 交给浏览器原生执行、隔离更强）或 **micro-app**（支持 `<script type=module>`、低侵入）。别为「用上 qiankun」硬把 Vite 塞进 `vite-plugin-qiankun` 的 hack（那会丢隔离）。qiankun 2.x 与 Vite 是架构级不兼容。",
+    "tags": ["qiankun", "选型", "wujie"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "换 wujie（iframe 沙箱、原生 ESM）或 micro-app（支持 module script）",
+        "isCorrect": true,
+        "description": "正确。这是 Vite + 要隔离的顺路选择。"
+      },
+      {
+        "text": "继续用 qiankun，只要把 Vite 换成 webpack 打包即可",
+        "isCorrect": false,
+        "description": "错误。题设是「Vite 主力」，顺路解是换 wujie/micro-app 而非强改构建工具。"
+      },
+      {
+        "text": "用 `vite-plugin-qiankun` 硬接，隔离问题可忽略",
+        "isCorrect": false,
+        "description": "错误。它沙箱失效，与「要真沙箱」矛盾。"
+      },
+      {
+        "text": "等 qiankun 3.0 stable 再上 Vite",
+        "isCorrect": false,
+        "description": "错误。3.0 长期 rc、未 stable，不该赌排期。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 3.0 打算从根上解决「接不了 Vite」，其新 loader（`@qiankunjs/loader`）的关键技术手段是什么？",
+    "explanation": "3.0 的核心是**换掉 import-html-entry 那套「正则 + eval」模型**：新 loader 用 **DOMParser 替代正则**解析 HTML（更健壮，正确处理各种 script 标签包括 `type=module`）、**streaming（流式）加载**边下边处理、**原生支持 `<script type=module>` / ESM 与 Vite / Webpack 5 Module Federation**——从加载模型层面接纳 ESM 而非 hack。但现实是 3.0 至今仍 rc（rc.21，2026-02）、未 stable，别赌排期。",
+    "tags": ["qiankun", "3.0", "loader"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "新 loader 用 DOMParser 替代正则解析、streaming 流式加载，从加载模型层面原生支持 `type=module`/ESM 与 Vite",
+        "isCorrect": true,
+        "description": "正确。这是 3.0 根治 Vite 痛点的技术手段。"
+      },
+      {
+        "text": "给 import-html-entry 打补丁，让 eval 支持 import 语法",
+        "isCorrect": false,
+        "description": "错误。3.0 是换掉该模型，而非给 eval 打补丁。"
+      },
+      {
+        "text": "改用 iframe 沙箱把 ESM 交给浏览器执行",
+        "isCorrect": false,
+        "description": "错误。iframe 是 wujie 思路，3.0 走 DOMParser + streaming 的新 loader。"
+      },
+      {
+        "text": "要求所有 Vite 子应用改回 UMD 打包",
+        "isCorrect": false,
+        "description": "错误。3.0 目标正是原生吃 ESM，而非退回 UMD。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 生产环境目前应当选用的「事实稳定版本」是哪一个？",
+    "explanation": "**2.10.16（2023-11-15）是 qiankun 的事实稳定线**——2.x 分支此后基本只做极小维护（如那次改动只是「移除对象展开运算符以在大数组迭代中提速」这类性能微调），**没有新特性**。3.0 长期 rc、未 stable，所以生产就用 2.10.16。今天生产在用的 qiankun 功能面就是 2.10 那套（两开关样式隔离、三沙箱、import-html-entry、globalState 通信）。",
+    "tags": ["qiankun", "版本", "2.10.16"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "2.10.16——2.x 事实停更的稳定线，生产首选",
+        "isCorrect": true,
+        "description": "正确。它是当前生产该用的稳定版。"
+      },
+      {
+        "text": "3.0.0-rc.21——最新的 rc 版本",
+        "isCorrect": false,
+        "description": "错误。rc 未 stable，不该用于生产。"
+      },
+      {
+        "text": "3.0.0 正式版",
+        "isCorrect": false,
+        "description": "错误。3.0 至今没有正式版，仍在 rc。"
+      },
+      {
+        "text": "1.x 的最后一个版本",
+        "isCorrect": false,
+        "description": "错误。事实稳定线是 2.10.16，不是 1.x。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 内置的应用间通信方案，是通过哪个 API 建立的？",
+    "explanation": "qiankun 内置通信走**全局状态**方案——**`initGlobalState(state)`** 建一个所有应用共享的状态对象，返回一组操作方法 `MicroAppStateActions`：`onGlobalStateChange`（订阅）、`setGlobalState`（更新，仅一级属性）、`offGlobalStateChange`（取消订阅）。子应用侧通过 `props` 拿到同一组 actions 双向读写。",
+    "tags": ["qiankun", "initGlobalState", "通信"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`initGlobalState(state)`——建全局共享状态，返回 onGlobalStateChange/setGlobalState/offGlobalStateChange",
+        "isCorrect": true,
+        "description": "正确。这是 qiankun 内置的通信入口。"
+      },
+      {
+        "text": "`registerMicroApps` 的 `props` 是唯一通信方式",
+        "isCorrect": false,
+        "description": "错误。props 是一种下发方式，但内置通信 API 是 initGlobalState。"
+      },
+      {
+        "text": "`start({ globalState })` 配置项",
+        "isCorrect": false,
+        "description": "错误。全局状态由 initGlobalState 建立，不是 start 的配置项。"
+      },
+      {
+        "text": "`loadMicroApp` 的返回句柄",
+        "isCorrect": false,
+        "description": "错误。那是手动加载句柄，通信靠 initGlobalState。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `start({ prefetch })` 默认值是什么，对应怎样的预取行为？",
+    "explanation": "`prefetch` **默认 `true`**：**第一个子应用挂载后**，浏览器空闲时预取**其余未挂载**子应用的静态资源，等真要挂载时秒开。这是兼顾首屏与后续切换的通用默认。其余形态还有 `'all'`（start 后立即全预取）、`string[]`（指定 name）、函数（自定义关键/次要分级）。",
+    "tags": ["qiankun", "prefetch", "默认"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认 `true`——首个子应用挂载后，空闲时预取其余未挂载子应用的资源",
+        "isCorrect": true,
+        "description": "正确。这是兼顾首屏与切换的默认策略。"
+      },
+      {
+        "text": "默认 `false`——不做任何预取",
+        "isCorrect": false,
+        "description": "错误。默认是 true 会预取。"
+      },
+      {
+        "text": "默认 `'all'`——start 后立即预取全部",
+        "isCorrect": false,
+        "description": "错误。'all' 是可选形态，默认是 true。"
+      },
+      {
+        "text": "默认按子应用数量自动决定",
+        "isCorrect": false,
+        "description": "错误。默认就是固定的 true，无「按数量自动」一说。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `start({ prefetch })` 支持四种取值形态，下列哪一组完整且正确？",
+    "explanation": "四形态：**`true`**（默认，首个挂载后空闲预取其余）、**`'all'`**（start 后立即预取全部，常配 `loadMicroApp`）、**`string[]`**（只预取指定 name 的子应用）、**函数** `(apps) => ({ criticalAppNames, minorAppsName })`（自定义关键/次要分级）。此外还能脱离 start 用 `prefetchApps(apps)` 手动触发。",
+    "tags": ["qiankun", "prefetch", "四形态"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`true` / `'all'` / `string[]` / 函数 `(apps) => ({ criticalAppNames, minorAppsName })`",
+        "isCorrect": true,
+        "description": "正确。这是 prefetch 的四种取值形态。"
+      },
+      {
+        "text": "`true` / `false` / `'lazy'` / `'eager'`",
+        "isCorrect": false,
+        "description": "错误。qiankun 的 prefetch 没有 'lazy'/'eager' 字符串取值。"
+      },
+      {
+        "text": "`'idle'` / `'all'` / `'none'` / `'auto'`",
+        "isCorrect": false,
+        "description": "错误。默认是布尔 true 而非 'idle'，也无 'none'/'auto'。"
+      },
+      {
+        "text": "只有 `true` 和 `false` 两种",
+        "isCorrect": false,
+        "description": "错误。除布尔外还有 'all'、字符串数组、函数形态。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `setGlobalState(state)` 有一条重要限制，是什么？",
+    "explanation": "`setGlobalState(state)` **仅支持第一级属性的修改**——深层嵌套的改动不会触发 `onGlobalStateChange` 通知。也就是说改 `{ user: {...} }` 里整个 `user` 会通知，但只改 `user.name` 这种深层字段不会被监听到。这是使用 qiankun 内置通信时容易踩的坑（3.0 甚至计划移除 globalState）。",
+    "tags": ["qiankun", "setGlobalState", "一级属性"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只支持第一级属性的变更，深层嵌套字段的改动不会触发订阅通知",
+        "isCorrect": true,
+        "description": "正确。这是 setGlobalState 的已知限制。"
+      },
+      {
+        "text": "只能由主应用调用，子应用不能改全局状态",
+        "isCorrect": false,
+        "description": "错误。子应用通过 props 拿到 setGlobalState 也能改。"
+      },
+      {
+        "text": "每次只能更新一个属性",
+        "isCorrect": false,
+        "description": "错误。可一次更新多个一级属性，限制在「层级」而非「个数」。"
+      },
+      {
+        "text": "更新后必须手动调用 onGlobalStateChange 才生效",
+        "isCorrect": false,
+        "description": "错误。setGlobalState 会自动触发已订阅的回调（针对一级属性）。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 3.0 的发布状态，下列哪种描述符合其「三年难产」的实际时间线？",
+    "explanation": "3.0 是微前端圈著名的跳票案例：**2021-04 发起 roadmap → 2022-06 社区吐槽「一年多只做了个新 logo」→ 2024-09 发首个 rc.0 → 2026-02 到 rc.21，始终 rc、无 stable**。三年多、二十余个 rc 至今没有正式版。重构方向（可插拔 `@qiankunjs/*`、原生吃 ESM、`@scope` 样式）清晰但未落地——选型应以「2.x 是现实、3.0 是关注项」为准。",
+    "tags": ["qiankun", "3.0", "难产"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2021 发起、2024 出首个 rc.0、2026 到 rc.21，始终是 rc、至今无 stable",
+        "isCorrect": true,
+        "description": "正确。三年多二十余 rc 未发正式版。"
+      },
+      {
+        "text": "3.0 已于 2024 年发布 stable 正式版",
+        "isCorrect": false,
+        "description": "错误。3.0 至今仍是 rc，没有 stable。"
+      },
+      {
+        "text": "3.0 从未启动，只是社区的一个提议",
+        "isCorrect": false,
+        "description": "错误。3.0 已有 rc.0 到 rc.21 的持续迭代。"
+      },
+      {
+        "text": "3.0 在 2022 年就发布并取代了 2.x",
+        "isCorrect": false,
+        "description": "错误。2.10.16 仍是稳定线，3.0 未 stable。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的选型定位中，它最适合（甜区）的场景是哪种？",
+    "explanation": "qiankun 的**甜区是「存量 webpack 项目 + 要开箱即用」**——想少写隔离代码、要现成的 JS 沙箱 + 样式隔离 + HTML entry，且子应用都是 webpack。反过来，**新项目 Vite 主力应先看 wujie/micro-app**（qiankun 2.x 接不了 Vite）；要极致控制、自建底座则用 single-spa。一句话：qiankun 是「存量 webpack + 要开箱」的稳妥解，不是「新项目 + Vite」的顺路解。",
+    "tags": ["qiankun", "选型", "甜区"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "存量 webpack 项目 + 要开箱即用的沙箱/样式隔离/HTML entry",
+        "isCorrect": true,
+        "description": "正确。这是 qiankun 的甜区。"
+      },
+      {
+        "text": "全新的 Vite 主力项目 + 追求最强隔离",
+        "isCorrect": false,
+        "description": "错误。Vite 主力应先看 wujie/micro-app，qiankun 2.x 接不了 Vite。"
+      },
+      {
+        "text": "要极致控制、团队愿自建底座自理隔离",
+        "isCorrect": false,
+        "description": "错误。那是 single-spa 的定位，不是 qiankun 甜区。"
+      },
+      {
+        "text": "纯静态站点、无子应用拆分需求",
+        "isCorrect": false,
+        "description": "错误。无子应用就不需要微前端框架。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `onGlobalStateChange(cb, fireImmediately)` 第二个参数 `fireImmediately` 设为 `true` 有什么效果？",
+    "explanation": "`onGlobalStateChange(cb, fireImmediately?)` 用于订阅全局状态变更。**`fireImmediately: true` 会在注册回调的当下、立即用「当前状态值」触发一次回调**——不必等下一次 `setGlobalState` 才拿到值。这对「子应用挂载时就想立刻读到全局当前状态（如主题、用户信息）来初始化 UI」很有用。子应用 `unmount` 时应调 `offGlobalStateChange()` 取消订阅避免泄漏。",
+    "tags": ["qiankun", "onGlobalStateChange", "fireImmediately"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "注册时立即用当前状态值触发一次回调，无需等下一次 `setGlobalState`",
+        "isCorrect": true,
+        "description": "正确。fireImmediately 让订阅方立刻拿到当前值初始化。"
+      },
+      {
+        "text": "让回调在每次状态变更时触发两次",
+        "isCorrect": false,
+        "description": "错误。它只是注册时多触发一次「当前值」，不是每次翻倍。"
+      },
+      {
+        "text": "让该订阅忽略后续所有变更、只触发一次",
+        "isCorrect": false,
+        "description": "错误。它不影响后续变更的正常触发，只是注册时先触发一次。"
+      },
+      {
+        "text": "让状态变更同步阻塞直到回调返回",
+        "isCorrect": false,
+        "description": "错误。它与同步/阻塞无关，只控制注册时是否立即用当前值触发。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 3.0 的重构方向里，「模块化拆分」具体指什么？",
+    "explanation": "3.0 把内核**拆成 `@qiankunjs/*` 独立可插拔包**——`@qiankunjs/loader`（加载）、`@qiankunjs/sandbox`（沙箱）等可替换。其中沙箱**对齐 TC39 Realms 思路、去掉对 `eval` 的依赖**；loader 用 DOMParser + streaming 原生吃 ESM。此外还有样式隔离弃 Shadow DOM 转 `@scope`、支持 CSP、rc.21 加 legacy API 兼容层等。这套「可插拔模块化」是 3.0 三年重构的骨架。",
+    "tags": ["qiankun", "3.0", "模块化"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "拆成 `@qiankunjs/loader`、`@qiankunjs/sandbox` 等独立可插拔包，沙箱去 `eval`、对齐 Realms 思路",
+        "isCorrect": true,
+        "description": "正确。可插拔模块化是 3.0 重构骨架。"
+      },
+      {
+        "text": "把 qiankun 合并进 single-spa 成为一个包",
+        "isCorrect": false,
+        "description": "错误。3.0 是拆分为多个 @qiankunjs/* 包，而非并入 single-spa。"
+      },
+      {
+        "text": "放弃 npm 包、改用 CDN 单文件分发",
+        "isCorrect": false,
+        "description": "错误。3.0 走模块化拆分，不是单文件 CDN。"
+      },
+      {
+        "text": "把所有能力塞进一个巨型包便于引入",
+        "isCorrect": false,
+        "description": "错误。方向相反，是拆成可插拔小包。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 选型：一个全新项目以 Vite 为构建主力、且看重子应用隔离，为什么按笔记不建议首选 qiankun 而应先看 wujie/micro-app？",
+    "explanation": "因为 qiankun 的两大硬伤正好击中这个场景：**① Vite/ESM 之痛**——qiankun 2.x 基于 import-html-entry 的 fetch+eval 模型接不了 ESM/Vite，硬接（`vite-plugin-qiankun`）又**沙箱失效**、丢隔离；**② 3.0 长期难产**（rc.21 仍无 stable），不能赌它将来支持。而 **wujie 的 iframe 沙箱天生把 ESM 交给浏览器原生执行、隔离还更强**，micro-app 也原生支持 module script——它们才是「Vite + 要隔离」的顺路解。qiankun 的稳妥甜区是「存量 webpack + 要开箱」，与此场景不符。",
+    "tags": ["qiankun", "选型", "定位"],
+    "categories": [
+      ["技术方向", "qiankun"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "qiankun 2.x 接不了 Vite/ESM、硬接会丢隔离，3.0 又长期未 stable；wujie/micro-app 原生支持 ESM 且隔离更强，更契合该场景",
+        "isCorrect": true,
+        "description": "正确。硬伤正撞在「Vite + 要隔离」上。"
+      },
+      {
+        "text": "因为 qiankun 不支持 Vue 子应用，wujie/micro-app 才支持",
+        "isCorrect": false,
+        "description": "错误。qiankun 支持 Vue，问题在 Vite/ESM 加载而非框架。"
+      },
+      {
+        "text": "因为 qiankun 是国外框架、中文资料少",
+        "isCorrect": false,
+        "description": "错误。qiankun 是蚂蚁出品、中文资料最全，理由不成立。"
+      },
+      {
+        "text": "因为 wujie/micro-app 完全没有隔离、更轻量所以更快",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，wujie 的 iframe 沙箱隔离更强，不是「没有隔离」。"
+      }
+    ]
+  }
+]
