@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "浏览器多层缓存中，一次资源请求依次检查各缓存层的正确顺序是？",
+    "explanation": "一次请求的命中链是 **Service Worker（Cache API）→ memory cache → disk cache → 网络**：页面若被 SW 控制，`fetch` 事件最先有机会拦截；随后是渲染进程内存里的 memory cache；再到磁盘上的 disk cache（HTTP 缓存本体）；全部 miss（或需要协商验证）才真正出网。越靠前越快，**命中即短路后面所有层**。",
+    "tags": ["browser-cache", "cache-layers"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Service Worker（Cache API）→ memory cache → disk cache → 网络",
+        "isCorrect": true,
+        "description": "正确。SW 是最靠前的可编程拦截层，其后依次是内存层、磁盘层，最后才出网。"
+      },
+      {
+        "text": "memory cache → disk cache → Service Worker → 网络",
+        "isCorrect": false,
+        "description": "错误。SW 的 `fetch` 事件是最先拦截请求的一层，不在磁盘层之后（同文档 memory cache 命中短路 SW 属 Chrome 实现细节，不改变教学模型的层序）。"
+      },
+      {
+        "text": "disk cache → memory cache → Service Worker → 网络",
+        "isCorrect": false,
+        "description": "错误。内存层在磁盘层之前——「本文档刚用过」的资源直接从内存兑现，不必碰磁盘。"
+      },
+      {
+        "text": "先发网络请求，失败后才依次回退到各缓存层",
+        "isCorrect": false,
+        "description": "错误。缓存的设计恰恰是先查本地：web.dev 原文「浏览器发出的所有 HTTP 请求都会先被路由到浏览器缓存」。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存经典「四级缓存」图里的第四级 push cache，其现状是？",
+    "explanation": "push cache 是 HTTP/2 Server Push 推来资源的连接级暂存区，**已随 Server Push 一起退出历史**：**Chrome 106（2022-09）默认禁用**，**Firefox 132（2024-10）跟进**并预告可能彻底删除实现。今天再画命中链，第四级直接是**网络**——网上大量 2018~2021 年的「四级缓存」图文已过时。",
+    "tags": ["browser-cache", "push-cache", "http2"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "已死：Chrome 106 与 Firefox 132 先后默认禁用 HTTP/2 Server Push，这一层已成历史",
+        "isCorrect": true,
+        "description": "正确。Chrome 2022-09 移除、Firefox 2024-10 跟进，经典四级图的第四级如今直接是网络。"
+      },
+      {
+        "text": "仍是标准的第四级缓存，并在 HTTP/3 时代得到增强",
+        "isCorrect": false,
+        "description": "错误。push 虽写进了 HTTP/3 规范，但「很多 HTTP/3 服务端与客户端根本没有实现它」，名存实亡。"
+      },
+      {
+        "text": "被合并进 disk cache，作为其中一个分区继续工作",
+        "isCorrect": false,
+        "description": "错误。push cache 是连接级暂存、随连接关闭作废，与磁盘缓存是两套机制，也没有被合并。"
+      },
+      {
+        "text": "只剩 Safari 一家还在默认支持 Server Push",
+        "isCorrect": false,
+        "description": "错误。Firefox 132 发行说明直言「目前没有任何其他主流浏览器支持该特性」。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器多层缓存的「归属」划分中，开发者能直接编程读写的是哪一层？",
+    "explanation": "**Cache API（Service Worker 层）归开发者代码管**——代码写什么就存什么；**memory cache 与 disk cache 归浏览器管，不可编程读写**，只能通过 HTTP 响应头影响 disk cache 的行为。归属决定排查路径：`(ServiceWorker)` 的旧资源改 SW 代码，`(disk cache)` 的改响应头策略。",
+    "tags": ["browser-cache", "cache-layers", "cache-api"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Service Worker 的 Cache API：代码 `put` 什么就存什么，删改全由开发者做主",
+        "isCorrect": true,
+        "description": "正确。这是唯一可编程的缓存层，`CacheStorage`/`Cache` 提供完整的增删查接口。"
+      },
+      {
+        "text": "memory cache：可以用 JS 把关键资源「钉」在内存里",
+        "isCorrect": false,
+        "description": "错误。没有任何 HTTP 头或 API 能指定资源进内存；最接近的手段 `preload` 也只是让资源提前到达，放哪仍由浏览器定。"
+      },
+      {
+        "text": "disk cache：浏览器提供了直接增删磁盘缓存条目的标准 API",
+        "isCorrect": false,
+        "description": "错误。disk cache 只能靠 `Cache-Control` 等响应头间接影响，无编程读写接口。"
+      },
+      {
+        "text": "三层都提供标准的读写 API，只是权限不同",
+        "isCorrect": false,
+        "description": "错误。memory/disk 两层对开发者完全不透明，只有 Cache API 可编程。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器多层缓存各层的生命周期对比，正确的一组是？",
+    "explanation": "**memory cache 随标签页关闭蒸发**（活在渲染进程内存里）；**disk cache 跨会话持久**（重启浏览器仍在，容量满按近期使用淘汰）；**Cache API 条目不删不灭**（显式删除或整源被配额淘汰才消失）。三层寿命不同，正是「用户拿旧版」排查时要先定层的原因。",
+    "tags": ["browser-cache", "cache-layers", "lifecycle"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "memory cache 关标签页即失效；disk cache 跨会话持久；Cache API 条目不删就一直在",
+        "isCorrect": true,
+        "description": "正确。这就是三层的寿命梯度：标签页会话 → 跨会话 → 永久（直到显式删除或整源配额清理）。"
+      },
+      {
+        "text": "三层都会在浏览器关闭时统一清空",
+        "isCorrect": false,
+        "description": "错误。disk cache 与 Cache API 都跨会话持久，重启浏览器依然存在。"
+      },
+      {
+        "text": "disk cache 随标签页关闭清空，memory cache 跨会话持久",
+        "isCorrect": false,
+        "description": "错误。两层说反了——内存层才随标签页蒸发，磁盘层跨会话存活。"
+      },
+      {
+        "text": "Cache API 条目默认 24 小时自动过期",
+        "isCorrect": false,
+        "description": "错误。Cache API 没有任何自动过期机制——「不删除就不过期」，清理全靠开发者代码。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器各缓存层对 HTTP 缓存语义（RFC 9111）的遵守程度，下列说法正确的是？",
+    "explanation": "**disk cache 严格遵守 RFC 9111**——存不存、新鲜度判定、协商续命全按标准来；**Cache API 完全不看 HTTP 缓存头**，全由代码做主；**memory cache 是实现细节**，对缓存头的遵守比 disk cache 宽松，各浏览器不承诺行为一致。工程上正确性永远建立在 disk cache 那套 HTTP 语义之上。",
+    "tags": ["browser-cache", "cache-layers", "rfc9111"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "disk cache 严格遵守；Cache API 完全不看缓存头；memory cache 行为宽松、属实现细节",
+        "isCorrect": true,
+        "description": "正确。三层对标准的态度截然不同，这决定了「响应头管得住谁」。"
+      },
+      {
+        "text": "三层都严格按 RFC 9111 的新鲜度语义工作",
+        "isCorrect": false,
+        "description": "错误。Cache API 由代码全权做主，`no-store` 的响应照样能被 `put` 进去；memory cache 也只是宽松遵守。"
+      },
+      {
+        "text": "Cache API 会按 `max-age` 自动让条目过期",
+        "isCorrect": false,
+        "description": "错误。MDN 原文「Cache API 不遵守 HTTP 缓存头」，条目不删除就不过期。"
+      },
+      {
+        "text": "RFC 9111 定义的「私有缓存」指的是 memory cache",
+        "isCorrect": false,
+        "description": "错误。标准意义上按新鲜度工作的「私有缓存」是 disk cache；memory cache 的匹配与保留策略是各浏览器内部实现。"
+      }
+    ]
+  },
+  {
+    "stem": "DevTools Network 面板 Size 栏出现 `(prefetch cache)`，说明这个资源来自哪里？",
+    "explanation": "`(prefetch cache)` 表示命中了 **`<link rel=\"prefetch\">` 拉回的「下一页资源」暂存区**——prefetch 服务的是**还没发生的下一次导航**，属「投机加载暂存」维度，不同于服务本页的 `preload`（走正常 HTTP 缓存路径 + 内存复用）。它与 `(memory cache)`、`(disk cache)`、`(ServiceWorker)` 共同构成 Size 栏的「身份证」体系。",
+    "tags": ["browser-cache", "prefetch-cache", "devtools"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "来自 `<link rel=\"prefetch\">` 预取的下一页资源暂存区，此刻被真正的请求认领",
+        "isCorrect": true,
+        "description": "正确。prefetch 拉的是「下一页可能用」的资源，命中时用独立的 `(prefetch cache)` 标签标注。"
+      },
+      {
+        "text": "与 `(memory cache)` 完全等价，只是不同浏览器叫法不同",
+        "isCorrect": false,
+        "description": "错误。memory cache 复用的是「本文档刚用过」的资源，prefetch cache 暂存的是为下一次导航预取的资源，维度不同。"
+      },
+      {
+        "text": "来自 HTTP/2 Server Push 推送的资源",
+        "isCorrect": false,
+        "description": "错误。Server Push 已被 Chrome 106 / Firefox 132 默认禁用，与 prefetch 声明式预取是两回事。"
+      },
+      {
+        "text": "来自 Service Worker 在后台预缓存的资源",
+        "isCorrect": false,
+        "description": "错误。SW 兑现的请求显示的是 `(ServiceWorker)` 标签。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 官方博客给出的移除 HTTP/2 Server Push（push cache 之死）的理由，不包括下列哪一项？",
+    "explanation": "Chrome 官方死因三条：**没人用**——移除决定时仅 **1.25%** 的 HTTP/2 站点使用，后续统计跌到 **0.7%**；**性能不及预期**——「结果好坏参半……没有明确的净性能收益，很多情况下反而出现性能回退」，因为服务端猜不准浏览器缓存里已有什么，重复推送浪费带宽；**HTTP/3 时代名存实亡**——规范里有，但很多实现根本没做。「安全漏洞」不在官方理由之列。",
+    "tags": ["browser-cache", "push-cache", "http2"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Server Push 存在无法修复的协议级安全漏洞",
+        "isCorrect": true,
+        "description": "正确（此项不是官方理由）。官方博客从未以安全漏洞为由——死因是使用率、性能与 HTTP/3 实现缺位。"
+      },
+      {
+        "text": "使用率极低：仅 1.25% 的 HTTP/2 站点在用，后降至 0.7%",
+        "isCorrect": false,
+        "description": "错误（此项是官方理由）。「没人用」是移除决定的首要数据支撑。"
+      },
+      {
+        "text": "分析显示没有明确净性能收益，很多场景反而性能回退",
+        "isCorrect": false,
+        "description": "错误（此项是官方理由）。服务端看不见浏览器缓存、重复推送烧带宽，是性能不及预期的根源。"
+      },
+      {
+        "text": "HTTP/3 里很多服务端与客户端根本没有实现 push",
+        "isCorrect": false,
+        "description": "错误（此项是官方理由）。push 在 HTTP/3 时代名存实亡，继续维护没有意义。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存视角下，`103 Early Hints` 为什么被认为补上了 HTTP/2 Server Push 的最大短板？",
+    "explanation": "Server Push 的最大短板是**服务端看不见浏览器缓存**——客户端磁盘里明明有新鲜副本，服务端照推不误，带宽白烧。Early Hints 把思路从「服务端硬塞」改成「服务端提示、浏览器自己拉」：正式响应还没生成时（比如后端在查库）先发 `103` 临时响应带 `Link: rel=preload`，**浏览器收到提示后结合本地缓存自行决定**要不要提前拉——**缓存里已有的资源不会被重复传输**。Chrome 评价它是「出错概率小得多的替代方案」。",
+    "tags": ["browser-cache", "early-hints", "push-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把决策权交回浏览器：结合本地缓存自行决定是否预拉，已缓存的资源不会被重复传输",
+        "isCorrect": true,
+        "description": "正确。「提示而非硬塞」正好解决了 Server Push 重复推送已缓存资源的带宽浪费。"
+      },
+      {
+        "text": "103 响应会直接把资源字节提前推给浏览器，比 Push 更快",
+        "isCorrect": false,
+        "description": "错误。103 只携带 `Link` 提示头，不携带资源本身——拉不拉、拉什么由浏览器定。"
+      },
+      {
+        "text": "Early Hints 会强制浏览器清空旧缓存后重新拉取最新资源",
+        "isCorrect": false,
+        "description": "错误。它不清缓存，反而是利用本地缓存避免重复传输。"
+      },
+      {
+        "text": "Early Hints 工作在 TCP 层，彻底绕开了 HTTP 缓存体系",
+        "isCorrect": false,
+        "description": "错误。它是 HTTP 临时响应（状态码 103），预拉的资源照常走 HTTP 缓存路径。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存排查中，「Size 栏证据 → 去哪一层修」的对应关系，正确的是？",
+    "explanation": "分层的最大实用价值是把「用户拿到旧资源」翻译成「去哪一层修」：**`(ServiceWorker)` → 改 SW 代码**（版本化换仓、activate 收尸）；**`(disk cache)` → 改响应头策略**（哈希 URL + 正确 `Cache-Control`）；**`(memory cache)` → 通常无需修**（关标签页自愈，测试时换新标签页排除）；**无请求且整页是旧状态 → bfcache**（不是资源问题，在 `pageshow(persisted)` 里刷新时效数据）。",
+    "tags": ["browser-cache", "devtools", "troubleshooting"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`(ServiceWorker)` → 改 SW 代码做版本化换仓与 activate 收尸",
+        "isCorrect": true,
+        "description": "正确。SW 层归开发者代码管，旧资源赖着不走只能改代码清理。"
+      },
+      {
+        "text": "`(disk cache)` → 注销 Service Worker 即可解决",
+        "isCorrect": false,
+        "description": "错误。磁盘层命中与 SW 无关，要修的是响应头策略（哈希 URL + 正确的 `Cache-Control` 分工）。"
+      },
+      {
+        "text": "`(memory cache)` → 必须引导用户清空浏览器磁盘缓存",
+        "isCorrect": false,
+        "description": "错误。内存层关标签页即自愈，通常无需任何处理，更不需要动磁盘缓存。"
+      },
+      {
+        "text": "无请求且整页是旧状态 → 一定是 CDN 缓存没刷新",
+        "isCorrect": false,
+        "description": "错误。连请求都没有的「整页旧」多半是 bfcache 快照恢复——应在 `pageshow(persisted)` 里刷新时效数据。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 实测中，memory cache 命中对 Service Worker `fetch` 事件的影响是什么？",
+    "explanation": "**memory cache 位于渲染进程内部**：同一文档内的重复请求若在 memory cache 命中，请求根本不会派发出去——**SW 的 `fetch` 事件不会触发**；而 **disk cache 命中前 `fetch` 事件会正常触发**。这个出入被记录在规范仓库 w3c/ServiceWorker#1174——分层图是心智模型，别当严格实现规范。",
+    "tags": ["browser-cache", "memory-cache", "service-worker"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "memory cache 命中不触发 SW 的 `fetch` 事件；disk cache 命中则会正常触发",
+        "isCorrect": true,
+        "description": "正确。内存复用发生在渲染进程内部、请求未派发，SW 无从拦截；磁盘命中前请求会先过 SW。"
+      },
+      {
+        "text": "任何缓存层命中前都会先触发 SW 的 `fetch` 事件",
+        "isCorrect": false,
+        "description": "错误。这正是教学模型与 Chrome 真实实现的著名出入——同文档内存级复用对 SW 不可见。"
+      },
+      {
+        "text": "disk cache 命中不触发 `fetch` 事件，memory cache 命中会触发",
+        "isCorrect": false,
+        "description": "错误。两层说反了：被短路的是内存命中，磁盘命中会触发。"
+      },
+      {
+        "text": "两层命中都不触发，SW 只能观测到真正出网的请求",
+        "isCorrect": false,
+        "description": "错误。disk cache 命中前 `fetch` 事件正常触发——SW 完全可以拦到走向磁盘层的请求。"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2 push cache 在设计上的两个「天生软肋」是什么？",
+    "explanation": "一是**跟着连接走**——推送资源落在连接级暂存区，连接一关、未被页面认领的推送作废；二是**服务端看不见浏览器缓存**——客户端磁盘里明明有新鲜副本，服务端照推不误，带宽白烧。这两点正是它性能数据「好坏参半」、最终被浏览器移除的结构性原因。",
+    "tags": ["browser-cache", "push-cache", "http2"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "暂存随连接关闭作废；服务端不知道浏览器缓存里已有什么，会重复推送",
+        "isCorrect": true,
+        "description": "正确。「连接级寿命」与「信息不对称」是 push cache 的两大结构性缺陷。"
+      },
+      {
+        "text": "只能推送 HTML 主文档，无法推送静态子资源",
+        "isCorrect": false,
+        "description": "错误。Server Push 的典型用法恰恰是随主文档推送 CSS/JS 等子资源，没有这种限制。"
+      },
+      {
+        "text": "推送的资源不经过加密传输，存在泄露风险",
+        "isCorrect": false,
+        "description": "错误。推送与普通响应走同一条 HTTP/2 连接，加密与否取决于连接本身，这不是它的软肋。"
+      },
+      {
+        "text": "必须等主文档下载完成后才能开始推送",
+        "isCorrect": false,
+        "description": "错误。`PUSH_PROMISE` 帧随主文档一起发出，「不等请求就推」正是 Server Push 的卖点。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存排查讲究「先分清维度再动手」，下列四类「缓存」的维度归类，正确的是？",
+    "explanation": "**单资源命中链**（SW→memory→disk→网络）作用于一个个请求；**bfcache** 作用于一次前进/后退导航，恢复的是 DOM + JS 堆的完整执行状态；**prefetch cache** 作用于还没发生的下一次导航；**V8 编译代码缓存（script cache）**是引擎级缓存——缓存「脚本编译产物」而非响应本身，对开发者透明（MDN 对 `Clear-Site-Data: \"cache\"` 的描述里，「脚本缓存」与浏览器缓存、bfcache 并列在可能被清除之列）。排查先问「我面对哪张地图」。",
+    "tags": ["browser-cache", "cache-layers", "bfcache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "bfcache 作用于整页导航、prefetch cache 服务下一次导航、V8 code cache 存编译产物——都不在单资源命中链里",
+        "isCorrect": true,
+        "description": "正确。四张地图各管各的对象：单个请求、一次后退、下一次导航、脚本编译产物。"
+      },
+      {
+        "text": "bfcache 本质是 disk cache 针对 HTML 文档的一个特例分区",
+        "isCorrect": false,
+        "description": "错误。bfcache 缓存的是含 JS 堆的整页内存快照，不是 HTML 响应，也不落磁盘。"
+      },
+      {
+        "text": "prefetch cache 与 memory cache 是同一层缓存的两个名字",
+        "isCorrect": false,
+        "description": "错误。前者暂存为下一次导航预取的资源（`(prefetch cache)` 标签），后者复用本文档刚用过的资源。"
+      },
+      {
+        "text": "V8 编译代码缓存存的是响应字节，可以用 Cache API 读取",
+        "isCorrect": false,
+        "description": "错误。它缓存的是脚本编译产物而非响应本身，属引擎内部机制，对开发者完全透明。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器 memory cache（内存缓存）的生命周期是怎样的？",
+    "explanation": "memory cache 活在**渲染进程的内存**里，复用粒度是**文档会话**——同一标签页里当前页面刚加载过的资源直接从内存兑现；**关闭标签页、渲染进程退出即蒸发**，也**不跨标签页共享**（每个渲染进程各有一份）。读取不涉及磁盘 I/O 与进程间通信，DevTools Time 栏常显示 0ms。",
+    "tags": ["browser-cache", "memory-cache", "lifecycle"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "同一标签页会话内有效，关闭标签页即失效，且不跨标签页共享",
+        "isCorrect": true,
+        "description": "正确。它服务「当前这个文档」，随渲染进程退出而蒸发。"
+      },
+      {
+        "text": "跨浏览器重启持久保存",
+        "isCorrect": false,
+        "description": "错误。跨会话持久的是 disk cache；内存副本重启后必然消失。"
+      },
+      {
+        "text": "所有标签页共享同一份内存缓存",
+        "isCorrect": false,
+        "description": "错误。memory cache 按渲染进程各持一份，不跨标签页共享；全 profile 共享的是 disk cache。"
+      },
+      {
+        "text": "固定保留 10 分钟后自动清空",
+        "isCorrect": false,
+        "description": "错误。「10 分钟」是 Chrome 里 bfcache 常规页的存活上限，与 memory cache 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器 disk cache（磁盘缓存）与「HTTP 缓存」的关系，正确的是？",
+    "explanation": "**disk cache 就是标准意义上的「浏览器 HTTP 缓存」本体**：存不存看 `Cache-Control` 与启发式规则、用不用看新鲜度、陈旧后带条件头协商——**严格遵守 RFC 9111**；**跨会话持久**（重启浏览器、重启系统都还在），这是「一年 `max-age` + 文件名带哈希」策略能成立的物质基础；同一 profile 的所有标签页共用一份。",
+    "tags": ["browser-cache", "disk-cache", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "disk cache 就是「HTTP 缓存」本体：严格按 RFC 9111 语义工作、跨会话持久",
+        "isCorrect": true,
+        "description": "正确。谈「强缓存/协商缓存」时真正落地的层就是它。"
+      },
+      {
+        "text": "disk cache 只缓存图片、视频等大体积媒体文件",
+        "isCorrect": false,
+        "description": "错误。凡按 HTTP 语义可缓存的响应（JS/CSS/HTML/接口……）都可入磁盘缓存，不按文件类型划界。"
+      },
+      {
+        "text": "disk cache 与 HTTP 缓存无关，仅存储浏览器自身的配置数据",
+        "isCorrect": false,
+        "description": "错误。它存的正是 HTTP 响应副本（Chrome 里对应 profile 目录下的 Cache 文件）。"
+      },
+      {
+        "text": "disk cache 每次关闭浏览器时自动清空",
+        "isCorrect": false,
+        "description": "错误。它跨会话持久——否则长缓存策略就失去了意义。"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪个场景最典型地命中浏览器 memory cache？",
+    "explanation": "memory cache 以「**本文档刚用过**」为主要依据。典型场景：**同一页面里重复出现的图片**（一张商品图在列表出现 20 次，只有第一次真正走网络/磁盘，其余 19 次全是 `(memory cache)`）；刚被 `<link rel=\"preload\">` 预取的资源正式使用时认领；页面内脚本对同一 URL 的重复可缓存 GET fetch。跨会话、跨标签页的命中则落在 disk cache。",
+    "tags": ["browser-cache", "memory-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "同一页面里一张商品图出现 20 次，第 2~20 次的资源请求",
+        "isCorrect": true,
+        "description": "正确。「同文档重复引用」是 memory cache 最典型的服务对象——首次真实加载后其余全从内存兑现。"
+      },
+      {
+        "text": "关闭浏览器第二天再访问同一站点的 JS 文件",
+        "isCorrect": false,
+        "description": "错误。内存副本随渲染进程退出早已蒸发，跨会话命中的是 `(disk cache)`。"
+      },
+      {
+        "text": "新开一个标签页访问同一站点的资源",
+        "isCorrect": false,
+        "description": "错误。memory cache 不跨渲染进程共享——新标签页命中的多为 disk cache。"
+      },
+      {
+        "text": "用户清空全部缓存后的首次访问",
+        "isCorrect": false,
+        "description": "错误。无副本可用，只能走网络完整下载。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器决定「这份响应放 memory cache 还是 disk cache」的机制是什么？",
+    "explanation": "放哪一层**没有规范可查，是浏览器内部启发式**。可观测的三条规律：**是否本文档刚用过**（刚加载过的保留在内存供复用）；**资源大小**（视频分片、大图等大文件倾向只走磁盘，避免挤占渲染进程内存）；**内存压力**（吃紧时 memory cache 更早被清理）。**没有任何 HTTP 头或 API 能指定**「进内存」或「进磁盘」——性能优化的抓手是 HTTP 语义与 `preload`。",
+    "tags": ["browser-cache", "memory-cache", "disk-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器内部启发式决定（是否刚被本文档用过、资源大小、内存压力），开发者不可编程指定",
+        "isCorrect": true,
+        "description": "正确。这是实现细节层面的分配，规范里查不到，也没有干预入口。"
+      },
+      {
+        "text": "响应头写 `Cache-Control: memory` 即可指定进内存",
+        "isCorrect": false,
+        "description": "错误。不存在这样的指令——HTTP 语义只管「可不可缓存、新鲜多久」，不管存储介质。"
+      },
+      {
+        "text": "由页面 meta 标签统一声明缓存位置",
+        "isCorrect": false,
+        "description": "错误。meta 标签没有这种能力，存储位置对开发者完全不透明。"
+      },
+      {
+        "text": "HTML 里引用顺序靠前的资源进内存，靠后的进磁盘",
+        "isCorrect": false,
+        "description": "错误。分配依据是使用情况、大小与内存状况，与引用顺序无关。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存里 `preload` 与 `prefetch` 的区别，正确的是？",
+    "explanation": "**`preload` 服务本页马上要用的资源**——让关键资源提前到达并进入本文档的服务半径，正式使用时常见 `(memory cache)` 命中，但「放哪、留多久」仍由浏览器定；**`prefetch` 拉的是下一页可能用的资源**，命中时 Size 栏显示独立的 `(prefetch cache)` 标签。Chrome 控制台的「resource was preloaded but not used within a few seconds」警告，说的正是 preload 了却没人认领——白占带宽与内存。",
+    "tags": ["browser-cache", "preload", "prefetch-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "preload 服务本页马上要用的资源；prefetch 为下一页预取，命中时显示 `(prefetch cache)`",
+        "isCorrect": true,
+        "description": "正确。一个面向当前文档、一个面向下一次导航，语义与 Size 栏标签都不同。"
+      },
+      {
+        "text": "两者语义等价，可以互换使用",
+        "isCorrect": false,
+        "description": "错误。用 prefetch 加载首屏关键资源会错失时机，用 preload 拉下一页资源则浪费本页带宽，不能互换。"
+      },
+      {
+        "text": "prefetch 优先级更高，专门用于首屏关键资源",
+        "isCorrect": false,
+        "description": "错误。说反了——本页关键资源用 preload；prefetch 是面向下一页的投机加载。"
+      },
+      {
+        "text": "preload 的资源绕过所有缓存层，直接常驻内存",
+        "isCorrect": false,
+        "description": "错误。preload 走正常 HTTP 缓存路径 + 内存复用，没有「常驻」保证——放哪由浏览器启发式定。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存「三连实验」：首次访问、同标签页刷新、重启浏览器后再访问，Size 栏的典型变化是什么？",
+    "explanation": "**首访**（或清缓存后）资源全部显示真实传输字节——全走网络；**同标签页刷新**出现 `(memory cache)` 与 `(disk cache)` 混合——同文档刚用过的在内存、其余从磁盘拿；**重启浏览器后**内存副本已蒸发，命中的**全部是 `(disk cache)`**。这个实验直接印证了两层生命周期的差异：标签页会话 vs 跨会话。",
+    "tags": ["browser-cache", "memory-cache", "disk-cache", "devtools"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "首访全走网络 → 同标签页刷新时内存/磁盘混合命中 → 重启后全部变 `(disk cache)`",
+        "isCorrect": true,
+        "description": "正确。重启是分水岭：内存层蒸发，只剩跨会话的磁盘层兜底。"
+      },
+      {
+        "text": "重启浏览器后仍能看到大量 `(memory cache)` 命中",
+        "isCorrect": false,
+        "description": "错误。渲染进程退出后内存副本必然消失，重启后的命中只能来自磁盘。"
+      },
+      {
+        "text": "同标签页刷新时所有资源都重新走网络",
+        "isCorrect": false,
+        "description": "错误。普通刷新只强制重验证主文档，子资源照常命中缓存，会出现大量括号标签。"
+      },
+      {
+        "text": "首次访问也能大量命中 `(disk cache)`",
+        "isCorrect": false,
+        "description": "错误。干净基线下磁盘里没有副本，首访只能全量下载。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器协商缓存返回 `304` 后，「续命」的效果落在哪一层？",
+    "explanation": "304 的效果是**刷新 disk cache 里那份副本的新鲜期**——本地副本按新响应头续命，新鲜期内再访问就变回 `(disk cache)` 直接兑现。注意 Network 里那一行显示的字节数记录的是**这次条件请求本身**（传输了请求/响应头），续命的收益体现在**下一次**访问。",
+    "tags": ["browser-cache", "disk-cache", "http-304"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "disk cache：磁盘里的副本按新响应头刷新新鲜期，下次新鲜期内直接兑现",
+        "isCorrect": true,
+        "description": "正确。协商成功的续命发生在磁盘层——HTTP 缓存的本体。"
+      },
+      {
+        "text": "memory cache：304 会把副本从磁盘搬进内存常驻",
+        "isCorrect": false,
+        "description": "错误。304 不涉及内存层的搬运；进不进内存是浏览器另外的启发式分配。"
+      },
+      {
+        "text": "Cache API：SW 缓存里的同名条目被自动更新",
+        "isCorrect": false,
+        "description": "错误。Cache API 不主动更新——它完全游离于 HTTP 协商机制之外，更新要开发者自己写回。"
+      },
+      {
+        "text": "bfcache：整页快照的存活时限被重置",
+        "isCorrect": false,
+        "description": "错误。bfcache 缓存的是整页执行状态，与单个资源的协商续命是两个维度。"
+      }
+    ]
+  },
+  {
+    "stem": "给敏感响应配 `Cache-Control: no-store`，从浏览器 disk cache 视角看其「实质理由」是什么？",
+    "explanation": "disk cache **落盘即痕迹**——缓存内容持久留存在用户设备上，共享电脑、取证场景都可见。`no-store` 的实质是「**别让隐私数据写进磁盘**」——这是**隐私考量而非性能考量**；性能上它反而让每次访问都全量重下。",
+    "tags": ["browser-cache", "disk-cache", "no-store"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防止隐私数据持久写入磁盘留痕（共享电脑、取证场景可见）",
+        "isCorrect": true,
+        "description": "正确。「别写进磁盘」才是给敏感响应配 `no-store` 的本质动机。"
+      },
+      {
+        "text": "提升页面加载速度",
+        "isCorrect": false,
+        "description": "错误。`no-store` 意味着永不入缓存、每次全量重下，是性能上的净损失。"
+      },
+      {
+        "text": "减少服务器带宽消耗",
+        "isCorrect": false,
+        "description": "错误。失去缓存后每次都传完整响应体，带宽消耗反而增加。"
+      },
+      {
+        "text": "让资源改走 memory cache，从而提高命中率",
+        "isCorrect": false,
+        "description": "错误。`no-store` 的目标行为是**任何缓存都不保存**，不存在「改道内存」的语义。"
+      }
+    ]
+  },
+  {
+    "stem": "关于浏览器 disk cache 的共享范围与淘汰机制，正确的是？",
+    "explanation": "disk cache **全 profile 共享**——同一浏览器 profile 的所有标签页共用一份，A 标签页下载过的资源 B 标签页直接命中 `(disk cache)`；**容量有限**（随磁盘空间动态调整），满了**按近期使用情况淘汰旧条目**。所以「缓存一年」是「**最多**一年」，不是保证。",
+    "tags": ["browser-cache", "disk-cache", "eviction"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同一 profile 的所有标签页共用一份；容量满按近期使用淘汰——「缓存一年」是上限而非保证",
+        "isCorrect": true,
+        "description": "正确。跨标签页共享 + 容量淘汰是磁盘层的两大特征。"
+      },
+      {
+        "text": "每个标签页各持一份独立的磁盘缓存",
+        "isCorrect": false,
+        "description": "错误。「每渲染进程一份」说的是 memory cache；磁盘层是全 profile 共享的。"
+      },
+      {
+        "text": "磁盘缓存永不淘汰，除非用户手动清除",
+        "isCorrect": false,
+        "description": "错误。磁盘缓存有容量上限，满了会按近期使用情况自动淘汰旧条目。"
+      },
+      {
+        "text": "配了 `max-age=31536000` 的资源保证一年内一定在缓存里",
+        "isCorrect": false,
+        "description": "错误。新鲜期只约束「多久内可不经验证使用」，副本仍可能因容量压力被提前淘汰。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存观测中，同一资源上次刷新显示 `(memory cache)`、隔一会儿再刷变成 `(disk cache)`，最合理的解释是？",
+    "explanation": "这是**正常降级**：内存压力是浏览器分配启发式的输入之一——渲染进程内存吃紧时 memory cache 会被更早回收，后续命中自然落到磁盘层。**这不是缓存失效**：磁盘副本仍在新鲜期内，只是少了「零拷贝级」的加速，无需处理。这也提醒我们：**验证 `Cache-Control` 策略要用干净基线**（新开标签页或重启浏览器），别让内存层掩盖磁盘层的真实表现。",
+    "tags": ["browser-cache", "memory-cache", "disk-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "内存副本被回收（如内存压力），命中降级到磁盘层——属正常现象，无需处理",
+        "isCorrect": true,
+        "description": "正确。memory cache 的保留策略是动态启发式，副本被回收后由磁盘层继续兜底。"
+      },
+      {
+        "text": "缓存策略配置坏了，需要立即修正响应头",
+        "isCorrect": false,
+        "description": "错误。`(disk cache)` 恰恰说明强缓存仍在命中，HTTP 策略工作正常。"
+      },
+      {
+        "text": "资源已过新鲜期，浏览器正在协商",
+        "isCorrect": false,
+        "description": "错误。过期后走的是条件请求（Status 304/200 + 真实字节数），不会显示 `(disk cache)` 标签。"
+      },
+      {
+        "text": "DevTools 的显示 bug，重启 DevTools 即恢复",
+        "isCorrect": false,
+        "description": "错误。这是真实的层间降级行为，不是工具显示问题。"
+      }
+    ]
+  },
+  {
+    "stem": "从「memory cache 是实现细节」这一定位出发，下列工程判断哪项是正确的？",
+    "explanation": "RFC 9111 定义的「私有缓存」指 disk cache 那套按新鲜度工作的机制；**memory cache 的匹配与保留策略是各浏览器内部实现**——对 HTTP 头的遵守更宽松、不承诺行为一致。正确姿势：**把它当不可控的加速红利**，正确性建立在 HTTP 语义之上，别写「依赖某资源一定在/一定不在内存缓存」的逻辑。`no-store` 的目标行为是任何缓存都不保存，但历史上各浏览器在「同文档内复用」上存在过灰色地带——所以 **`no-store` 是缓存指令不是安全机制**，敏感数据要靠鉴权与传输安全兜底。",
+    "tags": ["browser-cache", "memory-cache", "no-store"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "正确性只建立在 HTTP 语义上，不依赖资源「一定在/不在」内存缓存；也不把 no-store 当安全机制用",
+        "isCorrect": true,
+        "description": "正确。加速红利可以享受，但不能作为逻辑或安全的前提。"
+      },
+      {
+        "text": "可以依赖「preload 过的资源必然从 memory cache 返回」来写分支逻辑",
+        "isCorrect": false,
+        "description": "错误。preload 只保证提前到达，「放哪、留多久」由浏览器定——这种依赖随时会被内存回收打破。"
+      },
+      {
+        "text": "no-store 在所有浏览器都严格保证内存层零复用，可作为安全边界",
+        "isCorrect": false,
+        "description": "错误。memory cache 属实现细节，历史上在同文档复用上存在过灰色地带——安全要靠鉴权与传输安全兜底。"
+      },
+      {
+        "text": "各浏览器的 memory cache 行为一致，按 Chrome 的表现写代码即可通吃",
+        "isCorrect": false,
+        "description": "错误。各浏览器不承诺 memory cache 行为一致，这正是「实现细节」的含义。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器强缓存命中时，DevTools Network 面板的典型表现是什么？",
+    "explanation": "资源**新鲜（fresh）**时浏览器直接兑现本地副本，**请求根本没出网络**——HTTP 缓存的设计对页面透明，页面代码感知到的仍是一次成功响应，DevTools 便记一条**灰色 200**，再用 Size 栏标注真实来源 `(memory cache)` / `(disk cache)`。判读口诀：**Size 栏有括号＝没花流量**。",
+    "tags": ["browser-cache", "http-cache", "devtools"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "灰色 200，Size 栏显示 `(memory cache)` 或 `(disk cache)`，请求未出网络",
+        "isCorrect": true,
+        "description": "正确。「假 200」是强缓存对页面透明兑现的表现，Size 栏揭示真实来源。"
+      },
+      {
+        "text": "状态码 304，Size 栏显示几百字节",
+        "isCorrect": false,
+        "description": "错误。304 是协商缓存命中——条件请求真的出网了，只是不传响应体。"
+      },
+      {
+        "text": "状态码 204 No Content",
+        "isCorrect": false,
+        "description": "错误。204 是「无内容」响应语义，与缓存命中无关。"
+      },
+      {
+        "text": "Network 面板完全不显示该资源的记录行",
+        "isCorrect": false,
+        "description": "错误。强缓存命中仍会记录一行灰色 200；「不产生请求行」的是 bfcache 整页恢复。"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存协商返回 `304 Not Modified` 时，浏览器与服务器之间实际发生了什么？",
+    "explanation": "304 是「**真请求**」：本地副本已陈旧，浏览器带条件头发**条件请求**出网，服务端确认没变后**只回状态行和头、不回响应体**，本地副本被续命。它省的是**带宽**（响应体）而非**延迟**（仍花一个完整往返）——这正是高频小资源与其依赖 304、不如给足 `max-age` 做到零请求的原因。",
+    "tags": ["browser-cache", "http-304", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "条件请求真的出网了，服务端只回头不回体，本地副本被续命",
+        "isCorrect": true,
+        "description": "正确。「花一个来回但没花响应体」——304 省带宽不省延迟。"
+      },
+      {
+        "text": "没发任何请求，浏览器直接用了本地副本",
+        "isCorrect": false,
+        "description": "错误。那是强缓存命中（灰色 200 + 括号标签）；304 一定伴随一次真实的网络往返。"
+      },
+      {
+        "text": "服务端重新传输了完整的响应体",
+        "isCorrect": false,
+        "description": "错误。回完整新副本的是 200；304 的意义就在于不传响应体。"
+      },
+      {
+        "text": "304 表示资源已被服务端删除，缓存副本作废",
+        "isCorrect": false,
+        "description": "错误。304 的语义是「没变，继续用你手里那份」——副本不仅不作废，反而被续命。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器发条件请求时的 `If-None-Match` / `If-Modified-Since` 头是谁负责携带的？",
+    "explanation": "**浏览器自动带**——按缓存副本里存的验证器换算：`ETag` → `If-None-Match`、`Last-Modified` → `If-Modified-Since`。web.dev 原文：这些条件头「由浏览器根据它对 HTTP 缓存当前值的理解自动带上」，**业务代码无感**。另一个推论：陈旧副本若**没有验证器**，只能当无缓存处理、完整重下。",
+    "tags": ["browser-cache", "http-cache", "conditional-request"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器根据缓存副本里的 `ETag` / `Last-Modified` 自动附上，业务代码无感",
+        "isCorrect": true,
+        "description": "正确。协商是浏览器与服务器之间的自动机制，对页面代码完全透明。"
+      },
+      {
+        "text": "需要前端在每次 fetch 调用里手动设置这两个头",
+        "isCorrect": false,
+        "description": "错误。HTTP 缓存对页面透明，条件头由浏览器自动管理，无需（也不应）手动拼。"
+      },
+      {
+        "text": "由服务端在上一次响应里替客户端预先写好",
+        "isCorrect": false,
+        "description": "错误。服务端提供的是验证器（`ETag`/`Last-Modified`），换算成条件请求头是浏览器的工作。"
+      },
+      {
+        "text": "由 CDN 边缘节点统一注入",
+        "isCorrect": false,
+        "description": "错误。这是浏览器（私有缓存）的行为；CDN 是另一套共享缓存体系。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器普通刷新（F5 / ⌘R）对页面「子资源」的缓存行为是怎样的？",
+    "explanation": "普通刷新只「怀疑」**主文档**——强制重验证 HTML 本身；**子资源自 Chrome 2017 年「Reload, reloaded」改革起不再连坐**，照常走缓存规则（新鲜则一个请求都不发）。按 Chromium 灰度数据，改革让 304 验证请求减少约一半。推论：给静态资源配了长 `max-age`，用户普通刷新也不会打爆你的 304。另外**移动端没有强刷手势**——下拉刷新等价于普通刷新。",
+    "tags": ["browser-cache", "refresh", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子资源照常走缓存规则不连坐，只有主文档被强制重验证",
+        "isCorrect": true,
+        "description": "正确。「用户怀疑的是这一页」——浏览器只对 HTML 较真，子资源新鲜就直接兑现。"
+      },
+      {
+        "text": "所有子资源都带条件头重新验证一遍",
+        "isCorrect": false,
+        "description": "错误。那是 2017 年「Reload, reloaded」改革之前的旧行为，如今子资源不再连坐。"
+      },
+      {
+        "text": "所有子资源全部绕过缓存、全量重新下载",
+        "isCorrect": false,
+        "description": "错误。全量重下是强制刷新（⌘⇧R）的行为，普通刷新没这么狠。"
+      },
+      {
+        "text": "子资源直接从 bfcache 恢复，无需请求",
+        "isCorrect": false,
+        "description": "错误。bfcache 作用于前进/后退的整页导航，刷新是重新加载，两者无关。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器强制刷新（Ctrl+Shift+R / ⌘⇧R）时，请求头的特征是什么？",
+    "explanation": "强制刷新对**主文档和全部子资源**都带 **`Cache-Control: no-cache` + `Pragma: no-cache`**（三家浏览器一致），且**不带条件头（验证器）**——「没有浏览器带验证头，304 无从谈起」，全量重下。`Pragma: no-cache` 是 HTTP/1.0 时代的兼容遗产，与 `Cache-Control: no-cache` 成对出现，照顾极老的中间缓存。",
+    "tags": ["browser-cache", "hard-refresh", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "主文档 + 全部子资源都带 `no-cache` + `Pragma: no-cache`，且不带条件头",
+        "isCorrect": true,
+        "description": "正确。全资源连坐 + 无验证器，是四种进入方式里穿透力最强的（HTTP 缓存范围内）。"
+      },
+      {
+        "text": "只有主文档带 `max-age=0`，子资源不受影响",
+        "isCorrect": false,
+        "description": "错误。这接近 Chrome 普通刷新的行为；强刷是全资源连坐。"
+      },
+      {
+        "text": "带上 `If-None-Match`，争取用 304 省流量",
+        "isCorrect": false,
+        "description": "错误。强刷的语义是「怀疑缓存坏了」，恰恰不带任何验证器，304 不可能发生。"
+      },
+      {
+        "text": "带上 `Clear-Site-Data` 头要求清空本地缓存",
+        "isCorrect": false,
+        "description": "错误。`Clear-Site-Data` 是服务端的响应头，不是浏览器请求方向的头。"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 响应完全没写 `Cache-Control` 头，浏览器会怎么处理缓存？",
+    "explanation": "web.dev 原文：「**省略 `Cache-Control` 响应头并不会禁用 HTTP 缓存！**浏览器会针对内容类型猜测最合适的缓存行为」——即**启发式缓存**接管，行为不可预期。生产事故常出在这里：「我没设缓存啊」的接口/页面被启发式缓存住。纪律：**每个响应都显式声明 `Cache-Control`**——要么给新鲜期，要么 `no-cache`/`no-store` 说清楚。",
+    "tags": ["browser-cache", "heuristic-caching", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "启发式缓存接管：浏览器自行猜测缓存行为，页面可能在不知情中被缓存住",
+        "isCorrect": true,
+        "description": "正确。「没写头」不等于「不缓存」，反而是把决定权交给了不可预期的启发式。"
+      },
+      {
+        "text": "等价于 `no-store`：绝不缓存",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——不写头浏览器照样可能缓存，想不缓存必须显式写 `no-store`。"
+      },
+      {
+        "text": "等价于 `no-cache`：每次都协商验证",
+        "isCorrect": false,
+        "description": "错误。启发式可能直接赋予一段新鲜期而不协商，行为与 `no-cache` 不等价。"
+      },
+      {
+        "text": "浏览器会拒绝渲染并报缺头错误",
+        "isCorrect": false,
+        "description": "错误。`Cache-Control` 不是必需头，缺失不影响渲染，只影响缓存行为的可预期性。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么浏览器强制刷新之后「不可能出现 304」？",
+    "explanation": "304 的前提是**条件请求携带验证器**（`If-None-Match` / `If-Modified-Since`），服务端据此判断「没变」。而强制刷新的语义是「怀疑缓存坏了」——**请求不带任何条件头**，服务端无从对比版本，只能全量回 200。csswizardry 的考据原文：「没有浏览器带验证头，304 无从谈起」。",
+    "tags": ["browser-cache", "hard-refresh", "http-304"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "强刷不带条件头（验证器），服务端无从判断「未变」，只能 200 全量返回",
+        "isCorrect": true,
+        "description": "正确。304 是协商的产物，而强刷从请求侧就排除了协商的可能。"
+      },
+      {
+        "text": "强刷会先删光本地缓存，没有可续命的副本",
+        "isCorrect": false,
+        "description": "错误。强刷的关键在请求头语义（`no-cache` + 无验证器），并不是先清空缓存。"
+      },
+      {
+        "text": "304 状态码已从 HTTP 标准中移除",
+        "isCorrect": false,
+        "description": "错误。304 仍是协商缓存的标准应答，正常导航与普通刷新场景每天都在发生。"
+      },
+      {
+        "text": "服务端看到 `Pragma: no-cache` 时必须回 500",
+        "isCorrect": false,
+        "description": "错误。`Pragma: no-cache` 只是 HTTP/1.0 兼容遗产，不改变响应状态码的选择。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器普通刷新（F5）对主文档的处理，Chrome / Firefox / Safari 三家的差异是？",
+    "explanation": "三家「狠劲」不同：**Firefox 最温和**——只带条件头，能 304 就 304；**Chrome 居中**——`Cache-Control: max-age=0` + 条件头（表达「视作陈旧、请重验证」）；**Safari 最激进**——`Cache-Control: no-cache` + `Pragma: no-cache` 且**不带验证器**，主文档必然全量重下。（2025-03 csswizardry 实测。）",
+    "tags": ["browser-cache", "refresh", "browser-difference"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 带 `max-age=0`+条件头；Firefox 仅条件头；Safari 带 `no-cache` 且无条件头",
+        "isCorrect": true,
+        "description": "正确。温和程度 Firefox > Chrome > Safari——Safari 的主文档在普通刷新下必然全量重下。"
+      },
+      {
+        "text": "三家完全一致，都带 `no-cache` + `Pragma: no-cache`",
+        "isCorrect": false,
+        "description": "错误。「三家一致」的是强制刷新；普通刷新的带头方式三家各不相同。"
+      },
+      {
+        "text": "Firefox 最激进，主文档必然全量重下",
+        "isCorrect": false,
+        "description": "错误。Firefox 恰恰最温和——只带条件头，服务端未变就能 304 续命。"
+      },
+      {
+        "text": "Safari 普通刷新时主文档可以协商拿到 304",
+        "isCorrect": false,
+        "description": "错误。Safari 不带验证器，「304 无从谈起」，主文档只能全量。"
+      }
+    ]
+  },
+  {
+    "stem": "出现在「请求」方向的 `Cache-Control: max-age=0` 与 `no-cache`，语义差别是什么？",
+    "explanation": "两者都是浏览器对沿途缓存（本地 + 代理）说话：**`max-age=0`**＝「把响应当作已陈旧处理，请重验证」——但**验证不可达时缓存仍可复用副本兜底**；**`no-cache`**＝「**必须**验证成功才能把缓存副本给我」，验证失败宁可报错——语义更严格，所以强制刷新用它、Chrome 普通刷新用前者。",
+    "tags": ["browser-cache", "cache-control", "refresh"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`max-age=0` 允许验证不可达时兜底用旧副本；`no-cache` 必须验证成功才准用缓存",
+        "isCorrect": true,
+        "description": "正确。「可兜底」与「必须验证」的差别，正对应普通刷新与强制刷新的严格程度。"
+      },
+      {
+        "text": "两者完全等价，只是写法不同",
+        "isCorrect": false,
+        "description": "错误。验证不可达时的行为不同——一个可用旧副本兜底，一个宁可失败。"
+      },
+      {
+        "text": "请求方向的 `no-cache` 表示「本次响应不要缓存」",
+        "isCorrect": false,
+        "description": "错误。那是把它误当响应指令的常见误解；请求方向它约束的是「缓存副本的使用条件」。"
+      },
+      {
+        "text": "`max-age=0` 会让浏览器删除该 URL 的全部缓存",
+        "isCorrect": false,
+        "description": "错误。它只是要求重验证，副本仍在——验证通过（304）后照样续命使用。"
+      }
+    ]
+  },
+  {
+    "stem": "`Cache-Control: no-store` 在浏览器各缓存层的真实波及面，正确的是？",
+    "explanation": "各层落地并不一刀切：**disk cache——完全不写入**；**memory cache——目标行为是不保存**（但属实现细节，别押安全性）；**bfcache——历史上一律阻断，Chrome 自 116 起实验、2025 年 3~4 月全量改为有条件允许进入**（bfcache 存的是页面快照不是响应，语义上本就不是 RFC 9111 管的「缓存」）；**SW Cache API——完全不理它**，`cache.put()` 什么就存什么，敏感响应防 SW 缓存要靠代码约定。",
+    "tags": ["browser-cache", "no-store", "cache-layers"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "管得住 disk/memory（目标行为），bfcache 从全阻断演进为 Chrome 有条件放宽，SW Cache API 完全不受它约束",
+        "isCorrect": true,
+        "description": "正确。四层四种态度——响应头拦不住一行 `cache.put()`，这是安全设计要记住的边界。"
+      },
+      {
+        "text": "四层全部严格禁止存储该响应",
+        "isCorrect": false,
+        "description": "错误。Cache API 不看任何 HTTP 缓存头，`no-store` 的响应照样能被代码存进去。"
+      },
+      {
+        "text": "只影响 disk cache，内存层明确不受任何约束",
+        "isCorrect": false,
+        "description": "错误。memory cache 的目标行为同样是不保存——只是它属实现细节、历史上有过灰色地带。"
+      },
+      {
+        "text": "`no-store` 只对 HTTPS 响应生效",
+        "isCorrect": false,
+        "description": "错误。它是通用缓存指令，没有安全上下文限制（仅 HTTPS 生效的是 `Clear-Site-Data` 这类机制）。"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 响应带 `Vary: Accept-Encoding, Origin` 时，浏览器缓存的副本匹配行为是？",
+    "explanation": "**缓存键不只是 URL**：响应带 `Vary` 时，浏览器匹配副本要**连所列请求头的值一起比对**——同一 URL 因请求头不同可存**多份副本**，也可能因此「**明明缓存过却不命中**」（这次请求的头值与存副本时不同）。这是「查副本」环节最容易被忽视的变量。",
+    "tags": ["browser-cache", "vary", "http-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "匹配副本时连 `Accept-Encoding`、`Origin` 的请求头值一起比对；同一 URL 可存多份副本",
+        "isCorrect": true,
+        "description": "正确。`Vary` 把所列请求头并入缓存键，URL 相同而头值不同就是不同副本。"
+      },
+      {
+        "text": "`Vary` 只影响 CDN 等共享缓存，浏览器私有缓存会忽略它",
+        "isCorrect": false,
+        "description": "错误。浏览器缓存同样按 `Vary` 扩展匹配维度，这正是「缓存过却不命中」的常见原因。"
+      },
+      {
+        "text": "带 `Vary` 的响应会被禁止缓存",
+        "isCorrect": false,
+        "description": "错误。`Vary` 不禁用缓存，只改变副本的匹配规则。"
+      },
+      {
+        "text": "浏览器始终只按 URL 匹配副本，`Vary` 仅供调试参考",
+        "isCorrect": false,
+        "description": "错误。`Vary` 是标准的缓存键扩展机制，直接参与匹配决策。"
+      }
+    ]
+  },
+  {
+    "stem": "`Cache-Control: immutable` 指令的设计目标与两家浏览器的落地路线，正确的是？",
+    "explanation": "`immutable` 为**驯服刷新**而生：向浏览器承诺「新鲜期内内容**绝不改变**」，于是**普通刷新也不必对它发起重验证**。历史上两条路线殊途同归：**Firefox 实现 `immutable` 指令、逐资源豁免**（Facebook 推动）；**Chrome 干脆改掉刷新行为**——「Reload, reloaded」让子资源一律不连坐。今天给哈希资源写 `max-age=31536000, immutable` 仍是最佳实践：尊重指令的浏览器里精确豁免，在 Chrome 里也无害。",
+    "tags": ["browser-cache", "immutable", "refresh"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "承诺新鲜期内内容不变、豁免普通刷新的重验证；Firefox 实现指令、Chrome 改刷新行为，殊途同归",
+        "isCorrect": true,
+        "description": "正确。一个逐资源精确豁免、一个整体改革刷新，目标都是消灭无意义的重验证。"
+      },
+      {
+        "text": "immutable 让资源永不过期，无需 `max-age` 配合",
+        "isCorrect": false,
+        "description": "错误。它豁免的是**新鲜期内**的重验证，新鲜期本身仍由 `max-age` 定义，两者配合使用。"
+      },
+      {
+        "text": "Chrome 通过实现 immutable 指令实现了刷新豁免",
+        "isCorrect": false,
+        "description": "错误。Chrome 走的是「Reload, reloaded」改刷新行为的路线，不是靠实现该指令。"
+      },
+      {
+        "text": "immutable 能阻止强制刷新重新下载资源",
+        "isCorrect": false,
+        "description": "错误。强制刷新全资源 `no-cache` 且无验证器，任何指令都豁免不了全量重下。"
+      }
+    ]
+  },
+  {
+    "stem": "部署新版后用户仍拿到旧页面，浏览器缓存视角的「根治配方」是什么？",
+    "explanation": "经典事故链是 **HTML 入口被配了长 `max-age`**（或被启发式缓存）——旧 HTML 一直引用旧哈希的 JS/CSS，怎么发版都无效。根治靠资源分工（web.dev 推荐）：**带哈希的静态资源配 `Cache-Control: max-age=31536000, immutable`**（URL 变即新资源，缓存一年也安全）；**HTML 入口等无版本 URL 配 `no-cache`** 加 `ETag` 走 304——发版后下一次导航即拿到新 HTML。SPA 还要注意：**每一条 fallback 路由返回的 HTML 响应都得是 `no-cache`**。「强刷只能救自己」：用户不会强刷、移动端也没有强刷手势。修复强度阶梯：等自然过期 < `Clear-Site-Data` < 改 URL（哈希换名是唯一 100% 可靠）。",
+    "tags": ["browser-cache", "deployment", "cache-control"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "哈希静态资源配一年 `max-age` + `immutable`；HTML 入口配 `no-cache` + `ETag` 走 304",
+        "isCorrect": true,
+        "description": "正确。「URL 变即新资源」保证静态资源安全长缓存，HTML 每次协商保证入口即时更新。"
+      },
+      {
+        "text": "通知所有用户强制刷新一次即可",
+        "isCorrect": false,
+        "description": "错误。用户不会强刷、移动端没有强刷入口，且强刷也穿不透 SW 缓存——「强刷只能救开发者自己」。"
+      },
+      {
+        "text": "给 HTML 也配上 `max-age=31536000` 提升整体性能",
+        "isCorrect": false,
+        "description": "错误。HTML 入口配长强缓存正是这类事故的头号根源——旧 HTML 会锁死一整套旧资源引用。"
+      },
+      {
+        "text": "把所有资源统一改成 `no-store`，保证永远最新",
+        "isCorrect": false,
+        "description": "错误。全站 `no-store` 意味着每次全量重下，是性能灾难；正确做法是按资源类型分工。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器 HTTP 缓存排查：用户反馈「按普通刷新（F5）后页面仍是旧版」，结合刷新机制反向推理，下列判断正确的是？",
+    "explanation": "普通刷新会**强制重验证主文档**（Chrome 带 `max-age=0` + 条件头）——HTML 的强缓存路径在这次刷新里已被绕过。若刷新后整页仍旧，问题多半**不在 HTML 的 HTTP 强缓存**，而在别层：**`(ServiceWorker)`**（SW 的 `fetch` 事件照样拦截并回旧副本，普通/强制刷新都穿不透）或**共享缓存（CDN/代理）**没回源。判层第一步永远是看 Network 的 Size 栏。",
+    "tags": ["browser-cache", "refresh", "troubleshooting", "service-worker"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "主文档已被强制重验证，仍旧多半是 SW 缓存或 CDN/代理层的问题——先看 Size 栏定层",
+        "isCorrect": true,
+        "description": "正确。普通刷新的机制排除了「HTML 强缓存命中」这条路径，嫌疑自然移向 SW 与服务侧共享缓存。"
+      },
+      {
+        "text": "一定是 HTML 配了过长的 max-age 导致强缓存命中",
+        "isCorrect": false,
+        "description": "错误。普通刷新恰恰强制重验证主文档——长 `max-age` 坑的是「正常导航」，不是这次刷新。"
+      },
+      {
+        "text": "一定是 memory cache 没被清空",
+        "isCorrect": false,
+        "description": "错误。主文档已被重验证；内存层只复用「本文档刚用过」的资源，解释不了整页仍旧。"
+      },
+      {
+        "text": "一定是 bfcache 恢复了旧快照",
+        "isCorrect": false,
+        "description": "错误。bfcache 只作用于前进/后退导航——刷新是重新加载，不走快照恢复。"
+      }
+    ]
+  },
+  {
+    "stem": "bfcache（往返缓存）的本质是什么？",
+    "explanation": "web.dev 的定义：**「整个页面在内存中的快照（包括 JavaScript 堆）」**——离开页面时不销毁而是**冻结**（JS 任务暂停），前进/后退返回时**解冻**（任务从暂停处恢复），页面瞬时出现。它与「只存响应」的 HTTP 缓存是两个维度：HTTP 缓存恢复页面仍要重新解析、执行 JS 重建状态；bfcache 直接恢复**执行状态**（DOM + JS 堆 + 滚动位置），且**仅存内存**。",
+    "tags": ["browser-cache", "bfcache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "整页在内存中的快照（含 JS 堆）：离开时冻结、返回时解冻",
+        "isCorrect": true,
+        "description": "正确。缓存单位是「整页执行状态」而非「响应」，这是它与 HTTP 缓存的本质分野。"
+      },
+      {
+        "text": "磁盘上按 URL 存储的 HTML 响应副本",
+        "isCorrect": false,
+        "description": "错误。那是 disk cache 的工作方式；bfcache 仅存内存、且存的是执行状态不是响应。"
+      },
+      {
+        "text": "后退按钮专用的一块 HTTP 缓存分区",
+        "isCorrect": false,
+        "description": "错误。bfcache 不是 RFC 9111 意义上的缓存，不按资源存响应。"
+      },
+      {
+        "text": "Service Worker 为历史记录预缓存的页面集合",
+        "isCorrect": false,
+        "description": "错误。bfcache 是浏览器导航层的机制，与 SW/Cache API 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "页面代码怎么判定「自己刚从 bfcache 恢复」？",
+    "explanation": "监听 **`pageshow`** 事件，检查 **`event.persisted === true`**——为 true 即表示本页刚从 bfcache 解冻（初次加载时 `pageshow` 也触发，但 persisted 为 false，且发生在 `load` 之后）。典型动作：补记一次 PV、刷新有时效性的数据（登录态 / 购物车 / token）。",
+    "tags": ["browser-cache", "bfcache", "pageshow"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "监听 `pageshow` 事件，`event.persisted === true` 即为从 bfcache 恢复",
+        "isCorrect": true,
+        "description": "正确。`persisted` 标志是区分「初次加载」与「快照解冻」的标准途径。"
+      },
+      {
+        "text": "监听 `load` 事件再次触发",
+        "isCorrect": false,
+        "description": "错误。bfcache 恢复不触发 `load`——页面没有重新走加载流程，这正是传统 PV 埋点漏算的原因。"
+      },
+      {
+        "text": "监听 `DOMContentLoaded` 的第二次触发",
+        "isCorrect": false,
+        "description": "错误。恢复不重新解析文档、不重新执行脚本，文档加载类事件都不会再来一遍。"
+      },
+      {
+        "text": "读取 `navigator.backForwardCache.restored` 属性",
+        "isCorrect": false,
+        "description": "错误。不存在这个 API；诊断未命中原因的标准入口是 NotRestoredReasons。"
+      }
+    ]
+  },
+  {
+    "stem": "web.dev 断言「用 bfcache 恢复的二次访问永远比 HTTP 缓存更快」，原因是什么？",
+    "explanation": "HTTP 缓存哪怕**全部命中**，恢复页面仍要**重新解析 HTML、执行 JS 重建页面状态**；而且「一次页面加载所需的全部请求都恰好命中 HTTP 缓存的情况非常罕见」。bfcache 直接**解冻整页执行状态**，近乎瞬时。命中面也大：**桌面 1/10、移动 1/5 的导航是前进/后退**（Chrome 96 起对桌面+移动全量启用 bfcache）。",
+    "tags": ["browser-cache", "bfcache", "performance"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "HTTP 缓存省的只是传输，仍要重新解析执行；bfcache 直接恢复执行状态",
+        "isCorrect": true,
+        "description": "正确。「省传输」与「省重建」是两个量级——后者把解析、执行、渲染全跳过了。"
+      },
+      {
+        "text": "bfcache 用了压缩率更高的存储格式",
+        "isCorrect": false,
+        "description": "错误。快慢差异来自「是否重建页面」，与压缩格式无关。"
+      },
+      {
+        "text": "bfcache 存在磁盘上、HTTP 缓存存在内存里，磁盘容量更大",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——bfcache 仅存内存，HTTP 缓存以磁盘为主。"
+      },
+      {
+        "text": "因为 bfcache 恢复可以跳过 TLS 握手",
+        "isCorrect": false,
+        "description": "错误。强缓存命中同样不出网络；两者的差异在「恢复执行状态 vs 重新构建页面」。"
+      }
+    ]
+  },
+  {
+    "stem": "bfcache 的「头号杀手」——哪种代码会让页面直接失去进入资格（桌面 Chrome/Firefox）？",
+    "explanation": "**`unload` 事件监听器**：桌面 Chrome/Firefox 上页面**直接失格**；移动端 Chrome 与 Safari 会尝试缓存，但 `unload` **永远不执行**。web.dev 原话「**永远不要用 `unload`**」——用 `pagehide` 替代；还可加 `Permissions-Policy: unload=()` 防第三方脚本/扩展偷偷挂监听。",
+    "tags": ["browser-cache", "bfcache", "unload"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "挂了 `unload` 事件监听器",
+        "isCorrect": true,
+        "description": "正确。unload 是 bfcache 阻断清单之首，桌面直接失格、移动端事件永不执行。"
+      },
+      {
+        "text": "使用了 `setInterval` 定时器",
+        "isCorrect": false,
+        "description": "错误。定时器在冻结期被暂停、恢复后续跑，不构成阻断。"
+      },
+      {
+        "text": "监听了 `pageshow` 事件",
+        "isCorrect": false,
+        "description": "错误。`pageshow` 恰恰是感知 bfcache 恢复的正确姿势，不影响资格。"
+      },
+      {
+        "text": "页面里引用了未压缩的大图",
+        "isCorrect": false,
+        "description": "错误。资源体积不在不可进入条件清单里。"
+      }
+    ]
+  },
+  {
+    "stem": "bfcache 事件模型中，`pagehide` 事件里 `event.persisted === true` 的准确含义是？",
+    "explanation": "表示浏览器**「打算」把页面放进 bfcache——但不保证最终成功**；persisted 为 false 则本页不会进入 bfcache、将被正常卸载。注意与 `pageshow` 里的 persisted 区分：后者为 true 是**确定**刚从 bfcache 恢复。",
+    "tags": ["browser-cache", "bfcache", "pagehide"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器打算把页面放进 bfcache，但不保证最终成功",
+        "isCorrect": true,
+        "description": "正确。pagehide 的 persisted 只是「意向声明」，最终能否入缓存还看后续条件。"
+      },
+      {
+        "text": "页面已确定成功进入 bfcache",
+        "isCorrect": false,
+        "description": "错误。规范措辞是「打算缓存」——不构成成功保证。"
+      },
+      {
+        "text": "页面刚从 bfcache 恢复完成",
+        "isCorrect": false,
+        "description": "错误。「刚恢复」由 `pageshow` 的 persisted 表达；pagehide 发生在离开方向。"
+      },
+      {
+        "text": "页面已被浏览器永久销毁",
+        "isCorrect": false,
+        "description": "错误。persisted 为 false 才意味着将被正常卸载；为 true 是准备冻结保活。"
+      }
+    ]
+  },
+  {
+    "stem": "SPA 的站内路由切换（如前端 router 的 push 后再返回）与 bfcache 的关系是？",
+    "explanation": "**站内路由切换是同一文档内的行为，与 bfcache 无关**——bfcache 作用于**整页导航**，例如用户从你的 SPA 跳去第三方支付页、再按浏览器后退回来。恢复时 **JS 堆原样回来**：Pinia/Redux 状态、定时器、组件树都停在离开那一刻——好处是零成本还原，坏处是**时效性数据全是旧的**，要在 `pageshow(persisted)` 里做「回魂检查」（登录态是否过期、余额/库存/购物车拉新、断开的 WebSocket 重连）。",
+    "tags": ["browser-cache", "bfcache", "spa"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无关：站内路由是同一文档内的行为；bfcache 只作用于整页导航（如跳去第三方支付再后退）",
+        "isCorrect": true,
+        "description": "正确。bfcache 的触发单位是文档级前进/后退，SPA 内部切换根本不产生新文档。"
+      },
+      {
+        "text": "SPA 每次路由切换都会生成一份 bfcache 快照",
+        "isCorrect": false,
+        "description": "错误。同一文档内的路由切换不触发页面冻结，没有快照产生。"
+      },
+      {
+        "text": "SPA 架构天然无法进入 bfcache",
+        "isCorrect": false,
+        "description": "错误。SPA 页面本身照样能被 bfcache 缓存（整页跳出再后退回来），是否失格取决于阻断条件而非架构。"
+      },
+      {
+        "text": "bfcache 恢复时会自动刷新 SPA 里过期的接口数据",
+        "isCorrect": false,
+        "description": "错误。JS 堆原样回来意味着时效数据全是旧的——「回魂检查」得自己在 pageshow(persisted) 里做。"
+      }
+    ]
+  },
+  {
+    "stem": "除 `unload` 与 `no-store` 之外，bfcache 的「不可进入条件」还包括哪一组？",
+    "explanation": "浏览器只把「冻结后能安全复活」的页面放进 bfcache。其余常见阻断项：**打开的 IndexedDB 连接**（对策：空闲即关、`pagehide` 里 `db.close()`）；**进行中的 fetch/XHR**（完成或用 `AbortController` 中止）；**打开的 WebSocket / WebRTC 连接**（`pagehide` 关闭、`pageshow(persisted)` 重连）；**非空 `window.opener`**（链接用 `rel=\"noopener\"`，现代浏览器 `target=\"_blank\"` 已默认）。",
+    "tags": ["browser-cache", "bfcache", "blockers"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "打开的 IndexedDB 连接、在途 fetch/XHR、打开的 WebSocket/WebRTC、非空 window.opener",
+        "isCorrect": true,
+        "description": "正确。这些都意味着「冻结后无法安全复活」的活动状态或跨窗口引用。"
+      },
+      {
+        "text": "页面体积超过 5MB、图片未压缩、CSS 文件过多",
+        "isCorrect": false,
+        "description": "错误。阻断清单针对的是活动连接与危险监听，没有体积类条款。"
+      },
+      {
+        "text": "使用了 localStorage 或 sessionStorage",
+        "isCorrect": false,
+        "description": "错误。同步的 WebStorage 读写不在阻断清单里；有风险的是打开着的 IndexedDB 连接。"
+      },
+      {
+        "text": "监听了 beforeunload 事件",
+        "isCorrect": false,
+        "description": "错误。现代浏览器已不因 beforeunload 阻断 bfcache（但仍建议按需挂、用完摘）。"
+      }
+    ]
+  },
+  {
+    "stem": "`beforeunload` 监听与 bfcache 的现状关系及推荐用法是？",
+    "explanation": "**现代浏览器已不再因 `beforeunload` 阻断 bfcache**（与 `unload` 命运不同），但事件本身不可靠。推荐纪律：「**有未保存更改时才 `addEventListener`，保存完立刻 `removeEventListener`**」——按需挂、用完摘，把它当作「离开确认」的临时开关而非常驻监听。",
+    "tags": ["browser-cache", "bfcache", "beforeunload"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "已不阻断（现代浏览器）；应「有未保存更改才挂、保存后立刻摘」",
+        "isCorrect": true,
+        "description": "正确。beforeunload 从阻断清单里毕业了，但「按需挂载」仍是纪律。"
+      },
+      {
+        "text": "与 unload 一样导致页面直接失格",
+        "isCorrect": false,
+        "description": "错误。直接失格的是 `unload`；beforeunload 在现代浏览器已不阻断。"
+      },
+      {
+        "text": "挂上 beforeunload 可以强制页面进入 bfcache",
+        "isCorrect": false,
+        "description": "错误。没有任何手段能「强制进入」——开发者能做的只是规避阻断项。"
+      },
+      {
+        "text": "beforeunload 会在 bfcache 恢复时再次触发",
+        "isCorrect": false,
+        "description": "错误。恢复时触发的是 `pageshow(persisted=true)`（Chromium 还会先派发 `resume`）。"
+      }
+    ]
+  },
+  {
+    "stem": "想知道线上真实用户「为什么没命中 bfcache」，Chrome 提供的诊断 API 是？",
+    "explanation": "**NotRestoredReasons API（Chrome 125+，实验性）**：从导航性能条目读取 `performance.getEntriesByType(\"navigation\")[0].notRestoredReasons`——结构含 `url`/`src`/`id`/`name`（iframe 归属）、`reasons`（原因数组，常见值 `unload-listener`、`websocket`、`fetch`、`lock`、`response-cache-control-no-store`、`broadcastchannel-message`）、`children`（同源 iframe 递归）；**跨域 iframe 的具体原因折叠为 `masked`** 防信息泄露。本地调试用 DevTools Application → Back/forward cache → Run Test；Lighthouse 10.0 起内置审计。老式 `PerformanceNavigation.type` 只能算命中率、给不出原因。",
+    "tags": ["browser-cache", "bfcache", "not-restored-reasons"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`performance.getEntriesByType(\"navigation\")[0].notRestoredReasons`（NotRestoredReasons，Chrome 125+）",
+        "isCorrect": true,
+        "description": "正确。它把「没恢复的原因」挂在导航条目上，是线上归因的标准入口。"
+      },
+      {
+        "text": "`document.bfcacheReasons` 属性",
+        "isCorrect": false,
+        "description": "错误。不存在这个属性；原因信息挂在 Performance API 的导航条目上。"
+      },
+      {
+        "text": "`window.onbfcachefail` 事件回调",
+        "isCorrect": false,
+        "description": "错误。没有这样的事件；感知恢复用 pageshow，归因用 NotRestoredReasons。"
+      },
+      {
+        "text": "无法编程获取，只能靠用户录屏排查",
+        "isCorrect": false,
+        "description": "错误。NotRestoredReasons 就是为线上真实用户归因设计的（Firefox/Safari 尚未实现）。"
+      }
+    ]
+  },
+  {
+    "stem": "bfcache 对 PV 统计的影响与正确补救是什么？",
+    "explanation": "**bfcache 恢复不触发 `load`**，传统「load 时上报 PV」会漏掉这批访问——桌面 1/10、移动 1/5 的导航是前进/后退，且 Firefox/Safari 多年前就有 bfcache，「你多半早就在少算了」（web.dev）。补法：**`pageshow` 里 `persisted === true` 时补报一次**。性能口径也要跟着改：恢复后 **LCP 用 `pageshow` 时间戳到下一帧绘制的差值，INP/CLS 归零重计**。",
+    "tags": ["browser-cache", "bfcache", "analytics"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PV 会少算（恢复不触发 load）；在 `pageshow` 的 persisted 为 true 分支补报一次",
+        "isCorrect": true,
+        "description": "正确。快照解冻绕过了 load，补报点必须迁到 pageshow(persisted)。"
+      },
+      {
+        "text": "PV 会重复多算，需要客户端去重",
+        "isCorrect": false,
+        "description": "错误。方向反了——是漏算不是多算。"
+      },
+      {
+        "text": "bfcache 恢复会重新触发 load，PV 统计不受影响",
+        "isCorrect": false,
+        "description": "错误。不触发 load 正是问题根源。"
+      },
+      {
+        "text": "只有 Chrome 用户的 PV 会受影响",
+        "isCorrect": false,
+        "description": "错误。Firefox/Safari 多年前就有 bfcache——不补报的话这些用户早就在漏算了。"
+      }
+    ]
+  },
+  {
+    "stem": "从机制上解释：为什么 bfcache 恢复不触发 `load` 事件？",
+    "explanation": "`load` 属于**文档加载流程**——获取、解析、子资源加载完成后触发。而 bfcache 恢复**根本没有重新走加载流程**：页面离开时未被销毁，而是连同 DOM、JS 堆、任务队列一起**冻结**；返回时**解冻**，被暂停的定时器、Promise 从暂停处**续跑**。文档没有「重新加载」这回事，自然没有新的 `load`；能标记这次恢复的是 `pageshow(persisted=true)`（Chromium 还会先派发 `resume`）。",
+    "tags": ["browser-cache", "bfcache", "lifecycle-events"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "页面没被销毁重建、没有重新走加载流程——只是冻结后解冻，任务从暂停处续跑",
+        "isCorrect": true,
+        "description": "正确。load 的触发前提是「加载」，而解冻不是加载——这是快照机制的直接推论。"
+      },
+      {
+        "text": "浏览器为省电刻意抑制了 load 事件",
+        "isCorrect": false,
+        "description": "错误。不是「有 load 但被抑制」，而是加载流程压根没有发生。"
+      },
+      {
+        "text": "load 触发了，但被 bfcache 的事件队列拦截丢弃",
+        "isCorrect": false,
+        "description": "错误。冻结期任务是暂停而非丢弃，恢复后续跑——但 load 从未被排入，因为没有加载。"
+      },
+      {
+        "text": "因为 HTML 是从磁盘缓存读的，磁盘命中不触发 load",
+        "isCorrect": false,
+        "description": "错误。disk cache 命中的正常导航照样完整走解析与加载流程、正常触发 load。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 对 `Cache-Control: no-store` 页面进入 bfcache 的「CCNS 放宽」，规则是什么？",
+    "explanation": "带 `no-store` 的页面历史上**一律不进 bfcache**；Chrome **自 116 起实验、2025 年 3~4 月全量**改为**有条件允许进入**：**Cookie 或其他授权凭据发生变化即逐出**；**页面内 fetch/XHR 的响应若也带 `no-store` 即逐出**；且此类页面的 bfcache 存活时限从常规的 **10 分钟压到 3 分钟**。实践建议：只给真正敏感的页面配 `no-store`，普通动态页用 `no-cache` 即可两全。",
+    "tags": ["browser-cache", "bfcache", "ccns", "no-store"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 116 实验、2025 年全量：可进入，但 Cookie/凭据变化即逐出、子请求响应带 no-store 也逐出、存活时限压到 3 分钟",
+        "isCorrect": true,
+        "description": "正确。放宽是「有条件准入 + 更严逐出 + 更短时限」的组合，兼顾性能与敏感数据安全。"
+      },
+      {
+        "text": "Chrome 已完全无视 no-store，一律按常规页缓存 10 分钟",
+        "isCorrect": false,
+        "description": "错误。放宽是有条件的——凭据变化逐出、时限压到 3 分钟，并非无视。"
+      },
+      {
+        "text": "放宽只在无痕窗口里生效",
+        "isCorrect": false,
+        "description": "错误。CCNS 放宽是常规浏览的行为变更，与无痕模式无关。"
+      },
+      {
+        "text": "Firefox 与 Safari 也同步实施了相同的放宽",
+        "isCorrect": false,
+        "description": "错误。CCNS 放宽是 Chrome 的行为（developer.chrome.com 文档），笔记未提两家跟进。"
+      }
+    ]
+  },
+  {
+    "stem": "统计「会话终点」的埋点信号为什么不该选 `unload`，正确替代是什么？",
+    "explanation": "`unload` 有两宗罪：**移动端经常根本不触发**（页签切后台后被系统直接杀掉，走不到卸载流程）；**挂上它还阻断 bfcache**（桌面 Chrome/Firefox 直接失格）。正确姿势：把**最后的可靠时机**放在 **`visibilitychange` 变 `hidden` / `pagehide`**，配 **`navigator.sendBeacon()`** 发送——比 unload 可靠得多。",
+    "tags": ["browser-cache", "bfcache", "analytics", "sendbeacon"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "unload 移动端常不触发、挂上还阻断 bfcache；改用 visibilitychange 转 hidden / pagehide + sendBeacon",
+        "isCorrect": true,
+        "description": "正确。「不可靠 + 有副作用」的 unload 应彻底退役，可靠时机是可见性变更与 pagehide。"
+      },
+      {
+        "text": "unload 触发太早导致数据不完整，应换成更晚的事件",
+        "isCorrect": false,
+        "description": "错误。它的问题是「经常不触发 + 阻断 bfcache」，不是触发时机早晚。"
+      },
+      {
+        "text": "sendBeacon 只能在 unload 回调里调用",
+        "isCorrect": false,
+        "description": "错误。sendBeacon 没有这种限制——推荐搭配的恰恰是 visibilitychange/pagehide。"
+      },
+      {
+        "text": "unload 会阻塞主线程渲染，拖慢页面",
+        "isCorrect": false,
+        "description": "错误。这不是笔记给出的理由；核心问题是可靠性与 bfcache 资格。"
+      }
+    ]
+  },
+  {
+    "stem": "页面在 bfcache 冻结期间，任务队列与跨页通信的行为是怎样的？",
+    "explanation": "冻结期间**「几乎所有 JavaScript 任务队列中的排队任务」被暂停**——定时器、未决 Promise 都停住，恢复时从暂停处续跑。两个连带效应：被暂停的任务若属于某个 **IndexedDB 事务**、而同源其他标签页正访问同一个库，可能互相影响（这也是「打开着 IndexedDB 连接的页面不给进」的原因之一）；页面在 bfcache 里**收到 BroadcastChannel 消息会被逐出**。Chromium 的 **`freeze`/`resume`**（Page Lifecycle API）对应进出冻结，`resume` 在恢复时**先于 `pageshow`** 触发。",
+    "tags": ["browser-cache", "bfcache", "freeze-resume"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "队列任务暂停、恢复后续跑；bfcache 中收到 BroadcastChannel 消息会被逐出；Chromium 的 resume 先于 pageshow 触发",
+        "isCorrect": true,
+        "description": "正确。「暂停-续跑」模型加上跨页通信的逐出规则与事件顺序，就是冻结期的完整行为图。"
+      },
+      {
+        "text": "定时器在冻结期间照常执行，只是不渲染",
+        "isCorrect": false,
+        "description": "错误。冻结的核心就是暂停任务队列——定时器停摆，恢复时才续跑。"
+      },
+      {
+        "text": "BroadcastChannel 消息会被排队，解冻后统一补投递",
+        "isCorrect": false,
+        "description": "错误。在 bfcache 里收到 BroadcastChannel 消息的页面会被直接逐出，而非补投。"
+      },
+      {
+        "text": "freeze/resume 是三大浏览器统一实现的标准事件",
+        "isCorrect": false,
+        "description": "错误。freeze/resume 是 Chromium 系派发的 Page Lifecycle API 事件，并非三家通用。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API（CacheStorage）与 HTTP 缓存头的关系是什么？",
+    "explanation": "MDN 原文：「**Cache API 不遵守 HTTP 缓存头**」——存什么由开发者代码（`put`/`add`）决定，`no-store` 的响应照样能被存进来；条目「**不主动更新、不删除就不过期**」。存、更、删全是开发者的责任——忘了版本化清理，就是「用户永远拿旧版」事故。",
+    "tags": ["browser-cache", "cache-api", "service-worker"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "完全不遵守：不看 Cache-Control、不自动过期、不自动更新，全由代码做主",
+        "isCorrect": true,
+        "description": "正确。Cache API 是「开发者全权」的缓存层，HTTP 缓存语义对它完全失效。"
+      },
+      {
+        "text": "条目会按响应头里的 `max-age` 自动过期",
+        "isCorrect": false,
+        "description": "错误。没有自动过期——「不删除就不过期」是 MDN 的明文表述。"
+      },
+      {
+        "text": "带 `no-store` 的响应无法被 `put` 进缓存",
+        "isCorrect": false,
+        "description": "错误。响应头拦不住一行 `cache.put()`——敏感数据防 SW 缓存要靠代码约定。"
+      },
+      {
+        "text": "浏览器会自动带条件头帮 Cache API 条目协商更新",
+        "isCorrect": false,
+        "description": "错误。更新机制是「开发者自己 fetch 新版、自己写回」，浏览器不代劳。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API 中 `caches.match(request)` 与 `cache.match(request)` 的区别是？",
+    "explanation": "**`caches.match` 在登记的所有具名 Cache 中查找**匹配项（等价于自己遍历 `caches.keys()` + 逐个 `cache.match()` 的便捷方法）；**`cache.match` 只查当前这一个** Cache 实例。背景：`CacheStorage`（全局 `caches`）是「命名缓存的登记簿」，window 与各类 worker 都能用、**不限于 Service Worker**，按源隔离、仅 HTTPS 安全上下文（非 HTTPS 直接 `SecurityError`）；`caches.open(name)` 不存在则创建。",
+    "tags": ["browser-cache", "cache-api", "cachestorage"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "caches.match 跨所有具名 Cache 查找；cache.match 只查当前一个 Cache 实例",
+        "isCorrect": true,
+        "description": "正确。一个是登记簿级的全局查找，一个是单仓库内查找。"
+      },
+      {
+        "text": "两者完全等价，只是简写不同",
+        "isCorrect": false,
+        "description": "错误。查找范围不同——多仓库场景下 caches.match 能找到任意仓里的匹配项。"
+      },
+      {
+        "text": "caches.match 只能在 Service Worker 上下文调用",
+        "isCorrect": false,
+        "description": "错误。CacheStorage 在 window 与各类 worker 都可用，不限于 SW。"
+      },
+      {
+        "text": "cache.match 未命中时会自动发起网络请求",
+        "isCorrect": false,
+        "description": "错误。match 只查缓存，miss 返回 undefined——要网络得自己 fetch（这正是各策略代码要写的部分）。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API 的 `add()/addAll()` 与 `put()` 行为差别，正确的是？",
+    "explanation": "**`add`/`addAll` = fetch 并存入**：响应**非 2xx 即 reject（TypeError）**，且 `addAll` **一条失败整批失败**；**`put` 直接写入**一对键值、**不校验状态码**、同键覆盖。推论：自己写策略时要像 MDN 示例那样按 `response.ok` 过滤再 `put`，否则可能把 500 错误页缓存成「永久故障」。",
+    "tags": ["browser-cache", "cache-api"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "addAll 会 fetch 并存入、非 2xx 整批 reject；put 直接写入不校验状态码，须自己按 response.ok 过滤",
+        "isCorrect": true,
+        "description": "正确。add 系有状态码门禁，put 没有——「把错误页缓存下来」的锅通常在裸 put。"
+      },
+      {
+        "text": "put 会校验状态码，add 不校验",
+        "isCorrect": false,
+        "description": "错误。说反了——校验非 2xx 而 reject 的是 add/addAll。"
+      },
+      {
+        "text": "addAll 里一条失败，其余成功的条目照常入库",
+        "isCorrect": false,
+        "description": "错误。addAll 是整批语义：一条失败整批失败。"
+      },
+      {
+        "text": "add 只能存文本响应，put 只能存二进制响应",
+        "isCorrect": false,
+        "description": "错误。两者存的都是 Request/Response 键值对，不按内容类型划分。"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 三大缓存策略与适用场景的正确搭配是？",
+    "explanation": "**cache-first**（先查缓存、命中直接回、miss 才走网络并写回）适合**带哈希的静态资源**——内容不可变、越快越好；**network-first**（先走网络、成功顺手更新缓存、失败才回退缓存）适合**接口数据、HTML 入口**——新鲜度优先、缓存做离线兜底；**stale-while-revalidate**（立即回缓存副本、同时后台拉新写回）适合头像、配置等**旧一拍也能接受**的资源。另有 network-only（支付等绝不容忍旧数据）与 cache-only（预缓存的离线专用资源）。",
+    "tags": ["browser-cache", "service-worker", "cache-strategy"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "哈希静态资源用 cache-first；接口/HTML 用 network-first；头像配置类用 stale-while-revalidate",
+        "isCorrect": true,
+        "description": "正确。按「内容可变性与新鲜度容忍度」选策略，是 SW 缓存设计的基本功。"
+      },
+      {
+        "text": "支付接口用 cache-first，保证响应速度",
+        "isCorrect": false,
+        "description": "错误。支付这类绝不容忍旧数据的请求应当 network-only——缓存快是快，回的是旧账。"
+      },
+      {
+        "text": "HTML 入口用 cache-only 性能最佳",
+        "isCorrect": false,
+        "description": "错误。cache-only 只适合预缓存的离线专用资源；HTML 用它意味着永远拿不到新版本。"
+      },
+      {
+        "text": "全站资源统一用 stale-while-revalidate 即可",
+        "isCorrect": false,
+        "description": "错误。SWR 对新鲜度敏感的接口意味着「先回旧数据」，不能一刀切。"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存写回时，`resp.clone()` 这一步为什么不可省略？",
+    "explanation": "**`Response` 的 body 是流、只能被消费一次**——「给页面」和「入缓存」两个去向必须**一份原件、一份克隆**。忘了 clone 的「body already used」报错是 SW 的第一高频异常。同理 `Request` 的 body 也是一次性流。",
+    "tags": ["browser-cache", "service-worker", "cache-api"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "响应体是只能消费一次的流：一份给页面、一份克隆后写入缓存",
+        "isCorrect": true,
+        "description": "正确。两个消费方就需要两个可读实例——clone 不是仪式，是流语义的硬要求。"
+      },
+      {
+        "text": "clone 是为了压缩响应、节省缓存空间",
+        "isCorrect": false,
+        "description": "错误。clone 不改变内容，只是复制出另一个可读实例。"
+      },
+      {
+        "text": "不 clone 的话同一响应会被重复缓存两份",
+        "isCorrect": false,
+        "description": "错误。问题方向相反——不 clone 会因 body 已被消费而报错，根本写不进去。"
+      },
+      {
+        "text": "clone 的作用是剥离响应里的 Set-Cookie 头",
+        "isCorrect": false,
+        "description": "错误。Set-Cookie 的剥离是 Fetch 规范对响应对象的要求，与 clone 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API 缓存跨域 no-cors 请求得到的 opaque 响应，会遇到什么坑？",
+    "explanation": "opaque 响应的 **status 恒为 0** → `add()/addAll()` 视为失败**必 reject**，要缓存只能自己 `fetch` + `put`；且**读不到它的头与体**；**配额按真实体积记账**（可能远大于表面可见的 0 字节）。结论：能用 CORS 就用 CORS。",
+    "tags": ["browser-cache", "cache-api", "opaque-response"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "status 恒为 0 使 addAll 必 reject，只能 fetch+put；读不到头体，配额还按真实体积记账",
+        "isCorrect": true,
+        "description": "正确。opaque 三连坑：入库姿势受限、内容不可见、配额暗涨。"
+      },
+      {
+        "text": "opaque 响应完全无法被 Cache API 存储",
+        "isCorrect": false,
+        "description": "错误。`put` 不校验状态码，可以存——只是 add/addAll 这条路走不通。"
+      },
+      {
+        "text": "opaque 响应不占用存储配额",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——按真实体积记账，可能远大于表面大小。"
+      },
+      {
+        "text": "只要在请求里加 no-cors 模式，addAll 就能成功缓存跨域资源",
+        "isCorrect": false,
+        "description": "错误。no-cors 正是产生 opaque（status 0）的原因，add 系照样 reject。"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存版本化的标准做法「install 备货、activate 收尸」指什么？",
+    "explanation": "**install 阶段**：`event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll([...])))` **预缓存新版本的资源清单**；**activate 阶段**（新 SW 正式接管后）：`caches.keys()` 过滤掉当前版本名，**删除所有旧版本缓存仓**。缓存名带版本号（如 `static-v3`），每次发布资源集合变化时递增。不收尸的代价：双倍配额 + 旧资源风险。",
+    "tags": ["browser-cache", "service-worker", "versioning"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "install 里 addAll 预缓存新版资源清单；activate 里删除所有非当前版本的缓存仓",
+        "isCorrect": true,
+        "description": "正确。「备货」与「收尸」分属两个生命周期阶段，顺序不可乱。"
+      },
+      {
+        "text": "install 里删旧缓存，activate 里存新缓存",
+        "isCorrect": false,
+        "description": "错误。顺序反了——install 时旧 SW 可能还在用旧仓，先删会抽掉它的地基。"
+      },
+      {
+        "text": "备货与收尸都放在 fetch 事件里按需完成",
+        "isCorrect": false,
+        "description": "错误。fetch 事件负责命中决策；预缓存与版本清理属于安装/激活阶段的职责。"
+      },
+      {
+        "text": "版本清理不用写代码，浏览器会按 max-age 自动删除旧仓",
+        "isCorrect": false,
+        "description": "错误。Cache API 不看 HTTP 头、没有自动过期——清理是开发者的硬责任。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API 的存储用量与配额体系的关系是？",
+    "explanation": "Cache API 用量**算入源（origin）的存储配额**，用 `navigator.storage.estimate()` 可估算余量；浏览器在磁盘压力下做兜底清理时「**通常要么删掉源的全部数据、要么一点不删**」——**整源 all-or-none 连坐**。所以别把关键数据只放缓存里。",
+    "tags": ["browser-cache", "cache-api", "quota"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "算入源的存储配额，可用 navigator.storage.estimate() 估算；兜底清理时整源 all-or-none",
+        "isCorrect": true,
+        "description": "正确。Cache API 与 IndexedDB 等共享同一套源级配额，清理是整源连坐而非逐条。"
+      },
+      {
+        "text": "Cache API 有独立的无限配额，不与其他存储共享",
+        "isCorrect": false,
+        "description": "错误。它算入源的统一存储配额，用多了会推高整源被清理的风险。"
+      },
+      {
+        "text": "配额吃紧时浏览器按条目 LRU 逐条淘汰",
+        "isCorrect": false,
+        "description": "错误。逐条 LRU 是 disk cache 的淘汰方式；Cache API 所在的源存储是「要么全删要么不删」。"
+      },
+      {
+        "text": "只有被 Service Worker 引用的缓存才计入配额",
+        "isCorrect": false,
+        "description": "错误。所有 Cache API 条目都记账，与是否被 SW 引用无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 版本化清理为什么放在 activate 而不是 install 阶段？",
+    "explanation": "**新旧 SW 会短暂并存**——新 SW install 时，旧 SW 可能还在控制页面、还在使用旧版本缓存；若 install 阶段就删旧仓，等于把旧 SW 的地基抽掉。**等新 SW 正式接管（activate）之后再删才安全**。口诀：「install 备货、activate 收尸」。",
+    "tags": ["browser-cache", "service-worker", "lifecycle"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "新旧 SW 短暂并存，旧 SW 可能还在用旧缓存；新 SW 正式接管后再删才安全",
+        "isCorrect": true,
+        "description": "正确。清理时机由 SW 生命周期的并存特性决定——这是正确性问题，不是风格偏好。"
+      },
+      {
+        "text": "因为只有 activate 阶段才有调用 caches.delete 的权限",
+        "isCorrect": false,
+        "description": "错误。install 阶段同样能调 Cache API——问题在于删早了不安全，不是权限。"
+      },
+      {
+        "text": "因为 install 阶段 Cache API 尚未初始化完成",
+        "isCorrect": false,
+        "description": "错误。install 里正是用 `caches.open` + `addAll` 预缓存的标准时机。"
+      },
+      {
+        "text": "因为浏览器禁止在 install 里执行异步任务",
+        "isCorrect": false,
+        "description": "错误。`event.waitUntil()` 的存在就是为了在 install/activate 里等待异步任务完成。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说「Service Worker 缓存的版本化清理是正确性要求，而非优化项」？",
+    "explanation": "Cache API **没有自动过期兜底**：「不显式请求就不更新、不删除就不过期」——忘了清理，用户就**永远拿旧版**。用户侧自救也难：**勾「清除缓存的图片和文件」救不了**（Cache API 与 SW 注册属「网站数据」类别），**强制刷新也穿不透** SW 的 `fetch` 拦截。对比 HTTP 缓存至少有「新鲜期到期后协商换新」的自愈通道。防线只能建在代码纪律上：版本化缓存名 + activate 收尸。",
+    "tags": ["browser-cache", "service-worker", "versioning"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无自动过期、无自动更新，忘清理用户永远旧版；且用户清缓存、强刷都难以自救",
+        "isCorrect": true,
+        "description": "正确。没有任何系统兜底通道，正确性完全押在开发者的清理代码上。"
+      },
+      {
+        "text": "只是为了节省配额，功能上可有可无",
+        "isCorrect": false,
+        "description": "错误。双倍配额只是次要代价；主危害是用户被锁死在旧版本上。"
+      },
+      {
+        "text": "不清理的话浏览器会在 7 天后自动删除旧缓存仓",
+        "isCorrect": false,
+        "description": "错误。不存在这样的自动清理；「不删不灭」正是 Cache API 的特性。"
+      },
+      {
+        "text": "主要是防止条目过多拖慢 caches.match 的查找性能",
+        "isCorrect": false,
+        "description": "错误。这不是笔记给出的理由——核心是正确性（旧版资源永远被兑现）。"
+      }
+    ]
+  },
+  {
+    "stem": "Cache API 匹配与存储响应的细节，下列哪项是正确的？",
+    "explanation": "匹配时**默认参与 `Vary` 头匹配**（MDN：「键匹配算法依赖 Vary 头」），可用选项放宽：**`ignoreSearch`**（忽略 URL 查询串）、**`ignoreMethod`**、**`ignoreVary`**；存入缓存的响应**不携带 `Set-Cookie`**——Fetch 规范要求响应对象剥离它，所以「依赖响应种 Cookie」的接口不适合走 Cache API 重放。",
+    "tags": ["browser-cache", "cache-api", "vary"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "默认连 Vary 一起匹配（ignoreSearch/ignoreMethod/ignoreVary 可放宽）；存入的响应被剥离 Set-Cookie",
+        "isCorrect": true,
+        "description": "正确。匹配维度与响应净化这两个细节，决定了哪些接口适合入缓存重放。"
+      },
+      {
+        "text": "match 只按 URL 精确匹配，没有任何可调选项",
+        "isCorrect": false,
+        "description": "错误。默认就参与 Vary 匹配，且提供 ignoreSearch 等三个放宽选项。"
+      },
+      {
+        "text": "存入的响应保留 Set-Cookie，缓存重放时照样种 Cookie",
+        "isCorrect": false,
+        "description": "错误。Fetch 规范要求响应对象不携带 Set-Cookie——从缓存重放不会种 Cookie。"
+      },
+      {
+        "text": "ignoreSearch 忽略的是 URL 的 hash 片段",
+        "isCorrect": false,
+        "description": "错误。ignoreSearch 忽略的是查询串（?key=value 部分）。"
+      }
+    ]
+  },
+  {
+    "stem": "DevTools Network 面板 Size 栏判读的第一原则是什么？",
+    "explanation": "**Size 栏有括号＝没出网络**：`(memory cache)` / `(disk cache)` / `(prefetch cache)` / `(ServiceWorker)` 四个标签就是四个来源层的「身份证」；**304 要看 Status 栏**——Size 栏不会出现「(304)」标签，Status 304 + 几百字节＝条件请求出网、仅回头部。开启 Big request rows 后 Size 显示两行：**上行＝实际传输量（压缩后 + 头），下行＝资源解压后真实大小**。",
+    "tags": ["browser-cache", "devtools", "size-column"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "有括号标签＝没出网络；304 要看 Status 栏而非 Size 栏",
+        "isCorrect": true,
+        "description": "正确。「括号定来源层、Status 定协商」是排查缓存问题的第一眼动作。"
+      },
+      {
+        "text": "Size 栏会显示「(304)」标签表示协商命中",
+        "isCorrect": false,
+        "description": "错误。Size 栏没有 304 标签——协商命中显示的是传输的头部字节数，状态在 Status 栏。"
+      },
+      {
+        "text": "括号标签表示该请求失败了",
+        "isCorrect": false,
+        "description": "错误。括号标签是缓存命中的标志，是「零网络成本的成功」。"
+      },
+      {
+        "text": "Size 两行显示中，上行是资源解压后大小",
+        "isCorrect": false,
+        "description": "错误。上行是实际传输量（含压缩与响应头），下行才是解压后大小。"
+      }
+    ]
+  },
+  {
+    "stem": "DevTools「Disable cache」勾选后的真实作用边界是什么？",
+    "explanation": "**只在 DevTools 打开期间生效**，禁用的是 **HTTP 缓存（memory + disk）**，用于模拟首访用户；**但它不禁用 Service Worker 的 Cache API**——SW 控制的页面照样可能显示 `(ServiceWorker)`。要连 SW 一起绕过，去 **Application → Service workers 勾 Bypass for network**。它也常是「本地怎么都观察不到缓存命中」的元凶——观察缓存前先确认它没勾着。",
+    "tags": ["browser-cache", "devtools", "disable-cache"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "仅 DevTools 打开期间禁 HTTP 缓存（memory+disk）；不禁 Cache API，SW 要另勾 Bypass for network",
+        "isCorrect": true,
+        "description": "正确。「Disable cache ≠ 全素颜」——SW 层有自己独立的旁路开关。"
+      },
+      {
+        "text": "永久禁用该站点的所有缓存层",
+        "isCorrect": false,
+        "description": "错误。关掉 DevTools 它就失效，且从来管不到 Cache API。"
+      },
+      {
+        "text": "勾选后会顺带注销当前站点的 Service Worker",
+        "isCorrect": false,
+        "description": "错误。注销 SW 要去 Application 面板操作（或 Clear site data），Disable cache 不碰注册。"
+      },
+      {
+        "text": "只禁 memory cache，不影响 disk cache",
+        "isCorrect": false,
+        "description": "错误。它把 HTTP 缓存整体旁路——内存与磁盘两层都不再命中。"
+      }
+    ]
+  },
+  {
+    "stem": "`Clear-Site-Data` 响应头的语法与生效条件，正确的是？",
+    "explanation": "语法铁律：**每个指令必须是带双引号的字符串**（quoted-string 文法，裸写无效），如 `Clear-Site-Data: \"cache\", \"cookies\", \"storage\"`；**仅 HTTPS 安全上下文生效**。登出场景推荐三件套 `\"cache\", \"cookies\", \"storage\"` 起步，用了投机加载的站点再补 `\"prefetchCache\", \"prerenderCache\"`（防止预渲染页里还带着登录态）。",
+    "tags": ["browser-cache", "clear-site-data"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "指令必须带双引号（如 `\"cache\"`），且仅 HTTPS 安全上下文生效",
+        "isCorrect": true,
+        "description": "正确。引号是 quoted-string 文法要求，漏引号是「发了头却不生效」的第一嫌疑。"
+      },
+      {
+        "text": "指令裸写即可，如 `Clear-Site-Data: cache`",
+        "isCorrect": false,
+        "description": "错误。裸写无效——每个指令都必须是带双引号的字符串。"
+      },
+      {
+        "text": "HTTP 与 HTTPS 站点都可以使用",
+        "isCorrect": false,
+        "description": "错误。它是远程清除用户数据的敏感操作，仅限 HTTPS 安全上下文。"
+      },
+      {
+        "text": "它是浏览器发给服务端的请求头",
+        "isCorrect": false,
+        "description": "错误。方向反了——它是服务端下达清除指令的响应头。"
+      }
+    ]
+  },
+  {
+    "stem": "`Clear-Site-Data` 各指令的清除作用域中，「特殊的一个」是哪项？",
+    "explanation": "**`\"cookies\"` 范围最大：清整个注册域（含全部子域）的 Cookie 与 HTTP 认证凭据**；其余指令（`\"cache\"`、`\"storage\"` 等）都按响应 URL 的**源（origin）**清。多子域架构下，登出接口放在哪个域名要想清楚。另外 `\"storage\"` 清本源全部 DOM 存储：localStorage、sessionStorage、IndexedDB（逐库删除）、**注销 Service Worker**、FileSystem API 等。",
+    "tags": ["browser-cache", "clear-site-data", "cookies"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`\"cookies\"` 清整个注册域（含所有子域）的 Cookie 与 HTTP 认证凭据；其余指令按源清",
+        "isCorrect": true,
+        "description": "正确。「注册域级 vs 源级」的不对称，直接影响多子域站点登出接口的部署位置。"
+      },
+      {
+        "text": "所有指令都按整个注册域清除",
+        "isCorrect": false,
+        "description": "错误。只有 `\"cookies\"` 有注册域级的波及面，其余按源。"
+      },
+      {
+        "text": "`\"storage\"` 会清掉整个注册域所有子域的存储",
+        "isCorrect": false,
+        "description": "错误。`\"storage\"` 按源清——只动响应 URL 所属源的 DOM 存储与 SW 注册。"
+      },
+      {
+        "text": "`\"cache\"` 会连其他源的浏览器缓存一起清",
+        "isCorrect": false,
+        "description": "错误。`\"cache\"` 清的是本源的浏览器缓存，不跨源。"
+      }
+    ]
+  },
+  {
+    "stem": "用户在 Chrome「清除浏览数据」里只勾「缓存的图片和文件」，对 PWA 旧版事故的救援效果是？",
+    "explanation": "「缓存的图片和文件」只清 **HTTP 缓存（disk cache）**；**Cache API 与 Service Worker 注册属「Cookie 及其他网站数据」类别**——只清缓存的话，旧 SW 还注册着、Cache API 还在，下次打开照旧接管，**对 PWA 类事故完全无效**。要动 SW 必须勾「Cookie 及其他网站数据」（代价是全站登录态一起没）。另外 bfcache 是纯内存快照，**不在任何清除清单里**——随导航逐出、超时（Chrome 常规 10 分钟）、重启自然消亡。这也是「SW 事故比 HTTP 缓存事故难救」的原因：防线必须建在版本化清理上。",
+    "tags": ["browser-cache", "clear-data", "service-worker"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "完全无效：SW 注册与 Cache API 属「网站数据」类别，旧 SW 下次打开照旧接管",
+        "isCorrect": true,
+        "description": "正确。这个不对称性是给客服/支持同学校准止血话术的关键——只清缓存动不了 SW。"
+      },
+      {
+        "text": "有效：HTTP 缓存清掉后 SW 缓存会被连带清空",
+        "isCorrect": false,
+        "description": "错误。两者分属不同清除类别，清 HTTP 缓存不波及 Cache API。"
+      },
+      {
+        "text": "有效：清缓存操作会强制注销 Service Worker",
+        "isCorrect": false,
+        "description": "错误。SW 注册属「网站数据」，「缓存的图片和文件」选项碰不到它。"
+      },
+      {
+        "text": "无效，而且即使勾了「Cookie 及其他网站数据」也无法清除 SW",
+        "isCorrect": false,
+        "description": "错误。勾「Cookie 及其他网站数据」可以清掉 Cache API 与 SW 注册——只是登录态也会陪葬。"
+      }
+    ]
+  },
+  {
+    "stem": "`Clear-Site-Data: \"cache\"` 指令的兼容性史与已知缺陷，正确的是？",
+    "explanation": "**Firefox：63 起支持 → 94 移除 → 138 恢复**——中间十几个大版本是空窗期；**Chrome：61 起支持但长期 partial**——已知 bug：当前标签页不重新加载时部分请求仍走缓存、还可能引发秒级卡顿（所以验证生效要**换新标签页**看）；**Safari 17 起支持**。结论：`\"cache\"` 别当精确武器——修「错发长缓存」事故它只是辅助，根治仍靠资源版本化。",
+    "tags": ["browser-cache", "clear-site-data", "compatibility"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Firefox 63 支持→94 移除→138 恢复；Chrome 长期 partial（本标签页不重载则部分请求照走缓存）；Safari 17 起支持",
+        "isCorrect": true,
+        "description": "正确。一个「删了又回」、一个「支持但有残留 bug」——这正是它不能当精确武器的原因。"
+      },
+      {
+        "text": "三家浏览器自发布起一直稳定支持该指令",
+        "isCorrect": false,
+        "description": "错误。稳定的是 `\"cookies\"`/`\"storage\"`；`\"cache\"` 是兼容重灾区。"
+      },
+      {
+        "text": "Chrome 从未实现过 `\"cache\"` 指令",
+        "isCorrect": false,
+        "description": "错误。Chrome 61 起就支持，只是长期标注 partial、带已知 bug。"
+      },
+      {
+        "text": "Safari 至今不支持 Clear-Site-Data 头",
+        "isCorrect": false,
+        "description": "错误。Safari 17 起支持该头（含 `\"cache\"`、`\"cookies\"`、`\"storage\"` 等指令）。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器缓存排查手册中，「改了代码刷新没变化」的第 0 步是什么？为什么？",
+    "explanation": "**先建干净基线：开无痕窗口复现**——无痕会话自带空缓存、无 SW 注册、缓存随会话结束丢弃（等价一个自带作废机制的空缓存环境）。**无痕里是新的 → 问题一定在缓存层**，接着回正常窗口用 Size 栏定层；**无痕里也是旧的 → 别折腾浏览器**，去查部署产物和 CDN。再配 `curl -sI` 核对服务端**此刻**返回的 `Cache-Control`/`ETag`，彻底排除浏览器因素。先定方向再动手，避免在错误的层里瞎清。",
+    "tags": ["browser-cache", "troubleshooting", "incognito"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无痕窗口复现定方向：无痕是新的→缓存层问题继续查；无痕也是旧的→查部署产物/CDN",
+        "isCorrect": true,
+        "description": "正确。无痕窗口是天然的干净基线，一步把「浏览器缓存问题」与「服务侧问题」分开。"
+      },
+      {
+        "text": "第一步直接让用户清空全部浏览数据",
+        "isCorrect": false,
+        "description": "错误。未定层就清数据，代价大（登录态陪葬）还可能根本清不对层（如问题在 CDN）。"
+      },
+      {
+        "text": "先重启部署服务器再观察",
+        "isCorrect": false,
+        "description": "错误。没有证据指向服务端前就重启，既不定位问题也可能引入新变量。"
+      },
+      {
+        "text": "先给所有资源响应头加上 no-store",
+        "isCorrect": false,
+        "description": "错误。这是性能灾难式的「预防」，且对已发出去的旧副本毫无作用。"
+      }
+    ]
+  },
+  {
+    "stem": "`Clear-Site-Data` 各指令的浏览器兼容全景（按笔记核对时点），正确的是？",
+    "explanation": "**`\"cookies\"` / `\"storage\"` 三家稳定**（Chrome 61 / Firefox 63 / Safari 17）；**`\"clientHints\"` 仅 Chrome 117+**（且 `\"cache\"`/`\"cookies\"`/`\"*\"` 会顺带清掉客户端提示）；**`\"executionContexts\"` 目前三家都不支持**（Chrome 未实现、Firefox 63~68 后移除、Safari 17~18.3 后移除）；**`\"prefetchCache\"`/`\"prerenderCache\"` 仅 Chrome 138+**；`\"*\"` 为 Chrome 117+（partial，带 `\"cache\"` 同款 bug）/ Firefox 63 / Safari 17。",
+    "tags": ["browser-cache", "clear-site-data", "compatibility"],
+    "categories": [
+      ["技术方向", "浏览器缓存机制"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "cookies/storage 三家稳定；clientHints 仅 Chrome 117+；executionContexts 无人支持；prefetchCache/prerenderCache 仅 Chrome 138+",
+        "isCorrect": true,
+        "description": "正确。「两稳、一独、一死、两新」——这张兼容图决定了登出接口该发哪些指令。"
+      },
+      {
+        "text": "executionContexts 是兼容性最好的指令",
+        "isCorrect": false,
+        "description": "错误。它目前无人支持：Chrome 未实现，Firefox 与 Safari 都曾实现后又移除。"
+      },
+      {
+        "text": "prefetchCache 与 prerenderCache 三家都已支持",
+        "isCorrect": false,
+        "description": "错误。这两个投机加载相关指令目前仅 Chrome 138+ 支持。"
+      },
+      {
+        "text": "clientHints 必须显式单发，其他指令不会顺带清除客户端提示",
+        "isCorrect": false,
+        "description": "错误。`\"cache\"`、`\"cookies\"`、`\"*\"` 都会顺带清掉 `Accept-CH` 登记的客户端提示。"
+      }
+    ]
+  }
+]
