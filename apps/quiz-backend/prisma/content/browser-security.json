@@ -404,7 +404,7 @@
   },
   {
     "stem": "CSP 违规报告（type 为 `csp-violation`）的字段中，用来判断「被拦的是攻击还是自己人」以及定位违规位置的关键字段是哪些？",
-    "explanation": "关键字段：**`blockedURL`**（被拦资源的 URL，内联脚本记为 `inline`）、**`effectiveDirective`**（实际命中的指令，会细化到如 `script-src-elem`）、**`sourceFile`/`lineNumber`**（违规发生的文件与行号）、**`sample`**（被拦内容的**前 40 字符**——直接看内容片段最能判断是注入攻击还是自家代码违规）、**`disposition`**（`enforce` 或 `report`，区分强制头还是 Report-Only）。页内还可监听 `securitypolicyviolation` 事件拿到同构字段。",
+    "explanation": "关键字段：**`blockedURL`**（被拦资源的 URL，内联脚本记为 `inline`）、**`effectiveDirective`**（实际命中的指令，会细化到如 `script-src-elem`）、**`sourceFile`/`lineNumber`**（违规发生的文件与行号）、**`sample`**（被拦内容的**前 40 字符**——需策略在对应指令加 **`'report-sample'`** 关键字才会填充，且仅对内联脚本/样式生成、外部资源恒为空；有它时看内容片段最能判断是注入攻击还是自家代码违规）、**`disposition`**（`enforce` 或 `report`，区分强制头还是 Report-Only）。页内还可监听 `securitypolicyviolation` 事件拿到同构字段。",
     "tags": ["browser-security", "csp", "violation-report"],
     "categories": [
       ["技术方向", "浏览器安全"],
@@ -414,7 +414,7 @@
       {
         "text": "`blockedURL`（内联记为 `inline`）+ `effectiveDirective`（命中指令）+ `sourceFile`/`lineNumber`（位置）+ `sample`（被拦内容前 40 字符）",
         "isCorrect": true,
-        "description": "正确。`sample` 的内容片段是「攻击还是自己人」的最直接证据，`sourceFile`/`lineNumber` 负责定位，`effectiveDirective` 说明撞了哪条规则。"
+        "description": "正确。`sample` 的内容片段是「攻击还是自己人」的最直接证据，`sourceFile`/`lineNumber` 负责定位，`effectiveDirective` 说明撞了哪条规则。注意 `sample` 需指令含 `'report-sample'` 且仅内联内容填充，外部资源恒为空。"
       },
       {
         "text": "报告里包含被拦脚本的完整源码，可直接做恶意代码分析",
@@ -1706,7 +1706,7 @@
   },
   {
     "stem": "混合内容处置中「可阻断（blockable）」类的覆盖范围与处理方式是哪一项？",
-    "explanation": "可阻断类覆盖：**`<script>`、`<link>` 样式表、`<iframe>`、`fetch()`/XHR、所有 CSS `url()`（含 `@font-face`、`cursor`）、`<object data>`、`sendBeacon()`、`<img srcset>`/`<picture>`、Web 字体——以及一切新增资源类型**。处理：**直接阻断、不发请求**（不尝试升级）。设计原则：能执行代码/改变页面行为的资源被中间人替换的后果最重，宁可功能缺失也不冒险；新类型没有存量兼容包袱，一律从严归入可阻断。",
+    "explanation": "可阻断类覆盖：**`<script>`、`<link>` 样式表、`<iframe>`、`fetch()`/XHR、非图像类的 CSS `url()`（如 `@font-face` Web 字体）、`<object data>`、`sendBeacon()`、`<img srcset>`/`<picture>`——以及一切新增资源类型**。处理：**直接阻断、不发请求**（不尝试升级）。设计原则：能执行代码/改变页面行为的资源被中间人替换的后果最重，宁可功能缺失也不冒险；新类型没有存量兼容包袱，一律从严归入可阻断。注意：CSS **图像**类 `url()`（`background-image`/`border-image`/`cursor` 等 image destination）按规范归**可升级**类，勿混入可阻断。",
     "tags": ["browser-security", "mixed-content", "blockable"],
     "categories": [
       ["技术方向", "浏览器安全"],
@@ -1714,7 +1714,7 @@
     ],
     "options": [
       {
-        "text": "脚本、样式表、iframe、fetch/XHR、CSS `url()`、字体、`srcset` 等，以及一切新增资源类型——直接阻断不发请求",
+        "text": "脚本、样式表、iframe、fetch/XHR、`@font-face` 字体等非图像类 CSS `url()`、`srcset` 等，以及一切新增资源类型——直接阻断不发请求",
         "isCorrect": true,
         "description": "正确。可阻断类是高危资源 + 全部新类型：默认不升级、不请求，Console 报「must be served over HTTPS」，Network 标 blocked:mixed-content。"
       },
