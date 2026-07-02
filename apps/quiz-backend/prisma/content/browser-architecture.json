@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "操作系统的进程与线程模型中，两者在内存归属上的关系是什么？",
+    "explanation": "**进程（process）**是「正在执行的程序」：OS 启动它时划给一块**私有内存**，进程结束时整块回收。**线程（thread）**住在进程里，负责执行程序的任意片段——**同进程内的所有线程共享这块私有内存**，可以随手互读互写；而**进程之间内存互不可见**，协作只能走 IPC 传消息。抓住「进程 = 私有内存 + 崩溃边界，线程 = 调度与执行单元」这条主线，浏览器多进程架构的一切取舍都由此展开。",
+    "tags": ["process-thread", "memory", "os-basics"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "进程拥有 OS 分配的一块私有内存；线程住在进程里，同进程的线程共享这块内存",
+        "isCorrect": true,
+        "description": "正确。内存按进程划分，线程是进程内的执行单元，共享宿主进程的私有内存。"
+      },
+      {
+        "text": "每条线程都有 OS 直接分配的私有内存，进程只是线程的逻辑分组",
+        "isCorrect": false,
+        "description": "错误。方向反了：私有内存划给进程；线程不独占私有内存，与同进程的其他线程共享同一块。"
+      },
+      {
+        "text": "进程之间默认共享同一块全局内存，线程之间才互相隔离",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——进程之间内存互不可见、必须走 IPC；同进程的线程之间才是共享内存的。"
+      },
+      {
+        "text": "进程和线程都没有内存概念，内存只按 CPU 核心数划分",
+        "isCorrect": false,
+        "description": "错误。内存空间按进程分配，与核心数无关；CPU 核心只是执行线程的硬件资源。"
+      }
+    ]
+  },
+  {
+    "stem": "CPU 与 GPU 两块硬件的分工特点中，哪种描述符合它们各自的定位？",
+    "explanation": "**CPU** 是计算机的大脑：单个核心像一位**全能工人**，什么任务都能接，但一次干一件、按顺序来；现代 CPU 多核，相当于几位工人并行。**GPU** 走另一条路：单个核心很「笨」、只擅长简单任务，但胜在**数量极多、同时开工**——把百万像素各自算色值正是「简单任务 × 海量并行」的典型场景。浏览器把「算」（解析、布局、JS）主要交给 CPU，把画好的图层**合成上屏**交给 GPU，这是 compositor 线程与 Viz 进程的硬件背景。",
+    "tags": ["cpu", "gpu", "hardware"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "CPU 核心全能、擅长按顺序处理五花八门的任务；GPU 核心简单但数量极多、擅长海量并行的简单任务",
+        "isCorrect": true,
+        "description": "正确。CPU 是顺序通用计算的主力，GPU 以海量小核并行取胜、为图形而生。"
+      },
+      {
+        "text": "GPU 是 CPU 的升级替代品，能做 CPU 的一切且更快",
+        "isCorrect": false,
+        "description": "错误。GPU 单核只擅长简单任务，复杂的顺序逻辑仍是 CPU 的主场；两者是分工关系不是替代关系。"
+      },
+      {
+        "text": "CPU 只能做数学运算，GPU 只负责存储图片文件",
+        "isCorrect": false,
+        "description": "错误。CPU 是通用处理器什么都能算；GPU 做的是并行计算（如逐像素算色值），不是文件存储。"
+      },
+      {
+        "text": "CPU 与 GPU 的核心结构完全相同，只是安装数量不同",
+        "isCorrect": false,
+        "description": "错误。差异不止数量：CPU 核心复杂全能，GPU 核心简单但海量，架构取向完全不同。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器架构语境下的 IPC（Inter-Process Communication）指什么？",
+    "explanation": "进程之间**内存互不可见**，但浏览器各部分必须协作——地址栏在 browser 进程、页面内容在 renderer 进程、画面上屏在 Viz 进程。解法是 **IPC（进程间通信）**：进程之间通过操作系统提供的通道互发**消息**，而不是共享变量。消息传递比共享内存慢，但换来**边界清晰**：每条跨进程交互都是显式的、可审计的——沙箱里的 renderer 想做特权操作只能「打报告」请 browser/服务进程代办，而不是自己伸手。",
+    "tags": ["ipc", "process-thread"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "进程之间内存互不可见，通过操作系统提供的通道互发消息来协作的机制",
+        "isCorrect": true,
+        "description": "正确。IPC 用「传消息」替代「共享变量」，慢一些但换来清晰、可审计的进程边界。"
+      },
+      {
+        "text": "同一进程内多条线程直接读写共享内存的通信方式",
+        "isCorrect": false,
+        "description": "错误。线程直接读写共享内存是进程内部的事；IPC 专指跨进程的消息传递。"
+      },
+      {
+        "text": "浏览器与服务器之间基于 HTTP 的网络通信",
+        "isCorrect": false,
+        "description": "错误。IPC 是同一台机器上进程之间的本地通信机制，不是网络协议。"
+      },
+      {
+        "text": "CPU 与 GPU 之间传输像素数据的硬件总线",
+        "isCorrect": false,
+        "description": "错误。IPC 是操作系统层的软件机制，与硬件总线无关。"
+      }
+    ]
+  },
+  {
+    "stem": "进程与线程的「崩溃半径」差异中，一条线程把内存写坏后会发生什么？",
+    "explanation": "同进程的线程们**共享同一块内存**：一条线程把内存写坏，同进程的所有线程都不可信了，OS 只能**整个进程收掉**——「线程崩 → 进程崩」。反过来，进程之间因**内存隔离**，一个进程再怎么崩也污染不到别人。这条崩溃半径差异正是浏览器多进程架构的**立足点**：把「容易崩、不可信」的网页代码圈进独立的 renderer 进程，崩溃和恶意行为都被圈在墙内。",
+    "tags": ["process-thread", "crash-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "同进程的所有线程都不可信，整个进程一起崩溃；其他进程因内存隔离不受影响",
+        "isCorrect": true,
+        "description": "正确。共享内存意味着一坏俱坏，OS 只能收掉整个进程；进程之间互不牵连。"
+      },
+      {
+        "text": "只有这条线程退出，同进程的其他线程照常运行",
+        "isCorrect": false,
+        "description": "错误。线程共享进程内存，内存被写坏后全体不可信，OS 收掉的是整个进程而非单条线程。"
+      },
+      {
+        "text": "所有进程一起崩溃，因为内存是全系统共享的",
+        "isCorrect": false,
+        "description": "错误。进程之间内存互不可见，一个进程崩溃不会波及其他进程——这正是多进程架构的价值来源。"
+      },
+      {
+        "text": "操作系统会自动修复被写坏的内存，让程序继续运行",
+        "isCorrect": false,
+        "description": "错误。OS 不会替应用「修复」写坏的内存，它能做的是把进程整个回收。"
+      }
+    ]
+  },
+  {
+    "stem": "操作系统执行程序的链条中，进程退出（正常结束或崩溃）时它占用的内存如何处理？",
+    "explanation": "进程启动时 OS 划给它一块**私有内存**；进程退出时——无论正常还是崩溃——OS 把这块内存**整体回收**。落到浏览器：一个 renderer 崩了，它占的内存**立刻还给系统**，别的进程毫发无损；这也是「关掉卡死的 tab 就能释放内存」的机制基础。注意区分层次：进程存活期间「进程内」的精细内存管理（如 JS 对象回收）才是 V8 等运行时自己的事。",
+    "tags": ["process-thread", "memory", "os-basics"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "OS 把该进程的私有内存整块回收，其他进程不受影响",
+        "isCorrect": true,
+        "description": "正确。进程退出即整块归还，崩溃也不例外——renderer 崩掉后内存立刻还给系统。"
+      },
+      {
+        "text": "内存必须由程序自己逐字节释放，否则永久泄漏",
+        "isCorrect": false,
+        "description": "错误。进程级内存由 OS 整块回收；「逐对象释放」是进程存活期间运行时内部的事。"
+      },
+      {
+        "text": "内存会自动移交给同一应用的其他进程继续使用",
+        "isCorrect": false,
+        "description": "错误。进程内存是私有的，退出即归还 OS，不存在跨进程自动移交。"
+      },
+      {
+        "text": "崩溃退出的进程内存无法回收，只能重启系统",
+        "isCorrect": false,
+        "description": "错误。崩溃与正常退出一样，OS 都能把其私有内存整块收回。"
+      }
+    ]
+  },
+  {
+    "stem": "JS 中的 `navigator.hardwareConcurrency` 与 `navigator.deviceMemory` 分别暴露什么硬件信息？",
+    "explanation": "`navigator.hardwareConcurrency` 返回**逻辑核心数**（注意是逻辑核、含超线程），是给 **Worker 池定容量**的常用依据；`navigator.deviceMemory` 返回**设备内存档位**（GB），取值被刻意**粗化**为 0.25/0.5/1/2/4/8。Chrome 决定进程数上限时参考的也是这类硬件水位——设备内存与 CPU 能力决定进程封顶线。",
+    "tags": ["hardware", "web-api"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "前者返回逻辑核心数（含超线程），后者返回被粗化成档位的设备内存大小（GB）",
+        "isCorrect": true,
+        "description": "正确。逻辑核数常用来定 Worker 池容量；内存档位被刻意粗化为 0.25/0.5/1/2/4/8。"
+      },
+      {
+        "text": "前者返回物理核心数且不含超线程，后者返回精确到 MB 的内存值",
+        "isCorrect": false,
+        "description": "错误。核心数是逻辑核、含超线程；内存只给粗化档位，不提供精确值。"
+      },
+      {
+        "text": "两者都返回 GPU 参数，用于 WebGL 初始化",
+        "isCorrect": false,
+        "description": "错误。它们暴露的是 CPU 逻辑核数与内存档位，与 GPU 无关。"
+      },
+      {
+        "text": "前者返回当前 renderer 进程数，后者返回浏览器已占用的内存",
+        "isCorrect": false,
+        "description": "错误。两者描述的是设备硬件能力，不是浏览器运行时状态。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 多进程架构下，V8 引擎在内存中的存在形态是怎样的？",
+    "explanation": "进程之间**内存不共享**，公共基础设施只能**每个进程各存一份**——最典型的就是每个 renderer 里都有一份 V8 拷贝。这是多进程形态天然比单进程**吃内存**的根源，也解释了 Chrome 为什么要**给进程数封顶**并推行 Servicification：进程越多，重复的基础设施拷贝越多。「进程 = 内存账单单位」由此而来。",
+    "tags": ["multi-process", "memory", "v8"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个 renderer 进程里各有一份 V8 拷贝——进程内存不共享，进程越多重复内存越多",
+        "isCorrect": true,
+        "description": "正确。这正是多进程的内存代价：公共基础设施在每个进程里重复存在。"
+      },
+      {
+        "text": "所有 renderer 进程共享同一份 V8 实例以节省内存",
+        "isCorrect": false,
+        "description": "错误。进程内存互不可见，无法直接共享一份 V8；能共享的话就没有「多进程费内存」这笔账了。"
+      },
+      {
+        "text": "V8 只存在于 browser 进程中，renderer 通过 IPC 远程调用它执行 JS",
+        "isCorrect": false,
+        "description": "错误。JS 就在各 renderer 自己的主线程本地执行；IPC 传的是消息，不是远程执行 JS 的通道。"
+      },
+      {
+        "text": "V8 被放进 GPU 显存，由 Viz 进程统一调度",
+        "isCorrect": false,
+        "description": "错误。V8 是 renderer 进程私有内存里的 JS 引擎，与 Viz、显存无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Web 平台的通信原语按「共享内存 or 传消息」归类时，下列哪项归类正确？",
+    "explanation": "Web 平台完整复刻了进程/线程的世界观：**`postMessage` + 结构化克隆**是传消息（数据**复制**，大对象复制有成本）；**`Transferable`**（如 ArrayBuffer）是传消息但**所有权转移**、零拷贝，转移后原持有方不可再用；**`SharedArrayBuffer`** 是真·共享内存——正因像「同进程线程」般危险，Spectre 后要求跨源隔离（COOP+COEP）才开放；**`BroadcastChannel`** 则是同源多 tab/Worker 的一对多消息广播。",
+    "tags": ["postmessage", "ipc", "web-api"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`postMessage` 是传消息（数据复制）、`Transferable` 是传消息（所有权转移、零拷贝）、`SharedArrayBuffer` 是真·共享内存",
+        "isCorrect": true,
+        "description": "正确。三者分别对应复制、转移、共享三种模型，与进程/线程的取舍一一对应。"
+      },
+      {
+        "text": "`postMessage` 让页面与 Worker 直接共享同一个对象引用",
+        "isCorrect": false,
+        "description": "错误。结构化克隆是把数据复制一份，两边各持一份互不影响，不共享引用。"
+      },
+      {
+        "text": "`Transferable` 转移 ArrayBuffer 后，原持有方仍可继续读写",
+        "isCorrect": false,
+        "description": "错误。转移的是所有权：零拷贝的代价就是转移后原持有方不可再用。"
+      },
+      {
+        "text": "`BroadcastChannel` 是跨源页面之间的共享内存方案",
+        "isCorrect": false,
+        "description": "错误。它是同源的多个 tab/Worker 之间的一对多消息广播，既不跨源也不共享内存。"
+      }
+    ]
+  },
+  {
+    "stem": "OS 线程调度的常识下，「浏览器跑着几十个进程」为什么不等于「几十个 CPU 核心在满负荷烧」？",
+    "explanation": "真正被核心执行的单位是**线程**，而系统里就绪的线程数远多于核心数，OS 调度器按**时间片（time slice）**把线程轮流分派到各核心上（切换时保存/恢复现场，即有成本的**上下文切换**）。关键在于：浏览器的大多数线程大部分时间在**等**——等网络、等 IPC、等 vsync，调度器只把核心分给有活干的线程。反向推论：同进程线程可被调度到**不同核心真正并行**（raster 线程 ×N 正是为吃满多核），而 JS 主线程再忙也只占一个核——想利用多核只能开 Worker。",
+    "tags": ["os-scheduling", "process-thread"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "大多数线程大部分时间在等待（网络/IPC/vsync），调度器按时间片只把核心分给有活干的线程",
+        "isCorrect": true,
+        "description": "正确。进程/线程数量多不代表都在消耗 CPU，等待中的线程不占用核心。"
+      },
+      {
+        "text": "因为浏览器的所有线程被绑定到同一个核心排队执行",
+        "isCorrect": false,
+        "description": "错误。没有这种绑定；同一进程的线程还能被调度到不同核心真正并行（如多条 raster 线程）。"
+      },
+      {
+        "text": "因为进程数永远不会超过 CPU 核心数",
+        "isCorrect": false,
+        "description": "错误。就绪线程数远多于核心数是常态，靠调度器时间片轮转来消化。"
+      },
+      {
+        "text": "因为 GPU 会代替 CPU 执行大部分进程的代码",
+        "isCorrect": false,
+        "description": "错误。GPU 只承接图形类海量并行任务；进程的普通代码仍由 CPU 核心执行。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 进程间的典型 IPC 消息里，`commit navigation` 的方向与时机是什么？",
+    "explanation": "**commit navigation** 是 **browser → renderer** 的 IPC：响应数据就绪后，browser 通知 renderer **接管导航**并随附**数据流**让其持续接收 HTML。renderer 回执确认后导航才算「已提交」，browser 随即更新地址栏与会话历史。对照记忆其他方向：renderer → browser 的有 **onload 完成通知**（停 spinner）与页面内发起的导航请求；renderer → Viz 的是 **compositor frame 提交**。",
+    "tags": ["ipc", "navigation", "commit"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "browser → renderer：响应数据就绪时通知 renderer 接管导航，并随附数据流",
+        "isCorrect": true,
+        "description": "正确。commit navigation 由 browser 发起，renderer 确认接管后 browser 才更新地址栏与会话历史。"
+      },
+      {
+        "text": "renderer → browser：页面渲染完成后请求更新地址栏",
+        "isCorrect": false,
+        "description": "错误。方向反了。renderer 发往 browser 的典型消息是 commit 确认与 onload 完成通知。"
+      },
+      {
+        "text": "renderer → Viz：合成器产出一帧后提交聚合",
+        "isCorrect": false,
+        "description": "错误。那是 compositor frame 提交；commit navigation 是导航交接消息，与合成帧无关。"
+      },
+      {
+        "text": "browser → Network Service：命令网络栈开始 DNS 解析",
+        "isCorrect": false,
+        "description": "错误。DNS 等网络工作发生在导航更早的阶段；commit navigation 是数据就绪后向 renderer 的交接。"
+      }
+    ]
+  },
+  {
+    "stem": "`SharedArrayBuffer` 在 Spectre 之后，为什么被要求页面先达成跨源隔离（COOP+COEP）才开放？",
+    "explanation": "一旦允许网页共享内存，就等于把「**同进程线程**」级别的攻击面交给了任意网页——共享内存可以搭出**高精度计时器**，正是 Spectre 侧信道读内存的原料。于是浏览器反过来要求页面先用 **COOP+COEP** 头声明**自我隔离**（达成 `self.crossOriginIsolated === true`）才开放 `SharedArrayBuffer` 与高精度计时。笔记的总结很精辟：**进程/内存边界的每一次放松，都要用更强的隔离承诺来赎买**。",
+    "tags": ["sharedarraybuffer", "spectre", "coop-coep"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "共享内存可搭出高精度计时等 Spectre 侧信道原料，等于把「同进程线程」的攻击面交给网页，必须先用 COOP+COEP 声明自我隔离来赎买",
+        "isCorrect": true,
+        "description": "正确。边界的放松要用更强的隔离承诺交换——跨源隔离达成后才开放这类 Spectre 敏感能力。"
+      },
+      {
+        "text": "因为 SharedArrayBuffer 占用内存太大，需要用响应头申报内存配额",
+        "isCorrect": false,
+        "description": "错误。限制与内存用量无关，核心是侧信道安全；COOP/COEP 是隔离声明，不是配额申报。"
+      },
+      {
+        "text": "因为它只能在 HTTP/2 连接上工作，COOP+COEP 用于协商协议版本",
+        "isCorrect": false,
+        "description": "错误。COOP/COEP 是跨源隔离声明头，与传输协议版本协商无关。"
+      },
+      {
+        "text": "因为它需要向 GPU 申请显存，而 GPU 只信任被隔离的页面",
+        "isCorrect": false,
+        "description": "错误。SharedArrayBuffer 是主内存中的共享缓冲区，与 GPU 显存无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 多进程架构中，browser 进程负责什么？",
+    "explanation": "**browser 进程**管应用的「chrome」部分——**地址栏、书签、前进/后退按钮**这层界面外框，并**编排网络请求、文件访问等特权操作**，还掌管导航与会话历史。全浏览器**仅此一个**。它是总调度：沙箱化的 renderer 想做特权操作，只能经 **IPC** 请它（或它治下的服务进程）代办。",
+    "tags": ["browser-process", "multi-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "地址栏、书签、前进/后退按钮等界面外框，加上网络请求、文件访问等特权操作的编排；全浏览器仅一个",
+        "isCorrect": true,
+        "description": "正确。browser 进程是唯一的总调度，管「chrome」外框与特权编排。"
+      },
+      {
+        "text": "解析 HTML/CSS 并执行页面 JS",
+        "isCorrect": false,
+        "description": "错误。解析与跑 JS 是 renderer 进程的职责，browser 进程不碰网页内容本身。"
+      },
+      {
+        "text": "把各进程的合成帧聚合后画到屏幕上",
+        "isCorrect": false,
+        "description": "错误。聚合上屏是 GPU 进程（现代 Chromium 的 Viz）的职责。"
+      },
+      {
+        "text": "每个 tab 配一个 browser 进程，随 tab 增减",
+        "isCorrect": false,
+        "description": "错误。browser 进程全局唯一；随 tab 增减的是 renderer 进程。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 多进程架构中，renderer 进程负责什么？",
+    "explanation": "**renderer 进程**负责 tab 内显示网站的一切：**解析 HTML/CSS、执行 JS、页面渲染**。**每个 tab（站点隔离下每个 site）一个**，并且因为天天执行互联网上任意来路的代码，被**沙箱**限制得最死。你写的前端代码，几乎全部人生都在某个 renderer 进程里度过。",
+    "tags": ["renderer", "multi-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "tab 内显示网站的一切：解析 HTML/CSS、执行 JS、渲染页面；每个 tab（站点隔离下每个 site）一个，被沙箱约束",
+        "isCorrect": true,
+        "description": "正确。renderer 是网页内容的专属进程，也是被沙箱限制最严的进程。"
+      },
+      {
+        "text": "绘制浏览器自身的地址栏与按钮",
+        "isCorrect": false,
+        "description": "错误。浏览器自身界面由 browser 进程的 UI 线程绘制，不归 renderer。"
+      },
+      {
+        "text": "管理 DNS 解析与 TLS 连接建立",
+        "isCorrect": false,
+        "description": "错误。网络栈归网络侧（现代为 Network Service 进程），renderer 无权直接操作网络。"
+      },
+      {
+        "text": "全浏览器只有一个 renderer，所有 tab 共用",
+        "isCorrect": false,
+        "description": "错误。renderer 是多个的，按 tab/site 划分；全局唯一的是 browser 进程与 Viz 进程。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 中一个 tab 崩溃显示「Aw, Snap!」后其余 tab 照常工作，这依赖什么机制？",
+    "explanation": "每个 tab 有**自己的 renderer 进程**。某个页面死循环、内存写坏、渲染引擎触发 bug——最坏结果是这个 tab 显示崩溃页，你关掉它继续用别的 tab。进程之间 **OS 层面内存隔离**，一个进程崩溃不会污染其他进程。对比单进程时代：所有 tab 在一个进程里，任何一个页面出事，**所有 tab 一起陪葬**。注意例外：进程数超限后同站多 tab 共享 renderer，会一起崩。",
+    "tags": ["multi-process", "crash-isolation", "renderer"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "每个 tab 有自己的 renderer 进程，进程间内存隔离，一个进程崩溃不影响其他进程",
+        "isCorrect": true,
+        "description": "正确。崩溃被圈在单个 renderer 进程内——这是多进程架构买来的稳定性。"
+      },
+      {
+        "text": "浏览器把崩溃 tab 的线程即时迁移到了其他 tab 的进程里",
+        "isCorrect": false,
+        "description": "错误。不存在崩溃线程迁移；隔离靠的是进程边界，崩掉的进程被整体回收。"
+      },
+      {
+        "text": "JS 引擎自动回滚了崩溃前的代码状态",
+        "isCorrect": false,
+        "description": "错误。没有回滚机制；tab 显示崩溃页说明其 renderer 已经死亡，而非被恢复。"
+      },
+      {
+        "text": "所有 tab 其实在同一进程，浏览器只是隐藏了崩溃的界面",
+        "isCorrect": false,
+        "description": "错误。若同一进程，一个页面崩溃会拖死全体；其余 tab 无恙正是因为进程各自独立。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 把 GPU 处理单列为一个独立进程，当初的理由是什么？",
+    "explanation": "GPU 进程之所以单列，是因为 **GPU 要接收来自多个来源（各 renderer、browser 进程）的请求，并把它们画到同一个表面**——把这类任务隔离到单独进程统一处理最干净。在现代 Chromium 中，GPU 进程演进为 **Viz** 进程，仍然全浏览器仅一个，负责聚合各方合成帧并上屏。",
+    "tags": ["viz", "gpu", "multi-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "GPU 需要接收多来源的请求并画到同一个表面，隔离成单独进程统一处理",
+        "isCorrect": true,
+        "description": "正确。多个进程的绘制请求最终汇到同一块 GPU/同一表面，单列进程统一处理最合理。"
+      },
+      {
+        "text": "GPU 进程负责替所有 tab 执行 JS 以加速运行",
+        "isCorrect": false,
+        "description": "错误。JS 只在各 renderer 的主线程（或 worker 线程）执行，GPU 进程不跑页面 JS。"
+      },
+      {
+        "text": "GPU 进程用于存储浏览历史与书签数据",
+        "isCorrect": false,
+        "description": "错误。历史与书签归 browser 进程（及其存储侧）管理，与 GPU 进程无关。"
+      },
+      {
+        "text": "因为 GPU 硬件要求每个进程独占一块显卡",
+        "isCorrect": false,
+        "description": "错误。事实相反：通常只有一块 GPU，所以才需要一个统一进程汇聚各方请求。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 的 Network Service（网络服务）是怎么来的？",
+    "explanation": "网络栈（DNS、连接、请求响应）最初是 **browser 进程内的 network 线程**；随 **Servicification（服务化）**推进，被拆为独立的 **Network Service 进程**——在资源受限的设备上仍可**回退**为进程内线程跑。这是「服务与进程解耦、按硬件伸缩」路线的标志性案例；读 2018 年 inside-browser 系列时看到「network 线程」，对号入座即可。",
+    "tags": ["network-service", "servicification", "multi-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "网络栈原是 browser 进程内的 network 线程，服务化后拆为独立进程，弱设备上可回退为进程内线程",
+        "isCorrect": true,
+        "description": "正确。Network Service 是 Servicification 的标志性产物，形态可随硬件伸缩。"
+      },
+      {
+        "text": "它从 Chrome 第一版起就是独立进程，与 browser 进程从无渊源",
+        "isCorrect": false,
+        "description": "错误。它的前身正是 browser 进程里的 network 线程，独立成进程是后来服务化的结果。"
+      },
+      {
+        "text": "它是 renderer 进程内的一条线程，负责页面的 fetch 请求",
+        "isCorrect": false,
+        "description": "错误。网络栈从不在 renderer 里；沙箱化的 renderer 发请求要经 IPC 请网络侧代办。"
+      },
+      {
+        "text": "它是操作系统内核的网络模块，不属于浏览器",
+        "isCorrect": false,
+        "description": "错误。Network Service 是浏览器自身的组成部分，跑在用户态，不是 OS 内核模块。"
+      }
+    ]
+  },
+  {
+    "stem": "单进程多线程形态的早期浏览器中，一个页面的死循环 JS 会造成什么后果？",
+    "explanation": "单进程形态下所有 tab 与浏览器界面共享一个进程，一个页面的死循环可能**拖住共享的关键线程**，令**整个浏览器无响应**——这正是 Chrome 2008 年发布起就押注多进程的原因。多进程下，死循环只能卡住**自己 renderer 的主线程**：该 tab 无响应，其他 tab、地址栏、书签一切照常（它们属于别的进程）。",
+    "tags": ["multi-process", "single-process", "crash-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "可能拖住共享的关键线程，令整个浏览器无响应；而多进程下只有该 tab 无响应",
+        "isCorrect": true,
+        "description": "正确。单进程一荣俱荣一损俱损；多进程把卡死圈在单个 renderer 里，关掉即可。"
+      },
+      {
+        "text": "只会让那个页面变慢，浏览器整体不受任何影响",
+        "isCorrect": false,
+        "description": "错误。单进程下大家共享线程与内存，一个页面的死循环足以冻住整个浏览器。"
+      },
+      {
+        "text": "操作系统会自动把死循环迁移到 GPU 上执行",
+        "isCorrect": false,
+        "description": "错误。不存在把 JS 迁去 GPU 的机制；死循环占住的是它所在线程的 CPU 时间。"
+      },
+      {
+        "text": "死循环会被浏览器立即精准终止，没有任何影响",
+        "isCorrect": false,
+        "description": "错误。浏览器无法预判并精准掐掉死循环（停机问题）；单进程时代只能整体遭殃。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 的 renderer 进程被沙箱化（sandbox）后，受到的关键限制是什么？",
+    "explanation": "操作系统提供了**按进程限制权限**的手段，浏览器借此把 renderer **沙箱化**：它天天执行互联网上任意来路的代码，于是被限得最死——**没有任意文件读写权**。即使恶意代码攻破了渲染引擎，直接能碰到的也只是这个被阉割的进程；想读磁盘、发任意请求，必须再**突破 IPC 边界**骗过 browser 进程/系统服务这道关。一句话：**进程是权限的边界**。",
+    "tags": ["sandbox", "renderer", "security"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "没有任意文件读写权；特权操作（发网络请求、写文件）只能经 IPC 请 browser/服务进程代办",
+        "isCorrect": true,
+        "description": "正确。沙箱把 renderer 关进笼子，攻破渲染引擎也只得到一个权限被阉割的进程。"
+      },
+      {
+        "text": "不能执行任何 JavaScript",
+        "isCorrect": false,
+        "description": "错误。renderer 正是执行页面 JS 的地方；沙箱限的是 OS 层权限，不是 JS 能力。"
+      },
+      {
+        "text": "只能使用一条线程运行",
+        "isCorrect": false,
+        "description": "错误。renderer 内有主线程、compositor、raster、worker 等多条线程；沙箱不限线程数。"
+      },
+      {
+        "text": "无法与任何其他进程进行通信",
+        "isCorrect": false,
+        "description": "错误。IPC 正是沙箱进程与外界协作的唯一正道——受限但可通信，特权操作靠「打报告」。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 对 renderer 进程数量的管理策略是什么？",
+    "explanation": "多进程的内存账单（V8 等**每进程一份拷贝**）不能无限膨胀，Chrome 的对策是**给进程数封顶**：上限依**设备内存与 CPU 能力**而定；达到上限后，新开的同站 tab 不再各自拉起 renderer，而是**同一站点的多个 tab 共享一个进程**。因此「多进程 = 每 tab 必有独立进程」并不严格成立，弱机器上尤其如此。",
+    "tags": ["multi-process", "memory", "process-limit"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按设备内存与 CPU 能力设进程数上限；超限后同一站点的多个 tab 共享一个 renderer 进程",
+        "isCorrect": true,
+        "description": "正确。封顶 + 同站共享是内存与隔离之间的折中，弱设备上更常触发。"
+      },
+      {
+        "text": "进程数没有上限，每个 tab 永远独占一个 renderer",
+        "isCorrect": false,
+        "description": "错误。有上限（依硬件而定），超限后同站 tab 会共享进程——「每 tab 一进程」并非铁律。"
+      },
+      {
+        "text": "超限后随机挑选任意两个 tab 合并进程，与站点无关",
+        "isCorrect": false,
+        "description": "错误。合并按「同一站点」进行，不是随机——跨站文档还受站点隔离约束不能同进程。"
+      },
+      {
+        "text": "超限后自动关闭最早打开的 tab 以释放进程",
+        "isCorrect": false,
+        "description": "错误。Chrome 不会替用户关 tab，策略是同站共享 renderer，而非淘汰页面。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 的 Servicification（服务化）指的是什么？",
+    "explanation": "稳定/安全/内存三笔账没有静态最优解——强机器不在乎内存、在乎隔离；弱机器反过来。**Servicification** 把浏览器每块功能改写成「服务」，让**服务与进程解耦**：**硬件充裕**时每个服务拆成独立进程（隔离更彻底，更稳更安全）；**资源受限**时多个服务合并进同一进程（少几份拷贝，省内存）。网络栈独立成 Network Service 是标志性案例；Android 系统本身也用类似思路伸缩服务。",
+    "tags": ["servicification", "multi-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把浏览器功能改写成与进程解耦的「服务」：强硬件上各自拆成独立进程，资源受限时合并进同一进程省内存",
+        "isCorrect": true,
+        "description": "正确。服务化让架构按硬件伸缩，同一功能在强弱设备上的进程形态可以完全不同。"
+      },
+      {
+        "text": "把浏览器功能全部搬到云端服务器执行",
+        "isCorrect": false,
+        "description": "错误。Servicification 是本机进程编排策略，「服务」指本地功能模块，不是上云。"
+      },
+      {
+        "text": "把所有服务永久固定为独立进程，任何设备上形态一致",
+        "isCorrect": false,
+        "description": "错误。它的价值恰在弹性：强硬件拆、弱硬件合，不是一刀切的固定拆分。"
+      },
+      {
+        "text": "只在企业版 Chrome 提供的付费架构特性",
+        "isCorrect": false,
+        "description": "错误。这是 Chromium 的通用架构方向，与付费版本无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 任务管理器（更多工具 → 任务管理器）里观察进程时，下列哪个现象符合多进程模型？",
+    "explanation": "任务管理器**每行一个进程**，是多进程架构的实景版。三个观察点：**「浏览器」与「GPU 进程」各只有一行**（全局唯一）；嵌跨站 iframe 的页面会出现独立的**「子框架」行**（站点隔离/OOPIF 的直接证据）；选中某个「标签页」点「结束进程」只有那个 tab 崩——稳定性收益眼见为实。更细的 frame→进程归属可看 `chrome://process-internals`。",
+    "tags": ["task-manager", "multi-process", "oopif"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "「浏览器」与「GPU 进程」各只有一行（全局唯一），嵌跨站 iframe 的页面还会出现独立的「子框架」行",
+        "isCorrect": true,
+        "description": "正确。browser 与 Viz 全局唯一；「子框架」行正是 OOPIF 独立进程的直接证据。"
+      },
+      {
+        "text": "每个 tab 的行下都必然嵌套一个独立的「浏览器」子进程",
+        "isCorrect": false,
+        "description": "错误。browser 进程全浏览器仅一个，不会按 tab 复制。"
+      },
+      {
+        "text": "「GPU 进程」的行数与打开的 tab 数一一对应",
+        "isCorrect": false,
+        "description": "错误。GPU（Viz）进程全局仅一个——「通常只有一块 GPU」；按 tab 增减的是 renderer。"
+      },
+      {
+        "text": "任务管理器只能看到 browser 进程一行，其余进程不可见",
+        "isCorrect": false,
+        "description": "错误。renderer、GPU、网络服务、扩展等都各占一行，这正是任务管理器的价值。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器术语里小写的「chrome」（非品牌名）指什么？",
+    "explanation": "小写 **chrome** 泛指应用中「**非网页内容**」的界面外框——地址栏、按钮、tab 条这些。Chrome 浏览器的 **browser 进程**管的正是这层外框，加上所有需要特权的幕后工作（网络编排、文件访问、会话历史）——「browser 进程负责应用的 chrome 部分」在这里是个双关。",
+    "tags": ["browser-process", "terminology"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "应用中「非网页内容」的界面外框——地址栏、按钮等；browser 进程管的正是这层外框加特权幕后工作",
+        "isCorrect": true,
+        "description": "正确。chrome 一词泛指应用外框（UI 骨架），Google 给浏览器起名正是玩了这个梗。"
+      },
+      {
+        "text": "特指 Google Chrome 内置的 V8 引擎",
+        "isCorrect": false,
+        "description": "错误。V8 是 JS 引擎的名字；小写 chrome 指界面外框，与引擎无关。"
+      },
+      {
+        "text": "网页里金属质感的 UI 风格主题",
+        "isCorrect": false,
+        "description": "错误。虽然词源与镀铬有关，但在浏览器术语里它指应用的界面外框，不是视觉主题。"
+      },
+      {
+        "text": "Chromium 项目的开源协议名称",
+        "isCorrect": false,
+        "description": "错误。Chromium 用的是 BSD 类协议；chrome 在这里是界面术语，不是协议名。"
+      }
+    ]
+  },
+  {
+    "stem": "从进程架构角度看，网络、存储、剪贴板等 Web API 几乎全是异步的架构原因是什么？",
+    "explanation": "沙箱化的 renderer **无权直接执行特权操作**——发网络请求、读写文件都要**跨进程经 IPC** 请 browser/服务进程代办。跨进程往返有延迟且时机不可控，若设计成同步 API，renderer 主线程就得原地阻塞等 IPC 回包，解析、渲染、交互全部陪等。这是相关 Web API 几乎全是异步的**架构原因之一**——异步不是风格偏好，而是进程边界的自然结果。",
+    "tags": ["ipc", "sandbox", "async-api"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "沙箱化的 renderer 无权直接做特权操作，须跨进程经 IPC 请服务代办，往返天然不宜同步阻塞主线程",
+        "isCorrect": true,
+        "description": "正确。特权操作必然跨进程，异步化避免主线程为 IPC 往返原地罚站。"
+      },
+      {
+        "text": "因为 JS 语言规范禁止一切同步函数",
+        "isCorrect": false,
+        "description": "错误。JS 有大量同步 API（如 `JSON.parse`）；异步是这些特权 API 的架构选择，不是语言禁令。"
+      },
+      {
+        "text": "因为这些操作都必须由 GPU 执行，而 GPU 只支持异步提交",
+        "isCorrect": false,
+        "description": "错误。网络、存储、剪贴板与 GPU 无关；关键是它们都要跨进程请特权方代办。"
+      },
+      {
+        "text": "因为异步 API 一定比同步 API 执行得更快",
+        "isCorrect": false,
+        "description": "错误。异步不等于更快，它的价值是不阻塞主线程；操作本身的耗时并不会因异步而缩短。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 中偶尔出现「一个 tab 崩溃连带同站的另一个 tab 一起崩」，最合理的解释是什么？",
+    "explanation": "崩溃隔离是 **per-process** 的：谁跟谁一起死，取决于谁**共享进程**。Chrome 按设备能力给进程数**封顶**，超限后**同一站点的多个 tab 共享一个 renderer 进程**——进程一崩，共享它的 tab 全部遭殃。想验证归属，看 Chrome 任务管理器里哪些 tab 落在同一行/同一进程 ID，或查 `chrome://process-internals`。",
+    "tags": ["multi-process", "crash-isolation", "process-limit"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "进程数达到上限后同站多 tab 共享一个 renderer 进程，进程一崩两个 tab 同时遭殃",
+        "isCorrect": true,
+        "description": "正确。崩溃半径由进程归属决定，同站共享进程的 tab 是同一崩溃域。"
+      },
+      {
+        "text": "两个 tab 之间存在 postMessage 通信时会被绑定成同一崩溃域",
+        "isCorrect": false,
+        "description": "错误。postMessage 是消息传递，不改变进程归属，也不会把两个进程绑成一个崩溃域。"
+      },
+      {
+        "text": "浏览器检测到崩溃后故意关闭同站 tab 以清理缓存",
+        "isCorrect": false,
+        "description": "错误。没有这种「连坐清理」机制；一起崩说明它们本来就在同一个进程里。"
+      },
+      {
+        "text": "同站 tab 共享同一条跨进程主线程，但进程仍各自独立",
+        "isCorrect": false,
+        "description": "错误。线程不能跨进程共享；一起崩恰恰说明共享的是进程本身。"
+      }
+    ]
+  },
+  {
+    "stem": "renderer 进程的主线程（main thread）承担哪些工作？",
+    "explanation": "主线程一人分饰全部关键角色：**解析 HTML→DOM、样式计算、构建布局树、生成绘制记录**，外加**执行你的所有 JS 和事件命中测试与派发**。这么多活挤在一条线程上，**一个长任务就能让解析、渲染、交互全部排队**——这正是「长任务卡一切」的架构根源，也是 Web Worker 存在的理由：把可挪的 JS 挪去 worker 线程。",
+    "tags": ["main-thread", "renderer"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "解析 HTML→DOM、样式计算、布局、绘制记录，外加执行你的所有 JS 与派发输入事件",
+        "isCorrect": true,
+        "description": "正确。渲染管线关键环节 + JS + 事件全挤在主线程，所以长任务会卡住一切。"
+      },
+      {
+        "text": "只执行 JS；解析与布局在 GPU 进程完成",
+        "isCorrect": false,
+        "description": "错误。解析、样式、布局都在主线程本地完成；GPU 侧做的是光栅化与上屏，不做 DOM 解析。"
+      },
+      {
+        "text": "只负责网络请求的收发",
+        "isCorrect": false,
+        "description": "错误。网络栈在网络侧（Network Service），renderer 主线程不直接收发网络数据。"
+      },
+      {
+        "text": "只绘制浏览器的地址栏与按钮",
+        "isCorrect": false,
+        "description": "错误。浏览器自身界面归 browser 进程的 UI 线程；renderer 主线程管的是网页内容。"
+      }
+    ]
+  },
+  {
+    "stem": "browser 进程内的经典线程分工（2018 年 inside-browser 口径）是哪三条？",
+    "explanation": "browser 进程的三大员：**UI 线程**（绘制地址栏/按钮/tab 条、判定地址栏输入、编排导航）、**network 线程**（跑网络栈，从互联网收发数据）、**storage 线程**（控制文件访问与各类存储）。注意演进：network 线程随服务化已移入独立的 **Network Service** 进程（弱设备可回退为进程内线程）——读旧文章时对号入座。",
+    "tags": ["browser-process", "ui-thread", "network-service"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "UI 线程（画界面/判定输入/编排导航）、network 线程（网络栈）、storage 线程（文件与存储访问）",
+        "isCorrect": true,
+        "description": "正确。这是 2018 年经典口径的三分工；network 线程现代已服务化为 Network Service 进程。"
+      },
+      {
+        "text": "main 线程、compositor 线程、raster 线程",
+        "isCorrect": false,
+        "description": "错误。这三条是 renderer 进程内的线程分工，不是 browser 进程的。"
+      },
+      {
+        "text": "display compositor 线程与 GPU main 线程",
+        "isCorrect": false,
+        "description": "错误。这两条是 Viz 进程（原 GPU 进程）的关键线程。"
+      },
+      {
+        "text": "DNS 线程、TLS 线程、HTTP 线程",
+        "isCorrect": false,
+        "description": "错误。网络栈是一个整体（network 线程/网络服务承载），不是按协议逐个拆线程描述的。"
+      }
+    ]
+  },
+  {
+    "stem": "renderer 进程的合成器线程（compositor thread）的独立价值是什么？",
+    "explanation": "**合成（compositing）**是把页面拆成多个**图层（layer）**、各自光栅化、再拼成一帧的技术，由独立的 compositor 线程主持。它的独立价值：**输入滚动、图层级动画可以完全不等主线程**——主线程哪怕正被 JS 长任务卡住，compositor 线程照样让页面滚起来。它还负责计算分层、协调图像解码与光栅化任务，并把结果封装成 compositor frame 提交出去。",
+    "tags": ["compositor", "renderer", "scrolling"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "滚动与图层级动画可以不经主线程独立推进——主线程被 JS 卡住时页面照样能滚",
+        "isCorrect": true,
+        "description": "正确。这正是「主线程卡死、滚动依然流畅」现象的架构解释。"
+      },
+      {
+        "text": "它是执行 JS 的备用线程，主线程忙时自动接管 JS",
+        "isCorrect": false,
+        "description": "错误。JS 只跑在主线程和 worker 线程；compositor 线程不执行页面 JS。"
+      },
+      {
+        "text": "它负责发起页面的网络请求",
+        "isCorrect": false,
+        "description": "错误。网络请求归网络侧；compositor 线程的职责是分层与合成帧。"
+      },
+      {
+        "text": "它只存在于 GPU 进程中，renderer 里没有合成器线程",
+        "isCorrect": false,
+        "description": "错误。每个 renderer 都有自己的 compositor 线程；Viz 里的是 display compositor，两者角色不同。"
+      }
+    ]
+  },
+  {
+    "stem": "renderer 进程的 raster（光栅化）线程做什么？",
+    "explanation": "图层可能很大（如整页的长图层），compositor 线程把它切成**图块（tile）**分发给多条 **raster 线程**；raster 线程把 tile **光栅化成位图**存进 **GPU 内存**，并**优先**处理视口附近的 tile。之所以开 ×N 多条，是为了把光栅化摊到多个 CPU 核心**真正并行**。随后 compositor 把「哪些 tile、放哪、怎么拼」封装成 draw quad，聚合为一张 **compositor frame** 提交出去。",
+    "tags": ["raster", "renderer", "tile"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把 compositor 切好的图块（tile）光栅化成位图存入 GPU 内存，通常多条并行以吃满多核",
+        "isCorrect": true,
+        "description": "正确。raster ×N 是把「tile→位图」的计算摊到多核的设计，视口附近的 tile 优先。"
+      },
+      {
+        "text": "把 HTML 解析成 DOM 树",
+        "isCorrect": false,
+        "description": "错误。解析 HTML 是主线程的职责；raster 线程处理的是图形数据，不碰 DOM。"
+      },
+      {
+        "text": "聚合所有进程的合成帧并绘制上屏",
+        "isCorrect": false,
+        "description": "错误。聚合与上屏是 Viz 进程（display compositor + GPU main）的活。"
+      },
+      {
+        "text": "以单条线程串行处理所有图层，不支持并行",
+        "isCorrect": false,
+        "description": "错误。raster 线程是 ×N 多条，正是为了并行光栅化，单条串行说反了。"
+      }
+    ]
+  },
+  {
+    "stem": "Web Worker 与 Service Worker 的 JS 代码运行在哪里？",
+    "explanation": "它们跑在 **renderer 进程内的 worker 线程**上，与主线程**不共享内存**、只靠 `postMessage` 传消息——与进程间 IPC 同一种世界观。这正是 Worker 的意义：JS 主线程再忙也只占一个核，想利用多核、想把长任务挪出主线程，只能开 worker 线程。",
+    "tags": ["worker", "renderer", "postmessage"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "renderer 进程内的 worker 线程上，与主线程不共享内存、只通过消息通信",
+        "isCorrect": true,
+        "description": "正确。Worker 是「不共享内存、传消息」哲学在页面内的投影，也是利用多核的唯一途径。"
+      },
+      {
+        "text": "browser 进程的 UI 线程上",
+        "isCorrect": false,
+        "description": "错误。UI 线程画的是浏览器界面；页面的 Worker JS 在 renderer 的 worker 线程执行。"
+      },
+      {
+        "text": "renderer 主线程上，与页面 JS 按时间片轮流执行",
+        "isCorrect": false,
+        "description": "错误。Worker 有独立线程，可与主线程真正并行——若挤在主线程就失去意义了。"
+      },
+      {
+        "text": "操作系统内核态中",
+        "isCorrect": false,
+        "description": "错误。Worker 是用户态的浏览器线程，与 OS 内核无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Viz 进程（原 GPU 进程）在整个浏览器中只有一个，官方给出的朴素理由是什么？",
+    "explanation": "**Viz**（取自 Visuals）全浏览器**仅一个**，理由朴素：「**通常只有一块 GPU**」。所有 renderer 进程和 browser 进程各自产出的 compositor frame，最终都要汇到同一块 GPU 画到同一块屏幕上——设一个统一的「上屏部门」聚合各方帧最合理。站点隔离下一个页面可能由多个 renderer 拼成，聚合正是 Viz 的价值所在。",
+    "tags": ["viz", "gpu", "compositor-frame"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通常只有一块 GPU——各 renderer 与 browser 的合成帧最终都要汇到同一块 GPU 上屏",
+        "isCorrect": true,
+        "description": "正确。硬件只有一块，聚合上屏就该有且只有一个统一进程。"
+      },
+      {
+        "text": "因为多个 Viz 进程会导致 V8 实例冲突",
+        "isCorrect": false,
+        "description": "错误。V8 是 renderer 里的 JS 引擎，与 Viz 无关；单例的理由是 GPU 硬件通常唯一。"
+      },
+      {
+        "text": "因为操作系统只允许浏览器创建一个子进程",
+        "isCorrect": false,
+        "description": "错误。浏览器可创建大量子进程（renderer ×N 就是证明）；Viz 单例是设计选择。"
+      },
+      {
+        "text": "因为合成帧数据太小，不值得多进程处理",
+        "isCorrect": false,
+        "description": "错误。与数据大小无关；关键是多来源的帧要统一聚合到同一块 GPU/屏幕。"
+      }
+    ]
+  },
+  {
+    "stem": "Viz 进程内部的两条关键线程如何分工？",
+    "explanation": "**display compositor 线程**把各 renderer + browser 进程提交的合成帧**聚合**、优化成一张全局帧；**GPU main 线程**负责光栅化显示列表与视频帧为 GPU 纹理 tile，并把合成帧**真正绘制到屏幕**。两者解耦的理由：display compositor **必须时刻可响应**，不能被 GPU 上的慢操作阻塞——聚合调度与真正画图分离，掉帧风险被隔离在 GPU main 一侧。",
+    "tags": ["viz", "display-compositor", "gpu-main"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "display compositor 线程把各进程的合成帧聚合成一张全局帧；GPU main 线程做光栅化并把帧真正绘制到屏幕",
+        "isCorrect": true,
+        "description": "正确。一个管「聚合调度」、一个管「真正画图」，解耦保证聚合侧时刻可响应。"
+      },
+      {
+        "text": "一条执行页面 JS、一条执行 WebAssembly",
+        "isCorrect": false,
+        "description": "错误。Viz 不执行页面代码；JS/WASM 都在 renderer 进程里跑。"
+      },
+      {
+        "text": "一条处理鼠标输入、一条处理键盘输入",
+        "isCorrect": false,
+        "description": "错误。输入事件由 browser 进程路由给 renderer；Viz 的两条线程都是围绕帧的聚合与上屏。"
+      },
+      {
+        "text": "两条线程各负责绘制半个屏幕，左右分工",
+        "isCorrect": false,
+        "description": "错误。分工按职责（聚合 vs 绘制）而非按屏幕区域切分。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离下一个含跨站 iframe 的页面，一帧画面是如何被拼装上屏的？",
+    "explanation": "此时「一个页面」由多个进程拼成：**主文档的 renderer、跨站 iframe 的 renderer（OOPIF）、browser 进程（浏览器 UI）各自产出 compositor frame**，经 **IPC** 提交给全浏览器唯一的 **Viz** 进程；**display compositor 线程**把它们**聚合**成一张全局帧，再由 **GPU main 线程**绘制上屏。要点：跨进程**内存互不可见**，谁也不能把别人的像素拉进自己进程合成——聚合必须由 Viz 这个统一的「上屏部门」完成，这正是它存在的价值。",
+    "tags": ["viz", "oopif", "compositor-frame", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "主文档 renderer、跨站 iframe 的 renderer、browser 进程各自产出 compositor frame，经 IPC 交给 Viz，由 display compositor 聚合为单帧后 GPU main 绘制上屏",
+        "isCorrect": true,
+        "description": "正确。多进程各自出帧 → Viz 统一聚合 → 上屏，这是「一页多进程」时代帧的完整旅程。"
+      },
+      {
+        "text": "主文档 renderer 先把 iframe 的像素读进本进程合成完整一帧，再交给 GPU",
+        "isCorrect": false,
+        "description": "错误。跨进程内存互不可见，主文档进程读不到 OOPIF 的像素——聚合只能在 Viz 完成。"
+      },
+      {
+        "text": "browser 进程把各 renderer 的 DOM 树合并后统一光栅化",
+        "isCorrect": false,
+        "description": "错误。合并的是各方的合成帧（在 Viz），不是 DOM 树；browser 进程不做全页光栅化。"
+      },
+      {
+        "text": "每个 renderer 轮流把自己那部分直接画到屏幕，无需聚合",
+        "isCorrect": false,
+        "description": "错误。各方帧必须聚合成一张全局帧统一上屏，否则无法保证画面完整一致。"
+      }
+    ]
+  },
+  {
+    "stem": "对照 2018 年 inside-browser 系列与现代 Chromium，下列名词演进的对应关系哪项正确？",
+    "explanation": "两处名词更替需要对齐：**browser 进程内的 network 线程 → 独立的 Network Service 进程**（服务化产物，弱设备可合并回进程内）；**GPU 进程 → Viz 进程**（内含 display compositor + GPU main 两条线程）。另外帧的提交路径也变了：compositor frame 从「先交 browser 进程再转 GPU」变为 **renderer 直接提交给 Viz 聚合**。架构在演进，但「每条线程只守一类职责，跨界只传消息」的分工哲学未变。",
+    "tags": ["network-service", "viz", "evolution"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "browser 进程内的 network 线程 → 独立的 Network Service 进程；GPU 进程 → Viz 进程（display compositor + GPU main）",
+        "isCorrect": true,
+        "description": "正确。这是读 2018 系列与现代文档时最重要的两条名词对照。"
+      },
+      {
+        "text": "renderer 主线程 → 移入 browser 进程统一执行",
+        "isCorrect": false,
+        "description": "错误。主线程从未搬家，解析/样式/布局/JS 依旧在各 renderer 进程内。"
+      },
+      {
+        "text": "compositor 线程 → 被 raster 线程完全取代",
+        "isCorrect": false,
+        "description": "错误。两者并存且分工不同：compositor 管分层与合成帧，raster 管 tile 光栅化。"
+      },
+      {
+        "text": "storage 线程 → 演进为独立的 V8 进程",
+        "isCorrect": false,
+        "description": "错误。V8 是 JS 引擎不是进程；storage 是存储访问的线程/服务，两者不相干。"
+      }
+    ]
+  },
+  {
+    "stem": "Viz 进程里 display compositor 不与 GPU main 挤同一条线程，官方解释是什么？",
+    "explanation": "官方解释：display compositor **必须时刻保持可响应**，不能被 GPU 上的慢操作阻塞。把「聚合调度」与「真正画图」解耦成两条线程后，GPU 侧的慢操作（大量光栅化、慢驱动调用）只会拖住 GPU main，**掉帧风险被隔离在 GPU main 一侧**，聚合器照常接收和编排各进程的合成帧。这与 renderer 里「compositor 线程独立于主线程」是同一种设计哲学：**关键调度路径必须永远畅通**。",
+    "tags": ["viz", "display-compositor", "responsiveness"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "display compositor 必须时刻可响应，不能被 GPU 慢操作阻塞——聚合调度与真正画图解耦，掉帧风险隔离在 GPU main 一侧",
+        "isCorrect": true,
+        "description": "正确。与 renderer 内「合成独立于主线程」一脉相承：调度路径不给慢操作陪绑。"
+      },
+      {
+        "text": "因为两条线程分别服务于两块不同的显示器",
+        "isCorrect": false,
+        "description": "错误。分工按职责（聚合 vs 绘制）划分，与显示器数量无关。"
+      },
+      {
+        "text": "因为 display compositor 需要执行页面的 JS 回调",
+        "isCorrect": false,
+        "description": "错误。Viz 不执行页面 JS；display compositor 做的是帧的聚合与优化。"
+      },
+      {
+        "text": "因为单条线程会超出操作系统的线程内存上限",
+        "isCorrect": false,
+        "description": "错误。不存在这样的限制逻辑；动机是响应性隔离，不是内存配额。"
+      }
+    ]
+  },
+  {
+    "stem": "DevTools Performance 面板中，页面滚动流畅但点击无响应，泳道上通常呈现什么景象？说明了什么？",
+    "explanation": "典型景象：**Compositor 泳道持续在动、Main 泳道被长任务（红角标）塞满**。这是「合成器线程独立于主线程」的教科书现场——滚动默认由 **compositor 线程**处理，不需要主线程参与，所以照常流畅；而**点击事件的命中测试与派发在主线程**，主线程被长任务占住，点击只能排队。泳道与线程一一对应：Main=主线程、Compositor=合成器线程、Raster=光栅化线程、GPU=Viz 侧工作。",
+    "tags": ["devtools", "compositor", "main-thread"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Compositor 泳道持续在动、Main 泳道被长任务塞满——合成器线程独立于主线程处理滚动的直接证据",
+        "isCorrect": true,
+        "description": "正确。滚动走 compositor 不等主线程；点击派发在主线程，被长任务堵住。"
+      },
+      {
+        "text": "Main 泳道空闲、Raster 泳道被塞满",
+        "isCorrect": false,
+        "description": "错误。点击无响应指向主线程被占；raster 忙只影响 tile 位图产出，不解释点击排队。"
+      },
+      {
+        "text": "GPU 泳道完全停止工作",
+        "isCorrect": false,
+        "description": "错误。滚动还流畅说明合成与上屏都在正常推进，GPU 侧并没有停。"
+      },
+      {
+        "text": "所有泳道都空闲，说明问题出在网络",
+        "isCorrect": false,
+        "description": "错误。点击无响应而滚动流畅是典型的主线程拥堵特征，与网络无关。"
+      }
+    ]
+  },
+  {
+    "stem": "页面注册了非 passive 的 `touchmove`/`wheel` 监听后，滚动性能为什么会下降？",
+    "explanation": "滚动默认由 **compositor 线程**独立处理、不等主线程。但非 passive 的监听器**可能调用 `preventDefault()` 取消滚动**，合成器无从预判，只能**每次都等主线程把事件跑完、确认没被取消**才敢滚——滚动从「不经主线程」退化为「看主线程脸色」，主线程一忙滚动就卡。声明 `{ passive: true }` 即是向合成器承诺「我不取消滚动」，让它放心独立推进。",
+    "tags": ["compositor", "passive-listener", "scrolling"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "合成器线程被迫等待主线程确认事件是否被 `preventDefault`，滚动从「不经主线程」退化为「等主线程确认」",
+        "isCorrect": true,
+        "description": "正确。非 passive 监听把主线程重新拉回滚动关键路径，独立滚动的优势尽失。"
+      },
+      {
+        "text": "非 passive 监听会直接禁用 GPU 加速",
+        "isCorrect": false,
+        "description": "错误。GPU 加速没有被禁用；变慢是因为合成器要等主线程确认，不是渲染方式退化。"
+      },
+      {
+        "text": "事件对象过大导致内存溢出",
+        "isCorrect": false,
+        "description": "错误。与事件对象大小无关，瓶颈在「等待主线程确认」的同步依赖。"
+      },
+      {
+        "text": "浏览器会为每次滚动新建一个 renderer 进程",
+        "isCorrect": false,
+        "description": "错误。滚动不会创建进程；进程按 tab/site 划分，与滚动事件无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 站点隔离（Site Isolation）的核心保证是什么？",
+    "explanation": "站点隔离把进程边界从「每 tab」细化到「每 site」：**不同 site 的文档必然进不同的 renderer 进程**——无论这次导航发生在当前 tab、新开 tab，还是页面里的 **iframe**（跨站 iframe 被拆成 OOPIF）。背后的结论性原则：**同进程 = 同一失陷域**，敏感数据绝不与不可信站点共享进程。",
+    "tags": ["site-isolation", "renderer", "security"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不同 site 的文档必然进不同的 renderer 进程——无论是本 tab 导航、新开 tab 还是页面里的 iframe",
+        "isCorrect": true,
+        "description": "正确。隔离粒度是 site，覆盖导航与 iframe 全部场景，跨站文档永不同进程。"
+      },
+      {
+        "text": "不同站点的 Cookie 会被自动加密并互相隔离",
+        "isCorrect": false,
+        "description": "错误。站点隔离讲的是进程边界的划分，不是 Cookie 的加密或分区机制。"
+      },
+      {
+        "text": "每个站点的网络请求走不同的物理网卡",
+        "isCorrect": false,
+        "description": "错误。与网卡无关；隔离的对象是渲染网页内容的 renderer 进程。"
+      },
+      {
+        "text": "不同站点的页面之间禁止相互链接跳转",
+        "isCorrect": false,
+        "description": "错误。跨站跳转照常允许，只是目标文档会被放进另一个 renderer 进程。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离中的 site（站点）由哪些部分组成？",
+    "explanation": "**site = scheme + 注册域名（eTLD+1）**，**忽略子域、端口与路径**。eTLD+1 即「有效顶级域 + 1 级」：`example.com` 是 `com` 下一级；而 `example.github.io` 因 `github.io` 在**公共后缀列表（Public Suffix List）**中，本身就是一个 site。对比 **origin = scheme + host + port**，site 粒度更粗——这正是站点隔离对 `document.domain` 旧页面的兼容妥协。",
+    "tags": ["site-isolation", "site-vs-origin", "etld"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "scheme + 注册域名（eTLD+1），忽略子域、端口与路径",
+        "isCorrect": true,
+        "description": "正确。scheme 参与判定（http 与 https 不同 site），子域/端口/路径都不参与。"
+      },
+      {
+        "text": "scheme + host + port",
+        "isCorrect": false,
+        "description": "错误。这是 origin 的组成；site 比 origin 粗，抹掉了子域与端口。"
+      },
+      {
+        "text": "仅注册域名，scheme 也不参与判定",
+        "isCorrect": false,
+        "description": "错误。scheme 参与 site 判定——`http://example.com` 与 `https://example.com` 不同 site。"
+      },
+      {
+        "text": "完整 URL，包含路径与查询串",
+        "isCorrect": false,
+        "description": "错误。路径与查询串从不参与 site 判定，那样的粒度对进程划分毫无意义。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离的术语体系下，`https://foo.example.com:8080` 这个 URL 的 site 是什么？",
+    "explanation": "site 取 **scheme + eTLD+1**：scheme 是 `https`，注册域名（eTLD+1）是 `example.com`——**子域 `foo` 与端口 `8080` 都不参与判定**，所以 site 是 **`https://example.com`**。而它的 **origin** 是 `https://foo.example.com:8080`（scheme+host+port 全保留）。一粗一细，分清两者是理解站点隔离判定的第一步。",
+    "tags": ["site-vs-origin", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`https://example.com`——子域与端口都不参与 site 判定",
+        "isCorrect": true,
+        "description": "正确。site 只留 scheme + eTLD+1，`foo` 子域与 `:8080` 端口都被抹掉。"
+      },
+      {
+        "text": "`https://foo.example.com:8080`",
+        "isCorrect": false,
+        "description": "错误。这是它的 origin（scheme+host+port），site 要比这粗两档。"
+      },
+      {
+        "text": "`example.com`",
+        "isCorrect": false,
+        "description": "错误。site 包含 scheme——http 与 https 的同名域是不同 site，不能省略。"
+      },
+      {
+        "text": "`https://foo.example.com`",
+        "isCorrect": false,
+        "description": "错误。子域不参与 site 判定，`foo` 应当被抹掉，只留注册域名。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离中的 OOPIF（Out-of-Process iframe）指什么？",
+    "explanation": "**OOPIF** 即「进程外 iframe」：父页面嵌入**跨站 iframe** 时（如 `https://news.example` 嵌 `https://ads.example`），该 iframe 的文档被放到**与父页面不同的独立 renderer 进程**中渲染。此时「一个页面」在进程视角变成多进程拼图；同 site 的 iframe 则留在父文档进程里。这项改造是 Chromium 多年的大工程：帧树横跨进程后，DevTools、页内查找、布局、输入路由都得跨进程协作。",
+    "tags": ["oopif", "site-isolation", "iframe"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨站 iframe 的文档被拆到与父页面不同的独立 renderer 进程中渲染",
+        "isCorrect": true,
+        "description": "正确。OOPIF 让「一个页面」变成多进程拼图；同 site 的 iframe 不拆。"
+      },
+      {
+        "text": "被浏览器判定为广告而自动屏蔽的 iframe",
+        "isCorrect": false,
+        "description": "错误。OOPIF 是进程分配机制，不做内容判断，广告拦截是另一套逻辑。"
+      },
+      {
+        "text": "使用 `srcdoc` 内联内容的 iframe",
+        "isCorrect": false,
+        "description": "错误。OOPIF 的判定依据是跨站与否，不是 iframe 的内容来源写法。"
+      },
+      {
+        "text": "渲染失败后自动重新加载的 iframe",
+        "isCorrect": false,
+        "description": "错误。OOPIF 与失败重试无关，指的是「进程外」渲染的跨站 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离的 site 判定下，`https://a.example.com` 与 `https://b.example.com` 是什么关系？",
+    "explanation": "两者 host 不同 → **不同 origin**；但 scheme 同为 `https`、eTLD+1 同为 `example.com`，**子域不参与 site 判定** → **同 site**。同 site 意味着站点隔离允许它们**共享同一个 renderer 进程**（比如互为 iframe 时不拆 OOPIF）。这正是「按 site 不按 origin」隔离的直接体现。",
+    "tags": ["site-vs-origin", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不同 origin，但同 site——子域不参与 site 判定，两者可以共享 renderer 进程",
+        "isCorrect": true,
+        "description": "正确。host 不同则 origin 不同；eTLD+1 与 scheme 相同则同 site，进程可共享。"
+      },
+      {
+        "text": "同 origin 也同 site",
+        "isCorrect": false,
+        "description": "错误。origin 按 scheme+host+port 比对，host 不同（a≠b）就不同 origin。"
+      },
+      {
+        "text": "不同 origin 也不同 site，必然分属不同进程",
+        "isCorrect": false,
+        "description": "错误。site 抹掉子域后同为 `https://example.com`，是同 site，不强制分进程。"
+      },
+      {
+        "text": "同 origin 但不同 site",
+        "isCorrect": false,
+        "description": "错误。这种组合不可能存在：origin 相同则 scheme 与 host 都相同，site 必然也相同。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离的 site 判定下，`https://a.github.io` 与 `https://b.github.io` 为什么被视为不同 site？",
+    "explanation": "因为 `github.io` 收录在**公共后缀列表（Public Suffix List）**中，被当作「有效顶级域（eTLD）」看待——于是 `a.github.io`、`b.github.io` 各自就是 **eTLD+1**，即各自独立的 site。这个设计保护了共享域托管平台：不同用户的 Pages 站点互不属于同一 site，站点隔离会把它们分进不同进程。",
+    "tags": ["psl", "etld", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`github.io` 在公共后缀列表中，`a.github.io` 与 `b.github.io` 各自就是 eTLD+1，即两个独立 site",
+        "isCorrect": true,
+        "description": "正确。公共后缀让平台子域各自成 site，不同用户的站点被进程级隔开。"
+      },
+      {
+        "text": "因为两者的端口不同",
+        "isCorrect": false,
+        "description": "错误。两个 URL 都未写端口（默认相同），且端口本来就不参与 site 判定。"
+      },
+      {
+        "text": "因为 GitHub 向 Chrome 申请了每个仓库独立进程的特权",
+        "isCorrect": false,
+        "description": "错误。这是公共后缀列表的通用机制，任何收录的域都如此，不是 GitHub 专属特权。"
+      },
+      {
+        "text": "判断有误——它们其实是同一个 site",
+        "isCorrect": false,
+        "description": "错误。若 `github.io` 不在公共后缀列表才会同 site；事实它在列表中，两者是不同 site。"
+      }
+    ]
+  },
+  {
+    "stem": "Chromium 站点隔离把安全边界的粒度定在 site 而不是更细的 origin，根源是什么？",
+    "explanation": "根源是**兼容性**：老网页会修改 `document.domain`（如把 `a.example.com` 与 `b.example.com` 都设为 `example.com`）实现**跨子域直接互访 DOM**。若按 origin 分进程，这类页面会被拆进两个进程而**彻底坏掉**。Chromium 于是退一步按 site 隔离——**安全边界的粒度，被一个上古 API 拖住了**。补救通道也留了：`document.domain` setter 已被 MDN 标记弃用，页面可用 `Origin-Agent-Cluster` 头主动申请按 origin 隔离。",
+    "tags": ["site-vs-origin", "document-domain", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "兼容改 `document.domain` 跨子域互访的旧页面——按 origin 分进程会把这类页面拆进两个进程而坏掉，安全粒度被上古 API 拖住",
+        "isCorrect": true,
+        "description": "正确。跨子域互访 DOM 要求同进程，origin 粒度会撕裂这类页面，只能退到 site。"
+      },
+      {
+        "text": "origin 数量太多会导致进程管理表溢出",
+        "isCorrect": false,
+        "description": "错误。不是数据结构容量问题；进程数本就另有封顶机制，粒度选择卡在兼容性上。"
+      },
+      {
+        "text": "origin 判定需要发起网络查询，性能不可接受",
+        "isCorrect": false,
+        "description": "错误。origin 是本地字符串规则（scheme+host+port），判定不需要联网。"
+      },
+      {
+        "text": "因为 TLS 证书只能按 eTLD+1 签发",
+        "isCorrect": false,
+        "description": "错误。证书可以按具体子域签发，与隔离粒度的选择无关；症结在 `document.domain` 兼容。"
+      }
+    ]
+  },
+  {
+    "stem": "`document.domain` setter 的现状与推荐替代方案是什么？",
+    "explanation": "`document.domain` setter 已被 MDN 标记为**弃用**——它破坏同源模型、招致安全 bug，还把站点隔离的粒度拖在 site 级。跨源通信一律改用 **`window.postMessage()`**；页面还可以用 **`Origin-Agent-Cluster`** 响应头**主动申请按 origin 隔离**。一句话：别再碰这个上古 API。",
+    "tags": ["document-domain", "postmessage", "origin-agent-cluster"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "已被 MDN 标记弃用；跨源通信改用 `window.postMessage()`，页面可用 `Origin-Agent-Cluster` 头主动申请按 origin 隔离",
+        "isCorrect": true,
+        "description": "正确。弃用 + 消息传递替代 + 主动加严隔离，是这个 API 的完整现状。"
+      },
+      {
+        "text": "它是新引入的推荐 API，用于加强跨子域隔离",
+        "isCorrect": false,
+        "description": "错误。方向完全反了：它是放松跨子域边界的历史包袱，且已被标记弃用。"
+      },
+      {
+        "text": "它只在 HTTP 页面可用，HTTPS 下会自动转为 postMessage",
+        "isCorrect": false,
+        "description": "错误。不存在这种自动转换机制；弃用与 scheme 无关。"
+      },
+      {
+        "text": "它被扩展为可设置任意无关域名以实现跨站互访",
+        "isCorrect": false,
+        "description": "错误。它从来只能在自身注册域范围内收缩域名，设任意域名从未被允许。"
+      }
+    ]
+  },
+  {
+    "stem": "Spectre/Meltdown（2018 年公开）对浏览器架构的特殊威胁在于什么？",
+    "explanation": "两者是 **CPU 推测执行的侧信道攻击**：**不需要 Chrome 有任何软件漏洞**，就能读取**本进程内存的任意内容**。这意味着 renderer 进程内实施的同源检查（软件逻辑）在硬件侧信道面前**形同虚设**——只要跨站数据和恶意代码在同一进程里，就可能被读走。三条线索（renderer 漏洞常态化、UXSS、Spectre）汇成同一结论：**进程是唯一靠得住的边界**，站点隔离由此成为必答题。",
+    "tags": ["spectre", "site-isolation", "security"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "利用 CPU 推测执行的侧信道，不需要浏览器有任何软件漏洞就能读取本进程内存的任意内容——软件层同源检查形同虚设",
+        "isCorrect": true,
+        "description": "正确。硬件侧信道绕过一切进程内软件检查，把「同进程」直接变成「同一失陷域」。"
+      },
+      {
+        "text": "它们是 V8 的 JS 语法漏洞，升级 V8 即可根除",
+        "isCorrect": false,
+        "description": "错误。这是 CPU 硬件层的推测执行问题，不是 JS 引擎 bug，软件升级无法根除。"
+      },
+      {
+        "text": "它们只影响服务器 CPU，浏览器场景不受威胁",
+        "isCorrect": false,
+        "description": "错误。浏览器里跑着任意网页代码，恰是侧信道攻击的高危场景，站点隔离正为此而生。"
+      },
+      {
+        "text": "它们只能读取 GPU 显存，不能读主内存",
+        "isCorrect": false,
+        "description": "错误。Spectre/Meltdown 读的是进程的主内存，这才是跨站数据泄露的要害。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离的内存开销，官方口径大约是多少？",
+    "explanation": "进程更多 = 每进程一份基础设施拷贝 + 更多进程管理开销。官方账单：**桌面全站点隔离约 10-13%**（多 tab 场景，Chrome 67 口径）；**Android 选择性隔离约 3-5%**（只隔离登录类站点，Chrome 77 口径）。这是一场**明码标价的交易**：拿一成内存买「同进程 = 同一失陷域」问题的进程级解药。",
+    "tags": ["site-isolation", "memory"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "桌面全站点隔离约 10-13%（多 tab 场景，Chrome 67 口径）；Android 选择性隔离约 3-5%（Chrome 77 口径）",
+        "isCorrect": true,
+        "description": "正确。两个平台两套策略两份账单——全量 10-13%，选择性 3-5%。"
+      },
+      {
+        "text": "桌面约 50% 以上，因此默认关闭",
+        "isCorrect": false,
+        "description": "错误。实际约 10-13%，且 Chrome 67 起桌面已默认开启，并未因开销而关闭。"
+      },
+      {
+        "text": "完全零开销，进程越多反而越省内存",
+        "isCorrect": false,
+        "description": "错误。每个进程都要揣一份基础设施拷贝，进程增多必然多吃内存。"
+      },
+      {
+        "text": "桌面约 3-5%，Android 约 10-13%",
+        "isCorrect": false,
+        "description": "错误。两个数字对调了：全量隔离的桌面开销更高（10-13%），选择性隔离的 Android 更低（3-5%）。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离的铺开时间线中，下列版本对应关系哪项正确？",
+    "explanation": "时间线：**Chrome 67**（2018）在桌面（Win/Mac/Linux/ChromeOS）**全站点默认开启**；**Chrome 77** 起 Android（≥2GB RAM）**选择性**隔离「用户登录过的站点」；**Chrome 92** 扩展至 OAuth 第三方登录站点与发 **COOP** 头的站点，并隔离扩展页；**Chrome 110** 支持 `<webview>` 标签。尚不覆盖：**Android WebView** 与 RAM < 2GB 的 Android 设备。",
+    "tags": ["site-isolation", "chrome-versions"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 67（2018）桌面全站点默认；Chrome 77 起 Android（≥2GB RAM）隔离登录过的站点；Chrome 92 扩至 OAuth/COOP 站点并隔离扩展页；Chrome 110 支持 `<webview>`",
+        "isCorrect": true,
+        "description": "正确。67 → 77 → 92 → 110 的铺开节奏，外加 WebView 与低内存 Android 至今未覆盖。"
+      },
+      {
+        "text": "Chrome 1（2008）发布时即在全平台默认开启站点隔离",
+        "isCorrect": false,
+        "description": "错误。2008 年只有多进程架构（每 tab 级）；站点隔离到 2018 年 Chrome 67 才在桌面默认开启。"
+      },
+      {
+        "text": "站点隔离先在 Android 全量开启，桌面到 Chrome 110 才支持",
+        "isCorrect": false,
+        "description": "错误。顺序反了：桌面（67）先行全量，Android（77 起）只做选择性隔离。"
+      },
+      {
+        "text": "站点隔离至今仍是实验性 flag，任何平台都未默认开启",
+        "isCorrect": false,
+        "description": "错误。桌面自 Chrome 67 起就是默认行为；flag 只是手动加严/调试的入口。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离落地后带来的行为副作用中，下列哪项属实？",
+    "explanation": "副作用清单：帧树横跨进程后**整页布局不再是跨进程同步的**（各 iframe 在各自进程排版）；**unload handler 不保证执行**（其中 `postMessage` 可能失败）；本地调试想让跨站文档回到同一进程，光 `--disable-web-security` 不够——它只关掉 renderer 内的同源检查，**进程边界还在**，需连带 `--disable-features=IsolateOrigins,site-per-process`。而父页与跨站 iframe 间的 `postMessage` 对代码**透明**照常工作，只是底下变成了真·跨进程 IPC。",
+    "tags": ["site-isolation", "unload", "debugging"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跨进程后整页布局不再同步、unload 不保证执行；`--disable-web-security` 调试还需连带 `--disable-features=IsolateOrigins,site-per-process`",
+        "isCorrect": true,
+        "description": "正确。这三条正是站点隔离的副作用清单：布局异步化、unload 失信、调试要多关一层进程隔离。"
+      },
+      {
+        "text": "跨站 iframe 与父页面之间的 postMessage 从此被禁用",
+        "isCorrect": false,
+        "description": "错误。postMessage 照常工作，OOPIF 对代码透明——只是底下从进程内传递变成真跨进程 IPC。"
+      },
+      {
+        "text": "所有 iframe 一律无法再执行 JS",
+        "isCorrect": false,
+        "description": "错误。iframe 的 JS 照常执行，只是跨站 iframe 换了个进程跑。"
+      },
+      {
+        "text": "单开 `--disable-web-security` 即可让跨站文档回到同一进程",
+        "isCorrect": false,
+        "description": "错误。该开关只关 renderer 内的同源检查；进程边界仍在，必须连带禁用站点隔离的 feature。"
+      }
+    ]
+  },
+  {
+    "stem": "Android 上的站点隔离为什么采用「选择性隔离」而非桌面式全量隔离？站点如何主动加入？",
+    "explanation": "移动端**内存吃紧**，Chrome 的取舍是只为「**值得保护的站点**」开隔离——用户**输入过密码/登录过**的站点（Chrome 77 起，要求 ≥2GB RAM），后来扩展到 OAuth 登录站点；这把全量隔离约 **10-13%** 的内存账单砍到约 **3-5%**。站点也可以**主动**发 **`Cross-Origin-Opener-Policy`** 头把自己列入被隔离名单（Chrome 92 起）——给自己的站点买一个进程级保镖。",
+    "tags": ["site-isolation", "android", "coop"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "内存吃紧，只为登录等「值得保护」的站点开隔离，把约 10-13% 的账单砍到约 3-5%；站点可发 COOP 头主动列入隔离名单",
+        "isCorrect": true,
+        "description": "正确。选择性隔离是移动端内存与安全的折中；COOP 头是主动申请隔离的信号。"
+      },
+      {
+        "text": "因为 Android 的 CPU 架构天然免疫 Spectre 攻击",
+        "isCorrect": false,
+        "description": "错误。Spectre 是推测执行的通病，移动芯片同样在射程内；选择性纯粹是内存权衡。"
+      },
+      {
+        "text": "因为 Android 系统禁止一个应用创建多个进程",
+        "isCorrect": false,
+        "description": "错误。Android 本身就有多进程服务机制（Servicification 还借鉴了它），不存在这种禁令。"
+      },
+      {
+        "text": "站点想加入必须向 Google 提交人工审核申请",
+        "isCorrect": false,
+        "description": "错误。加入靠技术信号（用户登录行为、COOP 头），不是人工审核流程。"
+      }
+    ]
+  },
+  {
+    "stem": "站点隔离已把跨站文档分进不同进程，为什么还需要 CORB（Cross-Origin Read Blocking）这道数据防线？",
+    "explanation": "进程分开只解决「跨站**文档**不同进程」；攻击者仍可在**自己的进程里**发跨站请求把敏感数据「**拉进来**」——比如把跨站 JSON 当作 `<img>`/`<script>` 子资源请求。**CORB** 负责拦截：**跨站的 HTML/XML/JSON/PDF 响应不会交付给不该拿到它的 renderer 进程，除非服务器用 CORS 明确放行**。一旦数据进了进程，Spectre 就能读到，所以必须在交付前拦。它是**尽力而为**的防线——受「资源标错 MIME 也得兼容」掣肘。",
+    "tags": ["corb", "site-isolation", "security"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "攻击者仍可在自己进程里用跨站子资源请求把敏感数据拉进来；CORB 让跨站 HTML/XML/JSON 等不交付给不该拿到它的进程（CORS 放行除外），且是尽力而为的防线",
+        "isCorrect": true,
+        "description": "正确。进程隔离管文档归属，CORB 管数据流入——两道防线合起来才堵住 Spectre 读数据的路。"
+      },
+      {
+        "text": "CORB 用于阻止用户手动复制粘贴跨站文本",
+        "isCorrect": false,
+        "description": "错误。CORB 拦的是网络响应向 renderer 进程的交付，与用户的复制行为无关。"
+      },
+      {
+        "text": "CORB 是给跨站 iframe 加视觉水印以防界面伪装",
+        "isCorrect": false,
+        "description": "错误。CORB 是数据层的读取拦截机制，不涉及任何视觉呈现。"
+      },
+      {
+        "text": "CORB 只在进程数超限、多站共享进程时才临时启用",
+        "isCorrect": false,
+        "description": "错误。CORB 是常态防线：即使进程完全分开，也要防止敏感数据被主动拉进错误进程。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航流程中，从地址栏输入到 commit 之前这一段主要由哪个进程主导？",
+    "explanation": "tab 之外的一切归 **browser 进程**：判定输入的 **UI 线程**、跑网络栈的**网络侧**、管存储的 storage 线程都在它的编排下。导航是 browser 进程主导的**接力**——直到 **commit navigation** 把数据流交给 renderer，tab 内容的主导权才移交。renderer 在 commit 前的唯一戏份是**被并行预启动**、原地待命。",
+    "tags": ["navigation", "browser-process"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "browser 进程——UI 线程判定输入、网络侧取响应、编排整个流程，renderer 在 commit 后才接管内容",
+        "isCorrect": true,
+        "description": "正确。导航第一棒由 browser 进程执飞，commit 是主导权移交给 renderer 的分界线。"
+      },
+      {
+        "text": "renderer 进程从输入第一个字符起就主导一切",
+        "isCorrect": false,
+        "description": "错误。commit 之前 renderer 最多是被预启动待命；判定、请求、安检都在 browser 侧。"
+      },
+      {
+        "text": "Viz 进程负责解析 URL 并发起请求",
+        "isCorrect": false,
+        "description": "错误。Viz 只管合成帧聚合与上屏，不参与导航编排。"
+      },
+      {
+        "text": "每一步由操作系统内核直接完成，浏览器只显示结果",
+        "isCorrect": false,
+        "description": "错误。判定输入、安检、进程编排都是浏览器应用层的逻辑，OS 只提供进程与网络等基础设施。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航的第一步中，UI 线程要对地址栏输入做什么判定？",
+    "explanation": "现代浏览器的地址栏**同时也是搜索框**，所以 UI 线程的第一件事是**判定输入是搜索词还是 URL**：`example.com` 应当作 URL 导航，`浏览器 架构 原理` 则要拼成搜索引擎的查询 URL。这套启发式（是否含 scheme、是否形如域名、是否有空格等）每次输入都在跑。",
+    "tags": ["navigation", "ui-thread"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "判定输入是搜索词还是 URL——地址栏身兼搜索框，两者去向不同",
+        "isCorrect": true,
+        "description": "正确。这是导航 Step 1：URL 直接导航，搜索词拼成搜索引擎查询 URL。"
+      },
+      {
+        "text": "判定用户是否已登录浏览器账号",
+        "isCorrect": false,
+        "description": "错误。账号状态与导航判定无关，Step 1 只关心输入的语义类型。"
+      },
+      {
+        "text": "判定页面该用哪种字符编码渲染",
+        "isCorrect": false,
+        "description": "错误。编码是拿到响应之后解析阶段的事，输入判定远在此之前。"
+      },
+      {
+        "text": "判定该用哪块 GPU 绘制新页面",
+        "isCorrect": false,
+        "description": "错误。GPU/Viz 是渲染后段的角色，与地址栏输入判定无关。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航 Step 2「开始导航」阶段，网络侧做哪些事？遇到 HTTP 301/302 会怎样？",
+    "explanation": "回车后 UI 线程发起网络调用、tab 角落转起 **spinner**（此刻显示的还是旧页面/空白）。网络侧开跑网络栈：**DNS 解析**拿 IP、与服务器**建立 TLS 连接**、发出请求。若服务器回 **HTTP 301/302 重定向**，网络侧会**通知 UI 线程「要转移」，对新 URL 再来一轮请求**——每跳一次重来一轮，这是重定向贵的原因。",
+    "tags": ["navigation", "redirect", "dns-tls"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "DNS 解析、建立 TLS 连接、发出请求；收到 301/302 时通知 UI 线程，对新 URL 再来一轮请求",
+        "isCorrect": true,
+        "description": "正确。Step 2 是网络栈的主场；重定向意味着整轮请求重启，跳一次贵一次。"
+      },
+      {
+        "text": "直接把 HTML 交给 renderer 渲染，无需 DNS 解析",
+        "isCorrect": false,
+        "description": "错误。不解析域名连服务器都找不到；数据交给 renderer 是 commit（Step 5）的事。"
+      },
+      {
+        "text": "遇到重定向会直接放弃导航并向用户报错",
+        "isCorrect": false,
+        "description": "错误。301/302 是正常流程，处理方式是对新 URL 重启一轮请求，不是报错。"
+      },
+      {
+        "text": "由 renderer 主线程亲自执行 DNS 查询",
+        "isCorrect": false,
+        "description": "错误。网络栈在网络侧（network 线程/Network Service）；renderer 无权直接做网络操作。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航 Step 3 读响应时，`Content-Type` 检查决定了什么分流？",
+    "explanation": "响应数据开始到达后，网络侧先**验明正身**：看 **`Content-Type`** 声明的类型——**HTML → 交给渲染流程**（后续由 renderer 接管）；**zip 包或其他文件 → 交给下载管理器**，导航就此转性。这解释了「点了链接却弹下载框」：服务器把 `Content-Type` 改成非 HTML（或加 `Content-Disposition: attachment`），Step 3 就把它分流去下载——是响应头的事，不是前端代码的事。",
+    "tags": ["navigation", "content-type", "download"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "HTML 响应走渲染流程交给 renderer；zip 等其他文件交给下载管理器",
+        "isCorrect": true,
+        "description": "正确。Content-Type 决定「渲染还是下载」的岔路，同一 URL 改响应头就换结局。"
+      },
+      {
+        "text": "决定页面的界面语言与翻译方向",
+        "isCorrect": false,
+        "description": "错误。语言协商靠的是其他头部与页面声明，Content-Type 管的是数据类型分流。"
+      },
+      {
+        "text": "决定改用 HTTP/1.1 还是 HTTP/2 重新请求",
+        "isCorrect": false,
+        "description": "错误。协议版本在建连阶段就协商完毕，与响应的 Content-Type 检查无关。"
+      },
+      {
+        "text": "决定是否需要弹出 beforeunload 确认框",
+        "isCorrect": false,
+        "description": "错误。beforeunload 是导航开始前问旧页面的手续，发生在请求之前，与响应类型无关。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器的 MIME 类型嗅探（MIME sniffing）发生在什么情况下？",
+    "explanation": "响应头 **`Content-Type` 缺失或干脆是错的**时，浏览器会进行 **MIME 嗅探**：读数据**开头几个字节**猜类型。官方原话称之为「**tricky business**」，**不同浏览器的猜法各不相同**。对前端的提醒：`Content-Type` 要写对——写错触发嗅探，行为因浏览器而异；该 `text/html` 的回成 `application/octet-stream`，用户会收到一个下载框。",
+    "tags": ["mime-sniffing", "navigation", "content-type"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "响应头 `Content-Type` 缺失或错误时，读数据开头几个字节猜类型；各浏览器猜法不一，官方称其为「tricky business」",
+        "isCorrect": true,
+        "description": "正确。嗅探是兜底手段，行为不可完全预期——所以服务端把类型写对才是正道。"
+      },
+      {
+        "text": "每个响应都会强制忽略 Content-Type 重新嗅探",
+        "isCorrect": false,
+        "description": "错误。声明存在且可信时按声明走；嗅探只是缺失/错误时的兜底。"
+      },
+      {
+        "text": "只对图片资源生效，其他类型从不嗅探",
+        "isCorrect": false,
+        "description": "错误。嗅探不限于图片，导航主文档同样适用——这正是分流去渲染还是下载的判断输入。"
+      },
+      {
+        "text": "由服务器执行嗅探，浏览器只接收结论",
+        "isCorrect": false,
+        "description": "错误。嗅探是浏览器端读响应首字节的行为，服务器只负责（正确地）声明类型。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航 Step 3 的安全检查中，SafeBrowsing 与 CORB 分别把守什么？",
+    "explanation": "两道安检与读响应**同步进行**：**SafeBrowsing** 拿域名或响应数据对照**已知恶意站点库**，命中则直接展示**警告页**，导航到此为止；**CORB（Cross-Origin Read Blocking）**确保**敏感的跨站数据（HTML/XML/JSON 等）不会被送进不该拿到它的 renderer 进程**——它是站点隔离的数据侧防线：进程分开了，还要防数据被「拉进」错误进程。",
+    "tags": ["safebrowsing", "corb", "navigation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SafeBrowsing 对照恶意站点库、命中则展示警告页；CORB 确保敏感跨站数据不被送进不该拿到它的 renderer 进程",
+        "isCorrect": true,
+        "description": "正确。一个拦「恶意站点」，一个拦「数据进错进程」，都在响应阶段同步把关。"
+      },
+      {
+        "text": "SafeBrowsing 负责压缩响应体，CORB 负责解压",
+        "isCorrect": false,
+        "description": "错误。两者都是安全检查，与内容编码/压缩毫无关系。"
+      },
+      {
+        "text": "两者都只在 HTTP 明文连接时才启用",
+        "isCorrect": false,
+        "description": "错误。安检不分明文加密；HTTPS 站点同样要过 SafeBrowsing 与 CORB。"
+      },
+      {
+        "text": "SafeBrowsing 拦截跨站数据，CORB 对照恶意站点库",
+        "isCorrect": false,
+        "description": "错误。两者职责对调了：恶意站点库归 SafeBrowsing，跨站数据拦截归 CORB。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航 Step 4「找 renderer」通常极快，靠的是什么优化？",
+    "explanation": "网络请求动辄数百毫秒，干等太浪费。所以 **UI 线程早在 Step 2 发起网络请求的同时，就已并行预启动了一个 renderer 进程**——数据一到，renderer 立即可用，「网络耗时」与「进程启动耗时」**重叠**掉。串行想象是 300ms 请求 + 100ms 启动；实际编排里启动躲进了请求的时间影子里。",
+    "tags": ["navigation", "preload-renderer", "optimization"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "UI 线程早在 Step 2 发起网络请求的同时就并行预启动了 renderer，进程启动耗时与网络耗时重叠",
+        "isCorrect": true,
+        "description": "正确。预启动让「找 renderer」几乎零等待——它早就启动好在旁边待命了。"
+      },
+      {
+        "text": "renderer 进程常驻内存永不退出，因此无需启动",
+        "isCorrect": false,
+        "description": "错误。renderer 按需创建、退出即回收；快是因为提前并行启动，不是常驻。"
+      },
+      {
+        "text": "网络请求会暂停，等 renderer 启动完成后再发出",
+        "isCorrect": false,
+        "description": "错误。这是串行做法，恰是优化要消灭的形态；两者是并行不是先后。"
+      },
+      {
+        "text": "由 GPU 进程临时客串 renderer 渲染首屏",
+        "isCorrect": false,
+        "description": "错误。Viz 不解析不渲染 HTML，页面内容只能由 renderer 进程处理。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航 Step 5「commit navigation」发生时，实际完成了哪些交接？",
+    "explanation": "数据与 renderer 双双就绪后，browser 进程向 renderer 发送 **IPC：commit navigation**，随附**数据流**让 renderer 持续接收 HTML。renderer **回执确认**后导航正式「已提交」，browser 立刻**换门牌**：**地址栏 URL、安全指示器（锁标）、站点设置 UI** 全部更新为新站点；**会话历史（session history）**入册新条目，并**写入磁盘**（storage 线程的地盘）以支持关闭后恢复。此后 tab 内容的主导权移交 renderer。",
+    "tags": ["commit", "navigation", "session-history"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "browser 经 IPC 向 renderer 发 commit navigation 并随附数据流；renderer 确认后地址栏、安全指示器与会话历史随之更新（历史还会落盘）",
+        "isCorrect": true,
+        "description": "正确。commit 是「一手交数据、一手改门牌」的交接点，也是主导权移交 renderer 的时刻。"
+      },
+      {
+        "text": "renderer 向 browser 请求开始 DNS 解析",
+        "isCorrect": false,
+        "description": "错误。DNS 早在 Step 2 就完成了；commit 是数据就绪后的交接，方向也是 browser → renderer。"
+      },
+      {
+        "text": "页面所有资源加载完毕，spinner 随即停止",
+        "isCorrect": false,
+        "description": "错误。commit 只是加载的开始；spinner 要等所有 frame 的 onload 跑完（Step 6）才停。"
+      },
+      {
+        "text": "浏览器把新页面截图存入书签栏",
+        "isCorrect": false,
+        "description": "错误。commit 更新的是地址栏与会话历史，不涉及书签或截图。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航中 tab 上的 spinner 什么时候停止？「加载完成」意味着页面不再变化吗？",
+    "explanation": "renderer 接管后解析 HTML、加载子资源、渲染页面；当页面**所有 frame** 的 **`onload`** 事件执行完毕，renderer 向 browser 发 IPC，**UI 线程停掉 spinner**。但官方在「完成」上打了引号：客户端 JS 完全可以在这之后继续拉数据、改视图——spinner 停了只意味着**初始加载告一段落**。对前端的暗示：把 `onload` 当「页面就绪」的唯一信号并不可靠，度量真实体验要看 LCP/INP 这类以用户为中心的指标。",
+    "tags": ["onload", "spinner", "navigation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "所有 frame 的 `onload` 执行完毕后 renderer 发 IPC 通知 browser 停 spinner；此后 JS 仍可继续加载数据改视图，页面并未定格",
+        "isCorrect": true,
+        "description": "正确。spinner 的终点是全 frame onload；「完成」只是初始加载的句号，不是页面的句号。"
+      },
+      {
+        "text": "commit navigation 一发生 spinner 就立即停止",
+        "isCorrect": false,
+        "description": "错误。commit 是 renderer 接管的起点，之后还有整个解析渲染阶段，spinner 继续转。"
+      },
+      {
+        "text": "spinner 由 renderer 进程直接绘制并停止",
+        "isCorrect": false,
+        "description": "错误。spinner 是 tab 上的浏览器 UI，归 browser 进程的 UI 线程；renderer 只能发消息请它停。"
+      },
+      {
+        "text": "onload 之后浏览器会冻结页面，禁止 JS 再修改 DOM",
+        "isCorrect": false,
+        "description": "错误。不存在冻结机制；JS 在 onload 后继续运行、继续改页面是常态（SPA 尤其如此）。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航中，地址栏 URL 与安全指示器为什么要等到 commit 才更新，而不是回车后立刻更新？",
+    "explanation": "commit 之前导航随时可能**不落在这个 URL 上**：服务器可能回 **301/302** 转去别处、**SafeBrowsing** 可能拦成警告页、响应可能按 `Content-Type` 分流成**下载**（页面根本不换）。只有 renderer **回执确认接管**、导航正式「已提交」，browser 才**换门牌**——保证地址栏、锁标展示的永远与 tab 实际内容**一致**。实用推论：「回车后地址栏没变」说明导航还没走到 Step 5。地址栏若提前显示新 URL 而内容还是旧页，就是给钓鱼伪装开门。",
+    "tags": ["commit", "navigation", "address-bar"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "commit 前导航可能因重定向、安检拦截、下载分流而根本不落在该 URL；renderer 确认接管后才换门牌，保证地址栏与实际内容一致",
+        "isCorrect": true,
+        "description": "正确。地址栏是安全承诺，必须与 tab 真实内容同步——commit 正是两者对齐的时刻。"
+      },
+      {
+        "text": "因为地址栏更新需要等 GPU 空闲后才能绘制",
+        "isCorrect": false,
+        "description": "错误。画一行地址栏文本不构成瓶颈；卡点是导航结果在 commit 前尚未确定。"
+      },
+      {
+        "text": "因为 URL 必须先写入磁盘才允许显示",
+        "isCorrect": false,
+        "description": "错误。会话历史落盘是为关闭后恢复，与地址栏显示时机没有先后依赖。"
+      },
+      {
+        "text": "因为地址栏由 renderer 进程绘制，必须等它启动完成",
+        "isCorrect": false,
+        "description": "错误。地址栏是 browser 进程 UI 线程画的；renderer 早已并行预启动，更新时机卡在导航确认而非进程启动。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器导航中，跨站重定向为什么比同站重定向更贵？",
+    "explanation": "两重代价：重定向本身**每跳一次重来一轮请求**；更关键的是 **Step 2 时已并行预启动了一个 renderer**，若重定向跳去**另一个站点**，站点隔离要求**跨站换进程**——预启动的 renderer 用不上，得**另起一个**，预热白做。对前端的推论：砍重定向链（尤其跨站跳）是导航优化的高性价比动作。",
+    "tags": ["redirect", "preload-renderer", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Step 2 已并行预启动 renderer；跳去另一站点时站点隔离要求换进程，预启动的 renderer 作废得另起一个，预热白做",
+        "isCorrect": true,
+        "description": "正确。跨站跳除了多一轮请求，还把「进程预热」这笔优化直接归零。"
+      },
+      {
+        "text": "因为跨站重定向必须重新下载浏览器渲染引擎",
+        "isCorrect": false,
+        "description": "错误。渲染引擎是浏览器自带的本地代码，不存在按站点下载一说。"
+      },
+      {
+        "text": "因为同站重定向不需要发出新的网络请求",
+        "isCorrect": false,
+        "description": "错误。任何重定向都要对新 URL 重来一轮请求；差别在预启动的 renderer 是否还能用。"
+      },
+      {
+        "text": "因为跨站重定向会强制弹出用户确认弹窗",
+        "isCorrect": false,
+        "description": "错误。重定向对用户是无感的自动流程，没有确认弹窗这道手续。"
+      }
+    ]
+  },
+  {
+    "stem": "按 MDN 口径的导航成本账，浏览器真正发出页面请求前、以及收到响应首块时，各有什么量级的隐形成本？",
+    "explanation": "首字节前的「隐形延迟」：**DNS 查询 + TCP 三次握手（SYN/SYN-ACK/ACK）+ TLS 协商**，浏览器在真正发出页面请求前可能已与服务器**往返约 8 次**；响应回来还受 **TCP 慢启动**限制，**首块约 14KB**。这段时间前端代码尚未登场——`dns-prefetch`/`preconnect`、砍重定向链，优化的正是这段「白屏 ≠ 你的代码慢」的时间。",
+    "tags": ["navigation", "performance", "round-trip"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "DNS + TCP 三次握手 + TLS 协商可累计约 8 次往返；响应首块受 TCP 慢启动限制约 14KB",
+        "isCorrect": true,
+        "description": "正确。8 次往返与 14KB 首块是 MDN 口径的两笔账，也是关键资源要控制在首块内的依据。"
+      },
+      {
+        "text": "首字节前只有 1 次往返，DNS/TCP/TLS 在同一个包里一次完成",
+        "isCorrect": false,
+        "description": "错误。三套协议各有握手往返，无法合并成一个包；累计约 8 次往返。"
+      },
+      {
+        "text": "响应首块固定为 1MB，与拥塞控制无关",
+        "isCorrect": false,
+        "description": "错误。TCP 慢启动限制初始发送窗口，首块约 14KB，之后才逐轮增大。"
+      },
+      {
+        "text": "约 80 次往返、首块约 140KB",
+        "isCorrect": false,
+        "description": "错误。数量级全错：往返约 8 次、首块约 14KB。"
+      }
+    ]
+  },
+  {
+    "stem": "从已有页面发起新导航时，browser 进程为什么必须先经 IPC 询问旧 renderer？",
+    "explanation": "页面可以注册 **`beforeunload`**，在用户离开时弹「离开此站点？」确认框。问题在于：**tab 内的一切——包括 JS 注册了什么监听——都是 renderer 进程的地盘**，browser 进程根本**不知道**当前页面有没有注册。所以每当用户发起新导航，browser 必须先经 IPC 向旧 renderer 确认「你在乎 beforeunload 吗」，处理完才能放行导航。",
+    "tags": ["beforeunload", "navigation-handoff", "ipc"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "tab 内一切（含 JS 注册的 `beforeunload`）都是 renderer 的地盘，browser 不知道旧页面有没有注册监听，必须先确认才能放行",
+        "isCorrect": true,
+        "description": "正确。进程边界决定了信息归属：browser 想知道 renderer 地盘里的事，只能发 IPC 去问。"
+      },
+      {
+        "text": "因为旧 renderer 保管着新页面的 HTML 缓存",
+        "isCorrect": false,
+        "description": "错误。新页面数据由网络侧获取，与旧 renderer 无关；询问是为了 beforeunload。"
+      },
+      {
+        "text": "因为 DNS 解析必须由旧 renderer 代为执行",
+        "isCorrect": false,
+        "description": "错误。DNS 在网络侧执行；renderer 从不承担网络栈职责。"
+      },
+      {
+        "text": "因为 browser 进程无权发起网络请求",
+        "isCorrect": false,
+        "description": "错误。网络编排恰是 browser（及网络服务）的特权；要问 renderer 的是页面自己的监听状态。"
+      }
+    ]
+  },
+  {
+    "stem": "`beforeunload` 监听的推荐注册姿势是什么？",
+    "explanation": "官方明确警告：**不要无条件添加 beforeunload**。正确姿势是**只在真有未保存数据时注册**——例如表单变脏（`input` 事件）时才 `addEventListener`，**保存成功后立刻 removeEventListener**，还导航一条「秒开跑道」。另注意：确认框的**文案不可定制**，handler 里 `event.preventDefault()` 触发的是浏览器原生弹框。",
+    "tags": ["beforeunload", "navigation-handoff", "best-practice"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只在真有未保存数据时注册（如表单变脏时），保存成功后立刻移除——干净页面的导航不背这笔账",
+        "isCorrect": true,
+        "description": "正确。按需注册、用完即摘，让 beforeunload 的导航税只在必要时征收。"
+      },
+      {
+        "text": "页面加载时就无条件注册，保证万无一失",
+        "isCorrect": false,
+        "description": "错误。这是官方点名警告的反模式：每次离开本页的导航都要白付一趟 IPC + handler 执行。"
+      },
+      {
+        "text": "注册后永不移除，由浏览器自动判断该不该执行",
+        "isCorrect": false,
+        "description": "错误。浏览器不会替你判断「有没有必要」；只要注册着，导航前就得走一遭。"
+      },
+      {
+        "text": "在 beforeunload 里写打动人心的自定义挽留文案",
+        "isCorrect": false,
+        "description": "错误。原生确认框的文案不可定制，浏览器只显示统一的「离开此页？」提示。"
+      }
+    ]
+  },
+  {
+    "stem": "用户点击页面内链接（或 JS 执行 `window.location = ...`）发起导航时，流程与地址栏导航有何异同？",
+    "explanation": "流程对称：**renderer 先自查 beforeunload**（导航请求发起方就在自己地盘，自己先过这关），处理完再**把导航请求经 IPC 提交给 browser 进程**——之后走的仍是那套「网络请求 → 安检 → commit」流程。**唯一区别是发起方**从地址栏（browser UI 线程）换成了 renderer。这再次体现分工：无论谁发起，网络与特权编排都归 browser 侧。",
+    "tags": ["navigation-handoff", "renderer", "beforeunload"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "renderer 先自查 beforeunload，再把导航请求交给 browser 进程；其余仍走「网络请求→安检→commit」，区别只在发起方",
+        "isCorrect": true,
+        "description": "正确。发起方变了，编排权没变——导航的主流程永远由 browser 进程执飞。"
+      },
+      {
+        "text": "renderer 可以跳过 browser 进程，直接发网络请求加载新页面",
+        "isCorrect": false,
+        "description": "错误。沙箱化的 renderer 无权直接做网络导航，请求必须提交给 browser 侧编排。"
+      },
+      {
+        "text": "点链接的导航不需要 commit navigation 这一步",
+        "isCorrect": false,
+        "description": "错误。commit 是所有导航的必经交接点，与发起方式无关。"
+      },
+      {
+        "text": "JS 发起的导航不会触发 beforeunload",
+        "isCorrect": false,
+        "description": "错误。无论点链接还是改 `window.location`，离开旧页面前同样要过 beforeunload 这一关。"
+      }
+    ]
+  },
+  {
+    "stem": "「进页面就注册 `beforeunload`」的挽留弹窗，为什么会拖慢用户离开时的每一次导航？",
+    "explanation": "关键在时序：**handler 在导航开始之前执行**。只要注册着监听，每次离开本页，browser 都要先走**一趟 IPC 到旧 renderer**、等 **handler 执行完**（若弹框还要等用户点「离开」）才开始网络请求。**哪怕 handler 什么都不做，这趟往返 + 执行时间也已计入每一次导航**——对比无监听时「回车立刻开始网络请求」。这就是「进页面就注册」的挽留弹窗/埋点成为导航变慢常见元凶的机制。",
+    "tags": ["beforeunload", "navigation-handoff", "performance"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "handler 在导航开始之前执行——browser 须先经 IPC 到旧 renderer 并等 handler 跑完才发起网络请求；哪怕 handler 空转，这趟往返加执行时间也计入每次导航",
+        "isCorrect": true,
+        "description": "正确。代价与「弹不弹框」无关，注册本身就把一段串行等待插进了导航关键路径。"
+      },
+      {
+        "text": "因为 beforeunload 会强制清空浏览器的 HTTP 缓存",
+        "isCorrect": false,
+        "description": "错误。它不动缓存；代价是导航前的 IPC 往返与 handler 执行时间。"
+      },
+      {
+        "text": "因为注册监听后页面会每秒轮询一次 browser 进程",
+        "isCorrect": false,
+        "description": "错误。没有轮询机制；成本只在每次导航发起时结算一次。"
+      },
+      {
+        "text": "只有真正弹出确认框时才有代价，不弹框就完全免费",
+        "isCorrect": false,
+        "description": "错误。不弹框也要付 IPC 往返 + handler 执行的成本——官方警告的正是这笔「隐形税」。"
+      }
+    ]
+  },
+  {
+    "stem": "跨站导航的交接期，新旧两个 renderer 进程的存在状态是怎样的？",
+    "explanation": "确认可以离开后，目标是另一站点时 browser **另起一个 renderer** 处理新导航（站点隔离也不允许复用），于是出现**双 renderer 短暂并存**：**新 renderer 并行构建/加载新页面的同时，旧 renderer 留守执行 `unload` 等收尾事件**。旧页面「看起来已经关了」，收尾代码却可能还在另一个进程里跑——这解释了「旧页面的定时器/日志在新页面已显示后仍多跑一拍」的灵异现象，也是页面生命周期（Page Lifecycle）要精确定义「页面还活着吗」的原因。",
+    "tags": ["navigation-handoff", "unload", "renderer"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "短暂并存——新 renderer 并行构建加载新页面的同时，旧 renderer 保留着执行 `unload` 等收尾事件",
+        "isCorrect": true,
+        "description": "正确。新页构建与旧页收尾并行，「旧页代码在新页显示后还多跑一拍」正源于此。"
+      },
+      {
+        "text": "旧 renderer 必须完全退出后，新 renderer 才被允许创建",
+        "isCorrect": false,
+        "description": "错误。那是串行做法，会白白拖慢导航；实际是并行交接。"
+      },
+      {
+        "text": "新旧页面复用同一个 renderer 以节省内存",
+        "isCorrect": false,
+        "description": "错误。跨站导航下站点隔离不允许复用进程，必须另起新 renderer。"
+      },
+      {
+        "text": "旧 renderer 转职为新页面的 worker 线程宿主",
+        "isCorrect": false,
+        "description": "错误。不存在这种转职机制；旧 renderer 跑完收尾就退场，内存整块回收。"
+      }
+    ]
+  },
+  {
+    "stem": "现代浏览器中 `unload` 事件为什么被认为「不可托付」？离场统计应改用什么方案？",
+    "explanation": "多重原因叠加：**站点隔离下 unload 不保证执行**（其中 `postMessage` 还可能失败）；**bfcache 命中时整段跳过**（页面被冻结存活而非销毁）；跨站导航时它挤占的是「旧 renderer 退场」的时间窗，做重活只会延长进程回收。可靠替代：**`visibilitychange` / `pagehide` + `navigator.sendBeacon()`**——既是站点隔离下的可靠性要求，也为 bfcache 让路。",
+    "tags": ["unload", "page-lifecycle", "sendbeacon"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "站点隔离下 unload 不保证执行（内含 postMessage 可能失败），bfcache 命中时整段跳过；应改用 `visibilitychange`/`pagehide` + `navigator.sendBeacon()`",
+        "isCorrect": true,
+        "description": "正确。「不保证执行 + bfcache 跳过」双重失信，离场上报早该迁移到可见性事件 + sendBeacon。"
+      },
+      {
+        "text": "unload 会重复执行两次导致统计翻倍，所以被弃用",
+        "isCorrect": false,
+        "description": "错误。问题方向相反：它的毛病是可能根本不执行，而不是执行两次。"
+      },
+      {
+        "text": "unload 只在 HTTPS 页面触发，HTTP 页面收不到",
+        "isCorrect": false,
+        "description": "错误。可靠性问题与 scheme 无关，根源在进程交接与 bfcache 机制。"
+      },
+      {
+        "text": "替代方案是把统计代码搬进无条件注册的 beforeunload",
+        "isCorrect": false,
+        "description": "错误。无条件注册 beforeunload 会给每次导航加税，且同样不保证可靠——正确出路是 visibilitychange/pagehide + sendBeacon。"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 介入一次导航请求的路径是怎样的？",
+    "explanation": "关键认知：**SW 是你用 JS 写的应用层网络代理，跑在某个 renderer 进程里**——不是浏览器内核的神秘组件。注册时其 **scope**（作用范围 URL 前缀）已被记录（存储侧地盘）。导航发生时：**网络侧拿 URL 匹配已注册的 SW scope** → 命中则**通知 UI 线程找一个 renderer 进程，启动并执行 SW 代码** → SW 可编程决定**读缓存（不发网络请求）还是走网络（由 SW 发起 fetch）**。注意顺序含义：必须先唤起 renderer、跑起 SW，才知道要不要发请求——SW 把「进程唤起 + JS 冷启动」插进了导航关键路径。",
+    "tags": ["service-worker", "navigation-handoff", "scope"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "网络侧拿 URL 匹配已注册的 SW scope，命中则通知 UI 线程找 renderer 启动并执行 SW 代码，由 SW 决定读缓存还是走网络",
+        "isCorrect": true,
+        "description": "正确。scope 匹配在网络侧、SW 代码在 renderer 里跑——它是被特殊调度的应用代码。"
+      },
+      {
+        "text": "SW 常驻 browser 进程内核，在 C++ 层直接拦截所有请求",
+        "isCorrect": false,
+        "description": "错误。SW 是跑在 renderer 进程里的 JS，不是内核组件，更不在 C++ 层拦截。"
+      },
+      {
+        "text": "导航请求永远先上网拿到响应，SW 只能事后决定是否缓存",
+        "isCorrect": false,
+        "description": "错误。SW 在请求发出前介入，完全可以决定读缓存、根本不发网络请求。"
+      },
+      {
+        "text": "scope 匹配由 DNS 服务器远程完成",
+        "isCorrect": false,
+        "description": "错误。scope 在注册时记录于浏览器本地存储，匹配是本地行为，与 DNS 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Navigation Preload 优化解决什么问题？其机制是怎样的？",
+    "explanation": "最坏情形：SW **冷启动**花几十上百毫秒，跑完逻辑的结论却是「走网络吧」——网络请求被 SW 启动**串行**耽误了。**Navigation Preload** 把两件事**并行**：导航时**同时**启动 SW、把网络请求发出去；预载请求带专门标头 **`Service-Worker-Navigation-Preload`**，服务器识别后可定制响应（如只回**增量数据**）；SW 启动后在 `fetch` 事件里用 **`event.preloadResponse`** 取用这份预载响应。效果：两段耗时从**相加**变成**取较长者**。",
+    "tags": ["navigation-preload", "service-worker", "performance"],
+    "categories": [
+      ["技术方向", "浏览器架构与进程模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "避免 SW 冷启动串行挡住网络：并行启动 SW 与发出请求，预载请求带 `Service-Worker-Navigation-Preload` 标头供服务器定制，SW 经 `event.preloadResponse` 取用——耗时从相加变取较长者",
+        "isCorrect": true,
+        "description": "正确。并行化 + 专属标头 + preloadResponse 三件套，把 SW 启动从关键路径上挪开。"
+      },
+      {
+        "text": "它把整个站点提前下载到本地磁盘备用",
+        "isCorrect": false,
+        "description": "错误。预载的只是本次导航的那个请求，不是全站预下载。"
+      },
+      {
+        "text": "它让 SW 改在 GPU 进程中运行以加速冷启动",
+        "isCorrect": false,
+        "description": "错误。SW 依旧跑在 renderer 里；优化的是「启动与请求并行」，不是换进程。"
+      },
+      {
+        "text": "它禁用 SW 的 fetch 拦截，强制所有导航直连网络",
+        "isCorrect": false,
+        "description": "错误。SW 依然拦截并决策，只是网络请求已并行在路上，miss 时不必再从零发起。"
+      }
+    ]
+  }
+]
