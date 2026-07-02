@@ -650,11 +650,26 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             sort: 2,
           },
           {
+            // 2026-07-02 选型调研定稿：占位 2 叶 → 7 叶（spec: docs/plans/20260702-frontend-arch-micro-frontend-trilogy.md）。
+            // 生态硬数据（GitHub/npm 实测）：MF 2.0 已运行时化成事实主线、wujie 2026-06 复活 v2.0、
+            // micro-app 持续活跃（1.0 仍 RC）；Garfish 维护模式、icestark 遗产态——不立叶。
+            // 新增 2 个原理叶（基础/核心机制）承载框架无关通论；MF 叶只讲架构层，
+            // 插件配置已被 webpack expert/rspack advanced 深讲（边界核验），链接不重复。
+            // 旧 2 叶保留原名（prod id 170/171，均 0 题已核实），仅重排 sort——
+            // importCategories 不更新已有节点 sort，落地时须手动补 prod 2 条 sort UPDATE（170→4、171→3）。
             name: "微前端框架",
             sort: 3,
             children: [
-              { name: "qiankun", sort: 1 },
-              { name: "single-spa", sort: 2 },
+              { name: "微前端基础", sort: 1 },
+              {
+                name: "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）",
+                sort: 2,
+              },
+              { name: "single-spa", sort: 3 },
+              { name: "qiankun", sort: 4 },
+              { name: "wujie", sort: 5 },
+              { name: "micro-app", sort: 6 },
+              { name: "Module Federation", sort: 7 },
             ],
           },
         ],
