@@ -1,0 +1,2217 @@
+[
+  {
+    "stem": "JS 沙箱（JS Sandbox）在微前端里主要防范以下哪一类问题？",
+    "explanation": "**JS 沙箱**回答「子应用的代码在哪个 `window` 上跑」，防的是三类典型副作用事故：**全局变量污染**（`window.__APP_CONFIG__` 被后来者覆盖）、**事件监听残留**（子应用卸载后 `addEventListener('resize', …)` 还挂着）、**定时器泄漏**（`setInterval` 无人 `clearInterval`）。根因是**卸载 DOM ≠ 清理副作用**。样式互踩是 CSS 隔离的战场，依赖去重与跨应用传数据分别是依赖共享与通信，都不归 JS 沙箱管。",
+    "tags": ["micro-frontend", "sandbox", "side-effects"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "子应用的全局变量污染、事件监听残留、定时器泄漏等副作用互相干扰",
+        "isCorrect": true,
+        "description": "正确。这三类都是往 `window`、事件系统、定时器队列里写的副作用，活在框架组件生命周期视野之外，正是 JS 沙箱要接管的。"
+      },
+      {
+        "text": "两个子应用的 CSS 样式互相覆盖",
+        "isCorrect": false,
+        "description": "错误。样式互踩由 CSS 隔离负责——沙箱再强，一个 `<style>` 插进 `document.head` 照样全局生效。"
+      },
+      {
+        "text": "公共依赖 React 被重复下载 n 份",
+        "isCorrect": false,
+        "description": "错误。重复下载是依赖共享（import maps / MF shared）解决的问题，与 JS 沙箱无关。"
+      },
+      {
+        "text": "跨域 iframe 之间无法直接传递消息",
+        "isCorrect": false,
+        "description": "错误。跨域窗口通信是 `postMessage` 的领域，属于通信机制而非沙箱。"
+      }
+    ]
+  },
+  {
+    "stem": "快照沙箱（snapshotSandbox）的隔离原理是下列哪一种？",
+    "explanation": "**快照沙箱**是第一代方案，思路最朴素：不拦截、不代理，靠**事后恢复**——应用激活时给 `window` 拍快照，失活时遍历 `window` diff 出改动、记入 `modifyPropsMap`，再把 `window` 恢复成快照原样。它不依赖任何 ES6+ 能力，历史价值是兼容性；缺点是运行期写的是同一个真 `window`。",
+    "tags": ["micro-frontend", "sandbox", "snapshot"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "应用激活时给 `window` 拍快照，失活时 diff 出改动并把 `window` 恢复原样",
+        "isCorrect": true,
+        "description": "正确。这就是快照沙箱「diff + 恢复」的事后恢复思路，理解它有助于看懂后续所有方案在优化什么。"
+      },
+      {
+        "text": "给每个应用发一个 fakeWindow 代理，写操作全落在假对象上",
+        "isCorrect": false,
+        "description": "错误。这是 Proxy 沙箱的写时隔离，不是快照沙箱。"
+      },
+      {
+        "text": "把子应用 JS 放进 iframe，靠浏览器原生边界隔离",
+        "isCorrect": false,
+        "description": "错误。这是 iframe 沙箱（wujie 路线）的物理隔离。"
+      },
+      {
+        "text": "用 `with` 把作用域链第一站换成代理对象",
+        "isCorrect": false,
+        "description": "错误。这是 with + Proxy 沙箱（micro-app 默认）的作用域链拦截。"
+      }
+    ]
+  },
+  {
+    "stem": "快照沙箱（snapshotSandbox）为什么「同一时刻只能活一个子应用」（单实例）？",
+    "explanation": "根本原因是：运行期所有应用写的是**同一个真 `window`**。若 A、B 同时活跃，失活 diff 时根本分不清某处改动是谁做的——「恢复快照」会把还活着的 B 的状态一并抹掉。所以快照沙箱世界里同一时刻只能有一个子应用。qiankun 在不支持 `Proxy` 的环境正是降级到这条路并强制 `singular: true`。",
+    "tags": ["micro-frontend", "sandbox", "snapshot", "singleton"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "所有应用运行期写的是同一个真实 `window`，两个应用同时活跃时 diff 无法归因改动属于谁",
+        "isCorrect": true,
+        "description": "正确。共用真 `window` ⇒ diff 无法归因 ⇒ 必然单实例，这是一条硬推理链。"
+      },
+      {
+        "text": "快照沙箱依赖 `Proxy`，而 `Proxy` 每页只能创建一个实例",
+        "isCorrect": false,
+        "description": "错误。快照沙箱恰恰不用 `Proxy`（它的卖点是无 ES6 依赖）；`Proxy` 也没有「每页一个」的限制。"
+      },
+      {
+        "text": "`window` 对象太大，同时拍两份快照会内存溢出",
+        "isCorrect": false,
+        "description": "错误。单实例限制来自 diff 无法归因，不是内存问题。"
+      },
+      {
+        "text": "浏览器限制同一时刻只能存在一个 `setInterval`",
+        "isCorrect": false,
+        "description": "错误。浏览器对定时器数量没有这种限制，与单实例无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Proxy 沙箱（fakeWindow）的读写规则常被概括为「写落假对象、读先假后真」，具体指什么？",
+    "explanation": "**Proxy 沙箱**给每个应用一个 fakeWindow + `Proxy`：`set` 陷阱让**写操作永远落在 fakeWindow 上**，绝不碰真 `window`；`get` 陷阱让**读操作先查 fakeWindow**，本应用改过的读自己的，没改过的**透传真 `window`**。这样既拿得到宿主环境的原生能力，改动又互不可见。",
+    "tags": ["micro-frontend", "sandbox", "proxy", "fake-window"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "写操作永远落在 fakeWindow 上，读操作先查 fakeWindow、没有再透传真 `window`",
+        "isCorrect": true,
+        "description": "正确。写时隔离 + 读时回退真 `window`，这是 Proxy 沙箱多实例并存的基础。"
+      },
+      {
+        "text": "写操作落在真 `window`，读操作只读 fakeWindow",
+        "isCorrect": false,
+        "description": "错误。写真 `window` 就失去了隔离；且只读 fakeWindow 会拿不到原生 API。这更接近 legacySandbox 的写真 window 但仍是错的描述。"
+      },
+      {
+        "text": "读写都只作用于 fakeWindow，完全不透传真 `window`",
+        "isCorrect": false,
+        "description": "错误。读操作对「没改过的属性」必须透传真 `window`，否则子应用连原生构造函数都拿不到。"
+      },
+      {
+        "text": "读写都先经过真 `window` 再同步回 fakeWindow",
+        "isCorrect": false,
+        "description": "错误。写操作绝不碰真 `window`，正是它零恢复成本的原因。"
+      }
+    ]
+  },
+  {
+    "stem": "Proxy 沙箱（proxySandbox）相比快照沙箱解决了哪两个结构性缺陷？",
+    "explanation": "对照快照沙箱，Proxy 沙箱同时解决两点：**多实例**——每个应用一个 fakeWindow，写操作互不可见，qiankun `start({ singular: false })` 多应用并存靠的就是它；**零恢复成本**——卸载即丢弃 fakeWindow，不存在遍历与 diff。但它拦不住不带 `window.` 前缀的隐式全局，也不隔离 `history`/`location`。",
+    "tags": ["micro-frontend", "sandbox", "proxy", "multi-instance"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个应用一个 fakeWindow 实现多实例并存，卸载即丢弃 fakeWindow、无需遍历恢复",
+        "isCorrect": true,
+        "description": "正确。多实例 + 零恢复成本正是 fakeWindow 写时隔离带来的两大改进。"
+      },
+      {
+        "text": "让快照沙箱支持 IE 等没有 `Proxy` 的老浏览器",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，Proxy 沙箱依赖 `Proxy`（无法 polyfill），在 IE 上不可用、要降级回快照。"
+      },
+      {
+        "text": "能拦截不带 `window.` 前缀的隐式全局变量",
+        "isCorrect": false,
+        "description": "错误。纯 Proxy 拦不住顶层 `var x = 1` 这类隐式全局，那要靠 with + Proxy。"
+      },
+      {
+        "text": "让 `history` 和 `location` 也获得浏览器原生隔离",
+        "isCorrect": false,
+        "description": "错误。原生隔离 `history`/`location` 是 iframe 沙箱的能力，Proxy 沙箱需额外处理。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 沙箱在不支持 `Proxy` 的环境（如 IE）会如何降级？",
+    "explanation": "qiankun 沙箱的主力实现是「用 `Proxy` 代理父页面 `window`」（FAQ 原文）。而 `Proxy` **无法被 polyfill**，所以在 IE 这类环境，qiankun 自动**降级到快照沙箱**，并**强制 `singular: true`**（单实例模式）——因为快照沙箱本就只能同时活一个应用。",
+    "tags": ["micro-frontend", "sandbox", "qiankun", "fallback"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动降级到快照沙箱，并强制 `singular: true`（单实例模式）",
+        "isCorrect": true,
+        "description": "正确。无 `Proxy` ⇒ 只能用快照沙箱 ⇒ 快照沙箱只能单实例 ⇒ 强制 `singular: true`，一条完整降级链。"
+      },
+      {
+        "text": "抛错拒绝启动，要求用户升级浏览器",
+        "isCorrect": false,
+        "description": "错误。qiankun 选择优雅降级而非拒绝启动。"
+      },
+      {
+        "text": "降级到 with + Proxy 沙箱",
+        "isCorrect": false,
+        "description": "错误。with + Proxy 同样依赖 `Proxy`，无 `Proxy` 环境用不了。"
+      },
+      {
+        "text": "关闭沙箱，直接在真 `window` 上运行且不做任何隔离",
+        "isCorrect": false,
+        "description": "错误。降级仍走快照沙箱做事后恢复，不是完全裸奔。"
+      }
+    ]
+  },
+  {
+    "stem": "with + Proxy 沙箱（micro-app 默认）相比纯 Proxy 沙箱，能多拦住什么？",
+    "explanation": "纯 Proxy 沙箱有个盲区：子应用代码里**不带 `window.` 前缀**的全局访问（顶层 `var x = 1` 直接进真 `window`，`Proxy` 没机会拦）。with + Proxy 在执行子应用代码前包一层 `with(proxyWindow){}`，把代理插到**作用域链第一站**，于是一切自由变量查找都先经过 `Proxy` 的 `has` 拦截——连隐式全局都拦得住。",
+    "tags": ["micro-frontend", "sandbox", "with", "scope-chain"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "连不带 `window.` 前缀的自由变量（隐式全局读写）也能拦截",
+        "isCorrect": true,
+        "description": "正确。`with` 换掉作用域链第一站，是纯 `Proxy` 做不到的彻底。"
+      },
+      {
+        "text": "能拦截 `window.top` / `window.parent` 造成的逃逸",
+        "isCorrect": false,
+        "description": "错误。`window.top`/`window.parent` 是所有非 iframe 软隔离的共同逃逸面，`with` 也拦不住。"
+      },
+      {
+        "text": "能隔离 `history` 和 `location`",
+        "isCorrect": false,
+        "description": "错误。原生隔离 `history`/`location` 是 iframe 路线的能力。"
+      },
+      {
+        "text": "能让 ESM 子应用直接在沙箱里运行",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，`with` 与 ESM 的强制严格模式互斥，反而更吃力。"
+      }
+    ]
+  },
+  {
+    "stem": "with + Proxy 沙箱的「性能税」根源是什么？wujie 甚至以此作为选 iframe 路线的理由。",
+    "explanation": "`with` 块内**每次变量查找都要跑一遍 `Proxy` 的 `has`/`get` 陷阱**；更关键的是 `with` 让作用域**静态分析失效**、无法被 JS 引擎优化。两者叠加就是持续的运行时税。wujie 文档明确把「规避 `with(proxyWindow){code}` 带来的性能损耗」列为选择 iframe 路线的直接理由。",
+    "tags": ["micro-frontend", "sandbox", "with", "performance"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`with` 块内每次变量查找都要过一遍 `Proxy` 的 `has`/`get`，且 `with` 让作用域静态分析失效、无法被引擎优化",
+        "isCorrect": true,
+        "description": "正确。查找税 + 不可优化，是 with 路线的固有代价，wujie 以此作为选型理由。"
+      },
+      {
+        "text": "fakeWindow 对象太大，每次读取都要深拷贝一次",
+        "isCorrect": false,
+        "description": "错误。Proxy 读取是陷阱转发不是深拷贝，性能税来自查找与不可优化。"
+      },
+      {
+        "text": "每次切换应用都要全量遍历 `window` 两遍",
+        "isCorrect": false,
+        "description": "错误。全量遍历两遍是快照沙箱的切换成本，不是 with 沙箱。"
+      },
+      {
+        "text": "iframe 实例化开销随应用数量线性增长",
+        "isCorrect": false,
+        "description": "错误。那是 iframe 路线的成本，with 路线没有 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "with + Proxy 沙箱里，某些老库会报 `xxx is not defined`。这个副作用的机制是什么？",
+    "explanation": "被 `with` 包裹后，子应用顶层的 `var xxx` / `function xxx(){}` 被 `with` 作用域「吃掉」，**不再泄漏为全局变量**。那些靠「往全局挂名字」工作的老式库，在沙箱里就找不到自己了。micro-app 给的三种解法（构建产物 `library.type: 'window'`、改写为 `window.xxx =`、插件 loader 批量替换）本质都是**把隐式全局改成显式全局**。",
+    "tags": ["micro-frontend", "sandbox", "with", "global-leak"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "顶层 `var`/`function` 被 `with` 作用域吃掉、不再泄漏为全局变量，依赖隐式全局挂名的老库因此找不到自己",
+        "isCorrect": true,
+        "description": "正确。彻底拦截自由变量的代价就是隐式全局被没收，解法是改成显式全局。"
+      },
+      {
+        "text": "`Proxy` 拦截了所有变量读取，导致合法变量也被误拦",
+        "isCorrect": false,
+        "description": "错误。`Proxy` 的 `get` 会正确透传真 `window`，问题出在顶层声明不再上全局。"
+      },
+      {
+        "text": "`with` 在严格模式下报语法错误，连带正常变量失效",
+        "isCorrect": false,
+        "description": "错误。执行器会维持非严格语境，`with` 能正常运行；`is not defined` 与严格模式无关。"
+      },
+      {
+        "text": "fakeWindow 未初始化，导致所有全局访问都返回 `undefined`",
+        "isCorrect": false,
+        "description": "错误。并非所有访问都失败，只有依赖隐式全局挂名的那部分库受影响。"
+      }
+    ]
+  },
+  {
+    "stem": "with 沙箱路线为什么在 ESM/Vite 时代格外吃力？",
+    "explanation": "`with` 语句在**严格模式下是语法错误**，而 **ESM 天然强制严格模式**——两者互斥。执行器要用 `with(proxy)` 介入作用域链，就必须维持非严格语境，这与 ESM 直接冲突。这也是 with 沙箱路线（及整个 HTML entry + execScripts 执行模型）在 ESM 时代吃力的原因之一。",
+    "tags": ["micro-frontend", "sandbox", "with", "esm"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`with` 在严格模式下是语法错误，而 ESM 天然强制严格模式，两者互斥",
+        "isCorrect": true,
+        "description": "正确。ESM ⇒ 强制严格模式 ⇒ `with` 非法 ⇒ 沙箱手段被没收，是结构性冲突。"
+      },
+      {
+        "text": "ESM 不支持 `Proxy` 对象",
+        "isCorrect": false,
+        "description": "错误。ESM 与 `Proxy` 并不冲突，问题出在 `with` 与严格模式。"
+      },
+      {
+        "text": "ESM 的模块体积太大，`with` 无法包裹",
+        "isCorrect": false,
+        "description": "错误。体积与语法合法性无关，`with` 的问题是严格模式下非法。"
+      },
+      {
+        "text": "`with` 只能包裹 CommonJS 模块，不能包裹任何浏览器脚本",
+        "isCorrect": false,
+        "description": "错误。`with` 能包裹非严格的经典脚本，唯独与严格模式（含 ESM）互斥。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe 沙箱（wujie 路线）的「JS 在 iframe、DOM 在主文档」是怎么拆的？",
+    "explanation": "wujie 的拆法：子应用 **JS 运行在一个与主应用同域的 iframe** 中——`window`/`history`/`location` 原生独立，全局污染、事件残留、路由冲突从根上不存在，也没有 with/Proxy 的查找税；而 **DOM 不在 iframe 里渲染**，子应用视图渲染进**主文档的 WebComponent 容器**，框架代理 iframe 内 `document` 的查询/插入接口（`querySelector`、`appendChild`）指向容器，把「JS 在 iframe、DOM 在主文档」无缝缝合，弹窗也因此不需要特殊改造。",
+    "tags": ["micro-frontend", "sandbox", "iframe", "wujie"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "子应用 JS 在同域 iframe 中运行获得原生隔离，DOM 渲染进主文档的 WebComponent 容器，靠代理 iframe 的 `document` 接口缝合",
+        "isCorrect": true,
+        "description": "正确。JS 进 iframe 求原生隔离、DOM 进主文档求渲染体验，代理层负责缝合，是 wujie 的核心设计。"
+      },
+      {
+        "text": "JS 和 DOM 都在 iframe 内，主文档只留一个占位容器",
+        "isCorrect": false,
+        "description": "错误。DOM 若也在 iframe 内就退回传统 iframe 方案的体验问题了，wujie 恰恰把 DOM 放主文档。"
+      },
+      {
+        "text": "JS 和 DOM 都在主文档，iframe 仅用于隔离 CSS",
+        "isCorrect": false,
+        "description": "错误。iframe 隔离的是 JS 执行环境（`window` 等），不是专门隔离 CSS。"
+      },
+      {
+        "text": "每次 DOM 操作都通过 `postMessage` 序列化传给主文档",
+        "isCorrect": false,
+        "description": "错误。同域 iframe 可直接引用，靠代理接口而非 `postMessage` 序列化。"
+      }
+    ]
+  },
+  {
+    "stem": "micro-app 可选的 iframe 沙箱有个一手文档明说的「src 同域坑」，它是什么？",
+    "explanation": "micro-app 的 iframe 沙箱为了同域通信，**iframe 的 `src` 必须指向主应用域名**。副作用是沙箱初始化时**有几率把主应用的静态资源重新加载一遍**。官方两个解法：给 `iframeSrc` 配一个主应用域下的**空 HTML**；或在主应用 `head` 最前面插 `if (window.parent !== window) { window.stop() }`（残留缺点：network 面板仍会出现 canceled 请求）。",
+    "tags": ["micro-frontend", "sandbox", "iframe", "micro-app"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "iframe 的 `src` 必须指向主应用域名以保证同域通信，初始化时有几率把主应用的静态资源重新加载一遍",
+        "isCorrect": true,
+        "description": "正确。src 指向主域是同域通信的前提，误加载主应用资源就是它的窗口期代价。"
+      },
+      {
+        "text": "iframe 的 `src` 指向子应用域名，导致跨域无法通信",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，src 指向的是主应用域名（为同域），坑在于误加载主应用资源。"
+      },
+      {
+        "text": "iframe 无法设置 `src`，只能用 `srcdoc`",
+        "isCorrect": false,
+        "description": "错误。它正是要设置 `src` 指向主域，问题由此而来。"
+      },
+      {
+        "text": "iframe 会自动继承主应用的所有 cookie 造成越权",
+        "isCorrect": false,
+        "description": "错误。同域坑指的是误加载资源，不是 cookie 越权。"
+      }
+    ]
+  },
+  {
+    "stem": "Proxy 沙箱透传 `window.location`、`addEventListener` 这类原生方法时，最容易踩的坑是什么？",
+    "explanation": "`get` 陷阱读到 `window.location`、`document`、`addEventListener` 这类**原生对象/方法**时，直接返回会有 `this` 指向问题——脱离原宿主调用会抛 **Illegal invocation**。实现里必须逐一 `bind` 到真 `window`。这是自研 Proxy 沙箱最容易踩的坑；此外 `addEventListener`/`setInterval` 是方法调用，还需框架专项劫持、记账、卸载统一清理。",
+    "tags": ["micro-frontend", "sandbox", "proxy", "this-binding"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原生方法直接透传返回后 `this` 指向错误（Illegal invocation），实现里必须逐一 `bind` 到真 `window`",
+        "isCorrect": true,
+        "description": "正确。原生方法脱离宿主调用会抛 Illegal invocation，`bind` 是标准兜底。"
+      },
+      {
+        "text": "原生方法无法被 `Proxy` 代理，会直接抛 `TypeError`",
+        "isCorrect": false,
+        "description": "错误。原生方法能被读到，问题出在调用时的 `this` 指向而非无法代理。"
+      },
+      {
+        "text": "原生方法透传后会污染 fakeWindow 的属性表",
+        "isCorrect": false,
+        "description": "错误。透传是读操作，不写 fakeWindow，谈不上污染。"
+      },
+      {
+        "text": "原生对象透传会触发跨域安全错误",
+        "isCorrect": false,
+        "description": "错误。同页面透传原生对象不涉及跨域，问题是 `this` 绑定。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 ShadowRealm 提案的现状与定位，下列哪项准确？",
+    "explanation": "**ShadowRealm** 是 TC39 想把沙箱做成语言标准的提案：每个 `ShadowRealm` 有**独立的 `globalThis` + 一整套内建对象副本**（连 `Object.prototype` 都不同源）。它同步执行、无 DOM、共享引擎，比 iframe 轻、比 Worker 即时。但现状必须写准：提案停在 **Stage 2.7**，**目前没有可用于生产的浏览器原生实现**——正确姿势是「关注，不排期」。",
+    "tags": ["micro-frontend", "sandbox", "shadowrealm", "tc39"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "TC39 Stage 2.7 提案，提供独立 `globalThis` + 全套内建副本的语言层沙箱，目前无生产可用的浏览器原生实现",
+        "isCorrect": true,
+        "description": "正确。Stage 2.7 + 无生产实现，对微前端是「关注不排期」。"
+      },
+      {
+        "text": "已是 Baseline Widely available，可直接用于生产",
+        "isCorrect": false,
+        "description": "错误。Baseline Widely available 说的是 import maps（2023-03），不是 ShadowRealm。"
+      },
+      {
+        "text": "是 qiankun 内置的默认沙箱实现",
+        "isCorrect": false,
+        "description": "错误。qiankun 默认走 `Proxy` 沙箱，与 ShadowRealm 无关。"
+      },
+      {
+        "text": "是 Node.js 独有的 API，浏览器完全不支持",
+        "isCorrect": false,
+        "description": "错误。ShadowRealm 是 TC39 语言层提案，不是 Node 独有；且尚无生产可用实现。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么快照沙箱（snapshotSandbox）在多应用并存场景下「必炸」？这是一条纯机制推理。",
+    "explanation": "推理链只有三步：多应用**共用同一个真 `window`** ⇒ 某个应用失活 diff 时，`window` 上的改动**无法归因**到具体是谁做的 ⇒ 「恢复快照」会连带把仍活跃应用刚写的状态一并抹掉。所以快照沙箱的世界里同一时刻只能有一个子应用，多实例并存必然互吞状态。这也是它只能配 `singular: true` 的根因。",
+    "tags": ["micro-frontend", "sandbox", "snapshot", "reasoning"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "多应用共用同一个真 `window`，失活 diff 时无法区分改动属于哪个应用，恢复快照会连带抹掉仍活跃应用的状态",
+        "isCorrect": true,
+        "description": "正确。共用真 `window` ⇒ 无法归因 ⇒ 恢复即互吞，这是必然而非偶发。"
+      },
+      {
+        "text": "快照对象占用内存过大，多实例时触发 OOM 崩溃",
+        "isCorrect": false,
+        "description": "错误。「必炸」指状态互吞，不是内存溢出。"
+      },
+      {
+        "text": "`Proxy` 的 `set` 陷阱在多实例下会陷入死循环",
+        "isCorrect": false,
+        "description": "错误。快照沙箱不用 `Proxy`，也没有死循环问题。"
+      },
+      {
+        "text": "多个 `requestIdleCallback` 抢占主线程导致快照丢失",
+        "isCorrect": false,
+        "description": "错误。与调度无关，问题在 diff 无法归因。"
+      }
+    ]
+  },
+  {
+    "stem": "ShadowRealm 的 callable boundary 语义，对微前端的通信模式意味着什么？",
+    "explanation": "ShadowRealm 对微前端最关键的设计是 **callable boundary**：跨越 realm 边界的值**只允许原始值（primitive）与可调用对象（函数）**，函数会被自动包装转发，**普通对象一律过不去**。这意味着「把 `window.appState` 对象直接递给子应用」这类共享模式在 ShadowRealm 里根本不成立——隔离是真隔离，通信必须走**显式的函数协议**。",
+    "tags": ["micro-frontend", "sandbox", "shadowrealm", "callable-boundary"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "跨界只允许原始值与函数通过，普通对象过不去——直接共享对象的模式不再成立，通信必须走显式函数协议",
+        "isCorrect": true,
+        "description": "正确。callable boundary 决定了 ShadowRealm 里只能用函数协议通信，不能直接递对象。"
+      },
+      {
+        "text": "任意对象都能跨界，只是会被自动深拷贝一份",
+        "isCorrect": false,
+        "description": "错误。普通对象根本过不去，不存在自动深拷贝。"
+      },
+      {
+        "text": "只有 DOM 节点能跨界，其他值一律被拒绝",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，能过的是原始值与函数；ShadowRealm 本就无 DOM 概念。"
+      },
+      {
+        "text": "跨界的函数无法被调用，只能读取其引用",
+        "isCorrect": false,
+        "description": "错误。函数会被包装成 wrapped function 后可正常调用，这正是 callable boundary 的用途。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说 CSS 隔离与 JS 沙箱是「两件事」，JS 沙箱再强也替代不了 CSS 隔离？",
+    "explanation": "**CSS 隔离与 JS 沙箱相互独立**：JS 沙箱管的是「代码在哪个 `window` 上跑」，而**一个 `<style>` 标签插进 `document.head` 照样全局生效**——CSS 是全局作用域，不经过 JS 沙箱那套 `window` 记账。所以样式的战场要单独打，实践中通常「命名约定打底 + 运行时手段兜底」。",
+    "tags": ["micro-frontend", "css-isolation", "sandbox"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个 `<style>` 标签插进 `document.head` 照样全局生效，样式作用域与 JS 全局污染是两条独立战线",
+        "isCorrect": true,
+        "description": "正确。CSS 是全局级联，不归 `window` 沙箱管，所以要单独隔离。"
+      },
+      {
+        "text": "JS 沙箱会拦截所有 DOM 操作，包括插入 `<style>`，所以其实不需要 CSS 隔离",
+        "isCorrect": false,
+        "description": "错误。JS 沙箱不会因此让样式作用域失效，`<style>` 进 `head` 仍全局生效。"
+      },
+      {
+        "text": "CSS 隔离只是 JS 沙箱的一个子功能，开沙箱即自动隔离样式",
+        "isCorrect": false,
+        "description": "错误。两者是独立机制，开 JS 沙箱不会自动隔离 CSS。"
+      },
+      {
+        "text": "现代浏览器已原生隔离每个应用的样式，无需额外处理",
+        "isCorrect": false,
+        "description": "错误。浏览器没有为「多应用同页」准备任何样式边界，正是要靠隔离机制补。"
+      }
+    ]
+  },
+  {
+    "stem": "CSS 的「后来者覆盖」问题在微前端下会怎样表现？",
+    "explanation": "CSS 没有模块系统，任何规则最终都进**同一个全局级联**；同名选择器按 **specificity + 源顺序**决胜——「谁后加载谁说了算」。两个子应用都写 `.title`，后加载的那个会把页面上所有 `.title` 一并改掉。加上卸载不摘 `<style>` 的残留，就是微前端典型的样式互踩现场。",
+    "tags": ["micro-frontend", "css-isolation", "cascade"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "两个子应用都写 `.title` 时，按 specificity 与源顺序决胜，后加载的样式覆盖先加载的",
+        "isCorrect": true,
+        "description": "正确。全局级联 + 源顺序决胜，就是「后来者覆盖」。"
+      },
+      {
+        "text": "浏览器会检测到冲突并报错，拒绝应用后加载的样式",
+        "isCorrect": false,
+        "description": "错误。CSS 不报冲突错误，只按级联规则默默覆盖。"
+      },
+      {
+        "text": "先加载的样式优先级永远最高，后者无法覆盖",
+        "isCorrect": false,
+        "description": "错误。同 specificity 下源顺序靠后者胜，先加载不等于优先级最高。"
+      },
+      {
+        "text": "同名选择器会自动合并成一条规则",
+        "isCorrect": false,
+        "description": "错误。不会合并，而是各自参与级联、按规则决胜。"
+      }
+    ]
+  },
+  {
+    "stem": "Shadow DOM 作为 CSS 隔离方案，它的隔离方向是哪一种？",
+    "explanation": "**Shadow DOM** 是浏览器唯一原生的样式隔离边界，且是**双向隔离**：页面样式选不中 shadow tree 内元素，树内样式也出不去；JS 侧同理，`document.querySelector` 看不见 shadow 内节点。qiankun 的 `strictStyleIsolation` 正是把子应用容器转成 shadow DOM。",
+    "tags": ["micro-frontend", "css-isolation", "shadow-dom"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "双向隔离——页面样式选不中 shadow tree 内元素，树内样式也出不去",
+        "isCorrect": true,
+        "description": "正确。进不来也出不去，是 Shadow DOM 区别于单向方案的关键。"
+      },
+      {
+        "text": "单向隔离——只防子应用样式泄漏，不防主应用样式进入",
+        "isCorrect": false,
+        "description": "错误。单向（防泄漏不防入侵）是属性前缀改写的特征，不是 Shadow DOM。"
+      },
+      {
+        "text": "只隔离 JS，不隔离 CSS",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 同时隔离 DOM 与样式作用域。"
+      },
+      {
+        "text": "只在时间维度隔离，卸载时才生效",
+        "isCorrect": false,
+        "description": "错误。时间维度（防残留）是动态样式表劫持的特征。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `strictStyleIsolation` 走的是哪条 CSS 隔离路线？",
+    "explanation": "`strictStyleIsolation` 把**每个子应用的容器转成 Shadow DOM**，借浏览器原生双向隔离边界确保子应用样式不泄漏到全局。wujie 的 WebComponent 容器、micro-app 的元素隔离也都借这条边界。它与 `experimentalStyleIsolation`（属性改写）是 qiankun 提供的两种不同强度方案。",
+    "tags": ["micro-frontend", "css-isolation", "shadow-dom", "qiankun"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把每个子应用的容器转成 Shadow DOM，靠浏览器原生边界隔离",
+        "isCorrect": true,
+        "description": "正确。strict 走 Shadow DOM 原生双向隔离。"
+      },
+      {
+        "text": "运行时给每条规则加 `data-qiankun` 属性前缀",
+        "isCorrect": false,
+        "description": "错误。那是 `experimentalStyleIsolation`（属性改写）的机制。"
+      },
+      {
+        "text": "劫持 `appendChild` 给样式记账，卸载时移除",
+        "isCorrect": false,
+        "description": "错误。那是动态样式表劫持（沙箱默认行为）。"
+      },
+      {
+        "text": "编译期把类名哈希化",
+        "isCorrect": false,
+        "description": "错误。那是 CSS Modules 型命名约定，非 qiankun 运行时行为。"
+      }
+    ]
+  },
+  {
+    "stem": "Shadow DOM 号称隔离，但有三类东西会照常「穿透」边界，恰是微前端最常撞上的，是哪三类？",
+    "explanation": "「隔离」不等于「绝缘」，三类东西会穿过 Shadow DOM 边界：**继承属性**（`color`/`font-family`/`line-height` 沿 DOM 树照常继承进 shadow tree）、**CSS 自定义属性**（`--brand-color` 穿透，树内 `var()` 可取值）、**`dir`/`lang`**（shadow tree 与 `<slot>` 从宿主继承）。这不是 bug——CSS 变量正是**官方推荐的主题下发通道**：主应用定义 token，子应用消费。",
+    "tags": ["micro-frontend", "css-isolation", "shadow-dom", "inheritance"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "继承属性（`color`/`font-family` 等）、CSS 自定义属性（`--brand-color`）、`dir`/`lang` 会照常穿过边界",
+        "isCorrect": true,
+        "description": "正确。这三类穿透是特性——CSS 变量是官方推荐的主题通道。"
+      },
+      {
+        "text": "所有属性都被完全隔离，无一穿透",
+        "isCorrect": false,
+        "description": "错误。继承属性与 CSS 变量本就会穿透，这是刻意的设计。"
+      },
+      {
+        "text": "只有 `z-index` 和 `position` 会穿透",
+        "isCorrect": false,
+        "description": "错误。穿透的是继承属性/CSS 变量/`dir`·`lang`，不是 `z-index`/`position`。"
+      },
+      {
+        "text": "只有标了 `!important` 的规则会穿透",
+        "isCorrect": false,
+        "description": "错误。穿透与 `!important` 无关，取决于是否为继承属性或自定义属性。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 Shadow DOM 隔离救不了组件库挂在 `document.body` 的弹窗？这是一条逻辑必然。",
+    "explanation": "推理链很短：①子应用与其样式被关进 shadow tree；②弹窗（Dialog/Tooltip/Select）为躲 `overflow: hidden` 与层叠上下文，默认 `appendChild` 到 `document.body`，**物理上离开了 shadow tree**；③树内样式出不去（双向隔离如实执行），弹窗**一丝样式都拿不到**、裸奔；④它同时脱离了隔离保护，可能被主应用样式误伤。这不是 bug，是双向隔离的逻辑必然。",
+    "tags": ["micro-frontend", "css-isolation", "shadow-dom", "popup"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "弹窗被 `appendChild` 到 `document.body`，物理上离开了 shadow tree，树内样式出不去导致弹窗拿不到任何样式",
+        "isCorrect": true,
+        "description": "正确。节点跑出 shadow tree ⇒ 双向隔离如实执行 ⇒ 样式全丢，是逻辑必然。"
+      },
+      {
+        "text": "弹窗的 `z-index` 太高，超出了 shadow tree 的层叠范围",
+        "isCorrect": false,
+        "description": "错误。问题是节点物理离开了 shadow tree，与 `z-index` 数值无关。"
+      },
+      {
+        "text": "Shadow DOM 不支持 `position: fixed` 定位的元素",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 支持 fixed 定位，问题在弹窗被挂到了 body。"
+      },
+      {
+        "text": "弹窗使用了 `!important`，绕过了隔离",
+        "isCorrect": false,
+        "description": "错误。样式全丢是因为节点在树外拿不到树内样式，不是 `!important` 绕过。"
+      }
+    ]
+  },
+  {
+    "stem": "Shadow DOM 的 `mode: \"closed\"` 是不是一道安全边界？",
+    "explanation": "**不是**。`mode: \"closed\"` 只是让 `element.shadowRoot` 返回 `null`，表达「请勿访问」的意图；MDN 原话是「不应视为强安全机制……浏览器扩展等仍能绕过」。它防君子不防扩展，与 `open` 的实际隔离能力没有安全等级差异。",
+    "tags": ["micro-frontend", "css-isolation", "shadow-dom", "security"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不是——它只让 `element.shadowRoot` 返回 `null`，表达「请勿访问」的意图，浏览器扩展等仍能绕过",
+        "isCorrect": true,
+        "description": "正确。closed 只是访问约定，不是安全边界。"
+      },
+      {
+        "text": "是——closed 模式下任何外部代码都无法访问 shadow tree",
+        "isCorrect": false,
+        "description": "错误。扩展等仍能绕过，MDN 明确它不是强安全机制。"
+      },
+      {
+        "text": "是——closed 模式会加密 shadow tree 的内容",
+        "isCorrect": false,
+        "description": "错误。closed 不做任何加密，只是让 `shadowRoot` 返回 `null`。"
+      },
+      {
+        "text": "closed 与 open 没有任何区别，两者都是安全的",
+        "isCorrect": false,
+        "description": "错误。两者在 `shadowRoot` 可访问性上有区别，但都不构成安全边界。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端里几十个子应用实例要共享同一套设计系统样式，`adoptedStyleSheets` 为什么是性能正解？",
+    "explanation": "用构造样式表（`new CSSStyleSheet()` + `replaceSync`）得到一个 `CSSStyleSheet` 对象，可**同时挂到多棵 shadow tree** 的 `adoptedStyleSheets` 上——**浏览器只解析一次**，`replaceSync` 一改**全树自动生效**。相比给每棵树各写一份 `<style>`（解析多次），这是「几十个微前端实例共享一套设计系统」的性能正解。",
+    "tags": [
+      "micro-frontend",
+      "css-isolation",
+      "shadow-dom",
+      "adopted-stylesheets"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一个 `CSSStyleSheet` 对象可同时挂到多棵 shadow tree，浏览器只解析一次、`replaceSync` 修改自动传播全树",
+        "isCorrect": true,
+        "description": "正确。共享同一对象 ⇒ 解析一次 ⇒ 改一处全树生效，是多实例共享主题的正解。"
+      },
+      {
+        "text": "它能让 shadow tree 内的样式泄漏到全局，方便统一调试",
+        "isCorrect": false,
+        "description": "错误。它不破坏隔离，只是共享样式表对象。"
+      },
+      {
+        "text": "它给每棵 shadow tree 各复制一份样式表，隔离更彻底",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它共享同一个对象而非复制，省的就是重复解析。"
+      },
+      {
+        "text": "它只能用于主文档，不能用于 shadow tree",
+        "isCorrect": false,
+        "description": "错误。`adoptedStyleSheets` 正是给 shadow root（及 document）用的。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `experimentalStyleIsolation`（属性前缀改写）在运行时对子应用样式做了什么？",
+    "explanation": "开启后，子应用的每条样式规则被运行时**加上属性选择器限定**，等效 Vue scoped 的运行时版：`.app-main` 被改写为 `div[data-qiankun-react16] .app-main`。效果是子应用样式只在自己容器内生效、出不去（**单向隔离**——防泄漏、不防入侵）。",
+    "tags": ["micro-frontend", "css-isolation", "attribute-rewrite", "qiankun"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "运行时给每条规则加属性选择器限定，如 `.app-main` 改写成 `div[data-qiankun-xxx] .app-main`",
+        "isCorrect": true,
+        "description": "正确。属性改写 = 运行时版 scoped，实现单向防泄漏。"
+      },
+      {
+        "text": "把子应用容器转成 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。转 Shadow DOM 是 `strictStyleIsolation`，不是 experimental。"
+      },
+      {
+        "text": "把类名编译成哈希值",
+        "isCorrect": false,
+        "description": "错误。那是 CSS Modules，编译期行为，非运行时属性改写。"
+      },
+      {
+        "text": "把子应用放进独立 iframe",
+        "isCorrect": false,
+        "description": "错误。属性改写不涉及 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "属性前缀改写为什么不支持 `@keyframes`、`@font-face`、`@import`、`@page` 这几个 at-rule？",
+    "explanation": "属性改写的操作对象是**元素选择器**，加的是「作用于哪个元素」的属性限定。而 `@keyframes` 定义的动画名、`@font-face` 定义的字体族名是**全局命名空间里的名字**，压根没有「作用于哪个元素」的概念，语法上无处安放属性限定。后果可推理：两个子应用都定义 `@keyframes fade-in`，改写救不了、**动画重名照样互踩**——动画名/字体名仍要靠命名约定兜底。",
+    "tags": [
+      "micro-frontend",
+      "css-isolation",
+      "attribute-rewrite",
+      "at-rules"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "属性改写只能限定元素选择器，而 at-rule 定义的动画名/字体名是全局命名空间的名字，没有「作用于哪个元素」的概念",
+        "isCorrect": true,
+        "description": "正确。全局命名空间的名字无处安放属性限定，所以改写无能为力、动画重名仍互踩。"
+      },
+      {
+        "text": "这几个 at-rule 性能太差，qiankun 出于优化故意禁用",
+        "isCorrect": false,
+        "description": "错误。不是性能取舍，是语法上无法给全局命名空间加属性限定。"
+      },
+      {
+        "text": "浏览器不允许在运行时改写任何 at-rule",
+        "isCorrect": false,
+        "description": "错误。限制来自属性改写的语义，不是浏览器禁止改写 at-rule。"
+      },
+      {
+        "text": "这几个 at-rule 只能写在主应用里",
+        "isCorrect": false,
+        "description": "错误。子应用可以写这些 at-rule，只是属性改写救不了它们的命名冲突。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 开沙箱后「自动隔离微应用之间的样式」，这句话里的量词「之间」划出了什么边界？",
+    "explanation": "**动态样式表劫持**管的是时间维度：框架劫持 `appendChild`/`insertBefore`，给每个子应用运行期插入的 `<style>`/`<link>` 记一本账，卸载时按账本移除、再挂载时重建。qiankun FAQ 表述是「自动隔离微应用**之间**的样式」——注意量词：它保证 A 卸载后不污染 B，但**主应用与子应用之间**的冲突不归它管，因为主应用样式不经过沙箱、无从记账。",
+    "tags": ["micro-frontend", "css-isolation", "stylesheet-hijack"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它给子应用运行期插入的样式记账、自动隔离子应用「之间」的样式，但主应用样式不经过沙箱、不归它管",
+        "isCorrect": true,
+        "description": "正确。「之间」= 子应用互相，主应用样式需自治，这是它的明确边界。"
+      },
+      {
+        "text": "它能隔离主应用与所有子应用之间的全部样式冲突",
+        "isCorrect": false,
+        "description": "错误。主应用样式不经过沙箱，劫持机制管不到。"
+      },
+      {
+        "text": "它只在编译期工作，运行时不介入",
+        "isCorrect": false,
+        "description": "错误。它恰恰是运行时劫持 DOM API 记账。"
+      },
+      {
+        "text": "它会把子应用样式永久缓存，卸载后也不移除",
+        "isCorrect": false,
+        "description": "错误。卸载时正是要按账本移除样式，避免残留污染。"
+      }
+    ]
+  },
+  {
+    "stem": "主应用与子应用都用 antd 时，主应用样式自治的标准做法（qiankun FAQ 原方案）是什么？",
+    "explanation": "动态样式表劫持管不了主应用样式，官方补法是**主应用样式自治**——最典型的是组件库改前缀：用 `modifyVars: { '@ant-prefix': 'yourPrefix' }` 把 antd 的 CSS 前缀从 `ant-` 改掉（`.ant-btn` → `.yourPrefix-btn`），再配合运行时 `<ConfigProvider prefixCls=\"yourPrefix\">` 让组件生成的类名也换前缀。",
+    "tags": ["micro-frontend", "css-isolation", "antd", "prefix"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `modifyVars` 改 `@ant-prefix`，配合 `<ConfigProvider prefixCls=\"...\">` 让运行时类名也换前缀",
+        "isCorrect": true,
+        "description": "正确。改样式前缀 + 改运行时 `prefixCls`，主应用样式就与子应用不撞。"
+      },
+      {
+        "text": "把主应用也整个塞进 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。把主应用塞进 Shadow DOM 不现实，标准做法是改组件库前缀。"
+      },
+      {
+        "text": "给主应用开启 `experimentalStyleIsolation`",
+        "isCorrect": false,
+        "description": "错误。`experimentalStyleIsolation` 是给子应用的运行时改写，不解决主应用自治。"
+      },
+      {
+        "text": "删除主应用的所有全局样式",
+        "isCorrect": false,
+        "description": "错误。删光样式不可行，正解是改前缀避免撞名。"
+      }
+    ]
+  },
+  {
+    "stem": "四条 CSS 隔离路线里，唯一能天然覆盖「挂 `body` 弹窗」的是哪一条？这需要对四路线盲区做机制推理。",
+    "explanation": "对挂 `body` 的弹窗：**Shadow DOM** 样式全丢（节点跑出树）、**属性前缀改写** 选不中（改写后的选择器命不中 body 上的节点）、**动态样式表劫持** 不管辖（它只记账样式节点、不改选择器）。唯有**命名约定**——弹窗类名也带团队前缀/哈希，**挂到哪儿都不撞名**，天然覆盖。所以落地组合拳是「命名约定打底 + 运行时手段兜底」。",
+    "tags": [
+      "micro-frontend",
+      "css-isolation",
+      "naming-convention",
+      "reasoning"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "命名约定——弹窗类名也带前缀/哈希，挂到哪儿都不撞名，而另外三条运行时路线对挂 body 弹窗都失效",
+        "isCorrect": true,
+        "description": "正确。命名约定不依赖节点位置，是弹窗盲区里唯一天然覆盖的方案。"
+      },
+      {
+        "text": "Shadow DOM——它的双向隔离对弹窗最彻底",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 恰恰是弹窗死穴：节点跑出树，样式全丢。"
+      },
+      {
+        "text": "属性前缀改写——改写后的选择器能精确命中 body 上的弹窗",
+        "isCorrect": false,
+        "description": "错误。弹窗不在子应用容器内，改写后的属性选择器反而选不中。"
+      },
+      {
+        "text": "动态样式表劫持——它会把弹窗样式一并记账移除",
+        "isCorrect": false,
+        "description": "错误。劫持只记账样式节点，不解决弹窗类名撞车。"
+      }
+    ]
+  },
+  {
+    "stem": "主应用「拿到」子应用有 JS entry 与 HTML entry 两种契约，它们的核心区别是什么？",
+    "explanation": "**JS entry**：约定每个子应用构建成 JS bundle，加载后在全局暴露渲染/卸载函数，Fowler 原话「这个全局函数的签名就是容器应用与微前端之间的关键契约」。**HTML entry**：直接把子应用的 **HTML 地址**当入口，HTML 本身就是资源清单——里面的 `<script>`/`<link>` 如实列出所需资源，且天然带 hash 后的最新文件名。",
+    "tags": ["micro-frontend", "html-entry", "js-entry"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "JS entry 让子应用暴露一个全局渲染函数当契约；HTML entry 直接给一个 HTML 地址，把 HTML 本身当资源清单",
+        "isCorrect": true,
+        "description": "正确。一个约定全局函数签名，一个把 HTML 当资源清单，这是两派的分野。"
+      },
+      {
+        "text": "JS entry 给 HTML 地址，HTML entry 给 JS 地址",
+        "isCorrect": false,
+        "description": "错误。说反了——JS entry 约定全局函数，HTML entry 才是给 HTML 地址。"
+      },
+      {
+        "text": "两者完全相同，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。两者契约形态不同，工程成本也不同。"
+      },
+      {
+        "text": "JS entry 只能用于 Vue，HTML entry 只能用于 React",
+        "isCorrect": false,
+        "description": "错误。两种契约都与框架无关。"
+      }
+    ]
+  },
+  {
+    "stem": "HTML entry 相比 JS entry 最大的架构收益「同构」指的是什么？",
+    "explanation": "HTML entry 的最大收益是**同构**：子应用**开发时独立跑的 HTML** 和**被主应用集成解析的 HTML** 是**同一份**——集成测试与独立调试不再是两个世界。相比之下 JS entry 里「独立运行」与「被集成」常是两套入口、容易漂移。代价是主应用要内置一个「迷你浏览器」（import-html-entry 的角色）。",
+    "tags": ["micro-frontend", "html-entry", "isomorphic"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用独立跑的 HTML 与被主应用集成解析的 HTML 是同一份，集成测试与独立调试不再是两个世界",
+        "isCorrect": true,
+        "description": "正确。同一份 HTML 消除了「独立运行」与「被集成」两套入口的漂移。"
+      },
+      {
+        "text": "它能让子应用同时运行 React 和 Vue 两个框架",
+        "isCorrect": false,
+        "description": "错误。同构指的是入口一致，不是多框架混跑。"
+      },
+      {
+        "text": "它把 CSS 和 JS 合并成一个文件下发",
+        "isCorrect": false,
+        "description": "错误。HTML entry 反而按清单分别拉取资源。"
+      },
+      {
+        "text": "它让子应用不再需要构建打包",
+        "isCorrect": false,
+        "description": "错误。子应用照常构建，HTML entry 只是把产物 HTML 当清单。"
+      }
+    ]
+  },
+  {
+    "stem": "import-html-entry（qiankun 底层）对外暴露的三个核心 API 是哪三个？",
+    "explanation": "import-html-entry 是 HTML entry 的事实标准实现（kuitos 维护），对外三个核心 API：**`importHTML(url)`** 解析 HTML 地址、返回五件套；**`importEntry(entry)`** 既接受地址、也接受 `{ scripts, styles, html }` 对象（qiankun entry 对象配置透传于此，此时 publicPath 自动为 `/`）；**`execScripts(...)`** 在代理上下文里执行脚本并返回入口导出。",
+    "tags": ["micro-frontend", "html-entry", "import-html-entry", "api"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`importHTML`（解析 HTML 地址）、`importEntry`（接受地址或 `{ scripts, styles, html }` 对象）、`execScripts`（代理上下文执行脚本并返回导出）",
+        "isCorrect": true,
+        "description": "正确。这三个 API 就是 HTML entry 事实标准的骨架。"
+      },
+      {
+        "text": "`fetch`、`eval`、`render` 三个原生方法的封装",
+        "isCorrect": false,
+        "description": "错误。这不是它对外暴露的 API 名，而是内部手段的粗略类比。"
+      },
+      {
+        "text": "`install`、`mount`、`unmount` 三个生命周期钩子",
+        "isCorrect": false,
+        "description": "错误。生命周期是子应用导出的，不是 import-html-entry 的 API。"
+      },
+      {
+        "text": "只有 `importHTML` 一个 API，其余是内部私有",
+        "isCorrect": false,
+        "description": "错误。`importEntry` 与 `execScripts` 都是对外 API。"
+      }
+    ]
+  },
+  {
+    "stem": "import-html-entry 的 `execScripts(sandbox, strictGlobal)` 返回值是什么？为什么它是「灵魂 API」？",
+    "explanation": "`execScripts` 在给定 **proxy（沙箱对象）上下文**里执行全部脚本，返回值是**入口脚本在 `window`（或 proxy）上设置的最后一个属性**——生命周期导出就是这么被拿到的。这就解释了为什么子应用必须 UMD、library 名要对齐（识别导出靠「执行后全局多出来的那个变量」）。而这个 `proxy` 参数正是**沙箱插槽**——HTML entry 与 JS 沙箱机制在这一个参数上会师。",
+    "tags": ["micro-frontend", "html-entry", "exec-scripts", "sandbox"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 proxy（沙箱对象）上下文执行全部脚本，返回入口脚本在 `window`/proxy 上设置的最后一个属性（即生命周期导出）",
+        "isCorrect": true,
+        "description": "正确。返回「最后一个全局属性」正是 UMD 约束与 library 对齐的根由。"
+      },
+      {
+        "text": "返回所有脚本的源码文本拼接后的字符串",
+        "isCorrect": false,
+        "description": "错误。它返回的是执行后的导出对象，不是源码文本。"
+      },
+      {
+        "text": "返回一个 Promise，resolve 值永远是 `undefined`",
+        "isCorrect": false,
+        "description": "错误。resolve 的是入口导出，不是 `undefined`。"
+      },
+      {
+        "text": "返回子应用 HTML 解析出的 DOM 树",
+        "isCorrect": false,
+        "description": "错误。DOM 由 `template` 负责，`execScripts` 返回的是脚本导出。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 HTML entry 硬性要求子应用的所有静态资源支持跨域（CORS）？",
+    "explanation": "关键在执行模型：import-html-entry **不是**把 `<script src>` 插回文档让浏览器加载，而是 **fetch 拿到脚本文本、在函数作用域里求值**（eval 型执行）。既然脚本、样式全走 `fetch`，**同源策略立刻生效**——qiankun FAQ 原文：「qiankun 是通过 fetch 去获取微应用的静态资源的，所以必须要求这些静态资源支持跨域」。这也是「本地好好的、上线 CORS 报错」的第一排查点。",
+    "tags": ["micro-frontend", "html-entry", "cors", "fetch"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "脚本样式都用 `fetch` 成文本再求值，走 `fetch` 就受同源策略约束，因此必须配 CORS",
+        "isCorrect": true,
+        "description": "正确。fetch 拉资源 ⇒ 同源策略生效 ⇒ 必须 CORS，是一条推论链。"
+      },
+      {
+        "text": "因为子应用和主应用一定不同域，浏览器强制要求跨域",
+        "isCorrect": false,
+        "description": "错误。即便同域也走 fetch；根因是 fetch 执行模型，不是「一定不同域」。"
+      },
+      {
+        "text": "因为 UMD 格式规定必须跨域加载",
+        "isCorrect": false,
+        "description": "错误。UMD 与 CORS 无关，CORS 来自 fetch 执行模型。"
+      },
+      {
+        "text": "因为 Shadow DOM 需要跨域样式才能隔离",
+        "isCorrect": false,
+        "description": "错误。CORS 与 Shadow DOM 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "HTML entry 方案下子应用为什么必须打成 UMD、且 library 名要与主应用注册名对齐？",
+    "explanation": "求值后框架从 proxy 上找「入口脚本设置的最后一个属性」当导出，所以子应用要用 **UMD 格式**让生命周期落到**全局变量**上，且变量名可预期。典型配置：`output.library` 设为可预期的名字、`libraryTarget: 'umd'`，让导出挂到全局并与主应用注册的 `name` 对齐——这样框架才认得出「执行后全局多出来的那个变量」就是生命周期。",
+    "tags": ["micro-frontend", "html-entry", "umd", "library"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "求值后框架从 proxy 上取「最后一个全局属性」当导出，UMD 让生命周期落到可预期的全局变量名上、与主应用注册名对齐才能被识别",
+        "isCorrect": true,
+        "description": "正确。识别导出靠全局变量，所以要 UMD 且 library 名对齐。"
+      },
+      {
+        "text": "UMD 格式体积最小、加载最快",
+        "isCorrect": false,
+        "description": "错误。选 UMD 不是为体积，是为把导出挂到全局。"
+      },
+      {
+        "text": "只有 UMD 格式支持 Shadow DOM",
+        "isCorrect": false,
+        "description": "错误。模块格式与 Shadow DOM 无关。"
+      },
+      {
+        "text": "UMD 是唯一支持跨域加载的模块格式",
+        "isCorrect": false,
+        "description": "错误。跨域是 CORS 的事，与 UMD 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 报 `Application died in status LOADING_SOURCE_CODE` 时，官方一句话解释是什么？",
+    "explanation": "官方解释只一句：**无法从微应用的 entry js 中识别出其导出的生命周期钩子**。排查按机制走：生命周期是否真的导出了 → `output.library`/`globalObject` 是否让导出落上 `window` → entry 脚本是不是最后执行（不是就加 `entry` 属性标记）→ 生产环境 HTML/JS 响应是否 200 → 与 Module Federation 混用时是否在 bootstrap 里重新暴露了生命周期。",
+    "tags": ["micro-frontend", "html-entry", "lifecycle", "error"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无法从子应用 entry js 中识别出其导出的生命周期钩子",
+        "isCorrect": true,
+        "description": "正确。该报错就是「取不到生命周期导出」，排查围绕 UMD/library/entry 顺序展开。"
+      },
+      {
+        "text": "子应用的 HTML 地址返回了 404",
+        "isCorrect": false,
+        "description": "错误。404 是另一类问题；该报错专指识别不到生命周期导出。"
+      },
+      {
+        "text": "主应用的路由配置写错了",
+        "isCorrect": false,
+        "description": "错误。它与路由无关，指向的是 entry 导出识别失败。"
+      },
+      {
+        "text": "子应用的 CSS 文件加载失败",
+        "isCorrect": false,
+        "description": "错误。CSS 加载失败不会报这个状态码。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 publicPath 运行时注入解决什么问题？它的边界（管不到的那块）在哪？",
+    "explanation": "子应用打包时不知自己将来挂在谁的域名下，动态资源默认按相对路径解析、被主应用加载后 404 连片。解法两步：主应用注入 `assetPublicPath`（`__INJECTED_PUBLIC_PATH_BY_QIANKUN__` 型全局变量），子应用 entry 顶部回填 `__webpack_public_path__`，之后所有动态 chunk/资源以注入值为基准。但边界很清楚：**CSS 文件内部的 `url()`**（字体、背景图）是编译期写死的、不走 webpack 运行时——修不了只能绕（CDN 绝对地址 / 小文件 base64 / file-loader 写死完整路径）。",
+    "tags": ["micro-frontend", "html-entry", "public-path", "webpack"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "解决子应用动态载入的 chunk/图片地址不正确；但 CSS 内部的 `url()` 是编译期写死的、不走 webpack 运行时，修不了只能绕",
+        "isCorrect": true,
+        "description": "正确。运行时 publicPath 管动态资源，CSS `url()` 是它的盲区。"
+      },
+      {
+        "text": "它能修正包括 CSS `url()` 在内的所有资源路径",
+        "isCorrect": false,
+        "description": "错误。CSS `url()` 编译期写死，运行时 publicPath 管不到。"
+      },
+      {
+        "text": "它在编译期生效，与运行时无关",
+        "isCorrect": false,
+        "description": "错误。它恰恰是运行时改写 `__webpack_public_path__`。"
+      },
+      {
+        "text": "它只用于跨域校验，与资源路径无关",
+        "isCorrect": false,
+        "description": "错误。它专治资源路径，不做跨域校验。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说 qiankun 2.x 对 Vite/ESM 入口的不支持是「结构性」的，而不是「没来得及适配」？",
+    "explanation": "整套 HTML entry + execScripts 机制建立在「**classic script + 全局导出**」上，与 ESM 逐条冲突：ESM 的 `import`/`export` 在 `eval`/`new Function` 语境下**直接 SyntaxError**；ESM **模块作用域天然封闭**，顶层变量本就不进 `window`，「执行后全局多出来的变量」无从谈起；ESM **强制严格模式**，`with` 是语法错误、沙箱手段被没收。所以是执行模型**结构性地**装不下 ESM。",
+    "tags": ["micro-frontend", "html-entry", "esm", "vite"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "机制建立在 classic script + 全局导出上，而 ESM 的 `import/export` 在 eval 语境直接 SyntaxError、模块顶层变量不上 `window`、强制严格模式让 `with` 失效",
+        "isCorrect": true,
+        "description": "正确。三条冲突叠加，是结构性不支持而非排期问题。"
+      },
+      {
+        "text": "qiankun 团队没时间适配 Vite，属于排期问题",
+        "isCorrect": false,
+        "description": "错误。这是执行模型的结构性冲突，不是有没有时间的问题。"
+      },
+      {
+        "text": "Vite 打包速度太快，qiankun 的加载器跟不上",
+        "isCorrect": false,
+        "description": "错误。速度与此无关，问题是 ESM 与 eval 执行模型互斥。"
+      },
+      {
+        "text": "ESM 文件体积太大，fetch 会超时",
+        "isCorrect": false,
+        "description": "错误。与体积无关，是语法/作用域/严格模式三重冲突。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 接入中，`public-path.js` 为什么必须是子应用 entry 里第一个被执行的模块？",
+    "explanation": "`public-path.js` 运行时改写 webpack 的 `__webpack_public_path__`（`if (window.__POWERED_BY_QIANKUN__) __webpack_public_path__ = window.__INJECTED_PUBLIC_PATH_BY_QIANKUN__`）。只有它**最先执行**，之后所有动态 chunk/资源才以注入值为基准；若晚于其他模块执行，先加载的 chunk 已按错误基准解析、404 已经发生，回填再多也补不回来。",
+    "tags": ["micro-frontend", "html-entry", "public-path", "order"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它运行时改写 `__webpack_public_path__`，只有最先执行，之后的动态 chunk/资源才以注入值为基准；晚执行则先加载的 chunk 已按错误基准解析",
+        "isCorrect": true,
+        "description": "正确。publicPath 只对「之后」的动态加载生效，所以必须抢在最前面。"
+      },
+      {
+        "text": "它必须最后执行，用来覆盖前面所有模块的配置",
+        "isCorrect": false,
+        "description": "错误。最后执行就来不及了，先加载的 chunk 已按错误基准解析。"
+      },
+      {
+        "text": "它的执行顺序无关紧要，webpack 会自动排序",
+        "isCorrect": false,
+        "description": "错误。顺序至关重要，webpack 不会替你保证它最先。"
+      },
+      {
+        "text": "它只在主应用里执行一次，与子应用无关",
+        "isCorrect": false,
+        "description": "错误。它是子应用 entry 顶部的模块，在子应用里执行。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 iframe 沙箱路线（wujie / micro-app iframe 模式）天然兼容 ESM 子应用，而 HTML entry 路线不行？这是一处对比推理。",
+    "explanation": "iframe 路线里子应用脚本由 **iframe 的浏览器上下文原生执行**，`<script type=\"module\">` 天然合法、`import.meta` 与裸说明符解析都绑定在真实模块图上——ESM 兼容性是 iframe 路线的**隐藏红利**。而 HTML entry 靠「fetch 文本 + 函数作用域求值 + proxy 当全局」，容不下 `import`/`export` 语法与模块作用域。这正解释了 qiankun 的 Vite 之痛与 wujie/micro-app iframe 模式的兴起路径。",
+    "tags": ["micro-frontend", "html-entry", "esm", "iframe"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "iframe 里脚本由浏览器上下文原生执行、`type=\"module\"` 天然合法；HTML entry 靠 fetch 文本 + 函数作用域求值，容不下 `import/export` 语法与模块作用域",
+        "isCorrect": true,
+        "description": "正确。执行环境是浏览器原生还是 eval 语境，决定了 ESM 能不能跑。"
+      },
+      {
+        "text": "iframe 会自动把 ESM 转译成 CommonJS 再执行",
+        "isCorrect": false,
+        "description": "错误。iframe 不转译，是浏览器原生执行 ESM。"
+      },
+      {
+        "text": "HTML entry 根本不支持执行任何 JavaScript",
+        "isCorrect": false,
+        "description": "错误。HTML entry 能执行经典脚本，只是装不下 ESM。"
+      },
+      {
+        "text": "iframe 禁用了严格模式，所以 ESM 才能跑",
+        "isCorrect": false,
+        "description": "错误。ESM 本就强制严格模式；iframe 能跑 ESM 是因为原生执行而非禁用严格模式。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端应用间通信的第一原则是什么？single-spa 官方对此态度罕见地强硬。",
+    "explanation": "第一原则是**少通信**。single-spa 官方立场：UI 状态极少需要跨应用共享，「如果你发现两个微前端之间需要频繁共享状态，考虑把它们合并」；Fowler 同调——好的架构里应用之间应**间接、少耦合**地通信。因果链是：通信通道一旦建立，两端就有了共同协议要维护，「独立部署」名存实亡。",
+    "tags": ["micro-frontend", "communication", "coupling"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "少通信——若两个微前端频繁通信，说明耦合过度、应考虑合并",
+        "isCorrect": true,
+        "description": "正确。通道即协议，协议即耦合，所以第一原则是少通信。"
+      },
+      {
+        "text": "尽量多建通信通道，方便应用之间随时协作",
+        "isCorrect": false,
+        "description": "错误。通道越多耦合越重，与「独立部署」相悖。"
+      },
+      {
+        "text": "所有应用必须共享同一个全局 Redux store",
+        "isCorrect": false,
+        "description": "错误。single-spa 明确反对全局 Redux/Mobx。"
+      },
+      {
+        "text": "通信越频繁，架构越健康",
+        "isCorrect": false,
+        "description": "错误。频繁通信是「本不该拆」的信号。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端通信的五种模式（props 下行 / CustomEvent 上行 / 发布订阅 / URL / utility module）在「方向」上如何对应？",
+    "explanation": "按方向记最省事：**props 下行**（主→子，挂载时递数据与回调）、**CustomEvent 上行**（子→主，冒泡广播领域事实）、**发布订阅/全局状态**与 **URL 即通信**（多↔多）、**utility module**（调用方→模块，直接 import 共享逻辑）。跨域 iframe 场景才另用 `postMessage`。",
+    "tags": ["micro-frontend", "communication", "direction"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "props 下行（主→子）、CustomEvent 上行（子→主）、发布订阅/URL（多↔多）、utility module（调用方→模块）",
+        "isCorrect": true,
+        "description": "正确。先记方向再记名字，是五模式选型的第一步。"
+      },
+      {
+        "text": "所有模式都是双向的，方向无差别",
+        "isCorrect": false,
+        "description": "错误。props 与 CustomEvent 恰恰是单向的。"
+      },
+      {
+        "text": "所有模式都只能主→子单向下发",
+        "isCorrect": false,
+        "description": "错误。CustomEvent 是子→主，URL/发布订阅是多↔多。"
+      },
+      {
+        "text": "通信只有 `postMessage` 一种方式",
+        "isCorrect": false,
+        "description": "错误。`postMessage` 只是跨域 iframe 的专用通道，同上下文另有五模式。"
+      }
+    ]
+  },
+  {
+    "stem": "用 CustomEvent 做子应用上行通信时，实践里必须坚持哪条要点？",
+    "explanation": "子应用从容器节点 `dispatchEvent` 冒泡广播（`bubbles: true`），主应用在外层统一收。实践要点一条：**事件名必须带团队/应用前缀**（如 `team-checkout:cart-add`）——事件名是页面级全局命名空间，不带前缀迟早撞车。局限是只适合「广播事实」、不适合请求-响应，且事件**发后不管**，先发的不会补发给后来的监听者。",
+    "tags": ["micro-frontend", "communication", "custom-event"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用从容器节点冒泡 `dispatchEvent`，事件名必须带团队/应用前缀避免全局命名空间撞名",
+        "isCorrect": true,
+        "description": "正确。事件名是全局命名空间，加前缀是防撞车的硬要求。"
+      },
+      {
+        "text": "事件名越短越好，不需要任何前缀",
+        "isCorrect": false,
+        "description": "错误。无前缀迟早在全局事件名空间里撞车。"
+      },
+      {
+        "text": "CustomEvent 只能主应用发、子应用收",
+        "isCorrect": false,
+        "description": "错误。CustomEvent 上行正是子应用发、主应用收。"
+      },
+      {
+        "text": "CustomEvent 支持请求-响应式的同步返回值",
+        "isCorrect": false,
+        "description": "错误。它是发后不管的广播，不适合请求-响应。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun `initGlobalState` 型全局状态的「三件套」API 分别是什么？",
+    "explanation": "三件套：`onGlobalStateChange(cb, fireImmediately)` **监听**变化（`fireImmediately: true` 时注册即回放当前值，缓解「先发后订」丢消息）、`setGlobalState` **修改**（注意**只能改第一层属性**）、`offGlobalStateChange` 在**子应用卸载时移除**监听，否则就是跨应用的内存泄漏。",
+    "tags": ["micro-frontend", "communication", "global-state", "qiankun"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`onGlobalStateChange` 监听（`fireImmediately` 可注册即回放）、`setGlobalState` 修改（只能改第一层属性）、`offGlobalStateChange` 卸载时移除",
+        "isCorrect": true,
+        "description": "正确。监听/修改/移除三件套，卸载不移除就是跨应用内存泄漏。"
+      },
+      {
+        "text": "`get`、`set`、`delete` 三个方法",
+        "isCorrect": false,
+        "description": "错误。API 名是 `onGlobalStateChange`/`setGlobalState`/`offGlobalStateChange`。"
+      },
+      {
+        "text": "`subscribe`、`publish`、`clear` 三个方法",
+        "isCorrect": false,
+        "description": "错误。这不是 qiankun 的 API 命名。"
+      },
+      {
+        "text": "只有 `setGlobalState` 一个方法，无法监听变化",
+        "isCorrect": false,
+        "description": "错误。有 `onGlobalStateChange` 专门监听。"
+      }
+    ]
+  },
+  {
+    "stem": "single-spa 官方**首选**的跨应用通信模式是哪一种？它同时明确反对什么？",
+    "explanation": "single-spa 首选 **utility module**（cross microfrontend imports）：把共享逻辑做成独立构建、独立部署的 in-browser module，其他应用像用 npm 包一样 `import`——通信是**显式函数契约**，可查类型、可版本化、可单测，是五模式里唯一有真实 API 边界的。它同时**明确反对全局 Redux/Mobx**：一旦各应用依赖全局 store 形状或他人 dispatch 的 action，就不能真正独立部署；正确姿势是各应用自持状态。",
+    "tags": ["micro-frontend", "communication", "utility-module", "single-spa"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "utility module——把共享逻辑做成独立部署的模块直接 `import`，是唯一有真实 API 边界的模式；同时反对全局 Redux/Mobx",
+        "isCorrect": true,
+        "description": "正确。显式函数契约优于全局 store，这是 single-spa 的鲜明立场。"
+      },
+      {
+        "text": "全局 Redux store，让所有应用共享同一份状态",
+        "isCorrect": false,
+        "description": "错误。single-spa 恰恰反对全局 Redux/Mobx。"
+      },
+      {
+        "text": "全局事件总线，任意应用互发事件",
+        "isCorrect": false,
+        "description": "错误。事件总线风险高，不是 single-spa 首选。"
+      },
+      {
+        "text": "`localStorage` 轮询同步状态",
+        "isCorrect": false,
+        "description": "错误。轮询既低效又非官方推荐。"
+      }
+    ]
+  },
+  {
+    "stem": "`postMessage` 消息经结构化克隆序列化，哪些能传、哪些传不了？",
+    "explanation": "结构化克隆能力比 JSON 大一圈：`Object`/`Array`/`Map`/`Set`/`Date`/`RegExp`/`ArrayBuffer`/`TypedArray`/`Blob`/`File` 都能过。三样过不去要记牢：**函数**、**DOM 节点**、`Symbol`；类实例能过但**原型链丢失**——到对面只剩自有数据属性，`instanceof` 全部失效。所以跨 iframe 协议一律按**纯数据 + 类型字段**设计（`{ type, payload }`）。",
+    "tags": [
+      "micro-frontend",
+      "communication",
+      "postmessage",
+      "structured-clone"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "能传 `Object`/`Array`/`Map`/`Set`/`Date`/`RegExp`/`ArrayBuffer`/`Blob`/`File`；传不了函数、DOM 节点、`Symbol`；类实例原型链丢失",
+        "isCorrect": true,
+        "description": "正确。结构化克隆比 JSON 强，但函数/DOM/Symbol 过不去、原型丢失。"
+      },
+      {
+        "text": "只能传字符串，其他类型都要先 `JSON.stringify`",
+        "isCorrect": false,
+        "description": "错误。结构化克隆能直接传多种对象，不必先序列化成字符串。"
+      },
+      {
+        "text": "能传函数和 DOM 节点，但不能传 `Date`",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：`Date` 能传，函数和 DOM 节点不能传。"
+      },
+      {
+        "text": "什么都能传，包括函数和完整原型链",
+        "isCorrect": false,
+        "description": "错误。函数传不了、类实例原型链也会丢失。"
+      }
+    ]
+  },
+  {
+    "stem": "`postMessage` 发送端的 `targetOrigin` 参数，安全底线是什么？",
+    "explanation": "MDN 告诫接近原话级：**给其他窗口发数据时，永远指定精确的 `targetOrigin`，不要用 `*`**——「恶意站点可以在你不知情的情况下改变窗口的 location，从而截获用 postMessage 发送的数据」。若窗口已被导航到别的源，写死精确 origin 的消息就直接不投递。省略该参数时默认值是 `\"/\"`（仅投递给同源窗口）。",
+    "tags": ["micro-frontend", "communication", "postmessage", "target-origin"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "发敏感数据必须写精确的目标 origin、绝不用 `*`，否则恶意站点可改掉窗口 location 截获消息；省略时默认 `\"/\"`（仅同源）",
+        "isCorrect": true,
+        "description": "正确。精确 `targetOrigin` 是防截获的底线，`*` 是给攻击者留门。"
+      },
+      {
+        "text": "`targetOrigin` 写 `*` 最安全、兼容性也最好",
+        "isCorrect": false,
+        "description": "错误。`*` 恰恰最危险，可能把数据投给被劫持的窗口。"
+      },
+      {
+        "text": "`targetOrigin` 是可选的，省略即广播给所有窗口",
+        "isCorrect": false,
+        "description": "错误。省略时默认 `\"/\"` 仅同源，不是广播给所有窗口。"
+      },
+      {
+        "text": "`targetOrigin` 只影响性能，与安全无关",
+        "isCorrect": false,
+        "description": "错误。它是核心安全参数，直接决定消息是否可能被截获。"
+      }
+    ]
+  },
+  {
+    "stem": "`postMessage` 接收端的标准安全写法是怎样的三步？",
+    "explanation": "标准写法三步：①**身份**——用白名单校验 `event.origin`（必要时加 `event.source`），不在白名单直接丢弃；②**语法**——身份过了还要校验消息 schema（如 `type` 是否为字符串），不对也丢弃；③**分发**——按类型分发处理，**绝不 `eval` 消息内容**。MDN 把利害说得很重：不校验 `origin`（及 `source`）就是给跨站脚本攻击开门；不期望收消息就别挂 `message` 监听。",
+    "tags": ["micro-frontend", "communication", "postmessage", "origin-check"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先用白名单校验 `event.origin`（必要时加 `event.source`），再校验消息语法，最后按类型分发、绝不 `eval` 消息内容",
+        "isCorrect": true,
+        "description": "正确。身份→语法→分发三步，缺一环就可能被顺着通道打穿。"
+      },
+      {
+        "text": "只要能收到消息就直接处理，`origin` 无需校验",
+        "isCorrect": false,
+        "description": "错误。不校验 `origin` 等于给 XSS 开门。"
+      },
+      {
+        "text": "只校验 `event.data.length`，`origin` 不重要",
+        "isCorrect": false,
+        "description": "错误。长度不能替代身份校验，`origin` 白名单是必须的。"
+      },
+      {
+        "text": "用 `try/catch` 包住 `eval(event.data)` 即可安全",
+        "isCorrect": false,
+        "description": "错误。绝不能 `eval` 消息内容，`try/catch` 也挡不住注入。"
+      }
+    ]
+  },
+  {
+    "stem": "高频跨窗口通信下，`MessageChannel` 专线相比广播式 `postMessage` 改进在哪？",
+    "explanation": "`MessageChannel` 建通道后把 `port2` 经 `postMessage` **转移**给对方；**握手一次校验 `origin`**，之后两端走**点对点双向管道**——不再广播、不再逐条对 `origin` 校验，协议清爽得多。要注意 `transfer` 数组里的对象走**所有权转移**而非拷贝：`MessagePort`、`ArrayBuffer` 等**转移后原端立即不可用**（这正是大数据零拷贝的关键）。",
+    "tags": ["micro-frontend", "communication", "message-channel", "transfer"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 `port2` 转移给对方，握手一次校验 `origin` 后走点对点双向管道，不再广播、不再逐条校验；transfer 的对象转移后原端不可用",
+        "isCorrect": true,
+        "description": "正确。专线把「广播 + 逐条校验」升级成「握手一次 + 点对点」。"
+      },
+      {
+        "text": "`MessageChannel` 完全不需要校验 `origin`",
+        "isCorrect": false,
+        "description": "错误。首次握手仍要校验 `origin`，只是之后不用逐条校验。"
+      },
+      {
+        "text": "`MessageChannel` 只能单向发送消息",
+        "isCorrect": false,
+        "description": "错误。`port1`/`port2` 构成双向管道。"
+      },
+      {
+        "text": "`MessageChannel` 会把消息广播给页面里所有 iframe",
+        "isCorrect": false,
+        "description": "错误。它恰恰是点对点专线，不广播。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 wujie 恰恰「不靠 `postMessage`」通信？这需要把通信方案与沙箱路线联系起来推理。",
+    "explanation": "wujie 的子应用 iframe 与主应用**同域**，`window.parent` 拿到的就是主应用**真 window**——函数直接调用、对象直接引用（wujie 三层通信：props、`window.parent` 直通、EventBus），**根本不需要序列化**。`postMessage` 真正的主场是**跨域 iframe 集成**（嵌第三方、跨公司协作、遗留系统），那里同域假设不成立。可见通信方案永远是沙箱路线的下游——先定隔离模型，再选通信通道。",
+    "tags": ["micro-frontend", "communication", "wujie", "postmessage"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 子应用 iframe 与主应用同域，`window.parent` 就是主应用真 window，可直接调用函数/引用对象，无需序列化",
+        "isCorrect": true,
+        "description": "正确。同域 ⇒ 直通引用 ⇒ 不需要 `postMessage`；`postMessage` 是跨域集成才登场。"
+      },
+      {
+        "text": "wujie 用 WebSocket 替代了 `postMessage`",
+        "isCorrect": false,
+        "description": "错误。wujie 靠同域直通，不需要 WebSocket。"
+      },
+      {
+        "text": "wujie 禁用了所有跨窗口通信能力",
+        "isCorrect": false,
+        "description": "错误。wujie 通信能力很强，只是走同域直通而非 `postMessage`。"
+      },
+      {
+        "text": "wujie 的 iframe 与主应用跨域，因此只能用 `postMessage`",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，wujie 的 iframe 与主应用同域。"
+      }
+    ]
+  },
+  {
+    "stem": "Fowler 力荐「URL 即通信」，但它有明确的适用边界。这个边界由它自身的优点反推是什么？",
+    "explanation": "URL 通信的优点（Fowler）恰好反推出它的边界：URL **容量有限**（倒逼只传少量数据）、**面向用户**（能被看懂/收藏/分享）、对页面上**任何代码全局可见**——所以它**只适合小而可公开的页面级状态**（选中的 id、激活的页签），**放不下大对象、也不该放敏感数据**。这类状态放 URL 而非全局 store，还能刷新即恢复、跨应用天然同步、免费获得深链接。",
+    "tags": ["micro-frontend", "communication", "url", "fowler"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只适合小而可公开的页面级状态，放不下大对象、也不该放敏感数据——由容量有限、面向用户、全局可见反推",
+        "isCorrect": true,
+        "description": "正确。优点即边界：小、可公开、全局可见，决定了它不装大对象和敏感数据。"
+      },
+      {
+        "text": "URL 适合传输任意大对象和敏感 token",
+        "isCorrect": false,
+        "description": "错误。URL 容量有限且全局可见，塞大对象/敏感数据都不合适。"
+      },
+      {
+        "text": "URL 通信只能在同一个子应用内部使用",
+        "isCorrect": false,
+        "description": "错误。地址栏全局可见，正是跨应用天然同步的通道。"
+      },
+      {
+        "text": "URL 通信必须服务端配合才能生效",
+        "isCorrect": false,
+        "description": "错误。它是前端读写地址栏即可，不必服务端配合。"
+      }
+    ]
+  },
+  {
+    "stem": "`postMessage` 里 `event.origin` 的「时刻」语义常被误解。它到底代表什么？回信又该怎么写？",
+    "explanation": "`event.origin` 是**消息发送时刻**发送方的 origin——它**不保证对方窗口现在还在那个源**（窗口可能已被导航走）。所以校验只能证明「这条消息发出时来自可信源」。标准回信写法是 `event.source.postMessage(reply, event.origin)`——把**发来的 origin 当回信的 `targetOrigin`**，从而把回信也锁定给最初的发送方。",
+    "tags": ["micro-frontend", "communication", "postmessage", "reasoning"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是消息发送时刻发送方的 origin，不保证对方窗口现在还在那个源；回信写 `event.source.postMessage(reply, event.origin)`",
+        "isCorrect": true,
+        "description": "正确。origin 是发送时刻快照，回信用它当 `targetOrigin` 锁定原发送方。"
+      },
+      {
+        "text": "它是接收时刻窗口的当前 origin，因此永远可信",
+        "isCorrect": false,
+        "description": "错误。它是发送时刻的 origin，不代表窗口现状。"
+      },
+      {
+        "text": "回信应写 `postMessage(reply, \"*\")` 以保证一定送达",
+        "isCorrect": false,
+        "description": "错误。回信用 `*` 会重蹈截获风险，应写精确 `event.origin`。"
+      },
+      {
+        "text": "`event.source` 是一个字符串形式的来源 URL",
+        "isCorrect": false,
+        "description": "错误。`event.source` 是发送方的窗口引用（用于回信），不是字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端依赖共享要解决的「n 份 React」核心问题是什么？它同时带来什么对价？",
+    "explanation": "问题面（Fowler）：「如果每个微前端都带一份自己的 React，就是在强迫用户下载 n 次 React」。但共享的**对价是构建耦合回潮**——一旦为去重把公共依赖抽出来，「就**重新引入了构建时耦合**……可能落得一场大规模协同升级」。所以依赖共享不是「要不要去重」的技术题，而是**拿部署独立性换字节**的架构交易。",
+    "tags": ["micro-frontend", "dependency-sharing", "fowler"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "五个子应用各自打包就下载 n 份 React，共享让公共大库只下载一次；对价是构建耦合回潮",
+        "isCorrect": true,
+        "description": "正确。省字节的同时要付出构建耦合，是一笔架构交易。"
+      },
+      {
+        "text": "让每个子应用都运行不同版本的 React，互不干扰",
+        "isCorrect": false,
+        "description": "错误。多版本共存是另一个话题；核心问题是避免 n 份重复下载。"
+      },
+      {
+        "text": "隔离子应用之间的 CSS 样式冲突",
+        "isCorrect": false,
+        "description": "错误。那是 CSS 隔离，不是依赖共享。"
+      },
+      {
+        "text": "拦截子应用的全局变量污染",
+        "isCorrect": false,
+        "description": "错误。那是 JS 沙箱的职责。"
+      }
+    ]
+  },
+  {
+    "stem": "三条依赖共享路线（import maps / MF shared / 不共享）最本质的分界线是什么？",
+    "explanation": "分界线是**版本协商发生的时机**：**externals + import maps** 在**部署时**由 map 维护者集中裁定；**Module Federation shared** 在**运行时**于 share scope 里按 semver 现场协商；**不共享**则无协商、各应用自己打包接受重复。三者本质是三种不同的「成交方式」。",
+    "tags": ["micro-frontend", "dependency-sharing", "negotiation"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "按版本协商发生的时机——import maps 部署时集中裁定、MF shared 运行时现场协商、不共享无协商",
+        "isCorrect": true,
+        "description": "正确。协商时机是三路线最根本的分类维度。"
+      },
+      {
+        "text": "按子应用使用的框架（React/Vue/Angular）划分",
+        "isCorrect": false,
+        "description": "错误。三路线与具体框架无关。"
+      },
+      {
+        "text": "按构建工具（webpack/vite/rollup）划分",
+        "isCorrect": false,
+        "description": "错误。import maps 甚至工具无关，分界是协商时机。"
+      },
+      {
+        "text": "按子应用的数量多少划分",
+        "isCorrect": false,
+        "description": "错误。数量不是分界依据。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 import maps 的标准化现状，下列哪项准确？教程里常见的 SystemJS 又是什么定位？",
+    "explanation": "**import maps 自 2023-03 起已 Baseline Widely available**——是浏览器**原生**能力，新项目直接用原生 ESM + 原生 import map 即可。教程里常见的 **SystemJS 是 import maps 未原生化年代的 polyfill**（把代码编译成 `System.register` 格式模拟模块语义），如今已**退居历史兼容层**，只在需要兼容化石浏览器时才请回来。",
+    "tags": ["micro-frontend", "dependency-sharing", "import-maps", "systemjs"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "import maps 已 Baseline Widely available（2023-03 起）、是浏览器原生能力；SystemJS 是它未原生化年代的 polyfill、已退居历史兼容层",
+        "isCorrect": true,
+        "description": "正确。原生 import maps 早已可用，SystemJS 只剩兼容化石浏览器的价值。"
+      },
+      {
+        "text": "import maps 仍是提案阶段，必须等浏览器支持",
+        "isCorrect": false,
+        "description": "错误。它 2023-03 起已 Baseline Widely available。"
+      },
+      {
+        "text": "import maps 只有 Chrome 支持，其余浏览器都不支持",
+        "isCorrect": false,
+        "description": "错误。Baseline Widely available 意味着主流浏览器普遍支持。"
+      },
+      {
+        "text": "import maps 必须依赖 SystemJS 才能工作",
+        "isCorrect": false,
+        "description": "错误。原生 import maps 不需要 SystemJS，后者是历史 polyfill。"
+      }
+    ]
+  },
+  {
+    "stem": "import maps 的三个键 `imports` / `scopes` / `integrity` 各管什么？哪个键实现「同页多版本共存」？",
+    "explanation": "三键各管一件事（MDN 一手语义）：`imports` 是**裸说明符→URL 的全局映射**（键以 `/` 结尾即前缀匹配，多键可匹配时最具体的键优先）；`scopes` **按引用者（referrer）URL 路径**给出不同映射——这是**同页多版本共存**的原生方案（渐进升级的直接工具，最具体 scope 优先、逐级回退）；`integrity` 给模块 URL 挂 SRI 哈希锁死内容。",
+    "tags": ["micro-frontend", "dependency-sharing", "import-maps", "scopes"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`imports` 全局映射（尾斜杠前缀匹配）、`scopes` 按引用者路径给不同映射实现同页多版本共存、`integrity` 模块级 SRI",
+        "isCorrect": true,
+        "description": "正确。同页多版本靠 `scopes`，这是原生 import maps 做渐进升级的关键。"
+      },
+      {
+        "text": "`import` / `export` / `require` 三个键",
+        "isCorrect": false,
+        "description": "错误。import maps 的键是 `imports`/`scopes`/`integrity`。"
+      },
+      {
+        "text": "`dev` / `prod` / `test` 三个环境键",
+        "isCorrect": false,
+        "description": "错误。import maps 不按环境分键。"
+      },
+      {
+        "text": "只有 `imports` 一个键，无法做多版本",
+        "isCorrect": false,
+        "description": "错误。`scopes` 正是用于同页多版本共存。"
+      }
+    ]
+  },
+  {
+    "stem": "使用 import maps 有两条来自一手文档的硬性工程约束，是哪两条？",
+    "explanation": "两条硬约束（MDN 一手）：①**必须在首个模块加载前声明并处理完**——晚了不生效；②`type=\"importmap\"` 的 `<script>` **禁止 `src`/`async`/`defer`** 等属性——不能外链，只能内联或由服务端渲染进 HTML。此外：多张 map 会合并进全局表但「已解析/已映射的说明符先者优先」；映射只作用于 `import` 语句与 `import()`，不影响 `<script src>` 与 worker。",
+    "tags": [
+      "micro-frontend",
+      "dependency-sharing",
+      "import-maps",
+      "constraints"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须在任何模块加载之前声明并处理完，且 `type=\"importmap\"` 的 script 不能用 `src` 外链，只能内联或服务端渲染",
+        "isCorrect": true,
+        "description": "正确。先于一切模块加载 + 不能外链，是 import maps 的两条硬约束。"
+      },
+      {
+        "text": "可以放在页面任意位置，且支持随时热更新",
+        "isCorrect": false,
+        "description": "错误。它必须先于模块加载声明，位置有严格要求。"
+      },
+      {
+        "text": "必须通过 `src` 属性外链一个 `.importmap` 文件",
+        "isCorrect": false,
+        "description": "错误。`type=\"importmap\"` 恰恰禁止 `src` 外链。"
+      },
+      {
+        "text": "它只作用于 `<script src>`，不影响 `import` 语句",
+        "isCorrect": false,
+        "description": "错误。恰好相反：它作用于 `import`/`import()`，不影响 `<script src>`。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的 `shared` 是「双端协议」，这在四种声明组合下会产生怎样的结局？",
+    "explanation": "共享是「注册 + 消费」的**双向协议**：生产者在 `shared` 里声明，副本才进 scope；消费者也要在 `shared` 里声明（同一 shareKey），构建器才把 `import 'react'` 改写成「先查 scope」。四组合：**双方都声明** → 共享成立、协商出一个副本；**仅生产者声明** → 消费者照旧用自己副本、**共享静默失效**、页面双份依赖；**仅消费者声明** → scope 无人提供、回退到 fallback；**仅消费者声明且 `import: false`** → 无 fallback 可回、**运行时报错**。",
+    "tags": [
+      "micro-frontend",
+      "dependency-sharing",
+      "module-federation",
+      "shared"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "生产者与消费者都要在 `shared` 里声明同一依赖（shareKey 一致）；只有一端声明时另一端照旧打包自己副本、共享静默失效",
+        "isCorrect": true,
+        "description": "正确。共享是双端协议，最阴险的是「仅生产者声明」——无报错、只是多一份 React。"
+      },
+      {
+        "text": "只要生产者声明，所有消费者就自动共享",
+        "isCorrect": false,
+        "description": "错误。消费者不声明就不会走 scope 查找，照旧用自己副本。"
+      },
+      {
+        "text": "只要消费者声明即可，与生产者无关",
+        "isCorrect": false,
+        "description": "错误。生产者不声明就没副本进 scope，消费者只能回退 fallback。"
+      },
+      {
+        "text": "双端都不用声明，MF 会自动识别所有依赖并共享",
+        "isCorrect": false,
+        "description": "错误。MF 不会自动共享，必须双端显式声明。"
+      }
+    ]
+  },
+  {
+    "stem": "开启 `singleton` 后，一个反直觉但必然的后果是「你实际运行的版本，本地 lockfile 说了不算」。为什么？",
+    "explanation": "`singleton` 开启后 share scope 里同一 shareKey **只允许一个实例**，MF 的裁决规则是**版本不一致时加载较高版本、低版本一方在控制台收到警告**。由此推出：**你实际运行的版本由页面里最高版本的参与者决定**——你 lockfile 锁 18.2.0，遇上某个 remote 带着 18.3.1 进场，全页面就跑 18.3.1。「singleton 可能加载出乎意料的版本」不是 bug，是协商机制的定义行为；治理靠让各方版本范围收敛，而非指望 lockfile。",
+    "tags": ["micro-frontend", "dependency-sharing", "singleton", "version"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "singleton 下 scope 只留一个实例、版本冲突时加载较高版本，实际运行版本由页面里最高版本的参与者决定，lockfile 锁不住",
+        "isCorrect": true,
+        "description": "正确。最高版本获胜 ⇒ 运行版本由全场最高者决定，这是协商的定义行为。"
+      },
+      {
+        "text": "singleton 会强制所有应用使用你 lockfile 里锁定的版本",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，lockfile 说了不算，最高版本获胜。"
+      },
+      {
+        "text": "singleton 会加载最低版本以保证最大兼容性",
+        "isCorrect": false,
+        "description": "错误。规则是加载较高版本，不是最低。"
+      },
+      {
+        "text": "只有关闭 singleton 才会加载最高版本",
+        "isCorrect": false,
+        "description": "错误。关闭 singleton 是各用各的副本，「最高版本获胜」正是 singleton 的行为。"
+      }
+    ]
+  },
+  {
+    "stem": "MF `shared` 的 `requiredVersion` 与 `strictVersion` 构成一条治理光谱，两者的语义差别是什么？",
+    "explanation": "`requiredVersion`（默认从自家 package.json 推断）声明「我能接受的版本范围」，scope 里版本不满足时默认行为是**控制台警告然后照用可用版本**（宽容但危险）；`strictVersion` 把宽容关掉——版本不满足即**拒绝**该共享模块：有本地 fallback 就静默用 fallback，配了 `import: false`（无 fallback）则**运行时直接抛错**。三档治理光谱：不设 requiredVersion（全凭 semver）→ requiredVersion（不合警告）→ strictVersion（不合拒绝）。",
+    "tags": [
+      "micro-frontend",
+      "dependency-sharing",
+      "required-version",
+      "strict-version"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "requiredVersion 不满足时默认警告后照用可用版本；strictVersion 把警告升级为拒绝——有 fallback 用 fallback、`import: false` 无 fallback 则运行时抛错",
+        "isCorrect": true,
+        "description": "正确。一个宽容警告、一个严格拒绝，构成从 semver 到强约束的治理光谱。"
+      },
+      {
+        "text": "requiredVersion 不满足直接抛错，strictVersion 只是警告",
+        "isCorrect": false,
+        "description": "错误。说反了——requiredVersion 警告、strictVersion 拒绝。"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "错误。一个警告后照用、一个拒绝，行为不同。"
+      },
+      {
+        "text": "strictVersion 会自动降级到兼容版本，永不报错",
+        "isCorrect": false,
+        "description": "错误。strictVersion 无 fallback 时会运行时抛错，不是自动降级。"
+      }
+    ]
+  },
+  {
+    "stem": "MF `shared: { 'react-dom': {...} }` 有个 Common mistake：会冒出第二份 React DOM。根因和正解是什么？",
+    "explanation": "`shared` 的键默认**精确匹配**，`'react-dom'` 只拦 `import 'react-dom'`——而 `react-dom/client`（子路径导出）会**打进本地副本**，页面出现第二份 React DOM、破坏 React 的单例要求、引发 hydration 报错。正解是写 **`'react-dom/'` 尾斜杠做前缀匹配**，覆盖 `react-dom/client`、`react-dom/server` 等全部子路径。",
+    "tags": [
+      "micro-frontend",
+      "dependency-sharing",
+      "subpath",
+      "trailing-slash"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认精确匹配只拦 `import 'react-dom'`，`react-dom/client` 会打进本地副本破坏单例；正解是写 `'react-dom/'` 尾斜杠前缀匹配",
+        "isCorrect": true,
+        "description": "正确。尾斜杠 = 前缀匹配，覆盖全部子路径，避免第二份 React DOM。"
+      },
+      {
+        "text": "`shared: ['react-dom']` 会自动覆盖 `react-dom` 的所有子路径",
+        "isCorrect": false,
+        "description": "错误。默认精确匹配，子路径不被覆盖，必须加尾斜杠。"
+      },
+      {
+        "text": "子路径导入不受 `shared` 影响，无需任何特殊处理",
+        "isCorrect": false,
+        "description": "错误。子路径恰恰是坑所在，会打进本地副本。"
+      },
+      {
+        "text": "把 `react-dom/client` 加入 `shared` 会让 `react-dom` 无法共享",
+        "isCorrect": false,
+        "description": "错误。正解就是用 `'react-dom/'` 前缀覆盖，不会破坏 `react-dom` 共享。"
+      }
+    ]
+  },
+  {
+    "stem": "MF `shareStrategy` 的 `version-first`（默认）与 `loaded-first` 在启动行为上有何取舍？",
+    "explanation": "`version-first`（默认）为保证「singleton 最高版本获胜」裁决准确，**初始化阶段就把所有 remote 的入口文件拉一遍**登记版本——这是一次隐性全量预拉；收益是版本裁决全局最优，代价是**任一 remote 离线，启动期就触发 `beforeLoadShare` 阶段失败**，没错误兜底就白屏。`loaded-first` 反过来：优先复用已加载副本、remote 按需再拉——启动轻、离线容错好，代价是版本裁决可能非全局最优。",
+    "tags": [
+      "micro-frontend",
+      "dependency-sharing",
+      "share-strategy",
+      "startup"
+    ],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "version-first 初始化即拉全部 remote 入口保证版本裁决准确、但任一 remote 离线启动就炸；loaded-first 按需拉、启动轻、离线容错好",
+        "isCorrect": true,
+        "description": "正确。一个求版本最优、一个求启动稳健，是明确的取舍。"
+      },
+      {
+        "text": "version-first 按需加载，loaded-first 才是全量加载",
+        "isCorrect": false,
+        "description": "错误。说反了——version-first 才是初始化全量拉。"
+      },
+      {
+        "text": "两者都不会在启动时加载任何 remote",
+        "isCorrect": false,
+        "description": "错误。version-first 恰恰在启动时全量拉 remote 入口。"
+      },
+      {
+        "text": "version-first 只加载版本最低的 remote",
+        "isCorrect": false,
+        "description": "错误。它全量拉取以便裁决出最高版本。"
+      }
+    ]
+  },
+  {
+    "stem": "single-spa 明确建议：同一依赖不要同时走 import maps 与 MF shared。这条「混用禁忌」的机制根因是什么？",
+    "explanation": "import maps 与 MF shared 是**两套互不知晓的解析体系**——前者活在**浏览器模块图**里，后者活在 **MF 运行时容器**里。同一个 React 两边各挂一份，结果就是**双份下载、两个模块实例（singleton 名存实亡）、以及「哪边版本在跑」无从推理**。原则一句话：一个页面里，一个依赖只能有一个权威解析源。工程混用（single-spa 编排 + MF 共享）是成熟模式，但依赖名单必须二选一划界。",
+    "tags": ["micro-frontend", "dependency-sharing", "mixing", "reasoning"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "两者是互不知晓的解析体系（一个在浏览器模块图、一个在 MF 运行时容器），同一依赖两边各挂会双份下载、两个实例、版本无从推理",
+        "isCorrect": true,
+        "description": "正确。两套解析各自为政，同一依赖混用必然双份且 singleton 名存实亡。"
+      },
+      {
+        "text": "两者可以自由混用，MF 会自动识别并去重 import maps 的副本",
+        "isCorrect": false,
+        "description": "错误。MF 不知晓 import maps 的解析，不会去重。"
+      },
+      {
+        "text": "混用会直接报编译错误，根本无法构建",
+        "isCorrect": false,
+        "description": "错误。它不报编译错误，而是运行时双份加载、难排查。"
+      },
+      {
+        "text": "混用后 import maps 会自动接管 MF 的共享作用域",
+        "isCorrect": false,
+        "description": "错误。两套体系互不接管，各自解析同一依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端的预加载（prefetch / 预执行 / keep-alive）为什么是刚需，而单体 SPA 里切页面却几乎不需要？",
+    "explanation": "单体 SPA 里「切页面」是路由组件挂载，代价以毫秒计；微前端里「切应用」是一整条**冷启动链**：下载子应用 HTML → 解析出 JS/CSS 清单 → 逐个下载 → 沙箱初始化 → 脚本执行 → mount → 可交互。**预加载的本质就是把这条链的前半段搬到用户点击之前**——用主应用空闲期的带宽，换子应用切换时的体感。",
+    "tags": ["micro-frontend", "preload", "cold-start"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "微前端切换要走「下载 HTML/JS/CSS → 沙箱初始化 → 执行 → mount」整条冷启动链，预加载把它搬到用户点击之前",
+        "isCorrect": true,
+        "description": "正确。切应用 = 冷启动链，预加载就是把链前移到点击前。"
+      },
+      {
+        "text": "因为微前端不支持路由，必须预先加载所有页面",
+        "isCorrect": false,
+        "description": "错误。微前端支持路由，预加载是为摊平冷启动链而非因为不支持路由。"
+      },
+      {
+        "text": "因为浏览器缓存对微前端完全无效",
+        "isCorrect": false,
+        "description": "错误。缓存仍有效，预加载正是要把资源提前拉进缓存。"
+      },
+      {
+        "text": "因为子应用无法使用 CDN 加速",
+        "isCorrect": false,
+        "description": "错误。子应用可用 CDN，与预加载刚需无关。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun 的 `prefetch` 与 wujie 的「预执行」都属于提前加载，本质区别是什么？",
+    "explanation": "**预加载 ≠ 预执行**：qiankun `prefetch` 只是**把资源拉进 HTTP 缓存**，JS 的 parse/execute、框架初始化、沙箱构建、渲染仍留在切换时——对重型子应用**首跳依然可感**。wujie 的**预执行（`exec`）**更激进：在预加载阶段**直接运行子应用代码**，组件树在点击前就渲染在内存容器里，达到「类 SSR 的打开体验」，切换时几乎只剩「把已渲染的容器亮出来」。",
+    "tags": ["micro-frontend", "preload", "pre-execution"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "prefetch 只把资源拉进 HTTP 缓存、执行渲染仍留切换时；wujie 预执行在预加载阶段就直接运行代码，达到类 SSR 打开体验",
+        "isCorrect": true,
+        "description": "正确。一个只拉资源、一个连执行渲染都提前，激进程度不同。"
+      },
+      {
+        "text": "两者完全一样，只是 API 名字不同",
+        "isCorrect": false,
+        "description": "错误。prefetch 不执行代码，预执行会执行渲染，差别很大。"
+      },
+      {
+        "text": "prefetch 会执行代码，预执行只下载资源",
+        "isCorrect": false,
+        "description": "错误。说反了——prefetch 只下载、预执行才执行。"
+      },
+      {
+        "text": "两者都会立刻把子应用渲染到用户屏幕上",
+        "isCorrect": false,
+        "description": "错误。预执行渲染在内存容器里，prefetch 连执行都不做。"
+      }
+    ]
+  },
+  {
+    "stem": "qiankun `start({ prefetch })` 的四种取值（四形态）分别对应什么调度策略？",
+    "explanation": "四形态：`true`（默认，**首个子应用 mount 完成后**预拉其他所有已注册应用的资源）、`'all'`（主应用 `start()` 时就**全量预拉**）、`string[]`（首个 mount 后**只预拉指定应用**）、`function`（自定义，返回 `{ criticalAppNames, minorAppsName }` **两级名单**）。`true` 与 `'all'` 的差异是跟主应用**抢不抢首屏**；预拉执行在浏览器空闲期（`requestIdleCallback` 型调度）。",
+    "tags": ["micro-frontend", "preload", "prefetch", "qiankun"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`true`（首个子应用 mount 后预拉其他）、`'all'`（start 时全量预拉）、`string[]`（定向预拉）、`function`（返回 criticalAppNames + minorAppsName 两级名单）",
+        "isCorrect": true,
+        "description": "正确。四形态本质是四种调度策略，核心差异在触发时机与预拉范围。"
+      },
+      {
+        "text": "`on` / `off` / `auto` / `manual` 四种开关",
+        "isCorrect": false,
+        "description": "错误。这不是 qiankun `prefetch` 的取值。"
+      },
+      {
+        "text": "`high` / `medium` / `low` / `none` 四个优先级",
+        "isCorrect": false,
+        "description": "错误。qiankun 用 `true`/`'all'`/`string[]`/`function`，不是优先级枚举。"
+      },
+      {
+        "text": "只有 `true` 和 `false` 两种取值",
+        "isCorrect": false,
+        "description": "错误。除布尔外还有 `'all'`、数组、函数形态。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的保活（keep-alive）优化的是哪种场景？它的代价是什么？",
+    "explanation": "**保活优化的是回访**：切走时**不销毁 iframe 与 WebComponent 容器**，子应用状态（表单、滚动位置、组件树）原样保留，再次进入无需重新渲染、秒开，类比 Vue 的 `keep-alive`。它是纯粹的**内存换时间**——每个保活应用都是一个常驻 iframe + 完整组件树，**不设上限的保活等于自己造内存泄漏**。要分清：预执行优化**首访**、保活优化**回访**，别拿保活当首访优化用。",
+    "tags": ["micro-frontend", "preload", "keep-alive", "wujie"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "优化回访——切走不销毁 iframe 与容器、状态全留、再进秒开，是内存换时间，保活数量必须设上限",
+        "isCorrect": true,
+        "description": "正确。保活管回访、内存换时间，不设上限就是自造内存泄漏。"
+      },
+      {
+        "text": "它能显著优化子应用的首次访问速度",
+        "isCorrect": false,
+        "description": "错误。首访优化是预执行的事，保活优化的是回访。"
+      },
+      {
+        "text": "它不占用额外内存，可以无限开启",
+        "isCorrect": false,
+        "description": "错误。每个保活应用常驻内存，必须设上限。"
+      },
+      {
+        "text": "它会在切走时销毁状态，回来重新渲染",
+        "isCorrect": false,
+        "description": "错误。保活恰恰是不销毁、状态全留。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端相对单体前端有四笔结构性开销，请求瀑布是其中被 MF 2.0 公告点名的一笔。四笔分别是什么？",
+    "explanation": "四笔结构性开销：①**重复运行时下载**（Fowler：每个微前端带一份 React = 用户下载 n 次，按字节计费、随应用数线性增长）；②**公共依赖抽取 → 构建耦合回潮**（按组织成本计费，共享名单里每个包 major 升级都要全体排期）；③**请求瀑布**（运行时逐级发现依赖，MF 2.0 公告原文点名「微前端架构固有的请求瀑布问题」）；④**沙箱运行时税**（with/Proxy 查找、样式改写、iframe 内存）。",
+    "tags": ["micro-frontend", "performance", "cost", "waterfall"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "重复运行时下载、公共依赖抽取带来的构建耦合回潮、逐级发现依赖的请求瀑布、沙箱与样式改写的运行时税",
+        "isCorrect": true,
+        "description": "正确。字节、组织成本、RTT、运行时税四笔账，请求瀑布被 MF 2.0 点名。"
+      },
+      {
+        "text": "只有一笔开销：重复下载 React",
+        "isCorrect": false,
+        "description": "错误。重复运行时只是四笔之一，还有构建耦合、请求瀑布、沙箱税。"
+      },
+      {
+        "text": "内存泄漏、XSS、CSRF、点击劫持四类安全问题",
+        "isCorrect": false,
+        "description": "错误。这些是安全话题，不是微前端的结构性性能开销。"
+      },
+      {
+        "text": "微前端没有任何额外性能开销",
+        "isCorrect": false,
+        "description": "错误。四笔结构性开销是拆分的固有代价。"
+      }
+    ]
+  },
+  {
+    "stem": "微前端的请求瀑布（request waterfall）形态是怎样的？为什么它在弱网下会被逐级放大？",
+    "explanation": "运行时集成把「构建期就能确定的依赖关系」推迟到运行时逐级发现：HTML entry 链 = fetch HTML → 解析清单 → fetch JS/CSS → 执行 → mount；MF 链 = fetch manifest → fetch remoteEntry → 共享协商 → fetch 业务 chunk。**每一级都要等上一级返回才知道下一步拉什么——每级一轮 RTT**，弱网下逐级放大。缓解四思路：清单前移（manifest/import map 让第一跳知整条链）、层内并行、时间搬运（预加载挪空闲期）、架构级 SSR/Data Prefetch。",
+    "tags": ["micro-frontend", "performance", "waterfall", "rtt"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每一级都要等上一级返回才知道下一步拉什么，每级一轮 RTT，弱网下逐级放大",
+        "isCorrect": true,
+        "description": "正确。逐级发现依赖 ⇒ 串行 RTT ⇒ 弱网放大，缓解要靠清单前移等手段。"
+      },
+      {
+        "text": "所有资源一次性并行拉取，不存在任何串行等待",
+        "isCorrect": false,
+        "description": "错误。瀑布的本质就是串行发现，无法一次拉全（除非清单前移）。"
+      },
+      {
+        "text": "请求瀑布只在开发环境出现，生产环境不会有",
+        "isCorrect": false,
+        "description": "错误。它是运行时集成的固有形态，生产同样存在。"
+      },
+      {
+        "text": "请求瀑布是浏览器缓存导致的，清缓存即可消除",
+        "isCorrect": false,
+        "description": "错误。它源于逐级发现依赖，与缓存无关。"
+      }
+    ]
+  },
+  {
+    "stem": "面对「微前端一定比单体慢」的直觉，Fowler 的实测立场是什么？",
+    "explanation": "Fowler 指出独立编译有个常被忽略的**反向红利**：「通过独立编译每个页面，我们等效于实现了自己的 code splitting——任何单页加载只会下载该页的源码与依赖」，因此**即使对重复依赖什么都不做，单页仍可能比单体前端加载得更快**（单体 bundle 塞着所有页面的代码）。方法论结论更该抄在墙上：**「想确知性能影响，没有什么能替代真实环境的测量，最好是在生产环境」**。",
+    "tags": ["micro-frontend", "performance", "fowler", "measurement"],
+    "categories": [
+      ["技术方向", "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "独立编译天然等效按页 code-split、单页可能反而更快；想确知性能没什么能替代真实环境（最好生产）的测量",
+        "isCorrect": true,
+        "description": "正确。按页切割是反向红利，性能结论只能来自实测而非直觉。"
+      },
+      {
+        "text": "微前端一定比单体慢，无需测量即可下结论",
+        "isCorrect": false,
+        "description": "错误。Fowler 恰恰反对拍脑袋，强调独立编译可能更快。"
+      },
+      {
+        "text": "微前端一定比单体快，因为资源都并行加载",
+        "isCorrect": false,
+        "description": "错误。Fowler 说的是「可能更快」且强调必须实测，不是断言一定快。"
+      },
+      {
+        "text": "性能只能靠理论模型推算，真实测量并不可靠",
+        "isCorrect": false,
+        "description": "错误。Fowler 的立场恰恰是真实环境测量最可靠。"
+      }
+    ]
+  }
+]
