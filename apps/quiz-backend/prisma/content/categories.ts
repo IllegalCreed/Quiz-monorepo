@@ -126,12 +126,19 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-07-02 选型调研定稿：占位 3 叶 → 5 叶（spec: docs/plans/20260702-web-base-browser-trilogy.md）。
+            // 新增「浏览器架构与进程模型」（进程/线程/导航编排原无落点）与「浏览器存储」
+            // （选型矩阵/配额驱逐/分区原无落点；WebStorage/IndexedDB 的 API 用法仍留 Web API 章）。
+            // 旧 3 叶全部保留原名（prod id 31/32/33，均 0 题已核实），仅重排 sort——
+            // importCategories 不更新已有节点 sort，落地时须手动补 prod 的 3 条 sort UPDATE。
             name: "浏览器基础",
             sort: 3,
             children: [
-              { name: "浏览器渲染原理", sort: 1 },
-              { name: "浏览器缓存机制", sort: 2 },
-              { name: "浏览器安全", sort: 3 },
+              { name: "浏览器架构与进程模型", sort: 1 },
+              { name: "浏览器渲染原理", sort: 2 },
+              { name: "浏览器存储", sort: 3 },
+              { name: "浏览器缓存机制", sort: 4 },
+              { name: "浏览器安全", sort: 5 },
             ],
           },
         ],
