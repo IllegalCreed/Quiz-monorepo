@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "Module Federation（模块联邦）在架构上把「哪一件事」标准化成了一套方案？",
+    "explanation": "MF 由 Zack Jackson 在 webpack 5 时代提出，它标准化的是**「一个应用在运行时加载另一个独立部署应用所导出的模块」**。官方把 MF 定义为「JavaScript 应用去中心化的架构模式（类比服务端微服务）」——共享的是**模块粒度**（组件/工具函数/store），而不是 qiankun/wujie 那种「整应用挂载」的应用级组合。它没有沙箱、更轻，但需要团队自律。",
+    "tags": ["module-federation", "federation-concepts", "definition"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把「一个应用在运行时加载另一个独立部署应用所导出的模块」标准化",
+        "isCorrect": true,
+        "description": "正确。这正是 MF 的定位——模块级、运行时的联邦，类比服务端微服务的去中心化架构。"
+      },
+      {
+        "text": "把「多个子应用按路由挂载到同一页面」的生命周期编排标准化",
+        "isCorrect": false,
+        "description": "错误。这是 single-spa/qiankun 的应用级编排，管的是「谁在什么路由挂载整应用」，不是 MF 的模块级共享。"
+      },
+      {
+        "text": "把 JS 与 CSS 的沙箱隔离机制标准化",
+        "isCorrect": false,
+        "description": "错误。MF 恰恰**没有沙箱**，联邦模块与宿主同一个 `window`；沙箱是 qiankun/wujie 的能力。"
+      },
+      {
+        "text": "把构建产物的代码分割与 tree-shaking 标准化",
+        "isCorrect": false,
+        "description": "错误。代码分割是打包器的通用能力，与 MF 的「跨应用运行时加载模块」不是一回事。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 最精炼的一句话心智模型，是把它类比成什么？",
+    "explanation": "MF = **跨应用的动态 `import()`**。宿主在运行时去另一个独立部署应用的产物里 `import` 一个**模块**（组件/函数/store），而不是把整个子应用挂上来。`import('shop/Button')` 里的 `shop` 不是本地包，而是另一个应用；`shop/Button` 是它用 `exposes` 暴露的模块。这条心智把 MF 与「挂载整应用」的应用级方案彻底区分开。",
+    "tags": ["module-federation", "federation-concepts", "mental-model"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "跨应用的动态 `import()`——运行时去另一个应用的产物里 import 一个模块",
+        "isCorrect": true,
+        "description": "正确。这是官方与笔记反复强调的一句话心智：MF 像「跨应用的动态 import」，共享的是模块粒度。"
+      },
+      {
+        "text": "跨应用的 iframe 嵌入——把另一个应用整页塞进 iframe",
+        "isCorrect": false,
+        "description": "错误。iframe 嵌入是 wujie 一类应用级方案的隔离手段，MF 加载的是模块而非整页 iframe。"
+      },
+      {
+        "text": "跨应用的 npm 包安装——把另一个应用发布成 npm 依赖",
+        "isCorrect": false,
+        "description": "错误。npm 包在构建期锁定版本、需各自发版重构；MF 是运行时加载线上产物，一处更新处处生效。"
+      },
+      {
+        "text": "跨应用的 HTTP 接口调用——通过 REST 请求获取数据",
+        "isCorrect": false,
+        "description": "错误。MF 加载的是可执行的 JS 模块（组件/函数），不是数据接口返回的 JSON。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 里只有两个角色，其中用 `exposes` 声明「我对外导出哪些模块」的是哪个？",
+    "explanation": "MF 只有两个可兼任的角色：**remote（生产者 / Provider）** 用 `exposes` 声明导出哪些模块，构建产物里多出一个入口清单（`remoteEntry.js` / `mf-manifest.json`）；**host（消费者 / Consumer）** 用 `remotes` 声明去哪些 remote 加载。两者不是互斥身份而是可叠加的能力——同一应用可同时 `exposes` 又 `remotes`，形成双向联邦。",
+    "tags": ["module-federation", "host-remote", "exposes"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "remote（生产者 / Provider）",
+        "isCorrect": true,
+        "description": "正确。remote 用 `exposes` 声明导出，产出入口清单，被 host 按需加载。"
+      },
+      {
+        "text": "host（消费者 / Consumer）",
+        "isCorrect": false,
+        "description": "错误。host 用的是 `remotes`（声明去哪加载），`exposes` 是 remote 的职责。"
+      },
+      {
+        "text": "shell（壳应用）",
+        "isCorrect": false,
+        "description": "错误。MF 是对等网络，没有天然的 shell/child 层级；「壳」是需要架构层自行约定的角色，不是 MF 的内建概念。"
+      },
+      {
+        "text": "root-config（根配置）",
+        "isCorrect": false,
+        "description": "错误。root-config 是 single-spa 的中心化编排概念，MF 去中心化、没有这个「大脑」。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 中，host（消费者）通过哪个声明来指定「我要从哪些 remote 加载模块」？",
+    "explanation": "host 用 **`remotes`** 声明来源——写明「我要从哪些 remote 加载模块」，运行时先取对方的入口清单，再在用到时把模块 chunk 拉过来执行。对照记：`exposes`（remote 导出什么）、`remotes`（host 从哪加载）、`shared`（共享哪些依赖）三块字段各司其职。这些字段的**语法**属于插件配置（在构建工具章讲），本处只需辨清角色归属。",
+    "tags": ["module-federation", "host-remote", "remotes"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`remotes`",
+        "isCorrect": true,
+        "description": "正确。host 用 `remotes` 声明去哪些 remote 加载，运行时按清单拉模块。"
+      },
+      {
+        "text": "`exposes`",
+        "isCorrect": false,
+        "description": "错误。`exposes` 是 remote 声明「我导出什么」，方向相反。"
+      },
+      {
+        "text": "`shared`",
+        "isCorrect": false,
+        "description": "错误。`shared` 声明的是「共享哪些依赖」（如 React），不是「从哪加载 remote」。"
+      },
+      {
+        "text": "`imports`",
+        "isCorrect": false,
+        "description": "错误。`imports` 是 Import Map 的字段（Native Federation 底座），不是 MF 的 host 声明。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的「双向联邦」指的是什么结构特征？",
+    "explanation": "**双向联邦**：host 与 remote 不是互斥身份而是可叠加的能力，**同一个应用可以同时是 host 又是 remote**——A 用 B 的 Chart，B 也用 A 的 Header。这形成一个**对等网络**（peer network），没有中心编排者、没有 single-spa 那种 shell/child 的刚性层级。它与「双向数据绑定」「双向长连接」毫无关系，指的纯粹是角色可兼任带来的对等结构。",
+    "tags": ["module-federation", "bidirectional", "peer-network"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "同一个应用可同时是 host 又是 remote，形成无中心编排者的对等网络",
+        "isCorrect": true,
+        "description": "正确。角色可兼任是双向联邦的实质，A 用 B 的模块、B 也用 A 的模块，对等无主从。"
+      },
+      {
+        "text": "host 与 remote 之间用双向 WebSocket 保持长连接",
+        "isCorrect": false,
+        "description": "错误。MF 是运行时按需拉取模块 chunk，不涉及双向长连接。"
+      },
+      {
+        "text": "数据可以在 host 与 remote 之间双向绑定同步",
+        "isCorrect": false,
+        "description": "错误。「双向联邦」讲的是角色对等结构，不是数据双向绑定。"
+      },
+      {
+        "text": "构建产物同时输出 CommonJS 与 ESM 两种格式",
+        "isCorrect": false,
+        "description": "错误。这是打包输出格式问题，与 MF 的角色对等结构无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 中 host 加载 remote 模块是「两段式」的，第一段的 `remoteEntry.js` 扮演什么角色？",
+    "explanation": "两段式加载：第 1 段 host 先 `fetch` remote 的入口清单（`remoteEntry.js` / `mf-manifest.json`），清单里写着这个 remote **exposes 了什么、shared 了哪些依赖、chunk 在哪**；第 2 段 host 真的 `import('shop/Button')` 时才去拉对应 chunk 执行。所以 `remoteEntry` 不是「一大包代码」，而是**一张导出目录 + 加载器**。正是它让 remote 重新部署、清单 URL 不变，host 无需重构就能拿到新版。",
+    "tags": ["module-federation", "remote-entry", "two-phase"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一张「导出目录 + 加载器」，先告知 host 有哪些 exposes、shared 了什么、chunk 在哪",
+        "isCorrect": true,
+        "description": "正确。remoteEntry 是运行时的「目录」，host 据此按需再拉真正的模块 chunk。"
+      },
+      {
+        "text": "一大包包含 remote 全部模块代码的产物",
+        "isCorrect": false,
+        "description": "错误。它只是目录 + 加载器，真正的模块 chunk 在第二段按需拉取，不是一次性打包全量代码。"
+      },
+      {
+        "text": "remote 应用完整的 HTML 入口页面",
+        "isCorrect": false,
+        "description": "错误。MF 加载的是模块而非整页，remoteEntry 是 JS 入口清单不是 HTML 页面。"
+      },
+      {
+        "text": "host 与 remote 之间的鉴权令牌",
+        "isCorrect": false,
+        "description": "错误。remoteEntry 描述的是模块导出与依赖信息，不承担鉴权职责。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的「构建时组合」是指哪种机制？",
+    "explanation": "**构建时组合**：构建插件在编译期把 `import('shop/Button')` **改写成「查 share scope + 拉 remoteEntry」的运行时调用**，remote 列表**编译期写死**在配置里。它是静态的、可 tree-shake、类型好推。与之相对的**运行时组合**用 Runtime SDK 的 `registerRemotes` 在运行时动态注册，remote 清单可来自接口/配置中心。MF 1.0 以构建时为主，MF 2.0 把运行时组合也做成一等公民。",
+    "tags": ["module-federation", "build-time", "composition"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "构建插件在编译期改写 `import`、remote 列表编译期写死",
+        "isCorrect": true,
+        "description": "正确。构建时组合把 remote 织进依赖图，静态、可 tree-shake，是 MF 1.0 的主要模式。"
+      },
+      {
+        "text": "运行时用 `registerRemotes` 动态注册 remote",
+        "isCorrect": false,
+        "description": "错误。这是「运行时组合」，remote 清单运行期才确定，正好与构建时组合相对。"
+      },
+      {
+        "text": "把 remote 的代码在构建期完全内联进 host 产物",
+        "isCorrect": false,
+        "description": "错误。MF 不内联 remote 代码——remote 独立部署、运行时按需拉取，内联会破坏独立部署的前提。"
+      },
+      {
+        "text": "每次访问页面时在服务端实时编译 remote",
+        "isCorrect": false,
+        "description": "错误。MF 加载的是已构建好的产物 chunk，不做请求期服务端编译。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 中，remote 重新部署后 host 无需重新构建就能拿到新版模块，这一「解耦部署」能力来自什么机制？",
+    "explanation": "解耦部署的关键在于**两段式加载 + 清单 URL 稳定**：host 运行时按清单 URL 去 fetch remote 的 `remoteEntry.js` / `mf-manifest.json`，**remote 重新部署但清单 URL 不变**，host 下次运行时自然拿到新版本的模块——无需重新构建 host。这正是「独立部署」在 MF 里的落地方式，也是它区别于 npm 包（构建期锁版本、要各自发版）的核心价值。",
+    "tags": ["module-federation", "remote-entry", "independent-deploy"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "host 按稳定的清单 URL 运行时拉取，remote 重新部署 URL 不变，下次运行自动取到新版",
+        "isCorrect": true,
+        "description": "正确。清单 URL 稳定 + 运行时拉取，让 remote 与 host 的部署解耦，无需 host 重构。"
+      },
+      {
+        "text": "host 在构建期把 remote 的代码内联进自己的产物",
+        "isCorrect": false,
+        "description": "错误。内联会把 remote 版本锁死在 host 构建期，恰恰破坏独立部署。"
+      },
+      {
+        "text": "host 通过 npm 依赖锁定 remote 的版本",
+        "isCorrect": false,
+        "description": "错误。npm 依赖是构建期锁版本、要各自发版重构，正是 MF 想解决的痛点。"
+      },
+      {
+        "text": "host 每次都要重新构建才能同步 remote 的变更",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，MF 的价值就是 remote 改版 host 无需重构。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 引入的 `mf-manifest.json` 相比裸 `remoteEntry.js` 的关键增量是什么？",
+    "explanation": "裸 `remoteEntry.js` 只是个能自解释的 JS 入口；**`mf-manifest.json` 是结构化 JSON**，额外携带 `exposes`/`shared`/`remotes`/`chunks`/`type`（及 `types`）等元信息。正是这份**结构化清单**让**类型联邦、预加载、DevTools、版本治理巡检**成为可能——工具能读到统一的数据源。可以说 2.0 生态的一整圈能力都建立在「元信息被结构化」这一步之上。",
+    "tags": ["module-federation", "manifest", "mf2"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是结构化 JSON，携带 exposes/shared/remotes/chunks/type 等元信息，使类型联邦、预加载、DevTools、治理巡检成为可能",
+        "isCorrect": true,
+        "description": "正确。结构化元信息是 2.0 生态的公共数据源，裸 remoteEntry.js 无法提供。"
+      },
+      {
+        "text": "它把 remote 的全部模块代码压缩进一个文件以减少请求数",
+        "isCorrect": false,
+        "description": "错误。manifest 仍是「目录」而非代码包，模块 chunk 依旧按需拉取。"
+      },
+      {
+        "text": "它彻底取代了 remoteEntry.js，2.0 后不再需要入口清单",
+        "isCorrect": false,
+        "description": "错误。manifest 是 remoteEntry 的结构化升级版，入口清单的角色仍在，二者并存。"
+      },
+      {
+        "text": "它是给 host 用的鉴权配置，不含模块信息",
+        "isCorrect": false,
+        "description": "错误。manifest 恰恰以模块/依赖元信息为核心，与鉴权无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的「模块级复用」与 qiankun/wujie 的「应用级复用」，复用单位分别是什么？",
+    "explanation": "这是 MF 与 qiankun 系最本质的分界。**MF 的复用单位是「一个模块」**——组件、hook、工具函数、store；**qiankun/wujie 的复用单位是「一个带路由的完整子应用」**。MF 的加载动作是跨应用 `import()` 一个导出，qiankun 是 `mount(container)` 挂载整应用。粒度差一个数量级，决定了隔离、通信、部署的全部差异。",
+    "tags": ["module-federation", "module-level", "app-level"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "MF 复用「一个模块」（组件/hook/函数/store）；qiankun/wujie 复用「一个带路由的完整子应用」",
+        "isCorrect": true,
+        "description": "正确。模块级 vs 应用级是两者的第一分水岭，决定了隔离、通信、部署的全部差异。"
+      },
+      {
+        "text": "MF 复用整个子应用；qiankun 复用单个组件",
+        "isCorrect": false,
+        "description": "错误。方向恰好说反了——MF 才是模块级，qiankun 是应用级。"
+      },
+      {
+        "text": "两者都复用单个组件，只是隔离方式不同",
+        "isCorrect": false,
+        "description": "错误。qiankun 复用的是整个子应用而非单组件，复用单位本质不同。"
+      },
+      {
+        "text": "MF 复用 npm 包；qiankun 复用 CDN 链接",
+        "isCorrect": false,
+        "description": "错误。MF 复用的是运行时加载的联邦模块，不是构建期的 npm 包。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的「运行时组合」相比构建时组合，在架构上打开了什么关键能力？",
+    "explanation": "运行时组合用 Runtime SDK（`registerRemotes`）在**运行时**注册 remote，remote 列表可来自**接口/配置中心**。架构意义：**「哪些微前端在线、各用哪个版本」从构建期决策变成运行期决策**，由此解锁**灰度发布**（给部分用户注册新版 remote）、**A/B 实验**（按分流注册不同 remote）、**动态上下线**（配置中心一改前端无需发版）。这些在 1.0「remotes 编译期写死」的模型里做不到。",
+    "tags": ["module-federation", "runtime-composition", "mf2"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "remote 列表可运行时才确定（来自接口/配置中心），支持灰度、A/B、动态上下线",
+        "isCorrect": true,
+        "description": "正确。把「装哪些 remote、哪个版本」变成运行期决策，是 2.0 相对 1.0 的核心升维。"
+      },
+      {
+        "text": "让构建产物体积更小、tree-shaking 更彻底",
+        "isCorrect": false,
+        "description": "错误。tree-shaking 反而是构建时组合的优势；运行时组合换来的是动态性而非更小体积。"
+      },
+      {
+        "text": "让 remote 的类型在编译期被更好地推导",
+        "isCorrect": false,
+        "description": "错误。类型推导是构建时/类型联邦的话题，不是运行时组合打开的能力。"
+      },
+      {
+        "text": "让 host 不再需要网络请求即可加载 remote",
+        "isCorrect": false,
+        "description": "错误。无论构建时还是运行时组合，加载 remote 都要运行时网络请求拉清单与 chunk。"
+      }
+    ]
+  },
+  {
+    "stem": "面对「Module Federation 和 single-spa 到底谁替代谁」这个常见困惑，用「联邦 / 编排 / 共享」三个正交概念看，正确的定位是什么？",
+    "explanation": "三个词**正交、各管一层**：**编排**（single-spa/qiankun）管「谁在什么路由 mount/unmount 整应用」（应用级）；**联邦**（MF）管「谁能 import 谁的模块」（模块级）；**共享**（shared / import maps）管「一份依赖如何被多方复用」。编排 ⟂ 联邦，正因正交所以能**叠加**（single-spa 编排 + MF 共享），压根不在同一层，不存在替代关系。",
+    "tags": ["module-federation", "orthogonal", "vs-single-spa"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "single-spa 管「编排」（整应用挂载）、MF 管「联邦」（模块 import），两者正交可叠加、不存在替代",
+        "isCorrect": true,
+        "description": "正确。编排与联邦分属应用级与模块级、互相正交，成熟做法是叠加使用而非二选一。"
+      },
+      {
+        "text": "MF 是 single-spa 的升级版，功能完全覆盖后者",
+        "isCorrect": false,
+        "description": "错误。MF 不做应用级编排，无法覆盖 single-spa 的 mount/unmount 职责。"
+      },
+      {
+        "text": "两者都管编排，MF 性能更好所以替代 single-spa",
+        "isCorrect": false,
+        "description": "错误。MF 管的是模块级联邦不是编排，二者管的层不同。"
+      },
+      {
+        "text": "两者都管依赖共享，只能二选一",
+        "isCorrect": false,
+        "description": "错误。single-spa 管编排、不是依赖共享方案；把它们摆成依赖共享的二选一是概念混淆。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么 Module Federation 能做到 qiankun 做不到的「跨应用共享同一个 React context / 同一个 store 实例」？",
+    "explanation": "根本前提是**无沙箱**：联邦模块与宿主执行在**同一个 realm/`window`** 里，它们本就是同一份运行时，因此能真正共享 React 实例——hooks、context、Suspense 跨应用可用。qiankun/wujie 把子应用隔离在**代理 `window`/iframe** 里，隔离的 realm 里是**两份** React，跨应用共享 context 很别扭甚至做不到。「模块级复用」得以成立，正因为它放弃了隔离。",
+    "tags": ["module-federation", "no-sandbox", "same-realm"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "联邦模块与宿主执行在同一个 realm/`window` 里（无沙箱），本就是同一份运行时",
+        "isCorrect": true,
+        "description": "正确。同 realm 是共享 React 实例与 context 的前提，也是「模块级复用」成立的根，代价是失去隔离。"
+      },
+      {
+        "text": "MF 用更先进的 Proxy 沙箱在隔离环境里同步了 context",
+        "isCorrect": false,
+        "description": "错误。MF 根本不做沙箱；Proxy 沙箱是 qiankun 的隔离手段，隔离环境里反而是两份 React。"
+      },
+      {
+        "text": "MF 通过 postMessage 在两个 iframe 之间序列化传递 store",
+        "isCorrect": false,
+        "description": "错误。同 realm 直接函数调用/共享内存即可，无需 iframe 与序列化桥。"
+      },
+      {
+        "text": "MF 在构建期把两个应用的 React 合并成一份",
+        "isCorrect": false,
+        "description": "错误。共享是运行时 share scope 协商的结果，不是构建期合并。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的 shared 为什么被称作「最大的架构变量」，而不是普通配置项？",
+    "explanation": "跨应用共享 React/Vue 这类依赖时，MF 用**运行时 semver 协商**——把依赖版本的裁决从「构建期集中裁定」搬到「**运行时现场协商**」。这换来独立部署，代价是**版本不再由任何单点掌控**（lockfile 可能说了不算），必须用治理策略补回确定性。所以 shared 是治理重点而非配置细节：它决定了你实际跑的是哪个版本、谁能推高共享库下限。",
+    "tags": ["module-federation", "shared", "governance"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它把依赖版本裁决从构建期搬到运行时现场协商，版本不再由单点掌控，需治理补回确定性",
+        "isCorrect": true,
+        "description": "正确。运行时协商是 shared 的本质，也是它成为治理重点、而非普通配置项的原因。"
+      },
+      {
+        "text": "它只是一个决定要不要打包某个依赖的开关，配一次即可",
+        "isCorrect": false,
+        "description": "错误。shared 涉及跨应用运行时版本协商，远不止「打不打包」的开关。"
+      },
+      {
+        "text": "它在构建期就把所有参与方的依赖版本锁死为一致",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，MF 下 lockfile 可能失效，版本在运行时才协商确定。"
+      },
+      {
+        "text": "它决定 remote 用 HTTP 还是 HTTPS 加载清单",
+        "isCorrect": false,
+        "description": "错误。shared 管的是依赖共享与版本协商，与传输协议无关。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 中，一个依赖被声明为 `singleton` 且各方版本不一致时，运行时的裁决行为是什么？",
+    "explanation": "`singleton: true` 时 scope 内只留一份，**版本不一致则加载较高版本、低版本方仅收到控制台告警**。翻译成架构语言：你在 `package.json` 锁了 `react@18.2.0`，但某个 remote 带着 `react@18.3.1` 进场——整个页面跑的就是 18.3.1，这不是 bug 而是 singleton 的**定义行为**。React/Vue 这类全局状态库必须 singleton，否则两份实例会让 hooks 崩溃。",
+    "tags": ["module-federation", "singleton", "shared"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "加载最高版本，低版本方仅收到控制台告警",
+        "isCorrect": true,
+        "description": "正确。「最高版本获胜 + 低版本告警」是 singleton 的定义行为，实际版本由页面里最高参与者决定。"
+      },
+      {
+        "text": "加载最低版本以保证向后兼容",
+        "isCorrect": false,
+        "description": "错误。是最高版本获胜而非最低——这也意味着一个团队激进升级会传染给所有共享方。"
+      },
+      {
+        "text": "各方各自加载自己的版本，互不影响",
+        "isCorrect": false,
+        "description": "错误。那是「不共享」的行为；singleton 的目的正是全场只留一份实例。"
+      },
+      {
+        "text": "直接抛出运行时错误，拒绝启动",
+        "isCorrect": false,
+        "description": "错误。默认只告警不报错；只有开了 `strictVersion` 且不满足又无 fallback 才会抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的依赖共享是「注册 + 消费」的双向协议，如果只有一端在 `shared` 里声明某依赖会怎样？",
+    "explanation": "**双端声明是硬前提**：生产者与消费者**都要**在 `shared` 声明同一 `shareKey` 才算成交。**只有一端声明 = 共享静默失效、页面里两份依赖，且没有任何报错**——这是最阴险的反模式，往往要靠 bundle 分析才发现。所以治理清单里第一条就是「务必双端同 `shareKey`」。",
+    "tags": ["module-federation", "shared", "dual-declaration"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "共享静默失效、页面里出现两份依赖，且没有任何报错",
+        "isCorrect": true,
+        "description": "正确。单端声明会静默双份依赖、无报错，是最阴险的坑；必须双端同 shareKey。"
+      },
+      {
+        "text": "MF 会自动补全另一端的声明，仍能正常共享",
+        "isCorrect": false,
+        "description": "错误。共享是双向协议，MF 不会替你补声明，缺一端就不成交。"
+      },
+      {
+        "text": "构建时直接报错，阻止打包通过",
+        "isCorrect": false,
+        "description": "错误。恰恰没有报错——它是运行时静默失效，隐蔽性极强。"
+      },
+      {
+        "text": "host 会拒绝加载该 remote",
+        "isCorrect": false,
+        "description": "错误。remote 照常加载，只是这份依赖没被共享、各带一份。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 的 shared 治理光谱里，`requiredVersion` 在版本不满足范围时的默认行为是什么？",
+    "explanation": "治理光谱从宽到严：**不设 requiredVersion（纯 semver 协商）→ `requiredVersion`（不合只**控制台告警**、仍用可用版本）→ `strictVersion`（不合就拒绝）**。`requiredVersion` 是默认档——「能跑但会漂」：版本低于声明范围时给告警、然后用现有可用版本继续跑。它不会阻断运行，这也意味着告警很容易被忽略，直到某个 API 在新版被移除才炸。",
+    "tags": ["module-federation", "required-version", "shared"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "给出控制台告警，然后用可用版本继续跑（能跑但会漂）",
+        "isCorrect": true,
+        "description": "正确。requiredVersion 是默认档，不满足只告警不阻断，属于「宽容」一侧。"
+      },
+      {
+        "text": "直接拒绝该共享并抛出运行时错误",
+        "isCorrect": false,
+        "description": "错误。那是 `strictVersion` 无 fallback 时的行为，比 requiredVersion 严格一档。"
+      },
+      {
+        "text": "静默降级到最低兼容版本，不产生任何提示",
+        "isCorrect": false,
+        "description": "错误。requiredVersion 会产生控制台告警，并非完全静默。"
+      },
+      {
+        "text": "回退到各自打包一份，放弃共享",
+        "isCorrect": false,
+        "description": "错误。它仍用 share scope 里可用的版本共享，不会退化成各打各的。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 中开启 `strictVersion` 后，共享依赖版本不满足要求时的行为是什么？",
+    "explanation": "`strictVersion` 把「软告警」变成「硬失败」：**不满足就拒绝该共享——有 fallback 用 fallback，无 fallback 则运行时抛错**。它的治理价值常被低估：把「版本漂移」这个潜伏到生产才发作的 bug，**提前到联调 / CI 阶段以显式错误暴露**，用一次可控的失败换掉一堆不可控的诡异运行期怪象。对 React、设计系统这类关键共享库通常划算。",
+    "tags": ["module-federation", "strict-version", "shared"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "拒绝该共享——有 fallback 用 fallback，无 fallback 则运行时抛错",
+        "isCorrect": true,
+        "description": "正确。strictVersion 把软告警变硬失败，把版本漂移提前到联调/CI 暴露。"
+      },
+      {
+        "text": "只打印告警，仍用可用版本继续运行",
+        "isCorrect": false,
+        "description": "错误。那是 `requiredVersion` 的默认行为；strictVersion 更严，会拒绝。"
+      },
+      {
+        "text": "自动升级低版本方到满足要求的版本",
+        "isCorrect": false,
+        "description": "错误。MF 不会替你升级依赖版本，只会在不满足时拒绝共享。"
+      },
+      {
+        "text": "忽略版本约束，强制加载最高版本",
+        "isCorrect": false,
+        "description": "错误。strictVersion 的目的正是不放过不满足的情况，而非忽略约束。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 的 singleton 场景下，为什么说「lockfile 说了不算」是治理必须正视的现象？",
+    "explanation": "singleton 下**实际运行的版本由页面里版本最高的参与者决定**，而非你 `package.json` 锁的版本。你锁了 `react@18.2.0`，某个 remote 带 `react@18.3.1` 进场，整页就跑 18.3.1。三个直接启示：① **lockfile 不是防线**，防线要建在「所有参与方版本范围收敛」上；② 最高版本获胜 = **升级风险会传染**；③ 告警不等于安全。治理的靶心正是这条。",
+    "tags": ["module-federation", "lockfile", "singleton"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "实际版本由页面里最高版本的参与者决定，本地 lockfile 无法掌控",
+        "isCorrect": true,
+        "description": "正确。这是 singleton 的定义后果——防线要建在全体版本收敛而非单方 lockfile。"
+      },
+      {
+        "text": "lockfile 会被 MF 自动删除，所以无效",
+        "isCorrect": false,
+        "description": "错误。lockfile 依旧存在、约束本地安装，只是决定不了运行时协商的最终版本。"
+      },
+      {
+        "text": "MF 完全忽略 semver，随机挑一个版本",
+        "isCorrect": false,
+        "description": "错误。协商是按 semver 规则选最高兼容版本，并非随机。"
+      },
+      {
+        "text": "只有 host 的 lockfile 有效，remote 的无效",
+        "isCorrect": false,
+        "description": "错误。不是「谁的 lockfile 有效」，而是运行时由最高参与者定版本，与 lockfile 所属无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的 `shareStrategy` 默认值 `version-first` 与 `loaded-first` 在可用性上的核心权衡是什么？",
+    "explanation": "`shareStrategy` 表面是「协商积极程度」，实质是**可用性 / 容错决策**。**`version-first`（默认）** 初始化即**拉一遍所有 remote 的入口**登记各家版本以保证「最高版本」裁决准确——代价是**任一 remote 离线就在启动期加载失败（白屏）**。**`loaded-first`** 优先复用已加载副本、按需再拉——版本可能非全局最优，换来**启动性能 + 离线容错**。生产系统若无法保证每个 remote 可用，应显式改 `loaded-first` + 错误兜底。",
+    "tags": ["module-federation", "share-strategy", "availability"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "version-first 启动即拉全部 remote 保版本最优、任一离线即白屏；loaded-first 复用已加载、容错但版本非全局最优",
+        "isCorrect": true,
+        "description": "正确。默认的 version-first 把版本正确性置于可用性之上，loaded-first 用版本非最优换启动性能与容错。"
+      },
+      {
+        "text": "version-first 更省流量，loaded-first 更费流量",
+        "isCorrect": false,
+        "description": "错误。version-first 启动即拉全部 remote 反而更重，权衡点是版本正确性 vs 可用性，不是流量多少。"
+      },
+      {
+        "text": "两者只影响类型生成，不影响运行时加载",
+        "isCorrect": false,
+        "description": "错误。shareStrategy 直接决定启动期是否拉全部 remote，是运行时可用性决策。"
+      },
+      {
+        "text": "loaded-first 会强制所有依赖用最高版本",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，loaded-first 优先复用已加载副本，版本可能非全局最优。"
+      }
+    ]
+  },
+  {
+    "stem": "Fowler 提醒「Module Federation 的 shared 名单要按需最小」，其架构理由是什么？",
+    "explanation": "**每加一个共享项，就多一份「必须协同升级」的构建时耦合**——共享名单越长，被锁死的「协同升级」范围越大：因为「最高版本获胜」会把某方的升级传染给所有共享它的参与者。所以治理建议是**从「不共享」起步，只共享大而全局的**（React、设计系统），无状态小工具（lodash、dayjs）宁可各自带一份换独立升级权，并定期审计砍掉不必共享的项。",
+    "tags": ["module-federation", "shared", "minimal-list"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个共享项都是一份「必须协同升级」的构建耦合，名单越长被锁死的协同升级范围越大",
+        "isCorrect": true,
+        "description": "正确。共享即耦合，应从「不共享」起步、只共享大而全局的，定期审计精简。"
+      },
+      {
+        "text": "共享项越多，remoteEntry 文件体积会线性膨胀导致下载变慢",
+        "isCorrect": false,
+        "description": "错误。Fowler 的理由是「协同升级耦合」这一治理成本，而非清单文件体积。"
+      },
+      {
+        "text": "MF 限制 shared 最多只能声明 10 个依赖",
+        "isCorrect": false,
+        "description": "错误。MF 没有此类硬性数量上限，最小化是治理建议而非工具限制。"
+      },
+      {
+        "text": "共享的依赖越多，类型联邦越容易失效",
+        "isCorrect": false,
+        "description": "错误。类型联邦与共享名单长度无必然关系，理由是协同升级耦合。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 的关键共享库上启用 `strictVersion`，其被低估的治理价值是什么？",
+    "explanation": "`strictVersion` 的价值在于**把「版本漂移」这个潜伏到生产才发作的 bug，提前到联调 / CI 阶段以显式错误暴露**。默认的 `requiredVersion` 只告警、容易被忽略，等到某个 API 在新版被移除才在生产炸；`strictVersion` 用**一次可控、看得见的失败**换掉一堆不可控的诡异运行期怪象。对 React、设计系统、内部 SDK 这类关键共享库，这笔交易通常划算。",
+    "tags": ["module-federation", "strict-version", "governance"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把版本漂移从「潜伏到生产才发作」提前到联调/CI 以显式错误暴露，用可控失败换不可控怪象",
+        "isCorrect": true,
+        "description": "正确。它把软告警变硬失败，让问题在能修的阶段暴露，对关键共享库划算。"
+      },
+      {
+        "text": "它能自动把所有 remote 的依赖升级到同一版本",
+        "isCorrect": false,
+        "description": "错误。strictVersion 只做「不满足就拒绝」，不会替你升级依赖。"
+      },
+      {
+        "text": "它让共享依赖的下载速度更快",
+        "isCorrect": false,
+        "description": "错误。它是版本严格性开关，与下载速度无关。"
+      },
+      {
+        "text": "它让 lockfile 重新成为版本的唯一真相",
+        "isCorrect": false,
+        "description": "错误。singleton 下版本仍由最高参与者定，strictVersion 只是让不满足时显式失败，不改变裁决规则。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 里，某团队把共享的 React 激进升级，可能给整个联邦带来什么治理风险？",
+    "explanation": "因为 singleton 是**「最高版本获胜」**，**一个团队激进升级 React，会让所有共享它的 remote 被动跑上新版本**——升级风险会「传染」。治理要管住的正是「**谁能推高共享库的下限**」：契约变更须走评审，谁想抬高某共享库下限，必须让全体参与方一起升。这也是为什么 shared 名单需要**单一负责人 + 中心化契约**，不能各团队各自决定。",
+    "tags": ["module-federation", "singleton", "upgrade-contagion"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "「最高版本获胜」会让所有共享该依赖的 remote 被动跑上新版，升级风险传染全场",
+        "isCorrect": true,
+        "description": "正确。这正是治理要管住「谁能推高共享库下限」的原因，契约变更须走评审、全体一起升。"
+      },
+      {
+        "text": "只有那个团队自己的应用会用新版，其他人不受影响",
+        "isCorrect": false,
+        "description": "错误。singleton 下全场只留一份最高版本，其他共享方会被动跟着跑新版。"
+      },
+      {
+        "text": "MF 会自动阻止任何版本升级以保护其他团队",
+        "isCorrect": false,
+        "description": "错误。MF 默认不阻止，正因如此才需要组织级契约与评审来兜底。"
+      },
+      {
+        "text": "新版只在下次全员重新构建后才生效",
+        "isCorrect": false,
+        "description": "错误。运行时协商在页面加载那一刻发生，无需其他人重构即被传染。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的默认 `shareStrategy: version-first` 在生产环境为何可能是「一个 remote 拖垮整站」的隐患？",
+    "explanation": "`version-first` **把「版本正确性」置于「可用性」之上**——它假设所有 remote 都在线，初始化即拉一遍所有 remote 入口来登记版本。**一旦某个 remote 挂了，启动期就在共享协商阶段加载失败（白屏）**。生产系统若无法保证每个 remote 的可用性，应显式改用 `loaded-first` 并配错误兜底，把「一个 remote 拖垮整站」的风险摘掉——这是架构决策，不是能默认糊弄过去的配置项。",
+    "tags": ["module-federation", "share-strategy", "resilience"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它启动即拉全部 remote 保证版本最优，某个 remote 离线就在启动期协商阶段白屏",
+        "isCorrect": true,
+        "description": "正确。version-first 假设 remote 全在线，可用性无保证时应改 loaded-first + 错误兜底。"
+      },
+      {
+        "text": "它会缓存过期的 remote 版本，导致数据不一致",
+        "isCorrect": false,
+        "description": "错误。隐患是「离线即启动白屏」，不是缓存过期。"
+      },
+      {
+        "text": "它让每个 remote 各自加载两份 React",
+        "isCorrect": false,
+        "description": "错误。双份依赖是「单端声明/漏尾斜杠」的问题，与 version-first 的可用性隐患无关。"
+      },
+      {
+        "text": "它禁用了运行时插件，无法做降级兜底",
+        "isCorrect": false,
+        "description": "错误。version-first 不禁用插件；恰恰应叠加错误兜底插件来缓解其可用性风险。"
+      }
+    ]
+  },
+  {
+    "stem": "既然 Module Federation 下「lockfile 说了不算」，治理版本地狱的根治手段应该是什么？",
+    "explanation": "治理版本地狱**不能靠 lockfile**，要靠**让所有参与方的版本范围主动收敛**——统一升级节奏、共享构建 preset、CI 校验 manifest 版本，把「最高版本获胜」退化成「大家本就同版本」，从根上消灭漂移。防线不在单方 lockfile，而在**全体收敛**。配套还需中心化的共享依赖契约（单一负责人）与基于 mf-manifest.json 的跨 remote 一致性巡检。",
+    "tags": ["module-federation", "version-convergence", "governance"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让所有参与方的版本范围主动收敛，把「最高版本获胜」退化成「大家本就同版本」",
+        "isCorrect": true,
+        "description": "正确。防线在全体收敛而非单方 lockfile，靠统一升级节奏 + 共享 preset + CI 巡检落地。"
+      },
+      {
+        "text": "给每个 remote 单独锁一份更严格的 lockfile",
+        "isCorrect": false,
+        "description": "错误。singleton 下 lockfile 决定不了运行时版本，再严也堵不住漂移。"
+      },
+      {
+        "text": "关闭 singleton，让每个应用各带一份依赖",
+        "isCorrect": false,
+        "description": "错误。全局状态库各带一份会崩（两份 React 崩 hooks），不能靠放弃共享来治理。"
+      },
+      {
+        "text": "把所有依赖都改成 eager 打进入口",
+        "isCorrect": false,
+        "description": "错误。eager 只是免异步协商、代价入口膨胀，并不解决版本收敛问题。"
+      }
+    ]
+  },
+  {
+    "stem": "在多团队的 Module Federation 组织治理里，「谁拥有 shared 名单」这个问题的正确答案是什么？",
+    "explanation": "MF 的 shared 失控几乎都源于**没有单一负责人**——每个团队在自己的 `shared` 里各写各的版本，最终运行时撞车。有效治理需要**由平台/架构组维护一份中心化的共享依赖契约**（哪些库进 share scope、哪些 singleton、版本基线、哪些上 strictVersion），业务方**遵从而非各自决定**；再配**版本收敛机制**与基于 **mf-manifest.json 的 CI 跨 remote 一致性巡检**——这是 2.0 相比裸 remoteEntry 才有的治理抓手。",
+    "tags": ["module-federation", "org-governance", "shared-contract"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "由平台/架构组维护中心化的共享依赖契约，业务方遵从；配版本收敛与 mf-manifest.json 的 CI 巡检",
+        "isCorrect": true,
+        "description": "正确。shared 名单需单一负责人 + 中心契约 + 可观测巡检，才敢在多团队规模上跑 MF。"
+      },
+      {
+        "text": "每个业务团队自行决定自己应用的 shared 名单，互不干涉",
+        "isCorrect": false,
+        "description": "错误。各自决定正是失控之源——运行时会撞车，必须有单一负责人。"
+      },
+      {
+        "text": "由 MF 运行时自动生成并强制统一 shared 名单",
+        "isCorrect": false,
+        "description": "错误。MF 不自动生成契约，治理是组织职责；工具只提供 manifest 作可观测抓手。"
+      },
+      {
+        "text": "交给 lockfile 机器人自动仲裁版本冲突",
+        "isCorrect": false,
+        "description": "错误。lockfile 在 singleton 下失效，仲裁要靠中心契约与全体收敛，而非 lockfile。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 相对 1.0 最根本的变化，发生在什么时间、由谁主导？",
+    "explanation": "**2024-04-26**，官方发布 MF 2.0 公告：由**字节跳动 Web Infra 团队 + MF 作者 Zack Jackson + 社区贡献者**共同，把 MF 从 webpack 里**fork 出来、重设计为独立项目**（新家 module-federation.io、`@module-federation/*` 系列包）。此前 2020 年 MF 是 webpack 5 内置特性（此时「MF = webpack 特性」确实成立）；2024 之后它成了一个独立的微前端运行时。",
+    "tags": ["module-federation", "mf2", "webpack-fork"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "2024-04 由字节跳动 Web Infra + Zack Jackson 从 webpack fork 成独立项目",
+        "isCorrect": true,
+        "description": "正确。2024-04 的 MF 2.0 公告把 MF 从 webpack 里搬出、做成独立项目 module-federation.io。"
+      },
+      {
+        "text": "2020 年由 Vercel 团队作为 Next.js 特性发布",
+        "isCorrect": false,
+        "description": "错误。2020 是 webpack 5 内置 MF（Zack Jackson 提出）；主导 2.0 独立化的是字节 Web Infra + Zack Jackson。"
+      },
+      {
+        "text": "2024 年由 Vite 团队从 Rollup 中分离而来",
+        "isCorrect": false,
+        "description": "错误。MF 源自 webpack 而非 Rollup，主导方是字节 + Zack Jackson 而非 Vite 团队。"
+      },
+      {
+        "text": "2022 年由 single-spa 社区合并进 MF",
+        "isCorrect": false,
+        "description": "错误。single-spa 是应用级编排，与 MF 是两个物种，不存在合并一说。"
+      }
+    ]
+  },
+  {
+    "stem": "MF 2.0 公告里「原本内嵌在 webpack 里的运行时能力，已被抽取出来形成一个独立的 SDK」这句话的架构后果是什么？",
+    "explanation": "这句话是 2.0 全部变化的总纲，后果是**MF 的「联邦加载 + 版本协商」不再需要 webpack 参与**——它**不再是 webpack 编译期专属**。webpack（以及 Rspack）的插件从此只干**编译期**的事（把 `import` 改写成对 runtime 的调用、产出 manifest）；运行期真正加载模块、协商 shared 的是那个**与构建工具无关的独立 runtime**。这正是「运行时化」的实质，也是 MF 能横跨五六种打包器的前提。",
+    "tags": ["module-federation", "mf2", "runtime-sdk"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "联邦加载与版本协商不再需要 webpack 参与，MF 不再是 webpack 编译期专属",
+        "isCorrect": true,
+        "description": "正确。运行时能力独立成 SDK，webpack 插件退成编译期织入器，这是运行时化的实质。"
+      },
+      {
+        "text": "webpack 从此被完全废弃，无法再用于 MF",
+        "isCorrect": false,
+        "description": "错误。webpack 仍是一等支持的打包器，只是不再是唯一——它的插件退居编译期织入器。"
+      },
+      {
+        "text": "MF 变成纯构建期工具，运行时不再做任何事",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，核心能力落到了运行时 SDK，运行期才是主角。"
+      },
+      {
+        "text": "MF 从此只能在 Node 服务端运行",
+        "isCorrect": false,
+        "description": "错误。runtime 同时活在浏览器与 Node（SSR），并非只能服务端。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的 Runtime SDK（`@module-federation/runtime`）带来的关键能力是什么？",
+    "explanation": "Runtime SDK 可以在**没有任何构建插件**的纯运行时环境里，**动态注册和加载 remote 与 shared 模块**。最小四件套：`createInstance({ name, remotes })` 建实例 → `loadRemote('remote/expose')` 加载模块 → `registerRemotes([...])` 动态注册 → `preloadRemote([...])` 预加载。构建插件用法（直接写 `import('shop/util')` 交给插件改写）只是这套 runtime 的**编译期糖衣**，底层是同一个内核。",
+    "tags": ["module-federation", "runtime-sdk", "mf2"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不依赖任何构建插件，在纯运行时里动态注册和加载 remote 与 shared 模块",
+        "isCorrect": true,
+        "description": "正确。Runtime SDK 让联邦脱离构建工具，构建插件用法只是它的编译期糖衣。"
+      },
+      {
+        "text": "在构建期把所有 remote 的代码静态内联进 host",
+        "isCorrect": false,
+        "description": "错误。Runtime SDK 恰恰是运行时能力，与「构建期内联」相反。"
+      },
+      {
+        "text": "自动为项目生成 webpack 配置文件",
+        "isCorrect": false,
+        "description": "错误。它是运行时联邦内核，不生成构建配置。"
+      },
+      {
+        "text": "把 MF 限定为只能配合 webpack 使用",
+        "isCorrect": false,
+        "description": "错误。它的意义正是脱离 webpack，让联邦与构建工具无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 纯运行时用法的「四件套」API 分别负责什么？",
+    "explanation": "四件套：**`createInstance({ name, remotes })`** 建一个联邦实例、声明自己是谁与初始 remote；**`loadRemote('remote/expose')`** 运行时加载 remote 暴露的模块（等价于跨应用 import）；**`registerRemotes([...])`** 在运行时动态追加/注册 remote；**`preloadRemote([...])`** 预加载 remote 资源、拍平请求瀑布。它们共享同一个 runtime 内核，构建插件用法与纯运行时用法可混用。",
+    "tags": ["module-federation", "runtime-sdk", "api"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "createInstance 建实例、loadRemote 加载模块、registerRemotes 动态注册、preloadRemote 预加载",
+        "isCorrect": true,
+        "description": "正确。这是 2.0 纯运行时四件套，覆盖建实例、加载、动态注册、预取四个动作。"
+      },
+      {
+        "text": "createStore、dispatch、subscribe、getState",
+        "isCorrect": false,
+        "description": "错误。这是 Redux 的 API，与 MF 运行时无关。"
+      },
+      {
+        "text": "mount、unmount、bootstrap、update",
+        "isCorrect": false,
+        "description": "错误。这是 single-spa/qiankun 的应用生命周期钩子，属于应用级编排。"
+      },
+      {
+        "text": "defineConfig、build、preview、optimizeDeps",
+        "isCorrect": false,
+        "description": "错误。这是 Vite 的构建 API，不是 MF 的运行时四件套。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说「Module Federation 就是一个 webpack 插件」在 2026 年已是过时认知？",
+    "explanation": "这句话停在 2020 的 1.0 时代。**2024-04 从 webpack fork 后**，联邦逻辑活在与构建工具无关的 runtime 里，官方支持已覆盖 **webpack、Rspack（内置）、Vite（官方插件）、Rollup、Rolldown、Rsbuild、Metro**——webpack 只是它支持的众多打包器之一。同一套 runtime 协议下，webpack 产的 host 甚至能联邦 Rspack 产的 remote。「MF = webpack 插件」把一个独立微前端运行时误当成某个打包器的特性。",
+    "tags": ["module-federation", "mf2", "cross-bundler"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "2.0 已从 webpack fork 成独立运行时，横跨 Rspack/Vite/Rollup/Metro，webpack 只是众多打包器之一",
+        "isCorrect": true,
+        "description": "正确。「MF = webpack 插件」停在 1.0 时代，2024 后 MF 是独立的微前端运行时。"
+      },
+      {
+        "text": "因为 webpack 已经停止维护，MF 转投 Vite",
+        "isCorrect": false,
+        "description": "错误。webpack 并未停维、仍是 MF 一等支持；MF 也没有「转投」某一个打包器。"
+      },
+      {
+        "text": "因为 MF 现在只能在 Rspack 上运行",
+        "isCorrect": false,
+        "description": "错误。MF 跨多种打包器，Rspack 只是内置支持之一，并非唯一。"
+      },
+      {
+        "text": "因为 MF 已被 Native Federation 完全取代",
+        "isCorrect": false,
+        "description": "错误。Native Federation 是同一心智的另一种底座，二者并存且在收敛，非取代关系。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的 `registerRemotes` 把「哪些 remote、哪个版本」从构建期决策变成运行期决策，这解锁了什么？",
+    "explanation": "`createInstance` 的 `remotes` 是初始列表，但 remote **不必启动时定死**——`registerRemotes` 可在**运行时**追加/动态注册，清单甚至来自服务端接口。架构意义：**「哪些微前端在线、各用哪个版本」变成运行期决策**，由此解锁**灰度发布**（给部分用户注册新版 remote）、**A/B 实验**（按分流注册不同 remote）、**动态上下线**（配置中心一改前端无需发版）。这在 1.0「remotes 编译期写死」里做不到。",
+    "tags": ["module-federation", "register-remotes", "runtime-composition"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "灰度发布、A/B 实验、动态上下线——remote 清单可来自服务端，前端无需发版",
+        "isCorrect": true,
+        "description": "正确。把 remote 与版本变成运行期决策，是 2.0 相对 1.0 最重要的能力跃迁。"
+      },
+      {
+        "text": "让 tree-shaking 把未用的 remote 从产物中剔除",
+        "isCorrect": false,
+        "description": "错误。tree-shaking 是构建期静态优化，与 registerRemotes 的运行期动态注册无关。"
+      },
+      {
+        "text": "让 host 在离线状态下也能加载 remote",
+        "isCorrect": false,
+        "description": "错误。运行时注册仍需网络拉清单与 chunk，不提供离线能力。"
+      },
+      {
+        "text": "让类型联邦自动生成 remote 的 .d.ts",
+        "isCorrect": false,
+        "description": "错误。类型生成是 DTS 插件/类型联邦的职责，不是 registerRemotes 解锁的。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 2.0 运行时化之后，webpack/Rspack 的 MF 构建插件退居到什么角色？",
+    "explanation": "构建插件没消失，但**退成了「编译期织入器」**：负责编译期把源码里的 `import('shop/Button')` 改写成对 runtime 的调用、并产出 manifest。**运行期真正加载模块、协商 shared 的，是那个与构建工具无关的独立 runtime**。构建插件用法与纯运行时用法（手动 `createInstance`）共享同一个 runtime 内核、可混用——真正的主角是 runtime，插件只是编译期糖衣的产生者。",
+    "tags": ["module-federation", "mf2", "build-plugin"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "退成「编译期织入器」——把 `import` 改写成 runtime 调用、产出 manifest，运行期交给独立 runtime",
+        "isCorrect": true,
+        "description": "正确。插件只干编译期织入，真正加载与协商靠与构建工具无关的 runtime。"
+      },
+      {
+        "text": "升级成运行时的核心，负责所有模块加载",
+        "isCorrect": false,
+        "description": "错误。加载由独立 runtime 负责，构建插件退居编译期而非升为运行时核心。"
+      },
+      {
+        "text": "被彻底删除，2.0 完全不需要构建插件",
+        "isCorrect": false,
+        "description": "错误。构建插件仍在（负责编译期改写与产 manifest），只是不再是主角。"
+      },
+      {
+        "text": "变成只负责生成类型声明的工具",
+        "isCorrect": false,
+        "description": "错误。类型生成是 DTS 插件的活；构建插件负责的是 import 改写与 manifest 产出。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的 `mf-manifest.json` 为什么被称作「联邦的公共协议 / 数据源」？",
+    "explanation": "运行时化需要一份**机器可读的联邦契约**。`mf-manifest.json` 用结构化 JSON 记录 `name`/`exposes`/`shared`/`remotes`/`chunks`/`types` 等——正因为版本、导出、类型都被**结构化**写下，才使这些能力共用同一数据源：**版本治理巡检**（采集 `shared` 版本做跨 remote 一致性检查）、**类型联邦**（`types` 指向类型包）、**预加载**（chunk 信息让 `preloadRemote` 精准预取）、**DevTools**（读清单可视化依赖图）。",
+    "tags": ["module-federation", "mf-manifest", "protocol"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它把版本/导出/类型/chunk 结构化，成为类型联邦、预加载、DevTools、治理巡检共用的数据源",
+        "isCorrect": true,
+        "description": "正确。结构化的公共协议是 2.0 一整圈工具能力的地基。"
+      },
+      {
+        "text": "它是 host 与 remote 之间加密通信的密钥交换协议",
+        "isCorrect": false,
+        "description": "错误。manifest 描述模块与依赖元信息，不承担加密通信职责。"
+      },
+      {
+        "text": "它规定了 HTTP 请求头的标准格式",
+        "isCorrect": false,
+        "description": "错误。它是联邦元信息清单，与 HTTP 头规范无关。"
+      },
+      {
+        "text": "它是一份仅供人阅读的文档，工具无法解析",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，它是机器可读的结构化 JSON，正因如此工具才能统一消费。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的「构建插件用法」与「纯运行时用法」之间是什么关系？",
+    "explanation": "两种用法**共享同一个 runtime 内核、可混用**。构建插件用法（直接写 `import('shop/Button')` 由插件在编译期改写）只是纯运行时用法的**编译期糖衣**——底层跑的都是 `@module-federation/runtime` 那个与构建工具无关的内核。所以你既能享受插件带来的静态便利，也能在需要时用 `createInstance`/`registerRemotes` 手动接管，两者不冲突。",
+    "tags": ["module-federation", "runtime-sdk", "mf2"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者共享同一个 runtime 内核、可混用，构建插件用法只是纯运行时用法的编译期糖衣",
+        "isCorrect": true,
+        "description": "正确。底层是同一个 runtime，插件用法是编译期糖衣，二者可混用。"
+      },
+      {
+        "text": "两者是互斥的，一个项目里只能选其一",
+        "isCorrect": false,
+        "description": "错误。它们共享内核、可在同一项目混用，并非互斥。"
+      },
+      {
+        "text": "纯运行时用法只在服务端可用，构建插件用法只在浏览器可用",
+        "isCorrect": false,
+        "description": "错误。两种用法都能跑在浏览器（runtime 也支持 Node SSR），不存在这种环境切分。"
+      },
+      {
+        "text": "构建插件用法用的是旧内核，纯运行时用法用的是新内核",
+        "isCorrect": false,
+        "description": "错误。两者用的是同一个内核，不存在新旧内核之分。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的「运行时插件系统」（Runtime Plugin System）主要用来做什么？",
+    "explanation": "2.0 把「模块加载」拆成一串**生命周期钩子**（`beforeInit`/`beforeRequest`/`afterResolve`/`onLoad`/`errorLoadRemote` 等），开放成运行时插件系统——可插拔地干预模块解析与加载。它把**重试、鉴权、按环境切源、降级兜底、埋点监控**这些横切关注点，从「散落在业务里」收敛成「可复用的运行时插件」。例如用 `errorLoadRemote` 在 remote 加载失败时返回降级模块，避免整页崩。生态里的 retry、preload、DevTools 本质都是这套插件。",
+    "tags": ["module-federation", "runtime-plugin", "lifecycle"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用生命周期钩子（如 errorLoadRemote）可插拔干预加载，收敛重试/鉴权/降级/监控等横切关注点",
+        "isCorrect": true,
+        "description": "正确。运行时插件系统是重试、预加载、DevTools 等能力的统一底座。"
+      },
+      {
+        "text": "在构建期对源码做 AST 转换与代码压缩",
+        "isCorrect": false,
+        "description": "错误。它是运行时的加载生命周期钩子，不做构建期 AST 转换。"
+      },
+      {
+        "text": "替代 webpack loader 处理各种文件类型",
+        "isCorrect": false,
+        "description": "错误。webpack loader 是构建期资源转换，运行时插件干预的是运行期模块加载。"
+      },
+      {
+        "text": "管理组件的挂载与卸载生命周期",
+        "isCorrect": false,
+        "description": "错误。组件挂载是 UI 框架/应用级编排的事；运行时插件管的是 remote 加载生命周期。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 1.0 的「remotes 编译期写死」模型，做不到 2.0 的哪一类能力？",
+    "explanation": "1.0（webpack 时代）以**构建时组合**为主，`remotes` 写在配置里、编译期写死。它做不到 2.0 靠 `registerRemotes` 实现的**运行期动态决策**——**灰度发布、A/B 实验、动态上下线**。这些能力要求「哪些 remote 在线、用哪个版本」在运行时才确定（来自接口/配置中心），而 1.0 一旦构建完成 remote 列表就固定了，改 remote 必须重新构建 host。",
+    "tags": ["module-federation", "mf1-vs-mf2", "register-remotes"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "运行期动态决策——灰度、A/B、动态上下线（remote 与版本运行时才确定）",
+        "isCorrect": true,
+        "description": "正确。1.0 的 remotes 编译期写死，改 remote 要重构 host，无法做运行期动态决策。"
+      },
+      {
+        "text": "构建期的 tree-shaking 优化",
+        "isCorrect": false,
+        "description": "错误。tree-shaking 恰恰是构建时组合（1.0 也有）的强项，不是 1.0 缺失的。"
+      },
+      {
+        "text": "把 import 改写成运行时调用",
+        "isCorrect": false,
+        "description": "错误。1.0 的插件本就做 import 改写，这不是它缺失的能力。"
+      },
+      {
+        "text": "加载 remote 暴露的模块",
+        "isCorrect": false,
+        "description": "错误。加载 remote 模块是 1.0 的基本能力，2.0 增强的是「运行期决定加载哪些」。"
+      }
+    ]
+  },
+  {
+    "stem": "从「打包特性」升维成「独立的微前端运行时」，为什么是 Module Federation 2026 年能横跨五六种打包器的技术前提？",
+    "explanation": "因为联邦逻辑一旦从 webpack 里搬出、活在**与构建工具无关的 runtime**里，**任何能产出「符合协议的 chunk + manifest」的打包器都能加入联邦**——webpack、Rspack、Vite、Rollup、Rolldown、Rsbuild、Metro 都行。同一套 runtime 协议下，webpack 产的 host 可联邦 Rspack 产的 remote，Vite 产的 remote 也能被两者消费：**构建工具选择与联邦能力解耦**了。若联邦逻辑仍绑在 webpack 编译期，这种跨工具互操作根本无从谈起。",
+    "tags": ["module-federation", "runtime-sdk", "cross-bundler"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "联邦逻辑活在与构建工具无关的 runtime 里，任何产出「协议 chunk + manifest」的打包器都能加入，构建工具与联邦能力解耦",
+        "isCorrect": true,
+        "description": "正确。运行时内核让联邦与打包器解耦，这是跨工具互操作（host/remote 跨打包器联邦）的前提。"
+      },
+      {
+        "text": "因为 2.0 用 Rust 重写了所有打包器的底层",
+        "isCorrect": false,
+        "description": "错误。MF 不重写打包器；它靠与构建工具无关的 runtime 协议实现跨工具，而非统一底层实现。"
+      },
+      {
+        "text": "因为各打包器都内置了完整的 MF 运行时",
+        "isCorrect": false,
+        "description": "错误。运行时是独立 SDK，打包器只需产出符合协议的产物，并非各自内置整套运行时。"
+      },
+      {
+        "text": "因为 MF 强制所有打包器输出相同的 bundle 格式",
+        "isCorrect": false,
+        "description": "错误。解耦点在「符合 runtime 协议的 chunk + manifest」，不是强制统一 bundle 格式。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 运行时化之后，围绕独立 runtime 长出的生态主要由哪四大块组成？",
+    "explanation": "2.0 把 MF 从「打包特性」补成「微前端基础设施」，围绕独立 runtime 长出四大块：**类型联邦**（自动生成/同步 remote 的 TS 类型）、**Chrome DevTools**（可视化联邦依赖图）、**预加载优化**（`preloadRemote` 拍平请求瀑布）、**跨构建工具**（webpack/Rspack/Vite/Rollup/Metro）。它们共享同一份 mf-manifest.json 作数据源、大多以运行时插件实现。",
+    "tags": ["module-federation", "ecosystem", "mf2"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "类型联邦、Chrome DevTools、预加载优化、跨构建工具",
+        "isCorrect": true,
+        "description": "正确。这四大块共享 mf-manifest.json 数据源，把 MF 补成完整的微前端基础设施。"
+      },
+      {
+        "text": "沙箱隔离、样式隔离、生命周期、事件总线",
+        "isCorrect": false,
+        "description": "错误。这些是 qiankun 一类应用级方案的能力，MF 无沙箱、不走这条线。"
+      },
+      {
+        "text": "服务端渲染、静态站点生成、增量构建、边缘计算",
+        "isCorrect": false,
+        "description": "错误。SSR 只是 MF 生态的一部分，其余是元框架/部署话题，不构成 MF 生态四大块。"
+      },
+      {
+        "text": "路由管理、状态管理、表单校验、国际化",
+        "isCorrect": false,
+        "description": "错误。这些是应用层框架能力，不是围绕联邦 runtime 长出的生态。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的「类型联邦」（Type Federation）解决的是什么痛点？",
+    "explanation": "联邦模块有天生的「类型黑洞」：`import('shop/Button')` 在**运行时**能拿到真实模块，但**编译时** TS 不知道它长什么样——因为它是另一个独立部署应用的产物，不在你的 `node_modules` 里。1.0 时代只能手写 `.d.ts`、随 remote 改动而腐烂。类型联邦让 remote 构建时用 DTS 插件**自动生成类型包**、写进 manifest 的 `types` 字段，host 拉取后获得**真实 TS 类型**并本地实时同步——联邦模块从此享有和本地模块一样的类型安全与 IDE 提示。",
+    "tags": ["module-federation", "type-federation", "typescript"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "联邦模块「运行时能拿到、TS 却不认识」的类型丢失——自动生成/同步 remote 类型，让跨应用共享不牺牲类型",
+        "isCorrect": true,
+        "description": "正确。类型联邦补上跨 remote 的 TypeScript，取代 1.0 时代手写易腐烂的 .d.ts。"
+      },
+      {
+        "text": "运行时加载 remote 时的类型转换性能开销",
+        "isCorrect": false,
+        "description": "错误。类型是编译期概念，不产生运行时转换开销；痛点是编译期类型丢失。"
+      },
+      {
+        "text": "remote 与 host 之间的网络类型协议不兼容",
+        "isCorrect": false,
+        "description": "错误。类型联邦解决的是 TS 类型可见性，不是网络协议兼容。"
+      },
+      {
+        "text": "shared 依赖的版本号类型校验",
+        "isCorrect": false,
+        "description": "错误。版本校验是 shared 治理的话题，类型联邦补的是模块的 TS 类型。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的 Chrome DevTools 插件，在去中心化架构里解决什么问题？",
+    "explanation": "去中心化的代价是**难排查**——一个页面到底加载了哪些 remote、各自哪个版本、shared 协商成了谁，肉眼看不见。DevTools 插件把这张图**可视化**：展示模块依赖关系、各 remote 的配置，并支持**本地代理 + 热更新**——把线上某个 remote 的清单指向本机 dev server，就能在完整线上环境里**联调单个 remote**。对比 import maps 路线只能靠「读 JSON + 看 network 面板」推断，MF 把依赖解析变成可点开的图。",
+    "tags": ["module-federation", "devtools", "observability"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把联邦依赖图可视化、展示各 remote 配置，并支持本地代理 + 热更新联调单个线上 remote",
+        "isCorrect": true,
+        "description": "正确。DevTools 解决去中心化「难观测/难联调」的痛点，是 MF 工具化成熟度的体现。"
+      },
+      {
+        "text": "自动修复 shared 版本冲突",
+        "isCorrect": false,
+        "description": "错误。DevTools 是可观测工具，不自动改版本；版本冲突靠治理策略处理。"
+      },
+      {
+        "text": "把 remote 的代码反编译成源码",
+        "isCorrect": false,
+        "description": "错误。它可视化的是依赖关系与配置，不做反编译。"
+      },
+      {
+        "text": "为 remote 生成沙箱隔离环境",
+        "isCorrect": false,
+        "description": "错误。MF 无沙箱，DevTools 也不提供隔离，它只做可视化与联调。"
+      }
+    ]
+  },
+  {
+    "stem": "到 2026 年，Module Federation 官方支持的跨构建工具矩阵大致包括哪些？",
+    "explanation": "运行时化最直接的兑现是**摆脱对 webpack 的绑定**。官方支持已覆盖 **webpack 5、Rspack（内置 v1.5）、Vite（官方 `@module-federation/vite`）、Rollup、Rolldown、Rsbuild、Metro（React Native）**。因为联邦逻辑活在与构建工具无关的 runtime 里，任何能产出「符合协议的 chunk + manifest」的打包器都能加入联邦——这正是「MF = webpack 插件」认知过时的最硬证据。",
+    "tags": ["module-federation", "cross-bundler", "ecosystem"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "webpack、Rspack（内置）、Vite（官方插件）、Rollup、Rolldown、Rsbuild、Metro",
+        "isCorrect": true,
+        "description": "正确。这是 2.0 跨构建工具红利的支持矩阵，同一 runtime 协议下产物可互相联邦。"
+      },
+      {
+        "text": "仅 webpack 与 Rspack，其余打包器均不支持",
+        "isCorrect": false,
+        "description": "错误。Vite（官方插件）、Rollup、Metro 等均在支持之列，不止两家。"
+      },
+      {
+        "text": "仅 Vite 与 esbuild，webpack 已被移除支持",
+        "isCorrect": false,
+        "description": "错误。webpack 是发源地、一等支持，从未被移除。"
+      },
+      {
+        "text": "所有打包器都需通过 originjs 插件接入",
+        "isCorrect": false,
+        "description": "错误。originjs 只是社区旧 Vite 方案且已停滞；官方支持各打包器各有插件，不经 originjs。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 在 Rspack 上的支持现状，正确的描述是什么？",
+    "explanation": "Rspack 团队与 MF 团队紧密协作、「提供一等支持」，**内置 MF v1.5**（不用额外装包即可用 `rspack.container.ModuleFederationPlugin`）；要 2.0 的**类型联邦、DevTools 等增强**，再叠 `@module-federation/enhanced`。官方明确**不推荐 v1.0**（已停止迭代），用 v1.5 或 v2.0。所以 Rspack 是「开箱内置 + 可增强」的一等支持，而非需要外部插件才能勉强跑。",
+    "tags": ["module-federation", "rspack", "cross-bundler"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Rspack 内置 MF v1.5（`rspack.container.ModuleFederationPlugin`），要 2.0 增强再叠 `@module-federation/enhanced`",
+        "isCorrect": true,
+        "description": "正确。Rspack 一等支持、开箱内置 v1.5，enhanced 提供类型/DevTools 等 2.0 增强。"
+      },
+      {
+        "text": "Rspack 完全不支持 MF，必须切回 webpack",
+        "isCorrect": false,
+        "description": "错误。Rspack 恰恰是内置 MF 的一等支持打包器。"
+      },
+      {
+        "text": "Rspack 只支持 MF v1.0，官方推荐停留在 v1.0",
+        "isCorrect": false,
+        "description": "错误。官方明确不推荐已停迭代的 v1.0，Rspack 内置的是 v1.5。"
+      },
+      {
+        "text": "Rspack 上的 MF 需要 originjs 插件桥接",
+        "isCorrect": false,
+        "description": "错误。originjs 是 Vite 社区旧方案，与 Rspack 无关；Rspack 内置支持无需它。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Vite 上使用 Module Federation，官方与社区方案的现状对比是什么？",
+    "explanation": "**官方 `@module-federation/vite`** 由 MF 2.0 团队维护，**直接把 Vite 接到官方 runtime**（而非另造一套），活跃（v1.15.x、周级更新）。社区的 **`originjs/vite-plugin-federation` 已停滞**——自造运行时、v1.4.1 停更约一年、2026-01 起与 Vite 7 不兼容。新项目应选官方版，「MF 在 Vite 上只有 originjs」是过时信息。",
+    "tags": ["module-federation", "vite", "originjs"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "官方 `@module-federation/vite` 接入官方 runtime、活跃；社区 originjs 已停滞、Vite 7 不兼容，新项目用官方版",
+        "isCorrect": true,
+        "description": "正确。官方 Vite 插件取代了停滞的 originjs，二者的关键差异是「接官方 runtime vs 自造运行时」。"
+      },
+      {
+        "text": "Vite 上只有 originjs 一个选择，官方无插件",
+        "isCorrect": false,
+        "description": "错误。这是过时信息——官方 `@module-federation/vite` 已存在且活跃。"
+      },
+      {
+        "text": "官方与 originjs 共用同一套运行时，功能等价",
+        "isCorrect": false,
+        "description": "错误。originjs 自造运行时、官方接官方 runtime，二者不共用，且 originjs 已停滞。"
+      },
+      {
+        "text": "Vite 无法支持 MF，必须换 Rspack",
+        "isCorrect": false,
+        "description": "错误。官方 Vite 插件让 Vite 正常支持 MF，无需换打包器。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的社区方案 `originjs/vite-plugin-federation` 为什么被官方 Vite 插件取代？",
+    "explanation": "`originjs/vite-plugin-federation` 曾是 Vite 联邦的唯一选择，但它**自造了一套运行时**，**长期未随 MF 2.0 演进、约一年未发版（停在 v1.4.1）、2026-01 起与 Vite 7 不兼容**。而官方 `@module-federation/vite` 直接接入 `@module-federation/runtime`——跟随 2.0 生态一起演进（类型/DevTools/跨工具互通）。自造运行时的孤岛化正是它被取代的根因，新项目应选官方版。",
+    "tags": ["module-federation", "originjs", "vite"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它自造运行时、约一年未更、2026-01 起与 Vite 7 不兼容，未随 MF 2.0 演进",
+        "isCorrect": true,
+        "description": "正确。自造运行时导致孤岛化，官方版接入官方 runtime 才能与 2.0 生态互通。"
+      },
+      {
+        "text": "它的性能太差，加载 remote 比官方慢十倍",
+        "isCorrect": false,
+        "description": "错误。取代原因是维护停滞与自造运行时孤岛化，而非性能差十倍这类说法。"
+      },
+      {
+        "text": "它只支持 Vue 不支持 React",
+        "isCorrect": false,
+        "description": "错误。它是构建插件、不限框架；被取代的原因是停滞与不兼容 Vite 7。"
+      },
+      {
+        "text": "它被字节收购后闭源了",
+        "isCorrect": false,
+        "description": "错误。不存在收购闭源一说；它是停更的开源社区插件。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 的 `preloadRemote` 用来缓解什么性能问题？",
+    "explanation": "联邦的默认加载是**串行瀑布**：host 先拉 remote 的 manifest，解析后才知道要拉 `Button` 的 chunk，执行时又发现 `Button` 依赖某个还没加载的 shared……每步都要等上一步返回，网络往返叠加成延迟。`preloadRemote` 在真正用到之前就**按需预取**，用 `resourceCategory`（`all`/`sync`）、`exposes`（只预取用得到的导出）、`filter`（排除无关资源）三个旋钮**精准预取**、把瀑布**提前拍平**，而不是无脑全拉。",
+    "tags": ["module-federation", "preload", "waterfall"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "联邦默认加载的串行请求瀑布——用 resourceCategory/exposes/filter 精准预取、提前拍平",
+        "isCorrect": true,
+        "description": "正确。preloadRemote 把「用到才发现要加载」的串行往返提前并行拉好，缓解请求瀑布。"
+      },
+      {
+        "text": "shared 依赖的版本协商冲突",
+        "isCorrect": false,
+        "description": "错误。版本协商由 singleton/shareStrategy 处理，preloadRemote 解决的是加载瀑布。"
+      },
+      {
+        "text": "remote 代码的运行时内存泄漏",
+        "isCorrect": false,
+        "description": "错误。它是预取优化，与内存泄漏无关。"
+      },
+      {
+        "text": "类型联邦的编译速度",
+        "isCorrect": false,
+        "description": "错误。preloadRemote 是运行时资源预取，不影响类型编译速度。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 的 `@module-federation/bridge-react` / `-vue3` 让联邦具备了什么额外能力，代价又是什么？",
+    "explanation": "MF 天生是**模块级**的（`loadRemote` 拿到一个组件/函数），但实践常需联邦**一整个带路由、带生命周期的页面**。bridge 在模块级联邦之上包一层**应用级适配**——remote 把「整个子应用」`exposes` 成可被 host 挂载的桥接单元，host 用 bridge 渲染进容器并托管其路由。于是 MF 覆盖从「共享一个 Button」到「联邦一个完整子应用」的全谱。但代价是：**bridge 仍是无沙箱的（同 realm）**，隔离靠自律，而非 qiankun 那样的框架兜底。",
+    "tags": ["module-federation", "bridge", "app-level"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让模块级联邦也能桥接带路由的整页面，但 bridge 仍无沙箱（同 realm）、隔离靠自律",
+        "isCorrect": true,
+        "description": "正确。bridge 把 MF 补出应用级页面桥接能力，但它挂的是「不隔离」的整应用。"
+      },
+      {
+        "text": "给联邦模块加上 Proxy 沙箱，实现与 qiankun 同级的隔离",
+        "isCorrect": false,
+        "description": "错误。bridge 仍是无沙箱的，同 realm 隔离靠自律——这正是它与 qiankun 的分水岭。"
+      },
+      {
+        "text": "把 remote 的路由强制合并进 host 的路由表",
+        "isCorrect": false,
+        "description": "错误。bridge 托管的是被挂载子应用自己的路由，不做强制合并。"
+      },
+      {
+        "text": "让 host 无需网络即可加载整个 remote 应用",
+        "isCorrect": false,
+        "description": "错误。bridge 仍走运行时加载，不提供离线能力。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 2.0 里「同一套 runtime 协议下，webpack 产的 host 可以联邦 Rspack 产的 remote」——这句话的架构含义是什么？",
+    "explanation": "这句话说明 **构建工具选择与联邦能力已经解耦**。因为联邦逻辑活在与构建工具无关的 runtime 里、各方遵循同一份 mf-manifest.json 协议，只要产物符合协议，**不同打包器产出的 host/remote 就能互相联邦**：webpack 产的 host 消费 Rspack 产的 remote、Vite 产的 remote 被两者消费。这正是「MF = webpack 插件」认知过时的最硬证据——联邦不再是某个打包器的私有特性。",
+    "tags": ["module-federation", "cross-bundler", "interop"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "构建工具选择与联邦能力解耦——只要产物符合同一 runtime 协议，不同打包器的 host/remote 就能互相联邦",
+        "isCorrect": true,
+        "description": "正确。跨工具互操作靠共同的 runtime 协议与 manifest，是「MF ≠ webpack 插件」的最硬证据。"
+      },
+      {
+        "text": "webpack 和 Rspack 内部用了完全相同的打包算法",
+        "isCorrect": false,
+        "description": "错误。互操作靠共同的 runtime 协议，而非底层打包算法相同。"
+      },
+      {
+        "text": "host 必须与 remote 用同一个打包器才能联邦",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，跨打包器联邦正是这句话要表达的能力。"
+      },
+      {
+        "text": "联邦要求所有产物先转成 CommonJS",
+        "isCorrect": false,
+        "description": "错误。互通靠符合 runtime 协议的 chunk + manifest，不要求统一转 CJS。"
+      }
+    ]
+  },
+  {
+    "stem": "按 InfoQ 2026 的观察，Module Federation 相对 single-spa / import maps / Piral 的差异化壁垒是什么？",
+    "explanation": "InfoQ 的观察是：尽管有人觉得 monorepo 工具「开发体验更好」，但 MF 的**「运行时版本协商 + 内建错误边界集成」在规模化场景仍是相对 single-spa、import maps、Piral 的差异点**。换句话说，MF 生态的护城河不是「能加载远程模块」（这谁都能做），而是**围绕运行时协商长出的一整圈治理与工具**——类型、可观测、预加载、跨工具、错误边界。",
+    "tags": ["module-federation", "differentiator", "infoq"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "运行时版本协商 + 内建错误边界集成，在规模化治理上更强",
+        "isCorrect": true,
+        "description": "正确。护城河不是「能加载远程模块」，而是围绕运行时协商长出的治理与工具圈。"
+      },
+      {
+        "text": "它是唯一能加载远程模块的方案，其余都不行",
+        "isCorrect": false,
+        "description": "错误。加载远程模块「谁都能做」，MF 的差异点在运行时协商与错误边界，不是独占加载能力。"
+      },
+      {
+        "text": "它提供了最强的 JS 沙箱隔离",
+        "isCorrect": false,
+        "description": "错误。MF 无沙箱；隔离恰恰是它相对 qiankun 让渡掉的，不是壁垒。"
+      },
+      {
+        "text": "它的构建速度远快于所有竞品",
+        "isCorrect": false,
+        "description": "错误。差异化壁垒是运行时协商 + 错误边界的治理能力，而非构建速度。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 一句话概括是什么？",
+    "explanation": "**Native Federation 是把 MF 的心智模型（host/remote、`exposes`/`remotes`、shared）搬到浏览器原生标准上的实现**——底座换成 **ESM + Import Maps**，不再依赖任何打包器的私有运行时。你依然在讲 host/remote、依然 `exposes` 模块、依然声明 `shared` 去重依赖；变的只是这些概念底下靠什么技术实现。它由 Manfred Steyer 发起、Angular 官方背书。",
+    "tags": ["native-federation", "import-maps", "esm"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把 MF 的心智模型搬到浏览器原生标准（ESM + Import Maps）上、不依赖打包器私有运行时的实现",
+        "isCorrect": true,
+        "description": "正确。同一套联邦心智，底座换成原生 ESM + Import Maps，这是 Native Federation 的定位。"
+      },
+      {
+        "text": "MF 2.0 的一个官方子模块，专门给 webpack 用",
+        "isCorrect": false,
+        "description": "错误。它是另一套实现（Manfred Steyer / Angular），不是 MF 的子模块，也不绑 webpack。"
+      },
+      {
+        "text": "一个用 Rust 重写的 MF 运行时",
+        "isCorrect": false,
+        "description": "错误。它押注浏览器原生 ESM + Import Maps，而非用 Rust 重写运行时。"
+      },
+      {
+        "text": "把 qiankun 的沙箱搬到原生 Web Components 上",
+        "isCorrect": false,
+        "description": "错误。Native Federation 是 MF 心智的原生实现，与 qiankun 的应用级沙箱无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 由哪两个核心 npm 包组成，各自的定位是什么？",
+    "explanation": "两个包：**`@softarc/native-federation`** 是**框架/打包器无关的核心**（context7 描述为「browser-native 的 Module Federation 实现，适配任意框架与构建工具」）；**`@angular-architects/native-federation`** 是 **Angular 集成**（`ng add` 一条命令接入）。Angular 之外的框架可基于核心包自建集成。这种「核心 + 框架集成」的分层，正对应它「bundler-agnostic」的立意。",
+    "tags": ["native-federation", "packages", "angular"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`@softarc/native-federation` 是框架/打包器无关的核心，`@angular-architects/native-federation` 是 Angular 集成",
+        "isCorrect": true,
+        "description": "正确。核心包框架无关，Angular 集成包用 `ng add` 接入，其他框架可基于核心自建。"
+      },
+      {
+        "text": "`@module-federation/enhanced` 与 `@module-federation/vite`",
+        "isCorrect": false,
+        "description": "错误。这两个是 webpack MF 2.0 的包，不是 Native Federation 的包。"
+      },
+      {
+        "text": "`single-spa` 与 `qiankun`",
+        "isCorrect": false,
+        "description": "错误。这是应用级编排/框架，与 Native Federation 无关。"
+      },
+      {
+        "text": "`systemjs` 与 `import-map-overrides`",
+        "isCorrect": false,
+        "description": "错误。SystemJS 是 Import Maps 原生化前的 polyfill，非 Native Federation 的核心包。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 的发起者与官方背书来自哪里？",
+    "explanation": "Native Federation 由 **Manfred Steyer**（Angular GDE、Angular Architects）发起，目标是「**把联邦的理念与具体打包器彻底解耦**」；它发布在 **Angular 官方博客**（blog.angular.dev），是 **Angular 微前端的官方推荐路线**。对照之下，webpack/Rspack MF 的背书是**字节 Web Infra + Zack Jackson**。两者是「同一心智、两种底座」，各有生态归属。",
+    "tags": ["native-federation", "angular", "manfred-steyer"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "由 Manfred Steyer 发起、Angular 官方博客发布，是 Angular 微前端的官方推荐路线",
+        "isCorrect": true,
+        "description": "正确。Manfred Steyer / Angular 背书 Native Federation，对照 MF 的字节 + Zack Jackson。"
+      },
+      {
+        "text": "由字节跳动 Web Infra 团队发起",
+        "isCorrect": false,
+        "description": "错误。字节 Web Infra 背书的是 webpack/Rspack MF 2.0，Native Federation 是 Manfred Steyer / Angular。"
+      },
+      {
+        "text": "由 Vue 核心团队发起",
+        "isCorrect": false,
+        "description": "错误。Native Federation 的背书是 Angular 生态，非 Vue 团队。"
+      },
+      {
+        "text": "由 webpack 核心团队发起",
+        "isCorrect": false,
+        "description": "错误。它恰恰想与打包器解耦，发起方是 Angular 侧的 Manfred Steyer 而非 webpack 团队。"
+      }
+    ]
+  },
+  {
+    "stem": "官方称 Native Federation「其 API 面与 Module Federation 非常相似」，这对学过 MF 的人意味着什么？",
+    "explanation": "官方原话强调 Native Federation「API 面与 MF 非常相似，重心在**可移植性与 ECMAScript 模块、Import Maps 这些标准**」——**学过 MF 的人几乎零成本迁移心智**。你依然讲 host/remote、依然 `exposes` 导出、依然声明 `shared` 去重，只是 `shared` 落地为 **import map 条目**、产物是标准 ESM、清单角色相同但格式贴原生。心智不变、底座换了。",
+    "tags": ["native-federation", "api-similarity", "mental-model"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "心智几乎零成本迁移——同样是 host/remote、exposes/remotes/shared，只是底座换成原生标准",
+        "isCorrect": true,
+        "description": "正确。「同一心智、不同底座」，MF 的概念在 Native Federation 里一一对应。"
+      },
+      {
+        "text": "两者产物格式互通，可以直接混合联邦",
+        "isCorrect": false,
+        "description": "错误。清单格式/字段不互通，是两套实现，别假设产物能直接混联邦。"
+      },
+      {
+        "text": "Native Federation 只是 MF 的一个语法糖包装",
+        "isCorrect": false,
+        "description": "错误。它是另一套底座实现（ESM + Import Maps），不是 MF 的语法糖。"
+      },
+      {
+        "text": "学过 MF 反而要推翻重学全部概念",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，API 面高度相似，心智几乎零成本迁移。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 号称「bundler-agnostic（不绑定打包器）」，它在编译期是怎么实现这一点的？",
+    "explanation": "「不依赖打包器」不等于「不用打包器」——它仍需打包器把源码编译成 ESM，只是**不绑定某一个**。官方描述其架构：**编译期是「现有打包器之上的一层包装」，通过一个可替换的适配器（exchangeable adapter）与底层打包器通信**。换打包器只换适配器，上层的联邦语义（exposes/remotes/shared）与产物形态（ESM + import map）不变。Angular 集成里适配器直接委托给 ApplicationBuilder（用 esbuild）。",
+    "tags": ["native-federation", "bundler-agnostic", "adapter"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "编译期是「现有打包器之上的一层包装」，通过可替换适配器与底层打包器通信，换打包器只换适配器",
+        "isCorrect": true,
+        "description": "正确。可替换适配器是 bundler-agnostic 的实现机制，联邦语义与产物形态不随打包器变。"
+      },
+      {
+        "text": "它完全不用任何打包器，浏览器直接编译 TS",
+        "isCorrect": false,
+        "description": "错误。bundler-agnostic 是「不绑定某一个」，仍需打包器把源码编译成 ESM。"
+      },
+      {
+        "text": "它内置了一个专用打包器，禁止替换",
+        "isCorrect": false,
+        "description": "错误。恰恰是可替换适配器让它不绑定单一打包器。"
+      },
+      {
+        "text": "它在运行时才用 Babel 编译 remote 源码",
+        "isCorrect": false,
+        "description": "错误。编译在构建期由适配器包装的打包器完成，不是运行时 Babel。"
+      }
+    ]
+  },
+  {
+    "stem": "在共享依赖去重的实现上，webpack MF 与 Native Federation 的底座差异是什么？",
+    "explanation": "同一个「shared 去重」概念，两种底座：**webpack MF** 用 **share scope 运行时 semver 协商**（各 remote 把自带副本注册进货架，用时按 semver 取哪一份）；**Native Federation** 用 **Import Map 条目**——把裸说明符（如 `react`）映射到唯一 URL 实现去重，加载/缓存/去重全交给**浏览器原生模块图**，而非 MF 那样的自有容器。这正是「同一心智、不同底座」在依赖共享上的体现。",
+    "tags": ["native-federation", "import-maps", "shared"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "MF 用 share scope 运行时 semver 协商；Native Federation 用 Import Map 条目、交浏览器原生模块图去重",
+        "isCorrect": true,
+        "description": "正确。这是「同一心智、不同底座」在 shared 去重上的具体差异。"
+      },
+      {
+        "text": "两者都用 share scope 运行时协商，实现完全一致",
+        "isCorrect": false,
+        "description": "错误。Native Federation 用 import map 条目交浏览器解析，不是 MF 的 share scope 容器。"
+      },
+      {
+        "text": "MF 用 Import Map，Native Federation 用 share scope",
+        "isCorrect": false,
+        "description": "错误。方向说反了——Import Map 是 Native Federation 的底座，share scope 是 MF 的。"
+      },
+      {
+        "text": "两者都在构建期把依赖合并成一份，无运行时去重",
+        "isCorrect": false,
+        "description": "错误。两者的去重都发生在运行时（协商或 import map 解析），不是构建期合并。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 的 Angular 集成为什么能「既得到联邦、又得到快构建速度」？",
+    "explanation": "因为它的适配器**直接委托给 Angular ApplicationBuilder，而后者用快速打包器 esbuild**。联邦语义（exposes/remotes/shared）由 Native Federation 的包装层处理，实际编译交给 esbuild——所以**联邦不牺牲构建速度**。这也体现了 bundler-agnostic 的价值：换个底层打包器（这里是 esbuild）只换适配器，上层联邦不变，还能白捡打包器的性能红利。",
+    "tags": ["native-federation", "esbuild", "angular"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "适配器委托给 Angular ApplicationBuilder，后者用快速打包器 esbuild，联邦不牺牲构建速度",
+        "isCorrect": true,
+        "description": "正确。可替换适配器让 Native Federation 白捡 esbuild 的速度，联邦语义不变。"
+      },
+      {
+        "text": "它把编译搬到运行时，跳过了构建步骤",
+        "isCorrect": false,
+        "description": "错误。它仍在构建期编译（经 esbuild），不是跳过构建。"
+      },
+      {
+        "text": "它用 webpack 的持久缓存加速",
+        "isCorrect": false,
+        "description": "错误。Angular 集成走的是 esbuild（经 ApplicationBuilder），不是 webpack 缓存。"
+      },
+      {
+        "text": "它把 remote 预编译成 WASM",
+        "isCorrect": false,
+        "description": "错误。产物是标准 ESM，不是 WASM；速度来自 esbuild。"
+      }
+    ]
+  },
+  {
+    "stem": "Native Federation 敢押注「浏览器原生」的关键平台前提是什么？",
+    "explanation": "关键平台事实是：**Import Maps 已经 Baseline Widely available（自 2023-03 起）**，主流浏览器普遍支持。这条时间线很重要——在 import maps 原生化之前，同页多版本、裸说明符映射只能靠 **SystemJS** 这类 polyfill 模拟；原生化之后这些能力**内置于浏览器**，SystemJS 退居「兼容化石浏览器」的历史层。于是 Native Federation 的运行时可以极薄：remote 产出标准 ESM，host 用一张 Import Map 声明去重，加载/缓存/去重全交浏览器。",
+    "tags": ["native-federation", "import-maps", "baseline"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Import Maps 自 2023-03 起 Baseline Widely available、主流浏览器普遍支持，SystemJS 退居兼容层",
+        "isCorrect": true,
+        "description": "正确。原生 Import Maps 的普及让联邦运行时可以极薄，这是押注原生的前提。"
+      },
+      {
+        "text": "所有浏览器都内置了 webpack runtime",
+        "isCorrect": false,
+        "description": "错误。浏览器不内置 webpack runtime；前提是原生 Import Maps 的普及。"
+      },
+      {
+        "text": "SystemJS 成为了 W3C 标准",
+        "isCorrect": false,
+        "description": "错误。SystemJS 是 polyfill，原生化后它退居兼容层，并非成为标准。"
+      },
+      {
+        "text": "HTTP/3 的普及让模块加载变快",
+        "isCorrect": false,
+        "description": "错误。押注原生的前提是 Import Maps Baseline，与 HTTP/3 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "把 Module Federation 与 Native Federation 理解为「对立的两代技术」为什么是错的？",
+    "explanation": "它们是**同一心智的两种底座实现**，不是对立两代：MF 用「打包器编译 + 自有运行时容器」，Native Federation 用「原生 ESM + Import Maps + esbuild」。MF 2.0 生态更厚（类型联邦、DevTools、预加载、bridge、跨工具），Native Federation 更贴浏览器标准、更可移植、在 Angular 有官方地位。而且两条路在**收敛**——MF 2.0 的官方 Vite 插件、对原生 ESM 的拥抱，和 Native Federation 押注的 import maps，方向一致：让联邦越来越贴近平台原生。",
+    "tags": ["native-federation", "vs-mf", "convergence"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它们是同一心智的两种底座实现，各有生态归属，且方向在收敛（都朝贴近平台原生走）",
+        "isCorrect": true,
+        "description": "正确。不是新旧替代，而是「同一心智、不同底座」，且 MF 与 Native Federation 正在收敛。"
+      },
+      {
+        "text": "Native Federation 是 MF 的下一个大版本，会完全取代 MF",
+        "isCorrect": false,
+        "description": "错误。它是另一套实现而非 MF 的版本升级，二者并存、收敛而非取代。"
+      },
+      {
+        "text": "MF 已过时，Native Federation 在所有场景都更优",
+        "isCorrect": false,
+        "description": "错误。多团队规模化场景 MF 2.0 生态优势明显，并非 Native Federation 全面更优。"
+      },
+      {
+        "text": "两者互不兼容，所以必然是对立两代",
+        "isCorrect": false,
+        "description": "错误。清单不互通不等于「对立两代」；它们是同一心智的两种平行底座。"
+      }
+    ]
+  },
+  {
+    "stem": "选型时，为什么不能假设「Native Federation 的产物能直接被 webpack MF 联邦」？",
+    "explanation": "因为 **Native Federation 与 webpack MF 的清单格式、字段不互通——它是另一套实现，不是 MF 的一个适配器**。虽然两者 API 面高度相似、心智一一对应，但清单协议不同，产物不能直接互相联邦。选型应按「生态 vs 原生」权衡（MF 2.0 生态更厚、Native Federation 更贴标准），而不是假设两者产物能混联邦。这是「同一心智、两种独立实现」的实际约束。",
+    "tags": ["native-federation", "interop", "selection"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它是另一套独立实现、清单格式与字段和 webpack MF 不互通，不是 MF 的适配器",
+        "isCorrect": true,
+        "description": "正确。心智相似但协议不通，产物不能直接混联邦，选型按「生态 vs 原生」权衡。"
+      },
+      {
+        "text": "因为 Native Federation 只支持 Angular，webpack 用不了",
+        "isCorrect": false,
+        "description": "错误。核心包框架无关；不能混联邦的原因是清单协议不互通，而非只支持 Angular。"
+      },
+      {
+        "text": "因为 Native Federation 产物是 WASM 而 MF 是 JS",
+        "isCorrect": false,
+        "description": "错误。Native Federation 产物是标准 ESM 而非 WASM；症结在清单协议不互通。"
+      },
+      {
+        "text": "其实可以直接混联邦，两者产物完全兼容",
+        "isCorrect": false,
+        "description": "错误。恰恰不兼容——它们是两套独立实现，清单不互通。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation 与 qiankun/wujie 在架构上的本质分野是什么？",
+    "explanation": "**MF 是模块级 + 无沙箱**（共享组件/依赖，同 `window`）；**qiankun/wujie 是应用级 + 带沙箱**（挂载整应用，隔离全局与样式）。它们不是同一类工具的两个牌子，而是**两个物种**：MF 让两个应用「像同一应用里的两个模块」，qiankun 让两个应用「像同一页里的两个隔离租户」。选型第一问就是「你要共享『模块』还是隔离『应用』」。",
+    "tags": ["module-federation", "vs-qiankun", "module-level"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "MF 是模块级 + 无沙箱；qiankun/wujie 是应用级 + 带沙箱——两个物种而非两个牌子",
+        "isCorrect": true,
+        "description": "正确。本质分野在「模块级/无沙箱」对「应用级/带沙箱」，决定了后续一切选型判断。"
+      },
+      {
+        "text": "MF 更新、qiankun 更老，功能上后者是前者的子集",
+        "isCorrect": false,
+        "description": "错误。它们解决不同粒度的问题、可叠加使用，不是新旧或子集关系。"
+      },
+      {
+        "text": "MF 带沙箱、qiankun 无沙箱",
+        "isCorrect": false,
+        "description": "错误。方向说反了——MF 无沙箱，qiankun 带沙箱。"
+      },
+      {
+        "text": "两者都是应用级方案，只是打包器不同",
+        "isCorrect": false,
+        "description": "错误。MF 是模块级、qiankun 是应用级，粒度不同而非只是打包器差异。"
+      }
+    ]
+  },
+  {
+    "stem": "在 Module Federation 与应用级方案之间选型，「第一问」应该问什么？",
+    "explanation": "选型的第一问是：**你要共享「模块」还是要隔离「应用」**。要**细粒度共享**组件/逻辑/大依赖（同技术栈、多团队、能自律）→ Module Federation；要**强隔离整应用**（老系统林立、CSS 混乱、技术栈各异、团队互不信任）→ 应用级（qiankun/wujie）；两者都要 → 叠加（编排 + MF 共享）。抓住这一问，后面的决策树自然展开。",
+    "tags": ["module-federation", "selection", "decision-tree"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "你要共享「模块」还是要隔离「应用」",
+        "isCorrect": true,
+        "description": "正确。共享模块选 MF、隔离应用选 qiankun/wujie、都要则叠加——这是选型的根问题。"
+      },
+      {
+        "text": "你用的是 webpack 还是 Vite",
+        "isCorrect": false,
+        "description": "错误。打包器只是选型的次级分支；第一问是「共享模块 vs 隔离应用」。"
+      },
+      {
+        "text": "你的团队规模有多大",
+        "isCorrect": false,
+        "description": "错误。团队规模是参考因素，但根问题是诉求本身：共享还是隔离。"
+      },
+      {
+        "text": "你要不要服务端渲染",
+        "isCorrect": false,
+        "description": "错误。SSR 是实现细节，选型第一问是共享模块还是隔离应用。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation「无沙箱」的准确含义是什么？",
+    "explanation": "「无沙箱」不是「不成熟」，而是刻意的定位选择。准确含义：**联邦模块执行在宿主的同一个 realm 里，共享同一个 `window`、同一份全局对象、同一棵 DOM、同一个 CSS 作用域**。MF 不提供 JS 沙箱，也不提供样式隔离——而且**不打算提供**。这一个事实同时是红利（能真正共享 React 实例、零隔离开销、通信零成本）与代价（全局互撞/CSS 泄漏/副作用不回收无兜底）的来源。",
+    "tags": ["module-federation", "no-sandbox", "same-realm"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "联邦模块与宿主共享同一个 `window`、全局、DOM、CSS 作用域，MF 不做也不打算做隔离",
+        "isCorrect": true,
+        "description": "正确。无沙箱=同 realm，这是红利与代价的共同来源，是定位选择而非缺功能。"
+      },
+      {
+        "text": "MF 用轻量沙箱，只隔离 JS 不隔离 CSS",
+        "isCorrect": false,
+        "description": "错误。MF 既不隔离 JS 也不隔离 CSS，是完全无沙箱。"
+      },
+      {
+        "text": "MF 用 iframe 做隔离但省略了 Proxy",
+        "isCorrect": false,
+        "description": "错误。MF 不用 iframe 也不用 Proxy，联邦模块与宿主同 realm。"
+      },
+      {
+        "text": "无沙箱意味着 MF 无法加载任何第三方模块",
+        "isCorrect": false,
+        "description": "错误。无沙箱指不做隔离，与「能否加载模块」无关——MF 正是靠加载模块工作的。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation「无沙箱」带来的红利（相对带沙箱方案）主要是什么？",
+    "explanation": "无沙箱=同 realm，红利有三：**能真正共享运行时**——两个应用用同一个 React 实例，hooks、context、Suspense 跨应用可用（沙箱方案隔离的 `window` 里是两份 React，做不到）；**零隔离开销**——没有 Proxy 代理 `window`、没有 iframe，加载快、内存省；**通信零成本**——同 realm，import 来的函数直接调、store 直接订阅，不需要序列化/事件桥。代价是把「不互相污染」的责任下放给团队纪律。",
+    "tags": ["module-federation", "no-sandbox", "benefit"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "能真正共享一份 React 实例与 context、零隔离开销、通信就是普通函数调用",
+        "isCorrect": true,
+        "description": "正确。同 realm 让共享运行时、低开销、零成本通信成为可能，这是无沙箱的红利。"
+      },
+      {
+        "text": "自动帮各子应用清理副作用与全局监听",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，无沙箱下副作用不回收、要自己管；清理是沙箱方案的能力。"
+      },
+      {
+        "text": "强制隔离 CSS，避免样式冲突",
+        "isCorrect": false,
+        "description": "错误。无沙箱不隔离 CSS，样式会泄漏，需靠 CSS Modules/scoped 约定自保。"
+      },
+      {
+        "text": "让不同技术栈的应用天然互不干扰",
+        "isCorrect": false,
+        "description": "错误。互不干扰是沙箱的红利；无沙箱下反而需要团队自律来避免互撞。"
+      }
+    ]
+  },
+  {
+    "stem": "Module Federation「无沙箱」的代价（自治成本）具体表现在哪些方面？",
+    "explanation": "无沙箱把「不互相污染」的责任从框架下放给团队纪律，代价有三：**全局互撞无兜底**——两个团队都往 `window.__CONFIG__` 写会直接互相覆盖；**CSS 会泄漏**——A 的 `.btn { color: red }` 会作用到 B 的按钮，全靠 CSS Modules/scoped/BEM 前缀等约定自保；**副作用不回收**——子应用卸载时它加的全局监听、定时器、`<style>` 不会像 qiankun 那样被沙箱记账清理，得自己管。规模越大、团队越杂，自律越难维持。",
+    "tags": ["module-federation", "no-sandbox", "cost"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "全局变量互撞、CSS 泄漏、副作用不回收都没有框架兜底，全靠团队自律",
+        "isCorrect": true,
+        "description": "正确。无沙箱把隔离责任下放给团队纪律，规模越大越难维持，是它的自治成本。"
+      },
+      {
+        "text": "加载 remote 时必然产生双份 React 实例",
+        "isCorrect": false,
+        "description": "错误。双份实例是「单端声明/漏尾斜杠」的问题；无沙箱恰恰能共享一份 React。"
+      },
+      {
+        "text": "remote 无法访问宿主的全局对象",
+        "isCorrect": false,
+        "description": "错误。无沙箱下 remote 与宿主共享同一个 `window`，能访问全局——问题正是「太能访问导致互撞」。"
+      },
+      {
+        "text": "构建产物体积必然翻倍",
+        "isCorrect": false,
+        "description": "错误。无沙箱的代价是自治成本（污染无兜底），不是产物体积翻倍。"
+      }
+    ]
+  },
+  {
+    "stem": "在大型微前端里，Module Federation 与 single-spa/qiankun 常见的「叠加模式」是怎样分工的？",
+    "explanation": "真实的大型微前端常**不是二选一，而是叠加**——因为「应用级编排」与「模块级共享」本就正交。成熟模式是：**用 single-spa/qiankun 做应用级编排（谁在什么路由 mount/unmount、沙箱隔离）+ 用 MF 做模块级依赖共享（大家共用一份 React、共享设计系统组件）**，各取所长。single-spa 官方也把「single-spa 编排 + MF 共享依赖」列为成熟可行模式。",
+    "tags": ["module-federation", "hybrid", "orchestration"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "single-spa/qiankun 做应用级编排（谁在什么路由挂载）+ MF 做模块级依赖共享（共用一份 React/设计系统）",
+        "isCorrect": true,
+        "description": "正确。编排层与共享层正交，叠加各取所长，是 single-spa 官方也认可的成熟模式。"
+      },
+      {
+        "text": "MF 做编排、qiankun 做依赖共享",
+        "isCorrect": false,
+        "description": "错误。分工说反了——MF 做模块级共享，qiankun/single-spa 做应用级编排。"
+      },
+      {
+        "text": "两者只能二选一，不能叠加",
+        "isCorrect": false,
+        "description": "错误。编排与联邦正交、可叠加，这正是大型微前端的常见做法。"
+      },
+      {
+        "text": "叠加时两者都各自管一半路由",
+        "isCorrect": false,
+        "description": "错误。编排（含路由）归 single-spa/qiankun，MF 只管模块共享，不分管路由。"
+      }
+    ]
+  },
+  {
+    "stem": "在与 Module Federation 对照的应用级选型中，「既要隔离又要用 Vite」时相对 qiankun，wujie / micro-app 的定位优势是什么？",
+    "explanation": "wujie/micro-app 用 **iframe / WebComponent 沙箱**，对 **Vite / ESM 友好**——「要隔离又要 Vite」时优先它们；而 **qiankun 2.x 不接 ESM**（对 Vite 的 ESM 产物支持不佳）。所以在应用级（带沙箱）这一支里，决策树进一步分叉：**存量 webpack + 要开箱即用 → qiankun；新项目 / Vite / 要更强隔离 → wujie / micro-app**。这与 MF（模块级/无沙箱）是不同分支。",
+    "tags": ["module-federation", "wujie", "vite"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "wujie/micro-app 用 iframe/WebComponent 沙箱、对 Vite/ESM 友好，而 qiankun 2.x 不接 ESM",
+        "isCorrect": true,
+        "description": "正确。要隔离又要 Vite 时优先 wujie/micro-app，qiankun 2.x 的 ESM 支持不足。"
+      },
+      {
+        "text": "wujie/micro-app 是模块级方案，比 qiankun 更轻",
+        "isCorrect": false,
+        "description": "错误。wujie/micro-app 是应用级带沙箱方案；模块级/无沙箱的是 MF。"
+      },
+      {
+        "text": "wujie/micro-app 无沙箱，所以对 Vite 友好",
+        "isCorrect": false,
+        "description": "错误。它们恰恰是带沙箱（iframe/WebComponent），对 Vite 友好来自 ESM 兼容而非无沙箱。"
+      },
+      {
+        "text": "qiankun 只支持 Vite，wujie 只支持 webpack",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，qiankun 2.x 不接 ESM/Vite，wujie/micro-app 才对 Vite/ESM 友好。"
+      }
+    ]
+  },
+  {
+    "stem": "当 single-spa/qiankun 编排与 Module Federation 共享叠加使用时，唯一的「混用红线」是什么？",
+    "explanation": "叠加时唯一红线：**同一依赖只能有一个权威解析源**——不要让同一个 React 既走 import maps 又走 MF shared。两套解析体系**互不知晓**，混用必然**双份实例、singleton 名存实亡**。工程混用没问题，但**依赖名单必须二选一划界**：这个 React 要么全走 import maps、要么全走 MF shared，不能脚踏两条船。这是 single-spa 官方立场，也是依赖共享通论的红线。",
+    "tags": ["module-federation", "hybrid", "shared-conflict"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同一依赖只能有一个权威解析源，别让同一个 React 既走 import maps 又走 MF shared",
+        "isCorrect": true,
+        "description": "正确。两套解析互不知晓，混用必然双份实例、singleton 名存实亡，依赖名单须二选一划界。"
+      },
+      {
+        "text": "编排层和共享层必须用同一个打包器",
+        "isCorrect": false,
+        "description": "错误。红线是「同一依赖别走两套解析」，与打包器是否相同无关。"
+      },
+      {
+        "text": "MF 和 qiankun 不能出现在同一个页面",
+        "isCorrect": false,
+        "description": "错误。它们正是叠加使用（同页共存），红线只针对「同一依赖别走两套解析」。"
+      },
+      {
+        "text": "所有子应用必须用相同的路由库",
+        "isCorrect": false,
+        "description": "错误。混用红线是依赖解析源唯一，不涉及路由库统一。"
+      }
+    ]
+  },
+  {
+    "stem": "为什么说 Module Federation「无沙箱」是一种设计取舍而非功能缺陷？",
+    "explanation": "因为 MF **假设参与方是同一个组织、能协同约定**，于是**不做隔离、换取轻量与「真共享一份运行时」的能力**。qiankun/wujie 花大力气做沙箱，是因为它们要把**互不信任、技术栈各异的整应用**塞进同一页面。所以「无沙箱」不是缺陷，是**定位选择**——代价是团队必须自律。在同组织、能统一约定的共享驱动场景下这笔交易划算；在团队互不信任、遗留 CSS 混乱的场景下才危险（那是沙箱的主场）。",
+    "tags": ["module-federation", "no-sandbox", "tradeoff"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "MF 假设参与方同组织、能协同约定，故不做隔离换取轻量与真共享运行时——是定位选择",
+        "isCorrect": true,
+        "description": "正确。无沙箱是针对「同组织、共享驱动」场景的取舍，代价是需要团队自律。"
+      },
+      {
+        "text": "因为实现沙箱太难，MF 团队暂时没做，未来会补上",
+        "isCorrect": false,
+        "description": "错误。MF 是「不打算做」沙箱，这是定位而非技术难度或待办。"
+      },
+      {
+        "text": "因为浏览器不允许 JS 做任何隔离",
+        "isCorrect": false,
+        "description": "错误。qiankun/wujie 就在做隔离，浏览器允许；MF 是主动选择不做。"
+      },
+      {
+        "text": "因为无沙箱在所有场景都优于带沙箱",
+        "isCorrect": false,
+        "description": "错误。团队互不信任、遗留 CSS 混乱时无沙箱很危险，带沙箱才是那些场景的主场。"
+      }
+    ]
+  },
+  {
+    "stem": "在「团队互不信任、技术栈各异、遗留 CSS 混乱」的场景下，为什么选 Module Federation 反而危险？",
+    "explanation": "因为 MF **无沙箱**——全局互撞、CSS 泄漏、副作用不回收**都没有框架兜底，全靠团队自律**。这在同组织、能统一约定时划算；但在**团队互不信任、技术栈各异、遗留 CSS 混乱**的场景下，自律根本无法维持：谁都可能污染全局、CSS 相互覆盖，MF 不会拦。这正是**沙箱方案（qiankun/wujie）的主场**——它们用「框架兜底不互相污染」适配老系统林立、强隔离驱动的场景。诉求是隔离整应用时应选带沙箱方案，而非 MF。",
+    "tags": ["module-federation", "selection", "no-sandbox"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "MF 无沙箱、隔离全靠自律，这类场景自律无法维持，应选带沙箱的 qiankun/wujie",
+        "isCorrect": true,
+        "description": "正确。强隔离刚需是沙箱方案的主场，无沙箱的 MF 在无法自律的场景下会失控。"
+      },
+      {
+        "text": "MF 不支持多技术栈，无法加载不同框架的模块",
+        "isCorrect": false,
+        "description": "错误。危险的根因是无沙箱下无法约束污染，而非「不支持多技术栈」这个技术能力问题。"
+      },
+      {
+        "text": "MF 的沙箱在老系统上会内存泄漏",
+        "isCorrect": false,
+        "description": "错误。MF 根本没有沙箱，谈不上「沙箱内存泄漏」——问题恰恰是没有隔离兜底。"
+      },
+      {
+        "text": "MF 只能用于同一个团队的单体应用",
+        "isCorrect": false,
+        "description": "错误。MF 正是为多团队共享设计，只是要求团队能自律；问题是「不信任/混乱」场景难自律。"
+      }
+    ]
+  },
+  {
+    "stem": "什么样的诉求组合最适合「single-spa/qiankun 编排 + Module Federation 共享」的叠加方案？",
+    "explanation": "当你**两个都要——既要编排整应用（谁在什么路由挂载、要隔离），又要跨应用共享依赖（大家共用一份 React/设计系统）**时，叠加最优：用 single-spa/qiankun 做应用级编排层（含沙箱隔离），每个子应用内部再用 MF 做模块级共享层。这样既拿到「隔离整应用」的能力，又拿到「真共享一份运行时」的红利。唯一红线是**同一依赖只走一套解析**（import maps 或 MF shared，二选一），否则双份实例、singleton 名存实亡。",
+    "tags": ["module-federation", "hybrid", "decision"],
+    "categories": [
+      ["技术方向", "Module Federation"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "既要编排整应用（含隔离）、又要跨应用共享依赖时，叠加各取所长，红线是同一依赖只走一套解析",
+        "isCorrect": true,
+        "description": "正确。两个诉求都要时叠加最优，编排归 single-spa/qiankun、共享归 MF，依赖解析源须唯一。"
+      },
+      {
+        "text": "只想共享一个 Button 组件、其他都不要时",
+        "isCorrect": false,
+        "description": "错误。只需细粒度共享用 MF 即可，无需叠加应用级编排层。"
+      },
+      {
+        "text": "只想隔离老系统、完全不共享依赖时",
+        "isCorrect": false,
+        "description": "错误。只需隔离用 qiankun/wujie 即可，不必叠加 MF 共享层。"
+      },
+      {
+        "text": "团队很小、只有一个单页应用时",
+        "isCorrect": false,
+        "description": "错误。单应用小团队无需微前端，更谈不上编排 + 共享的叠加。"
+      }
+    ]
+  }
+]
