@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "CSP（内容安全策略）防御 XSS 的核心思路是什么？",
+    "explanation": "CSP 的思路不是识别恶意代码（做不到），而是**收窄「代码能从哪来、以什么形态执行」**：只允许指定来源的外部脚本、默认禁掉所有内联与 `eval`——注入点即使存在，注入的代码也**跑不起来**。要摆正定位：CSP 是**纵深防御**的一层，MDN 的原话是它「减少注入攻击的危害」，第一道防线永远是别让注入发生（输入过滤/输出转义），CSP 不是它们的替代品。",
+    "tags": ["browser-security", "csp", "xss"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不去识别恶意代码，而是用白名单收窄代码的来源与执行形态——未被允许的外部源、内联脚本与 eval 一律不执行",
+        "isCorrect": true,
+        "description": "正确。CSP 是声明式白名单：只放行指定来源的脚本、默认禁内联与 `eval`，让注入的代码失去执行机会，属于纵深防御的一层。"
+      },
+      {
+        "text": "对页面所有输入自动做转义与过滤，识别并删除其中的恶意字符串",
+        "isCorrect": false,
+        "description": "错误。识别恶意代码恰恰是 CSP 明确放弃的路线（做不到可靠识别）；输入过滤/输出转义是独立的第一道防线，由应用代码负责，不是 CSP 的机制。"
+      },
+      {
+        "text": "把页面脚本加密传输，防止攻击者读取和篡改源码",
+        "isCorrect": false,
+        "description": "错误。传输加密是 HTTPS/TLS 的职责，与 CSP 无关；CSP 管的是「哪些代码允许执行」，不管代码是否加密。"
+      },
+      {
+        "text": "内置恶意脚本特征库，在执行前对脚本做特征匹配拦截",
+        "isCorrect": false,
+        "description": "错误。浏览器不做特征库式的恶意脚本识别，CSP 是纯声明式的来源/形态白名单，不涉及内容特征分析。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的 `default-src` 指令在整个策略中扮演什么角色？",
+    "explanation": "**`default-src` 是所有 fetch 指令的回退**：`script-src`、`img-src`、`connect-src` 等没单独写的资源类型都按它执行。写策略的常见套路是先定 `default-src 'self'` 再逐类放宽。注意回退只覆盖 **fetch 指令族**——`frame-ancestors`、`form-action`、`base-uri` 这类 navigation/document 指令**不吃 `default-src` 的回退**，没写就是不受限，这是最典型的漏配来源。",
+    "tags": ["browser-security", "csp", "default-src"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它是所有 fetch 指令的回退——没单独声明的资源类型都按它执行，所以写策略常先定 `default-src 'self'` 再逐类放宽",
+        "isCorrect": true,
+        "description": "正确。`default-src` 兜底所有 fetch 类指令（script-src、img-src、connect-src 等），未单独声明的资源类型按它判定。"
+      },
+      {
+        "text": "它只管 `<script>` 的加载来源，与 `script-src` 完全等价",
+        "isCorrect": false,
+        "description": "错误。管脚本来源的是 `script-src`；`default-src` 是整个 fetch 指令族的回退，覆盖图片、字体、连接等所有未单独声明的资源类型。"
+      },
+      {
+        "text": "它是包括 `frame-ancestors`、`form-action` 在内的全部指令的回退",
+        "isCorrect": false,
+        "description": "错误。回退只作用于 fetch 指令族；navigation 类（`form-action`/`frame-ancestors`）与 document 类（`base-uri` 等）指令不吃这个回退，没写就是不受限。"
+      },
+      {
+        "text": "它只在策略中没有任何其他指令时才生效，写了任意一个指令它就整体失效",
+        "isCorrect": false,
+        "description": "错误。`default-src` 与其他指令共存：单独写了的资源类型按各自指令执行，没写的仍回退到 `default-src`，不存在整体失效一说。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP（内容安全策略）有哪两种下发通道？推荐关系是什么？",
+    "explanation": "CSP 有两种下发方式：**`Content-Security-Policy` 响应头**（推荐，且应对**所有响应**设置，而非只有 HTML 主文档——否则 Worker 脚本等响应会漏出策略之外）与 **`<meta http-equiv>` 标签**（备选，适合无法控制服务器响应头的纯静态托管）。meta 通道是残血版：`frame-ancestors`、`sandbox`、`report-uri`、`report-to` 在 meta 里不生效，Report-Only 也没有 meta 形式——**防点击劫持和收违规报告必须能改响应头**。",
+    "tags": ["browser-security", "csp", "http-headers"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "响应头 `Content-Security-Policy` 为主（应对所有响应设置），`<meta http-equiv>` 为辅——适合改不了响应头的纯静态托管，但部分指令不生效",
+        "isCorrect": true,
+        "description": "正确。响应头是正道且要覆盖所有响应；meta 是残血备选，`frame-ancestors`、`sandbox`、`report-uri`、`report-to` 在其中不生效。"
+      },
+      {
+        "text": "只能通过 `<meta>` 标签写在 HTML 里，响应头方式已被废弃",
+        "isCorrect": false,
+        "description": "错误。方向反了：响应头才是推荐通道，meta 只是无法控制服务器时的备选，且功能不全。"
+      },
+      {
+        "text": "通过 JS 在运行时调用专用 API 动态设置，随时可改",
+        "isCorrect": false,
+        "description": "错误。不存在运行时设置 CSP 的 JS API——策略必须随响应（头或 meta）到达，这正是它不可被注入代码篡改的原因之一。"
+      },
+      {
+        "text": "写在站点根目录的 `robots.txt` 里，由浏览器启动时统一拉取",
+        "isCorrect": false,
+        "description": "错误。`robots.txt` 是给爬虫的抓取协议，与 CSP 无关；CSP 只随每个响应的头或文档内 meta 生效。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的指令体系分为哪四大类？",
+    "explanation": "CSP 指令分四类：**fetch 指令**（`default-src` 兜底、`script-src`、`img-src`、`connect-src` 等——管每类资源允许从哪加载）、**document 指令**（`base-uri`、`sandbox`、`require-trusted-types-for`——管文档自身的属性与能力）、**navigation 指令**（`form-action` 管表单能提交到哪、`frame-ancestors` 管谁能嵌我）、**reporting 指令**（`report-uri` 遗留 → `report-to` 现行——管违规往哪报）。另有杂项如 `upgrade-insecure-requests`。三个高价值但常被漏配的指令：`object-src 'none'`、`base-uri 'none'`、`form-action`。",
+    "tags": ["browser-security", "csp", "directives"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "fetch（资源加载）、document（文档自身）、navigation（去向与被嵌）、reporting（违规上报）",
+        "isCorrect": true,
+        "description": "正确。fetch 类管各类资源来源（default-src 兜底），document 类管 base-uri/sandbox 等文档属性，navigation 类管 form-action/frame-ancestors，reporting 类管上报。"
+      },
+      {
+        "text": "脚本、样式、图片、媒体四类，按资源类型划分",
+        "isCorrect": false,
+        "description": "错误。脚本/样式/图片只是 fetch 指令族内部的细分（script-src/style-src/img-src），不是顶层分类；顶层四类是 fetch/document/navigation/reporting。"
+      },
+      {
+        "text": "宽松、标准、严格、锁定四档，按安全级别划分",
+        "isCorrect": false,
+        "description": "错误。CSP 没有预设的安全级别档位，严格程度由你写的指令与源表达式组合决定，指令本身按职能分四类。"
+      },
+      {
+        "text": "输入、输出、传输、存储四类，按数据流向划分",
+        "isCorrect": false,
+        "description": "错误。这不是 CSP 的分类维度；CSP 不管数据存储与输入输出，只声明资源加载、文档能力、导航去向与上报。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 头一旦下发（含 `script-src` 约束），默认会禁掉哪些内联脚本载体？",
+    "explanation": "CSP 生效后**默认禁掉全部内联脚本**，覆盖三类载体：**inline `<script>` 代码块**、**内联事件处理器**（`onclick=`、`onerror=` 等）、**`javascript:` URL**——这三类恰是 XSS 注入的主战场，也是接入 CSP 后页面最常「坏」的地方。放行内联的正道是 **nonce** 或 **hash**，而不是 `'unsafe-inline'`。改造抓手：内联事件处理器改 `addEventListener`，`javascript:` URL 改按钮加监听。",
+    "tags": ["browser-security", "csp", "inline-script"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "inline `<script>` 代码块、`onclick=` 等内联事件处理器、`javascript:` URL 三类全部失效",
+        "isCorrect": true,
+        "description": "正确。CSP 默认把三类内联载体全部禁掉——它们正是注入代码最常见的执行形态；放行要走 nonce/hash 白名单。"
+      },
+      {
+        "text": "只禁 inline `<script>` 代码块，内联事件处理器与 `javascript:` URL 不受影响",
+        "isCorrect": false,
+        "description": "错误。若只禁代码块，攻击者注入 `<img onerror=…>` 照样执行——CSP 把内联事件处理器与 `javascript:` URL 一并默认禁掉才堵得住。"
+      },
+      {
+        "text": "只禁 `javascript:` URL，因为另外两类属于正常开发写法",
+        "isCorrect": false,
+        "description": "错误。三类内联载体对 CSP 而言同样不可区分「正常还是注入」，默认全禁；正常开发写法要通过 nonce/hash 或改造（addEventListener）过渡。"
+      },
+      {
+        "text": "禁掉所有外部 `<script src>` 引用，但保留内联脚本的执行",
+        "isCorrect": false,
+        "description": "错误。方向反了：外部脚本按源表达式白名单判定（如 `'self'` 放行同源），内联才是默认全禁的对象。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 源表达式 `'none'` 的使用规则是哪一项？",
+    "explanation": "**`'none'` 表示该类资源全部禁止，且不能与其他源值混用**——同一指令里写了 `'none'` 就不能再列任何其他来源。典型用法是 `object-src 'none'`（`<object>`/`<embed>` 是历史注入重灾区，现代页面直接关死）与 `base-uri 'none'`（阻止注入 `<base>` 标签劫持相对 URL）。与 `'self'`（同源）、host、scheme 表达式不同，`'none'` 是「一票禁绝」而非白名单成员。",
+    "tags": ["browser-security", "csp", "source-expression"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "表示该类资源全禁，并且不能与其他源值同列在一条指令里",
+        "isCorrect": true,
+        "description": "正确。`'none'` 是排他值：`object-src 'none'` 关死该资源类型，再列其他来源就是矛盾写法。"
+      },
+      {
+        "text": "可以与 `'self'` 混用，表示「除同源外全部禁止」",
+        "isCorrect": false,
+        "description": "错误。「除同源外全禁」直接写 `'self'` 即可（白名单语义天然排他）；`'none'` 不允许与任何其他值混用。"
+      },
+      {
+        "text": "表示不做任何限制，等价于没写这条指令",
+        "isCorrect": false,
+        "description": "错误。语义正相反：`'none'` 是全禁；「不限制」对应的是没写该指令且没有 `default-src` 兜底的情况。"
+      },
+      {
+        "text": "只对内联内容生效，外部资源不受它约束",
+        "isCorrect": false,
+        "description": "错误。`'none'` 作用于该指令管辖的整类资源（外部加载也在内），不是内联专用值；管内联放行的是 nonce/hash/unsafe-inline。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 策略里把 `'self'` 误写成不带单引号的 `self`，后果是什么？",
+    "explanation": "CSP 的关键字**必须带单引号**（`'self'`、`'none'`、`'unsafe-inline'` 等）。不带引号的 `self` 会被解析为 **host 源表达式——名为 self 的主机名**，于是策略实际放行的是 `http(s)://self` 这台不存在的主机。经典配错症状：**同源资源莫名被拦、Console 大片违规**。排查时看 Console 违规信息里的命中指令与被拦 URL 即可定位。",
+    "tags": ["browser-security", "csp", "pitfall"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`self` 被当成名为 self 的主机名——同源资源莫名被拦，Console 打出大片违规",
+        "isCorrect": true,
+        "description": "正确。引号是关键字与 host 表达式的区分标志；丢了引号，`self` 就成了普通主机名，同源放行的意图完全落空。"
+      },
+      {
+        "text": "浏览器能识别这种常见笔误，自动按 `'self'` 纠正处理",
+        "isCorrect": false,
+        "description": "错误。浏览器严格按语法解析，不做拼写纠正——不带引号就是合法的 host 表达式，语法上没有错误可纠。"
+      },
+      {
+        "text": "整条 CSP 策略因语法错误被丢弃，页面回到无策略状态",
+        "isCorrect": false,
+        "description": "错误。不带引号的 `self` 是语法合法的主机名写法，策略照常生效——正因为「合法但语义变了」，这个坑才隐蔽。"
+      },
+      {
+        "text": "效果完全相同，引号只是可选的风格约定",
+        "isCorrect": false,
+        "description": "错误。引号有语法意义：带引号是关键字，不带是主机名，两者语义截然不同，绝非风格问题。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 放行内联脚本的 nonce 与 hash 两种机制，适用场景应如何区分？",
+    "explanation": "**nonce 适合服务端动态渲染**：每次响应生成不可预测的随机值，同时写进响应头与 `<script>` 标签，要求模板注入能力。**hash 适合纯静态页/构建期可算哈希**：对脚本内容算 SHA-256/384/512 写进策略，内容不变哈希不变，**响应头可以是静态的**；代价是脚本内容一变就得重算。两者都同时支持内联与外部脚本，但**外部脚本走 hash 时标签必须带 `integrity` 且值与策略一致**。",
+    "tags": ["browser-security", "csp", "nonce", "hash"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "nonce 适合服务端动态渲染（每响应重新生成、模板注入）；hash 适合静态页（内容不变哈希不变，头可静态）；外部脚本走 hash 需配 `integrity`",
+        "isCorrect": true,
+        "description": "正确。nonce 依赖每次响应的随机生成与注入能力，hash 绑定内容本身适合构建期计算，外部脚本用 hash 时标签要带一致的 `integrity`。"
+      },
+      {
+        "text": "nonce 只能放行外部脚本，hash 只能放行内联脚本，两者辖区互斥",
+        "isCorrect": false,
+        "description": "错误。两种机制都同时支持内联与外部脚本，区别在生成与部署方式（动态随机 vs 内容哈希），不在适用的脚本形态。"
+      },
+      {
+        "text": "hash 更适合动态渲染页面，因为不需要改模板注入值",
+        "isCorrect": false,
+        "description": "错误。动态页的内联脚本内容常随数据变化，哈希会频繁失配；动态渲染恰恰是 nonce 的主场——反正每次都要渲染模板，顺手注入 nonce。"
+      },
+      {
+        "text": "nonce 生成一次即可长期复用，hash 则每次响应都要重新计算",
+        "isCorrect": false,
+        "description": "错误。完全说反了：nonce 必须每次响应重新生成且不可预测（复用即失守），hash 只在脚本内容变化时才需要重算。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 通过 `<meta http-equiv>` 下发时，哪组指令不会生效？",
+    "explanation": "meta 通道是残血版，四个指令在 meta 里**不生效**：**`frame-ancestors`**（防点击劫持）、**`sandbox`**（文档自沙箱）、**`report-uri`** 与 **`report-to`**（违规上报）；并且 `Content-Security-Policy-Report-Only` 头**没有 meta 形式**。这组限制指向同一结论：**防点击劫持和收违规报告，必须能改服务器响应头**——纯静态托管改不了头时，这两类防护是缺失的。",
+    "tags": ["browser-security", "csp", "meta"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`frame-ancestors`、`sandbox`、`report-uri`、`report-to` 四个指令不生效，Report-Only 也没有 meta 形式",
+        "isCorrect": true,
+        "description": "正确。嵌入控制与上报相关的指令在 meta 里一律无效——这正是「防点击劫持和收报告必须走响应头」的原因。"
+      },
+      {
+        "text": "meta 与响应头完全等价，所有指令都生效，只是优先级低一些",
+        "isCorrect": false,
+        "description": "错误。meta 不是完整等价通道：上述四个指令直接不生效（不是优先级问题），Report-Only 更是完全没有 meta 形式。"
+      },
+      {
+        "text": "只有 `script-src` 在 meta 里不生效，其余指令一切正常",
+        "isCorrect": false,
+        "description": "错误。`script-src` 这类 fetch 指令在 meta 里正常生效；不生效的是 frame-ancestors/sandbox/report-uri/report-to 这组嵌入与上报指令。"
+      },
+      {
+        "text": "meta 里所有 fetch 类指令都不生效，只有 navigation 类生效",
+        "isCorrect": false,
+        "description": "错误。方向反了：fetch 类指令在 meta 里可用，恰恰是 navigation 类的 `frame-ancestors` 与上报类指令不生效。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的同一条 `script-src` 指令里同时写了 nonce/hash 与 `'unsafe-inline'`，现代浏览器如何处理？",
+    "explanation": "**有 nonce/hash 时，现代浏览器会忽略同指令里的 `'unsafe-inline'`**。这是刻意设计的兼容通道：支持 nonce 的现代浏览器按 nonce/hash 严格执行（`'unsafe-inline'` 形同虚设），不认识 nonce 的老浏览器按 `'unsafe-inline'` 兜底放行内联——一条策略同时照顾两代浏览器。注意这条「共存忽略」规则**只适用于 `'unsafe-inline'`**：`'unsafe-eval'` 不会因 nonce/hash 的存在而被关掉。",
+    "tags": ["browser-security", "csp", "unsafe-inline"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "现代浏览器忽略 `'unsafe-inline'`、按 nonce/hash 严格执行；老浏览器不认识 nonce，按 `'unsafe-inline'` 兜底——可作两代浏览器的共存写法",
+        "isCorrect": true,
+        "description": "正确。这是官方认可的过渡配方：一条策略，新浏览器走严格白名单，旧浏览器至少不拦坏页面。"
+      },
+      {
+        "text": "`'unsafe-inline'` 优先生效，nonce 与 hash 被忽略，内联全部放行",
+        "isCorrect": false,
+        "description": "错误。优先级正相反：nonce/hash 的存在使现代浏览器直接忽略 `'unsafe-inline'`——否则这个共存写法就毫无安全价值了。"
+      },
+      {
+        "text": "两类值语法冲突，整条 `script-src` 指令被浏览器丢弃，脚本不受限制",
+        "isCorrect": false,
+        "description": "错误。并写完全合法，不构成语法冲突；浏览器按「有 nonce/hash 则忽略 unsafe-inline」的规则处理，指令照常生效。"
+      },
+      {
+        "text": "取两者并集：既放行带 nonce 的脚本，也放行所有无 nonce 的内联脚本",
+        "isCorrect": false,
+        "description": "错误。若取并集则 `'unsafe-inline'` 实际生效、防线归零；现代浏览器恰恰是丢弃 `'unsafe-inline'` 只认凭据。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的 `'unsafe-eval'` 放行哪些 API？它与 nonce/hash 的共存行为和 `'unsafe-inline'` 有何不同？",
+    "explanation": "**`'unsafe-eval'` 放行的是「把字符串当代码执行」的入口**：`eval()`、`new Function()`、字符串参数版的 `setTimeout`/`setInterval`。与 `'unsafe-inline'` 的关键差异：**它不会因同指令存在 nonce/hash 而被忽略**——写了就一直生效。某些依赖运行时求值的老库（旧模板引擎、旧打包产物）会逼你开它，正解是升级依赖而不是开洞；`eval` 场景多半能用 `JSON.parse` 或查表替代。",
+    "tags": ["browser-security", "csp", "unsafe-eval"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "放行 `eval()`、`new Function()`、字符串参数版 `setTimeout`/`setInterval`；且不会像 `'unsafe-inline'` 那样被同指令的 nonce/hash 关掉",
+        "isCorrect": true,
+        "description": "正确。`'unsafe-eval'` 打开的是字符串变代码的全部入口，并且没有「有凭据就忽略」的兼容规则，写了就持续生效。"
+      },
+      {
+        "text": "只放行 `eval()` 一个函数，`new Function()` 与字符串版定时器仍被禁止",
+        "isCorrect": false,
+        "description": "错误。`new Function()` 和字符串参数版 `setTimeout`/`setInterval` 同属「字符串当代码执行」一族，`'unsafe-eval'` 一并放行——只放 `eval` 而留着等价入口毫无意义。"
+      },
+      {
+        "text": "与 `'unsafe-inline'` 一样，同指令里出现 nonce/hash 时它会被现代浏览器忽略",
+        "isCorrect": false,
+        "description": "错误。「有 nonce/hash 则忽略」的规则只适用于 `'unsafe-inline'`；`'unsafe-eval'` 与执行凭据是两个维度，不会被关掉。"
+      },
+      {
+        "text": "它放行内联事件处理器与 `javascript:` URL 的执行",
+        "isCorrect": false,
+        "description": "错误。内联事件处理器与 `javascript:` URL 属于内联载体，归 `'unsafe-inline'`（或 nonce/hash）管辖；`'unsafe-eval'` 只管运行时求值 API。"
+      }
+    ]
+  },
+  {
+    "stem": "`Content-Security-Policy-Report-Only` 头的行为特征是哪一项？",
+    "explanation": "**Report-Only 模式只上报违规、不实际拦截**——策略试运行。标准上线路径：**先挂 Report-Only 收集真实流量的违规 → 按报告修配置/改代码 → 换正式头**（保留上报持续监控）。两个要点：它**只能走响应头**（没有 meta 形式）；它可与正式 `Content-Security-Policy` 头**同时下发**——一严一宽做灰度（正式头兜底、Report-Only 试更严的新策略）。",
+    "tags": ["browser-security", "csp", "report-only"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只上报违规不拦截，可与正式 CSP 头同时下发做灰度，且只能走响应头、没有 meta 形式",
+        "isCorrect": true,
+        "description": "正确。Report-Only 是「先观测再收紧」的标准路径载体：不拦截、可与强制头并行、仅响应头可用。"
+      },
+      {
+        "text": "既拦截违规资源，也把违规上报到端点，是最严格的执行模式",
+        "isCorrect": false,
+        "description": "错误。拦截 + 上报是正式 `Content-Security-Policy` 头（配 report-to）的行为；Report-Only 的定义就是**不执行拦截**。"
+      },
+      {
+        "text": "只在用户打开 DevTools 时才生效，用于本地调试",
+        "isCorrect": false,
+        "description": "错误。Report-Only 对所有用户的真实流量持续生效并上报——它的价值恰恰是收集线上真实违规，与 DevTools 是否打开无关。"
+      },
+      {
+        "text": "可以用 `<meta http-equiv>` 下发，方便静态站点做策略试运行",
+        "isCorrect": false,
+        "description": "错误。Report-Only 没有 meta 形式，只能走响应头——静态托管改不了头就用不了这个灰度通道。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 违规上报从 `report-uri` 到 `report-to` 的换代，关键差异是什么？",
+    "explanation": "**`report-uri` 已废弃**：直接在指令里写 URL，浏览器对每条违规 POST `application/csp-report`。**`report-to` 是现行方案**：端点由 **`Reporting-Endpoints` 响应头**声明具名端点，CSP 里引用端点名，走 Reporting API **批量** POST `application/reports+json`。过渡期**两者可并写**——支持 `report-to` 的浏览器会忽略 `report-uri`，老浏览器按 `report-uri` 兜底。这套 Reporting API 是全防线共用的观测基建（CSP、Permissions Policy、Integrity-Policy 同一端点）。",
+    "tags": ["browser-security", "csp", "reporting-api"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`report-uri` 直接写 URL、逐条 POST `application/csp-report`；`report-to` 引用 `Reporting-Endpoints` 声明的具名端点、批量 POST `application/reports+json`；并写时支持 `report-to` 的浏览器忽略前者",
+        "isCorrect": true,
+        "description": "正确。换代的三个维度：端点声明方式（内联 URL → 具名端点）、传输（逐条专有格式 → Reporting API 批量）、并写兼容（新浏览器忽略 report-uri）。"
+      },
+      {
+        "text": "`report-to` 直接写 URL，`report-uri` 才需要 `Reporting-Endpoints` 声明具名端点",
+        "isCorrect": false,
+        "description": "错误。两者说反了：遗留的 `report-uri` 是直接写 URL 的那个；现行 `report-to` 引用的是 `Reporting-Endpoints` 头里定义的端点名。"
+      },
+      {
+        "text": "两者只是指令改名，端点声明与传输格式完全一致",
+        "isCorrect": false,
+        "description": "错误。不只是改名：传输从逐条 `application/csp-report` 变为 Reporting API 批量 `application/reports+json`，端点声明也改为具名引用。"
+      },
+      {
+        "text": "并写时 `report-uri` 优先生效，`report-to` 只做兜底",
+        "isCorrect": false,
+        "description": "错误。优先级正相反：支持 `report-to` 的现代浏览器忽略 `report-uri`；后者只是给老浏览器的兜底。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 违规报告（type 为 `csp-violation`）的字段中，用来判断「被拦的是攻击还是自己人」以及定位违规位置的关键字段是哪些？",
+    "explanation": "关键字段：**`blockedURL`**（被拦资源的 URL，内联脚本记为 `inline`）、**`effectiveDirective`**（实际命中的指令，会细化到如 `script-src-elem`）、**`sourceFile`/`lineNumber`**（违规发生的文件与行号）、**`sample`**（被拦内容的**前 40 字符**——直接看内容片段最能判断是注入攻击还是自家代码违规）、**`disposition`**（`enforce` 或 `report`，区分强制头还是 Report-Only）。页内还可监听 `securitypolicyviolation` 事件拿到同构字段。",
+    "tags": ["browser-security", "csp", "violation-report"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`blockedURL`（内联记为 `inline`）+ `effectiveDirective`（命中指令）+ `sourceFile`/`lineNumber`（位置）+ `sample`（被拦内容前 40 字符）",
+        "isCorrect": true,
+        "description": "正确。`sample` 的内容片段是「攻击还是自己人」的最直接证据，`sourceFile`/`lineNumber` 负责定位，`effectiveDirective` 说明撞了哪条规则。"
+      },
+      {
+        "text": "报告里包含被拦脚本的完整源码，可直接做恶意代码分析",
+        "isCorrect": false,
+        "description": "错误。报告只含 `sample`——被拦内容的前 40 字符，不是完整源码；这个长度足够判断性质，又避免报告本身泄露过多内容。"
+      },
+      {
+        "text": "报告只有一个布尔字段表示是否发生违规，细节要看服务器访问日志",
+        "isCorrect": false,
+        "description": "错误。CSP 违规报告是结构化 JSON，含被拦 URL、命中指令、源文件行号、内容样本、完整策略等字段，本身就是排查的一手材料。"
+      },
+      {
+        "text": "`effectiveDirective` 永远是 `default-src`，看不出实际命中的细分指令",
+        "isCorrect": false,
+        "description": "错误。`effectiveDirective` 给出的是实际生效的指令，会细化到 `script-src-elem` 这类粒度——即使策略里只写了 default-src 兜底也会报告细分指令。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的 nonce 机制要求服务器每次响应都重新生成不可预测的随机值，背后的安全逻辑是什么？",
+    "explanation": "nonce 的防御前提是**攻击者注入内容时拿不到本次响应的合法凭据**。若 nonce 固定或可预测，攻击者可提前把猜中的值写进注入的 `<script nonce=…>`，策略直接放行——防线归零。所以 nonce 必须**每次响应重新生成 + 密码学不可预测**（如 `crypto.randomUUID()`）。对比 **hash 不需要随机**：它绑定的是脚本**内容本身**，攻击者注入的脚本内容不同、哈希必然失配——这正是静态页能用静态响应头的原因。两种凭据一个锚定「本次响应」、一个锚定「这段内容」。",
+    "tags": ["browser-security", "csp", "nonce"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "nonce 的安全性完全建立在「攻击者拿不到本次合法凭据」上——固定或可预测的 nonce 会被直接写进注入的脚本标签而放行；hash 无需随机是因为它锚定内容本身，注入内容不同哈希必失配",
+        "isCorrect": true,
+        "description": "正确。这是两种凭据机制的本质差异：nonce 按响应发凭据（必须随机），hash 按内容发凭据（可以静态），安全前提各不相同。"
+      },
+      {
+        "text": "随机化是为了让每次响应的 CSP 头都不同，防止中间人重放整份 HTML 响应",
+        "isCorrect": false,
+        "description": "错误。重放整份 HTML 时头与标签里的 nonce 一致，脚本照常执行——nonce 不防重放，防的是「注入内容拿不到凭据」；防中间人是 HTTPS 的职责。"
+      },
+      {
+        "text": "浏览器会记录历史 nonce，检测到重复值就拒绝执行页面全部脚本",
+        "isCorrect": false,
+        "description": "错误。浏览器不维护 nonce 历史、不做跨响应的重复校验，只比对「本次响应中头与标签的值是否一致」——随机性完全靠服务端自律。"
+      },
+      {
+        "text": "随机化是为了防止攻击者离线暴力破解 nonce 对应的哈希值",
+        "isCorrect": false,
+        "description": "错误。nonce 不是哈希、不存在「破解哈希」一说；它就是个随机票据，风险模型是被预测或复用，不是被逆向。"
+      }
+    ]
+  },
+  {
+    "stem": "防注入三件套（strict CSP、Trusted Types、SRI）的分工是哪一项？",
+    "explanation": "三件套各管一段、互不替代：**strict CSP** 管「什么脚本能执行」（注入的脚本标签没有 nonce/hash 就不跑）；**Trusted Types** 管「什么字符串能进 DOM XSS sink」（第一方代码把脏字符串塞进 `innerHTML` 时拦住）；**SRI** 管「拿到的文件是不是没被篡改」（CDN 被黑换了文件，哈希对不上就拒载）。三层叠满才算把注入面收干净——SRI 挡不住内联注入，CSP 挡不住 sink 误用，Trusted Types 挡不住 CDN 篡改。",
+    "tags": ["browser-security", "strict-csp", "trusted-types", "sri"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "strict CSP 管「什么脚本能执行」、Trusted Types 管「什么字符串能进 DOM XSS sink」、SRI 管「拿到的文件有没有被篡改」——三层互不替代",
+        "isCorrect": true,
+        "description": "正确。三件套分别回答执行准入、sink 准入、内容完整性三个独立问题，对应三类不同的攻击场景。"
+      },
+      {
+        "text": "三者都防同一种 XSS，部署任意一件即可获得完整防护",
+        "isCorrect": false,
+        "description": "错误。三者威胁模型不同：只上 CSP 挡不住第一方代码误用 `innerHTML`（DOM XSS），只上 SRI 挡不住内联注入——必须分层叠加。"
+      },
+      {
+        "text": "SRI 管脚本能否执行，strict CSP 管文件完整性校验",
+        "isCorrect": false,
+        "description": "错误。职责对调了：执行准入（nonce/hash 凭据）是 strict CSP 的辖区，内容完整性（`integrity` 哈希比对）才是 SRI 的辖区。"
+      },
+      {
+        "text": "Trusted Types 是 strict CSP 的别名，两者是同一机制的不同叫法",
+        "isCorrect": false,
+        "description": "错误。两者是独立机制：strict CSP 管脚本加载与执行来源，Trusted Types 通过 `require-trusted-types-for` 给 DOM sink 上闸——后者拦的是已在执行的第一方代码的危险赋值。"
+      }
+    ]
+  },
+  {
+    "stem": "SRI（子资源完整性）针对的威胁场景是什么？",
+    "explanation": "SRI 的威胁模型是**供应链攻击**：你从 CDN 挂脚本，CDN 被攻破后文件被替换——**来源没变、变的是内容**，所以 CSP 白名单/nonce 照常放行它。SRI 用 `integrity` 属性写死内容哈希，浏览器下载后比对，不匹配按网络错误拒绝加载。适用边界：适合**版本固定**的第三方资源；对「始终最新」的滚动 URL 天然冲突（内容一变哈希即碎），这类依赖要么锁版本、要么自托管。治理升级：`Integrity-Policy` 响应头可强制「所有脚本必须带 integrity」。",
+    "tags": ["browser-security", "sri", "supply-chain"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "CDN 被攻破后文件被替换——来源没变、内容变了，CSP 白名单与 nonce 照常放行，只有内容哈希能兜住",
+        "isCorrect": true,
+        "description": "正确。SRI 补的正是「按来源信任」的盲区：供应链攻击不改变加载来源，唯有锚定内容本身的哈希校验能发现篡改。"
+      },
+      {
+        "text": "攻击者往页面注入内联 `<script>` 代码块",
+        "isCorrect": false,
+        "description": "错误。内联注入归 CSP 管（默认禁内联 + nonce/hash 放行）；SRI 只校验外部资源的内容完整性，对内联脚本没有作用点。"
+      },
+      {
+        "text": "第一方代码把用户可控的脏字符串塞进 `innerHTML`",
+        "isCorrect": false,
+        "description": "错误。这是 DOM 型 XSS，归 Trusted Types 管（sink 拒收裸字符串）；SRI 不介入 DOM 赋值路径。"
+      },
+      {
+        "text": "中间人在传输链路上篡改 HTML 主文档本身",
+        "isCorrect": false,
+        "description": "错误。主文档的传输完整性靠 HTTPS/TLS 保障；SRI 的 `integrity` 属性只用于 `<script>` 与 `<link>` 引入的子资源，管不到承载它的主文档。"
+      }
+    ]
+  },
+  {
+    "stem": "Trusted Types 的浏览器支持现状（2026 年），哪个说法是准确的？",
+    "explanation": "MDN 标注 Trusted Types 为 **Baseline 2026-02 Newly available**——自 2026 年 2 月起在各主流浏览器**最新版**全部可用（且可在 Web Worker 里用）。「只有 Chrome 支持、生产不敢用」是旧认知。「Newly available」意味着老版本浏览器仍在存量中，官方给了 **tinyfill** 兜底：一行代码让不支持的浏览器把策略退化为普通净化函数，同一套代码两头跑。",
+    "tags": ["browser-security", "trusted-types", "baseline"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Baseline 2026-02 Newly available——各主流浏览器最新版已全部支持，老版本用一行 tinyfill 兜底即可上生产",
+        "isCorrect": true,
+        "description": "正确。2026 年 2 月起 Trusted Types 达到 Baseline Newly available，跨浏览器可用；Newly（而非 Widely）意味着要给存量旧版本配 tinyfill。"
+      },
+      {
+        "text": "仍是 Chrome 系独占特性，其他引擎没有实现计划，生产环境不能依赖",
+        "isCorrect": false,
+        "description": "错误。这正是笔记点名要更新的旧认知——2026-02 起各主流浏览器最新版均已支持，不再是 Chrome 独占。"
+      },
+      {
+        "text": "已经 Widely available 多年，所有存量浏览器都支持，无需任何兜底",
+        "isCorrect": false,
+        "description": "错误。它是 2026-02 的 **Newly** available——刚跨过全浏览器最新版的门槛，存量老版本仍不支持，所以官方才提供 tinyfill 方案。"
+      },
+      {
+        "text": "只有 Firefox 尚未支持，且没有任何降级兜底方案",
+        "isCorrect": false,
+        "description": "错误。Baseline 2026-02 的含义就是包括 Firefox 在内的主流浏览器最新版全部可用；而且官方明确提供了 tinyfill 兜底老版本。"
+      }
+    ]
+  },
+  {
+    "stem": "SRI 的 `integrity` 哈希比对失败时，浏览器如何处理该资源？",
+    "explanation": "哈希不匹配 = **拒绝加载并按网络错误处理**——不会降级为「加载但警告」，页面少了这个脚本该怎么坏就怎么坏，所以要有监控。适用元素：`<script>` 与 `<link>`（`rel` 为 `stylesheet`/`preload`/`modulepreload`）。多哈希规则：**混用不同算法时浏览器只取最强算法那组**；**同算法多值任一匹配即通过**（可同时放行资源的多个合法版本）。治理升级：`Integrity-Policy: blocked-destinations=(script)` 响应头可强制全站脚本必须带 integrity，配 Report-Only 灰度。",
+    "tags": ["browser-security", "sri", "integrity"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "拒绝加载并按网络错误处理——功能直接缺失，所以上线要配监控",
+        "isCorrect": true,
+        "description": "正确。SRI 的失败语义是硬失败（网络错误），宁可页面坏也不执行被篡改的内容——这正是完整性校验的意义。"
+      },
+      {
+        "text": "照常加载执行，只在 Console 打印一条完整性警告",
+        "isCorrect": false,
+        "description": "错误。「加载但警告」等于没有防护——被篡改的脚本一旦执行就为时已晚；SRI 的比对失败是硬性拒载。"
+      },
+      {
+        "text": "回退为跳过校验的普通加载，保证页面功能不受影响",
+        "isCorrect": false,
+        "description": "错误。不存在「校验失败就跳过校验」的回退——那会让攻击者靠篡改内容直接绕过 SRI，机制形同虚设。"
+      },
+      {
+        "text": "自动尝试从浏览器内置的备用 CDN 重新下载同名资源",
+        "isCorrect": false,
+        "description": "错误。浏览器没有内置备用 CDN 或自动重试源的机制；哈希不匹配就是网络错误，多源容灾要应用层自己做。"
+      }
+    ]
+  },
+  {
+    "stem": "域名白名单式 CSP（如 `script-src 'self' https://cdn.example.com`）被官方不再推荐的原因是什么？",
+    "explanation": "MDN 直接引用 Google 的研究**《CSP Is Dead, Long Live CSP!》**：① **白名单里总混进不安全域名**——被放行的域上只要存在 JSONP 端点、Angular 旧版运行时或可上传文件的路径，攻击者就能借道执行任意代码（**你信任的是整个域，而不是某个文件**）；② **维护成本失控**——第三方脚本还会再拉脚本，完整放行 Google Analytics 链路要 **187 个 Google 域名**；③ **列表会腐烂**——第三方换 CDN、加新域。答案是 strict CSP：放弃「按来源信任」，改为「按凭据信任」（nonce/hash + `'strict-dynamic'`）。",
+    "tags": ["browser-security", "strict-csp", "allowlist"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "白名单信任的是整个域而非具体文件——域上的 JSONP 端点、旧框架运行时都可被借道执行代码；且维护失控（放行 Google Analytics 链路要 187 个域名）",
+        "isCorrect": true,
+        "description": "正确。这是《CSP Is Dead, Long Live CSP!》的核心结论：多数白名单可被绕过 + 域名列表越滚越大无法维护，官方因此转推 nonce/hash + strict-dynamic。"
+      },
+      {
+        "text": "域名白名单语法已从 CSP 标准中移除，新浏览器不再解析 host 表达式",
+        "isCorrect": false,
+        "description": "错误。host 源表达式仍是合法语法、浏览器照常解析——问题是安全性与可维护性差，是「不推荐」而非「已删除」。"
+      },
+      {
+        "text": "逐条比对域名白名单的性能开销过大，拖慢页面加载",
+        "isCorrect": false,
+        "description": "错误。白名单匹配的开销可以忽略不计，性能从来不是这次换代的理由——理由是可绕过与维护失控。"
+      },
+      {
+        "text": "白名单只支持 http 源，无法表达 https 站点",
+        "isCorrect": false,
+        "description": "错误。host/scheme 表达式完全支持 https 源（如 `https://cdn.example.com`、`https:`）——这个限制不存在。"
+      }
+    ]
+  },
+  {
+    "stem": "strict CSP 的官方推荐配方由哪些成分组成？",
+    "explanation": "MDN 与 web.dev 共同推荐的 **strict CSP 配方四件套**：`script-src 'nonce-…'`（动态站，或静态站用 `'sha256-…'` hash）+ **`'strict-dynamic'`**（信任传递，让第三方脚本链能落地）+ **`object-src 'none'`**（关死 `<object>`/`<embed>` 历史注入重灾区）+ **`base-uri 'none'`**（阻止注入 `<base>` 劫持相对 URL）——**不写任何域名白名单**。核心转变是放弃「按来源信任」，改为「按凭据信任」。",
+    "tags": ["browser-security", "strict-csp", "nonce"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`script-src` 配 nonce（或 hash）+ `'strict-dynamic'` + `object-src 'none'` + `base-uri 'none'`，不写任何域名白名单",
+        "isCorrect": true,
+        "description": "正确。四件缺一不可：凭据管准入、strict-dynamic 管信任传递、object-src 与 base-uri 关掉两个经典旁路注入口。"
+      },
+      {
+        "text": "`script-src 'self'` 加上完整的第三方域名白名单，逐域审核后放行",
+        "isCorrect": false,
+        "description": "错误。这正是被《CSP Is Dead, Long Live CSP!》证明易被绕过、难维护的旧路线——strict CSP 的定义就是不依赖域名白名单。"
+      },
+      {
+        "text": "只需一条 `default-src 'none'`，其余全部由回退机制自动收紧",
+        "isCorrect": false,
+        "description": "错误。`default-src 'none'` 会把页面所有资源类型全部禁死（图片、样式、连接一起阵亡），不是可用的策略；而且它也覆盖不了 base-uri 这类不吃回退的指令。"
+      },
+      {
+        "text": "nonce 加 `'unsafe-inline'` 与 `'unsafe-eval'`，兼顾安全与兼容",
+        "isCorrect": false,
+        "description": "错误。`'unsafe-eval'` 是 strict CSP 明确要避免的洞（且不会被 nonce 关掉）；`'unsafe-inline'` 仅作老浏览器兜底顺带存在，配方的主体是 strict-dynamic 与两个 `'none'`。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 源表达式 `'strict-dynamic'` 的语义是什么？",
+    "explanation": "**`'strict-dynamic'` 的语义是信任传递**：被 nonce/hash 认证过的脚本，其通过 `document.createElement` 动态创建并插入的后代脚本**自动获得信任**，并可继续传递。它解决的是 strict CSP 的落地难题——现代第三方脚本（统计、广告、客服挂件）普遍会再动态注入脚本，没有信任传递就会大面积拦坏。代价：如果被信任的脚本有「拿页面可注入数据当 src 建 script」的坏习惯，信任链会被借用。",
+    "tags": ["browser-security", "strict-csp", "strict-dynamic"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "被 nonce/hash 放行的脚本，其动态 `createElement` 创建的后代脚本自动获得信任并可继续传递——专治第三方脚本再拉脚本的链条",
+        "isCorrect": true,
+        "description": "正确。信任随「程序化创建脚本」的行为显式传递，第三方脚本链不再需要枚举域名白名单。"
+      },
+      {
+        "text": "禁止一切动态创建的脚本执行，只允许 HTML 里静态写死的脚本标签",
+        "isCorrect": false,
+        "description": "错误。语义正相反：它是**放行**受信脚本动态创建的后代，而不是禁止动态创建——禁掉会拦坏几乎所有现代第三方脚本。"
+      },
+      {
+        "text": "只放行带 `async` 或 `defer` 属性的脚本，同步脚本一律拦截",
+        "isCorrect": false,
+        "description": "错误。`'strict-dynamic'` 与脚本的加载时序属性无关，判定依据是「创建者是否已被信任」，不是 async/defer。"
+      },
+      {
+        "text": "把整条策略切换到最严格模式，自动附加禁用 `eval` 的效果",
+        "isCorrect": false,
+        "description": "错误。它不是模式开关，只影响脚本信任的传递方式；`eval` 的禁放由 `'unsafe-eval'` 独立控制，两者互不牵连。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 声明 `require-trusted-types-for 'script'` 后，代码往 `innerHTML` 等 sink 赋裸字符串会发生什么？",
+    "explanation": "声明后，DOM XSS sink **拒收裸字符串，直接抛 `TypeError`**（Console 与违规报告同时记录），只接受经策略工厂盖章的 `TrustedHTML`/`TrustedScript`/`TrustedScriptURL` 对象。策略工厂用 `trustedTypes.createPolicy` 创建，把净化逻辑（如 DOMPurify）集中到唯一入口。配套的 **`trusted-types` 指令**可锁定允许创建的策略名——防止攻击者注入代码后**自建一个不做净化的放水策略**绕过闸门。",
+    "tags": ["browser-security", "trusted-types", "dom-xss"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "sink 拒收裸字符串直接抛 `TypeError`，只收 Trusted 类型对象；配套 `trusted-types` 指令锁定策略名，防攻击者自建放水策略",
+        "isCorrect": true,
+        "description": "正确。强制模式下裸字符串赋值即 TypeError，流量被逼着过策略工厂的净化入口；锁策略名堵住「攻击者自己 createPolicy」的旁路。"
+      },
+      {
+        "text": "赋进去的字符串被浏览器自动做 HTML 转义后写入 DOM",
+        "isCorrect": false,
+        "description": "错误。浏览器不做自动转义——怎么净化由你的策略工厂决定（转义还是 DOMPurify 白名单过滤）；机制本身只负责「拒收未盖章的字符串」。"
+      },
+      {
+        "text": "赋值被静默忽略，DOM 不变也不报任何错误",
+        "isCorrect": false,
+        "description": "错误。是显式抛 `TypeError` 并记录违规——静默失败会让迁移排查变成噩梦，显式报错才能定位每个未改造的调用点。"
+      },
+      {
+        "text": "浏览器弹出确认框，由用户决定这次赋值是否放行",
+        "isCorrect": false,
+        "description": "错误。Trusted Types 是纯代码层的强制约束，不涉及任何用户交互——用户也无从判断一个字符串该不该进 innerHTML。"
+      }
+    ]
+  },
+  {
+    "stem": "Trusted Types 把 DOM XSS sink 分为三族，下列对应关系哪项正确？",
+    "explanation": "三族 sink 与专属类型：**HTML 注入族**（`innerHTML`、`outerHTML`、`insertAdjacentHTML()`、`document.write()`、`iframe.srcdoc`、`DOMParser.parseFromString()`、`setHTMLUnsafe()`）收 **`TrustedHTML`**；**脚本执行族**（`eval()`、`new Function()`、`script.text/textContent`、字符串版 `setTimeout`/`setInterval`）收 **`TrustedScript`**；**脚本地址族**（`script.src`、`new Worker(url)`、`importScripts()`、`serviceWorker.register()`）收 **`TrustedScriptURL`**。按「字符串最终变成什么」分族：变标记、变代码、变代码的地址。",
+    "tags": ["browser-security", "trusted-types", "sink"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`innerHTML`/`document.write` 等收 `TrustedHTML`；`eval`/`new Function` 等收 `TrustedScript`；`script.src`/`new Worker` 等收 `TrustedScriptURL`",
+        "isCorrect": true,
+        "description": "正确。三族按危险字符串的归宿划分：进 DOM 当标记、直接当代码执行、当作代码的加载地址，各配一个专属 Trusted 类型。"
+      },
+      {
+        "text": "`innerHTML` 收 `TrustedScript`，因为注入的 HTML 里可能带脚本",
+        "isCorrect": false,
+        "description": "错误。`innerHTML` 收的字符串以 HTML 标记身份解析，归 HTML 注入族收 `TrustedHTML`；「可能带脚本」正是要净化的原因，但类型按 sink 的语义划分。"
+      },
+      {
+        "text": "`script.src` 收 `TrustedHTML`，因为 script 标签属于 HTML 元素",
+        "isCorrect": false,
+        "description": "错误。`script.src` 收的是「代码的地址」——归脚本地址族收 `TrustedScriptURL`；判定依据是字符串的用途（URL），不是元素类型。"
+      },
+      {
+        "text": "所有 sink 统一收 `TrustedString` 一种类型，没有分族",
+        "isCorrect": false,
+        "description": "错误。不存在 `TrustedString`；三种类型对应三种不同的净化语义（净化 HTML、审查代码、校验 URL），合并成一种会丢失针对性。"
+      }
+    ]
+  },
+  {
+    "stem": "Trusted Types 中名为 `default` 的策略有什么特殊行为？",
+    "explanation": "创建名为 **`default`** 的策略后，**所有存量的裸字符串 sink 赋值会自动路由给它**——不需要逐处改代码。这是迁移利器：先在 `createHTML` 里「净化 + console 记账」，**边跑边改**而不是一开闸全站报错。边界行为：若 default 策略的处理函数返回 `null`/`undefined`，该赋值抛 `TypeError`。配合 Report-Only 灰度（先摸排所有裸字符串调用点）构成完整迁移路径。",
+    "tags": ["browser-security", "trusted-types", "default-policy"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "创建后所有存量裸字符串 sink 赋值自动路由给它——可在其中净化并记录，边跑边改；返回 `null`/`undefined` 时赋值抛 `TypeError`",
+        "isCorrect": true,
+        "description": "正确。default 策略是官方设计的存量兜底通道：自动接管未改造的赋值点，让大型代码库能渐进迁移而非一次性全改。"
+      },
+      {
+        "text": "`default` 是浏览器内置策略，无需创建就默认放行一切裸字符串",
+        "isCorrect": false,
+        "description": "错误。default 策略必须由你显式 `createPolicy` 创建并提供处理函数；不存在「默认放行」——那样强制模式就毫无意义了。"
+      },
+      {
+        "text": "default 策略只拦截新写的代码，对存量代码的赋值不生效",
+        "isCorrect": false,
+        "description": "错误。方向反了：它的价值恰恰是自动兜住**存量**裸字符串赋值——新代码应该显式调用具名策略，不依赖 default 兜底。"
+      },
+      {
+        "text": "`default` 是保留名，调用 `createPolicy` 创建同名策略会直接抛异常",
+        "isCorrect": false,
+        "description": "错误。`default` 不仅允许创建，还是规范专门赋予特殊路由语义的名字——创建它正是官方推荐的迁移手段。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的 `'strict-dynamic'` 生效时，同指令里的域名白名单与 `'self'` 会被如何处理？这带来什么便利与风险？",
+    "explanation": "`'strict-dynamic'` 生效时，**浏览器会忽略同指令里的域名（host/scheme）与 `'self'`**。便利：可写一条**兼容策略**——现代浏览器走 nonce + strict-dynamic 严格执行，不认识 `'strict-dynamic'` 的老浏览器按域名白名单/`'self'` 兜底，一条头照顾两代。风险要心里有数：如果被信任的脚本存在「拿页面可注入数据当 src 建 script」的坏习惯，**信任链会被借用**——凭据信任模型的安全性依赖受信脚本自身的行为纪律。",
+    "tags": ["browser-security", "strict-csp", "strict-dynamic"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "域名与 `'self'` 被忽略——便于写新旧浏览器兼容策略；风险是受信脚本若拿可注入数据动态建 script，信任链会被借用",
+        "isCorrect": true,
+        "description": "正确。忽略规则是刻意设计的兼容通道（老浏览器读域名、新浏览器读凭据）；信任传递的代价是链上任一受信脚本的坏习惯都可能被利用。"
+      },
+      {
+        "text": "域名与 `'strict-dynamic'` 取并集同时生效，白名单域的脚本也自动获得传递信任",
+        "isCorrect": false,
+        "description": "错误。不是并集：`'strict-dynamic'` 生效时域名与 `'self'` 直接被忽略——保留域名生效会重新引入白名单可绕过的老问题。"
+      },
+      {
+        "text": "写了域名会导致 `'strict-dynamic'` 整体失效，策略退回纯白名单模式",
+        "isCorrect": false,
+        "description": "错误。方向反了：被忽略的是域名一侧，`'strict-dynamic'` 照常生效——这正是「同一条策略兼容两代浏览器」可行的原因。"
+      },
+      {
+        "text": "`'strict-dynamic'` 生效时连 nonce 也被忽略，只按动态创建关系判定信任",
+        "isCorrect": false,
+        "description": "错误。nonce/hash 是信任链的**根**——没有初始凭据就没有可传递的信任；被忽略的只是域名与 `'self'`。"
+      }
+    ]
+  },
+  {
+    "stem": "Trusted Types 官方 tinyfill（`trustedTypes = { createPolicy: (n, rules) => rules }`）在不支持的浏览器里起什么作用？",
+    "explanation": "tinyfill 只在 `typeof trustedTypes` 为 `undefined` 时定义一个对象，让 **`createPolicy` 退化为「返回规则对象本身」**。效果是**同一套代码两头跑**：支持的浏览器里 `policy.createHTML(input)` 产出 `TrustedHTML` 对象、CSP 强制生效；不支持的浏览器里 `policy.createHTML` 就是你传入的那个普通净化函数，返回净化后的字符串——**净化逻辑照常执行，只是没有 sink 层的强制拦截**。它不是完整 polyfill，而是保证代码同构的最小兜底。",
+    "tags": ["browser-security", "trusted-types", "tinyfill"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让 `createPolicy` 退化为返回规则对象本身——老浏览器里 `policy.createHTML` 就是普通净化函数，净化照常执行但无 sink 强制，代码同构运行",
+        "isCorrect": true,
+        "description": "正确。tinyfill 的精妙在于规则对象与策略对象的方法签名一致：一行代码保证两类浏览器共用同一调用方式，安全性按支持度渐进。"
+      },
+      {
+        "text": "在老浏览器里完整实现 Trusted Types 的 sink 拦截，效果与原生支持一致",
+        "isCorrect": false,
+        "description": "错误。sink 层的强制拦截需要引擎配合，一行 JS 模拟不了；tinyfill 只保证净化函数照常被调用，不提供「裸字符串抛 TypeError」的强制。"
+      },
+      {
+        "text": "把所有 sink 赋值改写为自动 HTML 转义，绕开策略工厂",
+        "isCorrect": false,
+        "description": "错误。tinyfill 不碰任何 sink、不做任何转义——它只定义 `trustedTypes.createPolicy`，净化逻辑仍是你在规则对象里写的那个函数。"
+      },
+      {
+        "text": "仅仅屏蔽 `trustedTypes is undefined` 的报错，净化逻辑在老浏览器里被跳过",
+        "isCorrect": false,
+        "description": "错误。净化不会被跳过：`createPolicy` 返回规则对象后，`policy.createHTML(input)` 调用的正是你写的净化函数——这是 tinyfill 与「空壳 shim」的本质区别。"
+      }
+    ]
+  },
+  {
+    "stem": "SRI 规定跨域资源必须配 `crossorigin` 属性走 CORS，no-cors 模式下 `integrity` 校验一律直接失败——为什么要这样设计？",
+    "explanation": "原因不是形式主义，而是堵一条**内容探测侧信道**：若允许 no-cors 的不透明响应参与完整性比对，攻击者可以**填一个猜测哈希 + 监听脚本的加载成败**——校验通过说明「跨源资源内容恰好等于我猜的那个版本」，等于把 SRI 变成读取跨源内容的 oracle（可探测别人登录态页面、内网资源的具体内容版本）。所以规范规定 **no-cors + integrity 一律失败**：要做完整性比对，就必须让资源方经 CORS（`Access-Control-Allow-Origin`）明确同意内容可被读取，标签写 `crossorigin` 走 anonymous 模式。",
+    "tags": ["browser-security", "sri", "cors", "side-channel"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "防止把哈希比对当侧信道：攻击者可填猜测哈希、看加载成败来探测跨源资源内容是否等于某版本——所以比对的前提是资源方经 CORS 同意内容可读",
+        "isCorrect": true,
+        "description": "正确。哈希比对的结果本身就是一比特的跨源内容信息；只有资源方经 CORS 显式放行读取，这个比特才不构成越权泄露。"
+      },
+      {
+        "text": "因为 no-cors 的不透明响应不含响应体字节，浏览器无从计算哈希",
+        "isCorrect": false,
+        "description": "错误。不透明响应的字节完整到达了浏览器（图片能显示、脚本能执行），只是对 JS 不可读——技术上完全能算哈希，禁止是出于安全设计而非能力限制。"
+      },
+      {
+        "text": "因为 CORS 响应头里携带官方哈希值，浏览器要用它与 `integrity` 比对",
+        "isCorrect": false,
+        "description": "错误。不存在这样的头——哈希只写在标签的 `integrity` 属性里，比对对象是下载到的内容本身；CORS 在这里的作用是「资源方同意内容可被读取」。"
+      },
+      {
+        "text": "纯粹是规范的历史遗留限制，没有安全上的动机",
+        "isCorrect": false,
+        "description": "错误。这是明确的反侧信道设计：MDN 解释了允许 no-cors 比对会让攻击者用「猜哈希 + 看成败」探测跨源内容，限制有清晰的威胁模型支撑。"
+      }
+    ]
+  },
+  {
+    "stem": "渲染器沙箱（renderer sandbox）剥夺了 renderer 进程的什么能力？",
+    "explanation": "renderer 进程启动时就被套上 **OS 级沙箱**：**没有直接系统调用权**——不能任意打开文件、访问设备、建原始网络连接。一切特权操作必须**经 IPC 向 browser 进程（或 Network Service）提交申请**，由特权进程校验后代办。对前端的可见后果：网页「任意读用户磁盘」这类能力**从架构上不存在**，文件访问全部经 `<input type=file>`、拖放、File System API 等**用户显式授权的窄门**。沙箱管住「向下」（本机），管不住「向内」（本进程内存里的数据）——那是站点隔离的活。",
+    "tags": ["browser-security", "sandbox", "renderer"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "直接系统调用权——不能任意读写文件、访问设备、建原始网络连接，特权操作必须经 IPC 请 browser 进程代办",
+        "isCorrect": true,
+        "description": "正确。沙箱的目标是让**失陷的** renderer 也伤不到本机：所有通向系统资源的路都改道特权进程审批。"
+      },
+      {
+        "text": "执行 JavaScript 的能力，脚本被移交给 browser 进程运行",
+        "isCorrect": false,
+        "description": "错误。执行 JS 正是 renderer 的本职（V8 就跑在里面）；沙箱剥夺的是它触达操作系统资源的能力，不是它的计算职能。"
+      },
+      {
+        "text": "解析 HTML 与 CSS 的能力，解析工作全部前移到网络进程",
+        "isCorrect": false,
+        "description": "错误。解析 HTML/CSS 同样是 renderer 的核心职责——正因为解析这些不可信内容的代码量巨大、漏洞是常态，才要用沙箱兜住失陷后果。"
+      },
+      {
+        "text": "与 GPU 进程通信的能力，页面因此无法使用硬件加速",
+        "isCorrect": false,
+        "description": "错误。跨进程 IPC 通道（含与 GPU 进程的合成通信）是保留的——沙箱切断的是**直接系统调用**，进程间协作恰恰是沙箱模型的运转方式。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器安全语境下的「纵深防御（defense in depth）」，准确含义是哪一项？",
+    "explanation": "纵深防御指**多层防线彼此独立、每层假设上一层已失守**：SRI 挡不住恶意内联脚本（那是 CSP 的活），CSP 挡不住 renderer 被 0day 攻破（那是沙箱的活），沙箱挡不住 Spectre 读本进程内存（那是站点隔离的活）。关键在**互不依赖**——每一层的成立不以其他层有效为前提，任何一层被攻破还有下一层。它不承诺单层完美（CORB 有兼容豁免、隔离粒度是 site 非 origin），承诺的是攻击者必须连破多层。",
+    "tags": ["browser-security", "defense-in-depth", "architecture"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "多层防线彼此独立、每层假设上一层已失守——任何一层被攻破还有下一层，且各层的成立互不依赖",
+        "isCorrect": true,
+        "description": "正确。纵深的工程含义是「每一步的失败都不依赖前一步成功」：CSP、沙箱、站点隔离各自回答不同层级的「如果上一层失守」。"
+      },
+      {
+        "text": "把所有防御逻辑集中到最底层（操作系统内核）统一实现，越深越可靠",
+        "isCorrect": false,
+        "description": "错误。集中到单点恰恰制造了单点失效风险；纵深防御是分层分散——内容层、进程层、系统层各设关卡，谁也不是唯一依赖。"
+      },
+      {
+        "text": "防线数量越多越好，各层功能重叠互为备份是设计重点",
+        "isCorrect": false,
+        "description": "错误。重点不是堆数量或功能重叠，而是各层威胁模型不同、彼此独立——SRI 与 CSP 并非互为备份，它们拦的是不同的攻击路径。"
+      },
+      {
+        "text": "指把防御机制的实现细节隐藏起来，让攻击者难以研究绕过",
+        "isCorrect": false,
+        "description": "错误。这是「隐匿式安全（security by obscurity）」，与纵深防御无关——浏览器防线（Chromium 沙箱、CSP 规范）全部公开，安全性不依赖保密。"
+      }
+    ]
+  },
+  {
+    "stem": "Chromium 的四层防御纵深，正确的层次顺序是哪一项？",
+    "explanation": "四层次序讲究——**越往下，信任的代码越少**：**① renderer 内的 Web 安全检查**（同源策略、CSP 执行——假设渲染引擎无 bug）→ **② 站点隔离**（不同 site 必进不同 renderer 进程——UXSS/引擎漏洞出现时兜底）→ **③ OS 沙箱**（进程无本地资源访问权——失陷进程伤不到本机）→ **④ browser 进程终审**（校验 renderer 的每个特权请求，发现越权可直接终止该进程）。每层假设上一层失守，失败互不依赖。",
+    "tags": ["browser-security", "defense-in-depth", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "renderer 内 Web 安全检查 → 站点隔离分进程 → OS 沙箱断本地资源 → browser 进程终审特权请求",
+        "isCorrect": true,
+        "description": "正确。从「引擎自身的软件检查」到「进程边界」到「系统资源隔断」再到「特权进程终审」，信任逐层递减。"
+      },
+      {
+        "text": "OS 沙箱 → CSP 执行 → 防火墙过滤 → 杀毒引擎扫描",
+        "isCorrect": false,
+        "description": "错误。防火墙与杀毒引擎不属于浏览器的防御层次；四层全部在浏览器架构之内（renderer 检查、站点隔离、沙箱、browser 终审）。"
+      },
+      {
+        "text": "browser 进程终审 → OS 沙箱 → 站点隔离 → renderer 内检查，特权进程最先把关",
+        "isCorrect": false,
+        "description": "错误。次序颠倒了：第一道是 renderer 内的 Web 安全检查（最常规、信任最多），browser 进程终审是最后一道（信任最少、可击杀越权进程）。"
+      },
+      {
+        "text": "站点隔离 → CORB → HTTPS → HSTS 四层，全部围绕网络传输展开",
+        "isCorrect": false,
+        "description": "错误。HTTPS/HSTS 是传输层机制（归网络章），不是这套进程防御纵深的组成；CORB 是站点隔离的配套数据防线而非独立一层。"
+      }
+    ]
+  },
+  {
+    "stem": "CORB（Cross-Origin Read Blocking）拦截的对象是什么？",
+    "explanation": "CORB 是进程隔离的配套数据防线：**跨站的 HTML/XML/JSON（及 PDF 等）数据型响应，不交付给发起请求的渲染进程**，除非服务器经 CORS 明确放行。判定逻辑：这些类型**几乎不可能是合法的 `<img>`/`<script>` 子资源**——请求照发、服务器照答，但命中时**响应体被替换为空**，渲染进程从未见过那些字节（DevTools 里显示空响应）。服务器的配合手段：MIME 标对 + `X-Content-Type-Options: nosniff` + `Cross-Origin-Resource-Policy`。",
+    "tags": ["browser-security", "corb", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跨站的 HTML/XML/JSON（及 PDF）等数据型响应——不交付给发起请求的渲染进程，除非服务器经 CORS 明确放行",
+        "isCorrect": true,
+        "description": "正确。CORB 保护「只该被同站读取的数据型响应」：它们不可能是合法的图片/脚本子资源，响应体在交付前被没收。"
+      },
+      {
+        "text": "所有跨站请求——在发出之前就被整体拦截，请求根本不会到达服务器",
+        "isCorrect": false,
+        "description": "错误。CORB 不拦请求本身（请求照发、服务器照答），拦的是**响应体向渲染进程的交付**——这也是 DevTools 里能看到请求但响应为空的原因。"
+      },
+      {
+        "text": "只拦跨站的 JavaScript 脚本文件，防止恶意代码进入进程",
+        "isCorrect": false,
+        "description": "错误。跨站脚本是 Web 的合法用法（CDN 引用），CORB 不拦；它拦的恰恰是「不该被当子资源加载」的数据型响应（HTML/XML/JSON）。"
+      },
+      {
+        "text": "跨站的图片与音视频资源，因为它们体积大、容易夹带数据",
+        "isCorrect": false,
+        "description": "错误。图片与媒体是典型的合法跨站子资源，CORB 明确放行；被拦的是数据型 MIME——判定依据是类型语义，不是体积。"
+      }
+    ]
+  },
+  {
+    "stem": "Spectre（2018）对浏览器安全模型的冲击，本质在于什么？",
+    "explanation": "Spectre 是 **CPU 推测执行的侧信道**攻击：让代码**不需要浏览器有任何 bug**，就能读取**本进程**任意内存。分水岭意义：同源策略是 renderer 进程**内**的软件检查，而 Spectre 读内存**根本不走检查**——软件层防线在它面前失效。Chromium 安全文档的结论：**唯一靠得住的边界是进程**；防御目标从「不被攻破」降级为更可达成的「被攻破的进程里没有值得偷的东西」。",
+    "tags": ["browser-security", "spectre", "side-channel"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无需任何浏览器漏洞即可读取本进程任意内存——进程内的软件同源检查全部失效，唯一可靠的边界只剩进程本身",
+        "isCorrect": true,
+        "description": "正确。Spectre 下探到硬件层（推测执行 + 缓存侧信道），绕过所有软件检查——这直接催生了「敏感数据绝不与不可信代码同进程」的站点隔离策略。"
+      },
+      {
+        "text": "它是渲染引擎的一个实现 bug，打上浏览器补丁即可彻底修复",
+        "isCorrect": false,
+        "description": "错误。Spectre 源于 CPU 推测执行的硬件设计，不是浏览器代码缺陷——浏览器只能缓解（降计时精度、进程隔离），无法「修复」硬件行为。"
+      },
+      {
+        "text": "它让攻击者可以直接跨进程读取其他进程的内存",
+        "isCorrect": false,
+        "description": "错误。Spectre 读的是**本进程**内存——这正是站点隔离有效的原因：把他站数据放进别的进程，攻击者的进程里就没有可偷的东西。"
+      },
+      {
+        "text": "它只影响未及时更新的旧版浏览器，现代浏览器已完全免疫",
+        "isCorrect": false,
+        "description": "错误。侧信道根植于 CPU 微架构，没有「免疫」版本；现代浏览器靠站点隔离 + 降精度计时器 + 强能力上锁**缓解**，防线是架构性的而非补丁式的。"
+      }
+    ]
+  },
+  {
+    "stem": "Spectre 披露后，浏览器的应对组合拳包含哪三项措施？",
+    "explanation": "三板斧：**① 站点隔离**——敏感数据根本不进攻击者进程（治本：本进程内存里没有值得偷的）；**② 降低计时器精度并加抖动**——侧信道要靠纳秒级计时测缓存命中/未命中来「读」内存，2018 年后浏览器统一降精；**③ 高危能力上锁**——`SharedArrayBuffer` 本质是「自带高精度计时器的共享内存」，被紧急下架；如今要用它（及恢复高精度计时）必须先用 COOP + COEP 达成**跨源隔离**（`crossOriginIsolated === true`），用主动声明隔离换回强能力。",
+    "tags": ["browser-security", "spectre", "sharedarraybuffer"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "站点隔离（敏感数据不进攻击者进程）+ 降低计时器精度加抖动 + 高危能力上锁（`SharedArrayBuffer` 须跨源隔离才开放）",
+        "isCorrect": true,
+        "description": "正确。三招分别对应：釜底抽薪（进程里没数据）、钝化武器（测不准时差）、锁住弹药库（SAB 这类自带计时器的能力凭隔离门票换取）。"
+      },
+      {
+        "text": "由浏览器厂商直接向用户 CPU 推送微码补丁，从硬件层根治",
+        "isCorrect": false,
+        "description": "错误。CPU 微码更新是操作系统与硬件厂商的渠道，浏览器无权也无法推送；浏览器的应对全部在软件架构层（隔离、降精、上锁）。"
+      },
+      {
+        "text": "全面禁用 JIT 编译，让所有 JS 以解释模式运行以消除推测执行",
+        "isCorrect": false,
+        "description": "错误。推测执行发生在 CPU 层，与 JIT 与否无关，禁 JIT 既拦不住侧信道又付出巨大性能代价——没有浏览器采取这条路线。"
+      },
+      {
+        "text": "把所有页面合并进同一个进程，便于统一监控异常内存访问",
+        "isCorrect": false,
+        "description": "错误。方向完全反了：同进程正是 Spectre 的猎场（读本进程内存不需要漏洞）；应对恰恰是拆进程——不同 site 必须分进程。"
+      }
+    ]
+  },
+  {
+    "stem": "Chromium 的 browser 进程如何利用「进程与 site 的归属关系」实施第四层防御？",
+    "explanation": "browser 进程掌握**每个 renderer 进程属于哪个 site**，据此**按进程发放数据**：某 site 的 Cookie、保存的密码等敏感数据**只交给该 site 的进程**。失陷 renderer 通过 IPC 冒领其他站点数据时，browser 进程的安全检查能**识破并直接终止（击杀）该进程**——Chromium 原话是安全检查「可以检测并终止行为异常的 renderer」。这就是终审的含义：renderer 的每个特权请求都要对得上进程的 site 身份。",
+    "tags": ["browser-security", "site-isolation", "browser-process"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按进程的 site 归属发放 Cookie、密码等敏感数据；renderer 经 IPC 冒领他站数据会被识破，进程可被直接终止",
+        "isCorrect": true,
+        "description": "正确。browser 进程是数据的守门人兼裁决者：数据按 site 定向投放，越权请求不仅被拒，整个进程还可能被击杀。"
+      },
+      {
+        "text": "给每个 renderer 进程分发相同的数据副本，靠加密保证只有对应站点能解开",
+        "isCorrect": false,
+        "description": "错误。防线是「数据根本不进错误进程」——若副本已进入失陷进程，Spectre 可直接读内存，加密在本进程内存里保护不了明文使用中的数据。"
+      },
+      {
+        "text": "browser 进程只负责窗口与 UI 管理，安全校验全部由 renderer 自己完成",
+        "isCorrect": false,
+        "description": "错误。renderer 是威胁模型里**假定已失陷**的一方，不能自证清白；browser 进程作为特权方对每个 IPC 请求做终审，正是第四层的意义。"
+      },
+      {
+        "text": "依靠各 renderer 进程互相监督对方的内存访问行为",
+        "isCorrect": false,
+        "description": "错误。沙箱进程之间不存在互查内存的通道（那本身就是漏洞）；裁决权集中在可信的 browser 进程，不依赖失陷域内的互相监督。"
+      }
+    ]
+  },
+  {
+    "stem": "从 CORB 到 ORB（Opaque Response Blocking）的演进，判定思路发生了什么反转？",
+    "explanation": "**CORB 是尽力而为（best effort）的黑名单**：拦截已知敏感类型（HTML/XML/JSON），但受「Web 上大量资源 MIME 标错也要兼容」掣肘——标成 `text/html` 的 JS 文件也得网开一面，留下豁免空间。**ORB 把思路反转为白名单**：不再枚举「该拦的类型」，而是**默认拦下所有无法证明是图片/媒体/脚本等合法子资源的不透明响应**。ORB 已写入 Fetch 标准，被各引擎逐步落地——从「拦已知的坏」到「只放已证的好」。",
+    "tags": ["browser-security", "corb", "orb"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CORB 是黑名单（拦已知敏感类型，受 MIME 标错兼容掣肘）；ORB 反转为白名单——默认拦下无法证明是合法子资源的不透明响应，已进 Fetch 标准",
+        "isCorrect": true,
+        "description": "正确。黑名单永远有漏（兼容豁免就是口子），白名单把举证责任反转给响应——证明不了自己是图片/媒体/脚本就不交付。"
+      },
+      {
+        "text": "ORB 放弃了拦截行为，改为只在 Console 打警告让开发者自查",
+        "isCorrect": false,
+        "description": "错误。ORB 是更彻底的拦截（默认拒绝），不是降级为警告——演进方向是收紧而非放松。"
+      },
+      {
+        "text": "ORB 把拦截职责从浏览器移交给服务器端的中间件执行",
+        "isCorrect": false,
+        "description": "错误。ORB 仍是浏览器（Fetch 规范层）的机制；服务器的配合（标对 MIME、nosniff、CORP）只是帮助判定，拦截本体始终在浏览器。"
+      },
+      {
+        "text": "两者行为完全相同，ORB 只是 CORB 标准化时的改名",
+        "isCorrect": false,
+        "description": "错误。不只是改名：判定模型从「黑名单枚举敏感类型」反转为「白名单验证合法子资源」，覆盖面与兜底方向根本不同。"
+      }
+    ]
+  },
+  {
+    "stem": "CORB/ORB 要可靠保护自家的数据接口，前端/服务端应做哪些配合动作？",
+    "explanation": "两件事在你手里：**① 给数据型接口标准 MIME + `X-Content-Type-Options: nosniff`**——让 CORB/ORB 能可靠识别你的 JSON，不给嗅探豁免留空间（MIME 标错正是 CORB 只能尽力而为的原因）；**② 发 `Cross-Origin-Resource-Policy`**——显式声明「本资源只许同源/同站使用」，比依赖 CORB 的类型推断更硬。另外两项行动：需要 `SharedArrayBuffer` 时按 COOP+COEP 做跨源隔离；服务端用 `Sec-Fetch-*` 识别并拒绝跨站请求。",
+    "tags": ["browser-security", "corb", "nosniff"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "给数据接口标准 MIME 加 `X-Content-Type-Options: nosniff`，再用 `Cross-Origin-Resource-Policy` 显式声明资源归属",
+        "isCorrect": true,
+        "description": "正确。标准 MIME + nosniff 让类型判定可靠（不给嗅探豁免留空间），CORP 把「归谁用」从推断变成显式声明。"
+      },
+      {
+        "text": "给接口响应加 CSP 的 `script-src` 指令，限制谁能加载这份数据",
+        "isCorrect": false,
+        "description": "错误。CSP 管的是「本文档能加载什么」，作用于加载方页面，不能反向控制「谁能加载我」——资源归属声明是 CORP 的职责。"
+      },
+      {
+        "text": "把 JSON 接口改造成 JSONP 格式，方便浏览器识别为脚本放行",
+        "isCorrect": false,
+        "description": "错误。方向完全反了：JSONP 把数据变成可跨站执行的脚本，正是白名单 CSP 被绕过的经典漏洞源，也让 CORB 的数据保护彻底失效。"
+      },
+      {
+        "text": "关闭接口的 MIME 声明，让浏览器自行嗅探内容类型以提高兼容性",
+        "isCorrect": false,
+        "description": "错误。缺失/含糊的 MIME 恰恰迫使 CORB 进入尽力而为的豁免路径——嗅探空间越大，数据被交付给跨站进程的风险越高。"
+      }
+    ]
+  },
+  {
+    "stem": "Spectre 场景下，失陷的 renderer 用 `<img src=跨站 JSON 接口>` 把敏感数据「拉进」本进程再读——这条攻击链被哪个机制在哪个环节斩断？",
+    "explanation": "关键在时序：站点隔离分开了进程，但失陷 renderer 可以**自己发起**跨站子资源请求——图片解码失败不重要，**在没有防护的世界里响应字节已进入进程内存**，Spectre 接手就能读（不需要解码成功）。**CORB/ORB 在响应交付前、进程之外没收响应体**：命中时响应体被替换为空，渲染进程**从未见过那些字节**——DevTools 的 Network 里该请求显示空响应。这正是「数据在进入失陷风险区之前被没收」的具象。",
+    "tags": ["browser-security", "corb", "spectre", "site-isolation"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "CORB/ORB 在响应交付前（进程之外）没收响应体——无防护时字节一进内存 Spectre 即可读，有 CORB 时渲染进程从未见过那些字节",
+        "isCorrect": true,
+        "description": "正确。这条链的要害是「字节进没进进程内存」：解码失败拦不住 Spectre（它读的是内存不是解码结果），必须在交付环节没收。"
+      },
+      {
+        "text": "站点隔离禁止 renderer 发起任何跨站子资源请求，攻击链在请求阶段就断了",
+        "isCorrect": false,
+        "description": "错误。跨站子资源请求（图片、脚本）是 Web 的常态，站点隔离不禁止发起——它管的是**文档**的进程分配；这个缺口正是需要 CORB 补上的原因。"
+      },
+      {
+        "text": "OS 沙箱拦截了 img 元素的网络请求，失陷进程无法访问网络",
+        "isCorrect": false,
+        "description": "错误。网络请求经 IPC 由网络服务代办，这是沙箱模型下的正常通道；沙箱断的是直接系统调用（本地文件、设备），不拦经代理的子资源请求。"
+      },
+      {
+        "text": "图片解码器发现内容是 JSON 而非图片格式，主动清空了已下载的数据",
+        "isCorrect": false,
+        "description": "错误。解码失败只是不渲染，无防护时字节仍留在进程内存里可被 Spectre 读取——依赖解码器清理恰是「没有 CORB 的世界」的漏洞所在。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe 的 `sandbox` 属性取空值（`<iframe sandbox src=…>`）时，内嵌文档处于什么状态？",
+    "explanation": "**空 `sandbox` 最严格**——全部限制生效：脚本不执行、表单提交静默失败、`window.open` 静默失败、`alert()/confirm()/print()` 无效、不能锁定指针/方向、不能触发下载、不能导航 `_top`；并且**源被替换为不透明源（opaque origin）**——同源判定永远失败，Cookie、`localStorage`、`indexedDB` 与一切需要源的 API 不可用。`sandbox` 的模型是**默认全禁、按 token 白名单放行**：写一个 token 放开一项。",
+    "tags": ["browser-security", "iframe-sandbox", "opaque-origin"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "最严格状态：脚本、表单、弹窗、模态框、顶层导航全部禁用，且内容被视为不透明源——同源判定永远失败、无 Cookie 与存储",
+        "isCorrect": true,
+        "description": "正确。空值意味着没有任何 token 放行，全部限制生效；不透明源使内容与任何源（包括它自己的真实源）都不同源。"
+      },
+      {
+        "text": "空值等于没写这个属性，iframe 拥有全部默认能力",
+        "isCorrect": false,
+        "description": "错误。sandbox 是「出现即全禁」的白名单模型：属性存在（哪怕无值）就启用全部限制——「没写属性」才是能力全开的状态。"
+      },
+      {
+        "text": "空值是非法语法，浏览器拒绝加载该 iframe 并报错",
+        "isCorrect": false,
+        "description": "错误。空值完全合法，且是嵌入完全不可信静态内容的推荐姿势——它不是错误而是最严格的合法配置。"
+      },
+      {
+        "text": "空值只禁脚本执行，表单提交与弹窗等能力保持可用",
+        "isCorrect": false,
+        "description": "错误。空值禁的是**全谱**能力（脚本只是其中一项）：表单、弹窗、模态、下载、顶层导航一并禁用，还叠加不透明源。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe 嵌入安全是双向的——`sandbox` 属性与 `frame-ancestors` 各自管哪个方向？",
+    "explanation": "两个方向各配一把锁：**`sandbox` 属性管「我嵌的第三方能干什么」**（向内限权——广告、评论挂件、用户自定义页面的能力白名单）；**`frame-ancestors`（及遗留的 `X-Frame-Options`）管「谁能把我装进 iframe」**（向外防点击劫持——由被嵌方通过响应头声明）。方向搞混是常见误区：sandbox 写在**宿主**的 iframe 标签上约束别人，frame-ancestors 写在**自己**的响应头里防被别人嵌。",
+    "tags": ["browser-security", "iframe-sandbox", "frame-ancestors"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`sandbox` 管向内——限制我嵌入的第三方内容能干什么；`frame-ancestors` 管向外——控制谁能把我的页面装进 iframe",
+        "isCorrect": true,
+        "description": "正确。宿主用 sandbox 给嵌入内容关笼子；被嵌方用 frame-ancestors 响应头声明允许的嵌入者，防点击劫持。"
+      },
+      {
+        "text": "`sandbox` 控制谁能嵌我，`frame-ancestors` 限制我嵌的内容的能力",
+        "isCorrect": false,
+        "description": "错误。两者职责正好说反了：sandbox 是宿主给嵌入内容设的限制，frame-ancestors 是被嵌方对嵌入者的准入声明。"
+      },
+      {
+        "text": "两者都管「我嵌的第三方」，sandbox 管脚本、frame-ancestors 管样式",
+        "isCorrect": false,
+        "description": "错误。frame-ancestors 根本不作用于「我嵌的内容」，它是被嵌方声明「谁有资格嵌我」的 navigation 指令，与样式无关。"
+      },
+      {
+        "text": "两者都管「谁能嵌我」，sandbox 是属性写法、frame-ancestors 是响应头写法",
+        "isCorrect": false,
+        "description": "错误。它们不是同一功能的两种写法，方向相反：sandbox 向内限权（属性，宿主写），frame-ancestors 向外防嵌（响应头，被嵌方发）。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe 加了 `sandbox=allow-scripts` 但忘给 `allow-same-origin` 时，最典型的故障形态是什么？",
+    "explanation": "无 `allow-same-origin` 时内容源被视为**不透明源**——**内容加载正常、界面正常，但一切依赖源的能力失效**：Cookie 登录态、`localStorage`、带凭证请求、同源 API 全部不可用。第三方挂件的表现是**「白屏/加载圈但 Console 干净」**——不是报错而是静默降级，极难排查。排查入口：DevTools → **Application → Frames** 选中该 frame，能看到生效的沙箱标志位。这是三大沙箱坑之一（另两个：同源自拆沙箱、弹窗继承限制）。",
+    "tags": ["browser-security", "iframe-sandbox", "opaque-origin"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "内容与界面加载正常，但 Cookie、localStorage、带凭证请求全部失效——挂件白屏或转圈而 Console 干净",
+        "isCorrect": true,
+        "description": "正确。不透明源的失效是静默的：需要源的能力悄悄不可用，页面结构照常渲染——「白屏但无报错」是它的指纹。"
+      },
+      {
+        "text": "iframe 直接拒绝加载，页面位置显示浏览器的拦截错误页",
+        "isCorrect": false,
+        "description": "错误。缺 `allow-same-origin` 不影响加载本身——文档正常下载渲染，坏的是源相关能力；显示拦截页的是 frame-ancestors 拒绝的场景。"
+      },
+      {
+        "text": "脚本全部不执行，页面退化为纯静态展示",
+        "isCorrect": false,
+        "description": "错误。脚本执行由 `allow-scripts` 控制，本题场景已给该 token——脚本照跑，跑挂的是脚本里依赖 Cookie/存储的逻辑。"
+      },
+      {
+        "text": "浏览器弹出权限询问框，请求用户授权该 iframe 使用存储",
+        "isCorrect": false,
+        "description": "错误。沙箱限制不走权限提示流程——不透明源是确定性的静默失效，没有任何用户交互机会。"
+      }
+    ]
+  },
+  {
+    "stem": "X-Frame-Options 头在现代浏览器里仍有效的取值有哪些？写 `ALLOW-FROM` 会怎样？",
+    "explanation": "XFO 只剩两个有效值：**`DENY`**（任何页面都不得嵌入，同源也不行）与 **`SAMEORIGIN`**（整条祖先链全部同源才可嵌）。**`ALLOW-FROM` 已废**——关键坑：现代浏览器遇到含它的头会**完全忽略整个头**，写了等于没防护（裸奔）。需要来源白名单必须换 CSP `frame-ancestors`。另一硬知识：XFO 的 **meta 写法无效**，只认响应头。",
+    "tags": ["browser-security", "x-frame-options", "clickjacking"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只有 `DENY` 与 `SAMEORIGIN` 两值有效；含 `ALLOW-FROM` 的头会被现代浏览器整头忽略——等于没有任何防护",
+        "isCorrect": true,
+        "description": "正确。ALLOW-FROM 不是「降级生效」而是「毒化整头」：一个废弃值让整条防线消失，需要白名单必须换 frame-ancestors。"
+      },
+      {
+        "text": "`DENY`、`SAMEORIGIN`、`ALLOW-FROM` 三值都仍然有效",
+        "isCorrect": false,
+        "description": "错误。ALLOW-FROM 已废弃且从未被所有引擎支持——现代浏览器不认它，而且会连带忽略整个头。"
+      },
+      {
+        "text": "`ALLOW-FROM` 部分失效，但头里的 DENY 语义会被保留执行",
+        "isCorrect": false,
+        "description": "错误。没有部分保留：ALLOW-FROM 出现即导致**整个头被忽略**——这正是它危险的地方，配置者以为有防护实际是零。"
+      },
+      {
+        "text": "X-Frame-Options 已被所有浏览器移除，任何取值都不再生效",
+        "isCorrect": false,
+        "description": "错误。XFO 是遗留但未移除——DENY/SAMEORIGIN 仍被执行，官方建议保留一条与 frame-ancestors 语义对齐的 XFO 给极老客户端兜底。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP `frame-ancestors` 与 X-Frame-Options 的对应与超越关系，哪项正确？",
+    "explanation": "对照关系：**`'none'` ≈ `DENY`**（全禁）、**`'self'` ≈ `SAMEORIGIN`**（仅同源）；超越点是**支持指定来源列表**（`frame-ancestors 'self' https://partner1.example …`）——这是 XFO 做不到的能力（ALLOW-FROM 已废）。共同限制：**两者的 meta 下发均无效**（frame-ancestors 是 meta 四不灵之一，XFO 只认响应头）。部署建议：新配置直接上 frame-ancestors，同时保留语义对齐的 XFO 兜底极老客户端——别一严一宽。",
+    "tags": ["browser-security", "frame-ancestors", "x-frame-options"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`'none'` ≈ DENY、`'self'` ≈ SAMEORIGIN；frame-ancestors 额外支持来源白名单（XFO 做不到）；两者 meta 下发均无效",
+        "isCorrect": true,
+        "description": "正确。frame-ancestors 完整覆盖 XFO 两值并补上来源列表能力；「都不能走 meta」是两者共同的部署约束。"
+      },
+      {
+        "text": "`'none'` 对应 SAMEORIGIN、`'self'` 对应 DENY",
+        "isCorrect": false,
+        "description": "错误。对应关系错位：`'none'` 是全禁对应 DENY，`'self'` 是仅同源对应 SAMEORIGIN——配错方向会把「允许自嵌」误设为「全禁」。"
+      },
+      {
+        "text": "frame-ancestors 同样不支持来源列表，能力与 XFO 完全等同",
+        "isCorrect": false,
+        "description": "错误。支持来源列表恰是 frame-ancestors 的核心增量——可信合作方嵌入的需求只有它能表达（ALLOW-FROM 已废）。"
+      },
+      {
+        "text": "frame-ancestors 可以用 `<meta http-equiv>` 下发，弥补静态站改不了响应头的缺口",
+        "isCorrect": false,
+        "description": "错误。frame-ancestors 是 meta 里不生效的四指令之一——防点击劫持必须有改响应头的能力，静态托管无法用 meta 补上。"
+      }
+    ]
+  },
+  {
+    "stem": "X-Frame-Options 与 `frame-ancestors` 都不发时，页面的可嵌入状态是什么？",
+    "explanation": "**不发任何头 = 任何人都能把你装进 iframe**——嵌入控制的默认值是全开放。这意味着攻击者可以把你的页面放进透明 iframe 叠在诱饵界面上做点击劫持。所以**后台系统、登录页、支付页必须显式声明**（`frame-ancestors 'none'` 或 `'self'`）；营销页/嵌入式挂件则要想清楚是否需要开放。「默认不安全、须显式关闭」是嵌入防线与 CSP（默认无策略）共同的部署特征。",
+    "tags": ["browser-security", "clickjacking", "frame-ancestors"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "任何站点都能把该页面嵌进 iframe——默认全开放，敏感页面必须显式发头声明限制",
+        "isCorrect": true,
+        "description": "正确。嵌入控制没有安全默认值：不声明就是对全网开放嵌入，点击劫持防护完全依赖显式配置。"
+      },
+      {
+        "text": "默认仅允许同源页面嵌入，跨站嵌入需要显式放行",
+        "isCorrect": false,
+        "description": "错误。不存在「默认 SAMEORIGIN」的出厂行为——同源限制必须靠显式发 `frame-ancestors 'self'` 或 XFO SAMEORIGIN 才生效。"
+      },
+      {
+        "text": "默认禁止一切嵌入，发头是为了放行可信来源",
+        "isCorrect": false,
+        "description": "错误。方向反了：默认是全放行，发头是为了**收紧**——如果默认全禁，整个嵌入式挂件生态（地图、播放器）就无法存在了。"
+      },
+      {
+        "text": "由浏览器根据页面是否含表单等敏感元素启发式决定可否被嵌",
+        "isCorrect": false,
+        "description": "错误。浏览器不做启发式嵌入判定——行为完全由响应头决定，没头就是开放，与页面内容无关。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe sandbox 的弹窗遗传规则：从沙箱 iframe 里 `window.open` 打开的新标签，限制如何传递？",
+    "explanation": "**沙箱会遗传**：从 sandbox iframe 里开的弹窗/新标签**继承全部沙箱限制**。典型事故：广告 iframe 给了 `allow-popups` 但没给 `allow-popups-to-escape-sandbox`，用户点广告在新标签打开落地页——**落地页的表单全部静默失效**（继承了无 allow-forms 的限制）。放行姿势：**`allow-popups-to-escape-sandbox`** 让弹出的新窗口**不继承**沙箱限制，是第三方广告点击跳转场景的标配 token。",
+    "tags": ["browser-security", "iframe-sandbox", "popups"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "弹窗默认继承全部沙箱限制（落地页表单会静默失效）；`allow-popups-to-escape-sandbox` 让新窗口不继承限制",
+        "isCorrect": true,
+        "description": "正确。遗传是默认行为——否则沙箱一个 `window.open` 就逃逸了；escape token 是显式声明「弹出的内容我信任」。"
+      },
+      {
+        "text": "弹窗是独立的顶层窗口，天生不受原 iframe 沙箱的任何约束",
+        "isCorrect": false,
+        "description": "错误。若弹窗天生自由，沙箱就毫无意义——被沙箱的内容开个新窗口即可解除全部限制；正因如此默认才是继承。"
+      },
+      {
+        "text": "沙箱 iframe 里的 `window.open` 被无条件禁止，没有任何 token 能放行",
+        "isCorrect": false,
+        "description": "错误。`allow-popups` 就是放行 `window.open` 与 `target=_blank` 的 token；本题讨论的是放行之后弹窗身上的限制传递问题。"
+      },
+      {
+        "text": "`allow-popups-to-escape-sandbox` 的作用是让 iframe 自身解除沙箱",
+        "isCorrect": false,
+        "description": "错误。escape 的主语是**弹窗**——iframe 自身仍在沙箱里，只有它开出的新窗口摆脱继承；不存在让 iframe 自我解除的 token。"
+      }
+    ]
+  },
+  {
+    "stem": "sandbox token 中 `allow-top-navigation-by-user-activation` 相比 `allow-top-navigation` 收紧了什么？",
+    "explanation": "两者都放行**导航顶层窗口（`_top`）**——把用户整页带走的能力。差别是 `-by-user-activation` 变体**仅限用户手势触发**的导航：脚本自动执行的顶层跳转仍被禁止，只有用户真实点击等激活行为才放行——**防脚本自动劫持跳转**（恶意广告把用户页面自动重定向到钓鱼站）。相关 token 还有 `allow-top-navigation-to-custom-protocols`（顶层导航到非 http 自定义协议，`allow-popups`/`allow-top-navigation` 会连带激活它）。",
+    "tags": ["browser-security", "iframe-sandbox", "top-navigation"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同样放行顶层导航，但仅限用户手势触发——脚本自动发起的整页跳转仍被禁止，防自动劫持",
+        "isCorrect": true,
+        "description": "正确。用户激活作为门槛，把「用户点了广告要跳转」与「脚本偷偷把整页带走」区分开——是更安全的推荐替代。"
+      },
+      {
+        "text": "只允许导航回与 iframe 同源的顶层页面，跨源目标被禁止",
+        "isCorrect": false,
+        "description": "错误。收紧的维度是**触发方式**（需用户手势），不是目标的源——用户激活后导航到任意目标都放行。"
+      },
+      {
+        "text": "每次顶层导航前浏览器弹出确认框，由用户逐次批准",
+        "isCorrect": false,
+        "description": "错误。没有确认框流程——判定是静默的：有用户激活上下文就放行，没有就拒绝，不引入额外交互。"
+      },
+      {
+        "text": "只放行 `target=_blank` 的新窗口打开，禁止一切 `_top` 导航",
+        "isCorrect": false,
+        "description": "错误。新窗口打开归 `allow-popups` 管；这个 token 管的正是 `_top` 顶层导航本身，只是加了用户手势的前提。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 的 `sandbox` 指令（响应头版沙箱）相对 iframe 的 `sandbox` 属性，补上了什么盲区？",
+    "explanation": "**`sandbox` 属性只在「被 iframe 嵌着」时有效**——用户把资源 URL 新开标签直接访问，就没了笼子。**CSP `sandbox` 指令由资源自己在响应头声明「请沙箱我」**（如 `Content-Security-Policy: sandbox allow-scripts`）：典型用途是用户上传内容（HTML 附件预览、富文本渲染服务）的响应统一加 sandbox——**即使有人直接打开资源 URL，它也在沙箱里跑**。注意：该指令在 meta 里不生效，也不能用于 Report-Only 头。",
+    "tags": ["browser-security", "csp", "sandbox-directive"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "属性只在被 iframe 嵌着时有效，用户直接访问资源 URL 就没了沙箱；响应头版由资源自己声明入笼，直接访问也在沙箱里跑",
+        "isCorrect": true,
+        "description": "正确。用户上传内容的渲染服务必须用响应头版——防护跟着资源走而不是跟着嵌入关系走，堵住「直接打开」的旁路。"
+      },
+      {
+        "text": "响应头版能放行比属性更多的能力种类，token 谱系是属性的超集",
+        "isCorrect": false,
+        "description": "错误。两者是同一套限制模型与 token 谱系，差别在下发通道与生效场景（谁声明、何时生效），不在能力范围。"
+      },
+      {
+        "text": "响应头版只在资源被 iframe 嵌入时生效，直接访问时失效",
+        "isCorrect": false,
+        "description": "错误。说反了：直接访问也生效正是响应头版的价值——属性版才是「只在被嵌时有效」的那个。"
+      },
+      {
+        "text": "响应头版用于给宿主页面上沙箱，属性版用于给嵌入内容上沙箱",
+        "isCorrect": false,
+        "description": "错误。响应头版沙箱的是**发出该响应的文档自己**（资源自我声明），不是宿主页面——宿主给别人上沙箱仍用属性。"
+      }
+    ]
+  },
+  {
+    "stem": "X-Frame-Options 与 CSP `frame-ancestors` 并存时谁优先？`SAMEORIGIN`/`'self'` 校验的范围是什么？",
+    "explanation": "**CSP2 规定两者并存时 `frame-ancestors` 优先、XFO 应被忽略**——所以部署建议是两头语义对齐（别一严一宽），XFO 只为极老客户端兜底。第二个硬知识：**`SAMEORIGIN`/`'self'` 校验的是整条祖先链**——从直接父级一路到顶层窗口**全部同源**才放行，不止看直接父级。「只看直接父级」是经典误解：否则攻击者把你的同源页面嵌进自己页面、再往里嵌目标页即可绕过。",
+    "tags": ["browser-security", "frame-ancestors", "x-frame-options"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CSP2 规定 frame-ancestors 优先、XFO 被忽略；SAMEORIGIN/`'self'` 要求整条祖先链全部同源，不止直接父级",
+        "isCorrect": true,
+        "description": "正确。优先级由 CSP2 明文规定；祖先链全查堵住「套娃嵌入」的绕过路径——任何一层祖先不同源即拒绝。"
+      },
+      {
+        "text": "XFO 优先生效，因为它出现更早、兼容性覆盖更广",
+        "isCorrect": false,
+        "description": "错误。CSP2 明文规定并存时 frame-ancestors 优先、XFO 应被忽略——「更老所以优先」不是标准的裁决逻辑。"
+      },
+      {
+        "text": "浏览器取两者中更严格的一条执行，宽松的自动作废",
+        "isCorrect": false,
+        "description": "错误。规范不是「取更严」而是「CSP 优先、XFO 忽略」——若 frame-ancestors 比 XFO 宽松，实际生效的就是宽松的那条，所以两头语义必须对齐。"
+      },
+      {
+        "text": "SAMEORIGIN 只校验直接父级窗口的源，更外层祖先不做检查",
+        "isCorrect": false,
+        "description": "错误。只查直接父级会被「攻击页 → 同源中间页 → 目标页」的套娃结构绕过；实际校验的是所有祖先 frame。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe 的 `sandbox` 属性与 `allow` 属性（Permissions Policy 委托）的辖区如何划分？",
+    "explanation": "两者叠加使用、互不替代：**`sandbox` 管基础行为能力**——脚本执行、表单提交、弹窗、模态框、顶层导航、下载等 token 谱系；**摄像头、麦克风、全屏、支付、定位这类强能力不归 sandbox 管**——那是 **`allow` 属性（Permissions Policy）的辖区**。所以「给了 `allow-scripts` 为什么 iframe 里还是拿不到摄像头」不是 bug：`getUserMedia` 的授权要走 `allow=camera` 委托 + 顶层响应头放行的双通道。",
+    "tags": ["browser-security", "iframe-sandbox", "permissions-policy"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "sandbox 管脚本、表单、弹窗、顶层导航等基础行为；摄像头、全屏、支付等强能力归 `allow` 属性（Permissions Policy）——两者叠加、互不替代",
+        "isCorrect": true,
+        "description": "正确。两套属性辖区分明：sandbox 的 token 谱系里没有任何强能力项，强能力的 iframe 委托只能走 allow 属性。"
+      },
+      {
+        "text": "sandbox 是 allow 属性的旧名，两者功能重叠，新代码任选其一即可",
+        "isCorrect": false,
+        "description": "错误。两者不是新旧关系而是分工关系：改名的是 Feature Policy → Permissions Policy（响应头），sandbox 从来独立存在且辖区不同。"
+      },
+      {
+        "text": "`allow-scripts` 同时放行了脚本对摄像头等设备 API 的调用",
+        "isCorrect": false,
+        "description": "错误。`allow-scripts` 只放行脚本**执行**；脚本调 `getUserMedia` 能否成功由 Permissions Policy 双通道决定——没有 allow 委托照样 NotAllowedError。"
+      },
+      {
+        "text": "allow 属性是 sandbox 的超集，写了 allow 就不需要再写 sandbox",
+        "isCorrect": false,
+        "description": "错误。allow 表达不了「禁脚本、禁表单、禁顶层导航」这些 sandbox 语义，反之亦然——嵌不可信内容时两者都要配。"
+      }
+    ]
+  },
+  {
+    "stem": "iframe sandbox 的同源逃逸：与宿主同源的内容同时拿到 `allow-scripts` 与 `allow-same-origin`，为什么安全性等于完全没上沙箱？",
+    "explanation": "MDN 的原警告：这个组合下内嵌文档可以「**移除自己的 sandbox 属性**——安全性与完全不用 sandbox 无异」。完整机制链：**`allow-same-origin` 保留真实源 → 内嵌文档与父页同源 → 脚本（`allow-scripts` 已放行）可直接访问父页 DOM → 在父页里找到自己的 `<iframe>` 节点 → `removeAttribute` 摘掉 sandbox → 重新加载后自由身**。结论：**沙箱只对「独立源上的内容」才有意义**——不可信内容永远放独立域名（哪怕是子域），别与主站同源。",
+    "tags": ["browser-security", "iframe-sandbox", "escape"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "同源 + 可执行脚本意味着能访问父页 DOM——找到自己的 iframe 节点移除 sandbox 属性，重新加载后即完全自由",
+        "isCorrect": true,
+        "description": "正确。逃逸链的每一环都是被授权的合法能力：同源授权 DOM 互访，脚本授权执行——组合起来就是「钥匙锁在了笼子里」。"
+      },
+      {
+        "text": "因为两个 token 存在语法冲突，浏览器解析失败后忽略整个 sandbox 属性",
+        "isCorrect": false,
+        "description": "错误。这个组合语法完全合法、sandbox 也照常生效——问题是被放行的能力组合足以让内容**主动拆除**沙箱，不是解析层面的失效。"
+      },
+      {
+        "text": "`allow-scripts` 单独就足以逃逸，`allow-same-origin` 只是加快了速度",
+        "isCorrect": false,
+        "description": "错误。缺 `allow-same-origin` 时内容是不透明源，与父页永远不同源、拿不到父页 DOM——逃逸链在第一环就断了，两个 token 缺一不可。"
+      },
+      {
+        "text": "浏览器对同源 iframe 从不执行 sandbox 限制，写不写都一样",
+        "isCorrect": false,
+        "description": "错误。sandbox 对同源内容照常生效（空 sandbox 的同源 iframe 一样全禁）——风险只出现在「同源 + 双 token」的特定组合，不是同源即免疫。"
+      }
+    ]
+  },
+  {
+    "stem": "混合内容（mixed content）指的是什么？危险在哪里？",
+    "explanation": "混合内容 = **HTTPS 页面加载 `http:` 子资源**——密文页面上的明文窟窿。危险分两级：明文资源在网络路径上**可被窥探**（泄露用户在看什么），更糟的是**可被替换**——当那是脚本或样式时，等于把页面控制权交给中间人。注意方向性：HTTP 页面加载 HTTPS 资源不叫混合内容（整个页面本来就没有保密承诺）。现行规范按可升级/可阻断两类处置，不再有「仅警告放行」档。",
+    "tags": ["browser-security", "mixed-content", "https"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "HTTPS 页面里加载 `http:` 子资源——明文部分可被中间人窥探甚至替换，脚本被换等于页面控制权易主",
+        "isCorrect": true,
+        "description": "正确。HTTPS 的完整性承诺被明文子资源撕开口子：窥探泄露隐私，替换脚本/样式则直接劫持页面。"
+      },
+      {
+        "text": "同一个页面混用多个不同的 JavaScript 框架导致的兼容问题",
+        "isCorrect": false,
+        "description": "错误。混合内容是传输安全概念（https 页面配 http 资源），与前端框架的混用、兼容完全无关。"
+      },
+      {
+        "text": "HTTP 页面里加载 HTTPS 资源，破坏了协议的一致性",
+        "isCorrect": false,
+        "description": "错误。方向反了：HTTP 页面本身就是明文、没有保密承诺可破坏，往上挂 HTTPS 资源不构成混合内容问题。"
+      },
+      {
+        "text": "页面同时包含服务端渲染与客户端渲染的内容区块",
+        "isCorrect": false,
+        "description": "错误。渲染方式的混合是架构话题；混合内容特指「密文页面 + 明文子资源」的传输安全缺口。"
+      }
+    ]
+  },
+  {
+    "stem": "isSecureContext 判定：哪些上下文会被浏览器认定为安全上下文？",
+    "explanation": "算安全的：**`https://`/`wss://`**，以及「本机投递、不经网络」的 **`http://127.0.0.1`、`http://localhost`、`http://*.localhost`**（Firefox 84+ 才认 localhost 域名写法）和 **`file://`**——这类不走 HTTPS 也可信的源叫 **potentially trustworthy origin（潜在可信源）**。这解释了「本地开发能用 Service Worker，一上 http 测试机就不行」。注意：**其他一切 `http://` 都不安全，包括内网 IP**（`http://192.168.1.10` 不算）。判定结果挂在 `window.isSecureContext`（Worker 里是 `self.isSecureContext`）。",
+    "tags": ["browser-security", "secure-context", "localhost"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`https://`/`wss://`，加上本机投递的 `http://127.0.0.1`、`http://localhost`、`http://*.localhost` 与 `file://`——即 potentially trustworthy origin",
+        "isCorrect": true,
+        "description": "正确。判定标准是「中间人碰不到」：走 TLS 的，加上根本不经网络的本机投递，都算安全上下文。"
+      },
+      {
+        "text": "只有 `https://` 一种，localhost 与 file 协议都不算",
+        "isCorrect": false,
+        "description": "错误。「安全上下文就是 HTTPS」是笔记点名的旧认知——本机投递（localhost/127.0.0.1/file）不经网络、无中间人风险，同样算数。"
+      },
+      {
+        "text": "`https://` 加上一切内网 IP 地址——局域网流量不出网关所以可信",
+        "isCorrect": false,
+        "description": "错误。`http://192.168.1.10` 这类内网 http 源**不是**安全上下文——局域网同样存在中间人（ARP 欺骗、恶意热点），只有本机回环才豁免。"
+      },
+      {
+        "text": "所有能通过 DNS 解析的域名，无论 http 还是 https",
+        "isCorrect": false,
+        "description": "错误。判定看投递通道的保密与认证能力，与能否解析无关——http 域名的流量全程明文，恰是要挡在门外的对象。"
+      }
+    ]
+  },
+  {
+    "stem": "安全上下文门控的强能力 API，在非安全上下文里的失败形态是什么？",
+    "explanation": "**失败形态不统一，特性检测要兜两种**：有的 API 干脆 **`undefined`**（如非安全上下文里 `navigator.serviceWorker` 直接不存在），有的**返回拒绝的 Promise**。门控清单（MDN 维护，几十项）高频组：Service Worker、Push/Notifications、`getUserMedia`、Screen Capture、Geolocation、异步 Clipboard、Web Crypto（`crypto.subtle`）、WebAuthn、WebUSB/Bluetooth/HID/Serial、Payment Request、WebGPU、WebTransport。记忆模型：**「这个能力落到中间人手里可怕吗？」可怕就在清单上**。",
+    "tags": ["browser-security", "secure-context", "powerful-features"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "形态不统一——有的 API 直接 `undefined`（如 `navigator.serviceWorker`），有的返回拒绝的 Promise，特性检测两种都要兜",
+        "isCorrect": true,
+        "description": "正确。门控在 API 暴露层与调用层各有实现：写健壮的检测代码要同时处理「不存在」与「存在但拒绝」。"
+      },
+      {
+        "text": "统一抛出 `SecurityError` 同步异常，捕获这一种即可",
+        "isCorrect": false,
+        "description": "错误。失败形态没有统一约定——`navigator.serviceWorker` 这类直接 `undefined` 的场景连异常都不抛，只 try/catch 一种会漏。"
+      },
+      {
+        "text": "API 照常存在且能工作，只是每次调用弹出安全警告",
+        "isCorrect": false,
+        "description": "错误。门控是硬性不可用——不存在「能用但警告」的宽松档；若 HTTP 下强能力照常工作，中间人注入脚本即可滥用，门控就失去意义了。"
+      },
+      {
+        "text": "只在 DevTools 的 Issues 面板提示，页面功能完全不受影响",
+        "isCorrect": false,
+        "description": "错误。DevTools 提示只是辅助排查；非安全上下文里强能力是真实不可用（undefined 或拒绝），不是仅提示级别的软约束。"
+      }
+    ]
+  },
+  {
+    "stem": "isSecureContext 高频踩坑：本机 `http://localhost:5173` 开发一切正常，手机访问 `http://192.168.1.10:5173` 联调时 Service Worker 与摄像头全灭——原因与正解是什么？",
+    "explanation": "原因：**localhost 是本机投递的 potentially trustworthy origin（算安全上下文），而 `http://192.168.1.10` 是普通 http 源（不算）**——强能力 API 在后者全体不可用。这不是设备或框架问题，是安全上下文判定规则。正解：**devServer 开 HTTPS**（自签证书/mkcert）或用支持 HTTPS 的隧道。同族坑：你的 HTTPS 应用被客户嵌进 HTTP 老门户的 iframe——祖先链一票否决，强能力集体失效，也不是你的 bug。",
+    "tags": ["browser-security", "secure-context", "dev-workflow"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "localhost 算安全上下文而 `http://192.168.1.10` 不算，强能力 API 在后者全体不可用；解法是 devServer 开 HTTPS（mkcert/自签）或走 HTTPS 隧道",
+        "isCorrect": true,
+        "description": "正确。本机回环豁免不延伸到局域网 IP——联调想用 SW/摄像头，就得给局域网访问补上 TLS。"
+      },
+      {
+        "text": "手机浏览器不支持 Service Worker 与 getUserMedia，换桌面浏览器即可",
+        "isCorrect": false,
+        "description": "错误。现代移动浏览器早已支持这些 API——同一台手机访问 https 站点一切正常；坏在访问通道不满足安全上下文，不在设备能力。"
+      },
+      {
+        "text": "192 开头的网段被浏览器列入了硬编码黑名单，换 10 网段即可解决",
+        "isCorrect": false,
+        "description": "错误。不存在网段黑名单，换 `http://10.x.x.x` 一样失败——规则是「非本机投递的 http 一律不安全」，与具体私网网段无关。"
+      },
+      {
+        "text": "需要在手机系统里打开开发者模式并信任调试证书",
+        "isCorrect": false,
+        "description": "错误。开发者模式与此无关——判定发生在浏览器的安全上下文规则层；除非你真的上了自签 HTTPS，才涉及让设备信任证书。"
+      }
+    ]
+  },
+  {
+    "stem": "混合内容处置中「可升级（upgradable）」类覆盖哪些资源？浏览器怎么处理它们？",
+    "explanation": "可升级类：**`<img src>`（含 SVG，但不含 `srcset`）、CSS 图像（`background-image`/`border-image` 等）、`<audio src>`、`<video src>`、`<source>`**。处理：**自动把 URL 从 http 改写为 https 再请求**——服务器若不支持 https，加载失败（坏图/坏媒体）。这份清单的由来：旧模型里「被动内容仅警告放行」的类型被**平移成了自动升级**——不再放行明文，而是替你升协议。注意 `srcset`/`<picture>` 不在此列，它们归可阻断。",
+    "tags": ["browser-security", "mixed-content", "upgradable"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`<img src>`（不含 srcset）、CSS 图像、`<audio src>`、`<video src>`、`<source>`——URL 自动改写为 https 重试，升不上去就加载失败",
+        "isCorrect": true,
+        "description": "正确。可升级类是旧「被动内容」清单的平移：浏览器替你把协议升到 https，服务器不支持就以失败告终，绝不明文加载。"
+      },
+      {
+        "text": "`<script>` 与 `<iframe>` 也属于可升级类，会自动升 https 后加载",
+        "isCorrect": false,
+        "description": "错误。脚本与 iframe 属于可阻断类——能改页面行为的资源风险太高，直接拦截不发请求；只有 CSP `upgrade-insecure-requests` 才会连它们一起升。"
+      },
+      {
+        "text": "可升级的含义是保持 http 明文加载，同时在 Console 提示建议升级",
+        "isCorrect": false,
+        "description": "错误。这是已退场的旧模型（被动内容仅警告）；现行行为是真实改写 URL 到 https——Network 面板里能看到请求已是 https。"
+      },
+      {
+        "text": "`<img srcset>` 与 `<picture>` 同样在自动升级之列",
+        "isCorrect": false,
+        "description": "错误。`srcset`/`<picture>` 被明确归入可阻断类（规范对新式图片语法从严）——可升级只覆盖传统 `<img src>` 等存量形态。"
+      }
+    ]
+  },
+  {
+    "stem": "混合内容处置中「可阻断（blockable）」类的覆盖范围与处理方式是哪一项？",
+    "explanation": "可阻断类覆盖：**`<script>`、`<link>` 样式表、`<iframe>`、`fetch()`/XHR、所有 CSS `url()`（含 `@font-face`、`cursor`）、`<object data>`、`sendBeacon()`、`<img srcset>`/`<picture>`、Web 字体——以及一切新增资源类型**。处理：**直接阻断、不发请求**（不尝试升级）。设计原则：能执行代码/改变页面行为的资源被中间人替换的后果最重，宁可功能缺失也不冒险；新类型没有存量兼容包袱，一律从严归入可阻断。",
+    "tags": ["browser-security", "mixed-content", "blockable"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "脚本、样式表、iframe、fetch/XHR、CSS `url()`、字体、`srcset` 等，以及一切新增资源类型——直接阻断不发请求",
+        "isCorrect": true,
+        "description": "正确。可阻断类是高危资源 + 全部新类型：默认不升级、不请求，Console 报「must be served over HTTPS」，Network 标 blocked:mixed-content。"
+      },
+      {
+        "text": "可阻断类会先尝试升级到 https，失败后才转为阻断",
+        "isCorrect": false,
+        "description": "错误。可阻断类默认**不尝试升级**、直接拦（升级是可升级类的待遇）；想让它们也升要显式配 CSP `upgrade-insecure-requests`。"
+      },
+      {
+        "text": "`<img src>` 的普通图片也属于可阻断类",
+        "isCorrect": false,
+        "description": "错误。传统 `<img src>` 归可升级类（自动升 https）；归可阻断的是 `srcset`/`<picture>` 这些新式图片语法。"
+      },
+      {
+        "text": "可阻断资源仅在用户点击交互后才被拦截，首屏加载不受影响",
+        "isCorrect": false,
+        "description": "错误。阻断发生在资源请求发起时（解析到标签/执行到 fetch 就拦），与用户交互时机无关——首屏的混合脚本一样直接拦。"
+      }
+    ]
+  },
+  {
+    "stem": "混合内容的旧认知「HTTPS 页面里的 HTTP 图片只是控制台警告」为什么已经过时？",
+    "explanation": "早期规范分**主动（active）/被动（passive）**两类：脚本这类能改页面的必拦，图片这类「只展示」的**允许明文加载、仅 Console 警告 + 小图标提示**。2020 年前后**换代**：旧「被动/可选阻断」清单**平移成了「可升级」**——不再放行明文，而是自动改写为 https（升不上去就失败）；**所有新增资源类型一律归可阻断**。正确心智：**HTTPS 页面里不存在「还能明文加载」的子资源——要么被升级、要么被拦**。",
+    "tags": ["browser-security", "mixed-content", "legacy"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "旧「主动/被动 + 仅警告」模型已退场：被动清单平移为自动升级（升不上去就失败），新类型全归阻断——不再有明文放行档",
+        "isCorrect": true,
+        "description": "正确。换代的本质是取消「明文 + 警告」的宽松档：HTTP 图片如今要么成功升到 https、要么加载失败，绝不再明文放行。"
+      },
+      {
+        "text": "因为浏览器现在允许所有混合内容加载，警告也一并取消了",
+        "isCorrect": false,
+        "description": "错误。演进方向是收紧不是放开——从「部分明文放行」走到「零明文」（升级或阻断），Console 对两种处置各有一条提示。"
+      },
+      {
+        "text": "因为图片现在也直接阻断、从不尝试升级，与脚本待遇一致",
+        "isCorrect": false,
+        "description": "错误。传统 `<img src>` 走的是自动升级而非直接阻断——「拦」与「升」两档待遇仍有区分，只是都不再明文放行。"
+      },
+      {
+        "text": "因为警告的展示位置从 Console 换成了页面顶部横幅",
+        "isCorrect": false,
+        "description": "错误。变化发生在处置行为（明文放行 → 升级/阻断），不是提示 UI 的挪位——把换代理解成提示样式调整就完全错过了要点。"
+      }
+    ]
+  },
+  {
+    "stem": "混合内容自动升级的例外：`<img src=http://93.184.215.14/a.png>` 这类 IP 主机的资源，浏览器如何处置？",
+    "explanation": "**IP 直连例外：不升级、直接阻断**——只有域名主机才自动升级。理由：http + IP 直连的场景大概率是**内网设备**（路由器、打印机、NAS），它们几乎拿不到公网可信的 TLS 证书，盲升 https 只会换一种失败（证书错误），不如直接拦。这条路的**正规出口是 Local Network Access**：LNA 权限授予后，对可识别的本地目标**放宽混合内容检查**——HTTPS 页面得以合法访问 `http://192.168.0.1`。",
+    "tags": ["browser-security", "mixed-content", "ip-host", "lna"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不升级、直接阻断——域名主机才升级；IP 直连多为拿不到可信证书的内网设备，正规出口是 LNA 权限授予后的混合内容豁免",
+        "isCorrect": true,
+        "description": "正确。「拦而不升」是对现实的妥协：盲升只会撞证书错误；LNA 把这类需求纳入权限模型给出合法通道。"
+      },
+      {
+        "text": "IP 主机与域名主机待遇一致，同样自动升级到 https",
+        "isCorrect": false,
+        "description": "错误。IP 主机被明确排除在自动升级之外——内网设备通常无有效 TLS 证书，升级注定失败，浏览器选择直接阻断。"
+      },
+      {
+        "text": "IP 主机被豁免检查，保持 http 明文正常加载",
+        "isCorrect": false,
+        "description": "错误。IP 主机不是豁免而是从严（直接拦）；明文放行档在现行规范里已不存在，豁免只能经 LNA 权限授予获得。"
+      },
+      {
+        "text": "私网 IP 直接阻断，公网 IP 则正常自动升级",
+        "isCorrect": false,
+        "description": "错误。规则按「主机是否为 IP 字面量」划线，不区分公私网——例子里的 93.184.215.14 是公网 IP，同样拦而不升。"
+      }
+    ]
+  },
+  {
+    "stem": "CSP 指令 `upgrade-insecure-requests` 相比浏览器默认的混合内容升级，多做了什么？边界在哪里？",
+    "explanation": "浏览器默认**只升「可升级类」**（img/audio/video 等）；`upgrade-insecure-requests` 把页面**所有 http 子请求——包括可阻断类（脚本、iframe、fetch）**——在发出前统一改写为 https，是存量 http 链接多的老站迁移利器。边界：它只管**本页面的子请求**，不负责别人链到你的 http 入口（那是 HSTS 的活）。反方向的 **`block-all-mixed-content`**（连可升级类也拦）**已废弃**——升级语义成为默认后失去意义，存量配置可删。",
+    "tags": ["browser-security", "mixed-content", "upgrade-insecure-requests"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认只升可升级类，该指令连可阻断类（脚本/iframe/fetch）一起升；但只管本页子请求，入口链接的 http 归 HSTS 管；`block-all-mixed-content` 已废弃",
+        "isCorrect": true,
+        "description": "正确。三个要点：升级范围扩到全部子请求、辖区止于本页面、反向的全拦指令已废——老站迁移配它 + HSTS 收口。"
+      },
+      {
+        "text": "与浏览器默认行为完全相同，只是把隐式规则显式声明出来",
+        "isCorrect": false,
+        "description": "错误。有实质增量：默认行为不会升可阻断类（http 脚本直接拦死），该指令让它们也改写为 https 后发出——老站的 http 脚本因此能活。"
+      },
+      {
+        "text": "它还会把用户从外部点进来的 http 入口链接重定向到 https",
+        "isCorrect": false,
+        "description": "错误。入口重定向发生在导航层，靠服务器 301 与 HSTS 锁定——CSP 指令只作用于已加载页面发出的子资源请求。"
+      },
+      {
+        "text": "它与 `block-all-mixed-content` 等价，两者写任意一个即可",
+        "isCorrect": false,
+        "description": "错误。语义相反：一个把明文请求升级放行，一个连可升级类也一律拦死——且后者已废弃，MDN 明确建议不再使用。"
+      }
+    ]
+  },
+  {
+    "stem": "安全上下文的边界判定：HTTPS iframe 嵌在 HTTP 页面里、与 HTTP 页面用 `window.open` 打开的 HTTPS 新窗口，判定结果分别是什么？",
+    "explanation": "两条规则方向相反：**iframe 看整条祖先链——一票否决**：所有祖先都必须安全，HTTPS iframe 嵌在 HTTP 页面里**不算**安全上下文（HTTP 父页可被中间人改写，进而操纵 iframe 的嵌入环境）；**弹窗不看 opener——按新窗口自己的顶层判定**：不安全页面开出的 HTTPS 窗口自己是顶层、通道完整，**算**安全上下文。工程含义：HTTPS 应用被嵌进 HTTP 老门户导致强能力失效，是祖先链规则而不是你的 bug。",
+    "tags": ["browser-security", "secure-context", "iframe"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "iframe 不算——祖先链一票否决，所有祖先必须安全；弹窗算——按新窗口自己的顶层判定，不看 opener 是否安全",
+        "isCorrect": true,
+        "description": "正确。iframe 的运行环境被父页控制（父页不安全则整链失守），弹窗自己就是顶层——两者的信任锚点不同。"
+      },
+      {
+        "text": "两者都算安全上下文，因为文档自身都是通过 HTTPS 投递的",
+        "isCorrect": false,
+        "description": "错误。iframe 一侧不成立：自身 HTTPS 不够，HTTP 祖先可被中间人操纵（改 iframe 尺寸、覆盖 UI、换 src），祖先链必须全绿。"
+      },
+      {
+        "text": "两者都不算，弹窗会被不安全的 opener 拖累降级",
+        "isCorrect": false,
+        "description": "错误。弹窗不受 opener 拖累——它按自己的顶层环境独立判定，HTTPS 弹窗是安全上下文。"
+      },
+      {
+        "text": "iframe 算而弹窗不算——嵌入关系比窗口关系更受信任",
+        "isCorrect": false,
+        "description": "错误。两个结论都反了：嵌入关系恰恰是被父页支配的（不算），独立顶层的弹窗才是自主判定的（算）。"
+      }
+    ]
+  },
+  {
+    "stem": "安全上下文机制把 Service Worker、getUserMedia 这类强能力绑死在 HTTPS/本机投递上，威胁模型上的推理是什么？",
+    "explanation": "MDN 的表述：安全上下文的主要目标是**防止中间人（MITM）攻击者接触到能进一步加害用户的强能力 API**。推理链：HTTP 页面的**每一个字节**都可能被网络路径上的任何一跳篡改——若强能力在 HTTP 下可用，「攻破咖啡馆 Wi-Fi」就等于「**往任意页面注入一段调 `getUserMedia` 的脚本**」：摄像头、常驻的 Service Worker、USB 设备全部落入中间人之手。所以门控判定看**投递通道**（TLS 或本机回环），而不是 API 自身的实现质量。",
+    "tags": ["browser-security", "secure-context", "mitm"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "HTTP 下页面每个字节都可被路径上任何一跳篡改——强能力若在 HTTP 开放，攻破一个 Wi-Fi 就等于能向任意页面注入调用摄像头、注册常驻 SW 的脚本",
+        "isCorrect": true,
+        "description": "正确。门控的对象其实是中间人：明文通道上「页面代码」与「攻击者代码」无法区分，唯有掐断通道上的强能力才能封住放大器。"
+      },
+      {
+        "text": "因为这些 API 计算量大，HTTPS 的连接复用能显著改善其性能",
+        "isCorrect": false,
+        "description": "错误。门控与性能无关——这是纯安全设计：保密与认证过的通道才配得上强能力，性能考量从不出现在判定规则里。"
+      },
+      {
+        "text": "因为强能力 API 产生的数据必须落盘加密，HTTP 下无法满足存储要求",
+        "isCorrect": false,
+        "description": "错误。门控判定的是**投递通道**（isSecureContext 看 scheme 与祖先链），不涉及数据存储加密——存储安全是另一套机制。"
+      },
+      {
+        "text": "因为标准委员会规定新 API 只在 HTTPS 环境下做兼容性测试",
+        "isCorrect": false,
+        "description": "错误。这不是测试流程问题——非安全上下文里 API 被刻意做成不可用（undefined/拒绝），是规范层面的威胁模型决策。"
+      }
+    ]
+  },
+  {
+    "stem": "Permissions-Policy 响应头（原名 Feature Policy）解决什么问题？",
+    "explanation": "Permissions Policy 用响应头**按目录管理强能力**（`camera=()`、`geolocation=(self)` 等）。核心价值有二：**给自己的页面削权**——就算代码有漏洞被 XSS，注入代码也调不动摄像头，因为**能力根本不在授权目录里**；**给嵌进来的第三方限权**——广告 iframe 别想读定位。它由 Feature Policy 更名而来（旧 API `document.featurePolicy` 在一些浏览器残留）。与 CSP 的分工：CSP 管「什么代码能跑」，Permissions Policy 管「跑起来的代码能用什么能力」。",
+    "tags": ["browser-security", "permissions-policy", "capability"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用响应头按目录管理摄像头、定位等强能力——给自己削权（被 XSS 也调不动摄像头）、给第三方 iframe 限权",
+        "isCorrect": true,
+        "description": "正确。它是能力的授权目录：CSP 管代码准入，它管能力准入——两者是互补的两道闸。"
+      },
+      {
+        "text": "管理操作系统层面的文件与目录访问权限",
+        "isCorrect": false,
+        "description": "错误。它是 Web 平台的能力策略头，管的是浏览器 API（摄像头、定位、全屏等），与操作系统文件权限无关。"
+      },
+      {
+        "text": "替代 CSP 控制脚本的加载来源与执行形态",
+        "isCorrect": false,
+        "description": "错误。脚本来源与执行形态是 CSP 的辖区；Permissions Policy 不管代码从哪来，只管已运行的代码能动用哪些强能力。"
+      },
+      {
+        "text": "管理站点用户账号体系里的角色与权限分配",
+        "isCorrect": false,
+        "description": "错误。业务层的用户角色权限是应用自己的鉴权逻辑；这个头作用于浏览器能力层，与账号体系无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Permissions Policy 禁用某能力后，页面调用对应 API 的症状是什么？",
+    "explanation": "被禁时的症状是 **API 直接拒绝，而不是弹权限询问框**：`getUserMedia` 抛 **`NotAllowedError`**、`requestFullscreen` 抛 `TypeError`、定位回调收 `PERMISSION_DENIED`、`play()` 的 Promise 拒绝——**用户看到的是「按钮点了没反应」**。这与「用户还没授权」的场景不同：策略禁了就没有询问机会。排查思路：先查顶层响应头的 allowlist 与 iframe 的 `allow` 属性是否两道闸都放行了。",
+    "tags": ["browser-security", "permissions-policy", "error"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不弹权限框、API 直接拒绝——getUserMedia 抛 `NotAllowedError`、requestFullscreen 抛 `TypeError`、定位收 `PERMISSION_DENIED`，用户侧表现为按钮点了没反应",
+        "isCorrect": true,
+        "description": "正确。策略级禁用发生在权限询问之前：能力不在授权目录里，浏览器连问用户的流程都不走，直接拒。"
+      },
+      {
+        "text": "弹出权限询问框，把最终决定权交给用户",
+        "isCorrect": false,
+        "description": "错误。弹框是「能力可用但需用户授权」的流程；Permissions Policy 禁用意味着能力被策略关死，不存在询问环节。"
+      },
+      {
+        "text": "整个页面被阻断，显示策略违规的错误页",
+        "isCorrect": false,
+        "description": "错误。策略只作用于对应能力的调用点，页面照常渲染运行——被禁的只是那一个 API 调用，不牵连整页。"
+      },
+      {
+        "text": "API 静默返回模拟的假数据以保证调用方不报错",
+        "isCorrect": false,
+        "description": "错误。浏览器不伪造摄像头画面或定位坐标——拒绝是显式的（异常/拒绝的 Promise/错误回调），便于代码分支处理。"
+      }
+    ]
+  },
+  {
+    "stem": "Local Network Access（LNA）针对的经典攻击链是什么？",
+    "explanation": "浏览器长期存在盲区：**公网页面可以直接 `fetch` 内网地址——你的浏览器就在内网里，是天然的跳板**。经典攻击链：诱导访问恶意页 → 页面向路由器管理接口发 **CSRF** 请求（默认密码常年不改）→ **改 DNS 配置** → 此后所有流量被劫持。打印机、NAS、IoT 设备、本机 `localhost` 调试服务同理。LNA 把这类「公网打内网/本机」的请求放进**权限提示**，把决定权交给用户。",
+    "tags": ["browser-security", "lna", "csrf"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "公网恶意页面借用户浏览器作内网跳板——向路由器等内网设备发 CSRF 请求（默认密码 + 改 DNS），劫持后续流量",
+        "isCorrect": true,
+        "description": "正确。攻击者根本不用进你的内网：你的浏览器替它进——LNA 用权限提示斩断这条「借道」链路。"
+      },
+      {
+        "text": "内网设备被入侵后主动向公网网站发起攻击",
+        "isCorrect": false,
+        "description": "错误。方向反了：LNA 防的是「公网页面 → 内网设备」的入站借道请求；内网设备出站攻击公网不在浏览器的管辖范围。"
+      },
+      {
+        "text": "攻击者物理接入局域网后嗅探内网明文流量",
+        "isCorrect": false,
+        "description": "错误。物理接入是网络边界问题，浏览器管不了；LNA 的威胁模型是攻击者远在公网、借受害者浏览器的内网位置发请求。"
+      },
+      {
+        "text": "公共 DNS 服务器被入侵导致域名解析被批量污染",
+        "isCorrect": false,
+        "description": "错误。DNS 基础设施安全是另一个层面的话题；LNA 场景里被改的是**你家路由器**的 DNS 配置，入口是浏览器发出的内网 CSRF。"
+      }
+    ]
+  },
+  {
+    "stem": "Permissions Policy 的双通道模型：跨源 iframe 要使用某强能力（如定位），授权规则是什么？",
+    "explanation": "跨源 iframe 用能力必须**两道闸都开**：**通道一是顶层页面的响应头**——allowlist 里放行该 iframe 的源（如 `geolocation=(self https://map.partner.example)`，头里具体源要带引号）；**通道二是 iframe 的 `allow` 属性**——把授权显式委托给这个 frame（`allow=geolocation`）。规则一句话：**两道闸取交集，每一层只能收窄、不能放大**——iframe 拿不到顶层没有的授权，孙 frame 拿不到父 frame 没委托的授权。配错症状是 API 直接拒绝而非弹窗。",
+    "tags": ["browser-security", "permissions-policy", "iframe"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶层响应头 allowlist 放行该源 × iframe `allow` 属性显式委托——两道闸取交集，任一道收紧即禁，且每层只能收窄不能放大",
+        "isCorrect": true,
+        "description": "正确。双通道设计让站点与嵌入点各持一票：头管全局目录，allow 管逐 frame 委托，授权只会逐层递减。"
+      },
+      {
+        "text": "iframe 写了 `allow` 属性即可使用，顶层响应头只是可选的加强",
+        "isCorrect": false,
+        "description": "错误。`allow` 单票无效——顶层头的 allowlist 没放行该源时，写了 allow 照样禁（笔记原例：`allow` 给了 rogue.example 但头里没有它，仍然禁）。"
+      },
+      {
+        "text": "顶层响应头放行后全局生效，iframe 不需要任何属性配合",
+        "isCorrect": false,
+        "description": "错误。跨源 iframe 还需要 `allow` 属性的显式委托——头只是把源列进目录，逐 frame 的授权传递靠 allow 完成，两道缺一不可。"
+      },
+      {
+        "text": "两道通道取并集——任何一道放行了，能力即可用",
+        "isCorrect": false,
+        "description": "错误。是交集不是并集：并集意味着 iframe 能自我扩权（写个 allow 就绕过头的限制），违背「只能收窄」的基本原则。"
+      }
+    ]
+  },
+  {
+    "stem": "Permissions-Policy 头的 allowlist 取值语义，下列哪项正确？",
+    "explanation": "allowlist 语法：**`*`**（所有文档与 iframe，无论来源）、**`()`**（空列表 = 彻底禁用；iframe `allow` 属性里的对应写法是 `'none'`）、**`self`**（当前文档 + 同源 iframe）、**`src`**（**仅 iframe `allow` 属性可用**——与 iframe `src` 的源一致即放行，是 **allow 属性的默认值**）、**指定源**（头里要带引号）、**通配子域**（`https://*.example.com` **不匹配裸域** `https://example.com`）。另外每个指令有隐式默认 allowlist（多数强能力是 `self`）——不发头时同源能用、跨源 iframe 不能用。",
+    "tags": ["browser-security", "permissions-policy", "allowlist"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`*` 是所有上下文、`()` 是彻底禁用、`self` 是同源、`src` 仅在 iframe `allow` 属性里可用且是其默认值；通配子域不匹配裸域",
+        "isCorrect": true,
+        "description": "正确。几个易错点全在这：空括号是禁不是放、src 只存在于 allow 属性侧、`https://*.example.com` 匹配不到 `https://example.com` 本身。"
+      },
+      {
+        "text": "`()` 表示不加限制，等价于 `*` 的全放行",
+        "isCorrect": false,
+        "description": "错误。`()` 是空 allowlist——没有任何源被授权，即彻底禁用；它与 `*` 是语义的两个极端。"
+      },
+      {
+        "text": "`src` 是响应头里的常用取值，表示按资源的加载来源判定",
+        "isCorrect": false,
+        "description": "错误。`src` 只在 iframe 的 `allow` 属性里有意义（指与 iframe `src` 属性的源一致），响应头的 allowlist 里没有这个值。"
+      },
+      {
+        "text": "`https://*.example.com` 同时匹配所有子域与裸域 `https://example.com`",
+        "isCorrect": false,
+        "description": "错误。通配符只覆盖子域，**不匹配裸域本身**——要放行裸域必须把 `https://example.com` 单独列出，这是常见配漏点。"
+      }
+    ]
+  },
+  {
+    "stem": "Local Network Access 的现行方案（Chrome 142 起正式启用）是什么？与第一代 PNA 方案的关键区别在哪？",
+    "explanation": "第一代 **PNA（Private Network Access）走 CORS 预检路线**：公网→内网请求先发预检，目标设备用 `Access-Control-Allow-Private-Network` 显式同意——问题是「要全网内网设备升级固件配合」不现实，**方案已被搁置**。现行 **LNA 改为把决定权交给用户：权限提示**——**`local-network`** 与 **`loopback-network`** 两枚权限（旧名 `local-network-access` 作兼容别名），首次触发弹提示，拒绝则请求失败。硬门槛：**仅安全上下文可用**——http 公网页面打内网**直接失败，连提示都没有**。时间线：Chrome 138 flag 试用 → **142（2025-10）正式**；其他引擎跟进中。",
+    "tags": ["browser-security", "lna", "pna"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PNA 的 CORS 预检方案（需内网设备配合应答）因落地不现实被搁置；LNA 改为浏览器权限提示——`local-network`/`loopback-network` 两枚权限，且仅安全上下文可用",
+        "isCorrect": true,
+        "description": "正确。换代的核心是「谁来点头」：从要求全网设备升级固件应答预检，改为让用户在权限提示里决定——工程上可落地得多。"
+      },
+      {
+        "text": "LNA 仍走 CORS 预检，只是把预检头换了一个名字",
+        "isCorrect": false,
+        "description": "错误。预检路线整个被搁置了——LNA 是权限模型（弹提示问用户），不再要求内网设备理解任何新的 CORS 头。"
+      },
+      {
+        "text": "LNA 全面禁止公网页面访问内网，没有任何放行途径",
+        "isCorrect": false,
+        "description": "错误。不是一刀切：用户在权限提示里授予后即可访问——设备配网页、内网管理台这类正当场景是它专门保留的出口。"
+      },
+      {
+        "text": "LNA 默认关闭，只有企业管理员下发策略后才会启用",
+        "isCorrect": false,
+        "description": "错误。Chrome 142 起默认启用权限提示；企业策略只是可以**预授/预禁**（跳过提示），不是启用开关。"
+      }
+    ]
+  },
+  {
+    "stem": "LNA 场景下 fetch 的 `targetAddressSpace` 选项解决什么问题？什么情况下必须显式声明？",
+    "explanation": "问题：**公网域名解析到内网 IP** 时（如 `http://printer.corp.example` 指向 192.168 段），浏览器在 DNS 解析前无法识别目标是本地——需要 **`fetch(url, { targetAddressSpace: 'local' })`**（本机服务用 `'loopback'`）**显式声明目标地址空间**。**IP 字面量与 `.local` 域**浏览器能在 DNS 前识别，**可省略**。联动收益：声明 + 权限授予后，对本地目标**豁免混合内容检查**——HTTPS 页面得以合法访问 `http://192.168.0.1`（内网设备拿不到公网可信证书，这是正规出口）。",
+    "tags": ["browser-security", "lna", "target-address-space"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "公网域名解析到内网 IP 时浏览器在 DNS 前无法识别目标是本地，须显式声明；IP 字面量与 `.local` 域可省略；权限授予后对本地目标豁免混合内容检查",
+        "isCorrect": true,
+        "description": "正确。声明补上「域名指向内网」的识别盲区，并联动混合内容豁免——HTTPS 管理台合法访问 http 内网设备的唯一正道。"
+      },
+      {
+        "text": "它用于指定请求从哪块网卡（有线/无线）发出",
+        "isCorrect": false,
+        "description": "错误。网卡与路由选择是操作系统的事——该选项声明的是目标的**地址空间类别**（local/loopback），供 LNA 判定用。"
+      },
+      {
+        "text": "声明它可以跳过 LNA 权限提示，直接放行内网请求",
+        "isCorrect": false,
+        "description": "错误。它不是绕过手段——声明只解决「识别不出目标是本地」的问题，权限提示照弹，用户拒绝照样失败。"
+      },
+      {
+        "text": "它只是给 DevTools 看的调试注释，对请求行为没有影响",
+        "isCorrect": false,
+        "description": "错误。它有真实行为语义：影响 LNA 的目标判定与混合内容豁免——漏声明时「公网域名指内网」的请求会失败。"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch Metadata（`Sec-Fetch-*`）支撑的服务端资源隔离策略中，哪些请求应该放行？",
+    "explanation": "资源隔离策略的判定序列：**① 头缺失（老客户端）→ 放行**（渐进增强，走既有 CSRF token 防线）；**② `Sec-Fetch-Site` 为 `same-origin`/`same-site`/`none` → 放行**（自己人；`none` = 用户直接发起——地址栏、书签、拖放，最可信）；**③ 跨站但 `mode=navigate` 的 GET 顶层导航 → 放行**（别人正常链接到我；排除 `object`/`embed` 的 dest）；**④ 其余跨站子资源/接口请求 → 拒绝（403）**。一个 if 同时压制 CSRF、资源盗链与部分 XS-Leaks 探测。Baseline Widely available（2023-03），可放心依赖。",
+    "tags": ["browser-security", "fetch-metadata", "resource-isolation"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "放行：头缺失的老客户端、`same-origin`/`same-site`/`none`、跨站 GET 顶层导航（排除 object/embed）；其余跨站请求拒绝",
+        "isCorrect": true,
+        "description": "正确。这套白名单保住三类正当流量（旧客户端、自己人与用户直达、外站正常链接），把跨站的子资源与接口请求整体挡在业务逻辑之前。"
+      },
+      {
+        "text": "所有携带 `Sec-Fetch-Site` 头的请求都出自真实浏览器，应一律放行",
+        "isCorrect": false,
+        "description": "错误。攻击页面同样运行在真实浏览器里、请求同样带头——头的价值在于**取值**如实标注了跨站关系（cross-site），带头本身不代表可信。"
+      },
+      {
+        "text": "`cross-site` 一律拒绝，包括用户从外站点击链接进入的顶层导航",
+        "isCorrect": false,
+        "description": "错误。一刀切会把「别人网站正常链接到我」全拒掉——搜索引擎、社交分享的入站导航都是 cross-site + navigate，必须白放。"
+      },
+      {
+        "text": "`Sec-Fetch-Site: none` 表示来源不明，属于最可疑流量应当拒绝",
+        "isCorrect": false,
+        "description": "错误。`none` 不是「不明」而是「没有网页发起方」——用户亲手在地址栏输入、点书签，恰是最可信的一档。"
+      }
+    ]
+  },
+  {
+    "stem": "`Sec-Fetch-Site` 等 Fetch Metadata 头，为什么服务端可以信任它们没有被页面脚本篡改？",
+    "explanation": "因为 **`Sec-` 前缀是浏览器保留的禁改前缀**：页面脚本经 fetch/XHR **无法设置或覆盖**以 `Sec-` 开头的请求头——四个头由**浏览器在发出请求时按真实上下文自动附加**（且只发给 HTTPS）。所以攻击者页面里的 JS 无法把 `cross-site` 伪装成 `same-origin`：**头的取值不取决于攻击者的代码，取决于请求真实的发起位置**。对不发头的老客户端按渐进兼容处理（放行 + 走既有 CSRF token 防线）——这也是资源隔离策略把「头缺失」设为放行的原因。",
+    "tags": ["browser-security", "fetch-metadata", "sec-prefix"],
+    "categories": [
+      ["技术方向", "浏览器安全"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`Sec-` 前缀是浏览器保留的禁改前缀——脚本经 fetch/XHR 无法设置或覆盖，头由浏览器按请求的真实发起上下文自动附加，攻击者代码改不了取值",
+        "isCorrect": true,
+        "description": "正确。可信的根基是「写权在浏览器不在页面」：取值如实反映发起方与目标的关系，攻击页的 JS 无从伪装。"
+      },
+      {
+        "text": "因为 TLS 加密保证了请求头在传输中无法被任何一方修改",
+        "isCorrect": false,
+        "description": "错误。TLS 防的是传输路径上的中间人；本题的威胁是**发起端的页面脚本**——TLS 管不到请求发出之前的构造环节，禁改前缀才是关键。"
+      },
+      {
+        "text": "因为服务端会校验这些头上附带的数字签名",
+        "isCorrect": false,
+        "description": "错误。Fetch Metadata 没有签名机制——头就是普通明文值，可信性完全来自「浏览器自动附加、脚本禁改」的写入控制。"
+      },
+      {
+        "text": "因为这些头只在用户打开 DevTools 时才由浏览器发送",
+        "isCorrect": false,
+        "description": "错误。四个头随每个（HTTPS 的）出站请求常态发送（Baseline 2023-03 起各浏览器均发），与 DevTools 是否打开毫无关系。"
+      }
+    ]
+  }
+]
