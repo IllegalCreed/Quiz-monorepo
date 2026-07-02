@@ -621,7 +621,7 @@
   },
   {
     "stem": "Cookie Store API 相对 `document.cookie` 的核心改进是什么？",
-    "explanation": "`document.cookie` 的隐性成本是**同步**——Cookie 数据在现代浏览器里由浏览器进程统一管理，同步读取可能意味着跨进程等待。**Cookie Store API**（`cookieStore.get()/set()/delete()`）给出异步的 Promise 风格替代，还能在 **Service Worker 里使用**（`document.cookie` 在 Worker 里根本不存在）。但**各引擎支持进度不一**，跨浏览器项目使用前务必查兼容性表——方向对、兼容性未拉齐是它的现状。",
+    "explanation": "`document.cookie` 的隐性成本是**同步**——Cookie 数据在现代浏览器里由浏览器进程统一管理，同步读取可能意味着跨进程等待。**Cookie Store API**（`cookieStore.get()/set()/delete()`）给出异步的 Promise 风格替代，还能在 **Service Worker 里使用**（`document.cookie` 在 Worker 里根本不存在）。兼容性上它已于 2025-06 达到 **Baseline Newly available**（Chrome 87 / Safari 18.4 / Firefox 132 起，Firefox 早期为子集实现）——但 newly available 距「广泛可用」尚有时日、存量旧浏览器多，替换仍需特性检测（`'cookieStore' in window`）。",
     "tags": ["storage", "cookie", "cookie-store-api"],
     "categories": [
       ["技术方向", "浏览器存储"],
@@ -629,9 +629,9 @@
     ],
     "options": [
       {
-        "text": "异步 Promise 风格读写，且可在 Service Worker 中使用；但兼容性尚未拉齐",
+        "text": "异步 Promise 风格读写，且可在 Service Worker 中使用；已达 Baseline（newly available），替换仍需特性检测",
         "isCorrect": true,
-        "description": "正确。异步化消除同步跨进程等待，Worker 可达补上 `document.cookie` 的空白；使用前查兼容性表。"
+        "description": "正确。异步化消除同步跨进程等待，Worker 可达补上 `document.cookie` 的空白；2025-06 起 Baseline newly available，存量旧浏览器多，用前特性检测。"
       },
       {
         "text": "把单条 Cookie 的容量上限从 4KB 提升到 5 MiB",
@@ -646,7 +646,7 @@
       {
         "text": "已在全部浏览器达到 Baseline，可无顾虑替换 `document.cookie`",
         "isCorrect": false,
-        "description": "错误。各引擎支持进度不一、兼容性尚未拉齐，跨浏览器项目还不能无条件替换。"
+        "description": "错误。它达到的是 Baseline **newly available**（2025-06；Firefox 早期为子集实现）——「无顾虑替换」要等 widely available 且旧浏览器退场，当前仍需特性检测。"
       }
     ]
   },
@@ -992,8 +992,8 @@
     ]
   },
   {
-    "stem": "本地双击打开 HTML 文件（`file:` 协议）调试时访问 `localStorage`，会发生什么？",
-    "explanation": "`file:`、`data:` 等**非法源（scheme）下访问 `localStorage` 直接抛 `SecurityError`**；用户在浏览器设置里禁掉站点数据持久化时同理。这是「本地双击 HTML 调试怎么 localStorage 就炸了」的标准答案——Web Storage 的隔离模型建立在「源」之上，这些 scheme 构不成合法源。与无痕模式区分开：无痕是「API 可用、关窗即清」，非法源是「访问即抛错」。",
+    "stem": "本地双击打开 HTML 文件（`file:` 协议）或在 `data:` URL 中访问 `localStorage`，实际行为是什么？",
+    "explanation": "Web Storage 按「源」隔离，但两种特殊 scheme 的行为并不一样：`data:` URL 属**不透明源（opaque origin）**，访问 `localStorage` **必抛 `SecurityError`**（Chromium 报错原文即 `Storage is disabled inside 'data:' URLs`）；而 `file:` 页面在 Chromium/Firefox 的**实测行为是可正常读写**——数据落在浏览器 profile 目录（隔离粒度各家实现不同），MDN 对无效源的规范措辞是「**可能（can）**抛 `SecurityError`」而非必然。另外用户在浏览器设置里禁掉站点数据时，任何源访问都会抛错。教学点：「本地双击 HTML 调试 localStorage 炸了」别一口咬定是 `file:` 必抛——真正必炸的是 `data:`/沙箱 iframe 这类不透明源。",
     "tags": ["storage", "web-storage", "securityerror"],
     "categories": [
       ["技术方向", "浏览器存储"],
@@ -1001,24 +1001,24 @@
     ],
     "options": [
       {
-        "text": "访问直接抛出 `SecurityError`——`file:` 构不成合法源",
+        "text": "行为分场景：`data:` URL（不透明源）必抛 `SecurityError`；`file:` 页面主流浏览器实测可正常读写（MDN 措辞为「可能」抛）",
         "isCorrect": true,
-        "description": "正确。非法源下连 API 访问都被拒绝，与超限的 `QuotaExceededError`、无痕的静默退化都不同。"
+        "description": "正确。必炸的是不透明源（`data:`/沙箱 iframe）；`file:` 在 Chromium/Firefox 实测可读写，规范层面只是「可能」抛错，不是必然。"
       },
       {
-        "text": "正常读写，数据存到当前文件所在目录",
+        "text": "`file:` 与 `data:` 都构不成合法源，访问一律直接抛 `SecurityError`",
         "isCorrect": false,
-        "description": "错误。`file:` 下访问直接抛错；即便合法源，存储也落在浏览器接管的 profile 目录，与页面文件位置无关。"
+        "description": "错误。`data:` 确实必抛，但 `file:` 页面在 Chromium/Firefox 实测可正常读写——MDN 的措辞是「可能（can）」抛，把它当成必然就与主流实现相悖了。"
       },
       {
-        "text": "抛出 `QuotaExceededError`，因为 `file:` 协议配额为零",
+        "text": "两者都正常读写，数据存到当前文件所在目录",
         "isCorrect": false,
-        "description": "错误。抛的是 `SecurityError` 不是配额错误——问题出在源的合法性，不是容量。"
+        "description": "错误。`data:` 必抛错；`file:` 虽可读写，但数据落在浏览器接管的 profile 目录，与页面文件位置无关。"
       },
       {
-        "text": "读写静默失败但不报错，类似 Cookie 的行为",
+        "text": "抛出 `QuotaExceededError`，因为这类协议配额为零",
         "isCorrect": false,
-        "description": "错误。Web Storage 在非法源下是显式抛 `SecurityError`，不是 Cookie 式的静默忽略。"
+        "description": "错误。不透明源抛的是 `SecurityError`（源的合法性问题），不是配额错误；`file:` 下也不存在「配额为零」的行为。"
       }
     ]
   },
@@ -1954,7 +1954,7 @@
   },
   {
     "stem": "Storage Access API（`document.requestStorageAccess()`）能帮第三方 iframe 拿回什么？",
-    "explanation": "Storage Access API 是分区世界的逃生门，但范围很窄：三方 iframe 经**用户许可**后拿回的是**非分区 Cookie** 的访问权（即用户顶级访问该站时的 Cookie）——**它救的是 Cookie 型会话，不是 localStorage/IndexedDB**（Firefox 明确只有 Cookie 可动态解除分区）。Firefox 的授权一次有效 **30 天**，并配有 opener/导航两条**过渡期启发式**自动授权——官方定性为兼容性权宜，**别把产品逻辑押在启发式上**。",
+    "explanation": "Storage Access API 是分区世界的逃生门，但范围很窄：三方 iframe 经**用户许可**后拿回的是**非分区 Cookie** 的访问权（即用户顶级访问该站时的 Cookie）——**跨浏览器基线上它救的是 Cookie 型会话**（Firefox/Safari 明确只有 Cookie 可动态解除分区）；Chromium 125+ 另有**实验性扩展**——`requestStorageAccess({localStorage:true, indexedDB:true, …})` 返回 StorageAccessHandle，可按类型拿回非分区的 localStorage/IndexedDB/Cache 等（非 Baseline、其他引擎未跟进），跨浏览器产品不能依赖。Firefox 的授权一次有效 **30 天**，并配有 opener/导航两条**过渡期启发式**自动授权——官方定性为兼容性权宜，**别把产品逻辑押在启发式上**。",
     "tags": ["storage", "分区", "storage-access-api"],
     "categories": [
       ["技术方向", "浏览器存储"],
@@ -1962,14 +1962,14 @@
     ],
     "options": [
       {
-        "text": "仅非分区 Cookie 的访问权（需用户许可）——localStorage/IndexedDB 没有解分区通道",
+        "text": "跨浏览器基线：仅非分区 Cookie 的访问权（需用户许可）——Firefox/Safari 不给 localStorage/IndexedDB 解分区通道",
         "isCorrect": true,
-        "description": "正确。「只救 Cookie」决定了嵌入场景的登录态设计必须压在 Cookie 上才有回旋余地。"
+        "description": "正确。「跨浏览器只救 Cookie」决定了嵌入场景的登录态设计必须压在 Cookie 上才有回旋余地；Chromium 125+ 的 StorageAccessHandle 非 Cookie 扩展是实验性，不改变这一工程结论。"
       },
       {
         "text": "整个非分区存储世界——包括 localStorage 与 IndexedDB",
         "isCorrect": false,
-        "description": "错误。脚本可写存储没有动态解分区的通道，API 能要回的只有 Cookie。"
+        "description": "错误。跨浏览器基线上不成立：Firefox/Safari 只解 Cookie；Chromium 125+ 的 StorageAccessHandle 扩展是实验性、按类型显式申请，也远非「整个非分区存储世界」的无条件访问。"
       },
       {
         "text": "更大的存储配额——把 iframe 的配额提升到宿主级",
@@ -2109,7 +2109,7 @@
   },
   {
     "stem": "存储分区时代，做嵌入式 SSO 组件时为什么「登录态只压在 Cookie 上」反而是更稳的设计？",
-    "explanation": "机制推理链：分区后三方 iframe 拿不到用户顶级访问时写下的任何存储——localStorage、IndexedDB、Cookie 全在分区里。但**逃生门只对 Cookie 开**：`document.requestStorageAccess()` 经用户许可后能拿回**非分区 Cookie**（Firefox 明确只有 Cookie 可动态解除分区），localStorage/IndexedDB **没有任何解分区通道**。所以登录态若存在 localStorage 里，分区后无路可走；压在 Cookie 上至少还有「用户许可 → 恢复会话」这条路。这是自查清单的最后一条：**登录态是否只压在 Cookie 上？**",
+    "explanation": "机制推理链：分区后三方 iframe 拿不到用户顶级访问时写下的任何存储——localStorage、IndexedDB、Cookie 全在分区里。但**逃生门只对 Cookie 开**：`document.requestStorageAccess()` 经用户许可后能拿回**非分区 Cookie**（Firefox/Safari 明确只有 Cookie 可动态解除分区）；localStorage/IndexedDB 在 Firefox/Safari 上**没有解分区通道**（Chromium 125+ 的 StorageAccessHandle 扩展系实验性、非 Baseline，跨浏览器产品不能押注）。所以登录态若存在 localStorage 里，分区后无路可走；压在 Cookie 上至少还有「用户许可 → 恢复会话」这条路。这是自查清单的最后一条：**登录态是否只压在 Cookie 上？**",
     "tags": ["storage", "分区", "storage-access-api", "sso"],
     "categories": [
       ["技术方向", "浏览器存储"],
@@ -2117,9 +2117,9 @@
     ],
     "options": [
       {
-        "text": "因为 Storage Access API 只能解分区 Cookie——存别处的登录态在分区后永远没有恢复通道",
+        "text": "因为跨浏览器可靠的解分区通道只有 Cookie——存别处的登录态在 Firefox/Safari 上没有恢复手段",
         "isCorrect": true,
-        "description": "正确。「唯一逃生门只认 Cookie」倒推出凭证载体的选型：嵌入场景的会话必须走 Cookie。"
+        "description": "正确。「跨浏览器唯一可靠的逃生门只认 Cookie」倒推出凭证载体的选型：嵌入场景的会话必须走 Cookie（Chromium 的实验性非 Cookie 扩展不足以改变选型）。"
       },
       {
         "text": "因为 Cookie 不受存储分区影响，天然全局共享",
