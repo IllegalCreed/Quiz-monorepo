@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "浏览器渲染管线中，HTML 字节流被解析成 DOM 树要经过怎样的中间环节？",
+    "explanation": "HTML 解析分两步：**tokenization（词法分析）** 把字符流切成 token——开始标签（`startTag`）、结束标签（`endTag`）、属性名与值、文本；随后的**树构建**按 token 建节点、按嵌套关系挂成树。一个 DOM 节点从 `startTag` token 开始、到 `endTag` token 结束。完整链条是**字节流 → token 流 → 节点 → DOM 树**，产出的 DOM 既是浏览器对页面的内部表示，也是暴露给 JS 操作的数据结构与 API。",
+    "tags": ["rendering", "dom", "tokenization"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "字节流先经 tokenization 切成 token（开始/结束标签、属性、文本），再据 token 建节点、按嵌套挂成 DOM 树",
+        "isCorrect": true,
+        "description": "正确。MDN 的表述是「HTML 解析包含 tokenization 与树构建」，token 是字节流与节点之间的中间表示。"
+      },
+      {
+        "text": "字节流按行直接转成 DOM 节点，没有任何中间表示",
+        "isCorrect": false,
+        "description": "错误。HTML 不是按行结构化的，标签可以跨行、一行可含多个标签，必须先经 tokenization 产出 token 才能建树。"
+      },
+      {
+        "text": "字节流先整体转成 JSON 抽象语法树，再由 JS 引擎转换为 DOM",
+        "isCorrect": false,
+        "description": "错误。HTML 解析由渲染引擎的 HTML 解析器完成，与 JS 引擎无关，也不存在 JSON 中间产物。"
+      },
+      {
+        "text": "字节流先构建 CSSOM，再由 CSSOM 反推出 DOM 结构",
+        "isCorrect": false,
+        "description": "错误。CSSOM 来自 CSS 文本，与 DOM 是两棵相互独立的树，不存在由 CSSOM 反推 DOM 的流程。"
+      }
+    ]
+  },
+  {
+    "stem": "DOM 构建的「增量式（incremental）」性质指的是什么？",
+    "explanation": "**DOM 构建是增量的**：解析器不必等整个 HTML 下载完成，收到多少字节就解析多少、边下边建树。这正是**流式 HTML**（服务端边生成边发送）能提前渲染出首屏的原理。与之相对，**CSSOM 构建不是增量的**——后面的规则可能覆盖前面的，必须完整解析才能使用。",
+    "tags": ["rendering", "dom", "incremental"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不必等整个 HTML 下载完，收到多少字节就解析多少，DOM 树边接收边构建",
+        "isCorrect": true,
+        "description": "正确。增量构建让服务端流式输出的 HTML 可以提前出首屏，这是 DOM 与 CSSOM 的关键差异之一。"
+      },
+      {
+        "text": "每次页面更新只重新解析发生变化的 HTML 片段，未变化的部分跳过",
+        "isCorrect": false,
+        "description": "错误。增量指的是首次构建时「边下边建」，不是指后续更新的差量解析——页面更新走的是 DOM API 修改，不重跑 HTML 解析。"
+      },
+      {
+        "text": "DOM 节点按需懒加载，滚动到视口内才构建对应的节点",
+        "isCorrect": false,
+        "description": "错误。DOM 构建不感知视口，解析到哪就建到哪；「视口优先」是栅格化瓦片调度的策略，不是 DOM 构建的。"
+      },
+      {
+        "text": "解析器每帧只处理固定数量的 token，把解析工作平摊到多帧执行",
+        "isCorrect": false,
+        "description": "错误。增量的驱动力是网络字节的陆续到达，不是逐帧限额；解析器拿到数据后会尽快处理。"
+      }
+    ]
+  },
+  {
+    "stem": "HTML 解析器遇到一个没有 `async`/`defer` 属性的裸 `<script src>` 标签时会怎么做？",
+    "explanation": "裸 `<script>` 会让解析器**暂停 HTML 文档解析**：先下载（若为外链）、解析并**执行完** JS，才继续向下解析。根因是 JS 可能用 `document.write()` 改写文档结构，解析器无法预知，只能保守停下。这就是「脚本放底部或加 `defer`」这条优化建议的由来——同步脚本的下载与执行都压在关键渲染路径上。",
+    "tags": ["rendering", "script", "parser-blocking"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "暂停 HTML 解析，等脚本下载并执行完毕后才继续解析后续内容",
+        "isCorrect": true,
+        "description": "正确。裸 script 的下载与执行都阻塞解析，是关键渲染路径上的经典瓶颈。"
+      },
+      {
+        "text": "继续解析 HTML，脚本下载完后在主线程空闲时再执行",
+        "isCorrect": false,
+        "description": "错误。「空闲时执行」不是任何 script 模式的行为；裸 script 必须立即下载执行，解析器原地等待。"
+      },
+      {
+        "text": "只在脚本执行时暂停解析，下载过程不影响解析继续",
+        "isCorrect": false,
+        "description": "错误。这是 `async` 脚本的行为特征（下载并行、执行时才暂停）；裸 script 连下载都要解析器干等。"
+      },
+      {
+        "text": "把脚本推迟到文档解析完成后按文档顺序执行",
+        "isCorrect": false,
+        "description": "错误。这是 `defer` 脚本的行为；裸 script 是「遇到即执行」，不会被推迟。"
+      }
+    ]
+  },
+  {
+    "stem": "preload scanner（预加载扫描器）在 HTML 解析过程中起什么作用？",
+    "explanation": "**preload scanner 与主解析器并行运行**：它扫描 tokenizer 产出的 token，一旦发现 `<img>`、`<link>`、`<script src>` 这类外部资源引用，就直接把请求发给浏览器进程的**网络线程**，不等主解析器走到那里。MDN 的描述是：它在后台预取 CSS、JavaScript、Web 字体等**高优先级资源**，「等主解析器到达该资源时，它可能已在传输中甚至已下载完成」。这样即使主解析器被同步脚本暂停，后续资源的下载也不会干等。",
+    "tags": ["rendering", "preload-scanner", "network"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "与主解析器并行扫描 token，提前把 `<img>`、`<link>`、`<script src>` 等外部资源请求发给网络线程",
+        "isCorrect": true,
+        "description": "正确。它是「解析被脚本暂停时资源下载不停摆」的关键机制，预取的是高优先级外部资源。"
+      },
+      {
+        "text": "把整个页面的资源按优先级排好队，等 DOM 构建完成后统一发起下载",
+        "isCorrect": false,
+        "description": "错误。preload scanner 的价值恰恰在「提前」——不等 DOM 构建完成，发现引用立即发请求。"
+      },
+      {
+        "text": "在主解析器被脚本暂停时接管 DOM 构建，保证解析不中断",
+        "isCorrect": false,
+        "description": "错误。它只负责预取资源，不构建 DOM；主解析器暂停时 DOM 构建就是停的。"
+      },
+      {
+        "text": "预先执行内联脚本，缩短主线程的 JS 执行时间",
+        "isCorrect": false,
+        "description": "错误。它不执行任何 JS，只扫描 token 里的资源引用并发起下载。"
+      }
+    ]
+  },
+  {
+    "stem": "`<script defer>` 脚本的执行时机与顺序保证是怎样的？",
+    "explanation": "`defer` 脚本**并行下载、不阻塞解析**，在**文档解析完成后、`DOMContentLoaded` 事件之前**执行，且多个 defer 脚本**严格按文档顺序**执行。这使它成为「依赖 DOM、依赖彼此顺序」的主应用逻辑的首选。对比「把裸 script 放 `</body>` 前」：两者执行时机接近，但 defer 版的下载更早开始（preload scanner + 并行下载），通常更优。",
+    "tags": ["rendering", "script", "defer"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在文档解析完成后、`DOMContentLoaded` 之前执行，多个 defer 脚本按文档顺序执行",
+        "isCorrect": true,
+        "description": "正确。defer = 下载不阻塞 + 推迟到解析完 + 保序，适合依赖 DOM 和相互顺序的主逻辑。"
+      },
+      {
+        "text": "下载完成后立即执行，多个脚本谁先下载完谁先跑",
+        "isCorrect": false,
+        "description": "错误。这是 `async` 的行为——先到先跑、无顺序保证；defer 必须等解析完且保序。"
+      },
+      {
+        "text": "在 `load` 事件之后执行，顺序不作保证",
+        "isCorrect": false,
+        "description": "错误。defer 在 `DOMContentLoaded` 之前执行，早于 `load` 事件，且严格保序。"
+      },
+      {
+        "text": "与裸 `<script>` 行为完全一致，只是提示浏览器提高下载优先级",
+        "isCorrect": false,
+        "description": "错误。defer 从根本上改变了执行时机（不再阻塞解析、推迟到解析完），不是下载优先级提示。"
+      }
+    ]
+  },
+  {
+    "stem": "DOM 树的节点规模对渲染管线成本有什么影响？",
+    "explanation": "「**DOM 节点越多，构建 DOM 树耗时越长**」，且关键渲染路径的**后续每一步**——样式匹配、布局遍历、绘制——都按节点规模放大。节点数是全管线的**成本基数**，滥用包装 `<div>` 不是免费的；精简标记是渲染性能的地基优化。",
+    "tags": ["rendering", "dom", "performance"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "节点越多 DOM 构建越慢，且样式匹配、布局遍历等后续每一步都按节点规模放大",
+        "isCorrect": true,
+        "description": "正确。节点数是全管线的成本基数，这是「精简标记、少用包装 div」的原理依据。"
+      },
+      {
+        "text": "节点数只影响首次构建 DOM 的时间，对后续样式计算和布局没有影响",
+        "isCorrect": false,
+        "description": "错误。样式匹配要逐节点做选择器匹配，布局要逐节点遍历计算几何，都随节点数增长。"
+      },
+      {
+        "text": "现代浏览器对 DOM 做了虚拟化，节点数量不再影响渲染性能",
+        "isCorrect": false,
+        "description": "错误。浏览器没有「DOM 虚拟化」机制（那是前端框架层面的虚拟列表思路），真实节点都要参与管线。"
+      },
+      {
+        "text": "节点数量只影响内存占用，不影响渲染耗时",
+        "isCorrect": false,
+        "description": "错误。除了内存，构建、样式计算、布局的耗时都与节点规模正相关。"
+      }
+    ]
+  },
+  {
+    "stem": "`<script async>` 与 `<script defer>` 的核心行为差异是什么？",
+    "explanation": "两者的**下载都并行、不阻塞解析**，分野在执行：**`async` 下载完立即执行**（此刻会暂停解析），多个 async 脚本**无序**、先到先跑；**`defer` 等文档解析完成后**执行，**严格按文档顺序**。选型直觉：完全独立、越早跑越好的脚本（埋点、广告）用 `async`；依赖 DOM、依赖彼此顺序的主逻辑用 `defer`。",
+    "tags": ["rendering", "script", "async", "defer"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "async 下载完立即执行（执行时暂停解析）且多脚本无序；defer 等解析完成后按文档顺序执行",
+        "isCorrect": true,
+        "description": "正确。async 的「立即执行」意味着执行时机不可预测且会打断解析；defer 保序且不打断解析。"
+      },
+      {
+        "text": "async 与 defer 都在文档解析完成后执行，区别只是 async 的下载优先级更高",
+        "isCorrect": false,
+        "description": "错误。async 不等解析完成——下载完就执行；两者的区别是执行时机与顺序，不是下载优先级。"
+      },
+      {
+        "text": "defer 的下载会阻塞解析，async 的下载不会",
+        "isCorrect": false,
+        "description": "错误。两者的下载都是并行的、都不阻塞解析；阻塞下载的是裸 script。"
+      },
+      {
+        "text": "async 保证按文档顺序执行，defer 先下载完的先执行",
+        "isCorrect": false,
+        "description": "错误。顺序保证正好说反了：defer 保文档序，async 无序先到先跑。"
+      }
+    ]
+  },
+  {
+    "stem": "`<script type=\"module\">` 在不加其他属性时的加载与执行行为是什么？",
+    "explanation": "模块脚本**默认具有 defer 行为**：并行下载（包括其 import 的整个依赖图）、不阻塞解析，在文档解析完成后按**依赖图顺序**执行；显式加 `async` 属性则改为下载完立即执行。与 async/defer 脚本一样，模块脚本中 **`document.write` 被禁用**（调用被忽略并告警）。",
+    "tags": ["rendering", "script", "module"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认表现同 defer：并行下载（含依赖图），文档解析完成后按依赖图顺序执行，且禁用 `document.write`",
+        "isCorrect": true,
+        "description": "正确。module 默认 defer 行为，是现代模块化入口的推荐形态；加 async 可改为下载完即执行。"
+      },
+      {
+        "text": "默认表现同裸 script：遇到即下载并执行、阻塞 HTML 解析",
+        "isCorrect": false,
+        "description": "错误。模块脚本从不阻塞解析，这是它与裸 script 的根本区别之一。"
+      },
+      {
+        "text": "默认表现同 async：下载完立即执行，无顺序保证",
+        "isCorrect": false,
+        "description": "错误。默认是 defer 行为；只有显式加 `async` 属性才变成下载完即执行。"
+      },
+      {
+        "text": "必须显式加 defer 或 async 属性才能异步加载，否则浏览器报错",
+        "isCorrect": false,
+        "description": "错误。module 天生异步（默认 defer 行为），不加任何属性也不阻塞解析，更不会报错。"
+      }
+    ]
+  },
+  {
+    "stem": "HTML 容错机制（如自动修复交错标签 `<b>I'm <i>Chrome</b>!</i>`）符合下列哪种描述？",
+    "explanation": "浏览器对 HTML **从不抛出错误**（never throws an error）——这不是各浏览器的私有黑魔法，而是 **HTML 规范本身就设计为优雅处理错误**，修复规则是标准化的，各浏览器修复结果一致。但容错 ≠ 无代价：上面的交错标签会被修复为 `<b>I'm <i>Chrome</i></b><i>!</i>`，**多出一个意料之外的 `<i>` 节点**，CSS 选择器与 JS 遍历都可能踩坑。结论：别依赖容错，写规范嵌套。",
+    "tags": ["rendering", "html", "error-tolerance"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "容错修复规则由 HTML 规范标准化定义，各浏览器修复结果一致，但修复可能产生意料之外的额外节点",
+        "isCorrect": true,
+        "description": "正确。规范内建的标准化容错保证了一致性；交错标签修复后会多出节点，这是「容错有代价」的典型例子。"
+      },
+      {
+        "text": "容错是各浏览器的私有实现，同一段错误标记在不同浏览器会得到不同的 DOM",
+        "isCorrect": false,
+        "description": "错误。修复规则写在 HTML 规范里，是标准化的，各浏览器结果一致——这正是规范内建设计的意义。"
+      },
+      {
+        "text": "浏览器遇到交错标签会抛出解析错误并停止渲染该段内容",
+        "isCorrect": false,
+        "description": "错误。浏览器对 HTML 从不抛错，交错标签会被自动修复后继续渲染。"
+      },
+      {
+        "text": "容错只对漏写结束标签生效，交错标签会被原样保留在 DOM 中",
+        "isCorrect": false,
+        "description": "错误。交错标签同样会被修复（拆分补齐成合法嵌套），不会原样保留。"
+      }
+    ]
+  },
+  {
+    "stem": "裸 `<script>` 默认阻塞 HTML 解析，其根因与 `document.write()` 直接相关。下列哪项准确描述了这层因果？",
+    "explanation": "Chrome 官方的解释：**JavaScript 可以用 `document.write()` 之类的方式改变文档形状（shape）、改写整个 DOM 结构**——它会在当前解析位置插入新标记，后续 HTML 的解析结果取决于它写了什么。解析器无法预知脚本会不会这么干，只能保守地暂停等待。附带的毒性清单：`document.write` 对 **async/defer/module 脚本被规范禁用**（解析器不在这些脚本执行时驻留原地，调用被忽略并告警）；**文档解析完成后再调用会隐式 `document.open()` 清空整个文档**——经典事故。",
+    "tags": ["rendering", "document-write", "parser-blocking"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "JS 可能用 `document.write` 在当前解析位置改写文档结构，解析器无法预知，只能保守地暂停等脚本执行完",
+        "isCorrect": true,
+        "description": "正确。「script 默认阻塞解析」这条规则的根因就是 document.write 的存在（可能性），解析器必须防御这种改写。"
+      },
+      {
+        "text": "`document.write` 会同步发起网络请求，浏览器必须等响应返回才能继续",
+        "isCorrect": false,
+        "description": "错误。document.write 本身写的是标记文本，不发网络请求；阻塞的根源是「文档结构可能被改写」。"
+      },
+      {
+        "text": "`document.write` 会强制触发一次完整 layout，解析器必须等布局结束",
+        "isCorrect": false,
+        "description": "错误。强制同步布局由读取几何属性触发，与 document.write 无关；解析暂停也不是在等布局。"
+      },
+      {
+        "text": "`document.write` 会锁住 CSSOM，导致渲染无法继续",
+        "isCorrect": false,
+        "description": "错误。不存在「锁 CSSOM」的机制；CSS 阻塞的是渲染与 JS 执行，与 document.write 的毒性是两回事。"
+      }
+    ]
+  },
+  {
+    "stem": "preload scanner 存在哪些「看不见」的资源引用（盲区）？",
+    "explanation": "preload scanner 只扫描 **HTML 标记里的 token**，因此**JS 动态插入的 `<script>`、CSS 里的 `background-image`、`@import` 引入的样式表**都对它不可见——这些资源的加载起点被推迟到脚本执行或外层 CSS 解析之后。`@import` 尤其糟糕：浏览器要解析完外层 CSS 才能发现内层请求，串行加载加深关键路径。对确实无法出现在早期标记里的关键资源，官方解法是用 **`<link rel=\"preload\">`** 显式声明「对当前导航至关重要，尽快下载」。",
+    "tags": ["rendering", "preload-scanner", "preload"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "JS 动态插入的 `<script>`、CSS 的 `background-image`、`@import` 引入的样式表——它们不出现在早期 HTML 标记里",
+        "isCorrect": true,
+        "description": "正确。preload scanner 只认 HTML 标记里的资源引用；这三类的加载起点都被推迟，必要时用 `rel=\"preload\"` 补救。"
+      },
+      {
+        "text": "所有 `<img>` 标签——preload scanner 只扫描 CSS 和 JS 资源",
+        "isCorrect": false,
+        "description": "错误。`<img>` 恰恰是 preload scanner 的典型受益者，图片请求会被提前发出。"
+      },
+      {
+        "text": "带 `async` 属性的脚本——异步脚本不参与预扫描",
+        "isCorrect": false,
+        "description": "错误。async 脚本写在 HTML 标记里，preload scanner 一样能看见并提前发起下载。"
+      },
+      {
+        "text": "`<link rel=\"stylesheet\">` 样式表——样式表由 CSSOM 构建器单独负责下载",
+        "isCorrect": false,
+        "description": "错误。外链样式表正是 preload scanner 预取的高优先级资源之一，不存在「单独下载通道」。"
+      }
+    ]
+  },
+  {
+    "stem": "render tree（渲染树）由什么组成？",
+    "explanation": "render tree 是 **DOM 与 CSSOM 的结合**：浏览器从 DOM 树的根开始检查每个节点，判定附着哪些 CSS 规则，树中只收**所有可见节点**的内容与**计算样式**。不可见的被排除：`<head>` 及其子节点不产生渲染输出、`display: none` 的节点连同全部子孙都不进树。反过来，`::before`/`::after` 伪元素虽不在 DOM 中，**只要有 `content` 就会进 render tree**。",
+    "tags": ["rendering", "render-tree", "cssom"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "DOM 中的可见节点及其计算样式——`<head>` 与 `display: none` 的节点被排除在外",
+        "isCorrect": true,
+        "description": "正确。render tree = 可见节点 + computed style，是 DOM 与 CSSOM 结合后供 layout 使用的输入。"
+      },
+      {
+        "text": "全部 DOM 节点加全部 CSS 规则的完整拷贝",
+        "isCorrect": false,
+        "description": "错误。render tree 只收可见节点，`<head>`、`display: none` 子树都不在其中；样式也是计算后的结果而非规则原文。"
+      },
+      {
+        "text": "只有发生过样式变化的 DOM 节点",
+        "isCorrect": false,
+        "description": "错误。render tree 是完整的可见内容树，与「是否变化过」无关；失效跟踪是另一套机制。"
+      },
+      {
+        "text": "页面所有图层的绘制指令集合",
+        "isCorrect": false,
+        "description": "错误。绘制指令（paint records）是 paint 阶段的产物，render tree 在管线中位于其上游。"
+      }
+    ]
+  },
+  {
+    "stem": "CSS 在关键渲染路径中被称为 render-blocking（渲染阻塞）资源，这指的是什么？",
+    "explanation": "MDN 的原文定调：「**浏览器阻塞页面渲染，直到它接收并处理完所有 CSS**」。也就是说 CSSOM 完整之前，页面不会进入 render tree/layout/paint——这避免了先画出一版注定被后续规则覆盖的样式（FOUC 闪变）。注意边界：render-blocking 阻塞的是**渲染**，不是 HTML **解析**——解析器遇到 `<link rel=\"stylesheet\">` 会继续向下解析。",
+    "tags": ["rendering", "css", "render-blocking"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器在收齐并处理完全部 CSS（CSSOM 完整）之前，阻塞页面渲染",
+        "isCorrect": true,
+        "description": "正确。CSSOM 没齐就不渲染，防止画出注定被覆盖的样式；这是「关键 CSS 要早、要小」的原理。"
+      },
+      {
+        "text": "CSS 下载期间 HTML 解析被完全暂停",
+        "isCorrect": false,
+        "description": "错误。CSS 不阻塞 HTML 解析，解析器遇到样式表链接会继续往下走；被阻塞的是渲染。"
+      },
+      {
+        "text": "CSS 会阻止图片等其他资源的下载",
+        "isCorrect": false,
+        "description": "错误。资源下载由网络线程与 preload scanner 并行推进，CSS 不会阻塞其他资源下载。"
+      },
+      {
+        "text": "CSS 解析必须等所有 JS 执行完才能开始",
+        "isCorrect": false,
+        "description": "错误。方向反了——是 JS 执行要等前面的 CSS 就绪（CSS 阻塞 JS），CSS 解析不等 JS。"
+      }
+    ]
+  },
+  {
+    "stem": "`display: none` 与 `visibility: hidden` 在 render tree 中的处理有何不同？",
+    "explanation": "**`display: none`：自己和全部子孙都不进 render tree**——不显示、不占空间（UA 样式表里 `script { display: none; }` 就是这样被排除的）。**`visibility: hidden`：保留在 render tree 中**——不可见但**占布局空间**，几何计算需要它。实践含义：前者切换时代价是整段布局重算（整棵子树进出 render tree），后者切换只涉及绘制；频繁闪烁切换的元素用 `visibility`（或 `opacity`）更省。",
+    "tags": ["rendering", "render-tree", "visibility"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`display: none` 连同全部子孙都不进 render tree（不占空间）；`visibility: hidden` 保留在树中并占布局空间",
+        "isCorrect": true,
+        "description": "正确。这也是两者切换代价差异的根源：前者牵动布局重算，后者只涉及绘制。"
+      },
+      {
+        "text": "两者都会把节点从 render tree 中移除，只是 `visibility: hidden` 保留事件响应",
+        "isCorrect": false,
+        "description": "错误。`visibility: hidden` 的节点保留在 render tree 中占位，并没有被移除。"
+      },
+      {
+        "text": "`visibility: hidden` 连子孙一起移出 render tree，`display: none` 保留占位",
+        "isCorrect": false,
+        "description": "错误。两者的行为正好说反了：整枝摘除的是 `display: none`。"
+      },
+      {
+        "text": "两者都保留在 render tree 中，只在 paint 阶段跳过绘制",
+        "isCorrect": false,
+        "description": "错误。`display: none` 的子树根本不进 render tree，自然也没有布局信息，不只是「跳过绘制」。"
+      }
+    ]
+  },
+  {
+    "stem": "CSS 样式表的下载与解析会阻塞 HTML 解析吗？",
+    "explanation": "**不阻塞**。三个「阻塞」必须分清：CSS **不阻塞 HTML 解析**（解析器遇到 `<link rel=\"stylesheet\">` 继续向下解析）；CSS **阻塞渲染**（CSSOM 没齐不进 render tree/layout/paint）；CSS **阻塞 JS 执行**（JS 常查询样式，同步脚本要等前面的 CSS 就绪）——而 JS 又阻塞解析，于是 CSS 可能**间接**拖住解析。",
+    "tags": ["rendering", "css", "parser"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不阻塞——解析器遇到 `<link rel=\"stylesheet\">` 会继续向下解析 HTML；CSS 阻塞的是渲染与 JS 执行",
+        "isCorrect": true,
+        "description": "正确。CSS 与 HTML 解析并行；它挡住的是渲染输出和后续同步脚本的执行。"
+      },
+      {
+        "text": "阻塞——解析器必须等样式表下载并解析完才能继续处理后续标签",
+        "isCorrect": false,
+        "description": "错误。这会让每个样式表都成为解析瓶颈；实际上解析器不等 CSS，继续向下建 DOM。"
+      },
+      {
+        "text": "只有 `<style>` 内联样式阻塞解析，外链样式表不阻塞",
+        "isCorrect": false,
+        "description": "错误。内联样式随 HTML 一起解析，谈不上「等下载」；无论内联外链，CSS 都不阻塞 HTML 解析。"
+      },
+      {
+        "text": "只在移动端阻塞解析，桌面端并行处理",
+        "isCorrect": false,
+        "description": "错误。CSS 不阻塞 HTML 解析是引擎的通用行为，与设备类型无关。"
+      }
+    ]
+  },
+  {
+    "stem": "`<link rel=\"stylesheet\" media=\"print\">` 这类带媒体标注的样式表，在屏幕环境渲染时的行为是什么？",
+    "explanation": "**照常下载，但不阻塞当前环境的渲染**。`media` 属性告诉浏览器该样式表只适用于特定媒体（如打印），当前环境不匹配时它就不在关键渲染路径上——这是「让 CSS 退出关键路径」的官方手段之一。同理可用 `media=\"(min-width: 1200px)\"` 等媒体查询做条件标注。与之相反的反面教材是 `@import`：串行加载且 preload scanner 不可见，反而加深关键路径。",
+    "tags": ["rendering", "css", "media", "render-blocking"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "照常下载，但不阻塞当前屏幕环境的渲染",
+        "isCorrect": true,
+        "description": "正确。媒体不匹配的样式表退出关键渲染路径，是拆分 CSS、优化首屏的标准手法。"
+      },
+      {
+        "text": "完全不下载，只在用户触发打印时才发起请求",
+        "isCorrect": false,
+        "description": "错误。样式表仍会照常下载（以备切换媒体时可用），只是不阻塞屏幕渲染。"
+      },
+      {
+        "text": "照常下载且照常阻塞渲染，`media` 只影响规则是否被应用",
+        "isCorrect": false,
+        "description": "错误。media 标注的核心收益正是解除渲染阻塞；若照常阻塞就失去了拆分的意义。"
+      },
+      {
+        "text": "转为最低优先级下载并阻塞首次绘制",
+        "isCorrect": false,
+        "description": "错误。它不阻塞首次绘制——「不阻塞渲染」正是这个机制存在的目的。"
+      }
+    ]
+  },
+  {
+    "stem": "CSSOM 构建为什么是非增量的（必须完整解析才能使用），而 DOM 构建可以增量？",
+    "explanation": "根因是**级联**：CSS 规则允许**后面的规则覆盖前面的**——同一元素，样式表第 500 行完全可能推翻第 3 行的声明。如果浏览器用「解析到一半的 CSSOM」去渲染，就会先画出一版**注定被后续规则覆盖**的样式，随后闪变（FOUC）。所以规范选择：**CSSOM 完整之前不渲染**，增量特性对 CSS 不适用。而 HTML 节点的语义不会被后续标记「推翻」，所以 DOM 可以边下边建。",
+    "tags": ["rendering", "cssom", "cascade"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 级联允许后面的规则覆盖前面的，用解析到一半的 CSSOM 渲染会画出注定被覆盖的样式",
+        "isCorrect": true,
+        "description": "正确。「rules can be overwritten」是 MDN 给出的 render-blocking 与非增量的共同根因。"
+      },
+      {
+        "text": "CSS 文件通常比 HTML 小，增量解析的收益不值得实现成本",
+        "isCorrect": false,
+        "description": "错误。这是工程量权衡的说法；真正的原因是语义层面的——半成品 CSSOM 给出的样式可能是错的。"
+      },
+      {
+        "text": "CSSOM 是有向图而非树，必须收齐全部节点才能建图",
+        "isCorrect": false,
+        "description": "错误。CSSOM 与 DOM 一样是树形结构；非增量的原因在级联覆盖，不在数据结构形态。"
+      },
+      {
+        "text": "CSS 解析依赖 JS 引擎空闲，无法流式进行",
+        "isCorrect": false,
+        "description": "错误。CSS 解析由渲染引擎完成，与 JS 引擎无关；不能增量使用是语义问题，不是调度问题。"
+      }
+    ]
+  },
+  {
+    "stem": "同步 `<script>` 前面有一个尚未就绪的样式表时，HTML 解析为什么会被间接拖住？",
+    "explanation": "MDN 原文：「等待 CSS 不阻塞 HTML 解析或下载，但它**阻塞 JavaScript**，因为 JS 经常用于查询 CSS 属性对元素的影响」（如 `getComputedStyle`）。于是形成**连坐链**：同步脚本必须等前面的 CSS 就绪才能执行（CSS 阻塞 JS），而解析器又必须等同步脚本执行完才能继续（JS 阻塞解析）——CSS 通过 JS 间接挡住了 HTML 解析。这也是「样式表放前、脚本放后或加 defer」的另一层理由。",
+    "tags": ["rendering", "css", "script", "blocking"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CSS 阻塞 JS 执行（JS 常查询样式），JS 又阻塞 HTML 解析——形成 CSS→JS→解析的连坐链",
+        "isCorrect": true,
+        "description": "正确。解析器要先等 CSS、再等 JS 执行完，才能继续解析；两条阻塞规则串联成间接阻塞。"
+      },
+      {
+        "text": "样式表和脚本共享同一个下载队列，CSS 不下载完 JS 无法开始下载",
+        "isCorrect": false,
+        "description": "错误。下载是并行的（preload scanner 早就把两者的请求都发了）；被卡住的是 JS 的「执行」时机。"
+      },
+      {
+        "text": "解析器规定所有资源必须按文档顺序串行下载",
+        "isCorrect": false,
+        "description": "错误。资源下载高度并行，不存在按文档顺序串行下载的规则。"
+      },
+      {
+        "text": "CSSOM 构建独占主线程，解析器抢不到时间片",
+        "isCorrect": false,
+        "description": "错误。CSSOM 构建极快且这里的等待主要是网络时间；卡住解析的是「JS 必须等 CSS 才能执行」的语义依赖。"
+      }
+    ]
+  },
+  {
+    "stem": "CSS 选择器 `.bar .foo` 的匹配方向与性能定调，下列哪项符合 MDN 的描述？",
+    "explanation": "浏览器匹配选择器时**从最右侧的关键选择器（key selector）开始向左验证**：先找到所有 `.foo`，再沿 DOM 向上遍历检查是否有祖先 `.bar`。因此 `.foo {}` 比 `.bar .foo {}` 快（少一步向上遍历），右端越具体候选集越小。但 MDN 紧接着的定调更重要：这点代价**「不太值得围绕它优化」，选择器性能差异只在微秒级**（microseconds）——把它当理解引擎的知识，别当性能军规；真正的大头在减少节点数与避免重排。",
+    "tags": ["rendering", "css", "selector"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从最右侧关键选择器 `.foo` 开始向左验证（向上找祖先 `.bar`）；但选择器性能差异在微秒级，不值得围绕它做优化",
+        "isCorrect": true,
+        "description": "正确。从右向左匹配 + 「微秒级、别过度优化」的定调，两个要点都来自 MDN 关键渲染路径文档。"
+      },
+      {
+        "text": "从左向右：先找 `.bar` 再向下搜索 `.foo`，嵌套越深性能损失呈指数级增长",
+        "isCorrect": false,
+        "description": "错误。方向反了；「指数级损失」也是夸大——实际差异只在微秒级。"
+      },
+      {
+        "text": "两端同时匹配再取交集，性能与选择器写法完全无关",
+        "isCorrect": false,
+        "description": "错误。不存在双向取交集的机制；写法确实有影响，只是影响小到不值得优化。"
+      },
+      {
+        "text": "从右向左匹配，且选择器写法是渲染性能最主要的优化点",
+        "isCorrect": false,
+        "description": "错误。匹配方向对，但定调错了——MDN 明确说选择器优化收益在微秒级，不是主要优化点。"
+      }
+    ]
+  },
+  {
+    "stem": "页面没写任何 CSS 时 `<h1>` 依然比正文大、段落有默认间距，这体现了级联计算的什么机制？",
+    "explanation": "**UA 默认样式表（user agent stylesheet）打底**——级联的起点永远不是空白。Chrome 官方的描述：没写 CSS 也有 computed style，`<h1>` 比 `<h2>` 大、段落有默认 margin，都来自浏览器内置的默认样式表。级联的过程是「从适用于节点的**最一般规则**开始，**递归地应用更具体的规则**细化出计算样式」，DevTools 的 Computed 面板看到的就是选择器匹配 + 级联后的最终样式集。",
+    "tags": ["rendering", "cascade", "ua-stylesheet"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "UA 默认样式表打底——级联从最一般规则开始，递归应用更具体的规则细化出 computed style",
+        "isCorrect": true,
+        "description": "正确。级联起点是浏览器内置的 user agent stylesheet，作者样式在它之上层层细化。"
+      },
+      {
+        "text": "HTML 标签自带像素级样式属性，浏览器直接读取标签内置尺寸渲染",
+        "isCorrect": false,
+        "description": "错误。标签本身不携带样式；默认外观来自 UA 样式表的 CSS 规则，仍走级联计算。"
+      },
+      {
+        "text": "浏览器缓存了用户最近访问站点的样式，作为新页面的默认值",
+        "isCorrect": false,
+        "description": "错误。不存在跨站样式复用——这既不安全也不可预测；默认样式是浏览器内置的。"
+      },
+      {
+        "text": "未定义样式时由操作系统主题决定，浏览器不参与计算",
+        "isCorrect": false,
+        "description": "错误。默认样式由浏览器的 UA 样式表提供并经级联计算；OS 主题只影响少数系统控件外观。"
+      }
+    ]
+  },
+  {
+    "stem": "关于 CSSOM 构建的真实成本，MDN 给出的定调是什么？",
+    "explanation": "MDN 特意泼冷水：**CSSOM 构建非常非常快**，快到 DevTools 不为它单列条目——「Recalculate Style」显示的是解析 CSS + 构建 CSSOM + 递归计算 computed styles 的**总时间**，而**创建 CSSOM 的总耗时通常小于一次 DNS 查询**。真正贵的是「等 CSS 下载」的**网络时间**，不是解析本身。因此优化火力应对准：**减少关键 CSS 字节数、减少请求往返**（早、小、拆 + media 标注），而不是纠结解析速度。",
+    "tags": ["rendering", "cssom", "performance"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "构建 CSSOM 非常快（总耗时通常小于一次 DNS 查询），真正贵的是等 CSS 下载的网络时间，优化应对准减少关键 CSS 字节与请求往返",
+        "isCorrect": true,
+        "description": "正确。「render-blocking 很痛」与「CSSOM 构建很快」并不矛盾——痛在网络等待，不在解析。"
+      },
+      {
+        "text": "CSSOM 构建是渲染管线中最慢的一步，DevTools 为它单列了专门的耗时面板",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——它快到 DevTools 都不单独列出，只并入 Recalculate Style 总时间。"
+      },
+      {
+        "text": "CSSOM 构建耗时与选择器复杂度成指数关系，简化选择器是首要优化",
+        "isCorrect": false,
+        "description": "错误。选择器影响的是匹配阶段且只在微秒级；CSSOM 构建本身极快，都不是优化重点。"
+      },
+      {
+        "text": "CSSOM 构建必须等 DOM 完整之后才能开始，因此瓶颈在 DOM 侧",
+        "isCorrect": false,
+        "description": "错误。CSSOM 与 DOM 是两棵独立的树，CSS 一到就可以解析，不等 DOM 完整。"
+      }
+    ]
+  },
+  {
+    "stem": "对一个 `display: none` 的元素读取 `offsetWidth` 恒为 0，其渲染管线层面的原理是什么？",
+    "explanation": "`display: none` 的节点（连同全部子孙）**不进 render tree**，而 render tree 是 layout 的输入——**不在 render tree 里的节点没有布局信息**，浏览器从未为它计算过几何，所以几何查询只能返回 0。这也解释了为什么「先把元素 `display: block` 再测量、测完改回去」这类代码必然触发布局：节点要先进 render tree 才有几何可言。",
+    "tags": ["rendering", "render-tree", "layout"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`display: none` 的节点不进 render tree，而 render tree 是 layout 的输入——不在树中的节点没有布局信息",
+        "isCorrect": true,
+        "description": "正确。几何信息是 layout 阶段基于 render tree 算出来的；节点不在树里，就从来没有过几何。"
+      },
+      {
+        "text": "浏览器对隐藏元素做了安全脱敏，强制返回 0 防止指纹追踪",
+        "isCorrect": false,
+        "description": "错误。这不是安全机制；`visibility: hidden` 的元素照样能读到真实尺寸（它在 render tree 中占位）。"
+      },
+      {
+        "text": "`display: none` 元素的布局信息被冻结为初始值 0，重新显示后才解冻",
+        "isCorrect": false,
+        "description": "错误。不存在「冻结/解冻」——该节点根本不在 render tree 中，没有任何布局信息可冻结。"
+      },
+      {
+        "text": "`offsetWidth` 只统计可视区域内的元素，滚出屏幕外的一律返回 0",
+        "isCorrect": false,
+        "description": "错误。滚出视口的元素仍在 render tree 中、有完整布局信息，offsetWidth 返回真实值。"
+      }
+    ]
+  },
+  {
+    "stem": "渲染管线的 layout（布局）阶段在计算什么？",
+    "explanation": "layout 补上 render tree 缺失的信息：render tree 告诉浏览器「哪些节点可见、样式是什么」，但**不知道它们多大、在哪**。布局阶段**从 render tree 的根开始遍历**，为每个节点算出**几何信息**——盒子的尺寸（宽高）与坐标（x, y）。Chromium 视角：主线程遍历 DOM 与计算样式，生成带有 x/y 坐标、边界框尺寸的 layout tree。布局以**视口尺寸为地基**、以**盒模型为词汇表**。",
+    "tags": ["rendering", "layout", "geometry"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "从 render tree 根开始遍历，为每个可见节点算出几何信息——盒子的尺寸与 x/y 坐标",
+        "isCorrect": true,
+        "description": "正确。layout 的产物就是「每个盒子多大、在哪」，是 paint 的前置输入。"
+      },
+      {
+        "text": "为每个节点匹配 CSS 规则、算出最终的 computed style",
+        "isCorrect": false,
+        "description": "错误。这是 style（样式计算）阶段的工作，发生在 layout 之前。"
+      },
+      {
+        "text": "生成「先画背景再画文字」的绘制指令序列",
+        "isCorrect": false,
+        "description": "错误。这是 paint 阶段的工作——产出 paint records；layout 只管几何。"
+      },
+      {
+        "text": "把页面拆分成图层并分配 GPU 内存",
+        "isCorrect": false,
+        "description": "错误。分层与栅格化属于合成阶段的工作，不是 layout 的职责。"
+      }
+    ]
+  },
+  {
+    "stem": "重排（reflow）与 layout 这两个术语的关系，按 MDN 的定义是什么？",
+    "explanation": "MDN 的切分很干净：「**第一次**确定每个节点的尺寸和位置称为 **layout**。对 layout 的**后续重新计算**称为 **reflow**」。也就是说 reflow 不是另一种更轻的计算，而是**同一套几何计算的再执行**——任何时候 render tree 被修改（DOM 增删、盒模型样式变化、视口变化等），几何就要重算。",
+    "tags": ["rendering", "reflow", "layout"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "首次确定节点尺寸位置叫 layout，之后每次重新计算叫 reflow——两者是同一套几何计算",
+        "isCorrect": true,
+        "description": "正确。区别只在「第几次」，计算内容与代价本质相同。"
+      },
+      {
+        "text": "layout 负责块级元素，reflow 负责行内元素",
+        "isCorrect": false,
+        "description": "错误。两者不按元素类型分工；都覆盖整个受影响的布局范围。"
+      },
+      {
+        "text": "reflow 是比 layout 更轻量的局部计算，只算位置不算尺寸",
+        "isCorrect": false,
+        "description": "错误。reflow 是同一套完整几何计算的再执行；引擎会尽量限制范围，但不是「只算位置」的轻量版。"
+      },
+      {
+        "text": "layout 由主线程执行，reflow 由合成器线程执行",
+        "isCorrect": false,
+        "description": "错误。两者都在渲染进程主线程执行；合成器线程不做布局计算。"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪组操作都会触发重排（reflow）？",
+    "explanation": "重排的触发面很宽：**DOM 结构变化**（增删/移动节点、`innerHTML` 重写）、**内容变化**（改文本、未定尺寸的图片加载完成）、**盒模型样式更新**（`width`/`height`/`padding`/`margin`/`border`/`top`/`font-size`/`line-height` 等）、**视口变化**（窗口 resize、设备旋转——每次都重新 layout）。对照记忆：只改 `color`/`background`/`box-shadow` 这类外观属性**跳过 layout 只重绘**；改已成层元素的 `transform`/`opacity` 则 layout 和 paint 都跳过、仅合成。",
+    "tags": ["rendering", "reflow", "trigger"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "增删 DOM 节点、修改 `width`/`padding`/`font-size`、窗口 resize、设备旋转",
+        "isCorrect": true,
+        "description": "正确。结构变化、盒模型与字体样式变化、视口变化都会让几何失效，触发重排。"
+      },
+      {
+        "text": "修改 `color`、`background`、`box-shadow`",
+        "isCorrect": false,
+        "description": "错误。这组只改外观不改几何，跳过 layout、只触发 repaint 与 composite。"
+      },
+      {
+        "text": "修改已提升图层元素的 `transform` 与 `opacity`",
+        "isCorrect": false,
+        "description": "错误。这组是最便宜的路径——layout 与 paint 都跳过，仅在合成器线程重新拼帧。"
+      },
+      {
+        "text": "在 `console.log` 中打印 DOM 节点的引用",
+        "isCorrect": false,
+        "description": "错误。打印引用本身不读几何属性也不改样式，不触发重排。"
+      }
+    ]
+  },
+  {
+    "stem": "未声明尺寸的 `<img>` 图片下载完成时，渲染管线会发生什么？",
+    "explanation": "布局阶段浏览器对没声明尺寸的替换元素只能先给**占位空间**继续排版；图片下载完成、真实尺寸已知时，**触发一次 reflow** 重新挤开周围内容。这就是内容加载过程中页面「跳一下」的渲染层原因，也是**给图片写 `width`/`height` 属性或 `aspect-ratio` 防 CLS** 的原理依据——提前告知尺寸，占位即正确，图片到达就不必重排。",
+    "tags": ["rendering", "reflow", "image", "cls"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器此前只给了占位空间，真实尺寸已知后触发一次 reflow，挤开周围内容重新排版",
+        "isCorrect": true,
+        "description": "正确。「未定尺寸的图片到达」在重排触发清单上，是布局偏移（CLS）的经典来源。"
+      },
+      {
+        "text": "图片直接绘制在占位区域内，多余部分被裁剪，不触发任何重新计算",
+        "isCorrect": false,
+        "description": "错误。浏览器不会裁剪图片迁就占位——它会按真实尺寸重排，这正是页面跳动的原因。"
+      },
+      {
+        "text": "只触发 repaint，元素几何保持不变",
+        "isCorrect": false,
+        "description": "错误。真实尺寸与占位不一致时几何必须重算；只有声明了尺寸、占位正确时才可能只是绘制内容。"
+      },
+      {
+        "text": "浏览器推迟显示图片直到下一次用户交互，避免重排",
+        "isCorrect": false,
+        "description": "错误。不存在「等交互再显示」的机制；图片就绪即参与渲染并触发所需的重排。"
+      }
+    ]
+  },
+  {
+    "stem": "重排（reflow）发生后，渲染管线的后续阶段会怎样？",
+    "explanation": "MDN 原文点透代价链：「**reflow 会引发 repaint 和 re-composite**」——重排永远不是单独付费。几何变了，受影响区域的绘制指令必须重新生成（repaint），图层内容变了又必须重新合成（re-composite）。这就是「改布局属性最贵」的完整含义：**reflow → repaint → re-composite 全链重跑**；对比之下改外观只走 repaint → composite，改已成层的 `transform`/`opacity` 只走 composite。",
+    "tags": ["rendering", "reflow", "repaint", "composite"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "重排必然引发重绘与重合成——reflow → repaint → re-composite，是代价链最长的路径",
+        "isCorrect": true,
+        "description": "正确。管线级联决定了越靠前的失效连坐越广，布局失效牵动其后所有阶段。"
+      },
+      {
+        "text": "重排只更新几何数据，绘制与合成都可以完全跳过",
+        "isCorrect": false,
+        "description": "错误。几何变了画面必然要变，绘制指令与合成帧都要更新，不可能跳过。"
+      },
+      {
+        "text": "重排后只需重新合成，绘制指令可以全部复用",
+        "isCorrect": false,
+        "description": "错误。位置尺寸变了，受影响区域的绘制指令也要重新生成，不能全部复用。"
+      },
+      {
+        "text": "重排与重绘互斥，一帧内只会发生其中之一",
+        "isCorrect": false,
+        "description": "错误。两者不是互斥关系而是连坐关系——重排必然带出重绘。"
+      }
+    ]
+  },
+  {
+    "stem": "移动端页面缺少 `<meta name=\"viewport\" content=\"width=device-width\">` 时整页缩成一团，其布局层的原因是什么？",
+    "explanation": "布局「**取视口尺寸为基准**」自根向下推：块级元素默认宽度 = 父级的 100%，一路继承到 `<body>`，地基就是视口宽度。没有 viewport meta 时，移动浏览器按**默认视口（一般 960px）**排版，再把排好的 960px 宽页面整体缩小到设备屏幕内——这就是老页面在手机上「缩成一团」的原理。声明 `width=device-width` 后，布局视口对齐设备宽度，页面才按真实屏宽排版。",
+    "tags": ["rendering", "layout", "viewport"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "布局以视口尺寸为基准自根向下推（块级默认宽为父级 100%），无该标注时按默认视口（一般 960px）排版再整体缩放",
+        "isCorrect": true,
+        "description": "正确。视口是布局的地基；默认视口按桌面宽度假设排版，缩放到小屏自然一团。"
+      },
+      {
+        "text": "缺少该标签时浏览器禁用 CSS，退回 UA 默认样式渲染",
+        "isCorrect": false,
+        "description": "错误。CSS 照常生效；问题出在布局视口宽度的假设，不是样式被禁用。"
+      },
+      {
+        "text": "缺少该标签时字体渲染引擎按桌面 DPI 计算，只影响文字大小",
+        "isCorrect": false,
+        "description": "错误。影响的是整个布局的基准宽度与整体缩放，不只是文字。"
+      },
+      {
+        "text": "该标签控制 GPU 栅格化倍率，与布局计算无关",
+        "isCorrect": false,
+        "description": "错误。viewport meta 影响的正是布局视口——布局计算的第一输入，不是栅格化参数。"
+      }
+    ]
+  },
+  {
+    "stem": "强制同步布局（forced synchronous layout）是如何被触发的？",
+    "explanation": "正常节奏下，JS 改样式后浏览器**不会立刻**重排——失效标记被攒着，等到本帧渲染时机统一算一次（批处理优化）。但**读取依赖最新布局的几何属性**会打断攒批：浏览器为了不给你旧值，只能**当场同步执行布局**。典型代码：`el.style.width = ...`（写，布局失效）后立刻 `el.offsetHeight`（读，被迫现在就跑 layout）。单次强制布局只是「把账提前结」，循环里反复结账才是灾难（layout thrashing）。",
+    "tags": ["rendering", "forced-layout", "reflow"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "修改样式后立刻读取 `offsetWidth` 等依赖最新布局的几何属性，浏览器被迫当场同步执行布局",
+        "isCorrect": true,
+        "description": "正确。「写后读」打断了浏览器的失效攒批，几何读取必须拿到最新值，只能立即算。"
+      },
+      {
+        "text": "调用 `requestAnimationFrame` 会立即同步执行一次布局",
+        "isCorrect": false,
+        "description": "错误。rAF 只是注册回调，回调在渲染步骤之前执行；注册本身不触发布局。"
+      },
+      {
+        "text": "任何一次 DOM 写操作都会立即同步触发布局",
+        "isCorrect": false,
+        "description": "错误。纯写入只是标记失效，浏览器默认攒批到帧末统一算——这正是批处理优化的意义。"
+      },
+      {
+        "text": "只有窗口 resize 才会同步触发布局，其余场景都是异步的",
+        "isCorrect": false,
+        "description": "错误。resize 触发的是正常的重排调度；强制同步布局的典型触发是「改样式后读几何」。"
+      }
+    ]
+  },
+  {
+    "stem": "layout thrashing（布局抖动）的成因与药方分别是什么？",
+    "explanation": "成因：**循环中交替「写样式 → 读几何」**，每一圈的读取都遇到待处理的样式改动，触发一次强制同步布局——n 个元素就是 n 次布局，帧预算瞬间爆掉。药方是**读写分离**：先集中读（至多逼一次布局）、再集中写（失效攒成一批，帧末统一重算）。配套法则：缓存几何值、把连续视觉更新放进 `requestAnimationFrame`、动画只碰 `transform`/`opacity`。",
+    "tags": ["rendering", "layout-thrashing", "performance"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "循环中交替「写样式→读几何」，每圈强制一次同步布局；药方是读写分离——先集中读、再集中写",
+        "isCorrect": true,
+        "description": "正确。把读全部提前、写全部靠后，布局失效只剩一批，帧末统一算一次。"
+      },
+      {
+        "text": "图层数量过多导致 GPU 内存耗尽；药方是移除全部 `will-change`",
+        "isCorrect": false,
+        "description": "错误。这说的是图层爆炸问题，属于合成阶段的坑，与布局抖动是两回事。"
+      },
+      {
+        "text": "CSS 选择器过深导致样式计算超时；药方是扁平化选择器",
+        "isCorrect": false,
+        "description": "错误。选择器性能差异在微秒级；布局抖动的病灶是读写交替触发的反复强制布局。"
+      },
+      {
+        "text": "事件监听器过多导致输入延迟；药方是 `passive: true`",
+        "isCorrect": false,
+        "description": "错误。passive 解决的是滚动等待主线程的问题，与循环读写引发的布局抖动无关。"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪组读取操作在存在待处理样式改动时，都会触发强制同步布局？",
+    "explanation": "「读了就逼布局」的高危 API 清单：**`offsetTop`/`offsetLeft`/`offsetWidth`/`offsetHeight`**、**`clientWidth`/`clientHeight`**、**`scrollTop`/`scrollHeight`** 等滚动几何、**`getBoundingClientRect()`**、**`getComputedStyle()` 读几何相关值**，以及 **`focus()`、`scrollIntoView()`** 等隐式需要最新布局的操作。共同点：它们的返回值（或行为）依赖最新几何，浏览器不能给旧值。DevTools Performance 面板里带红三角警告的 Layout 块就是在指认它们。",
+    "tags": ["rendering", "forced-layout", "api"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`offsetTop`、`clientWidth`、`scrollTop`、`getBoundingClientRect()`",
+        "isCorrect": true,
+        "description": "正确。四者都依赖最新布局的几何数据，有待处理改动时必然逼出一次同步布局。"
+      },
+      {
+        "text": "`el.id`、`el.tagName`、`el.dataset.foo`",
+        "isCorrect": false,
+        "description": "错误。这些是 DOM 属性读取，不涉及几何，直接从节点对象取值，不触发布局。"
+      },
+      {
+        "text": "`el.textContent`、`el.children.length`",
+        "isCorrect": false,
+        "description": "错误。文本内容与子节点数量是 DOM 结构信息，不需要几何计算。"
+      },
+      {
+        "text": "`Date.now()`、`performance.now()`",
+        "isCorrect": false,
+        "description": "错误。时间 API 与渲染管线无关，不会触发布局。"
+      }
+    ]
+  },
+  {
+    "stem": "改完元素样式浏览器并不立刻重排，但紧接着读一下 `offsetWidth` 就会立刻重排。这背后的引擎机制是什么？",
+    "explanation": "关键在浏览器的**失效批处理**：样式写入只是把布局**标记为失效**攒着，等到本帧的渲染时机（rAF 之后、绘制之前）统一计算一次——多次写入合并成一次布局，这是引擎的核心优化。而几何属性的读取**要求返回最新值**，引擎面对「有待处理失效 + 立刻要精确几何」的组合，唯一选择是**当场同步跑一次布局**（把账提前结）。理解这个机制就理解了读写分离为什么有效：读全放批处理生效之前或之后，别打断它。",
+    "tags": ["rendering", "forced-layout", "invalidation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器把布局失效标记攒着、到本帧渲染时机统一批量计算；读取几何要求最新值，引擎为不返回旧值只能当场同步跑一次布局",
+        "isCorrect": true,
+        "description": "正确。「攒批失效 + 读取要最新值」的冲突是强制同步布局的全部机理。"
+      },
+      {
+        "text": "`offsetWidth` 的 getter 内部注册了一个高优先级宏任务，插队到渲染之前执行",
+        "isCorrect": false,
+        "description": "错误。强制布局是同步发生在读取语句执行时的，不经过任务队列，谈不上宏任务插队。"
+      },
+      {
+        "text": "读取几何属性会触发垃圾回收，GC 过程顺带执行了布局",
+        "isCorrect": false,
+        "description": "错误。GC 与布局是完全独立的机制，几何读取不触发 GC。"
+      },
+      {
+        "text": "样式写入时实际已立即重排，读取只是从缓存取值，两者耗时相同",
+        "isCorrect": false,
+        "description": "错误。写入默认不立即重排（攒批优化的意义就在此）；若写入即重排，读写分离就不会有任何收益。"
+      }
+    ]
+  },
+  {
+    "stem": "MDN 对布局耗时的定调是「加载或旋转屏幕时 20ms 的布局延迟没问题，但动画或滚动中的布局会导致 jank」。这句话应如何理解？",
+    "explanation": "核心是区分**一次性布局**与**高频布局**：页面加载、设备旋转是低频事件，一次 20ms 的布局用户无感；但动画和滚动要求每帧出画面（60Hz 下每帧仅 ≈16.7ms），**每帧都触发布局必然吃穿帧预算**——布局本身不是罪，高频布局才是。MDN 给出的结论也直白：「**批量更新，避免对盒模型属性做动画**」——动画用 `transform`/`opacity` 绕开布局，一次性的大布局留给低频场景。",
+    "tags": ["rendering", "layout", "jank", "animation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "布局本身不是罪，高频布局才是——一次性布局在加载期可接受，动画每帧都触发布局必然超出帧预算",
+        "isCorrect": true,
+        "description": "正确。20ms 放在低频场景无感，放进 16.7ms 的每帧预算里必然掉帧——频率决定性质。"
+      },
+      {
+        "text": "20ms 是布局的硬性上限，超过 20ms 的布局会被浏览器强制中断",
+        "isCorrect": false,
+        "description": "错误。20ms 只是 MDN 举例的量级感受，不存在布局超时中断机制。"
+      },
+      {
+        "text": "动画期间浏览器会自动跳过布局阶段，jank 是绘制阶段导致的",
+        "isCorrect": false,
+        "description": "错误。动画碰了盒模型属性布局就必须跑，浏览器不会「自动跳过」；跳过布局的前提是只改合成属性。"
+      },
+      {
+        "text": "只要开启 GPU 加速，动画中的布局就不会造成 jank",
+        "isCorrect": false,
+        "description": "错误。布局在主线程执行，GPU 加速不了它；避免 jank 的办法是让动画不触发布局。"
+      }
+    ]
+  },
+  {
+    "stem": "渲染管线的 paint（绘制）阶段直接产出的是什么？",
+    "explanation": "paint 产出的是 **paint records（绘制记录）**——Chrome 原文形容它是「绘制过程的记录，比如『先背景、然后文字、然后矩形』」——**是指令而非像素**。真正把指令变成像素的是后面的**栅格化（rasterization）**。这层「指令与像素分离」是现代渲染的关键设计：指令可以缓存、复用、跨线程搬运（在 RenderingNG 里演化为 display list）。",
+    "tags": ["rendering", "paint", "paint-records"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "paint records——「先画背景、再画文字、再画矩形」这样的绘制指令，而不是像素",
+        "isCorrect": true,
+        "description": "正确。paint 只生成指令；像素由栅格化按指令产出。指令化让缓存与跨线程调度成为可能。"
+      },
+      {
+        "text": "屏幕上的最终像素",
+        "isCorrect": false,
+        "description": "错误。像素是栅格化与最终 draw 的产物；paint 阶段还停留在指令层。"
+      },
+      {
+        "text": "每个节点的几何尺寸与坐标",
+        "isCorrect": false,
+        "description": "错误。几何是 layout 阶段的产物，paint 在它之后、消费这些几何。"
+      },
+      {
+        "text": "GPU 纹理瓦片",
+        "isCorrect": false,
+        "description": "错误。纹理瓦片是栅格化阶段把绘制指令逐瓦片光栅化后的产物。"
+      }
+    ]
+  },
+  {
+    "stem": "合成（compositing）技术的基本思路是什么？",
+    "explanation": "Chrome 的定义：「合成是**把页面各部分拆分成多个图层、分别栅格化、再在一个独立线程——合成器线程——里拼合成页面**的技术。滚动时图层已经栅格化好了，只需要合成一个新帧。动画同理：移动图层、合成新帧」。一句话：**栅格化的成果按层缓存，能用挪的就不重画**。这是滚动与 `transform` 动画不需要主线程也能流畅的基础设施。",
+    "tags": ["rendering", "compositing", "layer"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把页面拆成多个图层分别栅格化，在合成器线程拼成一帧——滚动/动画时图层已栅格化好，只需重新拼合",
+        "isCorrect": true,
+        "description": "正确。分层 + 缓存栅格化成果 + 独立线程拼帧，三者合起来就是合成的全部思路。"
+      },
+      {
+        "text": "把多个 CSS 文件合并成一个以减少网络请求数",
+        "isCorrect": false,
+        "description": "错误。那是构建工具的资源合并；渲染语境的 compositing 是图层拼帧技术。"
+      },
+      {
+        "text": "把所有 DOM 操作合并到一次事务中批量提交",
+        "isCorrect": false,
+        "description": "错误。DOM 批量更新是应用层优化手法，与渲染管线的合成阶段无关。"
+      },
+      {
+        "text": "把多帧画面插值合成慢动作，提升视觉流畅度",
+        "isCorrect": false,
+        "description": "错误。浏览器不做帧插值；合成是把同一帧的多个图层拼装成最终画面。"
+      }
+    ]
+  },
+  {
+    "stem": "`transform`/`opacity` 动画（元素已提升为合成层）之所以便宜，是因为跳过了哪些管线阶段？",
+    "explanation": "已成层元素的 `transform`/`opacity` 变化**跳过 layout 与 paint**：几何没变（transform 不参与布局）、绘制指令没变（图层内容未变），要做的只是**在合成器线程用新的变换矩阵/不透明度重新拼帧**。对比三条路径：改 `width`/`top` 走 layout+paint+composite 全链；改 `background`/`color` 走 paint+composite；改 `transform`/`opacity` 仅 composite——这就是「位移用 `translate` 不用 `top`、显隐过渡用 `opacity`」等动画军规的原理出处。",
+    "tags": ["rendering", "transform", "opacity", "compositing"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "跳过 layout 与 paint，只在合成器线程重新拼帧（改图层的变换矩阵或不透明度）",
+        "isCorrect": true,
+        "description": "正确。「仅合成的动画」是流畅性的最佳选择——不重排、不重绘、不等主线程。"
+      },
+      {
+        "text": "跳过 composite，只重跑 layout 与 paint",
+        "isCorrect": false,
+        "description": "错误。方向反了——composite 是唯一要跑的阶段，跳过的是 layout 与 paint。"
+      },
+      {
+        "text": "跳过 style 计算，layout 与 paint 照常执行",
+        "isCorrect": false,
+        "description": "错误。若 layout 与 paint 照常跑，就没有任何便宜可言；便宜的来源正是跳过这两步。"
+      },
+      {
+        "text": "什么阶段都不跳过，只是 GPU 执行这些属性的速度更快",
+        "isCorrect": false,
+        "description": "错误。收益来自阶段跳过与线程独立，不是「GPU 算得快」这种量变。"
+      }
+    ]
+  },
+  {
+    "stem": "下列哪组是典型的图层提升（元素成为独立合成层）来源？",
+    "explanation": "典型的成层触发：**`<video>`/`<canvas>`**（内容独立更新，天然适合单层）、**3D `transform`**（`translateZ` 一族，变换在合成时应用）、**`opacity` 动画**（效果在合成时应用）、**`will-change: transform/opacity`**（显式预建层提示），以及 `position: fixed`/`sticky`、滚动容器等（实现相关）。注意：元素成层后**其子孙跟着进同层**，除非子孙自己又触发了成层条件；普通 `z-index` 并不等于成层。",
+    "tags": ["rendering", "layer", "compositing"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`<video>`/`<canvas>`、3D transform（`translateZ` 一族）、`opacity` 动画、`will-change: transform`",
+        "isCorrect": true,
+        "description": "正确。这几类是 MDN 与 Chrome 文档列出的典型成层来源——内容独立更新或效果可在合成时应用。"
+      },
+      {
+        "text": "任何设置了 `z-index` 的元素",
+        "isCorrect": false,
+        "description": "错误。z-index 影响的是绘制排序（层叠上下文），不直接导致合成层提升，两个「层」概念不同。"
+      },
+      {
+        "text": "所有块级元素——每个块级盒子默认各占一层",
+        "isCorrect": false,
+        "description": "错误。若每个盒子一层，GPU 内存立刻爆炸；默认多数内容共享图层，只有特定条件才独立成层。"
+      },
+      {
+        "text": "带有 `id` 属性的元素",
+        "isCorrect": false,
+        "description": "错误。HTML 属性与合成分层毫无关系。"
+      }
+    ]
+  },
+  {
+    "stem": "页面首次加载之后，重绘（repaint）的作用范围是怎样的？",
+    "explanation": "MDN：「**首次加载时绘制整个屏幕；此后只重绘屏幕上受影响的区域**」——浏览器已优化为只重绘所需的**最小区域**。绘制本身「非常快」，单独的 repaint 很少成为瓶颈；真正贵的是被 reflow 连坐（reflow → repaint → re-composite）和高频重绘大面积区域。",
+    "tags": ["rendering", "repaint", "invalidation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "首次加载绘制整个屏幕，此后只重绘屏幕上受影响的最小区域",
+        "isCorrect": true,
+        "description": "正确。增量重绘是浏览器的内建优化，失效范围决定重绘范围。"
+      },
+      {
+        "text": "每次重绘都必须重画整屏",
+        "isCorrect": false,
+        "description": "错误。整屏重画只在首次；之后按失效区域增量重绘，这正是浏览器的优化点。"
+      },
+      {
+        "text": "重绘固定以图层为单位，整层重画",
+        "isCorrect": false,
+        "description": "错误。重绘按受影响区域算，不是无条件整层重画；层内也有更细的失效跟踪。"
+      },
+      {
+        "text": "重绘范围由开发者通过 API 手动指定",
+        "isCorrect": false,
+        "description": "错误。失效区域由引擎根据变化自动计算，没有让开发者指定重绘矩形的 Web API。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器 paint 阶段为什么不能按 HTML 标记顺序直接往下画？",
+    "explanation": "Chrome 原文：「**按 HTML 标记顺序绘制而不考虑 z-index，会得到错误的渲染结果**」。绘制顺序由 **CSS painting order** 规范决定，整体**自后向前（back-to-front）**分层压画。`z-index` 可以改变前后关系——尤其**负 z-index 会画到背景之后**，所以 paint records 必须按最终层叠关系**全局排序**，不能按文档流一路画下去。",
+    "tags": ["rendering", "paint", "painting-order", "z-index"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "绘制顺序由 CSS painting order 决定、整体自后向前；`z-index`（尤其负值会画到背景之后）要求绘制指令按层叠关系全局排序",
+        "isCorrect": true,
+        "description": "正确。层叠关系与文档顺序可以完全不同，按标记顺序硬画会把前后关系画错。"
+      },
+      {
+        "text": "HTML 顺序与 DOM 顺序不一致，必须先排序对齐",
+        "isCorrect": false,
+        "description": "错误。DOM 顺序就来自 HTML 标记顺序（容错修复除外）；问题在层叠关系，不在两者不一致。"
+      },
+      {
+        "text": "为了并行绘制，浏览器会随机打乱顺序分配给多线程",
+        "isCorrect": false,
+        "description": "错误。绘制顺序是确定性的（painting order 规范），随机打乱会导致每帧结果不一致。"
+      },
+      {
+        "text": "其实就是按 HTML 顺序画的，`z-index` 只影响事件响应优先级",
+        "isCorrect": false,
+        "description": "错误。z-index 影响的正是绘制的前后关系；Chrome 原文明确说按标记顺序画会得到错误结果。"
+      }
+    ]
+  },
+  {
+    "stem": "stacking context（层叠上下文）对绘制排序意味着什么？",
+    "explanation": "stacking context 是 **z-index 排序的作用域**：上下文内的内容**作为一个整体**参与外层排序，**内部的 z-index 出不了这个门**——子元素设再大的 z-index 也只在自己所属的上下文内比较。创建条件包括 `position` + `z-index`、`opacity < 1`、`transform`、`filter` 等。对绘制的另一层影响是**失效粒度**：改一个元素的外观，同 stacking context 内与它重叠的内容可能一并重绘——z-index 混战不只难维护，也在给 paint 制造更大的失效面。",
+    "tags": ["rendering", "stacking-context", "paint"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是 z-index 排序的作用域：上下文内的内容作为整体参与外层排序，内部 z-index 无法越出这个边界",
+        "isCorrect": true,
+        "description": "正确。这就是「z-index: 9999 还是被盖住」的原理——它被困在自己的层叠上下文里。"
+      },
+      {
+        "text": "它是 GPU 合成层的同义词，创建层叠上下文必然新建合成层",
+        "isCorrect": false,
+        "description": "错误。层叠上下文是绘制排序概念，合成层是栅格化缓存单元；有交集（如 transform 两者都触发）但不是一回事。"
+      },
+      {
+        "text": "它只影响事件捕获顺序，与绘制无关",
+        "isCorrect": false,
+        "description": "错误。层叠上下文恰恰是决定绘制前后关系的核心机制，事件捕获顺序由 DOM 树决定。"
+      },
+      {
+        "text": "整个页面只有一个层叠上下文，所有 z-index 全局比较",
+        "isCorrect": false,
+        "description": "错误。opacity、transform、filter 等都会创建新的层叠上下文，页面通常存在大量嵌套的上下文。"
+      }
+    ]
+  },
+  {
+    "stem": "`will-change: transform` 的收益与代价（双刃剑）分别是什么？",
+    "explanation": "**收益**：对「应该独立成层却没被自动分层」的部分（如侧滑菜单），提前提示浏览器**预建图层**——动画开始时不用现做「成层 + 栅格化」的准备工作，避免首帧卡顿。**代价**：每层都要在 **GPU 内存**里持有栅格化纹理（移动端尤其敏感），Chrome 还警告「**跨过多图层做合成，可能比每帧重新栅格化页面小块更慢**」——这就是图层爆炸（layer explosion）。纪律：预建节制、**动画结束后移除 `will-change`** 释放资源、以实测为准。",
+    "tags": ["rendering", "will-change", "layer"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "收益是动画前预建图层、避免首帧现做成层与栅格化的卡顿；代价是每层占 GPU 内存，滥用导致图层爆炸反而更慢——应实测并在动画结束后移除",
+        "isCorrect": true,
+        "description": "正确。这是 Chrome 官方「建议用它」与「泼冷水」两段话的完整合并——收益真实，代价也真实。"
+      },
+      {
+        "text": "收益是让该元素所有属性的动画都跳过 layout；代价是与 z-index 冲突",
+        "isCorrect": false,
+        "description": "错误。改 width 等布局属性照样触发 layout，成层救不了它；与 z-index 也不存在冲突关系。"
+      },
+      {
+        "text": "收益是提高元素的绘制优先级；代价是降低其他元素的帧率",
+        "isCorrect": false,
+        "description": "错误。will-change 不是优先级调度指令，而是资源预分配提示；也不存在「牺牲别人帧率」的机制。"
+      },
+      {
+        "text": "收益是永久免除该元素的重绘；没有代价，应给所有动画元素全局添加",
+        "isCorrect": false,
+        "description": "错误。「无代价、全局撒网」正是官方点名的反模式——层耗内存，图层爆炸会反噬性能。"
+      }
+    ]
+  },
+  {
+    "stem": "合成器线程把大图层切成瓦片（tiles）栅格化，其调度策略是什么？",
+    "explanation": "图层可能很大（比如整页长的文档流），一次性栅格化整层既慢又浪费。合成器线程把图层**切成瓦片**，逐瓦片交给**栅格线程**栅格化并存入 **GPU 内存**，调度上**视口内及附近的瓦片优先**——用户马上要看的先准备好，远处的可以慢慢来。这套「分块 + 按需优先」的设计让首帧更快、滚动时也总有就绪的瓦片可拼。",
+    "tags": ["rendering", "raster", "tiles"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "逐瓦片交给栅格线程栅格化并存入 GPU 内存，视口内及附近的瓦片优先处理",
+        "isCorrect": true,
+        "description": "正确。瓦片化 + 视口优先是栅格化调度的两个要点，兼顾首帧速度与滚动就绪度。"
+      },
+      {
+        "text": "从文档顶部到底部严格按顺序栅格化",
+        "isCorrect": false,
+        "description": "错误。若严格从头到尾，用户已滚动到中部时还在栅格化顶部——优先级跟着视口走才合理。"
+      },
+      {
+        "text": "一次性栅格化整个图层，不做分块",
+        "isCorrect": false,
+        "description": "错误。整层一次性栅格化对长页面代价巨大且大部分内容看不到；切瓦片正是为了避免这一点。"
+      },
+      {
+        "text": "只栅格化视口内的瓦片，视口外的永远不栅格化",
+        "isCorrect": false,
+        "description": "错误。视口附近的瓦片也会预栅格化（为滚动做准备），只是优先级低于视口内。"
+      }
+    ]
+  },
+  {
+    "stem": "主线程被一个长任务卡死时，为什么已提升合成层的 `transform` 动画依然丝滑？",
+    "explanation": "Chrome 原文给出根本原因：「合成的好处是**不需要主线程参与**。合成器线程**不需要等待样式计算或 JavaScript 执行**」。主线程 commit 之后，图层与瓦片都已在合成器侧就位；合成器动画每帧要做的只是**改图层变换矩阵、重新拼帧**，全程在合成器线程完成。反过来，**如果 layout 或 paint 需要重新计算，主线程就必须卷进来**——这就是「仅合成的动画（compositing-only animations）是流畅性最佳选择」的机制依据。",
+    "tags": ["rendering", "compositor-thread", "animation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "合成器线程不需要等待样式计算或 JS 执行——commit 之后拼帧、改变换矩阵都在合成器线程独立完成，不需要主线程参与",
+        "isCorrect": true,
+        "description": "正确。线程独立性是关键：动画数据已在合成器侧，主线程卡死不影响它逐帧出画面。"
+      },
+      {
+        "text": "浏览器检测到长任务后会把该任务自动迁移到 Worker 线程执行",
+        "isCorrect": false,
+        "description": "错误。主线程任务不会被自动迁移（Worker 需要开发者显式使用）；流畅的原因是动画根本不在主线程。"
+      },
+      {
+        "text": "`transform` 动画由 GPU 硬件定时器直接驱动，浏览器完全不参与",
+        "isCorrect": false,
+        "description": "错误。动画由合成器线程按帧推进并组装 compositor frame，GPU 负责栅格化与绘制，不存在绕开浏览器的硬件定时器。"
+      },
+      {
+        "text": "长任务执行期间浏览器暂停屏幕刷新，用户看到的是缓存帧所以感觉不卡",
+        "isCorrect": false,
+        "description": "错误。屏幕照常刷新且动画确实在逐帧更新——合成器持续产出新帧，不是静止的缓存帧。"
+      }
+    ]
+  },
+  {
+    "stem": "用户滚动一个没有绑定任何相关监听器的页面时，渲染进程内实际发生了什么？",
+    "explanation": "滚动默认由**合成器线程**处理：瓦片早已栅格化并缓存在 GPU 内存，滚动改变的只是**拼装参数（滚动偏移）**——合成器线程直接生成新的 compositor frame 发出去，**主线程可以完全不参与**，layout 与 paint 都不需要重跑。这就是「页面 JS 卡成狗、滚动依然顺滑」的原理。前提是没有监听器把该区域标成非快速滚动区——那样每次滚动都要先等主线程往返。",
+    "tags": ["rendering", "scroll", "compositor-thread"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "合成器线程直接生成新的 compositor frame——瓦片早已栅格化好，改的只是拼装参数（滚动偏移），主线程可以不参与",
+        "isCorrect": true,
+        "description": "正确。滚动走合成器快速通道：内容没变，只是换个偏移重新拼帧。"
+      },
+      {
+        "text": "主线程重新执行 layout 计算所有元素的新位置，再重新 paint 整页",
+        "isCorrect": false,
+        "description": "错误。滚动不改变文档内的几何关系，无需 layout/paint；若每次滚动都全链重跑，不可能流畅。"
+      },
+      {
+        "text": "浏览器进程代替渲染进程完成滚动，渲染进程进入休眠",
+        "isCorrect": false,
+        "description": "错误。页面内容与滚动都归渲染进程管；浏览器进程只负责转发输入事件。"
+      },
+      {
+        "text": "每滚动一像素都触发一次完整的渲染管线重跑",
+        "isCorrect": false,
+        "description": "错误。这正是合成技术要避免的局面；滚动只在合成器侧改偏移拼帧，管线前段全部跳过。"
+      }
+    ]
+  },
+  {
+    "stem": "经典合成模型中，draw quads 与 compositor frame 是什么关系？",
+    "explanation": "两个术语的官方定义：**draw quads** 记录「瓦片在内存中的位置 + 应该画到页面哪里」的信息（考虑页面合成）；**compositor frame（合成器帧）** 则是「代表页面一帧的 **draw quads 集合**」。流程串起来：合成器线程收集瓦片信息生成 draw quads → 组装成 compositor frame → **经 IPC 提交**（经典文描述为交给浏览器进程、汇同浏览器 UI 的帧一起送 GPU；现代实现由 Viz 进程统一聚合）→ GPU 画上屏幕。",
+    "tags": ["rendering", "compositor-frame", "draw-quads"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "draw quad 记录「瓦片在内存中的位置 + 应画到页面何处」；compositor frame 是代表一帧的 draw quads 集合，经 IPC 提交后送 GPU 绘制",
+        "isCorrect": true,
+        "description": "正确。quad 是拼装说明书的条目，compositor frame 是整份说明书——一帧画面的完整拼装参数。"
+      },
+      {
+        "text": "draw quad 是 GPU 着色器程序，compositor frame 是它的运行时上下文",
+        "isCorrect": false,
+        "description": "错误。两者都是数据结构（拼装信息），不是着色器代码与执行环境的关系。"
+      },
+      {
+        "text": "compositor frame 是单个瓦片的像素数据，draw quads 是多帧的集合",
+        "isCorrect": false,
+        "description": "错误。包含关系说反了，且 compositor frame 里是拼装指令不是像素数据。"
+      },
+      {
+        "text": "两者是同一个数据结构在不同文档里的不同叫法",
+        "isCorrect": false,
+        "description": "错误。它们是明确的整体与部分关系：一个 compositor frame 由多个 draw quads 组成。"
+      }
+    ]
+  },
+  {
+    "stem": "渲染的帧预算（frame budget）由什么决定？",
+    "explanation": "帧预算 = **1000ms ÷ 显示器刷新率**：60Hz ≈ 16.7ms、90Hz ≈ 11.1ms、120Hz ≈ 8.3ms。显示器按固定节奏刷新，浏览器出帧的目标是**匹配显示器刷新率**——错过一拍这帧顺延，用户看到的就是卡顿（jank）。预算内要装下主线程的输入回调 + rAF + style + layout + paint + commit。注意**别写死 60fps**：高刷屏上预算只有一半，同样的代码在 120Hz 设备上更容易掉帧。",
+    "tags": ["rendering", "frame-budget", "refresh-rate"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "显示器刷新率——预算等于 1000ms 除以刷新率：60Hz 约 16.7ms、120Hz 约 8.3ms",
+        "isCorrect": true,
+        "description": "正确。帧预算随硬件刷新率变化，目标是匹配刷新率而不是固定 60fps。"
+      },
+      {
+        "text": "CPU 核心数——核心越多每帧预算越长",
+        "isCorrect": false,
+        "description": "错误。预算由显示节奏决定，与 CPU 核数无关；核多只是更可能在预算内干完活。"
+      },
+      {
+        "text": "固定 16.7ms，与硬件无关",
+        "isCorrect": false,
+        "description": "错误。16.7ms 只是 60Hz 的情形；120Hz 屏上每帧只有约 8.3ms，写死 60fps 是常见误区。"
+      },
+      {
+        "text": "由页面通过 meta 标签自行声明",
+        "isCorrect": false,
+        "description": "错误。不存在声明帧预算的 meta 标签；节奏由显示器 vsync 信号驱动。"
+      }
+    ]
+  },
+  {
+    "stem": "一帧之内，渲染进程主线程的标准工作编排顺序是怎样的？",
+    "explanation": "vsync 信号到来后，主线程按固定编排推进：**输入事件回调**（合并后的 `mousemove`/`touchmove` 等在此分发）→ **requestAnimationFrame 回调**（视觉更新写在这里）→ **style**（重算样式）→ **layout**（重排）→ **paint**（生成绘制指令）→ **commit 给合成器线程**；若还有富余时间，跑 `requestIdleCallback` 的空闲回调。注意这条流水**不是每帧全跑**——没有失效就跳过对应阶段（没改几何就没有 layout）。",
+    "tags": ["rendering", "frame", "main-thread"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "输入事件回调 → requestAnimationFrame 回调 → style → layout → paint → commit 给合成器线程",
+        "isCorrect": true,
+        "description": "正确。rAF 在渲染步骤之前、输入回调之后；渲染完 commit 后合成器接手，空闲期才轮到 rIC。"
+      },
+      {
+        "text": "style → layout → paint → rAF 回调 → 输入回调 → commit",
+        "isCorrect": false,
+        "description": "错误。rAF 与输入回调都在渲染步骤（style/layout/paint）之前执行，不是之后。"
+      },
+      {
+        "text": "rAF 回调 → 输入回调 → paint → layout → style → commit",
+        "isCorrect": false,
+        "description": "错误。输入回调先于 rAF；且渲染内部顺序是 style→layout→paint，不能倒着来（后一步依赖前一步产物）。"
+      },
+      {
+        "text": "commit → style → layout → paint → 输入回调 → rAF 回调",
+        "isCorrect": false,
+        "description": "错误。commit 是主线程本帧工作的收尾（把结果交给合成器），不可能排在最前。"
+      }
+    ]
+  },
+  {
+    "stem": "requestAnimationFrame 回调的执行时机有什么特点？",
+    "explanation": "rAF 回调在**每帧渲染步骤（style/layout/paint）之前**执行一次，节奏**与显示器刷新率对齐**——60Hz 屏每秒约 60 次、120Hz 屏约 120 次，是做视觉更新的标准位置。回调收到的 `timestamp` 参数是本帧的时间基准，动画进度应该用它计算而不是自己攒帧数（帧数在不同刷新率设备上时长不同）。Chrome 官方对主线程动画的建议就是「用 rAF 把 JS 操作切成小块，安排在每一帧运行」。",
+    "tags": ["rendering", "raf", "animation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "每帧渲染步骤（style/layout/paint）之前执行一次，节奏与显示器刷新率对齐——是做视觉更新的标准位置",
+        "isCorrect": true,
+        "description": "正确。「渲染前 + 对齐刷新率」两个性质让 rAF 里的样式修改恰好赶上本帧渲染。"
+      },
+      {
+        "text": "每帧渲染步骤之后、下一帧开始之前执行",
+        "isCorrect": false,
+        "description": "错误。rAF 在渲染步骤之前——这样回调里的修改才能进入本帧；渲染后的空隙属于 rIC。"
+      },
+      {
+        "text": "固定每 16ms 执行一次，与设备刷新率无关",
+        "isCorrect": false,
+        "description": "错误。rAF 跟随实际刷新率：120Hz 屏上约每 8.3ms 一次，不是固定 16ms。"
+      },
+      {
+        "text": "主线程空闲时才执行，可能被无限期推迟",
+        "isCorrect": false,
+        "description": "错误。这是 requestIdleCallback 的特征；rAF 每帧渲染前都会执行（页面可见时）。"
+      }
+    ]
+  },
+  {
+    "stem": "用 `setTimeout(fn, 16)` 驱动动画，为什么不如 requestAnimationFrame？",
+    "explanation": "三个硬伤：**定时器不与 vsync 对齐**——回调触发点和屏幕刷新点存在相位差，画面更新可能错过本帧；**受任务队列排队影响**——前面有任务就延后，节奏注定漂移掉帧；**16ms 这个数字本身就是写死 60Hz**——在 120Hz 屏上正确节拍是约 8.3ms，`setTimeout(fn, 16)` 直接把动画帧率腰斩。rAF 则由渲染时机驱动、自动匹配设备刷新率。",
+    "tags": ["rendering", "raf", "settimeout", "animation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "定时器不与 vsync 对齐、受任务队列排队影响会漂移掉帧，且 120Hz 屏上 16ms 本身就是错误节拍",
+        "isCorrect": true,
+        "description": "正确。三个问题叠加：相位不对齐、排队漂移、写死 60Hz——rAF 逐一解决。"
+      },
+      {
+        "text": "setTimeout 的回调在合成器线程执行，无法访问 DOM",
+        "isCorrect": false,
+        "description": "错误。setTimeout 回调照样在主线程执行、可以访问 DOM；问题在时机不对齐，不在执行环境。"
+      },
+      {
+        "text": "setTimeout 每次执行都会强制触发一次 reflow",
+        "isCorrect": false,
+        "description": "错误。定时器本身不触发布局；强制布局取决于回调内的代码是否「写后读几何」。"
+      },
+      {
+        "text": "两者完全等价，只是 rAF 的写法更符合现代规范",
+        "isCorrect": false,
+        "description": "错误。两者行为有本质差异——rAF 与渲染节奏对齐且自适应刷新率，不是代码风格问题。"
+      }
+    ]
+  },
+  {
+    "stem": "requestIdleCallback 适合安排什么样的工作？",
+    "explanation": "一帧的活提前干完、到下一个 vsync 之间的空隙是**空闲期**，rIC 把**可推迟的低优先级工作**（上报埋点、预热缓存等）填进去。回调收到 `deadline` 参数，用 `deadline.timeRemaining()` 查询本次空闲还剩多少毫秒、干多少算多少；可配 `timeout` 选项兜底（迟迟没空闲也要在限期内执行）。纪律：rIC 里**不要改 DOM**——要改就转投一个 rAF。",
+    "tags": ["rendering", "ric", "idle"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "可推迟的低优先级工作（上报埋点、预热缓存）——在一帧活干完后的空闲期执行，可用 `timeout` 兜底",
+        "isCorrect": true,
+        "description": "正确。rIC 的定位就是「帧的边角料」：低优、可推迟、随时让路给渲染。"
+      },
+      {
+        "text": "动画的每帧视觉更新",
+        "isCorrect": false,
+        "description": "错误。视觉更新必须在渲染前执行（rAF 的位置）；空闲期在渲染之后，此时改画面赶不上本帧。"
+      },
+      {
+        "text": "用户输入的即时响应逻辑",
+        "isCorrect": false,
+        "description": "错误。输入响应要求低延迟，不能等「有空再说」——空闲期可能迟迟不来。"
+      },
+      {
+        "text": "必须在渲染前同步完成的布局测量",
+        "isCorrect": false,
+        "description": "错误。渲染前的测量该放 rAF 或普通任务里；rIC 在渲染之后，时机完全不符。"
+      }
+    ]
+  },
+  {
+    "stem": "requestIdleCallback 回调里为什么不建议直接修改 DOM？",
+    "explanation": "rIC 执行在**本帧渲染完成之后**的空闲期——此刻改 DOM 会让布局**重新失效**，下一帧就得重算 style/layout/paint，**等于把「空闲工作」变成「下一帧的账单」**，空闲的意义荡然无存。正确做法：空闲期只做计算、把 DOM 写入转投一个 `requestAnimationFrame`（在下一帧渲染前统一落地）。",
+    "tags": ["rendering", "ric", "dom"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "空闲期改 DOM 会让布局失效，下一帧就得重算——等于把「空闲工作」变成「下一帧的账单」；要改应转投 rAF",
+        "isCorrect": true,
+        "description": "正确。rIC 位于渲染之后，此时的 DOM 修改全部记到下一帧头上，违背「不挤占渲染」的初衷。"
+      },
+      {
+        "text": "rIC 回调运行在 Worker 线程，没有 DOM 访问权",
+        "isCorrect": false,
+        "description": "错误。rIC 回调在主线程执行，技术上完全可以改 DOM——不建议是因为代价转嫁，不是权限限制。"
+      },
+      {
+        "text": "rIC 期间 DOM 处于只读锁定状态，写入会抛出异常",
+        "isCorrect": false,
+        "description": "错误。不存在 DOM 锁定机制，写入不会报错；问题在性能语义上。"
+      },
+      {
+        "text": "rIC 的 deadline 时间太短，DOM 操作一定超时",
+        "isCorrect": false,
+        "description": "错误。deadline 只是告知剩余时间的信息接口，不会中断超时代码；不建议改 DOM 的原因是失效转嫁。"
+      }
+    ]
+  },
+  {
+    "stem": "一次触摸手势从屏幕到页面 JS 回调，输入事件的路由链是怎样的？",
+    "explanation": "路由链：**浏览器进程**最先收到手势——但它只知道事件类型与**坐标**（页面内容不归它管，它只是邮差）→ 把事件转交**渲染进程的合成器线程** → 若事件不涉及主线程监听（落在快速滚动路径上），合成器直接拼新帧；**仅当落在非快速滚动区或需要跑监听器时**，才转发**主线程**做 hit test、走捕获/冒泡分发。这套设计让多数滚动根本不进主线程。",
+    "tags": ["rendering", "input", "event-routing"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器进程先收到（只知道事件类型与坐标）→ 转交渲染进程合成器线程 → 仅当涉及监听器或非快速滚动区时才进主线程做 hit test 与分发",
+        "isCorrect": true,
+        "description": "正确。三段式路由：浏览器进程转发、合成器线程分流、主线程按需介入。"
+      },
+      {
+        "text": "渲染进程主线程直接从操作系统读取输入设备数据",
+        "isCorrect": false,
+        "description": "错误。渲染进程是沙箱化的，不能直接访问输入设备；输入必经浏览器进程转发。"
+      },
+      {
+        "text": "浏览器进程完成 hit test 后，把目标元素 id 直接发给渲染进程",
+        "isCorrect": false,
+        "description": "错误。浏览器进程不了解页面内容（DOM 与绘制数据都在渲染进程），做不了 hit test。"
+      },
+      {
+        "text": "GPU 进程解析触摸坐标后广播给所有进程",
+        "isCorrect": false,
+        "description": "错误。GPU/Viz 负责栅格化与绘制输出，不承担输入解析与分发。"
+      }
+    ]
+  },
+  {
+    "stem": "渲染进程主线程做 hit test（命中测试）时，基于什么数据找到事件目标元素？",
+    "explanation": "主线程拿到坐标后的第一件事就是命中测试——**基于 paint records 数据**查询「这个坐标下面是哪个元素」，找到目标后再走捕获/冒泡分发事件。用绘制数据做命中测试是合理的：paint records 按 painting order 排序，正好回答「这一点上用户看到的最上层内容是谁」——命中结果与视觉层叠一致。",
+    "tags": ["rendering", "hit-test", "input"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "基于 paint records 数据按坐标查找该点之下的元素",
+        "isCorrect": true,
+        "description": "正确。绘制记录携带层叠顺序与几何信息，能准确回答「坐标点上视觉最前的是谁」。"
+      },
+      {
+        "text": "基于 CSSOM 的选择器索引反向查询",
+        "isCorrect": false,
+        "description": "错误。CSSOM 存的是样式规则，没有元素的屏上位置信息，无法按坐标查询。"
+      },
+      {
+        "text": "基于 GPU 纹理的像素颜色采样判断元素归属",
+        "isCorrect": false,
+        "description": "错误。像素颜色无法反推元素身份（不同元素可以同色）；命中测试用的是结构化的绘制数据。"
+      },
+      {
+        "text": "基于 HTML 源码的字符偏移定位",
+        "isCorrect": false,
+        "description": "错误。源码偏移与屏幕坐标没有映射关系，布局后的位置只存在于渲染数据中。"
+      }
+    ]
+  },
+  {
+    "stem": "非快速滚动区（non-fast scrollable region）内发生输入事件时会怎样？",
+    "explanation": "合成器线程能独立滚动的前提是**不需要问主线程**。页面绑定了相关事件监听时，合成器把「附加了事件处理器的区域」标记为非快速滚动区：输入发生在**区外**，合成器不等主线程直接合成新帧；发生在**区内**，事件必须先发给主线程——**万一监听器 `preventDefault()` 取消滚动呢？**——于是滚动开始前先等一趟**主线程往返**，主线程忙就是肉眼可见的滚动迟滞。",
+    "tags": ["rendering", "scroll", "non-fast-region"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "事件必须先发给主线程处理（监听器可能 preventDefault 取消滚动），滚动开始前要等一趟主线程往返——主线程忙就滚动迟滞",
+        "isCorrect": true,
+        "description": "正确。合成器必须等主线程的裁决才能滚，这个等待就是滚动发闷的根源。"
+      },
+      {
+        "text": "该区域被完全禁止滚动",
+        "isCorrect": false,
+        "description": "错误。非快速滚动区照样能滚，只是滚动要先绕道主线程，变慢而非禁止。"
+      },
+      {
+        "text": "合成器线程照常直接滚动，事件事后补发给主线程",
+        "isCorrect": false,
+        "description": "错误。这是 `passive: true` 生效时的行为（不等结果直接滚）；默认情况下合成器必须先等主线程。"
+      },
+      {
+        "text": "浏览器进程接管该区域的滚动处理",
+        "isCorrect": false,
+        "description": "错误。滚动始终由渲染进程处理（合成器或主线程），浏览器进程只转发输入。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 对连续输入事件（`mousemove`/`pointermove`/`touchmove`/`wheel`）的分发策略是什么？",
+    "explanation": "**连续事件被合并（coalesce）**：延迟到**下一次 requestAnimationFrame 之前**才分发，一帧至多分发一次，天然与渲染同频——因为多数中间态根本画不出来，逐条分发既浪费又容易压垮主线程。**离散事件**（`keydown`/`keyup`/`mousedown`/`mouseup`/`touchstart`/`touchend`）则**立即分发**、不合并——点击或按键丢一个都是事故。需要完整轨迹的应用（如绘图板）用 `getCoalescedEvents()` 找回被合并的中间坐标。",
+    "tags": ["rendering", "input", "coalescing"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "合并（coalesce）后延迟到下一次 rAF 之前才分发、一帧至多一发；而 `keydown`/`mousedown` 等离散事件立即分发不合并",
+        "isCorrect": true,
+        "description": "正确。连续事件按帧合并对齐渲染节奏，离散事件保完整性立即分发——两类策略并存。"
+      },
+      {
+        "text": "所有输入事件一视同仁，产生即分发",
+        "isCorrect": false,
+        "description": "错误。连续事件的产生频率远超刷新率，逐条分发浪费且压主线程，引擎会按帧合并。"
+      },
+      {
+        "text": "连续事件全部丢弃只保留首尾两个，离散事件按帧合并",
+        "isCorrect": false,
+        "description": "错误。中间态被合并但可用 getCoalescedEvents() 找回（非丢弃）；离散事件恰恰不合并。"
+      },
+      {
+        "text": "所有事件都推迟到帧末渲染完成后统一分发",
+        "isCorrect": false,
+        "description": "错误。合并后的连续事件在渲染前（rAF 之前）分发，离散事件更是立即分发，都不等帧末。"
+      }
+    ]
+  },
+  {
+    "stem": "把 `touchstart` 监听器委托到 `document.body` 上，为什么会伤害整页的滚动性能？",
+    "explanation": "合成器判断「快速滚动区」的依据是**哪些区域附加了相关事件监听**。委托到 `document`/`body` 后，**合成器无法预知页面哪些具体区域的监听会 `preventDefault()`，只能把整个页面标成非快速滚动区**——此后任何位置的滚动都要先把事件发给主线程、等一趟往返才能开始，主线程一忙滚动就迟滞。事件委托在 DOM 事件模型里是好模式，但在滚动性能上是最大的坑；官方解法是 `passive: true` 或 CSS `touch-action`。",
+    "tags": ["rendering", "scroll", "event-delegation", "non-fast-region"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "合成器无法预知哪些区域的监听会 preventDefault，只能把整页标成非快速滚动区——所有滚动都要先等主线程往返",
+        "isCorrect": true,
+        "description": "正确。委托把「小区域的等待」放大成「整页的等待」，快速滚动通道全面失效。"
+      },
+      {
+        "text": "`document.body` 上的监听器优先级最低，事件排队时间最长",
+        "isCorrect": false,
+        "description": "错误。事件分发没有按绑定位置的优先级排队机制；问题在滚动区域标记，不在分发排队。"
+      },
+      {
+        "text": "委托导致事件冒泡路径变长，每次分发多耗费几毫秒",
+        "isCorrect": false,
+        "description": "错误。冒泡路径由 DOM 深度决定，与在哪绑定监听无关；几毫秒的分发开销也不是滚动迟滞的主因。"
+      },
+      {
+        "text": "body 上的监听会禁用 GPU 加速",
+        "isCorrect": false,
+        "description": "错误。GPU 栅格化照常工作；受影响的是「滚动是否要先问主线程」这个决策，不是 GPU 能力。"
+      }
+    ]
+  },
+  {
+    "stem": "`addEventListener` 的 `passive: true` 选项拯救滚动性能的真正机理是什么？",
+    "explanation": "`passive: true` 是对浏览器的**承诺：监听器不会调用 `preventDefault()`**。有了这个承诺，**合成器不必等待主线程的监听执行结果，立刻继续合成新帧滚动**——监听器本身照常（异步地）执行。所以它救的不是「回调执行速度」，而是**解除「滚动等待监听结果」的依赖**。配套细节：passive 监听里 `preventDefault` 无效（需要时先查 `event.cancelable`）；CSS `touch-action` 则可声明式关掉默认手势、压根不需要 JS 监听。",
+    "tags": ["rendering", "passive", "scroll", "input"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是「不会调用 preventDefault」的承诺——合成器因此不必等主线程监听结果、立刻继续合成新帧；监听器本身照常异步执行",
+        "isCorrect": true,
+        "description": "正确。passive 解除的是依赖等待，不是加速回调——滚动与监听从「串行」变「并行」。"
+      },
+      {
+        "text": "它把监听回调移到合成器线程执行，绕开主线程",
+        "isCorrect": false,
+        "description": "错误。回调仍在主线程执行（JS 只能在主线程/Worker 跑）；变化在合成器不再等它的结果。"
+      },
+      {
+        "text": "它把回调的调度优先级提到最高，让回调更快执行完",
+        "isCorrect": false,
+        "description": "错误。passive 不改变回调的调度优先级；即使回调很慢，滚动也已先行——这正是它的意义。"
+      },
+      {
+        "text": "它让浏览器跳过该事件的冒泡阶段，减少分发开销",
+        "isCorrect": false,
+        "description": "错误。事件传播流程（捕获/目标/冒泡）不变；passive 只影响「能否取消默认行为」及合成器的等待策略。"
+      }
+    ]
+  },
+  {
+    "stem": "输入设备上报频率（触摸屏每秒 60–120 次、鼠标约 100 次）与事件合并机制的设计动机是什么关系？",
+    "explanation": "输入上报频率**高于典型屏幕刷新率**（60Hz），逐条分发连续事件既浪费——**多数中间态根本画不出来**（一帧只出一张画面），又容易压垮主线程。因此引擎把连续事件**按帧合并、对齐到下一次 rAF 之前分发**，一帧至多一发、与渲染天然同频。需要完整轨迹的绘图类应用用 **`getCoalescedEvents()`** 一次取回本帧内被合并的全部中间坐标。实践推论：给 `pointermove` 手写 `throttle(16)` 做「渲染节流」多半是多余的——引擎已按帧合并；节流的正当场景是进一步**降频**（如联动昂贵计算降到每 100ms 一次）。",
+    "tags": ["rendering", "input", "coalescing", "raf"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "上报频率高于典型刷新率，逐条分发既浪费（中间态画不出来）又易压垮主线程——因此连续事件按帧合并、对齐 rAF 前分发；需要完整轨迹时用 getCoalescedEvents() 找回中间点",
+        "isCorrect": true,
+        "description": "正确。合并机制是「输入频率 > 显示频率」这一硬件事实的直接工程回应。"
+      },
+      {
+        "text": "输入频率低于刷新率，浏览器靠插值伪造中间事件补齐轨迹",
+        "isCorrect": false,
+        "description": "错误。方向反了——输入比刷新快，问题是「多」不是「少」；引擎做的是合并而非插值伪造。"
+      },
+      {
+        "text": "事件合并的目的是省电，与频率差无关；被合并的中间坐标永久丢失无法找回",
+        "isCorrect": false,
+        "description": "错误。动机是对齐渲染节奏、保护主线程；中间坐标保留在事件里，可用 getCoalescedEvents() 取回。"
+      },
+      {
+        "text": "合并只在页面掉帧时启用，正常帧率下逐条分发",
+        "isCorrect": false,
+        "description": "错误。合并是常态策略（连续事件始终按帧分发），不是掉帧时的降级手段。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 是什么？",
+    "explanation": "RenderingNG 是 **Chromium 渲染架构的整体重写**（2021 年宣布主体完成），把经典管线细化为 **12 个可按需跳过的阶段**（animate→style→layout→pre-paint→scroll→paint→commit→layerize→raster→activate→aggregate→draw），核心设计是**数据结构解耦**（property trees、不可变 fragment tree、display list）+ **阶段可跳过**。定调要记住：**经典 5 步 CRP 仍是有效的心智模型**（MDN 讲授、面试通用、代价链依然成立），RenderingNG 是引擎实现层的现代化——两套话语用术语映射对齐。",
+    "tags": ["rendering", "renderingng", "chromium"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Chromium 渲染架构的整体重写（2021 年宣布主体完成），把经典管线细化为 12 个可按需跳过的阶段；经典 5 步 CRP 仍是有效心智模型",
+        "isCorrect": true,
+        "description": "正确。RenderingNG 是实现层现代化，不推翻经典模型的教学与直觉价值。"
+      },
+      {
+        "text": "一种替代 CSS 的新样式语言",
+        "isCorrect": false,
+        "description": "错误。它是渲染引擎架构，不是面向开发者的新语言；CSS 的写法不受影响。"
+      },
+      {
+        "text": "Chrome DevTools 性能面板的项目代号",
+        "isCorrect": false,
+        "description": "错误。它是渲染架构本身的重写；DevTools 只是能观察到它的一些新阶段名（如 pre-paint）。"
+      },
+      {
+        "text": "W3C 制定的渲染标准，所有浏览器都必须实现",
+        "isCorrect": false,
+        "description": "错误。它是 Chromium 的私有实现架构，不是 W3C 标准；其他引擎（Gecko/WebKit）有各自实现。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 的 property trees 指的是哪四棵树？",
+    "explanation": "每个文档有四棵独立的属性树：**transform tree**（CSS 变换与滚动平移）、**clip tree**（overflow 裁剪）、**effect tree**（opacity、filter、mask、blend mode 等视觉效果）、**scroll tree**（滚动信息与滚动链）。它们取代了「单一 layer tree 承载一切语义」的旧心智——树的拓扑是 DOM 的**稀疏表示**（页面有三个 overflow 裁剪，clip tree 就三个节点），树与树之间还有链接编码「先 transform 还是先 filter」这类应用顺序。",
+    "tags": ["rendering", "renderingng", "property-trees"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "transform、clip、effect、scroll",
+        "isCorrect": true,
+        "description": "正确。四棵树分别承载变换、裁剪、视觉效果、滚动四类语义，彼此独立又相互链接。"
+      },
+      {
+        "text": "DOM、CSSOM、render、layout",
+        "isCorrect": false,
+        "description": "错误。这是经典管线各阶段的产物树，不是 property trees 的成员。"
+      },
+      {
+        "text": "style、layout、paint、composite",
+        "isCorrect": false,
+        "description": "错误。这是经典管线的四个阶段名，不是四棵属性树。"
+      },
+      {
+        "text": "fragment、display、layer、surface",
+        "isCorrect": false,
+        "description": "错误。这几个词各有所指（fragment tree、display list、合成层、surface 引用），但都不是 property trees 的四棵。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 四棵 property trees 各自承载什么语义？",
+    "explanation": "**transform tree** 承载 CSS transform 与**滚动平移**（滚动偏移本质是一种变换）；**clip tree** 承载 overflow 裁剪矩形；**effect tree** 承载 opacity、filter、mask、blend mode、clip-path 等视觉效果；**scroll tree** 承载滚动信息与滚动链（scroll chaining——谁可滚、怎么链式传递）。每个节点代表某个 DOM 元素施加的一种滚动或视觉效果，一个元素有多种效果就对应多个节点。",
+    "tags": ["rendering", "renderingng", "property-trees"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "transform 树承载变换与滚动平移；clip 树承载 overflow 裁剪；effect 树承载 opacity/filter/mask 等视觉效果；scroll 树承载滚动信息与滚动链",
+        "isCorrect": true,
+        "description": "正确。四类语义各归其树；「滚动平移进 transform 树、滚动链进 scroll 树」是容易混淆的细节。"
+      },
+      {
+        "text": "transform 承载动画帧序列、clip 承载图片裁剪参数、effect 承载滤镜插件、scroll 承载滚动条样式",
+        "isCorrect": false,
+        "description": "错误。四个描述全部跑偏：不存「动画帧序列」，clip 是布局裁剪不是图片处理，effect 是 CSS 效果不是插件，滚动条样式更不在其中。"
+      },
+      {
+        "text": "四棵树分别对应 DOM 的四个子树：head、body、shadow、iframe",
+        "isCorrect": false,
+        "description": "错误。property trees 按「语义类型」划分而非按 DOM 区域划分，每棵树都覆盖整个文档的对应语义。"
+      },
+      {
+        "text": "四棵树按管线阶段划分：样式树、布局树、绘制树、合成树",
+        "isCorrect": false,
+        "description": "错误。它们不是管线阶段的产物集合，而是把「怎么动/裁/加效果/滚」从 layer tree 中拆出的语义结构。"
+      }
+    ]
+  },
+  {
+    "stem": "LayoutNG 中 layout 阶段的输出是什么数据结构？",
+    "explanation": "输出是**不可变 fragment tree**：表示所有元素的位置与尺寸，**但不含 transform**——transform 归 property trees 管，这本身就是「内容与合成解耦」的体现。「不可变」意味着布局结果一旦生成就不再修改，换来的能力是**增量布局**（复用旧树的绝大部分，只重建从变化点到根的「脊柱」）以及未来的跨线程传递、并行推测布局空间。这取代了旧实现中可变、互相引用的布局对象网。",
+    "tags": ["rendering", "layoutng", "fragment-tree"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不可变 fragment tree——表示所有元素的位置与尺寸，但不含 transform（transform 归 property trees 管）",
+        "isCorrect": true,
+        "description": "正确。「不可变 + 不含 transform」是 LayoutNG 输出的两个标志性设计。"
+      },
+      {
+        "text": "可变的 layout object 网，节点之间自由互相引用",
+        "isCorrect": false,
+        "description": "错误。这是被 LayoutNG 取代的旧实现——可变与互相引用正是增量布局和并行化难做的原因。"
+      },
+      {
+        "text": "直接输出 GPU 纹理瓦片",
+        "isCorrect": false,
+        "description": "错误。纹理瓦片是 raster 阶段的产物；layout 输出的是几何数据结构。"
+      },
+      {
+        "text": "一棵包含变换、裁剪、滚动全部信息的大一统 layer tree",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——RenderingNG 把这些语义拆进 property trees，fragment tree 只管位置尺寸。"
+      }
+    ]
+  },
+  {
+    "stem": "CompositeAfterPaint（CAP）改变了渲染管线中哪个决策的位置？",
+    "explanation": "CAP 把**分层（layerize）决策从 paint 之前挪到 paint 之后**：对照 12 阶段管线的第 6–8 步——paint（主线程产出 display list）→ commit（拷贝给合成器线程）→ **layerize（合成器侧基于 paint chunks 决定分几层）**。项目名「CompositeAfterPaint」直译就是「先画完、再（决定怎么）合成」。收益：分层决策基于真实的绘制产物而非提前猜测，更聪明、更晚、更少误伤。",
+    "tags": ["rendering", "renderingng", "cap", "layerize"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "分层（layerize）决策从 paint 之前挪到 paint 之后——由合成器侧基于 paint chunks 决定分几层",
+        "isCorrect": true,
+        "description": "正确。旧模型先分层后绘制，CAP 反过来：绘制产物（paint chunks）成为分层决策的输入。"
+      },
+      {
+        "text": "把样式计算挪到合成器线程执行",
+        "isCorrect": false,
+        "description": "错误。style 阶段仍在主线程；CAP 动的是「分层决策」的时机与位置。"
+      },
+      {
+        "text": "把绘制挪到 GPU 进程执行",
+        "isCorrect": false,
+        "description": "错误。paint（生成 display list）仍在主线程；上 GPU 的是栅格化，且那是另一项演进（GPU 光栅化）。"
+      },
+      {
+        "text": "把 layout 挪到 paint 之后执行",
+        "isCorrect": false,
+        "description": "错误。layout 仍在 paint 之前（paint 消费布局结果）；被后移的是 layerize，不是 layout。"
+      }
+    ]
+  },
+  {
+    "stem": "Viz 进程在现代 Chromium 渲染架构中承担什么职责？",
+    "explanation": "Viz 是**全系统一个**的独立进程，两个核心角色：**display compositor thread** 把**所有渲染进程 + 浏览器进程**提交的 compositor frame **聚合（aggregate）**成单一全局帧——它必须时刻保持响应，不被 GPU 主线程拖慢；**GPU main thread** 负责把 display list 与视频帧栅格化成 GPU 纹理瓦片（**GPU 光栅化是默认路径**，光栅任务从渲染进程发到 Viz、用 sync token 异步衔接）并执行最终 **draw**。跨进程内容靠 **surface ID** 拼装：跨站 iframe 的帧就是被父页帧用 surface 引用嵌进来的。",
+    "tags": ["rendering", "renderingng", "viz", "gpu"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "display compositor 线程聚合所有渲染进程与浏览器 UI 提交的 compositor frame 成单一全局帧；GPU main thread 负责 GPU 光栅化（默认路径）与最终 draw",
+        "isCorrect": true,
+        "description": "正确。聚合 + GPU 光栅化/绘制是 Viz 的两大职责，全系统只有一个 Viz。"
+      },
+      {
+        "text": "每个标签页配一个 Viz 进程，负责该页的 JS 执行",
+        "isCorrect": false,
+        "description": "错误。Viz 全系统仅一个且不执行 JS——JS 在各渲染进程的主线程/Worker 里跑。"
+      },
+      {
+        "text": "Viz 只在硬件加速失败时作为软件渲染的兜底",
+        "isCorrect": false,
+        "description": "错误。Viz 是常态架构的核心环节（所有帧都经它聚合绘制），不是降级方案。"
+      },
+      {
+        "text": "Viz 负责网络资源解码，渲染仍由各渲染进程独立完成上屏",
+        "isCorrect": false,
+        "description": "错误。网络不归 Viz 管；且渲染进程不能独立上屏——最终画面必须经 Viz 聚合后统一 draw。"
+      }
+    ]
+  },
+  {
+    "stem": "CompositeAfterPaint 修正了 2018 年经典 Inside Browser 系列文章的哪个说法？",
+    "explanation": "2018 版 part3 写的是「**主线程在 layout 后遍历 layout tree 创建 layer tree**」（DevTools 老时间线的 Update Layer Tree）。**现代 Chromium 里主线程不再产出 layer tree**——它产出 **display list + property trees**；「分几层」是 layerize 阶段（合成器侧）对 paint chunks 的**后置决策**。旧的「先分层后绘制」欠下的实现债：主线程必须提前猜「谁会动」，猜错就图层爆炸（层堆内存）或错失合成机会——CAP 用「先画完再决定」终结了这种猜测。",
+    "tags": ["rendering", "renderingng", "cap", "layer-tree"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "旧文说「主线程在 layout 后创建 layer tree」；现代 Chromium 主线程不再产出 layer tree——它产出 display list 与 property trees，分层是合成器侧的后置决策",
+        "isCorrect": true,
+        "description": "正确。读 2018 经典文时要打上这个补丁：layer tree 的生成位置与时机都变了。"
+      },
+      {
+        "text": "旧文说渲染只有一个进程；现代改为每帧启用一个新进程",
+        "isCorrect": false,
+        "description": "错误。进程模型不是 CAP 的范畴，「每帧一个进程」也纯属虚构。"
+      },
+      {
+        "text": "旧文说 CSS 阻塞渲染；现代 CSS 已不再阻塞渲染",
+        "isCorrect": false,
+        "description": "错误。CSS render-blocking 至今成立（CSSOM 完整前不渲染），与 CAP 无关。"
+      },
+      {
+        "text": "旧文说 GPU 参与栅格化；现代栅格化全部回到 CPU 执行",
+        "isCorrect": false,
+        "description": "错误。方向反了——现代 GPU 光栅化才是默认路径，栅格化更深地上了 GPU。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 为什么用四棵独立的 property trees，而不是沿用单棵 layer tree 承载全部语义？",
+    "explanation": "官方解释的核心是**语义拓扑天然错位**：「滚动只作用于其包含的子树」，而 `position: absolute/fixed` 元素**经常逃出祖先滚动器**；其他视觉效果（opacity/filter）却作用于整棵 DOM 子树。两类语义的作用范围对不上，硬塞进一棵树只能靠**层的裂变**去表达——这正是**图层爆炸的病根之一**。拆成四棵独立树后收益广泛：分层与绘制解耦、决策最优合成策略、测量 IntersectionObserver 几何、跳过离屏元素的工作、精准失效 paint/raster、测量 layout shift 与 LCP。",
+    "tags": ["rendering", "renderingng", "property-trees", "architecture"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "滚动只作用于其包含子树，而 absolute/fixed 元素经常逃出祖先滚动器——语义拓扑天然错位，硬塞一棵树只能靠层的裂变表达，正是图层爆炸的病根之一",
+        "isCorrect": true,
+        "description": "正确。「fixed 逃出滚动器」这类拓扑错位是单树模型的死穴，四树分离让每类语义各有正确的拓扑。"
+      },
+      {
+        "text": "四棵树可以分给四个 CPU 核心并行遍历，纯粹为了并行度",
+        "isCorrect": false,
+        "description": "错误。拆分动机是语义拓扑错位，不是核数对齐；四棵树也不是按核心数设计的。"
+      },
+      {
+        "text": "单棵树的节点数会超过 V8 堆对象数量上限",
+        "isCorrect": false,
+        "description": "错误。property trees 是渲染引擎（Blink/cc）的原生数据结构，与 V8 堆无关，也不存在这种上限问题。"
+      },
+      {
+        "text": "四棵树分别对应四大浏览器厂商的私有实现，便于互操作",
+        "isCorrect": false,
+        "description": "错误。property trees 是 Chromium 内部架构，与其他厂商实现无关。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 12 阶段管线中，纯视觉效果动画与滚动可以跳过哪些阶段？",
+    "explanation": "架构文档明确：不需要的管线阶段可以跳过——**纯视觉效果动画与滚动可以跳过 layout、pre-paint 和 paint**，此时**整段流程完全在合成器线程运行，主线程零参与**。这是经典模型「transform 动画便宜」结论在新架构下的**精确版本**：跳过的阶段被显式列出（12 阶段：animate/style/layout/pre-paint/scroll/paint/commit/layerize/raster/activate/aggregate/draw）。配套设计还有**流水线并行**——滚动/动画可与主线程的下一轮更新同时进行，辅以多缓冲掩盖延迟。",
+    "tags": ["rendering", "renderingng", "pipeline", "animation"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "跳过 layout、pre-paint 和 paint——此时整段流程完全在合成器线程运行，主线程零参与",
+        "isCorrect": true,
+        "description": "正确。这三个主线程阶段被跳过后，动画/滚动只走合成器侧的阶段，与主线程彻底解耦。"
+      },
+      {
+        "text": "跳过 commit 和 layerize，但 layout 与 paint 必须每帧执行",
+        "isCorrect": false,
+        "description": "错误。若每帧都跑 layout 与 paint，主线程就深度参与了——便宜的关键恰恰是跳过这些主线程阶段。"
+      },
+      {
+        "text": "跳过 aggregate 和 draw，由渲染进程直接送屏",
+        "isCorrect": false,
+        "description": "错误。aggregate 与 draw 是 Viz 的收尾阶段，任何帧都必须经过；渲染进程不能绕开 Viz 直接上屏。"
+      },
+      {
+        "text": "任何阶段都不可跳过，12 个阶段每帧全部执行",
+        "isCorrect": false,
+        "description": "错误。「阶段可按需跳过」正是 12 阶段设计的贯穿性原则之一。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 中 property tree state「四元组」是如何用于定位一个元素的屏上位置的？",
+    "explanation": "**每个元素（以及每段 display list、每块 GPU 瓦片）都携带 property tree state 四元组**——作用于它的**最近 transform/clip/effect/scroll 祖先节点**。要算某元素的屏上位置，**沿四棵树向上乘变换即可，不需要遍历庞大的 DOM 或 layer 结构**——树是 DOM 的稀疏表示，路径短得多。property trees 在 **pre-paint 阶段**计算生成。这套机制也支撑了 IntersectionObserver 几何测量、离屏跳过、精准失效等能力。",
+    "tags": ["rendering", "renderingng", "property-trees", "geometry"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "每个元素（及每段 display list、每块 GPU 瓦片）携带最近的 transform/clip/effect/scroll 祖先节点四元组；算屏上位置沿四棵树向上乘变换即可，无需遍历庞大的 DOM 或 layer 结构",
+        "isCorrect": true,
+        "description": "正确。四元组是「内容」与「四类语义」之间的指针，稀疏树上的短路径取代全结构遍历。"
+      },
+      {
+        "text": "四元组是元素的 (x, y, width, height)，直接查表得到位置",
+        "isCorrect": false,
+        "description": "错误。位置尺寸在 fragment tree 里；property tree state 存的是四棵语义树的祖先节点引用。"
+      },
+      {
+        "text": "四元组指 top/right/bottom/left 四个 CSS 属性的计算值",
+        "isCorrect": false,
+        "description": "错误。这是定位属性的偏移值，与 property tree state 无关。"
+      },
+      {
+        "text": "每个元素直接存储到视口的绝对变换矩阵，每帧全量重算",
+        "isCorrect": false,
+        "description": "错误。存的是树节点引用而非展开的矩阵——变换变化时只改树节点，携带者不必逐个更新，这正是设计的精妙处。"
+      }
+    ]
+  },
+  {
+    "stem": "RenderingNG 中 display items 如何被分组为 paint chunks？layerize 又按什么策略把 chunks 变成合成层？",
+    "explanation": "**display item** 是可被 **Skia** 栅格化的低级绘制命令（画个边框、画段背景）；paint 阶段按 **CSS painting order** 遍历产出自后向前的 display item list（未变的 item 直接复用上次的）。绘制遍历同时记录当前 property tree state，把**共享同一四元组状态的连续 display items** 分成一组——即 **paint chunk**。**layerize** 以 paint chunks 为输入：极端方案「每 chunk 一层」会**迅速耗尽 GPU 内存**；官方策略是「**默认合并**，只把 property tree state 预期会在合成器线程变化的 chunk（合成器滚动、合成器 transform 动画）保持独立」——从机制上反图层爆炸。",
+    "tags": ["rendering", "renderingng", "paint-chunks", "layerize"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按 painting order 产出的 display items 中，共享同一 property tree state 四元组的连续 items 分为一个 chunk；layerize 默认合并 chunks，只把预期在合成器线程变化的（合成器滚动/transform 动画）保持独立",
+        "isCorrect": true,
+        "description": "正确。「按状态分组 + 默认合并、按需独立」是 CAP 时代分层决策的完整策略。"
+      },
+      {
+        "text": "每个 DOM 元素固定生成一个 chunk，每个 chunk 固定成为一层",
+        "isCorrect": false,
+        "description": "错误。chunk 按 property tree state 分组（可跨元素合并）；「每 chunk 一层」正是官方点名会耗尽 GPU 内存的反例。"
+      },
+      {
+        "text": "按颜色和字体分组，使用相同着色器的 items 归一个 chunk，全部独立成层",
+        "isCorrect": false,
+        "description": "错误。分组依据是 property tree state 四元组，与颜色字体无关；「全部独立成层」违背默认合并策略。"
+      },
+      {
+        "text": "chunks 由开发者通过 CSS `contain` 属性手动划分，浏览器不做自动分组",
+        "isCorrect": false,
+        "description": "错误。分组是引擎在绘制遍历中自动完成的；contain 影响渲染隔离范围，但不是 chunk 的划分机制。"
+      }
+    ]
+  },
+  {
+    "stem": "LayoutNG 的不可变 fragment tree 靠哪两条纪律保证不可变性？换来了什么能力？",
+    "explanation": "两条纪律：**禁止向上引用**（子 fragment 不得指向父）、**禁止数据上浮**（子只读自己子树的信息）。换来的能力：**增量布局**——「大多数布局是增量更新」，理想情况下工作量只与实际变化成正比，**复用旧树的绝大部分、只重建从变化点到根的「脊柱」**；以及官方展望的未来空间——不可变树可跨线程传递、为平滑布局动画生成多棵树、做并行推测布局。配套优化还有**内联内容平面化**：行内文本用 DFS 序的 `(对象, 后代数)` 元组**平面列表**（配 inline cursor 游标 API）而非树，遍历只是数组偏移递增，快且省内存。",
+    "tags": ["rendering", "layoutng", "fragment-tree", "immutable"],
+    "categories": [
+      ["技术方向", "浏览器渲染原理"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "禁止子指向父的向上引用、禁止子读取子树之外的数据上浮；换来增量布局（复用旧树大部分、只重建从变化点到根的「脊柱」）与跨线程传递、并行推测布局的空间",
+        "isCorrect": true,
+        "description": "正确。两条纪律切断了子树对外部的依赖，子树因此可以整棵复用——增量与并行都建立在这之上。"
+      },
+      {
+        "text": "全部 fragment 用 const 声明、冻结原型链；换来的是更少的垃圾回收",
+        "isCorrect": false,
+        "description": "错误。fragment tree 是 C++ 数据结构，不涉及 JS 的 const 或原型链；收益也在增量复用而非 GC。"
+      },
+      {
+        "text": "布局结果写入只读共享内存、由 GPU 校验；换来像素级安全性",
+        "isCorrect": false,
+        "description": "错误。不可变性靠引用纪律保证，不靠内存权限与 GPU 校验；目标是复用与并行，不是安全。"
+      },
+      {
+        "text": "每帧销毁重建整棵树保证一致性；换来实现上的简单",
+        "isCorrect": false,
+        "description": "错误。方向完全相反——不可变性的意义正是避免整树重建，实现「工作量与变化成正比」的增量更新。"
+      }
+    ]
+  }
+]
