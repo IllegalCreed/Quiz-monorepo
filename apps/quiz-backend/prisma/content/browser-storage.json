@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "浏览器存储六机制（Cookie、localStorage、sessionStorage、IndexedDB、Cache API、OPFS）中，唯一会随每个匹配的 HTTP 请求自动上行发送的是哪一个？",
+    "explanation": "六机制里只有 **Cookie** 会自动跟着每个匹配 Domain/Path/SameSite 规则的请求发送到服务端——HTML、JS、CSS、图片、XHR/fetch 全都带。这正是它作为「会话凭证载体」的价值，也是它作为「存储」的原罪：**存进 Cookie 的每个字节都要乘以请求数**。其余五种机制的数据都只留在本地，不参与网络上行。",
+    "tags": ["storage", "cookie", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Cookie——每个匹配请求都自动带上 `Cookie` 请求头",
+        "isCorrect": true,
+        "description": "正确。「随请求发送」是 Cookie 独有属性，它本质是发给服务器的信头，不是存给自己的数据。"
+      },
+      {
+        "text": "localStorage——同源请求会自动附带其内容",
+        "isCorrect": false,
+        "description": "错误。localStorage 数据只存在本地，任何请求都不会自动携带它。"
+      },
+      {
+        "text": "Cache API——缓存的响应会随请求回传服务端",
+        "isCorrect": false,
+        "description": "错误。Cache API 缓存 Request/Response 对供本地离线使用，不会向服务端上行任何数据。"
+      },
+      {
+        "text": "sessionStorage——仅在当前标签页发起的请求中携带",
+        "isCorrect": false,
+        "description": "错误。sessionStorage 与网络请求完全无关，它只是按「标签页 + 源」隔离的本地键值存储。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储选型中，web.dev《Storage for the web》给出的三个现代首选分别是什么？",
+    "explanation": "web.dev 的官方选型是：**加载应用所需的网络资源 → Cache API**（Service Worker 离线体系的一部分）、**文件类内容 → OPFS**（字节级高性能读写）、**其余数据 → IndexedDB**（配 Promise 包装库如 `idb`）。三者的共同点是**全异步、不阻塞主线程**，且在 window、Web Worker、Service Worker 里都可用。同时点名「别用」：localStorage 同步阻塞应避免，Cookie 不当存储。",
+    "tags": ["storage", "选型", "web.dev"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "网络资源用 Cache API、文件用 OPFS、其余数据用 IndexedDB",
+        "isCorrect": true,
+        "description": "正确。三首选全是异步阵营，Worker 全可达，这是 web.dev 的官方立场。"
+      },
+      {
+        "text": "网络资源用 localStorage、文件用 Cookie、其余数据用 sessionStorage",
+        "isCorrect": false,
+        "description": "错误。localStorage 被 web.dev 点名「应避免」，Cookie 被点名「不当存储」，方向完全反了。"
+      },
+      {
+        "text": "全部数据统一放 IndexedDB，其余机制均已废弃",
+        "isCorrect": false,
+        "description": "错误。六机制是分工不是替代，Cache API 与 OPFS 各管网络资源与文件，均未废弃。"
+      },
+      {
+        "text": "网络资源用 File System Access API、文件用 Cache API、其余用 Cookie",
+        "isCorrect": false,
+        "description": "错误。用户可见的 File System Access API 仅 Chromium 支持，web.dev 不推荐作为存储方案；Cache API 管的是网络资源不是文件。"
+      }
+    ]
+  },
+  {
+    "stem": "localStorage 被 web.dev 列为「应避免」的存储机制，其主要原因是什么？",
+    "explanation": "localStorage 的先天限制：**同步 API 阻塞主线程**（读写期间 JavaScript 全停，含渲染）、容量仅 **~5 MiB/源**、**只能存字符串**（对象要 JSON 序列化）、**Worker 里不可用**。数据小无感，一旦拿它存接口缓存、大 JSON，每次读写 + `JSON.parse` 都是主线程上的实打实卡顿。MDN 的建议是大数据量、性能敏感场景改用异步的 IndexedDB。",
+    "tags": ["storage", "localstorage", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "同步 API 阻塞主线程，且容量仅 ~5 MiB、只能存字符串、Worker 不可用",
+        "isCorrect": true,
+        "description": "正确。这四条先天限制正是「应避免」的依据；legacy 小偏好（主题、语言）仍可接受。"
+      },
+      {
+        "text": "它的数据会随每个 HTTP 请求自动发送，拖慢全站",
+        "isCorrect": false,
+        "description": "错误。随请求发送是 Cookie 的独有属性，localStorage 数据不参与网络传输。"
+      },
+      {
+        "text": "它已从规范中移除，新浏览器不再支持",
+        "isCorrect": false,
+        "description": "错误。localStorage 仍是标准 API 且全浏览器支持，「应避免」是性能与容量层面的工程建议，不是废弃。"
+      },
+      {
+        "text": "它无法持久化，页面刷新后数据即丢失",
+        "isCorrect": false,
+        "description": "错误。localStorage 按源持久保存，刷新、重启浏览器都还在（被驱逐或手动清除前）。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储的决策口诀中，「要回传服务端的数据」「结构化大数据」「静态资源离线」三类数据分别应放在哪里？",
+    "explanation": "选型矩阵的决策口诀：**要回传服务端 → Cookie**（唯一随请求上行的机制）；**页面级小键值 → Web Storage**；**结构化数据 → IndexedDB**（结构化克隆、GB 级、异步）；**网络资源 → Cache API**（与 Service Worker 配套）；**文件/数据库文件 → OPFS**。判断数据配不配进 Cookie 只有一条标准：**服务端每次请求都需要看吗？**",
+    "tags": ["storage", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "分别放 Cookie、IndexedDB、Cache API",
+        "isCorrect": true,
+        "description": "正确。Cookie 管回传、IndexedDB 管结构化数据、Cache API 配合 Service Worker 管静态资源离线。"
+      },
+      {
+        "text": "分别放 localStorage、Cookie、OPFS",
+        "isCorrect": false,
+        "description": "错误。localStorage 不回传服务端；Cookie 单条 ~4KB 装不下结构化大数据；OPFS 管文件而非网络资源缓存。"
+      },
+      {
+        "text": "分别放 sessionStorage、Cache API、IndexedDB",
+        "isCorrect": false,
+        "description": "错误。sessionStorage 关标签页即清且不上行；Cache API 存 Request/Response 对而非结构化记录；离线静态资源存 IndexedDB 是手搓 Cache API 已有的能力。"
+      },
+      {
+        "text": "三类数据都放 IndexedDB，因为它容量最大",
+        "isCorrect": false,
+        "description": "错误。IndexedDB 不随请求发送，无法承担会话凭证的回传职责；静态资源离线也应交给与 Service Worker 配套的 Cache API。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储的「容量两套账本」是指什么？",
+    "explanation": "容量结构的关键：**Web Storage（localStorage/sessionStorage）的 ~5 MiB 是独立小池子**，而 **IndexedDB、Cache API、OPFS 共用同一份「源级配额」大池子**（Chrome 单源可达磁盘 60%）。所以「localStorage 满了」不等于「这个源没空间了」——大池子可能还空着几十 GB。**Cookie 则完全不在配额体系内**，它受的是「单条 ~4KB + 每域条数」的独立限制。",
+    "tags": ["storage", "配额", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Web Storage 独立 ~5 MiB 小池，IndexedDB/Cache API/OPFS 共享源级大配额，两者互不相干",
+        "isCorrect": true,
+        "description": "正确。两套账本意味着「配额还剩 40 GB」与「localStorage 满了」可以同时为真。"
+      },
+      {
+        "text": "浏览器为每个标签页与每个源各记一份配额账本",
+        "isCorrect": false,
+        "description": "错误。配额按源（Firefox 组限按 eTLD+1）记账，不存在按标签页的配额账本。"
+      },
+      {
+        "text": "无痕模式与正常模式各有一套账本且互相同步",
+        "isCorrect": false,
+        "description": "错误。无痕模式配额骤减且关窗全清，与正常模式互不同步，这也不是「两套账本」的含义。"
+      },
+      {
+        "text": "Cookie 与 localStorage 共享一套 4KB 账本，其余机制共享另一套",
+        "isCorrect": false,
+        "description": "错误。Cookie 的单条 ~4KB 限制是独立体系，与 localStorage 的 ~5 MiB 互不相干。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储六机制的 Worker 可达性划分中，下列哪组机制可以在 Web Worker / Service Worker 中使用？",
+    "explanation": "Worker 可达性把六机制划成两个阵营：**IndexedDB、Cache API、OPFS 在 window、Web Worker、Service Worker 里全可用**（OPFS 的同步访问句柄还仅限 Worker）；而 **localStorage、sessionStorage 在 Worker 里都不可用**，`document.cookie` 在 Worker 里也不存在（异步的 Cookie Store API 可在 Service Worker 读写 Cookie，但兼容性尚未拉齐）。这条分界与同步/异步分界高度重合——异步阵营才进得了 Worker。",
+    "tags": ["storage", "worker", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "IndexedDB、Cache API、OPFS 全可用；Web Storage 与 `document.cookie` 不可用",
+        "isCorrect": true,
+        "description": "正确。异步三件套 Worker 全可达，这也是重 I/O 能整体挪出主线程的前提。"
+      },
+      {
+        "text": "localStorage 与 sessionStorage 可用，IndexedDB 仅限主线程",
+        "isCorrect": false,
+        "description": "错误。恰好说反：Web Storage 在 Worker 里不可用，IndexedDB 则 window/Worker/Service Worker 全可用。"
+      },
+      {
+        "text": "六种机制在 Worker 中全部可用，没有差别",
+        "isCorrect": false,
+        "description": "错误。Web Storage 两兄弟和 `document.cookie` 在 Worker 里都不可用，差别是选型的关键维度之一。"
+      },
+      {
+        "text": "只有 Cache API 可在 Worker 使用，其余全部不可用",
+        "isCorrect": false,
+        "description": "错误。IndexedDB 与 OPFS 同样 Worker 可用，Cache API 并非独苗。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储反模式中，「把 token 放进 localStorage」的主要风险是什么？",
+    "explanation": "把六种机制当候选存储位横向看：localStorage/sessionStorage/IndexedDB/Cache API/OPFS——**页面里任何 JS 都能读**，一旦有 XSS，注入脚本同样能读。**HttpOnly Cookie 是唯一对 JS 不可见的存储位**：`document.cookie` 读不到、Cookie Store API 也拿不到，但浏览器照常随请求回传服务端。所以「token 别放 localStorage」的存储视角解释就一句话：**放得进 JS 读得到的地方，就偷得走**。",
+    "tags": ["storage", "localstorage", "安全"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一次 XSS 注入脚本即可读走 token；会话凭证应放 HttpOnly Cookie",
+        "isCorrect": true,
+        "description": "正确。localStorage 对页面内所有 JS 可见，XSS 下整锅端走；HttpOnly Cookie 是唯一 JS 读不到的存储位。"
+      },
+      {
+        "text": "localStorage 会随每个请求发送 token，造成带宽浪费",
+        "isCorrect": false,
+        "description": "错误。localStorage 不随请求发送；「每字节乘以请求数」说的是 Cookie。"
+      },
+      {
+        "text": "token 存入 localStorage 会立即被浏览器驱逐清除",
+        "isCorrect": false,
+        "description": "错误。localStorage 按源持久保存，驱逐是存储压力下的低概率事件，风险核心在 XSS 可读而非易丢。"
+      },
+      {
+        "text": "localStorage 的 5 MiB 容量放不下一个 token",
+        "isCorrect": false,
+        "description": "错误。token 通常只有几百字节到几 KB，容量完全不是问题，问题在安全可见性。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储反模式中，「用户偏好塞进 Cookie」的症状与纠正方案是什么？",
+    "explanation": "Cookie 会随**每一个**匹配的 HTTP 请求自动上行。往里塞几 KB 的用户配置，等于给站点的每个请求都加了几 KB 的固定税——**全站请求变胖**。算笔账：Cookie 总量 4KB、页面加载发 50 个同源请求，仅上行就多出 200KB，且上行带宽通常远小于下行。纠正：主题、语言、折叠状态这类**服务端不需要每次都看**的小偏好放 **localStorage**。",
+    "tags": ["storage", "cookie", "反模式"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "全站每个请求都被撑大（每字节乘以请求数）；应改放 localStorage",
+        "isCorrect": true,
+        "description": "正确。Cookie 只该装「服务端每个请求都要看的最小状态」，纯客户端偏好放 localStorage。"
+      },
+      {
+        "text": "偏好数据会在 7 天后被所有浏览器自动清空；应改放 IndexedDB",
+        "isCorrect": false,
+        "description": "错误。7 天清库是 Safari ITP 针对脚本可写存储的规则，且换成 IndexedDB 也照样在 ITP 清除范围内。"
+      },
+      {
+        "text": "Cookie 无法存字符串以外的数据；应改放 Cache API",
+        "isCorrect": false,
+        "description": "错误。偏好本来就能序列化成字符串，这不是核心问题；Cache API 存 Request/Response 对，更不适合存偏好。"
+      },
+      {
+        "text": "Cookie 在无痕模式不可用；应改放 sessionStorage",
+        "isCorrect": false,
+        "description": "错误。无痕模式下 Cookie API 照常可用（关窗即清）；sessionStorage 关标签页即清，存持久偏好也不合适。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储中，「接口数据缓存塞进 localStorage」这一反模式的症状是什么？",
+    "explanation": "localStorage 是**同步 API**：每次 `getItem`/`setItem` 都在主线程上同步执行，大 JSON 的读写 + `JSON.parse` 耗时全算进主线程卡顿，低端机上肉眼可见；同时 **~5 MiB 的天花板**很快就顶到。纠正方案是 **IndexedDB**：异步不挡渲染、走共享源配额（GB 级）、支持结构化克隆不需要 JSON 序列化，还能整体搬进 Worker。",
+    "tags": ["storage", "localstorage", "反模式"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "主线程同步卡顿 + 5 MiB 容量天花板；应迁移到异步的 IndexedDB",
+        "isCorrect": true,
+        "description": "正确。同步读写 + JSON 解析都在主线程上执行，容量又小，接口缓存的正确归宿是 IndexedDB。"
+      },
+      {
+        "text": "接口缓存会随请求自动上行，导致重复传输",
+        "isCorrect": false,
+        "description": "错误。localStorage 数据不随请求发送，这是 Cookie 的行为。"
+      },
+      {
+        "text": "localStorage 在页面刷新后清空，缓存无法复用",
+        "isCorrect": false,
+        "description": "错误。localStorage 按源持久，刷新后仍在；「关页即焚」的是 sessionStorage。"
+      },
+      {
+        "text": "浏览器会为 localStorage 的每次写入弹出权限确认框",
+        "isCorrect": false,
+        "description": "错误。localStorage 读写没有任何权限弹窗，问题在同步阻塞与容量，不在权限。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储机制中，用户可见的 File System Access API（带 `showOpenFilePicker()` 选择器弹窗）与 OPFS 在兼容性上的关键差异是什么？",
+    "explanation": "两者共用 `FileSystemFileHandle`/`FileSystemDirectoryHandle` 句柄类型，但定位与兼容性完全不同：**用户可见的 File System Access API 仅 Chromium 支持**，web.dev 不推荐作为跨浏览器存储方案；**OPFS 则是 Baseline——2023-03 起全浏览器支持**。前者是「替用户管他的文件」（带权限弹窗与安全检查），OPFS 是「给应用一块高性能私有盘」（无弹窗、原地写入）。",
+    "tags": ["storage", "opfs", "兼容性"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "File System Access API 仅 Chromium 支持；OPFS 是 Baseline，2023-03 起全浏览器可用",
+        "isCorrect": true,
+        "description": "正确。这也是 web.dev 推荐 OPFS 而不推荐用户可见 File System Access API 作存储方案的原因。"
+      },
+      {
+        "text": "两者都是 Baseline 特性，任选其一即可",
+        "isCorrect": false,
+        "description": "错误。只有 OPFS 达到 Baseline；用户可见的那套仅 Chromium 支持，跨浏览器项目不能依赖。"
+      },
+      {
+        "text": "OPFS 仅 Safari 支持，File System Access API 全浏览器可用",
+        "isCorrect": false,
+        "description": "错误。恰好说反：OPFS 全浏览器（Baseline），File System Access API 仅 Chromium。"
+      },
+      {
+        "text": "两者是同一个 API 的新旧名称，兼容性完全一致",
+        "isCorrect": false,
+        "description": "错误。它们是 File System API 的两个不同侧面：一个用户可见带弹窗，一个源私有无弹窗，兼容性差异显著。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储选型矩阵中，「跨标签页要同步的状态」与「当前标签页的向导步骤草稿」分别推荐用什么机制？",
+    "explanation": "跨标签页同步：**localStorage + storage 事件**——localStorage 同源所有标签页共享同一份，改动会在同源的**其他**文档上触发 `storage` 事件，构成浏览器原生的跨标签页广播。单标签页临时态：**sessionStorage**——按「标签页 + 源」隔离，要的就是「关页即焚」+ 多标签页互不干扰，且页面会话跨刷新存活，适合防误刷新丢失的草稿。",
+    "tags": ["storage", "web-storage", "选型"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跨标签页同步用 localStorage + storage 事件；单标签页草稿用 sessionStorage",
+        "isCorrect": true,
+        "description": "正确。localStorage 同源共享 + storage 事件广播；sessionStorage 按标签页隔离、关页即焚、刷新不丢。"
+      },
+      {
+        "text": "跨标签页同步用 sessionStorage；单标签页草稿用 localStorage",
+        "isCorrect": false,
+        "description": "错误。恰好说反：sessionStorage 每个标签页各一份天生不同步；localStorage 是同源共享的，不满足「关页即焚」。"
+      },
+      {
+        "text": "两种场景都用 Cookie，因为它对所有标签页可见",
+        "isCorrect": false,
+        "description": "错误。Cookie 虽同源共享，但会随每个请求上行、单条仅 ~4KB，把纯客户端状态塞进去是典型反模式。"
+      },
+      {
+        "text": "跨标签页同步只能轮询 localStorage 实现",
+        "isCorrect": false,
+        "description": "错误。轮询白耗 CPU，是明确列出的反模式；storage 事件才是原生的跨标签页通知机制。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器存储的生命周期维度上，说「localStorage、IndexedDB、Cache API、OPFS 是持久存储」时，「持久」的准确含义是什么？",
+    "explanation": "这四种机制名义上持久，但都排在浏览器的**驱逐队列**里：存储压力下按 LRU 整源清除，Safari 还有 7 天 ITP 清库。**「持久」只是「没有到期时间」，不是「保证不丢」**——想要浏览器的保留承诺得调 `navigator.storage.persist()` 申请 persistent 模式（且可能被拒）。这与 sessionStorage 的「标签页会话」、Cookie 的「到期时间」共同构成生命周期维度：没有一种存储是真正「永久」的。",
+    "tags": ["storage", "生命周期", "驱逐"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只是「没有到期时间」——仍可能被 LRU 驱逐或 Safari ITP 清除，并非保证不丢",
+        "isCorrect": true,
+        "description": "正确。默认 best-effort 模式下浏览器有回收权；`persist()` 成功才换来「仅用户显式操作可清」的承诺。"
+      },
+      {
+        "text": "写入后即落入操作系统保护区，任何情况下都不会被清除",
+        "isCorrect": false,
+        "description": "错误。数据在浏览器接管的 profile 目录里，浏览器统一记账、统一回收，存储压力下照删。"
+      },
+      {
+        "text": "「持久」意味着数据会自动同步到用户的云端账户",
+        "isCorrect": false,
+        "description": "错误。这些机制都是纯本地存储，没有任何云端同步语义。"
+      },
+      {
+        "text": "只要调用过一次 `estimate()`，数据就升级为永久保留",
+        "isCorrect": false,
+        "description": "错误。`estimate()` 只查用量与配额，不改变桶模式；申请保留承诺的是 `persist()`，且可能返回 `false`。"
+      }
+    ]
+  },
+  {
+    "stem": "document.cookie 读取时返回的内容是什么？",
+    "explanation": "`document.cookie` 是**原生 getter/setter（访问器属性）**，读取返回**当前文档可见的所有 Cookie 拼成的一根字符串**，形如 `\"theme=dark; lang=zh-CN\"`（分号 + 空格分隔的名值对）。关键限制：**只有名和值**——Domain、Path、Expires、Secure 等任何属性都读不出来；想知道某条 Cookie 何时过期，浏览器侧没有 API 能回答，只有 DevTools 的 Application 面板看得到。",
+    "tags": ["storage", "cookie", "document.cookie"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "所有匹配 Cookie 的名值对拼成的一根字符串，读不到任何属性",
+        "isCorrect": true,
+        "description": "正确。返回形如「a=1; b=2」的整串，Domain/Path/过期时间一概不可见，解析要自己 `split`。"
+      },
+      {
+        "text": "一个 Cookie 对象数组，每项含名、值与全部属性",
+        "isCorrect": false,
+        "description": "错误。`document.cookie` 返回的是字符串不是数组，且属性永远读不到；对象化的读取是 Cookie Store API 的事。"
+      },
+      {
+        "text": "只返回最近写入的那一条 Cookie",
+        "isCorrect": false,
+        "description": "错误。读取返回当前文档可见的全部 Cookie，不是最近一条。"
+      },
+      {
+        "text": "一个 JSON 字符串，可直接 `JSON.parse` 得到键值映射",
+        "isCorrect": false,
+        "description": "错误。格式是「名=值; 名=值」的分号分隔串，不是 JSON，取单个值得自己拆分匹配。"
+      }
+    ]
+  },
+  {
+    "stem": "HttpOnly Cookie 在 `document.cookie` 中的表现是什么？",
+    "explanation": "带 `HttpOnly` 的 Cookie **根本不会出现在 `document.cookie` 的返回值里**——完全隐身。这不是缺陷而是设计：它让会话凭证对 XSS 注入的脚本不可见。由此 HttpOnly Cookie 成为**浏览器里唯一 JS 读不到的存储位**（Cookie Store API 也拿不到），但浏览器仍照常随每个匹配请求把它回传服务端。排查时「JS 读不到但请求里有」是它的典型特征。",
+    "tags": ["storage", "cookie", "httponly"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "完全不出现在返回值里——JS 读不到，但仍随请求正常发送",
+        "isCorrect": true,
+        "description": "正确。HttpOnly 让 Cookie 对页面脚本隐身，同时不影响它作为请求头上行，这正是会话凭证的理想属性。"
+      },
+      {
+        "text": "能读到名字，但值显示为空字符串",
+        "isCorrect": false,
+        "description": "错误。HttpOnly Cookie 是整条隐身，连名字都不出现，不存在「名在值空」的中间态。"
+      },
+      {
+        "text": "读取时会抛出 `SecurityError` 异常",
+        "isCorrect": false,
+        "description": "错误。读取 `document.cookie` 不会因 HttpOnly 抛错，只是结果里不含该条；抛 `SecurityError` 的是 `file:`/`data:` 等非法源下访问 Web Storage 之类的场景。"
+      },
+      {
+        "text": "首次读取返回值，之后被浏览器锁定不可再读",
+        "isCorrect": false,
+        "description": "错误。不存在「首读可见」的机制，HttpOnly Cookie 自始至终对 JS 不可见。"
+      }
+    ]
+  },
+  {
+    "stem": "document.cookie 执行一次赋值（如 `document.cookie = \"theme=light; max-age=3600\"`）的语义是什么？",
+    "explanation": "写 `document.cookie` 的语义是**新增或更新【一条】Cookie**，不会覆盖或清空其他 Cookie——因为它是 setter 不是普通字符串属性。想设三条 Cookie 就要赋值三次；把多条拼进一次赋值，**后面的部分会被当成第一条的属性**而丢失。这是 `document.cookie` 作为「伪装成字符串的访问器」最反直觉的怪癖：写进去的格式（一条 + 属性）和读出来的格式（全部名值对拼串）完全不同。",
+    "tags": ["storage", "cookie", "document.cookie"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "新增或更新这一条 Cookie，其余 Cookie 原样保留",
+        "isCorrect": true,
+        "description": "正确。一次赋值 = 操作一条；赋值后再读，新条生效、旧条还在。"
+      },
+      {
+        "text": "用赋的值整体替换全部 Cookie，其余全部清空",
+        "isCorrect": false,
+        "description": "错误。它是访问器 setter 而非数据属性，赋值不是覆盖整个 Cookie 集合。"
+      },
+      {
+        "text": "同时设置多条 Cookie，分号分隔的每段各成一条",
+        "isCorrect": false,
+        "description": "错误。分号后的内容被解析为第一条 Cookie 的属性（如 `max-age`），不会拆成多条；多条要多次赋值。"
+      },
+      {
+        "text": "抛出异常，因为 Cookie 只能由服务端 `Set-Cookie` 写入",
+        "isCorrect": false,
+        "description": "错误。非 HttpOnly 的 Cookie 可由 JS 写入；只有 `__Http-` 前缀等特殊约束才把写入权留给服务端。"
+      }
+    ]
+  },
+  {
+    "stem": "document.cookie 写入失败时（如给别人的域设 Cookie、在 `http:` 页面写 `Secure` Cookie）的表现是什么？",
+    "explanation": "`document.cookie` 写失败**静默无报错**：给非当前文档域写 Cookie、`http:` 页面写 `Secure` Cookie、违反 `__Host-` 前缀约束——统统**不抛异常、也不生效**，浏览器直接忽略。超过容量限制时同样静默（新 Cookie 被丢弃或挤掉旧的）。所以线上「Cookie 怎么没写进去」的排查，第一步永远是打开 DevTools 的 Application → Cookies 面板看真相，而不是在代码里找异常。",
+    "tags": ["storage", "cookie", "排查"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "静默失败——不抛异常、不生效，只能靠 DevTools 面板确认",
+        "isCorrect": true,
+        "description": "正确。写入被浏览器直接忽略且无任何报错，这是 Cookie 排查必须依赖 DevTools 的根本原因。"
+      },
+      {
+        "text": "同步抛出 `QuotaExceededError`",
+        "isCorrect": false,
+        "description": "错误。同步抛 `QuotaExceededError` 的是 Web Storage 的 `setItem` 超限；Cookie 写失败一律静默。"
+      },
+      {
+        "text": "返回 `false` 表示写入失败",
+        "isCorrect": false,
+        "description": "错误。赋值表达式不会返回成功与否的标志，`document.cookie` 也没有任何失败反馈通道。"
+      },
+      {
+        "text": "浏览器弹出权限询问框，由用户决定是否允许写入",
+        "isCorrect": false,
+        "description": "错误。Cookie 写入没有权限弹窗机制，非法写入直接被忽略。"
+      }
+    ]
+  },
+  {
+    "stem": "RFC 6265 对 Cookie 实现的最低容量要求是什么？",
+    "explanation": "RFC 6265 §6.1 对实现的最低要求：**每条 Cookie 至少 4096 字节**（名、值、属性长度合计）、**每域至少 50 条**、**总量至少 3000 条**。各浏览器实际上限围绕这些下限浮动，工程记忆只需一条：**单条 ~4KB、每域几十条起步——这是六种存储机制里最小的天花板**。注意 4096 字节是名 + 值 + 属性的合计，不是仅值的长度；超限行为也是静默丢弃或挤掉旧条。",
+    "tags": ["storage", "cookie", "rfc6265"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "单条至少 4096 字节（名+值+属性合计）、每域至少 50 条、总量至少 3000 条",
+        "isCorrect": true,
+        "description": "正确。这是 RFC 6265 §6.1 的实现下限，「单条 ~4KB、每域几十条」的工程直觉来自这里。"
+      },
+      {
+        "text": "单条至少 5 MiB、每域不限条数",
+        "isCorrect": false,
+        "description": "错误。~5 MiB 是 Web Storage 的量级；Cookie 是全场最小的天花板，单条仅 ~4KB。"
+      },
+      {
+        "text": "单条至少 1024 字节、每域至少 20 条、总量至少 300 条",
+        "isCorrect": false,
+        "description": "错误。RFC 6265 的下限是 4096 字节/条、50 条/域、3000 条总量，这组数字全部偏小。"
+      },
+      {
+        "text": "RFC 6265 只规定单条 4096 字节，条数完全由浏览器自定",
+        "isCorrect": false,
+        "description": "错误。条数同样有下限要求：每域至少 50 条、总量至少 3000 条，浏览器实际上限在此之上浮动。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器侧删除一条 Cookie 的标准做法是什么？",
+    "explanation": "Cookie 没有专门的删除 API，删除 = **写一条同名、过期时间在过去的 Cookie**：`max-age=0` 或把 `expires` 设为过去时间。一个关键细节：**`path`/`domain` 等属性要与原 Cookie 一致才能命中**——属性不匹配时写出的是另一条 Cookie，原条纹丝不动。例如 `document.cookie = \"draft=; max-age=0; path=/\"`。",
+    "tags": ["storage", "cookie", "document.cookie"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "写一条同名 Cookie 并把过期时间设为过去（如 `max-age=0`），且 path/domain 须与原条一致",
+        "isCorrect": true,
+        "description": "正确。让浏览器因「已过期」把它移除；属性不一致会命中不了原条。"
+      },
+      {
+        "text": "调用 `document.cookie.removeItem(name)` 方法",
+        "isCorrect": false,
+        "description": "错误。`document.cookie` 是字符串型访问器，没有 `removeItem` 方法；那是 Web Storage 的 API。"
+      },
+      {
+        "text": "赋值 `document.cookie = \"\"` 清空全部 Cookie",
+        "isCorrect": false,
+        "description": "错误。一次赋值只操作一条 Cookie，空字符串赋值不会清空集合。"
+      },
+      {
+        "text": "Cookie 只能等待自然过期，浏览器侧无法删除",
+        "isCorrect": false,
+        "description": "错误。通过「同名 + 过期时间在过去」的写入即可主动删除（HttpOnly 条除外，JS 本来就动不了）。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 值中包含分号、逗号或空白字符时，规范的处理方式是什么？",
+    "explanation": "Cookie 的存取格式是「名=值; 属性; 属性」的分隔字符串，**值里出现分号、逗号、空白会破坏整根字符串的格式**——分号后的内容会被当成属性解析。规范做法是写入时用 **`encodeURIComponent()` 编码值**、读取时用 `decodeURIComponent()` 解码：`document.cookie = \"k=\" + encodeURIComponent(value)`。这属于「编码自理」——浏览器不会替你编码。",
+    "tags": ["storage", "cookie", "编码"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "写入前用 `encodeURIComponent()` 编码值，读取后再解码",
+        "isCorrect": true,
+        "description": "正确。编码把分隔符转义掉，避免值被误解析为属性；浏览器不做自动编码，需自理。"
+      },
+      {
+        "text": "浏览器会自动转义这些字符，无需任何处理",
+        "isCorrect": false,
+        "description": "错误。`document.cookie` 不做自动编码，含分隔符的裸值直接破坏格式。"
+      },
+      {
+        "text": "用双引号包裹值即可安全存放任意字符",
+        "isCorrect": false,
+        "description": "错误。引号包裹不是 Cookie 的转义机制，分号照样会截断值并被当作属性分隔符。"
+      },
+      {
+        "text": "值改用 Base64 是唯一合法方案，`encodeURIComponent` 不被允许",
+        "isCorrect": false,
+        "description": "错误。规范做法就是 `encodeURIComponent`；Base64 虽也能避开分隔符，但说它是唯一合法方案、且百分号编码不被允许，与事实不符。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 前缀 `__Host-` 会让浏览器在写入时强制校验哪些约束？",
+    "explanation": "Cookie 前缀由**浏览器在写入时强制校验**，不满足即静默失败。`__Host-` 的约束：必须 **HTTPS + 带 `Secure`**、**不得设置 `Domain` 属性**、**`Path` 必须为 `/`**——把这条 Cookie 锁死在单一主机上（子域拿不到、也覆盖全站路径）。相比之下 `__Secure-` 只要求 HTTPS + `Secure`。更新的 `__Http-` 前缀要求必须 `HttpOnly`（JS 根本写不了），`__Host-Http-` 则是两者约束合体。",
+    "tags": ["storage", "cookie", "前缀"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须 HTTPS 且带 `Secure`，不得设 `Domain`，`Path` 必须为 `/`",
+        "isCorrect": true,
+        "description": "正确。三条合起来把 Cookie 锁死在单主机全路径上，这是 `__Host-` 比 `__Secure-` 更严的地方。"
+      },
+      {
+        "text": "只要求必须带 `HttpOnly`",
+        "isCorrect": false,
+        "description": "错误。强制 `HttpOnly` 的是较新的 `__Http-` 前缀；`__Host-` 管的是 Secure/Domain/Path 三件事。"
+      },
+      {
+        "text": "只要求 HTTPS 与 `Secure`，Domain 与 Path 不限",
+        "isCorrect": false,
+        "description": "错误。这是 `__Secure-` 前缀的约束；`__Host-` 在此之上还锁 Domain（禁设）与 Path（必须 `/`）。"
+      },
+      {
+        "text": "要求值必须经过 `encodeURIComponent` 编码",
+        "isCorrect": false,
+        "description": "错误。前缀校验只针对属性约束（Secure/Domain/Path/HttpOnly），与值的编码方式无关。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie Store API 相对 `document.cookie` 的核心改进是什么？",
+    "explanation": "`document.cookie` 的隐性成本是**同步**——Cookie 数据在现代浏览器里由浏览器进程统一管理，同步读取可能意味着跨进程等待。**Cookie Store API**（`cookieStore.get()/set()/delete()`）给出异步的 Promise 风格替代，还能在 **Service Worker 里使用**（`document.cookie` 在 Worker 里根本不存在）。但**各引擎支持进度不一**，跨浏览器项目使用前务必查兼容性表——方向对、兼容性未拉齐是它的现状。",
+    "tags": ["storage", "cookie", "cookie-store-api"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "异步 Promise 风格读写，且可在 Service Worker 中使用；但兼容性尚未拉齐",
+        "isCorrect": true,
+        "description": "正确。异步化消除同步跨进程等待，Worker 可达补上 `document.cookie` 的空白；使用前查兼容性表。"
+      },
+      {
+        "text": "把单条 Cookie 的容量上限从 4KB 提升到 5 MiB",
+        "isCorrect": false,
+        "description": "错误。Cookie Store API 改变的是调用方式（同步→异步）与可用环境，不改变 Cookie 本身的容量限制。"
+      },
+      {
+        "text": "允许 JS 读取 HttpOnly Cookie 的值",
+        "isCorrect": false,
+        "description": "错误。HttpOnly 对 Cookie Store API 同样不可见，「唯一 JS 读不到的存储位」这一安全属性不因新 API 而破。"
+      },
+      {
+        "text": "已在全部浏览器达到 Baseline，可无顾虑替换 `document.cookie`",
+        "isCorrect": false,
+        "description": "错误。各引擎支持进度不一、兼容性尚未拉齐，跨浏览器项目还不能无条件替换。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 总量 4KB、页面加载发 50 个同源请求的场景下，仅 Cookie 带来的上行流量大约是多少？这说明了什么？",
+    "explanation": "每个匹配请求都自动带上完整的 `Cookie` 请求头：4KB × 50 个请求 = **约 200KB 纯上行开销**，且上行带宽通常远小于下行——这笔账还要每次页面加载都付一遍。web.dev 的立场因此很干脆：Cookie 里存的东西一多，「每个 Web 请求的体积都会显著增大」——**Cookie 不当存储用**，只该装「服务端每个请求都要看的最小状态」，通常就是一个会话标识。",
+    "tags": ["storage", "cookie", "性能"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "约 200KB 上行——每个字节都乘以请求数，所以 Cookie 只该装最小会话状态",
+        "isCorrect": true,
+        "description": "正确。4KB × 50 = 200KB，且走较窄的上行链路；这是「Cookie 不当存储」的量化依据。"
+      },
+      {
+        "text": "仅 4KB——Cookie 只在第一个请求发送一次，后续请求不再携带",
+        "isCorrect": false,
+        "description": "错误。Cookie 随**每个**匹配请求发送，不存在「只发一次」的机制，代价是乘法不是加法。"
+      },
+      {
+        "text": "0——Cookie 属于响应头，只有服务端向浏览器的下行才携带",
+        "isCorrect": false,
+        "description": "错误。`Set-Cookie` 是下行响应头，但存量 Cookie 会作为 `Cookie` 请求头随每个请求上行。"
+      },
+      {
+        "text": "约 200KB，但浏览器会自动压缩 Cookie 头，实际可忽略不计",
+        "isCorrect": false,
+        "description": "错误。笔记的结论恰恰是这笔开销「显著增大请求体积」不可忽略，不存在「自动压缩后可忽略」的说法。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 排查场景：JS 里 `document.cookie` 读不到某条 Cookie，但 DevTools 的网络面板显示请求头里带着它。最可能的原因是什么？",
+    "explanation": "这是 DevTools 排查的高频姿势之二：到 Application → Cookies 面板查看该条，**HttpOnly 列打了勾**——一切正常，它本来就不该被 JS 读到。HttpOnly Cookie 对 `document.cookie` 完全隐身，但随请求发送不受影响。对照姿势之一：「写了没生效」→ 面板里根本没出现，多半是域不匹配、`http:` 页面写 `Secure`、或违反前缀约束——写入被静默丢弃。",
+    "tags": ["storage", "cookie", "排查"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "该 Cookie 带 `HttpOnly`——JS 不可见但随请求发送，属正常设计",
+        "isCorrect": true,
+        "description": "正确。「JS 读不到但请求里有」正是 HttpOnly 的行为签名，去 Application 面板看 HttpOnly 列即可确认。"
+      },
+      {
+        "text": "Cookie 已过期，浏览器只在请求中保留副本",
+        "isCorrect": false,
+        "description": "错误。过期的 Cookie 既不会出现在 `document.cookie` 也不会随请求发送，不存在「只在请求里保留」的状态。"
+      },
+      {
+        "text": "该 Cookie 超过 4096 字节被 JS 侧截断",
+        "isCorrect": false,
+        "description": "错误。超限的 Cookie 在写入时就被静默丢弃或挤掉旧条，不存在「请求可见、JS 截断」的分裂行为。"
+      },
+      {
+        "text": "浏览器缓存了旧的 `document.cookie` 值，刷新即可读到",
+        "isCorrect": false,
+        "description": "错误。`document.cookie` 是实时访问器不是缓存快照；读不到 HttpOnly 条是设计使然，刷新也读不到。"
+      }
+    ]
+  },
+  {
+    "stem": "Cookie 前缀 `__Http-` 对前端开发者的实际意义是什么？",
+    "explanation": "`__Http-` 前缀要求该 Cookie **必须带 `HttpOnly`**——从名字上就宣告「JS 写不了」：`document.cookie` 与 Cookie Store API 都设不动它，写入尝试静默失败。所以看到 `__Http-` 开头的 Cookie 名**连试都不用试**，它只可能来自服务端的 `Set-Cookie`。这个前缀较新，注意兼容性；`__Host-Http-` 则是 `__Host-` 与 `__Http-` 约束的合体。前缀的校验方是浏览器（写入时强制），这正是它属于浏览器侧知识的原因。",
+    "tags": ["storage", "cookie", "前缀"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "此名只可能由服务端 `Set-Cookie` 下发——JS 侧两套 API 都写不动",
+        "isCorrect": true,
+        "description": "正确。`__Http-` 强制 `HttpOnly`，而 JS 无法写 HttpOnly Cookie，前端见到即可断定来源是服务端。"
+      },
+      {
+        "text": "表示该 Cookie 仅在 `http:` 协议下发送，HTTPS 请求不携带",
+        "isCorrect": false,
+        "description": "错误。`__Http-` 指的是 HttpOnly 约束，与「仅 http 协议」无关；限定加密传输的是 `Secure` 属性。"
+      },
+      {
+        "text": "表示该 Cookie 对 JS 只读——能读取但不能修改",
+        "isCorrect": false,
+        "description": "错误。HttpOnly Cookie 对 JS 是完全不可见（读也读不到），不是「只读可见」。"
+      },
+      {
+        "text": "浏览器会为该 Cookie 自动追加 `Domain` 属性以扩大作用域",
+        "isCorrect": false,
+        "description": "错误。前缀是写入校验规则，不会自动追加属性；锁 Domain 的是 `__Host-`（禁止设置 Domain）。"
+      }
+    ]
+  },
+  {
+    "stem": "localStorage 与 sessionStorage 的隔离模型有什么区别？",
+    "explanation": "两兄弟共用一套 API（`getItem`/`setItem`/`removeItem`/`clear`），差别全在**隔离与生命周期**：**localStorage 按源（scheme + host + port）隔离**——同源所有标签页/iframe 共享同一份，浏览器重启仍在；**sessionStorage 按「标签页 + 源」隔离**——每个标签页一份独立的**页面会话（page session）**，同源的两个标签页互不可见，关标签页即清。「两个标签页数据不同步」的问题十有八九是把 sessionStorage 当成了 localStorage。",
+    "tags": ["storage", "web-storage", "隔离"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "localStorage 按源隔离、同源标签页共享；sessionStorage 按「标签页 + 源」隔离、每个标签页各一份",
+        "isCorrect": true,
+        "description": "正确。隔离键的差异是两者最核心的区别，API 本身完全一致。"
+      },
+      {
+        "text": "localStorage 按标签页隔离，sessionStorage 按源隔离",
+        "isCorrect": false,
+        "description": "错误。恰好说反：按标签页细分的是 sessionStorage。"
+      },
+      {
+        "text": "两者都按源隔离，唯一区别是容量大小不同",
+        "isCorrect": false,
+        "description": "错误。两者容量同为 ~5 MiB/源；真正的差别在隔离键与生命周期，sessionStorage 多了「标签页」这一维。"
+      },
+      {
+        "text": "localStorage 全浏览器共享一份，不区分源",
+        "isCorrect": false,
+        "description": "错误。localStorage 严格按源隔离，域 A 永远读不到域 B 的数据——不存在跨源共享的全局存储。"
+      }
+    ]
+  },
+  {
+    "stem": "sessionStorage 的「页面会话（page session）」在下列哪种操作后仍然存活？",
+    "explanation": "页面会话的定义：**文档加载进某个标签页时创建、只对该标签页可见**。它比直觉更顽强——**刷新不清、崩溃后恢复标签页也不清**（页面会话未结束），所以适合存「防误刷新丢失」的表单草稿；但**关闭标签页/窗口必清**，浏览器重启后也不在。这与 localStorage 的「按源持久」形成对照。",
+    "tags": ["storage", "sessionstorage", "生命周期"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "页面刷新与崩溃后「恢复标签页」——两者都不结束页面会话",
+        "isCorrect": true,
+        "description": "正确。刷新与恢复都延续同一页面会话，数据保留；这正是它适合存防误刷新草稿的原因。"
+      },
+      {
+        "text": "关闭标签页后重新打开同一网址",
+        "isCorrect": false,
+        "description": "错误。关闭标签页即销毁页面会话，重新打开是全新会话，数据已清空。"
+      },
+      {
+        "text": "浏览器完全退出后重新启动",
+        "isCorrect": false,
+        "description": "错误。浏览器重启后 sessionStorage 不复存在；重启仍在的是 localStorage。"
+      },
+      {
+        "text": "把数据同步到同源的其他标签页后",
+        "isCorrect": false,
+        "description": "错误。sessionStorage 按标签页隔离，根本不会同步到其他标签页，此选项前提就不成立。"
+      }
+    ]
+  },
+  {
+    "stem": "localStorage 只能存字符串，把对象经 `JSON.stringify` 存入再读出时，哪些类型信息会丢失？",
+    "explanation": "Web Storage 的键与值都只能是字符串，对象要走 `JSON.stringify`/`parse`，代价藏在 JSON 的语义损耗里：**`Date` 变字符串、`Map`/`Set` 变空对象、`undefined` 丢失、`Blob`/`ArrayBuffer` 根本存不了**。需要保形存储的数据属于 IndexedDB 的**结构化克隆**管辖区——Date/Map/Set/Blob/ArrayBuffer 直接存、取出来还是原来的形状。",
+    "tags": ["storage", "web-storage", "序列化"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`Date` 变字符串、`Map`/`Set` 变空对象、`undefined` 丢失、`Blob` 存不了",
+        "isCorrect": true,
+        "description": "正确。这是 JSON 序列化的固有损耗；保形需求应改用支持结构化克隆的 IndexedDB。"
+      },
+      {
+        "text": "什么都不会丢——`JSON.parse` 能完整还原任何 JS 值",
+        "isCorrect": false,
+        "description": "错误。JSON 只覆盖原始值/对象/数组的子集，Date、Map、Set、undefined、二进制类型都会丢形。"
+      },
+      {
+        "text": "只有函数会丢失，其余类型全部保形",
+        "isCorrect": false,
+        "description": "错误。函数确实序列化不了，但 Date/Map/Set/undefined/Blob 同样丢形，损耗范围远不止函数。"
+      },
+      {
+        "text": "数字精度会全部丢失，字符串则原样保留",
+        "isCorrect": false,
+        "description": "错误。JSON 对常规数字的表示没有「全部丢精度」的问题；真正的坑在 Date/Map/Set/二进制这些非 JSON 原生类型。"
+      }
+    ]
+  },
+  {
+    "stem": "localStorage 写入超出 ~5 MiB 配额时会发生什么？严谨的写法是什么？",
+    "explanation": "主流浏览器给 localStorage 与 sessionStorage **各 ~5 MiB/源**（两个池子独立计）。超限时 `setItem` **同步抛出 `QuotaExceededError`**——注意是同步 throw，不是返回 false 也不是静默。所以严谨的写法永远带 try/catch：捕获后清理旧键或把这类数据迁去 IndexedDB。**写本地存储要按「可能失败的 I/O」对待，不是内存赋值**——没兜住时用户看到的就是「点了保存、什么都没发生」。",
+    "tags": ["storage", "web-storage", "quotaexceedederror"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`setItem` 同步抛出 `QuotaExceededError`，因此写入必须包 try/catch",
+        "isCorrect": true,
+        "description": "正确。同步 API 的失败路径就是同步异常；catch 后清理或迁移到 IndexedDB 是标准处理。"
+      },
+      {
+        "text": "`setItem` 返回 `false`，检查返回值即可",
+        "isCorrect": false,
+        "description": "错误。`setItem` 没有布尔返回值约定，失败通过抛异常表达。"
+      },
+      {
+        "text": "静默截断值的末尾部分，保证写入成功",
+        "isCorrect": false,
+        "description": "错误。Web Storage 不会截断数据；要么完整写入要么抛错，静默无报错的是 Cookie 的写入失败。"
+      },
+      {
+        "text": "浏览器自动把超出部分转存到 IndexedDB",
+        "isCorrect": false,
+        "description": "错误。两套存储互不打通，不存在自动迁移；迁去 IndexedDB 是开发者在 catch 里做的事。"
+      }
+    ]
+  },
+  {
+    "stem": "storage 事件的触发范围是什么？",
+    "explanation": "改动 Web Storage 会在**同源的其他文档**上触发 `storage` 事件——**发起改动的那个页面自己收不到**。由于 localStorage 是同源所有标签页共享的，这就成了浏览器原生的跨标签页广播：典型用法是多标签页登出同步（一处 `removeItem`，处处跳登录页）、主题偏好即时生效。若在发起页里也想响应改动，得自己在 set 之后手动调用处理逻辑——等事件是等不来的。",
+    "tags": ["storage", "web-storage", "storage事件"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "同源的其他文档收到事件，发起改动的页面自己不触发",
+        "isCorrect": true,
+        "description": "正确。「只发给别人」是 storage 事件最重要的行为特征，也是它能当跨标签页广播用的机制基础。"
+      },
+      {
+        "text": "所有打开的标签页都收到，包括发起改动的页面",
+        "isCorrect": false,
+        "description": "错误。发起者自己收不到——在本页监听 storage 事件响应本页的写入是常见误区。"
+      },
+      {
+        "text": "只有发起改动的页面收到，用于确认写入成功",
+        "isCorrect": false,
+        "description": "错误。方向完全相反；确认写入靠 `setItem` 不抛错，不靠事件。"
+      },
+      {
+        "text": "任何源的页面都能收到，实现跨站广播",
+        "isCorrect": false,
+        "description": "错误。storage 事件严格限定同源文档，跨源页面既读不到数据也收不到事件。"
+      }
+    ]
+  },
+  {
+    "stem": "无痕/隐私模式下 localStorage 的行为是什么？",
+    "explanation": "无痕模式的关键认知：**API 完全可用**（读写不报错），但 **localStorage 被当作 sessionStorage 对待**——无痕窗口关闭，全部清空。配套的还有配额骤减（Chrome 无痕只给 ~5% 磁盘）。所以「无痕模式 ≠ 没有存储」：离线功能要检测并降级，而不是假设 API 不存在；同时**别在无痕模式下承诺任何持久化**。",
+    "tags": ["storage", "web-storage", "无痕模式"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "API 全可用，但退化如 sessionStorage——关闭无痕窗口即全部清空",
+        "isCorrect": true,
+        "description": "正确。读写照常、持久化承诺作废，这是「API 在、数据不在」的典型场景。"
+      },
+      {
+        "text": "访问 localStorage 直接抛出 `SecurityError`",
+        "isCorrect": false,
+        "description": "错误。抛 `SecurityError` 的是 `file:`/`data:` 等非法源或用户禁数据持久化的场景；无痕模式下 API 正常可用。"
+      },
+      {
+        "text": "行为与正常模式完全一致，数据永久保留",
+        "isCorrect": false,
+        "description": "错误。无痕的意义就是不留痕：关窗全清，配额也骤减。"
+      },
+      {
+        "text": "只允许读取正常模式写入的数据，禁止写入新数据",
+        "isCorrect": false,
+        "description": "错误。无痕会话与正常会话数据隔离，也不存在「只读模式」——可读可写，只是关窗即焚。"
+      }
+    ]
+  },
+  {
+    "stem": "sessionStorage 的复制规则：从页面 A 点开新标签页 B 时，B 的 sessionStorage 初始状态是什么？",
+    "explanation": "MDN 的规则：**若新页面拥有 `opener`，其 sessionStorage 初始是 opener 那份的拷贝**——不是空白、也不是共享；**拷贝完成后两份完全独立**，互改不影响。想阻止这次拷贝，用任何断开 opener 的手段：`rel=\"noopener\"`、`window.open(url, \"_blank\", \"noopener\")` 等。这是 sessionStorage「按标签页隔离」原则下唯一的数据传递通道。",
+    "tags": ["storage", "sessionstorage", "noopener"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "有 `opener` 时是 A 那份的拷贝，拷贝后各自独立；noopener 可阻断拷贝",
+        "isCorrect": true,
+        "description": "正确。「初始拷贝 + 之后独立」是关键：看起来像共享，实际改动互不影响。"
+      },
+      {
+        "text": "永远是空白——sessionStorage 按标签页隔离，绝无例外",
+        "isCorrect": false,
+        "description": "错误。隔离归隔离，但存在「opener 拷贝初值」这一例外通道；只有断开 opener 才是空白。"
+      },
+      {
+        "text": "与 A 共享同一份，任意一方修改另一方立即可见",
+        "isCorrect": false,
+        "description": "错误。那是 localStorage 的行为；sessionStorage 只在打开瞬间拷贝一次，之后两份互不相通。"
+      },
+      {
+        "text": "自动继承 A 的 localStorage 内容并转成 sessionStorage",
+        "isCorrect": false,
+        "description": "错误。拷贝发生在 sessionStorage 与 sessionStorage 之间，与 localStorage 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "storage 事件对象上，调用 `clear()` 触发的事件与「删除单个键」触发的事件分别有什么特征？",
+    "explanation": "storage 事件把改动上下文带得很全：`key` 是变动的键——**`clear()` 触发时 `key` 为 `null`**；`oldValue`/`newValue` 是变动前后的值——**新增时 `oldValue` 为 `null`，删除时 `newValue` 为 `null`**；`url` 是发起改动的文档地址；`storageArea` 指明变动发生在哪个 Storage 对象（localStorage 还是 sessionStorage）。监听方靠这些字段区分增、删、改、清空四种操作。",
+    "tags": ["storage", "web-storage", "storage事件"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`clear()` 时 `key` 为 `null`；删除单键时 `key` 为该键、`newValue` 为 `null`",
+        "isCorrect": true,
+        "description": "正确。key 与 oldValue/newValue 的 null 组合是区分四种操作的判据。"
+      },
+      {
+        "text": "`clear()` 不触发 storage 事件，只有单键改动才触发",
+        "isCorrect": false,
+        "description": "错误。`clear()` 同样触发事件，特征是 `key` 为 `null`。"
+      },
+      {
+        "text": "两种操作的事件对象完全相同，无法区分",
+        "isCorrect": false,
+        "description": "错误。`key` 与 `newValue` 的取值不同（null 与否），完全可以区分。"
+      },
+      {
+        "text": "删除单键时 `oldValue` 为 `null`、`newValue` 为被删的值",
+        "isCorrect": false,
+        "description": "错误。方向反了：删除时旧值在 `oldValue` 里、`newValue` 为 `null`；`oldValue` 为 `null` 的是新增。"
+      }
+    ]
+  },
+  {
+    "stem": "本地双击打开 HTML 文件（`file:` 协议）调试时访问 `localStorage`，会发生什么？",
+    "explanation": "`file:`、`data:` 等**非法源（scheme）下访问 `localStorage` 直接抛 `SecurityError`**；用户在浏览器设置里禁掉站点数据持久化时同理。这是「本地双击 HTML 调试怎么 localStorage 就炸了」的标准答案——Web Storage 的隔离模型建立在「源」之上，这些 scheme 构不成合法源。与无痕模式区分开：无痕是「API 可用、关窗即清」，非法源是「访问即抛错」。",
+    "tags": ["storage", "web-storage", "securityerror"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "访问直接抛出 `SecurityError`——`file:` 构不成合法源",
+        "isCorrect": true,
+        "description": "正确。非法源下连 API 访问都被拒绝，与超限的 `QuotaExceededError`、无痕的静默退化都不同。"
+      },
+      {
+        "text": "正常读写，数据存到当前文件所在目录",
+        "isCorrect": false,
+        "description": "错误。`file:` 下访问直接抛错；即便合法源，存储也落在浏览器接管的 profile 目录，与页面文件位置无关。"
+      },
+      {
+        "text": "抛出 `QuotaExceededError`，因为 `file:` 协议配额为零",
+        "isCorrect": false,
+        "description": "错误。抛的是 `SecurityError` 不是配额错误——问题出在源的合法性，不是容量。"
+      },
+      {
+        "text": "读写静默失败但不报错，类似 Cookie 的行为",
+        "isCorrect": false,
+        "description": "错误。Web Storage 在非法源下是显式抛 `SecurityError`，不是 Cookie 式的静默忽略。"
+      }
+    ]
+  },
+  {
+    "stem": "localStorage 的性能优化姿势中，为什么不建议把所有状态塞成单个巨型 JSON 键？",
+    "explanation": "Web Storage 是同步 API，优化目标是把主线程开销压到最低。**巨型 JSON 键的问题：每次小改动都要整串重序列化、重解析**——改一个字段也得 `JSON.parse` 整包再 `JSON.stringify` 整包写回。更划算的姿势：**拆成多个键按需读写**；热路径别反复 `getItem` + `JSON.parse`，**启动时一次读入内存、改动时再写回**，把同步开销压到每会话常数次。",
+    "tags": ["storage", "localstorage", "性能"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次小改动都要整串重序列化、重解析，主线程为不相关数据反复买单；应拆多键按需读写",
+        "isCorrect": true,
+        "description": "正确。粒度过粗放大了同步 API 的开销；多键拆分 + 内存缓存是笔记给出的省钱姿势。"
+      },
+      {
+        "text": "单个键的值上限是 4096 字节，巨型 JSON 存不进去",
+        "isCorrect": false,
+        "description": "错误。4096 字节是 Cookie 的单条下限；localStorage 的限制是整池 ~5 MiB，单键没有 4KB 一说。"
+      },
+      {
+        "text": "巨型键会触发浏览器自动压缩，导致读取变慢",
+        "isCorrect": false,
+        "description": "错误。笔记没有「自动压缩」机制的说法；问题出在 JSON 全量序列化/解析的主线程成本。"
+      },
+      {
+        "text": "storage 事件不支持大值，超过 1 MiB 的改动不广播",
+        "isCorrect": false,
+        "description": "错误。storage 事件没有值大小的广播门槛，这不是拆键的理由。"
+      }
+    ]
+  },
+  {
+    "stem": "通过 `<script>` 标签引入的第三方 JS 与嵌在 `<iframe>` 里的第三方页面，各自读写的是谁的 Web Storage？",
+    "explanation": "关键在**浏览上下文**：`<script>` 引入的三方代码**运行在宿主页面的浏览上下文里**，读写的就是**宿主源**的 storage——从浏览器视角看根本没有「第三方」可言（这也是审计三方脚本要看它碰不碰 storage 的原因）；`<iframe>` 里的代码则读写 **iframe 自己源**的 storage，且用户禁用第三方 Cookie 时会被连带拒绝访问，现代浏览器还按顶级站点对其分区。",
+    "tags": ["storage", "web-storage", "第三方"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`<script>` 三方代码写宿主源的 storage；`<iframe>` 里的代码写 iframe 自己源的 storage",
+        "isCorrect": true,
+        "description": "正确。script 融入宿主上下文、iframe 自成上下文——「第三方」的边界由浏览上下文的源决定，不由代码来源决定。"
+      },
+      {
+        "text": "两者都写第三方自己源的 storage，与宿主无关",
+        "isCorrect": false,
+        "description": "错误。`<script>` 代码没有独立的源上下文，它就是以宿主源的身份在执行。"
+      },
+      {
+        "text": "两者都写宿主源的 storage，浏览器不区分嵌入方式",
+        "isCorrect": false,
+        "description": "错误。iframe 是独立浏览上下文，读写自己源的 storage，与宿主的池子隔离。"
+      },
+      {
+        "text": "`<script>` 三方代码禁止访问 storage，会抛 `SecurityError`",
+        "isCorrect": false,
+        "description": "错误。script 代码访问宿主 storage 完全合法且不报错——正因如此三方脚本才需要被审计。"
+      }
+    ]
+  },
+  {
+    "stem": "sessionStorage 的改动触发的 storage 事件，可能被哪些文档收到？",
+    "explanation": "storage 事件发给「同源的其他文档」，但接收范围受**存储对象本身的可见性**约束：sessionStorage 按「标签页 + 源」隔离，别的标签页根本看不到这份存储，自然也收不到它的事件——所以 **sessionStorage 的 storage 事件只可能来自同一标签页内的其他文档（如同源 iframe）**。**跨标签页同步是 localStorage 的专利**：它同源共享，事件才能跨标签页传播。这是「隔离模型决定事件传播范围」的机制推理。",
+    "tags": ["storage", "sessionstorage", "storage事件"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只有同一标签页内的其他同源文档（如 iframe）——跨标签页收不到",
+        "isCorrect": true,
+        "description": "正确。事件传播不越过存储的隔离边界；sessionStorage 的边界就是单个标签页。"
+      },
+      {
+        "text": "同源的所有标签页，与 localStorage 的事件范围一致",
+        "isCorrect": false,
+        "description": "错误。别的标签页持有的是各自独立的 sessionStorage，看不到这份存储也收不到事件。"
+      },
+      {
+        "text": "任何文档都收不到——sessionStorage 的改动不触发 storage 事件",
+        "isCorrect": false,
+        "description": "错误。sessionStorage 的改动同样触发事件，只是可达范围被隔离模型限制在同标签页内。"
+      },
+      {
+        "text": "发起改动的文档自己收到，其他文档不收",
+        "isCorrect": false,
+        "description": "错误。storage 事件永远不发给发起者自己，这条规则对两种 storage 一视同仁。"
+      }
+    ]
+  },
+  {
+    "stem": "把敏感的临时登录态放在 sessionStorage 的应用，在「用户从页面开新标签页」的链路上要预期哪两个工程后果？",
+    "explanation": "opener 拷贝规则的双刃剑：其一，**新页面有 `opener` 时会拷贝走一份 sessionStorage**——敏感临时态会被带进新标签页，这份拷贝不受你后续控制（两份独立）；其二，反过来，**指望「新标签页自动继承会话态」的设计在 noopener 链接下会失灵**——`rel=\"noopener\"` 阻断拷贝，新页两手空空。这也是 sessionStorage 与会话 Cookie 的行为差异点：会话 Cookie 按浏览器会话共享，不依赖 opener 链路。",
+    "tags": ["storage", "sessionstorage", "noopener", "安全"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "有 opener 时敏感数据被拷贝进新标签页；依赖继承的设计在 noopener 下失灵——两个方向都要设防",
+        "isCorrect": true,
+        "description": "正确。拷贝规则既造成数据外溢（安全面），又造成继承不可靠（功能面）；会话 Cookie 无此 opener 依赖。"
+      },
+      {
+        "text": "新标签页与原页实时共享该 sessionStorage，登录态天然同步",
+        "isCorrect": false,
+        "description": "错误。拷贝只发生一次且之后独立，不是实时共享；「时有时无的同步」正是这种误解的产物。"
+      },
+      {
+        "text": "sessionStorage 永不跨标签页流动，敏感数据绝对安全",
+        "isCorrect": false,
+        "description": "错误。opener 拷贝正是隔离原则的例外通道——不设 noopener 时数据确实会流入新标签页。"
+      },
+      {
+        "text": "浏览器会在拷贝前弹窗征求用户同意",
+        "isCorrect": false,
+        "description": "错误。拷贝是静默的浏览器行为，没有任何用户提示；防外溢只能靠断开 opener。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 的数据模型定位是什么？",
+    "explanation": "IndexedDB 是浏览器内建的**事务型对象数据库**：**按键索引的对象存储（object store），不是 SQL 表**。与 Web Storage 的差距不是「容量大一点」，而是整个范式不同：对象存储 + 索引的数据模型、readonly/readwrite **事务**保证一致性、支持键/键范围（key range）/索引/游标的查询方式、异步调用、Worker 可用、容量走共享源配额（GB 级）。",
+    "tags": ["storage", "indexeddb"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "事务型对象数据库——按键索引的对象存储（object store），不是 SQL 表",
+        "isCorrect": true,
+        "description": "正确。「数据库」三个字要当真：事务、索引、游标俱全，但模型是对象存储而非关系表。"
+      },
+      {
+        "text": "内嵌的 SQL 关系数据库，用 SQL 语句查询",
+        "isCorrect": false,
+        "description": "错误。IndexedDB 不是 SQL 数据库，没有表和 SQL 查询，查询靠键、键范围、索引与游标。"
+      },
+      {
+        "text": "和 localStorage 一样的扁平键值串存储，只是容量更大",
+        "isCorrect": false,
+        "description": "错误。它与 Web Storage 是范式级差异：对象存储 + 索引 + 事务，值也不限于字符串。"
+      },
+      {
+        "text": "基于文件句柄的字节流存储",
+        "isCorrect": false,
+        "description": "错误。字节流文件语义是 OPFS 的领域；IndexedDB 面向结构化对象记录。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 的同步版 API 现状如何？",
+    "explanation": "IndexedDB 的**异步是底线**：所有读写经由请求对象以事件回调结果，不阻塞主线程。规范早期还有一套同步 API，**已被从规范移除**——「同步用 IndexedDB」这条路根本不存在。想要同步语义的高性能存储，唯一的路是 OPFS 在 Worker 里的同步访问句柄；主线程上则全员异步。",
+    "tags": ["storage", "indexeddb", "异步"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "已从规范移除——IndexedDB 只有异步用法",
+        "isCorrect": true,
+        "description": "正确。曾有的同步版被移除，异步是 IndexedDB 的底线设计。"
+      },
+      {
+        "text": "在 Worker 中可以使用同步版 IndexedDB API",
+        "isCorrect": false,
+        "description": "错误。同步版已从规范移除，Worker 里也没有；Worker 内的同步文件读写是 OPFS 同步句柄的能力。"
+      },
+      {
+        "text": "同步版仍是规范一部分，只是各浏览器未实现",
+        "isCorrect": false,
+        "description": "错误。不是「未实现」而是规范层面已移除，这条路在标准里就不存在了。"
+      },
+      {
+        "text": "默认同步，需要传参数开启异步模式",
+        "isCorrect": false,
+        "description": "错误。IndexedDB 天生异步（事件/请求对象风格），没有同步默认模式一说。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 用结构化克隆算法存值，下列哪组类型可以直接存入且取出保形？",
+    "explanation": "**结构化克隆（structured clone）**是 IndexedDB 对 Web Storage 的降维打击——**不需要 JSON，也不丢形**。能直接存：原始值、普通对象、数组、`Date`、`RegExp`、`Map`、`Set`、`Blob`、`File`、`ArrayBuffer`、TypedArray。工程直觉：接口返回的大数组、含 `Date` 的记录、用户上传的 `File`、二进制缓冲——整个丢进去，取出来还是原来的形状。存不了的是**函数与 DOM 节点**（抛 `DataCloneError`）。",
+    "tags": ["storage", "indexeddb", "结构化克隆"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`Date`、`Map`/`Set`、`Blob`/`File`、`ArrayBuffer`/TypedArray——全部保形",
+        "isCorrect": true,
+        "description": "正确。这些正是 JSON 序列化会丢形而结构化克隆能保住的类型，「结构化数据放 IndexedDB」的底气所在。"
+      },
+      {
+        "text": "函数与 DOM 节点——IndexedDB 专为存储它们设计",
+        "isCorrect": false,
+        "description": "错误。函数与 DOM 节点恰是结构化克隆的边界，存入会抛 `DataCloneError`。"
+      },
+      {
+        "text": "仅字符串与数字，对象仍需 JSON 序列化",
+        "isCorrect": false,
+        "description": "错误。「仅字符串」是 Web Storage 的限制；IndexedDB 直接存对象，无需 JSON。"
+      },
+      {
+        "text": "任何 JS 值都能存，包括函数与 DOM 节点",
+        "isCorrect": false,
+        "description": "错误。结构化克隆有明确边界：函数与 DOM 节点抛 `DataCloneError`，不是全能。"
+      }
+    ]
+  },
+  {
+    "stem": "OPFS（Origin Private File System）的定位与入口是什么？",
+    "explanation": "OPFS 是 File System API 里「私有」的那一半：每个源一棵**对用户不可见**的文件树——**无任何权限弹窗**、写入**原地生效**（快），入口一行：`const opfsRoot = await navigator.storage.getDirectory()`，返回 `FileSystemDirectoryHandle`，需要**安全上下文（HTTPS）**。定位是「给应用一块高性能私有盘」，适合文件类内容与 SQLite-wasm 数据库；2023-03 起达到 Baseline 全浏览器支持。",
+    "tags": ["storage", "opfs"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "源私有、用户不可见的文件系统，无权限弹窗；入口是 `navigator.storage.getDirectory()`（需 HTTPS）",
+        "isCorrect": true,
+        "description": "正确。「源私有 + 无弹窗 + 原地写入」是 OPFS 区别于用户可见文件访问的三个关键词。"
+      },
+      {
+        "text": "让用户通过 `showOpenFilePicker()` 弹窗选择真实文件的 API",
+        "isCorrect": false,
+        "description": "错误。带选择器弹窗的是用户可见的 File System Access API（仅 Chromium）；OPFS 对用户不可见、无弹窗。"
+      },
+      {
+        "text": "对真实磁盘目录的直接映射，可在 Finder/资源管理器中找到对应文件",
+        "isCorrect": false,
+        "description": "错误。OPFS 刻意不与真实磁盘路径一一对应，用户在文件管理器里找不到这些文件。"
+      },
+      {
+        "text": "Cookie 的文件化替代品，数据随请求发送",
+        "isCorrect": false,
+        "description": "错误。OPFS 是纯本地存储，与请求上行毫无关系；随请求发送是 Cookie 的独有属性。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 中执行 `store.put(someValue)` 时抛出 `DataCloneError`，`someValue` 里最可能包含什么？",
+    "explanation": "结构化克隆的硬边界：**函数**与 **DOM 节点**存入即抛 `DataCloneError`。另有两类「不抛错但静默丢失」：getter/setter 等**属性描述符不保留**、**原型链不保留**（类实例存进去、取出来是普通对象）。排查时先扫值里有没有回调函数、事件处理器、DOM 引用——它们常藏在业务对象的深层属性里。",
+    "tags": ["storage", "indexeddb", "datacloneerror"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "函数或 DOM 节点——两者是结构化克隆明确拒绝的类型",
+        "isCorrect": true,
+        "description": "正确。`DataCloneError` 的两大常客；深层属性里的回调与 DOM 引用最容易被忽略。"
+      },
+      {
+        "text": "`Date` 或 `Map` 对象——它们无法被克隆",
+        "isCorrect": false,
+        "description": "错误。`Date`、`Map` 都在结构化克隆的支持清单里，直接存且保形。"
+      },
+      {
+        "text": "超过 5 MiB 的字符串——超出单值容量限制",
+        "isCorrect": false,
+        "description": "错误。5 MiB 是 Web Storage 的池子限制；IndexedDB 走 GB 级共享配额，且超限报的是 `QuotaExceededError`（事务 onabort），不是 `DataCloneError`。"
+      },
+      {
+        "text": "`Blob` 或 `ArrayBuffer`——二进制类型不被支持",
+        "isCorrect": false,
+        "description": "错误。二进制类型（Blob/File/ArrayBuffer/TypedArray）恰是 IndexedDB 的强项，完全支持。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 的原生 API 风格与 web.dev 推荐的工程姿势是什么？",
+    "explanation": "原生 IndexedDB 是**事件驱动的请求-回调风格**：事务、版本升级、游标遍历全要手写样板，出名的啰嗦。web.dev 的建议是配 **Promise 包装库 `idb`**——隐藏事务与版本机器，换来 async/await 手感。同时 `indexedDB` 在 **window、Web Worker、Service Worker 里都有**：重查询、批量写入、导入导出可以整体放进 Worker，主线程只收结果。",
+    "tags": ["storage", "indexeddb", "idb"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原生是事件驱动的请求-回调风格，样板繁多；建议配 Promise 包装库 `idb` 使用",
+        "isCorrect": true,
+        "description": "正确。「原生啰嗦、包装省心」是 web.dev 的明确建议，`idb` 提供 async/await 手感。"
+      },
+      {
+        "text": "原生就是 Promise 风格，`idb` 只是历史遗留的兼容垫片",
+        "isCorrect": false,
+        "description": "错误。原生恰恰不是 Promise 风格而是事件回调风格，`idb` 才是把它包装成 Promise 的库。"
+      },
+      {
+        "text": "原生 API 只能在 Worker 中调用，主线程必须经过包装库",
+        "isCorrect": false,
+        "description": "错误。原生 API 在 window 与 Worker 里都可直接用，包装库解决的是人体工学不是可达性。"
+      },
+      {
+        "text": "原生 API 是同步风格，包装库把它转成异步",
+        "isCorrect": false,
+        "description": "错误。原生本来就是异步（事件回调），同步版早已从规范移除；包装库改变的是回调形态不是同步性。"
+      }
+    ]
+  },
+  {
+    "stem": "OPFS 里存的文件在归属与清理上遵循什么规则？",
+    "explanation": "OPFS 不是法外之地：**用量算入源配额**（`navigator.storage.estimate()` 的 usage 里包含它）、**受同一套驱逐规则管**（LRU 整源清除时一起走）、**用户「清除站点数据」会连它一起删**。文件也**不与真实磁盘一一对应**——别指望在 Finder/资源管理器里找到它们。一句话：OPFS 与 IndexedDB、Cache API 同池记账、同规受管。",
+    "tags": ["storage", "opfs", "配额"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "算入共享源配额、受驱逐规则管、清除站点数据时一并删除、不映射真实磁盘路径",
+        "isCorrect": true,
+        "description": "正确。「文件系统」只是接口语义，记账与回收完全纳入浏览器的存储体系。"
+      },
+      {
+        "text": "作为真实文件存在用户文档目录，浏览器无权删除",
+        "isCorrect": false,
+        "description": "错误。OPFS 落在浏览器接管的 profile 目录、刻意不与真实路径对应，浏览器完全有权按驱逐规则清除。"
+      },
+      {
+        "text": "拥有独立于源配额的专用文件配额，`estimate()` 不统计它",
+        "isCorrect": false,
+        "description": "错误。OPFS 与 IndexedDB/Cache API 共享同一份源配额，`estimate()` 的 usage 包含它。"
+      },
+      {
+        "text": "只要文件被打开过一次，就永久免于驱逐",
+        "isCorrect": false,
+        "description": "错误。不存在「打开即豁免」；免驱逐要靠 `persist()` 申请 persistent 模式，且可能被拒。"
+      }
+    ]
+  },
+  {
+    "stem": "OPFS 的同步访问句柄 `createSyncAccessHandle()` 的使用环境与方法特征是什么？",
+    "explanation": "同步访问句柄是 OPFS 的王牌，**仅 Web Worker 内可用**；**创建这一步本身是异步的**（`await fileHandle.createSyncAccessHandle()`），拿到句柄后 **`read`/`write`/`flush`/`truncate`/`getSize` 全是同步调用**——无 Promise 开销、字节级随机读写。主线程上的 OPFS 则走异步路线（`getFile()` 读、`createWritable()` 写）。用完记得 `flush()` 确保落盘、`close()` 释放。",
+    "tags": ["storage", "opfs", "同步句柄"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅 Worker 内可用；创建句柄是异步的，之后 `read`/`write`/`flush`/`truncate`/`getSize` 全同步",
+        "isCorrect": true,
+        "description": "正确。「异步创建、同步使用、仅限 Worker」三个特征合起来才是同步句柄的完整画像。"
+      },
+      {
+        "text": "主线程与 Worker 都可用，方法全部返回 Promise",
+        "isCorrect": false,
+        "description": "错误。同步句柄仅限 Worker；方法是同步调用不返回 Promise——这正是「同步句柄」名字的含义。"
+      },
+      {
+        "text": "仅主线程可用，用于替代 `document.cookie` 的同步读写",
+        "isCorrect": false,
+        "description": "错误。恰好相反，它被限制在 Worker 内，为的就是同步调用不至于卡主线程；与 Cookie 无关。"
+      },
+      {
+        "text": "创建与使用全部同步，无需任何 await",
+        "isCorrect": false,
+        "description": "错误。创建这一步（`createSyncAccessHandle()`）是异步的，需要 await；同步的是拿到句柄之后的读写方法。"
+      }
+    ]
+  },
+  {
+    "stem": "OPFS 同步访问句柄「在 Worker 里做同步 I/O」这个看似矛盾的设计，为什么恰是它的设计点？",
+    "explanation": "拆开看两半：**同步调用的低开销**——没有 Promise/事件循环的调度成本，适合高频、小块、随机读写；**Worker 隔离**——同步阻塞发生在 Worker 线程上，主线程照常渲染响应。两者相加 = 高性能且不卡界面。这正是把传统文件型软件搬上 Web 的地基——最典型的是 **SQLite-wasm 官方把 OPFS 当持久化后端**：数据库引擎需要的就是高频、小块、随机的同步 I/O。",
+    "tags": ["storage", "opfs", "worker", "sqlite"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同步调用免去 Promise 调度开销，Worker 隔离又保证不阻塞主线程——两者相加满足数据库引擎的高频小块随机 I/O 需求",
+        "isCorrect": true,
+        "description": "正确。SQLite-wasm 把 OPFS 作为标配持久化后端，正是看中这套「低开销 + 不卡主线程」的组合。"
+      },
+      {
+        "text": "同步 API 在 Worker 里会被浏览器自动转成异步执行",
+        "isCorrect": false,
+        "description": "错误。它是货真价实的同步调用，没有自动异步化；设计依赖的是 Worker 线程可以安全阻塞这一事实。"
+      },
+      {
+        "text": "Worker 里的同步调用能绕过源配额限制",
+        "isCorrect": false,
+        "description": "错误。OPFS 用量照常算入共享源配额，同步句柄不改变记账规则。"
+      },
+      {
+        "text": "该设计是历史遗留妥协，官方已计划移除同步句柄",
+        "isCorrect": false,
+        "description": "错误。同步句柄是刻意的性能设计而非遗留妥协；被移除的是 IndexedDB 的同步版 API。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 的「版本化 schema」机制指的是什么？",
+    "explanation": "IndexedDB 的三个模型级要点之一：**库结构（有哪些 object store、哪些索引）在版本升级事件里定义**——这是它保证**结构演进有序**的机制。另两个要点：异步是底线（同步 API 已移除）、**严格同源隔离**（域 A 存的数据域 B 永远拿不到）。版本号驱动的 schema 变更让「加一个对象存储/索引」成为受控事件，而不是随时随地的隐式修改。",
+    "tags": ["storage", "indexeddb", "schema"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对象存储与索引等库结构只能在版本升级事件里定义，结构演进由版本号驱动",
+        "isCorrect": true,
+        "description": "正确。版本化 schema 把结构变更收敛到升级事件中，保证演进有序。"
+      },
+      {
+        "text": "每条记录都带版本号，旧版本记录自动迁移",
+        "isCorrect": false,
+        "description": "错误。版本化的是**库结构**不是单条记录，也没有记录级自动迁移机制。"
+      },
+      {
+        "text": "浏览器每次更新会强制升级所有 IndexedDB 库的版本",
+        "isCorrect": false,
+        "description": "错误。版本升级由应用代码在打开数据库时指定，与浏览器自身的版本更新无关。"
+      },
+      {
+        "text": "schema 可在任意事务中随时修改，版本号仅作日志用途",
+        "isCorrect": false,
+        "description": "错误。恰恰相反——结构定义被限制在版本升级事件里，不能在普通事务中随改。"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB 存入一个类实例（如 `new Todo(...)`，带方法与 getter），取出来会得到什么？",
+    "explanation": "结构化克隆的静默损耗区：**原型链不保留**——类实例存进去、**取出来是普通对象**；**getter/setter 与属性描述符也不保留**。数据本身（自有可枚举的数据属性）会完整克隆，但 `instanceof Todo` 为 false、方法全部消失。工程对策：存「纯数据」，取出后用工厂函数重建实例；或者一开始就以 plain object 建模。注意这与函数/DOM 节点不同——后两者是**抛 `DataCloneError`**，而原型链丢失是**不报错的静默降级**。",
+    "tags": ["storage", "indexeddb", "结构化克隆"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "一个普通对象——数据属性还在，但原型链、方法、getter/setter 全部丢失且不报错",
+        "isCorrect": true,
+        "description": "正确。原型链与属性描述符不在结构化克隆的保留范围内，这是「静默降级」而非报错。"
+      },
+      {
+        "text": "抛出 `DataCloneError`——类实例不可克隆",
+        "isCorrect": false,
+        "description": "错误。抛 `DataCloneError` 的是函数与 DOM 节点；类实例本身能存，只是取出来降级为普通对象。"
+      },
+      {
+        "text": "完整的类实例——结构化克隆连原型链一起保存",
+        "isCorrect": false,
+        "description": "错误。结构化克隆不保留原型链，`instanceof` 检查会失败，方法也不复存在。"
+      },
+      {
+        "text": "一个 JSON 字符串，需要手动 `JSON.parse`",
+        "isCorrect": false,
+        "description": "错误。IndexedDB 不经过 JSON，取出的直接是克隆后的对象；「存取皆字符串」是 Web Storage 的模型。"
+      }
+    ]
+  },
+  {
+    "stem": "Storage API（`navigator.storage`）与 Web Storage API（`localStorage`）是什么关系？",
+    "explanation": "命名事故现场：两者**名字像，完全是两个东西**。**Web Storage API** 的入口是 `window.localStorage`/`sessionStorage`，职责是存键值串，仅 window 可用；**Storage API** 的入口是 `navigator.storage`（StorageManager），职责是**管配额、持久化与 OPFS 入口**——方法是 `estimate()`/`persist()`/`persisted()`/`getDirectory()`，window + Worker 可用、需安全上下文。背后是 WHATWG Storage 标准的统一模型：每个源一个「站点存储单元」（桶）。",
+    "tags": ["storage", "storage-api", "命名"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "重名不同物——前者管配额/持久化/OPFS 入口，后者只是同步键值存储",
+        "isCorrect": true,
+        "description": "正确。这是本主题第一个命名陷阱：`navigator.storage` 与 `localStorage` 分属两套毫不相干的 API。"
+      },
+      {
+        "text": "Storage API 是 Web Storage API 的第二版，将全面取代后者",
+        "isCorrect": false,
+        "description": "错误。两者职责不同不存在取代关系：一个管账与承诺，一个存键值。"
+      },
+      {
+        "text": "同一 API 的两个别名，`navigator.storage.getItem()` 同样可用",
+        "isCorrect": false,
+        "description": "错误。`navigator.storage` 上没有 `getItem`，它的方法是 `estimate`/`persist`/`persisted`/`getDirectory`。"
+      },
+      {
+        "text": "Web Storage API 是 Storage API 的底层实现模块",
+        "isCorrect": false,
+        "description": "错误。没有实现层级关系；Web Storage 甚至不在 Storage API 管的共享配额体系内（独立 ~5 MiB 小池）。"
+      }
+    ]
+  },
+  {
+    "stem": "navigator.storage.estimate() 的返回值是什么？使用时要注意什么？",
+    "explanation": "`estimate()` 返回 `Promise<{ usage, quota }>`（单位**字节**）。两个「估」字要当真：**quota 是保守估算**——比设备真实可用空间小，防止写爆磁盘；**usage 是模糊值**——浏览器为**反指纹**会刻意混淆，且去重/压缩让「你写入的字节数」与「实际占的字节数」对不上。**别拿它做精确账本**，做「快满了该清理了」的阈值判断刚好。运行时判断永远以它的实际返回为准，配额表格数字只用于建立量级直觉。",
+    "tags": ["storage", "estimate", "配额"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回 `{ usage, quota }`（字节）——两者都是估算值，适合做阈值判断，不能当精确账本",
+        "isCorrect": true,
+        "description": "正确。反指纹混淆 + 去重/压缩决定了它天生模糊，用途是量级判断。"
+      },
+      {
+        "text": "返回精确到字节的实际占用，可用于财务级审计",
+        "isCorrect": false,
+        "description": "错误。usage 被刻意模糊（反指纹），物理占用与逻辑大小也因去重/压缩对不上，精确审计不可能。"
+      },
+      {
+        "text": "同步返回一个数字，表示剩余可用的 MiB 数",
+        "isCorrect": false,
+        "description": "错误。它返回 Promise（异步），解析出的是含 usage 与 quota 两个字段的对象，单位是字节。"
+      },
+      {
+        "text": "返回 localStorage 的已用与剩余空间",
+        "isCorrect": false,
+        "description": "错误。它统计的是共享源配额（IndexedDB/Cache API/OPFS 等），Web Storage 的 ~5 MiB 小池不归它管。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器的共享源配额（`estimate()` 报告的那份）覆盖下列哪些存储？",
+    "explanation": "共享配额覆盖：**IndexedDB、Cache API、OPFS、WebAssembly 代码缓存**——四者的数据都记在每个源的「站点存储单元」（桶）上，配额按桶算、驱逐按桶清。**不含 Web Storage**（localStorage 与 sessionStorage 另立小池，各 ~5 MiB/源）、**不含 Cookie**（独立的单条 ~4KB 限制体系）。所以「配额还剩 40 GB」与「localStorage 满了」可以同时为真。",
+    "tags": ["storage", "配额"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "IndexedDB、Cache API、OPFS 与 WebAssembly 代码缓存",
+        "isCorrect": true,
+        "description": "正确。wasm 代码缓存是最容易漏记的一项；Web Storage 与 Cookie 都不在此列。"
+      },
+      {
+        "text": "全部六种存储机制，包括 Cookie 与 Web Storage",
+        "isCorrect": false,
+        "description": "错误。Web Storage 独立 ~5 MiB 小池，Cookie 完全不在配额体系内。"
+      },
+      {
+        "text": "仅 IndexedDB——其余机制各有各的配额",
+        "isCorrect": false,
+        "description": "错误。Cache API、OPFS、wasm 代码缓存与 IndexedDB 共用这一份源级配额。"
+      },
+      {
+        "text": "localStorage 与 sessionStorage 两兄弟",
+        "isCorrect": false,
+        "description": "错误。恰恰是这两位被排除在外——它们的 ~5 MiB 独立小池与共享配额是两套账本。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome/Edge（Chromium）的存储配额数值是多少？无痕模式下有什么变化？",
+    "explanation": "MDN 当前口径：**Chromium 单源最多可用磁盘总量的 60%**（best-effort 与 persistent 相同），浏览器整体占用上限约 80%。web.dev 补充的两个特殊场景：**无痕模式配额只有 ~5% 磁盘**且关窗全清；用户开启「关窗清数据」设置时约 **300 MB**。工程含义：无痕下离线功能按不可用设计；数字会随版本调整，运行时判断永远以 `estimate()` 为准。",
+    "tags": ["storage", "配额", "chrome"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "单源 ≤ 磁盘总量 60%；无痕模式骤减到 ~5% 且关窗全清",
+        "isCorrect": true,
+        "description": "正确。60% 与 5% 的悬殊差距意味着无痕下的存储策略要单独设计。"
+      },
+      {
+        "text": "单源固定 10 GiB；无痕模式完全禁用存储 API",
+        "isCorrect": false,
+        "description": "错误。10 GiB 组限是 Firefox 的规则；无痕下 API 仍可用只是配额小、关窗清。"
+      },
+      {
+        "text": "单源 ≤ 磁盘 5%；无痕模式提升到 60% 以保护隐私",
+        "isCorrect": false,
+        "description": "错误。数字对调了——正常 60%、无痕 ~5%，无痕不可能给更多空间。"
+      },
+      {
+        "text": "单源起步 1 GiB，用满后弹窗按 200 MB 递增",
+        "isCorrect": false,
+        "description": "错误。「1 GiB 起步 + 200 MB 递增弹窗」是旧版 Safari 的行为，不是 Chromium 的。"
+      }
+    ]
+  },
+  {
+    "stem": "Firefox 的 best-effort 存储配额规则是什么？",
+    "explanation": "Firefox 的 best-effort 配额 = **min(磁盘 10%, 10 GiB)**，其中 **10 GiB 是「每 eTLD+1 组」的上限**——组限按站点（eTLD+1）聚合，意味着**同站多子域共享这 10 GiB**。申请到 persistent 后规则变为**磁盘 50%（上限 8 TiB）且不受组限**。这是三大引擎里唯一引入「站点组」维度记账的配额模型（Firefox 的配额还按 profile 所在磁盘计算）。",
+    "tags": ["storage", "配额", "firefox"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "min(磁盘 10%, 10 GiB)，10 GiB 按 eTLD+1 组计——同站多子域共享；persistent 可到磁盘 50%（≤ 8 TiB）免组限",
+        "isCorrect": true,
+        "description": "正确。「组限按站点聚合」是 Firefox 独有的记账维度，多子域架构要意识到共享上限。"
+      },
+      {
+        "text": "单源 ≤ 磁盘 60%，与 Chrome 完全一致",
+        "isCorrect": false,
+        "description": "错误。60% 是 Chromium 的口径；Firefox 的 best-effort 是 min(10%, 10 GiB/组)。"
+      },
+      {
+        "text": "每个子域独立 10 GiB，互不影响",
+        "isCorrect": false,
+        "description": "错误。10 GiB 是 eTLD+1 组的总上限，同站子域共享而非各占一份。"
+      },
+      {
+        "text": "固定 5 MiB/源，超出即需用户授权",
+        "isCorrect": false,
+        "description": "错误。5 MiB 是 Web Storage 小池的量级；Firefox 的共享配额是 GB 级，也没有超额授权弹窗机制（弹窗的是 persist 申请）。"
+      }
+    ]
+  },
+  {
+    "stem": "Safari 的存储配额在新旧版本间有什么差异？",
+    "explanation": "**新 Safari（macOS 14 / iOS 17+）**：浏览器内单源约 **60%** 磁盘（整体 80%）；嵌入 WKWebView 的 App 内约 **15%**（整体 20%）；**跨源 iframe 约为父配额的 1/10**；加主屏的 Web App 享浏览器配额。**旧版 Safari**：起步 **1 GiB**，用满**弹窗向用户要**、按 **200 MB** 递增——「Safari 约 1GB 起递增提示」的经验出处就在这里。这组数字也解释了为什么 Safari 上的嵌入场景配额告警要单独设阈值。",
+    "tags": ["storage", "配额", "safari"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "新版浏览器内单源 ~60%（WKWebView 内 ~15%，跨源 iframe ≈ 父配额 1/10）；旧版起步 1 GiB、弹窗按 200 MB 递增",
+        "isCorrect": true,
+        "description": "正确。新版看环境给比例、旧版靠弹窗递增，两代模型完全不同。"
+      },
+      {
+        "text": "新旧版本都是无限配额，Safari 从不限制存储",
+        "isCorrect": false,
+        "description": "错误。Safari 不仅限配额，还有 ITP 7 天清库这样比配额更激进的回收机制。"
+      },
+      {
+        "text": "新版固定 10 GiB/站点组，旧版磁盘 60%",
+        "isCorrect": false,
+        "description": "错误。10 GiB 组限是 Firefox 的规则；且新旧 Safari 的数值恰好说反了。"
+      },
+      {
+        "text": "WKWebView 内嵌页面享有比 Safari 浏览器更高的配额",
+        "isCorrect": false,
+        "description": "错误。方向相反：App 内嵌 WebView 只有 ~15%（整体 20%），远低于浏览器内的 ~60%。"
+      }
+    ]
+  },
+  {
+    "stem": "WHATWG 存储模型中 best-effort 与 persistent 两种桶模式的区别是什么？",
+    "explanation": "每个源的桶有两种模式：**best-effort（默认）**——浏览器尽力保留，但存储压力来了**不打招呼直接清**（LRU 驱逐的候选）；**persistent**——`navigator.storage.persist()` 申请成功后，**LRU 驱逐跳过该源**，「清缓存/清最近历史」也不动它，**只有用户显式针对性操作才清**。配套查询：`persisted()` 返回当前是否已持久（不触发申请）。",
+    "tags": ["storage", "persist", "驱逐"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "best-effort 默认可被静默驱逐；persistent 免于 LRU 驱逐，仅用户显式操作可清",
+        "isCorrect": true,
+        "description": "正确。两种模式的差别就是「浏览器有没有权限不打招呼清你的数据」。"
+      },
+      {
+        "text": "best-effort 存内存、persistent 存磁盘",
+        "isCorrect": false,
+        "description": "错误。两种模式都是磁盘持久化存储，差别在驱逐策略不在存储介质。"
+      },
+      {
+        "text": "persistent 桶的配额自动翻倍",
+        "isCorrect": false,
+        "description": "错误。Chromium 里两者配额相同（60%）；Firefox 的 persistent 上限确实更高，但「自动翻倍」不是通用规则，模式的本质差别在驱逐豁免。"
+      },
+      {
+        "text": "best-effort 只读、persistent 可读写",
+        "isCorrect": false,
+        "description": "错误。两种模式读写能力完全一样，区别只在数据的保留承诺。"
+      }
+    ]
+  },
+  {
+    "stem": "navigator.storage.persist() 的申请在各浏览器如何裁决？返回 `false` 意味着什么？",
+    "explanation": "裁决方式分两派：**Firefox 弹出权限提示**交给用户决定；**Chrome/Edge/Safari 不弹窗**，根据**交互历史**（是否常用、是否加书签/装 PWA 等信号）自动批或拒。所以 **`persist()` 返回 `false` 不是 bug，是拒签**——代码必须兼容「永远拿不到持久承诺」的路径，把 best-effort 当常态设计。",
+    "tags": ["storage", "persist"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Firefox 弹权限窗问用户；Chromium/Safari 按交互历史静默裁决——返回 `false` 是正常拒签，需兜底",
+        "isCorrect": true,
+        "description": "正确。两种裁决路径 + 「拒签是常态」的认知，决定了持久化只能当增强不能当依赖。"
+      },
+      {
+        "text": "所有浏览器都弹出统一的权限对话框",
+        "isCorrect": false,
+        "description": "错误。只有 Firefox 弹窗；Chromium 与 Safari 是无感的自动裁决。"
+      },
+      {
+        "text": "调用即生效，返回值永远为 `true`",
+        "isCorrect": false,
+        "description": "错误。申请可能被拒，返回 `false` 很常见——尤其对交互历史浅的站点。"
+      },
+      {
+        "text": "返回 `false` 表示 API 不受支持，应上报兼容性错误",
+        "isCorrect": false,
+        "description": "错误。`false` 表示「申请被拒、仍是 best-effort」，是正常业务路径不是兼容性故障。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器在存储压力下执行 LRU 驱逐时，为什么按「整源清除」而不做部分删除？",
+    "explanation": "驱逐的触发条件是**存储压力**：设备磁盘吃紧，或浏览器总占用触到自身上限（如 Chrome/Safari 的 80%）。此时按 **LRU 找出最久未使用的 best-effort 源**，把它的数据**整源删除**——IndexedDB、Cache API、OPFS 一起走。不做部分删除的原因：**半删会给应用留下无法自愈的不一致状态**（比如索引还在、数据没了）。persistent 源被跳过。",
+    "tags": ["storage", "驱逐", "lru"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "部分删除会留下应用无法自愈的不一致状态，整源清除保证「要么全有要么全无」",
+        "isCorrect": true,
+        "description": "正确。IndexedDB/Cache/OPFS 一锅端，宁可全清也不制造半损坏的数据现场。"
+      },
+      {
+        "text": "整源清除的磁盘 I/O 开销比部分删除更低",
+        "isCorrect": false,
+        "description": "错误。笔记给出的理由是数据一致性（防半删不一致），不是 I/O 成本。"
+      },
+      {
+        "text": "因为浏览器无法统计单个存储项的大小",
+        "isCorrect": false,
+        "description": "错误。浏览器对各分项用量有完整记账（DevTools 可见分项），整源清除是一致性设计不是能力缺陷。"
+      },
+      {
+        "text": "规范要求随机挑选源删除，整源只是实现巧合",
+        "isCorrect": false,
+        "description": "错误。挑选规则是 LRU（最久未使用）不是随机，整源清除是明确的设计决策。"
+      }
+    ]
+  },
+  {
+    "stem": "存储写入超限时，Web Storage、IndexedDB、Cache API 三者的报错方式分别是什么？",
+    "explanation": "超限报错三张脸（同名错误 `QuotaExceededError`，三种投递方式）：**Web Storage** 的 `setItem` **同步抛出**；**IndexedDB** 事务中止，**`onabort` 回调**收到错误；**Cache API** 写入的 Promise **reject**。统一处理思路：捕获 → 清理可再生数据（旧缓存先删）→ 重试；不可再生数据提示用户。三条失败路径只要有一条没兜住，用户看到的就是「点了保存、什么都没发生」。",
+    "tags": ["storage", "quotaexceedederror", "配额"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Web Storage 同步 throw；IndexedDB 走事务 onabort；Cache API 的 Promise reject——同一个 `QuotaExceededError` 三种投递",
+        "isCorrect": true,
+        "description": "正确。同步 API 抛异常、事务型走中止回调、Promise 型走 reject——投递方式与各自的调用范式一致。"
+      },
+      {
+        "text": "三者都同步抛出异常，try/catch 一网打尽",
+        "isCorrect": false,
+        "description": "错误。只有 Web Storage 是同步抛；IndexedDB 与 Cache API 是异步失败，同步 try/catch 接不住。"
+      },
+      {
+        "text": "三者都静默失败，只能靠 DevTools 发现",
+        "isCorrect": false,
+        "description": "错误。静默失败是 Cookie 写入的行为；这三者都有明确的错误投递通道。"
+      },
+      {
+        "text": "三者都触发 `onabort` 事件回调",
+        "isCorrect": false,
+        "description": "错误。`onabort` 是 IndexedDB 事务特有的失败通道，另两者分别是同步异常与 Promise reject。"
+      }
+    ]
+  },
+  {
+    "stem": "Safari ITP 环境下，某站点用户两周没访问后回访，发现「登录态还在、离线数据没了」。用 ITP 规则如何解释？",
+    "explanation": "Safari ITP 铁律：**连续 7 个「Safari 使用日」未与站点交互，该站全部脚本可写存储被清空**——IndexedDB、Cache API、Service Worker 注册、localStorage 全在内。但**服务端 `Set-Cookie` 下发的 Cookie 不在清除之列**——这正是「登录态活着（Cookie 幸存）、离线数据没了（脚本可写存储被清）」的成因。补充规则：用户一次交互即可重置 7 天计时；**加到主屏幕的已安装 PWA 豁免**。计时按 Safari 使用日算，不是自然日。",
+    "tags": ["storage", "safari", "itp", "驱逐"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "7 个使用日无交互触发 ITP 清库：脚本可写存储全清，但服务端 Set-Cookie 的 Cookie 幸存——所以 Cookie 型登录态在、本地数据没",
+        "isCorrect": true,
+        "description": "正确。清除范围的「脚本可写」限定词是关键：服务端下发的 Cookie 不属于脚本可写存储。"
+      },
+      {
+        "text": "Safari 按 LRU 驱逐时只清了一半数据，属于罕见 bug",
+        "isCorrect": false,
+        "description": "错误。LRU 驱逐是整源清除不会半删；这个现象是 ITP 规则的正常结果，不是 bug。"
+      },
+      {
+        "text": "离线数据超过了配额被静默回收，与 ITP 无关",
+        "isCorrect": false,
+        "description": "错误。「两周未访问后消失」的时间特征正是 ITP 的 7 使用日规则，配额超限的表现是写入报错而非事后消失。"
+      },
+      {
+        "text": "用户的 iCloud 同步覆盖了本地存储",
+        "isCorrect": false,
+        "description": "错误。笔记里不存在云同步覆盖本地存储的机制；成因是 ITP 对脚本可写存储的定向清除。"
+      }
+    ]
+  },
+  {
+    "stem": "navigator.storage.persist() 申请成功后，为什么仍不能把本地数据当「永不丢失」的唯一副本？",
+    "explanation": "persistent 的承诺边界：它让源**免于 LRU 驱逐**、「清缓存/清最近历史」也不动它，但**用户显式针对性操作（如手动清除该站点数据）照样删除**。再叠加现实约束：多数浏览器静默裁决、`persist()` 可能永远返回 `false`；用户还可能换设备、重装浏览器。所以工程铁律不变：**服务端为源、本地当缓存**——关键数据必须有服务端源头，本地丢了能重建。持久化申请是「降低丢失概率」的增强，不是「杜绝丢失」的保险。",
+    "tags": ["storage", "persist", "驱逐"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "persistent 只豁免浏览器的自动驱逐——用户显式清除站点数据照样删，且申请本身可能被拒",
+        "isCorrect": true,
+        "description": "正确。承诺的对手方是浏览器不是用户；「服务端为源、本地当缓存」的设计原则不因 persist 成功而改变。"
+      },
+      {
+        "text": "persistent 会在 30 天后自动过期回到 best-effort",
+        "isCorrect": false,
+        "description": "错误。持久化状态没有 30 天过期机制；30 天是 Firefox Storage Access API 授权的有效期，属于另一个话题。"
+      },
+      {
+        "text": "persist() 成功后浏览器会定期压缩数据导致损坏",
+        "isCorrect": false,
+        "description": "错误。不存在「定期压缩致损」的机制；风险来自用户显式清除与设备层面的变化。"
+      },
+      {
+        "text": "说法不成立——persist() 成功后数据确实永不丢失",
+        "isCorrect": false,
+        "description": "错误。「仅用户显式操作才清」本身就说明用户能删；把它当永不丢失的保险箱是设计事故的起点。"
+      }
+    ]
+  },
+  {
+    "stem": "存储分区（storage partitioning）把第三方 iframe 的存储隔离键改成了什么？",
+    "explanation": "传统模型里存储只按**源**隔离：`tracker.example` 的 iframe 无论嵌在哪个网站，读写的都是全网唯一一份存储——这是跨站追踪的温床（A 站写用户 ID、B 站原样读回）。分区后隔离键升级为 **「(顶级站点, 源)」双键**：同一个 `widget.example` iframe 嵌在 A 站和 B 站读写**两份互不相通的存储**，与用户**直接顶级访问** `widget.example` 看到的又是**第三份**。目的：防跨站追踪，同时不封杀正经嵌入。",
+    "tags": ["storage", "分区", "隔离"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从「源」单键升级为「源 + 顶级站点」双键——同一 iframe 源在不同宿主站各有一份存储",
+        "isCorrect": true,
+        "description": "正确。双键切分让追踪者无法在两个站点间读到同一份数据，嵌入功能本身仍可用。"
+      },
+      {
+        "text": "从「源」改为「标签页 + 源」，与 sessionStorage 的隔离键一致",
+        "isCorrect": false,
+        "description": "错误。「标签页 + 源」是 sessionStorage 的页面会话隔离；分区的第二把键是顶级站点，不是标签页。"
+      },
+      {
+        "text": "改为按 iframe 的嵌套深度隔离，每层一份",
+        "isCorrect": false,
+        "description": "错误。分区键是顶级站点而非嵌套深度；嵌套场景的补充规则是祖先位，也不是按层计份。"
+      },
+      {
+        "text": "改为按用户账号隔离，登录不同账号见不同存储",
+        "isCorrect": false,
+        "description": "错误。浏览器存储的隔离与站点账号体系无关，分区的键是（顶级站点, 源）。"
+      }
+    ]
+  },
+  {
+    "stem": "存储分区在 Chrome 与 Firefox 的默认开启时间线是什么？",
+    "explanation": "**Chrome 115 起对全体用户默认开启**存储分区（嵌套场景另加祖先位；137 起 Blob URL 除顶级导航外也分区）。**Firefox 103 起默认开启动态分区**；而**网络状态**（HTTP 缓存、DNS、连接池等）的分区更早——**85 起且永久分区、不可解除**。还要注意：分区**不是可选特性**——没有让站点整体退出的开关（Chrome 仅有迁移期的弃用试验），代码里也没有「是否被分区」的直接查询 API。",
+    "tags": ["storage", "分区", "兼容性"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 115 默认全量开启；Firefox 103 默认动态分区（网络状态 85 起永久分区）",
+        "isCorrect": true,
+        "description": "正确。两大引擎均已默认开启，分区是当下默认世界观而非未来特性。"
+      },
+      {
+        "text": "两家浏览器都仍是实验性 flag，默认关闭",
+        "isCorrect": false,
+        "description": "错误。Chrome 115 / Firefox 103 起都已对用户默认开启，不是实验开关。"
+      },
+      {
+        "text": "仅 Safari 实现了存储分区，Chrome/Firefox 尚未跟进",
+        "isCorrect": false,
+        "description": "错误。Chrome 与 Firefox 都已默认开启；题目笔记给出的时间线正是这两家的版本号。"
+      },
+      {
+        "text": "Chrome 122 起可用但需站点声明 opt-in 才生效",
+        "isCorrect": false,
+        "description": "错误。122 是 Storage Buckets API 的版本号；分区没有 opt-in/opt-out 机制，对全体默认生效。"
+      }
+    ]
+  },
+  {
+    "stem": "存储分区的覆盖范围除了 localStorage 等存储 API，还包括哪类容易被忽略的 API？",
+    "explanation": "Chrome 口径的分区清单：Web Storage、IndexedDB、Cache API、OPFS、Storage Buckets、配额系统、三方上下文注册的 Service Worker，以及**通信 API——BroadcastChannel、SharedWorker、Web Locks 也按分区切断**（137 起 Blob URL 除顶级导航外也分区）；`Clear-Site-Data` 也只清当前分区。**配额也按分区记账**：每个分区是独立的桶，三方 iframe 能用的配额远小于顶级上下文（Safari 给跨源 frame 约父配额 1/10）。所以「iframe 与你站顶级页/弹窗之间用 BroadcastChannel 通信」在跨分区时已失效。",
+    "tags": ["storage", "分区", "broadcastchannel"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "BroadcastChannel、SharedWorker、Web Locks 等通信 API——跨分区的通道被一并切断",
+        "isCorrect": true,
+        "description": "正确。分区不只隔数据还隔通信；配额系统也按分区独立记账。"
+      },
+      {
+        "text": "只有 localStorage 被分区，其余 API 保持全局共享",
+        "isCorrect": false,
+        "description": "错误。分区覆盖 Web Storage/IndexedDB/Cache/OPFS/SW/通信 API 等一整套，远不止 localStorage。"
+      },
+      {
+        "text": "`fetch()` 网络请求被分区，跨站请求一律拒绝",
+        "isCorrect": false,
+        "description": "错误。分区切的是存储与通信的隔离键，不是拒绝跨站网络请求；请求控制是 CORS 等机制的职责。"
+      },
+      {
+        "text": "仅 Cookie 被分区，脚本可写存储不受影响",
+        "isCorrect": false,
+        "description": "错误。方向反了——分区主要作用于脚本可写存储与通信 API；Cookie 反而是唯一能经 Storage Access API 解分区的例外。"
+      }
+    ]
+  },
+  {
+    "stem": "Storage Access API（`document.requestStorageAccess()`）能帮第三方 iframe 拿回什么？",
+    "explanation": "Storage Access API 是分区世界的逃生门，但范围很窄：三方 iframe 经**用户许可**后拿回的是**非分区 Cookie** 的访问权（即用户顶级访问该站时的 Cookie）——**它救的是 Cookie 型会话，不是 localStorage/IndexedDB**（Firefox 明确只有 Cookie 可动态解除分区）。Firefox 的授权一次有效 **30 天**，并配有 opener/导航两条**过渡期启发式**自动授权——官方定性为兼容性权宜，**别把产品逻辑押在启发式上**。",
+    "tags": ["storage", "分区", "storage-access-api"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅非分区 Cookie 的访问权（需用户许可）——localStorage/IndexedDB 没有解分区通道",
+        "isCorrect": true,
+        "description": "正确。「只救 Cookie」决定了嵌入场景的登录态设计必须压在 Cookie 上才有回旋余地。"
+      },
+      {
+        "text": "整个非分区存储世界——包括 localStorage 与 IndexedDB",
+        "isCorrect": false,
+        "description": "错误。脚本可写存储没有动态解分区的通道，API 能要回的只有 Cookie。"
+      },
+      {
+        "text": "更大的存储配额——把 iframe 的配额提升到宿主级",
+        "isCorrect": false,
+        "description": "错误。它与配额无关，管的是非分区 Cookie 的访问授权。"
+      },
+      {
+        "text": "免用户交互的静默数据通道，用于跨站同步",
+        "isCorrect": false,
+        "description": "错误。授权需要用户许可；「静默跨站同步」正是分区要消灭的能力。"
+      }
+    ]
+  },
+  {
+    "stem": "Storage Buckets API 解决的核心痛点是什么？",
+    "explanation": "动机来自 `persist()` 的粗粒度：**它对整个源「全有或全无」**。而真实应用里数据分三六九等——用户没发出去的草稿丢了不可原谅，上周的列表缓存丢了无所谓。Storage Buckets 让一个源开**多个桶**、**各桶独立驱逐**、可分别申请持久化：`navigator.storageBuckets.open(name, { persisted, durability })`，桶内经 `bucket.indexedDB`/`bucket.caches` 访问存储端点。驱逐时浏览器可**逐桶清除**：先清 best-effort 的缓存桶，persisted 的草稿桶幸存。现状：**Chromium 122 起可用，仍是 WICG 提案**（Mozilla 立场评估中），只能做渐进增强。",
+    "tags": ["storage", "storage-buckets"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`persist()` 只能对整源「全有或全无」——Buckets 让数据按重要性分桶、各桶独立设驱逐优先级与持久化",
+        "isCorrect": true,
+        "description": "正确。「一源多桶、独立驱逐」正是对 persist 粗粒度的治法：草稿桶 persisted、缓存桶 best-effort。"
+      },
+      {
+        "text": "Web Storage 的 5 MiB 太小——Buckets 把它扩容到 GB 级",
+        "isCorrect": false,
+        "description": "错误。Buckets 不是给 Web Storage 扩容的，桶内访问的是 IndexedDB/Cache API 等端点，解决的是驱逐粒度问题。"
+      },
+      {
+        "text": "存储分区太严格——Buckets 允许跨顶级站点共享桶",
+        "isCorrect": false,
+        "description": "错误。分区与分桶正交，三方 iframe 里开的桶照样按分区各记各账，Buckets 不提供跨分区通道。"
+      },
+      {
+        "text": "IndexedDB 的 API 太啰嗦——Buckets 提供 Promise 风格替代",
+        "isCorrect": false,
+        "description": "错误。治 IndexedDB 人体工学的是 `idb` 这类包装库；Buckets 管的是存储的组织与驱逐粒度。"
+      }
+    ]
+  },
+  {
+    "stem": "浏览器为什么选择「存储分区」而不是直接封杀第三方 iframe 的存储？",
+    "explanation": "历史上的两种对策都不理想：**全面封杀第三方存储**会砸坏 SSO、支付、客服挂件这类正经嵌入；**按追踪者名单封杀**依赖分类准确。于是浏览器走了第三条路：**不封杀，改隔离**——三方 iframe 的存储照常可用，只是按「源 + 顶级站点」双键各记各账，追踪者再也无法在 A 站写、B 站读。嵌入功能保住了（widget 在单个宿主站内仍能存取自己的状态），跨站串联的能力被拆掉了。",
+    "tags": ["storage", "分区", "隐私"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "全面封杀会砸坏 SSO/支付/客服等正经嵌入，名单封杀又依赖分类准确——分区保留功能、只拆跨站串联",
+        "isCorrect": true,
+        "description": "正确。「不封杀，改隔离」在反追踪与不破坏嵌入生态之间取得平衡。"
+      },
+      {
+        "text": "因为封杀第三方存储在技术上无法实现",
+        "isCorrect": false,
+        "description": "错误。技术上可行（用户禁用第三方 Cookie 时浏览器就连带拒绝三方 iframe 的 Web Storage），问题在误伤面太大。"
+      },
+      {
+        "text": "因为广告行业协议强制要求浏览器保留跨站存储",
+        "isCorrect": false,
+        "description": "错误。笔记中不存在这样的行业协议；决策依据是「反追踪」与「保住正经嵌入」的权衡。"
+      },
+      {
+        "text": "分区只是过渡方案，最终目标仍是全面封杀三方存储",
+        "isCorrect": false,
+        "description": "错误。分区本身就是选定的第三条路；连第三方 Cookie 的默认淘汰都已在 2024-07 官宣反转，「最终全面封杀」无从谈起。"
+      }
+    ]
+  },
+  {
+    "stem": "Chrome 存储分区的「祖先位（ancestor bit）」解决什么问题？",
+    "explanation": "嵌套 iframe 的漏洞场景：A 站嵌 B 站的 iframe、B 里再嵌 A 的 iframe——最内层 iframe 与顶级文档**同站**，按纯双键（顶级站点, 源）计算会拿到 A 顶级访问的那份存储，B 就能借这个「跳板 iframe」间接读写 A 的非分区数据。**祖先位**的规则：**只要当前 iframe 与顶级文档之间隔着任何跨站文档，即使首尾同站也照样分区**——把「跳板 iframe」这条路堵死。",
+    "tags": ["storage", "分区", "iframe"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "堵住嵌套跳板：A 嵌 B、B 再嵌 A 时，中间隔着跨站文档的最内层 iframe 即使与顶级同站也被分区",
+        "isCorrect": true,
+        "description": "正确。祖先位记录「链路上是否出现过跨站」，首尾同站不再是免分区的通行证。"
+      },
+      {
+        "text": "让 iframe 继承祖先的全部存储权限，简化授权",
+        "isCorrect": false,
+        "description": "错误。祖先位是收紧隔离的机制，不是放开权限的继承机制。"
+      },
+      {
+        "text": "统计 iframe 的嵌套层数，超过阈值即禁止存储",
+        "isCorrect": false,
+        "description": "错误。它关心的是链路上有没有跨站文档，不是嵌套深度阈值。"
+      },
+      {
+        "text": "标记最老的祖先文档，把存储统一记到它名下",
+        "isCorrect": false,
+        "description": "错误。存储仍按（顶级站点, 源）+ 祖先位记账，不存在「记到最老祖先名下」的归并。"
+      }
+    ]
+  },
+  {
+    "stem": "你的产品会被别人 iframe 嵌入，按存储分区的现实自查时，下列哪个旧预期仍然成立？",
+    "explanation": "分区后的现实对照：用户在 A 站 widget 里设的偏好，B 站同一 widget **不记得**（两个分区两份数据）；用户登录过 `sso.example`，其他站的 SSO iframe **读不到**顶级会话；iframe 与打开的弹窗之间的 BroadcastChannel **被切断**；配额**独立记账且往往更小**（Safari 跨源 frame ≈ 父配额 1/10）。仍然成立的是：**同一宿主站内，iframe 自己写的数据自己后续还能读**——分区隔的是「跨顶级站点」，不是「iframe 自身的读写」。排查线索：Firefox 会在控制台打印「Partitioned cookie or storage access was provided to …」。",
+    "tags": ["storage", "分区", "iframe"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同一宿主站点内，iframe 之前写入的数据在后续访问中仍能读到",
+        "isCorrect": true,
+        "description": "正确。分区键是（顶级站点, 源）——同宿主同源的分区不变，站内的持久化照常工作。"
+      },
+      {
+        "text": "用户在 A 站 widget 里设置的偏好，B 站的同一 widget 也记得",
+        "isCorrect": false,
+        "description": "错误。A、B 两个宿主对应两个分区、两份数据，跨站记忆正是分区要消灭的。"
+      },
+      {
+        "text": "用户登录过你的站点后，任何站里你的 SSO iframe 都能读到会话",
+        "isCorrect": false,
+        "description": "错误。iframe 分区里没有顶级会话；想要回 Cookie 型会话只能走 Storage Access API + 用户许可。"
+      },
+      {
+        "text": "iframe 与你站顶级页之间的 BroadcastChannel 通信一切如常",
+        "isCorrect": false,
+        "description": "错误。通信 API 同样按分区切断，跨分区的 BroadcastChannel 收不到彼此消息。"
+      }
+    ]
+  },
+  {
+    "stem": "存储分区时代，做嵌入式 SSO 组件时为什么「登录态只压在 Cookie 上」反而是更稳的设计？",
+    "explanation": "机制推理链：分区后三方 iframe 拿不到用户顶级访问时写下的任何存储——localStorage、IndexedDB、Cookie 全在分区里。但**逃生门只对 Cookie 开**：`document.requestStorageAccess()` 经用户许可后能拿回**非分区 Cookie**（Firefox 明确只有 Cookie 可动态解除分区），localStorage/IndexedDB **没有任何解分区通道**。所以登录态若存在 localStorage 里，分区后无路可走；压在 Cookie 上至少还有「用户许可 → 恢复会话」这条路。这是自查清单的最后一条：**登录态是否只压在 Cookie 上？**",
+    "tags": ["storage", "分区", "storage-access-api", "sso"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 Storage Access API 只能解分区 Cookie——存别处的登录态在分区后永远没有恢复通道",
+        "isCorrect": true,
+        "description": "正确。「唯一逃生门只认 Cookie」倒推出凭证载体的选型：嵌入场景的会话必须走 Cookie。"
+      },
+      {
+        "text": "因为 Cookie 不受存储分区影响，天然全局共享",
+        "isCorrect": false,
+        "description": "错误。Cookie 同样被分区（默认拿到的是分区 Cookie）；区别在它有解分区的申请通道，不是免疫。"
+      },
+      {
+        "text": "因为 Cookie 容量最大，装得下完整的会话对象",
+        "isCorrect": false,
+        "description": "错误。Cookie 单条 ~4KB 是全场最小天花板；选它是因为解分区通道，不是容量。"
+      },
+      {
+        "text": "因为 localStorage 在 iframe 中一律抛 `SecurityError`",
+        "isCorrect": false,
+        "description": "错误。三方 iframe 里 Web Storage 通常仍可访问（用户禁三方 Cookie 时才被拒），只是数据被分区；不是一律抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "Storage Buckets 实践：`navigator.storageBuckets.open(\"drafts\", { persisted: true, durability: \"strict\" })` 开草稿桶、`open(\"cache\")` 开缓存桶。存储压力来临时会发生什么？`durability: \"strict\"` 的代价是什么？",
+    "explanation": "驱逐时浏览器**逐桶清除**：先清 best-effort 的 `cache` 桶（默认 `persisted: false`），`drafts` 桶因 persisted 而幸存——这就是「独立驱逐优先级」。`durability: \"strict\"` 买的是**断电也尽量不丢的落盘可靠性**、付的是**写性能**，只该给「丢了不可原谅」的桶；缓存类桶保持默认 `\"relaxed\"`（性能优先）。另注意**分区与分桶正交**：三方 iframe 里开的桶照样按分区各记各账；跨浏览器使用要做特性检测（`\"storageBuckets\" in navigator`），不支持就回落到单桶 + `persist()` 兜底。",
+    "tags": ["storage", "storage-buckets", "驱逐"],
+    "categories": [
+      ["技术方向", "浏览器存储"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "压力下先清 best-effort 的缓存桶、persisted 草稿桶幸存；`strict` 用写性能换断电落盘可靠性",
+        "isCorrect": true,
+        "description": "正确。按重要性分桶 + 按桶设 durability，把「全有或全无」变成分级取舍。"
+      },
+      {
+        "text": "两个桶同属一个源，驱逐时仍然整源一起清除",
+        "isCorrect": false,
+        "description": "错误。Buckets 的意义正是打破整源清除——浏览器可逐桶驱逐，persisted 桶被跳过。"
+      },
+      {
+        "text": "`strict` 让写入更快，因为跳过了落盘确认",
+        "isCorrect": false,
+        "description": "错误。方向反了：`strict` 为可靠性牺牲写性能；跳过强制落盘换性能的是默认的 `relaxed`。"
+      },
+      {
+        "text": "persisted: true 的桶在 Firefox/Safari 上同样受标准保证",
+        "isCorrect": false,
+        "description": "错误。Storage Buckets 仍是 WICG 提案、Chromium 122 起可用，Firefox/Safari 未跟进，只能渐进增强。"
+      }
+    ]
+  }
+]
