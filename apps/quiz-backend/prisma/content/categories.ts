@@ -676,6 +676,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       },
 
       // ----- 9. 移动/桌面开发 -----
+      // ⚠️ 2026-07-03 选型调研定案重构：三章格局 = 移动端框架 / 小程序 / 桌面端框架。
+      //   移动端框架收窄为「真·原生/混合 App 框架」：移出「微信小程序」「Uniapp」，
+      //     新增 Capacitor（原生运行时，周下载 292 万）、Lynx（字节 2025 开源·观察叶）。
+      //   小程序单独成章：微信/支付宝/抖音/百度/QQ 五原生平台 + uni-app（原 Uniapp 更名）/Taro 两跨端框架。
+      //   桌面端扩为四强：Electron/Tauri + Wails（Go+Web）/Neutralino（纯 JS 轻量）。
+      //   组名保留「移动/桌面开发」（小程序属移动开发；改一级 node 名会令 prod 整棵子树 re-key 成孤儿，得不偿失）。
+      // 🚨 prod 移动坑：import 只增不删——下次 import:content:prod 前须先删 prod 里「移动端框架」下的
+      //   旧占位叶「微信小程序」「Uniapp」（0 题节点，已迁至小程序章 / 更名为 uni-app），否则残留孤儿。
+      //   详见部署记忆 content-deploy-workflow「分类移动坑」。
       {
         name: "移动/桌面开发",
         sort: 9,
@@ -686,17 +695,32 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "React Native", sort: 1 },
               { name: "Flutter", sort: 2 },
-              { name: "微信小程序", sort: 3 },
-              { name: "Uniapp", sort: 4 },
-              { name: "Ionic", sort: 5 },
+              { name: "Capacitor", sort: 3 },
+              { name: "Ionic", sort: 4 },
+              { name: "Lynx", sort: 5 },
+            ],
+          },
+          {
+            name: "小程序",
+            sort: 2,
+            children: [
+              { name: "微信小程序", sort: 1 },
+              { name: "支付宝小程序", sort: 2 },
+              { name: "抖音小程序", sort: 3 },
+              { name: "百度智能小程序", sort: 4 },
+              { name: "QQ小程序", sort: 5 },
+              { name: "uni-app", sort: 6 },
+              { name: "Taro", sort: 7 },
             ],
           },
           {
             name: "桌面端框架",
-            sort: 2,
+            sort: 3,
             children: [
               { name: "Electron", sort: 1 },
               { name: "Tauri", sort: 2 },
+              { name: "Wails", sort: 3 },
+              { name: "Neutralino", sort: 4 },
             ],
           },
         ],
