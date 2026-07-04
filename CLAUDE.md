@@ -172,7 +172,26 @@ presetIcons({
 - **增量更新**：`import-content.ts` 幂等设计——**只增不删、按 stem 去重、已存在则更新、已完整则跳过**，可安全重跑，不会破坏库里已有题目。
 - **dev / test 库禁放正式题目**：dev 库只用测试数据（`db:seed:dev` 的用户/角色/权限），**严禁 `import:content:dev` 灌入正式题目**；dev 库需还原时用测试数据 seed 还原。
 - **执行前必须经用户确认**：导入生产库前先报用户、得到明确同意才执行，**绝不擅自跑任何 `import:content:*`**。
-- **分类「移动」坑**：import 按 key=`groupId:parentId:name` 只增不删——改叶子名 / 把叶子移到新父节点会留旧节点 + 建新节点 = **重复**，须手动 `update` prod 的 `parentId` 或先删旧节点（详见部署记忆 `content-deploy-workflow`）。
+- **分类「移动」坑**：import 按 key=`groupId:parentId:name` 只增不删——改叶子名 / 把叶子移到新父节点会留旧节点 + 建新节点 = **重复**。改结构前**先连 prod 只读核查**（复用 import 的 `PrismaMariaDb` adapter + `dotenv -e .env.production -e .env.production.local -- node -r ts-node/register`），再用一次性 ts 脚本删旧孤儿（**校验 0 题 0 子才删**）后再 import。prod 分类是「技术方向 / 难度」两大**扁平组**，章节（如「工程化与自动化」）是**技术方向组下的分类树节点**，不是独立 group。
+
+## 内容部署规范（部署三件套到生产）
+
+三件套内容部署到 illegalscreed.cn（ECS `47.120.26.143` + 阿里云 RDS），**三路独立、prod 推送前必经用户确认**：
+
+- **题库 → RDS**：`import:content:prod`（见上「题目入库规范」）。跨区易掉线，给 DATABASE_URL 追加 `?connectTimeout=30000&acquireTimeout=60000&connection_limit=3`；幂等可从失败点重跑。
+- **笔记 → ECS**：dist 已 build 时直接 `rsync -az --delete --exclude 'SlideStack' .vitepress/dist/ root@47.120.26.143:/var/www/illegal-site/`。**`--exclude 'SlideStack'` 必须有**（否则 `--delete` 误删线上幻灯片）；实跑前先 `rsync -azvn`（带 **-v** 才列文件）dry-run 确认「传新页 + 0 误删 SlideStack」。
+- **幻灯片 → ECS**：**逐包 rsync，别用 `deploy.sh all` / 无参 `pnpm run deploy`**（会重建 + 重推全部 200+ 包，且无参 `pnpm run deploy` 被 pnpm 内置命令拦截需 `pnpm run` 显式）。dist 已 build 时：`PKGS=(a-slide b-slide …); for p in "${PKGS[@]}"; do rsync -az --delete "packages/$p/dist/" "root@47.120.26.143:/var/www/illegal-site/SlideStack/$p/"; done`。
+- **别并发**：VitePress 与 SlideStack 部署顺序来；**绝不同时跑两个 `docs:build`**（抢同一 dist 互踩、OOM）。
+- **认真实 exit code**：`cmd > log 2>&1; echo EXIT=$?` 的后台任务报的「exit 0」是末尾 `echo` 的码、**非 build 的**；判断成败看日志里真实 `EXIT=` + `build complete in Xs` + `ls dist/<新页>` 有产物，别只信 exit 0。
+- 部署后**必 HTTP 200 抽样验证**新页（笔记 `/zh/.../`、幻灯片 `/SlideStack/{x}-slide/`）。
+
+## 内容 build 常见崩点 + 工具坑（团队共性）
+
+- **mustache 插值崩 build**：VitePress/Slidev 底层都是 Vue，正文 / 行内 code / bullet 里的 `{{ }}`（Faker、Ansible Jinja2、GitHub Actions `${{ }}` 等）会被当插值致 build 崩——用 `<code v-pre>{{ }}</code>` 包裹，或放进**围栏代码块**（围栏内安全）。
+- **裸角括号当 HTML 标签**：正文 / 表格里的 `<dur>`、`<name>`、`Output<T>` 等被 Vue 编译器当未闭合标签 → 「Element is missing end tag」→ build 崩。用反引号包裹或写 `&lt;&gt;` 实体。
+- **围栏 language 警告无害**：`The language 'xxx' is not loaded, falling back to txt` 只是 Shiki 高亮回退，不影响 build。
+- **Bash 工具实为 zsh**：`for x in $VAR` **不分词**（整串当一个），批量循环必须用数组 `PKGS=(a b c)` + `"${PKGS[@]}"`。
+- **`.gitignore` 的 `docker-compose*` 通配**会误伤 `content/docker-compose.json` 题库——仓库已加 negation `!apps/quiz-backend/prisma/content/docker-compose.json` 放行（新增同类被通配误伤的 content 文件时照此处理）。
 
 ## 相关文档
 
