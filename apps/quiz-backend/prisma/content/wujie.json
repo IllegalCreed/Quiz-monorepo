@@ -1,0 +1,2172 @@
+[
+  {
+    "stem": "wujie 的 JS 沙箱在实现上本质是什么？",
+    "explanation": "wujie 的沙箱内核一句话：**把子应用的 JavaScript 注入一个同域 iframe 里执行**。iframe 是浏览器原生就提供的、独立的浏览上下文，自带一套完全独立的 `window`/`document`/`history`/`location`/全局对象。子应用所有脚本都跑在这个 iframe 的 window 上，因此拿到的是**物理隔离**，而非 qiankun 那种用 `Proxy` 软件模拟的假 window。这是理解 wujie 「JS 在 iframe、DOM 在 WebComponent」双容器路线的第一块基石。",
+    "tags": ["wujie", "iframe-sandbox", "隔离"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把子应用的 JavaScript 注入一个同域 iframe 里执行，借用 iframe 原生独立的 window 上下文",
+        "isCorrect": true,
+        "description": "正确。iframe 是浏览器原生独立浏览上下文，子应用 JS 跑在其原生 window 上，天然物理隔离。"
+      },
+      {
+        "text": "用 `Proxy` 代理一个 `fakeWindow`，拦截子应用对全局的读写",
+        "isCorrect": false,
+        "description": "错误。那是 qiankun 的 Proxy 软沙箱路线，wujie 不模拟 window，而是直接借用 iframe 的真隔离。"
+      },
+      {
+        "text": "用 `with` 语句把子应用代码包进一个自定义的作用域链里",
+        "isCorrect": false,
+        "description": "错误。`with`+`Proxy` 改写作用域链是软沙箱手段，wujie 免掉了这层，子应用直接跑在 iframe 原生 window 上。"
+      },
+      {
+        "text": "为每个子应用启动一个 Web Worker 线程隔离执行",
+        "isCorrect": false,
+        "description": "错误。Web Worker 无法访问 DOM，也非 wujie 的方案；wujie 用的是同域 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 iframe 沙箱里，子应用访问到的 `window`/`history`/`location` 是什么？",
+    "explanation": "iframe 自带一套完全独立、原生的 `window`/`history`/`location`。子应用给 `window.token` 赋值，落在 iframe 原生 window 上，与主应用同名的 `window.token` **互不影响**；子应用的 `history` 是 iframe 自己的路由栈，`location` 是 iframe 自己的地址。这正是**物理隔离**的含义——不是模拟出来的假对象，而是浏览器给每个 iframe 的真实原生对象。",
+    "tags": ["wujie", "iframe-sandbox", "window"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "iframe 自带的原生对象，各自独立，与主应用物理隔离",
+        "isCorrect": true,
+        "description": "正确。iframe 天生带独立的原生 `window`/`history`/`location`，是 wujie 物理隔离的来源。"
+      },
+      {
+        "text": "主应用 window 的 `Proxy` 代理副本",
+        "isCorrect": false,
+        "description": "错误。wujie 不做 Proxy 代理，子应用拿到的是 iframe 真实原生对象；代理副本是软沙箱做法。"
+      },
+      {
+        "text": "wujie 手写模拟的 `fakeWindow`/`fakeHistory` 对象",
+        "isCorrect": false,
+        "description": "错误。wujie 不模拟，这些对象是浏览器给 iframe 的原生实现。"
+      },
+      {
+        "text": "与主应用共享的同一个全局对象",
+        "isCorrect": false,
+        "description": "错误。若共享就谈不上隔离了；iframe 的全局与主应用各自独立。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 iframe 沙箱中，子应用 `window.xxx = 1` 这类全局变量在卸载时如何清理？",
+    "explanation": "iframe 沙箱的一大省心之处：**全局无需框架记账、卸载时也无需手动清**。子应用 `window.xxx = 1` 落在 iframe 原生 window 上，主应用完全看不见；iframe 销毁时，其上的全局、定时器、事件监听**随之一起消亡**。对比 qiankun 的 Proxy 沙箱要框架逐个记账、卸载时按 diff 恢复，iframe 路线在全局清理上几乎零成本。",
+    "tags": ["wujie", "iframe-sandbox", "cleanup"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无需框架记账手动清，iframe 销毁时全局随之消亡",
+        "isCorrect": true,
+        "description": "正确。全局挂在 iframe 原生 window 上，iframe 一销毁全局跟着没，无需 diff 恢复。"
+      },
+      {
+        "text": "框架在挂载时快照、卸载时按 diff 恢复",
+        "isCorrect": false,
+        "description": "错误。快照 diff 是快照沙箱/Proxy 沙箱的清理方式，iframe 路线不需要。"
+      },
+      {
+        "text": "通过 `Proxy` 的 `deleteProperty` 陷阱逐个删除",
+        "isCorrect": false,
+        "description": "错误。wujie 不用 Proxy 陷阱；iframe 销毁即自动回收全局。"
+      },
+      {
+        "text": "需要子应用在卸载钩子里手动 `delete` 每个全局",
+        "isCorrect": false,
+        "description": "错误。iframe 销毁自动清，子应用无需手动删全局。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 官方称「执行性能不被代理上下文拖累」，这句话的技术含义是什么？",
+    "explanation": "qiankun 子应用每次访问 `window.X` 都要穿过一层 `Proxy` 的 `get`/`set` 陷阱（先查 `fakeWindow`、再回退真 window），`with`+`Proxy` 沙箱还要把整段代码包进 `with(proxyWindow){...}` 改写作用域链——这是**运行时每次全局访问都要付的税**。而 wujie 子应用跑在 iframe 的**原生 window** 上，`window.X` 就是普通原生属性访问，**没有代理陷阱、没有 with 改写**，高频访问全局的大型应用在这点上更省 CPU。代价挪到了 iframe 的启动与常驻内存开销上。",
+    "tags": ["wujie", "iframe-sandbox", "性能"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用跑在 iframe 原生 window 上，`window.X` 是普通原生属性访问，无 Proxy 陷阱、无 with 作用域改写",
+        "isCorrect": true,
+        "description": "正确。原生访问不付代理税，这是 wujie 相对 Proxy 沙箱的执行性能优势。"
+      },
+      {
+        "text": "wujie 用 Web Worker 把子应用 JS 放到后台线程，不占主线程",
+        "isCorrect": false,
+        "description": "错误。子应用 JS 仍在主线程的 iframe 里跑，只是不经代理；分片靠 `fiber` 而非 Worker。"
+      },
+      {
+        "text": "wujie 对子应用 JS 做了 AOT 编译优化",
+        "isCorrect": false,
+        "description": "错误。wujie 不编译子应用代码；性能优势来自「免代理」而非编译。"
+      },
+      {
+        "text": "wujie 缓存了子应用所有全局访问结果，二次访问零成本",
+        "isCorrect": false,
+        "description": "错误。没有这种全局访问缓存；优势是原生访问本身不经陷阱。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 iframe 沙箱为什么必须与主应用「同域」？",
+    "explanation": "**同域是 wujie 的地基**：只有 iframe 与主应用**同源**，主应用才能 `iframe.contentWindow.xxx` 直接读子应用全局、子应用才能 `window.parent.xxx` 直接访问主应用（通信的基础），wujie 才能代理 iframe 的 `document`（WC 桥接的基础）。跨域 iframe 会被浏览器**同源策略（SOP）**全部拦死——这三条能力都会失效。v2.0 的「空白同域 iframe 沙箱」中「同域」正是这个含义。",
+    "tags": ["wujie", "iframe-sandbox", "same-origin"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只有同源，主应用才能 `contentWindow` 直读子应用全局、子应用才能 `window.parent` 直读主应用、wujie 才能代理 iframe 的 `document`；跨域会被 SOP 拦死",
+        "isCorrect": true,
+        "description": "正确。同域是通信直通与 document 代理桥接的物理前提，跨域被同源策略拦死。"
+      },
+      {
+        "text": "同域是为了让子应用共享主应用的 Cookie 和 localStorage",
+        "isCorrect": false,
+        "description": "错误。同域的目的是互访 window 与代理 document，而非共享存储。"
+      },
+      {
+        "text": "同域能让 iframe 免于加载，直接复用主应用文档",
+        "isCorrect": false,
+        "description": "错误。iframe 仍是独立上下文（空白同域地址），并非复用主应用文档。"
+      },
+      {
+        "text": "跨域 iframe 无法执行 JavaScript，只有同域才能跑子应用脚本",
+        "isCorrect": false,
+        "description": "错误。跨域 iframe 也能执行 JS，只是父子无法互访；wujie 要的是互访与代理能力。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie v2.0 的「全新空白同域 iframe 沙箱」中，「空白」指什么？",
+    "explanation": "「空白（blank）」指 **iframe 的 `src` 指向一个空白的同域地址**，而不是直接把子应用页面塞进 iframe。子应用的 JS 再被注入这个干净的 iframe 上下文里执行——空白 iframe 就是一张「白纸 window」，没有多余的页面副作用，纯粹当 JS 运行时用。配合「同域」实现互访与 document 代理，这套内核是 2026-06 v2.0 重构的核心。",
+    "tags": ["wujie", "v2", "sandbox"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "iframe 的 `src` 指向一个空白的同域地址，当作干净的「白纸 window」承载子应用 JS，而非直接把子应用页面塞进 iframe",
+        "isCorrect": true,
+        "description": "正确。空白 iframe 是纯净的 JS 运行时，无多余页面副作用。"
+      },
+      {
+        "text": "iframe 初始不加载任何脚本，直到用户首次交互才注入",
+        "isCorrect": false,
+        "description": "错误。空白指 iframe 指向空白同域地址，不是延迟到交互才注入脚本。"
+      },
+      {
+        "text": "iframe 用 `about:blank` 跨域地址创建，避免污染",
+        "isCorrect": false,
+        "description": "错误。关键是「同域」，跨域会被 SOP 拦死互访与代理，与 wujie 需求相悖。"
+      },
+      {
+        "text": "空白指 iframe 尺寸为 0，完全不可见",
+        "isCorrect": false,
+        "description": "错误。iframe 确实 `display:none` 不可见，但「空白」说的是其地址内容为空白，不是尺寸。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie v2.0 沙箱内核重构后，一个用户可感知的关键收益是什么？",
+    "explanation": "v2.0 沙箱的一个用户可感知收益是**支持浏览器前进后退**：子应用在 iframe 里的路由操作能正确进入浏览器历史栈，配合路由同步，点浏览器的前进/后退按钮能正确驱动子应用路由。这解决了 v1 时代 **iframe 路由与浏览器历史割裂**的老问题，也是 2026-06「连发 4 版复活」的核心动作。",
+    "tags": ["wujie", "v2", "history"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "支持浏览器前进后退，子应用 iframe 路由能正确进入浏览器历史栈",
+        "isCorrect": true,
+        "description": "正确。v2.0 让 iframe 路由正确入浏览器历史栈，修了 v1 路由与历史割裂的老痛点。"
+      },
+      {
+        "text": "子应用体积自动减半，加载更快",
+        "isCorrect": false,
+        "description": "错误。沙箱重构不改变子应用体积；收益是前进后退与内核稳定性。"
+      },
+      {
+        "text": "支持跨域 iframe 子应用接入",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，沙箱是「同域」的，跨域会破坏互访与代理。"
+      },
+      {
+        "text": "彻底移除了 iframe，改用纯 `Proxy` 沙箱",
+        "isCorrect": false,
+        "description": "错误。v2.0 是「全新空白同域 iframe 沙箱」，仍以 iframe 为核心而非改用 Proxy。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的同域 iframe 沙箱里，子应用为什么不建议直接执行 `window.location.href = ...`？",
+    "explanation": "因为沙箱是**同域 iframe**，子应用里直接操作 `location`（如 `window.location.href = ...`）可能把整个 iframe 替换掉，导致「**跨域 frame 访问被拦**」。wujie 的解法是让子应用改用 <code v-pre>window.$wujie.location</code> 做所有 location 操作——**Vite 子应用尤其要注意**这条。这是「沙箱就是个真 iframe」这一物理事实带来的实战坑。",
+    "tags": ["wujie", "iframe-sandbox", "location"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接操作 `location` 可能把整个 iframe 替换掉，导致「跨域 frame 访问被拦」，应改用 `window.$wujie.location`",
+        "isCorrect": true,
+        "description": "正确。直接改 location 会替换沙箱 iframe，须走 `window.$wujie.location`，Vite 子应用尤甚。"
+      },
+      {
+        "text": "`location` 是只读的，赋值会静默失败",
+        "isCorrect": false,
+        "description": "错误。`location.href` 可写，问题是会替换 iframe 引发跨域访问被拦，而非静默失败。"
+      },
+      {
+        "text": "直接赋值会触发主应用整页刷新",
+        "isCorrect": false,
+        "description": "错误。受影响的是子应用 iframe 本身被替换，不是主应用整页刷新。"
+      },
+      {
+        "text": "`location` 被 `Proxy` 冻结，赋值会抛 `TypeError`",
+        "isCorrect": false,
+        "description": "错误。wujie 用代理 `window.$wujie.location` 引导，而非冻结抛错。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 开启 `degrade: true` 降级后，子应用的 JS 和 DOM 分别在哪里？",
+    "explanation": "**默认（`degrade: false`）**：JS 在 iframe、DOM 在 WebComponent（标准双容器）。**降级（`degrade: true`）**：退回「iframe 直接渲染」——**JS 和 DOM 都在 iframe 里**，回到裸 iframe 的老约束：**iframe 内的弹窗无法覆盖整个应用**（被 iframe 边框框死）。wujie 也会在检测到浏览器不支持 WebComponent 时自动降级，`degrade: true` 是手动强制。降级是「保可用性、牺牲体验」的兜底。",
+    "tags": ["wujie", "degrade", "降级"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JS 和 DOM 都退回 iframe 里（iframe 直接渲染），此时 iframe 内弹窗无法覆盖全屏",
+        "isCorrect": true,
+        "description": "正确。降级即退回裸 iframe 渲染，弹窗被 iframe 边框框死，无法覆盖全屏。"
+      },
+      {
+        "text": "JS 在 iframe、DOM 仍在 WebComponent，只是关闭样式隔离",
+        "isCorrect": false,
+        "description": "错误。降级后 DOM 回到 iframe 内，不再有 WebComponent 与 document 代理。"
+      },
+      {
+        "text": "JS 和 DOM 都移到主应用主文档，放弃隔离",
+        "isCorrect": false,
+        "description": "错误。降级仍在 iframe 内渲染，并非移到主应用主文档。"
+      },
+      {
+        "text": "JS 移到 Web Worker、DOM 留在 WebComponent",
+        "isCorrect": false,
+        "description": "错误。wujie 不用 Web Worker，降级是回退到 iframe 直接渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 子应用里要访问「未被代理的真实 window」应该用什么？",
+    "explanation": "子应用里的 `window` 是**被代理的沙箱 window**（iframe 的），`window.parent` 指向的是**主应用真实 window**。若要拿子应用自己**未被代理的真实 window**，用 <code v-pre>window.__WUJIE_RAW_WINDOW__</code>。这三者要区分清楚：沙箱 window、主应用 window、子应用原始 window 各有用途。",
+    "tags": ["wujie", "window", "raw-window"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`window.__WUJIE_RAW_WINDOW__`",
+        "isCorrect": true,
+        "description": "正确。这是子应用访问自己未被代理的真实 window 的入口。"
+      },
+      {
+        "text": "`window.parent`",
+        "isCorrect": false,
+        "description": "错误。`window.parent` 是主应用真实 window，不是子应用自己的原始 window。"
+      },
+      {
+        "text": "`window.__POWERED_BY_WUJIE__`",
+        "isCorrect": false,
+        "description": "错误。那是一个布尔标志，用于判断是否被 wujie 嵌入，不是 window 引用。"
+      },
+      {
+        "text": "`window.top`",
+        "isCorrect": false,
+        "description": "错误。`window.top` 指向顶层窗口（主应用），不是子应用未被代理的真实 window。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 iframe 沙箱在机制上为什么比 qiankun 的 `Proxy` 沙箱隔离更彻底？",
+    "explanation": "iframe 是浏览器**原生的独立浏览上下文**，`window`/`history`/`location` 全是物理独立的原生对象，子应用无从触碰主应用全局。而 `Proxy` 沙箱只是**软件模拟的假 window**——「防意外不防恶意」，且 `window.top`、`window.parent` 等仍可能**逃逸**到真实全局。所以 iframe 路线是「借浏览器拿物理隔离」，Proxy 路线是「用软件尽力模拟隔离」。注意：wujie 因同域，子应用仍能 `window.parent` 访问主应用，所以是「接近物理隔离」而非绝对沙箱。",
+    "tags": ["wujie", "iframe-sandbox", "对比"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "iframe 的 `window`/`history`/`location` 全是物理独立的原生对象；`Proxy` 只是软件模拟的假 window，`window.top` 等仍可能逃逸到真实全局",
+        "isCorrect": true,
+        "description": "正确。物理隔离 vs 软件模拟是两条路线的本质差异，Proxy 沙箱有逃逸面。"
+      },
+      {
+        "text": "iframe 运行在独立进程，与主应用完全无法通信",
+        "isCorrect": false,
+        "description": "错误。同域 iframe 恰恰能与主应用通信（`window.parent`/`contentWindow`），并非完全隔绝。"
+      },
+      {
+        "text": "iframe 禁用了所有全局 API，子应用只能用白名单接口",
+        "isCorrect": false,
+        "description": "错误。iframe 内全局 API 齐全，隔离靠上下文独立而非 API 白名单。"
+      },
+      {
+        "text": "`Proxy` 沙箱根本不隔离全局变量，iframe 才隔离",
+        "isCorrect": false,
+        "description": "错误。Proxy 沙箱也隔离全局（写时隔离），只是软隔离、有逃逸面，非「根本不隔离」。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 能对 Vite/ESM 子应用「零改造」接入、而 qiankun 2.x 不能，根本原因是什么？",
+    "explanation": "wujie 把 **ESM 交给 iframe 里的浏览器原生执行**，浏览器天然认 `type=module`——Vite/ESM 子应用零改造接入。而 qiankun 2.x 走的是 `import-html-entry` 的 **eval 模型**，接不了 `type=module`（沙箱会失效），这正是 qiankun 2.x 的最大痛点。「要强隔离又要 Vite 友好」一度是微前端格局里的空位，wujie 的 iframe 路线天然同时满足，这也是它 2026-06 复活值得关注的原因。",
+    "tags": ["wujie", "vite", "esm"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 把 ESM 交给 iframe 里的浏览器原生执行，浏览器天然认 `type=module`；qiankun 2.x 的 `import-html-entry` eval 模型接不了 `type=module`",
+        "isCorrect": true,
+        "description": "正确。ESM 交浏览器在 iframe 原生执行，绕开了 eval 模型不认模块脚本的痛点。"
+      },
+      {
+        "text": "wujie 内置了一个 ESM-to-UMD 的编译器把模块转成 qiankun 能吃的格式",
+        "isCorrect": false,
+        "description": "错误。wujie 不做模块转换，直接让浏览器原生执行 ESM。"
+      },
+      {
+        "text": "Vite 官方为 wujie 提供了专用插件，qiankun 没有",
+        "isCorrect": false,
+        "description": "错误。友好来自 iframe 原生执行 ESM 的架构，而非某个官方插件。"
+      },
+      {
+        "text": "wujie 禁用了 ESM，强制子应用打包成单文件 IIFE",
+        "isCorrect": false,
+        "description": "错误。恰恰相反，wujie 支持 ESM 原生执行，无需打成 IIFE。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中「主应用脚本被误加载进子应用 iframe 导致重复执行」，官方给的一种解法是什么？",
+    "explanation": "因为 iframe 与主应用同域、初始可能加载主应用上下文，主应用的脚本/资源有时会被误加载进子应用 iframe，导致重复执行或报错。官方两条解法：**解法 A** 给 iframe 的 `src` 指向一个「返回空内容」的同域端点（`attrs: { src }`）；**解法 B** 在主应用 `<head>` 最前面插一段脚本——检测 `window.parent !== window`（说明当前在 iframe 里）就立即 `window.stop()` 停止加载。",
+    "tags": ["wujie", "iframe-sandbox", "排障"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "主应用 `<head>` 最前面插一段脚本，检测 `window.parent !== window`（说明在 iframe 里）就立即 `window.stop()`",
+        "isCorrect": true,
+        "description": "正确。非顶层窗口即停止加载，可避免主应用资源在子应用 iframe 里重复执行。"
+      },
+      {
+        "text": "给子应用 iframe 加 `sandbox` 沙箱属性屏蔽外部脚本",
+        "isCorrect": false,
+        "description": "错误。`sandbox` 属性会破坏同域互访（同源需求），并非官方解法。"
+      },
+      {
+        "text": "把主应用所有脚本改成 `defer` 延迟执行",
+        "isCorrect": false,
+        "description": "错误。`defer` 只改执行时机，不能阻止脚本被误加载进子应用 iframe。"
+      },
+      {
+        "text": "在子应用 iframe 上监听 `load` 事件后清空其 `document`",
+        "isCorrect": false,
+        "description": "错误。清空 document 会破坏子应用运行时，官方给的是 `window.stop()` 或空端点。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 iframe 沙箱相比 `Proxy` 沙箱，本质是做了怎样一笔资源权衡？",
+    "explanation": "iframe 路线是一笔「**用内存换执行性能与隔离强度**」的账：一方面拿到了原生无代理税的执行性能、物理级隔离、ESM 原生执行；另一方面**iframe 本身的创建有启动开销、每个子应用常驻一个 iframe 有内存开销**。qiankun 的 Proxy 沙箱则相反——省内存、单页多应用轻，但隔离弱、ESM 难。选型不是「谁更好」，而是「谁更配你的场景」。",
+    "tags": ["wujie", "iframe-sandbox", "权衡"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用内存换执行性能与隔离强度——iframe 有创建启动与常驻内存开销，换来原生无代理税的执行性能和物理隔离",
+        "isCorrect": true,
+        "description": "正确。iframe 路线牺牲内存，换取执行性能与最强隔离，是其核心权衡。"
+      },
+      {
+        "text": "用执行性能换内存——iframe 更省内存但每次全局访问更慢",
+        "isCorrect": false,
+        "description": "错误。方向反了：iframe 更费内存但执行更快（免代理），且隔离更强。"
+      },
+      {
+        "text": "用隔离强度换内存——iframe 隔离更弱但更省内存",
+        "isCorrect": false,
+        "description": "错误。iframe 隔离最强且更费内存，与选项描述完全相反。"
+      },
+      {
+        "text": "无任何代价，iframe 沙箱在所有维度都优于 `Proxy` 沙箱",
+        "isCorrect": false,
+        "description": "错误。iframe 有明确的内存与启动开销代价，并非全面占优。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用的真实 DOM 树渲染在哪里？",
+    "explanation": "wujie 用 Web Components 定义了一个自定义元素 `<wujie>`。子应用的真实 DOM 树不渲染在 iframe 内，而是挂在 `<wujie>` 元素的 **`shadowRoot`** 里。你在主应用配的 `el`（或 `<WujieVue>` 组件位置）最终渲染出的正是这个元素。**JS 在 iframe、DOM 在 WebComponent** 的分工，是 wujie 破解「裸 iframe 把 DOM 框死」的关键。",
+    "tags": ["wujie", "webcomponent", "shadowroot"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "渲染进一个自定义元素 `<wujie>`（WebComponent）的 `shadowRoot` 里",
+        "isCorrect": true,
+        "description": "正确。DOM 挂在 `<wujie>` 的 `shadowRoot`，活在主应用文档流里。"
+      },
+      {
+        "text": "渲染进承载子应用 JS 的那个 iframe 内部",
+        "isCorrect": false,
+        "description": "错误。DOM 若在 iframe 内会被边框框死；wujie 特意把 DOM 拎到 WebComponent。"
+      },
+      {
+        "text": "直接渲染进主应用的 `document.body`",
+        "isCorrect": false,
+        "description": "错误。直接进 body 就没有样式隔离了；wujie 渲染进带 Shadow DOM 的 `<wujie>`。"
+      },
+      {
+        "text": "渲染进一个隐藏的 Web Worker 上下文",
+        "isCorrect": false,
+        "description": "错误。Web Worker 无 DOM 能力，与 wujie 渲染无关。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的双容器架构里，iframe 和 WebComponent 各自负责什么？",
+    "explanation": "wujie 把子应用**拆成两半**：**JS 在 iframe 里跑**（拿物理隔离、原生 `window`/`history`/`location`），**DOM 在 `<wujie>` WebComponent 里渲染**（活在主应用文档流、弹窗可覆盖全屏、样式随 Shadow DOM 隔离）。二者靠 `document` 代理缝合。记住这张分工图，是理解 wujie 的钥匙。",
+    "tags": ["wujie", "webcomponent", "架构"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "JS 在 iframe 里跑（拿隔离），DOM 在 `<wujie>` WebComponent 里渲染（活在主应用文档流）",
+        "isCorrect": true,
+        "description": "正确。iframe 给隔离与运行时，WebComponent 给渲染与样式隔离。"
+      },
+      {
+        "text": "iframe 负责 DOM 渲染，WebComponent 负责 JS 执行",
+        "isCorrect": false,
+        "description": "错误。分工正好相反：JS 在 iframe、DOM 在 WebComponent。"
+      },
+      {
+        "text": "iframe 负责样式隔离，WebComponent 负责路由同步",
+        "isCorrect": false,
+        "description": "错误。样式隔离靠 WebComponent 的 Shadow DOM，路由同步靠劫持 iframe history。"
+      },
+      {
+        "text": "两者都负责 JS，DOM 交给主应用直接渲染",
+        "isCorrect": false,
+        "description": "错误。DOM 渲染进 `<wujie>` 的 shadowRoot，不是主应用直接渲染。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 把子应用 DOM 渲染进 WebComponent 而非 iframe，最直观的收益是什么？",
+    "explanation": "裸 iframe 里 DOM 被框死在 iframe 的视口盒子内——**弹窗、下拉、全屏遮罩永远无法超出 iframe 边框**，模态框只能相对 iframe 居中。wujie 把 DOM 渲染进主应用文档流里的 `<wujie>` WebComponent 后，子应用的**弹窗能覆盖主应用全屏**、`z-index` 与主应用同一套层叠上下文、布局随主应用容器伸缩。这是 wujie 相对裸 iframe 最直观的渲染收益。",
+    "tags": ["wujie", "webcomponent", "弹窗"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用的弹窗/浮层能覆盖主应用全屏，不被 iframe 边框框死",
+        "isCorrect": true,
+        "description": "正确。DOM 活在主应用文档流，弹窗可覆盖全屏、z-index 与主应用同层叠。"
+      },
+      {
+        "text": "子应用 DOM 能被搜索引擎爬取，利于 SEO",
+        "isCorrect": false,
+        "description": "错误。这与 SEO 无关；收益在弹窗覆盖与文档流融合。"
+      },
+      {
+        "text": "子应用 DOM 渲染速度比在 iframe 里快一倍",
+        "isCorrect": false,
+        "description": "错误。收益是弹窗不被框死，并非某个具体的渲染速度倍数。"
+      },
+      {
+        "text": "子应用 DOM 能直接访问主应用的组件实例",
+        "isCorrect": false,
+        "description": "错误。跨应用能力靠通信（props/bus），不是把 DOM 放进 WebComponent 带来的。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的子应用 CSS 隔离靠什么实现？",
+    "explanation": "`shadowRoot` 是浏览器**原生的封装边界**：shadow 内的样式不会泄漏到外面，外面的样式（除继承属性/CSS 变量外）也进不来。wujie 的 CSS 隔离**不是框架运行时改写选择器**（qiankun 那种），而是**借浏览器 Shadow DOM 的原生能力**——属于 CSS 隔离四路方案里的「Shadow DOM 派」。",
+    "tags": ["wujie", "css-isolation", "shadow-dom"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "借浏览器原生的 Shadow DOM 边界——shadowRoot 内样式不泄漏出去、外部样式也进不来，无需运行时改写选择器",
+        "isCorrect": true,
+        "description": "正确。样式隔离随 Shadow DOM 天然发生，属「Shadow DOM 派」。"
+      },
+      {
+        "text": "框架运行时给每条选择器加子应用前缀命名空间",
+        "isCorrect": false,
+        "description": "错误。那是属性/命名空间派（如运行时改写选择器），wujie 靠原生 Shadow DOM。"
+      },
+      {
+        "text": "给子应用样式表加 `scoped` 属性",
+        "isCorrect": false,
+        "description": "错误。`scoped` 是 Vue SFC 编译期能力，非 wujie 的运行时隔离机制。"
+      },
+      {
+        "text": "把子应用样式全部内联进 `style` 属性",
+        "isCorrect": false,
+        "description": "错误。wujie 不做内联改写，隔离来自 shadowRoot 边界。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 代理了子应用 iframe 的 `document.querySelector`/`getElementById` 等查询方法，把它们指向哪里？",
+    "explanation": "wujie 代理（劫持）iframe `document` 上的一批查询 API——`querySelector`/`getElementById`/`getElementsByClassName`/`getElementsByTagName`、`body`/`head` 等，把它们**重定向到 `<wujie>` 的 `shadowRoot`**。于是子应用「以为」自己在正常页面里操作 `document`，实际操作的是 WebComponent 容器里的 DOM——这是 wujie「低侵入」的技术底座。",
+    "tags": ["wujie", "document-proxy", "桥接"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "指向 `<wujie>` 元素的 `shadowRoot`",
+        "isCorrect": true,
+        "description": "正确。查询 API 被重定向到 shadowRoot，子应用无感地操作 WebComponent 里的 DOM。"
+      },
+      {
+        "text": "指向主应用的 `document`",
+        "isCorrect": false,
+        "description": "错误。指向主应用 document 会破坏隔离；代理目标是子应用自己的 shadowRoot。"
+      },
+      {
+        "text": "指向承载 JS 的 iframe 内部 `document`",
+        "isCorrect": false,
+        "description": "错误。DOM 不在 iframe 里，查 iframe document 根本找不到子应用节点。"
+      },
+      {
+        "text": "指向一个内存里的虚拟 DOM 树",
+        "isCorrect": false,
+        "description": "错误。代理指向真实的 shadowRoot DOM，不是虚拟 DOM。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 为什么必须代理 iframe 的 `document` 查询 API？",
+    "explanation": "JS 在 iframe、DOM 在 WebComponent，本来是**两个不同的文档**。子应用调 `document.getElementById('app')` 时，如果直接查 iframe 的 document，是**查不到 DOM 的**（DOM 不在 iframe 里）。wujie 靠 `document` 代理把这道缝补上——把 iframe 里的查询重定向到 `<wujie>` 的 shadowRoot，让「iframe 的 JS」能操作「WebComponent 的 DOM」。",
+    "tags": ["wujie", "document-proxy", "机制"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JS 在 iframe、DOM 在 WebComponent 是两个不同文档，子应用调 `document.getElementById('app')` 若直接查 iframe document 会查不到 DOM，代理把这道缝补上",
+        "isCorrect": true,
+        "description": "正确。代理弥合了「JS 与 DOM 分处两个文档」的缝隙，是双容器可用的关键。"
+      },
+      {
+        "text": "为了拦截子应用的 XSS 注入，过滤危险节点",
+        "isCorrect": false,
+        "description": "错误。document 代理的目的是桥接 JS 与 DOM，不是安全过滤。"
+      },
+      {
+        "text": "为了把子应用 DOM 同步复制一份到 iframe 里",
+        "isCorrect": false,
+        "description": "错误。DOM 只在 WebComponent 一份，代理是重定向查询而非复制 DOM。"
+      },
+      {
+        "text": "为了让子应用 DOM 操作触发主应用的响应式更新",
+        "isCorrect": false,
+        "description": "错误。代理与主应用响应式无关；跨应用交互靠通信。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用 CSS 的 `@font-face` 字体声明为何要特殊处理，wujie 怎么做？",
+    "explanation": "`@font-face` 字体声明在 **shadow tree 内不生效**（浏览器规范限制）。wujie 会**自动把 `@font-face` 声明搬到 shadow 边界外**，让字体能加载。副作用：主应用和子应用**若用了同名字体族会互相覆盖**——起字体名时要避开重名。这是「DOM 活在 Shadow DOM 里」带来的一处逃逸修正。",
+    "tags": ["wujie", "css-isolation", "font-face"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`@font-face` 在 Shadow DOM 内不生效（规范限制），wujie 自动把它搬到 shadow 边界外；副作用是主/子应用同名字体族会互相覆盖",
+        "isCorrect": true,
+        "description": "正确。字体声明须搬出 shadow 才生效，代价是同名字体族可能互相覆盖。"
+      },
+      {
+        "text": "`@font-face` 会阻塞渲染，wujie 把它删除以提速",
+        "isCorrect": false,
+        "description": "错误。wujie 是把它搬出 shadow 边界让其生效，而非删除。"
+      },
+      {
+        "text": "`@font-face` 无法跨域，wujie 把字体转成 base64 内联",
+        "isCorrect": false,
+        "description": "错误。问题是 shadow tree 内声明不生效，解法是搬出边界，不是 base64 内联。"
+      },
+      {
+        "text": "`@font-face` 在 Shadow DOM 里重复加载，wujie 做了去重",
+        "isCorrect": false,
+        "description": "错误。问题不是重复加载，而是 shadow 内不生效需搬出。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用 CSS 里 `background: url(./a.png)` 的相对路径为什么能正确加载？",
+    "explanation": "CSS 里 `background: url(./a.png)` 的相对路径，默认会**相对主应用域名解析而 404**。wujie **自动把相对 `url()` 转成绝对地址**。但要注意：**动态插入的 HTML**（`v-html`、`innerHTML`、运行时 append 的 `<style>`）不走这条自动转换，需在子应用入口把 `window.__webpack_public_path__` 指向 <code v-pre>window.__WUJIE_PUBLIC_PATH__</code>。",
+    "tags": ["wujie", "css-isolation", "url"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 自动把相对 `url()` 转成绝对地址（默认会相对主应用域名解析而 404）",
+        "isCorrect": true,
+        "description": "正确。静态 CSS 的相对 url() 由 wujie 自动补成绝对地址。"
+      },
+      {
+        "text": "Shadow DOM 会自动以子应用域名为基准解析相对路径",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 不改变 url 解析基准，默认相对主应用域名会 404，靠 wujie 转换。"
+      },
+      {
+        "text": "wujie 把所有图片预先下载并替换成 base64",
+        "isCorrect": false,
+        "description": "错误。wujie 是改写为绝对地址，不是把图片 base64 内联。"
+      },
+      {
+        "text": "浏览器对 Shadow DOM 内的 `url()` 默认用子应用 origin 解析",
+        "isCorrect": false,
+        "description": "错误。浏览器不会自动用子应用 origin，需 wujie 转换或配 publicPath。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中通过 `v-html`/`innerHTML` 动态插入的资源，为什么需要子应用额外配 `window.__webpack_public_path__`？",
+    "explanation": "wujie 只对**静态 CSS** 的相对 `url()` 做自动转绝对；而**动态插入的 HTML**（`v-html`、`innerHTML`、运行时 append）不走这条自动转换。所以要在子应用入口补一行 `window.__webpack_public_path__ = window.__WUJIE_PUBLIC_PATH__`，让动态插入的资源也用正确的 publicPath 解析，避免相对路径 404。",
+    "tags": ["wujie", "publicpath", "动态资源"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "动态插入的 HTML 不走 wujie 自动的相对 `url()` 转绝对，需手动把 `__webpack_public_path__` 指向 `window.__WUJIE_PUBLIC_PATH__`",
+        "isCorrect": true,
+        "description": "正确。自动转换只覆盖静态 CSS，动态插入需手动配 publicPath。"
+      },
+      {
+        "text": "动态插入的资源默认被 Shadow DOM 拦截，需配置放行",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 不拦截资源加载，问题在相对路径解析基准。"
+      },
+      {
+        "text": "webpack 打包时必须硬编码 publicPath，运行时无法自动推断",
+        "isCorrect": false,
+        "description": "错误。运行时可用 `window.__WUJIE_PUBLIC_PATH__` 动态设置，无需硬编码。"
+      },
+      {
+        "text": "动态资源会被主应用的 CSP 拦截，需配置白名单",
+        "isCorrect": false,
+        "description": "错误。这与 CSP 无关，是相对 url 解析基准问题。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中异步事件处理器里的 `e.target` 为什么会变成 `<wujie>` 宿主元素？",
+    "explanation": "DOM 在 Shadow DOM 里，事件跨越 shadow 边界冒泡时，浏览器会做**事件重定向（event retargeting）**——把事件的 `target` 改写成宿主元素（这里是 `wujie-app`/`<wujie>`），以免暴露 shadow 内部结构。这会坑到依赖 `e.target` 的代码，尤其是**异步处理器**里读取时 target 已被重定向。",
+    "tags": ["wujie", "event", "retargeting"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "DOM 在 Shadow DOM 里，事件跨越 shadow 边界冒泡时浏览器做事件重定向（retargeting），把 target 改写成宿主元素以免暴露 shadow 内部结构",
+        "isCorrect": true,
+        "description": "正确。事件重定向是浏览器 Shadow DOM 的原生行为，非 wujie 主动改写。"
+      },
+      {
+        "text": "wujie 主动劫持了所有事件，统一把 target 改成 `<wujie>`",
+        "isCorrect": false,
+        "description": "错误。这是浏览器原生的事件重定向，不是 wujie 主动改写 target。"
+      },
+      {
+        "text": "异步回调执行时原始 target 已被垃圾回收，浏览器用宿主兜底",
+        "isCorrect": false,
+        "description": "错误。与垃圾回收无关，是 shadow 边界的事件重定向所致。"
+      },
+      {
+        "text": "iframe 与 WebComponent 跨文档传事件时丢失了原始 target",
+        "isCorrect": false,
+        "description": "错误。原因是 Shadow DOM 的 retargeting，而非 iframe 跨文档传递。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中要在异步事件处理器里拿到真实点击的节点，正确做法是什么？",
+    "explanation": "因为 Shadow DOM 的事件重定向会把 `e.target` 改成宿主元素，正解是用 **`e.composedPath()[0]`** 取穿透 shadow 的真实目标。官方写法：`e.target.shadowRoot && e.composed ? e.composedPath()[0] || e.target : e.target`。`composedPath()` 返回事件穿越（含 shadow 内部）的完整路径，`[0]` 就是真实触发节点。",
+    "tags": ["wujie", "event", "composedpath"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 `e.composedPath()[0]` 取穿透 shadow 的真实目标",
+        "isCorrect": true,
+        "description": "正确。composedPath 返回含 shadow 内部的完整路径，首项即真实触发节点。"
+      },
+      {
+        "text": "用 `e.currentTarget` 代替 `e.target`",
+        "isCorrect": false,
+        "description": "错误。`currentTarget` 是绑定监听的元素，不是真实点击的目标。"
+      },
+      {
+        "text": "直接读 `e.target.shadowRoot.activeElement`",
+        "isCorrect": false,
+        "description": "错误。`shadowRoot` 不一定存在，`activeElement` 是焦点元素而非点击目标。"
+      },
+      {
+        "text": "用已废弃的 `window.event.srcElement` 读取",
+        "isCorrect": false,
+        "description": "错误。`srcElement` 已废弃且同样受 retargeting 影响，官方解法是 composedPath。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 为什么把子应用 DOM 单独渲染到 WebComponent，而不是和 JS 一起留在 iframe 内？",
+    "explanation": "若 DOM 也留在 iframe 内，会回到裸 iframe 的**致命体验问题**：iframe 是独立视口盒子，里面的弹窗、下拉、全屏遮罩**永远无法超出 iframe 边框**。把 DOM 渲染进主应用文档流里的 WebComponent，子应用弹窗才能**覆盖全屏**、`z-index` 与主应用**同一套层叠上下文**、布局随主应用容器伸缩。这是「JS 拿隔离、DOM 拿渲染自由」的分工动机，不是纯性能优化。",
+    "tags": ["wujie", "webcomponent", "机制"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "若 DOM 在 iframe 内会被边框框死，弹窗/遮罩无法覆盖全屏；渲染进主应用文档流的 WebComponent 才能让弹窗覆盖全屏、z-index 与主应用同层叠、布局随主应用伸缩",
+        "isCorrect": true,
+        "description": "正确。分工的动机是解除 iframe 对 DOM 渲染的边框约束。"
+      },
+      {
+        "text": "iframe 内无法运行 CSS，只有 WebComponent 支持样式",
+        "isCorrect": false,
+        "description": "错误。iframe 内完全能跑 CSS，问题是弹窗被边框框死。"
+      },
+      {
+        "text": "iframe 内的 DOM 无法被 JavaScript 操作",
+        "isCorrect": false,
+        "description": "错误。iframe 内 DOM 可被 JS 操作，拆分是为了渲染自由而非可操作性。"
+      },
+      {
+        "text": "WebComponent 渲染 DOM 比 iframe 快，是纯性能优化",
+        "isCorrect": false,
+        "description": "错误。核心动机是弹窗覆盖全屏等渲染自由，不是纯性能。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用运行时动态 `append` 的 `<style>` 为什么能正确落进 shadowRoot 并随子应用销毁移除，无需像 `Proxy` 沙箱那样逐条记账？",
+    "explanation": "因为 `document.head`/`document.body` 已被 wujie 的 **`document` 代理**指向了 `<wujie>` 容器，子应用运行时 append 的 `<style>`/`<link>` 会**正确落进 shadowRoot**，并随子应用**销毁 WebComponent 时一并移除**。这是「样式隔离靠 WebComponent」在动态样式上的自洽体现——无需框架像 Proxy 沙箱那样逐条记账改写选择器。",
+    "tags": ["wujie", "document-proxy", "动态样式"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 `document.head`/`body` 已被 document 代理指向 `<wujie>` 容器，append 的 style 自然进 shadowRoot，销毁 WebComponent 时一并移除",
+        "isCorrect": true,
+        "description": "正确。document 代理让动态样式自然归属 shadowRoot，随容器销毁而清，自洽无需记账。"
+      },
+      {
+        "text": "wujie 用 `MutationObserver` 监听并逐条记录动态样式，销毁时删除",
+        "isCorrect": false,
+        "description": "错误。无需逐条监听记账，代理已让样式归属 shadowRoot，随容器一起移除。"
+      },
+      {
+        "text": "Shadow DOM 会自动回收所有动态插入的节点",
+        "isCorrect": false,
+        "description": "错误。回收发生在 WebComponent 销毁时，前提是样式已经落进 shadowRoot（靠 document 代理）。"
+      },
+      {
+        "text": "动态 `style` 被 wujie 转发到主应用 head，销毁时统一清",
+        "isCorrect": false,
+        "description": "错误。样式落进子应用 shadowRoot 而非主应用 head，否则就破坏隔离了。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的路由同步主要解决裸 iframe 的什么老毛病？",
+    "explanation": "裸 iframe 里，子应用的路由跳转发生在 iframe 内部的 `history` 栈上，**主应用的地址栏 URL 完全不变**。后果是：**刷新即回首页**（主应用没记录子应用在哪）、**URL 分享无效**（对方只看到子应用首页）、**浏览器前进后退错乱**。wujie 的路由同步就是把子应用 iframe 里的路由状态**投影到主应用可见的 URL 上**来根治这些。",
+    "tags": ["wujie", "route-sync", "痛点"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "刷新浏览器 / 分享 URL 后子应用路由丢失（回到首页）",
+        "isCorrect": true,
+        "description": "正确。裸 iframe 路由不体现在主应用 URL，刷新/分享即丢失，路由同步来根治。"
+      },
+      {
+        "text": "iframe 加载太慢导致首屏白屏",
+        "isCorrect": false,
+        "description": "错误。首屏白屏靠预加载/保活解决，不是路由同步的目标。"
+      },
+      {
+        "text": "iframe 内样式污染主应用",
+        "isCorrect": false,
+        "description": "错误。样式隔离靠 WebComponent 的 Shadow DOM，与路由同步无关。"
+      },
+      {
+        "text": "iframe 无法执行子应用 JavaScript",
+        "isCorrect": false,
+        "description": "错误。iframe 能执行 JS，路由同步解决的是路由投影问题。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的路由同步在机制上劫持了什么？",
+    "explanation": "因为 wujie 的沙箱是 iframe，子应用的路由（无论 `history` 模式还是 `hash` 模式）操作的是 **iframe 自己原生的 `history`/`location`**。wujie 只需**劫持 iframe 的 `history.pushState` 与 `history.replaceState`**，就能在子应用每次路由跳转时拿到新路由，并同步到主应用 URL query。这是「iframe 自带独立 history」这一物理事实的自然产物。",
+    "tags": ["wujie", "route-sync", "history"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用 iframe 的 `history.pushState` 与 `history.replaceState`",
+        "isCorrect": true,
+        "description": "正确。劫持 iframe 原生 history 的两个方法，即可捕获子应用路由变化。"
+      },
+      {
+        "text": "主应用的 `window.onpopstate` 事件",
+        "isCorrect": false,
+        "description": "错误。同步靠劫持子应用 iframe 的 pushState/replaceState，不是监听主应用 popstate。"
+      },
+      {
+        "text": "子应用的 Vue Router / React Router 实例",
+        "isCorrect": false,
+        "description": "错误。wujie 劫持的是底层 history API，与具体路由库无关，因此零改造。"
+      },
+      {
+        "text": "浏览器的 `location.assign` 方法",
+        "isCorrect": false,
+        "description": "错误。劫持的是 iframe 的 history 方法，非 location.assign。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的路由同步默认状态与开启方式是怎样的？",
+    "explanation": "路由同步**默认关闭**（`sync: false`），用 **`sync: true`** 开启——命令式在 `startApp` 里配，或组件式用 `<WujieVue :sync>`。开启后，子应用每次路由变化都会投影到主应用 URL query。多个子应用可同时开启，各用自己的 `name` 作 key，互不干扰。",
+    "tags": ["wujie", "route-sync", "sync"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认关闭（`sync: false`），用 `sync: true`（或 `<WujieVue :sync>`）开启",
+        "isCorrect": true,
+        "description": "正确。同步默认关，须显式 `sync: true` 才开启。"
+      },
+      {
+        "text": "默认开启，用 `sync: false` 关闭",
+        "isCorrect": false,
+        "description": "错误。默认是关闭的，需手动开启。"
+      },
+      {
+        "text": "默认开启，无法关闭",
+        "isCorrect": false,
+        "description": "错误。同步是可选开关，默认关闭且可控。"
+      },
+      {
+        "text": "默认关闭，用 `route: true` 开启",
+        "isCorrect": false,
+        "description": "错误。配置项是 `sync` 而非 `route`。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 路由同步把子应用路由写回主应用 URL 时，采用什么格式？",
+    "explanation": "wujie 把子应用的 **`path + query + hash`** 用 `encodeURIComponent` 编码，挂到主应用 query 上，**key = 子应用 `name`**——形如 `主应用地址?子应用name=编码后的子应用路由`。例如子应用 `router.push('/detail/5?tab=info')` 会写回 `https://main.app/dashboard?app-vue=%2Fdetail%2F5%3Ftab%3Dinfo`。多子应用各用自己的 name 作 key 并存。",
+    "tags": ["wujie", "route-sync", "url"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "子应用 `path+query+hash` 经 `encodeURIComponent` 编码，挂到主应用 query 上，key = 子应用 `name`",
+        "isCorrect": true,
+        "description": "正确。编码后的子应用路由以 name 为 key 挂在主应用 query，形如 `?app-vue=%2F...`。"
+      },
+      {
+        "text": "直接把子应用路由拼接到主应用 `path` 后面",
+        "isCorrect": false,
+        "description": "错误。wujie 投影到 query 而非主应用 path；拼进 path 是 qiankun 那类 base 前缀路线。"
+      },
+      {
+        "text": "用子应用 `url` 的 host 作 key，明文挂到 query",
+        "isCorrect": false,
+        "description": "错误。key 是子应用 `name`，且路由值经 encodeURIComponent 编码而非明文。"
+      },
+      {
+        "text": "存进 `localStorage`，URL 上只放一个随机 id",
+        "isCorrect": false,
+        "description": "错误。路由直接编码进主应用 URL query，不走 localStorage。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中用户刷新浏览器后，子应用为何能恢复到刷新前的路由？",
+    "explanation": "子应用路由已被同步进主应用 URL query（如 `?app-vue=%2Fdetail%2F5`）。刷新浏览器或分享这个 URL 时，wujie 在**初次实例化**会从 query 里把 `app-vue=...` **解码读回**，让子应用直接恢复到 `/detail/5`。这正是「把路由投影到主应用 URL」的兑现——路由状态不再随刷新丢失。",
+    "tags": ["wujie", "route-sync", "刷新恢复"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 初次实例化时从主应用 URL 的 query 里把 `name=...` 解码读回，让子应用恢复到该路由",
+        "isCorrect": true,
+        "description": "正确。初次实例化从 query 读回子应用路由，实现刷新/分享恢复。"
+      },
+      {
+        "text": "子应用把路由存进 `sessionStorage`，刷新后自动读取",
+        "isCorrect": false,
+        "description": "错误。恢复靠 URL query 读回，而非 sessionStorage。"
+      },
+      {
+        "text": "主应用拦截 F5，阻止真正刷新只重渲染",
+        "isCorrect": false,
+        "description": "错误。是真实刷新，恢复靠从 URL query 读回路由。"
+      },
+      {
+        "text": "iframe 的 `history` 栈在刷新后依然保留",
+        "isCorrect": false,
+        "description": "错误。刷新会重建 iframe，history 栈不保留，靠 URL query 恢复。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 路由同步的「单向同步」具体指什么？",
+    "explanation": "这是路由同步**最反直觉、最容易踩的语义坑**。官方原文：只有无界实例在**初次实例化**时才会从 URL 读回路由信息，一旦实例化完成，后续只会**单向**地将子应用路由同步到主应用 URL。拆开说：初次实例化是唯一一次 URL → 子应用方向；之后只有**子应用路由 → 主应用 URL** 一个方向，主应用改 URL **不会**反向驱动子应用。",
+    "tags": ["wujie", "route-sync", "单向同步"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只有初次实例化才从 URL 读回一次路由，之后只有「子应用路由 → 主应用 URL」一个方向，主应用改 URL 不会反向驱动子应用",
+        "isCorrect": true,
+        "description": "正确。读回仅初次实例化一次，之后是子应用到主应用 URL 的单向同步。"
+      },
+      {
+        "text": "只有「主应用 URL → 子应用路由」一个方向",
+        "isCorrect": false,
+        "description": "错误。方向反了：实例化后是子应用到主应用 URL，主应用改 URL 无效。"
+      },
+      {
+        "text": "子应用与主应用 URL 双向实时绑定",
+        "isCorrect": false,
+        "description": "错误。除初次读回外并非双向，实例化后仅单向。"
+      },
+      {
+        "text": "每次路由变化都双向读写 URL 和子应用",
+        "isCorrect": false,
+        "description": "错误。只有初次实例化读回一次，之后单向。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中主应用想让子应用跳到某个路由，正确做法是什么？",
+    "explanation": "因为路由同步是**单向**的（主应用改 URL query 不会反向驱动子应用），「主应用想控制子应用跳路由」**不能靠改 URL query**，要走**通信**：用 `props` 传目标路由 + 子应用监听，或用 EventBus 广播跳转指令让子应用自己跳。尤其**保活模式**下改 `startApp` 的 `url` 参数也**不会**触发跳转，同样得走通信通道。",
+    "tags": ["wujie", "route-sync", "通信"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "走通信（`props` 传目标路由 + 子应用监听，或 EventBus 广播跳转指令），因为改 URL query 不会反向驱动子应用",
+        "isCorrect": true,
+        "description": "正确。单向同步下主控子跳转必须走通信，改 URL 无效。"
+      },
+      {
+        "text": "直接用 JS 修改主应用地址栏的 `?name=...` query",
+        "isCorrect": false,
+        "description": "错误。实例化后主应用改 URL 不反向驱动子应用，无效。"
+      },
+      {
+        "text": "调用 `startApp` 时改 `url` 参数即可触发跳转",
+        "isCorrect": false,
+        "description": "错误。保活模式下改 `url` 不触发跳转；官方推荐主控子跳转统一走通信。"
+      },
+      {
+        "text": "调用 wujie 的 `navigateSubApp` API",
+        "isCorrect": false,
+        "description": "错误。不存在该 API；主控子跳转靠 props/bus 通信。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 路由同步的 `prefix` 配置作用是什么？",
+    "explanation": "子应用路由前缀往往很长（`/example/prod/module-a/page`），全塞进主应用 query 会让 URL 又臭又长。`prefix` 让你用短标识替换长前缀：把短 key `prod` 映射到 `/example/prod`，让 `/example/prod/hello` 在 URL 里显示成 `{prod}/hello`。同步时**匹配最长可用前缀**替换、读回时反向展开。`prefix` 纯粹是「URL 显示瘦身」，**不改变子应用实际路由**（配置时去掉域名部分）。",
+    "tags": ["wujie", "route-sync", "prefix"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把冗长的子应用路由前缀替换成短标识给主应用 URL 瘦身（匹配最长前缀），纯显示瘦身不改子应用实际路由",
+        "isCorrect": true,
+        "description": "正确。prefix 只是 URL 显示层的短标识替换，读回时反向展开，不改真实路由。"
+      },
+      {
+        "text": "给子应用路由统一加上一个 `base` 前缀",
+        "isCorrect": false,
+        "description": "错误。prefix 是缩短显示，不是给子应用路由加 base。"
+      },
+      {
+        "text": "限定子应用只能访问某些前缀下的路由",
+        "isCorrect": false,
+        "description": "错误。prefix 不做访问限制，只做 URL 显示瘦身。"
+      },
+      {
+        "text": "把主应用路由前缀同步给子应用",
+        "isCorrect": false,
+        "description": "错误。prefix 作用于子应用路由在主应用 URL 的显示，方向与描述相反。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中同屏多个子应用同时开启路由同步会怎样？",
+    "explanation": "**多个子应用可以同时同步**——各自用自己的 `name` 作 key 挂在主应用 query 上，**互不干扰**，形如 `https://main.app/?app-vue=%2Fa&app-react=%2Fb`。这与 wujie「天然支持同屏多子应用并存」的组件化路线一脉相承。浏览器的前进后退（v2.0 支持）会正确驱动对应子应用的路由。",
+    "tags": ["wujie", "route-sync", "多实例"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "各子应用用自己的 `name` 作 key 挂在主应用 query 上，互不干扰，如 `?app-vue=%2Fa&app-react=%2Fb`",
+        "isCorrect": true,
+        "description": "正确。以 name 为 key 使多子应用路由在同一 URL 上并存不冲突。"
+      },
+      {
+        "text": "只有最后挂载的子应用能同步，其余被覆盖",
+        "isCorrect": false,
+        "description": "错误。key 是各自的 name，不会互相覆盖。"
+      },
+      {
+        "text": "所有子应用路由合并成一个 query 值",
+        "isCorrect": false,
+        "description": "错误。每个子应用各占一个 query 键值对，不合并。"
+      },
+      {
+        "text": "多子应用同步会冲突，wujie 禁止同屏多个 sync",
+        "isCorrect": false,
+        "description": "错误。wujie 天然支持多子应用并存同步，不禁止。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 保活模式（`alive: true`）下改 `startApp` 的 `url` 参数为什么不触发子应用路由跳转？",
+    "explanation": "保活模式下子应用**渲染一次就常驻**、状态全留、切换秒切，`url` 参数不再驱动路由——所以改 `url` **不会**触发子应用路由跳转。要在保活模式下控制子应用跳转，必须走**通信**（`props`/`bus`）让子应用自己跳。这与路由同步的「单向」语义一致：主应用无法通过改 URL 或 url 参数反向驱动子应用。",
+    "tags": ["wujie", "keep-alive", "route-sync"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "保活模式子应用常驻不销毁、状态全留，`url` 不再驱动路由，要控制跳转必须走通信通道",
+        "isCorrect": true,
+        "description": "正确。保活下 url 不驱动路由，主控子跳转须走 props/bus 通信。"
+      },
+      {
+        "text": "保活模式禁用了 `history`，子应用无法跳路由",
+        "isCorrect": false,
+        "description": "错误。子应用自己仍能跳路由，只是改 `url` 参数不驱动它跳。"
+      },
+      {
+        "text": "`url` 参数在保活模式下变成只读",
+        "isCorrect": false,
+        "description": "错误。不是只读，而是改动不触发路由跳转。"
+      },
+      {
+        "text": "保活模式下 `url` 改动会触发整个子应用重建而非跳转",
+        "isCorrect": false,
+        "description": "错误。保活恰恰是不重建，改 url 既不跳也不重建。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 与 qiankun 相比，为什么说它的路由同步是「iframe 自带独立 history」这一物理事实的自然产物？",
+    "explanation": "wujie 子应用用 **iframe 原生独立的 `history`**，wujie 只需**劫持它、把路由投影到主应用 query**，子应用几乎**零改造**。而 qiankun 让子应用改造成**共享主应用的 `history`**、路由 `base` 前缀直接体现在主应用真实 path、**需切换路由 base**（`activeRule` 前缀）。两条路线机制不同：wujie 是投影到 query、qiankun 是共享同一 history。",
+    "tags": ["wujie", "route-sync", "对比"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "子应用用 iframe 原生独立 history，wujie 只需劫持它、把路由投影到主应用 query，子应用几乎零改造；qiankun 让子应用共享主应用 history、需切换路由 base",
+        "isCorrect": true,
+        "description": "正确。iframe 自带独立 history 使 wujie 只需劫持投影，子应用零改造。"
+      },
+      {
+        "text": "iframe 的 `history` 会自动同步到主应用，wujie 无需做任何劫持",
+        "isCorrect": false,
+        "description": "错误。同步靠 wujie 主动劫持 pushState/replaceState 投影，并非自动。"
+      },
+      {
+        "text": "qiankun 无法做路由同步，只有 iframe 路线能实现",
+        "isCorrect": false,
+        "description": "错误。qiankun 也能让子应用路由体现在主应用 URL，只是机制是共享 history。"
+      },
+      {
+        "text": "iframe 的 `history` 与浏览器地址栏本就是同一个，天然一致",
+        "isCorrect": false,
+        "description": "错误。iframe 有独立 history，与主应用地址栏并非同一个，需 wujie 投影。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 有哪三种子应用运行模式？",
+    "explanation": "wujie 的「切换子应用时怎么处理它」有三档：**保活（keep-alive）**、**单例（singleton）**、**重建（rebuild，默认）**，取决于两个开关——`alive` 是否为 `true`、子应用是否写了 <code v-pre>__WUJIE_MOUNT</code>/<code v-pre>__WUJIE_UNMOUNT</code> 生命周期。一句话选择：要状态不丢切换最快 → 保活；要每次全新实例但复用沙箱 → 单例；最省内存每次全新 → 重建。",
+    "tags": ["wujie", "keep-alive", "模式"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "保活（keep-alive）、单例（singleton）、重建（rebuild，默认）",
+        "isCorrect": true,
+        "description": "正确。三模式靠 `alive` 与是否写生命周期区分，重建为默认。"
+      },
+      {
+        "text": "同步、异步、懒加载",
+        "isCorrect": false,
+        "description": "错误。这不是 wujie 的运行模式划分。"
+      },
+      {
+        "text": "沙箱、非沙箱、降级",
+        "isCorrect": false,
+        "description": "错误。降级是 `degrade` 开关，不属于三种运行模式。"
+      },
+      {
+        "text": "单页、多页、混合",
+        "isCorrect": false,
+        "description": "错误。这与 wujie 的模式无关。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中既不配 `alive` 也不写生命周期钩子，子应用处于哪种模式？",
+    "explanation": "什么都不配就是**重建模式（默认）**：每次切换都把 WebComponent（DOM）和 iframe（JS）**双双销毁**，下次进入**全量重建**。它最省内存、隔离最干净，但每次进入都有加载渲染开销（非 webpack 老项目切换时可能白屏，官方建议这类项目用保活）。需要编程式全量重建刷新时用 `refreshApp()`（v2.1.0 新增）。",
+    "tags": ["wujie", "rebuild", "默认模式"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "重建模式（默认）——每次切换销毁 WebComponent+iframe，下次进来全量重建",
+        "isCorrect": true,
+        "description": "正确。不配 alive、不写生命周期即重建模式，最省内存但每次重建。"
+      },
+      {
+        "text": "保活模式——状态全留、切换秒切",
+        "isCorrect": false,
+        "description": "错误。保活需显式配 `alive: true`，默认不保活。"
+      },
+      {
+        "text": "单例模式——切换销毁重建实例",
+        "isCorrect": false,
+        "description": "错误。单例需子应用写生命周期钩子，默认不是单例。"
+      },
+      {
+        "text": "预加载模式——空闲期提前拉资源",
+        "isCorrect": false,
+        "description": "错误。预加载是 `preloadApp` 的能力，不是子应用切换的运行模式。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 保活模式（`alive: true`）下切走再切回，子应用状态如何？",
+    "explanation": "保活是 wujie 的招牌能力。`alive: true` 后子应用**渲染一次就常驻**：切走时 wujie **不销毁** WebComponent 和 iframe，只把 WebComponent 从 DOM 上摘下留在内存；切回时把缓存的 WebComponent 直接挂回去。结果是**状态（数据+子应用路由）全不丢**、切换秒切——用户填了一半的表单、滚动到一半的长列表，切走再回来**原样还在**。",
+    "tags": ["wujie", "keep-alive", "状态保留"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "状态（数据+路由）全不丢，WebComponent 与 iframe 都留内存不销毁，切回把缓存 WC 挂回 DOM",
+        "isCorrect": true,
+        "description": "正确。保活不销毁 WC+iframe，切回挂回缓存 WC，状态全留、切换秒切。"
+      },
+      {
+        "text": "状态全部重置，子应用重新渲染",
+        "isCorrect": false,
+        "description": "错误。那是重建模式的行为，保活恰恰保留状态。"
+      },
+      {
+        "text": "只保留路由，数据状态丢失",
+        "isCorrect": false,
+        "description": "错误。保活数据与路由都保留，不是只留路由。"
+      },
+      {
+        "text": "只保留数据，路由回到首页",
+        "isCorrect": false,
+        "description": "错误。保活连子应用路由状态也保留，不会回首页。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的单例模式需要子应用配合做什么？",
+    "explanation": "**单例模式**（`alive: false` 且子应用写了生命周期）需要子应用导出 <code v-pre>window.__WUJIE_MOUNT</code>/<code v-pre>window.__WUJIE_UNMOUNT</code> 钩子：切走时 wujie 调 `__WUJIE_UNMOUNT` 销毁当前实例，切回时调 `__WUJIE_MOUNT` 渲染一个全新实例。单例下改 `url` 会触发**真实路由跳转**，且多个菜单用同一个 `name` 会**共享同一个子应用实例**（同一 iframe 沙箱），适合「同一子应用、多个入口」。",
+    "tags": ["wujie", "singleton", "生命周期"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "导出 `window.__WUJIE_MOUNT` / `window.__WUJIE_UNMOUNT` 生命周期钩子",
+        "isCorrect": true,
+        "description": "正确。单例模式才需子应用实现这对挂载/卸载钩子。"
+      },
+      {
+        "text": "什么都不用改，零改造",
+        "isCorrect": false,
+        "description": "错误。零改造的是保活与重建模式；单例需写生命周期。"
+      },
+      {
+        "text": "导出 `bootstrap`/`mount`/`unmount` 三个 UMD 生命周期",
+        "isCorrect": false,
+        "description": "错误。那是 qiankun 的契约；wujie 单例用 `__WUJIE_MOUNT`/`__WUJIE_UNMOUNT`。"
+      },
+      {
+        "text": "配置 `alive: true`",
+        "isCorrect": false,
+        "description": "错误。`alive: true` 是保活模式；单例是 `alive: false` + 写生命周期。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 `preloadApp`（不配 `exec`）在空闲期做了什么？",
+    "explanation": "`preloadApp` 解决的是「第一次进也快」。不配 `exec` 时它做**预加载**：在浏览器**空闲期**用 `requestIdleCallback` 把子应用的**静态资源（HTML/JS/CSS）下载进内存缓存**。等用户真进入时，资源已就绪，省掉了下载时间——「极大提升子应用打开的首屏时间」。它不执行 JS、不渲染 DOM（那是 `exec: true` 的预执行才做的）。",
+    "tags": ["wujie", "preload", "预加载"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `requestIdleCallback` 把子应用静态资源（HTML/JS/CSS）下载进内存缓存，缩短首屏时间",
+        "isCorrect": true,
+        "description": "正确。预加载在空闲期拉资源进缓存，省下载时间，不执行 JS。"
+      },
+      {
+        "text": "提前把子应用完整渲染出来",
+        "isCorrect": false,
+        "description": "错误。提前渲染是 `exec: true` 的预执行，纯预加载不渲染。"
+      },
+      {
+        "text": "提前建立与子应用服务器的长连接",
+        "isCorrect": false,
+        "description": "错误。预加载是下载资源进缓存，不是建长连接。"
+      },
+      {
+        "text": "把子应用打包进主应用 bundle",
+        "isCorrect": false,
+        "description": "错误。预加载是运行时空闲期拉资源，与打包无关。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 `preloadApp({ exec: true })` 相比不配 `exec` 多做了什么？",
+    "explanation": "`exec: true` 是**预执行**——比预加载更进一步，不止下载资源，还**提前把子应用渲染出来**（执行 JS、建 DOM）。用户进入时几乎是「现成的」直接展示，最逼近秒开。代价是提前常驻一个 iframe + WebComponent。预执行时通常配合 `fiber: true` 分片，避免长时间阻塞主线程。",
+    "tags": ["wujie", "preload", "预执行"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不止下载资源，还提前把子应用渲染出来（执行 JS、建 DOM），最逼近秒开",
+        "isCorrect": true,
+        "description": "正确。预执行提前跑 JS 建 DOM，用户进入时几乎现成，代价是提前常驻 iframe+WC。"
+      },
+      {
+        "text": "只是把资源缓存的优先级提高",
+        "isCorrect": false,
+        "description": "错误。exec 是真正提前渲染，不只是调整缓存优先级。"
+      },
+      {
+        "text": "把子应用资源预先 gzip 压缩",
+        "isCorrect": false,
+        "description": "错误。压缩是服务端/传输层的事，exec 做的是提前执行渲染。"
+      },
+      {
+        "text": "提前建立 iframe 但不执行任何 JS",
+        "isCorrect": false,
+        "description": "错误。预执行会执行 JS 并建 DOM，不是只建空 iframe。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 `fiber: true`（默认）借鉴 React Fiber 做什么？",
+    "explanation": "预执行要跑子应用 JS、建 DOM，可能**长时间占用主线程**导致主应用卡顿。wujie 借鉴 **React Fiber** 的思路，用 `fiber` 把子应用 JS 的执行**切成一个个小片**、插空执行，避免一次性阻塞主线程。`fiber: true`（默认）适合预执行、后台预加载等不希望卡住主应用的场景。",
+    "tags": ["wujie", "fiber", "分片"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把子应用 JS 执行切成小片插空执行，避免一次性长时间阻塞主线程",
+        "isCorrect": true,
+        "description": "正确。fiber 分片执行 JS，避免预执行/首次渲染卡住主线程。"
+      },
+      {
+        "text": "给子应用组件树做虚拟 DOM diff",
+        "isCorrect": false,
+        "description": "错误。fiber 在 wujie 指 JS 执行分片，不是虚拟 DOM diff。"
+      },
+      {
+        "text": "把子应用 JS 放到 Web Worker 后台线程",
+        "isCorrect": false,
+        "description": "错误。JS 仍在主线程的 iframe 里，只是切片执行，不入 Worker。"
+      },
+      {
+        "text": "让子应用支持并发渲染和时间切片调度器",
+        "isCorrect": false,
+        "description": "错误。fiber 这里是 wujie 分片执行子应用 JS，不是给子应用注入并发渲染能力。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 官方建议哪种子应用设 `fiber: false`（一次性执行）？",
+    "explanation": "`fiber: false` 是一次性执行。官方建议——**在主应用初始化时就要加载的子应用**设 `false`。因为此时主应用本就在忙初始化，把子应用 JS 分片反而**拖慢子应用就绪**；一次性执行让它尽快跑完。其余「不希望卡住主应用」的场景（预执行、后台预加载）仍用默认 `fiber: true`。",
+    "tags": ["wujie", "fiber", "选型"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "主应用初始化时就要加载的子应用——此时主应用本就在忙初始化，分片反而拖慢子应用就绪",
+        "isCorrect": true,
+        "description": "正确。初始化即加载的子应用宜一次性执行尽快就绪，故设 `fiber: false`。"
+      },
+      {
+        "text": "保活模式的子应用",
+        "isCorrect": false,
+        "description": "错误。是否保活与 fiber 取值无直接关系，建议看是否初始化即加载。"
+      },
+      {
+        "text": "需要预执行的子应用",
+        "isCorrect": false,
+        "description": "错误。预执行恰恰宜用默认 `fiber: true` 分片避免阻塞。"
+      },
+      {
+        "text": "体积特别大的子应用",
+        "isCorrect": false,
+        "description": "错误。判据是「是否初始化即加载」，而非子应用体积大小。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用静态资源更新后，如何强制下次重新拉取？",
+    "explanation": "wujie 按 **host 缓存** 子应用的 HTML/JS/CSS。资源更新后，用 **`clearAssetsCache()`** 清掉缓存，强制下次重新拉取；不传参清全部，**传 `host` 可精确清某个子应用**的缓存。这避免了子应用发版后主应用仍用旧缓存资源的问题。",
+    "tags": ["wujie", "cache", "clearAssetsCache"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "调 `clearAssetsCache()` 清掉按 host 缓存的 HTML/JS/CSS（可传 `host` 精确清某个子应用）",
+        "isCorrect": true,
+        "description": "正确。clearAssetsCache 清资源缓存，不传清全部、传 host 清指定子应用。"
+      },
+      {
+        "text": "调 `destroyApp()` 销毁子应用即可",
+        "isCorrect": false,
+        "description": "错误。destroyApp 销毁实例，不负责清资源缓存。"
+      },
+      {
+        "text": "修改 `startApp` 的 `url` 加时间戳",
+        "isCorrect": false,
+        "description": "错误。官方提供了 clearAssetsCache 专门清缓存，无需 url 加时间戳的 hack。"
+      },
+      {
+        "text": "调 `refreshApp()` 全量重建",
+        "isCorrect": false,
+        "description": "错误。refreshApp 是全量重建子应用，不等于清 host 资源缓存。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的「预加载+预执行+保活」秒开秒切组合，本质代价是什么？",
+    "explanation": "这套秒开秒切组合拳本质是**用内存换时间**：预加载省下载时间（内存多份资源缓存）、预执行省首次渲染时间（提前常驻 iframe+WebComponent）、保活省重建（子应用永久常驻内存、后台仍跑 JS）。因为 wujie 的隔离靠 iframe，**每个被预执行/保活的子应用都常驻一个 iframe（+WebComponent+JS 运行时）**，同屏并存越多内存越高。",
+    "tags": ["wujie", "内存", "权衡"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用内存换时间——每个被预执行/保活的子应用都常驻一个 iframe+WebComponent+JS 运行时，同屏越多内存越高",
+        "isCorrect": true,
+        "description": "正确。秒开三件套是用内存换时间，常驻子应用越多内存占用越高。"
+      },
+      {
+        "text": "用 CPU 换时间——预执行持续占用主线程",
+        "isCorrect": false,
+        "description": "错误。fiber 分片正是为避免持续占主线程；核心代价是常驻内存。"
+      },
+      {
+        "text": "用带宽换时间——反复重新下载资源",
+        "isCorrect": false,
+        "description": "错误。预加载是把资源缓存进内存省下载，不是反复重新下载。"
+      },
+      {
+        "text": "无代价，秒开三件套是纯收益",
+        "isCorrect": false,
+        "description": "错误。代价是明确的内存开销，不能无脑全开。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 保活的子应用即使不在前台，仍会发生什么？",
+    "explanation": "保活的子应用**后台仍活着**：即使不在前台，它的 JS **一直在 iframe 里跑**，**仍在响应 `bus` 事件**。这既是能力（后台也能收消息、维持状态），也是**内存/CPU 成本**——保活子应用永久常驻内存，后台仍占 CPU。所以不能无脑全开保活，要按子应用冷热取舍。",
+    "tags": ["wujie", "keep-alive", "内存"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仍在响应 `bus` 事件，它的 JS 一直在 iframe 里跑——既是能力也是内存/CPU 成本",
+        "isCorrect": true,
+        "description": "正确。保活子应用后台 JS 不停、仍响应 bus，既是能力也是常驻成本。"
+      },
+      {
+        "text": "完全冻结，不占用任何 CPU",
+        "isCorrect": false,
+        "description": "错误。保活不冻结，后台 JS 仍在运行并占用资源。"
+      },
+      {
+        "text": "iframe 被浏览器自动卸载以省内存",
+        "isCorrect": false,
+        "description": "错误。保活恰恰是不卸载，iframe 常驻内存。"
+      },
+      {
+        "text": "只保留 DOM 快照，JS 停止运行",
+        "isCorrect": false,
+        "description": "错误。保活保留的是活的实例，JS 继续运行，不是静态快照。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 基于保活的内存代价，实践上应如何取舍开不开保活？",
+    "explanation": "因为每个保活子应用常驻一个 iframe+WebComponent+JS 运行时，同屏保活越多内存越高，**不能无脑全开保活**。实践建议：**高频往返、状态重的子应用**（表单、长列表）开保活/预执行，享受秒切与状态不丢；**低频、一次性**的子应用走默认重建，省内存、隔离最干净。按子应用冷热取舍是关键。",
+    "tags": ["wujie", "keep-alive", "选型"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "高频往返、状态重的子应用开保活/预执行；低频、一次性的走默认重建，不能无脑全开保活",
+        "isCorrect": true,
+        "description": "正确。按子应用冷热取舍：热的保活、冷的重建，平衡体验与内存。"
+      },
+      {
+        "text": "所有子应用都开保活，体验最好",
+        "isCorrect": false,
+        "description": "错误。全开保活内存开销叠加，冷子应用常驻不划算。"
+      },
+      {
+        "text": "所有子应用都用重建，最省内存最优",
+        "isCorrect": false,
+        "description": "错误。全用重建会牺牲高频往返子应用的秒切与状态保留体验。"
+      },
+      {
+        "text": "按子应用体积决定，越大越要保活",
+        "isCorrect": false,
+        "description": "错误。判据是访问频率与状态重要性（冷热），不是单纯体积。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 提供哪三种主子应用通信方式？",
+    "explanation": "wujie 提供三种通信方式：**`props` 注入**（父传子首选）、**`window` 直通**（同域 iframe 特权，`window.parent`/`contentWindow` 直接互访）、**去中心化 EventBus（`bus`）**（发布订阅、任意方向广播）。三者都建立在一个物理前提上：**wujie 的 iframe 与主应用同域**，所以直通与共享 `bus` 实例才可能工作。",
+    "tags": ["wujie", "communication", "通信"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`props` 注入、`window` 直通（同域）、去中心化 EventBus（`bus`）",
+        "isCorrect": true,
+        "description": "正确。props 父传子、window 同域直通、bus 去中心化广播是 wujie 的三种通信。"
+      },
+      {
+        "text": "`postMessage`、`localStorage`、`Cookie`",
+        "isCorrect": false,
+        "description": "错误。这些是通用跨文档/存储手段，不是 wujie 内置的三种通信方式。"
+      },
+      {
+        "text": "Redux、Vuex、Pinia",
+        "isCorrect": false,
+        "description": "错误。这些是状态管理库，不是 wujie 的应用间通信通道。"
+      },
+      {
+        "text": "WebSocket、SSE、长轮询",
+        "isCorrect": false,
+        "description": "错误。这些是前后端实时通信，与 wujie 主子应用通信无关。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中主应用通过 `props` 注入的数据，子应用怎么读取？",
+    "explanation": "主应用用 `startApp({ props })` 或 `<WujieVue :props>` 注入数据与方法，子应用从 <code v-pre>window.$wujie.props</code> 取——这是最简单、最常用的父传子通道。`props` 里既能传数据、也能传函数（传函数就实现了「子应用回调主应用」的反向通道）。适合初始配置、用户信息、主应用能力下发。",
+    "tags": ["wujie", "communication", "props"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `window.$wujie.props`",
+        "isCorrect": true,
+        "description": "正确。子应用从 `window.$wujie.props` 读取主应用注入的数据与方法。"
+      },
+      {
+        "text": "用 `window.parent.props`",
+        "isCorrect": false,
+        "description": "错误。props 挂在子应用的 `window.$wujie.props`，不是主应用 window 上。"
+      },
+      {
+        "text": "用 `this.$attrs`",
+        "isCorrect": false,
+        "description": "错误。`$attrs` 是 Vue 组件的透传属性，与 wujie 的 props 注入无关。"
+      },
+      {
+        "text": "用 `window.__WUJIE_PROPS__`",
+        "isCorrect": false,
+        "description": "错误。没有这个全局；正确入口是 `window.$wujie.props`。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 `props` 除了传数据，还能传什么以实现子应用回调主应用？",
+    "explanation": "`props` 里既能传数据、也能**传函数（方法）**——传函数就实现了「子应用回调主应用」的**反向通道**。例如主应用注入 `onLogout: () => store.logout()`，子应用调 `props.onLogout()` 即回调主应用逻辑。这让 `props` 不止是父传子的数据通道，还能承担子到父的回调。",
+    "tags": ["wujie", "communication", "props"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "能传函数（方法）——子应用调用即回调主应用，形成反向通道",
+        "isCorrect": true,
+        "description": "正确。props 传函数即实现子应用回调主应用的反向通道。"
+      },
+      {
+        "text": "只能传可序列化的纯数据，不能传函数",
+        "isCorrect": false,
+        "description": "错误。同域下 props 可传函数，正是回调主应用的关键。"
+      },
+      {
+        "text": "能传 DOM 节点引用",
+        "isCorrect": false,
+        "description": "错误。props 传的是数据与方法，传 DOM 引用非其设计用途。"
+      },
+      {
+        "text": "能传主应用的整个 Vue 实例，别的都不行",
+        "isCorrect": false,
+        "description": "错误。props 通常传数据与回调方法，并非只能传 Vue 实例。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 同域 iframe 下，子应用访问主应用全局用什么？",
+    "explanation": "因为 iframe 与主应用**同源**，子应用可通过 **`window.parent.xxx`** 直接访问主应用全局。这条通道直接、轻量、无需约定协议，但**耦合最紧**（两边硬编码对方全局名），适合简单临时直连；复杂、多应用、要解耦的场景应优先 EventBus。注意：子应用里 `window` 是被代理的沙箱 window，`window.parent` 才是主应用真实 window。",
+    "tags": ["wujie", "communication", "window"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.parent.xxx`",
+        "isCorrect": true,
+        "description": "正确。同域下子应用用 `window.parent` 直读主应用真实 window 的全局。"
+      },
+      {
+        "text": "`window.child.xxx`",
+        "isCorrect": false,
+        "description": "错误。不存在 `window.child`；子访主用 `window.parent`。"
+      },
+      {
+        "text": "`window.$wujie.main.xxx`",
+        "isCorrect": false,
+        "description": "错误。没有 `$wujie.main` 这个入口；子访主用 `window.parent`。"
+      },
+      {
+        "text": "`window.__WUJIE_RAW_WINDOW__.xxx`",
+        "isCorrect": false,
+        "description": "错误。那是子应用自己未被代理的真实 window，不是主应用 window。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中主应用要访问某个子应用挂在其 window 上的全局，怎么做？",
+    "explanation": "主应用通过该子应用 **iframe 的 `contentWindow`** 访问其全局——每个子应用的 iframe 的 `name` 就是它的 `name`，所以 `window.document.querySelector(iframe[name=app-vue]).contentWindow` 即拿到子应用 window，再读其上的全局。这是同域 iframe 的特权（跨域会被 SOP 拦死），耦合较紧，复杂场景优先 EventBus。",
+    "tags": ["wujie", "communication", "contentWindow"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通过该子应用 iframe 的 `contentWindow`（iframe 的 name 就是子应用 name），如 `querySelector(iframe[name=app-vue]).contentWindow`",
+        "isCorrect": true,
+        "description": "正确。iframe 的 name 即子应用 name，取其 contentWindow 即可读子应用全局。"
+      },
+      {
+        "text": "直接读 `window.app-vue`",
+        "isCorrect": false,
+        "description": "错误。子应用全局在其 iframe 的 contentWindow 上，不挂在主应用 window 的同名属性。"
+      },
+      {
+        "text": "通过 `bus.$emit` 请求子应用返回",
+        "isCorrect": false,
+        "description": "错误。那是事件总线通信；直读全局用 contentWindow。"
+      },
+      {
+        "text": "读 `localStorage` 里子应用写的值",
+        "isCorrect": false,
+        "description": "错误。直读子应用全局用 contentWindow，不依赖 localStorage 中转。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中主应用和子应用分别怎么拿到 `bus`？",
+    "explanation": "**主应用**引入 `bus`：`import { bus } from wujie`（或从 `WujieVue`/`WujieReact` 上解构）；**子应用**用 <code v-pre>window.$wujie.bus</code>（或 `$wujie.bus`）。两边拿到的是同一个**全局单例** `bus`，API 一致（`$emit`/`$on`/`$off` 等），所以能跨应用发布订阅。",
+    "tags": ["wujie", "communication", "bus"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "主应用 `import { bus } from wujie`（或从 WujieVue 上取），子应用用 `window.$wujie.bus`",
+        "isCorrect": true,
+        "description": "正确。主应用 import bus、子应用用 `$wujie.bus`，是同一全局单例。"
+      },
+      {
+        "text": "主子应用都用 `import { bus } from wujie`",
+        "isCorrect": false,
+        "description": "错误。子应用跑在 iframe 里，用 `window.$wujie.bus` 而非直接 import。"
+      },
+      {
+        "text": "主应用用 `window.$wujie.bus`，子应用 `import { bus }`",
+        "isCorrect": false,
+        "description": "错误。方向反了：主应用 import，子应用用 `window.$wujie.bus`。"
+      },
+      {
+        "text": "主子应用都用 `window.parent.bus`",
+        "isCorrect": false,
+        "description": "错误。主应用直接 import bus；子应用用 `window.$wujie.bus`。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 `bus` EventBus 有什么特点？",
+    "explanation": "wujie 内置的 `bus` 是**去中心化的事件总线**，API 仿 Vue 的事件系统、支持链式调用。它**不分「谁是父谁是子」**——任意应用都能 `$emit` 发、`$on` 收，天然支持子应用之间、多应用广播。核心方法：`$emit(event, ...args)` 发、`$on(event, fn)` 收、`$off` 卸、`$once` 一次性、`$onAll` 监听所有、`$clear` 清空。",
+    "tags": ["wujie", "communication", "eventbus"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "去中心化、API 仿 Vue（链式），不分父子，任意应用都能 `$emit` 发、`$on` 收，天然支持子应用之间、多应用广播",
+        "isCorrect": true,
+        "description": "正确。bus 去中心化、任意方向广播，是多应用解耦通信的首选。"
+      },
+      {
+        "text": "只能主应用发、子应用收，单向广播",
+        "isCorrect": false,
+        "description": "错误。bus 不分父子，任意应用都能收发，非单向。"
+      },
+      {
+        "text": "每对应用间需先建立点对点连接",
+        "isCorrect": false,
+        "description": "错误。bus 是去中心化发布订阅，无需点对点建连。"
+      },
+      {
+        "text": "基于 `postMessage`，跨域也能用",
+        "isCorrect": false,
+        "description": "错误。bus 是同域共享的单例实例，wujie 通信建立在同域前提上。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的 WujieVue 里，子应用 `bus.$emit(routeChange, ...)` 发出的事件，主应用组件怎么最简监听？",
+    "explanation": "WujieVue 有个**语法糖**：在 Vue 里，子应用用 `bus.$emit(routeChange, ...)` 发出的事件，主应用可以直接在组件上用 `@routeChange=handler` 监听——**省去手动 `bus.$on`**。这让 wujie 在 Vue 里用起来像监听普通组件事件一样自然。",
+    "tags": ["wujie", "communication", "wujievue"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "直接在组件上 `@routeChange=handler`，省去手动 `bus.$on`",
+        "isCorrect": true,
+        "description": "正确。WujieVue 语法糖让子应用 bus.$emit 的事件可用 @event 直接监听。"
+      },
+      {
+        "text": "必须在 `mounted` 里手动 `bus.$on(routeChange, ...)`",
+        "isCorrect": false,
+        "description": "错误。可以手动 $on，但 WujieVue 提供了 @event 的更简写法。"
+      },
+      {
+        "text": "用 `props` 传一个回调进去接收",
+        "isCorrect": false,
+        "description": "错误。props 回调是另一种方式；bus 事件在 WujieVue 里可直接 @event 监听。"
+      },
+      {
+        "text": "用 `window.parent` 监听 `routeChange` 事件",
+        "isCorrect": false,
+        "description": "错误。bus 事件不走 window.parent 监听，WujieVue 用 @event 糖。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 保活模式下为什么尤其要在卸载/失活钩子里手动 `bus.$off`？",
+    "explanation": "`bus` 是**全局单例、跨子应用生命周期存在**。非保活状态下子应用销毁/重渲染时 wujie 会自动清理其订阅；但**保活模式**子应用长期存活不销毁，若每次 `activated` 都 `$on` 而不 `$off`，监听会**越堆越多**，形成重复订阅与内存泄漏。稳妥做法是在卸载/失活钩子里手动 `$off` 自己注册的监听。",
+    "tags": ["wujie", "communication", "内存泄漏"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`bus` 是全局单例、保活子应用长期存活不销毁，每次 `activated` 都 `$on` 而不 `$off` 会累积重复订阅导致内存泄漏",
+        "isCorrect": true,
+        "description": "正确。保活子应用反复 $on 不 $off 会堆积订阅，须手动 $off 防泄漏。"
+      },
+      {
+        "text": "保活模式下 wujie 不提供任何自动清理，必须全手动",
+        "isCorrect": false,
+        "description": "错误。非保活会自动清；保活因不销毁才需手动 $off，并非完全无自动清理机制。"
+      },
+      {
+        "text": "`$off` 能提升 `bus` 广播的性能",
+        "isCorrect": false,
+        "description": "错误。$off 的目的是移除多余订阅防泄漏，不是为提升广播性能。"
+      },
+      {
+        "text": "保活子应用的 `$on` 会污染主应用的事件，`$off` 才能隔离",
+        "isCorrect": false,
+        "description": "错误。问题是同一子应用重复订阅堆积，不是污染主应用事件。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的一句话定位是什么？",
+    "explanation": "wujie 的定位一句话说清：**iframe（跑子应用 JS、拿原生 `window`/`history`/`location` 做物理隔离）+ WebComponent（承载子应用 DOM 渲染）**。子应用的 JS 被注入同域 iframe 执行，DOM 则渲染进自定义的 `<wujie>` WebComponent 的 `shadowRoot`，靠代理 iframe 的 `document` 把二者桥接。这条「JS 在 iframe、DOM 在 WebComponent」的双容器路线，与所有 Proxy 沙箱框架本质不同。",
+    "tags": ["wujie", "定位", "双容器"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "iframe（跑子应用 JS、拿原生 `window`/`history`/`location` 做物理隔离）+ WebComponent（承载子应用 DOM 渲染）",
+        "isCorrect": true,
+        "description": "正确。iframe 拿隔离、WebComponent 拿渲染，是 wujie 的核心定位。"
+      },
+      {
+        "text": "`Proxy` 沙箱 + HTML entry 加载",
+        "isCorrect": false,
+        "description": "错误。那是 qiankun 的路线；wujie 走 iframe+WebComponent。"
+      },
+      {
+        "text": "Web Worker 隔离 + 虚拟 DOM 渲染",
+        "isCorrect": false,
+        "description": "错误。wujie 不用 Web Worker，DOM 渲染进真实的 shadowRoot。"
+      },
+      {
+        "text": "纯 iframe 嵌入，无额外容器",
+        "isCorrect": false,
+        "description": "错误。wujie 把 DOM 拎进 WebComponent，正是为了破解裸 iframe 的约束。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 是谁开源的、走什么技术路线？",
+    "explanation": "wujie（无界）是**腾讯开源**的微前端框架，走的是一条和 qiankun/single-spa 都不同的独特路线：**iframe JS 沙箱 + WebComponent 容器渲染**。它靠 iframe 拿最强隔离、靠 WebComponent 拿渲染自由，天然亲和 Vite/ESM，支持保活与预加载。这条路线与 Proxy 软沙箱正交，是它在微前端里单列一格的原因。",
+    "tags": ["wujie", "定位", "腾讯"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "腾讯开源，走 iframe JS 沙箱 + WebComponent 容器渲染的独特路线",
+        "isCorrect": true,
+        "description": "正确。wujie 是腾讯出品，iframe+WebComponent 路线是其标识。"
+      },
+      {
+        "text": "阿里开源，走 `Proxy` 软沙箱路线",
+        "isCorrect": false,
+        "description": "错误。Proxy 软沙箱、阿里出品说的是 qiankun，不是 wujie。"
+      },
+      {
+        "text": "京东开源，走 with/Proxy 软沙箱路线",
+        "isCorrect": false,
+        "description": "错误。京东出品、with/Proxy 软沙箱说的是 micro-app。"
+      },
+      {
+        "text": "社区开源，只做路由编排不做隔离",
+        "isCorrect": false,
+        "description": "错误。只做路由编排是 single-spa；wujie 由腾讯出品且做强隔离。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 主应用接入子应用，相比 single-spa/qiankun 的一个便利是什么？",
+    "explanation": "wujie **不需要注册**——不必像 single-spa/qiankun 那样先 `registerMicroApps`，直接 `startApp({ name, url, el })` 一个命令式 API，或用 `<WujieVue>`/`<WujieReact>` 组件把子应用**当普通组件用**，还支持同屏多实例。命令式 `startApp` 与组件式 `<WujieVue>` 底层是同一套内核，配置项一一对应。",
+    "tags": ["wujie", "接入", "startApp"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无需 `registerMicroApps` 注册，直接 `startApp({ name, url, el })` 或用 `<WujieVue>` 组件把子应用当组件用",
+        "isCorrect": true,
+        "description": "正确。wujie 组件化接入、无需注册，是相对 single-spa/qiankun 的便利。"
+      },
+      {
+        "text": "无需子应用开 CORS",
+        "isCorrect": false,
+        "description": "错误。所有模式都要开 CORS，这是硬约束，不是便利点。"
+      },
+      {
+        "text": "无需引入任何 wujie 依赖",
+        "isCorrect": false,
+        "description": "错误。主应用仍需引入 wujie（或 wujie-vue3 等），只是无需注册流程。"
+      },
+      {
+        "text": "无需给容器设置宽高",
+        "isCorrect": false,
+        "description": "错误。官方建议给容器设宽高以免渲染尺寸异常，并非便利点。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 子应用用什么判断自己是「独立运行」还是「被 wujie 嵌入」？",
+    "explanation": "子应用用 <code v-pre>window.__POWERED_BY_WUJIE__</code> 区分「独立跑」还是「被嵌入」，据此切换渲染逻辑（如路由 `base`、挂载目标等）。被 wujie 嵌入时该标志为真，子应用可把渲染/销毁交给 wujie 生命周期；独立运行时正常自渲染。",
+    "tags": ["wujie", "接入", "环境判别"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`window.__POWERED_BY_WUJIE__`",
+        "isCorrect": true,
+        "description": "正确。该标志为真即被 wujie 嵌入，子应用据此切换渲染逻辑。"
+      },
+      {
+        "text": "`window.$wujie.isEmbedded`",
+        "isCorrect": false,
+        "description": "错误。判别用 `window.__POWERED_BY_WUJIE__`，无 isEmbedded 字段。"
+      },
+      {
+        "text": "`window.__WUJIE_MOUNT`",
+        "isCorrect": false,
+        "description": "错误。那是单例模式的挂载钩子，不是环境判别标志。"
+      },
+      {
+        "text": "`window.parent === window`",
+        "isCorrect": false,
+        "description": "错误。虽在 iframe 里 parent 不等于 window，但官方判别用 `__POWERED_BY_WUJIE__`。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 中子应用为什么必须开启 CORS？",
+    "explanation": "wujie 从**主应用上下文 `fetch`** 子应用的 HTML 与静态资源，所以跨域资源必须放开 **`Access-Control-Allow-Origin`**。携带 cookie 时还要**指定具体源、不能用 `*`**，并配 `Access-Control-Allow-Credentials`。这是所有运行模式都成立的硬约束——与是否保活、是否单例无关。",
+    "tags": ["wujie", "接入", "cors"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 从主应用上下文 `fetch` 子应用的 HTML 与静态资源，跨域资源要放开 `Access-Control-Allow-Origin`（带 cookie 时须指定具体源、不能用 `*`）",
+        "isCorrect": true,
+        "description": "正确。wujie 用 fetch 拉子应用资源，跨域须开 CORS，带 cookie 时须指定具体源。"
+      },
+      {
+        "text": "因为 iframe 加载跨域页面需要 CORS",
+        "isCorrect": false,
+        "description": "错误。iframe 嵌页不靠 CORS；wujie 要 CORS 是因为它用 fetch 拉资源。"
+      },
+      {
+        "text": "因为 Shadow DOM 渲染需要 CORS",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 渲染与 CORS 无关；CORS 是为 fetch 子应用资源。"
+      },
+      {
+        "text": "因为 `bus` 通信基于跨域 `postMessage`",
+        "isCorrect": false,
+        "description": "错误。bus 是同域共享单例，不基于跨域 postMessage；CORS 是为 fetch 资源。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie v2.0 的发布与复活节奏是怎样的？",
+    "explanation": "wujie 的 v1 线（2021~2023）迭代到 v1.0.29 后**长期沉寂**，一度被认为停更。转机在 **2026-06**：发布 **v2.0「全新空白同域 iframe 沙箱」**，并在**一个月内连发 4 版**（v2.0.0 → v2.0.1 → v2.0.2 → v2.1.0）。密集迭代是「复活」而非「昙花」的信号——都在补 iframe 路线最敏感的短板。",
+    "tags": ["wujie", "v2", "版本"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2026-06 发布 v2.0「全新空白同域 iframe 沙箱」，并在一个月内连发 4 版（v2.0.0/0.1/0.2/2.1.0）",
+        "isCorrect": true,
+        "description": "正确。2026-06 v2.0 复活、月内连发 4 版，是认真维护的信号。"
+      },
+      {
+        "text": "2023 年发布 v2.0 后持续稳定迭代至今",
+        "isCorrect": false,
+        "description": "错误。v1 到 2023 的 v1.0.29 后沉寂，v2.0 是 2026-06 才发布。"
+      },
+      {
+        "text": "2026-06 只发了 v2.0.0 一版便再次停更",
+        "isCorrect": false,
+        "description": "错误。2026-06 连发 4 版（至 v2.1.0），并非一版停更。"
+      },
+      {
+        "text": "v2.0 是社区 fork 的非官方版本",
+        "isCorrect": false,
+        "description": "错误。v2.0 是官方发布的正式版本，非社区 fork。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie v2.1.0（2026-06-15）新增了哪个 API？",
+    "explanation": "**v2.1.0（2026-06-15）** 是复活后第一个 minor，四条变更含金量高：内联事件处理器在子应用作用域执行、修复异步加载 CSS 重复插入、修复子应用刷新 `destroy` 竞态**内存泄漏**、**新增 `refreshApp` API**（子应用**全量重建刷新**，对应重建模式的编程式触发）。这几条都在补 iframe 路线最敏感的短板。",
+    "tags": ["wujie", "v2", "refreshApp"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`refreshApp`——支持子应用全量重建刷新",
+        "isCorrect": true,
+        "description": "正确。refreshApp 是 v2.1.0 新增的编程式全量重建刷新 API。"
+      },
+      {
+        "text": "`preloadApp`——预加载子应用",
+        "isCorrect": false,
+        "description": "错误。preloadApp 是既有 API，非 v2.1.0 新增。"
+      },
+      {
+        "text": "`setupApp`——预设默认配置",
+        "isCorrect": false,
+        "description": "错误。setupApp 是既有 API，非 v2.1.0 新增。"
+      },
+      {
+        "text": "`destroyApp`——销毁子应用",
+        "isCorrect": false,
+        "description": "错误。destroyApp 是既有 API，非 v2.1.0 新增。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 的选型定位可概括为哪三个「最」？",
+    "explanation": "wujie 的选型定位有三个「最」：**隔离最强**（iframe 物理隔离，独立原生 `window`/`history`/`location`，不像 Proxy 软沙箱防意外不防恶意）、**Vite/ESM 最友好**（ESM 交 iframe 浏览器原生执行、零改造接 Vite，正是 qiankun 2.x 最大痛点）、**保活预加载秒开最顺**（原生 `alive` 保活 + `preloadApp` 预加载/预执行）。甜区是「复杂子应用 + 要最强隔离 + Vite 主力」。",
+    "tags": ["wujie", "选型", "定位"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "隔离最强（iframe 物理隔离）+ Vite/ESM 最友好（浏览器原生执行）+ 保活预加载秒开最顺",
+        "isCorrect": true,
+        "description": "正确。三个「最」概括了 wujie 的核心卖点与甜区。"
+      },
+      {
+        "text": "体积最小 + 生态最成熟 + 学习成本最低",
+        "isCorrect": false,
+        "description": "错误。这些不是 wujie 的定位，生态成熟度反而是 qiankun 的强项。"
+      },
+      {
+        "text": "内存最省 + 兼容性最好 + 无需改造",
+        "isCorrect": false,
+        "description": "错误。iframe 路线恰恰内存开销较高，不是内存最省。"
+      },
+      {
+        "text": "加载最快 + SEO 最好 + 跨域最灵活",
+        "isCorrect": false,
+        "description": "错误。这些非 wujie 定位；wujie 还受同域约束，并非跨域灵活。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 与 micro-app 都走组件化、Vite 友好路线，二者默认 JS 沙箱有何本质区别？",
+    "explanation": "wujie 和 micro-app 都主打「像用组件一样用子应用 + Vite 友好」，但**默认 JS 沙箱不同**：**wujie 默认 iframe 物理沙箱**（最强、最重），**micro-app 默认 with/Proxy 软沙箱**（更轻、也提供 iframe 模式）。一句话：wujie 默认把隔离拉满（代价是内存），micro-app 默认更轻（代价是隔离弱一档）。",
+    "tags": ["wujie", "micro-app", "对比"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "wujie 默认 iframe 物理沙箱（最强、最重），micro-app 默认 with/Proxy 软沙箱（更轻、也提供 iframe 模式）",
+        "isCorrect": true,
+        "description": "正确。默认沙箱是二者本质分野：wujie 物理、micro-app 软沙箱。"
+      },
+      {
+        "text": "两者默认都是 iframe 沙箱，无区别",
+        "isCorrect": false,
+        "description": "错误。micro-app 默认是 with/Proxy 软沙箱，只是也提供 iframe 模式。"
+      },
+      {
+        "text": "wujie 默认软沙箱，micro-app 默认 iframe 沙箱",
+        "isCorrect": false,
+        "description": "错误。方向反了：wujie 默认 iframe 物理沙箱。"
+      },
+      {
+        "text": "两者都用 Shadow DOM 隔离 JS，不用沙箱",
+        "isCorrect": false,
+        "description": "错误。Shadow DOM 隔离的是 CSS/DOM，不隔离 JS；JS 靠各自的沙箱。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 按其决策表，什么场景应「慎选」？",
+    "explanation": "wujie 不是万能钥匙，是「用内存换隔离与体验」的特化选择。按决策表，**单页要嵌很多个轻量小应用**时应「慎选」——因为每个子应用一个 iframe，内存开销会**叠加**，此时 qiankun/micro-app 的软沙箱更轻更划算。实践准则：先问技术栈（Vite → wujie 友好）、再问隔离需求、最后算内存账（并存越多越轻，iframe 开销越不划算）。",
+    "tags": ["wujie", "选型", "决策"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "单页要嵌很多个轻量小应用——每应用一 iframe，内存开销叠加",
+        "isCorrect": true,
+        "description": "正确。轻量小应用多实例并存时 iframe 内存开销叠加，宜慎选 wujie。"
+      },
+      {
+        "text": "子应用是 Vite/ESM 技术栈",
+        "isCorrect": false,
+        "description": "错误。Vite/ESM 正是 wujie 的甜区，应选而非慎选。"
+      },
+      {
+        "text": "高频往返、要状态不丢/秒切",
+        "isCorrect": false,
+        "description": "错误。这是保活的用武之地，正该选 wujie。"
+      },
+      {
+        "text": "需要同屏并存多个复杂子应用",
+        "isCorrect": false,
+        "description": "错误。组件化、天然多实例是 wujie 强项；慎选的是「很多轻量小应用」。"
+      }
+    ]
+  },
+  {
+    "stem": "wujie 为什么值得在微前端框架里单列一叶，而非并入 qiankun 讲？",
+    "explanation": "2026 年微前端格局里，qiankun 3.0 三年 rc 难产、2.x 又接不了 Vite，「要强隔离又要 Vite 友好」一度是块空位。wujie 的 iframe 路线天然同时满足这两点，v2.0 复活恰好填补——它不与 qiankun 抢「存量 webpack 开箱」的盘，而是卡住「**Vite 时代 + 复杂子应用 + 强隔离**」这个增量场景。因为它代表**一条与 Proxy 软沙箱正交的技术路线**，才值得单列一叶。",
+    "tags": ["wujie", "选型", "路线"],
+    "categories": [
+      ["技术方向", "wujie"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "它代表一条与 Proxy 软沙箱正交的技术路线（iframe 物理隔离），卡住「Vite 时代+复杂子应用+强隔离」这个 qiankun 覆盖不到的增量场景",
+        "isCorrect": true,
+        "description": "正确。iframe 路线与 Proxy 软沙箱正交，填补 qiankun 覆盖不到的增量场景。"
+      },
+      {
+        "text": "因为 wujie 的 API 与 qiankun 完全不同，无法类比",
+        "isCorrect": false,
+        "description": "错误。单列的原因是技术路线正交，而非仅 API 名称不同。"
+      },
+      {
+        "text": "因为 wujie 比 qiankun 更流行、star 更多",
+        "isCorrect": false,
+        "description": "错误。单列理由是路线差异与场景补位，不是流行度对比。"
+      },
+      {
+        "text": "因为 qiankun 已停更，只能讲 wujie",
+        "isCorrect": false,
+        "description": "错误。qiankun 并非停更；单列是因 wujie 代表正交路线。"
+      }
+    ]
+  }
+]

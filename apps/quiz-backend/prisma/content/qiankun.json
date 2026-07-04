@@ -218,7 +218,7 @@
   },
   {
     "stem": "qiankun 的 `start({ singular })` 默认值是什么，它决定了怎样的挂载语义？",
-    "explanation": "路由型接入 `start` 的 **`singular` 默认为 `true`**，语义是**单实例——同一时刻只挂载一个子应用**：路由切到新子应用时，qiankun 会**先把当前子应用 `unmount`、再挂新的**。这符合「页面主区域同时只显示一个子应用」的常见场景，也让沙箱走单实例的 `legacyProxySandbox`。要让多个子应用同屏并存必须显式设 `singular: false`。",
+    "explanation": "路由型接入 `start` 的 **`singular` 默认为 `true`**，语义是**单实例——同一时刻只挂载一个子应用**：路由切到新子应用时，qiankun 会**先把当前子应用 `unmount`、再挂新的**。这符合「页面主区域同时只显示一个子应用」的常见场景。要让多个子应用同屏并存必须显式设 `singular: false`。（`singular` 只管路由挂载时序，沙箱类型由 `sandbox.loose` 决定，二者独立。）",
     "tags": ["qiankun", "singular", "单实例"],
     "categories": [
       ["技术方向", "qiankun"],
@@ -228,7 +228,7 @@
       {
         "text": "默认 `true`，表示单实例——同一时刻只挂一个子应用，切换时先卸旧再挂新",
         "isCorrect": true,
-        "description": "正确。这是路由型的默认互斥语义，也决定沙箱走单实例。"
+        "description": "正确。这是路由型的默认互斥语义；`singular` 只管挂载时序、不决定沙箱类型。"
       },
       {
         "text": "默认 `false`，表示允许任意多个子应用同屏并存",
@@ -373,7 +373,7 @@
   },
   {
     "stem": "qiankun 路由型接入下想让两个子应用同屏并存，却发现总是「挂新的把旧的卸了」，最可能是哪个配置导致的？",
-    "explanation": "路由型默认 **`singular: true`（单实例）**——同一时刻只挂一个子应用，切到新子应用时会**先 unmount 当前子应用再挂新的**，因此两个子应用无法同屏并存。要并存必须显式 **`start({ singular: false })`**，此时沙箱走多实例 `proxySandbox`，每个子应用一个独立 `fakeWindow`。这条因果要想清：没开 `singular: false` 就别指望两个子应用同时正常并存。",
+    "explanation": "路由型默认 **`singular: true`（单实例）**——同一时刻只挂一个子应用，切到新子应用时会**先 unmount 当前子应用再挂新的**，因此两个子应用无法同屏并存。要并存必须显式 **`start({ singular: false })`**，（沙箱默认即多实例 `proxySandbox`、每应用独立 `fakeWindow`，与 `singular` 无关）。这条因果要想清：没开 `singular: false` 就别指望两个子应用同时正常并存。",
     "tags": ["qiankun", "singular", "并存"],
     "categories": [
       ["技术方向", "qiankun"],
@@ -590,7 +590,7 @@
   },
   {
     "stem": "qiankun 会按什么条件在三个沙箱之间自动选择？",
-    "explanation": "自动选择逻辑：**① `window.Proxy` 不支持（老 IE）→ `snapshotSandbox`（并强制单实例）**；② 支持 Proxy 且 **`singular: true`（路由型默认）→ `legacyProxySandbox`**（单实例 Proxy）；③ 支持 Proxy 且 **`singular: false` → `proxySandbox`**（多实例，每应用一个 `fakeWindow`）。即按「有无 Proxy + `singular` 取值」两维决定，无需手选。",
+    "explanation": "自动选择逻辑（源码 `loader.ts` + `sandbox/index.ts`）：**① `window.Proxy` 不支持（老 IE）→ `snapshotSandbox`**；② 支持 Proxy 且显式 **`sandbox: { loose: true }` → `legacyProxySandbox`**（单实例 Proxy）；③ 支持 Proxy 且**默认（`sandbox: true`、未开 loose）→ `proxySandbox`**（多实例，每应用一个 `fakeWindow`）。即按「有无 Proxy + `sandbox.loose`」两维决定，无需手选。注意 `singular` 只管路由层挂载时序（是否先卸旧再挂新），**不参与沙箱类型选择**。",
     "tags": ["qiankun", "沙箱", "自动选择"],
     "categories": [
       ["技术方向", "qiankun"],
@@ -598,9 +598,9 @@
     ],
     "options": [
       {
-        "text": "按「浏览器是否支持 Proxy」+「`singular` 取值」两维自动决定，无需手动指定",
+        "text": "按「浏览器是否支持 Proxy」+「`sandbox.loose` 是否开启」两维自动决定，无需手动指定",
         "isCorrect": true,
-        "description": "正确。无 Proxy 走快照，有 Proxy 再按 singular 分单/多实例。"
+        "description": "正确。无 Proxy 走快照，有 Proxy 再按 `sandbox.loose` 分 legacy/默认。"
       },
       {
         "text": "由开发者在 `start` 里用 `sandboxType` 字段显式指定",
@@ -610,12 +610,12 @@
       {
         "text": "永远优先用 `proxySandbox`，除非它抛错才降级",
         "isCorrect": false,
-        "description": "错误。单实例默认走 legacyProxySandbox 而非 proxySandbox。"
+        "description": "错误。proxySandbox 就是默认，选择按 `sandbox.loose` 静态判定、非抛错降级；开 `loose:true` 才用 legacyProxySandbox。"
       },
       {
         "text": "按子应用框架（React/Vue）自动匹配不同沙箱",
         "isCorrect": false,
-        "description": "错误。选择只看 Proxy 能力与 singular，与子应用框架无关。"
+        "description": "错误。选择只看 Proxy 能力与 `sandbox.loose`，与子应用框架无关。"
       }
     ]
   },
@@ -652,7 +652,7 @@
   },
   {
     "stem": "qiankun 的 `proxySandbox`（多实例沙箱）是如何做到多个子应用同屏并存互不干扰的？",
-    "explanation": "`proxySandbox` 给**每个子应用分配一个独立的 `fakeWindow`**——子应用的**写操作落到自己的 `fakeWindow`（假对象）、读则先查假对象再回落真 window（读先假后真）**。因为各自写各自的 fakeWindow、互不可见，多个子应用可同屏并存互不污染。它在支持 Proxy 且 `singular: false` 时启用。",
+    "explanation": "`proxySandbox` 给**每个子应用分配一个独立的 `fakeWindow`**——子应用的**写操作落到自己的 `fakeWindow`（假对象）、读则先查假对象再回落真 window（读先假后真）**。因为各自写各自的 fakeWindow、互不可见，多个子应用可同屏并存互不污染。它在支持 Proxy 且未开 `sandbox.loose`（默认）时启用。",
     "tags": ["qiankun", "proxySandbox", "fakeWindow"],
     "categories": [
       ["技术方向", "qiankun"],
