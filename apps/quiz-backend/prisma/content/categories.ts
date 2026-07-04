@@ -727,43 +727,91 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       },
 
       // ----- 10. 前端可视化 -----
+      // 🔒 2026-07-04 选型调研定案扩章（npm 周下载量 + 全站去重 + 2025-2026 生态事件核查）：
+      //   新增「图形基础」地基组（Canvas/SVG 全站无叶）；图表补 Recharts/AntV G2；
+      //   新增三组：图与流程图(G6/X6) / 地图(Leaflet/Mapbox-MapLibre) / 2D 渲染引擎(Pixi/Fabric/Konva)；
+      //   三维补 WebGPU（2025 底全主流 Baseline）；动画补 WAAPI 地基 + Anime.js v4；拖拽补 dnd-kit。
+      //   prod 安全：既有组/叶名与父子关系全不动（Framer Motion 叶名保留、内容讲 Motion 演进；CesiumJS 留三维组），仅重排 sort。
+      //   排除项：react-dnd/Hammer.js/Popmotion→停维护；Animate.css→与 CSS 章重叠；KaTeX→出题空间小；
+      //   候选观察：OpenLayers/React Three Fiber/Pragmatic DnD/Interact.js/Rive。
       {
         name: "前端可视化",
         sort: 10,
         children: [
           {
-            name: "图表",
+            name: "图形基础",
             sort: 1,
+            children: [
+              { name: "Canvas", sort: 1 },
+              { name: "SVG", sort: 2 },
+            ],
+          },
+          {
+            name: "图表",
+            sort: 2,
             children: [
               { name: "ECharts", sort: 1 },
               { name: "D3.js", sort: 2 },
               { name: "Chart.js", sort: 3 },
-              { name: "Mermaid", sort: 4 },
+              { name: "Recharts", sort: 4 },
+              { name: "AntV G2", sort: 5 },
+              { name: "Mermaid", sort: 6 },
+            ],
+          },
+          {
+            name: "图与流程图",
+            sort: 3,
+            children: [
+              { name: "AntV G6", sort: 1 },
+              { name: "AntV X6", sort: 2 },
+            ],
+          },
+          {
+            name: "地图",
+            sort: 4,
+            children: [
+              { name: "Leaflet", sort: 1 },
+              { name: "Mapbox GL JS 与 MapLibre", sort: 2 },
             ],
           },
           {
             name: "三维",
-            sort: 2,
+            sort: 5,
             children: [
               { name: "WebGL", sort: 1 },
-              { name: "Three.js", sort: 2 },
-              { name: "Babylon.js", sort: 3 },
-              { name: "CesiumJS", sort: 4 },
+              { name: "WebGPU", sort: 2 },
+              { name: "Three.js", sort: 3 },
+              { name: "Babylon.js", sort: 4 },
+              { name: "CesiumJS", sort: 5 },
+            ],
+          },
+          {
+            name: "2D 渲染引擎",
+            sort: 6,
+            children: [
+              { name: "PixiJS", sort: 1 },
+              { name: "Fabric.js", sort: 2 },
+              { name: "Konva", sort: 3 },
             ],
           },
           {
             name: "动画",
-            sort: 3,
+            sort: 7,
             children: [
-              { name: "GSAP", sort: 1 },
-              { name: "Framer Motion", sort: 2 },
-              { name: "Lottie", sort: 3 },
+              { name: "Web Animations API", sort: 1 },
+              { name: "GSAP", sort: 2 },
+              { name: "Framer Motion", sort: 3 },
+              { name: "Lottie", sort: 4 },
+              { name: "Anime.js", sort: 5 },
             ],
           },
           {
             name: "拖拽",
-            sort: 4,
-            children: [{ name: "Sortable.js", sort: 1 }],
+            sort: 8,
+            children: [
+              { name: "Sortable.js", sort: 1 },
+              { name: "dnd-kit", sort: 2 },
+            ],
           },
         ],
       },
