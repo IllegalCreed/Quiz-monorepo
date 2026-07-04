@@ -1,0 +1,1614 @@
+[
+  {
+    "stem": "PixiJS 常被团队用来做游戏界面的高性能动画效果，它本质上是一个什么性质的库？",
+    "explanation": "PixiJS 定位一句话是网页端最快、最轻量的 2D 渲染引擎，基于 WebGL 默认与 WebGPU 可选的双后端。它不提供图表或 UI 组件，做可视化需要自己在渲染引擎之上搭建图形逻辑，这也是它和 ECharts 这类开箱即用图表库的本质区别。选游戏界面动画、高帧率交互场景正是它的强项。",
+    "tags": ["pixi", "入门", "what-is"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "基于 WebGL/WebGPU 的高性能 2D 渲染引擎，专注海量图形对象的高帧率渲染",
+        "isCorrect": true,
+        "description": "定位一句话：面向游戏/交互应用的高性能 2D 渲染引擎，不提供图表或 UI 组件"
+      },
+      {
+        "text": "开箱即用的图表库，类似 ECharts",
+        "isCorrect": false,
+        "description": "PixiJS 不内置图表/UI 组件，做可视化需要自己在渲染引擎之上搭建图形逻辑"
+      },
+      {
+        "text": "服务端游戏逻辑框架",
+        "isCorrect": false,
+        "description": "PixiJS 是纯前端渲染库，不涉及服务端逻辑"
+      },
+      {
+        "text": "CSS 动画库，用于替代 transition/animation",
+        "isCorrect": false,
+        "description": "PixiJS 走 Canvas 元素与 GPU 渲染管线，与 CSS 动画完全是两套技术路线"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目里没有做任何额外配置，`new Application()` 加 `await app.init()` 之后，画面实际会走哪种图形后端渲染？",
+    "explanation": "PixiJS 的渲染后端选择由 preference 选项决定，Application.init() 里 preference 的默认值明确是 'webgl'。官方所说的自动选择指的是环境探测和降级兜底机制，并不是默认优先 WebGPU，要吃到 WebGPU 性能红利必须显式设置 preference: 'webgpu'。",
+    "tags": ["pixi", "入门", "webgl-default"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WebGPU——v8 为了原生支持 WebGPU 而重写，默认优先用它",
+        "isCorrect": false,
+        "description": "常见误读；架构总览提到自动选择容易让人误以为默认 WebGPU，但选项表里 preference 默认是 'webgl'"
+      },
+      {
+        "text": "WebGL——preference 选项默认值是 'webgl'",
+        "isCorrect": true,
+        "description": "即便 PixiJS 支持 WebGPU，不显式设置 preference 时默认走 WebGL"
+      },
+      {
+        "text": "Canvas 2D 原生绘图 API",
+        "isCorrect": false,
+        "description": "CanvasRenderer 只是兜底方案，仍在完善中，非默认选择"
+      },
+      {
+        "text": "由浏览器随机决定，每次刷新可能不同",
+        "isCorrect": false,
+        "description": "渲染后端选择是确定性的（依据 preference 加环境探测），不是随机的"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v8 里，`const app = new Application(); console.log(app.stage);` 这样写完立刻打印 app.stage，会打印出什么？",
+    "explanation": "v8 的 Application 构造函数不再接受参数，必须先 new 再 await app.init() 完成异步初始化后，app.stage、app.canvas 等属性才会存在。这是因为 WebGPU 上下文获取本身是异步过程，v7 那种构造时就同步初始化好一切的方式在 v8 里已不成立。忘记 await 是 v7 迁移到 v8 最常见的踩坑点。",
+    "tags": ["pixi", "入门", "init-async"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个空的根 Container 实例",
+        "isCorrect": false,
+        "description": "在 init 完成前访问，实际拿到的是 undefined，不是空 Container"
+      },
+      {
+        "text": "抛出编译期类型错误，代码无法运行",
+        "isCorrect": false,
+        "description": "这是运行时行为问题，不是语法/类型错误，代码能跑但拿到 undefined"
+      },
+      {
+        "text": "undefined——必须先 await app.init() 完成后 app.stage 才存在",
+        "isCorrect": true,
+        "description": "v8 Application 构造函数不再接受参数，stage 等属性要等异步 init 完成后才初始化"
+      },
+      {
+        "text": "和 v7 一样，构造时就已经同步初始化好了",
+        "isCorrect": false,
+        "description": "这正是 v7 的行为，v8 因 WebGPU 上下文获取是异步的而改为必须 await init()"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 教程代码里的 `document.body.appendChild(app.view)` 直接照搬到 v8 项目里运行，会发生什么？",
+    "explanation": "v7 里的 app.view 在 v8 已经改名为 app.canvas，两者不是同名兼容属性，照抄旧代码会直接拿到 undefined 或报错。这是一处纯粹的属性改名，与选择 WebGL 还是 WebGPU 后端无关。迁移 v7 项目时需要全局搜索并替换这类改名的 API。",
+    "tags": ["pixi", "入门", "rename-canvas"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "完全正常运行，两个属性是同名别名",
+        "isCorrect": false,
+        "description": "v8 并未保留 view 作为别名，直接访问会得到 undefined"
+      },
+      {
+        "text": "app.view 在 v8 里变成了获取纹理的方法",
+        "isCorrect": false,
+        "description": "不存在这样的语义变化，只是单纯改名为 canvas"
+      },
+      {
+        "text": "只有 WebGPU 模式下才会报错，WebGL 模式下正常",
+        "isCorrect": false,
+        "description": "改名与渲染后端无关，两种后端下 app.view 都已不存在"
+      },
+      {
+        "text": "报错或拿不到画布元素——v8 把 app.view 改名为 app.canvas",
+        "isCorrect": true,
+        "description": "v7→v8 迁移最常见的改名坑之一，app.view 已不存在，需要用 app.canvas"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 应用初始化完成后，想把一个精灵显示到屏幕上，最终都要把它添加到哪个对象上（直接或间接）？",
+    "explanation": "app.stage 是整棵场景图的根 Container，每帧 PixiJS 从它开始遍历，累积计算所有子孙节点的世界变换和世界透明度。想让任何对象显示到屏幕上，最终都要把它直接或间接 addChild 到 app.stage 下。renderer 负责把这棵树光栅化到画布，但本身不是承载对象的容器。",
+    "tags": ["pixi", "入门", "stage-root"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "app.stage——场景图的根 Container",
+        "isCorrect": true,
+        "description": "app.stage 是整棵场景图的根节点，每帧从它开始遍历计算所有子孙的世界变换"
+      },
+      {
+        "text": "app.renderer",
+        "isCorrect": false,
+        "description": "renderer 负责把场景图光栅化到画布，本身不是挂载对象的容器"
+      },
+      {
+        "text": "app.ticker",
+        "isCorrect": false,
+        "description": "ticker 只负责驱动每帧回调，与显示对象的挂载无关"
+      },
+      {
+        "text": "document.body",
+        "isCorrect": false,
+        "description": "body 只承载 canvas 这个 DOM 元素，场景内部对象的父子关系由 stage 管理"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 想显示一张 bunny.png 图片精灵，标准的两步流程是什么？",
+    "explanation": "在 PixiJS v8 里加载并显示一张图片的标准流程是：先 await Assets.load() 拿到 Texture 对象，再用 new Sprite(texture) 构造精灵。Sprite 构造函数接受的是 Texture 而不是原始路径字符串，直接传路径是无效用法。图片这类位图内容走 Sprite 加 Texture 路线，矢量图形则走 Graphics。",
+    "tags": ["pixi", "入门", "sprite-create"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "直接 new Sprite('bunny.png') 传路径字符串",
+        "isCorrect": false,
+        "description": "Sprite 构造函数接受的是 Texture 对象，不是原始路径字符串"
+      },
+      {
+        "text": "await Assets.load('bunny.png') 拿到纹理，再 new Sprite(texture)",
+        "isCorrect": true,
+        "description": "Assets 是 v8 现代资源管理单例，加载得到 Texture 后传给 Sprite 构造函数"
+      },
+      {
+        "text": "new Image('bunny.png') 后传给 Container",
+        "isCorrect": false,
+        "description": "这是 DOM Image API，与 PixiJS 的资源/精灵体系无关"
+      },
+      {
+        "text": "用 Graphics 画出图片的形状再填充",
+        "isCorrect": false,
+        "description": "位图图片应该走 Sprite 加 Texture 路线，Graphics 是用来画矢量图形的"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 里给一个 Sprite 设置 `sprite.anchor.set(0.5)` 之后再 `sprite.rotation = Math.PI / 4`，会发生什么？",
+    "explanation": "anchor 决定的是 Sprite 变换（包括旋转和缩放）的参考中心点，anchor.set(0.5) 表示把中心点设在精灵正中央。设置之后再改 rotation，精灵就会围绕自身中心旋转，而不是围绕左上角旋转。anchor 不影响透明度或裁剪，只影响变换基准点。",
+    "tags": ["pixi", "入门", "anchor"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "精灵会被裁剪掉一半",
+        "isCorrect": false,
+        "description": "anchor 不影响裁剪，只影响变换的参考点"
+      },
+      {
+        "text": "精灵的透明度会变为 50%",
+        "isCorrect": false,
+        "description": "透明度由 alpha 控制，与 anchor 无关"
+      },
+      {
+        "text": "精灵围绕自身中心点旋转 45 度，而不是围绕左上角",
+        "isCorrect": true,
+        "description": "anchor 决定了旋转/缩放的锚点/中心，0.5 表示居中"
+      },
+      {
+        "text": "anchor.set(0.5) 对 rotation 完全没有影响，只影响 position",
+        "isCorrect": false,
+        "description": "anchor 同时影响旋转和缩放的中心点，不仅仅是定位"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 要让一个精灵持续旋转，比起自己手写 requestAnimationFrame 循环，官方推荐的做法是什么？",
+    "explanation": "Ticker 是 PixiJS 官方推荐的动画驱动机制，内部用 requestAnimationFrame 驱动，通过 app.ticker.add() 注册的回调会在每一帧被调用。相比自己写 setInterval，Ticker 天然与屏幕刷新节奏同步，更平滑也更贴合渲染管线；CSS 动画则完全无法触及 canvas 内部的绘制内容。",
+    "tags": ["pixi", "入门", "ticker-basics"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 setInterval(fn, 16) 模拟 60fps",
+        "isCorrect": false,
+        "description": "setInterval 不与屏幕刷新同步，容易掉帧/不平滑，Ticker 是更贴合渲染管线的方案"
+      },
+      {
+        "text": "在 CSS 里写 @keyframes 控制 canvas 内部元素",
+        "isCorrect": false,
+        "description": "canvas 内部的图形不是 DOM 元素，CSS 动画无法控制其内部绘制内容"
+      },
+      {
+        "text": "每次状态变化时手动调用一次 app.render()",
+        "isCorrect": false,
+        "description": "这是命令式手动触发渲染，而不是持续的每帧循环驱动动画"
+      },
+      {
+        "text": "用 app.ticker.add(callback) 注册每帧回调",
+        "isCorrect": true,
+        "description": "Ticker 封装了 requestAnimationFrame 驱动的渲染循环，是官方推荐的动画驱动方式"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 做一个每帧都在变化的计分板（HUD），要显示成千上万次刷新的数字，应该优先选哪种文本方案？",
+    "explanation": "Text、BitmapText、HTMLText 三种文本方案各有取舍：Text 每次内容变化都要重新走 Canvas 光栅化再上传 GPU，不适合高频刷新的大量实例；BitmapText 用预生成的位图字形集直接拼字符，专为 HUD/计分板这类每帧变化、成千上万实例的场景设计；HTMLText 渲染是异步的且不适合大量实例。计分板场景应优先选 BitmapText。",
+    "tags": ["pixi", "入门", "text-vs-bitmaptext"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "BitmapText——预生成位图字形集，直接拼字符，适合高频变化的大量文本",
+        "isCorrect": true,
+        "description": "Text 每次变化要重新走 Canvas 光栅化再上传 GPU，性能开销大；BitmapText 专为这种场景设计"
+      },
+      {
+        "text": "Text——用浏览器 Canvas API 可以精细控制样式",
+        "isCorrect": false,
+        "description": "Text 适合样式精细但不频繁变化的文本，频繁刷新是它的性能弱项"
+      },
+      {
+        "text": "HTMLText——支持 CSS 排版更灵活",
+        "isCorrect": false,
+        "description": "HTMLText 渲染是异步的且不适合大量实例，反而是三者中最不适合高频计分板的"
+      },
+      {
+        "text": "三者性能完全一致，随便选",
+        "isCorrect": false,
+        "description": "三种文本方案的性能特征差异很大，需要按场景选择"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 里一个 Sprite 按钮点击没反应，检查发现代码里只写了 `sprite.on('pointerdown', fn)` 但没设置别的，最可能缺了哪一行？",
+    "explanation": "PixiJS v8 里 eventMode 默认值是 'passive'，意味着对象自身不会主动响应点击类事件，必须显式设置为 'static' 或 'dynamic' 才能接收 pointerdown 等事件。题目里只绑定了事件回调却没设置 eventMode，是最常见的可交互对象点击无反应的原因。",
+    "tags": ["pixi", "入门", "eventmode-static"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "sprite.visible = true",
+        "isCorrect": false,
+        "description": "题目没提到精灵不可见，问题在于事件模式而非可见性"
+      },
+      {
+        "text": "sprite.eventMode = 'static'",
+        "isCorrect": true,
+        "description": "v8 默认 eventMode 是 'passive'，自身不响应点击，需要显式设为 static/dynamic 才能接收指针事件"
+      },
+      {
+        "text": "sprite.texture = Texture.WHITE",
+        "isCorrect": false,
+        "description": "纹理内容与是否能接收点击事件无关"
+      },
+      {
+        "text": "app.stage.addChild(sprite)",
+        "isCorrect": false,
+        "description": "如果精灵完全没挂到场景图上应该连显示都看不到，题目描述的是点击无反应而非不显示"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 被提议用来给后台管理系统画一次性的静态趋势小图（十几个点、不交互不动画），这个技术选型合理吗？",
+    "explanation": "PixiJS 的学习曲线和体积开销是为海量图形对象、高帧率、复杂交互场景准备的，一次性静态小图这种量级、无交互动画的需求引入它反而增加不必要的复杂度。原生 Canvas 2D 或轻量图表库对这种场景更合适，选型要看是否真的需要它的性能上限，而不是一味追求性能天花板。",
+    "tags": ["pixi", "初级", "selection-canvas2d"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "合理——PixiJS 性能天花板更高，任何图形场景都应该优先用它",
+        "isCorrect": false,
+        "description": "性能上限高不等于任何场景都该用，简单场景引入反而增加不必要的复杂度和体积"
+      },
+      {
+        "text": "合理——PixiJS 本身就是图表库，专为这种场景设计",
+        "isCorrect": false,
+        "description": "PixiJS 是渲染引擎而非图表库，不提供开箱即用的图表组件"
+      },
+      {
+        "text": "不合理——量级小、无交互动画的一次性图形，原生 Canvas 2D 或轻量图表库更合适",
+        "isCorrect": true,
+        "description": "PixiJS 的学习曲线和体积是为海量对象/高帧率场景准备的，简单静态图没必要引入"
+      },
+      {
+        "text": "不合理——因为 PixiJS 不支持画静态图形，只支持动画",
+        "isCorrect": false,
+        "description": "PixiJS 完全能画静态图形，问题在于是否值得引入而不是能不能画"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 中有 `container.addChild(a, b)` 之后又调用 `container.addChildAt(c, 0)`，此时 c 在子节点数组里的位置是？",
+    "explanation": "container.addChildAt(child, index) 会把子节点插入到指定索引位置，这里指定了索引 0，因此 c 会被放在子节点数组的最前面（最先渲染）。它不会替换原有的 0 号位子节点，也不会忽略索引参数，原来在 0 号位的节点会整体后移。",
+    "tags": ["pixi", "初级", "container-api"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "自动追加到数组末尾，索引参数被忽略",
+        "isCorrect": false,
+        "description": "addChildAt 明确按给定索引插入，不会忽略该参数"
+      },
+      {
+        "text": "替换掉原本索引 0 的子节点 a",
+        "isCorrect": false,
+        "description": "addChildAt 是插入而非替换，a 仍然存在，只是整体后移"
+      },
+      {
+        "text": "c 会被同时插入到 0 和末尾两个位置",
+        "isCorrect": false,
+        "description": "只会插入到指定的单一索引位置"
+      },
+      {
+        "text": "索引 0，也就是最底层最先渲染的位置",
+        "isCorrect": true,
+        "description": "addChildAt 指定索引插入，0 号位在渲染顺序上排在最前面（最先绘制，视觉上通常在最下层）"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 场景图里，父 Container 的 `alpha = 0.5`，其子节点 Sprite 自身也设了 `alpha = 0.5`，这个 Sprite 最终渲染出来的透明度是多少？",
+    "explanation": "PixiJS 场景图里 worldAlpha 是从根到叶逐层相乘累积得到的，父容器 alpha 为 0.5、子节点自身 alpha 也是 0.5 时，最终渲染出来的透明度是 0.5 乘 0.5 等于 0.25，而不是相互覆盖或抵消。理解这种乘积关系对排查子节点比预期更透明这类问题很关键。",
+    "tags": ["pixi", "初级", "world-alpha"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "0.25——父子 alpha 是相乘累积的",
+        "isCorrect": true,
+        "description": "worldAlpha 由父到子逐层相乘得到，0.5×0.5=0.25，而不是各自独立生效"
+      },
+      {
+        "text": "0.5——子节点自身设置的值会覆盖父级影响",
+        "isCorrect": false,
+        "description": "子节点 alpha 不会覆盖父级，而是在父级基础上继续相乘"
+      },
+      {
+        "text": "1（不透明）——两次减半相互抵消",
+        "isCorrect": false,
+        "description": "透明度是相乘而不是抵消关系，两次减半只会更透明"
+      },
+      {
+        "text": "0——父子都设置 alpha 会导致对象完全不可见",
+        "isCorrect": false,
+        "description": "0.5×0.5=0.25，仍然可见，只是更透明，并不会归零"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 里两个同级子节点 child1.zIndex = 1，child2.zIndex = 10，但画面上 child1 却盖在 child2 上面，最可能漏了什么？",
+    "explanation": "zIndex 要真正影响渲染顺序，前提是父容器开启了 sortableChildren = true，否则 PixiJS 仍然按 addChild 的插入顺序渲染，zIndex 数值本身会被忽略。这是一个常见的排查点：数值设置正确但顺序没生效，往往是漏了开启排序开关，而不需要手动调用额外的排序方法。",
+    "tags": ["pixi", "初级", "zindex"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "zIndex 数值设反了，应该 child1 更大",
+        "isCorrect": false,
+        "description": "child2.zIndex=10 大于 child1 的 1，只要排序生效 child2 就应该盖在上面，数值本身没设反"
+      },
+      {
+        "text": "父容器没有设置 container.sortableChildren = true",
+        "isCorrect": true,
+        "description": "zIndex 要生效，父容器必须开启 sortableChildren，否则仍按 addChild 的插入顺序渲染"
+      },
+      {
+        "text": "zIndex 只在 Graphics 上生效，对普通 Container 无效",
+        "isCorrect": false,
+        "description": "zIndex 是 Container 通用机制，不限于 Graphics"
+      },
+      {
+        "text": "必须先调用 container.sort() 手动排序一次",
+        "isCorrect": false,
+        "description": "sortableChildren=true 后由内部自动处理排序，无需手动调用排序方法"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 代码 `new Graphics().beginFill(0xff0000).drawRect(0,0,100,100).endFill()` 要迁移到 v8，正确的等价写法是？",
+    "explanation": "PixiJS v8 把 Graphics 的绘制流程整体重写：v7 是先 beginFill、再画形状、最后 endFill 的顺序，v8 改成先用 rect()/circle() 等方法描述形状、再调用 fill()/stroke() 上色的链式写法。beginFill/drawRect/endFill 这些 v7 方法在 v8 里已经不存在，混用两套 API 会直接报错。",
+    "tags": ["pixi", "初级", "graphics-chain"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "new Graphics().beginFill(0xff0000).rect(0,0,100,100)",
+        "isCorrect": false,
+        "description": "beginFill() 在 v8 中已不存在，混用 v7/v8 API 不成立"
+      },
+      {
+        "text": "new Graphics().drawRect(0,0,100,100).fill(0xff0000)",
+        "isCorrect": false,
+        "description": "drawRect() 是 v7 方法名，v8 里画矩形的方法改名为 rect()"
+      },
+      {
+        "text": "new Graphics().rect(0,0,100,100).fill(0xff0000)",
+        "isCorrect": true,
+        "description": "v8 把先 beginFill 再画形状的顺序倒过来，改成先描述形状（rect）再 fill/stroke 上色"
+      },
+      {
+        "text": "两种写法在 v8 里都能直接运行，只是风格不同",
+        "isCorrect": false,
+        "description": "v7 的 beginFill/drawRect/endFill 在 v8 中已被移除，直接照搬会报错"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v8 项目里，`sprite.addChild(childSprite)` 突然报错或不生效，这段代码在 v7 里原本是能跑的，问题出在哪？",
+    "explanation": "v8 里叶子节点（Sprite、Graphics、Mesh 等可渲染对象）不再允许通过 addChild 互相挂载子节点，容器职责和可渲染对象职责被彻底分离，必须都挂到外层 Container 下。这是一处典型的 v7→v8 破坏性变化，v7 能跑的 sprite.addChild(childSprite) 在 v8 下不再有效。",
+    "tags": ["pixi", "初级", "label-rename"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "addChild 方法名在 v8 里改成了 append",
+        "isCorrect": false,
+        "description": "不存在改名，Container.addChild 这个方法名本身没变"
+      },
+      {
+        "text": "childSprite 必须先调用 await Assets.load() 才能被添加",
+        "isCorrect": false,
+        "description": "Assets.load 针对的是加载纹理资源，与能否 addChild 无关"
+      },
+      {
+        "text": "Sprite 之间只能用 swapChildren 建立父子关系",
+        "isCorrect": false,
+        "description": "swapChildren 是交换两个已有子节点顺序的方法，不是用来建立父子关系的"
+      },
+      {
+        "text": "v8 中叶子节点（Sprite/Graphics/Mesh 等）不再允许 addChild，必须都挂在 Container 下",
+        "isCorrect": true,
+        "description": "v8 把容器职责与可渲染对象职责彻底分离，两个 Sprite 之间不能再直接父子挂载"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 要给一段文字加白色描边和黑色投影效果，应该通过 TextStyle 的哪些字段组合实现？",
+    "explanation": "TextStyle 把文字的视觉效果拆分成独立可配置字段：fill 控制填充色，stroke 控制描边，dropShadow 控制投影，v8 里 dropShadow 是对象形式，可以单独修改某个子字段而不必重建整个 style。这些都是 TextStyle 内置能力，不需要额外叠加 Filters 或依赖外部 CSS。",
+    "tags": ["pixi", "初级", "textstyle"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "fill 设置文字颜色、stroke 设置描边、dropShadow 设置投影",
+        "isCorrect": true,
+        "description": "TextStyle 把这些视觉效果都做成独立可配置字段，v8 里 dropShadow 是对象形式，可单独改子字段"
+      },
+      {
+        "text": "只能通过滤镜 Filters 实现，TextStyle 不支持",
+        "isCorrect": false,
+        "description": "TextStyle 本身就内置了 stroke 和 dropShadow 配置，不需要额外上滤镜"
+      },
+      {
+        "text": "用 tint 属性叠加颜色即可同时实现描边和投影",
+        "isCorrect": false,
+        "description": "tint 是着色乘色，不能表达描边和投影这类独立的视觉层"
+      },
+      {
+        "text": "在 CSS 里给 canvas 标签写 text-shadow 样式",
+        "isCorrect": false,
+        "description": "canvas 内部绘制内容不受外部 CSS 样式影响，须走 PixiJS 自身的 TextStyle 配置"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 里一张白色底图的 Sprite 设置 `sprite.tint = 0xff0000` 之后会发生什么？",
+    "explanation": "tint 本质是逐像素相乘的着色效果而不是叠加图层：白色像素乘上任意颜色就直接呈现该颜色，非白色区域则按各自颜色相乘变化。它不会修改原始纹理数据，也不是只对边框描色，而是整张纹理都参与这次乘色运算。",
+    "tags": ["pixi", "初级", "tint"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在原图上叠加一层半透明红色遮罩",
+        "isCorrect": false,
+        "description": "那是 alpha 混合叠加的效果，tint 是逐像素相乘而非叠加图层"
+      },
+      {
+        "text": "整张图呈现红色调——tint 是与原始像素相乘的着色效果",
+        "isCorrect": true,
+        "description": "tint 本质是乘色，白色像素乘红色会直接呈现该颜色，非白色区域则按各自颜色相乘变化"
+      },
+      {
+        "text": "把纹理本身替换成一张纯红色图片",
+        "isCorrect": false,
+        "description": "tint 不修改原始纹理数据，只是渲染时的乘色效果，原纹理保持不变"
+      },
+      {
+        "text": "只对精灵的边框描红色，内部颜色不变",
+        "isCorrect": false,
+        "description": "tint 影响整张纹理的像素，不是只描边框"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目要给同一张 bunny.png 起个更好记的名字方便到处引用，应该怎么加载？",
+    "explanation": "Assets.load 支持传对象形式指定 alias 别名，比如 { alias: 'bunny', src: 'path/to/bunny.png' }，加载完成后就可以用 Assets.get('bunny') 这个更短的名字取用，不需要每次都写完整路径。Assets.load 并不支持把别名作为第二个字符串参数传入的写法。",
+    "tags": ["pixi", "初级", "assets-load"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "await Assets.load('path/to/bunny.png', 'bunny')",
+        "isCorrect": false,
+        "description": "Assets.load 不接受第二个字符串参数作为别名，别名需要通过传对象的 alias 字段指定"
+      },
+      {
+        "text": "const bunny = 'path/to/bunny.png'; 之后到处用这个变量名",
+        "isCorrect": false,
+        "description": "这只是 JS 变量名，与 Assets 内部的缓存/别名机制无关，仍需完整路径去加载"
+      },
+      {
+        "text": "await Assets.load({ alias: 'bunny', src: 'path/to/bunny.png' })，之后用 Assets.get('bunny') 取用",
+        "isCorrect": true,
+        "description": "Assets.load 支持传对象指定 alias 别名，加载后可用短别名代替完整路径存取"
+      },
+      {
+        "text": "Assets 不支持别名，只能用完整路径引用",
+        "isCorrect": false,
+        "description": "Assets 明确支持 alias 机制，这是其常用特性之一"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v8 想用 Graphics 画一个甜甜圈（一个圆形里挖掉一个同心的小圆形孔），链式调用最后应该用什么方法完成挖洞？",
+    "explanation": "v8 里 Graphics 的挖洞操作用 .cut() 方法替代了 v7 的 beginHole()/endHole()：先画出外层大圆再画内层小圆，最后调用 .cut() 即可镂空。只是把填充色设成透明并不能实现真正的镂空语义，视觉上可能看不出区别但底层仍会遮挡后方内容和影响命中测试。",
+    "tags": ["pixi", "初级", "graphics-cut"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "调用 .beginHole() 再 .endHole()",
+        "isCorrect": false,
+        "description": "这是 v7 的挖洞 API，v8 里已被 .cut() 取代"
+      },
+      {
+        "text": "把小圆的 fill() 颜色设置为透明色即可",
+        "isCorrect": false,
+        "description": "透明填充只是视觉上看不见，并不会真正镂空，与真正挖洞语义不同"
+      },
+      {
+        "text": "无法用 Graphics 实现镂空效果，需要滤镜配合",
+        "isCorrect": false,
+        "description": "Graphics 通过 .cut() 原生支持镂空，不需要额外滤镜"
+      },
+      {
+        "text": "先画大圆再画小圆，最后调用 .cut()",
+        "isCorrect": true,
+        "description": "v8 用 .cut() 替代了 v7 的 beginHole()/endHole() 来挖洞"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 应用想让画布自动跟随浏览器窗口尺寸变化、且在高分屏上保持清晰，`app.init()` 应该配置哪些选项？",
+    "explanation": "resizeTo 选项让画布自动跟随目标（如 window）的尺寸变化，resolution 按设备像素比（window.devicePixelRatio）提升高分屏下的清晰度，两者通常搭配 autoDensity 一起使用。antialias 只解决锯齿问题，backgroundAlpha 只控制背景透明度，都不能替代这组配置解决的自适应尺寸和清晰度需求。",
+    "tags": ["pixi", "初级", "init-options"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "resizeTo: window 配合 resolution: window.devicePixelRatio || 1",
+        "isCorrect": true,
+        "description": "resizeTo 让画布自动跟随目标尺寸，resolution 按设备像素比提升清晰度，常搭配 autoDensity 使用"
+      },
+      {
+        "text": "只需要设置 antialias: true 就能同时解决跟随尺寸和清晰度问题",
+        "isCorrect": false,
+        "description": "antialias 只做抗锯齿，不解决自适应尺寸和高分屏清晰度问题"
+      },
+      {
+        "text": "backgroundAlpha: 1",
+        "isCorrect": false,
+        "description": "这个选项只控制画布背景的不透明度，与尺寸自适应和清晰度无关"
+      },
+      {
+        "text": "preference: 'webgpu'",
+        "isCorrect": false,
+        "description": "preference 选择的是渲染后端（WebGL/WebGPU），与自适应尺寸/清晰度需求无关"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 要嵌入一个全站用 React 声明式开发的项目，且不想脱离 React 组件化心智，官方生态里对应哪个方案？",
+    "explanation": "@pixi/react 是 PixiJS 官方生态里专门用来以 React 声明式方式管理 PixiJS 对象的库，要求 React 19 及以上版本，能让 PixiJS 场景以组件化的方式嵌入 React 应用。pixi-sound 负责音频、pixi-spine 负责骨骼动画、DevTools 是可视化调试扩展，都不是面向 React 集成的方案。",
+    "tags": ["pixi", "初级", "pixi-react"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pixi-sound——基于 WebAudio 的音频播放库",
+        "isCorrect": false,
+        "description": "pixi-sound 解决的是音频播放问题，与 React 集成无关"
+      },
+      {
+        "text": "@pixi/react——以 React 声明式方式管理 PixiJS 对象，要求 React 19+",
+        "isCorrect": true,
+        "description": "这是 PixiJS 官方生态里专门衔接 React 声明式开发模式的库"
+      },
+      {
+        "text": "pixi-spine——Spine 骨骼动画集成",
+        "isCorrect": false,
+        "description": "pixi-spine 是骨骼动画方案，不涉及 React 集成"
+      },
+      {
+        "text": "DevTools——浏览器调试扩展",
+        "isCorrect": false,
+        "description": "DevTools 是可视化调试工具，不是运行时的 React 集成方案"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 遗留代码里写着 `sprite.interactive = true`，直接在 v8 项目里保留这行代码，会发生什么？",
+    "explanation": "v7 遗留写法 sprite.interactive = true 在 v8 里仍然可用，它是 eventMode = 'static' 的别名，可以正常工作，但官方新代码已经不推荐这种写法，应该直接使用 eventMode。它并不等价于 eventMode='none'（完全不响应），也不会因为保留旧写法而报错。",
+    "tags": ["pixi", "初级", "interactive-alias"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "编译报错，v8 已彻底移除 interactive 属性",
+        "isCorrect": false,
+        "description": "interactive 属性仍被保留兼容，不会报错"
+      },
+      {
+        "text": "效果等价于 eventMode = 'none'，对象会变得不可交互",
+        "isCorrect": false,
+        "description": "interactive=true 对应的是 static（可交互），不是 none（完全不响应）"
+      },
+      {
+        "text": "仍然可以正常工作，它等价于 eventMode = 'static'，只是官方不再推荐",
+        "isCorrect": true,
+        "description": "v8 向后兼容保留了 interactive 这个别名写法，但新代码应直接用 eventMode"
+      },
+      {
+        "text": "必须同时删除并换成 eventMode 才能生效，两者不兼容",
+        "isCorrect": false,
+        "description": "两种写法当前可以共存生效，interactive 只是 eventMode='static' 的别名"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v8 里一个 Sprite 没有设置任何 eventMode（保持默认值），它的父容器 eventMode 是 'static'，这个 Sprite 自身能不能响应 pointerdown？",
+    "explanation": "v8 默认 eventMode 是 'passive'：对象自身不会主动响应点击，但不会阻断其可交互子元素正常工作，这与父级是否可交互无关，也和继承机制不同。常见误记是把默认值当成 'auto'（v7 默认行为对应的语义）或 'none'，实际上默认值明确是 'passive'。",
+    "tags": ["pixi", "中级", "eventmode-values"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "能——子节点会自动继承父容器的 eventMode",
+        "isCorrect": false,
+        "description": "eventMode 不是简单地整体继承，'passive' 的语义是自身不响应但放行子元素"
+      },
+      {
+        "text": "能——因为 v8 默认值是 'auto'",
+        "isCorrect": false,
+        "description": "v8 默认值是 'passive' 而非 'auto'，这是常见误记"
+      },
+      {
+        "text": "不能——因为默认值是 'none'，完全禁用了所有事件",
+        "isCorrect": false,
+        "description": "'none' 才是完全忽略且连子元素都不响应的取值，默认值是 'passive' 不是 'none'"
+      },
+      {
+        "text": "不能——默认值 'passive' 表示自身不响应点击，但不影响其可交互子元素正常工作",
+        "isCorrect": true,
+        "description": "'passive' 是 v8 默认值：自身不主动响应，但作为父级不阻断子元素的可交互性"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 游戏想让加载页和游戏主场景各自的资源分开、按需懒加载，应该用 Assets 的什么机制？",
+    "explanation": "Assets 的 Manifest 机制允许把资源组织成多个命名 bundle，比如 'load-screen' 和 'game-screen' 各自独立，通过 Assets.loadBundle('load-screen') 只加载当前需要的那一组，实现分组懒加载。这比一次性 Assets.load() 全部加载更适合资源体量大、场景分阶段的项目。",
+    "tags": ["pixi", "中级", "assets-manifest"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Manifest 定义多个 bundles，用 Assets.loadBundle('load-screen') 按需加载对应分组",
+        "isCorrect": true,
+        "description": "Manifest 把资源组织成命名 bundle，需要哪一组场景就只加载对应 bundle，实现分组懒加载"
+      },
+      {
+        "text": "把所有资源放进一次 Assets.load() 调用里，一次性全部加载",
+        "isCorrect": false,
+        "description": "这样会牺牲懒加载的意义，启动时就要等全部资源加载完"
+      },
+      {
+        "text": "给每个资源单独调用一次 Assets.init()",
+        "isCorrect": false,
+        "description": "Assets.init() 是全局初始化配置（如设置 manifest/basePath），不是逐个资源调用的"
+      },
+      {
+        "text": "用 Assets.unload() 提前卸载暂时不用的资源来模拟懒加载",
+        "isCorrect": false,
+        "description": "unload 是卸载已加载资源的收尾操作，不能替代按分组懒加载这个加载阶段的设计"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 资源清单里写了 `bunny@{1,2}x.{png,webp}` 这样的通配符路径，Resolver 大致会怎样处理它？",
+    "explanation": "Resolver 的工作流程是标准化到展开通配符再到按平台能力（分辨率/图片格式支持）择优再到输出具体 URL 四个阶段，这类写法正是配合 AssetPack 工具生成的多分辨率多格式清单，最终只会解析出一个最优的具体 URL 去加载，而不是全部加载进内存。",
+    "tags": ["pixi", "中级", "assets-resolver"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "依次加载所有组合，最终都保留在内存里以备切换",
+        "isCorrect": false,
+        "description": "只会解析出一个最优 URL 去加载，不会把所有组合都加载进内存"
+      },
+      {
+        "text": "展开通配符枚举出所有候选组合，再按当前平台能力（分辨率/图片格式支持）选出一个最优具体 URL",
+        "isCorrect": true,
+        "description": "Resolver 是标准化→展开通配符→按平台能力择优→输出具体 URL 的四阶段流程，常配合 AssetPack 自动生成多分辨率多格式清单"
+      },
+      {
+        "text": "webp 格式优先级永远最高，不管浏览器是否支持",
+        "isCorrect": false,
+        "description": "选择依据是当前平台的实际能力探测，而不是固定的格式优先级"
+      },
+      {
+        "text": "这种写法是非法语法，Resolver 不支持通配符",
+        "isCorrect": false,
+        "description": "这正是 Resolver 官方支持的多分辨率/多格式通配符写法"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 代码 `app.ticker.add(delta => sprite.x += delta * 2)` 直接搬到 v8 项目里跑，会出现什么问题？",
+    "explanation": "v8 的 Ticker 回调参数从 v7 的裸 delta 数字改成了 Ticker 实例本身，需要通过 ticker.deltaTime 才能拿到缩放后的帧时差。直接把 v7 写法的 delta 当数字参与运算，会得到 NaN 或非预期结果，这是一处典型的 v7→v8 破坏性变化而非语法错误。",
+    "tags": ["pixi", "中级", "ticker-instance"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "完全没有问题，两个版本回调参数格式完全一致",
+        "isCorrect": false,
+        "description": "这正是一个 v7→v8 的破坏性变化，回调参数类型变了"
+      },
+      {
+        "text": "会抛出编译期类型错误，代码根本跑不起来",
+        "isCorrect": false,
+        "description": "JS 没有编译期类型检查，这是运行时得到错误数值的问题，不是语法错误"
+      },
+      {
+        "text": "delta 拿到的是 Ticker 实例而非裸数字，delta * 2 会得到 NaN 或非预期结果",
+        "isCorrect": true,
+        "description": "v8 ticker 回调参数从裸 delta 数字改成了 Ticker 实例，需要改成 ticker.deltaTime * 2 才对"
+      },
+      {
+        "text": "delta 会自动被转换成 elapsedMS 的值",
+        "isCorrect": false,
+        "description": "没有这种自动转换，拿到的就是 Ticker 实例本身，需要显式取 .deltaTime 字段"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 要在场景里放 1000 个外观完全一样的圆形图标（不同位置），比起每个都单独写 `new Graphics().circle().fill()`，更省开销的做法是？",
+    "explanation": "GraphicsContext 可以让多个 Graphics 实例共享同一份几何数据，1000 个外观相同的图标只需要构建一次 GraphicsContext，再让每个 Graphics 切换到这份共享几何，开销远低于各自独立 new Graphics().circle().fill()。官方也明确建议避免每帧清空重建 Graphics，这属于性能反模式。",
+    "tags": ["pixi", "中级", "graphics-context"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用一个全局 Graphics 每帧清空重建 1000 次",
+        "isCorrect": false,
+        "description": "官方明确建议避免每帧清空重建 Graphics，这种做法反而是性能反模式"
+      },
+      {
+        "text": "把 1000 个圆形拼成一张 SVG 再整体导入",
+        "isCorrect": false,
+        "description": "PixiJS 的 Graphics 是矢量绘制原语，不是 SVG 导入机制，这条路径不成立"
+      },
+      {
+        "text": "GraphicsContext 和分别 new 1000 个独立 Graphics 性能完全一样",
+        "isCorrect": false,
+        "description": "共享同一份几何数据切换开销更低，并非完全一样"
+      },
+      {
+        "text": "先构建一个 GraphicsContext，1000 个 Graphics 实例共享同一份几何数据",
+        "isCorrect": true,
+        "description": "GraphicsContext 可以跨实例复用几何数据，多个 Graphics 切换到同一个 context 开销远低于各自独立构建"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 用 Graphics 画一个矩形，想同时给它设置线性渐变色和一张纹理贴图，这样写可行吗？",
+    "explanation": "FillGradient 渐变会内部占用纹理和矩阵插槽，因此不能与纹理填充同时使用，这个限制和 WebGL/WebGPU 后端选择无关，也不是靠 destroy() 释放资源就能绕开的。想要渐变和纹理同时呈现，需要在应用层面自己组合，而不是指望 fill() 一次性叠加两者。",
+    "tags": ["pixi", "中级", "fill-gradient"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不可行——渐变会占用纹理和矩阵插槽，FillGradient 不能与纹理同时使用",
+        "isCorrect": true,
+        "description": "官方明确渐变不能与纹理/矩阵同时使用，二者互斥，只能二选一"
+      },
+      {
+        "text": "可行——渐变和纹理会自动叠加混合",
+        "isCorrect": false,
+        "description": "两者是互斥关系而非自动叠加，同时传入不会得到叠加效果"
+      },
+      {
+        "text": "可行，但只在 WebGPU 后端下支持，WebGL 不支持",
+        "isCorrect": false,
+        "description": "这个限制与渲染后端无关，是 FillGradient 本身的设计限制"
+      },
+      {
+        "text": "可行，只要先调用 gradient.destroy() 释放资源即可同时使用",
+        "isCorrect": false,
+        "description": "destroy() 是渐变使用完之后释放资源的收尾操作，不是让它与纹理共存的方法"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 官方架构文档笼统地提到会自动选择 WebGPU 或 WebGL 渲染器，如果因此就认为 v8 默认优先走 WebGPU 来预估性能，会有什么问题？",
+    "explanation": "PixiJS 官方架构总览页对渲染器选择的表述比较笼统，容易让人误读成 v8 默认优先用 WebGPU，但 Application.init() 选项表给出的 preference 默认值明确是 'webgl'。自动选择指的是环境探测和降级兜底机制，要真正吃到 WebGPU 必须显式配置 preference: 'webgpu'，否则性能预期会落空。",
+    "tags": ["pixi", "中级", "webgpu-preference"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "没有问题——WebGPU 确实是 v8 的默认后端",
+        "isCorrect": false,
+        "description": "这正是常见误读，选项表给出的默认值是 'webgl'"
+      },
+      {
+        "text": "预期会落空——preference 选项默认值明确是 'webgl'，不显式配置就是走 WebGL",
+        "isCorrect": true,
+        "description": "自动选择指的是环境探测/降级兜底机制，不是默认优先 WebGPU"
+      },
+      {
+        "text": "没有问题——preference 选项本身在 v8 里已经被移除",
+        "isCorrect": false,
+        "description": "preference 选项存在且是 Application.init 的合法配置项"
+      },
+      {
+        "text": "预期会落空——因为 v8 根本不支持 WebGPU，只是文档笔误",
+        "isCorrect": false,
+        "description": "v8 确实原生支持 WebGPU（WebGPURenderer），只是默认不优先选用它"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目运行中发现 BitmapText 在不同设备上显示模糊，想通过运行时修改 `text.resolution` 来解决，这样做有效吗？",
+    "explanation": "BitmapText 的 resolution 属性不支持运行时修改，这是它的一个已知限制：要得到不同分辨率的清晰度，必须重新生成对应分辨率的位图字体资源，而不是像调整普通属性那样直接赋值就能生效。这个限制与渲染后端无关，源于其预烘焙字形集的实现机制。",
+    "tags": ["pixi", "中级", "bitmaptext-perf"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "有效——resolution 是运行时热更新属性，改完立即生效",
+        "isCorrect": false,
+        "description": "resolution 属性对 BitmapText 而言运行时修改不会生效，这是常见误踩坑"
+      },
+      {
+        "text": "无效——BitmapText 根本不支持任何分辨率相关配置",
+        "isCorrect": false,
+        "description": "BitmapText 在生成阶段是支持分辨率配置的，只是不能事后运行时修改"
+      },
+      {
+        "text": "无效——BitmapText 的 resolution 不可运行时修改，需要重新生成对应分辨率的位图字体资源",
+        "isCorrect": true,
+        "description": "这是 BitmapText 的一个已知限制，与 Text 不同，改分辨率必须重新生成位图字形集"
+      },
+      {
+        "text": "有效，但仅在 WebGPU 后端下生效",
+        "isCorrect": false,
+        "description": "这个限制与渲染后端无关，是 BitmapText 底层预烘焙字形集机制导致的"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 有一个 5000×5000px 的静态 UI 大面板容器，想用 `container.cacheAsTexture()` 优化渲染，会遇到什么问题？",
+    "explanation": "cacheAsTexture 对容器渲染区域有大致 4096×4096px 的尺寸上限，超过这个范围可能缓存失败，5000×5000px 已经触及这个限制。这个功能面向 Container 及其子元素整体生效，不限定只用于 Graphics，也和是否调用 destroy() 没有关系。",
+    "tags": ["pixi", "中级", "cache-as-texture"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "完全没问题，尺寸越大缓存效果越好",
+        "isCorrect": false,
+        "description": "尺寸越大反而越容易触及缓存失败的上限，不是越大越好"
+      },
+      {
+        "text": "cacheAsTexture 只对 Graphics 有效，对普通 Container 无效",
+        "isCorrect": false,
+        "description": "cacheAsTexture 面向 Container 及其子元素整体生效，不限于 Graphics"
+      },
+      {
+        "text": "需要先手动调用 container.destroy() 才能启用缓存",
+        "isCorrect": false,
+        "description": "destroy() 是销毁对象释放资源的方法，与启用 cacheAsTexture 毫无关系"
+      },
+      {
+        "text": "超过约 4096×4096px 的渲染区域可能缓存失败，这个尺寸已经超限",
+        "isCorrect": true,
+        "description": "cacheAsTexture 对超大容器有尺寸上限，5000×5000 已超过约 4096×4096px 的经验限制"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 用 ParticleContainer 渲染十万级粒子做烟花特效，往里添加单个粒子对象应该调用哪个方法？",
+    "explanation": "v8 重构后的 ParticleContainer 不再接受普通 Sprite，而是使用更轻量的 Particle 对象，添加粒子要调用 container.addParticle() 而非 addChild()，粒子实际存放在 particleChildren 而非 children 数组里。这套设计是为了在数十万粒子规模下进一步压榨渲染性能。",
+    "tags": ["pixi", "中级", "particle-container"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "container.addParticle(particle)——而非 addChild",
+        "isCorrect": true,
+        "description": "v8 重构后的 ParticleContainer 不再接受 Sprite，改用更轻量的 Particle 对象，添加方式是 addParticle"
+      },
+      {
+        "text": "container.addChild(particle)",
+        "isCorrect": false,
+        "description": "ParticleContainer 存的是 particleChildren 而非 children，用 addChild 不是正确的添加方式"
+      },
+      {
+        "text": "container.addSprite(particle)",
+        "isCorrect": false,
+        "description": "不存在 addSprite 这个方法名，且 ParticleContainer 存的对象本来就不是 Sprite"
+      },
+      {
+        "text": "直接把 particle 推入 container.children 数组",
+        "isCorrect": false,
+        "description": "ParticleContainer 的粒子存放在 particleChildren 而非 children，直接操作 children 数组不是有效路径"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 一张精灵图集（sprite sheet）里剪裁出了 10 个不同的 Texture 对象，这 10 个 Texture 在底层与 GPU 显存的关系是什么？",
+    "explanation": "纹理链路是源文件到 TextureSource（原始像素数据加 GPU 上传）再到 Texture（含裁剪/UV/变换等元数据的轻量视图），多个 Texture 可以共享同一个 TextureSource，这正是精灵图集能减少纹理切换、避免重复上传 GPU 显存的原理。TextureSource 和 Texture 是分层的不同概念，并非同一回事。",
+    "tags": ["pixi", "中级", "texture-source"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "各自独立上传到 GPU 显存 10 份完整拷贝",
+        "isCorrect": false,
+        "description": "恰恰相反，共享同一 TextureSource 正是为了避免重复上传，减少纹理切换和显存占用"
+      },
+      {
+        "text": "共享同一个 TextureSource，各自只是裁剪区域/UV 等元数据不同的轻量视图",
+        "isCorrect": true,
+        "description": "多个 Texture 共享一个 TextureSource 正是精灵图集的原理"
+      },
+      {
+        "text": "TextureSource 只是 Texture 的别名，两者是同一个概念",
+        "isCorrect": false,
+        "description": "v7 的 BaseTexture 已被拆分为多种 *Source，Texture 和 TextureSource 是分层的不同概念"
+      },
+      {
+        "text": "10 个 Texture 分别对应 10 个独立的 Sprite 实例",
+        "isCorrect": false,
+        "description": "Texture 与 Sprite 是不同层级的概念，一个 Texture 可以被多个 Sprite 复用"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 给一个 Sprite 设置 `sprite.filters = [new BlurFilter({ strength: 4 }), new NoiseFilter({ noise: 0.2 })]`，这两个滤镜的实际处理顺序是？",
+    "explanation": "filters 是数组语义，会按数组顺序对渲染结果依次处理，先模糊后加噪点和先加噪点后模糊会得到不同的视觉效果，顺序真实影响最终结果。滤镜不是并行取平均，也不存在只有数组第一项生效的说法，滤镜数量越多性能开销也越大。",
+    "tags": ["pixi", "中级", "filters-basics"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两个滤镜会同时并行处理，结果取平均值",
+        "isCorrect": false,
+        "description": "滤镜是顺序链式处理而非并行取平均"
+      },
+      {
+        "text": "只有数组里第一个滤镜会生效，后面的被忽略",
+        "isCorrect": false,
+        "description": "数组内多个滤镜都会依次生效，不是只取第一个"
+      },
+      {
+        "text": "按数组顺序依次处理：先模糊后加噪点，链式叠加",
+        "isCorrect": true,
+        "description": "filters 是数组语义，按顺序对结果依次处理，顺序变化会得到不同的最终视觉效果"
+      },
+      {
+        "text": "顺序不影响结果，PixiJS 会自动优化处理顺序",
+        "isCorrect": false,
+        "description": "顺序确实影响最终结果，不存在自动重排"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 被拿来和 Fabric.js 对比，用于做一个需要框选、拖拽、旋转缩放画布对象（类似 PPT 操作手感）的海报编辑器，选哪个更合适？",
+    "explanation": "Fabric.js 是面向可编辑对象的画布库，内建选择框、旋转缩放手柄，编辑器体验开箱即用；PixiJS 是渲染导向的引擎，Federated Events 只提供底层事件模型，选中/拖拽/变换手柄这类交互都需要自己实现。做类似 PPT 操作手感的编辑器，优先选 Fabric.js 能省下大量交互层开发成本。",
+    "tags": ["pixi", "中级", "selection-fabric"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "优先 PixiJS——它的 Federated Events 天然包含选择框和变换手柄",
+        "isCorrect": false,
+        "description": "PixiJS 的事件系统只提供底层事件模型（eventMode 等），不内置选择框/旋转缩放手柄这类编辑器控件"
+      },
+      {
+        "text": "两者能力完全一样，选哪个都行",
+        "isCorrect": false,
+        "description": "两者定位不同：Fabric 编辑器导向开箱即用，PixiJS 渲染导向需要自己补交互层"
+      },
+      {
+        "text": "都不合适，这种需求只能用原生 Canvas 2D 手写",
+        "isCorrect": false,
+        "description": "Fabric.js 正是为这类可编辑对象场景设计的，不需要从原生 Canvas 2D 手写"
+      },
+      {
+        "text": "优先 Fabric.js——它内建选择框、旋转缩放手柄，编辑器体验开箱即用；PixiJS 要自己补齐这层交互",
+        "isCorrect": true,
+        "description": "Fabric 是面向可编辑对象的画布库；PixiJS 是渲染导向，性能上限更高但需要自己实现交互层"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 有多个 ticker 回调需要保证特定的执行顺序（比如物理更新必须先于渲染前的视觉调整），同时还想在设备卡顿时把最小帧率钳制在 30fps 防止位移跳变过大，应该怎么配置？",
+    "explanation": "Ticker 的 UPDATE_PRIORITY 机制（HIGH(50) 大于 NORMAL(0) 大于 LOW(-50)）可以精确控制多个回调的执行先后顺序，配合 ticker.minFPS 钳制 deltaTime 的下限，能在设备卡顿掉帧时避免物理位移一次性跳变过大。maxFPS 解决的是帧率上限问题，与防止掉帧跳变的诉求方向不同。",
+    "tags": ["pixi", "中级", "ticker-priority"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 UPDATE_PRIORITY（如 HIGH/NORMAL/LOW）控制回调顺序，设置 ticker.minFPS = 30 钳制 deltaTime 下限",
+        "isCorrect": true,
+        "description": "UPDATE_PRIORITY 决定多个回调的执行先后，minFPS 则钳制 deltaTime 避免掉帧时物理位移过大"
+      },
+      {
+        "text": "把所有回调放进同一个函数里手动控制顺序，PixiJS 不提供优先级机制",
+        "isCorrect": false,
+        "description": "Ticker 明确提供 UPDATE_PRIORITY 这个优先级参数，不需要退化成手动拼接"
+      },
+      {
+        "text": "设置 ticker.maxFPS = 30 来防止位移跳变",
+        "isCorrect": false,
+        "description": "maxFPS 是限制帧率上限，防止掉帧导致位移跳变要靠 minFPS 钳制 deltaTime 的下限"
+      },
+      {
+        "text": "创建多个 Application 实例，每个负责不同优先级的回调",
+        "isCorrect": false,
+        "description": "多开 Application 是过度设计，同一个 ticker 通过 priority 参数即可分层管理回调顺序"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 大型游戏场景把几乎所有对象都逐一标记成 `new Container({ isRenderGroup: true })`，指望获得最大性能提升，这个思路对吗？",
+    "explanation": "Render Group 的收益来自把变换/着色计算下放 GPU、减少 CPU 负担，但每个 Render Group 自身也有管理开销，官方明确提醒不要滥用，标记过多反而更慢，需要实测挑选真正结构不常变的静态子树。这是一个反直觉但很重要的性能设计取舍点。",
+    "tags": ["pixi", "高级", "render-groups"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对——Render Group 越多，GPU 负担分摊越均匀，性能只会越来越好",
+        "isCorrect": false,
+        "description": "这正是官方特意强调的反直觉点：数量并非越多越好"
+      },
+      {
+        "text": "不对——官方明确提醒 Render Group 不要滥用，标记过多反而更慢，需要实测挑选真正结构不常变的静态子树",
+        "isCorrect": true,
+        "description": "Render Group 的收益来自下放 GPU 计算、减少 CPU 负担，但自身也有管理开销，滥用会适得其反"
+      },
+      {
+        "text": "不对——Render Group 只能用在 app.stage 这个根节点上",
+        "isCorrect": false,
+        "description": "Render Group 可以标记任意合适的子树容器，不限定只能是根节点"
+      },
+      {
+        "text": "对，只要子树包含 Sprite 就应该标记为 Render Group",
+        "isCorrect": false,
+        "description": "是否适合标记为 Render Group 取决于该子树结构是否稳定，而非是否包含 Sprite"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 游戏里角色的血条应该永远显示在游戏世界所有对象之上，但血条在逻辑上又必须是角色的子节点（跟随角色移动），这个矛盾用什么机制解决？",
+    "explanation": "Render Layers 正是为了把渲染顺序与场景图父子逻辑关系解耦而设计，用 layer.attach() 把血条显式插入更高的绘制层，角色仍是逻辑父级，但绘制顺序可以独立提到最上层。zIndex 只能在同一容器内的兄弟节点间排序，解决不了跨子树的绘制顺序需求。",
+    "tags": ["pixi", "高级", "render-layers"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把血条设置更高的 zIndex 并开启 sortableChildren 即可",
+        "isCorrect": false,
+        "description": "zIndex 只在同一容器内的兄弟节点间排序，无法让血条跨越所在子树显示在整个游戏世界之上"
+      },
+      {
+        "text": "把血条从角色身上移除，改成完全独立于角色管理位置",
+        "isCorrect": false,
+        "description": "这样会失去血条跟随角色移动的逻辑父子关系，需要自己手动同步坐标"
+      },
+      {
+        "text": "Render Layers——用 layer.attach(hpBar) 把血条显式插入更高的绘制层，同时保留其对角色的逻辑父子变换继承",
+        "isCorrect": true,
+        "description": "Render Layers 把渲染顺序与场景图父子逻辑关系解耦，角色仍是逻辑父级但绘制顺序可独立提升"
+      },
+      {
+        "text": "用 cacheAsTexture 把角色和血条缓存成一张纹理",
+        "isCorrect": false,
+        "description": "cacheAsTexture 解决的是渲染整体复用的性能问题，不解决绘制顺序高于所在子树这个视觉排序需求"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目从 v7 迁移到 v8 后，发现之前设置 `container.cullable = true` 就能让屏幕外对象自动跳过渲染的效果不再生效，为什么？",
+    "explanation": "v8 的 culling 机制发生了重要变化：v7 设置 cullable=true 配合渲染器会自动完成裁剪，v8 不再自动触发，必须显式调用 Culler.shared.cull() 或注册 CullerPlugin 扩展才能找回接近 v7 的自动行为。cullable/cullArea 等属性本身依然存在，只是不再默认参与渲染时的自动裁剪流程。",
+    "tags": ["pixi", "高级", "culling"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cullable 属性在 v8 里已经被彻底移除",
+        "isCorrect": false,
+        "description": "cullable/cullableChildren/cullArea 这些属性仍然存在，只是不再自动触发裁剪逻辑"
+      },
+      {
+        "text": "cullable 只在 WebGPU 渲染器下生效，项目还在用 WebGL",
+        "isCorrect": false,
+        "description": "这个变化与渲染后端选择无关，是 v8 整体的 culling 机制设计变化"
+      },
+      {
+        "text": "必须把 cullArea 设置为整个屏幕尺寸才能生效",
+        "isCorrect": false,
+        "description": "问题的关键在于 v8 需要显式调用 cull() 方法或注册插件才会执行裁剪判断"
+      },
+      {
+        "text": "v8 不再像 v7 那样渲染时自动裁剪，需要显式调用 Culler.shared.cull() 或注册 CullerPlugin 才能找回类似行为",
+        "isCorrect": true,
+        "description": "cullable/cullArea 等属性仍然存在，但裁剪逻辑不再自动触发，必须显式驱动"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目一张频繁切换场景复用的纹理，只是想暂时从 GPU 显存释放、但保留 JS 引用以便随时再次上传使用，应该调用哪个方法？",
+    "explanation": "texture.source.unload() 只从 GPU 卸载，保留内存引用，这与彻底销毁的 destroy() 是两回事：unload 只精细释放显存占用，JS 对象和引用还在，可以再次上传复用。选错方式会导致要么过早销毁复用中的纹理，要么内存该放不放。",
+    "tags": ["pixi", "高级", "destroy-vs-unload"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "texture.source.unload()——只从 GPU 卸载，保留内存引用",
+        "isCorrect": true,
+        "description": "unload 只精细释放显存占用，JS 对象和引用还在，可以再次上传复用"
+      },
+      {
+        "text": "texture.destroy()",
+        "isCorrect": false,
+        "description": "destroy() 是彻底释放（GPU+内存引用都没了），用在这里会导致这张要复用的纹理被过早销毁"
+      },
+      {
+        "text": "Assets.unload() 且不需要额外调用其他方法",
+        "isCorrect": false,
+        "description": "Assets.unload() 面向的是通过 URL 管理的缓存资源整体释放，题目场景应直接对 Texture 对象调用 source.unload()"
+      },
+      {
+        "text": "sprite.visible = false",
+        "isCorrect": false,
+        "description": "这只是隐藏显示对象，不释放任何 GPU 显存资源"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 要写一个自定义滤镜，同时要保证在 WebGL 和 WebGPU 两种渲染器下都能正常工作，`new Filter()` 至少需要准备什么？",
+    "explanation": "自定义滤镜必须同时想清楚 WebGL 和 WebGPU 双后端着色器：WebGL 用 GlProgram，WebGPU 需要对应的程序定义，PixiJS 不会做跨着色语言的自动转译。resources 只是传递 uniform 数据的机制，不能替代着色器程序本身的双后端准备工作。",
+    "tags": ["pixi", "高级", "custom-filter"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只需要写一份通用 GLSL 代码，PixiJS 会自动转译成 WebGPU 的着色语言",
+        "isCorrect": false,
+        "description": "PixiJS 不会自动做这种跨着色语言转译，需要开发者自行准备两套程序定义"
+      },
+      {
+        "text": "同时提供 WebGL 的 GlProgram（着色器程序）与对应的 WebGPU 程序定义",
+        "isCorrect": true,
+        "description": "自定义滤镜必须同时想清楚 WebGL/WebGPU 双后端着色器，只写一套在另一后端下会失效"
+      },
+      {
+        "text": "只有 WebGPU 需要额外配置，WebGL 滤镜可以完全零配置直接工作",
+        "isCorrect": false,
+        "description": "两种后端都需要显式配置各自的程序，并非 WebGL 零配置"
+      },
+      {
+        "text": "使用 resources 传入的 uniform 会自动适配任意后端，无需额外处理着色器",
+        "isCorrect": false,
+        "description": "resources 只是传递 uniform 数据的机制，着色器程序本身仍需要为 WebGL/WebGPU 分别准备"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 需要给一个大量元素的复杂面板做裁剪遮罩，从性能角度，下面几种遮罩方式该怎么排优先级？",
+    "explanation": "PixiJS 的遮罩性能有明确的层级排序：轴对齐矩形遮罩（直接裁剪矩形）开销最低，图形遮罩（走模板缓冲）居中，精灵遮罩因为要走滤镜管线而开销最大。给大量元素的复杂面板做裁剪时，应该优先考虑用矩形遮罩，而不是想当然地认为精灵遮罩能直接复用纹理所以更快。",
+    "tags": ["pixi", "高级", "mask-performance"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "精灵遮罩最快，因为可以直接复用已有纹理",
+        "isCorrect": false,
+        "description": "恰恰相反，精灵遮罩需要走滤镜管线，是三者中最慢的"
+      },
+      {
+        "text": "三种遮罩方式性能完全一样，选择只看视觉效果需求",
+        "isCorrect": false,
+        "description": "三者性能差异是官方明确给出的排序，并不等价"
+      },
+      {
+        "text": "轴对齐矩形遮罩最快 > 图形（Graphics）遮罩次之 > 精灵遮罩最慢（走滤镜）",
+        "isCorrect": true,
+        "description": "矩形遮罩是直接裁剪矩形开销最低，图形遮罩走模板缓冲居中，精灵遮罩要走滤镜管线开销最大"
+      },
+      {
+        "text": "图形遮罩最快，矩形遮罩反而最慢",
+        "isCorrect": false,
+        "description": "顺序反了，轴对齐矩形遮罩是最快的，不是图形遮罩"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 代码 `const w = sprite.getBounds().width;` 直接搬到 v8 项目里运行，`w` 会拿到什么？",
+    "explanation": "v7 的 getBounds() 直接返回 Rectangle 对象，可以直接访问 .width；v8 的 getBounds() 改成返回 Bounds 对象，需要先取 .rectangle 才能拿到传统的矩形字段。照搬 v7 写法直接访问 .width，在 v8 里会因为 Bounds 对象上没有该字段而拿到 undefined。",
+    "tags": ["pixi", "高级", "get-bounds"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "和 v7 完全一样，能正确拿到宽度数值",
+        "isCorrect": false,
+        "description": "v8 的 getBounds() 返回值结构变了，直接取 .width 不再是 Rectangle 上的字段"
+      },
+      {
+        "text": "抛出运行时异常导致程序崩溃",
+        "isCorrect": false,
+        "description": "访问不存在的字段在 JS 里通常得到 undefined 而不是抛异常，不会直接崩溃"
+      },
+      {
+        "text": "w 会是一个 Bounds 对象而非数字",
+        "isCorrect": false,
+        "description": "sprite.getBounds() 确实返回 Bounds 对象，但题目问的是 .width 这个属性访问的结果，Bounds 上没有直接的 width 字段"
+      },
+      {
+        "text": "undefined——v8 的 getBounds() 返回 Bounds 对象，需要 .rectangle 才能取到传统的 width 等矩形字段",
+        "isCorrect": true,
+        "description": "v7 的 getBounds() 直接返回 Rectangle，v8 变成了返回 Bounds 对象，需要 .rectangle.width 才对"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 项目要从 v7 升级到 v8，下面哪一组改动是必须做的（而不是可选的风格调整）？",
+    "explanation": "PixiJS v7 升级到 v8 是一次架构级的破坏性重写，Application 构造方式（必须 await init()）、Graphics 绘图 API（先画形状再 fill/stroke）、事件默认行为（eventMode 默认值从 v7 等价的 auto 变成了 passive）都属于必须调整的破坏性变化，不是可选的风格偏好，也不局限于用到 WebGPU 的项目。",
+    "tags": ["pixi", "高级", "migration-v7-v8"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Application 改成 new 加 await init()、Graphics 改成先画形状再 fill/stroke、eventMode 显式设置而非依赖旧默认交互行为",
+        "isCorrect": true,
+        "description": "这三项都是 v8 的破坏性变化而非风格偏好：构造方式变了、绘图 API 整体重写、事件默认值变了"
+      },
+      {
+        "text": "只需要把所有 import 语句从 @pixi/xxx 子包换成从 pixi.js 主包导入即可，其余 API 不用改",
+        "isCorrect": false,
+        "description": "模块引入方式确实变了，但 Application/Graphics/eventMode 等核心 API 也都发生了破坏性变化"
+      },
+      {
+        "text": "v8 完全向后兼容 v7，不需要改任何代码",
+        "isCorrect": false,
+        "description": "v8 是一次架构级重写，官方明确这是破坏性升级，历史项目升级成本高"
+      },
+      {
+        "text": "只有用到 WebGPU 的项目才需要改代码，纯 WebGL 项目不受影响",
+        "isCorrect": false,
+        "description": "Application 初始化方式/Graphics API/eventMode 默认值等变化对 WebGL 和 WebGPU 项目都同样影响"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS v7 代码里的 `texture.baseTexture.scaleMode = SCALE_MODES.NEAREST` 迁移到 v8，思路上最大的变化是什么？",
+    "explanation": "v8 把 v7 里大量的数字枚举常量（如 SCALE_MODES.NEAREST、WRAP_MODES.REPEAT、DRAW_MODES.TRIANGLES）整体替换成了字符串常量（如 'nearest'、'repeat'、'triangle-list'），这类常量本身在 v8 里已不存在，迁移时要把所有引用改写成对应的字符串值。",
+    "tags": ["pixi", "高级", "enum-strings"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "scaleMode 这个属性被完全移除，v8 不再支持缩放模式配置",
+        "isCorrect": false,
+        "description": "缩放模式配置依然存在，只是取值形式从数字枚举变成了字符串"
+      },
+      {
+        "text": "v8 把数字枚举整体改成了字符串常量，这里应该写成类似 'nearest' 这样的字符串值",
+        "isCorrect": true,
+        "description": "v8 用字符串常量取代了 v7 的数字枚举，SCALE_MODES.NEAREST 这类常量在 v8 里已不存在"
+      },
+      {
+        "text": "只是属性挂载路径变了，从 baseTexture 上移到 texture 上，取值方式不变",
+        "isCorrect": false,
+        "description": "确实有 baseTexture 拆分带来的路径变化，但题目问的核心变化是枚举取值形式"
+      },
+      {
+        "text": "NEAREST 在 v8 里的值从 0 变成了 1，其余不变",
+        "isCorrect": false,
+        "description": "v8 不是简单调整枚举数值，而是把整套数字枚举替换成了字符串常量"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 想让部分渲染逻辑跑在 Web Worker 里（用 OffscreenCanvas），需要用到哪个环境适配机制？",
+    "explanation": "DOMAdapter 负责 PixiJS 的环境适配：浏览器主线程默认用 BrowserAdapter，要在 Web Worker（配合 OffscreenCanvas）里运行则要切换成 WebWorkerAdapter，也支持自定义 Adapter。v7 的全局 settings 对象在 v8 中已被移除，这类配置改由 DOMAdapter 承担，和选择 WebGL 还是 WebGPU 是完全独立的两个维度。",
+    "tags": ["pixi", "高级", "dom-adapter"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "全局 settings 对象，设置 settings.ADAPTER 即可",
+        "isCorrect": false,
+        "description": "settings 全局对象在 v8 里已被移除，这类配置改由 DOMAdapter.set() 等新 API 承担"
+      },
+      {
+        "text": "直接 import 'pixi.js/dom' 子入口即可自动切换，无需额外配置",
+        "isCorrect": false,
+        "description": "dom 这个子入口只是相关适配代码的打包入口，实际切换适配器仍需要通过 DOMAdapter 机制显式配置"
+      },
+      {
+        "text": "DOMAdapter，切换成 WebWorkerAdapter 而非默认的 BrowserAdapter",
+        "isCorrect": true,
+        "description": "浏览器主线程用 BrowserAdapter，WebWorker 环境（OffscreenCanvas）用 WebWorkerAdapter，也支持自定义 Adapter"
+      },
+      {
+        "text": "preference: 'webgpu' 选项，因为 WebGPU 天然支持 Worker 环境",
+        "isCorrect": false,
+        "description": "preference 选择的是渲染后端，与是否运行在主线程还是 Worker 线程是两个不同维度的问题"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 自定义滤镜里定义一个 uniform：`resources: { timeUniforms: { uTime: { value: 0.0, type: 'f32' } } }`，为什么 v8 要求显式声明 `type: 'f32'` 这样的类型信息？",
+    "explanation": "这是 v7→v8 Uniform/Shader 系统重构的一部分：纹理和 uniform 都变成了显式声明的资源（resources），WebGPU 的管线描述要求预先明确知道每个 uniform 的具体类型和内存布局，不像 v7 那样只靠 WebGL 宽松推断。这个 type 字段在运行时确实被使用，并非只是编译期类型提示或调试展示用途。",
+    "tags": ["pixi", "专家", "uniform-group"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "纯粹是 TypeScript 的类型注解，运行时会被完全忽略",
+        "isCorrect": false,
+        "description": "这个 type 字段在运行时确实被使用，用于生成 WebGPU 所需的 uniform 布局，并非只是编译期提示"
+      },
+      {
+        "text": "只是为了在 DevTools 里显示更友好的调试信息",
+        "isCorrect": false,
+        "description": "这不只是调试展示用途，而是 WebGPU 管线正确生成所必需的运行时信息"
+      },
+      {
+        "text": "type 字段只有 WebGL 用到，WebGPU 会忽略它",
+        "isCorrect": false,
+        "description": "恰恰相反，这类显式类型声明正是为了满足 WebGPU 生成 pipeline layout 的需要"
+      },
+      {
+        "text": "供 WebGPU 生成 pipeline 的 uniform layout，WebGPU 需要提前明确知道每个 uniform 的具体类型和内存布局",
+        "isCorrect": true,
+        "description": "v8 纹理和 uniform 都变成显式声明的资源，WebGPU 管线描述要求预先知道确切类型，不像 v7 只靠 WebGL 宽松推断"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 用 ParticleContainer 渲染数十万粒子的烟花特效，`dynamicProperties: { position: true, rotation: false, vertex: false, color: false }` 这样配置的性能考量是什么？",
+    "explanation": "ParticleContainer 区分动态属性（每帧上传 GPU）与静态属性（仅在调用 update() 时才上传）正是为了在数十万粒子规模下压榨性能，把频繁变化的 position 设为动态属性、其余不常变的属性设为静态，能把上传开销集中在真正逐帧变化的字段上。全部设为动态看似数据最新，实际会让每帧上传量最大化，是最差的性能选择。",
+    "tags": ["pixi", "专家", "particle-dynamic-static"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把频繁变化的 position 设为每帧上传 GPU 的动态属性，其余不变或很少变的属性设为静态、仅在 update() 时才上传，减少每帧数据传输量",
+        "isCorrect": true,
+        "description": "区分动态与静态属性正是为了在数十万粒子规模下把上传开销集中在真正逐帧变化的字段上"
+      },
+      {
+        "text": "dynamicProperties 只是决定粒子能不能响应事件，与性能无关",
+        "isCorrect": false,
+        "description": "Particle 本身就不支持事件，dynamicProperties 的作用是控制 GPU 数据上传频率，是纯性能考量"
+      },
+      {
+        "text": "全部设置为 true 性能最好，因为数据始终保持最新",
+        "isCorrect": false,
+        "description": "全部设为 true 意味着每帧都要上传全部属性，在数十万粒子规模下反而是最差的性能选择"
+      },
+      {
+        "text": "这个配置只影响初始渲染，运行时粒子属性变化不受其约束",
+        "isCorrect": false,
+        "description": "这个配置贯穿运行时始终决定哪些属性走每帧上传通道，直接影响运行时的每帧开销"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 大型场景同时存在 CPU 变换计算压力大、静态 UI 面板重绘开销大、深层节点遍历开销大三种不同性能瓶颈，Render Group、cacheAsTexture、Culling 这三种手段应该怎么对应取舍？",
+    "explanation": "三种手段解决的是不同层面的性能问题：Render Group 针对 CPU 侧变换/着色计算量，cacheAsTexture 针对重复重绘静态内容的开销，Culling 针对大场景里不必要的遍历与绘制。三者不是互相替代关系，实际项目往往需要根据具体瓶颈组合使用，而不是指望单一手段包打天下。",
+    "tags": ["pixi", "专家", "performance-tradeoffs"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "三者可以互相替代，用好其中任意一种就能解决所有性能问题",
+        "isCorrect": false,
+        "description": "三者面向的瓶颈完全不同，不存在互相替代关系"
+      },
+      {
+        "text": "Render Group 下放变换计算减轻 CPU 压力，cacheAsTexture 复用静态渲染结果减少重绘，Culling 跳过不可见对象减少遍历/绘制开销——三者面向不同瓶颈，并非互相替代",
+        "isCorrect": true,
+        "description": "三种手段面向不同层面的性能问题，应根据实际瓶颈组合使用"
+      },
+      {
+        "text": "应该优先用 Culling 解决所有问题，因为它的开销天然最低",
+        "isCorrect": false,
+        "description": "Culling 只解决跳过不可见对象这一类开销，对 CPU 变换计算压力或静态面板反复重绘的问题并不对症"
+      },
+      {
+        "text": "cacheAsTexture 可以完全替代 Render Group，两者本质上做的是同一件事",
+        "isCorrect": false,
+        "description": "cacheAsTexture 是把渲染结果整体缓存成纹理复用，Render Group 是把变换/着色计算下放 GPU 且仍逐帧参与场景图运算，机制不同"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS 一个包含上万节点的深层场景图，设置了根容器 `cullable = true` 后性能反而没有明显提升，怀疑是遍历开销本身就很大，应该怎么优化？",
+    "explanation": "cullableChildren = false 可以让 Culler 在遍历大场景图时跳过对某些确定不需要裁剪判断的深层子树做递归剔除计算，这是一种针对遍历开销本身的细粒度优化手段。直接关闭 cullable 或扩大 cullArea 范围，要么完全放弃裁剪优化，要么牺牲正确性，都不是解决遍历开销问题的正确方向。",
+    "tags": ["pixi", "专家", "cullable-children"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把 cullable 设置为 false 就能自动获得更好性能",
+        "isCorrect": false,
+        "description": "直接关闭 cullable 会让该容器完全失去剔除优化，与优化遍历开销的目标相反"
+      },
+      {
+        "text": "增大 cullArea 的范围让更多对象被裁掉",
+        "isCorrect": false,
+        "description": "扩大 cullArea 会导致更多本该显示的对象被误判为不可见，这是牺牲正确性而非优化遍历开销的手段"
+      },
+      {
+        "text": "在合适的子树上设置 cullableChildren = false，避免对确定不需要裁剪判断的深层子树做递归剔除计算",
+        "isCorrect": true,
+        "description": "cullableChildren=false 可以让 Culler 跳过对某些子树的递归剔除判断，减少大场景图中不必要的遍历 CPU 开销"
+      },
+      {
+        "text": "cullableChildren 只对 Sprite 有效，对 Container 无效，这里的问题无解",
+        "isCorrect": false,
+        "description": "cullableChildren 是 Container 层面的通用配置项，并非只对 Sprite 有效"
+      }
+    ]
+  },
+  {
+    "stem": "PixiJS（2D 层）与 Three.js（3D 层）在同一页面混合渲染，两者交替调用各自的 render 方法后画面出现渲染状态错乱（材质/混合模式互相污染），可能的根因和应对方向是什么？",
+    "explanation": "官方文档专门有 mixing-three-and-pixi 这类多渲染器共存指南，说明两者混用是被支持的场景（如 Three.js 负责 3D 层、PixiJS 负责 2D UI 叠加层），但多个渲染器交替操作同一 WebGL 上下文时状态容易互相污染，需要类似 renderer.resetState() 这样的显式状态重置来做隔离，这个问题与选择 WebGL 还是 WebGPU 后端无关。",
+    "tags": ["pixi", "专家", "multi-renderer-state"],
+    "categories": [
+      ["技术方向", "PixiJS"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "这是浏览器 bug，PixiJS 和 Three.js 无法在同一页面共存",
+        "isCorrect": false,
+        "description": "官方明确支持两者混用，并非无法共存，只是需要处理好状态隔离"
+      },
+      {
+        "text": "只要两者都使用 WebGPU 后端就不会有这个问题",
+        "isCorrect": false,
+        "description": "状态隔离问题的根源在于共享同一渲染上下文被多方交替写入，与具体选择 WebGL 还是 WebGPU 无关"
+      },
+      {
+        "text": "把其中一个渲染器的画布设置为 display: none 即可避免状态污染",
+        "isCorrect": false,
+        "description": "隐藏画布只影响视觉显示，不影响底层渲染上下文状态是否被多个渲染器交替写入"
+      },
+      {
+        "text": "两个渲染器共享同一 WebGL 上下文时各自内部的渲染状态未隔离，需要类似 renderer.resetState() 这样的状态重置来做隔离",
+        "isCorrect": true,
+        "description": "多个渲染器交替操作同一 WebGL 上下文时状态会互相污染，需要显式重置/隔离状态"
+      }
+    ]
+  }
+]

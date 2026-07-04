@@ -1,0 +1,1676 @@
+[
+  {
+    "stem": "Konva：团队评审要不要引入 Konva 时，有人说「反正都是拿 Canvas 画图，直接用原生 Canvas API 就行，何必多包一层」。这种说法忽略了 Konva 相对原生 Canvas 最核心的能力差异是什么？",
+    "explanation": "原生 Canvas API 是「立即模式」（immediate mode）：画完一个图形后浏览器就不再记得它是什么，想单独修改某个已画图形只能整体重画。Konva 把绘制升级为「保留模式」（retained mode）的节点树，每个图形都是持续存在的节点，可以被反复查询、变换、监听事件，而不必重绘整个画面。这正是设计器、白板、标注工具这类需要「点选并修改已有图形」场景要引入 Konva 的根本原因。",
+    "tags": ["konva", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Konva 把命令式绘制升级为保留模式的节点树，图形创建后可持续被查询/变换/监听事件，不必重绘整个画面",
+        "isCorrect": true,
+        "description": "正确，这是选型 Konva 而非纯手写 Canvas 的根本原因"
+      },
+      {
+        "text": "Konva 底层改用 WebGL 渲染，绘制性能比原生 Canvas API 高得多",
+        "isCorrect": false,
+        "description": "错误，Konva 基于 2D Canvas API，并非 WebGL，性能定位与原生 Canvas 同量级"
+      },
+      {
+        "text": "Konva 只是给原生 Canvas API 换了个语法糖，实际功能与原生完全一致",
+        "isCorrect": false,
+        "description": "错误，Konva 提供了场景图、事件系统、拖拽、变换器等原生 API 不具备的能力"
+      },
+      {
+        "text": "Konva 主要用于生成静态图片导出，本身不支持任何鼠标/触摸交互",
+        "isCorrect": false,
+        "description": "错误，Konva 恰恰是为交互式 2D 图形应用设计的，事件/拖拽/变换开箱即带"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：要从零搭建一个能显示一个红色圆形的最小页面，正确的对象创建与拼装顺序是什么？",
+    "explanation": "标准顺序是：先 `new Konva.Stage({container, width, height})` 创建舞台并绑定 DOM 容器；再 `new Konva.Layer()` 创建图层并 `stage.add(layer)`；然后创建具体 Shape（如 `Konva.Circle`）配置好属性；最后 `layer.add(shape)` 把图形加入图层。这是官方文档给出的最小可用代码骨架。",
+    "tags": ["konva", "入门", "setup"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "new Konva.Stage(...) → new Konva.Layer() 并 stage.add(layer) → 创建 Shape → layer.add(shape)",
+        "isCorrect": true,
+        "description": "正确，这是官方最小可用代码的标准顺序"
+      },
+      {
+        "text": "先创建 Shape，把它作为参数传入 Layer 构造函数，最后再创建 Stage 把 Layer 传入",
+        "isCorrect": false,
+        "description": "错误，构造函数不接收这种嵌套传参方式，必须先建 Stage 再逐层 add"
+      },
+      {
+        "text": "直接 new Konva.Shape() 并调用 shape.mount() 挂载到 DOM，无需 Stage 和 Layer",
+        "isCorrect": false,
+        "description": "错误，Konva 没有 mount 方法，Shape 必须经由 Layer、Stage 组织的场景树渲染"
+      },
+      {
+        "text": "先 new Konva.Layer()，Stage 会在 Layer 内部被隐式自动创建",
+        "isCorrect": false,
+        "description": "错误，Stage 不会被隐式创建，必须显式 new 出来并绑定容器"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：在浏览器端 `new Konva.Stage({...})` 时，下列哪一项配置是不能省略的？",
+    "explanation": "浏览器端创建 Stage 必须显式传入 `container`（DOM 元素的 id 字符串或元素引用），Konva 需要把 Stage 挂载到这个真实 DOM 容器上。draggable、listening 都有默认值且非必需显式传入；Layer 不是 Stage 的构造参数，而是创建 Stage 后再通过 `stage.add(layer)` 加入的。",
+    "tags": ["konva", "入门", "stage"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "container：DOM 元素 id 或元素引用",
+        "isCorrect": true,
+        "description": "正确，浏览器端场景下 Stage 必须绑定一个真实 DOM 容器"
+      },
+      {
+        "text": "draggable：不设置的话 Stage 将无法被创建",
+        "isCorrect": false,
+        "description": "错误，draggable 默认是 false，不是创建 Stage 的必需项"
+      },
+      {
+        "text": "至少一个 Layer 作为构造函数参数直接传入",
+        "isCorrect": false,
+        "description": "错误，Layer 是创建 Stage 之后再用 stage.add(layer) 加进去的，不是构造参数"
+      },
+      {
+        "text": "listening：不显式传入 Stage 就无法渲染任何内容",
+        "isCorrect": false,
+        "description": "错误，listening 默认是 true，与是否能渲染无关"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 `Konva.Layer` 实例在浏览器里实际对应的是什么？",
+    "explanation": "每个 Layer 内部都对应一个真实的 `<canvas>` DOM 元素，并且同时维护两张画布：一张用于正常显示场景，一张隐藏的「hit canvas」专门用于快速判断事件命中了哪个节点。这也是官方建议「尽量减少 Layer 数量」的根本原因——Layer 越多，真实存在的 canvas DOM 元素也越多。",
+    "tags": ["konva", "入门", "layer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个独立的 `<canvas>` DOM 元素（含一张显示 canvas 与一张隐藏的 hit canvas）",
+        "isCorrect": true,
+        "description": "正确，这也是为什么 Layer 数量会直接影响内存与渲染开销"
+      },
+      {
+        "text": "一个虚拟 DOM 节点，不产生任何真实 canvas 元素",
+        "isCorrect": false,
+        "description": "错误，Layer 对应的是真实存在的 canvas DOM 元素，不是虚拟节点"
+      },
+      {
+        "text": "Stage 内部用于分组管理的一个 CSS 类名",
+        "isCorrect": false,
+        "description": "错误，Layer 是场景树节点兼真实 canvas 元素，不是 CSS 类名"
+      },
+      {
+        "text": "一段 SVG `<g>` 分组元素",
+        "isCorrect": false,
+        "description": "错误，Konva 渲染基于 Canvas 而非 SVG，不存在 `<g>` 分组元素"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：官方 Shapes 分类下，以下哪一组图形类型全部是 Konva 内置提供的？",
+    "explanation": "Konva 官方内置共 19 种形状，包括 Rect、Circle、Ellipse、Line、Text、TextPath、Image、Sprite、Path、RegularPolygon、Star、Ring、Arc、Wedge、Arrow、Label、Group 等。Konva 是纯 2D 场景图框架，不存在 Cube/Mesh/Sprite3D/Group3D 这类三维概念的内置形状，那些是 Three.js/Babylon.js 一类三维引擎的术语。",
+    "tags": ["konva", "入门", "shapes"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Rect / Circle / Star / Arrow",
+        "isCorrect": true,
+        "description": "正确，均是官方 19 种内置形状之一"
+      },
+      {
+        "text": "Rect / Circle / Cube / Mesh",
+        "isCorrect": false,
+        "description": "错误，Cube 和 Mesh 是三维概念，Konva 是 2D 框架不存在这两种内置形状"
+      },
+      {
+        "text": "Rect / Sprite3D / Line / Star",
+        "isCorrect": false,
+        "description": "错误，Konva 的 Sprite 是 2D 帧动画精灵，不存在 Sprite3D 这个类型"
+      },
+      {
+        "text": "Rect / Circle / Group3D / Path",
+        "isCorrect": false,
+        "description": "错误，Konva 只有 2D 的 Group，不存在 Group3D"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：几乎所有 Shape 都通用支持的一组属性是什么？",
+    "explanation": "Konva 的所有内置形状几乎都支持一套通用属性：`x/y`（位置）、`width/height`（尺寸）、`fill/stroke`（填充/描边）、`rotation`（旋转角度）、`scaleX/scaleY`（缩放）、`opacity`（透明度）、`draggable`（可拖拽）、`visible`（显隐）等，这些都是节点自身的属性系统，不依赖 CSS。",
+    "tags": ["konva", "入门", "attributes"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "x/y、width/height、fill/stroke、rotation、scaleX/scaleY、opacity、draggable、visible",
+        "isCorrect": true,
+        "description": "正确，这是几乎所有 Shape 通用支持的属性集合"
+      },
+      {
+        "text": "只有 Rect 和 Circle 支持 fill/stroke，其他形状的颜色必须靠 CSS 设置",
+        "isCorrect": false,
+        "description": "错误，Konva 渲染基于 Canvas 而非 DOM，不使用 CSS 控制形状样式"
+      },
+      {
+        "text": "rotation 只能通过 CSS transform 设置，不是 Konva 节点自身的属性",
+        "isCorrect": false,
+        "description": "错误，rotation 是 Konva 节点自身的属性，与 CSS 无关"
+      },
+      {
+        "text": "draggable 是 Stage 专属属性，单个 Shape 级别不支持设置",
+        "isCorrect": false,
+        "description": "错误，draggable 是几乎所有节点（包括 Shape）都支持的通用属性"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：给一个 Rect 设置 `draggable: true` 后不写任何额外代码，能实现什么效果？",
+    "explanation": "`draggable: true` 会自动开启该节点的拖拽能力，同时覆盖桌面端鼠标拖拽和移动端触摸拖拽两种交互方式，开发者无需手写 mousedown/mousemove/mouseup 或 touchstart/touchmove/touchend 的状态机逻辑。",
+    "tags": ["konva", "入门", "drag"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "同时支持桌面鼠标拖拽和移动端触摸拖拽，无需手写事件状态机",
+        "isCorrect": true,
+        "description": "正确，draggable 一个属性即覆盖桌面和移动端两种拖拽交互"
+      },
+      {
+        "text": "只支持桌面鼠标拖拽，移动端仍需另外手动绑定 touchstart/touchmove/touchend",
+        "isCorrect": false,
+        "description": "错误，移动端触摸拖拽同样是自动支持的"
+      },
+      {
+        "text": "只是让形状显示一个「可拖拽」的视觉提示图标，真正的拖拽逻辑仍需手写",
+        "isCorrect": false,
+        "description": "错误，draggable 是功能开关，拖拽行为本身已经内置实现"
+      },
+      {
+        "text": "会自动生成一个半透明的拖拽预览图层，需要手动关闭",
+        "isCorrect": false,
+        "description": "错误，Konva 的拖拽不会额外生成预览图层"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：`Konva.Group` 与 `Konva.Layer` 最本质的区别是什么？",
+    "explanation": "Group 本身不渲染任何像素，只是一个纯容器，用来批量管理或统一变换（旋转/缩放/拖拽）一组子节点；而 Layer 是真实独立的 `<canvas>` DOM 元素，直接参与渲染。两者虽然都能 `add()` 子节点，但底层实现和渲染语义完全不同。",
+    "tags": ["konva", "入门", "group"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Group 不渲染像素、只是批量管理/变换子节点的容器；Layer 是真实独立的 canvas 元素",
+        "isCorrect": true,
+        "description": "正确，这是 Group 与 Layer 最核心的语义区别"
+      },
+      {
+        "text": "Group 也是独立 canvas 元素，只是尺寸比 Layer 小",
+        "isCorrect": false,
+        "description": "错误，Group 不对应任何 canvas 元素"
+      },
+      {
+        "text": "Group 不能包含 Shape，只能包含 Layer",
+        "isCorrect": false,
+        "description": "错误，Group 通常直接包含 Shape 或其他 Group"
+      },
+      {
+        "text": "Group 和 Layer 完全等价，可以在任意场景下互相替代",
+        "isCorrect": false,
+        "description": "错误，二者渲染语义不同，不能互相替代"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让同一个 Circle 只调用一次 `on()` 就同时响应 `mouseover` 和 `mouseout` 两种事件，应该怎么写？",
+    "explanation": "Konva 的事件绑定支持用空格分隔多个事件类型名称，写成一个字符串传给同一次 `on()` 调用即可，回调函数会在任一事件触发时执行。这是官方文档明确给出的写法。",
+    "tags": ["konva", "入门", "events"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "circle.on('mouseover mouseout', fn) —— 用空格分隔多个事件类型",
+        "isCorrect": true,
+        "description": "正确，空格分隔是 Konva 官方支持的多事件同绑写法"
+      },
+      {
+        "text": "circle.on(['mouseover', 'mouseout'], fn) —— 传入事件名数组",
+        "isCorrect": false,
+        "description": "错误，Konva 的 on() 不接受数组形式的事件名参数"
+      },
+      {
+        "text": "必须分别调用两次 circle.on()，Konva 不支持一次绑定多个事件类型",
+        "isCorrect": false,
+        "description": "错误，Konva 明确支持空格分隔的一次性多事件绑定"
+      },
+      {
+        "text": "circle.on('mouseover, mouseout', fn) —— 用英文逗号分隔",
+        "isCorrect": false,
+        "description": "错误，分隔符是空格而不是逗号"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：官方 FAQ 页在对比 Konva 与 PixiJS 的选型建议时，给出的核心结论是什么？",
+    "explanation": "官方口径是：需要「点击、拖拽、调整大小」这类 UI 交互的场景（设计器、白板、标注工具）优先选 Konva；需要成百上千高频动画精灵或游戏级渲染的场景则应选择基于 WebGL 的 PixiJS。二者不是互相替代关系，而是分别面向不同的性能量级和交互模型。",
+    "tags": ["konva", "入门", "comparison"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "点击/拖拽/调整大小等 UI 交互场景优先选 Konva；成百上千高频动画精灵/游戏渲染选 PixiJS",
+        "isCorrect": true,
+        "description": "正确，这是官方 FAQ 给出的选型分工建议"
+      },
+      {
+        "text": "两者渲染管线完全相同（都基于 WebGL），选哪个纯粹是语法风格偏好",
+        "isCorrect": false,
+        "description": "错误，Konva 基于 2D Canvas API，PixiJS 基于 WebGL，底层技术不同"
+      },
+      {
+        "text": "Konva 性能天然优于 PixiJS，任何 2D 场景都该优先选 Konva",
+        "isCorrect": false,
+        "description": "错误，大规模高频动画/游戏场景 PixiJS 的 GPU 加速性能上限更高"
+      },
+      {
+        "text": "需要成百上千高频动画精灵、游戏渲染的场景也应该选 Konva 而非 PixiJS",
+        "isCorrect": false,
+        "description": "错误，这类场景官方建议转向基于 WebGL 的 PixiJS"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：舞台里有多个 name 都设置为 `star` 的节点，想一次性拿到全部并批量做动画，应该用哪个 API？",
+    "explanation": "`find()` 按选择器返回匹配的节点数组，`.` 前缀表示按 name 属性匹配（对应 CSS class 选择器的语感）。`findOne()` 只返回单个节点，`#` 前缀是按 id 匹配，无前缀则是按类型名匹配（会匹配所有该类型节点而不管 name 是否为 star）。",
+    "tags": ["konva", "初级", "selector"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "layer.find('.star') —— 用 `.` 前缀按 name 查找，返回节点数组",
+        "isCorrect": true,
+        "description": "正确，`.` 前缀对应按 name 属性做批量查找"
+      },
+      {
+        "text": "layer.findOne('.star') —— 按 name 查找",
+        "isCorrect": false,
+        "description": "错误，findOne 只返回单个节点，不满足「拿到全部」的需求"
+      },
+      {
+        "text": "layer.find('#star') —— 用 `#` 前缀查找",
+        "isCorrect": false,
+        "description": "错误，`#` 前缀是按 id 查找，id 通常唯一，语义上不适合批量场景"
+      },
+      {
+        "text": "layer.find('Star') —— 不加前缀按类型名查找",
+        "isCorrect": false,
+        "description": "错误，无前缀是按类型名匹配所有 Star 类型节点，不管其 name 是否为 star"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让一个 Rect 显示在同容器内所有兄弟节点的最上层，应该调用哪个方法？",
+    "explanation": "`moveToTop()` 直接把节点移动到其父容器内的最顶层，是最直接的写法。`moveUp()` 只会把节点上移一级，如果上面还有多个兄弟节点并不能保证移到最顶；`moveToBottom()` 效果相反；`visible()` 只控制显隐，与层级顺序无关。",
+    "tags": ["konva", "初级", "zindex"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "rect.moveToTop()",
+        "isCorrect": true,
+        "description": "正确，直接把节点移到其父容器内的最顶层"
+      },
+      {
+        "text": "rect.moveToBottom()",
+        "isCorrect": false,
+        "description": "错误，效果相反，会移到最底层"
+      },
+      {
+        "text": "rect.moveUp()",
+        "isCorrect": false,
+        "description": "错误，只上移一级，不保证到达最顶层"
+      },
+      {
+        "text": "rect.visible(true)",
+        "isCorrect": false,
+        "description": "错误，只控制显隐，与层级顺序无关"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想复制一个已有的 Circle，让新副本的 x 坐标变成 100，其余属性保持不变，应该怎么写？",
+    "explanation": "`node.clone(overrideAttrs)` 是官方提供的节点克隆 API，接收一个对象用于覆盖部分属性，其余属性沿用原节点。`destroy()` 是销毁节点而非克隆；直接把节点实例传给构造函数不是有效用法；`setAttrs()` 是原地修改，不会产生新节点。",
+    "tags": ["konva", "初级", "clone"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "const newCircle = circle.clone({ x: 100 });",
+        "isCorrect": true,
+        "description": "正确，clone 接收覆盖属性对象并返回新副本"
+      },
+      {
+        "text": "circle.destroy({ x: 100 });",
+        "isCorrect": false,
+        "description": "错误，destroy 用于销毁节点，不接收覆盖属性也不返回副本"
+      },
+      {
+        "text": "const newCircle = new Konva.Circle(circle);",
+        "isCorrect": false,
+        "description": "错误，构造函数不接受节点实例作为配置来克隆"
+      },
+      {
+        "text": "circle.setAttrs({ x: 100 });",
+        "isCorrect": false,
+        "description": "错误，这是原地修改原节点属性，不会产生新副本"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想把一个 Shape 从当前 Layer 移动到另一个 Layer，同时保留其所有其他属性不变，应该调用什么方法？",
+    "explanation": "`node.moveTo(newContainer)` 是官方提供的跨容器移动 API，容器可以是另一个 Stage、Layer 或 Group，用于重组场景结构而不丢失节点原有属性。",
+    "tags": ["konva", "初级", "container"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "shape.moveTo(anotherLayer)",
+        "isCorrect": true,
+        "description": "正确，moveTo 支持跨 Stage/Layer/Group 移动节点"
+      },
+      {
+        "text": "shape.zIndex(anotherLayer)",
+        "isCorrect": false,
+        "description": "错误，zIndex 接收的是数字索引，不接受容器实例"
+      },
+      {
+        "text": "先 shape.destroy() 再在新 Layer 里重建一个同配置节点",
+        "isCorrect": false,
+        "description": "错误，destroy 后原节点已释放，这不是「移动」而是销毁重建"
+      },
+      {
+        "text": "Konva 不支持跨容器移动节点，必须整体重建场景树",
+        "isCorrect": false,
+        "description": "错误，moveTo 正是官方支持的跨容器移动 API"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想给一个 Rect 设置从上到下的颜色渐变效果，应该使用哪个属性？",
+    "explanation": "线性渐变对应 `fillLinearGradientColorStops`（配合 `fillLinearGradientStartPoint`/`fillLinearGradientEndPoint` 指定渐变方向），适合「从上到下」这种沿一条直线过渡的效果。径向渐变是从中心向外扩散，图案填充是用图片平铺，阴影颜色与填充渐变无关。",
+    "tags": ["konva", "初级", "styling"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "fillLinearGradientColorStops（配合起止点属性）",
+        "isCorrect": true,
+        "description": "正确，线性渐变适合「从上到下」这类沿直线过渡的效果"
+      },
+      {
+        "text": "fillRadialGradientColorStops",
+        "isCorrect": false,
+        "description": "错误，径向渐变是从中心向外扩散，不是从上到下的线性过渡"
+      },
+      {
+        "text": "fillPatternImage",
+        "isCorrect": false,
+        "description": "错误，这是图案填充（图片平铺），不是颜色渐变"
+      },
+      {
+        "text": "shadowColor",
+        "isCorrect": false,
+        "description": "错误，这是阴影颜色属性，与填充渐变无关"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想获取用户在 Stage 上点击的坐标（已经处理好缩放和设备像素比换算），标准做法是什么？",
+    "explanation": "`stage.getPointerPosition()` 是官方提供的标准 API，直接返回相对 Stage 的坐标且已处理好各种换算，比开发者自己用 `event.clientX - canvas.getBoundingClientRect().left` 手动计算更可靠。",
+    "tags": ["konva", "初级", "coordinates"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "stage.getPointerPosition()",
+        "isCorrect": true,
+        "description": "正确，官方标准 API，已处理好缩放/DPR 换算"
+      },
+      {
+        "text": "自己用 event.clientX 减去 canvas.getBoundingClientRect().left 手动计算",
+        "isCorrect": false,
+        "description": "错误，官方明确指出这种手动计算方式不如 getPointerPosition 可靠"
+      },
+      {
+        "text": "stage.x() / stage.y()",
+        "isCorrect": false,
+        "description": "错误，这是 Stage 本身的位置属性，不是指针坐标"
+      },
+      {
+        "text": "Konva.pixelRatio",
+        "isCorrect": false,
+        "description": "错误，这是全局像素比设置，不是坐标获取 API"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让一段 Text 在超出容器宽度时自动换行，且超长部分显示省略号，需要组合设置哪两个属性？",
+    "explanation": "`wrap` 控制文本换行方式，`ellipsis` 控制超长内容是否显示省略号，两者组合即可实现「自动换行 + 超长省略」的效果。`fontStyle`/`align` 分别管字体样式和对齐方式，`lineHeight`/`padding` 管行高和内边距，都与换行省略无关。",
+    "tags": ["konva", "初级", "text"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "wrap 与 ellipsis",
+        "isCorrect": true,
+        "description": "正确，两者组合实现自动换行 + 超长省略号"
+      },
+      {
+        "text": "fontStyle 与 align",
+        "isCorrect": false,
+        "description": "错误，分别控制字体样式（如斜体加粗）和文本对齐，与换行省略无关"
+      },
+      {
+        "text": "lineHeight 与 padding",
+        "isCorrect": false,
+        "description": "错误，分别控制行高和内边距，与换行省略无关"
+      },
+      {
+        "text": "shadowBlur 与 shadowOpacity",
+        "isCorrect": false,
+        "description": "错误，这两个是阴影相关属性"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 Circle 被点击后，事件默认会怎样传播？如果不想让父级 Layer 也收到这次点击，应该怎么做？",
+    "explanation": "Konva 事件默认从子节点冒泡到父容器（如 Circle → Layer → Stage），这与浏览器 DOM 事件冒泡的方向一致。如果想阻止事件继续向上冒泡，在事件回调里设置 `evt.cancelBubble = true` 即可，这与 `off()` 解绑事件是完全不同的两回事。",
+    "tags": ["konva", "初级", "events"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "默认从子节点冒泡到父容器；回调里设置 evt.cancelBubble = true 可阻止继续冒泡",
+        "isCorrect": true,
+        "description": "正确，冒泡方向和阻止方式都符合官方文档描述"
+      },
+      {
+        "text": "默认不冒泡，Konva 的每个事件都是孤立触发的，无需额外处理",
+        "isCorrect": false,
+        "description": "错误，Konva 事件默认是冒泡的"
+      },
+      {
+        "text": "需要调用 circle.off('click') 来阻止本次冒泡",
+        "isCorrect": false,
+        "description": "错误，off() 是解绑事件监听器，不是阻止冒泡的手段"
+      },
+      {
+        "text": "冒泡方向是从父到子（Stage → Layer → Circle）",
+        "isCorrect": false,
+        "description": "错误，方向说反了，是从子到父"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：以下哪一组事件名称属于 Konva 的「触摸事件族」，移动端无需额外适配即自动支持？",
+    "explanation": "Konva 的触摸事件族包括 `tap`/`dbltap`/`touchstart`/`touchmove`/`touchend`，移动端自动可用。指针事件族（pointerdown 等）、拖拽事件族（dragstart 等）、鼠标事件族（mousedown 等）都是各自独立的事件分类，不属于触摸事件族。",
+    "tags": ["konva", "初级", "touch"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "tap / dbltap / touchstart / touchmove / touchend",
+        "isCorrect": true,
+        "description": "正确，这是官方文档列出的触摸事件族"
+      },
+      {
+        "text": "pointerdown / pointermove / pointerup",
+        "isCorrect": false,
+        "description": "错误，这是独立的指针事件族，不是触摸事件族"
+      },
+      {
+        "text": "dragstart / dragmove / dragend",
+        "isCorrect": false,
+        "description": "错误，这是拖拽事件族"
+      },
+      {
+        "text": "mousedown / mouseup / mousemove",
+        "isCorrect": false,
+        "description": "错误，这是桌面端专属的鼠标事件族"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让一个节点只能水平拖拽、不能纵向移动，教程页推荐的实现方式是什么？",
+    "explanation": "官方教程给出的写法是在 `dragmove` 事件回调里把纵坐标强制锁定为固定值，例如 `node.on('dragmove', function () { this.y(50); })`，这样无论用户怎么拖，y 坐标始终被覆盖回固定值，只有 x 会真正跟随拖拽变化。",
+    "tags": ["konva", "初级", "drag"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 dragmove 事件回调里把 this.y(50) 强制锁定为固定值",
+        "isCorrect": true,
+        "description": "正确，这是官方教程给出的单方向拖拽锁定写法"
+      },
+      {
+        "text": "设置 draggable: 'horizontal'",
+        "isCorrect": false,
+        "description": "错误，draggable 只有布尔值，不存在这种字符串取值"
+      },
+      {
+        "text": "方向锁定只能通过 dragBoundFunc 实现，dragmove 事件无法做到",
+        "isCorrect": false,
+        "description": "错误，dragmove 事件覆盖坐标正是教程页推荐的方式之一"
+      },
+      {
+        "text": "把 Shape 的 scaleY 设为 0",
+        "isCorrect": false,
+        "description": "错误，这会让形状纵向不可见，不是锁定拖拽方向的正确做法"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：`node.dragBoundFunc(pos => {...})` 中，回调函数参数 `pos` 与返回值分别代表什么？",
+    "explanation": "`dragBoundFunc` 是官方专门用于约束拖拽位置的 API：参数 `pos` 是拖拽过程中节点试图到达的绝对坐标，返回值则是被约束后真正允许到达的绝对坐标，二者都是同一个坐标系下的绝对位置。",
+    "tags": ["konva", "初级", "drag"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "pos 是试图到达的绝对坐标，返回值是被约束后允许到达的绝对坐标",
+        "isCorrect": true,
+        "description": "正确，这是 dragBoundFunc 的标准签名语义"
+      },
+      {
+        "text": "pos 是相对父容器的相对坐标，返回值是布尔值表示是否允许拖拽",
+        "isCorrect": false,
+        "description": "错误，pos 和返回值都是绝对坐标，不是布尔值"
+      },
+      {
+        "text": "pos 是上一帧坐标，返回值是本帧与上帧的坐标差值",
+        "isCorrect": false,
+        "description": "错误，两者都是当前尝试的绝对坐标，不是差值"
+      },
+      {
+        "text": "pos 是 Stage 的宽高，返回值是缩放比例",
+        "isCorrect": false,
+        "description": "错误，与 Stage 尺寸和缩放比例无关"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：Stage→Layer→Group→Shape 这棵场景树中，哪一层是「直接对应一个真实 DOM canvas 元素」的？",
+    "explanation": "Stage 对应的是一个 DOM 容器（如 div），本身不是 canvas；真正对应 `<canvas>` 元素的是 Layer；Group 不渲染像素、不对应任何 DOM 元素；Shape 是绘制在某个 Layer 的 canvas 上的图形对象，本身也不是独立的 DOM 元素。",
+    "tags": ["konva", "初级", "architecture"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Layer",
+        "isCorrect": true,
+        "description": "正确，每个 Layer 都是一个独立的真实 canvas DOM 元素"
+      },
+      {
+        "text": "Stage",
+        "isCorrect": false,
+        "description": "错误，Stage 对应的是外层 DOM 容器（如 div），本身不是 canvas"
+      },
+      {
+        "text": "Group",
+        "isCorrect": false,
+        "description": "错误，Group 不渲染像素，不对应任何 canvas 或 DOM 元素"
+      },
+      {
+        "text": "Shape",
+        "isCorrect": false,
+        "description": "错误，Shape 是绘制在 Layer 的 canvas 上的图形对象，本身不是独立 DOM 元素"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想把当前 Stage 导出成一张分辨率翻倍的 PNG 图片供用户下载，应该怎么写？",
+    "explanation": "`stage.toDataURL({ pixelRatio: 2 })` 可以导出提升分辨率的图片数据（base64），`stage.toImage({ callback(img) {...} })` 则直接给回调返回一个 `HTMLImageElement`。这两个 API 是「导出图片」场景的正规方法，与 `toJSON()` 的场景树序列化是完全不同的用途。",
+    "tags": ["konva", "初级", "export"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "stage.toDataURL({ pixelRatio: 2 }) 获取图片数据，或 stage.toImage({ callback }) 拿到 HTMLImageElement",
+        "isCorrect": true,
+        "description": "正确，这两个 API 都支持通过 pixelRatio 提升导出分辨率"
+      },
+      {
+        "text": "stage.toJSON() 导出的就是可下载的图片数据",
+        "isCorrect": false,
+        "description": "错误，toJSON 导出的是场景结构 JSON，不是图片数据"
+      },
+      {
+        "text": "必须先给 Stage 应用一个 Konva.Filters 滤镜才能导出图片",
+        "isCorrect": false,
+        "description": "错误，导出图片与是否应用滤镜无关"
+      },
+      {
+        "text": "设置全局 Konva.pixelRatio = 2 后，toDataURL 会自动忽略传入的 pixelRatio 参数",
+        "isCorrect": false,
+        "description": "错误，toDataURL 传入的 pixelRatio 参数可以局部覆盖全局设置"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让用户点击某个 Rect 后动态显示变换控制框（缩放/旋转手柄），代码上应该怎么绑定？",
+    "explanation": "标准做法是创建一个 `new Konva.Transformer()` 实例并 `layer.add(tr)`，然后在点击事件里调用 `tr.nodes([rect])` 动态绑定要变换的节点。`nodes` 既可以在构造时传入，也可以随时用 `tr.nodes([...])` 重新设置，并不是只能在构造时一次性绑定。",
+    "tags": ["konva", "中级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "new Konva.Transformer() 并 layer.add(tr)，点击时用 tr.nodes([rect]) 动态绑定",
+        "isCorrect": true,
+        "description": "正确，nodes() 既可构造时传入也可事后动态调用"
+      },
+      {
+        "text": "给 Rect 设置 transformable: true 属性，无需创建 Transformer 实例",
+        "isCorrect": false,
+        "description": "错误，不存在这个属性，必须显式创建 Transformer 实例"
+      },
+      {
+        "text": "Transformer 只能在构造时通过 nodes 一次性绑定，事后不能再修改",
+        "isCorrect": false,
+        "description": "错误，tr.nodes([...]) 支持随时动态重新绑定"
+      },
+      {
+        "text": "Transformer 必须绑定到 Stage 而非 Layer，否则无法显示控制框",
+        "isCorrect": false,
+        "description": "错误，Transformer 和普通 Shape 一样是加入 Layer 的"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：用户通过 Transformer 拖拽手柄把一个 Rect 放大了一倍后，代码里读 `rect.width()` 发现数值完全没变，这是什么原因？",
+    "explanation": "这是 Transformer 的核心机制：缩放操作改变的是节点的 `scaleX`/`scaleY`，而不是 `width`/`height`。如果业务逻辑需要读取真实像素尺寸，应该在 `transformend` 事件里手动用 `width() * scaleX()` 换算出真实宽度，再把 `scaleX`/`scaleY` 重置为 1。",
+    "tags": ["konva", "中级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Transformer 缩放改变的是 scaleX/scaleY，不是 width/height；需要真实尺寸时应在 transformend 里换算后重置 scale 为 1",
+        "isCorrect": true,
+        "description": "正确，这是 Transformer 最容易被忽视的核心机制，也是必考坑"
+      },
+      {
+        "text": "这是 bug，正常情况下 Transformer 应该直接修改 width/height",
+        "isCorrect": false,
+        "description": "错误，这是 Konva 的设计机制而非 bug"
+      },
+      {
+        "text": "rect.width() 需要手动调用 rect.refresh() 才会同步最新值",
+        "isCorrect": false,
+        "description": "错误，不存在 refresh 方法，width 本身就没有被改变"
+      },
+      {
+        "text": "Transformer 缩放只影响视觉渲染，不触发任何属性变化，需要监听 transform 事件手动改 width",
+        "isCorrect": false,
+        "description": "错误，scaleX/scaleY 属性确实被改变了，只是不是 width/height"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想限制 Transformer 缩放后矩形的宽度不能小于 20px 也不能大于 200px，应该怎么实现？",
+    "explanation": "官方提供 `boundBoxFunc(oldBox, newBox)` 回调专门用于限制缩放/旋转后的边界框：在回调里判断 `newBox.width` 是否越界，越界则返回 `oldBox`（相当于拒绝本次变换），否则正常返回 `newBox`。`dragBoundFunc` 是限制拖拽位置的，与缩放尺寸限制是两套不同的机制。",
+    "tags": ["konva", "中级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 boundBoxFunc(oldBox, newBox) 里判断宽度越界时返回 oldBox 拒绝本次变换，否则返回 newBox",
+        "isCorrect": true,
+        "description": "正确，boundBoxFunc 专门用于限制变换后的边界框尺寸"
+      },
+      {
+        "text": "设置 Rect 的 width 为固定值，Transformer 会自动跳过越界的缩放操作",
+        "isCorrect": false,
+        "description": "错误，固定 width 并不会让 Transformer 自动拒绝越界缩放"
+      },
+      {
+        "text": "在 dragBoundFunc 里限制宽度",
+        "isCorrect": false,
+        "description": "错误，dragBoundFunc 限制的是拖拽位置，不是缩放尺寸"
+      },
+      {
+        "text": "Transformer 不支持尺寸限制，只能在 transformend 后手动纠正回去",
+        "isCorrect": false,
+        "description": "错误，boundBoxFunc 正是官方提供的实时尺寸限制机制"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：想让 Transformer 旋转时自动吸附到 0°/90°/180°/270° 这几个角度，应该设置什么？",
+    "explanation": "`rotationSnaps` 是 Transformer 的官方配置项，接收一个角度数组，旋转操作会自动吸附到数组里最接近的角度。`anchorDragBoundFunc` 是控制锚点位置吸附对齐（如靠近参考线自动对齐）的回调，`centeredScaling` 是居中缩放开关，都不是角度吸附。",
+    "tags": ["konva", "中级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "new Konva.Transformer({ rotationSnaps: [0, 90, 180, 270] })",
+        "isCorrect": true,
+        "description": "正确，rotationSnaps 接收角度数组实现旋转吸附"
+      },
+      {
+        "text": "anchorDragBoundFunc",
+        "isCorrect": false,
+        "description": "错误，这是控制锚点吸附对齐辅助线的回调，不是角度吸附数组"
+      },
+      {
+        "text": "centeredScaling: true",
+        "isCorrect": false,
+        "description": "错误，这是居中缩放开关，与旋转吸附无关"
+      },
+      {
+        "text": "只能在 transform 事件里手动用 Math.round(rotation / 90) * 90 纠正，Transformer 本身没有内置吸附能力",
+        "isCorrect": false,
+        "description": "错误，rotationSnaps 就是官方内置的旋转吸附能力"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：`new Konva.Animation((frame) => {...}, layer)` 回调函数的 `frame` 参数中，`frame.timeDiff` 代表什么？",
+    "explanation": "`frame.time` 是动画启动后经过的总毫秒数，`frame.timeDiff` 是距上一帧经过的毫秒数，`frame.frameRate` 是当前帧率。三者是 Konva.Animation 回调里提供的三个核心时间参数，Konva.Animation 本身没有「距结束还剩多少时间」这个字段，动画默认持续运行直到手动 `stop()`。",
+    "tags": ["konva", "中级", "animation"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "距上一帧经过的毫秒数",
+        "isCorrect": true,
+        "description": "正确，timeDiff 是帧间隔时间"
+      },
+      {
+        "text": "动画启动后经过的总毫秒数",
+        "isCorrect": false,
+        "description": "错误，那是 frame.time"
+      },
+      {
+        "text": "当前帧率",
+        "isCorrect": false,
+        "description": "错误，那是 frame.frameRate"
+      },
+      {
+        "text": "距动画结束还剩的毫秒数",
+        "isCorrect": false,
+        "description": "错误，Konva.Animation 没有这个字段，动画默认无限循环直到手动 stop"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 Tween 总时长 2 秒，播放到一半时想让它直接跳到第 1 秒对应的进度，应该调用哪个方法？",
+    "explanation": "`tween.seek(1)` 直接跳转到指定的秒数进度。`reset()` 是重置回起点，`finish()` 是直接跳到结束状态，`reverse()` 是反向播放，都不是「跳到某个中间时间点」的方法。",
+    "tags": ["konva", "中级", "tween"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "tween.seek(1)",
+        "isCorrect": true,
+        "description": "正确，seek 用于跳转到指定的时间进度"
+      },
+      {
+        "text": "tween.reset()",
+        "isCorrect": false,
+        "description": "错误，reset 是重置回起点，不是跳到指定进度"
+      },
+      {
+        "text": "tween.finish()",
+        "isCorrect": false,
+        "description": "错误，finish 是直接跳到结束状态"
+      },
+      {
+        "text": "tween.reverse()",
+        "isCorrect": false,
+        "description": "错误，reverse 是反向播放，不是定位到某个时间点"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：`Konva.Easings` 缓动函数族里，哪一个用来实现「像小球一样弹跳到静止」的效果？",
+    "explanation": "`Konva.Easings.BounceEaseOut` 是官方文档明确列出的缓动函数，效果是模拟小球弹跳到静止。`Linear` 是匀速运动，`EaseInOut` 是平滑的先加速后减速过渡，`BackEaseIn` 是起始阶段先反向回拉一点再前进，都不是弹跳到静止的效果。",
+    "tags": ["konva", "中级", "easing"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "BounceEaseOut",
+        "isCorrect": true,
+        "description": "正确，官方文档明确列出的弹跳缓动函数"
+      },
+      {
+        "text": "Linear",
+        "isCorrect": false,
+        "description": "错误，匀速运动，没有弹跳效果"
+      },
+      {
+        "text": "EaseInOut",
+        "isCorrect": false,
+        "description": "错误，平滑的先加速后减速，没有弹跳感"
+      },
+      {
+        "text": "BackEaseIn",
+        "isCorrect": false,
+        "description": "错误，是起始阶段先反向回拉再前进，与弹跳到静止的效果不同"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：给一个 Image 直接执行 `image.filters([Konva.Filters.Blur]); image.blurRadius(10);`，没有额外操作，结果发现滤镜完全没有生效，原因是什么？",
+    "explanation": "应用任何滤镜前都必须先调用 `image.cache()`。滤镜是基于缓存位图做的像素级运算，不调用 `cache()` 滤镜不会生效。滤镜内置在 konva 主包里，不需要额外安装单独的包，也同样适用于 Image 之外的其他节点。",
+    "tags": ["konva", "中级", "filter"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "应用滤镜前必须先调用 image.cache()，滤镜是基于缓存位图的像素级运算",
+        "isCorrect": true,
+        "description": "正确，这是滤镜功能里最常被忽略的必要前置步骤"
+      },
+      {
+        "text": "Konva.Filters.Blur 需要额外 npm install 一个单独的滤镜包才能使用",
+        "isCorrect": false,
+        "description": "错误，滤镜内置在 konva 主包里，无需额外安装"
+      },
+      {
+        "text": "滤镜只对自定义 Shape 有效，对 Image 节点不生效",
+        "isCorrect": false,
+        "description": "错误，Image 正是滤镜最常见的应用对象之一"
+      },
+      {
+        "text": "blurRadius 必须写在构造函数里，创建后不能动态设置",
+        "isCorrect": false,
+        "description": "错误，blurRadius 和其他属性一样可以创建后动态设置"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 Image 已经 `cache()` 并应用了 Blur 滤镜，后续又更换了这个节点的图片源（`image()` 属性），发现滤镜效果没有正确刷新到新图片上，应该怎么修复？",
+    "explanation": "`cache()` 生成的是当时内容的位图快照，之后如果又修改了会影响视觉的属性（比如换了图片源），旧缓存并不会自动失效。正确做法是先调用 `clearCache()` 清除旧缓存，再重新 `cache()`，让滤镜基于新内容重新计算。",
+    "tags": ["konva", "中级", "filter"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先调用 clearCache() 清除旧缓存，再重新 cache()，滤镜才会基于新内容计算",
+        "isCorrect": true,
+        "description": "正确，这是官方文档明确指出的缓存刷新流程"
+      },
+      {
+        "text": "不需要做任何事，Konva 会自动检测图片源变化并刷新缓存",
+        "isCorrect": false,
+        "description": "错误，缓存不会自动感知视觉属性变化并刷新"
+      },
+      {
+        "text": "只需要重新调用一次 filters([...]) 数组，不需要处理缓存",
+        "isCorrect": false,
+        "description": "错误，问题根源是旧的缓存位图没有更新，重新设置 filters 数组不解决这个问题"
+      },
+      {
+        "text": "应该 destroy() 整个 Image 节点再重新创建一个新的",
+        "isCorrect": false,
+        "description": "错误，销毁重建的代价远高于 clearCache() 后重新 cache()"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：给一个 Rect 设置了 `offsetX: 50, offsetY: 50` 后，除了旋转/缩放的原点发生改变，还会出现什么容易被忽略的现象？",
+    "explanation": "Offset 决定的是绘制、旋转、缩放的原点，但改变 offset 之后节点的视觉显示位置也会跟着变化，因为绘制起点变了。常见误解是「offset 只影响旋转中心，不影响显示位置」，实际二者是耦合的，调完 offset 后往往还需要连带调整 x/y 才能让节点回到原来的视觉位置。",
+    "tags": ["konva", "中级", "offset"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "节点的视觉显示位置也会跟着偏移，需要连带调整 x/y 才能回到原来的位置",
+        "isCorrect": true,
+        "description": "正确，offset 和位置显示是耦合的，这是常被忽略的一点"
+      },
+      {
+        "text": "不会有任何副作用，offset 只影响旋转和缩放中心，与显示位置完全无关",
+        "isCorrect": false,
+        "description": "错误，这正是常见的误解，实际二者是耦合的"
+      },
+      {
+        "text": "只有 Circle 类型的形状会受 offset 影响，Rect 不受影响",
+        "isCorrect": false,
+        "description": "错误，offset 对各类形状的影响机制是一致的"
+      },
+      {
+        "text": "offset 会被 Konva 内部自动换算抵消，视觉位置保持不变",
+        "isCorrect": false,
+        "description": "错误，Konva 不会自动抵消 offset 带来的位置偏移"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：`stage.toJSON()` 导出的字符串，想还原成一棵可用的场景树，应该用哪个 API？",
+    "explanation": "`Konva.Node.create(json, 'container-id')` 是官方提供的反序列化静态方法，用序列化字符串和目标容器 id 重建整棵场景树。`JSON.parse()` 只能把字符串转成普通 JS 对象，不会重建出带有 Konva 方法的节点实例；Stage 实例上也没有 `fromJSON` 方法。",
+    "tags": ["konva", "中级", "serialization"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Konva.Node.create(json, 'container-id')",
+        "isCorrect": true,
+        "description": "正确，这是官方提供的反序列化重建场景树的静态方法"
+      },
+      {
+        "text": "Konva.Stage.parse(json)",
+        "isCorrect": false,
+        "description": "错误，不存在这个方法名"
+      },
+      {
+        "text": "JSON.parse(json) 直接得到可用的 Stage 实例",
+        "isCorrect": false,
+        "description": "错误，JSON.parse 只转成普通对象，不会重建出带方法的 Konva 节点实例"
+      },
+      {
+        "text": "stage.fromJSON(json)",
+        "isCorrect": false,
+        "description": "错误，Stage 实例上没有这个方法，重建走的是 Konva.Node.create 静态方法"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：连续执行 `shape.x(1); shape.y(2); shape.fill('red');` 三行属性修改后，官方推荐的收尾操作是什么？",
+    "explanation": "推荐在一组属性修改完成后统一调用一次 `layer.batchDraw()`，把多次修改合并成一次重绘，避免每次 setAttr 都单独触发一次绘制。这是 Konva 性能优化里的常见基本手法，react-konva 内部在非自动重绘场景下也是靠 batchDraw() 实现合批的。",
+    "tags": ["konva", "中级", "performance"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "调用一次 layer.batchDraw()，合并本轮多次属性修改后的重绘",
+        "isCorrect": true,
+        "description": "正确，batchDraw 是官方推荐的合批收尾操作"
+      },
+      {
+        "text": "每一行属性修改后都单独调用一次 layer.draw()",
+        "isCorrect": false,
+        "description": "错误，会导致多次重复重绘，不是推荐做法"
+      },
+      {
+        "text": "不需要做任何事，Konva 永远不会为属性修改触发重绘",
+        "isCorrect": false,
+        "description": "错误，属性修改默认会触发重绘，只是可以通过 batchDraw 合并次数"
+      },
+      {
+        "text": "调用 stage.destroy() 再重新创建整个场景",
+        "isCorrect": false,
+        "description": "错误，销毁重建代价过大，不是收尾的正确做法"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：自定义一个三角形 `Konva.Shape` 时，`sceneFunc` 内完成路径绘制后，应该用什么方式让节点的 fill/stroke/shadow 属性正确生效？",
+    "explanation": "官方五条最佳实践之一：样式统一通过 `context.fillStrokeShape(shape)` 委托，让 Konva 根据节点自身的 fill/stroke/shadow 等属性自动处理，而不要手动调用原生 Canvas 的 `context.fill()`/`context.stroke()`——手动调用会绕开 Konva 的属性系统，导致后续修改 fill 属性可能不生效。",
+    "tags": ["konva", "中级", "custom-shape"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "调用 context.fillStrokeShape(shape)，把样式渲染委托给 Konva 根据节点属性自动处理",
+        "isCorrect": true,
+        "description": "正确，这是官方五条最佳实践之一"
+      },
+      {
+        "text": "手动调用原生 context.fill() 和 context.stroke()",
+        "isCorrect": false,
+        "description": "错误，这会绕开 Konva 的属性系统，导致后续改 fill 属性可能不生效"
+      },
+      {
+        "text": "在构造函数里传入 autoStyle: true",
+        "isCorrect": false,
+        "description": "错误，不存在这个配置项"
+      },
+      {
+        "text": "不需要额外调用，sceneFunc 执行完路径绘制后 Konva 会自动应用样式",
+        "isCorrect": false,
+        "description": "错误，必须显式调用 fillStrokeShape 才能让样式生效"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：react-konva 项目里，想直接调用某个 `<Circle>` 组件对应的原生 Konva 方法（比如 `.to()` 播放动画），应该怎么拿到这个原生节点实例？",
+    "explanation": "用 `useRef()` 创建一个 ref 并传给 `<Circle ref={circleRef} />`，`circleRef.current` 就是真实的 `Konva.Circle` 对象，可以直接调用它的原生方法。JSX 元素本身只是对渲染结果的描述，并不是节点实例；react-konva 明确支持这种命令式访问底层节点的方式。",
+    "tags": ["konva", "中级", "react-konva"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 useRef() 创建 ref 传给 <Circle ref={circleRef} />，circleRef.current 就是真实的 Konva.Circle 对象",
+        "isCorrect": true,
+        "description": "正确，这是 react-konva 官方支持的命令式访问底层节点实例的方式"
+      },
+      {
+        "text": "直接对 JSX 里的 <Circle> 元素调用方法，React 组件本身就是 Konva 节点实例",
+        "isCorrect": false,
+        "description": "错误，JSX 元素只是渲染描述，不是真实的 Konva 节点实例"
+      },
+      {
+        "text": "react-konva 不支持访问底层 Konva 节点，所有操作必须通过 props 声明式完成",
+        "isCorrect": false,
+        "description": "错误，useRef 正是官方支持的命令式访问方式"
+      },
+      {
+        "text": "用 document.querySelector 找到对应的 canvas 元素再手动解析",
+        "isCorrect": false,
+        "description": "错误，Canvas 内部的图形不是可查询的 DOM 节点，这不是标准做法"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个中型设计器应用出现明显卡顿，排查发现团队为了「分层管理方便」创建了 15 个 Layer，官方性能建议接下来应该怎么做？",
+    "explanation": "官方性能优化的第一原则是「尽量减少 Layer 数量」而不是「越多越好」：每个 Layer 都对应一个真实的 canvas DOM 元素，本身就有创建和内存开销。只有在真正需要独立更新节奏（比如背景很少变化、前景频繁移动）的场景才值得拆分 Layer，而不是为了「管理方便」随意增设。",
+    "tags": ["konva", "高级", "performance"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "精简 Layer 数量，只在真正需要独立更新节奏的场景才拆分 Layer",
+        "isCorrect": true,
+        "description": "正确，官方明确「最小化 Layer 数量」而非「越分越好」"
+      },
+      {
+        "text": "继续增加 Layer 数量，分得越细性能越好",
+        "isCorrect": false,
+        "description": "错误，这正是官方明确反对的误区"
+      },
+      {
+        "text": "Layer 数量与性能无关，卡顿只可能是 Shape 数量导致的",
+        "isCorrect": false,
+        "description": "错误，Layer 数量本身就是核心性能变量之一"
+      },
+      {
+        "text": "把所有 Layer 合并成一个 Stage 内的多个 Group 就能自动获得同等性能",
+        "isCorrect": false,
+        "description": "错误，Group 和 Layer 语义不同，不是简单等价替代，仍需结合实际渲染需求权衡"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：以下哪种场景最适合对 Shape 调用 `cache()`？",
+    "explanation": "官方缓存四原则中提到：没有滤镜的简单形状不建议缓存（直接画可能更快）；缓存会给每个节点多开辟一份 canvas 缓冲区，滥用会吃内存；应优先对「一组形状」整体缓存（cache 一个 Group）而不是逐个缓存子节点。因此，应用了多个滤镜、绘制逻辑复杂但更新不频繁的图形，是最适合缓存的场景。",
+    "tags": ["konva", "高级", "cache"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "应用了多个滤镜、绘制逻辑复杂但更新不频繁的自定义图形",
+        "isCorrect": true,
+        "description": "正确，这正是官方建议使用 cache() 的典型场景"
+      },
+      {
+        "text": "一个没有滤镜、绘制逻辑简单的纯色 Rect",
+        "isCorrect": false,
+        "description": "错误，官方建议这种简单场景不缓存，直接画可能更快"
+      },
+      {
+        "text": "场景里的每个子节点都逐一单独缓存，而不是整体缓存 Group",
+        "isCorrect": false,
+        "description": "错误，官方建议优先缓存整个 Group 而非逐个缓存子节点"
+      },
+      {
+        "text": "一个每帧视觉内容都在变化的动画节点",
+        "isCorrect": false,
+        "description": "错误，频繁变化的内容缓存反而增加清空重建缓存的开销，不划算"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个图表里有上千个不需要交互的纯展示型数据点 Shape，为了提速应该设置什么属性？",
+    "explanation": "`listening(false)` 可以让节点从「hit graph」命中检测体系中移除，纯展示型、不需要参与点击/悬浮判断的大量节点应该关闭它以提速。`visible(false)` 和 `opacity(0)` 都会让节点不可见，不满足「纯展示」的需求；`draggable(false)` 本身就是默认值，且与命中检测的计算开销无关。",
+    "tags": ["konva", "高级", "performance"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "listening(false)，让节点从 hit graph 命中检测中移除",
+        "isCorrect": true,
+        "description": "正确，纯展示型大量节点关闭命中检测能显著提速"
+      },
+      {
+        "text": "visible(false)",
+        "isCorrect": false,
+        "description": "错误，会让节点完全不可见，不符合「纯展示」的需求"
+      },
+      {
+        "text": "draggable(false)",
+        "isCorrect": false,
+        "description": "错误，这本来就是默认值，且与命中检测的计算开销无关"
+      },
+      {
+        "text": "opacity(0)",
+        "isCorrect": false,
+        "description": "错误，会让节点透明不可见，且底层命中检测开销依然存在"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个形状同时设置了 fill、stroke 和 opacity，想换取一些绘制性能而接受轻微的视觉妥协，应该关闭什么？",
+    "explanation": "`perfectDrawEnabled(false)` 专门用于这种场景：关闭「完美绘制」模式来换取绘制性能，代价是 fill+stroke+opacity 组合的视觉效果可能略有妥协。这与直接关闭 stroke 或 fill 本身（会彻底失去对应视觉效果）是完全不同的取舍。",
+    "tags": ["konva", "高级", "performance"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "perfectDrawEnabled(false)",
+        "isCorrect": true,
+        "description": "正确，专门用于 fill+stroke+opacity 组合场景下换取性能"
+      },
+      {
+        "text": "shadowForStrokeEnabled(true)",
+        "isCorrect": false,
+        "description": "错误，该属性此处应该关闭（设为 false）来减少描边阴影计算，而非开启"
+      },
+      {
+        "text": "strokeEnabled(false)",
+        "isCorrect": false,
+        "description": "错误，会直接去掉描边效果，不是「轻微视觉妥协换性能」的做法"
+      },
+      {
+        "text": "fillEnabled(false)",
+        "isCorrect": false,
+        "description": "错误，会直接去掉填充效果"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：图表里的一根连线 `strokeWidth` 只有 1px，用户反馈「很难点中这根线」，应该怎么优化？",
+    "explanation": "`hitStrokeWidth` 可以和视觉描边宽度 `strokeWidth` 解耦，默认值是 `'auto'`（等于 strokeWidth）。把它单独调大（比如设为 20）就能在不改变视觉细线外观的前提下扩大命中检测区域，这在图表/连线类交互里是常见但容易被忽略的优化点。",
+    "tags": ["konva", "高级", "hit-detection"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "调大 hitStrokeWidth（如设为 20），与视觉描边宽度解耦，扩大命中区域而不改变视觉粗细",
+        "isCorrect": true,
+        "description": "正确，这是官方文档明确给出的细线交互优化手段"
+      },
+      {
+        "text": "只能把 strokeWidth 也一起调大到 20px，视觉和命中区域必须保持一致",
+        "isCorrect": false,
+        "description": "错误，hitStrokeWidth 可以单独控制，无需跟着改变视觉粗细"
+      },
+      {
+        "text": "设置 listening(false) 让点击更容易命中",
+        "isCorrect": false,
+        "description": "错误，这会让节点完全不参与命中检测，反而彻底点不中"
+      },
+      {
+        "text": "无法优化，细线条在 Canvas 里天然无法被精确点中",
+        "isCorrect": false,
+        "description": "错误，hitStrokeWidth 正是为解决这个问题设计的"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：设计器类应用想实现「缩放手柄靠近参考线 10px 内自动吸附对齐」的辅助线效果，应该使用 Transformer 的哪个能力？",
+    "explanation": "`anchorDragBoundFunc(oldAbsPos, newAbsPos, event)` 是专门用于控制锚点吸附行为的回调，可以在其中判断与参考线的距离并返回吸附后的坐标。`rotationSnaps` 是角度吸附，`centeredScaling` 是居中缩放，`boundBoxFunc` 是限制变换后包围盒的尺寸范围，都不是处理锚点位置吸附对齐的机制。",
+    "tags": ["konva", "高级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "anchorDragBoundFunc(oldAbsPos, newAbsPos, event) 回调，在其中判断距离并返回吸附后坐标",
+        "isCorrect": true,
+        "description": "正确，这是官方提供的锚点吸附对齐机制"
+      },
+      {
+        "text": "rotationSnaps",
+        "isCorrect": false,
+        "description": "错误，这是旋转角度吸附，不是位置吸附对齐"
+      },
+      {
+        "text": "centeredScaling",
+        "isCorrect": false,
+        "description": "错误，这是居中缩放开关，与参考线吸附无关"
+      },
+      {
+        "text": "boundBoxFunc",
+        "isCorrect": false,
+        "description": "错误，这是限制缩放后包围盒尺寸范围的，不是处理锚点吸附对齐"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个包含大量复杂子节点的场景中，用户拖拽其中一个节点时整个画面明显卡顿，官方建议的优化技巧是什么？",
+    "explanation": "官方建议在 `dragstart` 时把正在拖拽的节点临时移到一个专用的 Layer，`dragend` 结束后再移回原 Layer，这样拖拽过程中只需要重绘这个专用 Layer，避免每次拖拽移动都重绘整个复杂场景。",
+    "tags": ["konva", "高级", "drag-performance"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把正在拖拽的节点临时移到专用 Layer，dragend 后再移回原 Layer",
+        "isCorrect": true,
+        "description": "正确，这是官方文档给出的拖拽性能优化技巧"
+      },
+      {
+        "text": "拖拽期间把所有其他节点 destroy()，拖拽结束后重新创建",
+        "isCorrect": false,
+        "description": "错误，销毁重建的成本远高于临时换 Layer，且会丢失节点状态"
+      },
+      {
+        "text": "拖拽期间设置 Konva.pixelRatio = 0",
+        "isCorrect": false,
+        "description": "错误，像素比不能设为 0，会导致渲染异常"
+      },
+      {
+        "text": "官方不建议做任何优化，拖拽卡顿是 Canvas 的固有限制无法缓解",
+        "isCorrect": false,
+        "description": "错误，临时切换 Layer 正是官方给出的可行优化方案"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 v9 时代写的 Node.js 服务端渲染脚本，`npm install konva` 后直接 `new Konva.Stage()` 就能用；同样的代码升级到 Konva v10 后在 Node.js 环境报错，原因和修复方式是什么？",
+    "explanation": "v10 移除了自动后端探测机制，Node.js 环境下必须显式 `import 'konva/canvas-backend'` 或 `import 'konva/skia-backend'`，并额外安装 `canvas` 或 `skia-canvas` 依赖包才能正常渲染，这是 v9 → v10 唯一确认的破坏性变化点。",
+    "tags": ["konva", "高级", "nodejs"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "v10 移除了自动后端探测，需显式 import 'konva/canvas-backend' 或 'konva/skia-backend'，并额外安装 canvas 或 skia-canvas 依赖包",
+        "isCorrect": true,
+        "description": "正确，这是 v9 → v10 在 Node.js 场景下唯一确认的破坏性变化"
+      },
+      {
+        "text": "v10 彻底移除了 Node.js 支持，只能降级回 v9",
+        "isCorrect": false,
+        "description": "错误，v10 依然支持 Node.js，只是需要显式导入后端"
+      },
+      {
+        "text": "需要把 konva 换成一个专门的服务端包 konva-node",
+        "isCorrect": false,
+        "description": "错误，不存在这个包名，官方方案是子路径显式导入"
+      },
+      {
+        "text": "只需在 package.json 里加上 「type」: 「commonjs」 即可修复",
+        "isCorrect": false,
+        "description": "错误，这与后端自动探测被移除的问题无关"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：react-konva 里一个 `<Rect draggable x={x} y={y} />` 组件，没有绑定 `onDragEnd`，用户拖拽它松手后会出现什么现象？",
+    "explanation": "由于拖拽只改变了 Konva 内部节点的实际位置，React state 里的 x/y 并不知情，下一次因为其他原因触发的渲染会把节点「弹回」props 指定的旧坐标。react-konva 官方会在控制台打印明确警告提示这个问题，这是新手最容易踩的坑之一，修复方式是在 `onDragEnd` 里把新坐标同步回 state。",
+    "tags": ["konva", "高级", "react-konva"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "下次因其他原因触发的渲染会把节点弹回 props 里的旧坐标，且控制台会打印官方警告",
+        "isCorrect": true,
+        "description": "正确，这是 react-konva 最常见的新手坑之一"
+      },
+      {
+        "text": "节点会永久停留在拖拽后的新位置，不会有任何问题",
+        "isCorrect": false,
+        "description": "错误，这正是常见的坑，节点位置会被下次渲染重置"
+      },
+      {
+        "text": "react-konva 会自动把新坐标同步进 React state，无需手动处理",
+        "isCorrect": false,
+        "description": "错误，需要开发者手动在 onDragEnd 里更新 state"
+      },
+      {
+        "text": "应用会直接抛出运行时异常导致崩溃",
+        "isCorrect": false,
+        "description": "错误，不会崩溃，只是视觉上「弹回」并在控制台打印警告"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：官方给自定义 `sceneFunc` 列出的最佳实践里，「命中检测复杂形状」应该怎么处理？",
+    "explanation": "官方五条最佳实践之一：命中检测复杂形状时应该额外定义独立的 `hitFunc`，而不是完全依赖 `sceneFunc` 里绘制的路径自动做命中检测。这样可以针对命中判断单独做简化或优化，避免复杂视觉路径拖累每次事件判断的性能。",
+    "tags": ["konva", "高级", "hitfunc"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "应额外定义独立的 hitFunc，而不是依赖 sceneFunc 绘制路径自动做命中检测",
+        "isCorrect": true,
+        "description": "正确，这是官方五条最佳实践之一"
+      },
+      {
+        "text": "复杂形状应关闭 listening，放弃命中检测能力",
+        "isCorrect": false,
+        "description": "错误，这会导致该形状完全无法交互，不符合场景需求"
+      },
+      {
+        "text": "sceneFunc 内部的路径会自动被复用做命中检测，无需额外处理",
+        "isCorrect": false,
+        "description": "错误，对简单形状可行，但复杂形状官方建议单独定义 hitFunc 优化"
+      },
+      {
+        "text": "只能通过降低形状复杂度来间接优化命中检测，没有专门的 API",
+        "isCorrect": false,
+        "description": "错误，hitFunc 正是官方提供的专门 API"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个节点当前正被某个 Transformer 通过 `tr.nodes([node])` 绑定，如果直接调用 `node.destroy()` 销毁它而不做其他处理，可能会有什么后果？",
+    "explanation": "Transformer 内部会持续持有对绑定节点的引用，节点被销毁后 Transformer 并不会自动感知并清空自己的 `nodes` 数组，这可能导致 Transformer 后续操作时引用到已销毁节点而报错。正确做法是先 `tr.nodes([])` 或把该节点从数组里移除，再执行 `destroy()`。",
+    "tags": ["konva", "高级", "transformer"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Transformer 可能仍引用着已销毁节点导致后续报错，应先 tr.nodes([]) 解绑再销毁",
+        "isCorrect": true,
+        "description": "正确，这是 Transformer 使用中常被忽略的一个坑"
+      },
+      {
+        "text": "完全没有影响，Transformer 会自动感知节点已销毁并清空自己的 nodes 数组",
+        "isCorrect": false,
+        "description": "错误，Transformer 不会自动清空引用，需要手动处理"
+      },
+      {
+        "text": "Konva 会阻止这次 destroy() 调用，防止销毁被绑定的节点",
+        "isCorrect": false,
+        "description": "错误，destroy() 会正常执行，只是会留下 Transformer 引用失效的隐患"
+      },
+      {
+        "text": "只需要销毁节点，绑定的 Transformer 本身也会跟着自动一起被销毁",
+        "isCorrect": false,
+        "description": "错误，Transformer 是独立实例，不会跟随其绑定的节点一起被销毁"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：团队里维护原生 Canvas 看板工具的同事说「我们已经用 canvas 画出各种图形了，为什么还要多引入 Konva 这一层」。但看板工具后续需要支持「点选已画好的某个图形并单独修改它的颜色」，这暴露出原生 Canvas 命令式绘制的什么根本局限？这也是选型 Konva 而非纯手写 Canvas 的核心原因。",
+    "explanation": "原生 Canvas API 是「立即模式」（immediate mode）：画完即忘，无法在事后单独查询或修改某一个已经画出来的图形，只能整体重新绘制。Konva 用「保留模式」（retained mode）的场景图节点树弥补了这个局限——每个图形都是持续存在于树中的节点，可以被反复查询、修改、监听事件，这正是需要「点选并编辑已有图形」的场景应该选 Konva 而非纯 Canvas API 的根本原因。",
+    "tags": ["konva", "专家", "rendering-model"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "原生 Canvas 是立即模式（画完即忘），无法事后单独修改某个已画图形；Konva 是保留模式，节点持续存在可反复查改",
+        "isCorrect": true,
+        "description": "正确，这是渲染范式层面选型 Konva 而非纯 Canvas 的根本原因"
+      },
+      {
+        "text": "Konva 是立即模式，原生 Canvas 才是保留模式",
+        "isCorrect": false,
+        "description": "错误，说反了，Konva 是保留模式而原生 Canvas 是立即模式"
+      },
+      {
+        "text": "两者渲染范式完全相同，区别只在 API 命名风格不同",
+        "isCorrect": false,
+        "description": "错误，二者渲染范式有本质区别，不只是命名风格问题"
+      },
+      {
+        "text": "根本差异在于 Konva 使用 WebGL 而原生 Canvas 使用 2D API",
+        "isCorrect": false,
+        "description": "错误，Konva 底层同样基于 2D Canvas API 而非 WebGL"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：数据可视化大屏项目里有一个模块要展示 5000 个以上可被鼠标悬浮高亮、支持拖拽分组的浮动气泡节点，且要求 60fps 顺滑运行。继续用 Konva 还是改用 PixiJS，判断依据应该是什么？",
+    "explanation": "Konva 基于 CPU 2D Canvas 光栅化而非 WebGL，大规模高频动画/海量精灵这类场景性能上限低于基于 WebGL 的 PixiJS；反过来，PixiJS 没有 Konva 那样开箱即用的 Transformer 交互能力。5000+ 高频动画节点、60fps 的要求已经逼近或超出 Konva 的性能量级，这类场景官方建议转向 PixiJS 这类 WebGL 方案，而不是靠下载量、API 偏好等因素做判断。",
+    "tags": ["konva", "专家", "architecture-choice"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Konva 是 CPU 2D 光栅化非 WebGL，大规模高频动画的性能上限低于 PixiJS；5000+ 节点 60fps 已逼近这个量级，应考虑转向 PixiJS",
+        "isCorrect": true,
+        "description": "正确，这是官方口径中「交互 UI 用 Konva，游戏/海量精灵动画用 PixiJS」的具体应用"
+      },
+      {
+        "text": "只要看两者 npm 下载量谁更高就该换谁",
+        "isCorrect": false,
+        "description": "错误，下载量不是技术选型的核心判断依据"
+      },
+      {
+        "text": "Konva 和 PixiJS 底层渲染技术完全一样，换不换纯粹是 API 风格偏好",
+        "isCorrect": false,
+        "description": "错误，两者底层渲染技术不同，一个是 2D Canvas API，一个是 WebGL"
+      },
+      {
+        "text": "PixiJS 没有官方 React 绑定，React 项目一律不能选 PixiJS",
+        "isCorrect": false,
+        "description": "错误，PixiJS 有官方 React 绑定 @pixi/react，只是生态定位偏游戏"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个类 Figma 的设计器应用里，用户先点选一个矩形，再按住 Shift 点选另一个圆形，期望两个节点同时进入可缩放旋转状态；点击画布空白处则要清空所有选中。这套「点击空白取消选中 + Shift 多选」的标准实现范式是怎样的？",
+    "explanation": "官方推荐范式：在 Stage 的 click/tap 事件里判断 `e.target === stage`，是则 `tr.nodes([])` 清空选中；否则结合 `evt.shiftKey`/`ctrlKey` 判断——如果按住了修饰键且目标尚未被选中，就把它累加进 `tr.nodes()` 数组实现多选，否则替换为单选。整个多选状态由同一个 Transformer 实例的 `nodes()` 数组统一管理，而不是每个节点各建一个 Transformer。",
+    "tags": ["konva", "专家", "transformer-multi-select"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Stage 点击时判断 e.target === stage 则清空选中；否则结合 shiftKey/ctrlKey 决定是把目标累加进同一个 Transformer 的 nodes() 数组还是替换为单选",
+        "isCorrect": true,
+        "description": "正确，这是官方文档给出的设计器类应用标准选中交互模型"
+      },
+      {
+        "text": "每个 Shape 自己监听 click 并各自维护一个独立的 Transformer 实例",
+        "isCorrect": false,
+        "description": "错误，应该是单一 Transformer 通过 nodes() 数组统一管理多选，而非每个节点一个 Transformer"
+      },
+      {
+        "text": "用 CSS 的 :hover 伪类判断节点是否被选中",
+        "isCorrect": false,
+        "description": "错误，Konva 图形渲染在 Canvas 内部，不是独立 DOM 节点，CSS 伪类无法作用于其内部图形"
+      },
+      {
+        "text": "Transformer 原生不支持多选，多选必须通过叠加创建多个 Transformer 实例实现",
+        "isCorrect": false,
+        "description": "错误，tr.nodes() 本身接受数组就能实现多选，无需叠加多个实例"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 react-konva 项目里，某段代码用 `nodeRef.current.x(100)` 命令式直接改了节点位置，但对应的 React state 没有更新；下次因为其他原因触发重渲染时，节点位置又跳回了 state 里的旧值。排查这类「节点状态与 React state 不同步」的问题时，应该打开哪个全局开关？",
+    "explanation": "`import { useStrictMode } from 'react-konva'; useStrictMode(true);` 开启后，每次渲染都会强制把 Konva 节点的属性同步为 render 函数给出的值，用于在「命令式修改节点 vs 声明式 props」混用的场景下暴露和排查不一致的问题，这与 React 官方内置的 StrictMode 是两个不同的机制。",
+    "tags": ["konva", "专家", "react-konva"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "useStrictMode(true)",
+        "isCorrect": true,
+        "description": "正确，这是 react-konva 提供的专用调试开关"
+      },
+      {
+        "text": "React 官方内置的 <React.StrictMode> 双重渲染检测",
+        "isCorrect": false,
+        "description": "错误，这是 react-konva 自己的开关，不是 React 内置 StrictMode 的代理"
+      },
+      {
+        "text": "把所有 Konva 节点的 draggable 强制设为 false",
+        "isCorrect": false,
+        "description": "错误，与 draggable 无关，这个开关解决的是属性同步问题"
+      },
+      {
+        "text": "关闭 autoDrawEnabled 以跳过不必要的属性 diff",
+        "isCorrect": false,
+        "description": "错误，作用方向相反，useStrictMode 是为了「强制同步」而非「跳过同步」"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个 Node.js 服务端渲染任务，需要给电商详情页批量生成高保真渲染大图，对渲染质量要求高，可以接受稍大的依赖体积和安装成本。选择 `canvas`（node-canvas）还是 `skia-canvas` 作为后端更合适？",
+    "explanation": "官方给出的判断依据是渲染质量需求与依赖体积/安装便利性的权衡：`canvas`（node-canvas）生态更成熟、安装更轻便，是通用场景的默认选择；`skia-canvas` 渲染质量更优，还能用 `layer.getNativeCanvasElement().toBuffer()` 直接拿到 Buffer，更适合对渲染质量有较高要求的场景。本题描述的「高保真渲染大图、可接受更大依赖体积」正对应 `skia-canvas` 的适用场景。",
+    "tags": ["konva", "专家", "nodejs-backend"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "skia-canvas，渲染质量更优，可直接用 layer.getNativeCanvasElement().toBuffer() 拿 Buffer，代价是依赖体积和安装便利性不如 canvas",
+        "isCorrect": true,
+        "description": "正确，题目场景明确优先渲染质量、可接受更大依赖体积，对应 skia-canvas"
+      },
+      {
+        "text": "两者性能和渲染质量完全相同，选哪个都一样",
+        "isCorrect": false,
+        "description": "错误，官方明确指出两者渲染质量存在差异"
+      },
+      {
+        "text": "skia-canvas 已被官方废弃，只能选 canvas",
+        "isCorrect": false,
+        "description": "错误，两者都是当前受支持的可选后端"
+      },
+      {
+        "text": "只有 canvas 支持配合 Konva 的 toDataURL() 导出图片，skia-canvas 不支持",
+        "isCorrect": false,
+        "description": "错误，两种后端都能配合 Konva 的图片导出 API 使用"
+      }
+    ]
+  },
+  {
+    "stem": "Konva：一个团队最初图省事，直接把 `stage.toJSON()` 的结果存进数据库，读取时用 `Konva.Node.create()` 还原当存档方案；半年后业务要求「给旧存档的图形加一个新字段的默认值」时发现步履维艰，新旧数据格式对不上、难以迁移。官方 Best Practices 页给出的正确替代模式是什么？",
+    "explanation": "官方明确不建议大型应用直接用 `toJSON`/`Node.create` 做存档方案，因为这会把视觉细节和业务数据强耦合在一起，难以做版本迁移。推荐模式是「业务状态是唯一真相源，Konva 场景树只是该状态的渲染投影」：只持久化必要的业务数据（如坐标数组），再分别写 `create(state)`（从状态全量重建整棵树）和 `update(state)`（只更新属性，数量变化才重建节点）两个函数分层处理。",
+    "tags": ["konva", "专家", "serialization-best-practice"],
+    "categories": [
+      ["技术方向", "Konva"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只持久化必要的业务数据，写 create(state) 全量重建与 update(state) 增量更新两个函数分层处理，Konva 场景树只是业务状态的渲染投影",
+        "isCorrect": true,
+        "description": "正确，这是官方 Best Practices 页给出的推荐模式"
+      },
+      {
+        "text": "把 toJSON() 的结果原样存数据库，读取时直接 Node.create() 还原，这就是官方推荐方案",
+        "isCorrect": false,
+        "description": "错误，这正是官方明确不建议的做法，会导致视觉与业务数据强耦合难以迁移"
+      },
+      {
+        "text": "数据持久化应完全避开 Konva，改用截图对比的方式还原场景",
+        "isCorrect": false,
+        "description": "错误，截图无法逆向解析出可编辑的节点树，不现实也非官方建议"
+      },
+      {
+        "text": "用 toDataURL() 导出的图片字符串作为存档数据，编辑时再解析图片像素还原节点",
+        "isCorrect": false,
+        "description": "错误，位图无法逆向解析出可编辑的节点树，导出图片是另一个用途完全不同的场景"
+      }
+    ]
+  }
+]
