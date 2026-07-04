@@ -1,0 +1,1614 @@
+[
+  {
+    "stem": "WebGL 被 webglfundamentals.org 称为“只画点、线、三角形的光栅化引擎”，这句话最准确地指出了它与 Three.js 的本质区别是什么？",
+    "explanation": "WebGL 本身不理解“3D”这个概念，只认裁剪空间里的点、线、三角形；透视、光照、动画等效果全部是开发者通过顶点/片元着色器算出来的。Three.js 则是建在 WebGL 之上的框架，内建场景图、相机、材质等高层抽象，替开发者屏蔽了这些底层细节。二者是底层 API 与上层框架的关系，而非互相竞争的同级方案。",
+    "tags": ["webgl", "入门", "concept"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WebGL 不理解 3D 概念，效果靠开发者写着色器算出；Three.js 内建场景图/相机/材质等高层封装",
+        "isCorrect": true,
+        "description": "底层光栅化 API 与上层框架的定位差异"
+      },
+      {
+        "text": "WebGL 的运行时性能天生低于 Three.js",
+        "isCorrect": false,
+        "description": "Three.js 建在 WebGL 之上，性能不会更高，只是多一层调度开销"
+      },
+      {
+        "text": "WebGL 只能绘制 2D 图形，3D 效果必须依赖 Three.js 才能实现",
+        "isCorrect": false,
+        "description": "原生 WebGL 完全可以手写 3D，只是心智负担更重"
+      },
+      {
+        "text": "Three.js 是浏览器原生 API，WebGL 只是其上层扩展库",
+        "isCorrect": false,
+        "description": "关系恰好相反，WebGL 才是浏览器原生标准"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 项目里写 `canvas.getContext('webgl2') || canvas.getContext('webgl')`，这样做的目的是什么？",
+    "explanation": "getContext 在浏览器不支持对应上下文类型时会返回 null，因此必须做判空兜底。这行代码优先尝试能力更强的 WebGL2 上下文，若返回 null（浏览器不支持）再退而求其次尝试 WebGL1，力求在新特性和兼容性之间取得平衡。",
+    "tags": ["webgl", "入门", "context"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "优先用能力更强的 WebGL2，浏览器不支持时再回退 WebGL1，兼顾新特性与兼容性",
+        "isCorrect": true,
+        "description": "标准的渐进增强式上下文获取写法"
+      },
+      {
+        "text": "getContext 从不会返回 null，这里只是无意义的习惯写法",
+        "isCorrect": false,
+        "description": "不支持时确实返回 null，必须写判空/回退逻辑"
+      },
+      {
+        "text": "WebGL2 和 WebGL1 需要各自对应不同类型的 canvas 元素",
+        "isCorrect": false,
+        "description": "同一个 canvas 元素即可获取任一类型上下文"
+      },
+      {
+        "text": "这样写能让同一个画布同时使用两个上下文加速渲染",
+        "isCorrect": false,
+        "description": "上下文类型互斥，一旦创建就固定，不能叠加使用"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL1 与 WebGL2 底层各自基于哪个 OpenGL ES 版本，下列描述正确的是？",
+    "explanation": "WebGL1 对应 WebGLRenderingContext，基于 OpenGL ES 2.0，自 2015 年起已是 Baseline Widely available；WebGL2 对应 WebGL2RenderingContext，基于 OpenGL ES 3.0，自 2021 年起同样达到 Widely available。WebGL2 完全向后兼容 WebGL1，WebGL1 的 API 和常量可以原样在 webgl2 上下文里使用。",
+    "tags": ["webgl", "入门", "version"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WebGL1 基于 OpenGL ES 2.0，WebGL2 基于 OpenGL ES 3.0，且 WebGL2 完全向后兼容 WebGL1",
+        "isCorrect": true,
+        "description": "版本基线与向后兼容性的准确描述"
+      },
+      {
+        "text": "WebGL2 与 WebGL1 互不兼容，WebGL1 代码无法在 webgl2 上下文运行",
+        "isCorrect": false,
+        "description": "WebGL2 完全向后兼容，WebGL1 代码可直接运行"
+      },
+      {
+        "text": "WebGL1、WebGL2 都基于 OpenGL ES 3.0，只是常量命名不同",
+        "isCorrect": false,
+        "description": "两者对应的 OpenGL ES 版本并不相同"
+      },
+      {
+        "text": "WebGL 基于 DirectX，因此只能在 Windows 系统上运行",
+        "isCorrect": false,
+        "description": "WebGL 基于跨平台的 OpenGL ES，并非 DirectX"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 画布每帧渲染前的“清屏三部曲”，clearColor 设置颜色后，第二步要调用什么才能真正清除画布？",
+    "explanation": "gl.clearColor(r, g, b, a) 只是设置将要用于清除的颜色值，本身不会执行任何清除动作；真正执行清除的是 gl.clear(gl.COLOR_BUFFER_BIT)，把颜色缓冲区整体填成刚设置的颜色。这两步缺一不可，且顺序不能颠倒。",
+    "tags": ["webgl", "入门", "clear"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "调用 `gl.clear(gl.COLOR_BUFFER_BIT)` 真正执行清除动作",
+        "isCorrect": true,
+        "description": "clearColor 只设值，clear 才真正执行清除"
+      },
+      {
+        "text": "调用 `gl.flush()` 强制提交所有已排队命令",
+        "isCorrect": false,
+        "description": "flush 与清屏无关，是命令队列提交"
+      },
+      {
+        "text": "直接调用 `gl.drawArrays()` 开始绘制",
+        "isCorrect": false,
+        "description": "跳过清除会让上一帧内容残留"
+      },
+      {
+        "text": "不需要额外调用，设置颜色后浏览器自动清屏",
+        "isCorrect": false,
+        "description": "必须显式调用 clear，不会自动执行"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 代码只写了顶点着色器源码并编译，页面却始终无法绘制任何内容，最可能的原因是什么？",
+    "explanation": "一个可用的 WebGL 程序至少需要顶点着色器和片元着色器都编译成功，再通过 attachShader 挂载、linkProgram 链接成一个完整的 program 才能使用。只有顶点着色器编译通过，缺少片元着色器会导致 program 链接失败，自然无法绘制任何内容。",
+    "tags": ["webgl", "入门", "program"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "缺少片元着色器，program 无法完成链接",
+        "isCorrect": true,
+        "description": "顶点+片元着色器都齐全才能链接出可用 program"
+      },
+      {
+        "text": "顶点着色器本身就能独立绘制简单图形",
+        "isCorrect": false,
+        "description": "渲染管线要求两个阶段的着色器都存在"
+      },
+      {
+        "text": "WebGL 会为缺失的着色器自动生成默认实现",
+        "isCorrect": false,
+        "description": "WebGL 不会自动补全缺失的着色器"
+      },
+      {
+        "text": "只要 canvas 尺寸设置正确就能绘制，与着色器数量无关",
+        "isCorrect": false,
+        "description": "着色器缺失是绘制失败的直接原因，与画布尺寸无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 顶点着色器里必须写 gl_Position，片元着色器（WebGL1）里必须写 gl_FragColor，这两个内置变量分别代表什么？",
+    "explanation": "gl_Position 是顶点着色器对该顶点变换后输出的裁剪空间坐标，决定这个顶点最终落在屏幕的什么位置；gl_FragColor 是片元着色器对该片元输出的最终颜色。两者是渲染管线两个不同阶段各自强制要求的输出，缺一处理器就无法正常绘制。",
+    "tags": ["webgl", "入门", "pipeline"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "gl_Position 是裁剪空间坐标，gl_FragColor 是片元最终颜色，是两个阶段各自的强制输出",
+        "isCorrect": true,
+        "description": "两个内置变量对应渲染管线的两个必写输出"
+      },
+      {
+        "text": "两者是同一个东西在不同着色器里的别名",
+        "isCorrect": false,
+        "description": "二者含义完全不同，分属顶点/片元两个阶段"
+      },
+      {
+        "text": "gl_Position 是屏幕像素坐标，gl_FragColor 是纹理坐标",
+        "isCorrect": false,
+        "description": "gl_Position 是裁剪空间坐标而非像素坐标，gl_FragColor 是颜色而非坐标"
+      },
+      {
+        "text": "二者都是可选变量，不写也能正常渲染出图形",
+        "isCorrect": false,
+        "description": "两者都是强制要求的输出，不写会导致渲染失败"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 项目里，同一个 canvas 元素先调用了 getContext('2d')，之后再调用 getContext('webgl') 想叠加 3D 效果，会发生什么？",
+    "explanation": "同一个 canvas 元素的上下文类型一旦创建就固定且互斥，先创建了 2d 上下文后，再请求 webgl 上下文会返回 null，无法获得 WebGL 能力。如果确实需要 WebGL 渲染，必须使用一个新的、尚未确定上下文类型的 canvas 元素。",
+    "tags": ["webgl", "入门", "context"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "上下文类型互斥且一旦固定，第二次调用拿不到 WebGL 上下文（返回 null）",
+        "isCorrect": true,
+        "description": "上下文类型互斥是 canvas 规范规定的行为"
+      },
+      {
+        "text": "两种上下文会自动叠加，同一画布同时支持 2D 与 3D 绘制",
+        "isCorrect": false,
+        "description": "上下文类型互斥，不能同时叠加两种"
+      },
+      {
+        "text": "后调用的 webgl 会覆盖前者，2d 上下文被自动销毁并成功创建",
+        "isCorrect": false,
+        "description": "第二次调用只会返回 null，不会替换已有上下文"
+      },
+      {
+        "text": "浏览器会弹出运行时错误中断脚本执行",
+        "isCorrect": false,
+        "description": "只是静默返回 null，不会抛出异常中断脚本"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 里最基本、最常用的绘制图元是三角形，对应哪个绘制模式常量？",
+    "explanation": "gl.TRIANGLES 让每三个顶点独立构成一个三角形，是最通用、最常用的图元装配方式，几乎所有复杂 3D 模型最终都会被拆解成三角形网格来绘制。其余如 POINTS、LINE_LOOP、TRIANGLE_FAN 等都是针对特定场景的图元类型。",
+    "tags": ["webgl", "入门", "primitive"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`gl.TRIANGLES`——每三个顶点独立构成一个三角形",
+        "isCorrect": true,
+        "description": "最通用的三角形图元装配方式"
+      },
+      {
+        "text": "`gl.POINTS`，每个顶点画一个点",
+        "isCorrect": false,
+        "description": "POINTS 只画点，不构成三角形面"
+      },
+      {
+        "text": "`gl.LINE_LOOP`，顶点首尾相连成闭合线框",
+        "isCorrect": false,
+        "description": "LINE_LOOP 画的是线框而非填充三角形"
+      },
+      {
+        "text": "`gl.TRIANGLE_FAN`，专用于绘制扇形结构",
+        "isCorrect": false,
+        "description": "TRIANGLE_FAN 适合扇形几何体，不是最通用的图元"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 顶点着色器里 attribute vec4 aPosition 和 uniform mat4 uMatrix 这两种输入变量，核心差异是什么？",
+    "explanation": "attribute 是逐顶点变化的数据，每个顶点从绑定的 buffer 里取到不同的值（如每个顶点各自的位置）；uniform 则是本次绘制调用内全局统一、所有顶点共享的同一份数据（如变换矩阵）。这是 CPU 向 GPU 传数据的两条不同通道，用途完全不同。",
+    "tags": ["webgl", "入门", "glsl"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "attribute 逐顶点变化（来自 buffer），uniform 全局统一不变",
+        "isCorrect": true,
+        "description": "两条数据通道的核心区别：粒度不同"
+      },
+      {
+        "text": "attribute 只能传整数，uniform 只能传浮点数",
+        "isCorrect": false,
+        "description": "两者对数据类型没有这种限制"
+      },
+      {
+        "text": "attribute 用于片元着色器，uniform 用于顶点着色器",
+        "isCorrect": false,
+        "description": "attribute 只能用于顶点着色器，uniform 两个阶段都能用"
+      },
+      {
+        "text": "两者完全等价，可以互换使用",
+        "isCorrect": false,
+        "description": "二者语义和用途完全不同，不能互换"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 着色器里颜色分量通常写成 0.0~1.0 的浮点数（例如纯红是 vec4(1.0, 0.0, 0.0, 1.0)），这与什么形成对比？",
+    "explanation": "这与 CSS、图片等常见的 0~255 整数表示法不同，GLSL 里颜色分量统一用归一化的浮点数表达。但需要注意例外场景：texImage2D 读取的原始像素数据仍然是 0~255 的 Uint8 格式，写 JS 层的像素操作代码时不能与着色器里的浮点约定混淆。",
+    "tags": ["webgl", "入门", "color"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "与 CSS/图片常见的 0~255 整数表示法不同；但 texImage2D 原始像素数据仍是 0~255",
+        "isCorrect": true,
+        "description": "着色器内浮点约定与像素数据格式的对比"
+      },
+      {
+        "text": "WebGL 内部统一使用 0~255 整数，浮点写法只是语法糖",
+        "isCorrect": false,
+        "description": "着色器里颜色分量确实是浮点数，并非语法糖"
+      },
+      {
+        "text": "0.0~1.0 只适用于 alpha 通道，RGB 三个通道仍用 0~255",
+        "isCorrect": false,
+        "description": "RGB 和 alpha 分量在着色器里统一用浮点数"
+      },
+      {
+        "text": "这个范围只在 WebGL2 中生效，WebGL1 仍用 0~255",
+        "isCorrect": false,
+        "description": "WebGL1/2 的着色器颜色约定是一致的"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 项目里编写了一段着色器源码，调用 compileShader 后画面一片空白且控制台没有报错，正确的排查姿势是什么？",
+    "explanation": "compileShader 编译失败并不会抛出 JS 异常，必须主动用 gl.getShaderParameter(shader, gl.COMPILE_STATUS) 检查编译是否成功；失败时再用 gl.getShaderInfoLog(shader) 打印具体的错误详情。这是调试着色器问题的第一步，也是最容易被忽略的一步。",
+    "tags": ["webgl", "初级", "shader-compile"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `getShaderParameter(shader, gl.COMPILE_STATUS)` 检查编译状态，失败时打印 `getShaderInfoLog`",
+        "isCorrect": true,
+        "description": "标准的着色器编译错误排查流程"
+      },
+      {
+        "text": "compileShader 编译失败一定会抛出 JS 异常中断脚本",
+        "isCorrect": false,
+        "description": "编译失败不会抛异常，必须主动查询状态"
+      },
+      {
+        "text": "直接检查 canvas 的宽高属性是否正确即可定位问题",
+        "isCorrect": false,
+        "description": "画布尺寸与着色器编译无关"
+      },
+      {
+        "text": "着色器编译错误只能通过浏览器开发者工具的网络面板查看",
+        "isCorrect": false,
+        "description": "编译错误要通过 WebGL API 主动查询，不会出现在网络面板"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 顶点、片元着色器都编译成功后，调用 linkProgram 却依然无法使用该 program，接下来该检查什么？",
+    "explanation": "两个着色器各自编译成功不代表能顺利链接成一个 program，比如 attribute/varying 命名或数量不匹配都会导致链接失败。要用 gl.getProgramParameter(program, gl.LINK_STATUS) 检查链接结果，失败时用 gl.getProgramInfoLog(program) 查看具体的链接错误信息。",
+    "tags": ["webgl", "初级", "program-link"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `getProgramParameter(program, gl.LINK_STATUS)` 检查链接状态，失败时查 `getProgramInfoLog`",
+        "isCorrect": true,
+        "description": "标准的 program 链接错误排查流程"
+      },
+      {
+        "text": "link 阶段不会失败，只要两个 shader 各自编译通过就一定能用",
+        "isCorrect": false,
+        "description": "两个着色器接口不匹配时链接依然会失败"
+      },
+      {
+        "text": "需要重新调用 compileShader 而不是排查 link 本身",
+        "isCorrect": false,
+        "description": "编译已经成功，问题出在链接阶段，应查链接状态"
+      },
+      {
+        "text": "linkProgram 的返回值本身就是错误信息",
+        "isCorrect": false,
+        "description": "linkProgram 无返回值，错误信息需主动查询获取"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 往顶点缓冲区里写入几何数据，标准三步依次是什么？",
+    "explanation": "先用 createBuffer 创建一个空的缓冲对象，再用 bindBuffer(gl.ARRAY_BUFFER, buffer) 把它设为当前操作目标，最后用 bufferData 把 Float32Array 数据实际写入这块缓冲区。WebGL 是状态机，bindBuffer 这一步不能省略，否则 bufferData 不知道该往哪个缓冲区写。",
+    "tags": ["webgl", "初级", "buffer"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`createBuffer` 创建 → `bindBuffer` 绑定为当前目标 → `bufferData` 写入数据",
+        "isCorrect": true,
+        "description": "标准的顶点缓冲区创建三步"
+      },
+      {
+        "text": "`bufferData` 可以在 `createBuffer` 之前调用，只要最后 `bindBuffer` 一次即可",
+        "isCorrect": false,
+        "description": "必须先创建、先绑定，才能正确写入数据"
+      },
+      {
+        "text": "只需要 `bufferData` 一步，`bindBuffer` 是可选的性能优化",
+        "isCorrect": false,
+        "description": "bindBuffer 是必需步骤，决定数据写入哪个缓冲区"
+      },
+      {
+        "text": "`createBuffer` 之后立即可用，不需要 `bindBuffer` 这一步",
+        "isCorrect": false,
+        "description": "不绑定就无法确定 bufferData 的写入目标"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 配置好 `vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0)` 之后，画面里的图形却完全没有出现，最常见的遗漏是什么？",
+    "explanation": "忘记调用 gl.enableVertexAttribArray(location)——只配置读取方式而不显式开启，该 attribute 依然读取的是默认值而非 buffer 里的真实数据，典型症状是图形全黑或所有顶点重合在原点。这是初学 WebGL 最容易漏掉的一步，几乎每个入门教程都会强调。",
+    "tags": ["webgl", "初级", "vertex-attrib"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "忘记调用 `enableVertexAttribArray(location)`，属性没有被显式开启",
+        "isCorrect": true,
+        "description": "不开启该属性会读取默认值而非 buffer 数据"
+      },
+      {
+        "text": "vertexAttribPointer 的第四个参数应该传 true 而不是 false",
+        "isCorrect": false,
+        "description": "该参数是是否归一化，与图形消失无直接关系"
+      },
+      {
+        "text": "必须先调用 drawArrays 才能让 vertexAttribPointer 生效",
+        "isCorrect": false,
+        "description": "vertexAttribPointer 配置顺序应在 drawArrays 之前完成"
+      },
+      {
+        "text": "stride 参数不能传 0，必须显式计算字节偏移",
+        "isCorrect": false,
+        "description": "stride 传 0 表示紧密排列，是合法且常见的写法"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 绘制一个由 36 个索引复用 8 个顶点构成的立方体，相比直接 drawArrays 平铺 36 个顶点，选择 drawElements 的核心收益是什么？",
+    "explanation": "drawElements 配合索引缓冲区可以复用共享顶点——立方体每个角实际被 3 个面共用，用索引方式只需存 8 个顶点加 36 个索引，比平铺 36 个完整顶点数据节省大量存储和传输开销。这是绘制带有大量共享顶点几何体（如立方体、球体）时的标准做法。",
+    "tags": ["webgl", "初级", "draw-call"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "drawElements 配合索引缓冲区可以复用共享顶点，减少顶点数据量",
+        "isCorrect": true,
+        "description": "索引缓冲的核心价值是省去重复顶点数据"
+      },
+      {
+        "text": "drawElements 的理论绘制速度比 drawArrays 更高，与顶点复用无关",
+        "isCorrect": false,
+        "description": "核心收益是数据量减少，而非绘制速度本身更快"
+      },
+      {
+        "text": "drawArrays 无法绘制立方体这类封闭几何体",
+        "isCorrect": false,
+        "description": "drawArrays 平铺全部顶点同样能画出立方体"
+      },
+      {
+        "text": "两者性能和数据量完全一致，只是调用签名不同",
+        "isCorrect": false,
+        "description": "索引方式在共享顶点场景下能显著减少数据量"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 顶点着色器给 varying 变量赋了颜色值，片元着色器里读到的却是介于三个顶点之间的过渡色，这是为什么？",
+    "explanation": "光栅化阶段会对 varying 变量自动做重心插值（barycentric interpolation）：每个片元根据自己在三角形内的位置，对三个顶点写出的 varying 值做加权插值。这是渲染管线固定不可编程的一环，开发者不需要、也不能手写插值代码。",
+    "tags": ["webgl", "初级", "varying"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "光栅化阶段自动对 varying 做重心插值，无需手写插值代码",
+        "isCorrect": true,
+        "description": "varying 过渡色来自光栅化阶段的自动插值"
+      },
+      {
+        "text": "这是驱动兼容性问题，需要手动在片元着色器里做插值计算",
+        "isCorrect": false,
+        "description": "插值是规范规定的固定行为，不是驱动 bug"
+      },
+      {
+        "text": "varying 只能传递整数，颜色值被自动做了取整平均",
+        "isCorrect": false,
+        "description": "varying 可以传浮点向量，插值是连续的重心插值而非取整"
+      },
+      {
+        "text": "说明顶点着色器里的颜色赋值语句有 bug",
+        "isCorrect": false,
+        "description": "过渡色是正常的插值结果，不代表代码有误"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 设置数据前调用的 `getAttribLocation(program, name)`/`getUniformLocation(program, name)`，它们返回的值有什么用途？",
+    "explanation": "两者分别返回该 attribute/uniform 在链接后的 program 里的位置句柄。后续所有向这个变量写数据的调用（如 vertexAttribPointer、uniform4fv、uniformMatrix4fv 等）都需要传入这个句柄，才能明确操作的是哪个变量。",
+    "tags": ["webgl", "初级", "location"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回该变量在 program 里的位置句柄，后续设置数据都要用它",
+        "isCorrect": true,
+        "description": "位置句柄是操作对应 attribute/uniform 的必要凭证"
+      },
+      {
+        "text": "返回的是变量在 GLSL 源码里的字符行号，仅用于调试定位",
+        "isCorrect": false,
+        "description": "返回值是位置句柄而非源码行号"
+      },
+      {
+        "text": "返回值是布尔值，只用于判断该变量是否存在",
+        "isCorrect": false,
+        "description": "返回的是可用于后续调用的位置句柄（数字）"
+      },
+      {
+        "text": "调用该函数会直接把数据写入对应变量，返回值可忽略",
+        "isCorrect": false,
+        "description": "该函数只查询句柄，不会写入任何数据"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 往着色器传一个 4x4 的模型视图矩阵，应该调用哪个 uniform 赋值函数？",
+    "explanation": "矩阵类型的 uniform 要用 uniformMatrix4fv(location, false, matrixData) 赋值，第二个参数固定传 false（占位保留，表示不对矩阵做转置）。按数据类型选对应函数是 WebGL uniform 赋值的基本规则，标量用 uniform1f/1i，向量用 uniform2/3/4fv，矩阵用 uniformMatrixNfv。",
+    "tags": ["webgl", "初级", "uniform"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`uniformMatrix4fv(location, false, matrixData)`，第二参固定传 false",
+        "isCorrect": true,
+        "description": "矩阵类型 uniform 的标准赋值函数与参数约定"
+      },
+      {
+        "text": "`uniform4fv(location, matrixData)`，因为矩阵展开后也是一维数组",
+        "isCorrect": false,
+        "description": "矩阵必须用 uniformMatrix 系列函数，不能用普通向量函数"
+      },
+      {
+        "text": "`uniformMatrix4fv` 的第二个参数应传 true 才能正确应用矩阵",
+        "isCorrect": false,
+        "description": "第二参是转置标志位，WebGL 中通常固定传 false"
+      },
+      {
+        "text": "矩阵类型的 uniform 必须拆成 4 次 uniform4fv 调用分别传每一行",
+        "isCorrect": false,
+        "description": "一次 uniformMatrix4fv 调用即可整体传入，无需拆分"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 调用 `bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW)` 时，如果把最后一个参数误写成 `gl.DYNAMIC_DRAW`，会导致什么后果？",
+    "explanation": "usage 参数只是给驱动的性能提示，暗示数据的更新频率——STATIC_DRAW 表示几乎不变、DYNAMIC_DRAW 表示常变、STREAM_DRAW 表示只用一次。写错并不会导致功能错误或渲染异常，只可能让驱动内部的优化策略不够理想，属于性能层面而非正确性层面的问题。",
+    "tags": ["webgl", "初级", "buffer-usage"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只是性能提示写错，不影响功能正确性，只可能影响驱动优化效果",
+        "isCorrect": true,
+        "description": "usage 参数是性能提示而非功能约束"
+      },
+      {
+        "text": "会直接导致 bufferData 调用抛出异常",
+        "isCorrect": false,
+        "description": "usage 参数只是提示值，写错不会报错"
+      },
+      {
+        "text": "会让顶点数据只写入一次就失效，后续绘制读不到数据",
+        "isCorrect": false,
+        "description": "usage 不影响数据是否可读，只影响性能提示"
+      },
+      {
+        "text": "会让 drawArrays 绘制出错误的图元类型",
+        "isCorrect": false,
+        "description": "图元类型由 drawArrays 的 mode 参数决定，与 usage 无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 动画（比如让一个立方体持续旋转）里更新 uniform 角度值、重新绘制的逻辑，应该放进哪个驱动循环？",
+    "explanation": "requestAnimationFrame 是浏览器提供的标准动画驱动方式，会在浏览器下一次重绘前调用回调，天然与显示器刷新率同步、且页面不可见时会自动暂停以节省资源。这是 WebGL（以及所有 Web 动画）公认的标准驱动方式。",
+    "tags": ["webgl", "初级", "animation"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`requestAnimationFrame`——与浏览器重绘节奏同步的标准动画驱动方式",
+        "isCorrect": true,
+        "description": "requestAnimationFrame 是公认的标准动画循环"
+      },
+      {
+        "text": "`setInterval(fn, 16)`，比 requestAnimationFrame 更精确",
+        "isCorrect": false,
+        "description": "setInterval 不与显示器刷新同步，且标签页不可见时仍会触发浪费资源"
+      },
+      {
+        "text": "应该放在 `window.onresize` 事件里触发重绘",
+        "isCorrect": false,
+        "description": "resize 事件只在窗口尺寸变化时触发，不是持续动画的驱动源"
+      },
+      {
+        "text": "WebGL 有内置的自动动画循环，不需要手写驱动代码",
+        "isCorrect": false,
+        "description": "WebGL 本身不提供动画循环，必须由开发者手写驱动"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 绘制一条连续的条带状地形网格，用 `TRIANGLE_STRIP` 代替 `TRIANGLES` 的主要好处是什么？",
+    "explanation": "TRIANGLE_STRIP 用相邻的每三个顶点组成一个三角形，后一个三角形复用前一个三角形的两个顶点，因此达到同样数量的三角形所需的顶点总数比 TRIANGLES 更少。这种“条带式”复用特别适合连续的条带状几何体，如地形网格、道路等。",
+    "tags": ["webgl", "初级", "primitive"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "相邻三角形复用顶点，达到同样三角形数所需顶点总数更少",
+        "isCorrect": true,
+        "description": "TRIANGLE_STRIP 靠顶点复用节省数据量"
+      },
+      {
+        "text": "TRIANGLE_STRIP 渲染出的每个三角形都能独立设置不同颜色，TRIANGLES 不行",
+        "isCorrect": false,
+        "description": "着色方式由着色器决定，与图元类型无关"
+      },
+      {
+        "text": "TRIANGLE_STRIP 是 WebGL2 新增的图元类型，WebGL1 不支持",
+        "isCorrect": false,
+        "description": "TRIANGLE_STRIP 在 WebGL1 中同样原生支持"
+      },
+      {
+        "text": "TRIANGLE_STRIP 会自动做背面剔除，TRIANGLES 需要手动开启",
+        "isCorrect": false,
+        "description": "背面剔除由 CULL_FACE 状态控制，与图元类型无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 一个 canvas 里要画三个位置、颜色都不同的立方体，最基本的实现思路是什么？",
+    "explanation": "WebGL 本身没有场景图去自动管理多个物体，通常靠多次调用 drawArrays/drawElements 实现——每次绘制前切换该物体所需的状态（如模型矩阵、颜色等 uniform，必要时还有不同的 buffer 绑定），一次 draw call 画一个物体。",
+    "tags": ["webgl", "初级", "multi-object"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "多次调用 drawArrays/drawElements，每次绘制前切换该物体所需的 buffer/uniform",
+        "isCorrect": true,
+        "description": "WebGL 无场景图，多物体靠多次 draw call 分别绘制"
+      },
+      {
+        "text": "一次 drawArrays 调用可以传入多组独立的模型矩阵，自动分别绘制三个物体",
+        "isCorrect": false,
+        "description": "单次 draw call 内所有顶点共用同一份非实例化 uniform"
+      },
+      {
+        "text": "必须为每个物体创建一个独立的 canvas 元素分别渲染再合成",
+        "isCorrect": false,
+        "description": "同一个 canvas 内多次绘制即可，无需拆分多个画布"
+      },
+      {
+        "text": "WebGL2 提供了内置的场景图 API，可以声明式描述多个物体",
+        "isCorrect": false,
+        "description": "WebGL(1/2) 都不提供场景图，这是 Three.js 等框架的能力"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 项目做“保存当前画布为图片”的截图功能，调用 `canvas.toDataURL()` 却经常得到一张空白图，getContext 时该补上哪个上下文属性？",
+    "explanation": "contextAttributes 里的 preserveDrawingBuffer 默认是 false，此时绘图缓冲可能在每帧渲染完成后被浏览器清空以换取更好的性能；截图或调用 toDataURL 这类需要读取缓冲内容的操作，必须把它显式设为 true，让缓冲内容在下一帧渲染前保持可读。",
+    "tags": ["webgl", "初级", "context-attributes"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`preserveDrawingBuffer` 设为 true，让绘图缓冲在下一帧前保持可读",
+        "isCorrect": true,
+        "description": "默认 false 时缓冲内容可能被提前清空，截图需要设 true"
+      },
+      {
+        "text": "`alpha` 设为 false，因为透明通道干扰了截图",
+        "isCorrect": false,
+        "description": "alpha 通道与缓冲是否被清空无关"
+      },
+      {
+        "text": "`antialias` 设为 true，抗锯齿关闭导致图片空白",
+        "isCorrect": false,
+        "description": "抗锯齿只影响边缘平滑度，不会导致整图空白"
+      },
+      {
+        "text": "`powerPreference` 设为 high-performance，让 GPU 渲染更快完成",
+        "isCorrect": false,
+        "description": "该属性只是双显卡设备的 GPU 选择提示，与截图空白无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 片元着色器源码里没有写任何 precision 声明，编译直接报错；顶点着色器同样没写却能正常编译，这是为什么？",
+    "explanation": "WebGL 规范里顶点着色器有默认精度 highp，可以不显式声明；但片元着色器没有默认精度，必须显式写一行如 precision mediump float; 才能编译通过。精度分 lowp/mediump/highp 三档，移动端 GPU 上 highp 在片元阶段可能不被支持或性能极差，最佳实践是用 mediump 兜底，必要时用 getShaderPrecisionFormat() 检测实际支持度。",
+    "tags": ["webgl", "初级", "precision"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "片元着色器没有默认精度必须显式声明，顶点着色器有默认值 highp 可省略",
+        "isCorrect": true,
+        "description": "两个阶段对精度声明的默认行为不同，这是规范规定"
+      },
+      {
+        "text": "两个着色器都必须显式声明精度，顶点着色器不写只是恰好没被发现",
+        "isCorrect": false,
+        "description": "顶点着色器确实有默认精度 highp，不写不会报错"
+      },
+      {
+        "text": "精度声明只是可选的性能优化提示，不写不会导致编译失败",
+        "isCorrect": false,
+        "description": "片元着色器不写精度会直接编译失败，并非可选项"
+      },
+      {
+        "text": "应该在 JS 层调用 `gl.precision()` 设置，而不是写进 GLSL 源码",
+        "isCorrect": false,
+        "description": "精度是 GLSL 源码里的语言特性，WebGL API 没有这个方法"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL1 的顶点着色器代码原样搬到 WebGL2 环境，只在文件开头加了一行 `#version 300 es`，编译却直接报错，原因是什么？",
+    "explanation": "声明 #version 300 es 之后必须同步把 GLSL ES 1.00 的语法换成 ES 3.00 语法：顶点着色器里 attribute 要换成 in、varying（输出）换成 out；片元着色器里 varying（输入）换成 in，且不能再用 gl_FragColor，要改成自定义的 out vec4 变量。版本声明与语法必须成对升级，只改版本号不改语法会导致编译失败。",
+    "tags": ["webgl", "中级", "glsl-version"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "版本声明和语法必须成对升级：attribute/varying/gl_FragColor 都要换成 in/out 与自定义 out 变量",
+        "isCorrect": true,
+        "description": "GLSL ES 3.00 语法与旧版本语法不匹配会编译失败"
+      },
+      {
+        "text": "WebGL2 从不允许使用 `#version 300 es`，这行声明本身就是错误写法",
+        "isCorrect": false,
+        "description": "WebGL2 的 GLSL ES 3.00 源码恰恰要求这行声明"
+      },
+      {
+        "text": "attribute/varying 在 GLSL ES 3.00 里是保留关键字，只是换了个意思",
+        "isCorrect": false,
+        "description": "GLSL ES 3.00 里这两个关键字直接被 in/out 取代，不是改变含义"
+      },
+      {
+        "text": "这是驱动兼容性问题，需要换用 WebGL1 上下文规避",
+        "isCorrect": false,
+        "description": "这是语法版本不匹配导致的编译错误，与驱动兼容性无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 的 GLSL 源码里，同事先写了一行注释说明用途，再写 `#version 300 es`，结果编译报错，问题出在哪？",
+    "explanation": "#version 300 es 必须是整段源码的第一行，前面不能有任何字符，包括注释或空行，这是 GLSL ES 3.00 规范的硬性要求。把版本声明放在注释之后，哪怕只是一行说明性注释，也会导致编译器报错。",
+    "tags": ["webgl", "中级", "glsl-version"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`#version 300 es` 必须是源码第一行，前面不能有任何字符（含注释、空行）",
+        "isCorrect": true,
+        "description": "版本声明位置是规范的硬性要求"
+      },
+      {
+        "text": "版本号写错了，应该写成 `100 es`",
+        "isCorrect": false,
+        "description": "WebGL2/GLSL ES 3.00 对应的版本号正是 300 es"
+      },
+      {
+        "text": "GLSL 不支持行注释，只支持块注释",
+        "isCorrect": false,
+        "description": "GLSL 同时支持行注释和块注释，问题在版本声明的位置"
+      },
+      {
+        "text": "这个版本声明只对片元着色器生效，顶点着色器里不需要",
+        "isCorrect": false,
+        "description": "顶点和片元着色器都需要各自声明 #version 300 es"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 绑定索引数据时，为什么不能像顶点数据一样绑定到 `ARRAY_BUFFER`？",
+    "explanation": "索引缓冲区必须绑定到专用的 gl.ELEMENT_ARRAY_BUFFER 目标，才能被 drawElements 正确读取；gl.ARRAY_BUFFER 是绑定普通顶点属性数据（位置、颜色、法线、纹理坐标等）的目标。两者是两条独立的绑定通道，混用会导致数据读取错误。",
+    "tags": ["webgl", "中级", "index-buffer"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "索引数据必须绑定到专用的 `ELEMENT_ARRAY_BUFFER` 目标，才能配合 `drawElements` 使用",
+        "isCorrect": true,
+        "description": "两个绑定目标分工不同，不能混用"
+      },
+      {
+        "text": "两者可以混用，`ARRAY_BUFFER` 同样支持 `drawElements` 读取索引",
+        "isCorrect": false,
+        "description": "drawElements 只会从 ELEMENT_ARRAY_BUFFER 读取索引"
+      },
+      {
+        "text": "`ELEMENT_ARRAY_BUFFER` 是 WebGL2 才新增的常量，WebGL1 只能用 `ARRAY_BUFFER`",
+        "isCorrect": false,
+        "description": "ELEMENT_ARRAY_BUFFER 在 WebGL1 中已经存在"
+      },
+      {
+        "text": "索引数据必须用 uniform 传递，不走 buffer 绑定机制",
+        "isCorrect": false,
+        "description": "索引数据走的正是 ELEMENT_ARRAY_BUFFER 这条 buffer 通道"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL1 项目的网格顶点数超过 65536 个，用 `UNSIGNED_SHORT` 类型索引绘制出现诡异的三角形错位，原因和解法分别是什么？",
+    "explanation": "WebGL1 索引类型默认上限是 UNSIGNED_SHORT（最大 65535），超过这个数量后索引值会静默回绕导致画面错乱，且不会抛出任何报错。解法是开启 OES_element_index_uint 扩展改用 UNSIGNED_INT 类型索引，或者直接迁移到原生支持 UNSIGNED_INT 索引的 WebGL2。",
+    "tags": ["webgl", "中级", "index-type"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`UNSIGNED_SHORT` 索引上限 65535，超限静默出错；需 `OES_element_index_uint` 扩展或迁移 WebGL2",
+        "isCorrect": true,
+        "description": "索引类型上限导致的静默回绕问题及标准解法"
+      },
+      {
+        "text": "这是显卡驱动的兼容性 bug，换一台电脑即可解决",
+        "isCorrect": false,
+        "description": "这是索引类型数值范围限制导致的，与驱动兼容性无关"
+      },
+      {
+        "text": "应该把这份网格拆分使用 `TRIANGLE_FAN` 图元来规避顶点数限制",
+        "isCorrect": false,
+        "description": "图元类型与索引数值范围限制无关"
+      },
+      {
+        "text": "顶点数超限会直接抛出 JS 异常，不会静默出错",
+        "isCorrect": false,
+        "description": "实际表现是索引静默回绕导致画面错乱，没有异常提示"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 纹理加载代码先调用了 `texImage2D` 上传图片数据，之后才调用 `bindTexture`，结果贴图完全不生效，问题出在哪？",
+    "explanation": "WebGL 是严格的状态机，texImage2D、texParameteri 等纹理操作都作用于“当前绑定”的纹理对象；必须先 bindTexture 把目标纹理设为当前绑定，之后的配置调用才会作用在它身上。调用顺序颠倒会导致这些操作作用于错误的（或不存在的）绑定目标，贴图自然不生效。",
+    "tags": ["webgl", "中级", "texture-bind"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "WebGL 是状态机，纹理操作作用于当前绑定对象，必须先 `bindTexture` 再配置",
+        "isCorrect": true,
+        "description": "调用顺序颠倒导致操作作用于错误的绑定目标"
+      },
+      {
+        "text": "`texImage2D` 和 `bindTexture` 的调用顺序在 WebGL 中没有强制要求",
+        "isCorrect": false,
+        "description": "状态机模型下顺序是有强制要求的"
+      },
+      {
+        "text": "应该把 `bindTexture` 换成 `activeTexture` 才能生效",
+        "isCorrect": false,
+        "description": "activeTexture 是选纹理单元，不能替代 bindTexture 的绑定作用"
+      },
+      {
+        "text": "这是图片跨域导致的污染问题，与调用顺序无关",
+        "isCorrect": false,
+        "description": "跨域污染只影响后续读取操作，不影响贴图是否显示"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 片元着色器里 `uniform sampler2D uSampler` 通过 `uniform1i(location, 0)` 赋值，这里的整数 0 代表什么？",
+    "explanation": "这个 0 代表纹理单元编号（对应 TEXTURE0），需要先用 gl.activeTexture(gl.TEXTURE0) 激活该单元，并在该单元上 bindTexture 绑定真正的纹理对象。uniform1i 传给 sampler2D 的是纹理单元编号这个整数，而不是纹理对象本身。",
+    "tags": ["webgl", "中级", "texture-unit"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "纹理单元编号，需配合 `activeTexture` 激活对应单元并在其上绑定纹理",
+        "isCorrect": true,
+        "description": "sampler2D uniform 接收的是单元编号而非纹理对象"
+      },
+      {
+        "text": "这张纹理在显存里的地址偏移量",
+        "isCorrect": false,
+        "description": "WebGL API 不暴露显存地址，传的是单元编号"
+      },
+      {
+        "text": "mipmap 的层级索引",
+        "isCorrect": false,
+        "description": "mip 层级由采样器自动选择，不是通过这个整数指定"
+      },
+      {
+        "text": "纹理的 wrap 环绕模式常量值",
+        "isCorrect": false,
+        "description": "wrap 模式通过 texParameteri 单独设置，与这个整数无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL1 给一张 100x60 像素（非 2 次幂）的贴图设置 `REPEAT` 环绕并调用 `generateMipmap`，画面变成纯黑色但控制台没有任何报错，原因是什么？",
+    "explanation": "WebGL1 对非 2 次幂（NPOT）纹理有严格限制：不能使用 REPEAT/MIRRORED_REPEAT 环绕模式，也不能生成 mipmap，只能配合 CLAMP_TO_EDGE 环绕和非 mipmap 的 NEAREST/LINEAR 过滤方式。违反这些限制会导致纹理静默采样失败（表现为纯黑或纯色），而不是抛出错误。WebGL2 则完全取消了这个限制。",
+    "tags": ["webgl", "中级", "npot-texture"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "WebGL1 对非 2 次幂纹理禁止 `REPEAT` 环绕和 `generateMipmap`，违反会静默采样失败",
+        "isCorrect": true,
+        "description": "NPOT 纹理限制是 WebGL1 特有的静默失败陷阱"
+      },
+      {
+        "text": "这是图片本身损坏导致的，与纹理尺寸无关",
+        "isCorrect": false,
+        "description": "问题根源是非 2 次幂尺寸触发的 WebGL1 限制"
+      },
+      {
+        "text": "WebGL1 完全不支持非 2 次幂纹理，必须报错而非黑屏",
+        "isCorrect": false,
+        "description": "WebGL1 支持 NPOT 纹理，只是环绕/mipmap 能力受限"
+      },
+      {
+        "text": "只需要把 `UNPACK_FLIP_Y_WEBGL` 设为 true 即可解决",
+        "isCorrect": false,
+        "description": "翻转设置与 NPOT 限制无关，解决不了这个问题"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 场景里加了半透明玻璃，开启 `DEPTH_TEST` 后，先画的不透明墙体反而被后画的玻璃完全遮住颜色错乱，需要额外注意什么？",
+    "explanation": "深度测试要真正生效，必须在每一帧的 gl.clear() 调用里同时带上 gl.DEPTH_BUFFER_BIT（与 COLOR_BUFFER_BIT 一起清），否则深度缓冲区从不重置、值只增不减，后续帧会被历史深度值挡住。此外透明物体的混合结果依赖绘制顺序，通常要求先画不透明物体，再按由远到近的顺序画透明物体。",
+    "tags": ["webgl", "中级", "depth-blend"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每帧 `clear` 要同时带 `DEPTH_BUFFER_BIT`；且透明物体需按从远到近顺序绘制",
+        "isCorrect": true,
+        "description": "深度缓冲清除遗漏与绘制顺序是两个常见易错点"
+      },
+      {
+        "text": "DEPTH_TEST 只对不透明物体生效，半透明物体默认会被忽略深度信息",
+        "isCorrect": false,
+        "description": "深度测试对所有物体统一生效，与透明度无关"
+      },
+      {
+        "text": "这个现象与绘制顺序、深度缓冲清除都无关，是混合公式本身的 bug",
+        "isCorrect": false,
+        "description": "该现象正是深度缓冲未清除或绘制顺序错误导致"
+      },
+      {
+        "text": "只要开启 `gl.enable(gl.BLEND)` 就能自动修正绘制顺序问题",
+        "isCorrect": false,
+        "description": "BLEND 只是启用混合功能，不会自动排序绘制顺序"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 标准透明混合公式 `blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)` 描述的是什么合成方式？",
+    "explanation": "这是最常用的 alpha-over 合成公式：新片元颜色乘以自身 alpha，再加上已有颜色乘以 (1 减去源 alpha)，实现按透明度占比叠加的效果。需要注意混合结果依赖绘制顺序，通常要求先画不透明物体、再从远到近画透明物体。",
+    "tags": ["webgl", "中级", "blend"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "标准 alpha-over 合成：源色乘源 alpha，加已有色乘 (1-源 alpha)",
+        "isCorrect": true,
+        "description": "最常用的半透明混合公式"
+      },
+      {
+        "text": "把两个片元颜色直接相加、不考虑 alpha 的加法混合",
+        "isCorrect": false,
+        "description": "加法混合对应的是 blendFunc(ONE, ONE) 一类写法，不是这个公式"
+      },
+      {
+        "text": "这个公式会让所有物体强制变为完全不透明",
+        "isCorrect": false,
+        "description": "该公式正是实现半透明效果的标准写法"
+      },
+      {
+        "text": "这是专用于剔除背面三角形的公式，与颜色混合无关",
+        "isCorrect": false,
+        "description": "背面剔除由 CULL_FACE 状态控制，与 blendFunc 无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 引入 VAO（顶点数组对象）之后，切换绘制不同几何体的代码从“重复调用 bindBuffer + vertexAttribPointer + enableVertexAttribArray”简化成了什么？",
+    "explanation": "只需要调用一次 bindVertexArray(vao)，就能恢复该几何体在初始化阶段配置好的整套顶点属性绑定状态（哪个 buffer 绑定到哪个 attribute、格式如何），避免每帧重复发出多条状态设置调用。VAO 只记录 vertexAttribPointer 的配置结果，若要用 bufferSubData 更新数据仍需重新 bindBuffer。",
+    "tags": ["webgl", "中级", "vao"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只需 `bindVertexArray(vao)` 一次调用，恢复整套顶点属性绑定状态",
+        "isCorrect": true,
+        "description": "VAO 把多条状态设置打包成一次绑定调用"
+      },
+      {
+        "text": "可以完全省略绘制前的任何顶点属性配置，VAO 会自动推断",
+        "isCorrect": false,
+        "description": "VAO 只是记录之前配置好的状态，不会自动推断新配置"
+      },
+      {
+        "text": "VAO 会把顶点数据本身缓存进显卡纹理内存",
+        "isCorrect": false,
+        "description": "VAO 只记录属性配置，不存储顶点数据本身"
+      },
+      {
+        "text": "VAO 只在 WebGL1 里可用，WebGL2 已经废弃这个概念",
+        "isCorrect": false,
+        "description": "WebGL2 原生支持 VAO，WebGL1 才需要靠扩展实现"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 渲染代码写成 `gl_Position = model * view * projection * aPosition;`，画面里的物体完全消失且没有任何报错，最可能的问题是什么？",
+    "explanation": "MVP 矩阵乘法顺序写反了，正确顺序应是 projection * view * model * position。矩阵乘法不满足交换律，变换从右向左依次生效——先应用 model，再 view，最后 projection；顺序颠倒会导致顶点被错误地变换到裁剪空间之外，物体因此“消失”，且通常没有任何报错信息，非常难排查。",
+    "tags": ["webgl", "中级", "mvp-order"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "矩阵乘法顺序写反，正确顺序应是 `projection * view * model * position`",
+        "isCorrect": true,
+        "description": "矩阵乘法不满足交换律，顺序错误会让物体被变换出裁剪空间"
+      },
+      {
+        "text": "aPosition 属性没有调用 `enableVertexAttribArray`",
+        "isCorrect": false,
+        "description": "若属性未启用通常表现为顶点重合于原点而非物体消失"
+      },
+      {
+        "text": "投影矩阵的 fov 参数设置得太小",
+        "isCorrect": false,
+        "description": "fov 过小只会让视野变窄，不会导致这种典型的乘序错误症状"
+      },
+      {
+        "text": "三个矩阵的书写顺序对最终结果没有影响",
+        "isCorrect": false,
+        "description": "矩阵乘法顺序对结果影响巨大，顺序错误是常见致命错误"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 裁剪空间坐标是四分量的齐次坐标 (x, y, z, w)，其中 w 分量的意义是什么？",
+    "explanation": "w 决定该坐标是否参与平移：普通顶点位置 w=1（参与平移），方向向量（如法线）w=0（不参与平移）。裁剪空间坐标最终要除以 w 得到 NDC（归一化设备坐标，-1~1 立方体），这个“透视除法”正是近大远小效果的数学根源。",
+    "tags": ["webgl", "中级", "homogeneous-w"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "决定坐标是否参与平移（点 w=1，方向向量 w=0），且除以 w 得到 NDC 产生透视效果",
+        "isCorrect": true,
+        "description": "齐次坐标 w 分量的双重意义：平移语义 + 透视除法"
+      },
+      {
+        "text": "表示该顶点的透明度 alpha 值",
+        "isCorrect": false,
+        "description": "alpha 是颜色的独立分量，与齐次坐标 w 无关"
+      },
+      {
+        "text": "只是占位分量，对最终渲染结果没有任何影响",
+        "isCorrect": false,
+        "description": "w 分量直接决定透视除法的结果，影响巨大"
+      },
+      {
+        "text": "表示该顶点使用的纹理单元编号",
+        "isCorrect": false,
+        "description": "纹理单元编号由 uniform1i 单独传递，与坐标 w 无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 要一次性上传一组共享的光照 uniform（位置、颜色、强度）并让多个 program 共用同一份数据，该用什么机制？",
+    "explanation": "UBO（Uniform Buffer Object）可以把一组 uniform 打包成一块缓冲区，用 bindBufferBase(gl.UNIFORM_BUFFER, ...) 一次性上传，相比多次单独调用 uniform*fv 减少了开销，并且多个 shader program 可以共享同一个 UBO，避免重复设置相同数据。这是 WebGL1 所没有的 WebGL2 新特性。",
+    "tags": ["webgl", "中级", "ubo"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "UBO（Uniform Buffer Object），打包上传且可被多个 program 共享",
+        "isCorrect": true,
+        "description": "UBO 是 WebGL2 新增的批量共享 uniform 机制"
+      },
+      {
+        "text": "必须为每个 uniform 单独调用一次 uniform4fv，WebGL2 没有批量上传机制",
+        "isCorrect": false,
+        "description": "WebGL2 恰恰提供了 UBO 这种批量机制"
+      },
+      {
+        "text": "应该使用 Transform Feedback 把光照数据写回 buffer",
+        "isCorrect": false,
+        "description": "Transform Feedback 用于顶点着色器输出回写，不是 uniform 共享方案"
+      },
+      {
+        "text": "VAO 可以把这些 uniform 一并记录进顶点属性配置",
+        "isCorrect": false,
+        "description": "VAO 只记录顶点属性配置，与 uniform 无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 场景里要绘制 5000 棵外观相同但位置朝向各不相同的树，为了避免 5000 次独立 `drawArrays` 调用，原生提供的解决方案是什么？",
+    "explanation": "gl.drawArraysInstanced/drawElementsInstanced 配合 gl.vertexAttribDivisor，可以让某个 attribute（如每棵树各自的位置/旋转）按实例前进而非按顶点前进，一次 draw call 就能画出上千个变体几何体，是减少 draw call 的核心手段。WebGL1 需要靠 ANGLE_instanced_arrays 扩展实现同等能力。",
+    "tags": ["webgl", "高级", "instancing"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`drawArraysInstanced`/`drawElementsInstanced` 配合 `vertexAttribDivisor`，一次 draw call 画上千实例",
+        "isCorrect": true,
+        "description": "实例化绘制是减少 draw call 的核心手段"
+      },
+      {
+        "text": "把所有树合并成一个巨大顶点缓冲区用普通 drawArrays 绘制",
+        "isCorrect": false,
+        "description": "合并顶点数据仍是绘制相同内容，无法体现各实例差异且数据量巨大"
+      },
+      {
+        "text": "为每棵树创建独立的 FBO 分别渲染再合成",
+        "isCorrect": false,
+        "description": "FBO 用于离屏渲染/后处理，不是解决大量重复实例绘制的手段"
+      },
+      {
+        "text": "使用 Transform Feedback 把每棵树的顶点数据预先计算好存入 buffer",
+        "isCorrect": false,
+        "description": "Transform Feedback 解决的是顶点计算回写，不是减少 draw call 数量"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 要实现“先把 3D 场景渲染成一张纹理，再对这张纹理做全屏后处理（如高斯模糊）”的效果，核心用到的基础设施是什么？",
+    "explanation": "帧缓冲对象 FBO：先 createFramebuffer，再用 framebufferTexture2D 把一张纹理挂载为颜色附件，此后 drawArrays/drawElements 的绘制结果会写入这张纹理而非屏幕；随后用一个铺满屏幕的四边形配合后处理片元着色器对这张纹理做二次采样，即可实现全屏滤镜效果，用完记得切回默认帧缓冲。",
+    "tags": ["webgl", "高级", "fbo"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "帧缓冲对象 FBO：渲染到挂载的纹理附件，再用铺屏四边形二次采样做后处理",
+        "isCorrect": true,
+        "description": "FBO 离屏渲染是全屏后处理的标准基础设施"
+      },
+      {
+        "text": "只需要在片元着色器里调用 readPixels 读取上一帧颜色",
+        "isCorrect": false,
+        "description": "readPixels 是 CPU-GPU 同步的昂贵操作，不是着色器内可调用的手段"
+      },
+      {
+        "text": "这个效果必须借助 Canvas 2D 上下文配合完成，WebGL 本身做不到离屏渲染",
+        "isCorrect": false,
+        "description": "FBO 正是 WebGL 原生支持的离屏渲染机制"
+      },
+      {
+        "text": "使用 `WEBGL_lose_context` 扩展模拟离屏画布",
+        "isCorrect": false,
+        "description": "该扩展用于模拟上下文丢失测试，与离屏渲染无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 延迟渲染（deferred shading）管线里，片元着色器需要一次绘制同时输出颜色、法线、深度等多张纹理，靠什么原生能力实现？",
+    "explanation": "gl.drawBuffers() 支持的多渲染目标 MRT（Multiple Render Targets）：片元着色器可以通过多个自定义 out 变量同时写入挂在同一个 FBO 上的多个颜色附件，一次绘制即可同时产出颜色、法线、深度等多张纹理。WebGL1 只能靠 WEBGL_draw_buffers 扩展模拟这项能力。",
+    "tags": ["webgl", "高级", "mrt"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`drawBuffers()` 支持的多渲染目标 MRT，片元着色器多个 out 变量同时写入多个附件",
+        "isCorrect": true,
+        "description": "MRT 是延迟渲染管线的基础设施"
+      },
+      {
+        "text": "为每张目标纹理各自建一个 FBO 并绘制三次场景",
+        "isCorrect": false,
+        "description": "重复绘制三次是低效替代方案，MRT 能一次绘制完成"
+      },
+      {
+        "text": "靠 Transform Feedback 把法线和深度数据写回 buffer",
+        "isCorrect": false,
+        "description": "Transform Feedback 面向顶点数据回写，不涉及片元多目标输出"
+      },
+      {
+        "text": "靠 `texStorage3D` 把三种数据打包进一张 3D 纹理数组",
+        "isCorrect": false,
+        "description": "texStorage3D 是纹理存储声明方式，不是多渲染目标机制"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 的 GPU 端粒子系统想让顶点着色器算出的新位置直接写回 buffer，同时跳过光栅化和片元阶段以避免每帧 CPU-GPU 传输位置数据，该用什么机制？",
+    "explanation": "Transform Feedback：顶点着色器的输出可以直接写回一个 buffer 而不经过光栅化和片元着色阶段，是 GPU 端模拟粒子系统等场景的标准手段，避免了每帧把位置数据在 CPU 与 GPU 间来回传输的开销。它的本质仍是“顶点着色器+光栅化管线”的旁路复用，不是独立的通用计算模型。",
+    "tags": ["webgl", "高级", "transform-feedback"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Transform Feedback：顶点着色器输出直接写回 buffer，跳过光栅化与片元阶段",
+        "isCorrect": true,
+        "description": "GPU 端粒子系统模拟的标准手段，避免每帧 CPU-GPU 传输"
+      },
+      {
+        "text": "使用 drawArraysInstanced 让每个粒子作为一个实例复用同一份计算结果",
+        "isCorrect": false,
+        "description": "实例化解决的是重复几何体绘制，不解决计算结果回写"
+      },
+      {
+        "text": "使用 UBO 把粒子位置打包成 uniform 传入",
+        "isCorrect": false,
+        "description": "UBO 是只读输入的批量传递，不能承载顶点着色器的计算输出"
+      },
+      {
+        "text": "WebGL2 没有这类能力，必须借助 WebGPU 的 compute shader",
+        "isCorrect": false,
+        "description": "WebGL2 的 Transform Feedback 正是这类场景的原生方案"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 立方体做了非等比缩放（比如只在 X 轴拉伸 3 倍）后，直接用模型矩阵变换法向量，光照计算出的高光位置完全不对，正确做法是什么？",
+    "explanation": "变换法向量不能直接套用模型矩阵，需要用法线矩阵（模型视图矩阵的逆矩阵的转置）来变换法向量，才能保证变换后的法向量依然垂直于对应表面。非等比缩放会破坏这种垂直关系，等比缩放或纯旋转平移则不受影响。",
+    "tags": ["webgl", "高级", "normal-matrix"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用法线矩阵（模型视图矩阵的逆矩阵的转置）变换法向量，而非直接套用模型矩阵",
+        "isCorrect": true,
+        "description": "非等比缩放下法线必须用逆转置矩阵变换才能保持垂直关系"
+      },
+      {
+        "text": "应该把法向量的 w 分量设为 1 而不是 0",
+        "isCorrect": false,
+        "description": "方向向量（含法线）w 必须为 0，不参与平移，这不是问题所在"
+      },
+      {
+        "text": "只需要在片元着色器里对法向量做归一化 `normalize()` 即可解决",
+        "isCorrect": false,
+        "description": "归一化只统一长度，不能修正方向本身被拉伸导致的偏差"
+      },
+      {
+        "text": "非等比缩放场景下法向量本身不需要跟着物体变换",
+        "isCorrect": false,
+        "description": "法向量必须跟随变换，只是变换矩阵要用法线矩阵而非模型矩阵"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 场景“代码看起来完全没问题，但画面就是不对”，排查陷入僵局时，业内常用什么工具逐帧还原真实发生的调用与状态？",
+    "explanation": "Spector.js（浏览器扩展）能捕获一帧内全部 WebGL 调用及每一步的渲染状态并可视化展示，是排查这类“代码看似正确但结果不对”问题的关键调试手段。相比之下，getError() 只能定位单次调用是否出错，无法还原完整的状态变化过程。",
+    "tags": ["webgl", "高级", "debugging"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Spector.js：捕获一帧内全部 WebGL 调用及每一步渲染状态并可视化",
+        "isCorrect": true,
+        "description": "逐帧还原调用与状态的专用调试工具"
+      },
+      {
+        "text": "只能靠在代码里到处插入 `gl.getError()` 排查",
+        "isCorrect": false,
+        "description": "getError 只报告单次调用错误码，无法还原完整状态过程"
+      },
+      {
+        "text": "Chrome 的 Performance 面板可以直接展示每次 draw call 的具体 GPU 状态",
+        "isCorrect": false,
+        "description": "Performance 面板侧重耗时分析，不展示逐帧 WebGL 调用状态"
+      },
+      {
+        "text": "只能通过对比不同浏览器的渲染结果来猜测问题所在",
+        "isCorrect": false,
+        "description": "这是低效的排除法，专用工具能直接定位问题"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 同一张纹理想在一处用最近邻采样（像素风格）、另一处用线性过滤，且不想复制两份纹理数据，该怎么做？",
+    "explanation": "使用采样器对象（Sampler Object）：它把纹理数据本身和采样参数（wrap/filter 等）解耦，同一张纹理可以配不同的 sampler 对象实现不同的采样方式，不需要为每种采样效果复制一份纹理数据，是 WebGL1 所没有的 WebGL2 新特性。",
+    "tags": ["webgl", "高级", "sampler-object"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "使用采样器对象（Sampler Object），把纹理数据与采样参数解耦",
+        "isCorrect": true,
+        "description": "Sampler Object 让同一纹理配不同采样方式无需复制数据"
+      },
+      {
+        "text": "必须为每种采样方式各建一份纹理并分别 generateMipmap",
+        "isCorrect": false,
+        "description": "这正是采样器对象要避免的重复开销"
+      },
+      {
+        "text": "应该用 texStorage2D 声明两套不同的存储描述",
+        "isCorrect": false,
+        "description": "texStorage2D 只是声明存储，不解决采样参数解耦问题"
+      },
+      {
+        "text": "WebGL2 里纹理和采样参数是强绑定的，无法解耦，只能复制纹理",
+        "isCorrect": false,
+        "description": "WebGL2 恰恰通过 Sampler Object 实现了解耦"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 代码评审时有人强调要保证顶点属性 location 0 始终处于 enable 状态，这个规则背后的原因是什么？",
+    "explanation": "在部分桌面 OpenGL 实现（例如 macOS）上，禁用 attribute location 0 会触发昂贵的软件模拟兜底路径，导致性能骤降。最佳实践是始终显式绑定并保证某个顶点属性占用 location 0 且处于 enable 状态，规避这个平台特有的性能陷阱。",
+    "tags": ["webgl", "高级", "attribute-location-0"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "部分桌面 OpenGL 实现下禁用 location 0 会触发昂贵的软件兜底路径，性能骤降",
+        "isCorrect": true,
+        "description": "location 0 的平台特有性能陷阱"
+      },
+      {
+        "text": "location 0 是规范里唯一允许绑定 buffer 的位置，其他 location 无法读取顶点数据",
+        "isCorrect": false,
+        "description": "所有 location 都能正常绑定读取顶点数据"
+      },
+      {
+        "text": "这只是历史遗留的编码规范，禁用它在所有平台上都没有实际影响",
+        "isCorrect": false,
+        "description": "在特定桌面实现上确实有明显的性能影响"
+      },
+      {
+        "text": "location 0 必须固定绑定给纹理坐标属性，否则纹理无法采样",
+        "isCorrect": false,
+        "description": "location 0 没有强制的语义绑定要求，只是要保持 enable 状态"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 想判断某批绘制是否有像素通过深度测试来做遮挡剔除优化，且不希望像 `readPixels` 那样强制同步等待，该用什么机制？",
+    "explanation": "查询对象（Query Object）可以做遮挡查询（occlusion query），GPU 异步返回该批绘制是否有像素实际通过深度测试，不需要像 readPixels/getError/finish 那样强制 CPU 等待 GPU 完成当前所有排队命令，避免拖垮渲染循环的帧率。",
+    "tags": ["webgl", "高级", "query-object"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "查询对象（Query Object）做遮挡查询，GPU 异步返回结果",
+        "isCorrect": true,
+        "description": "Query Object 避免了强制 CPU-GPU 同步等待"
+      },
+      {
+        "text": "只能用 `gl.getError()` 轮询绘制状态",
+        "isCorrect": false,
+        "description": "getError 只报告调用错误码，不能判断像素是否通过深度测试"
+      },
+      {
+        "text": "只能用 `gl.finish()` 等待 GPU 完成后再读取结果",
+        "isCorrect": false,
+        "description": "finish 正是要避免的强制同步阻塞调用"
+      },
+      {
+        "text": "应该用 Transform Feedback 记录每个片元的深度测试结果",
+        "isCorrect": false,
+        "description": "Transform Feedback 作用于顶点阶段，不记录片元深度测试结果"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 一张纹理要分级声明 8 个 mip 级别，相比循环调用 `texImage2D`，`texStorage2D` 有什么优势？",
+    "explanation": "texStorage2D 一次性声明该纹理全部 mip 级别的不可变（immutable）存储描述，相比分级调用 texImage2D，驱动能提前知晓完整的存储需求从而做更好的优化，并且能在声明阶段就提前捕获格式相关的错误，而不必等到某一级上传时才发现问题。",
+    "tags": ["webgl", "高级", "tex-storage"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一次性声明全部 mip 级别的不可变存储，驱动优化更好且能提前捕获格式错误",
+        "isCorrect": true,
+        "description": "texStorage2D 相比逐级 texImage2D 的核心优势"
+      },
+      {
+        "text": "texStorage2D 生成的纹理数据可以在运行时任意改变尺寸，texImage2D 不行",
+        "isCorrect": false,
+        "description": "texStorage2D 声明的正是不可变存储，尺寸不能再改变"
+      },
+      {
+        "text": "texStorage2D 只是 texImage2D 的别名，没有实质区别",
+        "isCorrect": false,
+        "description": "两者在存储可变性与声明方式上有实质区别"
+      },
+      {
+        "text": "texStorage2D 只能用于 3D 纹理，2D 纹理必须用 texImage2D",
+        "isCorrect": false,
+        "description": "texStorage2D 本身就是 2D 纹理的存储声明函数"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 团队评估要不要在 2026 年把渲染引擎全面切换到 WebGPU，符合官方信源交叉核实结论的建议是什么？",
+    "explanation": "WebGPU 被 MDN 等官方信源定性为 WebGL 的“继任者”，三大浏览器引擎虽已在 2025 年内全部完成首发，但截至 2026 年其 Baseline 状态仍只是刚跨过“Newly available”，离“Widely available”预计还要到 2028 年前后，生产环境仍需 WebGL 兜底。应采取类似 Three.js 自 r171 起 WebGPURenderer 自动回退 WebGL2 的“渐进增强、两者共存”策略，而非立即整体替换。",
+    "tags": ["webgl", "专家", "webgpu-relation"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "WebGPU 是继任者但尚未 Widely available，宜渐进增强、WebGL 兜底共存而非立即替换",
+        "isCorrect": true,
+        "description": "官方信源交叉核实的过渡期共存结论"
+      },
+      {
+        "text": "WebGPU 2026 年已终结 WebGL 时代，应该立即全面替换，不需要考虑兼容性",
+        "isCorrect": false,
+        "description": "这是不可靠营销内容的说法，与官方信源基调不符"
+      },
+      {
+        "text": "WebGPU 仍是实验性草案，2026 年任何浏览器都不该考虑使用",
+        "isCorrect": false,
+        "description": "三大引擎已于 2025 年内全部完成首发，并非仍处实验草案阶段"
+      },
+      {
+        "text": "WebGL 已被 W3C 正式废弃，继续维护 WebGL 代码属于技术债",
+        "isCorrect": false,
+        "description": "WebGL 并未被废弃，仍是 Widely available 的现役标准"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 半透明背景的 canvas 叠加在深色页面背景上，边缘出现了不该有的发黑镶边，混合公式已经是标准的 `blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA)`，问题可能出在哪个容易被忽视的上下文属性上？",
+    "explanation": "premultipliedAlpha（默认 true）决定 canvas 输出颜色是否已按 alpha 预乘，这会影响该 canvas 与页面其他内容合成时的方式；若混合逻辑与该设置的预乘/非预乘假设不匹配，半透明边缘就容易出现颜色发黑的镶边，这与 preserveDrawingBuffer 一样是容易被忽视的 contextAttributes。",
+    "tags": ["webgl", "专家", "premultiplied-alpha"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`premultipliedAlpha`：决定输出颜色是否预乘，与混合逻辑假设不匹配会导致边缘发黑",
+        "isCorrect": true,
+        "description": "容易被忽视的预乘 alpha 与页面合成方式的关系"
+      },
+      {
+        "text": "应该检查 `antialias` 属性，抗锯齿导致了边缘颜色异常",
+        "isCorrect": false,
+        "description": "抗锯齿只影响锯齿平滑度，不会导致系统性的发黑镶边"
+      },
+      {
+        "text": "这与 `premultipliedAlpha` 无关，只需要调整 `depthFunc`",
+        "isCorrect": false,
+        "description": "depthFunc 控制深度比较方式，与颜色合成无关"
+      },
+      {
+        "text": "应该把 `preserveDrawingBuffer` 设为 false 解决颜色发黑",
+        "isCorrect": false,
+        "description": "该属性只影响缓冲是否被清空，与颜色合成方式无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 有人说“用了 Three.js 就不用理解状态机了”，从底层机制角度看这句话准确吗？",
+    "explanation": "不准确。WebGL 本质是严格的状态机，任何时刻“当前绑定的 buffer/texture/framebuffer/program”决定了后续调用作用于谁；Three.js 这类封装库内部做的大量工作正是替开发者管理这套绑定状态，避免“忘记切换绑定导致 A 对象被画上 B 的纹理”这类难以复现的 bug——状态机心智模型被封装隐藏了，而不是被消除了。",
+    "tags": ["webgl", "专家", "state-machine"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "不准确，状态机被 Three.js 封装隐藏而非消除，底层机制依然存在",
+        "isCorrect": true,
+        "description": "封装库替开发者管理绑定状态，但状态机本身没有消失"
+      },
+      {
+        "text": "准确，Three.js 内部完全抛弃了 WebGL 的状态机模型，改用声明式渲染",
+        "isCorrect": false,
+        "description": "Three.js 底层依然通过 WebGL 调用工作，状态机机制未被抛弃"
+      },
+      {
+        "text": "准确，因为 WebGL2 已经取消了绑定状态的概念",
+        "isCorrect": false,
+        "description": "WebGL2 依然是状态机模型，绑定概念并未取消"
+      },
+      {
+        "text": "不准确，但原因是 Three.js 性能比原生 WebGL 更差",
+        "isCorrect": false,
+        "description": "性能差异与是否需要理解状态机是两个不同的问题"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL2 的 Transform Feedback 被认为“等价于 WebGPU 的 compute shader”，这个说法错在哪？",
+    "explanation": "Transform Feedback 本质仍是“顶点着色器 + 光栅化管线”的旁路复用——只是让顶点着色器的输出跳过光栅化直接写回 buffer；而 compute shader 是完全独立于渲染管线的通用计算模型。这正是 WebGL2 的 GPGPU 能力只能“有限逼近”而非“原生支持”通用计算的根本原因。",
+    "tags": ["webgl", "专家", "compute-vs-feedback"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Transform Feedback 仍是渲染管线的旁路复用，compute shader 是独立于渲染管线的通用计算模型",
+        "isCorrect": true,
+        "description": "二者在是否依附渲染管线上有本质区别"
+      },
+      {
+        "text": "两者其实完全等价，只是 API 命名习惯不同",
+        "isCorrect": false,
+        "description": "二者的执行模型本质不同，并非命名差异"
+      },
+      {
+        "text": "Transform Feedback 性能远超 compute shader，是更优的通用计算方案",
+        "isCorrect": false,
+        "description": "Transform Feedback 只能有限逼近通用计算，能力上不如原生 compute shader"
+      },
+      {
+        "text": "错在 Transform Feedback 只存在于 WebGL1，WebGL2 已移除",
+        "isCorrect": false,
+        "description": "Transform Feedback 恰恰是 WebGL2 才引入的特性，WebGL1 没有"
+      }
+    ]
+  },
+  {
+    "stem": "WebGL 引擎没有引入任何场景图框架，产品要求“点击 3D 场景里的某个物体高亮”，常见的技术方案是什么？",
+    "explanation": "WebGL 没有场景图，天然不像 Canvas 2D 的 isPointInPath 那样有内建的拾取方案；常见手法是“颜色编码拾取”——把每个物体在一张离屏 FBO 上渲染成一个唯一的 ID 颜色，再读取鼠标位置对应像素的颜色反查出被点击的物体，也可以自建包围盒做射线检测。",
+    "tags": ["webgl", "专家", "picking"],
+    "categories": [
+      ["技术方向", "WebGL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "颜色编码拾取：离屏 FBO 渲染唯一 ID 颜色，读取鼠标位置像素反查物体（或自建包围盒射线检测）",
+        "isCorrect": true,
+        "description": "无场景图下的两种常见拾取技术路线"
+      },
+      {
+        "text": "WebGL 提供了与 Canvas 2D 完全相同的 `isPointInPath` API，可以直接调用",
+        "isCorrect": false,
+        "description": "WebGL 没有这个 API，这是 Canvas 2D 路径系统特有的能力"
+      },
+      {
+        "text": "必须引入 Three.js 才能实现点击拾取，原生 WebGL 无法做到",
+        "isCorrect": false,
+        "description": "颜色编码拾取等技术可以在原生 WebGL 里手工实现"
+      },
+      {
+        "text": "只能通过给每个物体绑定独立的 DOM 事件监听区域实现",
+        "isCorrect": false,
+        "description": "WebGL 画布是单一 DOM 元素，物体本身没有独立 DOM 节点可绑定事件"
+      }
+    ]
+  }
+]
