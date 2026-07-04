@@ -463,5 +463,776 @@
         "description": "Turbo 约定"
       }
     ]
+  },
+  {
+    "stem": "Turborepo 由谁出品、其性能核心近年做了什么？",
+    "explanation": "Turborepo 是 Vercel 维护的高性能 JS/TS monorepo 构建系统。为追求速度，其核心引擎已用 Rust 重写（性能敏感部分从早期实现迁到 Rust）。它主打「任务编排 + 智能缓存」让大仓构建/测试又快又省。",
+    "tags": ["turborepo", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Vercel 出品的高性能 monorepo 构建系统，核心引擎用 Rust 重写",
+        "isCorrect": true,
+        "description": "主打任务编排 + 智能缓存"
+      },
+      {
+        "text": "Google 出品的容器编排器",
+        "isCorrect": false,
+        "description": "出品方是 Vercel，且是构建系统"
+      },
+      {
+        "text": "一个 CSS 框架",
+        "isCorrect": false,
+        "description": "与样式无关"
+      },
+      {
+        "text": "一个数据库",
+        "isCorrect": false,
+        "description": "与数据库无关"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 判断一个任务能否命中缓存，依据是什么？",
+    "explanation": "Turborepo 对任务的「输入」做哈希：包括相关源文件内容、依赖、声明的环境变量、以及任务配置等。若某次运行算出的哈希与之前一致，就命中缓存、直接还原上次的输出与日志而跳过执行。它是「内容寻址」的——相同输入必然同哈希。",
+    "tags": ["turborepo", "中级", "hashing"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对任务输入（源文件/依赖/env/配置）做哈希，相同则命中缓存",
+        "isCorrect": true,
+        "description": "内容寻址：相同输入必然同哈希"
+      },
+      {
+        "text": "按文件的修改时间戳判断",
+        "isCorrect": false,
+        "description": "是内容哈希，非时间戳"
+      },
+      {
+        "text": "按上次运行是否成功判断",
+        "isCorrect": false,
+        "description": "按输入哈希，非成功与否"
+      },
+      {
+        "text": "随机决定是否命中",
+        "isCorrect": false,
+        "description": "由确定的哈希决定"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的「本地缓存」默认存放在哪里？",
+    "explanation": "本地缓存默认存放在 `node_modules/.cache/turbo`。命中时 Turborepo 从这里还原任务产物与日志。这是「同一台机器上重复运行」提速的基础；跨机器共享则需远程缓存。",
+    "tags": ["turborepo", "中级", "local-cache"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "node_modules/.cache/turbo",
+        "isCorrect": true,
+        "description": "本机重复运行提速的基础"
+      },
+      {
+        "text": "系统的 /tmp 目录",
+        "isCorrect": false,
+        "description": "默认在 node_modules/.cache/turbo"
+      },
+      {
+        "text": "git 仓库里",
+        "isCorrect": false,
+        "description": "缓存不进 git"
+      },
+      {
+        "text": "远程服务器（唯一位置）",
+        "isCorrect": false,
+        "description": "本地默认在 .cache/turbo，远程是可选"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的「远程缓存（Remote Cache）」带来的核心价值是什么？",
+    "explanation": "远程缓存把任务产物存到云端（Vercel Remote Cache 或自托管），让「团队其他成员与 CI」也能命中——例如 CI 已构建过的产物，本地拉下来直接命中，跨机器共享，避免重复计算。它是把 Turborepo 缓存收益从「单机」扩展到「整个团队/CI」的关键。",
+    "tags": ["turborepo", "高级", "remote-cache"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让团队与 CI 跨机器共享缓存产物，避免重复计算",
+        "isCorrect": true,
+        "description": "把缓存收益从单机扩到整个团队/CI"
+      },
+      {
+        "text": "让本地缓存容量翻倍",
+        "isCorrect": false,
+        "description": "价值在跨机共享而非本地容量"
+      },
+      {
+        "text": "自动部署应用到云",
+        "isCorrect": false,
+        "description": "是缓存共享，非部署"
+      },
+      {
+        "text": "只缓存 lint 结果",
+        "isCorrect": false,
+        "description": "缓存各类可缓存任务"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 中若任务读取了某环境变量却没在 turbo.json 里声明（env/globalEnv），可能导致什么？",
+    "explanation": "环境变量是任务的隐性输入。若它影响产物却没被纳入缓存哈希，Turborepo 可能在「env 变了但哈希没变」时错误命中旧缓存、拿到用旧 env 构建的产物（如把 dev 的 API 地址打进 prod 产物）。因此必须在 env/globalEnv 里声明相关环境变量，保证缓存正确。",
+    "tags": ["turborepo", "高级", "env"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "env 变了哈希却没变 → 错误命中旧缓存拿到错产物，故必须声明相关 env",
+        "isCorrect": true,
+        "description": "环境变量是隐性输入，须纳入哈希"
+      },
+      {
+        "text": "没有任何影响",
+        "isCorrect": false,
+        "description": "会破坏缓存正确性"
+      },
+      {
+        "text": "会让构建变快",
+        "isCorrect": false,
+        "description": "是正确性问题，非速度"
+      },
+      {
+        "text": "Turborepo 会自动感知所有 env",
+        "isCorrect": false,
+        "description": "需显式声明相关 env"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo v2 的「严格环境变量模式（strict env mode）」如何提升缓存正确性？",
+    "explanation": "strict 模式下，任务只能访问「显式声明（env/globalEnv/passThroughEnv）」的环境变量，未声明的对任务不可见。这就迫使你把影响产物的 env 都声明出来（否则任务根本读不到），从而杜绝「用了未声明 env 导致缓存错误命中」的隐患。v2 默认更倾向严格，是缓存正确性的重要保障。",
+    "tags": ["turborepo", "高级", "strict-env"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任务只能访问显式声明的 env，迫使声明相关 env，杜绝未声明致错误命中",
+        "isCorrect": true,
+        "description": "v2 更倾向严格，保障缓存正确性"
+      },
+      {
+        "text": "让任务能访问所有系统 env",
+        "isCorrect": false,
+        "description": "恰恰相反，限制到已声明的"
+      },
+      {
+        "text": "禁用所有环境变量",
+        "isCorrect": false,
+        "description": "是限制到已声明，非全禁"
+      },
+      {
+        "text": "只影响 dev 任务",
+        "isCorrect": false,
+        "description": "针对缓存正确性，通用"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 任务配置里 `outputs` 声明的作用是什么？",
+    "explanation": "`outputs` 告诉 Turborepo 一个任务产出哪些文件/目录（如 `dist/**`、`.next/**`）。命中缓存时，Turborepo 据此「还原这些产物到磁盘」。若 outputs 声明不全，缓存命中后会缺失应有产物，导致后续步骤（如部署）拿不到构建结果而失败。",
+    "tags": ["turborepo", "中级", "outputs"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明任务产物路径，供缓存命中时还原到磁盘",
+        "isCorrect": true,
+        "description": "声明不全会导致命中后缺产物"
+      },
+      {
+        "text": "声明任务的输入文件",
+        "isCorrect": false,
+        "description": "输入是 inputs，outputs 是产物"
+      },
+      {
+        "text": "指定输出日志级别",
+        "isCorrect": false,
+        "description": "与日志级别无关"
+      },
+      {
+        "text": "配置远程缓存地址",
+        "isCorrect": false,
+        "description": "与缓存地址无关"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 中 `inputs` 声明的作用是什么？",
+    "explanation": "`inputs` 显式指定「哪些文件算作任务的输入」（参与哈希）。不声明时 Turborepo 默认把包内所有被 git 跟踪的文件当输入。精确声明 inputs 可让「无关文件改动（如改了 README）不使 build 缓存失效」，提升命中率——但要小心别漏掉真正影响产物的文件，否则会错误命中。",
+    "tags": ["turborepo", "中级", "inputs"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "指定哪些文件算任务输入（参与哈希），精确声明可提升命中率",
+        "isCorrect": true,
+        "description": "不声明默认全部跟踪文件；漏声明会错误命中"
+      },
+      {
+        "text": "指定任务的输出目录",
+        "isCorrect": false,
+        "description": "输出是 outputs"
+      },
+      {
+        "text": "指定命令行参数",
+        "isCorrect": false,
+        "description": "是输入文件声明"
+      },
+      {
+        "text": "inputs 对缓存无影响",
+        "isCorrect": false,
+        "description": "直接决定哈希与命中"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `globalDependencies` 用来做什么？",
+    "explanation": "`globalDependencies` 列出「影响所有任务」的全局文件（如根 `tsconfig.base.json`、`.env`、lockfile 等）——它们一变，所有任务的缓存都失效重算。用于表达「这些文件谁都依赖」的全局输入，保证改了全局配置后不会错误复用旧缓存。",
+    "tags": ["turborepo", "中级", "global-deps"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明影响所有任务的全局文件，其变化使所有任务缓存失效",
+        "isCorrect": true,
+        "description": "如根 tsconfig/lockfile 谁都依赖"
+      },
+      {
+        "text": "声明要全局安装的依赖包",
+        "isCorrect": false,
+        "description": "是全局输入文件，非要装的包"
+      },
+      {
+        "text": "配置全局环境变量",
+        "isCorrect": false,
+        "description": "env 是 globalEnv，此为文件"
+      },
+      {
+        "text": "只影响 root 包的任务",
+        "isCorrect": false,
+        "description": "影响所有任务"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 中对开发服务器（`dev`）这类任务，通常怎么配置？",
+    "explanation": "dev server 是「长期运行、无固定产物、不该被缓存」的任务，应配 `\"cache\": false` 与 `\"persistent\": true`。cache:false 表示不缓存（它没有确定产物），persistent:true 告诉 Turborepo 它是长驻进程（不会自然结束，也不应被其它任务依赖等待其完成）。这避免了把长驻任务当普通可缓存任务处理的错误。",
+    "tags": ["turborepo", "中级", "dev-task"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "配 cache:false + persistent:true（长驻、不缓存、不被依赖等待）",
+        "isCorrect": true,
+        "description": "避免把长驻任务当可缓存任务"
+      },
+      {
+        "text": "配 cache:true 缓存 dev 输出",
+        "isCorrect": false,
+        "description": "dev 无固定产物不该缓存"
+      },
+      {
+        "text": "把 dev 声明为其它任务的 dependsOn",
+        "isCorrect": false,
+        "description": "长驻任务不该被依赖等待"
+      },
+      {
+        "text": "dev 任务无需任何特殊配置",
+        "isCorrect": false,
+        "description": "需 cache:false/persistent"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `--filter` 用来做什么？",
+    "explanation": "`--filter` 用于「选择要运行任务的包子集」——可按包名（`--filter=@acme/web`）、按目录、按依赖关系（如 `...@acme/web` 含其依赖、`@acme/web...` 含依赖它的）、按变更（配合 git 范围）等。它让你在大仓里只对相关包跑任务，而非全量，是精准与提速的关键。",
+    "tags": ["turborepo", "中级", "filter"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "选择要运行任务的包子集（按名/目录/依赖方向/变更）",
+        "isCorrect": true,
+        "description": "只对相关包跑任务，精准提速"
+      },
+      {
+        "text": "过滤日志输出内容",
+        "isCorrect": false,
+        "description": "是选择包，非过滤日志"
+      },
+      {
+        "text": "过滤缓存条目",
+        "isCorrect": false,
+        "description": "是包选择器"
+      },
+      {
+        "text": "只能按字母顺序选包",
+        "isCorrect": false,
+        "description": "支持名/目录/依赖/变更多种"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `turbo prune <包> --docker` 主要服务什么场景？",
+    "explanation": "`turbo prune` 从 monorepo 中「抽取某个包及其依赖所需的最小子集」输出到 `out/`。`--docker` 会把结果分成便于分层缓存的结构（json 层含 lockfile/package.json、full 层含源码）。目的：构建 Docker 镜像时只带该应用需要的部分、并利用 Docker 层缓存（依赖不变则不重装），大幅优化镜像构建。",
+    "tags": ["turborepo", "高级", "prune"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "为 Docker 抽取某包最小子集并分层，优化镜像构建与层缓存",
+        "isCorrect": true,
+        "description": "只带所需部分 + 利用 Docker 层缓存"
+      },
+      {
+        "text": "删除无用的 npm 包",
+        "isCorrect": false,
+        "description": "是抽取子集，非删包"
+      },
+      {
+        "text": "清空 Turborepo 缓存",
+        "isCorrect": false,
+        "description": "与清缓存无关"
+      },
+      {
+        "text": "发布包到 npm",
+        "isCorrect": false,
+        "description": "与发布无关"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 是否负责「版本管理与 npm 发布」？",
+    "explanation": "不负责。Turborepo 聚焦「任务编排 + 缓存」，它不做版本递增、changelog、npm publish。需要发布时常与 Changesets 搭配（Changesets 管版本/发布，Turborepo 管构建加速）。这与 Lerna（自带 version/publish）不同——选型时要清楚 Turborepo 的职责边界。",
+    "tags": ["turborepo", "高级", "scope"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不负责，聚焦任务编排+缓存；发布常配 Changesets",
+        "isCorrect": true,
+        "description": "与自带 version/publish 的 Lerna 不同"
+      },
+      {
+        "text": "内置完整的 npm 发布流程",
+        "isCorrect": false,
+        "description": "不做发布，需配 Changesets 等"
+      },
+      {
+        "text": "会自动递增所有包版本",
+        "isCorrect": false,
+        "description": "不管版本递增"
+      },
+      {
+        "text": "取代 Changesets 的全部功能",
+        "isCorrect": false,
+        "description": "职责不同，常搭配"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 如何处理「本地包之间的依赖安装/链接」？",
+    "explanation": "Turborepo 不自己做依赖安装/链接，而是「依赖包管理器的 workspaces」（npm/pnpm/yarn workspaces）来完成 linking 与安装。Turborepo 在其上读取工作区结构、构建任务图、做缓存与编排。即：workspaces 管依赖，Turborepo 管任务加速。",
+    "tags": ["turborepo", "中级", "workspaces"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "依赖包管理器 workspaces 做安装/链接，自己只管任务图与缓存",
+        "isCorrect": true,
+        "description": "workspaces 管依赖，Turbo 管加速"
+      },
+      {
+        "text": "自己实现依赖安装",
+        "isCorrect": false,
+        "description": "交给 workspaces"
+      },
+      {
+        "text": "要求每个包手动 npm link",
+        "isCorrect": false,
+        "description": "workspaces 自动处理"
+      },
+      {
+        "text": "不支持包间依赖",
+        "isCorrect": false,
+        "description": "靠 workspaces 支持并据此建任务图"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 运行任务时，如何决定并行与顺序？",
+    "explanation": "Turborepo 据 `dependsOn` 配置 + 包依赖图构建「任务图」，自动让无依赖关系的任务并行、有依赖的按序（上游先跑）。它会尽量最大化并行以缩短总时长，同时尊重声明的依赖。你无需手动排顺序，声明好 dependsOn 即可。",
+    "tags": ["turborepo", "中级", "task-graph"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "据 dependsOn+依赖图建任务图，无依赖并行、有依赖按序，最大化并行",
+        "isCorrect": true,
+        "description": "声明好 dependsOn 即可，无需手动排序"
+      },
+      {
+        "text": "严格按 turbo.json 里书写顺序串行",
+        "isCorrect": false,
+        "description": "按依赖图并行，非书写顺序"
+      },
+      {
+        "text": "全部任务无脑并行不管依赖",
+        "isCorrect": false,
+        "description": "会尊重 dependsOn 依赖"
+      },
+      {
+        "text": "按包名字母序执行",
+        "isCorrect": false,
+        "description": "按依赖关系，非字母序"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `--dry-run`（或 `--graph`）用途是什么？",
+    "explanation": "`--dry-run` 让 turbo「只打印将要运行哪些任务、各自的缓存命中情况、哈希等」而不实际执行，用于调试/预览。`--graph` 则可视化任务依赖图。它们帮你理解「这次会跑什么、能命中多少缓存、依赖关系对不对」，是排查缓存/编排问题的利器。",
+    "tags": ["turborepo", "高级", "dry-run"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "预览将跑哪些任务/缓存命中/哈希（--graph 可视化依赖图），不实际执行",
+        "isCorrect": true,
+        "description": "排查缓存/编排问题的利器"
+      },
+      {
+        "text": "强制重跑所有任务",
+        "isCorrect": false,
+        "description": "那是 --force"
+      },
+      {
+        "text": "清空缓存",
+        "isCorrect": false,
+        "description": "是预览，不清缓存"
+      },
+      { "text": "部署应用", "isCorrect": false, "description": "与部署无关" }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `--force` 选项作用是什么？",
+    "explanation": "`--force` 强制忽略缓存、重新执行任务（并把新结果写入缓存）。用于「怀疑缓存不对、想干净重跑一次」的排查场景。若频繁需要 --force 才对，往往说明 inputs/env 声明有问题导致缓存命中不准，应修根因而非长期依赖 --force。",
+    "tags": ["turborepo", "高级", "force"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "忽略缓存强制重跑（并写入新缓存），用于排查缓存问题",
+        "isCorrect": true,
+        "description": "频繁需要它往往是 inputs/env 声明有问题"
+      },
+      {
+        "text": "强制删除所有包",
+        "isCorrect": false,
+        "description": "是重跑任务，非删包"
+      },
+      {
+        "text": "强制并行到最大",
+        "isCorrect": false,
+        "description": "并发是 --concurrency"
+      },
+      {
+        "text": "强制发布到远程缓存",
+        "isCorrect": false,
+        "description": "是忽略缓存重跑"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `--continue` 选项作用是什么？",
+    "explanation": "默认某任务失败会尽快停止后续。`--continue` 让 turbo「即使有任务失败也继续运行其余不依赖它的任务」，最后汇总所有结果。适合 CI 里「想一次看到所有包的失败」而非遇到第一个失败就停，便于一轮拿到全部问题。",
+    "tags": ["turborepo", "中级", "continue"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "即使有任务失败也继续跑其余任务，最后汇总（便于一次看到全部失败）",
+        "isCorrect": true,
+        "description": "适合 CI 一轮拿到所有问题"
+      },
+      {
+        "text": "失败后自动重试",
+        "isCorrect": false,
+        "description": "是继续跑其余，非重试"
+      },
+      {
+        "text": "忽略所有失败并标记成功",
+        "isCorrect": false,
+        "description": "仍会体现失败，只是继续跑"
+      },
+      {
+        "text": "继续使用旧缓存",
+        "isCorrect": false,
+        "description": "与缓存策略无关"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 与 Nx 相比，通常的定位差异是什么？",
+    "explanation": "Turborepo 轻量、聚焦「任务编排 + 缓存」，配置少、上手快、心智负担小；Nx 功能更全面（缓存/affected 之外还有代码生成、插件生态、模块边界约束、nx release、分布式执行等）。选型：只想要「快且简单的构建缓存」偏 Turborepo，要「全套 monorepo 工程能力与治理」偏 Nx。",
+    "tags": ["turborepo", "高级", "vs-nx"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Turborepo 轻量聚焦缓存/编排；Nx 功能更全（生成器/边界/release/DTE）",
+        "isCorrect": true,
+        "description": "要简单快选 Turbo，要全套能力选 Nx"
+      },
+      {
+        "text": "两者功能完全相同",
+        "isCorrect": false,
+        "description": "能力广度不同"
+      },
+      {
+        "text": "Turborepo 比 Nx 功能更全面",
+        "isCorrect": false,
+        "description": "Nx 功能更全，Turbo 更轻"
+      },
+      {
+        "text": "Nx 不支持缓存",
+        "isCorrect": false,
+        "description": "缓存是 Nx 核心能力之一"
+      }
+    ]
+  },
+  {
+    "stem": "`turbo run build` 与各包 `package.json` 里的 `build` 脚本是什么关系？",
+    "explanation": "`turbo run build` 会在相关包里执行它们各自 `package.json` 中定义的 `build` 脚本——Turborepo 本身不实现构建逻辑，而是「按任务图编排、缓存」这些包脚本的执行。即：真正的构建命令写在各包 scripts 里，Turborepo 负责什么时候跑、能不能命中缓存。",
+    "tags": ["turborepo", "中级", "scripts"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "turbo 编排/缓存各包 package.json 里的同名脚本，本身不实现构建逻辑",
+        "isCorrect": true,
+        "description": "构建命令在各包 scripts，Turbo 管调度缓存"
+      },
+      {
+        "text": "turbo 内置了各语言的构建器",
+        "isCorrect": false,
+        "description": "调用各包脚本，非内置构建器"
+      },
+      {
+        "text": "turbo 会忽略 package.json 脚本自己构建",
+        "isCorrect": false,
+        "description": "正是运行各包的脚本"
+      },
+      {
+        "text": "必须把构建逻辑写进 turbo.json",
+        "isCorrect": false,
+        "description": "逻辑在各包 scripts 里"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 缓存是「内容寻址」，把文件改回原样后再跑任务会怎样？",
+    "explanation": "因为哈希只看内容不看时间，若你把文件改动又改回到与之前完全一致的内容，输入哈希会回到旧值，于是能「命中之前那次的缓存」、瞬间还原产物——即使中间改过。这与「按 mtime 判断」的工具不同，是内容寻址缓存的特性。",
+    "tags": ["turborepo", "专家", "content-addressed"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "内容一致则哈希回到旧值，能命中之前的缓存瞬间还原",
+        "isCorrect": true,
+        "description": "内容寻址只看内容不看时间戳"
+      },
+      {
+        "text": "必然重新构建因为文件被动过",
+        "isCorrect": false,
+        "description": "内容相同即命中，不看是否动过"
+      },
+      {
+        "text": "缓存会永久失效",
+        "isCorrect": false,
+        "description": "内容一致仍可命中"
+      },
+      {
+        "text": "会报哈希冲突错误",
+        "isCorrect": false,
+        "description": "正常命中，无冲突"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 的 `--concurrency` 选项作用是什么？",
+    "explanation": "`--concurrency` 控制同时运行的任务数上限（并发度），如 `--concurrency=10` 或按 CPU 百分比。默认会尽量并行；在资源受限或想避免压垮机器时可调低。它在「充分利用多核加速」与「不耗尽机器资源」之间给你控制。",
+    "tags": ["turborepo", "中级", "concurrency"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "控制同时运行任务数上限（并发度），平衡加速与资源占用",
+        "isCorrect": true,
+        "description": "资源受限时可调低"
+      },
+      {
+        "text": "控制缓存条目数量",
+        "isCorrect": false,
+        "description": "是任务并发度，非缓存数"
+      },
+      {
+        "text": "控制远程缓存连接数",
+        "isCorrect": false,
+        "description": "是任务并发上限"
+      },
+      {
+        "text": "只能设为 1",
+        "isCorrect": false,
+        "description": "可设任意上限/百分比"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 缓存正确性的三大「输入维度」通常包括哪些？",
+    "explanation": "任务哈希通常综合：①相关源文件内容（inputs）；②该包依赖的上游包（依赖图变化）；③声明的环境变量（env/globalEnv）。三者任一变化都应使哈希变、缓存失效。把这三类都正确声明，缓存才既高效又不出错——漏任何一类都可能错误命中。",
+    "tags": ["turborepo", "专家", "cache-correctness"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "源文件内容 + 依赖（上游包）+ 声明的环境变量",
+        "isCorrect": true,
+        "description": "三类都正确声明才既高效又不错误命中"
+      },
+      {
+        "text": "只看源文件时间戳",
+        "isCorrect": false,
+        "description": "看内容且含依赖/env，非时间戳"
+      },
+      {
+        "text": "只看包名",
+        "isCorrect": false,
+        "description": "综合内容/依赖/env"
+      },
+      {
+        "text": "只看 git 分支名",
+        "isCorrect": false,
+        "description": "与分支名无关"
+      }
+    ]
+  },
+  {
+    "stem": "Turborepo 对「非确定性任务」（每次输出都不同，如打时间戳）缓存不友好，为什么？",
+    "explanation": "缓存前提是「相同输入→相同输出」。若任务输出含时间戳/随机数等每次都变的内容，缓存要么命中给出过时输出、要么语义已变却复用，破坏正确性。可缓存任务应保持确定性；把非确定/有副作用的动作（部署、发通知）设 `cache:false` 或移出可缓存任务。",
+    "tags": ["turborepo", "专家", "determinism"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "违背「相同输入→相同输出」前提，非确定任务应 cache:false 或移出",
+        "isCorrect": true,
+        "description": "缓存要求确定性"
+      },
+      {
+        "text": "没有任何影响",
+        "isCorrect": false,
+        "description": "破坏缓存正确性前提"
+      },
+      {
+        "text": "会让缓存更准确",
+        "isCorrect": false,
+        "description": "恰恰破坏正确性"
+      },
+      {
+        "text": "Turborepo 会自动忽略随机性",
+        "isCorrect": false,
+        "description": "不会，需自己保证确定性"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，Turborepo 让 monorepo 构建「又快又省」的核心机制是什么？",
+    "explanation": "核心是「内容哈希缓存 + 任务图并行 +（可选）远程缓存共享」：对每个任务按输入哈希，命中就跳过执行直接还原产物；无依赖任务并行跑；远程缓存让团队/CI 跨机复用。三者叠加，把重复工作降到最低、把可并行的都并行，从而大幅缩短大仓的构建/测试时间。",
+    "tags": ["turborepo", "中级", "summary"],
+    "categories": [
+      ["技术方向", "Turborepo"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "内容哈希缓存 + 任务图并行 + 远程缓存共享，三者叠加降重复、增并行",
+        "isCorrect": true,
+        "description": "把重复工作降到最低、可并行的都并行"
+      },
+      {
+        "text": "靠堆最高配硬件",
+        "isCorrect": false,
+        "description": "靠缓存/并行机制而非堆硬件"
+      },
+      {
+        "text": "靠删除测试来提速",
+        "isCorrect": false,
+        "description": "不牺牲质量"
+      },
+      {
+        "text": "靠禁用所有缓存",
+        "isCorrect": false,
+        "description": "缓存正是核心提速手段"
+      }
+    ]
   }
 ]

@@ -1,0 +1,556 @@
+[
+  {
+    "stem": "Pulumi 与 Terraform 在「配置语言」上的根本差异是什么？",
+    "explanation": "Terraform 用专门的 DSL（HCL）声明资源；Pulumi 则让你用「通用编程语言」（TypeScript/JavaScript/Python/Go/C#/Java 等，也支持 YAML）来定义基础设施。这样可直接使用语言原生的循环、条件、函数、类、包管理、IDE 补全与单元测试等能力来组织基础设施代码。",
+    "tags": ["pulumi", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Pulumi 用通用编程语言（TS/Python/Go 等），Terraform 用 HCL DSL",
+        "isCorrect": true,
+        "description": "可用语言原生循环/条件/抽象/测试"
+      },
+      {
+        "text": "Pulumi 只能用 YAML",
+        "isCorrect": false,
+        "description": "支持多种通用语言，YAML 只是其一"
+      },
+      {
+        "text": "两者都只用 HCL",
+        "isCorrect": false,
+        "description": "Pulumi 不用 HCL"
+      },
+      {
+        "text": "Pulumi 不需要写任何代码",
+        "isCorrect": false,
+        "description": "用编程语言写程序定义资源"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 虽然用编程语言编写，但它本质上仍是什么范式？",
+    "explanation": "尽管你用命令式语言书写，Pulumi 底层仍是「声明式/期望状态」模型：你的程序运行后构建出「资源图」，Pulumi 引擎对比期望与当前 state，算出并执行差异（增/改/删）以收敛到期望状态。即「用命令式语言表达，声明式引擎执行」，同样具备幂等与 plan/preview。",
+    "tags": ["pulumi", "中级", "paradigm"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "底层仍是声明式/期望状态：程序构建资源图，引擎算差异收敛",
+        "isCorrect": true,
+        "description": "命令式语言表达，声明式引擎执行，仍幂等"
+      },
+      {
+        "text": "是纯命令式，一步步执行无期望状态",
+        "isCorrect": false,
+        "description": "底层是声明式收敛"
+      },
+      {
+        "text": "没有 state 概念",
+        "isCorrect": false,
+        "description": "有 state，与 Terraform 类似"
+      },
+      {
+        "text": "无法预览变更",
+        "isCorrect": false,
+        "description": "有 pulumi preview 预览"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的核心命令 `pulumi preview`、`pulumi up`、`pulumi destroy` 分别做什么？",
+    "explanation": "`pulumi preview` 预览将要做的变更（类似 terraform plan）；`pulumi up` 先展示预览再执行变更、把基础设施收敛到程序描述的期望状态（可交互确认或 `--yes`）；`pulumi destroy` 销毁该 stack 管理的资源。up 集「预览+应用」于一体是常见工作方式。",
+    "tags": ["pulumi", "初级", "commands"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "preview 预览、up 预览并执行收敛、destroy 销毁 stack 资源",
+        "isCorrect": true,
+        "description": "up 集预览+应用于一体"
+      },
+      {
+        "text": "三者都只预览不执行",
+        "isCorrect": false,
+        "description": "up/destroy 会执行"
+      },
+      {
+        "text": "up 只销毁资源",
+        "isCorrect": false,
+        "description": "up 是创建/更新，destroy 才销毁"
+      },
+      {
+        "text": "preview 会真正创建资源",
+        "isCorrect": false,
+        "description": "preview 只预览"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的「stack（栈）」概念是什么？",
+    "explanation": "stack 是一个 Pulumi 程序的「可独立配置与部署的实例」——通常对应一个环境（dev/staging/prod）。每个 stack 有自己的配置（`Pulumi.<stack>.yaml`）与独立 state。同一份程序代码可部署成多个 stack，用不同配置产出不同环境的基础设施。类似 Terraform 的 workspace 但更常态化。",
+    "tags": ["pulumi", "中级", "stack"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "程序的可独立配置/部署实例，通常对应一个环境、有独立配置与 state",
+        "isCorrect": true,
+        "description": "同一代码可部署成 dev/prod 多个 stack"
+      },
+      {
+        "text": "调用栈（call stack）",
+        "isCorrect": false,
+        "description": "是部署实例，非程序调用栈"
+      },
+      {
+        "text": "一种数据结构",
+        "isCorrect": false,
+        "description": "是环境/部署实例概念"
+      },
+      {
+        "text": "存放日志的地方",
+        "isCorrect": false,
+        "description": "与日志无关"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的 state 默认存放在哪里，可否自管？",
+    "explanation": "Pulumi 默认使用「Pulumi Cloud（app.pulumi.com）」托管后端来存 state 并加锁；也支持自管后端（self-managed backend），把 state 存到 S3、Azure Blob、GCS 或本地文件系统。团队可按对托管服务的接受度选择——要完全自控则用自管后端。",
+    "tags": ["pulumi", "中级", "state"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认用 Pulumi Cloud 托管后端；也可自管到 S3/Azure/GCS/本地",
+        "isCorrect": true,
+        "description": "按对托管的接受度选择，自控则自管后端"
+      },
+      {
+        "text": "只能存本地，无法远程",
+        "isCorrect": false,
+        "description": "默认恰恰是托管云后端"
+      },
+      { "text": "不需要 state", "isCorrect": false, "description": "有 state" },
+      {
+        "text": "只能存 GitHub 仓库",
+        "isCorrect": false,
+        "description": "支持多种后端，非 GitHub"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 用编程语言写 IaC，最直接的好处之一是什么？",
+    "explanation": "可以自然地用语言的抽象能力消除重复：用循环批量创建资源、用条件按环境分支、把常用组合封装成函数/类/组件（Component Resource）、复用 npm/pip 包、写单元测试验证基础设施逻辑、享受 IDE 类型检查与补全。相比 HCL 里受限的表达，复杂逻辑更自然。",
+    "tags": ["pulumi", "中级", "benefit"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用语言原生的循环/条件/函数/类/包/测试/类型消除重复与提升表达力",
+        "isCorrect": true,
+        "description": "复杂逻辑比受限的 HCL 更自然"
+      },
+      {
+        "text": "完全不需要理解基础设施",
+        "isCorrect": false,
+        "description": "仍需懂资源，只是表达更灵活"
+      },
+      {
+        "text": "不再需要 provider",
+        "isCorrect": false,
+        "description": "仍用 provider"
+      },
+      {
+        "text": "不产生任何 state",
+        "isCorrect": false,
+        "description": "仍有 state"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 中的 Output（如 `resource.id`）为什么常是「异步/包装」类型而非普通值？",
+    "explanation": "许多资源属性（如生成的 ID、IP）要等资源真正创建后才知道，因此 Pulumi 把它们表示为 `Output<T>`——一种「将来才有值」的包装。要基于它派生新值需用 `.apply()`（或 `pulumi.interpolate`）而非直接拼接。理解 Output 的异步/依赖传递语义是写对 Pulumi 程序的关键。",
+    "tags": ["pulumi", "高级", "output"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "属性需资源创建后才知，故用 Output<T> 表未来值，派生需 apply/interpolate",
+        "isCorrect": true,
+        "description": "理解 Output 异步/依赖传递是写对的关键"
+      },
+      {
+        "text": "因为 Pulumi 不支持同步值",
+        "isCorrect": false,
+        "description": "已知值是普通值，未知值才 Output"
+      },
+      {
+        "text": "Output 只是普通字符串",
+        "isCorrect": false,
+        "description": "是包装的未来值，需 apply 解包"
+      },
+      {
+        "text": "Output 与依赖无关",
+        "isCorrect": false,
+        "description": "Output 还承载资源间依赖"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的「Component Resource（组件资源）」用来做什么？",
+    "explanation": "Component 把「一组相关资源」封装成一个更高层的可复用抽象（一个逻辑组件，如「一个带日志与告警的服务」），对外暴露简洁接口、内部编排多个底层资源。它类似 Terraform 模块，但用语言的类来定义，可继承、可发布为包共享，充分利用编程语言的封装能力。",
+    "tags": ["pulumi", "高级", "component"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把一组资源封装成高层可复用组件（用类定义），类似模块但更面向对象",
+        "isCorrect": true,
+        "description": "可继承、发布为包共享"
+      },
+      {
+        "text": "一种前端 UI 组件",
+        "isCorrect": false,
+        "description": "是基础设施抽象，非 UI"
+      },
+      {
+        "text": "state 的别名",
+        "isCorrect": false,
+        "description": "与 state 无关"
+      },
+      {
+        "text": "一个 CLI 命令",
+        "isCorrect": false,
+        "description": "是资源抽象概念"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的「Automation API」提供什么能力？",
+    "explanation": "Automation API 让你「用代码以编程方式驱动 Pulumi」——不通过 CLI，而是在自己的程序里调用 API 来创建/选择 stack、设置配置、执行 up/preview/destroy、读取输出。适合把基础设施编排嵌入到自研平台、CI 工具、自助式门户等场景，实现「基础设施即软件」。",
+    "tags": ["pulumi", "专家", "automation-api"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用代码以编程方式驱动 Pulumi（建 stack/配置/up 等），嵌入自研平台",
+        "isCorrect": true,
+        "description": "无需 CLI，实现基础设施即软件"
+      },
+      {
+        "text": "自动生成前端页面",
+        "isCorrect": false,
+        "description": "是编程驱动 Pulumi，非生成 UI"
+      },
+      {
+        "text": "自动写业务逻辑",
+        "isCorrect": false,
+        "description": "驱动的是基础设施编排"
+      },
+      {
+        "text": "替代 provider",
+        "isCorrect": false,
+        "description": "仍用 provider"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 处理密钥（secrets）的方式是什么？",
+    "explanation": "Pulumi 支持把配置值标记为 secret（`pulumi config set --secret`），这些值在 state 与配置文件里以「加密形式」存储（由 stack 的 secret provider 加密，如 Pulumi Cloud、云 KMS、passphrase）。相比某些工具把敏感值明文存进 state，Pulumi 的 secret 默认加密是其一大安全优点。",
+    "tags": ["pulumi", "高级", "secrets"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "标记为 secret 的值在 state/配置里加密存储（由 secret provider 加密）",
+        "isCorrect": true,
+        "description": "默认加密敏感值是其安全优点"
+      },
+      {
+        "text": "secret 以明文存进 state",
+        "isCorrect": false,
+        "description": "Pulumi secret 默认加密"
+      },
+      {
+        "text": "Pulumi 不支持任何密钥",
+        "isCorrect": false,
+        "description": "有完整 secret 机制"
+      },
+      {
+        "text": "secret 只能存明文注释里",
+        "isCorrect": false,
+        "description": "是加密存储"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的 provider 生态与 Terraform 有何关系？",
+    "explanation": "Pulumi 既有「原生（native）provider」，也能通过「桥接（bridge）」复用 Terraform 的 provider 生态——很多 Pulumi provider 就是从对应 Terraform provider 桥接生成的。因此 Pulumi 能覆盖与 Terraform 相近的广泛云/服务资源，用户不必担心生态覆盖不足。",
+    "tags": ["pulumi", "中级", "provider"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "有原生 provider，也桥接复用 Terraform provider 生态，覆盖广",
+        "isCorrect": true,
+        "description": "很多 Pulumi provider 由 TF provider 桥接生成"
+      },
+      {
+        "text": "完全没有可用 provider",
+        "isCorrect": false,
+        "description": "生态丰富"
+      },
+      {
+        "text": "只能用一个内置 provider",
+        "isCorrect": false,
+        "description": "覆盖广泛资源"
+      },
+      {
+        "text": "与 Terraform provider 完全隔绝",
+        "isCorrect": false,
+        "description": "可桥接复用"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 相比 Terraform，其编程语言路线的「潜在代价」是什么？",
+    "explanation": "用通用语言更强大，但也可能带来：更容易写出过度复杂/难读的基础设施代码（滥用抽象/副作用）、需要团队具备该语言能力、程序里若混入非确定性逻辑会破坏可复现。HCL 的「受限」反而带来一致与可预测。因此 Pulumi 需要纪律（保持声明式风格、避免副作用）来发挥优势而不失控。",
+    "tags": ["pulumi", "专家", "tradeoff"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "可能写出过度复杂/非确定性代码，需团队语言能力与纪律约束",
+        "isCorrect": true,
+        "description": "HCL 的受限换来一致可预测，Pulumi 需自律"
+      },
+      {
+        "text": "没有任何代价，纯优势",
+        "isCorrect": false,
+        "description": "灵活也带来复杂/失控风险"
+      },
+      {
+        "text": "无法预览变更",
+        "isCorrect": false,
+        "description": "有 preview"
+      },
+      {
+        "text": "不能用于生产",
+        "isCorrect": false,
+        "description": "可用于生产，需纪律"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 用编程语言的一个实用优势是「可测试性」，具体指什么？",
+    "explanation": "因为基础设施是普通代码，可用该语言的测试框架写「单元测试」（用 Pulumi 提供的 mock 隔离真实云，验证资源属性/逻辑是否符合预期）与「属性/策略测试」。这让「基础设施逻辑」也能在部署前被自动化测试覆盖，是纯 DSL 较难做到的。",
+    "tags": ["pulumi", "高级", "testing"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可用语言测试框架 + mock 对基础设施逻辑写单元/属性测试",
+        "isCorrect": true,
+        "description": "部署前自动化测试基础设施逻辑"
+      },
+      {
+        "text": "无法对基础设施做任何测试",
+        "isCorrect": false,
+        "description": "可测性正是其优势"
+      },
+      {
+        "text": "只能测试业务代码不能测基础设施",
+        "isCorrect": false,
+        "description": "基础设施即代码可被测"
+      },
+      {
+        "text": "测试需真实创建云资源",
+        "isCorrect": false,
+        "description": "可用 mock 隔离真实云"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 的「策略即代码（Policy as Code / CrossGuard）」用来做什么？",
+    "explanation": "CrossGuard 让你用代码写「策略」（如「禁止创建公开可读的存储桶」「必须打某些标签」），在 preview/up 时对将部署的资源做合规校验，违规则警告或阻止。它把安全/合规护栏自动化进部署流程，属于治理能力。类似其它 IaC 的策略引擎（如 Sentinel/OPA）。",
+    "tags": ["pulumi", "专家", "policy"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用代码写合规策略，在部署时校验资源、违规则警告/阻止",
+        "isCorrect": true,
+        "description": "把安全/合规护栏自动化进部署"
+      },
+      {
+        "text": "用于加速资源创建",
+        "isCorrect": false,
+        "description": "是合规治理，非加速"
+      },
+      {
+        "text": "生成前端策略页面",
+        "isCorrect": false,
+        "description": "是基础设施策略校验"
+      },
+      {
+        "text": "与安全无关",
+        "isCorrect": false,
+        "description": "正是安全/合规护栏"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 中同一份程序部署到多个 stack（如 dev/prod），差异通过什么表达？",
+    "explanation": "通过「每个 stack 各自的配置（`pulumi config`，存于 `Pulumi.<stack>.yaml`）」表达差异——程序里用 `config.require()`/`config.get()` 读取当前 stack 的配置值（如实例规格、副本数、区域），从而同一份代码在不同 stack 下产出不同规模/参数的环境。代码相同、配置不同。",
+    "tags": ["pulumi", "中级", "config"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用每个 stack 各自的 config，程序读取配置产出不同环境（代码同、配置异）",
+        "isCorrect": true,
+        "description": "Pulumi.<stack>.yaml 存各环境配置"
+      },
+      {
+        "text": "为每个环境写完全不同的程序",
+        "isCorrect": false,
+        "description": "同一代码 + 不同配置"
+      },
+      {
+        "text": "靠改 state 手动区分",
+        "isCorrect": false,
+        "description": "靠 stack 配置，非手改 state"
+      },
+      {
+        "text": "无法区分不同环境",
+        "isCorrect": false,
+        "description": "stack + config 正是为此"
+      }
+    ]
+  },
+  {
+    "stem": "选择 Pulumi 而非 Terraform 的典型理由是什么？",
+    "explanation": "团队已精通某通用语言（TS/Python/Go）、希望用熟悉的语言与工具链（包管理、测试、IDE、抽象）来写基础设施、有复杂动态逻辑难以用 HCL 表达、或想把基础设施编排嵌入应用/平台（Automation API）——这些场景 Pulumi 更顺手。若偏好简单声明式 DSL、生态成熟度与广泛采用，Terraform/OpenTofu 仍是稳妥选择。",
+    "tags": ["pulumi", "中级", "selection"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "精通某语言、需复杂逻辑/测试/抽象或嵌入平台时选 Pulumi",
+        "isCorrect": true,
+        "description": "偏好简单 DSL 与广泛采用则 Terraform/OpenTofu"
+      },
+      {
+        "text": "Pulumi 适合完全不会编程的人",
+        "isCorrect": false,
+        "description": "需具备该语言能力"
+      },
+      {
+        "text": "Pulumi 无法管理云资源",
+        "isCorrect": false,
+        "description": "能管理广泛云资源"
+      },
+      {
+        "text": "两者没有任何选择依据",
+        "isCorrect": false,
+        "description": "语言/复杂度/嵌入需求是依据"
+      }
+    ]
+  },
+  {
+    "stem": "Pulumi 程序里若写了「非确定性」逻辑（如依赖当前时间、随机数决定资源），会有什么风险？",
+    "explanation": "因为 Pulumi 靠对比期望与现状收敛，若程序每次运行都因时间/随机产生不同的资源图，会导致每次 up 都出现「变更」、破坏幂等与可复现、造成资源反复重建。应保持程序对相同输入产出相同资源图（确定性），把变化交给显式配置，而非隐性随机。",
+    "tags": ["pulumi", "专家", "determinism"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "破坏幂等/可复现，导致每次 up 都有变更甚至资源反复重建",
+        "isCorrect": true,
+        "description": "应保持确定性，变化交给显式配置"
+      },
+      {
+        "text": "没有任何影响",
+        "isCorrect": false,
+        "description": "破坏幂等与可复现"
+      },
+      {
+        "text": "会让部署更快",
+        "isCorrect": false,
+        "description": "反而造成无谓变更"
+      },
+      {
+        "text": "Pulumi 会自动忽略随机性",
+        "isCorrect": false,
+        "description": "不会，需开发者保证确定性"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，Pulumi 在 IaC 谱系里的定位可概括为？",
+    "explanation": "「用通用编程语言书写、但由声明式引擎执行的现代 IaC」：兼得声明式的幂等/预览/state 与编程语言的抽象/测试/生态，并提供 stack、加密 secret、Component、Automation API、策略即代码等能力。适合把基础设施当「软件工程」来做的团队；与 Terraform/OpenTofu 的 HCL 路线并列为主流选择。",
+    "tags": ["pulumi", "中级", "summary"],
+    "categories": [
+      ["技术方向", "Pulumi"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通用语言书写、声明式引擎执行的现代 IaC，兼得两者之长",
+        "isCorrect": true,
+        "description": "把基础设施当软件工程来做"
+      },
+      {
+        "text": "一个纯命令式的部署脚本工具",
+        "isCorrect": false,
+        "description": "底层声明式，非纯命令式"
+      },
+      {
+        "text": "一个只支持 YAML 的工具",
+        "isCorrect": false,
+        "description": "支持多种通用语言"
+      },
+      {
+        "text": "一个 CI 平台",
+        "isCorrect": false,
+        "description": "是 IaC 工具"
+      }
+    ]
+  }
+]

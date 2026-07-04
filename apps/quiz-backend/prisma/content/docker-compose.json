@@ -1,0 +1,1420 @@
+[
+  {
+    "stem": "Docker Compose 的核心定位是什么？",
+    "explanation": "Docker Compose 用一个 YAML 文件定义并管理「多容器应用」——把多个服务（service）、网络（network）、卷（volume）声明在一起，用 `docker compose up` 一键拉起整套。它主要面向单机的开发/测试环境编排；大规模生产集群编排通常用 Kubernetes。",
+    "tags": ["docker-compose", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用一个 YAML 定义并一键管理多容器应用（单机为主）",
+        "isCorrect": true,
+        "description": "多服务/网络/卷声明在一起，up 一键拉起"
+      },
+      {
+        "text": "替代 Dockerfile 用来构建镜像",
+        "isCorrect": false,
+        "description": "构建仍靠 Dockerfile，Compose 负责编排"
+      },
+      {
+        "text": "用于大规模生产集群的容器编排",
+        "isCorrect": false,
+        "description": "大规模编排用 Kubernetes"
+      },
+      {
+        "text": "一个镜像仓库服务",
+        "isCorrect": false,
+        "description": "与镜像仓库无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose V2（`docker compose` 子命令）相比已弃用的 V1（`docker-compose` 独立命令）主要变化是什么？",
+    "explanation": "Compose V2 用 Go 重写并作为 Docker CLI 的插件，命令形式从带连字符的 `docker-compose` 变成 `docker compose`（空格子命令）。V1（Python 版）已于 2023 年终止支持。V2 与 Compose Specification 对齐，并弃用了顶层 `version` 字段。",
+    "tags": ["docker-compose", "中级", "version"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "V2 是 Go 重写的 CLI 插件，命令为 `docker compose`，V1 已停止支持",
+        "isCorrect": true,
+        "description": "对齐 Compose Spec，弃用 version 字段"
+      },
+      {
+        "text": "V2 改用 XML 配置文件",
+        "isCorrect": false,
+        "description": "仍是 YAML"
+      },
+      {
+        "text": "V2 只能在 Windows 运行",
+        "isCorrect": false,
+        "description": "无平台限制"
+      },
+      {
+        "text": "V2 取消了对多服务的支持",
+        "isCorrect": false,
+        "description": "多服务正是其核心"
+      }
+    ]
+  },
+  {
+    "stem": "在现代 Docker Compose 中，文件顶部的 `version: \"3.8\"` 字段现状如何？",
+    "explanation": "对齐 Compose Specification 后，顶层 `version` 字段已被弃用（obsolete）——Compose V2 会忽略它并可能给出警告。现在直接写 `services:` 等顶层键即可，不再需要声明 version。仍保留它不会报错，但已无实际意义。",
+    "tags": ["docker-compose", "中级", "version"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "已弃用，V2 会忽略它，不再需要声明",
+        "isCorrect": true,
+        "description": "直接写 services 等顶层键即可"
+      },
+      {
+        "text": "必须精确写对否则无法启动",
+        "isCorrect": false,
+        "description": "现已可省略，写错也仅警告"
+      },
+      {
+        "text": "决定使用哪个 Docker 引擎版本",
+        "isCorrect": false,
+        "description": "从不决定引擎版本"
+      },
+      {
+        "text": "是唯一必填的顶层字段",
+        "isCorrect": false,
+        "description": "services 才是核心，version 已弃用"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 默认会为一个项目里的服务创建什么网络，容器间如何互相访问？",
+    "explanation": "Compose 默认为每个项目创建一个自定义 bridge 网络，所有服务加入其中。同网络内的容器可用「服务名」作为主机名、通过内建 DNS 互相解析访问（如 `web` 连 `db:5432`），无需暴露端口到宿主。端口发布（ports）只是为了让宿主/外部访问。",
+    "tags": ["docker-compose", "中级", "network"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认建一个项目网络，服务间用服务名经内建 DNS 互访",
+        "isCorrect": true,
+        "description": "如 web 直连 db:5432，无需 ports"
+      },
+      {
+        "text": "服务间必须靠 ports 映射到宿主才能互访",
+        "isCorrect": false,
+        "description": "ports 是对宿主/外部，服务间用服务名即可"
+      },
+      {
+        "text": "默认不创建任何网络，服务无法通信",
+        "isCorrect": false,
+        "description": "默认建项目网络"
+      },
+      {
+        "text": "所有服务共用宿主网络命名空间",
+        "isCorrect": false,
+        "description": "那是 network_mode: host，非默认"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `depends_on: [db]` 默认能保证 `db` 服务「已就绪可用」再启动依赖它的服务吗？",
+    "explanation": "不能。默认的 `depends_on` 只保证按顺序「先启动」被依赖的容器，但不等待其内部应用真正就绪（如数据库可接受连接）。要等就绪，需给被依赖服务配 `healthcheck`，并写成 `depends_on: { db: { condition: service_healthy } }`。这是极高频的坑。",
+    "tags": ["docker-compose", "高级", "depends-on"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不能，默认只保证启动顺序；需配 healthcheck + condition: service_healthy",
+        "isCorrect": true,
+        "description": "默认不等应用就绪，是高频坑"
+      },
+      {
+        "text": "能，默认就会等到 db 完全就绪",
+        "isCorrect": false,
+        "description": "默认只保证容器先启动，不等就绪"
+      },
+      {
+        "text": "depends_on 与启动顺序完全无关",
+        "isCorrect": false,
+        "description": "它确实控制启动顺序"
+      },
+      {
+        "text": "只有加 -d 时 depends_on 才生效",
+        "isCorrect": false,
+        "description": "与 -d 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中服务的 `healthcheck` 若不显式设置 `interval`/`timeout`/`retries`，其默认值大致是？",
+    "explanation": "Compose/Docker 的 healthcheck 默认：`interval` 30s、`timeout` 30s、`retries` 3、`start_period` 0s（另有 `start_interval` 默认 5s，用于启动期更频繁探测）。理解默认值有助于估算「多久才判定 unhealthy」以及配合 depends_on 的等待。",
+    "tags": ["docker-compose", "高级", "healthcheck"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "interval 30s、timeout 30s、retries 3、start_period 0s",
+        "isCorrect": true,
+        "description": "另 start_interval 默认 5s（启动期更频繁探测）"
+      },
+      {
+        "text": "interval 1s、timeout 1s、retries 1",
+        "isCorrect": false,
+        "description": "默认远没这么激进"
+      },
+      {
+        "text": "没有默认值，必须全部显式写",
+        "isCorrect": false,
+        "description": "有内建默认值"
+      },
+      {
+        "text": "interval 5min、retries 10",
+        "isCorrect": false,
+        "description": "默认 interval 是 30s 不是 5 分钟"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose up -d` 的 `-d` 表示什么？",
+    "explanation": "`-d`（detached）表示以后台分离模式启动，命令返回终端、容器在后台运行；不加 `-d` 则前台运行并聚合输出各服务日志、按 Ctrl+C 停止。开发时常用前台看日志，长期运行用 `-d`。",
+    "tags": ["docker-compose", "入门", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "后台分离运行，命令返回、容器在后台跑",
+        "isCorrect": true,
+        "description": "不加 -d 则前台聚合日志、Ctrl+C 停止"
+      },
+      {
+        "text": "删除已有容器后再启动",
+        "isCorrect": false,
+        "description": "删除是 down，不是 -d"
+      },
+      {
+        "text": "以调试模式运行",
+        "isCorrect": false,
+        "description": "-d 是 detached，不是 debug"
+      },
+      {
+        "text": "只构建不启动",
+        "isCorrect": false,
+        "description": "只构建是 build"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose down` 默认会删除什么、保留什么？",
+    "explanation": "`down` 会停止并删除本项目的容器和默认创建的网络，但默认「不会删除命名卷（named volumes）」，以防误删数据库等持久化数据。要连命名卷一起删需显式加 `--volumes`/`-v`。这是保护数据的重要默认行为。",
+    "tags": ["docker-compose", "中级", "lifecycle"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "删容器和网络，默认保留命名卷（需 -v 才删卷）",
+        "isCorrect": true,
+        "description": "默认不删卷以保护持久化数据"
+      },
+      {
+        "text": "删除包括命名卷在内的所有资源",
+        "isCorrect": false,
+        "description": "命名卷需显式 -v 才删"
+      },
+      {
+        "text": "只停止容器不删除任何东西",
+        "isCorrect": false,
+        "description": "会删容器和网络"
+      },
+      {
+        "text": "还会删除本地镜像",
+        "isCorrect": false,
+        "description": "默认不删镜像（需 --rmi）"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中服务的 `build` 与 `image` 同时出现时的含义是什么？",
+    "explanation": "若同时写 `build`（构建上下文/Dockerfile）与 `image`（镜像名标签），Compose 会用 build 指定的方式构建镜像，并把构建结果打上 `image` 指定的名字标签（便于推送/复用）。只写 `image` 则直接拉取现成镜像；只写 `build` 则构建并用自动生成的名字。",
+    "tags": ["docker-compose", "中级", "build"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按 build 构建镜像并打上 image 指定的名字标签",
+        "isCorrect": true,
+        "description": "只 image=拉现成；只 build=构建用自动名"
+      },
+      {
+        "text": "两者冲突会直接报错",
+        "isCorrect": false,
+        "description": "可共存，image 作为构建产物命名"
+      },
+      {
+        "text": "image 会被忽略只看 build",
+        "isCorrect": false,
+        "description": "image 用作构建结果的标签名"
+      },
+      {
+        "text": "会同时拉取和构建两个不同镜像",
+        "isCorrect": false,
+        "description": "只产出一个镜像"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `environment` 与 `env_file` 的作用与关系是什么？",
+    "explanation": "`environment` 在 compose 文件里内联声明服务的环境变量；`env_file` 指向一个外部 `.env` 风格文件批量加载变量。两者可共存，一般 `environment` 内联值优先级高于 `env_file`。注意：这些是「容器内运行时环境变量」，与用于对 compose 文件本身做变量插值的项目根 `.env` 是不同用途。",
+    "tags": ["docker-compose", "中级", "env"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者都设容器内环境变量；environment 内联、env_file 从文件批量加载",
+        "isCorrect": true,
+        "description": "environment 优先级高于 env_file"
+      },
+      {
+        "text": "env_file 用于给 compose 文件做插值",
+        "isCorrect": false,
+        "description": "插值用的是项目根 .env，用途不同"
+      },
+      {
+        "text": "两者不能同时使用",
+        "isCorrect": false,
+        "description": "可共存"
+      },
+      {
+        "text": "environment 设的是构建期变量",
+        "isCorrect": false,
+        "description": "是运行时环境变量"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 里区分「项目根 `.env` 文件」与服务的 `env_file`，二者用途不同在哪？",
+    "explanation": "项目根目录的 `.env` 文件用于对 compose 文件里的 `${VAR}` 占位做「变量插值/替换」（在解析 compose 文件时生效）。服务里的 `env_file:` 则是把某文件里的变量注入到「容器运行时环境」。前者影响 compose 配置本身，后者影响容器内环境，别混淆。",
+    "tags": ["docker-compose", "高级", "env"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "根 .env 给 compose 文件做插值；env_file 给容器注入运行时变量",
+        "isCorrect": true,
+        "description": "一个影响配置解析，一个影响容器环境"
+      },
+      {
+        "text": "两者完全一样可互换",
+        "isCorrect": false,
+        "description": "作用阶段与目标不同"
+      },
+      {
+        "text": "根 .env 会自动注入所有容器",
+        "isCorrect": false,
+        "description": "根 .env 主要用于插值，不自动进容器"
+      },
+      {
+        "text": "env_file 用于 compose 文件插值",
+        "isCorrect": false,
+        "description": "插值用根 .env，不是 env_file"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 变量插值中，`${VAR:-default}` 与 `${VAR-default}` 的区别是什么？",
+    "explanation": "`${VAR:-default}`：当 VAR 未设置「或为空」时用 default；`${VAR-default}`（无冒号）：仅当 VAR「未设置」时用 default，若 VAR 设为空字符串则用空值。类似地 `:?` 会在为空时报错、`?` 仅在未设置时报错。冒号的有无决定「是否把空值也当作缺失」。",
+    "tags": ["docker-compose", "专家", "interpolation"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "带冒号 :- 把「空或未设」都用默认；无冒号 - 仅「未设」才用默认",
+        "isCorrect": true,
+        "description": "冒号决定是否把空值也视为缺失"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "对空值的处理不同"
+      },
+      {
+        "text": "`:-` 表示必填否则报错",
+        "isCorrect": false,
+        "description": "报错是 :? / ?，不是 :-"
+      },
+      {
+        "text": "`-` 表示禁用该变量",
+        "isCorrect": false,
+        "description": "是提供默认值，非禁用"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 文件里要写一个字面的 `$` 字符（不想被当变量插值），应怎么写？",
+    "explanation": "用 `$$` 转义表示一个字面 `$`。因为 Compose 会对 `$VAR` / `${VAR}` 做插值，若命令或值中本身需要 `$`（如 shell 变量、cron 表达式、正则），必须写成 `$$` 才不会被 Compose 提前替换。",
+    "tags": ["docker-compose", "高级", "interpolation"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 `$$` 转义表示字面的 `$`",
+        "isCorrect": true,
+        "description": "避免被 Compose 当变量插值提前替换"
+      },
+      {
+        "text": "用 `\\$` 反斜杠转义",
+        "isCorrect": false,
+        "description": "Compose 用 $$ 而非反斜杠"
+      },
+      {
+        "text": "用 `%$%` 包裹",
+        "isCorrect": false,
+        "description": "无此语法"
+      },
+      { "text": "无法输出字面 $", "isCorrect": false, "description": "$$ 即可" }
+    ]
+  },
+  {
+    "stem": "Docker Compose 的 `profiles` 特性用来做什么？",
+    "explanation": "`profiles` 给服务打上「档案标签」，未激活对应 profile 的服务默认不随 `up` 启动。可用 `--profile <name>` 或环境变量激活。典型用途：把可选组件（如调试工具、监控、seed 任务）归入某 profile，平时不启动，需要时才激活。被依赖但未在激活 profile 的服务也可被带起。",
+    "tags": ["docker-compose", "高级", "profiles"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "给服务分组标签，未激活的 profile 服务默认不启动",
+        "isCorrect": true,
+        "description": "用于可选组件按需启用"
+      },
+      {
+        "text": "定义容器的资源使用档位",
+        "isCorrect": false,
+        "description": "与资源档位无关"
+      },
+      {
+        "text": "配置不同的网络安全策略",
+        "isCorrect": false,
+        "description": "与安全策略无关"
+      },
+      {
+        "text": "指定镜像的性能剖析",
+        "isCorrect": false,
+        "description": "不是性能 profiling"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 支持用多个 `-f` 指定多份文件（如 `-f base.yml -f override.yml`），合并规则是什么？",
+    "explanation": "多个 `-f` 按顺序叠加合并，后面的文件覆盖前面的同名配置（标量覆盖、部分列表/映射按规则合并）。此外，默认会自动叠加 `docker-compose.override.yml`（若存在）到 `docker-compose.yml` 之上。常用于「基础配置 + 环境专属覆盖」。",
+    "tags": ["docker-compose", "高级", "merge"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "按顺序叠加、后者覆盖前者；且默认自动叠加 override 文件",
+        "isCorrect": true,
+        "description": "常用于基础配置 + 环境覆盖"
+      },
+      {
+        "text": "只有第一个 -f 生效，其余忽略",
+        "isCorrect": false,
+        "description": "多个 -f 会合并"
+      },
+      {
+        "text": "前面的文件覆盖后面的",
+        "isCorrect": false,
+        "description": "是后者覆盖前者"
+      },
+      {
+        "text": "多个 -f 会报冲突错误",
+        "isCorrect": false,
+        "description": "是设计支持的叠加合并"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose up --build` 与不加 `--build` 的区别是什么？",
+    "explanation": "`--build` 强制在启动前重新构建带 `build` 配置的服务镜像；不加时，若镜像已存在则直接复用现有镜像启动（不会自动感知 Dockerfile/源码变化）。开发中改了 Dockerfile 或依赖后常需 `--build` 才能生效。",
+    "tags": ["docker-compose", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "--build 启动前强制重建镜像；不加则复用已有镜像",
+        "isCorrect": true,
+        "description": "改了 Dockerfile/依赖需 --build 生效"
+      },
+      {
+        "text": "--build 只构建不启动",
+        "isCorrect": false,
+        "description": "up --build 构建后仍会启动"
+      },
+      {
+        "text": "不加 --build 会自动检测源码变化重建",
+        "isCorrect": false,
+        "description": "不会自动重建，需显式 --build"
+      },
+      {
+        "text": "两者行为完全一致",
+        "isCorrect": false,
+        "description": "是否强制重建不同"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `compose.yaml` 与 `docker-compose.yml` 两种文件名，现在推荐/优先哪个？",
+    "explanation": "Compose Specification 推荐使用 `compose.yaml`（也支持 `compose.yml`）。若目录中同时存在 `compose.yaml` 和旧的 `docker-compose.yaml`，Compose 会优先使用 `compose.yaml`。旧名仍受支持以向后兼容，但新项目建议用 `compose.yaml`。",
+    "tags": ["docker-compose", "中级", "naming"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "推荐 `compose.yaml`，同时存在时它优先于 `docker-compose.yaml`",
+        "isCorrect": true,
+        "description": "旧名兼容，新项目用 compose.yaml"
+      },
+      {
+        "text": "只能用 `docker-compose.yml` 这一种",
+        "isCorrect": false,
+        "description": "新规范推荐 compose.yaml"
+      },
+      {
+        "text": "两个文件名不能被 Compose 识别",
+        "isCorrect": false,
+        "description": "均可识别，compose.yaml 优先"
+      },
+      {
+        "text": "compose.yaml 只能配合 V1 使用",
+        "isCorrect": false,
+        "description": "是 V2/Spec 推荐名"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose exec web sh` 与 `docker compose run web sh` 的区别是什么？",
+    "explanation": "`exec` 在「已经运行的 web 服务容器」里执行命令（用于调试运行中的服务）。`run` 会「新建一个一次性容器」来跑命令（基于该服务配置，常用于运行迁移、一次性任务），且默认不映射服务声明的 ports（除非 --service-ports）。二者一个作用于现有容器、一个新建容器。",
+    "tags": ["docker-compose", "中级", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "exec 在运行中的容器执行；run 新建一次性容器跑命令",
+        "isCorrect": true,
+        "description": "run 默认不映射服务 ports（需 --service-ports）"
+      },
+      {
+        "text": "两者都在运行中的容器执行",
+        "isCorrect": false,
+        "description": "run 是新建一次性容器"
+      },
+      {
+        "text": "run 在运行中容器执行，exec 新建容器",
+        "isCorrect": false,
+        "description": "说反了"
+      },
+      {
+        "text": "exec 用于构建镜像",
+        "isCorrect": false,
+        "description": "构建是 build"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose ps` 与 `docker compose logs -f` 分别用于什么？",
+    "explanation": "`ps` 列出当前项目的服务容器及其状态（运行/退出/健康）；`logs -f` 实时跟踪（follow）各服务的聚合日志。二者是排查 Compose 应用最常用的观察命令：先 ps 看谁挂了，再 logs 看为什么。",
+    "tags": ["docker-compose", "入门", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "ps 看服务容器状态；logs -f 实时跟踪聚合日志",
+        "isCorrect": true,
+        "description": "排查常用：先 ps 看谁挂，再 logs 看原因"
+      },
+      {
+        "text": "两者都用于启动服务",
+        "isCorrect": false,
+        "description": "启动是 up"
+      },
+      {
+        "text": "ps 删除容器，logs 删除日志",
+        "isCorrect": false,
+        "description": "都是查看命令，不删除"
+      },
+      {
+        "text": "logs 只能看已停止容器",
+        "isCorrect": false,
+        "description": "运行中也能看，-f 还能实时跟踪"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中服务的 `restart: unless-stopped` 策略含义是什么？",
+    "explanation": "`unless-stopped`：容器异常退出或 Docker 重启后都会自动重启，但如果是被用户手动停止（`docker stop`/`compose stop`），则不再自动拉起。相比 `always`（手动停止后 Docker 重启仍会拉起），它更符合「尊重人为停止」的直觉。其它取值有 `no`（默认）、`on-failure`。",
+    "tags": ["docker-compose", "中级", "restart"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "异常退出/宿主重启会自动重启，但用户手动停止后不再拉起",
+        "isCorrect": true,
+        "description": "对比 always：手动停后 Docker 重启仍拉起"
+      },
+      {
+        "text": "永不重启",
+        "isCorrect": false,
+        "description": "那是 no（默认）"
+      },
+      {
+        "text": "只在构建失败时重启",
+        "isCorrect": false,
+        "description": "restart 针对运行期退出，非构建"
+      },
+      {
+        "text": "无论如何（含手动停止）都重启",
+        "isCorrect": false,
+        "description": "那是 always 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `volumes` 顶层元素声明「命名卷」，与服务里 `volumes` 写绑定挂载有何不同？",
+    "explanation": "顶层 `volumes:` 声明由 Docker 管理的命名卷（可被多个服务引用、持久化数据）；服务内 `volumes:` 列表里既可引用这些命名卷（`卷名:/容器路径`），也可写绑定挂载（`./宿主相对路径:/容器路径`）。命名卷适合持久化数据，绑定挂载适合开发时挂源码。",
+    "tags": ["docker-compose", "中级", "volume"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶层 volumes 声明受管命名卷；服务内可引用卷或写绑定挂载",
+        "isCorrect": true,
+        "description": "命名卷持久化数据，bind 挂源码做开发"
+      },
+      {
+        "text": "顶层 volumes 声明的是宿主目录",
+        "isCorrect": false,
+        "description": "顶层声明的是命名卷，非宿主目录"
+      },
+      {
+        "text": "服务内不能写绑定挂载",
+        "isCorrect": false,
+        "description": "可写绑定挂载"
+      },
+      {
+        "text": "命名卷不能被多个服务共享",
+        "isCorrect": false,
+        "description": "可被多服务引用共享"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose config` 命令的用途是什么？",
+    "explanation": "`docker compose config` 会解析、合并（含多 -f 与 override）、做变量插值后，输出「最终生效的规范化配置」，并校验语法。它非常适合调试：确认变量替换、文件叠加、profiles 后实际会用什么配置，而不必真的启动。",
+    "tags": ["docker-compose", "中级", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "输出合并/插值后的最终配置并校验，用于调试确认",
+        "isCorrect": true,
+        "description": "看清多文件叠加与变量替换的实际结果"
+      },
+      {
+        "text": "把配置写回磁盘覆盖原文件",
+        "isCorrect": false,
+        "description": "只输出到标准输出，不改原文件"
+      },
+      {
+        "text": "启动所有服务",
+        "isCorrect": false,
+        "description": "config 不启动服务"
+      },
+      {
+        "text": "生成一个新的 Dockerfile",
+        "isCorrect": false,
+        "description": "与 Dockerfile 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中用 YAML 锚点（`&`/`*`）与 `x-` 扩展字段的常见目的是什么？",
+    "explanation": "`x-` 开头的顶层扩展字段会被 Compose 忽略（不解析为服务），常用来配合 YAML 锚点定义可复用的配置片段；再用别名（`*`）或合并键把公共配置注入多个服务，减少重复。例如把统一的 logging、环境、健康检查抽成 `x-common` 复用。",
+    "tags": ["docker-compose", "专家", "reuse"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "x- 字段被忽略，配合 YAML 锚点定义可复用片段注入多服务",
+        "isCorrect": true,
+        "description": "抽公共配置（logging/健康检查）减少重复"
+      },
+      {
+        "text": "x- 字段是必须的服务配置",
+        "isCorrect": false,
+        "description": "x- 会被 Compose 忽略，非服务配置"
+      },
+      {
+        "text": "锚点用于加密配置",
+        "isCorrect": false,
+        "description": "锚点是 YAML 复用机制，与加密无关"
+      },
+      {
+        "text": "x- 用于声明外部网络",
+        "isCorrect": false,
+        "description": "外部网络用 external: true"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中把某个卷或网络标记为 `external: true` 的含义是什么？",
+    "explanation": "`external: true` 表示该卷/网络是「在 Compose 之外已经创建好的」，Compose 只引用它、不负责创建，也不会在 `down` 时删除它。用于多个 compose 项目共享同一网络/卷，或引用手动/其它工具创建的资源。",
+    "tags": ["docker-compose", "高级", "external"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "引用外部已存在的资源，Compose 不创建也不删除它",
+        "isCorrect": true,
+        "description": "用于跨项目共享网络/卷"
+      },
+      {
+        "text": "让 Compose 每次都重新创建它",
+        "isCorrect": false,
+        "description": "恰恰相反，不由 Compose 创建"
+      },
+      {
+        "text": "把资源暴露到公网",
+        "isCorrect": false,
+        "description": "与公网暴露无关"
+      },
+      {
+        "text": "标记资源为只读",
+        "isCorrect": false,
+        "description": "与只读无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose Watch（`docker compose watch`）主要用于什么开发场景？",
+    "explanation": "Compose Watch 监听本地源文件变化，并按配置的 `develop.watch` 规则自动作出反应：`sync` 把改动同步进运行中的容器（热更）、`rebuild` 触发重建、`sync+restart` 同步后重启。它面向「代码改动即时反映到容器」的开发内环，仅对定义了相应规则/构建的服务生效。",
+    "tags": ["docker-compose", "高级", "watch"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "监听源码变化，按规则 sync/rebuild/restart，加速开发内环",
+        "isCorrect": true,
+        "description": "代码改动即时反映进容器"
+      },
+      {
+        "text": "监控生产容器的资源用量",
+        "isCorrect": false,
+        "description": "不是资源监控工具"
+      },
+      {
+        "text": "监听镜像仓库的新版本",
+        "isCorrect": false,
+        "description": "监听的是本地源码"
+      },
+      {
+        "text": "自动扩缩容器副本",
+        "isCorrect": false,
+        "description": "扩缩用 up --scale/deploy replicas"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose up --scale web=3` 的效果是什么，需注意什么？",
+    "explanation": "它把 `web` 服务扩到 3 个副本容器（负载在同网络内共享服务名 DNS 轮询）。注意：若该服务用 `ports` 固定映射了同一宿主端口，多个副本会争抢端口而失败——扩缩的服务通常不应硬绑宿主端口（交给反向代理/负载均衡分发）。",
+    "tags": ["docker-compose", "高级", "scale"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把 web 扩到 3 副本；但固定 ports 映射会致端口冲突",
+        "isCorrect": true,
+        "description": "扩缩服务不宜硬绑宿主端口"
+      },
+      {
+        "text": "把 web 镜像层压缩到 3 层",
+        "isCorrect": false,
+        "description": "与镜像层无关"
+      },
+      {
+        "text": "限制 web 最多用 3 核 CPU",
+        "isCorrect": false,
+        "description": "那是资源限制，不是副本数"
+      },
+      {
+        "text": "会自动配置好负载均衡与端口",
+        "isCorrect": false,
+        "description": "端口需自行规避冲突"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中默认的「项目名（project name）」通常来自什么，它有什么影响？",
+    "explanation": "项目名默认取自 compose 文件所在目录名（可用 `-p`/`COMPOSE_PROJECT_NAME` 覆盖）。它作为前缀用于命名容器、网络、卷（如 `myproj_web_1`、`myproj_default` 网络），从而实现「同一套 compose 在不同项目名下互不干扰地并存」。",
+    "tags": ["docker-compose", "中级", "project"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认取目录名，作为容器/网络/卷的命名前缀以隔离多套实例",
+        "isCorrect": true,
+        "description": "可用 -p/COMPOSE_PROJECT_NAME 覆盖"
+      },
+      {
+        "text": "项目名对资源命名无影响",
+        "isCorrect": false,
+        "description": "它是资源命名前缀，影响隔离"
+      },
+      {
+        "text": "项目名必须与镜像名一致",
+        "isCorrect": false,
+        "description": "无此要求"
+      },
+      {
+        "text": "项目名决定使用的网络驱动",
+        "isCorrect": false,
+        "description": "与网络驱动无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `configs` 与 `secrets` 顶层元素相比直接用环境变量传配置/密钥的优势是什么？",
+    "explanation": "`configs`/`secrets` 把配置/敏感数据以「文件」形式挂载进容器指定路径，而非环境变量。好处：环境变量易在日志、`docker inspect`、子进程中泄露，而 secret 以受限文件挂载、不进镜像、更适合敏感数据。`secrets` 语义上专为敏感信息设计（在 Swarm 中更完整）。",
+    "tags": ["docker-compose", "专家", "secrets"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "以文件形式挂载，避免环境变量在日志/inspect 中泄露",
+        "isCorrect": true,
+        "description": "secret 专为敏感数据，不进镜像"
+      },
+      {
+        "text": "configs/secrets 会自动加密磁盘",
+        "isCorrect": false,
+        "description": "单机 Compose 不等于全盘加密"
+      },
+      {
+        "text": "它们只能存二进制文件",
+        "isCorrect": false,
+        "description": "可存文本配置"
+      },
+      {
+        "text": "用它们就不需要任何权限控制",
+        "isCorrect": false,
+        "description": "仍需合理权限，只是比环境变量更稳妥"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose stop` 与 `docker compose down` 的区别是什么？",
+    "explanation": "`stop` 只是停止运行中的容器，保留容器、网络、卷，之后可用 `start` 快速再启动（状态还在）。`down` 则停止「并删除」容器和默认网络（卷默认保留）。想临时暂停用 stop，想清理重来用 down。",
+    "tags": ["docker-compose", "初级", "lifecycle"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "stop 只停容器可再 start；down 停并删除容器和网络",
+        "isCorrect": true,
+        "description": "临时暂停用 stop，清理重来用 down"
+      },
+      {
+        "text": "两者都会删除命名卷",
+        "isCorrect": false,
+        "description": "down 默认也不删命名卷，stop 更不删"
+      },
+      {
+        "text": "stop 会删除容器",
+        "isCorrect": false,
+        "description": "stop 保留容器"
+      },
+      {
+        "text": "down 只是暂停不删除",
+        "isCorrect": false,
+        "description": "down 会删除容器和网络"
+      }
+    ]
+  },
+  {
+    "stem": "在 Docker Compose 中，一个服务要连接同一 compose 里的数据库服务 `db`，连接串主机名应写什么？",
+    "explanation": "应写服务名 `db`（如 `postgres://user:pass@db:5432/mydb`）。因为同项目服务在同一网络里，Compose 内建 DNS 会把服务名解析到对应容器。不要写 `localhost`——那指向服务自己的容器，而非 db 容器。",
+    "tags": ["docker-compose", "中级", "network"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "写服务名 `db`（经内建 DNS 解析到 db 容器）",
+        "isCorrect": true,
+        "description": "别写 localhost，那指向自己容器"
+      },
+      {
+        "text": "写 `localhost:5432`",
+        "isCorrect": false,
+        "description": "localhost 指自身容器，连不到 db"
+      },
+      {
+        "text": "写宿主机的公网 IP",
+        "isCorrect": false,
+        "description": "同网络用服务名即可，无需绕公网"
+      },
+      {
+        "text": "写容器的随机 IP 硬编码",
+        "isCorrect": false,
+        "description": "容器 IP 会变，应用服务名"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中，多个服务需要共享同一份构建产物或数据目录时，比「各自 bind mount 宿主同一目录」更受管的做法是什么？",
+    "explanation": "用一个命名卷（named volume）被多个服务同时挂载。命名卷由 Docker 管理、可移植、生命周期独立，比让多个服务各自绑定挂载宿主同一路径更受管、更不依赖宿主目录结构。当然共享写入仍需应用层处理并发一致性。",
+    "tags": ["docker-compose", "高级", "volume"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用一个命名卷被多个服务同时挂载",
+        "isCorrect": true,
+        "description": "受管、可移植、不依赖宿主目录结构"
+      },
+      {
+        "text": "把数据打进镜像层供各服务读",
+        "isCorrect": false,
+        "description": "镜像层只读且不宜放运行数据"
+      },
+      {
+        "text": "用环境变量传递整个目录",
+        "isCorrect": false,
+        "description": "环境变量无法传目录"
+      },
+      {
+        "text": "让每个服务复制一份数据",
+        "isCorrect": false,
+        "description": "复制导致不一致，卷共享更佳"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `deploy` 段（如 `replicas`、`resources`）在纯 `docker compose`（非 Swarm）下的支持情况如何？",
+    "explanation": "`deploy` 段源自 Swarm 模式规范。Compose V2 对其中部分字段有支持（如 `resources.limits` 限资源、`replicas` 在 up 时可展开多副本），但一些 Swarm 专属编排语义（如 `placement`、滚动更新策略）在单机 compose 下不完全生效或被忽略。需按实际支持矩阵使用。",
+    "tags": ["docker-compose", "专家", "deploy"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "部分字段（resources/replicas）受支持，Swarm 专属语义可能被忽略",
+        "isCorrect": true,
+        "description": "deploy 源自 Swarm，单机 compose 支持有限"
+      },
+      {
+        "text": "deploy 段全部字段在 compose 下都完整生效",
+        "isCorrect": false,
+        "description": "部分 Swarm 专属项不完全生效"
+      },
+      {
+        "text": "deploy 段在 compose 下会直接报错",
+        "isCorrect": false,
+        "description": "可用，只是支持有限"
+      },
+      {
+        "text": "deploy 用于构建镜像",
+        "isCorrect": false,
+        "description": "与构建无关"
+      }
+    ]
+  },
+  {
+    "stem": "从 Docker Compose 迁移到 Kubernetes 时，社区常用的辅助工具/说法是什么？",
+    "explanation": "`Kompose` 是把 `compose.yaml` 转换成 Kubernetes 资源清单（Deployment/Service 等）的社区工具，可作迁移起点；Docker 也提供过 Compose Bridge 之类的转换能力。但转换结果通常需人工调整（K8s 概念更丰富）。Compose 适合单机开发，K8s 面向生产集群编排。",
+    "tags": ["docker-compose", "高级", "k8s"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 Kompose 等把 compose 转成 K8s 清单作迁移起点（需人工调整）",
+        "isCorrect": true,
+        "description": "Compose 单机开发，K8s 生产集群编排"
+      },
+      {
+        "text": "Compose 文件可被 K8s 直接原样运行",
+        "isCorrect": false,
+        "description": "需转换成 K8s 资源"
+      },
+      {
+        "text": "K8s 无法运行容器化应用",
+        "isCorrect": false,
+        "description": "K8s 正是容器编排平台"
+      },
+      {
+        "text": "迁移必须重写全部业务代码",
+        "isCorrect": false,
+        "description": "迁移的是编排配置，非业务代码"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中若想只重建并重启单个服务（如 `web`）而不动其它服务，可以怎么做？",
+    "explanation": "可用 `docker compose up -d --build web` 只针对 web 服务重建并（重新）启动，Compose 会保持其它服务不变。也可 `docker compose build web` 后 `docker compose up -d web`。Compose 会智能地只重建目标服务、复用其余运行中的容器。",
+    "tags": ["docker-compose", "中级", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "docker compose up -d --build web 只重建重启该服务",
+        "isCorrect": true,
+        "description": "其它服务保持不动"
+      },
+      {
+        "text": "必须 down 整个项目再 up 才能更新单个服务",
+        "isCorrect": false,
+        "description": "可只针对单服务操作"
+      },
+      {
+        "text": "Compose 不支持操作单个服务",
+        "isCorrect": false,
+        "description": "命令后加服务名即可"
+      },
+      {
+        "text": "只能通过删除镜像来更新服务",
+        "isCorrect": false,
+        "description": "up --build 即可"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `extends` 关键字（或跨文件复用）解决的问题是什么？",
+    "explanation": "`extends` 允许一个服务继承另一个服务（可在同文件或另一文件里）的配置并做局部覆盖，用于复用公共服务定义、减少重复。它与「多 -f 叠加」「YAML 锚点」都是复用手段，各有适用场景（extends 偏服务级继承）。",
+    "tags": ["docker-compose", "高级", "reuse"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让服务继承另一服务的配置并局部覆盖，复用公共定义",
+        "isCorrect": true,
+        "description": "与多 -f、锚点同为复用手段"
+      },
+      {
+        "text": "把两个服务合并成一个容器",
+        "isCorrect": false,
+        "description": "是配置继承，不是合并容器"
+      },
+      {
+        "text": "扩展容器的磁盘空间",
+        "isCorrect": false,
+        "description": "与磁盘无关"
+      },
+      {
+        "text": "延长容器运行时间",
+        "isCorrect": false,
+        "description": "与运行时长无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `include` 顶层元素（较新特性）的作用是什么？",
+    "explanation": "`include` 允许在一个 compose 文件里引入其它 compose 文件的定义，把大型配置拆分成多个可复用、可独立维护的子文件并组合起来。相比多 `-f` 命令行叠加，`include` 把组合关系写进文件本身，利于模块化管理复杂项目。",
+    "tags": ["docker-compose", "专家", "include"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 compose 文件中引入其它 compose 文件，实现模块化组合",
+        "isCorrect": true,
+        "description": "把组合关系写进文件，利于拆分复用"
+      },
+      {
+        "text": "包含外部镜像的构建缓存",
+        "isCorrect": false,
+        "description": "与缓存无关"
+      },
+      {
+        "text": "引入宿主机的系统库",
+        "isCorrect": false,
+        "description": "不涉及系统库"
+      },
+      {
+        "text": "只能在 V1 中使用",
+        "isCorrect": false,
+        "description": "是较新的 V2/Spec 特性"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中把服务设为 `network_mode: host` 的效果与代价是什么？",
+    "explanation": "`network_mode: host` 让容器直接共享宿主的网络命名空间：容器内监听端口即等于监听宿主端口，省去 NAT、性能略好，但失去网络隔离、无法用 Compose 服务名 DNS 互访、且易与宿主端口冲突。仅在确有需要（如高性能网络、特定端口）时使用。",
+    "tags": ["docker-compose", "专家", "network"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "共享宿主网络命名空间：省 NAT 但失隔离、无服务名 DNS、易端口冲突",
+        "isCorrect": true,
+        "description": "仅特定高性能/端口需求下使用"
+      },
+      {
+        "text": "让容器完全无法联网",
+        "isCorrect": false,
+        "description": "那是 network_mode: none"
+      },
+      {
+        "text": "为容器创建独立子网",
+        "isCorrect": false,
+        "description": "host 模式恰恰不隔离网络"
+      },
+      {
+        "text": "自动负载均衡多个容器",
+        "isCorrect": false,
+        "description": "与负载均衡无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 项目在 CI 中做集成测试时，常见的收尾操作是什么以避免残留？",
+    "explanation": "常见做法是测试结束用 `docker compose down -v`（连命名卷一起删）彻底清理容器、网络、卷，避免残留影响下次运行或占用 CI 资源。有时还加 `--remove-orphans` 清理孤儿容器。CI 里保证幂等、干净收尾很重要。",
+    "tags": ["docker-compose", "高级", "ci"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "docker compose down -v（含卷）彻底清理，保证干净收尾",
+        "isCorrect": true,
+        "description": "可加 --remove-orphans 清孤儿容器"
+      },
+      {
+        "text": "什么都不做，让残留自然消失",
+        "isCorrect": false,
+        "description": "残留会影响下次运行/占资源"
+      },
+      {
+        "text": "只 stop 不 down 即可",
+        "isCorrect": false,
+        "description": "stop 会留容器/卷，不够干净"
+      },
+      {
+        "text": "删除整个 Docker 引擎重装",
+        "isCorrect": false,
+        "description": "过度且不必要"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中服务定义了 `ports: [\"8080:80\"]`，这个映射的方向是什么？",
+    "explanation": "格式是「宿主端口:容器端口」，即把宿主机的 8080 端口映射到容器的 80 端口，外部访问宿主 8080 即到达容器 80。写反（`80:8080`）会导致访问端口错误。只写单个端口（如 `\"80\"`）则宿主随机分配端口映射到容器 80。",
+    "tags": ["docker-compose", "初级", "ports"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "宿主 8080 → 容器 80（格式为 宿主:容器）",
+        "isCorrect": true,
+        "description": "写反会导致访问端口错误"
+      },
+      {
+        "text": "容器 8080 → 宿主 80",
+        "isCorrect": false,
+        "description": "方向反了，是 宿主:容器"
+      },
+      {
+        "text": "两个都是容器端口",
+        "isCorrect": false,
+        "description": "左宿主右容器"
+      },
+      {
+        "text": "表示只允许 8080 到 80 的流量过滤",
+        "isCorrect": false,
+        "description": "是端口映射不是过滤规则"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 里，若一个服务依赖数据库且数据库启动较慢，仅靠 `restart` 策略让应用崩溃重试直到连上，与用 healthcheck + depends_on 相比如何评价？",
+    "explanation": "两种思路都能「最终连上」：靠应用崩溃-重启是一种务实的容错（应用本就该能重连），而 healthcheck + `condition: service_healthy` 则在编排层更优雅地控制启动次序、减少无谓的失败噪音。业界共识：应用应具备重连能力（不能只依赖启动顺序），healthcheck 是锦上添花而非唯一保障。",
+    "tags": ["docker-compose", "专家", "startup"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "应用本应能重连；healthcheck+depends_on 让启动更优雅、减少失败噪音",
+        "isCorrect": true,
+        "description": "不能只靠启动顺序，重连能力是根本"
+      },
+      {
+        "text": "有了 depends_on 应用就无需具备重连能力",
+        "isCorrect": false,
+        "description": "运行中依赖也可能断，重连仍必要"
+      },
+      {
+        "text": "崩溃重试是绝对禁止的",
+        "isCorrect": false,
+        "description": "是一种务实容错，非禁止"
+      },
+      {
+        "text": "healthcheck 能保证依赖永不断开",
+        "isCorrect": false,
+        "description": "只影响启动判定，运行中仍可能断"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose pull` 的用途是什么？",
+    "explanation": "`pull` 预先拉取 compose 文件里各服务声明的镜像（`image:` 指定的），不启动容器。常用于部署前先把镜像下载好（加快后续 up、或在有网络窗口时预取），以及更新到镜像的最新标签内容。对用 `build` 的服务则用 `build` 而非 pull。",
+    "tags": ["docker-compose", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "预先拉取各服务声明的镜像而不启动容器",
+        "isCorrect": true,
+        "description": "部署前预取/更新镜像；build 服务用 build"
+      },
+      {
+        "text": "拉取并立即启动所有服务",
+        "isCorrect": false,
+        "description": "启动是 up，pull 只下载"
+      },
+      {
+        "text": "把本地镜像推送到仓库",
+        "isCorrect": false,
+        "description": "推送是 push"
+      },
+      {
+        "text": "拉取宿主机的系统更新",
+        "isCorrect": false,
+        "description": "只拉容器镜像"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中，开发环境用绑定挂载把宿主源码挂进容器实现热更时，常见的 `node_modules` 冲突问题如何缓解？",
+    "explanation": "把整个项目目录 bind mount 进容器会用宿主的 `node_modules`（可能架构不符或为空）覆盖容器内安装好的依赖。常见解法是用一个「匿名卷/命名卷」把容器内的 `node_modules` 路径「盖」在 bind mount 之上（如再挂 `/app/node_modules`），从而保留容器内安装的依赖，同时源码仍热更。",
+    "tags": ["docker-compose", "专家", "volume"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用卷覆盖容器内 node_modules 路径，保留容器依赖同时源码热更",
+        "isCorrect": true,
+        "description": "避免宿主目录覆盖掉容器内安装的依赖"
+      },
+      {
+        "text": "把 node_modules 提交进 Git 一起挂载",
+        "isCorrect": false,
+        "description": "架构/体积问题，不推荐"
+      },
+      {
+        "text": "禁用绑定挂载改为每次重建",
+        "isCorrect": false,
+        "description": "失去热更便利，非最佳解"
+      },
+      {
+        "text": "该问题无法缓解",
+        "isCorrect": false,
+        "description": "用卷覆盖是成熟解法"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中，`docker compose logs` 默认输出所有服务日志，如何只看某个服务并持续跟踪？",
+    "explanation": "在命令后跟服务名并加 `-f`（follow），如 `docker compose logs -f web` 只实时跟踪 web 服务日志。还可用 `--tail=N` 只看最后 N 行、`--since` 限定时间。聚合视图便于纵览，指定服务便于聚焦排障。",
+    "tags": ["docker-compose", "初级", "logs"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "docker compose logs -f web（服务名 + -f 持续跟踪）",
+        "isCorrect": true,
+        "description": "可配 --tail/--since 进一步过滤"
+      },
+      {
+        "text": "logs 无法针对单个服务",
+        "isCorrect": false,
+        "description": "跟服务名即可聚焦"
+      },
+      {
+        "text": "必须先停止其它服务才能看单个",
+        "isCorrect": false,
+        "description": "无需停其它服务"
+      },
+      {
+        "text": "-f 表示只看最后一行",
+        "isCorrect": false,
+        "description": "-f 是持续跟踪，最后 N 行是 --tail"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Docker Compose 与 Docker Swarm 的关系，下列说法正确的是？",
+    "explanation": "Compose 文件格式（Compose Specification）被 Docker Swarm 的 `docker stack deploy` 复用，`deploy` 段就是给 Swarm 集群编排用的。但 Compose（`docker compose`）本身面向「单机」多容器；Swarm 才是 Docker 原生的「多节点集群」编排。二者共享文件格式，编排范围不同。",
+    "tags": ["docker-compose", "高级", "swarm"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "共享文件格式；Compose 面向单机，Swarm 面向多节点集群",
+        "isCorrect": true,
+        "description": "deploy 段供 Swarm 的 stack deploy 使用"
+      },
+      {
+        "text": "Compose 就是多节点集群编排器",
+        "isCorrect": false,
+        "description": "Compose 面向单机"
+      },
+      {
+        "text": "两者文件格式完全不兼容",
+        "isCorrect": false,
+        "description": "Swarm 复用 Compose 格式"
+      },
+      {
+        "text": "Swarm 已完全取代 Compose",
+        "isCorrect": false,
+        "description": "用途不同，并存"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 中 `docker compose run --rm migrate` 这类「一次性任务容器」的典型用途是什么？",
+    "explanation": "用于跑数据库迁移、seed、批处理等一次性任务：基于某服务配置新建一个容器执行命令，`--rm` 让它结束即删除、不留残容器。它复用了服务的镜像、环境、网络（能连到 db 服务），非常适合在 compose 网络内执行运维脚本。",
+    "tags": ["docker-compose", "中级", "run"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 compose 网络内跑迁移/seed 等一次性任务，--rm 用完即删",
+        "isCorrect": true,
+        "description": "复用服务镜像/环境/网络执行运维脚本"
+      },
+      {
+        "text": "永久新增一个常驻服务",
+        "isCorrect": false,
+        "description": "run 是一次性容器，非常驻服务"
+      },
+      { "text": "构建镜像", "isCorrect": false, "description": "构建是 build" },
+      {
+        "text": "把服务扩容到多副本",
+        "isCorrect": false,
+        "description": "扩容用 --scale"
+      }
+    ]
+  },
+  {
+    "stem": "在 Docker Compose 中管理敏感信息时，为什么不推荐把密钥直接写进提交到仓库的 `compose.yaml` 的 `environment` 里？",
+    "explanation": "compose 文件通常入库，明文密钥会随仓库泄露、进入历史、被所有能读仓库的人看到。应改用未入库的 `.env`（配 `.gitignore`）做插值，或用 secrets 文件挂载，并结合权限管理。这与「密钥绝不入库」的通用安全原则一致。",
+    "tags": ["docker-compose", "中级", "security"],
+    "categories": [
+      ["技术方向", "Docker Compose"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "compose 文件通常入库，明文密钥会随仓库与历史泄露",
+        "isCorrect": true,
+        "description": "改用未入库 .env 插值或 secrets 挂载"
+      },
+      {
+        "text": "environment 无法存放字符串",
+        "isCorrect": false,
+        "description": "能存，只是不该放明文密钥"
+      },
+      {
+        "text": "写进 environment 会导致容器无法启动",
+        "isCorrect": false,
+        "description": "能启动，问题在泄露风险"
+      },
+      {
+        "text": "密钥放 compose 文件里最安全",
+        "isCorrect": false,
+        "description": "恰恰最易泄露"
+      }
+    ]
+  }
+]

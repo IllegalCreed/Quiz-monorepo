@@ -1,0 +1,893 @@
+[
+  {
+    "stem": "Changesets 工具的核心定位是什么？",
+    "explanation": "Changesets（`@changesets/cli`）是面向 monorepo 的版本管理与发布工具。它的核心理念是：开发者在改动时「显式声明一条 changeset」描述本次变更影响哪些包、该升什么版本（major/minor/patch）；发布时汇总这些 changeset 自动递增版本、生成 changelog 并发布。它与 pnpm/yarn/npm workspaces 配合良好。",
+    "tags": ["changesets", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "monorepo 的版本/发布工具，靠显式声明的 changeset 驱动版本与 changelog",
+        "isCorrect": true,
+        "description": "声明变更意图 → 汇总 → 递增版本/发布"
+      },
+      { "text": "一个打包器", "isCorrect": false, "description": "与打包无关" },
+      {
+        "text": "一个测试运行器",
+        "isCorrect": false,
+        "description": "与测试无关"
+      },
+      {
+        "text": "一个类型检查器",
+        "isCorrect": false,
+        "description": "与类型检查无关"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中一个「changeset 文件」通常长什么样、放在哪里？",
+    "explanation": "运行 `changeset add` 会在 `.changeset/` 目录生成一个随机命名的 Markdown 文件，含 YAML frontmatter 声明「哪些包 + 各自的 bump 类型（patch/minor/major）」，正文是这条变更的说明（将进入 changelog）。这些文件随代码提交进仓库，等待发布时被消费。",
+    "tags": ["changesets", "初级", "changeset-file"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": ".changeset/ 下的 md 文件，frontmatter 声明包+bump 类型，正文是变更说明",
+        "isCorrect": true,
+        "description": "随代码提交，发布时被消费"
+      },
+      {
+        "text": "一个 JSON 存在项目根目录",
+        "isCorrect": false,
+        "description": "是 .changeset/ 下的 md 文件"
+      },
+      {
+        "text": "写在 package.json 的字段里",
+        "isCorrect": false,
+        "description": "是独立的 md 文件"
+      },
+      {
+        "text": "一个 git tag",
+        "isCorrect": false,
+        "description": "changeset 是文件，不是 tag"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的核心工作流三步通常是什么？",
+    "explanation": "①`changeset add`（或简写 `changeset`）交互式创建变更声明；②`changeset version` 消费所有累积的 changeset，据其递增各包 `package.json` 版本、更新内部依赖引用、生成/更新 CHANGELOG、并删除已消费的 changeset 文件；③`changeset publish` 把版本高于 registry 的包发布到 npm 并打 tag。",
+    "tags": ["changesets", "中级", "workflow"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "changeset add 声明 → changeset version 消费改版本+changelog → changeset publish 发布",
+        "isCorrect": true,
+        "description": "声明、消费改版本、发布三步"
+      },
+      {
+        "text": "install → build → test",
+        "isCorrect": false,
+        "description": "那是通用构建流程，非 changesets 流程"
+      },
+      {
+        "text": "commit → push → merge",
+        "isCorrect": false,
+        "description": "那是 git 流程"
+      },
+      {
+        "text": "只有一步 publish",
+        "isCorrect": false,
+        "description": "需先 add 与 version"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的 `changeset version` 命令具体做了哪些事？",
+    "explanation": "`changeset version` 会：读取 `.changeset/` 里所有 changeset，按其声明的 bump 类型对相应包递增 `package.json` 版本号；更新 monorepo 内部包之间的依赖版本引用；把变更条目写入各包 CHANGELOG.md；然后删除这些已被消费的 changeset 文件。它只改本地文件，不发布、不推送。",
+    "tags": ["changesets", "中级", "version"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "据 changeset 递增版本、更新内部依赖引用、写 changelog、删除已消费的 changeset",
+        "isCorrect": true,
+        "description": "只改本地文件，不发布不推送"
+      },
+      {
+        "text": "直接把包发布到 npm",
+        "isCorrect": false,
+        "description": "发布是 publish，version 只改文件"
+      },
+      {
+        "text": "创建 git 提交并推送",
+        "isCorrect": false,
+        "description": "默认只改文件，提交由你/CI 处理"
+      },
+      {
+        "text": "删除所有 CHANGELOG",
+        "isCorrect": false,
+        "description": "是写入 changelog，非删除"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `changeset publish` 与 npm publish 的关系是什么？",
+    "explanation": "`changeset publish` 会检查各包本地 `package.json` 版本与 registry 上的版本，把「本地版本更高、尚未发布」的包发布到 npm（底层调用包管理器的 publish），并为发布的包打 git tag。它在 monorepo 里批量、幂等地完成发布，避免手工逐个 npm publish。",
+    "tags": ["changesets", "中级", "publish"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对比本地与 registry 版本，发布更高版本的包并打 tag",
+        "isCorrect": true,
+        "description": "monorepo 批量、幂等发布，免手工逐个"
+      },
+      {
+        "text": "只打 tag 不真正发布",
+        "isCorrect": false,
+        "description": "会真正发布到 npm"
+      },
+      {
+        "text": "会发布所有包无论版本",
+        "isCorrect": false,
+        "description": "只发本地版本高于 registry 的"
+      },
+      {
+        "text": "只能发布到私有 registry",
+        "isCorrect": false,
+        "description": "默认发 npm，可配私有"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 与 semantic-release 在「版本决策来源」上的根本差异是什么？",
+    "explanation": "semantic-release 从「提交信息（conventional commits）」推断版本；Changesets 则要求开发者「显式写一条 changeset」声明变更意图与 bump 级别。差异：Changesets 把版本决策交给作者显式表达（更可控、适合 monorepo 多包），semantic-release 靠提交约定自动推断（更全自动、单包场景轻）。",
+    "tags": ["changesets", "高级", "compare"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Changesets 靠作者显式声明变更；semantic-release 从 commit 自动推断",
+        "isCorrect": true,
+        "description": "显式可控 vs 提交约定自动"
+      },
+      {
+        "text": "两者都从 commit 推断版本",
+        "isCorrect": false,
+        "description": "Changesets 是显式声明"
+      },
+      {
+        "text": "两者都需要手写 changeset 文件",
+        "isCorrect": false,
+        "description": "semantic-release 不用 changeset 文件"
+      },
+      {
+        "text": "两者版本来源完全相同",
+        "isCorrect": false,
+        "description": "决策来源根本不同"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的 `.changeset/config.json` 里 `access` 字段（`public`/`restricted`）作用是什么？",
+    "explanation": "`access` 决定发布 scoped 包（如 `@org/pkg`）时的可见性。npm 默认把带 scope 的包当私有（restricted），若要发布为公共包必须显式设 `access: public`，否则发布会因权限/私有设置而失败。对公开的 scoped 包这是必配项。",
+    "tags": ["changesets", "中级", "config"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "控制 scoped 包发布可见性，公开包需设 public",
+        "isCorrect": true,
+        "description": "scoped 包默认 restricted，公开须显式 public"
+      },
+      {
+        "text": "控制谁能读代码仓库",
+        "isCorrect": false,
+        "description": "是 npm 发布可见性，非仓库权限"
+      },
+      {
+        "text": "设置 npm 登录 token",
+        "isCorrect": false,
+        "description": "token 另行配置"
+      },
+      {
+        "text": "决定 changelog 语言",
+        "isCorrect": false,
+        "description": "与语言无关"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 fixed 与 linked 两种包分组配置的区别是什么？",
+    "explanation": "`fixed`：一组包版本号完全绑定，任一包发布时该组所有包一起升到同一版本（即使有的没变）。`linked`：一组包共享「版本号高度」——当组内某包升级时，其它包在下次自身有变更时会对齐到该更高版本，但不会为没变的包强行发版。fixed 更强绑定，linked 更宽松同步。",
+    "tags": ["changesets", "高级", "grouping"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fixed 组内版本完全绑定齐发；linked 共享版本高度但不强制齐发",
+        "isCorrect": true,
+        "description": "fixed 更强绑定，linked 更宽松"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "绑定强度不同"
+      },
+      {
+        "text": "fixed 每包独立版本",
+        "isCorrect": false,
+        "description": "fixed 是绑定同版本"
+      },
+      {
+        "text": "linked 会把包合并成一个",
+        "isCorrect": false,
+        "description": "只是版本对齐，不合并包"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `updateInternalDependencies` 配置项影响什么？",
+    "explanation": "它控制「当一个包升级时，monorepo 内依赖它的其它包，其对该包的依赖版本引用以及自身是否需要 bump」的行为——例如设为 `patch` 表示：内部依赖被升级时，依赖方至少补一个 patch。它决定内部依赖联动升级的粒度，避免发布出彼此版本引用不一致的包。",
+    "tags": ["changesets", "专家", "internal-deps"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "控制内部依赖升级时依赖方的联动 bump 粒度",
+        "isCorrect": true,
+        "description": "避免发布出内部版本引用不一致的包"
+      },
+      {
+        "text": "控制第三方依赖的自动更新",
+        "isCorrect": false,
+        "description": "指 monorepo 内部依赖，非第三方"
+      },
+      {
+        "text": "决定是否安装依赖",
+        "isCorrect": false,
+        "description": "与安装无关"
+      },
+      {
+        "text": "配置 npm registry 地址",
+        "isCorrect": false,
+        "description": "与 registry 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的预发布（pre-release）模式如何进入与退出？",
+    "explanation": "用 `changeset pre enter <tag>`（如 `next`/`beta`/`alpha`/`rc`）进入预发布模式，此后 `version`/`publish` 产出带该 tag 的预发布版本（如 `1.2.0-beta.0`）；用 `changeset pre exit` 退出，回到正式版本流程。忘记 `pre exit` 会导致后续一直发预发布版，是常见坑。",
+    "tags": ["changesets", "高级", "prerelease"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "changeset pre enter <tag> 进入、changeset pre exit 退出",
+        "isCorrect": true,
+        "description": "忘记 exit 会一直发预发布版，是坑"
+      },
+      {
+        "text": "改 package.json 的 private 字段切换",
+        "isCorrect": false,
+        "description": "用 pre enter/exit，非 private"
+      },
+      {
+        "text": "删除 .changeset 目录进入预发布",
+        "isCorrect": false,
+        "description": "不是靠删目录"
+      },
+      {
+        "text": "预发布无法退出",
+        "isCorrect": false,
+        "description": "pre exit 即可退出"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的 snapshot 发布（`changeset version --snapshot` / `publish --tag`）用途是什么？",
+    "explanation": "snapshot 发布生成一次性的、带唯一标识（如时间戳）的临时版本（如 `0.0.0-snapshot-20260704...`），常配合 `publish --tag <某 dist-tag>` 发到一个非 latest 的 dist-tag，供在 PR 上试用某次改动而不影响正式版本线。用完即弃，不进正式版本历史。",
+    "tags": ["changesets", "专家", "snapshot"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "发一次性带唯一标识的临时版本到非 latest tag，供 PR 试用",
+        "isCorrect": true,
+        "description": "不影响正式版本线，用完即弃"
+      },
+      {
+        "text": "把正式版本回滚",
+        "isCorrect": false,
+        "description": "不是回滚，是临时预览发布"
+      },
+      {
+        "text": "删除 npm 上的旧版本",
+        "isCorrect": false,
+        "description": "与删除无关"
+      },
+      {
+        "text": "只在本地打包不发布",
+        "isCorrect": false,
+        "description": "snapshot 会发布到 registry（非 latest tag）"
+      }
+    ]
+  },
+  {
+    "stem": "在 CI 中，官方的 `changesets/action` 通常自动做什么？",
+    "explanation": "`changesets/action`（GitHub Action）在主干有累积的 changeset 时，自动维护一个「Release PR」——把 `changeset version` 的结果（版本递增、changelog）作为 PR 呈现；当该 Release PR 被合并后，Action 再自动执行 `changeset publish` 发布到 npm。这实现了「合并 Release PR 即发布」的自动化。",
+    "tags": ["changesets", "高级", "ci"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动维护 Release PR（版本+changelog），合并后自动 publish 发布",
+        "isCorrect": true,
+        "description": "实现「合并 Release PR 即发布」"
+      },
+      {
+        "text": "自动创建 changeset 文件替代人工",
+        "isCorrect": false,
+        "description": "changeset 仍由开发者显式写"
+      },
+      {
+        "text": "自动编写业务代码",
+        "isCorrect": false,
+        "description": "只处理版本发布流程"
+      },
+      {
+        "text": "自动回滚失败的部署",
+        "isCorrect": false,
+        "description": "与部署回滚无关"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `@changesets/changelog-github` 这类 changelog 生成器的作用是什么？",
+    "explanation": "默认 changelog 生成器只写变更摘要；`@changesets/changelog-github`（需配 repo 与 token）会在生成的 changelog 条目里自动附上关联的 PR 链接、提交、贡献者 @ 提及等，让 changelog 更丰富、可溯源。在 `config.json` 的 `changelog` 字段配置使用。",
+    "tags": ["changesets", "专家", "changelog"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 changelog 里自动附 PR 链接/提交/贡献者，增强可溯源",
+        "isCorrect": true,
+        "description": "在 config.json 的 changelog 字段配置"
+      },
+      {
+        "text": "把 changelog 翻译成多语言",
+        "isCorrect": false,
+        "description": "是增强 GitHub 元信息，非翻译"
+      },
+      {
+        "text": "删除旧的 changelog",
+        "isCorrect": false,
+        "description": "是生成/增强，非删除"
+      },
+      {
+        "text": "生成 API 文档",
+        "isCorrect": false,
+        "description": "生成的是变更日志"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中，一个改动若「不需要发版」（如仅改内部测试/文档），推荐怎么处理？",
+    "explanation": "可以运行 `changeset add` 后创建一个「空 changeset」（不勾选任何包做 bump），它会生成一个不含包 bump 的记录，用于在 CI 的 changeset 校验里表明「我知道这次不需要发版」，从而通过校验又不触发版本递增。这优雅地处理了「有改动但无需发版」的场景。",
+    "tags": ["changesets", "高级", "empty-changeset"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "创建空 changeset 表明本次无需发版，既过校验又不升版本",
+        "isCorrect": true,
+        "description": "优雅处理「有改动但不发版」"
+      },
+      {
+        "text": "必须强行给某个包升 patch",
+        "isCorrect": false,
+        "description": "无需发版时可用空 changeset"
+      },
+      {
+        "text": "删除 .changeset 目录",
+        "isCorrect": false,
+        "description": "不该删目录"
+      },
+      {
+        "text": "禁止提交该改动",
+        "isCorrect": false,
+        "description": "空 changeset 即可通过"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 为什么特别适合 monorepo（多包）场景？",
+    "explanation": "monorepo 里一次改动可能只影响部分包、且包间有内部依赖。Changesets 能按 changeset 精确地只给受影响的包 bump、自动处理内部依赖版本联动、为每个包各自生成 changelog、批量发布。这种「按包粒度的显式声明 + 联动」正契合多包发布的复杂性。",
+    "tags": ["changesets", "中级", "monorepo"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按包精确 bump、处理内部依赖联动、各包 changelog、批量发布",
+        "isCorrect": true,
+        "description": "契合多包发布的粒度与联动复杂性"
+      },
+      {
+        "text": "因为它能替代包管理器安装依赖",
+        "isCorrect": false,
+        "description": "不负责依赖安装"
+      },
+      {
+        "text": "因为它只支持单包",
+        "isCorrect": false,
+        "description": "恰恰擅长多包"
+      },
+      {
+        "text": "因为它能自动写业务代码",
+        "isCorrect": false,
+        "description": "只管版本发布"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 工作流中，`changeset version` 产生的改动通常由谁提交、何时提交？",
+    "explanation": "`changeset version` 只在本地改文件（版本、changelog、删 changeset）。这些改动需要被提交——手动流程里你自己 commit；自动化里由 `changesets/action` 在 Release PR 中提交。关键点：version 不自动 commit，需后续显式提交，这也是它与「一步到位」工具的区别之一。",
+    "tags": ["changesets", "中级", "workflow"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "version 只改文件不自动提交，需人工或 action 在 Release PR 中提交",
+        "isCorrect": true,
+        "description": "与「一步到位」工具的区别之一"
+      },
+      {
+        "text": "version 会自动 commit 并 push",
+        "isCorrect": false,
+        "description": "默认不自动提交"
+      },
+      {
+        "text": "改动无需提交即可发布",
+        "isCorrect": false,
+        "description": "版本/changelog 改动应提交"
+      },
+      {
+        "text": "version 会创建新分支提交",
+        "isCorrect": false,
+        "description": "不自动建分支提交"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `ignore` 配置（config.json）用于什么？",
+    "explanation": "`ignore` 列出「不参与版本管理/发布」的包（如示例应用、文档站、e2e 项目）。被 ignore 的包不会被 changeset 提示选择、也不会被 version/publish 处理。它把「仅内部使用、不发布的项目」排除在发布流程之外，避免误发。",
+    "tags": ["changesets", "高级", "config"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "排除不发布的包（示例/文档/e2e）不参与版本与发布",
+        "isCorrect": true,
+        "description": "避免内部项目被误纳入发布"
+      },
+      {
+        "text": "忽略某些 git 文件",
+        "isCorrect": false,
+        "description": "那是 .gitignore"
+      },
+      {
+        "text": "忽略测试失败",
+        "isCorrect": false,
+        "description": "与测试无关"
+      },
+      {
+        "text": "忽略 npm 审计告警",
+        "isCorrect": false,
+        "description": "与审计无关"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中同一次改动可以在一个 changeset 里声明多个包各自不同的 bump 级别吗？",
+    "explanation": "可以。一个 changeset 的 frontmatter 能同时列多个包，且各自指定不同 bump（如 `@org/a: minor`、`@org/b: patch`）。这适合「一次改动同时影响多个包、但影响程度不同」的情形。version 会分别据此递增各包。",
+    "tags": ["changesets", "中级", "changeset-file"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可以，一个 changeset 能为多个包分别指定不同 bump 级别",
+        "isCorrect": true,
+        "description": "适合一次改动影响多包程度不同"
+      },
+      {
+        "text": "一个 changeset 只能声明一个包",
+        "isCorrect": false,
+        "description": "可声明多个包"
+      },
+      {
+        "text": "多个包必须同一 bump 级别",
+        "isCorrect": false,
+        "description": "可各自不同"
+      },
+      {
+        "text": "必须为每个包各写一个文件",
+        "isCorrect": false,
+        "description": "可合并在一个 changeset"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 与包管理器 workspaces 的分工是怎样的？",
+    "explanation": "workspaces（pnpm/yarn/npm）负责依赖安装与本地包链接、以及提供 `publish` 底层能力；Changesets 在其上负责「版本递增决策 + changelog + 编排批量发布」。二者互补：workspaces 管依赖，Changesets 管版本与发布流程。这也是它无需自己实现 linking 的原因。",
+    "tags": ["changesets", "中级", "workspaces"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "workspaces 管依赖/链接，Changesets 管版本/changelog/发布编排",
+        "isCorrect": true,
+        "description": "互补，Changesets 不自做 linking"
+      },
+      {
+        "text": "Changesets 取代 workspaces 安装依赖",
+        "isCorrect": false,
+        "description": "依赖安装靠 workspaces"
+      },
+      {
+        "text": "两者功能完全重叠",
+        "isCorrect": false,
+        "description": "分工不同、互补"
+      },
+      {
+        "text": "workspaces 负责生成 changelog",
+        "isCorrect": false,
+        "description": "changelog 由 Changesets 生成"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 的典型「常见坑」之一是什么？",
+    "explanation": "最常见的是「忘记写 changeset」：改了包却没跑 `changeset add`，导致该改动不会触发版本递增、不进 changelog，发布时被漏掉。因此团队常在 CI 加校验（缺 changeset 则失败，类似 `@changesets/cli` 的检查或自定义 CI 步骤）来强制附带。其次是 pre 模式忘记 exit。",
+    "tags": ["changesets", "高级", "pitfall"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "忘记写 changeset 致改动漏发；用 CI 校验强制附带",
+        "isCorrect": true,
+        "description": "其次是 pre 模式忘记 exit"
+      },
+      {
+        "text": "changeset 文件会自动生成无需人管",
+        "isCorrect": false,
+        "description": "需开发者显式创建，故会漏"
+      },
+      {
+        "text": "changeset 会导致依赖无法安装",
+        "isCorrect": false,
+        "description": "与依赖安装无关"
+      },
+      {
+        "text": "changeset 只能用于单包项目",
+        "isCorrect": false,
+        "description": "恰恰擅长多包"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中，把 monorepo 内 `@org/a` 依赖 `@org/b`，当 b 发生 minor 升级时，version 通常怎样处理 a 对 b 的依赖范围？",
+    "explanation": "`changeset version` 会自动更新 a 的 `package.json` 中对 b 的依赖版本范围，使其指向 b 的新版本（并可能据 `updateInternalDependencies` 决定是否给 a 也补一个 bump）。这保证发布出去的 a 正确引用新版 b，避免内部依赖版本悬空。",
+    "tags": ["changesets", "高级", "internal-deps"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动更新 a 对 b 的依赖范围到 b 新版本，必要时给 a 补 bump",
+        "isCorrect": true,
+        "description": "保证发布包正确引用新版依赖"
+      },
+      {
+        "text": "完全不管 a 对 b 的引用",
+        "isCorrect": false,
+        "description": "会自动更新内部引用"
+      },
+      {
+        "text": "把 a、b 合并成一个包",
+        "isCorrect": false,
+        "description": "不合并包"
+      },
+      {
+        "text": "删除 a 对 b 的依赖",
+        "isCorrect": false,
+        "description": "更新版本而非删除依赖"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 相比在 CI 里「每次合并到主干就自动发正式版」的策略，「Release PR」模式的好处是什么？",
+    "explanation": "Release PR 模式把「累积的变更 + 即将发布的版本/changelog」汇总成一个可评审的 PR，团队可以在真正发布前审阅版本号与 changelog、控制发布时机（合并即发布）。相比每次合并即发，它提供了「批量发布 + 人工把关发布时机」的平衡，减少碎版本。",
+    "tags": ["changesets", "专家", "release-pr"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把版本/changelog 汇总成可评审 PR，控制发布时机、减少碎版本",
+        "isCorrect": true,
+        "description": "批量发布 + 人工把关的平衡"
+      },
+      {
+        "text": "让发布完全无人参与且不可控",
+        "isCorrect": false,
+        "description": "恰恰提供发布时机把关"
+      },
+      {
+        "text": "每次改动都立即发一个正式版",
+        "isCorrect": false,
+        "description": "那是它要改善的碎版本问题"
+      },
+      {
+        "text": "取消 changelog 生成",
+        "isCorrect": false,
+        "description": "Release PR 恰恰含 changelog"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `changeset status` 命令的用途是什么？",
+    "explanation": "`changeset status` 显示当前累积了哪些 changeset、这些 changeset 将导致哪些包升到什么版本，可用于在发布前预览「本次将发布什么」。常在 CI 里用 `changeset status --since=main` 之类检查 PR 是否带了 changeset。",
+    "tags": ["changesets", "中级", "cli"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "预览累积的 changeset 及将导致的版本变更",
+        "isCorrect": true,
+        "description": "CI 里可用 --since 检查 PR 是否带 changeset"
+      },
+      {
+        "text": "发布所有包",
+        "isCorrect": false,
+        "description": "status 只查看不发布"
+      },
+      {
+        "text": "删除所有 changeset",
+        "isCorrect": false,
+        "description": "只查看，不删除"
+      },
+      { "text": "安装依赖", "isCorrect": false, "description": "与安装无关" }
+    ]
+  },
+  {
+    "stem": "使用 Changesets 时，为什么它比 semantic-release 更依赖「开发者的自觉/流程约束」？",
+    "explanation": "因为版本意图由人显式写 changeset 表达——如果开发者忘写或写错 bump 级别，版本就不对。semantic-release 从提交约定自动推断，人只要按规范写 commit 即可。因此用 Changesets 更需要靠 CI 校验（缺 changeset 就失败）与团队习惯来保证每次该发版的改动都带上正确的 changeset。",
+    "tags": ["changesets", "专家", "tradeoff"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "版本意图靠人显式声明，漏写/写错就出错，需 CI 校验兜底",
+        "isCorrect": true,
+        "description": "换来更精细可控的多包版本决策"
+      },
+      {
+        "text": "因为它不支持 CI",
+        "isCorrect": false,
+        "description": "它有官方 CI action"
+      },
+      {
+        "text": "因为它随机决定版本",
+        "isCorrect": false,
+        "description": "由声明决定，非随机"
+      },
+      {
+        "text": "因为它不生成 changelog",
+        "isCorrect": false,
+        "description": "会生成 changelog"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中 `commit` 配置项（config.json）设为 true 时的效果是什么？",
+    "explanation": "默认 Changesets 的 add/version 不自动 git 提交（把提交交给你或 CI）。若把 `commit` 配为 true（或用相应提交器），它会在 `changeset add`/`version` 后自动创建 git 提交。多数团队保持默认（不自动提交）以便把提交纳入 PR 流程与评审。",
+    "tags": ["changesets", "专家", "config"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "让 add/version 自动创建 git 提交（默认不自动提交）",
+        "isCorrect": true,
+        "description": "多数团队保持默认以纳入 PR 评审"
+      },
+      {
+        "text": "自动把代码推送到远程",
+        "isCorrect": false,
+        "description": "commit 只提交本地，非推送"
+      },
+      {
+        "text": "提交到 npm registry",
+        "isCorrect": false,
+        "description": "commit 指 git 提交，非发布"
+      },
+      {
+        "text": "启用双因素认证",
+        "isCorrect": false,
+        "description": "与认证无关"
+      }
+    ]
+  },
+  {
+    "stem": "对一个「本身就是 pnpm monorepo、需要发布多个 npm 包」的项目，选 Changesets 的核心理由是什么？",
+    "explanation": "Changesets 天生为「workspaces monorepo + 多包发布」设计：按包声明变更、自动处理内部依赖联动、各包独立 changelog、批量幂等发布、与 pnpm workspaces 无缝配合，还有成熟的 Release PR CI 自动化。相比 semantic-release（更偏单包）它在多包发布上更顺手。",
+    "tags": ["changesets", "中级", "selection"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "为 workspaces 多包发布而生，联动/各包 changelog/批量发布顺手",
+        "isCorrect": true,
+        "description": "与 pnpm workspaces 无缝，Release PR CI 成熟"
+      },
+      {
+        "text": "因为它能替代 pnpm",
+        "isCorrect": false,
+        "description": "与 pnpm 配合而非替代"
+      },
+      {
+        "text": "因为它只适合单包",
+        "isCorrect": false,
+        "description": "恰恰擅长多包"
+      },
+      {
+        "text": "因为它能自动写测试",
+        "isCorrect": false,
+        "description": "只管版本发布"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 中，若发布时某些包应发到不同的 dist-tag（如 `latest` 与 `next`），一般怎么协调？",
+    "explanation": "正式版本用默认 `latest`；预发布（pre 模式）或 snapshot 会发到 `next`/`beta` 等非 latest 的 dist-tag（`publish --tag`）。这样用户默认装到稳定版，尝鲜者可 `npm i pkg@next`。协调 dist-tag 是管理稳定线与预览线并存的关键。",
+    "tags": ["changesets", "高级", "dist-tag"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "正式发 latest，预发布/snapshot 发 next/beta 等非 latest tag",
+        "isCorrect": true,
+        "description": "用户默认装稳定版，尝鲜用 @next"
+      },
+      {
+        "text": "所有版本都必须发到 latest",
+        "isCorrect": false,
+        "description": "预览应发非 latest tag"
+      },
+      {
+        "text": "dist-tag 无法自定义",
+        "isCorrect": false,
+        "description": "可用 --tag 指定"
+      },
+      {
+        "text": "预发布会覆盖 latest",
+        "isCorrect": false,
+        "description": "预发布发到独立 tag，不动 latest"
+      }
+    ]
+  },
+  {
+    "stem": "Changesets 生成的 CHANGELOG 条目内容主要来自哪里？",
+    "explanation": "来自每个 changeset 文件的正文（开发者写的变更说明）——`changeset version` 汇总这些说明，按包、按 bump 级别归类写入各自的 CHANGELOG.md。所以「changeset 正文写得清不清楚」直接决定 changelog 质量，鼓励开发者写有信息量的变更描述。",
+    "tags": ["changesets", "中级", "changelog"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "来自 changeset 文件的正文说明，按包/级别归类写入 CHANGELOG",
+        "isCorrect": true,
+        "description": "changeset 写得清不清直接决定 changelog 质量"
+      },
+      {
+        "text": "自动从代码 diff 生成",
+        "isCorrect": false,
+        "description": "来自人写的 changeset 说明"
+      },
+      {
+        "text": "从 git commit message 推断",
+        "isCorrect": false,
+        "description": "那是 semantic-release 的方式"
+      },
+      {
+        "text": "留空需事后手填",
+        "isCorrect": false,
+        "description": "由 changeset 正文自动汇总"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，Changesets 的设计哲学可以概括为什么？",
+    "explanation": "「让变更的版本意图与说明，在改动发生时就由作者显式、就近地记录下来（一条 changeset），再由工具在发布时汇总执行」。它把版本决策从「发布那一刻回忆/推断」前移到「改动那一刻声明」，兼顾多包精细控制与可评审的 changelog，是 monorepo 友好的发布范式。",
+    "tags": ["changesets", "专家", "philosophy"],
+    "categories": [
+      ["技术方向", "Changesets"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "改动时就近显式声明版本意图与说明，发布时汇总执行",
+        "isCorrect": true,
+        "description": "决策前移，多包精细 + 可评审 changelog"
+      },
+      {
+        "text": "发布时才靠 AI 猜测该升什么版本",
+        "isCorrect": false,
+        "description": "是作者显式声明，非猜测"
+      },
+      {
+        "text": "完全不记录变更说明",
+        "isCorrect": false,
+        "description": "changeset 正文正是变更说明"
+      },
+      {
+        "text": "只适合无依赖的独立单包",
+        "isCorrect": false,
+        "description": "为多包 monorepo 而生"
+      }
+    ]
+  }
+]

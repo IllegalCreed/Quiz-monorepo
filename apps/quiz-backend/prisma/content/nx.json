@@ -1,0 +1,1056 @@
+[
+  {
+    "stem": "Nx 的核心定位是什么？",
+    "explanation": "Nx 是一个「智能的 monorepo 构建系统」，核心能力包括：基于项目依赖图的任务编排、计算缓存（跳过重复工作）、受影响项目检测（affected）、代码生成器（generators）与插件生态。它让大型仓库的构建/测试既快又可维护。",
+    "tags": ["nx", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "智能 monorepo 构建系统：任务编排 + 缓存 + affected + 生成器/插件",
+        "isCorrect": true,
+        "description": "让大仓构建又快又可维护"
+      },
+      {
+        "text": "一个 CSS-in-JS 库",
+        "isCorrect": false,
+        "description": "与样式方案无关"
+      },
+      {
+        "text": "一个数据库 ORM",
+        "isCorrect": false,
+        "description": "与数据库无关"
+      },
+      {
+        "text": "一个云主机服务",
+        "isCorrect": false,
+        "description": "Nx 是本地构建系统"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的「计算缓存（computation caching）」如何加速重复任务？",
+    "explanation": "Nx 为每个任务计算输入哈希（源码、依赖、配置、命令等）。若某次运行的输入哈希与之前一致，Nx 直接从缓存「还原上次的终端输出与产物」而跳过真正执行——即所谓「缓存命中」。这让重复的构建/测试近乎瞬时完成。",
+    "tags": ["nx", "中级", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按输入哈希命中则还原上次输出与产物，跳过实际执行",
+        "isCorrect": true,
+        "description": "重复任务近乎瞬时完成"
+      },
+      {
+        "text": "把结果缓存进浏览器 localStorage",
+        "isCorrect": false,
+        "description": "缓存在本地/远程缓存，非浏览器"
+      },
+      {
+        "text": "每次都重新执行只是记录耗时",
+        "isCorrect": false,
+        "description": "命中时会跳过执行"
+      },
+      {
+        "text": "只缓存 build 不缓存其它任务",
+        "isCorrect": false,
+        "description": "可缓存 build/test/lint 等可缓存任务"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的 `nx affected`（受影响检测）依据什么来决定跑哪些项目的任务？",
+    "explanation": "`nx affected` 比较当前代码与某个基线（`--base`，如 main 分支）之间的差异，结合项目依赖图，找出「改动的项目 + 依赖它们的项目」，只对这些受影响的项目运行任务。这样在大仓 CI 里可跳过未受影响的大量项目，大幅提速。",
+    "tags": ["nx", "高级", "affected"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对比基线差异 + 依赖图，只跑改动项目及其下游依赖方",
+        "isCorrect": true,
+        "description": "--base 指定基线；大仓 CI 提速关键"
+      },
+      {
+        "text": "随机抽取一半项目运行",
+        "isCorrect": false,
+        "description": "按变更与依赖图确定，非随机"
+      },
+      {
+        "text": "总是运行全部项目",
+        "isCorrect": false,
+        "description": "affected 正是为避免全量"
+      },
+      {
+        "text": "只运行改动行数最多的项目",
+        "isCorrect": false,
+        "description": "按影响面而非改动量"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中项目依赖图（project graph）与任务图（task graph）的区别是什么？",
+    "explanation": "项目图描述「项目之间的依赖关系」（谁 import 谁）；任务图则是在执行某目标（如 build）时，据项目图 + 任务依赖配置（dependsOn）展开出的「具体任务及其先后依赖」的有向无环图。项目图是静态结构，任务图是某次执行的调度蓝图。",
+    "tags": ["nx", "高级", "graph"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "项目图=项目间依赖；任务图=某次执行展开的任务及其依赖 DAG",
+        "isCorrect": true,
+        "description": "一个是静态结构，一个是执行调度蓝图"
+      },
+      {
+        "text": "两者是同一个东西",
+        "isCorrect": false,
+        "description": "静态结构 vs 执行调度，不同"
+      },
+      {
+        "text": "任务图描述文件系统目录结构",
+        "isCorrect": false,
+        "description": "描述的是任务依赖，非目录"
+      },
+      {
+        "text": "项目图只在发布时生成",
+        "isCorrect": false,
+        "description": "项目图用于各类命令，非仅发布"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx.json` 的 `targetDefaults` 里常见的 `dependsOn: [\"^build\"]` 表示什么？",
+    "explanation": "`^build` 中的 `^` 表示「本项目所依赖的那些项目的 build 任务」。所以 `build` 的 `dependsOn: [\"^build\"]` 意为「构建某项目前，先构建它依赖的所有上游项目」。不带 `^` 的 `build` 则指本项目自己的 build。这是任务流水线（task pipeline）的核心语法。",
+    "tags": ["nx", "高级", "task-pipeline"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先构建本项目所依赖的上游项目（^ = 依赖项目的同名任务）",
+        "isCorrect": true,
+        "description": "不带 ^ 则指本项目自己的任务"
+      },
+      {
+        "text": "构建所有项目共 build 一次",
+        "isCorrect": false,
+        "description": "^ 指依赖项目，非全部"
+      },
+      {
+        "text": "^ 表示排除该任务",
+        "isCorrect": false,
+        "description": "^ 是依赖前缀，非排除"
+      },
+      {
+        "text": "表示并行运行同名任务",
+        "isCorrect": false,
+        "description": "表达的是依赖顺序，非并行标记"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 缓存正确性依赖于任务的 `inputs`/`outputs` 声明，`inputs` 配错会导致什么？",
+    "explanation": "`inputs` 声明哪些文件/配置算作任务的输入（参与哈希）。若漏掉了实际影响产物的输入，Nx 可能「错误命中缓存」——输入其实变了但哈希没变，于是拿到过期产物；若把无关文件也算进去，则缓存频繁失效、命中率低。正确声明 inputs 是缓存既可靠又高效的前提。",
+    "tags": ["nx", "专家", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "漏输入会错误命中拿到过期产物；多余输入会降低命中率",
+        "isCorrect": true,
+        "description": "正确声明 inputs 是缓存可靠高效前提"
+      },
+      {
+        "text": "inputs 配置不影响缓存",
+        "isCorrect": false,
+        "description": "直接决定哈希与命中正确性"
+      },
+      {
+        "text": "inputs 只影响日志格式",
+        "isCorrect": false,
+        "description": "影响缓存键，非日志"
+      },
+      {
+        "text": "outputs 才决定输入哈希",
+        "isCorrect": false,
+        "description": "inputs 决定哈希，outputs 是要缓存的产物"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的 `outputs` 配置项作用是什么？",
+    "explanation": "`outputs` 告诉 Nx 一个任务会产出哪些文件/目录（如 `dist/`、`coverage/`）。这样缓存命中时 Nx 知道要「还原」哪些产物到磁盘。若 outputs 声明不全，缓存命中后可能缺失应有的产物文件，导致后续步骤失败。",
+    "tags": ["nx", "高级", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "声明任务产物路径，供缓存命中时还原到磁盘",
+        "isCorrect": true,
+        "description": "outputs 不全会导致命中后缺产物"
+      },
+      {
+        "text": "声明任务的输入文件",
+        "isCorrect": false,
+        "description": "输入是 inputs，outputs 是产物"
+      },
+      {
+        "text": "指定输出的日志级别",
+        "isCorrect": false,
+        "description": "与日志级别无关"
+      },
+      {
+        "text": "配置发布到哪个 registry",
+        "isCorrect": false,
+        "description": "与发布无关"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的「远程缓存」（Nx Replay / Nx Cloud）相比纯本地缓存多带来什么？",
+    "explanation": "本地缓存只在自己机器复用；远程缓存把缓存产物存到云端，让「团队其他成员和 CI」也能命中——例如 CI 已构建过的产物，本地拉下来直接命中，跨机器共享，显著减少重复计算。Nx Cloud 还提供分布式任务执行等能力。写远程缓存通常受权限/信任控制。",
+    "tags": ["nx", "高级", "remote-cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把缓存产物存云端，团队与 CI 跨机器共享命中",
+        "isCorrect": true,
+        "description": "减少重复计算；写远程缓存受信任控制"
+      },
+      {
+        "text": "让本地缓存容量翻倍",
+        "isCorrect": false,
+        "description": "价值在跨机共享而非本地容量"
+      },
+      {
+        "text": "只能缓存测试结果",
+        "isCorrect": false,
+        "description": "可缓存各类可缓存任务"
+      },
+      {
+        "text": "远程缓存不需要任何权限",
+        "isCorrect": false,
+        "description": "写入通常受访问控制"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 executor 与 generator 分别是什么？",
+    "explanation": "executor（执行器）定义「如何运行某个 target 任务」（如用某 executor 来 build/test，接收 options）；generator（生成器）用于「按模板生成/修改代码与配置」（如 `nx g @nx/react:component` 生成组件、脚手架新项目）。一个管运行任务，一个管代码生成。",
+    "tags": ["nx", "中级", "executor-generator"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "executor 定义如何运行任务；generator 按模板生成/改代码",
+        "isCorrect": true,
+        "description": "一个管运行，一个管代码生成/脚手架"
+      },
+      {
+        "text": "executor 生成代码，generator 运行任务",
+        "isCorrect": false,
+        "description": "职责反了"
+      },
+      {
+        "text": "两者都是打包器",
+        "isCorrect": false,
+        "description": "与打包器不是一个概念"
+      },
+      {
+        "text": "generator 用于发布 npm 包",
+        "isCorrect": false,
+        "description": "发布是 nx release，非 generator"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `project.json`（或 package.json 中的 nx 配置）通常用来定义什么？",
+    "explanation": "`project.json` 定义单个项目的元数据与它的 targets（任务），如 build/test/lint 各用什么 executor、options、outputs、以及该 target 的依赖（dependsOn）、tags 等。它是「项目级」配置，与「仓库级」的 `nx.json` 相对。",
+    "tags": ["nx", "中级", "config"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "定义单个项目的 targets（任务）及其 executor/options/依赖/tags",
+        "isCorrect": true,
+        "description": "项目级配置，对应仓库级 nx.json"
+      },
+      {
+        "text": "定义整个仓库的全局缓存策略",
+        "isCorrect": false,
+        "description": "全局策略在 nx.json"
+      },
+      {
+        "text": "存放项目的源代码",
+        "isCorrect": false,
+        "description": "是配置，非源码"
+      },
+      {
+        "text": "npm 的锁文件",
+        "isCorrect": false,
+        "description": "锁文件由包管理器维护"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的「integrated（集成式）」与「package-based（包驱动）」两种 monorepo 风格的主要区别是什么？",
+    "explanation": "package-based 更接近传统：各包有自己的 package.json/依赖，Nx 主要提供缓存与任务编排，改造成本低。integrated 则由 Nx 更深度地统一管理（共享依赖版本、插件推断配置、统一工具链），对大团队一致性更强但更「Nx 化」。可按团队需要选择或渐进迁移。",
+    "tags": ["nx", "高级", "style"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "package-based 各包独立、改造轻；integrated 由 Nx 深度统一管理",
+        "isCorrect": true,
+        "description": "一致性更强但更 Nx 化，可渐进迁移"
+      },
+      {
+        "text": "两者完全一样只是名字不同",
+        "isCorrect": false,
+        "description": "依赖/工具链管理深度不同"
+      },
+      {
+        "text": "integrated 不支持缓存",
+        "isCorrect": false,
+        "description": "两种风格都享有缓存"
+      },
+      {
+        "text": "package-based 无法用 affected",
+        "isCorrect": false,
+        "description": "两种都能用 affected"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的模块边界约束（module boundaries，通过 tags + ESLint 规则）用来做什么？",
+    "explanation": "给项目打上 tags（如 `scope:app`、`type:ui`），再用 `@nx/enforce-module-boundaries` ESLint 规则约束「哪些 tag 的项目可以依赖哪些」。这能在大仓里强制架构分层（如 feature 不能被 util 依赖、某业务域不能跨域直接依赖），把架构规则变成可自动校验的约束。",
+    "tags": ["nx", "专家", "boundaries"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 tags + ESLint 规则约束项目间允许的依赖，强制架构分层",
+        "isCorrect": true,
+        "description": "把架构规则变成可自动校验的约束"
+      },
+      {
+        "text": "限制每个项目的代码行数",
+        "isCorrect": false,
+        "description": "约束的是依赖关系，非行数"
+      },
+      {
+        "text": "控制 npm 包的发布权限",
+        "isCorrect": false,
+        "description": "与发布权限无关"
+      },
+      {
+        "text": "限制运行时内存",
+        "isCorrect": false,
+        "description": "是静态依赖约束，非运行时"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx graph` 命令的作用是什么？",
+    "explanation": "`nx graph` 打开一个可交互的可视化界面，展示项目依赖图（及可选的任务图），帮助你理解「谁依赖谁」「改动会影响哪些项目」。它对排查循环依赖、理解 affected 范围、规划重构都很有用。",
+    "tags": ["nx", "初级", "graph"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "可视化展示项目/任务依赖图，帮助理解依赖与影响面",
+        "isCorrect": true,
+        "description": "排查循环依赖、理解 affected 很有用"
+      },
+      {
+        "text": "生成一张性能火焰图",
+        "isCorrect": false,
+        "description": "是依赖图，非性能剖析"
+      },
+      {
+        "text": "绘制 git 提交历史图",
+        "isCorrect": false,
+        "description": "是项目依赖图，非 git 图"
+      },
+      {
+        "text": "导出数据库 ER 图",
+        "isCorrect": false,
+        "description": "与数据库无关"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 的插件（如 `@nx/react`、`@nx/js`、`@nx/vite`）主要提供什么？",
+    "explanation": "Nx 插件为特定技术栈提供开箱能力：generators（生成项目/组件）、executors（封装该栈的构建/测试）、以及（现代 Nx 的）任务推断——自动识别项目里的工具配置并推断出对应 targets。插件让 Nx 与各框架/工具链无缝集成。",
+    "tags": ["nx", "中级", "plugin"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "为特定技术栈提供 generators/executors 及任务推断等集成能力",
+        "isCorrect": true,
+        "description": "让 Nx 与各框架/工具链无缝集成"
+      },
+      {
+        "text": "只是一些文档模板",
+        "isCorrect": false,
+        "description": "提供可执行能力，非仅文档"
+      },
+      {
+        "text": "替代 npm 安装依赖",
+        "isCorrect": false,
+        "description": "不负责依赖安装"
+      },
+      {
+        "text": "用于加密源代码",
+        "isCorrect": false,
+        "description": "与加密无关"
+      }
+    ]
+  },
+  {
+    "stem": "现代 Nx 的「任务推断 / 项目 Crystal（inferred tasks）」特性指什么？",
+    "explanation": "较新的 Nx 让插件能「自动推断」项目的 targets——即根据项目里已有的工具配置文件（如 `vite.config.ts`、`playwright.config.ts`）自动得出可运行的 build/test 等任务，而无需在 project.json 里手写大量 target 配置。这减少了样板配置，让 Nx 更贴合已有工具的原生配置。",
+    "tags": ["nx", "专家", "inferred-tasks"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "插件据项目里的工具配置自动推断出 targets，减少手写配置",
+        "isCorrect": true,
+        "description": "如据 vite.config 推断 build/test 任务"
+      },
+      {
+        "text": "AI 自动编写业务逻辑",
+        "isCorrect": false,
+        "description": "是推断任务配置，非生成业务代码"
+      },
+      {
+        "text": "推断用户的未来需求",
+        "isCorrect": false,
+        "description": "指从工具配置推断任务"
+      },
+      {
+        "text": "取消所有配置文件",
+        "isCorrect": false,
+        "description": "是减少样板，非取消配置"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx release` 提供的能力是什么？",
+    "explanation": "`nx release` 是 Nx 内建的版本与发布方案：可基于 conventional commits 计算版本、更新版本号、生成 changelog、打 tag 并发布到 npm，支持固定/独立版本组。它让 Nx monorepo 无需额外引入 Lerna 也能完成规范化发布。",
+    "tags": ["nx", "高级", "release"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "内建版本/changelog/tag/npm 发布，支持固定/独立版本组",
+        "isCorrect": true,
+        "description": "让 Nx 仓无需 Lerna 也能规范发布"
+      },
+      {
+        "text": "只发布 Nx 自身",
+        "isCorrect": false,
+        "description": "发布的是仓库里的项目包"
+      },
+      {
+        "text": "仅生成 changelog 不能发布",
+        "isCorrect": false,
+        "description": "可完整发布到 npm"
+      },
+      {
+        "text": "把项目部署到服务器",
+        "isCorrect": false,
+        "description": "是 npm 发布，非服务器部署"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx migrate` 命令解决什么问题？",
+    "explanation": "`nx migrate latest`（或指定版本）会更新 Nx 及其插件的版本，并生成 `migrations.json` 记录需要执行的自动代码/配置迁移；随后 `nx migrate --run-migrations` 自动应用这些迁移（改配置、升级 API 用法等）。这让跨大版本升级 Nx 与相关工具变得可控、少手工。",
+    "tags": ["nx", "高级", "migrate"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "更新 Nx/插件版本并自动执行配置/代码迁移，降低升级成本",
+        "isCorrect": true,
+        "description": "生成 migrations.json 再 --run-migrations 应用"
+      },
+      {
+        "text": "把数据库迁移到新服务器",
+        "isCorrect": false,
+        "description": "是升级 Nx 工具链，非数据库"
+      },
+      {
+        "text": "迁移 git 仓库到新平台",
+        "isCorrect": false,
+        "description": "与 git 托管迁移无关"
+      },
+      {
+        "text": "只打印升级说明不做任何改动",
+        "isCorrect": false,
+        "description": "可自动应用迁移"
+      }
+    ]
+  },
+  {
+    "stem": "Nx Cloud 的「分布式任务执行（DTE / Nx Agents）」用来解决什么？",
+    "explanation": "对超大仓，即便有缓存与 affected，单机 CI 跑完所有任务仍可能很慢。DTE/Nx Agents 把一次 CI 的任务智能地分发到多台 agent 机器并行执行，并汇总结果，从而把 CI 墙钟时间大幅压缩。它解决的是「任务太多、单机不够快」的规模问题。",
+    "tags": ["nx", "专家", "dte"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把一次 CI 的任务分发到多台 agent 并行执行以压缩墙钟时间",
+        "isCorrect": true,
+        "description": "解决超大仓单机 CI 太慢的规模问题"
+      },
+      {
+        "text": "把缓存分布到多个云区域",
+        "isCorrect": false,
+        "description": "是任务分发执行，非缓存分区"
+      },
+      {
+        "text": "分布式存储源代码",
+        "isCorrect": false,
+        "description": "与源码存储无关"
+      },
+      {
+        "text": "让本地开发也用多机构建",
+        "isCorrect": false,
+        "description": "主要面向 CI 的任务分发"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx run-many --target=build --all` 与 `nx affected --target=build` 的差别是什么？",
+    "explanation": "`run-many --all` 对所有（或指定的多个）项目运行目标任务，不管是否有变更；`affected` 只对受本次变更影响的项目运行。CI 里日常 PR 校验多用 affected 提速，而某些需要全量的场景（如依赖大升级后）用 run-many --all。二者都受缓存加速。",
+    "tags": ["nx", "中级", "cli"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "run-many 跑全部/多个项目；affected 只跑受变更影响的项目",
+        "isCorrect": true,
+        "description": "PR 常用 affected，全量场景用 run-many --all"
+      },
+      {
+        "text": "两者都只跑受影响项目",
+        "isCorrect": false,
+        "description": "run-many --all 是全量"
+      },
+      {
+        "text": "affected 会跑所有项目",
+        "isCorrect": false,
+        "description": "affected 只跑受影响的"
+      },
+      {
+        "text": "run-many 不支持缓存",
+        "isCorrect": false,
+        "description": "两者都受缓存加速"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中标记某任务 `\"cache\": true`（或默认可缓存）的前提是该任务应满足什么性质？",
+    "explanation": "可缓存的任务应是「纯粹/确定性」的：给定相同输入产出相同输出、无副作用（不改外部状态、不依赖当前时间/网络随机性）。像 build/test/lint 通常可缓存；而 deploy、发布、启动长驻服务这类有副作用的任务不应缓存，否则会「跳过实际该做的事」。",
+    "tags": ["nx", "专家", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "任务需确定性、无副作用；deploy/发布等有副作用的不应缓存",
+        "isCorrect": true,
+        "description": "缓存有副作用任务会跳过该做的事"
+      },
+      {
+        "text": "任何任务都能安全缓存",
+        "isCorrect": false,
+        "description": "有副作用的任务不宜缓存"
+      },
+      {
+        "text": "只有 deploy 适合缓存",
+        "isCorrect": false,
+        "description": "deploy 恰恰不应缓存"
+      },
+      {
+        "text": "缓存与任务是否确定性无关",
+        "isCorrect": false,
+        "description": "确定性正是可缓存的前提"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `namedInputs`（如 `production`）配合 inputs 用来做什么？",
+    "explanation": "`namedInputs` 让你给一组文件匹配规则起名（如 `production` 表示「排除测试文件、spec、配置注释后的源码集合」），然后在 target 的 inputs 里引用。这样可以让「测试文件的改动不使 build 缓存失效」等精细控制成为可能，提升缓存命中率。",
+    "tags": ["nx", "专家", "inputs"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "给文件集合命名并在 inputs 引用，精细控制什么改动使缓存失效",
+        "isCorrect": true,
+        "description": "如让测试文件改动不使 build 缓存失效"
+      },
+      {
+        "text": "给环境变量命名",
+        "isCorrect": false,
+        "description": "命名的是文件输入集合"
+      },
+      {
+        "text": "定义命名的网络端口",
+        "isCorrect": false,
+        "description": "与端口无关"
+      },
+      {
+        "text": "为项目起别名",
+        "isCorrect": false,
+        "description": "是给输入集合命名，非项目别名"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 与 Turborepo 相比，通常的定位差异是什么？",
+    "explanation": "Turborepo 轻量、聚焦「任务缓存 + 编排」，配置少、上手快；Nx 功能更全面——除缓存/affected 外还有代码生成、插件生态、模块边界约束、nx release、DTE 等，适合需要更强工程能力与治理的大团队。选型看你只要「快」还是要「全套 monorepo 工程能力」。",
+    "tags": ["nx", "高级", "compare"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Turborepo 轻量聚焦缓存/编排；Nx 更全面（生成器/边界/release/DTE）",
+        "isCorrect": true,
+        "description": "看只要快还是要全套工程能力"
+      },
+      {
+        "text": "两者功能完全相同",
+        "isCorrect": false,
+        "description": "能力广度不同"
+      },
+      {
+        "text": "Nx 不支持缓存",
+        "isCorrect": false,
+        "description": "缓存是 Nx 核心能力之一"
+      },
+      {
+        "text": "Turborepo 有比 Nx 更多的生成器与插件",
+        "isCorrect": false,
+        "description": "生态广度上 Nx 更全"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中运行任务时若发生「缓存命中」，终端通常会看到什么提示，含义是什么？",
+    "explanation": "命中时 Nx 会提示类似「Nx read the output from the cache」并近乎瞬间完成，表示该任务没有真正重新执行、而是还原了之前缓存的输出与产物。看到大量缓存命中说明增量/缓存配置在起作用；若期望命中却没命中，往往是 inputs 声明或环境差异导致哈希变化。",
+    "tags": ["nx", "中级", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "提示从缓存读取输出、瞬间完成，表示未真正重跑该任务",
+        "isCorrect": true,
+        "description": "没命中常因 inputs 或环境导致哈希变化"
+      },
+      {
+        "text": "表示任务失败",
+        "isCorrect": false,
+        "description": "命中是成功复用，非失败"
+      },
+      {
+        "text": "表示缓存已损坏需清空",
+        "isCorrect": false,
+        "description": "命中是正常且期望的"
+      },
+      {
+        "text": "表示任务被跳过且产物丢失",
+        "isCorrect": false,
+        "description": "命中会还原产物"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中当怀疑缓存导致结果不对，想强制忽略缓存跑一次，可以用什么？",
+    "explanation": "可用 `--skip-nx-cache`（跳过读取/写入缓存，强制真正执行一次），用于排查「缓存命中了但结果看起来不对」的情况。若确认是 inputs 声明不全导致的错误命中，则应修正 inputs 而非长期靠跳过缓存。",
+    "tags": ["nx", "高级", "cache"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 --skip-nx-cache 强制真正执行一次以排查",
+        "isCorrect": true,
+        "description": "根因常是 inputs 不全，应修正而非长期跳过"
+      },
+      {
+        "text": "删除整个项目重来",
+        "isCorrect": false,
+        "description": "无需这么激进"
+      },
+      {
+        "text": "把 Nx 卸载",
+        "isCorrect": false,
+        "description": "跳过缓存即可排查"
+      },
+      {
+        "text": "缓存无法被跳过",
+        "isCorrect": false,
+        "description": "有 --skip-nx-cache 选项"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 生成器（generators）相比手工创建项目/组件的价值是什么？",
+    "explanation": "生成器按既定模板与约定一键创建项目、库、组件、配置，并自动接好 tsconfig、路径别名、测试、lint、nx 配置等，保证团队产物结构一致、少踩样板配置的坑。它把「新建符合规范的东西」标准化、可重复，尤其在大团队里保障一致性。",
+    "tags": ["nx", "中级", "generator"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按模板一键创建并接好配置，保证结构一致、减少样板坑",
+        "isCorrect": true,
+        "description": "把「建符合规范的东西」标准化可重复"
+      },
+      {
+        "text": "运行时动态生成业务数据",
+        "isCorrect": false,
+        "description": "是脚手架代码生成，非运行时数据"
+      },
+      {
+        "text": "只能生成 README",
+        "isCorrect": false,
+        "description": "可生成项目/库/组件/配置"
+      },
+      {
+        "text": "会随机决定项目结构",
+        "isCorrect": false,
+        "description": "按既定模板与约定，非随机"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx.json` 与 `project.json` 的分工，下列描述正确的是？",
+    "explanation": "`nx.json` 是仓库级配置：默认缓存/任务流水线（targetDefaults）、namedInputs、插件、生成器默认值、远程缓存等全局设置；`project.json` 是项目级配置：该项目的 targets 及其细节。全局默认在 nx.json，项目可覆盖/补充。",
+    "tags": ["nx", "中级", "config"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "nx.json 仓库级全局默认；project.json 项目级 targets，可覆盖",
+        "isCorrect": true,
+        "description": "全局默认在 nx.json，项目可补充/覆盖"
+      },
+      {
+        "text": "两者都是项目级配置",
+        "isCorrect": false,
+        "description": "nx.json 是仓库级"
+      },
+      {
+        "text": "nx.json 存源码，project.json 存依赖",
+        "isCorrect": false,
+        "description": "都是配置文件"
+      },
+      {
+        "text": "project.json 决定全局缓存策略",
+        "isCorrect": false,
+        "description": "全局策略在 nx.json"
+      }
+    ]
+  },
+  {
+    "stem": "在 Nx monorepo 里做架构治理时，用 `type:` 和 `scope:` 两类 tag 的常见思路是什么？",
+    "explanation": "常见约定：`scope:` 表示业务域/所属应用（如 `scope:orders`、`scope:shared`），`type:` 表示技术层次（如 `type:feature`、`type:ui`、`type:util`、`type:data-access`）。再用 enforce-module-boundaries 规定「跨 scope 不可随意依赖」「feature 可依赖 util 但反之不行」等，实现分层与领域隔离。",
+    "tags": ["nx", "专家", "architecture"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "scope 标业务域、type 标技术层，再用边界规则约束依赖方向",
+        "isCorrect": true,
+        "description": "实现分层与领域隔离的可校验治理"
+      },
+      {
+        "text": "tag 只用于美化 nx graph 颜色",
+        "isCorrect": false,
+        "description": "核心是驱动边界约束"
+      },
+      {
+        "text": "tag 决定项目的构建顺序",
+        "isCorrect": false,
+        "description": "构建顺序由依赖图决定"
+      },
+      {
+        "text": "type/scope 是保留字不能自定义",
+        "isCorrect": false,
+        "description": "是团队约定，可自定义"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中把一个可缓存任务的命令改成「每次输出都不同」（如打印当前时间戳）会破坏什么？",
+    "explanation": "缓存的前提是「相同输入→相同输出」。若任务本身产出随时间/随机变化的结果，其正确性与可缓存假设冲突：要么缓存命中给出过时输出，要么每次哈希虽同但语义已变。可缓存任务应保持确定性，非确定性/有副作用的动作应移出可缓存任务。",
+    "tags": ["nx", "专家", "determinism"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "破坏「相同输入→相同输出」的确定性前提，与缓存假设冲突",
+        "isCorrect": true,
+        "description": "非确定性/副作用动作应移出可缓存任务"
+      },
+      {
+        "text": "没有任何影响",
+        "isCorrect": false,
+        "description": "违背缓存的确定性前提"
+      },
+      {
+        "text": "会让缓存变得更准确",
+        "isCorrect": false,
+        "description": "反而破坏缓存正确性"
+      },
+      {
+        "text": "只影响日志颜色",
+        "isCorrect": false,
+        "description": "影响缓存正确性"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 affected 的 `--base` 与 `--head` 参数在 CI（尤其 PR）里通常怎么设？",
+    "explanation": "PR 场景常把 `--base` 设为目标分支（如 `origin/main`）、`--head` 设为当前分支/提交，让 Nx 计算「本 PR 相对主干的改动」影响了哪些项目。base 设错（如设成太旧或太新的提交）会导致受影响集合算错——要么漏跑要么全跑。正确的 base 是 affected 准确的关键。",
+    "tags": ["nx", "高级", "affected"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "base 设目标分支、head 设当前分支，算 PR 相对主干的影响",
+        "isCorrect": true,
+        "description": "base 设错会漏跑或全跑"
+      },
+      {
+        "text": "base/head 随便设不影响结果",
+        "isCorrect": false,
+        "description": "直接决定受影响集合是否准确"
+      },
+      {
+        "text": "base 必须设成最初的提交",
+        "isCorrect": false,
+        "description": "PR 里通常是目标分支"
+      },
+      {
+        "text": "affected 不需要 base",
+        "isCorrect": false,
+        "description": "需基线来算差异"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中 `nx list`（或 `nx report`）这类命令的用途是什么？",
+    "explanation": "`nx list` 列出已安装/可用的 Nx 插件及其能力；`nx report` 输出 Nx 与各插件的版本、环境信息，便于排障与提 issue。它们帮助你了解当前 Nx 生态状态、核对版本兼容性——排查问题时很实用。",
+    "tags": ["nx", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "查看已装/可用插件及 Nx/插件版本环境信息，便于排障",
+        "isCorrect": true,
+        "description": "核对版本兼容、提 issue 用"
+      },
+      {
+        "text": "列出所有源文件",
+        "isCorrect": false,
+        "description": "列的是插件/版本信息"
+      },
+      {
+        "text": "运行所有测试",
+        "isCorrect": false,
+        "description": "与运行任务无关"
+      },
+      {
+        "text": "发布所有包",
+        "isCorrect": false,
+        "description": "发布是 nx release"
+      }
+    ]
+  },
+  {
+    "stem": "对一个已有的 package-based monorepo，想在「几乎不改结构」的前提下引入 Nx 的缓存与 affected，可行吗？",
+    "explanation": "可行。Nx 支持以 package-based（甚至仅作为缓存/任务运行层）的方式渐进接入：在现有 workspaces 之上加 Nx，配置 targetDefaults/inputs 即可获得缓存与 affected，而不必立刻转成 integrated 或大改目录。这降低了采用门槛，可后续再逐步深化。",
+    "tags": ["nx", "高级", "adoption"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可行，Nx 支持在现有结构上渐进接入缓存/affected",
+        "isCorrect": true,
+        "description": "不必立刻转 integrated，可后续深化"
+      },
+      {
+        "text": "必须彻底重构目录才能用 Nx",
+        "isCorrect": false,
+        "description": "支持 package-based 渐进接入"
+      },
+      {
+        "text": "只有全新项目才能用 Nx",
+        "isCorrect": false,
+        "description": "存量仓也可接入"
+      },
+      {
+        "text": "引入 Nx 必然破坏现有构建",
+        "isCorrect": false,
+        "description": "可平滑接入不破坏"
+      }
+    ]
+  },
+  {
+    "stem": "Nx 中若两个项目存在循环依赖（A 依赖 B、B 又依赖 A），会带来什么问题？",
+    "explanation": "循环依赖会破坏任务图的拓扑排序（无法确定谁先构建），也常反映架构耦合问题。Nx 能通过 nx graph 帮你发现循环，模块边界规则也可禁止某些循环。正确做法是打破环（抽取公共部分为第三个项目、或反转依赖方向）。",
+    "tags": ["nx", "高级", "cyclic"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "破坏拓扑排序且反映耦合，应通过抽公共/反转依赖打破环",
+        "isCorrect": true,
+        "description": "nx graph 可发现、边界规则可禁止"
+      },
+      {
+        "text": "循环依赖能加速构建",
+        "isCorrect": false,
+        "description": "反而破坏调度，是问题"
+      },
+      {
+        "text": "Nx 会自动删除其中一个项目",
+        "isCorrect": false,
+        "description": "不会自动删项目"
+      },
+      {
+        "text": "循环依赖没有任何影响",
+        "isCorrect": false,
+        "description": "破坏排序、反映架构问题"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Nx 的版本节奏（2026 现状），下列哪项描述较合理？",
+    "explanation": "Nx 采取较快的大版本迭代节奏（每年若干个大版本），2026 年处于 20/21 一带的较新大版本，并持续演进出任务推断（Crystal）、更强的 Nx Cloud 能力等。因为大版本推进较快，用 `nx migrate` 做受控升级尤为重要。答题时不必死记某个精确小版本，但应知其活跃演进。",
+    "tags": ["nx", "中级", "version"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "大版本迭代较快（2026 约 20/21 线），靠 nx migrate 受控升级",
+        "isCorrect": true,
+        "description": "活跃演进，不必死记精确小版本"
+      },
+      {
+        "text": "多年不发新版本已停滞",
+        "isCorrect": false,
+        "description": "Nx 演进活跃"
+      },
+      {
+        "text": "永远停留在 v1",
+        "isCorrect": false,
+        "description": "早已到 20+ 线"
+      },
+      {
+        "text": "没有升级工具只能手动改",
+        "isCorrect": false,
+        "description": "有 nx migrate 自动迁移"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，Nx 让「大 monorepo 的 CI 又快又可控」主要靠哪三根支柱协同？",
+    "explanation": "三根支柱：①计算缓存（重复任务命中即还原，不重跑）；②affected（只跑受变更影响的项目）；③（可选）分布式任务执行 DTE（把任务分发到多机并行）。缓存去重复、affected 去无关、DTE 扩并行——三者叠加把大仓 CI 时间压到可接受范围。",
+    "tags": ["nx", "专家", "summary"],
+    "categories": [
+      ["技术方向", "Nx"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "计算缓存 + affected + 分布式任务执行（DTE）三者协同",
+        "isCorrect": true,
+        "description": "去重复、去无关、扩并行"
+      },
+      {
+        "text": "只靠把机器配置堆到最高",
+        "isCorrect": false,
+        "description": "堆硬件不如缓存/affected/DTE 协同"
+      },
+      {
+        "text": "靠删除测试来提速",
+        "isCorrect": false,
+        "description": "不靠牺牲质量提速"
+      },
+      {
+        "text": "靠禁用所有缓存",
+        "isCorrect": false,
+        "description": "缓存正是核心提速手段"
+      }
+    ]
+  }
+]

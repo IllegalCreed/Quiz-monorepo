@@ -1,0 +1,827 @@
+[
+  {
+    "stem": "semantic-release 的核心目标是什么？",
+    "explanation": "semantic-release 实现「全自动的版本管理与发布」：它分析提交历史（遵循 Conventional Commits），自动决定下一个语义化版本号、生成 release notes/changelog、发布到 npm、打 git tag 并创建 GitHub/GitLab Release——整个过程无需人工决定版本号。它把「发布」变成一条流水线里的自动步骤。",
+    "tags": ["semantic-release", "入门", "concept"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "从提交自动决定版本并发布/打 tag/建 Release，全程无人工定版本",
+        "isCorrect": true,
+        "description": "把发布变成流水线里的自动步骤"
+      },
+      {
+        "text": "一个交互式手动改版本号的工具",
+        "isCorrect": false,
+        "description": "恰恰是全自动、无人工定版本"
+      },
+      { "text": "一个打包器", "isCorrect": false, "description": "与打包无关" },
+      {
+        "text": "一个代码格式化工具",
+        "isCorrect": false,
+        "description": "与格式化无关"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 依据什么来自动决定版本号该升哪一级？",
+    "explanation": "它依据 Conventional Commits 规范解析提交信息：`fix:` → patch，`feat:` → minor，提交体/脚注含 `BREAKING CHANGE:`（或 `!`）→ major。它扫描自上次发布以来的所有提交，取其中最高级别的变更作为本次版本递增级别。因此规范化的 commit message 是它工作的前提。",
+    "tags": ["semantic-release", "中级", "conventional"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按 Conventional Commits：fix→patch、feat→minor、BREAKING→major",
+        "isCorrect": true,
+        "description": "取自上次发布以来最高级别的变更"
+      },
+      {
+        "text": "按改动的文件数量决定",
+        "isCorrect": false,
+        "description": "按提交类型，非文件数"
+      },
+      {
+        "text": "总是升 patch",
+        "isCorrect": false,
+        "description": "按提交类型可能是 minor/major"
+      },
+      {
+        "text": "由开发者手动输入版本号",
+        "isCorrect": false,
+        "description": "是自动推断，非手输"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 官方强烈建议在什么环境运行，而非本地手动跑？",
+    "explanation": "官方建议 semantic-release 只在 CI 环境、由受信任的流水线运行（如在 main 分支的 CI job 里）。原因：发布需要 npm token、git 推送权限，且要保证发布来自可信、可复现的环境；本地手动跑容易出错、凭据管理混乱、且破坏「发布完全自动化、可审计」的初衷。",
+    "tags": ["semantic-release", "中级", "ci"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 CI 由可信流水线运行（如 main 分支 job），不建议本地手动跑",
+        "isCorrect": true,
+        "description": "凭据/可复现/可审计，避免本地出错"
+      },
+      {
+        "text": "只能在本地开发机运行",
+        "isCorrect": false,
+        "description": "恰恰推荐 CI 而非本地"
+      },
+      {
+        "text": "必须在生产服务器上运行",
+        "isCorrect": false,
+        "description": "在 CI 运行，非生产服务器"
+      },
+      {
+        "text": "在任意 PR 分支自动发布",
+        "isCorrect": false,
+        "description": "通常在发布分支（如 main）运行"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 的插件化架构中，一次发布大致经历哪些阶段（由插件实现）？",
+    "explanation": "核心阶段（对应插件）：verify conditions（校验环境/凭据）→ analyze commits（`commit-analyzer` 定版本级别）→ generate notes（`release-notes-generator` 生成 release notes）→（可选）changelog、npm 发布、git 提交 changelog/tag、github 创建 Release。每个阶段由对应插件负责，可增删组合。",
+    "tags": ["semantic-release", "高级", "plugins"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "校验→分析提交定版本→生成 notes→(changelog)→npm 发布→git→github Release",
+        "isCorrect": true,
+        "description": "各阶段由对应插件实现，可组合"
+      },
+      {
+        "text": "只有一个不可拆分的黑盒步骤",
+        "isCorrect": false,
+        "description": "是可组合的插件化多阶段"
+      },
+      {
+        "text": "先发布再决定版本号",
+        "isCorrect": false,
+        "description": "先分析定版本，再发布"
+      },
+      {
+        "text": "阶段顺序随机",
+        "isCorrect": false,
+        "description": "有固定的生命周期顺序"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 中 `@semantic-release/commit-analyzer` 插件的职责是什么？",
+    "explanation": "它负责「分析自上次发布以来的提交」，据 Conventional Commits（或配置的规则/preset）判定本次应发布的版本递增类型（major/minor/patch），或判定「无相关变更、不发布」。它是决定「是否发版、发什么版」的大脑。",
+    "tags": ["semantic-release", "高级", "plugin"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "分析提交、判定版本递增类型或判定不发布",
+        "isCorrect": true,
+        "description": "决定是否发版、发什么版的大脑"
+      },
+      {
+        "text": "把包发布到 npm",
+        "isCorrect": false,
+        "description": "发布是 @semantic-release/npm"
+      },
+      {
+        "text": "生成 GitHub Release",
+        "isCorrect": false,
+        "description": "那是 @semantic-release/github"
+      },
+      {
+        "text": "安装项目依赖",
+        "isCorrect": false,
+        "description": "与安装无关"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 若分析提交后发现「没有触发版本变更的相关提交」，会怎么做？",
+    "explanation": "如果自上次发布以来没有 fix/feat/BREAKING 等会影响版本的提交（比如只有 `chore:`、`docs:` 且未配置为触发发布），semantic-release 会判定「无需发布」，本次不发新版本、不打 tag。这避免了为无意义的改动制造版本噪音。",
+    "tags": ["semantic-release", "中级", "no-release"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "判定无需发布，不发新版、不打 tag",
+        "isCorrect": true,
+        "description": "避免为无意义改动制造版本噪音"
+      },
+      {
+        "text": "强制发一个 major 版本",
+        "isCorrect": false,
+        "description": "无相关提交不会强发"
+      },
+      {
+        "text": "报错中断流水线",
+        "isCorrect": false,
+        "description": "是正常的「无发布」结果"
+      },
+      {
+        "text": "随机决定一个版本",
+        "isCorrect": false,
+        "description": "无变更即不发布"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 中 `@semantic-release/npm` 与 `@semantic-release/git` 插件分别做什么？",
+    "explanation": "`@semantic-release/npm` 负责把包发布到 npm（并更新 package.json 版本）；`@semantic-release/git` 负责把发布过程产生的改动（如更新后的 changelog、package.json）回提交到仓库（形成 release commit）。注意用 git 插件回提交时要避免触发 CI 死循环（常用 `[skip ci]`）。",
+    "tags": ["semantic-release", "高级", "plugin"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "npm 插件发布到 npm；git 插件把 changelog/版本改动回提交仓库",
+        "isCorrect": true,
+        "description": "git 回提交需防 CI 死循环（[skip ci]）"
+      },
+      {
+        "text": "两者都用于分析提交",
+        "isCorrect": false,
+        "description": "分析是 commit-analyzer"
+      },
+      {
+        "text": "npm 插件负责建 GitHub Release",
+        "isCorrect": false,
+        "description": "Release 是 github 插件"
+      },
+      {
+        "text": "git 插件用于安装依赖",
+        "isCorrect": false,
+        "description": "与安装无关"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 的 `branches` 配置用来定义什么？",
+    "explanation": "`branches` 定义哪些分支参与发布及其角色：如 `main` 发布正式版；维护分支（如 `1.x`）发布该大版本线的补丁；预发布分支（如 `beta`、`next`）发布带 dist-tag 的预发布版本。它让 semantic-release 支持「多条发布线并存」（正式 + 维护 + 预发布）。",
+    "tags": ["semantic-release", "高级", "branches"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "定义各分支的发布角色（正式/维护线/预发布）",
+        "isCorrect": true,
+        "description": "支持多条发布线并存"
+      },
+      {
+        "text": "定义 git 合并策略",
+        "isCorrect": false,
+        "description": "是发布分支角色，非合并策略"
+      },
+      {
+        "text": "定义 CI 运行的机器",
+        "isCorrect": false,
+        "description": "与 runner 无关"
+      },
+      {
+        "text": "定义代码所有者",
+        "isCorrect": false,
+        "description": "那是 CODEOWNERS"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 的 `--dry-run` 用途是什么？",
+    "explanation": "`--dry-run` 让 semantic-release 只分析并「打印将要发布的版本号与 release notes」，但不真正发布、不打 tag、不回提交。常用于在 PR 或调试时预览「若现在发布会发什么版本」，验证 commit 规范与配置是否符合预期。",
+    "tags": ["semantic-release", "中级", "dry-run"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只预览将发布的版本与 notes，不真正发布",
+        "isCorrect": true,
+        "description": "PR/调试时验证配置与提交规范"
+      },
+      {
+        "text": "以更快方式真正发布",
+        "isCorrect": false,
+        "description": "dry-run 不发布"
+      },
+      {
+        "text": "删除上一个发布",
+        "isCorrect": false,
+        "description": "只预览，不删除"
+      },
+      {
+        "text": "跳过提交分析直接发布",
+        "isCorrect": false,
+        "description": "恰恰是不发布的预演"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 为什么被称为「无人工干预（opinionated / fully automated）」的发布方案？",
+    "explanation": "它刻意移除了「人工决定版本号」这一步——版本、changelog、发布全部由提交历史与流水线自动产生。设计哲学是：只要团队坚持规范化提交，机器就能可靠、一致、无争议地发布，消除人为的版本判断分歧与遗漏。代价是对提交规范的强依赖。",
+    "tags": ["semantic-release", "中级", "philosophy"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "版本/changelog/发布全自动化，移除人工定版本，强依赖提交规范",
+        "isCorrect": true,
+        "description": "机器一致可靠发布，代价是依赖规范提交"
+      },
+      {
+        "text": "因为它需要人工审批每次发布",
+        "isCorrect": false,
+        "description": "恰恰移除人工干预"
+      },
+      {
+        "text": "因为它随机决定是否发布",
+        "isCorrect": false,
+        "description": "由提交确定，非随机"
+      },
+      {
+        "text": "因为它只支持手动打 tag",
+        "isCorrect": false,
+        "description": "自动打 tag"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 在 monorepo（多包）场景下的局限是什么？",
+    "explanation": "semantic-release 最初为「单包仓库」设计，一个仓库一条版本线。用于 monorepo 多包各自发版时，原生并不直接支持，需要额外方案（如 `semantic-release-monorepo`、`multi-semantic-release` 等社区扩展，或每个包单独跑）。这也是多包项目常转向 Changesets 的原因之一。",
+    "tags": ["semantic-release", "高级", "monorepo"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原生偏单包，多包各自发版需社区扩展或每包单跑",
+        "isCorrect": true,
+        "description": "多包项目常因此转向 Changesets"
+      },
+      {
+        "text": "原生完美支持任意多包发布",
+        "isCorrect": false,
+        "description": "原生偏单包，多包需额外方案"
+      },
+      {
+        "text": "完全无法用于 monorepo",
+        "isCorrect": false,
+        "description": "可用扩展，只是不原生"
+      },
+      {
+        "text": "只能用于 monorepo",
+        "isCorrect": false,
+        "description": "本就为单包设计"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 与 Changesets 的取舍，通常怎么选？",
+    "explanation": "单包库、团队严格遵守 Conventional Commits、追求「零人工、合并即自动发版」→ semantic-release 很合适。多包 monorepo、想按包精细控制版本、希望 changelog 由作者写、发布时机可评审（Release PR）→ Changesets 更顺手。核心分歧是「从 commit 自动推断」还是「作者显式声明」。",
+    "tags": ["semantic-release", "专家", "compare"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "单包全自动选 semantic-release；多包精细/可评审选 Changesets",
+        "isCorrect": true,
+        "description": "自动推断 vs 显式声明是核心分歧"
+      },
+      {
+        "text": "任何场景都必须用 semantic-release",
+        "isCorrect": false,
+        "description": "多包常更适合 Changesets"
+      },
+      {
+        "text": "两者不能用于同一生态",
+        "isCorrect": false,
+        "description": "都在 JS 生态，只是取舍不同"
+      },
+      {
+        "text": "Changesets 只适合单包",
+        "isCorrect": false,
+        "description": "Changesets 擅长多包"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 发布预发布版本（如 beta）通常怎么实现？",
+    "explanation": "在 `branches` 里把某分支（如 `beta`、`next`）配置为预发布分支（`prerelease: true` 或指定 channel）。往该分支合并符合规范的提交，semantic-release 会产出带预发布标识的版本（如 `2.0.0-beta.1`）并发布到对应 dist-tag，供尝鲜安装（`npm i pkg@beta`），不影响 latest。",
+    "tags": ["semantic-release", "高级", "prerelease"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 branches 配置预发布分支，产出带标识的版本发到对应 dist-tag",
+        "isCorrect": true,
+        "description": "如 2.0.0-beta.1 发到 beta tag，不动 latest"
+      },
+      {
+        "text": "手动改 package.json 加 -beta",
+        "isCorrect": false,
+        "description": "由预发布分支自动产出"
+      },
+      {
+        "text": "预发布只能本地打包",
+        "isCorrect": false,
+        "description": "会发布到对应 dist-tag"
+      },
+      {
+        "text": "预发布会覆盖 latest 版本",
+        "isCorrect": false,
+        "description": "发到独立 tag，不动 latest"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 需要哪些凭据/权限才能完成一次完整发布？",
+    "explanation": "通常需要：npm 发布 token（`NPM_TOKEN`，用于 `@semantic-release/npm` 发布）与代码托管平台 token（如 `GITHUB_TOKEN`，用于打 tag/创建 Release/回提交）。这些通过 CI 的加密 secret 注入。凭据管理是它必须在受信任 CI 运行的原因之一。",
+    "tags": ["semantic-release", "中级", "credentials"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "npm token（发布）+ 平台 token（tag/Release/回提交），经 CI secret 注入",
+        "isCorrect": true,
+        "description": "凭据管理是需在可信 CI 运行的原因"
+      },
+      {
+        "text": "不需要任何凭据",
+        "isCorrect": false,
+        "description": "发布与打 tag 都需凭据"
+      },
+      {
+        "text": "只需要一个数据库密码",
+        "isCorrect": false,
+        "description": "与数据库无关"
+      },
+      {
+        "text": "需要用户的个人邮箱密码",
+        "isCorrect": false,
+        "description": "用的是 token，非邮箱密码"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 中 `@semantic-release/github` 插件的作用是什么？",
+    "explanation": "它在 GitHub 上创建对应版本的 Release（附上生成的 release notes），可选地把发布关联到相关 issue/PR 并评论通知。它让「代码托管平台上的 Release 记录」与实际发布同步产生，方便用户在 GitHub 上查看版本说明。",
+    "tags": ["semantic-release", "中级", "plugin"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 GitHub 创建带 release notes 的 Release，并可关联通知 issue/PR",
+        "isCorrect": true,
+        "description": "让平台 Release 与实际发布同步"
+      },
+      {
+        "text": "把包发布到 npm",
+        "isCorrect": false,
+        "description": "npm 发布是 npm 插件"
+      },
+      {
+        "text": "分析提交决定版本",
+        "isCorrect": false,
+        "description": "那是 commit-analyzer"
+      },
+      { "text": "运行测试", "isCorrect": false, "description": "与测试无关" }
+    ]
+  },
+  {
+    "stem": "使用 semantic-release 时，为什么「保护提交信息规范」（如用 commitlint + Husky）很重要？",
+    "explanation": "因为 semantic-release 完全靠提交信息推断版本与生成 notes——若提交不规范（乱写、不带类型），会导致版本判定错误或该发的没发、changelog 质量差。因此团队常用 commitlint 校验提交格式、Husky 在本地 commit 钩子拦截不规范提交，从源头保证 semantic-release 能正确工作。",
+    "tags": ["semantic-release", "高级", "commitlint"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "版本/notes 全靠提交推断，不规范提交会致版本判定错、changelog 差",
+        "isCorrect": true,
+        "description": "常配 commitlint + Husky 从源头保证规范"
+      },
+      {
+        "text": "提交规范对 semantic-release 无影响",
+        "isCorrect": false,
+        "description": "它完全依赖提交规范"
+      },
+      {
+        "text": "只影响代码风格不影响发布",
+        "isCorrect": false,
+        "description": "直接影响版本与发布正确性"
+      },
+      {
+        "text": "规范提交会阻止发布",
+        "isCorrect": false,
+        "description": "规范提交正是发布的前提"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 相比手工「改版本号 + 写 changelog + npm publish + 打 tag + 建 Release」的价值是什么？",
+    "explanation": "它把这一整套繁琐、易错、易遗漏且主观的步骤全自动化、标准化：版本客观由提交决定、changelog 自动生成、发布/tag/Release 一气呵成，消除人为差异与遗漏，保证每次发布一致可复现。代价是前期配置与对提交规范的纪律要求。",
+    "tags": ["semantic-release", "中级", "value"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把繁琐易错的发布全套自动化标准化，消除人为差异与遗漏",
+        "isCorrect": true,
+        "description": "代价是配置成本与提交纪律"
+      },
+      {
+        "text": "让发布变得更慢更繁琐",
+        "isCorrect": false,
+        "description": "恰恰简化并加速发布"
+      },
+      {
+        "text": "需要每次人工确认每一步",
+        "isCorrect": false,
+        "description": "是全自动，非逐步人工"
+      },
+      {
+        "text": "会导致版本号随机",
+        "isCorrect": false,
+        "description": "版本由提交客观决定"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 用 `@semantic-release/git` 把改动回提交主分支时，常见的坑是什么，如何规避？",
+    "explanation": "回提交（如带上更新后的 CHANGELOG、package.json）会向 main 推送一个新提交——若这个提交又触发了 CI 的发布流程，可能形成死循环。规避方法：在回提交信息里加 `[skip ci]`（或平台等价标记）让 CI 忽略该提交，避免重复触发发布。",
+    "tags": ["semantic-release", "专家", "pitfall"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "回提交可能再次触发 CI 发布死循环，用 [skip ci] 规避",
+        "isCorrect": true,
+        "description": "让 CI 忽略该 release 提交"
+      },
+      {
+        "text": "回提交会删除主分支",
+        "isCorrect": false,
+        "description": "只是新增一个提交"
+      },
+      {
+        "text": "回提交必然导致合并冲突",
+        "isCorrect": false,
+        "description": "非必然，主要风险是 CI 循环"
+      },
+      {
+        "text": "没有任何风险",
+        "isCorrect": false,
+        "description": "CI 死循环是真实风险"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 中「一个仓库一条版本线」的默认模型，对单包库的意义是什么？",
+    "explanation": "对单包库，「一个仓库一条版本线」正好匹配——仓库版本就是这个包的版本，提交历史直接映射到该包的版本演进。这让 semantic-release 对单包库极为顺手、几乎零心智负担。而这恰是它在多包 monorepo 需要额外方案的原因（多包需多条版本线）。",
+    "tags": ["semantic-release", "中级", "model"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "单包库中仓库版本即包版本，天然匹配、心智负担低",
+        "isCorrect": true,
+        "description": "多包需多条版本线故需额外方案"
+      },
+      {
+        "text": "单包库无法用 semantic-release",
+        "isCorrect": false,
+        "description": "单包库正是其最佳场景"
+      },
+      {
+        "text": "一条版本线也能自动管理无限多包",
+        "isCorrect": false,
+        "description": "多包需多条版本线"
+      },
+      {
+        "text": "版本线与包无关",
+        "isCorrect": false,
+        "description": "单包下版本线即包版本"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 生成的「release notes / changelog」内容来自哪里？",
+    "explanation": "来自自上次发布以来的提交信息——`release-notes-generator` 按提交类型分组（Features/Bug Fixes/BREAKING CHANGES 等）汇总成结构化的发布说明。因此规范、有意义的 commit message 直接决定 changelog 的质量与可读性。",
+    "tags": ["semantic-release", "中级", "changelog"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "来自提交信息，按类型分组汇总成结构化 release notes",
+        "isCorrect": true,
+        "description": "commit message 质量决定 changelog 质量"
+      },
+      {
+        "text": "由开发者发布时手写",
+        "isCorrect": false,
+        "description": "自动从提交生成"
+      },
+      {
+        "text": "从代码注释提取",
+        "isCorrect": false,
+        "description": "从提交信息，非代码注释"
+      },
+      { "text": "留空", "isCorrect": false, "description": "会自动生成内容" }
+    ]
+  },
+  {
+    "stem": "semantic-release 中，若想让某类提交（如 `perf:`、`refactor:`）也触发特定级别发布，怎么做？",
+    "explanation": "通过配置 commit-analyzer 的 `releaseRules`（或选用/自定义 preset），可以把额外的提交类型映射到版本级别（如 `perf` → patch）。默认 preset 通常只把 fix/feat/BREAKING 映射到版本，其它类型需显式配置才触发发布。这体现其行为可按团队约定裁剪。",
+    "tags": ["semantic-release", "专家", "config"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "配置 commit-analyzer 的 releaseRules 把额外类型映射到版本级别",
+        "isCorrect": true,
+        "description": "默认只 fix/feat/BREAKING，其它需显式配"
+      },
+      {
+        "text": "无法自定义，规则写死",
+        "isCorrect": false,
+        "description": "releaseRules 可自定义"
+      },
+      {
+        "text": "只能改源码实现",
+        "isCorrect": false,
+        "description": "通过配置即可"
+      },
+      {
+        "text": "所有提交类型默认都发版",
+        "isCorrect": false,
+        "description": "默认只部分类型触发"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 的 `verifyConditions` 阶段（各插件参与）主要检查什么？",
+    "explanation": "在真正发布前，`verifyConditions` 校验发布所需的前置条件是否具备：如 npm token 是否存在且有效、git 仓库权限、GitHub token、分支是否为配置的发布分支等。尽早失败可避免「跑到一半才发现没凭据」这种半途失败。",
+    "tags": ["semantic-release", "高级", "lifecycle"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "发布前校验凭据/权限/分支等前置条件，尽早失败",
+        "isCorrect": true,
+        "description": "避免跑到一半才发现缺凭据"
+      },
+      {
+        "text": "校验代码测试是否通过",
+        "isCorrect": false,
+        "description": "测试由 CI 其它步骤负责"
+      },
+      {
+        "text": "校验代码格式",
+        "isCorrect": false,
+        "description": "与格式无关"
+      },
+      {
+        "text": "校验用户输入的版本号",
+        "isCorrect": false,
+        "description": "版本自动推断，无人工输入"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 中，把发布放在 main 分支「push/merge 后自动触发」体现了哪种交付模式？",
+    "explanation": "这更接近「持续部署（到 npm registry）」——只要变更合入 main 并通过检查，就自动发布新版本，无人工放行。它把「发布」纳入 CI/CD 自动流水线，去除了人工发版环节，前提是团队对自动发版有信心（配合充分的 CI 测试与提交规范）。",
+    "tags": ["semantic-release", "高级", "cicd"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "合入 main 即自动发版，接近对 registry 的持续部署",
+        "isCorrect": true,
+        "description": "去人工放行，靠 CI 测试与提交规范兜底"
+      },
+      {
+        "text": "是纯手动发布模式",
+        "isCorrect": false,
+        "description": "恰恰是自动触发"
+      },
+      {
+        "text": "需要每次人工审批版本号",
+        "isCorrect": false,
+        "description": "无人工定版本/放行"
+      },
+      {
+        "text": "与 CI/CD 无关",
+        "isCorrect": false,
+        "description": "正是 CI/CD 里的自动步骤"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 在「维护旧大版本（如已发 3.x 但仍需给 2.x 打补丁）」时依靠什么机制？",
+    "explanation": "依靠维护分支（maintenance branches）——在 `branches` 里配置形如 `2.x`（或 `2.1.x`）的维护分支，向其提交 `fix:` 会在 2.x 线上发布补丁版本（如 2.4.1），与 main 上的 3.x 互不干扰。这让多个大版本线能并行维护。",
+    "tags": ["semantic-release", "专家", "maintenance"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用维护分支（如 2.x）在旧大版本线上独立发补丁",
+        "isCorrect": true,
+        "description": "多个大版本线并行维护、互不干扰"
+      },
+      {
+        "text": "无法维护旧版本，只能发最新",
+        "isCorrect": false,
+        "description": "维护分支专为此设计"
+      },
+      {
+        "text": "必须回退 main 到旧版本",
+        "isCorrect": false,
+        "description": "用独立维护分支，无需回退 main"
+      },
+      {
+        "text": "把旧版本代码复制成新仓库",
+        "isCorrect": false,
+        "description": "同仓维护分支即可"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 的「幂等/可重跑」特性体现在哪？",
+    "explanation": "若一次 CI 发布中途失败后重跑，semantic-release 会重新分析：已经发布过的版本（tag/npm 上已存在）不会重复发布，它据当前状态判断还需做什么。这种「按当前提交状态决定」的设计让发布流程对重试相对友好，减少重复发版风险。",
+    "tags": ["semantic-release", "专家", "idempotency"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按当前提交/已发布状态判断，不重复发已发版本，利于重试",
+        "isCorrect": true,
+        "description": "据现状决定还需做什么"
+      },
+      {
+        "text": "每次重跑都强制再发一个新版本",
+        "isCorrect": false,
+        "description": "不重复发已存在版本"
+      },
+      {
+        "text": "失败后无法重跑",
+        "isCorrect": false,
+        "description": "对重试相对友好"
+      },
+      {
+        "text": "重跑会删除已发布版本",
+        "isCorrect": false,
+        "description": "不删已发版本"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，采用 semantic-release 的团队必须接受的一个「前提约束」是什么？",
+    "explanation": "必须接受并坚持「规范化提交（Conventional Commits）」——因为版本与 changelog 完全由提交信息驱动。这需要全员纪律（配 commitlint/Husky/PR 校验）。若团队做不到规范提交，semantic-release 的自动化就会失准。这是采用它的最大前提成本。",
+    "tags": ["semantic-release", "中级", "prerequisite"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "全员坚持 Conventional Commits 规范提交",
+        "isCorrect": true,
+        "description": "版本/changelog 全靠提交驱动，需纪律"
+      },
+      {
+        "text": "必须使用某个特定 IDE",
+        "isCorrect": false,
+        "description": "与 IDE 无关"
+      },
+      {
+        "text": "必须放弃所有测试",
+        "isCorrect": false,
+        "description": "恰恰应有充分测试"
+      },
+      {
+        "text": "必须手动写每个版本号",
+        "isCorrect": false,
+        "description": "版本自动，无需手写"
+      }
+    ]
+  },
+  {
+    "stem": "semantic-release 发布到 npm 时，如何区分「正式版进 latest」与「预发布进独立 tag」？",
+    "explanation": "正式版本（main 等发布分支）发布到默认 dist-tag `latest`；预发布分支（beta/next）产出的预发布版本发布到对应的 dist-tag（如 `beta`/`next`）。用户 `npm i pkg` 默认装 latest 稳定版，`npm i pkg@next` 才装预发布。dist-tag 隔离了稳定线与尝鲜线。",
+    "tags": ["semantic-release", "高级", "dist-tag"],
+    "categories": [
+      ["技术方向", "semantic-release"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "正式发 latest，预发布发对应 dist-tag（beta/next），互不干扰",
+        "isCorrect": true,
+        "description": "用户默认装稳定版，@next 装预发布"
+      },
+      {
+        "text": "所有版本都发到 latest",
+        "isCorrect": false,
+        "description": "预发布应发独立 tag"
+      },
+      {
+        "text": "预发布会顶替 latest",
+        "isCorrect": false,
+        "description": "发到独立 tag，不动 latest"
+      },
+      {
+        "text": "无法控制 dist-tag",
+        "isCorrect": false,
+        "description": "按分支自动映射 dist-tag"
+      }
+    ]
+  }
+]

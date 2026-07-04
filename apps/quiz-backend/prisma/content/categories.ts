@@ -769,6 +769,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       },
 
       // ----- 11. 工程化与自动化 -----
+      // 🔒 2026-07-04 选型调研定案扩章（npm 下载量 + 全站去重核查）：
+      //   DevOps 补「CI/CD 核心机制」概念地基；容器单叶→拆组(Docker/Compose/K8s/Podman)；
+      //   Monorepo 补 Nx/Rush；新增三组：版本发布自动化 / 依赖更新自动化 / 基础设施即代码(IaC)。
+      //   排除项：Vercel/Netlify→云服务章；pnpm/yarn→包管理器章；Vite/ESLint→各专章；可观测性另开独立章。
       {
         name: "工程化与自动化",
         sort: 11,
@@ -777,24 +781,69 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "DevOps",
             sort: 1,
             children: [
-              { name: "GitHub Actions", sort: 1 },
-              { name: "GitLab CI/CD", sort: 2 },
-              { name: "Jenkins", sort: 3 },
-              { name: "Husky", sort: 4 },
-              { name: "lint-staged", sort: 5 },
+              // 🆕 工具无关的 CI/CD 理论地基（pipeline/stage/job/runner/cache/matrix/artifact/secrets/OIDC），
+              //   补齐 DevOps 只有具体工具、缺基础层的问题
+              { name: "CI/CD 核心机制", sort: 1 },
+              { name: "GitHub Actions", sort: 2 },
+              { name: "GitLab CI/CD", sort: 3 },
+              { name: "Jenkins", sort: 4 },
+              { name: "Husky", sort: 5 },
+              { name: "lint-staged", sort: 6 },
             ],
           },
           // 2026-06 裁撤「依赖管理器」节(pnpm（工程）/Yarn/Bit)：pnpm 与 Web进阶「包管理器」重复，
           // Yarn 已归位到 JS 四大包管理器；Bit 体量小不立叶。工程化组语义更聚焦 CI/容器/Monorepo。
-          { name: "容器（Docker）", sort: 2 },
+          // 🚨 2026-07-04 prod 移动坑：本节原为单叶「容器（Docker）」（0 题空节点），现拆成「容器」父组 + Docker 子叶。
+          //   import 只增不删——下次 import:content:prod 前须先删 prod 里旧的单叶「容器（Docker）」
+          //   （key=<工程化与自动化 id>:<同 id>:容器（Docker）），否则残留孤儿。详见 content-deploy-workflow「分类移动坑」。
+          {
+            name: "容器",
+            sort: 2,
+            children: [
+              { name: "Docker", sort: 1 },
+              { name: "Docker Compose", sort: 2 },
+              // 2026-07-04 定案拆分：容器化(Docker/Compose)→本组；编排/运行时(Kubernetes/Podman)→
+              //   「基础设施与数据流·容器编排」（该章纯 sidebar 规划、暂不产出）。故本组不含 K8s/Podman。
+            ],
+          },
           {
             name: "Monorepo",
             sort: 3,
             children: [
               { name: "Lerna", sort: 1 },
               { name: "Turborepo", sort: 2 },
-              // TODO（做本批时补）：Nx —— 2026-06 调研漏项，8.5M/wk · 28.8k★，
-              // Monorepo 主流之一，体量不输 Turborepo，建议 sort: 3
+              { name: "Nx", sort: 3 }, // 9.2M/wk，Monorepo 三巨头补齐（Lerna 现已并入 Nx 维护）
+              { name: "Rush", sort: 4 }, // 989k/wk，微软企业级 monorepo
+            ],
+          },
+          // 🆕 版本发布自动化（原全站零覆盖）：conventional-commits → 自动 version/changelog/publish
+          {
+            name: "版本发布自动化",
+            sort: 4,
+            children: [
+              { name: "Changesets", sort: 1 }, // 3.2M/wk，monorepo 原生（本站 pnpm monorepo 首选）
+              { name: "semantic-release", sort: 2 }, // 2.56M/wk，单包自动发布经典
+              { name: "release-please", sort: 3 }, // Google，GitHub-native（release PR）
+            ],
+          },
+          // 🆕 依赖更新自动化：自动开 PR 升级依赖
+          {
+            name: "依赖更新自动化",
+            sort: 5,
+            children: [
+              { name: "Renovate", sort: 1 },
+              { name: "Dependabot", sort: 2 },
+            ],
+          },
+          // 🆕 基础设施即代码（IaC）：声明式(Terraform/OpenTofu) + 编程式(Pulumi，可用 TS) + 配置管理(Ansible)
+          {
+            name: "基础设施即代码（IaC）",
+            sort: 6,
+            children: [
+              { name: "Terraform", sort: 1 },
+              { name: "OpenTofu", sort: 2 }, // Terraform 许可证变更后的社区开源 fork
+              { name: "Pulumi", sort: 3 },
+              { name: "Ansible", sort: 4 },
             ],
           },
         ],

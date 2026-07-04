@@ -1,0 +1,1459 @@
+[
+  {
+    "stem": "Docker 容器与传统虚拟机（VM）最本质的区别是什么？",
+    "explanation": "容器共享宿主机的操作系统内核，只隔离进程、文件系统、网络等用户态资源，因此启动快、开销小、镜像小。虚拟机则通过 Hypervisor 虚拟出完整硬件并运行各自独立的操作系统内核，隔离更强但更重。「共享内核」是容器轻量的根本原因。",
+    "tags": ["docker", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "容器共享宿主内核只做用户态隔离，VM 各自运行完整内核",
+        "isCorrect": true,
+        "description": "共享内核=轻量快速；VM 虚拟完整硬件更重"
+      },
+      {
+        "text": "容器比 VM 隔离更强、更安全",
+        "isCorrect": false,
+        "description": "共享内核使容器隔离弱于 VM"
+      },
+      {
+        "text": "容器必须运行 Windows，VM 只能 Linux",
+        "isCorrect": false,
+        "description": "与操作系统限制无关"
+      },
+      {
+        "text": "容器不能联网，VM 才能",
+        "isCorrect": false,
+        "description": "容器有完整网络能力"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中「镜像（image）」与「容器（container）」的关系是什么？",
+    "explanation": "镜像是只读的模板（分层文件系统 + 元数据），容器是镜像的一个可运行实例——在镜像的只读层之上加一个可写层运行。同一镜像可启动多个互相独立的容器。类比：镜像像类，容器像对象实例。",
+    "tags": ["docker", "入门", "concept"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "镜像是只读模板，容器是它的可运行实例（叠加可写层）",
+        "isCorrect": true,
+        "description": "一镜像可起多容器，类似类与对象"
+      },
+      {
+        "text": "容器是只读的，镜像是可写的",
+        "isCorrect": false,
+        "description": "反了：镜像只读，容器有可写层"
+      },
+      {
+        "text": "镜像和容器是同一个东西",
+        "isCorrect": false,
+        "description": "一个是模板一个是实例"
+      },
+      {
+        "text": "一个镜像只能对应一个容器",
+        "isCorrect": false,
+        "description": "可基于同镜像起任意多容器"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 镜像的「分层（layer）」机制带来的核心好处是什么？",
+    "explanation": "镜像由多个只读层叠加而成，每条 Dockerfile 指令大致生成一层。分层让不同镜像/构建之间可以复用相同的底层（如基础镜像层），节省存储与拉取带宽；构建时未变化的层还能命中缓存，加速构建。",
+    "tags": ["docker", "入门", "layer"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "层可跨镜像复用、可缓存，省存储/带宽并加速构建",
+        "isCorrect": true,
+        "description": "相同底层共享，未变层命中缓存"
+      },
+      {
+        "text": "让每个镜像都必须完全独立不共享",
+        "isCorrect": false,
+        "description": "分层恰恰是为了共享复用"
+      },
+      {
+        "text": "使镜像无法被缓存",
+        "isCorrect": false,
+        "description": "分层正是缓存的基础"
+      },
+      {
+        "text": "强制镜像只能有一层",
+        "isCorrect": false,
+        "description": "镜像通常多层"
+      }
+    ]
+  },
+  {
+    "stem": "Dockerfile 中 `CMD` 与 `ENTRYPOINT` 的关系与区别是什么？",
+    "explanation": "`ENTRYPOINT` 定义容器启动时固定要执行的可执行程序；`CMD` 提供默认参数或默认命令。当两者都用 exec 形式时，`docker run` 后面追加的参数会覆盖 `CMD`（作为 ENTRYPOINT 的参数），而 ENTRYPOINT 不被覆盖（除非用 `--entrypoint`）。常见模式：ENTRYPOINT 定程序，CMD 定默认参数。",
+    "tags": ["docker", "中级", "dockerfile"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ENTRYPOINT 定固定程序，CMD 提供默认参数且可被 run 追加参数覆盖",
+        "isCorrect": true,
+        "description": "run 追加参数覆盖 CMD，不覆盖 ENTRYPOINT"
+      },
+      {
+        "text": "两者完全等价可互换",
+        "isCorrect": false,
+        "description": "覆盖行为与语义不同"
+      },
+      {
+        "text": "CMD 不可被覆盖，ENTRYPOINT 可被 run 参数覆盖",
+        "isCorrect": false,
+        "description": "说反了"
+      },
+      {
+        "text": "一个 Dockerfile 只能有 CMD 不能有 ENTRYPOINT",
+        "isCorrect": false,
+        "description": "两者可共存且常配合使用"
+      }
+    ]
+  },
+  {
+    "stem": "Dockerfile 中 `COPY` 与 `ADD` 的关键区别是什么？",
+    "explanation": "`COPY` 只做本地文件/目录的复制，语义单纯、可预测。`ADD` 额外支持两种「魔法」：自动解压本地 tar 归档、以及从 URL 下载（不推荐）。官方最佳实践是：绝大多数情况用 `COPY`，只有确需自动解压 tar 时才用 `ADD`。",
+    "tags": ["docker", "中级", "dockerfile"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "COPY 仅复制；ADD 还能自动解压 tar 和从 URL 下载，一般优先 COPY",
+        "isCorrect": true,
+        "description": "ADD 语义带魔法，最佳实践默认用 COPY"
+      },
+      {
+        "text": "COPY 能从 URL 下载，ADD 不能",
+        "isCorrect": false,
+        "description": "反了：ADD 才支持 URL"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "ADD 多了解压/下载能力"
+      },
+      {
+        "text": "ADD 只能复制单个文件",
+        "isCorrect": false,
+        "description": "无此限制"
+      }
+    ]
+  },
+  {
+    "stem": "Dockerfile 中 `ARG` 与 `ENV` 的区别是什么？",
+    "explanation": "`ARG` 是「构建期变量」，只在 `docker build` 过程中可用，可通过 `--build-arg` 传入，不会保留到运行的容器里。`ENV` 是「运行期环境变量」，会写入镜像、在容器运行时存在。注意：ARG 值可能出现在镜像历史里，不应用来传密钥。",
+    "tags": ["docker", "中级", "dockerfile"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ARG 仅构建期有效不入运行容器；ENV 是运行期环境变量会写入镜像",
+        "isCorrect": true,
+        "description": "构建期 vs 运行期；ARG 不应传密钥"
+      },
+      {
+        "text": "ARG 运行期有效，ENV 只构建期有效",
+        "isCorrect": false,
+        "description": "说反了"
+      },
+      {
+        "text": "两者都能安全存放密钥",
+        "isCorrect": false,
+        "description": "都可能泄露，尤其 ARG 进历史"
+      },
+      {
+        "text": "ENV 不能被容器内进程读取",
+        "isCorrect": false,
+        "description": "ENV 恰恰是给运行时读的"
+      }
+    ]
+  },
+  {
+    "stem": "Dockerfile 中 `EXPOSE 8080` 的实际作用是什么？",
+    "explanation": "`EXPOSE` 只是「声明/文档」容器监听的端口，并不会真正把端口发布到宿主机。要让外部访问，仍需在 `docker run -p 宿主端口:容器端口` 做端口映射（或 compose 的 `ports`）。误以为 EXPOSE 就能对外访问是常见错误。",
+    "tags": ["docker", "中级", "network"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅声明容器监听端口（文档作用），不会真正发布到宿主",
+        "isCorrect": true,
+        "description": "对外访问仍需 -p 做端口映射"
+      },
+      {
+        "text": "自动把端口发布到宿主机",
+        "isCorrect": false,
+        "description": "发布需 -p，EXPOSE 不做映射"
+      },
+      {
+        "text": "关闭该端口的访问",
+        "isCorrect": false,
+        "description": "EXPOSE 是声明而非关闭"
+      },
+      {
+        "text": "让容器只能用该端口联网",
+        "isCorrect": false,
+        "description": "不限制其它端口"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 多阶段构建（multi-stage build）主要解决什么问题？",
+    "explanation": "多阶段构建在一个 Dockerfile 里用多个 `FROM` 定义多个构建阶段：前面的阶段负责编译（含编译器、依赖等重工具），最后阶段只 `COPY --from=构建阶段` 拷贝出最终产物到一个精简的运行镜像。这样最终镜像不含构建工具链，体积小、攻击面小。",
+    "tags": ["docker", "中级", "multi-stage"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "分离构建与运行环境，最终镜像只留产物、体积小攻击面小",
+        "isCorrect": true,
+        "description": "用 COPY --from 拷产物，丢弃构建工具链"
+      },
+      {
+        "text": "让构建可以并行跑多台机器",
+        "isCorrect": false,
+        "description": "多阶段不等于分布式构建"
+      },
+      {
+        "text": "允许一个镜像同时运行多个应用",
+        "isCorrect": false,
+        "description": "与运行多应用无关"
+      },
+      {
+        "text": "自动把镜像推送到多个仓库",
+        "isCorrect": false,
+        "description": "与推送无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 构建时，为最大化利用层缓存，`COPY package.json` 与 `RUN npm install` 通常应放在 `COPY . .`（拷全部源码）之前，为什么？",
+    "explanation": "构建缓存按层顺序失效：一旦某层的输入变了，它及其之后的所有层缓存都失效。源码改动频繁，若先 `COPY . .` 再装依赖，每次改代码都会让依赖安装层缓存失效、重装依赖。先只拷贝 `package.json`/lockfile 并安装依赖，再拷贝源码，可让「依赖未变时」复用安装缓存，大幅加速。",
+    "tags": ["docker", "高级", "cache"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "让依赖安装层在源码变动时仍能命中缓存，避免每次重装依赖",
+        "isCorrect": true,
+        "description": "把不常变的依赖层放前面，最大化缓存命中"
+      },
+      {
+        "text": "因为 npm 要求 package.json 必须最先拷贝",
+        "isCorrect": false,
+        "description": "是缓存策略，不是 npm 硬性要求"
+      },
+      {
+        "text": "这样能让镜像体积更小",
+        "isCorrect": false,
+        "description": "关乎缓存速度而非体积"
+      },
+      {
+        "text": "顺序无所谓，缓存不受影响",
+        "isCorrect": false,
+        "description": "层顺序直接决定缓存命中"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中数据卷（named volume）与绑定挂载（bind mount）的主要区别是什么？",
+    "explanation": "命名卷由 Docker 管理，存放在 Docker 的存储区域（如 `/var/lib/docker/volumes`），生命周期与容器解耦，适合持久化数据库等数据、可移植。绑定挂载把宿主机上任意指定路径直接挂进容器，路径由你完全控制，适合开发时把源码目录挂进容器实现热更。卷更「可移植/受管」，bind mount 更「贴宿主路径」。",
+    "tags": ["docker", "中级", "volume"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "命名卷由 Docker 管理更可移植；绑定挂载直接映射宿主任意路径",
+        "isCorrect": true,
+        "description": "卷=受管持久化；bind=开发挂源码热更"
+      },
+      {
+        "text": "命名卷会随容器删除而丢失，bind mount 不会",
+        "isCorrect": false,
+        "description": "命名卷生命周期与容器解耦，不随容器删除"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "管理方式与路径来源不同"
+      },
+      {
+        "text": "bind mount 的数据存在 Docker 内部区域",
+        "isCorrect": false,
+        "description": "bind mount 存在宿主指定路径"
+      }
+    ]
+  },
+  {
+    "stem": "执行 `docker run` 时，若不加 `-p`/`--publish`，默认 bridge 网络下从宿主机外部能直接访问容器内服务吗？",
+    "explanation": "默认 bridge 网络下，容器有自己的内网 IP，未做端口发布（-p）时，宿主机外部无法直接访问容器端口；需 `-p 宿主端口:容器端口` 把端口映射到宿主。（同一自定义网络内的容器之间则可通过容器名互访，无需 -p。）",
+    "tags": ["docker", "初级", "network"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不能，需 -p 把容器端口映射到宿主才可外部访问",
+        "isCorrect": true,
+        "description": "同网络内容器间可互访，但对外需发布端口"
+      },
+      {
+        "text": "能，容器端口默认全部对外开放",
+        "isCorrect": false,
+        "description": "默认不发布到宿主"
+      },
+      {
+        "text": "能，但仅限 80 端口",
+        "isCorrect": false,
+        "description": "无此特例"
+      },
+      {
+        "text": "永远无法从外部访问容器",
+        "isCorrect": false,
+        "description": "-p 映射后即可访问"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 自定义 bridge 网络相比默认 bridge 网络，一个关键优势是什么？",
+    "explanation": "在用户自定义 bridge 网络中，Docker 提供内建 DNS，容器之间可以直接用「容器名/服务名」互相解析访问；而默认 bridge 网络不提供这种自动服务发现（需过时的 `--link`）。因此多容器应用应创建自定义网络。",
+    "tags": ["docker", "中级", "network"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "容器间可用容器名通过内建 DNS 互相解析访问",
+        "isCorrect": true,
+        "description": "自定义网络自带服务发现，默认 bridge 没有"
+      },
+      {
+        "text": "自定义网络的容器不需要任何 IP",
+        "isCorrect": false,
+        "description": "容器仍有 IP"
+      },
+      {
+        "text": "自定义网络会自动对外公开所有端口",
+        "isCorrect": false,
+        "description": "不改变端口发布行为"
+      },
+      {
+        "text": "只有自定义网络能访问互联网",
+        "isCorrect": false,
+        "description": "默认 bridge 也能访问外网"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 的 `.dockerignore` 文件的作用是什么？",
+    "explanation": "`.dockerignore` 列出在 `docker build` 时不应发送到构建上下文（build context）的文件/目录（如 `node_modules`、`.git`、日志）。减小构建上下文能加快构建、避免把无关或敏感文件误拷进镜像、并提升缓存稳定性。",
+    "tags": ["docker", "初级", "build"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "排除文件不进构建上下文，加速构建并避免误拷敏感/无关文件",
+        "isCorrect": true,
+        "description": "类似 .gitignore，作用于 build context"
+      },
+      {
+        "text": "列出容器运行时要忽略的进程",
+        "isCorrect": false,
+        "description": "与运行时进程无关"
+      },
+      {
+        "text": "指定哪些端口不发布",
+        "isCorrect": false,
+        "description": "与端口无关"
+      },
+      {
+        "text": "声明镜像不包含的层",
+        "isCorrect": false,
+        "description": "作用于上下文文件，不是层"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 镜像标签 `myapp:latest` 与用内容摘要 `myapp@sha256:...` 引用，最重要的差别是什么？",
+    "explanation": "标签（tag）是可变的——`latest` 或 `v1` 可被重新推送指向不同的镜像内容。内容摘要（digest, `sha256:...`）是对镜像内容的哈希，不可变，唯一且确定地指向某一份镜像。生产部署为保证可复现与防篡改，常用 digest 锁定，而非依赖会漂移的 `latest`。",
+    "tags": ["docker", "高级", "image"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "tag 可变可被重新指向；digest 是内容哈希不可变、精确锁定",
+        "isCorrect": true,
+        "description": "生产用 digest 保证可复现、防漂移"
+      },
+      {
+        "text": "digest 可变，tag 不可变",
+        "isCorrect": false,
+        "description": "反了：digest 才不可变"
+      },
+      {
+        "text": "两者都不可变",
+        "isCorrect": false,
+        "description": "tag 可被覆盖重推"
+      },
+      {
+        "text": "latest 永远指向最新且最稳定版本",
+        "isCorrect": false,
+        "description": "latest 只是个标签，不保证稳定/最新"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Docker 镜像的 `latest` 标签，下列说法正确的是？",
+    "explanation": "`latest` 只是「未指定标签时的默认标签名」，并没有「自动指向最新版本」的魔力——它指向的是最后一次以 `latest` 名字推送的镜像。生产依赖 `latest` 常导致「不知道到底跑的哪个版本」「无法复现/回滚」等问题，应使用明确的版本标签。",
+    "tags": ["docker", "初级", "image"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "latest 只是默认标签名，不保证是最新版，生产应用明确版本标签",
+        "isCorrect": true,
+        "description": "它指向最后一次以 latest 推送的镜像而已"
+      },
+      {
+        "text": "latest 会自动跟踪并指向最新构建",
+        "isCorrect": false,
+        "description": "常见误解，无此自动机制"
+      },
+      {
+        "text": "没有 latest 标签镜像就无法运行",
+        "isCorrect": false,
+        "description": "可用任意标签或 digest"
+      },
+      {
+        "text": "latest 镜像总是最小体积",
+        "isCorrect": false,
+        "description": "与体积无关"
+      }
+    ]
+  },
+  {
+    "stem": "为减小 Docker 镜像体积与攻击面，选用基础镜像时常见的做法是？",
+    "explanation": "常用精简基础镜像：`alpine`（基于 musl libc，极小但可能有兼容性坑）、各语言的 `-slim` 变体、以及 `distroless`（只含运行时与应用、不含 shell 和包管理器，攻击面最小）。选择时在体积/兼容性/可调试性之间权衡。用完整发行版镜像跑生产往往过大。",
+    "tags": ["docker", "中级", "image-size"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "选 alpine / -slim / distroless 等精简镜像并权衡兼容性",
+        "isCorrect": true,
+        "description": "distroless 无 shell 攻击面最小；alpine 极小需注意 musl"
+      },
+      {
+        "text": "总是选体积最大的完整发行版镜像",
+        "isCorrect": false,
+        "description": "过大且攻击面大"
+      },
+      {
+        "text": "基础镜像大小对安全没有影响",
+        "isCorrect": false,
+        "description": "更少组件=更小攻击面"
+      },
+      {
+        "text": "distroless 镜像里自带完整 shell 方便调试",
+        "isCorrect": false,
+        "description": "distroless 恰恰不含 shell"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 架构中，`docker` CLI、Docker daemon（dockerd）、containerd、runc 的分工大致是怎样的？",
+    "explanation": "`docker` CLI 向 Docker daemon（dockerd）发 API 请求；dockerd 负责镜像/网络/卷等高层管理，并把容器生命周期委托给 containerd；containerd 再通过 OCI 运行时 runc 真正创建/运行容器进程。这是一条从客户端到底层运行时的分层调用链。",
+    "tags": ["docker", "高级", "architecture"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CLI→dockerd（高层管理）→containerd（容器管理）→runc（OCI 运行时起进程）",
+        "isCorrect": true,
+        "description": "分层：客户端、守护进程、容器运行时、底层 OCI 运行时"
+      },
+      {
+        "text": "CLI 直接调用 runc，不经过 daemon",
+        "isCorrect": false,
+        "description": "CLI 走 dockerd，不直连 runc"
+      },
+      {
+        "text": "containerd 是 CLI 的一部分",
+        "isCorrect": false,
+        "description": "containerd 是独立的容器运行时"
+      },
+      {
+        "text": "runc 负责镜像仓库管理",
+        "isCorrect": false,
+        "description": "runc 只负责按 OCI 规范起容器"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `docker stop` 与 `docker kill` 的区别是什么？",
+    "explanation": "`docker stop` 先向容器主进程发送 `SIGTERM`，给一段宽限期（默认 10 秒）让其优雅关闭，超时未退出再发 `SIGKILL`。`docker kill` 默认直接发 `SIGKILL` 立即强杀，不给清理机会。生产中优雅关闭很重要，故一般用 stop。",
+    "tags": ["docker", "中级", "lifecycle"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "stop 先 SIGTERM 宽限后再 SIGKILL；kill 默认直接 SIGKILL 强杀",
+        "isCorrect": true,
+        "description": "stop 给优雅关闭机会，kill 立即杀"
+      },
+      {
+        "text": "两者都直接强杀，无区别",
+        "isCorrect": false,
+        "description": "stop 有 SIGTERM 宽限期"
+      },
+      {
+        "text": "kill 会保存容器状态，stop 不会",
+        "isCorrect": false,
+        "description": "与状态保存无关"
+      },
+      {
+        "text": "stop 会删除容器，kill 不会",
+        "isCorrect": false,
+        "description": "两者都不删除容器（rm 才删）"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 容器内应用的日志，遵循「十二要素应用」的推荐做法是什么？",
+    "explanation": "推荐让应用把日志直接写到标准输出（stdout）/标准错误（stderr），由 Docker 的日志驱动统一收集（`docker logs` 可查，也可转发到集中式日志系统）。不建议应用自己在容器内写日志文件——那会随容器销毁而丢失且难以集中采集。",
+    "tags": ["docker", "中级", "logging"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把日志写到 stdout/stderr，交给 Docker 日志驱动收集",
+        "isCorrect": true,
+        "description": "容器内写文件会随容器销毁丢失"
+      },
+      {
+        "text": "在容器内写本地日志文件长期保存",
+        "isCorrect": false,
+        "description": "随容器删除即丢，难集中采集"
+      },
+      {
+        "text": "关闭所有日志以省空间",
+        "isCorrect": false,
+        "description": "并非推荐做法"
+      },
+      {
+        "text": "把日志打进镜像层",
+        "isCorrect": false,
+        "description": "镜像层只读，无法写运行日志"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 容器默认以什么用户运行进程，从安全角度应如何改进？",
+    "explanation": "若 Dockerfile 未指定，容器进程默认以 root 运行。一旦容器被攻破，root 权限会放大风险（尤其配合内核漏洞或错误挂载）。最佳实践是用 `USER` 指令切换到非 root 用户运行应用，遵循最小权限。更进一步可用 rootless Docker。",
+    "tags": ["docker", "高级", "security"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 root；应用 USER 切换到非 root 运行以降风险",
+        "isCorrect": true,
+        "description": "最小权限；进一步可用 rootless Docker"
+      },
+      {
+        "text": "默认就是非 root，无需处理",
+        "isCorrect": false,
+        "description": "未指定时默认 root"
+      },
+      {
+        "text": "必须以 root 运行才能工作",
+        "isCorrect": false,
+        "description": "多数应用可非 root 运行"
+      },
+      {
+        "text": "容器用户与安全无关",
+        "isCorrect": false,
+        "description": "root 容器风险显著更高"
+      }
+    ]
+  },
+  {
+    "stem": "Dockerfile 中 `HEALTHCHECK` 指令的作用是什么？",
+    "explanation": "`HEALTHCHECK` 定义 Docker 如何周期性检测容器内应用是否健康（如 `curl` 本地健康端点）。检测结果体现在容器状态（healthy/unhealthy），编排系统（如 Compose 的 depends_on condition、Swarm）可据此决定是否路由流量或重启。它检测的是「应用可用性」，不只是进程存活。",
+    "tags": ["docker", "中级", "healthcheck"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "周期性探测应用健康并反映到容器状态，供编排决策",
+        "isCorrect": true,
+        "description": "healthy/unhealthy 供 depends_on、重启等使用"
+      },
+      {
+        "text": "构建时检查 Dockerfile 语法",
+        "isCorrect": false,
+        "description": "它是运行期探针，非构建检查"
+      },
+      {
+        "text": "检测宿主机磁盘健康",
+        "isCorrect": false,
+        "description": "针对容器内应用，非宿主硬件"
+      },
+      {
+        "text": "只检查主进程 PID 是否存在",
+        "isCorrect": false,
+        "description": "可自定义探测应用可用性，非仅存活"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中删除已停止容器与删除镜像分别用哪类命令，两者关系如何？",
+    "explanation": "`docker rm <容器>` 删除容器，`docker rmi <镜像>` 删除镜像。容器是镜像的实例：只要还有容器（即使已停止）在引用某镜像，通常无法删除该镜像（需先删容器或 `-f`）。`docker system prune` 可批量清理停止的容器、悬空镜像、未用网络等。",
+    "tags": ["docker", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "rm 删容器、rmi 删镜像；有容器引用时镜像通常删不掉",
+        "isCorrect": true,
+        "description": "prune 可批量清理停止容器与悬空镜像"
+      },
+      {
+        "text": "rm 删镜像、rmi 删容器",
+        "isCorrect": false,
+        "description": "命令对应反了"
+      },
+      {
+        "text": "删镜像会自动删除所有相关容器",
+        "isCorrect": false,
+        "description": "反而被容器引用时删不了镜像"
+      },
+      {
+        "text": "停止的容器会自动消失无需删除",
+        "isCorrect": false,
+        "description": "停止≠删除，需 rm 或 --rm"
+      }
+    ]
+  },
+  {
+    "stem": "`docker run --rm` 选项的作用是什么？",
+    "explanation": "`--rm` 让容器在退出时自动被删除，不留下停止状态的容器。适合一次性任务（跑个脚本、临时工具），避免堆积大量 exited 容器需要手动清理。注意它与需要长期保留数据/日志的场景不适配。",
+    "tags": ["docker", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "容器退出时自动删除，适合一次性任务",
+        "isCorrect": true,
+        "description": "避免堆积 exited 容器"
+      },
+      {
+        "text": "删除容器使用的镜像",
+        "isCorrect": false,
+        "description": "只删容器不删镜像"
+      },
+      {
+        "text": "以只读方式运行容器",
+        "isCorrect": false,
+        "description": "只读是 --read-only"
+      },
+      {
+        "text": "移除容器的网络",
+        "isCorrect": false,
+        "description": "与网络无关"
+      }
+    ]
+  },
+  {
+    "stem": "BuildKit（Docker 现代构建引擎）相比传统构建器带来的能力，下列哪项正确？",
+    "explanation": "BuildKit（现为默认构建器）支持并行构建互不依赖的阶段、更高效的缓存（含 `RUN --mount=type=cache` 挂载缓存目录）、构建密钥挂载（`--mount=type=secret` 避免密钥进层）、以及跨平台构建等。它显著提升构建速度与安全性。",
+    "tags": ["docker", "高级", "buildkit"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "并行阶段、缓存挂载、构建期 secret 挂载、跨平台构建等",
+        "isCorrect": true,
+        "description": "更快更安全，现为默认构建器"
+      },
+      {
+        "text": "只能串行执行所有构建阶段",
+        "isCorrect": false,
+        "description": "BuildKit 支持并行独立阶段"
+      },
+      {
+        "text": "取消了对 Dockerfile 的支持",
+        "isCorrect": false,
+        "description": "仍以 Dockerfile 为主"
+      },
+      {
+        "text": "构建时无法使用任何缓存",
+        "isCorrect": false,
+        "description": "缓存能力反而更强"
+      }
+    ]
+  },
+  {
+    "stem": "在 Dockerfile 里用 `RUN --mount=type=secret` 挂载密钥，相比用 `ARG`/`ENV` 传密钥的好处是什么？",
+    "explanation": "BuildKit 的 secret 挂载让密钥只在该 `RUN` 执行期间以临时文件形式可用，不会被写入任何镜像层、也不进镜像历史。而用 `ARG`/`ENV` 或 `COPY` 密钥都会残留在层/历史里，可被 `docker history` 或导出镜像还原出来，属于泄露。",
+    "tags": ["docker", "专家", "security"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "密钥仅在该 RUN 期间临时可用，不写入任何层/历史",
+        "isCorrect": true,
+        "description": "避免 ARG/ENV/COPY 把密钥留在镜像里"
+      },
+      {
+        "text": "让密钥永久保存在镜像中方便复用",
+        "isCorrect": false,
+        "description": "恰恰相反，目的是不留存"
+      },
+      {
+        "text": "加密整个镜像",
+        "isCorrect": false,
+        "description": "只处理构建期密钥，不加密镜像"
+      },
+      {
+        "text": "与 ARG 完全等价",
+        "isCorrect": false,
+        "description": "ARG 会残留在历史，secret 挂载不会"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 容器文件系统的「可写层（container layer）」在容器删除后会怎样？",
+    "explanation": "容器运行时在镜像只读层之上有一个可写层，容器内对文件系统的改动都写在这里。容器被删除（`docker rm`）后，这个可写层连同其中的数据一并消失。要持久化数据必须用卷或绑定挂载，把数据放到容器可写层之外。",
+    "tags": ["docker", "中级", "storage"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可写层随容器删除而丢失，持久化须用卷/绑定挂载",
+        "isCorrect": true,
+        "description": "数据要放到容器可写层之外"
+      },
+      {
+        "text": "可写层会自动保存为新镜像",
+        "isCorrect": false,
+        "description": "需手动 commit 才成镜像，删除不会自动保存"
+      },
+      {
+        "text": "可写层数据永久保留在宿主",
+        "isCorrect": false,
+        "description": "随容器删除即丢"
+      },
+      {
+        "text": "容器无可写层，全部只读",
+        "isCorrect": false,
+        "description": "容器有可写层"
+      }
+    ]
+  },
+  {
+    "stem": "`docker exec` 与 `docker run` 的区别是什么？",
+    "explanation": "`docker run` 基于镜像创建并启动一个「新容器」。`docker exec` 是在一个「已经在运行的容器」里再执行一条命令（如 `docker exec -it web sh` 进入交互 shell 调试）。exec 不新建容器，run 才新建。",
+    "tags": ["docker", "初级", "cli"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "run 基于镜像新建并启动容器；exec 在运行中的容器里执行命令",
+        "isCorrect": true,
+        "description": "exec 常用于进入容器调试，不新建容器"
+      },
+      {
+        "text": "两者都新建容器",
+        "isCorrect": false,
+        "description": "exec 不新建，作用于现有容器"
+      },
+      {
+        "text": "exec 用于构建镜像",
+        "isCorrect": false,
+        "description": "构建是 build，不是 exec"
+      },
+      {
+        "text": "run 只能后台运行，exec 只能前台",
+        "isCorrect": false,
+        "description": "两者都可交互/后台，取决于选项"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Dockerfile 中每条 `RUN` 指令与镜像层的关系，下列说法正确的是？",
+    "explanation": "每条 `RUN`（以及 COPY/ADD）通常会生成一个新的镜像层。因此把多个相关命令用 `&&` 串成一条 `RUN`（并在同一层清理临时文件）能减少层数、避免「上一层装的东西下一层删但仍占体积」的问题。分成很多条 RUN 会徒增层、且删除前层文件并不能真正减小镜像。",
+    "tags": ["docker", "高级", "layer"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每条 RUN 生成一层；合并命令并在同层清理可减小镜像",
+        "isCorrect": true,
+        "description": "后层删前层文件不减体积，需同层清理"
+      },
+      {
+        "text": "所有 RUN 只共用一层",
+        "isCorrect": false,
+        "description": "每条 RUN 通常各成一层"
+      },
+      {
+        "text": "在后续层 rm 文件能减小前面层的体积",
+        "isCorrect": false,
+        "description": "前层已定型，删除只是加覆盖层"
+      },
+      {
+        "text": "层数越多镜像一定越小",
+        "isCorrect": false,
+        "description": "层多不等于小，反而可能更大"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `docker build -t myapp .` 末尾的 `.` 代表什么？",
+    "explanation": "末尾的 `.` 是「构建上下文（build context）」的路径，表示把当前目录的内容打包发送给构建器，Dockerfile 里的 `COPY`/`ADD` 只能引用这个上下文内的文件。它不是「Dockerfile 的位置」（Dockerfile 位置用 `-f` 指定）。上下文过大或包含敏感文件是常见问题，用 `.dockerignore` 控制。",
+    "tags": ["docker", "初级", "build"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "构建上下文路径（发送给构建器、COPY/ADD 的来源根）",
+        "isCorrect": true,
+        "description": "非 Dockerfile 位置（那用 -f 指定）"
+      },
+      {
+        "text": "Dockerfile 的文件名",
+        "isCorrect": false,
+        "description": "Dockerfile 位置用 -f，不是这个点"
+      },
+      {
+        "text": "生成镜像的输出目录",
+        "isCorrect": false,
+        "description": "镜像存进 Docker 存储，不输出到该目录"
+      },
+      {
+        "text": "容器运行的工作目录",
+        "isCorrect": false,
+        "description": "工作目录是 WORKDIR"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 卷（volume）在多个容器间共享数据的能力，典型用途是什么？",
+    "explanation": "同一个命名卷可被多个容器同时挂载，实现容器间共享数据（如一个容器写、另一个读）。也常用于数据库数据持久化（容器可升级替换而数据保留在卷里）。不过多个写者共享同一卷需应用层自行处理并发一致性。",
+    "tags": ["docker", "中级", "volume"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同一卷可被多容器挂载以共享数据，也用于数据持久化",
+        "isCorrect": true,
+        "description": "容器可替换升级而卷中数据保留"
+      },
+      {
+        "text": "一个卷只能被一个容器挂载",
+        "isCorrect": false,
+        "description": "可被多容器同时挂载"
+      },
+      {
+        "text": "卷中的数据随任一容器停止就清空",
+        "isCorrect": false,
+        "description": "卷生命周期独立于容器"
+      },
+      {
+        "text": "卷不能用于数据库",
+        "isCorrect": false,
+        "description": "数据库持久化正是卷的典型场景"
+      }
+    ]
+  },
+  {
+    "stem": "`docker commit`（把容器改动保存成镜像）为何不被推荐作为常规构建方式？",
+    "explanation": "`docker commit` 把某个容器的当前状态打包成镜像，但这个过程是「不可复现、不透明」的——没有 Dockerfile 记录如何得到该镜像，别人无法审查/重建，也难以纳入版本控制与 CI。规范做法是用 Dockerfile 声明式构建，保证可复现、可审计。",
+    "tags": ["docker", "中级", "build"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它不可复现/不透明，缺 Dockerfile 记录，难审查与纳入 CI",
+        "isCorrect": true,
+        "description": "规范用 Dockerfile 声明式、可复现构建"
+      },
+      {
+        "text": "commit 生成的镜像无法运行",
+        "isCorrect": false,
+        "description": "能运行，只是过程不可复现"
+      },
+      {
+        "text": "commit 会损坏原容器",
+        "isCorrect": false,
+        "description": "不损坏原容器"
+      },
+      {
+        "text": "commit 只能在 Windows 用",
+        "isCorrect": false,
+        "description": "无平台限制"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 镜像仓库（registry）中，Docker Hub、私有 registry、云厂商镜像仓库的共同角色是什么？",
+    "explanation": "它们都是「存储与分发镜像」的服务：`docker push` 上传、`docker pull` 下载。Docker Hub 是公共默认仓库；企业常用私有 registry（如 Harbor、云厂商 ECR/ACR/GCR）以获得私有性、访问控制、镜像扫描与就近拉取。镜像名一般形如 `registry/namespace/repo:tag`。",
+    "tags": ["docker", "初级", "registry"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "存储与分发镜像，供 push/pull；私有仓库另加访问控制/扫描",
+        "isCorrect": true,
+        "description": "镜像名含 registry/namespace/repo:tag"
+      },
+      {
+        "text": "它们是运行容器的引擎",
+        "isCorrect": false,
+        "description": "运行容器是 Docker 引擎，不是仓库"
+      },
+      {
+        "text": "只能存镜像不能下载",
+        "isCorrect": false,
+        "description": "既能 push 也能 pull"
+      },
+      {
+        "text": "私有 registry 无法做访问控制",
+        "isCorrect": false,
+        "description": "私有仓库正是为访问控制而设"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 容器中 PID 1 进程的「僵尸进程回收/信号处理」问题，常见解决方案是什么？",
+    "explanation": "容器里主进程作为 PID 1，需要正确处理子进程回收和转发信号（如 SIGTERM），否则可能产生僵尸进程或无法优雅停止。若应用本身不擅长做 init，可用轻量 init（如 `tini`，`docker run --init` 即注入）作为 PID 1 来正确转发信号、回收僵尸。",
+    "tags": ["docker", "专家", "process"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用轻量 init（如 tini / docker run --init）作 PID 1 转发信号、回收僵尸",
+        "isCorrect": true,
+        "description": "解决 PID 1 不处理信号/僵尸子进程问题"
+      },
+      {
+        "text": "把所有进程都设成 PID 1",
+        "isCorrect": false,
+        "description": "PID 1 只有一个"
+      },
+      {
+        "text": "禁用容器的信号机制",
+        "isCorrect": false,
+        "description": "反而需要正确处理信号"
+      },
+      {
+        "text": "该问题不存在于容器中",
+        "isCorrect": false,
+        "description": "PID 1 语义在容器中确实存在"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中给容器设置资源限制（如 `--memory`、`--cpus`）的意义是什么？",
+    "explanation": "默认容器可无限使用宿主资源，一个容器内存泄漏可能拖垮整台机器（OOM 影响其它容器）。用 `--memory`/`--cpus` 等限制可实现资源隔离与配额，防止「坏邻居」耗尽资源；超内存限制的容器会被 OOM Killer 终止。生产多容器共存时尤为重要。",
+    "tags": ["docker", "中级", "resource"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "隔离与限额资源，防单容器耗尽宿主影响其它容器",
+        "isCorrect": true,
+        "description": "超内存限制会被 OOM Killer 杀"
+      },
+      {
+        "text": "让容器运行更快",
+        "isCorrect": false,
+        "description": "限制资源不提升速度"
+      },
+      {
+        "text": "限制后容器无法联网",
+        "isCorrect": false,
+        "description": "资源限制与网络无关"
+      },
+      {
+        "text": "默认容器已被严格限额",
+        "isCorrect": false,
+        "description": "默认无限制，需显式设置"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `docker pull nginx` 未指定标签时，实际拉取的是什么？",
+    "explanation": "未指定标签时默认使用 `latest`，即拉取 `nginx:latest`（该仓库最后一次以 latest 推送的镜像）。若还想指定来源仓库，完整形式是 `docker.io/library/nginx:latest`（官方镜像在 `library` 命名空间）。生产建议显式指定版本标签以求确定性。",
+    "tags": ["docker", "入门", "registry"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认拉取 nginx:latest（省略即 latest 标签）",
+        "isCorrect": true,
+        "description": "官方镜像全名 docker.io/library/nginx:latest"
+      },
+      {
+        "text": "拉取所有标签的镜像",
+        "isCorrect": false,
+        "description": "只拉一个标签，需 -a 才拉全部"
+      },
+      {
+        "text": "报错要求必须指定标签",
+        "isCorrect": false,
+        "description": "省略时默认 latest，不报错"
+      },
+      {
+        "text": "拉取体积最小的那个标签",
+        "isCorrect": false,
+        "description": "默认按 latest，不按体积"
+      }
+    ]
+  },
+  {
+    "stem": "从 Dockerfile 最佳实践看，把频繁变动的指令（如 `COPY 源码`）尽量放在文件靠后位置的原因是什么？",
+    "explanation": "由于缓存自某层失效后其后所有层都失效，应把「不常变」的指令（安装系统依赖、拷贝 lockfile 装依赖）放前面，把「常变」的指令（拷贝源码）放后面。这样日常改代码时，前面稳定层持续命中缓存，只重建靠后的少数层，构建更快。",
+    "tags": ["docker", "中级", "cache"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让常变指令靠后，保住前面稳定层的缓存，加速日常构建",
+        "isCorrect": true,
+        "description": "缓存失效向后传播，稳定层放前面"
+      },
+      {
+        "text": "因为 Docker 要求 COPY 必须在最后",
+        "isCorrect": false,
+        "description": "无此硬性要求，是缓存优化"
+      },
+      {
+        "text": "为了让镜像层数最多",
+        "isCorrect": false,
+        "description": "目的不是增加层数"
+      },
+      {
+        "text": "顺序对构建速度没有影响",
+        "isCorrect": false,
+        "description": "顺序直接影响缓存命中"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 overlay2 存储驱动实现镜像分层与容器可写层用到的关键技术是什么？",
+    "explanation": "overlay2 基于 Linux 的 OverlayFS 联合文件系统（union filesystem），把多个只读层（lowerdir）与一个可写层（upperdir）联合挂载为一个统一视图。对只读层文件的修改采用写时复制（copy-on-write）：修改时先把文件复制到可写层再改，不动只读层。",
+    "tags": ["docker", "专家", "storage"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "基于 OverlayFS 联合挂载 + 写时复制（copy-on-write）",
+        "isCorrect": true,
+        "description": "只读层 lowerdir + 可写层 upperdir 联合视图"
+      },
+      {
+        "text": "把每层完整复制一份到容器",
+        "isCorrect": false,
+        "description": "CoW 只在修改时复制单个文件"
+      },
+      {
+        "text": "用数据库存储文件",
+        "isCorrect": false,
+        "description": "用的是联合文件系统"
+      },
+      {
+        "text": "所有层都可写",
+        "isCorrect": false,
+        "description": "只有 upperdir 可写，其余只读"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `-v /host/path:/container/path` 与 `-v myvol:/container/path` 两种写法分别是什么？",
+    "explanation": "前者是绑定挂载（bind mount）：把宿主机绝对路径 `/host/path` 挂到容器；后者是命名卷（named volume）：`myvol` 是 Docker 管理的卷名。区分方式：源以 `/` 或 `.` 开头是宿主路径（bind mount），否则被当作卷名（named volume）。",
+    "tags": ["docker", "中级", "volume"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前者是绑定挂载（宿主路径），后者是命名卷（Docker 管理）",
+        "isCorrect": true,
+        "description": "源以 / 开头=bind mount，否则=卷名"
+      },
+      {
+        "text": "两者都是命名卷",
+        "isCorrect": false,
+        "description": "带宿主路径的是 bind mount"
+      },
+      {
+        "text": "两者都是绑定挂载",
+        "isCorrect": false,
+        "description": "不带路径前缀的是命名卷"
+      },
+      {
+        "text": "两种写法都非法",
+        "isCorrect": false,
+        "description": "都是合法且常用的写法"
+      }
+    ]
+  },
+  {
+    "stem": "Docker Compose 与 Docker（引擎）的关系，下列描述正确的是？",
+    "explanation": "Docker 引擎负责单个容器的构建与运行；Docker Compose 是在其之上、用一个 YAML 文件定义并一键管理「多容器应用」（多服务、网络、卷）的编排工具。Compose 面向单机开发/测试的多容器编排，生产大规模编排通常用 Kubernetes。",
+    "tags": ["docker", "初级", "ecosystem"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Compose 在 Docker 之上用 YAML 编排多容器应用（单机为主）",
+        "isCorrect": true,
+        "description": "引擎管单容器，Compose 管多容器；大规模用 K8s"
+      },
+      {
+        "text": "Compose 是 Docker 引擎的替代品",
+        "isCorrect": false,
+        "description": "是其上的编排工具，非替代"
+      },
+      {
+        "text": "Docker 引擎依赖 Compose 才能运行容器",
+        "isCorrect": false,
+        "description": "引擎可独立运行容器"
+      },
+      {
+        "text": "Compose 用于大规模生产集群编排",
+        "isCorrect": false,
+        "description": "大规模编排用 Kubernetes"
+      }
+    ]
+  },
+  {
+    "stem": "为让 Docker 镜像支持多 CPU 架构（如 amd64 与 arm64），现代做法是什么？",
+    "explanation": "用 `docker buildx`（基于 BuildKit）构建「多架构镜像」，产出一个 manifest list（多架构清单），把同一标签下不同架构的镜像索引在一起。用户 `pull` 时 Docker 会自动选择匹配本机架构的镜像。这对 Apple Silicon（arm64）与服务器（amd64）混合环境很关键。",
+    "tags": ["docker", "专家", "multiarch"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用 buildx 构建多架构镜像（manifest list），pull 时自动选匹配架构",
+        "isCorrect": true,
+        "description": "一个标签索引多架构，兼容 arm64/amd64"
+      },
+      {
+        "text": "为每种架构起完全不同的镜像名",
+        "isCorrect": false,
+        "description": "多架构清单可共用一个标签"
+      },
+      {
+        "text": "Docker 无法支持多架构",
+        "isCorrect": false,
+        "description": "buildx 专门支持多架构"
+      },
+      {
+        "text": "只需在 Dockerfile 写 ARCH 变量即可",
+        "isCorrect": false,
+        "description": "需 buildx 真正构建各架构镜像"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中「悬空镜像（dangling image，显示为 `<none>:<none>`）」通常是怎么产生的？",
+    "explanation": "当你重新构建一个镜像并复用了原标签时，旧的镜像层失去标签引用，就变成悬空镜像（`<none>`）。它们占用磁盘但不再被标签指向。可用 `docker image prune` 清理悬空镜像，或 `docker builder prune` 清理构建缓存。",
+    "tags": ["docker", "中级", "maintenance"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "重建镜像复用标签后，旧镜像失去标签引用即成悬空",
+        "isCorrect": true,
+        "description": "docker image prune 可清理"
+      },
+      {
+        "text": "悬空镜像是构建失败的产物且无法删除",
+        "isCorrect": false,
+        "description": "可 prune 删除"
+      },
+      {
+        "text": "悬空镜像会自动被立即删除",
+        "isCorrect": false,
+        "description": "不会自动删，需 prune"
+      },
+      {
+        "text": "悬空镜像不占用磁盘空间",
+        "isCorrect": false,
+        "description": "仍占磁盘，故需清理"
+      }
+    ]
+  },
+  {
+    "stem": "关于 Docker 容器的隔离机制，下列哪项是其在 Linux 上依赖的核心内核特性？",
+    "explanation": "容器隔离主要依赖 Linux 内核的 namespaces（命名空间，隔离 PID、网络、挂载、用户等视图）与 cgroups（控制组，限制/统计 CPU、内存等资源）。namespaces 管「看得见什么」，cgroups 管「能用多少」。这也解释了容器共享宿主内核的本质。",
+    "tags": ["docker", "高级", "kernel"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "namespaces（视图隔离）+ cgroups（资源限制）",
+        "isCorrect": true,
+        "description": "namespace 管看见什么，cgroup 管用多少"
+      },
+      {
+        "text": "Hypervisor 硬件虚拟化",
+        "isCorrect": false,
+        "description": "那是 VM 的机制，非容器"
+      },
+      {
+        "text": "每容器独立内核",
+        "isCorrect": false,
+        "description": "容器共享宿主内核"
+      },
+      {
+        "text": "BIOS 级隔离",
+        "isCorrect": false,
+        "description": "与 BIOS 无关"
+      }
+    ]
+  },
+  {
+    "stem": "在 CI/CD 或生产中拉取 Docker 镜像时，用固定 digest（`image@sha256:...`）替代可变标签的主要动机是什么？",
+    "explanation": "标签可被重新推送指向不同内容，导致「昨天测过的 v1 和今天部署的 v1 可能不是同一份」。用 digest 锁定确保每次拉到的字节完全一致，实现可复现部署并防止上游标签被篡改（供应链攻击）。这是生产加固的推荐实践之一。",
+    "tags": ["docker", "专家", "security"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "保证每次拉到完全相同内容，可复现并防标签被篡改",
+        "isCorrect": true,
+        "description": "digest 内容寻址，抵御供应链投毒"
+      },
+      {
+        "text": "digest 拉取速度更快",
+        "isCorrect": false,
+        "description": "动机是确定性与安全，非速度"
+      },
+      {
+        "text": "digest 镜像体积更小",
+        "isCorrect": false,
+        "description": "内容相同，体积不变"
+      },
+      {
+        "text": "只有 digest 才能被 pull",
+        "isCorrect": false,
+        "description": "标签也能 pull，digest 只是更确定"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中，如果希望容器随 Docker 守护进程启动而自动拉起、异常退出后自动重启，应使用什么？",
+    "explanation": "用重启策略 `--restart`，如 `--restart unless-stopped`（除非手动停止否则总重启，含开机自启）或 `always`、`on-failure[:次数]`。它让长期服务型容器具备自愈与随宿主重启恢复的能力。Compose 里对应 `restart:` 字段。",
+    "tags": ["docker", "中级", "lifecycle"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "重启策略 --restart（如 unless-stopped / always / on-failure）",
+        "isCorrect": true,
+        "description": "提供自愈与随宿主重启恢复能力"
+      },
+      {
+        "text": "--rm 选项",
+        "isCorrect": false,
+        "description": "--rm 是退出即删除，正相反"
+      },
+      {
+        "text": "HEALTHCHECK 指令",
+        "isCorrect": false,
+        "description": "健康检查不负责重启策略"
+      },
+      {
+        "text": "EXPOSE 指令",
+        "isCorrect": false,
+        "description": "EXPOSE 只声明端口"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `docker system prune -a` 需要谨慎使用的原因是什么？",
+    "explanation": "`docker system prune` 清理停止的容器、悬空镜像、未使用网络和构建缓存；加 `-a` 还会删除「所有未被任何容器使用的镜像」（不只是悬空的）。在开发机上可能误删你还想用的镜像导致下次要重新拉取/构建。执行前应确认，生产环境尤须谨慎。",
+    "tags": ["docker", "初级", "maintenance"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "-a 会删除所有未被使用的镜像，可能误删仍需要的镜像",
+        "isCorrect": true,
+        "description": "不止悬空镜像，执行前需确认"
+      },
+      {
+        "text": "它只打印信息不实际删除",
+        "isCorrect": false,
+        "description": "会真实删除资源"
+      },
+      {
+        "text": "它只删除容器不删镜像",
+        "isCorrect": false,
+        "description": "-a 会删未用镜像"
+      },
+      {
+        "text": "它会删除正在运行的容器",
+        "isCorrect": false,
+        "description": "运行中的容器与在用镜像不被删"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 官方对「一个容器一个进程/职责」的推荐，背后的主要理由是什么？",
+    "explanation": "推荐每个容器聚焦单一职责（如一个 Web 服务、一个数据库各自一容器），便于独立扩缩、独立更新、清晰的日志与健康检查、以及编排调度。把多个服务塞进一个容器会让扩缩、故障隔离、镜像管理都变复杂。多服务应拆分并用 Compose/编排组合。",
+    "tags": ["docker", "中级", "best-practice"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "便于独立扩缩/更新、故障隔离与清晰的日志健康检查",
+        "isCorrect": true,
+        "description": "多服务应拆容器再用编排组合"
+      },
+      {
+        "text": "因为一个容器技术上只能跑一个进程",
+        "isCorrect": false,
+        "description": "技术上可跑多进程，是设计推荐"
+      },
+      {
+        "text": "为了让镜像体积必然更大",
+        "isCorrect": false,
+        "description": "与体积无必然关系"
+      },
+      {
+        "text": "因为多进程容器无法联网",
+        "isCorrect": false,
+        "description": "与网络无关"
+      }
+    ]
+  },
+  {
+    "stem": "Docker 中 `docker logs` 能查看容器日志的前提是什么？",
+    "explanation": "`docker logs` 读取的是容器主进程写到 stdout/stderr 的输出（由日志驱动捕获）。如果应用把日志写进了容器内的文件而不是 stdout/stderr，`docker logs` 就看不到。这也是为什么推荐容器应用把日志打到标准输出。",
+    "tags": ["docker", "初级", "logging"],
+    "categories": [
+      ["技术方向", "Docker"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "应用把日志输出到 stdout/stderr，才会被 docker logs 捕获",
+        "isCorrect": true,
+        "description": "写进容器内文件的日志 docker logs 看不到"
+      },
+      {
+        "text": "只要容器在运行就一定有 docker logs 输出",
+        "isCorrect": false,
+        "description": "取决于是否写到 stdout/stderr"
+      },
+      {
+        "text": "docker logs 能读容器内任意文件",
+        "isCorrect": false,
+        "description": "只读标准输出流"
+      },
+      {
+        "text": "必须先进入容器才能看日志",
+        "isCorrect": false,
+        "description": "docker logs 在宿主即可查看"
+      }
+    ]
+  }
+]

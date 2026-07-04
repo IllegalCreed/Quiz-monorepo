@@ -463,5 +463,807 @@
         "description": "全局都可用，与 monorepo 无关"
       }
     ]
+  },
+  {
+    "stem": "lint-staged 名字里的「staged」强调它只对什么文件运行命令？",
+    "explanation": "只对「已 git add 进暂存区（staged）的文件」运行你配置的命令，而非整个工作区或整个仓库。这正是它的核心价值：本次提交要提交的就是暂存的内容，只检查/格式化这部分最相关、最快。未暂存的改动和无关文件都不在处理范围。",
+    "tags": ["lint-staged", "初级", "staged"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只对已暂存（git add）的文件运行命令",
+        "isCorrect": true,
+        "description": "本次要提交的内容，最相关且最快"
+      },
+      {
+        "text": "对整个仓库所有文件运行",
+        "isCorrect": false,
+        "description": "那样又慢又报无关问题"
+      },
+      {
+        "text": "对所有已修改（含未暂存）的文件运行",
+        "isCorrect": false,
+        "description": "只针对暂存的，非全部已改"
+      },
+      {
+        "text": "对远程分支的文件运行",
+        "isCorrect": false,
+        "description": "作用于本地暂存文件"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 运行前，对「部分暂存（同一文件既有暂存又有未暂存改动）」通常怎么处理？",
+    "explanation": "lint-staged 会先把「未暂存的改动」用 git stash 藏起来，只让命令看到/处理「暂存的那部分内容」，运行结束后再恢复未暂存改动。这样保证：检查/格式化的正是本次要提交的版本，且不会把你还没打算提交的未暂存改动一并卷进来。",
+    "tags": ["lint-staged", "高级", "partial-stage"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先 stash 未暂存改动、只处理暂存内容，结束后恢复",
+        "isCorrect": true,
+        "description": "保证只碰本次要提交的版本"
+      },
+      {
+        "text": "把未暂存改动也一起处理提交",
+        "isCorrect": false,
+        "description": "会卷入未打算提交的改动，正是要避免的"
+      },
+      {
+        "text": "直接拒绝有部分暂存的文件",
+        "isCorrect": false,
+        "description": "通过 stash 机制正常处理"
+      },
+      {
+        "text": "删除未暂存的改动",
+        "isCorrect": false,
+        "description": "是暂存保护后恢复，不删除"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 里跑 `eslint --fix` / `prettier --write` 自动修复后，修复的内容如何进入本次提交？",
+    "explanation": "lint-staged（自 v10 起）会在任务修改了文件后「自动把这些被修改的文件 git add 回暂存区」，使修复内容纳入本次提交。所以你不需要（也不应）在命令里手动写 `git add`。这让「自动修复 + 修复入本次提交」无缝完成。",
+    "tags": ["lint-staged", "高级", "auto-restage"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "lint-staged 自动把被修复的文件重新 git add 进暂存，无需手动 add",
+        "isCorrect": true,
+        "description": "自 v10 起自动 re-stage"
+      },
+      {
+        "text": "需要在命令里手动追加 git add",
+        "isCorrect": false,
+        "description": "自动处理，手动反而可能冲突"
+      },
+      {
+        "text": "修复内容不会进入本次提交",
+        "isCorrect": false,
+        "description": "会自动 re-stage 进本次提交"
+      },
+      {
+        "text": "必须提交后再补一次提交",
+        "isCorrect": false,
+        "description": "自动 re-stage 后本次提交即含修复"
+      }
+    ]
+  },
+  {
+    "stem": "为什么不应在 lint-staged 的命令里自己写 `git add`？",
+    "explanation": "自 v10 起 lint-staged 已自动把任务修改过的文件 re-stage，并且用 stash 机制精细管理暂存/未暂存状态。若你再手动 `git add`（尤其 `git add .`），可能把本不该纳入的未暂存改动也加进来、或与 lint-staged 的内部状态管理冲突，导致提交内容错乱。交给 lint-staged 自动处理即可。",
+    "tags": ["lint-staged", "高级", "no-manual-add"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "会与 lint-staged 自动 re-stage/stash 状态管理冲突、可能卷入不该提交的改动",
+        "isCorrect": true,
+        "description": "v10+ 自动处理，手动 add 反而出错"
+      },
+      {
+        "text": "手动 git add 更可靠应该写",
+        "isCorrect": false,
+        "description": "会与自动机制冲突"
+      },
+      {
+        "text": "手动 git add 能加速",
+        "isCorrect": false,
+        "description": "无关速度，且会出错"
+      },
+      {
+        "text": "lint-staged 不支持自动 add",
+        "isCorrect": false,
+        "description": "v10+ 自动 re-stage"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 把「匹配到的暂存文件」以什么方式交给你配置的命令？",
+    "explanation": "lint-staged 把匹配的文件路径「作为参数追加到命令末尾」执行（如 `eslint --fix file1 file2 ...`），默认传绝对路径。因此命令应能接收文件参数（多数 linter/formatter 支持）。对「不接收文件名、总扫全项目」的工具（如 tsc）需特殊处理（用函数返回不带文件名的命令）。",
+    "tags": ["lint-staged", "中级", "filename-passing"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把匹配文件路径追加为命令参数（默认绝对路径）执行",
+        "isCorrect": true,
+        "description": "不接收文件名的工具需特殊处理"
+      },
+      {
+        "text": "通过环境变量传文件列表",
+        "isCorrect": false,
+        "description": "是追加为命令参数"
+      },
+      {
+        "text": "把文件内容通过 stdin 管道传入",
+        "isCorrect": false,
+        "description": "传的是路径参数，非内容"
+      },
+      {
+        "text": "写进一个临时 JSON 供命令读取",
+        "isCorrect": false,
+        "description": "是命令行参数"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的 `--relative` 选项作用是什么？",
+    "explanation": "默认传给命令的是文件的绝对路径；加 `--relative` 则传相对于 `package.json`（cwd）的相对路径。某些工具或配置（对路径敏感、期望相对路径）需要它。这是调整「传给命令的文件路径形态」的开关。",
+    "tags": ["lint-staged", "中级", "relative"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让传给命令的文件路径改为相对路径（默认是绝对路径）",
+        "isCorrect": true,
+        "description": "供对路径敏感、需相对路径的工具"
+      },
+      {
+        "text": "让 lint-staged 只处理相对目录",
+        "isCorrect": false,
+        "description": "是路径形态，非处理范围"
+      },
+      {
+        "text": "启用相对时间戳",
+        "isCorrect": false,
+        "description": "与时间戳无关"
+      },
+      {
+        "text": "关闭绝对路径匹配 glob",
+        "isCorrect": false,
+        "description": "只改传给命令的路径形态"
+      }
+    ]
+  },
+  {
+    "stem": "若 lint-staged 的某个任务失败（如 eslint 报错无法修复），会发生什么？",
+    "explanation": "任务失败时 lint-staged 以非零退出，并「把仓库恢复到运行前的状态」（撤销自动 re-stage、恢复之前 stash 的未暂存改动），从而不留下半修改的烂摊子；配合 Husky pre-commit，非零退出会中止本次提交。这种「失败即回滚 + 中止提交」保证了原子性与安全。",
+    "tags": ["lint-staged", "高级", "rollback"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "非零退出并恢复到运行前状态，配合 Husky 中止提交",
+        "isCorrect": true,
+        "description": "失败即回滚 + 中止，保证原子性"
+      },
+      {
+        "text": "忽略失败继续提交",
+        "isCorrect": false,
+        "description": "失败会中止提交"
+      },
+      {
+        "text": "自动强制修复并提交",
+        "isCorrect": false,
+        "description": "无法修复则回滚，不强提"
+      },
+      {
+        "text": "删除出错的文件",
+        "isCorrect": false,
+        "description": "是恢复状态，非删文件"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的 `--concurrent`/`--no-concurrent` 控制什么？",
+    "explanation": "控制不同 glob 任务是否并发运行。默认并发（加快速度）；`--no-concurrent`（或设为 false）改为串行。当多个任务可能修改同一批文件、有相互干扰风险时，串行更安全。它在「速度」与「避免并发写冲突」之间取舍。",
+    "tags": ["lint-staged", "高级", "concurrent"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "控制不同 glob 任务并发还是串行（默认并发，冲突风险时改串行）",
+        "isCorrect": true,
+        "description": "在速度与避免并发写冲突间取舍"
+      },
+      {
+        "text": "控制是否连接远程服务器",
+        "isCorrect": false,
+        "description": "与网络无关"
+      },
+      {
+        "text": "控制同一命令的多进程数",
+        "isCorrect": false,
+        "description": "是任务间并发，非单命令多进程"
+      },
+      {
+        "text": "控制缓存并发",
+        "isCorrect": false,
+        "description": "与缓存无关"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的 `--shell` 选项用途是什么？",
+    "explanation": "默认 lint-staged 直接执行命令（不经过 shell，出于性能与安全）。加 `--shell` 会在 shell 里运行命令，从而可用管道 `|`、重定向 `>`、`&&` 等 shell 特性。若你的任务命令需要 shell 语法，就需要它；否则默认不启用更安全。",
+    "tags": ["lint-staged", "高级", "shell"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 shell 里运行命令以支持管道/重定向/&& 等语法（默认不启用）",
+        "isCorrect": true,
+        "description": "需要 shell 语法时才用，否则默认更安全"
+      },
+      {
+        "text": "启用后自动进入交互 shell",
+        "isCorrect": false,
+        "description": "是让命令经 shell 执行，非交互"
+      },
+      {
+        "text": "指定用哪个 shell 登录服务器",
+        "isCorrect": false,
+        "description": "与远程无关"
+      },
+      {
+        "text": "关闭所有命令执行",
+        "isCorrect": false,
+        "description": "是启用 shell 执行方式"
+      }
+    ]
+  },
+  {
+    "stem": "当本次暂存的文件非常多时，lint-staged 如何避免命令行参数过长导致失败？",
+    "explanation": "lint-staged 会在文件数很多、拼接的命令行可能超出操作系统参数长度限制时，自动把文件「分批（chunk）」多次调用命令。这样即使一次提交涉及成百上千文件也不会因 `E2BIG`/参数过长而失败。这是它对大批量暂存的健壮性处理。",
+    "tags": ["lint-staged", "专家", "chunking"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "文件过多时自动分批多次调用命令，避免参数过长失败",
+        "isCorrect": true,
+        "description": "对大批量暂存的健壮性处理"
+      },
+      {
+        "text": "直接报错让用户减少文件",
+        "isCorrect": false,
+        "description": "自动分批，不需用户干预"
+      },
+      {
+        "text": "只处理前 N 个文件",
+        "isCorrect": false,
+        "description": "分批覆盖全部，非截断"
+      },
+      {
+        "text": "把文件名写进临时文件绕过",
+        "isCorrect": false,
+        "description": "采用分批调用而非临时文件"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 配合 `jest --findRelatedTests` 能实现什么？",
+    "explanation": "`jest --findRelatedTests <files>` 只运行「与给定文件相关的测试」。把它配进 lint-staged（对暂存的源文件），就能在提交前「只跑与本次改动相关的测试」，而非全量测试——既快又聚焦。这是把测试也纳入快速提交前检查的实用技巧。",
+    "tags": ["lint-staged", "高级", "jest"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "提交前只跑与本次暂存文件相关的测试，快且聚焦",
+        "isCorrect": true,
+        "description": "把相关测试纳入快速提交前检查"
+      },
+      {
+        "text": "运行全量测试套件",
+        "isCorrect": false,
+        "description": "findRelatedTests 只跑相关的"
+      },
+      {
+        "text": "生成测试覆盖率报告",
+        "isCorrect": false,
+        "description": "是只跑相关测试，非覆盖率"
+      },
+      {
+        "text": "删除无关测试文件",
+        "isCorrect": false,
+        "description": "只是选择性运行，不删文件"
+      }
+    ]
+  },
+  {
+    "stem": "一个典型的 lint-staged 配置（如 `{\"*.{js,ts}\": \"eslint --fix\", \"*.{css,md}\": \"prettier --write\"}`）体现了什么组织思路？",
+    "explanation": "按「文件类型 glob → 对应处理命令」组织：不同扩展名的暂存文件走各自合适的工具（JS/TS 走 eslint，样式/文档走 prettier）。lint-staged 据每个暂存文件匹配到的 glob 决定对它跑哪些命令。这种「按类型分派」让不同文件用对工具、互不干扰。",
+    "tags": ["lint-staged", "初级", "config"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "按文件类型 glob 分派到对应处理命令，不同文件用对工具",
+        "isCorrect": true,
+        "description": "据每个暂存文件匹配的 glob 决定跑哪些命令"
+      },
+      {
+        "text": "对所有文件都跑同一个命令",
+        "isCorrect": false,
+        "description": "是按 glob 分派不同命令"
+      },
+      {
+        "text": "glob 只是注释无实际作用",
+        "isCorrect": false,
+        "description": "glob 决定文件匹配哪些命令"
+      },
+      {
+        "text": "命令只能有一个",
+        "isCorrect": false,
+        "description": "每个 glob 可配多个命令"
+      }
+    ]
+  },
+  {
+    "stem": "关于 lint-staged 本身的职责边界，正确的理解是什么？",
+    "explanation": "lint-staged 本身「不做 lint/格式化」——它是一个「编排器」：负责找出暂存文件、按 glob 匹配、把文件交给你配置的命令（eslint、prettier、tsc、jest 等）去做实际工作，并处理 stash/re-stage/回滚等。真正的检查逻辑来自那些被调用的工具。理解这一边界能正确配置它。",
+    "tags": ["lint-staged", "中级", "scope"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是编排器：找暂存文件+按 glob 分派给你配的命令并管 stash/re-stage，本身不做检查",
+        "isCorrect": true,
+        "description": "检查逻辑来自被调用的 eslint/prettier 等"
+      },
+      {
+        "text": "lint-staged 内置了 ESLint 规则引擎",
+        "isCorrect": false,
+        "description": "调用外部工具，非内置规则"
+      },
+      {
+        "text": "它自己实现代码格式化",
+        "isCorrect": false,
+        "description": "格式化由 prettier 等做"
+      },
+      {
+        "text": "它是 ESLint 的一个插件",
+        "isCorrect": false,
+        "description": "是独立编排器，非 ESLint 插件"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 处理「本次暂存中被删除的文件」时的合理行为是什么？",
+    "explanation": "对已删除的文件，lint-staged 不会（也无法）对其运行需要读取文件内容的命令——删除的文件已不存在。它会把这类情况正确排除，避免命令因找不到文件报错。理解「只对实际存在的暂存文件跑命令」有助于避免困惑。",
+    "tags": ["lint-staged", "高级", "deleted-files"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对已删除文件不运行读取内容的命令，正确排除避免报错",
+        "isCorrect": true,
+        "description": "只对实际存在的暂存文件跑命令"
+      },
+      {
+        "text": "对删除的文件仍强行运行 lint",
+        "isCorrect": false,
+        "description": "文件已不存在，无法读取"
+      },
+      {
+        "text": "删除文件会导致 lint-staged 崩溃",
+        "isCorrect": false,
+        "description": "会被正确处理排除"
+      },
+      {
+        "text": "会恢复被删除的文件",
+        "isCorrect": false,
+        "description": "不恢复，只是排除处理"
+      }
+    ]
+  },
+  {
+    "stem": "为什么把 lint-staged 放在 pre-commit 阶段是「天作之合」？",
+    "explanation": "pre-commit 正是「即将提交」的时机，而 lint-staged 只处理「即将提交的暂存文件」——二者作用对象天然一致。加上 lint-staged 快（只碰暂存文件）、能自动修复并 re-stage、失败即回滚中止提交，放 pre-commit 既能在问题入库前拦截、又不拖慢开发。故 Husky pre-commit + lint-staged 是标配。",
+    "tags": ["lint-staged", "中级", "pre-commit-fit"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pre-commit 与 lint-staged 都聚焦「即将提交的暂存文件」，快且能拦截+自动修复",
+        "isCorrect": true,
+        "description": "作用对象天然一致，故为标配组合"
+      },
+      {
+        "text": "因为 pre-commit 会自动全量 lint",
+        "isCorrect": false,
+        "description": "lint-staged 只处理暂存文件"
+      },
+      {
+        "text": "因为 lint-staged 必须放 pre-push",
+        "isCorrect": false,
+        "description": "最契合 pre-commit"
+      },
+      {
+        "text": "两者其实不搭配使用",
+        "isCorrect": false,
+        "description": "是经典标配组合"
+      }
+    ]
+  },
+  {
+    "stem": "对「需要读取整个项目才能工作、不接收单文件参数」的工具（如类型检查 tsc），在 lint-staged 里的正确配法思路是什么？",
+    "explanation": "这类工具若被 lint-staged 追加单个文件名反而会破坏其项目级上下文（如 tsc 传单文件会丢失 tsconfig 上下文）。正确思路是用「函数式配置」返回一个「不带文件名的命令」（如 `() => 'tsc --noEmit'`），让它照常全项目工作，同时仍靠 lint-staged 触发。即：不把文件名传给它。",
+    "tags": ["lint-staged", "专家", "whole-project-tools"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用函数返回不带文件名的命令（如 () => 'tsc --noEmit'），让其全项目工作",
+        "isCorrect": true,
+        "description": "避免传单文件破坏项目级上下文"
+      },
+      {
+        "text": "直接把所有暂存文件名传给 tsc",
+        "isCorrect": false,
+        "description": "会丢失 tsconfig 项目上下文报错"
+      },
+      {
+        "text": "放弃在提交前做类型检查",
+        "isCorrect": false,
+        "description": "可用函数配置正确接入"
+      },
+      {
+        "text": "把 tsc 换成 eslint 就行",
+        "isCorrect": false,
+        "description": "职责不同，不能替代类型检查"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的 glob 匹配默认针对文件的哪种路径？",
+    "explanation": "lint-staged 的 glob（用 micromatch）默认对「相对于运行 lint-staged 的目录（通常是含配置的 package.json 所在目录）的相对路径」做匹配。理解匹配基准有助于在 monorepo 或子目录里写对 glob（如 `src/**/*.ts` 相对哪里）。传给命令的路径形态则另由 --relative 控制。",
+    "tags": ["lint-staged", "高级", "glob-base"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认对相对于配置所在目录（cwd）的相对路径匹配 glob",
+        "isCorrect": true,
+        "description": "理解基准以在子目录/monorepo 写对 glob"
+      },
+      {
+        "text": "对绝对路径匹配 glob",
+        "isCorrect": false,
+        "description": "glob 匹配用相对路径基准"
+      },
+      {
+        "text": "对 git 提交哈希匹配",
+        "isCorrect": false,
+        "description": "匹配的是文件路径"
+      },
+      {
+        "text": "对文件内容匹配",
+        "isCorrect": false,
+        "description": "glob 匹配路径，非内容"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 相比 `pretty-quick`（只跑 Prettier）这类专用工具，定位差异是什么？",
+    "explanation": "`pretty-quick` 专注「对改动文件跑 Prettier」；lint-staged 是「通用编排器」——可对暂存文件跑任意组合的命令（eslint、prettier、tsc、jest、自定义脚本等），可配置性与适用面更广。需要多工具、多类型分派时用 lint-staged；只想快速格式化可用 pretty-quick。",
+    "tags": ["lint-staged", "中级", "compare"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "lint-staged 通用可跑任意命令组合；pretty-quick 专注 Prettier",
+        "isCorrect": true,
+        "description": "多工具/多类型分派用 lint-staged"
+      },
+      {
+        "text": "两者完全一样",
+        "isCorrect": false,
+        "description": "通用编排 vs 专用格式化"
+      },
+      {
+        "text": "lint-staged 只能跑 Prettier",
+        "isCorrect": false,
+        "description": "可跑任意命令"
+      },
+      {
+        "text": "pretty-quick 能跑 ESLint 和测试",
+        "isCorrect": false,
+        "description": "它专注 Prettier"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 的函数式配置（返回命令数组）相比字符串配置多了什么能力？",
+    "explanation": "函数式配置接收匹配到的文件名列表，可「基于这些文件动态生成命令」——如按数量/路径决定是否加某参数、过滤子集、或返回不带文件名的命令（给 tsc 用）、拼接多条命令等。它解锁了字符串配置表达不了的动态逻辑，是处理复杂场景的手段。",
+    "tags": ["lint-staged", "高级", "function-config"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "能基于匹配文件名动态生成命令（过滤/条件/不带文件名等）",
+        "isCorrect": true,
+        "description": "解锁字符串配置表达不了的动态逻辑"
+      },
+      {
+        "text": "只能返回固定字符串",
+        "isCorrect": false,
+        "description": "函数正是为动态生成"
+      },
+      {
+        "text": "函数式配置会禁用 glob",
+        "isCorrect": false,
+        "description": "仍按 glob 匹配后调用函数"
+      },
+      {
+        "text": "函数式配置不能访问文件名",
+        "isCorrect": false,
+        "description": "参数正是文件名列表"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 与 Husky 在「提交前检查」链路中的分工是什么？",
+    "explanation": "Husky 负责「在 commit 时机触发 .husky/pre-commit 钩子」；钩子里调用 lint-staged，由 lint-staged 负责「找暂存文件、按 glob 跑命令、自动修复 re-stage、失败回滚」。Husky 管「何时触发」，lint-staged 管「对暂存文件做什么」。二者组合缺一不可：没 Husky 不会自动触发，没 lint-staged 就得自己写一堆脚本。",
+    "tags": ["lint-staged", "中级", "husky-division"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Husky 管触发时机，lint-staged 管对暂存文件做什么，二者组合",
+        "isCorrect": true,
+        "description": "缺 Husky 不自动触发，缺 lint-staged 要自写脚本"
+      },
+      {
+        "text": "lint-staged 负责触发钩子",
+        "isCorrect": false,
+        "description": "触发是 Husky 的职责"
+      },
+      {
+        "text": "Husky 负责跑 lint 检查",
+        "isCorrect": false,
+        "description": "检查由 lint-staged 调的工具做"
+      },
+      {
+        "text": "两者功能重复",
+        "isCorrect": false,
+        "description": "分工不同，互补"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 让「提交前检查」既快又不误伤的核心原因是什么？",
+    "explanation": "核心是「只处理本次暂存的少量文件」而非全量：改了 3 个文件就只检查这 3 个，速度快；且用 stash 只针对暂存版本、自动 re-stage 修复、失败回滚，既精准又不把无关改动卷进来。相比「每次提交都全量 lint 整个仓库」，它在速度与精准度上都远胜。",
+    "tags": ["lint-staged", "中级", "why"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只处理本次暂存的少量文件，快且精准、不卷入无关改动",
+        "isCorrect": true,
+        "description": "远胜每次全量 lint 整个仓库"
+      },
+      {
+        "text": "因为它跳过所有检查",
+        "isCorrect": false,
+        "description": "是聚焦暂存文件检查，非跳过"
+      },
+      {
+        "text": "因为它缓存了整个仓库",
+        "isCorrect": false,
+        "description": "靠只处理暂存文件，非缓存全仓"
+      },
+      {
+        "text": "因为它并行到几百台机器",
+        "isCorrect": false,
+        "description": "是本地对少量文件处理"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged 执行结果如何最终影响 `git commit` 是否成功？",
+    "explanation": "链路是：Husky 的 pre-commit 钩子调用 lint-staged → lint-staged 若所有任务成功则退出 0、失败则退出非零 → 钩子把这个退出码传给 Git → 非零则 Git 中止本次 commit。所以「lint-staged 里的检查不过 → 提交被拦下」，问题代码进不了仓库。",
+    "tags": ["lint-staged", "中级", "exit-chain"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "lint-staged 非零退出 → pre-commit 钩子非零 → Git 中止 commit",
+        "isCorrect": true,
+        "description": "检查不过则提交被拦，问题代码进不了仓库"
+      },
+      {
+        "text": "lint-staged 失败也不影响提交",
+        "isCorrect": false,
+        "description": "非零退出会中止提交"
+      },
+      {
+        "text": "lint-staged 直接调用 git commit",
+        "isCorrect": false,
+        "description": "它只返回退出码，由 Git/钩子决定"
+      },
+      {
+        "text": "只有 push 时才生效",
+        "isCorrect": false,
+        "description": "在 commit 时经 pre-commit 生效"
+      }
+    ]
+  },
+  {
+    "stem": "在 monorepo 里对不同子包用不同 lint 规则时，lint-staged 的一种组织方式是什么？",
+    "explanation": "可在各子包各自放 lint-staged 配置（配合能按目录应用的钩子/工具），或用根配置里以路径 glob 区分（如 `packages/a/**/*.ts` 用一套命令、`packages/b/**/*.ts` 用另一套）。核心是「按路径 glob 把不同子包的暂存文件分派到各自的命令」，实现子包差异化检查。",
+    "tags": ["lint-staged", "专家", "monorepo"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "按路径 glob 把不同子包暂存文件分派到各自命令（或各子包各自配置）",
+        "isCorrect": true,
+        "description": "实现子包差异化检查"
+      },
+      {
+        "text": "monorepo 里 lint-staged 完全不可用",
+        "isCorrect": false,
+        "description": "可用，按路径分派即可"
+      },
+      {
+        "text": "必须把所有子包合并成一个包",
+        "isCorrect": false,
+        "description": "按 glob 分派即可，无需合并"
+      },
+      {
+        "text": "只能对根目录文件生效",
+        "isCorrect": false,
+        "description": "可用路径 glob 覆盖子包"
+      }
+    ]
+  },
+  {
+    "stem": "综合来看，lint-staged 在前端工程化里的定位是什么？",
+    "explanation": "lint-staged 是「对 Git 暂存文件精准运行检查/格式化命令的编排器」：只碰本次要提交的文件、自动修复并 re-stage、失败回滚中止提交。它常与 Husky（触发）+ ESLint/Prettier（执行）组合，构成「提交前快速、聚焦、可自动修复」的质量门，是前端工程化提交流程的关键一环。",
+    "tags": ["lint-staged", "中级", "summary"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对暂存文件精准运行检查/格式化的编排器，配 Husky+ESLint/Prettier 构成提交前质量门",
+        "isCorrect": true,
+        "description": "只碰要提交的文件、自动修复、失败回滚"
+      },
+      {
+        "text": "一个 Git 客户端",
+        "isCorrect": false,
+        "description": "是暂存文件命令编排器，非 Git 客户端"
+      },
+      {
+        "text": "一个测试框架",
+        "isCorrect": false,
+        "description": "可调用测试，但本身非测试框架"
+      },
+      { "text": "一个打包器", "isCorrect": false, "description": "与打包无关" }
+    ]
+  },
+  {
+    "stem": "使用 lint-staged 时，ESLint、Prettier 这些实际执行检查的工具需要自己安装吗？",
+    "explanation": "需要。lint-staged 只是编排器，它调用的 eslint、prettier、tsc、jest 等必须由项目自行作为依赖安装、并各自配置好（.eslintrc、prettier 配置等）。lint-staged 不内置也不代装这些工具——它只负责把暂存文件交给你已装好的命令去跑。",
+    "tags": ["lint-staged", "中级", "dependencies"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "需要：lint-staged 只编排，eslint/prettier 等需项目自行安装并配置",
+        "isCorrect": true,
+        "description": "它不内置也不代装这些工具"
+      },
+      {
+        "text": "不需要，lint-staged 内置了 ESLint 和 Prettier",
+        "isCorrect": false,
+        "description": "它只调用外部工具，不内置"
+      },
+      {
+        "text": "lint-staged 会自动下载所需工具",
+        "isCorrect": false,
+        "description": "需项目显式安装为依赖"
+      },
+      {
+        "text": "这些工具必须全局安装才行",
+        "isCorrect": false,
+        "description": "项目本地依赖即可，通过 npx/pnpm exec 调用"
+      }
+    ]
+  },
+  {
+    "stem": "lint-staged（本地提交前）与 CI 里跑 lint/测试，二者是替代还是互补关系？",
+    "explanation": "互补。lint-staged 在本地提交前对「暂存文件」做快速检查，早反馈、可自动修复，但可被 --no-verify 绕过；CI 则对整个项目/整个 diff 做不可绕过的强制检查（合并门槛）。本地拦一道提升体验，CI 兜底做强制保障——二者层次不同，都需要。",
+    "tags": ["lint-staged", "高级", "vs-ci"],
+    "categories": [
+      ["技术方向", "lint-staged"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "互补：lint-staged 本地早反馈（可绕过），CI 全量强制兜底（不可绕过）",
+        "isCorrect": true,
+        "description": "层次不同，都需要"
+      },
+      {
+        "text": "有 lint-staged 就不需要 CI 检查",
+        "isCorrect": false,
+        "description": "lint-staged 可被绕过，CI 才是强制兜底"
+      },
+      {
+        "text": "有 CI 就不需要 lint-staged",
+        "isCorrect": false,
+        "description": "本地早反馈仍有价值"
+      },
+      {
+        "text": "两者完全重复",
+        "isCorrect": false,
+        "description": "作用层次不同，互补"
+      }
+    ]
   }
 ]
