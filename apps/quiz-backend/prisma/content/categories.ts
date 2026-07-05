@@ -154,20 +154,50 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             sort: 1,
             children: [
               { name: "Markdown", sort: 1 },
-              { name: "TypeScript", sort: 2 },
+              // 2026-07-05 新增：Markdown+JSX 超集，Docusaurus/Nextra/Astro 文档生态主力
+              { name: "MDX", sort: 2 },
+              { name: "TypeScript", sort: 3 },
               {
-                name: "CSS预处理",
-                sort: 3,
+                // 2026-07-05 选型调研定案：旧「CSS预处理」组名不准（Tailwind/UnoCSS 非预处理器），
+                // 重构升级为「样式方案」父组，下分两桶——「CSS 工具链」（预处理/后处理/原子化）
+                // + 「CSS-in-JS」（新增范式：2026 现代主流 4）。
+                // spec: docs/plans/20260705-web-advanced-language-trilogy.md
+                // 🚨 prod 移动坑：import 按 groupId:parentId:name 只增不删——旧「CSS预处理」节点
+                //   及其 5 子叶（Sass/Less/PostCSS/Tailwind CSS/UnoCSS，旧 parentId=CSS预处理，均 0 题）
+                //   在新结构下 parentId 改为「CSS 工具链」→ key 变→ import 新建、旧的成孤儿。
+                //   下次 import:content:prod 前须先只读核查（0 题 0 有效子引用）后删旧 6 节点，再 import。
+                name: "样式方案",
+                sort: 4,
                 children: [
-                  { name: "Sass", sort: 1 },
-                  { name: "Less", sort: 2 },
-                  { name: "PostCSS", sort: 3 },
-                  { name: "Tailwind CSS", sort: 4 },
-                  { name: "UnoCSS", sort: 5 },
+                  {
+                    name: "CSS 工具链",
+                    sort: 1,
+                    children: [
+                      { name: "Sass", sort: 1 },
+                      { name: "Less", sort: 2 },
+                      { name: "PostCSS", sort: 3 },
+                      { name: "Tailwind CSS", sort: 4 },
+                      { name: "UnoCSS", sort: 5 },
+                    ],
+                  },
+                  {
+                    // 2026-07-05 新增 CSS-in-JS 组：现代主流 4（排除衰退期 styled-components/Emotion，
+                    //   在各叶对比带过）。CSS Modules 为零运行时作用域基线，与 CSS-in-JS 对照。
+                    name: "CSS-in-JS",
+                    sort: 2,
+                    children: [
+                      { name: "CSS Modules", sort: 1 },
+                      { name: "StyleX", sort: 2 },
+                      { name: "Panda CSS", sort: 3 },
+                      { name: "vanilla-extract", sort: 4 },
+                    ],
+                  },
                 ],
               },
-              { name: "JSON", sort: 4 },
-              { name: "YAML", sort: 5 },
+              { name: "JSON", sort: 5 },
+              { name: "YAML", sort: 6 },
+              // 2026-07-05 新增：Cargo/pyproject/Wrangler 等广泛使用的配置语言，与 JSON/YAML 同类
+              { name: "TOML", sort: 7 },
             ],
           },
           {
@@ -306,6 +336,10 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Angular Material", sort: 15 },
               { name: "NG-ZORRO", sort: 16 },
               { name: "PrimeNG", sort: 17 },
+              // 2026-07-05 新增：Meta 2026-06 开源的 React 设计系统（MIT，150+ 组件，基于 StyleX，
+              //   带 CLI+MCP「AI agent 可读」）。与语言章 StyleX 配套同批产出。
+              //   spec: docs/plans/20260705-web-advanced-language-trilogy.md
+              { name: "Astryx", sort: 18 },
             ],
           },
           {
