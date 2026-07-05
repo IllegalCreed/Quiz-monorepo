@@ -1,0 +1,1366 @@
+[
+  {
+    "stem": "dnd-kit 团队评审拖拽方案时，一位同事说「dnd-kit 只是把浏览器原生 HTML5 Drag and Drop API 包了一层更好用的 hook」，这个说法准确吗？",
+    "explanation": "dnd-kit 是完全独立、从零构建的现代拖拽方案，并不基于浏览器原生的 HTML5 Drag and Drop API（`draggable` 属性 + `dragstart`/`dragover`/`drop` 事件）实现，而是自行处理指针/鼠标/触摸/键盘等输入。这也是它能补上原生 HTML5 DnD 在键盘操作、读屏支持等方面短板的原因。",
+    "tags": ["dnd-kit", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "准确，`useDraggable` 是对原生拖拽事件的封装",
+        "isCorrect": false,
+        "description": "与事实相反，dnd-kit 不基于原生 DnD 实现"
+      },
+      {
+        "text": "准确，但仅移动端脱离原生 API",
+        "isCorrect": false,
+        "description": "全平台都不基于原生 HTML5 DnD"
+      },
+      {
+        "text": "无法判断，底层实现未公开",
+        "isCorrect": false,
+        "description": "官方文档已明确说明其架构"
+      },
+      {
+        "text": "不准确，是从零构建、不依赖原生 HTML5 DnD 的方案",
+        "isCorrect": true,
+        "description": "自行实现指针/键盘等输入处理"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 场景：新项目只需要「基础的可拖拽 + 可放置」交互，暂时不涉及列表排序，也不需要限制拖拽范围，下面哪种安装方式最合适？",
+    "explanation": "`@dnd-kit/core` 是必装的核心包，提供 `DndContext`/`useDraggable`/`useDroppable`/`DragOverlay`/Sensors。`@dnd-kit/sortable`（排序预设）与 `@dnd-kit/modifiers`（坐标修饰符）都是可选的，按需求再引入即可，不必一次性全装。",
+    "tags": ["dnd-kit", "入门", "install"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "三个包必须同时装齐",
+        "isCorrect": false,
+        "description": "sortable、modifiers 均为可选"
+      },
+      {
+        "text": "只装 core，sortable/modifiers 用到再装",
+        "isCorrect": true,
+        "description": "三包按需引入，core 必装"
+      },
+      {
+        "text": "只装 sortable，它包含 core 全部能力",
+        "isCorrect": false,
+        "description": "sortable 依赖 core，不能替代它"
+      },
+      {
+        "text": "只装 modifiers，它是无障碍基础",
+        "isCorrect": false,
+        "description": "无障碍能力在 core 里，非 modifiers"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 排查故障：一个用了 `useDraggable` 的组件在控制台报错、拖拽完全不生效，检查后发现它被写在了 `DndContext` 组件外部，这是问题所在吗？",
+    "explanation": "`DndContext` 是拖拽应用的根组件，通过 React Context 让 `useDraggable`/`useDroppable`/`DragOverlay` 等 API 共享内部状态。任何用到这些 API 的组件都必须嵌套在 `DndContext` 内部，否则无法读取到必要的上下文而报错或不生效。",
+    "tags": ["dnd-kit", "入门", "dnd-context"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "是，这些 API 必须是 DndContext 的后代组件",
+        "isCorrect": true,
+        "description": "共享 Context 内部状态的硬性约束"
+      },
+      {
+        "text": "不是，DndContext 只影响 DragOverlay 位置",
+        "isCorrect": false,
+        "description": "实际上影响所有相关 hook"
+      },
+      {
+        "text": "不是，DndContext 只是可选样式容器",
+        "isCorrect": false,
+        "description": "它是功能性 Context Provider"
+      },
+      {
+        "text": "是，但仅用 KeyboardSensor 时才需要",
+        "isCorrect": false,
+        "description": "无论用哪种 Sensor 都需要嵌套"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 写一个最基础的可拖拽方块组件，`useDraggable` 返回值里，哪一组是让方块「能被拖起并跟手移动」所必需的最小组合？",
+    "explanation": "最小可用的可拖拽元素需要：`setNodeRef` 把 DOM 节点注册给 dnd-kit，`listeners`/`attributes` 绑定指针事件与无障碍属性以响应交互，`transform` 提供拖拽过程中的实时位移用于计算样式。`isDragging`/`active`/`over` 是辅助状态，不是让元素动起来的必需项。",
+    "tags": ["dnd-kit", "入门", "use-draggable"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仅 isDragging，其余都是视觉增强",
+        "isCorrect": false,
+        "description": "isDragging 只是布尔状态，不驱动移动"
+      },
+      {
+        "text": "active + over，决定元素位置",
+        "isCorrect": false,
+        "description": "这两项是拖拽上下文状态，非位移来源"
+      },
+      {
+        "text": "setNodeRef + listeners + attributes + transform",
+        "isCorrect": true,
+        "description": "注册节点+绑定交互+读取位移"
+      },
+      {
+        "text": "activatorEvent，记录触发坐标",
+        "isCorrect": false,
+        "description": "只是原始事件引用，非必需项"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 写一个「拖进来会变绿」的可放置区域，`useDroppable` 返回值里需要用到哪两项？",
+    "explanation": "`useDroppable` 最小用法是 `setNodeRef` 把容器 DOM 注册为可放置目标，配合布尔值 `isOver` 判断当前是否有拖拽项悬停其上，据此切换样式（如变绿）。dnd-kit 不会自动处理视觉反馈，样式变化需要业务代码根据 `isOver` 自行实现。",
+    "tags": ["dnd-kit", "入门", "use-droppable"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "active + rect，变色依赖尺寸",
+        "isCorrect": false,
+        "description": "变色逻辑与元素尺寸无关"
+      },
+      {
+        "text": "over + node，isOver 不存在",
+        "isCorrect": false,
+        "description": "isOver 确实存在于返回值中"
+      },
+      {
+        "text": "只需 setNodeRef，变色自动完成",
+        "isCorrect": false,
+        "description": "dnd-kit 不会自动处理视觉反馈"
+      },
+      {
+        "text": "setNodeRef 注册节点 + isOver 判断悬停",
+        "isCorrect": true,
+        "description": "二者组合即可实现变色反馈"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 的 `onDragEnd` 回调里，`event.over` 输出为 `null`，这说明了什么？",
+    "explanation": "`event.over` 表示拖拽结束时刻悬停/命中的可放置区域，值为 `null` 就代表没有落在任何 droppable 上——业务代码常见做法是先判空再决定是否执行放置逻辑。它和 `active`（当前被拖拽项）是两个独立字段，`over` 为空不代表 `active` 也为空。",
+    "tags": ["dnd-kit", "入门", "drag-end-event"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "本次未落在任何 droppable 上",
+        "isCorrect": true,
+        "description": "over 为 null 的标准含义"
+      },
+      {
+        "text": "拖拽被 cancelDrop 强制取消",
+        "isCorrect": false,
+        "description": "取消拖拽另有事件语义，非此字段"
+      },
+      {
+        "text": "当前浏览器不支持 dnd-kit",
+        "isCorrect": false,
+        "description": "与浏览器兼容性无关"
+      },
+      {
+        "text": "active 为空，拖拽未开始",
+        "isCorrect": false,
+        "description": "over 与 active 是独立字段"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 里 `useDraggable` 返回的 `transform` 要怎样才能真正让元素在屏幕上跟手移动？",
+    "explanation": "`transform` 只是一个描述位移/缩放增量的普通对象（`{x, y, scaleX, scaleY}`），需要业务代码手动转成 CSS 字符串并赋给元素的 `style.transform`，常见做法是用 `@dnd-kit/utilities` 提供的 `CSS.Translate.toString(transform)`。dnd-kit 不会直接修改元素在文档流中的真实位置。",
+    "tags": ["dnd-kit", "入门", "css-transform"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "无需处理，dnd-kit 自动改真实位置",
+        "isCorrect": false,
+        "description": "dnd-kit 不修改真实 DOM 位置"
+      },
+      {
+        "text": "用 CSS.Translate.toString(transform) 赋给 style.transform",
+        "isCorrect": true,
+        "description": "转成 CSS 字符串驱动位移"
+      },
+      {
+        "text": "把 transform 对象整体赋给 style",
+        "isCorrect": false,
+        "description": "React 不会自动序列化该对象"
+      },
+      {
+        "text": "调用 transform.apply() 方法",
+        "isCorrect": false,
+        "description": "transform 是普通数据对象，无此方法"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 项目里，一个可拖拽卡片用了 `id: 'card-1'`，同一个页面另一个可放置区域也想用 `id: 'card-1'`，这样写会冲突吗？",
+    "explanation": "官方文档明确说明 draggable 的 `id` 与 droppable 的 `id` 分别维护在各自独立的存储空间里，因此可以共享同一个字符串而不冲突。只需保证同一类型（都是 draggable 之间，或都是 droppable 之间）内唯一即可。",
+    "tags": ["dnd-kit", "入门", "unique-id"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "会，所有 id 必须全局唯一",
+        "isCorrect": false,
+        "description": "draggable 与 droppable 的 id 分开存储"
+      },
+      {
+        "text": "不会，但仅限用 KeyboardSensor 时",
+        "isCorrect": false,
+        "description": "与 Sensor 类型无关，始终可共享"
+      },
+      {
+        "text": "不会，二者 id 独立存储、可共享同名",
+        "isCorrect": true,
+        "description": "各自在同类型内唯一即可"
+      },
+      {
+        "text": "会，dnd-kit 抛运行时异常",
+        "isCorrect": false,
+        "description": "不会因同名 id 报错"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 技术选型评审会上，需要给「为什么现在 React 项目做拖拽交互首选 dnd-kit」提供依据，下列哪项是较可靠的支撑理由？",
+    "explanation": "npm 周下载量数据显示 `@dnd-kit/core`/`@dnd-kit/sortable` 均在 1800 万+ 级别，明显高于 `react-dnd`（约 500 万+）与 `sortablejs`（约 400 万），是当前 React 拖拽生态事实上的主流选择；且它无外部运行时依赖（仅 `tslib`）。它不是 React 官方方案，也并非唯一支持触摸的方案，性能优势来自 CSS `transform` 而非直接操作 DOM 顺序。",
+    "tags": ["dnd-kit", "入门", "adoption"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "周下载量远超同类方案，且几乎无外部运行时依赖",
+        "isCorrect": true,
+        "description": "1800万+ vs react-dnd 500万+，仅依赖 tslib"
+      },
+      {
+        "text": "是 React 官方维护的内置方案",
+        "isCorrect": false,
+        "description": "dnd-kit 是社区方案，非官方内置"
+      },
+      {
+        "text": "唯一支持触摸屏拖拽的方案",
+        "isCorrect": false,
+        "description": "react-dnd 等也支持触摸（需配置）"
+      },
+      {
+        "text": "性能优势来自直接操作真实 DOM 顺序",
+        "isCorrect": false,
+        "description": "优势恰恰来自不直接操作 DOM 顺序"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 场景：卡片放在一个 `overflow: hidden` 的滚动容器里，直接给拖拽源节点加 `transform` 拖动时，卡片被裁掉了一部分，应该怎么解决？",
+    "explanation": "直接对拖拽源节点应用 `transform` 会受滚动容器 `overflow` 裁剪、层叠上下文限制等问题影响。`DragOverlay` 渲染的覆盖层脱离正常文档流、相对 viewport 定位，天然规避这些问题，这是它存在的核心原因之一，`z-index` 或改 `overflow` 都治标不治本。",
+    "tags": ["dnd-kit", "初级", "drag-overlay"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把容器 overflow 永久改成 visible",
+        "isCorrect": false,
+        "description": "破坏原有滚动裁剪设计，治标不治本"
+      },
+      {
+        "text": "换用 useDroppable 代替 useDraggable",
+        "isCorrect": false,
+        "description": "二者职责不同，无法互相替代"
+      },
+      {
+        "text": "给源节点加超高 z-index",
+        "isCorrect": false,
+        "description": "无法解决 overflow 裁剪本身"
+      },
+      {
+        "text": "改用 DragOverlay 渲染脱离文档流的预览层",
+        "isCorrect": true,
+        "description": "相对 viewport 定位，天然规避裁剪"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 代码审查：一位同事写了 `{activeId && <DragOverlay>...</DragOverlay>}`，也就是整个 `DragOverlay` 组件都被条件渲染，这样写会有什么问题？",
+    "explanation": "官方建议 `DragOverlay` 组件本身应始终挂载，只对其内部 `children` 做条件渲染。如果连 `DragOverlay` 本身都被条件卸载，拖拽结束的瞬间会直接消失、没有过渡效果，内置的 `dropAnimation` 放下动画也就无法正常播放。",
+    "tags": ["dnd-kit", "初级", "drag-overlay-mount"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "会导致 useDraggable 无法读取 DndContext",
+        "isCorrect": false,
+        "description": "与 Context 读取无关"
+      },
+      {
+        "text": "卸载瞬间直接跳变，dropAnimation 失效",
+        "isCorrect": true,
+        "description": "应始终挂载、只条件渲染 children"
+      },
+      {
+        "text": "没有问题，是官方推荐写法",
+        "isCorrect": false,
+        "description": "官方恰恰建议相反的写法"
+      },
+      {
+        "text": "会导致 onDragStart 不再触发",
+        "isCorrect": false,
+        "description": "与生命周期事件触发无关"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 需求：一张卡片内容本身不能拖动（否则会误触内部按钮），只允许通过卡片右侧的「⠿」图标拖动，应该怎么实现？",
+    "explanation": "拖拽把手模式的做法是：`setNodeRef` 依旧注册整个卡片作为可拖拽节点，但把触发交互的 `listeners`/`attributes`，以及用于捕获初始位置的 `setActivatorNodeRef`，只绑定到把手图标这个独立子节点上。这样只有点击把手才能发起拖拽，卡片内其它区域（含按钮）不受影响。",
+    "tags": ["dnd-kit", "初级", "drag-handle"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "给整个卡片加 listeners，按钮加 pointer-events: none",
+        "isCorrect": false,
+        "description": "会连带屏蔽按钮自身交互"
+      },
+      {
+        "text": "用两个独立 useDraggable 实例分别控制",
+        "isCorrect": false,
+        "description": "并非官方拖拽把手的实现方式"
+      },
+      {
+        "text": "setNodeRef 注册整卡片，listeners/attributes/setActivatorNodeRef 绑到把手节点",
+        "isCorrect": true,
+        "description": "把手模式的标准实现"
+      },
+      {
+        "text": "dnd-kit 不支持拖拽把手，需自定义 Sensor",
+        "isCorrect": false,
+        "description": "通过 setActivatorNodeRef 原生支持"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 看板需求：每张卡片拖拽时，`onDragEnd` 里需要知道这张卡片所属的原始列表 ID，应该把这个信息放在哪里？",
+    "explanation": "`useDraggable`/`useDroppable` 都支持一个 `data` 参数，用来挂载任意业务数据，供事件回调、`modifier`、自定义 sensor 读取。相比拼接 `id` 字符串再手动解析，这是官方设计的正规做法，`active.data.current` 就能拿到设置的对象。",
+    "tags": ["dnd-kit", "初级", "data-prop"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "放进 useDraggable 的 data 参数，事件里读 active.data.current",
+        "isCorrect": true,
+        "description": "官方设计的业务数据挂载方式"
+      },
+      {
+        "text": "编码进 id 字符串，用分隔符拼接解析",
+        "isCorrect": false,
+        "description": "官方并不推荐、易出错的做法"
+      },
+      {
+        "text": "存 localStorage，事件回调里读取",
+        "isCorrect": false,
+        "description": "舍近求远，脱离了 dnd-kit 自身机制"
+      },
+      {
+        "text": "dnd-kit 不支持携带业务数据",
+        "isCorrect": false,
+        "description": "data 参数正是为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 场景：某些卡片需要「临时禁止拖拽」（比如正在保存中），一位同事写了 `{!saving && useDraggable({ id })}` 来按条件调用这个 hook，这样写对吗？",
+    "explanation": "`useDraggable`/`useDroppable` 本质是 React hook，必须遵守 hook 规则，不能放进 `if` 或短路表达式里有条件地调用。要临时禁用拖拽，应该始终无条件调用 hook，再通过其 `disabled` 参数控制是否启用，这才是被支持的做法。",
+    "tags": ["dnd-kit", "初级", "disabled-prop"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "对，是 React 推荐的条件调用 hook 方式",
+        "isCorrect": false,
+        "description": "恰恰违反了 hook 调用规则"
+      },
+      {
+        "text": "对，但仅 saving 为 boolean 时安全",
+        "isCorrect": false,
+        "description": "类型无关，条件调用本身就不安全"
+      },
+      {
+        "text": "不对，应用 try/catch 包裹调用",
+        "isCorrect": false,
+        "description": "try/catch 无法解决 hook 规则问题"
+      },
+      {
+        "text": "不对，应始终无条件调用、用 disabled 控制启停",
+        "isCorrect": true,
+        "description": "hook 规则要求无条件调用"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 想在「拖拽移动过程中」（还未结束）实时读取当前坐标做辅助线对齐，应该监听 `DndContext` 的哪个回调？",
+    "explanation": "`DndContext` 支持 `onDragStart`/`onDragMove`/`onDragOver`/`onDragEnd`/`onDragCancel` 一整套生命周期回调，其中 `onDragMove` 会在拖拽移动过程中持续触发，适合做实时辅助线对齐这类需求。`onDragEnd` 只在拖拽结束时触发一次，拿不到过程中的中间坐标。",
+    "tags": ["dnd-kit", "初级", "lifecycle-events"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "onDragEnd，包含最终坐标",
+        "isCorrect": false,
+        "description": "只在结束时触发一次，非过程回调"
+      },
+      {
+        "text": "onDragStart，包含完整移动轨迹",
+        "isCorrect": false,
+        "description": "仅在拖拽开始时触发一次"
+      },
+      {
+        "text": "onDragMove，移动过程每帧触发",
+        "isCorrect": true,
+        "description": "唯一贴合过程中需求的回调"
+      },
+      {
+        "text": "onDragCancel，专门处理坐标变化",
+        "isCorrect": false,
+        "description": "仅在取消拖拽时触发"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 需求：放下卡片前要先调用接口校验库存，库存不足则不允许真正放下，应该用哪个 API？",
+    "explanation": "`cancelDrop` 是 `DndContext` 提供的「放下前一票否决」钩子，签名允许返回 `boolean` 或 `Promise<boolean>`。因此可以在其中调用接口做异步校验（如查库存），返回 `false`/`Promise<false>` 就会阻止这次放置生效。",
+    "tags": ["dnd-kit", "初级", "cancel-drop"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 useDroppable 的 disabled 参数里写异步函数",
+        "isCorrect": false,
+        "description": "disabled 只接受布尔值，非校验逻辑"
+      },
+      {
+        "text": "DndContext 的 cancelDrop，可返回 Promise<boolean> 异步校验",
+        "isCorrect": true,
+        "description": "官方设计的放下前一票否决钩子"
+      },
+      {
+        "text": "onDragEnd 里用 event.preventDefault()",
+        "isCorrect": false,
+        "description": "拖拽事件对象无此方法"
+      },
+      {
+        "text": "dnd-kit 不支持异步校验",
+        "isCorrect": false,
+        "description": "cancelDrop 正是为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 概念题：文档里说 Sensor（传感器）是「一组检测不同输入方式的类」，它具体负责什么？",
+    "explanation": "Sensor 是识别不同输入设备（指针/鼠标/触摸/键盘）交互意图的类，职责是检测激活拖拽的时机、在拖拽过程中响应移动、并在合适时机派发结束或取消。它不涉及渲染预览、持久化数据或计算排序结果，这些是其它模块的职责。",
+    "tags": ["dnd-kit", "初级", "sensor-concept"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "识别激活时机、响应移动、派发结束或取消",
+        "isCorrect": true,
+        "description": "Sensor 的完整职责定义"
+      },
+      {
+        "text": "把拖拽结果持久化到后端",
+        "isCorrect": false,
+        "description": "持久化是业务代码的职责"
+      },
+      {
+        "text": "渲染 DragOverlay 里的预览内容",
+        "isCorrect": false,
+        "description": "渲染由业务组件自己完成"
+      },
+      {
+        "text": "计算 Sortable 列表最终排序结果",
+        "isCorrect": false,
+        "description": "排序计算属于 strategy/arrayMove 职责"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 新项目只面向现代浏览器，需要同时支持鼠标、触摸屏、触控笔拖拽，官方推荐优先使用哪个 Sensor？",
+    "explanation": "`PointerSensor` 基于原生 Pointer Events，统一处理鼠标、触摸、触控笔等指针类输入。官方推荐现代浏览器场景优先使用它，而不必再叠加注册 `MouseSensor` + `TouchSensor`（那样反而容易导致同一次交互触发两套事件）。",
+    "tags": ["dnd-kit", "初级", "pointer-sensor"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "必须同时注册 MouseSensor 和 TouchSensor",
+        "isCorrect": false,
+        "description": "反而容易同一交互触发两套事件"
+      },
+      {
+        "text": "KeyboardSensor，默认唯一启用的 Sensor",
+        "isCorrect": false,
+        "description": "默认同时启用 Pointer+Keyboard，非唯一"
+      },
+      {
+        "text": "需自定义 Sensor，无内置通用方案",
+        "isCorrect": false,
+        "description": "PointerSensor 正是内置通用方案"
+      },
+      {
+        "text": "PointerSensor，基于 Pointer Events 统一处理",
+        "isCorrect": true,
+        "description": "官方推荐现代浏览器首选"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 需求：一个可拖拽列表项只允许沿垂直方向移动，不应该出现水平位移，应该怎么实现？",
+    "explanation": "`@dnd-kit/modifiers` 提供的 modifier 函数会在拖拽过程中对 sensor 检测到的坐标做二次加工，`restrictToVerticalAxis` 就是专门限制仅沿垂直方向运动的内置 modifier。传入 `DndContext.modifiers`（或 `DragOverlay.modifiers`）即可生效，CSS `overflow` 或 `data` 参数都无法实现这个约束。",
+    "tags": ["dnd-kit", "初级", "modifiers-basic"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "在 CSS 里加 overflow-x: hidden",
+        "isCorrect": false,
+        "description": "只影响视觉裁剪，不改变拖拽坐标"
+      },
+      {
+        "text": "把 data 参数设为 { axis: 'vertical' }",
+        "isCorrect": false,
+        "description": "data 只是业务数据，不参与坐标加工"
+      },
+      {
+        "text": "传入 modifiers={[restrictToVerticalAxis]} 加工坐标",
+        "isCorrect": true,
+        "description": "内置 modifier 直接限制单一轴向"
+      },
+      {
+        "text": "modifiers 无法限制单一轴向",
+        "isCorrect": false,
+        "description": "restrictToVerticalAxis 正是为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 项目没有显式设置 `DndContext` 的 `collisionDetection` 属性，此时用的是哪种碰撞检测算法？",
+    "explanation": "`DndContext` 未显式指定 `collisionDetection` 时，默认使用 `rectIntersection`——判断两个矩形是否发生几何相交，适合大多数常规拖放场景。`closestCenter`/`closestCorners` 是需要显式传入的可选算法，分别更适合可排序列表与看板等堆叠容器场景。",
+    "tags": ["dnd-kit", "初级", "default-collision"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "closestCenter，比较中心点距离",
+        "isCorrect": false,
+        "description": "需要显式传入，非默认值"
+      },
+      {
+        "text": "rectIntersection，判定矩形几何相交",
+        "isCorrect": true,
+        "description": "未设置时的默认算法"
+      },
+      {
+        "text": "closestCorners，看板场景推荐",
+        "isCorrect": false,
+        "description": "同样需要显式传入，非默认"
+      },
+      {
+        "text": "默认不做碰撞检测，over 恒为 null",
+        "isCorrect": false,
+        "description": "默认算法始终生效，并非不检测"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 的 Sortable 预设（`@dnd-kit/sortable`）里，`SortableContext` 与 `useSortable` 分别扮演什么角色？",
+    "explanation": "Sortable 预设采用两层架构：`SortableContext` 是 Context 提供方，向后代广播当前容器的排序信息（`items`/`strategy` 等）；`useSortable` 是消费方，内部组合了 `useDraggable` 与 `useDroppable` 的能力，是具体列表项使用的 hook。二者是协作关系而非互斥或反向。",
+    "tags": ["dnd-kit", "中级", "sortable-architecture"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SortableContext 提供排序信息，useSortable 消费并组合 draggable+droppable",
+        "isCorrect": true,
+        "description": "两层架构的准确分工"
+      },
+      {
+        "text": "二者互斥，只能选用其一",
+        "isCorrect": false,
+        "description": "二者是协作关系，非互斥"
+      },
+      {
+        "text": "SortableContext 负责渲染，useSortable 只管请求数据",
+        "isCorrect": false,
+        "description": "均与数据请求无关"
+      },
+      {
+        "text": "useSortable 提供信息，SortableContext 管交互",
+        "isCorrect": false,
+        "description": "分工正好说反了"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 排序列表出现「拖拽动画错乱、卡片挤在一起」的 bug，检查代码发现 `<SortableContext items={sortedIds}>` 传入的 `sortedIds` 和 `.map()` 实际渲染列表项的顺序不一致，这会是问题根源吗？",
+    "explanation": "`SortableContext` 的 `items` 是一个已排序的唯一 id 数组，官方文档强调它必须与实际渲染顺序保持一致。dnd-kit 依据这个数组计算每一项的位置和过渡动画，一旦数组顺序和真实 DOM 顺序对不上，动画与位置计算就会出现错乱，这与具体使用哪种排序策略无关。",
+    "tags": ["dnd-kit", "中级", "sortable-items-order"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不是，items 只用于生成 key",
+        "isCorrect": false,
+        "description": "items 还决定位置与动画计算"
+      },
+      {
+        "text": "不是，SortableContext 会自动重排 DOM",
+        "isCorrect": false,
+        "description": "它不会代为重排实际 DOM 顺序"
+      },
+      {
+        "text": "是，但仅 rectSwappingStrategy 时出现",
+        "isCorrect": false,
+        "description": "与具体排序策略无关，普遍适用"
+      },
+      {
+        "text": "是，items 必须与实际渲染顺序一致",
+        "isCorrect": true,
+        "description": "官方明确要求的强约束"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 要给一个「响应式瀑布流网格」（每项宽高不规则）实现拖拽排序，4 种内置排序策略里哪一种是默认值、也最适合这种不规则布局？",
+    "explanation": "`rectSortingStrategy` 是 `SortableContext` 未指定 `strategy` 时的默认值，适合大多数通用场景（包括网格、不规则布局）。`verticalListSortingStrategy`/`horizontalListSortingStrategy` 是分别针对垂直、水平列表的优化（且支持虚拟化列表）。`rectSwappingStrategy` 是交换式而非插入式排序，需配合 `arraySwap` 使用，语义不同。",
+    "tags": ["dnd-kit", "中级", "sorting-strategy"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "verticalListSortingStrategy，垂直列表优化",
+        "isCorrect": false,
+        "description": "专为垂直列表而非不规则网格设计"
+      },
+      {
+        "text": "rectSortingStrategy，默认值，适合网格/不规则布局",
+        "isCorrect": true,
+        "description": "未指定 strategy 时的默认策略"
+      },
+      {
+        "text": "horizontalListSortingStrategy，水平列表优化",
+        "isCorrect": false,
+        "description": "专为水平列表而非不规则网格设计"
+      },
+      {
+        "text": "rectSwappingStrategy，交换式排序",
+        "isCorrect": false,
+        "description": "语义是互换而非插入，且非默认值"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 想在列表项组件里判断「当前是不是正处于排序交互中」以及「自己排序前的原始下标」，`useSortable` 相比 `useDraggable`+`useDroppable` 额外多返回的字段里，哪一组能满足需求？",
+    "explanation": "`useSortable` 在 `useDraggable`/`useDroppable` 基础上新增了 `index`/`newIndex`/`overIndex`/`activeIndex`/`items`/`isSorting` 等排序相关字段。而 `attributes`/`listeners`/`setNodeRef`/`transform`/`active`/`over` 本就是 `useDraggable`/`useDroppable` 已提供的基础返回值，并非 `useSortable` 独有新增。",
+    "tags": ["dnd-kit", "中级", "use-sortable-returns"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "attributes/listeners，useSortable 独有",
+        "isCorrect": false,
+        "description": "这两项 useDraggable 本身就有"
+      },
+      {
+        "text": "setNodeRef/transform，useDraggable 里没有",
+        "isCorrect": false,
+        "description": "useDraggable 本身就返回这两项"
+      },
+      {
+        "text": "isSorting 判断排序中，index 配合 overIndex/newIndex 推算位置",
+        "isCorrect": true,
+        "description": "useSortable 新增的排序专属字段"
+      },
+      {
+        "text": "active/over，仅 useSortable 返回",
+        "isCorrect": false,
+        "description": "这两项 useDroppable 本身就有"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 的 `onDragEnd` 里要把拖拽项从旧位置「插入」到新位置（中间项依次顺移，而不是两两互换），应该调用哪个工具函数？",
+    "explanation": "`arrayMove` 是插入式移动：把 `array[from]` 移动到 `to` 位置，中间项依次顺移；`arraySwap` 是交换式：只让 `from`/`to` 两个位置的元素互换，其余不变，通常搭配 `rectSwappingStrategy` 使用。两者语义不同，配错会导致排序结果和拖拽视觉反馈不一致。",
+    "tags": ["dnd-kit", "中级", "array-move-swap"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "splice 与排序结果无关，随便用哪个都一样",
+        "isCorrect": false,
+        "description": "二者语义不同，不能混用"
+      },
+      {
+        "text": "两者语义完全相同，可互换",
+        "isCorrect": false,
+        "description": "插入式与交换式语义截然不同"
+      },
+      {
+        "text": "arraySwap，交换式，两项互换位置",
+        "isCorrect": false,
+        "description": "交换式而非题目要求的插入式"
+      },
+      {
+        "text": "arrayMove，插入式移动，中间项顺移",
+        "isCorrect": true,
+        "description": "插入式移动的标准工具函数"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 要保证「不使用鼠标/触摸屏，仅靠键盘也能完成完整拖拽排序」这一无障碍需求，下列哪个 Sensor 是必需的，且是仅有的、聚焦后靠按键触发的输入方式？",
+    "explanation": "`KeyboardSensor` 是四种内置 Sensor 中唯一以「聚焦后按键」为激活方式的，是键盘无障碍支持的关键。`MouseSensor`/`TouchSensor`/`PointerSensor` 分别响应鼠标按下、单指触摸、指针按下，都不能满足纯键盘操作的需求。",
+    "tags": ["dnd-kit", "中级", "sensors-comparison"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "KeyboardSensor，聚焦后按键激活",
+        "isCorrect": true,
+        "description": "唯一支持纯键盘操作的 Sensor"
+      },
+      {
+        "text": "MouseSensor，仅响应 onMouseDown",
+        "isCorrect": false,
+        "description": "依赖鼠标事件，非键盘"
+      },
+      {
+        "text": "TouchSensor，仅响应单指触摸",
+        "isCorrect": false,
+        "description": "依赖触摸事件，非键盘"
+      },
+      {
+        "text": "PointerSensor，仅响应 onPointerDown",
+        "isCorrect": false,
+        "description": "依赖指针事件，非键盘"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 的可拖拽卡片内部还嵌了一个「删除」按钮，实测发现只要在卡片上按下鼠标，哪怕只是想点按钮，也会先触发一次拖拽，应该如何解决？",
+    "explanation": "不设置 `activationConstraint` 时，任何一次按下都会立即触发拖拽，导致按钮之类交互元素的点击被拖拽手势吞掉。`activationConstraint` 支持 `{ distance }`（需要移动一定像素才激活）或 `{ delay, tolerance }`（按住一段时间、允许一定抖动范围内才激活）两种约束，专门用来区分「点击」与「拖拽意图」。",
+    "tags": ["dnd-kit", "中级", "activation-constraint"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把删除按钮移出卡片容器结构",
+        "isCorrect": false,
+        "description": "治标不治本，也破坏了布局需求"
+      },
+      {
+        "text": "给按钮加 useDroppable 自动屏蔽拖拽",
+        "isCorrect": false,
+        "description": "useDroppable 不具备屏蔽点击的能力"
+      },
+      {
+        "text": "设置 activationConstraint（distance 或 delay+tolerance）",
+        "isCorrect": true,
+        "description": "区分点击与拖拽意图的标准方案"
+      },
+      {
+        "text": "无法解决，需手动判断 event.target",
+        "isCorrect": false,
+        "description": "activationConstraint 正是官方方案"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 代码里想同时启用 `PointerSensor` 和 `KeyboardSensor`，并各自传入不同的配置项，正确的组合方式是什么？",
+    "explanation": "正确用法是在组件内调用 `useSensor(SensorClass, options)` 分别构造每个 Sensor 描述符，再用 `useSensors(...)` 组合成数组传给 `DndContext.sensors`。`useSensor`/`useSensors` 本身是 hook，必须在组件内调用；`DndContext` 若不传 `sensors` 也有默认值（`PointerSensor` + `KeyboardSensor`），并非完全不启用。",
+    "tags": ["dnd-kit", "中级", "use-sensors"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接把类数组 [PointerSensor, KeyboardSensor] 传给 sensors",
+        "isCorrect": false,
+        "description": "需经 useSensor/useSensors 包装，非直接传类"
+      },
+      {
+        "text": "组件内 useSensors(useSensor(...), useSensor(...)) 传给 sensors",
+        "isCorrect": true,
+        "description": "hook 组合的标准写法"
+      },
+      {
+        "text": "在 DndContext 外部模块顶层调用一次即可",
+        "isCorrect": false,
+        "description": "useSensor 是 hook，必须在组件内调用"
+      },
+      {
+        "text": "不传 sensors 时不启用任何 Sensor",
+        "isCorrect": false,
+        "description": "不传时有默认的 Pointer+Keyboard"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 给一个可排序列表接入键盘操作时，`@dnd-kit/sortable` 提供的 `sortableKeyboardCoordinates` 相比 core 里默认的坐标获取器，优势是什么？",
+    "explanation": "`sortableKeyboardCoordinates` 是 `@dnd-kit/sortable` 提供的、专门针对排序列表场景优化过的键盘坐标获取器，通常作为 `useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })` 传入。它比 core 默认的通用 `defaultKeyboardCoordinateGetter` 更适合列表场景下的方向键移动逻辑，但属于可选配置项而非必填。",
+    "tags": ["dnd-kit", "中级", "keyboard-coordinates"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "针对排序列表优化，比通用默认坐标获取器更适合列表场景",
+        "isCorrect": true,
+        "description": "专为列表方向键移动逻辑优化"
+      },
+      {
+        "text": "让 KeyboardSensor 支持鼠标事件",
+        "isCorrect": false,
+        "description": "与鼠标事件无关，仍是键盘坐标逻辑"
+      },
+      {
+        "text": "是 useSortable 的必填参数",
+        "isCorrect": false,
+        "description": "属于可选的 coordinateGetter 配置项"
+      },
+      {
+        "text": "与默认坐标获取器计算逻辑完全一样",
+        "isCorrect": false,
+        "description": "二者是针对不同场景优化的不同实现"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 要做一个「待办/进行中/已完成」三列看板，每列内部都可以独立排序，架构上应该怎么组织 `DndContext` 与 `SortableContext`？",
+    "explanation": "`SortableContext` 必须是 `DndContext` 的后代，但可以在同一个 `DndContext` 下嵌套多个 `SortableContext`。这正是多容器/看板场景的标准做法：一个 `DndContext` 统管全局拖拽状态，每一列各自维护一个 `SortableContext` 和自己的 `items` 数组。",
+    "tags": ["dnd-kit", "中级", "multi-container-basics"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每列都用独立 DndContext 包裹",
+        "isCorrect": false,
+        "description": "会导致无法跨列共享拖拽状态"
+      },
+      {
+        "text": "只能有一个 SortableContext，拼一个大 items 数组",
+        "isCorrect": false,
+        "description": "无法区分各列独立排序信息"
+      },
+      {
+        "text": "SortableContext 不支持嵌套",
+        "isCorrect": false,
+        "description": "恰恰支持嵌套，是看板标准做法"
+      },
+      {
+        "text": "一个 DndContext 包裹全局，每列各自一个 SortableContext",
+        "isCorrect": true,
+        "description": "多容器看板的标准架构"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 在移动端测试可排序列表时，发现手指按住卡片拖动时页面会跟着乱跳、或者卡片根本拖不动，最可能被忽略的 CSS 设置是什么？",
+    "explanation": "移动端不设置 `touch-action: none`（或至少 `manipulation`）时，浏览器会让触摸手势同时被页面滚动和 dnd-kit 的拖拽逻辑抢占，表现为「拖不动」或者页面跟着乱跳。这是一个纯 CSS 层面的坑，与 `autoScroll`、`modifiers`、Sensor 类型选择无关。",
+    "tags": ["dnd-kit", "中级", "touch-action"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "忘记设置 DndContext 的 autoScroll: false",
+        "isCorrect": false,
+        "description": "与触摸滚动冲突无关"
+      },
+      {
+        "text": "忘记给可拖拽元素设置 touch-action: none",
+        "isCorrect": true,
+        "description": "触摸手势与页面滚动冲突的根源"
+      },
+      {
+        "text": "忘记引入 @dnd-kit/modifiers",
+        "isCorrect": false,
+        "description": "modifiers 与触摸滚动冲突无关"
+      },
+      {
+        "text": "忘记把 PointerSensor 换成 MouseSensor",
+        "isCorrect": false,
+        "description": "MouseSensor 不响应触摸，无助于此问题"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 看板场景里，多个列表容器紧挨着堆叠排列，用默认的 `closestCenter` 做碰撞检测时经常出现「明明想放到 A 列，却被判定放到了旁边的 B 列」，应该如何调整？",
+    "explanation": "四种内置碰撞检测各有适用场景。`rectIntersection`（默认，判定矩形是否相交）适合常规拖放，`closestCenter`（比较中心点距离）适合可排序列表，但在容器紧挨堆叠的看板场景容易误判。`closestCorners`（比较四角距离）官方明确建议看板等堆叠容器场景优先使用，`pointerWithin` 仅对指针类 sensor 有效、要求指针坐标落入容器内才判定。",
+    "tags": ["dnd-kit", "高级", "closest-corners"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "改用 rectIntersection，堆叠时精度最高",
+        "isCorrect": false,
+        "description": "并非官方针对堆叠容器的推荐算法"
+      },
+      {
+        "text": "关闭碰撞检测，手动算鼠标坐标",
+        "isCorrect": false,
+        "description": "舍弃内置能力，代价过高且无必要"
+      },
+      {
+        "text": "改用 closestCorners，比较四角距离",
+        "isCorrect": true,
+        "description": "官方针对看板堆叠场景的明确建议"
+      },
+      {
+        "text": "固有限制，只能靠增大容器间距解决",
+        "isCorrect": false,
+        "description": "换算法即可解决，无需改布局间距"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 想要「优先按指针实际坐标精确判断落点，但指针没有落在任何容器内时，退回用矩形相交兜底判断」，应该怎么实现？",
+    "explanation": "`DndContext.collisionDetection` 接受一个自定义函数，因此可以在函数体内先调用高精度的 `pointerWithin`，若返回的碰撞数组非空则直接采用，否则降级调用 `rectIntersection` 兜底，这是官方文档展示的典型组合/降级模式。`collisionDetection` 属性只接受一个函数，不能同时传两个内置算法自动合并。",
+    "tags": ["dnd-kit", "高级", "custom-collision"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同时把两个算法传给 collisionDetection，自动合并",
+        "isCorrect": false,
+        "description": "该属性只接受单一函数，不会自动合并"
+      },
+      {
+        "text": "不支持这种降级策略",
+        "isCorrect": false,
+        "description": "官方文档本身就展示了此类组合模式"
+      },
+      {
+        "text": "用 closestCenter 就能同时满足",
+        "isCorrect": false,
+        "description": "单一内置算法无法实现优先级降级逻辑"
+      },
+      {
+        "text": "自定义函数：先 pointerWithin，空则 fallback 到 rectIntersection",
+        "isCorrect": true,
+        "description": "官方展示的组合/降级模式"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 项目里，给 `DndContext.modifiers` 和 `DragOverlay.modifiers` 都传入了同一个 `restrictToVerticalAxis`，两处生效范围有什么本质区别？",
+    "explanation": "这是 dnd-kit modifier 系统里容易被混淆的一点：`DndContext.modifiers` 加工的是参与真实碰撞判定的坐标，会影响 `over` 计算结果；`DragOverlay.modifiers` 只加工覆盖层自身的视觉呈现位置，不影响底层碰撞判定逻辑。两者语义不同，并非互相覆盖或谁优先级更高的关系。",
+    "tags": ["dnd-kit", "高级", "modifiers-scope"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "DndContext.modifiers 影响真实碰撞判定，DragOverlay.modifiers 只影响视觉呈现",
+        "isCorrect": true,
+        "description": "二者作用范围本质不同"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "一个影响判定逻辑，一个只管视觉呈现"
+      },
+      {
+        "text": "DragOverlay.modifiers 优先级更高会覆盖",
+        "isCorrect": false,
+        "description": "二者是并行、不同职责的独立配置"
+      },
+      {
+        "text": "DndContext.modifiers 只在无 DragOverlay 时生效",
+        "isCorrect": false,
+        "description": "无论是否使用 DragOverlay 都会生效"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 要自己写一个「只允许拖拽到屏幕右半边」的自定义 modifier，函数实现时最容易犯的错误是什么？",
+    "explanation": "自定义 `Modifier` 函数接收包含 `transform`/`active`/`over`/`scrollableAncestors` 等信息的参数对象，要求必须返回一个新的 `Transform` 对象（不可变更新）。常见错误是图省事直接在原 `transform` 对象上做修改后返回同一个引用，这类可变更新不符合约定。",
+    "tags": ["dnd-kit", "高级", "custom-modifier"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "忘记把函数命名为 Modifier",
+        "isCorrect": false,
+        "description": "命名并非强制要求，与功能无关"
+      },
+      {
+        "text": "函数里访问了 active 字段",
+        "isCorrect": false,
+        "description": "访问 active 是被允许的常见用法"
+      },
+      {
+        "text": "直接修改传入的 transform 对象而非返回新对象",
+        "isCorrect": true,
+        "description": "违反必须不可变更新的约定"
+      },
+      {
+        "text": "返回值类型是 Transform 而非 boolean",
+        "isCorrect": false,
+        "description": "Transform 正是要求的返回类型"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 看板卡片从「待办」列拖到「进行中」列时，业务代码应该在哪个回调里把卡片从旧数组 `splice` 到新数组，才能让拖拽过程中就能实时看到卡片「跟着移动」到新列？",
+    "explanation": "多容器（看板）的标准范式是：跨容器移动的数组搬运（视觉过渡）应发生在 `onDragOver` 里，一旦发现 `active` 进入了新的容器就立刻更新 state，从而在拖拽过程中就能看到实时预览；`onDragEnd` 只负责用 `arrayMove`/`arraySwap` 处理容器内的最终排序。写反位置会导致拖拽过程中没有实时预览效果。",
+    "tags": ["dnd-kit", "高级", "kanban-drag-over"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "onDragEnd，只有结束才能确定容器",
+        "isCorrect": false,
+        "description": "写在这里会丢失过程中的实时预览"
+      },
+      {
+        "text": "onDragOver，检测跨容器时手动搬运，onDragEnd 只处理最终排序",
+        "isCorrect": true,
+        "description": "多容器看板的标准范式"
+      },
+      {
+        "text": "onDragStart，提前搬到目标容器",
+        "isCorrect": false,
+        "description": "拖拽刚开始时还不知道目标容器"
+      },
+      {
+        "text": "放哪个回调都一样，不影响视觉效果",
+        "isCorrect": false,
+        "description": "位置写反会导致没有实时预览"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 想让键盘拖拽时方向键的移动步长从默认的 25px 改成按网格对齐移动，并且把取消拖拽的按键从 `Escape` 换成自定义键位，应该分别配置 `KeyboardSensor` 的哪两个选项？",
+    "explanation": "`KeyboardSensor` 支持通过 `coordinateGetter`（类型 `KeyboardCoordinateGetter`）自定义方向键的移动逻辑（包括步长/网格对齐等）。也支持通过 `keyboardCodes`（`{start, cancel, end}` 三组按键数组）自定义拾取/取消/放下分别对应哪些按键，两者都是可配置项。",
+    "tags": ["dnd-kit", "高级", "keyboard-sensor-custom"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "coordinateGetter 自定义移动逻辑，keyboardCodes 自定义按键映射",
+        "isCorrect": true,
+        "description": "分别对应步长逻辑与按键映射"
+      },
+      {
+        "text": "activationConstraint 控制步长，disabled 控制取消键位",
+        "isCorrect": false,
+        "description": "二者均与按键映射/步长逻辑无关"
+      },
+      {
+        "text": "transform 控制步长，transition 控制取消键位",
+        "isCorrect": false,
+        "description": "二者是样式相关字段，非配置项"
+      },
+      {
+        "text": "两项都无法自定义，是写死行为",
+        "isCorrect": false,
+        "description": "KeyboardSensor 明确支持这两项自定义"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 项目里有一个和拖拽节点毫不相关的顶部状态栏组件，只是想在「任意一次拖拽开始/结束」时更新自己的提示文案，且不想让父组件手动透传 state，应该用哪个 API？",
+    "explanation": "`useDndMonitor` 正是为「组件本身不参与拖拽、但需要响应全局拖拽事件」这类场景设计的，只要在 `DndContext` 子树内调用即可监听 `onDragStart`/`onDragMove`/`onDragOver`/`onDragEnd`/`onDragCancel`，不需要手动透传 state。`useDndContext()` 则是用于读取内部状态来构建自定义组件或预设，两者用途不同。",
+    "tags": ["dnd-kit", "高级", "use-dnd-monitor"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useDndContext()，专为此设计的监听 hook",
+        "isCorrect": false,
+        "description": "它用于读取内部状态，非事件监听"
+      },
+      {
+        "text": "给状态栏组件也套一层 useDraggable",
+        "isCorrect": false,
+        "description": "状态栏并非拖拽节点，不应使用该 hook"
+      },
+      {
+        "text": "dnd-kit 不支持跨组件监听，须逐层透传",
+        "isCorrect": false,
+        "description": "useDndMonitor 正是为此设计"
+      },
+      {
+        "text": "useDndMonitor 监听全局拖拽事件，无需透传 state",
+        "isCorrect": true,
+        "description": "专为脱离拖拽节点监听事件设计"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 看板中，某一列内容变多导致高度变化后，相邻列的可放置区域测量数据没有及时更新，导致拖拽命中判定出现偏差，`useDroppable`/`useSortable` 的哪个参数能解决这类问题？",
+    "explanation": "`useDroppable`（`useSortable` 同样支持）提供 `resizeObserverConfig` 参数，其中 `updateMeasurementsFor` 可以声明「本容器尺寸变化时，还有哪些其它容器需要连带重新测量」。`timeout` 则用于控制 resize 到重新测量之间的防抖间隔，专门用来解决相邻容器测量数据不同步的问题。",
+    "tags": ["dnd-kit", "高级", "resize-observer-config"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "animateLayoutChanges，控制过渡动画",
+        "isCorrect": false,
+        "description": "只管动画触发，非测量联动"
+      },
+      {
+        "text": "getNewIndex，自定义新下标计算",
+        "isCorrect": false,
+        "description": "用于排序下标逻辑，非尺寸测量"
+      },
+      {
+        "text": "resizeObserverConfig，联动重测其它容器并可防抖",
+        "isCorrect": true,
+        "description": "通过 updateMeasurementsFor+timeout 解决"
+      },
+      {
+        "text": "无法处理，需业务代码手动刷新",
+        "isCorrect": false,
+        "description": "resizeObserverConfig 正是为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 给一个 `<ul><li>` 结构的可排序列表接入 `DragOverlay` 预览层时，应该注意 `DragOverlay` 的哪个属性，以避免产生无效的 DOM 嵌套？",
+    "explanation": "`DragOverlay` 的 `wrapperElement` 默认是 `div`，在包裹 `li` 这类必须作为 `ul`/`ol` 直接子元素的内容时，默认的 `div` 包裹会造成无效 DOM 嵌套，应显式把 `wrapperElement` 设为 `ul` 加以修正。`dropAnimation`（放下动画时长/缓动）与 `zIndex`（覆盖层层级）是两个独立的属性，跟 DOM 嵌套问题无关。",
+    "tags": ["dnd-kit", "高级", "drag-overlay-wrapper"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "dropAnimation，默认 250ms，必须关闭才能避免嵌套",
+        "isCorrect": false,
+        "description": "该属性只管放下动画，与嵌套无关"
+      },
+      {
+        "text": "wrapperElement，默认 div，列表场景应改成 ul",
+        "isCorrect": true,
+        "description": "避免无效 DOM 嵌套的正确设置"
+      },
+      {
+        "text": "zIndex，默认 999，调大即可避免嵌套",
+        "isCorrect": false,
+        "description": "该属性只管层级，与 DOM 结构无关"
+      },
+      {
+        "text": "不支持自定义包裹元素",
+        "isCorrect": false,
+        "description": "wrapperElement 正是为此设计的可配置项"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 想把一个可排序列表的无障碍体验做到最佳实践水平，除了默认自带的键盘操作与 ARIA 属性外，还应该分别用什么 API 定制「操作说明」与「实时播报」，并且播报文案应该遵循什么原则？",
+    "explanation": "dnd-kit 的无障碍能力分三层：默认 ARIA 属性 + `accessibility.screenReaderInstructions`（静态的「如何操作」说明文案）+ `accessibility.announcements`（`onDragStart`/`onDragOver`/`onDragEnd`/`onDragCancel` 四个回调返回的动态播报文本）。官方明确建议播报「当前处于第几项，共几项」这种位置语义，而非从 0 开始的数组下标，避免误导读屏用户。",
+    "tags": ["dnd-kit", "专家", "accessibility"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "都用 CSS 的 aria-label 统一控制",
+        "isCorrect": false,
+        "description": "静态说明与动态播报需专门的 accessibility API"
+      },
+      {
+        "text": "只需设置 tabIndex，其余浏览器自动完成",
+        "isCorrect": false,
+        "description": "说明文案与实时播报都需业务代码定制"
+      },
+      {
+        "text": "播报应直接输出数组下标最直观",
+        "isCorrect": false,
+        "description": "官方建议播报位置语义而非下标"
+      },
+      {
+        "text": "screenReaderInstructions 定制说明，announcements 定制播报，播报用位置语义",
+        "isCorrect": true,
+        "description": "三层定制+位置语义最佳实践"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 照抄一篇较早的教程，写了在 `DndContext` 上直接传 `announcements` 和 `screenReaderInstructions` 两个顶层属性，结果被 TypeScript 类型检查报错，最可能的原因是什么？",
+    "explanation": "早期教程/部分文档示例把 `announcements`/`screenReaderInstructions` 写成 `DndContext` 的顶层 prop，但当前发布的类型定义已将其收纳进嵌套的 `accessibility` 对象，并新增了 `container`/`restoreFocus` 两个字段。照抄旧教程的顶层写法会被 TypeScript 类型检查直接拒绝，写代码前应以当前类型定义报错信息为准。",
+    "tags": ["dnd-kit", "专家", "accessibility-props"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "当前类型定义已把这两项收纳进嵌套的 accessibility 对象",
+        "isCorrect": true,
+        "description": "新增 container/restoreFocus，非顶层 prop"
+      },
+      {
+        "text": "这两个 prop 已被完全移除",
+        "isCorrect": false,
+        "description": "功能仍在，只是挪进了嵌套对象"
+      },
+      {
+        "text": "是 TypeScript 版本过低导致的误报",
+        "isCorrect": false,
+        "description": "与 TS 版本无关，是 API 结构变化"
+      },
+      {
+        "text": "只有配合 sortable 才能用这两个顶层 prop",
+        "isCorrect": false,
+        "description": "与是否使用 sortable 无关"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 官网 `dndkit.com` 首页导航展示的是 `DragDropManager`/`Draggable`/`Droppable`/`Sortable` 等概念，团队新人照着首页示例写 `import { useDraggable } from '@dnd-kit/react'`，结果和现有项目里 `@dnd-kit/core@6.x` 的用法完全对不上，这是怎么回事？",
+    "explanation": "dnd-kit 作者正在开发一套全新的、框架无关的重写版本（`@dnd-kit/abstract`+`@dnd-kit/dom`+`@dnd-kit/react` 等，核心概念是 `DragDropManager`/`Draggable`/`Droppable`/`Sortable` 类），当前均为 0.5.0（pre-1.0 早期阶段），`@dnd-kit/react` 周下载量仅约为 core 的 4.6%。官网首页默认展示的正是这套新文档，经典版文档已移至 `/legacy/` 路径下——两套 hook 即便同名也来自不同的包、API 完全不同。",
+    "tags": ["dnd-kit", "专家", "architecture-migration"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "新人语法错误，两套 API 其实一致",
+        "isCorrect": false,
+        "description": "二者是完全不同的包与 API"
+      },
+      {
+        "text": "@dnd-kit/react 是 core 的官方别名",
+        "isCorrect": false,
+        "description": "二者是两套独立、不兼容的架构"
+      },
+      {
+        "text": "首页展示的是尚在 0.x 阶段的框架无关重写版，与经典 core 6.x 是两套不同 API",
+        "isCorrect": true,
+        "description": "经典版文档已移至 /legacy/ 路径"
+      },
+      {
+        "text": "core@6.x 已过时，应立即全面迁移",
+        "isCorrect": false,
+        "description": "新架构仍处早期采用阶段，非立即迁移"
+      }
+    ]
+  },
+  {
+    "stem": "dnd-kit 团队打算把可排序列表接到几千条数据的场景，看到文档说 `verticalListSortingStrategy` 支持虚拟化列表，于是认为「用了这个策略，长列表性能问题就自动解决了」，这个理解对吗？",
+    "explanation": "`verticalListSortingStrategy`/`horizontalListSortingStrategy` 所谓「支持虚拟化列表」，指的是这两种策略的位置计算逻辑在只渲染部分可见项的情况下依然正确工作，并不代表 dnd-kit 内置了虚拟滚动能力。真正的虚拟滚动仍需业务代码自行接入 `react-window`/`@tanstack/react-virtual` 这类专门的虚拟化库。",
+    "tags": ["dnd-kit", "专家", "virtualization"],
+    "categories": [
+      ["技术方向", "dnd-kit"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "对，dnd-kit 内置了虚拟滚动引擎",
+        "isCorrect": false,
+        "description": "dnd-kit 并未内置虚拟滚动引擎"
+      },
+      {
+        "text": "不对，只是计算逻辑兼容虚拟化，仍需自行接入虚拟滚动库",
+        "isCorrect": true,
+        "description": "策略兼容不等于自动获得虚拟滚动能力"
+      },
+      {
+        "text": "不对，应改用 rectSortingStrategy 获得虚拟化",
+        "isCorrect": false,
+        "description": "该策略同样不提供虚拟滚动能力"
+      },
+      {
+        "text": "对，但仅用 DragOverlay 时自动虚拟化",
+        "isCorrect": false,
+        "description": "DragOverlay 与虚拟滚动无关"
+      }
+    ]
+  }
+]
