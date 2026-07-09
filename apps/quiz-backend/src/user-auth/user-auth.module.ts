@@ -8,6 +8,7 @@ import { UserJwtAuthGuard } from "./guards/user-jwt-auth.guard";
 import { OptionalUserJwtGuard } from "./guards/optional-user-jwt.guard";
 import { PrismaModule } from "../prisma/prisma.module";
 import { SystemLogsModule } from "../system-logs/system-logs.module";
+import { getJwtSecret } from "../common/jwt-secret";
 
 /**
  * 用户认证模块
@@ -18,11 +19,13 @@ import { SystemLogsModule } from "../system-logs/system-logs.module";
     PrismaModule,
     PassportModule,
     SystemLogsModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || "your-secret-key",
-      signOptions: {
-        expiresIn: "7d",
-      },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getJwtSecret(),
+        signOptions: {
+          expiresIn: "7d",
+        },
+      }),
     }),
   ],
   controllers: [UserAuthController],

@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PrismaService } from "../../prisma/prisma.service";
+import { getJwtSecret } from "../../common/jwt-secret";
 
 /**
  * User JWT Payload 结构
@@ -25,7 +26,7 @@ export class UserJwtStrategy extends PassportStrategy(Strategy, "user-jwt") {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || "your-secret-key",
+      secretOrKey: getJwtSecret(),
     });
   }
 

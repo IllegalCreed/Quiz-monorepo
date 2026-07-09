@@ -3,6 +3,7 @@ export default {
   testEnvironment: "node",
   rootDir: "src",
   testRegex: ".*\\.spec\\.ts$",
+  setupFiles: ["<rootDir>/test/setup-env.ts"],
   transform: {
     "^.+\\.(t|j)s$": "ts-jest",
   },

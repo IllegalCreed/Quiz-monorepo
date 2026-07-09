@@ -10,8 +10,9 @@ import { playwright } from "@vitest/browser-playwright";
  *
  * 运行说明：
  * - 运行所有测试（包含 storybook tests）：pnpm -C packages/ui test
- * - 只跑单元测试（unit project）：pnpm -C packages/ui test -- --project unit
- * - 收集覆盖率：pnpm -C packages/ui test -- --coverage
+ * - 只跑单元测试（unit project）：pnpm -C packages/ui test:unit
+ * - 只跑 Storybook 浏览器测试：pnpm -C packages/ui test:storybook
+ * - 收集单元测试覆盖率：pnpm -C packages/ui test:unit:coverage
  *
  * 关于 storybookTest 插件：
  * - 我们使用 @storybook/addon-vitest 的 storybookTest 来在 Playwright 中运行 story 级别的交互测试。
