@@ -1,4 +1,4 @@
-import { nextTick, ref } from "vue";
+import { nextTick, reactive, ref } from "vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import QuizPage from "../QuizPage.vue";
@@ -22,6 +22,11 @@ const choose = vi.fn();
 const selectedIds = ref<number[]>([]);
 const initCategories = vi.fn<() => Promise<void>>();
 const loadUserPreferences = vi.fn<() => Promise<void>>();
+const applyCategoryParam = vi.fn<(value: unknown) => boolean>();
+
+const route = reactive<{ query: Record<string, unknown> }>({
+  query: {},
+});
 
 const userStore = {
   token: "",
@@ -50,11 +55,16 @@ vi.mock("@/composables/useCategories", () => ({
     selectedIds,
     init: initCategories,
     loadUserPreferences,
+    applyCategoryParam,
   }),
 }));
 
 vi.mock("@/stores/useUserStore", () => ({
   useUserStore: () => userStore,
+}));
+
+vi.mock("vue-router", () => ({
+  useRoute: () => route,
 }));
 
 vi.mock("@quiz/ui", () => ({
@@ -87,6 +97,8 @@ describe("QuizPage", () => {
     selectedIds.value = [];
     loadNext.mockReset().mockResolvedValue(undefined);
     choose.mockReset();
+    applyCategoryParam.mockReset().mockReturnValue(false);
+    route.query = {};
 
     initCategories.mockReset().mockImplementation(async () => {
       selectedIds.value = [1];
@@ -131,6 +143,47 @@ describe("QuizPage", () => {
     expect(initCategories).toHaveBeenCalledTimes(1);
     expect(userStore.fetchUserInfo).toHaveBeenCalledTimes(1);
     expect(loadUserPreferences).toHaveBeenCalledTimes(1);
+    expect(loadNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("URL 分类参数会作为临时筛选后再拉取首题", async () => {
+    route.query = { category: "vitepress" };
+    applyCategoryParam.mockImplementation((value) => {
+      if (value === "vitepress") {
+        selectedIds.value = [14];
+        return true;
+      }
+      return false;
+    });
+
+    wrapper = mount(QuizPage);
+
+    await flushPromises();
+
+    expect(applyCategoryParam).toHaveBeenCalledWith("vitepress");
+    expect(loadUserPreferences).not.toHaveBeenCalled();
+    expect(selectedIds.value).toEqual([14]);
+    expect(loadNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("已登录用户带 URL 分类参数时不覆盖为后端偏好", async () => {
+    userStore.token = "jwt-token";
+    route.query = { category: "vitepress" };
+    applyCategoryParam.mockImplementation((value) => {
+      if (value === "vitepress") {
+        selectedIds.value = [14];
+        return true;
+      }
+      return false;
+    });
+
+    wrapper = mount(QuizPage);
+
+    await flushPromises();
+
+    expect(userStore.fetchUserInfo).toHaveBeenCalledTimes(1);
+    expect(loadUserPreferences).not.toHaveBeenCalled();
+    expect(selectedIds.value).toEqual([14]);
     expect(loadNext).toHaveBeenCalledTimes(1);
   });
 

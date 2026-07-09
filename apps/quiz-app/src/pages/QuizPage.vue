@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { onMounted, watch, computed, ref } from "vue";
+import { useRoute } from "vue-router";
 import {
   BaseCard,
   BaseCardHeader,
@@ -84,29 +85,55 @@ const {
   explanation,
 } = useQuiz();
 
-const { selectedIds, init: initCategories, loadUserPreferences } = useCategories();
+const {
+  selectedIds,
+  init: initCategories,
+  loadUserPreferences,
+  applyCategoryParam,
+} = useCategories();
 const userStore = useUserStore();
+const route = useRoute();
 const quizReady = ref(false);
+let bootstrapping = true;
+
+/**
+ * 应用文档页带来的临时分类筛选
+ */
+function applyRouteCategoryFilter() {
+  return applyCategoryParam(route.query.category);
+}
 
 onMounted(async () => {
   await initCategories();
+  const routeCategoryApplied = applyRouteCategoryFilter();
 
   if (userStore.token) {
     await userStore.fetchUserInfo();
-    if (userStore.isLoggedIn) {
+    if (userStore.isLoggedIn && !routeCategoryApplied) {
       await loadUserPreferences();
     }
   }
 
   quizReady.value = true;
   await loadNext();
+  bootstrapping = false;
 });
 
 /** 分类变化时重新加载题目 */
 watch(selectedIds, () => {
-  if (!quizReady.value) return;
+  if (!quizReady.value || bootstrapping) return;
   loadNext();
 });
+
+/** URL 分类参数变化时切换临时题目范围 */
+watch(
+  () => route.query.category,
+  async () => {
+    if (!quizReady.value) return;
+    await initCategories();
+    applyRouteCategoryFilter();
+  },
+);
 
 watch(selected, (v, old) => {
   if (v != null && v !== old && status.value === "idle") {

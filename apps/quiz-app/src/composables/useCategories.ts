@@ -16,6 +16,9 @@ import type {
   RawCategoryNode,
 } from "@/types/category";
 
+/** URL 查询参数中可接受的分类值 */
+type CategoryQueryValue = string | Array<string | null | undefined> | null | undefined;
+
 /** 游客偏好 localStorage key */
 const GUEST_KEY = "quiz-guest-categories";
 
@@ -93,6 +96,87 @@ function findLabelById(nodes: CategoryNode[], id: number): string | null {
     }
   }
   return null;
+}
+
+/**
+ * 将分类名规范化为 URL 友好的 slug
+ *
+ * 规则与 VitePress 侧测试题链接生成脚本保持一致：
+ * - 英文大小写不敏感
+ * - 常见符号转成可读词
+ * - 中文分类名保留原字面量
+ */
+function createCategorySlug(value: string): string {
+  return value
+    .trim()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/\+/g, " plus ")
+    .replace(/#/g, " sharp ")
+    .replace(/@/g, " ")
+    .replace(/\./g, "-")
+    .replace(/[^0-9a-zA-Z\u4e00-\u9fff]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+}
+
+/**
+ * 取 URL 查询参数的第一个有效值
+ */
+function getFirstCategoryQueryValue(value: CategoryQueryValue): string | null {
+  const raw = Array.isArray(value)
+    ? value.find((item): item is string => typeof item === "string" && item.trim() !== "")
+    : value;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+/**
+ * 生成匹配分类时使用的候选 key
+ */
+function createCategoryKeys(value: string): Set<string> {
+  const raw = value.trim().toLowerCase();
+  const slug = createCategorySlug(value);
+  const compactSlug = slug.replace(/-/g, "");
+  return new Set([raw, slug, compactSlug].filter((item) => item.length > 0));
+}
+
+/**
+ * 从叶子节点列表中匹配 URL 分类参数
+ */
+function findLeafIdByCategoryParam(
+  leafNodes: Array<{ id: number; label: string }>,
+  value: CategoryQueryValue,
+): number | null {
+  const rawValue = getFirstCategoryQueryValue(value);
+  if (!rawValue) return null;
+
+  const numericId = Number(rawValue);
+  if (Number.isInteger(numericId)) {
+    const leaf = leafNodes.find((node) => node.id === numericId);
+    if (leaf) return leaf.id;
+  }
+
+  const targetKeys = createCategoryKeys(rawValue);
+  const leaf = leafNodes.find((node) => {
+    const leafKeys = createCategoryKeys(node.label);
+    return [...targetKeys].some((key) => leafKeys.has(key));
+  });
+  if (leaf) return leaf.id;
+
+  const targetSlug = createCategorySlug(rawValue);
+  if (targetSlug.length < 3) return null;
+
+  const fuzzyLeaf = leafNodes.find((node) => {
+    const leafSlug = createCategorySlug(node.label);
+    if (leafSlug.length < 3) return false;
+    return targetSlug.startsWith(`${leafSlug}-`) || leafSlug.startsWith(`${targetSlug}-`);
+  });
+
+  return fuzzyLeaf?.id ?? null;
 }
 
 /**
@@ -205,6 +289,19 @@ export function useCategories() {
   }
 
   /**
+   * 按 URL 分类参数临时筛选题目
+   *
+   * 不写入 localStorage / 后端偏好，避免文档跳转改变用户长期选择。
+   */
+  function applyCategoryParam(value: CategoryQueryValue): boolean {
+    const leafId = findLeafIdByCategoryParam(allLeafNodes.value, value);
+    if (!leafId) return false;
+
+    selectedIds.value = [leafId];
+    return true;
+  }
+
+  /**
    * 初始化：加载分类树 + 游客偏好
    */
   async function init() {
@@ -244,10 +341,18 @@ export function useCategories() {
     init,
     applySelection,
     loadUserPreferences,
+    applyCategoryParam,
     clearSelection,
     removeById,
   };
 }
 
 // 导出工具函数供测试
-export { transformNode, transformGroups, collectLeafIds, findLabelById };
+export {
+  transformNode,
+  transformGroups,
+  collectLeafIds,
+  findLabelById,
+  createCategorySlug,
+  findLeafIdByCategoryParam,
+};

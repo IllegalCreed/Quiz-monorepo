@@ -21,6 +21,8 @@ import {
   transformGroups,
   collectLeafIds,
   findLabelById,
+  createCategorySlug,
+  findLeafIdByCategoryParam,
 } from "../useCategories";
 import { fetchCategoryGroups } from "@/api/categories";
 import { fetchPreferences, updatePreferences } from "@/api/user-profile";
@@ -50,6 +52,9 @@ const fakeRawGroups: RawCategoryGroup[] = [
         children: [
           { id: 11, name: "Vue", sort: 0, isDefault: false, children: [] },
           { id: 12, name: "React", sort: 1, isDefault: false, children: [] },
+          { id: 13, name: "Tailwind CSS", sort: 2, isDefault: false, children: [] },
+          { id: 14, name: "VitePress", sort: 3, isDefault: false, children: [] },
+          { id: 15, name: "@pinia/testing", sort: 4, isDefault: false, children: [] },
           { id: 99, name: "通识", sort: 9999, isDefault: true, children: [] },
         ],
       },
@@ -230,6 +235,50 @@ describe("useCategories — 数据转换", () => {
       expect(findLabelById([], 1)).toBeNull();
     });
   });
+
+  describe("createCategorySlug", () => {
+    it("将英文技术名转为稳定 slug", () => {
+      expect(createCategorySlug("Tailwind CSS")).toBe("tailwind-css");
+      expect(createCategorySlug("@pinia/testing")).toBe("pinia-testing");
+      expect(createCategorySlug("C++")).toBe("c-plus-plus");
+    });
+
+    it("保留中文分类名", () => {
+      expect(createCategorySlug("浏览器缓存机制")).toBe("浏览器缓存机制");
+    });
+  });
+
+  describe("findLeafIdByCategoryParam", () => {
+    const leaves = [
+      { id: 1, label: "Tailwind CSS" },
+      { id: 2, label: "VitePress" },
+      { id: 3, label: "@pinia/testing" },
+      { id: 4, label: "MUI" },
+      { id: 5, label: "微前端核心机制（沙箱 / 样式隔离 / 通信 / 依赖共享）" },
+    ];
+
+    it("按 slug 匹配叶子节点", () => {
+      expect(findLeafIdByCategoryParam(leaves, "tailwind-css")).toBe(1);
+      expect(findLeafIdByCategoryParam(leaves, "vitepress")).toBe(2);
+    });
+
+    it("兼容 compact slug、原始名称、数组参数和数字 ID", () => {
+      expect(findLeafIdByCategoryParam(leaves, "tailwindcss")).toBe(1);
+      expect(findLeafIdByCategoryParam(leaves, "@pinia/testing")).toBe(3);
+      expect(findLeafIdByCategoryParam(leaves, ["", "vitepress"])).toBe(2);
+      expect(findLeafIdByCategoryParam(leaves, "3")).toBe(3);
+    });
+
+    it("在精确匹配失败后支持保守的前缀模糊匹配", () => {
+      expect(findLeafIdByCategoryParam(leaves, "mui-material-ui")).toBe(4);
+      expect(findLeafIdByCategoryParam(leaves, "微前端核心机制")).toBe(5);
+    });
+
+    it("无有效匹配时返回 null", () => {
+      expect(findLeafIdByCategoryParam(leaves, null)).toBeNull();
+      expect(findLeafIdByCategoryParam(leaves, "unknown")).toBeNull();
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -346,6 +395,46 @@ describe("useCategories — 选中管理", () => {
 
       await applySelection([11], true);
 
+      expect(selectedIds.value).toEqual([11]);
+    });
+  });
+
+  describe("applyCategoryParam", () => {
+    it("按 URL 分类 slug 临时设置 selectedIds", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds, applyCategoryParam } = useCategories();
+
+      await init();
+      const applied = applyCategoryParam("tailwind-css");
+
+      expect(applied).toBe(true);
+      expect(selectedIds.value).toEqual([13]);
+      expect(mockUpdatePrefs).not.toHaveBeenCalled();
+      expect(localStorage.getItem("quiz-guest-categories")).toBeNull();
+    });
+
+    it("支持原始分类名和 Vue Router 数组参数", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds, applyCategoryParam } = useCategories();
+
+      await init();
+
+      expect(applyCategoryParam("@pinia/testing")).toBe(true);
+      expect(selectedIds.value).toEqual([15]);
+
+      expect(applyCategoryParam([null, "vitepress"])).toBe(true);
+      expect(selectedIds.value).toEqual([14]);
+    });
+
+    it("未匹配时不改变当前选择", async () => {
+      mockFetchGroups.mockResolvedValue(fakeRawGroups);
+      const { init, selectedIds, applyCategoryParam } = useCategories();
+      selectedIds.value = [11];
+
+      await init();
+      const applied = applyCategoryParam("not-found");
+
+      expect(applied).toBe(false);
       expect(selectedIds.value).toEqual([11]);
     });
   });
