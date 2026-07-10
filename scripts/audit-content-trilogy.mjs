@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { format } from "prettier";
 
 const quizRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -540,8 +541,15 @@ const registry = {
 };
 
 mkdirSync(outputRoot, { recursive: true });
-writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`);
-writeFileSync(reportPath, renderReport(registry));
+const formattedRegistry = await format(JSON.stringify(registry), {
+  parser: "json",
+});
+const formattedReport = await format(renderReport(registry), {
+  parser: "markdown",
+  proseWrap: "preserve",
+});
+writeFileSync(registryPath, formattedRegistry);
+writeFileSync(reportPath, formattedReport);
 
 console.log(
   [
