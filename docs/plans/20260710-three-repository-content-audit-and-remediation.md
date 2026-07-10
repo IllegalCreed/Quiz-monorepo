@@ -143,6 +143,17 @@
 
 批次记录见 `docs/audits/20260711-vitepress-governance-batch-6-security-utilities.md`。下一子批次处理 Decimal.js、Fuse.js、PapaParse；`web-advanced/js-extension` 完成后再切换到下一个 M2 领域。
 
+2026-07-11 完成批次 7：
+
+- 按精确数值、模糊检索与 CSV 数据管线主题补齐 decimal.js、Fuse.js、Papa Parse 的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 275 降至 263；`web-advanced/js-extension` 剩余 12 页。
+- 对照三个项目官方文档、当前发布包与源码，并在隔离目录安装 decimal.js 10.6.0、Fuse.js 7.4.2、Papa Parse 5.5.4、`@types/papaparse` 5.5.2 做元数据与运行时验证。
+- 修正 Decimal 随机数参数、整数除法别名和可审计随机边界；补齐 Fuse token search、官方 FuseWorker、basic 构建与安全高亮；修正 Papa 类型来源、ISO Date / null 转型、流式内存、重复表头和 CSV 公式注入边界。
+- 中央优先级由 `P0=1 / P1=256 / P2=67 / P3=3` 更新为 `P0=1 / P1=255 / P2=68 / P3=3`；Fuse.js 降为 P2，decimal.js 与 Papa Parse 因 Slidev 仍为 D 继续保持 P1。
+- VitePress 完整构建在 724.44 秒内成功；18 个 HTML 均生成，12 个路由在桌面与移动视口共 24 次检查均为首个 H2“速查”、8 条要点、0 根页面横向溢出、0 控制台错误。
+- 提交 `41cc305` 已推送并部署；三个线上代表页与既有 Prettier 幻灯片均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
+
+批次记录见 `docs/audits/20260711-vitepress-governance-batch-7-numeric-search-csv.md`。下一子批次处理 Immer、RxJS、type-fest，完成 `web-advanced/js-extension` 的 M2 速查治理。
+
 ## M3：Slidev 全量治理
 
 自动基线从以下维度给出信号：教学路径、示例质量、视觉表达、分步讲解、交互演示、讲稿和可读性。人工审查通过整套缩略图和关键页实际操作完成。
