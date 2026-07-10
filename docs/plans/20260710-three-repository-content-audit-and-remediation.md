@@ -1,6 +1,6 @@
 # 三仓库内容全量审计与治理计划
 
-> 状态：M0 已完成，M1 待开始
+> 状态：M0、M1 已完成，下一阶段 M2
 > 范围：Quiz 题库/API、IllegalCreedWebsite、SlideStack
 > 基线日期：2026-07-10
 
@@ -61,6 +61,14 @@
 - Three.js：真实 Canvas、相机、材质、光照和参数控制。
 
 样板通过 build、0 溢出、全页截图和实际交互检查后，才固化为后续治理参考。
+
+完成于 2026-07-10：
+
+- `typescript-slide`：23 页重构为 16 页，增加控制流窄化实验、分步代码、状态图与 TypeScript 7.0 迁移边界。
+- `json-slide`：21 页重构为 14 页，增加实时解析、语法错误定位、大整数精度反馈与协议决策图。
+- `threejs-slide`：18 页重构为 16 页，增加 Three.js r185 实景、材质与光照控制、真实渲染统计及资源释放路径。
+- 三包 build 成功，overflow 均为 0；桌面与移动视口、实际控件和 Three.js Canvas 像素均已验收。
+- 自动分数分别由 56、60、59 提升至 82、81、84，原有风险信号全部清零。详细记录见 `docs/audits/20260710-slidev-quality-pilot.md`。
 
 ## M2：VitePress 全量治理
 
