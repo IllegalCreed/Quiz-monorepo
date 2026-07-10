@@ -154,6 +154,17 @@
 
 批次记录见 `docs/audits/20260711-vitepress-governance-batch-7-numeric-search-csv.md`。下一子批次处理 Immer、RxJS、type-fest，完成 `web-advanced/js-extension` 的 M2 速查治理。
 
+2026-07-11 完成批次 8：
+
+- 按不可变状态、响应式数据流与类型工具主题补齐 Immer、RxJS、type-fest 的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 263 降至 251；`web-advanced/js-extension` 的速查缺口归零。
+- 对照三个项目官方文档、当前发布包、源码与声明，并在隔离目录安装 Immer 11.1.11、RxJS 7.8.2、type-fest 5.8.0、TypeScript 5.9.3 做运行时与 strict 类型验证。
+- 修正 Immer draft-only API、异步 draft、预冻结与性能口径；修正 RxJS 退订 / Promise / fetch 取消边界、ValueFrom 与弃用时间线；把 type-fest 更新到 5.x 工具链基线并澄清 Opaque、AsyncReturnType 与 Entries。
+- 中央优先级由 `P0=1 / P1=255 / P2=68 / P3=3` 更新为 `P0=1 / P1=254 / P2=69 / P3=3`；RxJS 降为 P2，Immer 与 type-fest 因 Slidev 仍为 D 继续保持 P1。
+- VitePress 最终完整构建在 684.47 秒内成功；本地桌面 / 移动抽检无横向溢出或控制台错误，18 个线上页面全部返回 HTTP 200。
+- 提交 `7eeea3d` 已推送并部署；本批未改动或部署 Slidev，未执行 Quiz 生产导入。
+
+批次记录见 `docs/audits/20260711-vitepress-governance-batch-8-state-stream-types.md`。下一子批次转入 `frontend-framework/document`，优先处理 docx、docxtemplater、mammoth。
+
 ## M3：Slidev 全量治理
 
 自动基线从以下维度给出信号：教学路径、示例质量、视觉表达、分步讲解、交互演示、讲稿和可读性。人工审查通过整套缩略图和关键页实际操作完成。
