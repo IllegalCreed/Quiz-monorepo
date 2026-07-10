@@ -64,7 +64,12 @@ pnpm docs:build
 - 正式同步使用 checksum 模式，实际传输 2174 个文件；未触碰 SlideStack。
 - date-fns、Day.js、Luxon 三个线上页面及 `/SlideStack/prettier-slide/` 均返回 HTTP 200，并包含预期内容。
 
-验收域名使用 `https://illegalscreed.cn`。`https://www.illegalscreed.cn` 当前证书不包含 `www` 主机名，curl 会报 SAN 不匹配；这是独立运维问题，不是本批内容部署引入。
+部署验收最初发现 `www.illegalscreed.cn` 会落到 `algo.illegalscreed.cn` 的默认 HTTPS 虚拟主机，导致证书 SAN 不匹配。该运维问题已于同日修复：
+
+- 扩展现有 `illegalscreed.cn` Let's Encrypt 证书，SAN 现同时包含裸域名与 `www`，有效期至 2026-10-08。
+- 为 `www:443` 增加专用 Nginx 虚拟主机；`www` 的 HTTP / HTTPS 请求均以 301 跳转到裸域名，并保留路径与查询参数。
+- Nginx 配置测试和 reload 成功，主站、Prettier 幻灯片、algo 与 Quiz 抽样均正常。
+- 根用户 crontab 每日执行 `certbot renew`，本次 `certbot renew --dry-run` 对两个域名的模拟续期成功。
 
 ## 下一批
 
