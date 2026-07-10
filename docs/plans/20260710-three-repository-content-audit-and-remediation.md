@@ -32,7 +32,7 @@
 | VitePress 技术节点        |                   327 |
 | 需速查技术内容页          |                  1712 |
 | 免速查非技术根页面        |                     4 |
-| 缺失 / 位置异常 / 空速查  |           323 / 0 / 0 |
+| 缺失 / 位置异常 / 空速查  |           311 / 0 / 0 |
 | 版本说明缺失 / 未给出基线 |               31 / 30 |
 | Slidev 套件               |                   327 |
 | Quiz 内容 JSON            |                   326 |
@@ -100,7 +100,17 @@
 - 审计器新增顶部版本说明门禁，当前发现 31 页缺版本说明块、30 页虽有说明但没有明确基线；中央登记表逐节点记录文件清单。
 - 完整 VitePress 构建成功；桌面端抽查三类页面，移动端 `390×844` 无横向溢出。
 
-批次记录见 `docs/audits/20260710-vitepress-governance-batch-2-http-clients.md`。下一子批次处理 date-fns、Day.js、Luxon 三个日期时间库。
+批次记录见 `docs/audits/20260710-vitepress-governance-batch-2-http-clients.md`。
+
+2026-07-10 完成批次 3：
+
+- 按日期时间主题补齐 date-fns、Day.js、Luxon 的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 323 降至 311；`web-advanced/js-extension` 剩余 60 页。
+- 对照 date-fns v3 / v4 发布记录、4.1.0 源码、Day.js 官方插件文档与 Luxon 3.7.2 API 复核事实，并做对应版本的本地运行验证。
+- 修正三处原有内容边界：date-fns 反向区间需 `{ assertPositive: true }` 才拒绝、Day.js `.utcOffset()` 属于核心、Luxon `Duration#toHuman()` 可生成人类可读单位列表。
+- VitePress 完整构建成功；桌面和移动视口抽查无横向溢出。
+- 提交 `59cf85c` 已推送并部署，三个内容页与既有 Prettier 幻灯片线上抽样均为 HTTP 200。
+
+批次记录见 `docs/audits/20260710-vitepress-governance-batch-3-date-libraries.md`。下一子批次继续处理 `web-advanced/js-extension`，每批限制为 3 个技术节点、约 12 页。
 
 ## M3：Slidev 全量治理
 

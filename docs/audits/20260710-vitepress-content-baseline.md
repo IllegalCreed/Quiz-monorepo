@@ -1,6 +1,6 @@
 # VitePress 内容全量审计报告
 
-> 生成时间：2026-07-10T03:03:45.129Z
+> 生成时间：2026-07-10T03:15:50.635Z
 > 审计仓库：`/Users/zhangxu/workspace/IllegalCreedWebsite`
 > 规则口径：技术内容页应在标题和版本说明后紧跟 `## 速查`；`index.md` 概览页及明确登记的根级非技术页面除外。带 `## 文档地址` 或 `## 幻灯片地址` 的技术节点首页应带 `## 测试题`。
 
@@ -12,8 +12,8 @@
 | index 概览页       |  341 |
 | 内容页（需速查）   | 1712 |
 | 非技术页（免速查） |    4 |
-| 速查合规           | 1389 |
-| 缺失速查           |  323 |
+| 速查合规           | 1401 |
+| 缺失速查           |  311 |
 | 速查位置不合规     |    0 |
 | 空速查             |    0 |
 | 版本说明合规       | 1651 |
@@ -42,7 +42,7 @@
 | ---------------------------------------------- | ------ | ---- | ---- | ---------- | ------ |
 | base/language                                  | 207    | 207  | 0    | 0          | 0      |
 | frontend-develop-tools/testing                 | 133    | 133  | 0    | 0          | 0      |
-| web-advanced/js-extension                      | 105    | 33   | 72   | 0          | 0      |
+| web-advanced/js-extension                      | 105    | 45   | 60   | 0          | 0      |
 | web-advanced/language                          | 98     | 98   | 0    | 0          | 0      |
 | base/network                                   | 88     | 88   | 0    | 0          | 0      |
 | architecture/micro-frontend                    | 56     | 56   | 0    | 0          | 0      |
@@ -340,14 +340,6 @@
 - `src/zh/web-advanced/js-extension/crypto-js/guide-line/base.md`
 - `src/zh/web-advanced/js-extension/crypto-js/guide-line/expert.md`
 - `src/zh/web-advanced/js-extension/crypto-js/reference.md`
-- `src/zh/web-advanced/js-extension/date-fns/guide-line/advanced.md`
-- `src/zh/web-advanced/js-extension/date-fns/guide-line/base.md`
-- `src/zh/web-advanced/js-extension/date-fns/guide-line/expert.md`
-- `src/zh/web-advanced/js-extension/date-fns/reference.md`
-- `src/zh/web-advanced/js-extension/dayjs/guide-line/advanced.md`
-- `src/zh/web-advanced/js-extension/dayjs/guide-line/base.md`
-- `src/zh/web-advanced/js-extension/dayjs/guide-line/expert.md`
-- `src/zh/web-advanced/js-extension/dayjs/reference.md`
 - `src/zh/web-advanced/js-extension/decimal-js/guide-line/advanced.md`
 - `src/zh/web-advanced/js-extension/decimal-js/guide-line/base.md`
 - `src/zh/web-advanced/js-extension/decimal-js/guide-line/expert.md`
@@ -372,10 +364,6 @@
 - `src/zh/web-advanced/js-extension/lodash-es/guide-line/base.md`
 - `src/zh/web-advanced/js-extension/lodash-es/guide-line/expert.md`
 - `src/zh/web-advanced/js-extension/lodash-es/reference.md`
-- `src/zh/web-advanced/js-extension/luxon/guide-line/advanced.md`
-- `src/zh/web-advanced/js-extension/luxon/guide-line/base.md`
-- `src/zh/web-advanced/js-extension/luxon/guide-line/expert.md`
-- `src/zh/web-advanced/js-extension/luxon/reference.md`
 - `src/zh/web-advanced/js-extension/nanoid/guide-line/advanced.md`
 - `src/zh/web-advanced/js-extension/nanoid/guide-line/base.md`
 - `src/zh/web-advanced/js-extension/nanoid/guide-line/expert.md`
