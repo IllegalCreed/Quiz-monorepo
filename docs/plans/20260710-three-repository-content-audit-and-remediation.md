@@ -32,7 +32,7 @@
 | VitePress 技术节点        |                   327 |
 | 需速查技术内容页          |                  1712 |
 | 免速查非技术根页面        |                     4 |
-| 缺失 / 位置异常 / 空速查  |           287 / 0 / 0 |
+| 缺失 / 位置异常 / 空速查  |           275 / 0 / 0 |
 | 版本说明缺失 / 未给出基线 |               31 / 27 |
 | Slidev 套件               |                   327 |
 | Quiz 内容 JSON            |                   326 |
@@ -131,6 +131,17 @@
 - 提交 `e447714` 已推送并部署；三个内容页与既有 Prettier 幻灯片线上抽样均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
 
 批次记录见 `docs/audits/20260710-vitepress-governance-batch-5-type-safety-libraries.md`。下一子批次继续处理 `web-advanced/js-extension` 剩余 9 个技术节点、36 页，每批限制为 3 个技术节点、约 12 页。
+
+2026-07-11 完成批次 6：
+
+- 按安全边界与标识生成主题补齐 CryptoJS、DOMPurify、Nano ID 的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 287 降至 275；`web-advanced/js-extension` 剩余 24 页。
+- 对照三个项目官方文档、当前发布包与源码，并在隔离目录安装 CryptoJS 4.2.0、DOMPurify 3.4.11、jsdom 29.1.1、Nano ID 5.1.16 做本地行为验证。
+- 修正 CryptoJS 原生随机源、Keccak / NIST SHA-3、KDF 与常量时间比较边界；补齐 DOMPurify 服务端 DOM、Trusted Types、持久 config 与 post-sanitize 风险；修正 Nano ID CommonJS、React key、碰撞与数据库兜底说法。
+- 中央优先级由 `P0=1 / P1=259 / P2=64 / P3=3` 更新为 `P0=1 / P1=256 / P2=67 / P3=3`；三个节点速查全部合规，从 P1 降为 P2。
+- 最终 VitePress 完整构建成功；12 个路由在桌面与移动视口共 24 次检查均为首个 H2“速查”、8 条要点、0 根页面横向溢出、0 控制台错误。
+- 提交 `396e49e` 已推送并部署；三个线上代表页与既有 Prettier 幻灯片均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
+
+批次记录见 `docs/audits/20260711-vitepress-governance-batch-6-security-utilities.md`。下一子批次处理 Decimal.js、Fuse.js、PapaParse；`web-advanced/js-extension` 完成后再切换到下一个 M2 领域。
 
 ## M3：Slidev 全量治理
 
