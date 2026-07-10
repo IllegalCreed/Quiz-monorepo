@@ -133,7 +133,9 @@ function assignContentPages(techPages, allPages) {
   const assignments = new Map(techPages.map((page) => [page.file, []]));
   const unassigned = [];
 
-  for (const page of allPages.filter((candidate) => !candidate.isIndex)) {
+  for (const page of allPages.filter(
+    (candidate) => candidate.quickCheckRequired,
+  )) {
     const owner = directories.find(({ directory }) =>
       page.file.startsWith(`${directory}/`),
     );
@@ -234,7 +236,7 @@ function renderReport(registry) {
 | --- | ---: |
 | VitePress 技术节点 | ${registry.summary.nodes} |
 | VitePress 内容页 | ${registry.website.totals.contentPages} |
-| 缺失 / 位置异常速查 | ${registry.website.totals.missingQuickCheck} / ${registry.website.totals.misplacedQuickCheck} |
+| 免速查 / 缺失 / 位置异常 / 空速查 | ${registry.website.totals.excludedQuickCheck} / ${registry.website.totals.missingQuickCheck} / ${registry.website.totals.misplacedQuickCheck} / ${registry.website.totals.emptyQuickCheck} |
 | Slidev 套件 / 页面 | ${registry.slidev.totals.decks} / ${registry.slidev.totals.slides} |
 | VitePress 已展示幻灯片链接 | ${registry.website.totals.slideLinks} |
 | 漏链但可发现 Slidev 包 | ${missingSlideLinks.length} |
@@ -250,7 +252,7 @@ function renderReport(registry) {
 | --- | ---: |
 ${priorityRows}
 
-优先级含义：P0 为映射或本地结构错误；P1 为速查缺失或 Slidev D；P2 为速查位置异常、Slidev C 或首页漏链；P3 为当前自动规则未发现阻断项。
+优先级含义：P0 为映射或本地结构错误；P1 为速查缺失/空速查或 Slidev D；P2 为速查位置异常、Slidev C 或首页漏链；P3 为当前自动规则未发现阻断项。
 
 ## Slidev 初步等级
 
@@ -381,11 +383,16 @@ const nodes = techPages.map((page) => {
     misplaced: contentPages.filter(
       (item) => item.quickCheckStatus === "misplaced",
     ).length,
+    empty: contentPages.filter((item) => item.quickCheckStatus === "empty")
+      .length,
     missingFiles: contentPages
       .filter((item) => item.quickCheckStatus === "missing")
       .map((item) => item.file),
     misplacedFiles: contentPages
       .filter((item) => item.quickCheckStatus === "misplaced")
+      .map((item) => item.file),
+    emptyFiles: contentPages
+      .filter((item) => item.quickCheckStatus === "empty")
       .map((item) => item.file),
   };
   const quizErrorCount = quizFiles.reduce(
@@ -399,6 +406,7 @@ const nodes = techPages.map((page) => {
   const issues = [];
   if (quickCheck.missing > 0) issues.push("vitepress-quick-check-missing");
   if (quickCheck.misplaced > 0) issues.push("vitepress-quick-check-misplaced");
+  if (quickCheck.empty > 0) issues.push("vitepress-quick-check-empty");
   if (!linkedPackage && slidePackage)
     issues.push("vitepress-slide-link-missing");
   if (!slideAudit) issues.push("slide-package-missing");
@@ -422,6 +430,7 @@ const nodes = techPages.map((page) => {
     priority = "P0";
   } else if (
     issues.includes("vitepress-quick-check-missing") ||
+    issues.includes("vitepress-quick-check-empty") ||
     issues.includes("slide-quality-d")
   ) {
     priority = "P1";
