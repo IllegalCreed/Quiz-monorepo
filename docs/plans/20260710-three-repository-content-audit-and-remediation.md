@@ -32,7 +32,7 @@
 | VitePress 技术节点        |                   327 |
 | 需速查技术内容页          |                  1712 |
 | 免速查非技术根页面        |                     4 |
-| 缺失 / 位置异常 / 空速查  |           299 / 0 / 0 |
+| 缺失 / 位置异常 / 空速查  |           287 / 0 / 0 |
 | 版本说明缺失 / 未给出基线 |               31 / 27 |
 | Slidev 套件               |                   327 |
 | Quiz 内容 JSON            |                   326 |
@@ -121,6 +121,16 @@
 - 提交 `d002b87` 已推送并部署；三个线上抽样页面均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
 
 批次记录见 `docs/audits/20260710-vitepress-governance-batch-4-utility-libraries.md`。下一子批次继续处理 `web-advanced/js-extension` 剩余 12 个技术节点、48 页，每批限制为 3 个技术节点、约 12 页。
+
+2026-07-10 完成批次 5：
+
+- 按类型安全工具主题补齐 Zod、Valibot、ts-pattern 的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 299 降至 287；`web-advanced/js-extension` 剩余 36 页。
+- 对照三个项目的官方完整文档导航，并在隔离目录安装 Zod 4.4.3、Valibot 1.4.2、ts-pattern 5.9.0 做发布包和运行时验证。
+- 修正 Zod 转换 / 校验顺序与坏相对链接，补充 codec；修正 Valibot `forward` 分类、parser 语义、版本与性能口径；修正 ts-pattern `isMatching` 对未知输入的能力边界并补充 `.narrow()`。
+- VitePress 完整构建成功；12 个路由在桌面与移动视口共 24 次检查均为 HTTP 200、无横向溢出或页面异常。
+- 提交 `e447714` 已推送并部署；三个内容页与既有 Prettier 幻灯片线上抽样均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
+
+批次记录见 `docs/audits/20260710-vitepress-governance-batch-5-type-safety-libraries.md`。下一子批次继续处理 `web-advanced/js-extension` 剩余 9 个技术节点、36 页，每批限制为 3 个技术节点、约 12 页。
 
 ## M3：Slidev 全量治理
 
