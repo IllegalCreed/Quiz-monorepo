@@ -237,6 +237,7 @@ function renderReport(registry) {
 | VitePress 技术节点 | ${registry.summary.nodes} |
 | VitePress 内容页 | ${registry.website.totals.contentPages} |
 | 免速查 / 缺失 / 位置异常 / 空速查 | ${registry.website.totals.excludedQuickCheck} / ${registry.website.totals.missingQuickCheck} / ${registry.website.totals.misplacedQuickCheck} / ${registry.website.totals.emptyQuickCheck} |
+| 版本说明缺失 / 未给出基线 | ${registry.website.totals.missingVersion} / ${registry.website.totals.unspecifiedVersion} |
 | Slidev 套件 / 页面 | ${registry.slidev.totals.decks} / ${registry.slidev.totals.slides} |
 | VitePress 已展示幻灯片链接 | ${registry.website.totals.slideLinks} |
 | 漏链但可发现 Slidev 包 | ${missingSlideLinks.length} |
@@ -252,7 +253,7 @@ function renderReport(registry) {
 | --- | ---: |
 ${priorityRows}
 
-优先级含义：P0 为映射或本地结构错误；P1 为速查缺失/空速查或 Slidev D；P2 为速查位置异常、Slidev C 或首页漏链；P3 为当前自动规则未发现阻断项。
+优先级含义：P0 为映射或本地结构错误；P1 为速查缺失/空速查或 Slidev D；P2 为速查位置异常、版本基线问题、Slidev C 或首页漏链；P3 为当前自动规则未发现阻断项。
 
 ## Slidev 初步等级
 
@@ -395,6 +396,21 @@ const nodes = techPages.map((page) => {
       .filter((item) => item.quickCheckStatus === "empty")
       .map((item) => item.file),
   };
+  const version = {
+    total: contentPages.length,
+    ok: contentPages.filter((item) => item.version.status === "ok").length,
+    missing: contentPages.filter((item) => item.version.status === "missing")
+      .length,
+    unspecified: contentPages.filter(
+      (item) => item.version.status === "unspecified",
+    ).length,
+    missingFiles: contentPages
+      .filter((item) => item.version.status === "missing")
+      .map((item) => item.file),
+    unspecifiedFiles: contentPages
+      .filter((item) => item.version.status === "unspecified")
+      .map((item) => item.file),
+  };
   const quizErrorCount = quizFiles.reduce(
     (total, file) => total + file.errorCount,
     0,
@@ -407,6 +423,8 @@ const nodes = techPages.map((page) => {
   if (quickCheck.missing > 0) issues.push("vitepress-quick-check-missing");
   if (quickCheck.misplaced > 0) issues.push("vitepress-quick-check-misplaced");
   if (quickCheck.empty > 0) issues.push("vitepress-quick-check-empty");
+  if (version.missing > 0) issues.push("vitepress-version-missing");
+  if (version.unspecified > 0) issues.push("vitepress-version-unspecified");
   if (!linkedPackage && slidePackage)
     issues.push("vitepress-slide-link-missing");
   if (!slideAudit) issues.push("slide-package-missing");
@@ -450,6 +468,7 @@ const nodes = techPages.map((page) => {
       hasSlideSection: page.hasSlideLink,
       hasQuizSection: page.hasQuizLink,
       quickCheck,
+      version,
     },
     slide: {
       linkedPackage,
