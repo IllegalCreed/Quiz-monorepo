@@ -32,8 +32,8 @@
 | VitePress 技术节点        |                   327 |
 | 需速查技术内容页          |                  1712 |
 | 免速查非技术根页面        |                     4 |
-| 缺失 / 位置异常 / 空速查  |           311 / 0 / 0 |
-| 版本说明缺失 / 未给出基线 |               31 / 30 |
+| 缺失 / 位置异常 / 空速查  |           299 / 0 / 0 |
+| 版本说明缺失 / 未给出基线 |               31 / 27 |
 | Slidev 套件               |                   327 |
 | Quiz 内容 JSON            |                   326 |
 | Quiz 本地技术方向叶子     | 407（另有难度叶子 5） |
@@ -111,6 +111,16 @@
 - 提交 `59cf85c` 已推送并部署，三个内容页与既有 Prettier 幻灯片线上抽样均为 HTTP 200。
 
 批次记录见 `docs/audits/20260710-vitepress-governance-batch-3-date-libraries.md`。下一子批次继续处理 `web-advanced/js-extension`，每批限制为 3 个技术节点、约 12 页。
+
+2026-07-10 完成批次 4：
+
+- 按工具库主题补齐 Lodash-es、es-toolkit、常用工具库的 `base`、`advanced`、`expert`、`reference` 共 12 页速查，缺失由 311 降至 299；`web-advanced/js-extension` 剩余 48 页。
+- 对照 Lodash、es-toolkit、mitt、qs、JSZip、FileSaver、node-qrcode、chroma.js 与 Marked 官方文档，并在隔离目录安装精确版本做本地行为验证。
+- 修正 es-toolkit compat wrapper、`withTimeout` / AbortSignal、并发原语与 memoize 边界，以及 mitt 事件快照、qs 数组阈值和逗号往返、JSZip 安全边界、二维码环境差异、chroma 分位数 API、Marked 18 renderer 签名等旧说法。
+- 版本说明未给出明确基线由 30 降至 27；VitePress 完整构建成功，12 个路由在桌面与移动视口共 24 次检查无横向溢出或页面异常。
+- 提交 `d002b87` 已推送并部署；三个线上抽样页面均为 HTTP 200，本批未改动或部署 Slidev，未执行 Quiz 生产导入。
+
+批次记录见 `docs/audits/20260710-vitepress-governance-batch-4-utility-libraries.md`。下一子批次继续处理 `web-advanced/js-extension` 剩余 12 个技术节点、48 页，每批限制为 3 个技术节点、约 12 页。
 
 ## M3：Slidev 全量治理
 
