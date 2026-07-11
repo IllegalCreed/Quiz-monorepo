@@ -1,0 +1,1738 @@
+[
+  {
+    "stem": "Service Worker 与 PWA：它最准确的技术定位是下列哪一项？",
+    "explanation": "MDN 一句话定义——Service Worker 本质上是坐在 Web 应用、浏览器与网络之间的「可编程网络代理」。它是注册在某个源上、跑在独立线程、无 DOM、事件驱动、可在页面关闭后被唤醒的一段脚本，通过 `fetch` 事件拦截作用域内的所有请求，用 `respondWith` 决定走网络、走缓存还是就地合成响应。正因为能拦网络又能被唤醒，它才承载了离线、推送、后台同步这些页面脚本做不到的能力。",
+    "tags": ["service-worker", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器为某个源注册的「可编程网络代理」，以 `fetch` 事件拦截作用域内请求",
+        "isCorrect": true,
+        "description": "正是 MDN 官方定位——介于应用与网络之间的代理层"
+      },
+      {
+        "text": "一个必须引入运行时库的前端框架",
+        "isCorrect": false,
+        "description": "SW 是浏览器标准能力，不是框架、无运行时库"
+      },
+      {
+        "text": "只能加速首屏渲染的编译期优化工具",
+        "isCorrect": false,
+        "description": "它是运行时网络代理，与编译优化无关"
+      },
+      {
+        "text": "运行在主线程、可直接操作 DOM 的后台脚本",
+        "isCorrect": false,
+        "description": "SW 跑在独立线程且无 DOM，碰不到 `window`/`document`"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：相比普通 Web Worker，Service Worker 独有的「核心超能力」是什么？",
+    "explanation": "普通 Web Worker 与 Service Worker 都跑在独立线程、都无 DOM，但 Service Worker 独有 `fetch` 事件 + `event.respondWith()`——能拦截并改写作用域内的网络请求，成为页面与网络之间的可编程中间层。此外它还能脱离页面存活：页面全关后仍可被 `push`/`sync` 事件唤醒。离线、请求改写、API mock 都从 `fetch` 拦截长出来。",
+    "tags": ["service-worker", "初级", "worker-vs-sw"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "能创建 DOM 节点并直接渲染界面",
+        "isCorrect": false,
+        "description": "两者都无 DOM，SW 更碰不到 `document`"
+      },
+      {
+        "text": "能同步阻塞主线程以保证顺序",
+        "isCorrect": false,
+        "description": "SW 全异步，禁用同步 XHR 与同步存储"
+      },
+      {
+        "text": "用 `fetch` 事件 + `respondWith` 拦截并改写网络请求",
+        "isCorrect": true,
+        "description": "这正是 SW 区别于 Web Worker 的核心，是网络代理的落点"
+      },
+      {
+        "text": "能无限期常驻内存不被浏览器终止",
+        "isCorrect": false,
+        "description": "恰相反，SW 空闲会被终止，靠事件重新唤醒"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 Service Worker 的运行特征，下列描述正确的是？",
+    "explanation": "SW 跑在与页面分离的 worker 线程，碰不到 `window`/`document`，不阻塞 UI；它事件驱动，空闲时会被浏览器终止，`fetch`/`push`/`sync` 等事件到来时重新启动，不是常驻进程；它能脱离页面存活，一个 SW 可同时控制多个标签页，页面全关后仍可被唤醒执行后台任务；它强异步，禁用同步 XHR 与同步存储，动态 `import()` 被禁而静态 `import` 允许。",
+    "tags": ["service-worker", "入门", "sw-traits"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "常驻主线程、随页面关闭而销毁",
+        "isCorrect": false,
+        "description": "SW 在独立线程，且能脱离页面存活被唤醒"
+      },
+      {
+        "text": "独立线程、无 DOM、事件驱动可被唤醒、能脱离页面存活",
+        "isCorrect": true,
+        "description": "四条特征都对，正是 SW 的运行模型"
+      },
+      {
+        "text": "可同步读写 `localStorage` 与 `document`",
+        "isCorrect": false,
+        "description": "SW 无 DOM 且禁用同步存储"
+      },
+      {
+        "text": "一旦注册就永久占用一个后台进程",
+        "isCorrect": false,
+        "description": "空闲会被终止，靠事件重启，非常驻"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：在页面里注册 Service Worker 的标准入口与写法是？",
+    "explanation": "注册发生在页面脚本里（不是 `sw.js` 里），入口是 `navigator.serviceWorker.register('/sw.js', { scope: '/' })`，返回一个 Promise。实践上先用 `if ('serviceWorker' in navigator)` 做特性探测让老浏览器优雅降级，并常放在 `window` 的 `load` 事件后注册，避免与首屏关键资源抢带宽。",
+    "tags": ["service-worker", "入门", "register"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "在 `sw.js` 顶层调用 `self.register()` 自注册",
+        "isCorrect": false,
+        "description": "注册在页面侧发起，不是 SW 脚本自注册"
+      },
+      {
+        "text": "用 `<script type='serviceworker'>` 标签声明",
+        "isCorrect": false,
+        "description": "不存在这种标签，注册走 JS API"
+      },
+      {
+        "text": "调用 `document.registerServiceWorker()`",
+        "isCorrect": false,
+        "description": "无此 API，入口是 `navigator.serviceWorker`"
+      },
+      {
+        "text": "页面侧 `navigator.serviceWorker.register('/sw.js', { scope })`，配特性探测",
+        "isCorrect": true,
+        "description": "正是标准入口，返回 Promise，建议 load 后注册"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于作用域 `scope`，下列说法正确的是？",
+    "explanation": "默认作用域等于 SW 脚本所在目录——`/sw.js` 默认 scope 为 `/`（控制整站），`/js/sw.js` 默认只能控制 `/js/` 下的页面。所以想控制整站就把 SW 脚本放在根目录。scope 不能宽于脚本路径，除非服务端返回该脚本时带 `Service-Worker-Allowed` 头放宽。",
+    "tags": ["service-worker", "初级", "scope"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "scope 默认等于站点根目录，与脚本位置无关",
+        "isCorrect": false,
+        "description": "默认等于脚本所在目录，不是恒为根"
+      },
+      {
+        "text": "scope 可任意设得比脚本路径更宽",
+        "isCorrect": false,
+        "description": "默认不能宽于脚本路径，需 `Service-Worker-Allowed` 头"
+      },
+      {
+        "text": "默认 scope = 脚本所在目录，想控制整站就把 `sw.js` 放根目录",
+        "isCorrect": true,
+        "description": "正确，`/sw.js` 默认控整站"
+      },
+      {
+        "text": "scope 只能是单个页面 URL，不能是目录",
+        "isCorrect": false,
+        "description": "scope 是路径前缀，覆盖其下所有页面"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：想让 `/js/sw.js` 控制整站根 `/`，正确做法是？",
+    "explanation": "scope 不能宽于脚本路径是硬规则：`/js/sw.js` 默认只能控制 `/js/`。要让它控制 `/`，服务端返回该脚本时必须带响应头 `Service-Worker-Allowed: /`，否则 `register({ scope: '/' })` 会抛错。这也是常见注册失败原因之一。",
+    "tags": ["service-worker", "中级", "scope-limit"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "服务端返回 `sw.js` 时带 `Service-Worker-Allowed: /` 响应头",
+        "isCorrect": true,
+        "description": "正确，用该头放宽 scope 上限"
+      },
+      {
+        "text": "在 `register` 里传 `{ scope: '/', force: true }`",
+        "isCorrect": false,
+        "description": "无 `force` 选项，放宽靠响应头"
+      },
+      {
+        "text": "把 `<link rel='serviceworker'>` 的 href 改成 `/`",
+        "isCorrect": false,
+        "description": "不存在此机制，注册走 JS + 响应头"
+      },
+      {
+        "text": "给页面加 `<meta name='sw-scope' content='/'>`",
+        "isCorrect": false,
+        "description": "无此 meta，scope 由脚本路径与响应头决定"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：对同一作用域重复调用 `register()`、以及注册成功后的即时效果，正确的是？",
+    "explanation": "一个 scope 只能有一个 SW——对同一作用域重复 `register()` 是「幂等更新」（触发一次更新检查），不会并存两个 SW。而且注册成功不等于立刻生效：`register()` 不会控制当前已打开的页面，文档要在 SW 激活后重新加载才被接管，或用 `clients.claim()` 立即接管。",
+    "tags": ["service-worker", "中级", "single-sw"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次 `register()` 都新建一个并存的 SW",
+        "isCorrect": false,
+        "description": "一个 scope 只有一个 SW，重复注册是幂等更新"
+      },
+      {
+        "text": "注册成功后当前页面立即被新 SW 接管",
+        "isCorrect": false,
+        "description": "默认不接管已打开页，需重载或 `clients.claim()`"
+      },
+      {
+        "text": "重复注册会抛出「已存在」错误",
+        "isCorrect": false,
+        "description": "幂等更新不会报错，只触发更新检查"
+      },
+      {
+        "text": "重复注册幂等更新，且当前页默认要重载后才被接管",
+        "isCorrect": true,
+        "description": "两点都对：一个 scope 一个 SW，注册不立即控页"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：下列哪种情况会导致 `register()` 注册失败？",
+    "explanation": "常见注册失败原因包括：页面不是 HTTPS 且不是 `localhost`（非安全上下文）；SW 脚本与页面不同源或路径请求不到；请求的 scope 宽于脚本路径且没有 `Service-Worker-Allowed` 头（scope 越权）；用户禁用了 Cookie/存储或用隐私窗口。把 SW 脚本正确同源部署在 HTTPS 下、scope 不越权，才能注册成功。",
+    "tags": ["service-worker", "入门", "register-failure"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SW 脚本里注册了 `fetch` 事件监听器",
+        "isCorrect": false,
+        "description": "注册 `fetch` 是正常用法，不会致注册失败"
+      },
+      {
+        "text": "页面走 `http://`（非 localhost）等非安全上下文",
+        "isCorrect": true,
+        "description": "正确，SW 强制安全上下文，非 HTTPS 会失败"
+      },
+      {
+        "text": "`sw.js` 放在站点根目录",
+        "isCorrect": false,
+        "description": "放根目录是推荐做法，能控整站"
+      },
+      {
+        "text": "页面用了 `window.addEventListener('load')` 延迟注册",
+        "isCorrect": false,
+        "description": "load 后注册是最佳实践，不影响成功"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 Service Worker 的安全上下文要求，正确的是？",
+    "explanation": "规范强制 SW 只能在安全上下文中注册和运行——生产环境必须整站 HTTPS，无 HTTPS 时 `navigator.serviceWorker` 存在但 `register()` 会失败。`http://localhost` 与 `127.0.0.1` 被视为安全上下文，本地开发不用配证书。Firefox 还允许在 DevTools 打开时临时豁免，仅供调试。这也是可安装 PWA 的硬门槛之一。",
+    "tags": ["service-worker", "入门", "https"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SW 在任意 `http://` 页面都能正常注册",
+        "isCorrect": false,
+        "description": "非 HTTPS 且非 localhost 会注册失败"
+      },
+      {
+        "text": "必须 HTTPS，但 `localhost`/`127.0.0.1` 例外用于本地开发",
+        "isCorrect": true,
+        "description": "正确，安全上下文强制，本地回环豁免"
+      },
+      {
+        "text": "只要加了 manifest 就能豁免 HTTPS 要求",
+        "isCorrect": false,
+        "description": "manifest 与 HTTPS 无关，安全上下文不可豁免"
+      },
+      {
+        "text": "局域网 IP（如 192.168.x.x）也算安全上下文",
+        "isCorrect": false,
+        "description": "仅 localhost/127.0.0.1 例外，局域网 IP 不算"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：本站把「SW 缓存策略与 Cache API 用法」放在哪里，与本叶如何分工？",
+    "explanation": "本站关于 SW 缓存分两处：缓存策略（cache-first / network-first / stale-while-revalidate）与 Cache API（`caches`/`Cache`、`clone()`、opaque 响应、版本化清理）的用法在浏览器章；本叶只讲 SW 的机制（生命周期、fetch 拦截、离线、推送、同步、安装），在 fetch 拦截处点一句并链接过去、不重复展开。一句话记住：用什么缓存策略在浏览器章，SW 这套机器怎么转在本叶。",
+    "tags": ["service-worker", "入门", "cache-division"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "缓存策略与 SW 机制都只在本叶讲",
+        "isCorrect": false,
+        "description": "缓存策略的用法在浏览器章，本叶只讲机制"
+      },
+      {
+        "text": "Cache API 用法在本叶、生命周期在浏览器章",
+        "isCorrect": false,
+        "description": "恰好反了，机制在本叶、缓存用法在浏览器章"
+      },
+      {
+        "text": "两处内容完全重复、随便看一处即可",
+        "isCorrect": false,
+        "description": "两处刻意不重复，各管一段"
+      },
+      {
+        "text": "缓存策略/Cache API 用法在浏览器章，本叶只讲 SW 机制并在拦截处链接",
+        "isCorrect": true,
+        "description": "正是本站分工，避免重复"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：一个「可安装 + 能离线 + 可推送」的 PWA，由哪「三件套」构成？",
+    "explanation": "PWA 不是某个单一 API，而是一组能力的组合：Service Worker（离线缓存、请求拦截、后台推送/同步）+ Web App Manifest（应用身份、安装、独立窗口外观）+ HTTPS（安全上下文前提，SW 与安装都要求）。三者互相独立又缺一不可——只有 SW 没 manifest 只是个更快的网站，只有 manifest 没 SW 装完断网就白屏。",
+    "tags": ["service-worker", "入门", "pwa-trio"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Service Worker + Web App Manifest + HTTPS",
+        "isCorrect": true,
+        "description": "正是 PWA 三件套：离线/身份/安全上下文"
+      },
+      {
+        "text": "React + Webpack + CDN",
+        "isCorrect": false,
+        "description": "这是框架与工程工具，与 PWA 能力无关"
+      },
+      {
+        "text": "WebSocket + IndexedDB + Cookie",
+        "isCorrect": false,
+        "description": "都是存储/通信 API，非 PWA 三件套"
+      },
+      {
+        "text": "HTTP/2 + Gzip + Service Worker",
+        "isCorrect": false,
+        "description": "前两者是传输优化，PWA 三件套是 SW+Manifest+HTTPS"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Service Worker 从注册到作废的生命周期状态机，顺序正确的是？",
+    "explanation": "一个 SW 走单向状态机：download（浏览器抓取脚本）→ install（触发 `install` 事件）→（waiting，有旧 SW 控制页面时排队）→ activate（触发 `activate` 事件、开始接管）→ redundant（被替换或安装失败作废）。规范用三个槽位记录当前 SW：`registration.installing` / `.waiting` / `.active`，同一时刻各最多一个。",
+    "tags": ["service-worker", "初级", "lifecycle-states"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "activate → install → waiting → download",
+        "isCorrect": false,
+        "description": "顺序颠倒，download/install 在最前"
+      },
+      {
+        "text": "install → activate → download → waiting",
+        "isCorrect": false,
+        "description": "download 应在最先，waiting 在 install 之后"
+      },
+      {
+        "text": "download → install →（waiting）→ activate → redundant",
+        "isCorrect": true,
+        "description": "正是单向状态机顺序"
+      },
+      {
+        "text": "waiting → download → redundant → activate",
+        "isCorrect": false,
+        "description": "起点是 download，redundant 是终态"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：在 `install` 事件里预缓存 App Shell，标准写法用哪个方法把异步工作圈进安装生命周期？",
+    "explanation": "`install` 事件在 SW 首次注册或检测到更新后触发一次，是预缓存离线资源的标准场所。关键是用 `event.waitUntil(promise)` 把异步预缓存圈进安装生命周期——promise 不 resolve 就不算装成功；若某资源 404 让 `cache.addAll` 整批失败，本次 install 失败、SW 变 redundant，下次注册可重试。（怎么存、存什么策略在浏览器章。）",
+    "tags": ["service-worker", "初级", "install-precache"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`event.preventDefault()` 阻止默认安装",
+        "isCorrect": false,
+        "description": "install 无需 preventDefault，延长寿命用 waitUntil"
+      },
+      {
+        "text": "在 `setTimeout` 里做预缓存",
+        "isCorrect": false,
+        "description": "定时器不延长事件寿命，异步须包进 waitUntil"
+      },
+      {
+        "text": "`event.respondWith(cache)`",
+        "isCorrect": false,
+        "description": "respondWith 是 fetch 事件的方法，不用于 install"
+      },
+      {
+        "text": "`event.waitUntil(caches.open(...).then(c => c.addAll(...)))`",
+        "isCorrect": true,
+        "description": "正确，waitUntil 延长 install 直到预缓存完成"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 `event.waitUntil(promise)` 的语义，下列正确的是？",
+    "explanation": "MDN 原文——一旦在 `install`/`activate` 上用 promise 调了 `waitUntil()`，`fetch`/`push` 等功能事件会等这个 promise resolve 才派发，保证资源没缓存好之前不开始服务。它延长事件寿命：promise 完成前 SW 不进入下一状态、也不被终止。若 install 的 waitUntil promise reject，本次 install 失败、SW 作废，下次可重试。",
+    "tags": ["service-worker", "中级", "wait-until"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它让 SW 立即跳过 waiting 进入 activate",
+        "isCorrect": false,
+        "description": "那是 `skipWaiting()`，waitUntil 只延长事件寿命"
+      },
+      {
+        "text": "延长事件寿命，promise 未决前不进入下一状态、功能事件等待它",
+        "isCorrect": true,
+        "description": "正是 waitUntil 语义，保证预缓存完成前不服务"
+      },
+      {
+        "text": "它只是打印一条日志，无实际生命周期作用",
+        "isCorrect": false,
+        "description": "它实质延长 install/activate 生命周期"
+      },
+      {
+        "text": "promise reject 也照样算安装成功",
+        "isCorrect": false,
+        "description": "reject 则 install 失败、SW 变 redundant"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：你改了 `sw.js` 并刷新了页面，用户拿到的却仍是旧版。最可能的原因是？",
+    "explanation": "这是 SW 生命周期最反直觉的坑。当已有旧 SW 在控制页面时，新装好的 SW 会进入 waiting 排队，默认要等所有受旧版本控制的标签页全部关闭才激活。而普通刷新（Ctrl/Cmd+R）不算关闭标签页——刷新时旧页卸载、新页加载，但那个标签页从未真正关闭，旧 SW 的控制权连续不断。要生效需关掉所有相关标签重开，或显式 `skipWaiting()`，开发时用 DevTools 的 Update on reload。",
+    "tags": ["service-worker", "中级", "waiting-trap"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器缓存了页面 HTML，与 SW 无关",
+        "isCorrect": false,
+        "description": "根因是新 SW 在 waiting，普通刷新不换版"
+      },
+      {
+        "text": "`register()` 失败了所以没更新",
+        "isCorrect": false,
+        "description": "更常见是更新成功但新 SW 在 waiting 排队"
+      },
+      {
+        "text": "新 SW 进入 waiting，普通刷新不算关标签、旧 SW 仍控制页面",
+        "isCorrect": true,
+        "description": "正解，需关所有标签重开或 skipWaiting"
+      },
+      {
+        "text": "SW 脚本一字节没变所以没触发更新",
+        "isCorrect": false,
+        "description": "若已改脚本则会触发更新，但新 SW 卡在 waiting"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`self.skipWaiting()` 的作用是什么？",
+    "explanation": "在 `install` 里调 `self.skipWaiting()`，让新 SW 不排队、装完直接进入 activate，绕过等所有旧标签页关闭。但它只解决新 SW 立即激活，没解决立即控制已打开的页面——那是 `clients.claim()` 的事。两者常配对使用。",
+    "tags": ["service-worker", "初级", "skip-waiting"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "让新 SW 跳过 waiting、装完立即进入 activate",
+        "isCorrect": true,
+        "description": "正确，绕过等旧标签关闭；接管现页还需 claim"
+      },
+      {
+        "text": "立即接管所有已打开的页面",
+        "isCorrect": false,
+        "description": "那是 `clients.claim()`，skipWaiting 只负责激活"
+      },
+      {
+        "text": "阻止 SW 更新、锁定当前版本",
+        "isCorrect": false,
+        "description": "恰相反，它加速新版本上位"
+      },
+      {
+        "text": "删除所有旧版本缓存",
+        "isCorrect": false,
+        "description": "收尸旧缓存在 activate 里手动做，与 skipWaiting 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：对有复杂运行时状态的应用，为什么常不自动 `skipWaiting`，而改用「提示用户刷新」模式？",
+    "explanation": "`skipWaiting` 会让页面在运行到一半时被换成新 SW，若新旧 SW 的缓存版本、消息协议不兼容，正在打开的页面可能拿到半新半旧的响应而出错。更稳的做法：探测到 waiting 后弹提示，用户点刷新时通过 `postMessage` 通知 SW 执行 `skipWaiting()`，再在 `controllerchange` 里 `location.reload()` 一次性切到新版——把何时换版本交给用户。纯静态无状态站点则可 skipWaiting + claim 一把梭。",
+    "tags": ["service-worker", "高级", "skip-waiting-cost"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自动 skipWaiting 可能让页面中途被换新 SW，缓存/协议不兼容时出错",
+        "isCorrect": true,
+        "description": "正解，故让用户点刷新再切换更稳"
+      },
+      {
+        "text": "skipWaiting 会永久禁用缓存",
+        "isCorrect": false,
+        "description": "它不禁用缓存，风险在中途换版本"
+      },
+      {
+        "text": "skipWaiting 在生产环境被浏览器禁止",
+        "isCorrect": false,
+        "description": "并未禁止，只是有中途换版风险"
+      },
+      {
+        "text": "不 skipWaiting 就无法更新 SW",
+        "isCorrect": false,
+        "description": "不 skipWaiting 也能更新，只是等标签全关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`self.clients.claim()` 解决的是什么问题？",
+    "explanation": "默认行为（MDN 原话）：激活的 SW 在下次导航前不会控制注册它的那个页面——用户首次访问时 SW 完成 install+activate，但当前页面本次仍没被控制（`controller` 为 `null`），得等下次刷新/导航。在 `activate` 里 `event.waitUntil(self.clients.claim())` 打破这个默认，让刚激活的 SW 立即接管当前所有在其作用域内、尚无 controller 的页面，实现首访即生效。常与 `skipWaiting` 配对。",
+    "tags": ["service-worker", "中级", "clients-claim"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跳过 waiting 阶段直接激活",
+        "isCorrect": false,
+        "description": "那是 `skipWaiting()`，claim 负责接管现页"
+      },
+      {
+        "text": "逐字节比对触发 SW 更新",
+        "isCorrect": false,
+        "description": "更新靠字节比对机制，与 claim 无关"
+      },
+      {
+        "text": "删除受控页面的所有缓存",
+        "isCorrect": false,
+        "description": "claim 是接管页面，不删缓存"
+      },
+      {
+        "text": "让刚激活的 SW 立即接管当前已打开、尚无 controller 的页面",
+        "isCorrect": true,
+        "description": "正确，实现首访即被 SW 控制"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：用户第一次访问你的站点、SW 顺利 install+activate 后，本次页面为何往往还走不到缓存？",
+    "explanation": "MDN 明确：默认新 SW 在下次导航前不会控制注册它的那个页面。所以首次访问时 SW 虽已激活，但当前这个页面本次生命周期内仍未被接管（`navigator.serviceWorker.controller` 为 `null`），拦截与缓存要等第二次访问/刷新才生效。想首访即生效，就在 `activate` 里 `clients.claim()`。",
+    "tags": ["service-worker", "高级", "no-control-default"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为 install 事件还没触发",
+        "isCorrect": false,
+        "description": "首访时 install/activate 已完成，只是没接管当前页"
+      },
+      {
+        "text": "默认新 SW 到下次导航前不控制注册它的当前页",
+        "isCorrect": true,
+        "description": "正解，首访 controller 为 null，需 claim 才即时生效"
+      },
+      {
+        "text": "因为 HTTPS 证书尚未验证通过",
+        "isCorrect": false,
+        "description": "与证书无关，是默认不接管当前页的规范行为"
+      },
+      {
+        "text": "因为缓存配额还没分配",
+        "isCorrect": false,
+        "description": "与配额无关，根因是默认不控当前页"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：浏览器如何判定 `sw.js` 有新版本需要更新？",
+    "explanation": "靠逐字节比对——每到检查时机，浏览器重新抓取 `sw.js`，与当前已安装版本做逐字节对比，只要有一个字节不同（哪怕改了个注释）就认定新版本、触发 install。比对包含 `importScripts()` 拉取的脚本（现代浏览器已把 importScripts 内容纳入更新判定，旧版曾有不纳入的坑）。反过来，`sw.js` 一字节没变就不会重装——所以改了资源却没改 `sw.js` 时 SW 不更新，通常在 `sw.js` 里维护版本常量/资源清单让发版时内容必变。",
+    "tags": ["service-worker", "专家", "byte-diff"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只比对文件的 Last-Modified 时间戳",
+        "isCorrect": false,
+        "description": "靠内容逐字节比对，不只看时间戳"
+      },
+      {
+        "text": "只比对文件大小是否变化",
+        "isCorrect": false,
+        "description": "大小相同但内容不同也应触发，靠逐字节比对"
+      },
+      {
+        "text": "逐字节比对 `sw.js`（含 `importScripts` 拉取的脚本），有 1 字节不同即更新",
+        "isCorrect": true,
+        "description": "正解，importScripts 内容也纳入判定"
+      },
+      {
+        "text": "比对页面 HTML 是否改动",
+        "isCorrect": false,
+        "description": "更新判定针对 SW 脚本本身，不是页面 HTML"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：你只改了缓存里的 CSS/JS 资源、没改 `sw.js`，结果 SW 一直不更新。根因与对策是？",
+    "explanation": "因为浏览器靠逐字节比对 `sw.js` 触发更新——`sw.js` 内容一字节没变就不会重装，即使你改了它要缓存的资源。对策是把版本号或资源清单写进 `sw.js`（如维护一个 `const CACHE = 'app-shell-v2'` 常量），让每次发版 `sw.js` 内容必然变化，从而触发更新与新一轮预缓存/收尸。",
+    "tags": ["service-worker", "高级", "stale-resource"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "SW 更新只看资源文件的变化",
+        "isCorrect": false,
+        "description": "更新只看 `sw.js` 内容，不看被缓存资源"
+      },
+      {
+        "text": "需要手动清空浏览器全部缓存才行",
+        "isCorrect": false,
+        "description": "治标；正解是让 `sw.js` 内容随发版变化"
+      },
+      {
+        "text": "`sw.js` 未变即不更新，应在其中维护版本常量/清单让内容随发版变化",
+        "isCorrect": true,
+        "description": "正解，版本化 `sw.js` 保证字节变化触发更新"
+      },
+      {
+        "text": "改用 HTTP/2 推送资源即可自动更新",
+        "isCorrect": false,
+        "description": "与传输协议无关，根因是 `sw.js` 字节未变"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：浏览器在什么时机会去抓取 `sw.js` 检查更新？",
+    "explanation": "检查时机主要是：每次导航到作用域内的页面时检查更新；对功能事件（如 `push`）触发且距上次抓取超过 24 小时时也会检查。综合起来 MDN 的规则是浏览器至少每 24 小时检查一次更新，防止陈旧 SW 长期驻留。想手动催一次用 `registration.update()`。另外别给 `sw.js` 设长 HTTP 缓存，否则更新会被推迟。",
+    "tags": ["service-worker", "中级", "update-check"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只有用户手动清缓存时才检查",
+        "isCorrect": false,
+        "description": "导航与至少每 24h 会自动检查，无需手动清缓存"
+      },
+      {
+        "text": "每次导航到作用域内页面时检查，且至少每 24 小时检查一次",
+        "isCorrect": true,
+        "description": "正解，`registration.update()` 可手动催"
+      },
+      {
+        "text": "每隔 5 分钟固定轮询一次",
+        "isCorrect": false,
+        "description": "无固定 5 分钟轮询，规则是导航时 + 至少 24h"
+      },
+      {
+        "text": "永远不会自动检查，必须重新部署站点",
+        "isCorrect": false,
+        "description": "会自动检查（导航/24h），无需重新部署触发"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 `sw.js` 脚本自身的 HTTP 缓存，部署时正确的做法是？",
+    "explanation": "别给 `sw.js` 设长时间 HTTP 缓存——若 CDN/服务器给它配了 `Cache-Control: max-age=86400`，浏览器抓到的可能是缓存里的旧脚本，更新被推迟。现代浏览器对 SW 脚本的 HTTP 缓存有特殊限制（超过 24h 的会被忽略），但稳妥做法仍是给 `sw.js` 配 `Cache-Control: max-age=0` 或很短的值，保证更新检查拿到最新脚本。",
+    "tags": ["service-worker", "高级", "sw-cache-header"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "给 `sw.js` 配 `max-age=31536000` 长缓存以提速",
+        "isCorrect": false,
+        "description": "长缓存会推迟更新，恰恰要避免"
+      },
+      {
+        "text": "用 ETag 就无所谓缓存时长",
+        "isCorrect": false,
+        "description": "仍建议短 max-age，避免抓到旧脚本"
+      },
+      {
+        "text": "把 `sw.js` 打包进 HTML 内联即可",
+        "isCorrect": false,
+        "description": "SW 脚本须独立 URL 注册，不能内联进 HTML"
+      },
+      {
+        "text": "给 `sw.js` 配 `Cache-Control: max-age=0` 或很短的值",
+        "isCorrect": true,
+        "description": "正解，避免长缓存推迟更新检查"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`navigator.serviceWorker.controller` 表示什么？何时为 `null`？",
+    "explanation": "它指向当前控制本页面的 active SW；如果本页面尚未被任何 SW 控制（比如首次访问、SW 刚装还没 claim），它是 `null`。可用它做特性判断：`if (navigator.serviceWorker.controller)` 为真说明本页正被 SW 接管、拦截/缓存生效中。控制权变更时会在 `navigator.serviceWorker` 上触发 `controllerchange` 事件。",
+    "tags": ["service-worker", "初级", "controller"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "指向当前控制本页的 active SW；首访未接管时为 `null`",
+        "isCorrect": true,
+        "description": "正确，可据此判断本页是否被 SW 控制"
+      },
+      {
+        "text": "永远指向最新安装的 SW，从不为 null",
+        "isCorrect": false,
+        "description": "首访/未 claim 时为 null"
+      },
+      {
+        "text": "表示 SW 脚本的下载进度",
+        "isCorrect": false,
+        "description": "它是控制本页的 SW 引用，非下载进度"
+      },
+      {
+        "text": "是 `sw.js` 里注册 fetch 的开关",
+        "isCorrect": false,
+        "description": "它是页面侧只读引用，与注册开关无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：自建「发现新版本，点击刷新」提示条，标准的事件挂点是哪一组？",
+    "explanation": "标准姿势：在 `registration` 上监听 `updatefound`（发现新版本开始安装），拿到 `registration.installing`，再监听它的 `statechange`；当 `newWorker.state === 'installed'` 且 `navigator.serviceWorker.controller` 存在（说明是更新而非首装、新 SW 进了 waiting）时弹提示。用户点刷新后，页面 `postMessage` 通知 SW `skipWaiting()`，最后在 `navigator.serviceWorker` 的 `controllerchange` 里 `location.reload()` 一次性切到新版。",
+    "tags": ["service-worker", "专家", "update-ui"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "监听 `window` 的 `beforeunload` 判断更新",
+        "isCorrect": false,
+        "description": "与 SW 更新无关，应用 updatefound+statechange"
+      },
+      {
+        "text": "`registration` 的 `updatefound` + `installing.statechange` + `controllerchange` 里 reload",
+        "isCorrect": true,
+        "description": "正是自建更新提示的标准事件链"
+      },
+      {
+        "text": "轮询 `navigator.onLine` 判断有无新版",
+        "isCorrect": false,
+        "description": "onLine 与版本无关，判更新靠 updatefound"
+      },
+      {
+        "text": "监听 `fetch` 事件里的响应头版本号",
+        "isCorrect": false,
+        "description": "版本提示不靠 fetch 头，靠生命周期事件"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：SW 成为可编程网络代理的能力具体落在哪个事件上？调用与不调用 `respondWith` 的区别是？",
+    "explanation": "能力落在 `fetch` 事件上。一旦 SW 激活并控制页面，页面发出的每个网络请求（导航、子资源、甚至跨源资源）都会在 SW 里触发一次 `fetch` 事件。在事件里调用 `event.respondWith(Response 或 Promise)` 就接管这个请求——你返回什么页面就拿什么（缓存副本/网络响应/当场合成的 `Response`）；不调用它则放行，请求走浏览器默认流程，和没有 SW 一样。",
+    "tags": ["service-worker", "入门", "fetch-respondwith"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "落在 `fetch` 事件；调 `respondWith` 即接管请求，不调则放行走默认流程",
+        "isCorrect": true,
+        "description": "正解，respondWith 决定回什么，页面就拿什么"
+      },
+      {
+        "text": "落在 `message` 事件；`respondWith` 用于回消息",
+        "isCorrect": false,
+        "description": "网络代理靠 fetch 事件，非 message"
+      },
+      {
+        "text": "落在 `install` 事件；`respondWith` 预缓存资源",
+        "isCorrect": false,
+        "description": "预缓存在 install 用 waitUntil，拦截在 fetch"
+      },
+      {
+        "text": "落在 `activate` 事件；`respondWith` 清理缓存",
+        "isCorrect": false,
+        "description": "拦截在 fetch 事件，activate 用于收尸"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于要不要接管某个请求的决策时机，下列正确的是？",
+    "explanation": "`event.respondWith()` 必须在 `fetch` 事件回调里同步调用——不能先 `await` 一个异步结果、再根据结果决定调不调。要接管就同步调用 `respondWith(一个 promise)`，把异步逻辑放进那个 promise 里；异步任务的结果决定返回什么，但是否接管这个决定必须当场做出。若延迟到异步之后再决定，浏览器已按未接管放行了。",
+    "tags": ["service-worker", "专家", "respondwith-sync"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "可以先 `await caches.match()` 再决定要不要 `respondWith`",
+        "isCorrect": false,
+        "description": "错，是否接管必须同步决定，不能等 await"
+      },
+      {
+        "text": "`respondWith` 只能传同步的 `Response`，不能传 promise",
+        "isCorrect": false,
+        "description": "可传 promise，只是调用动作要同步"
+      },
+      {
+        "text": "必须在事件回调里同步调用 `respondWith`，异步逻辑放进传入的 promise",
+        "isCorrect": true,
+        "description": "正解，接管的决定当场做，异步只影响返回内容"
+      },
+      {
+        "text": "不调用 `respondWith` 会抛错中断请求",
+        "isCorrect": false,
+        "description": "不调用等于放行，不会抛错"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：在 `fetch` 里做请求过滤时，为什么通常只接管 `GET`、并放行非 GET 请求？",
+    "explanation": "`event.request` 上有 `url`/`method`/`mode`（`navigate`/`cors`/`no-cors`）/`destination`（`document`/`script`/`image`…）供精细过滤。通常只接管 `GET`——因为 Cache API 只支持 GET，`POST`/`PUT` 等写请求（登录、下单）不该被缓存拦截，应直接放行网络。此外常按 `request.mode === 'navigate'` 单独处理页面导航，并用 `url.origin` 放行跨源第三方请求。",
+    "tags": ["service-worker", "中级", "request-filter"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `POST` 请求速度太慢不值得缓存",
+        "isCorrect": false,
+        "description": "根因是 Cache API 只支持 GET，非速度问题"
+      },
+      {
+        "text": "因为浏览器禁止 SW 读取 `POST` 请求",
+        "isCorrect": false,
+        "description": "SW 能读 POST，只是不该缓存拦截写请求"
+      },
+      {
+        "text": "因为 `GET` 请求不需要网络",
+        "isCorrect": false,
+        "description": "GET 也走网络，接管是为可缓存性"
+      },
+      {
+        "text": "Cache API 只支持 GET，写请求（POST/PUT）不该被缓存拦截、应放行网络",
+        "isCorrect": true,
+        "description": "正解，故过滤 `method !== 'GET'` 先放行"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`fetch` 处理里 `event.respondWith()` 传入的 promise 最终 reject 且没兜底，会发生什么？",
+    "explanation": "一旦你调用了 `respondWith`，就承诺由你提供响应。若传入的 promise reject 且没有 `catch` 兜底，页面会拿到一个网络错误（相当于请求失败）——这可能让整页白屏或资源加载失败。所以所有分支都要 `catch` 兜底：导航请求失败回退预缓存的离线页，其他资源按需回退。这是比不接管更糟的情形，因为不接管至少还走默认网络。",
+    "tags": ["service-worker", "高级", "respondwith-error"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器自动回退到默认网络请求",
+        "isCorrect": false,
+        "description": "已接管就不会自动回退，reject 直接成网络错误"
+      },
+      {
+        "text": "页面照常拿到缓存的旧响应",
+        "isCorrect": false,
+        "description": "未主动返回缓存则不会，reject 即失败"
+      },
+      {
+        "text": "SW 被自动注销",
+        "isCorrect": false,
+        "description": "不会注销 SW，只是该请求失败"
+      },
+      {
+        "text": "页面拿到网络错误（等同请求失败），故每条分支都要 `catch` 兜底",
+        "isCorrect": true,
+        "description": "正解，导航兜底离线页、资源按需回退"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：实现断网时不显示浏览器恐龙页、而回退到自定义离线页，最小做法是？",
+    "explanation": "给导航请求配一个离线兜底页是性价比最高的一步：install 时把 `/offline.html` 预缓存进来；导航请求走网络优先，`fetch` 成功就返回真实页面，一旦断网 `fetch` 抛错，就在 `catch` 里返回预缓存的 `/offline.html`。这样即使不做完整离线缓存，也能避免默认的无网络错误页。",
+    "tags": ["service-worker", "初级", "offline-fallback"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "监听 `window.offline` 事件后 `alert` 提示",
+        "isCorrect": false,
+        "description": "兜底应在 SW 的 fetch catch 里返回离线页"
+      },
+      {
+        "text": "给每个请求都返回 503 状态",
+        "isCorrect": false,
+        "description": "只在断网兜底导航请求，不是一律 503"
+      },
+      {
+        "text": "install 预缓存 `/offline.html`，导航请求网络失败时在 `catch` 里返回它",
+        "isCorrect": true,
+        "description": "正解，网络优先 + 离线兜底页"
+      },
+      {
+        "text": "在 manifest 里配置 `offline_page` 字段",
+        "isCorrect": false,
+        "description": "manifest 无此字段，离线兜底靠 SW 逻辑"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：离线兜底页为什么必须是预缓存的静态 HTML，而不能运行时动态渲染？",
+    "explanation": "因为 SW 里没有 `window`/`document`/DOM——`fetch` 事件里只能用全局 `fetch()`、`caches`、`clients`，拿不到 DOM，无法运行时渲染页面。所以离线兜底页必须是 install 时就存好的完整静态 HTML，断网时直接从 Cache 取出返回。这也是判定离线靠 `fetch` 抛错、不靠 `navigator.onLine` 的同一类约束。",
+    "tags": ["service-worker", "中级", "offline-static"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SW 里没有 `window`/DOM，无法运行时渲染，兜底页须是预缓存的完整 HTML",
+        "isCorrect": true,
+        "description": "正解，SW 环境无 DOM，只能返回静态 HTML"
+      },
+      {
+        "text": "因为动态渲染太慢影响性能",
+        "isCorrect": false,
+        "description": "根因是 SW 无 DOM 不能渲染，非性能问题"
+      },
+      {
+        "text": "因为 Cache API 只能存 HTML 不能存 JS",
+        "isCorrect": false,
+        "description": "Cache 可存任意资源，限制在 SW 无 DOM"
+      },
+      {
+        "text": "因为静态 HTML 才能被搜索引擎收录",
+        "isCorrect": false,
+        "description": "与 SEO 无关，根因是 SW 无渲染能力"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：判断当前是否离线以决定走兜底逻辑，为什么不能只信 `navigator.onLine`？",
+    "explanation": "`navigator.onLine` 只是弱信号——它只反映有没有连上网络接口，连着 WiFi 但上不了外网（如需要门户认证的公共网络、外网故障）时它仍是 `true`。真正可靠的离线信号是 `fetch()` 是否抛错：在 `catch` 里做兜底才准确。所以离线兜底靠 `fetch` 的 `catch`，不靠 `onLine`。",
+    "tags": ["service-worker", "高级", "navigator-online"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`navigator.onLine` 在 SW 里不可用",
+        "isCorrect": false,
+        "description": "它可读，但语义弱不可靠，才是问题所在"
+      },
+      {
+        "text": "`onLine` 只表示连了网络接口，连着 WiFi 但没外网时仍为 `true`",
+        "isCorrect": true,
+        "description": "正解，可靠信号是 `fetch` 是否抛错"
+      },
+      {
+        "text": "`onLine` 只在移动网络下有效",
+        "isCorrect": false,
+        "description": "不分网络类型，问题是它不反映真实可达性"
+      },
+      {
+        "text": "`onLine` 会频繁误报为 `false`",
+        "isCorrect": false,
+        "description": "典型误报方向相反：没外网却报 true"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Navigation Preload 解决的是什么性能问题？",
+    "explanation": "SW 事件驱动、空闲即被终止。用户点链接导航时，若 SW 当前是停止的，浏览器得先启动 SW、再让它在 `fetch` 里发起网络请求——这段 SW 冷启动串在导航关键路径上，拖慢首字节。Navigation Preload 让浏览器在启动 SW 的同时并行发起导航请求，SW 起来后用 `event.preloadResponse` 直接取已在飞的响应。用 `registration.navigationPreload.enable()` 开启（需特性探测），是导航请求专属优化。",
+    "tags": ["service-worker", "高级", "navigation-preload"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "消除「SW 冷启动」延迟：启动 SW 的同时并行发起导航请求",
+        "isCorrect": true,
+        "description": "正解，用 preloadResponse 取并行响应，导航专属"
+      },
+      {
+        "text": "压缩响应体积以省流量",
+        "isCorrect": false,
+        "description": "它是并行发请求省启动延迟，非压缩"
+      },
+      {
+        "text": "把子资源请求也并行预取",
+        "isCorrect": false,
+        "description": "它是导航请求专属，对子资源无效"
+      },
+      {
+        "text": "替代 HTTPS 加密握手",
+        "isCorrect": false,
+        "description": "与 TLS 握手无关，解决的是 SW 启动延迟"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：开启 navigation preload 后，在 `fetch` 里正确取用预加载响应的写法要点是？",
+    "explanation": "`event.preloadResponse` 是一个 promise：支持且开启时 resolve 成预加载的 `Response`，否则 resolve 成 `undefined`。所以必须 `await` 后判空——命中就直接用，为空（不支持/未命中）再回退普通 `fetch`，网络也失败时兜底离线页。开启还会给预加载请求带 `Service-Worker-Navigation-Preload` 头，服务端可据此返回精简内容。这是导航请求专属，需先特性探测 `self.registration.navigationPreload` 再 `enable()`。",
+    "tags": ["service-worker", "专家", "preload-response"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "直接 `return event.preloadResponse`，它一定是 Response",
+        "isCorrect": false,
+        "description": "它可能 resolve 成 undefined，须判空回退"
+      },
+      {
+        "text": "`await event.preloadResponse` 判空：命中直接用，为空回退普通 `fetch`",
+        "isCorrect": true,
+        "description": "正解，preloadResponse 可能为 undefined"
+      },
+      {
+        "text": "它是同步属性，无需 await",
+        "isCorrect": false,
+        "description": "它是 promise，必须 await"
+      },
+      {
+        "text": "只能在 `install` 事件里读取",
+        "isCorrect": false,
+        "description": "在 fetch 事件里读取，配合导航请求"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：比 navigation preload 更彻底、能让某些请求根本不叫醒 SW 的较新机制是？",
+    "explanation": "是 `InstallEvent.addRoutes()`——在 install 阶段就声明某些 URL 模式根本不用叫醒 SW，直接走网络或直接走缓存，把这类请求从 SW 处理路径上彻底摘掉，省掉 SW 参与的全部开销（例如带哈希的 `/assets/*` 命中缓存就别惊动 SW）。它较新、浏览器支持有限，用前务必特性探测 `if (event.addRoutes)`。",
+    "tags": ["service-worker", "专家", "add-routes"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`registration.update()` 强制刷新路由",
+        "isCorrect": false,
+        "description": "update 是更新检查，与静态路由无关"
+      },
+      {
+        "text": "`caches.match()` 自动跳过 SW",
+        "isCorrect": false,
+        "description": "match 是缓存查询，不改变 SW 是否被唤醒"
+      },
+      {
+        "text": "`skipWaiting()` 跳过路由处理",
+        "isCorrect": false,
+        "description": "skipWaiting 管激活，不是路由摘除"
+      },
+      {
+        "text": "`InstallEvent.addRoutes()` 静态路由，声明某些 URL 直接走网络/缓存不惊动 SW",
+        "isCorrect": true,
+        "description": "正解，较新、支持有限、需特性探测"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Web Push 的完整链路，下列顺序正确的是？",
+    "explanation": "四步：① 页面用 `registration.pushManager.subscribe(options)` 订阅，拿到 `PushSubscription`（含 `endpoint` + 加密公钥）；② 把订阅发给你自己的服务器保存；③ 服务器用 `web-push` 一类库 + VAPID 私钥经推送服务（FCM/Mozilla/Apple）发消息；④ 消息到达唤醒 SW 的 `push` 事件，在里面 `showNotification` 弹通知。整条链路必须和 SW 搭档，因为消息到达时唤醒的是 SW。",
+    "tags": ["service-worker", "初级", "push-overview"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "服务器直接调用浏览器 API 弹通知",
+        "isCorrect": false,
+        "description": "服务器经推送服务发，SW 收 push 事件才弹"
+      },
+      {
+        "text": "页面订阅后浏览器每秒轮询服务器",
+        "isCorrect": false,
+        "description": "是服务器主动推送、唤醒 SW，非轮询"
+      },
+      {
+        "text": "页面 subscribe → 订阅发给自己服务器 → 服务器经推送服务发 → SW 收 push 事件弹通知",
+        "isCorrect": true,
+        "description": "正是 Web Push 四步链路"
+      },
+      {
+        "text": "SW 直接连数据库拉消息",
+        "isCorrect": false,
+        "description": "消息由推送服务送达并唤醒 SW，SW 不直连库"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`pushManager.subscribe()` 的 `applicationServerKey` 应传什么？接受哪些格式？",
+    "explanation": "传你的 VAPID 公钥（ECDSA P-256）。VAPID（自愿应用服务器标识）让推送服务确认消息确实来自你的应用服务器——私钥留在服务器用 `web-push` 一类库签名。`applicationServerKey` 接受 base64url 编码的字符串，或 `Uint8Array`/`ArrayBuffer`（常见的 `urlBase64ToUint8Array` 辅助函数就是把 base64url 公钥转成 `Uint8Array`）。",
+    "tags": ["service-worker", "高级", "vapid"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "传服务器的私钥字符串",
+        "isCorrect": false,
+        "description": "私钥必须留服务器，这里传公钥"
+      },
+      {
+        "text": "传用户的登录 token",
+        "isCorrect": false,
+        "description": "与用户 token 无关，传的是 VAPID 公钥"
+      },
+      {
+        "text": "传 VAPID 公钥，接受 base64url 字符串或 `Uint8Array`/`ArrayBuffer`",
+        "isCorrect": true,
+        "description": "正解，私钥留服务器签名"
+      },
+      {
+        "text": "只接受十六进制字符串",
+        "isCorrect": false,
+        "description": "接受 base64url 或 Uint8Array/ArrayBuffer，非十六进制"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`PushSubscription` 对象里都有什么，为什么 `endpoint` 要保密？",
+    "explanation": "`PushSubscription` 含 `endpoint`（推送服务给这个订阅分配的唯一 URL）和加密密钥 `keys.p256dh` / `keys.auth`（服务器用来端到端加密载荷）。`endpoint` 要保密——拿到它就能给这个用户发推送，泄露等于把推送通道交给别人。订阅通常整体 `JSON.stringify` 后发给自己的服务器保存（序列化含 endpoint 与 keys）。订阅失效/过期时 SW 会触发 `pushsubscriptionchange`。",
+    "tags": ["service-worker", "中级", "push-subscription"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只含一个明文密码，无需保密",
+        "isCorrect": false,
+        "description": "含 endpoint + 加密 keys，endpoint 需保密"
+      },
+      {
+        "text": "含用户的真实手机号",
+        "isCorrect": false,
+        "description": "不含个人身份信息，含 endpoint 与加密公钥"
+      },
+      {
+        "text": "endpoint 是公开的 CDN 地址无所谓泄露",
+        "isCorrect": false,
+        "description": "恰相反，泄露 endpoint 即可被冒名推送"
+      },
+      {
+        "text": "含 `endpoint`（唯一推送 URL，须保密）与 `keys.p256dh`/`keys.auth`（加密）",
+        "isCorrect": true,
+        "description": "正解，拿到 endpoint 就能给该用户发推送"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Chrome/Edge 下 `pushManager.subscribe()` 为何通常必须传 `userVisibleOnly: true`？",
+    "explanation": "Chrome/Edge 强制订阅时传 `userVisibleOnly: true`——这是向浏览器承诺每条推送都对用户可见（即必调 `showNotification` 弹通知），以此换取订阅许可，杜绝静默推送被滥用为后台追踪。不传或传 `false` 在这些浏览器上订阅会失败。",
+    "tags": ["service-worker", "初级", "user-visible-only"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它表示只在前台可见时才推送",
+        "isCorrect": false,
+        "description": "它是承诺每条推送都弹通知，非前台限制"
+      },
+      {
+        "text": "承诺每条推送都弹通知（对用户可见），杜绝静默推送追踪",
+        "isCorrect": true,
+        "description": "正解，Chrome/Edge 强制以换取订阅许可"
+      },
+      {
+        "text": "它用于隐藏通知图标",
+        "isCorrect": false,
+        "description": "恰相反，它要求通知必须可见"
+      },
+      {
+        "text": "它是可选项，传不传都一样",
+        "isCorrect": false,
+        "description": "Chrome/Edge 下不传通常订阅失败"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：在 SW 的 `push` 事件里弹出通知，应该用哪个 API？为什么不能用 `new Notification()`？",
+    "explanation": "在 SW 里弹通知只能用 `self.registration.showNotification(title, options)`——SW 里没有 `new Notification()`（那是页面 API，依赖 DOM 环境）。`push` 事件里通常 `event.waitUntil(self.registration.showNotification(...))` 保证通知弹出前 SW 不被终止；`options` 可含 `body`/`icon`/`badge`/`data`（存点击后跳转地址）/`actions`。前提是已获得 `Notification` 权限。",
+    "tags": ["service-worker", "中级", "show-notification"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `self.registration.showNotification(title, options)`；SW 里没有 `new Notification()`",
+        "isCorrect": true,
+        "description": "正解，`new Notification()` 是页面 API，SW 无 DOM"
+      },
+      {
+        "text": "用 `new Notification(title)` 直接弹",
+        "isCorrect": false,
+        "description": "SW 里没有该构造函数，须走 registration"
+      },
+      {
+        "text": "用 `alert()` 弹出提示",
+        "isCorrect": false,
+        "description": "SW 无 DOM，没有 `alert`"
+      },
+      {
+        "text": "用 `console.log` 输出即为通知",
+        "isCorrect": false,
+        "description": "日志不是系统通知，须 showNotification"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于弹通知所需的 `Notification` 权限，正确的是？",
+    "explanation": "`Notification.requestPermission()` 必须由用户手势触发（如点击「开启通知」按钮），不能页面一加载就弹。未授权就不能弹通知，因此 `userVisibleOnly` 的推送也发不出（订阅可能成功但无法展示）。正确顺序通常是：用户点按钮 → `requestPermission()` → 授权后再 `pushManager.subscribe()`。",
+    "tags": ["service-worker", "初级", "notification-permission"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "页面加载时自动申请即可，无需手势",
+        "isCorrect": false,
+        "description": "必须用户手势触发，自动申请会被拦"
+      },
+      {
+        "text": "`Notification.requestPermission()` 须由用户手势触发，未授权无法弹通知",
+        "isCorrect": true,
+        "description": "正解，故先授权再订阅推送"
+      },
+      {
+        "text": "授权后可无限静默推送不弹通知",
+        "isCorrect": false,
+        "description": "Chrome/Edge 要求 userVisibleOnly，每条须弹"
+      },
+      {
+        "text": "权限由服务器授予，与用户无关",
+        "isCorrect": false,
+        "description": "权限由用户在浏览器授予，须手势"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：用户点击推送通知后，在 SW 里聚焦已有窗口或打开新窗口，用什么？",
+    "explanation": "用户点通知触发 SW 的 `notificationclick` 事件。典型处理：`event.notification.close()` 关掉通知，读 `event.notification.data?.url` 取跳转地址，用 `self.clients.matchAll({ type: 'window' })` 枚举受控窗口——已有同源目标窗口就 `client.focus()` 聚焦（避免重复开），否则 `self.clients.openWindow(targetUrl)` 开新窗口。整个异步过程用 `event.waitUntil` 包住。",
+    "tags": ["service-worker", "中级", "notificationclick"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `window.open()` 直接开窗",
+        "isCorrect": false,
+        "description": "SW 无 window，用 `clients.openWindow`"
+      },
+      {
+        "text": "用 `location.href` 跳转",
+        "isCorrect": false,
+        "description": "SW 无 location 导航能力，用 clients API"
+      },
+      {
+        "text": "在 `notificationclick` 里用 `clients.matchAll` 聚焦或 `clients.openWindow` 开窗",
+        "isCorrect": true,
+        "description": "正解，先找已有窗口聚焦，否则开新窗口"
+      },
+      {
+        "text": "通知点击无法被 SW 感知",
+        "isCorrect": false,
+        "description": "会触发 `notificationclick` 事件"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 Web Push 的浏览器支持面，下列说法准确的是？",
+    "explanation": "Web Push 已是 Baseline（2023-03 起广泛可用），含 Safari 16.4+——桌面各主流浏览器可用。但 iOS/iPadOS 上有硬门槛：必须先把网站添加到主屏幕（安装为 PWA），用户在这个已安装的 PWA 里才能订阅并接收推送——普通 Safari 标签页里订阅不了。这是做 iOS Web 推送时最易忽略的前提。",
+    "tags": ["service-worker", "中级", "ios-push"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Web Push 仅 Chrome 独占，Safari 完全不支持",
+        "isCorrect": false,
+        "description": "Safari 16.4+ 已支持，且已是 Baseline"
+      },
+      {
+        "text": "iOS 的普通 Safari 标签页即可直接订阅推送",
+        "isCorrect": false,
+        "description": "iOS 需先添加到主屏幕装成 PWA 才能订阅"
+      },
+      {
+        "text": "Firefox 至今不支持 Web Push",
+        "isCorrect": false,
+        "description": "Firefox 支持 Web Push"
+      },
+      {
+        "text": "已是 Baseline（含 Safari 16.4+），但 iOS 需先添加到主屏幕才能订阅",
+        "isCorrect": true,
+        "description": "正解，iOS 普通标签页订阅不了推送"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：推送订阅失效或即将过期时，SW 会收到哪个事件、该怎么处理？",
+    "explanation": "订阅失效/即将过期时在 SW 触发 `pushsubscriptionchange` 事件。正确处理是在其中重新订阅（再次 `pushManager.subscribe`）并把新的 `PushSubscription` 更新到你的服务器，否则后续推送会发往失效的旧 endpoint 而丢失。这类事件同样要用 `event.waitUntil` 包住异步的重订阅+上报流程。",
+    "tags": ["service-worker", "专家", "subscription-change"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "收到 `push` 事件，忽略即可",
+        "isCorrect": false,
+        "description": "是 `pushsubscriptionchange`，且须重订阅上报"
+      },
+      {
+        "text": "收到 `pushsubscriptionchange`，应重新订阅并把新订阅更新到服务器",
+        "isCorrect": true,
+        "description": "正解，否则推送发往失效 endpoint 丢失"
+      },
+      {
+        "text": "收到 `sync` 事件，补发消息",
+        "isCorrect": false,
+        "description": "sync 是后台同步，与订阅失效无关"
+      },
+      {
+        "text": "浏览器自动续订，无需处理",
+        "isCorrect": false,
+        "description": "需在 pushsubscriptionchange 里手动重订阅上报"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：一次性 Background Sync 解决的核心问题是什么？基本用法？",
+    "explanation": "它解决用户离线时点了发送、怎么保证恢复网络后请求一定被补发——哪怕用户已关掉页面。做法：页面侧 `registration.sync.register(tag)` 登记一个字符串标签；设备恢复稳定网络时浏览器唤醒 SW 的 `sync` 事件，在 `event.waitUntil` 里补发离线期间攒下的请求。失败会择机重试，`event.lastChance === true` 表示这是最后一次尝试。",
+    "tags": ["service-worker", "初级", "background-sync"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "保证离线时的请求在恢复网络后被补发；`sync.register(tag)` 登记、SW 收 `sync` 事件补发",
+        "isCorrect": true,
+        "description": "正解，`event.waitUntil` 补发，lastChance 标记末次"
+      },
+      {
+        "text": "让页面每秒自动重试发送",
+        "isCorrect": false,
+        "description": "是浏览器在恢复网络时唤醒 SW，非页面轮询"
+      },
+      {
+        "text": "用于同步多个标签页的状态",
+        "isCorrect": false,
+        "description": "它是后台补发离线请求，非跨标签状态同步"
+      },
+      {
+        "text": "强制立即发送所有请求",
+        "isCorrect": false,
+        "description": "触发时机由浏览器裁量，非立即"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：一次性 Background Sync 的浏览器支持面如何，实践上要怎么处理？",
+    "explanation": "Background Sync 支持面窄——仅 Chromium 系（Chrome/Edge/Opera/Samsung Internet），Firefox 与 Safari 均不支持。所以必须特性探测（`'sync' in registration`）+ 降级：不支持时退回页面在线就立即发 + 监听 `online` 事件补发。它触发时机由浏览器裁量，不保证即时，别当准时定时器用。",
+    "tags": ["service-worker", "初级", "sync-support"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "全浏览器 Baseline，无需降级",
+        "isCorrect": false,
+        "description": "仅 Chromium，Firefox/Safari 不支持，须降级"
+      },
+      {
+        "text": "仅 Firefox 支持",
+        "isCorrect": false,
+        "description": "恰相反，Firefox 不支持，仅 Chromium 系"
+      },
+      {
+        "text": "仅 Chromium（Chrome/Edge/Opera/Samsung），Firefox/Safari 不支持，须特性探测降级",
+        "isCorrect": true,
+        "description": "正解，降级为在线即发 + online 事件补发"
+      },
+      {
+        "text": "仅 Safari 支持",
+        "isCorrect": false,
+        "description": "Safari 不支持，仅 Chromium 系"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Periodic Background Sync（`periodicsync`）有哪「三重硬限制」？",
+    "explanation": "Periodic Background Sync 面向定期在后台更新内容（如新闻/邮件 PWA 每天预取）。三重硬限制：① 仅 Chromium（Firefox/Safari 完全不支持）；② 仅已安装的 PWA——网站没被装到设备则 `periodicSync` 不可用；③ 受 site engagement（站点参与度）门槛限制——浏览器按参与度决定是否触发、多久触发，冷门站点几乎不触发。`register(tag, { minInterval })` 的 `minInterval` 只是下限，真实频率由浏览器裁定。",
+    "tags": ["service-worker", "高级", "periodic-sync"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无任何限制，任意站点均可用",
+        "isCorrect": false,
+        "description": "有三重硬限制，冷门站点几乎不触发"
+      },
+      {
+        "text": "仅需 HTTPS 一个条件",
+        "isCorrect": false,
+        "description": "还需 Chromium + 已安装 PWA + 参与度门槛"
+      },
+      {
+        "text": "仅限移动端、桌面不支持",
+        "isCorrect": false,
+        "description": "限制是 Chromium+已装 PWA+参与度，非端型"
+      },
+      {
+        "text": "仅 Chromium + 仅已安装 PWA + 受 site engagement 参与度门槛限制",
+        "isCorrect": true,
+        "description": "正解，minInterval 只是下限，频率由浏览器定"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：Web App Manifest 是什么？怎么挂到页面上？",
+    "explanation": "Manifest 是一个 JSON 文件，告诉浏览器这个网站作为应用叫什么、什么图标、怎么启动、怎么显示——是把网站变成可安装 PWA 的身份证。用 `<link rel='manifest' href='/app.webmanifest'>` 放进 `<head>` 挂载，MIME 类型为 `application/manifest+json`（`.json` 后缀通常也认）。需要带凭据时加 `crossorigin='use-credentials'`。",
+    "tags": ["service-worker", "入门", "manifest"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一段必须打包进 JS 的运行时配置",
+        "isCorrect": false,
+        "description": "它是独立 JSON 文件，用 link 挂载"
+      },
+      {
+        "text": "一个 JSON 文件，用 `<link rel='manifest'>` 挂进 `<head>`，描述应用身份与外观",
+        "isCorrect": true,
+        "description": "正解，PWA 的身份证，MIME application/manifest+json"
+      },
+      {
+        "text": "浏览器自动生成、开发者无法编辑",
+        "isCorrect": false,
+        "description": "由开发者编写并部署"
+      },
+      {
+        "text": "只在 iOS 上生效的配置文件",
+        "isCorrect": false,
+        "description": "各浏览器都用它，iOS 另需 apple meta 补充"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：与可安装直接相关的 manifest 核心字段，下列哪一组都属于？",
+    "explanation": "核心字段：`name`（全名）/ `short_name`（主屏短名）/ `icons`（图标数组，安装要求至少含 192×192 与 512×512）/ `start_url`（启动地址）/ `display`（显示模式）/ `theme_color`（主题色）/ `background_color`（启动屏背景）/ `scope`（导航范围）。其中 `name` 或 `short_name`、`icons`（192+512）、`start_url`、`display`（非 browser）是安装条件的一部分。",
+    "tags": ["service-worker", "初级", "manifest-fields"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`name`/`short_name`/`icons`/`start_url`/`display`/`theme_color`",
+        "isCorrect": true,
+        "description": "正解，都是 manifest 核心字段，多数与安装条件相关"
+      },
+      {
+        "text": "`route`/`state`/`store`/`reducer`",
+        "isCorrect": false,
+        "description": "这些是前端框架概念，非 manifest 字段"
+      },
+      {
+        "text": "`viewport`/`charset`/`lang`/`title`",
+        "isCorrect": false,
+        "description": "这些是 HTML meta，不在 manifest 里"
+      },
+      {
+        "text": "`cache`/`fetch`/`scope`/`waitUntil`",
+        "isCorrect": false,
+        "description": "混入了 SW API，非 manifest 核心字段"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：`display` 字段最常用于「像原生应用一样、无浏览器地址栏」的值是哪个？四个标准值分别是？",
+    "explanation": "四个标准值：`standalone`（独立应用窗口、无地址栏/前进后退，最像原生，绝大多数 PWA 用它）、`fullscreen`（全屏，连状态栏都尽量隐藏，游戏/沉浸式媒体）、`minimal-ui`（独立窗口但保留最小导航控件）、`browser`（就是普通浏览器标签页，等于不作为应用运行）。`display_override` 给一个有序回退链，优先于 `display`，可启用 `window-controls-overlay` 等新模式。",
+    "tags": ["service-worker", "入门", "display-mode"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`fullscreen` 最常用于普通 PWA",
+        "isCorrect": false,
+        "description": "最常用是 standalone；fullscreen 偏游戏"
+      },
+      {
+        "text": "`browser` 才是独立窗口模式",
+        "isCorrect": false,
+        "description": "browser 就是普通标签页，等于没装"
+      },
+      {
+        "text": "`standalone`（最常用）/`fullscreen`/`minimal-ui`/`browser` 四值",
+        "isCorrect": true,
+        "description": "正解，standalone 无地址栏最像原生"
+      },
+      {
+        "text": "只有 `standalone` 与 `browser` 两个值",
+        "isCorrect": false,
+        "description": "还有 fullscreen 与 minimal-ui"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：以 Chromium 系为准，一个网站要能被提示安装需同时满足哪些条件？",
+    "explanation": "Chromium 安装条件：整站 HTTPS（或 localhost）；有效 manifest 且满足——有 `name` 或 `short_name`；`icons` 至少含一个 192×192 和一个 512×512；有 `start_url`；`display` 为 `standalone`/`fullscreen`/`minimal-ui` 之一（`browser` 不算可安装）；`prefer_related_applications` 为 `false` 或不写（否则表示更推荐原生应用）。",
+    "tags": ["service-worker", "中级", "install-criteria"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只要页面加了任意 `<link rel='manifest'>` 即可",
+        "isCorrect": false,
+        "description": "还需 HTTPS + 图标 192/512 + start_url + display 非 browser 等"
+      },
+      {
+        "text": "必须上架应用商店审核通过",
+        "isCorrect": false,
+        "description": "PWA 安装无需应用商店"
+      },
+      {
+        "text": "必须使用 `display: browser`",
+        "isCorrect": false,
+        "description": "browser 恰恰不算可安装，须 standalone 等"
+      },
+      {
+        "text": "HTTPS + 合规 manifest（name/short_name、icons 192+512、start_url、display 非 browser、prefer_related_applications 非 true）",
+        "isCorrect": true,
+        "description": "正解，Chromium 安装条件全景"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：关于 Service Worker 是不是 PWA 可安装的硬性条件，按现行 MDN 口径正确的是？",
+    "explanation": "历史上 Chromium 要求网站注册一个带 `fetch` 处理器的 SW 才算可安装——这曾是硬门槛。较新的 Chromium 已放宽：SW / fetch 处理器不再是能弹安装提示的强制条件，仅凭 HTTPS + 合规 manifest 即可触发安装。但要注意：没有 SW 的 PWA 装完就无法离线（断网白屏），体验残缺。所以能装和该配 SW 是两件事——可安装门槛放宽了，但你仍应为离线配 SW。",
+    "tags": ["service-worker", "高级", "sw-not-required"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "SW 至今仍是可安装的硬性强制条件",
+        "isCorrect": false,
+        "description": "较新 Chromium 已放宽，SW 非强制安装条件"
+      },
+      {
+        "text": "现行已放宽，SW 非强制安装条件；但没 SW 装完断网白屏，仍应配 SW",
+        "isCorrect": true,
+        "description": "正解，能装与该配 SW 是两件事"
+      },
+      {
+        "text": "有了 SW 就一定能安装，无需 manifest",
+        "isCorrect": false,
+        "description": "安装靠 HTTPS+合规 manifest，SW 已非必需"
+      },
+      {
+        "text": "SW 从来都与安装无关",
+        "isCorrect": false,
+        "description": "它历史上曾是硬门槛，后放宽"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：想自定义安装按钮而不用浏览器默认小横幅，要拦截哪个事件？它的跨浏览器支持如何？",
+    "explanation": "拦截 `beforeinstallprompt`——满足安装条件时 Chromium 在 `window` 上触发它。`event.preventDefault()` 拦掉默认安装小横幅，把事件对象存下来，等用户点你自己的安装按钮时再 `event.prompt()`。关键：`beforeinstallprompt` 是 Chromium 私有事件，Firefox 与 Safari 完全不支持——做自定义安装 UI 一定要特性探测，别在不支持的浏览器上依赖它。",
+    "tags": ["service-worker", "初级", "before-install-prompt"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "拦截 `beforeinstallprompt`（Chromium 私有事件，Firefox/Safari 不支持）",
+        "isCorrect": true,
+        "description": "正解，preventDefault + 存事件，须特性探测"
+      },
+      {
+        "text": "拦截 `install` 事件，全浏览器支持",
+        "isCorrect": false,
+        "description": "是 `beforeinstallprompt` 且仅 Chromium"
+      },
+      {
+        "text": "拦截 `appinstalled`，Safari 也支持",
+        "isCorrect": false,
+        "description": "appinstalled 是安装后事件；自定义提示用 beforeinstallprompt"
+      },
+      {
+        "text": "拦截 `fetch` 事件里的安装请求",
+        "isCorrect": false,
+        "description": "安装不走 fetch，用 beforeinstallprompt"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：拿到 `beforeinstallprompt` 事件后触发系统安装框、读用户选择，正确流程是？",
+    "explanation": "存下事件 → 显示自定义安装按钮 → 用户点击时调 `event.prompt()` 弹系统安装框 → `await event.userChoice` 读 `{ outcome, platform }`（`outcome` 为 `accepted` 或 `dismissed`）。关键约束：一个事件对象的 `prompt()` 只能调一次，用过即废——之后要置空并隐藏按钮。安装成功后 `window` 触发 `appinstalled` 收尾埋点。",
+    "tags": ["service-worker", "中级", "prompt-once"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次页面加载自动调 `prompt()` 多次",
+        "isCorrect": false,
+        "description": "prompt() 一个事件只能调一次，且不该自动弹"
+      },
+      {
+        "text": "直接读 `event.outcome` 同步值",
+        "isCorrect": false,
+        "description": "结果在 `await event.userChoice` 里"
+      },
+      {
+        "text": "调 `prompt()` 后事件可反复复用",
+        "isCorrect": false,
+        "description": "用过即废，须置空"
+      },
+      {
+        "text": "用户点按钮时 `prompt()`（仅一次）→ `await userChoice` 读 `{ outcome, platform }`",
+        "isCorrect": true,
+        "description": "正解，accepted/dismissed，用完置空"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：PWA 安装成功后，用来做埋点、隐藏安装入口的事件是？",
+    "explanation": "PWA 安装成功后在 `window` 触发 `appinstalled` 事件——常用来埋点统计安装量、把之前存的 `beforeinstallprompt` 事件置空、隐藏自定义安装按钮。它与 `beforeinstallprompt`（安装前）配对：一个引导安装、一个收尾。",
+    "tags": ["service-worker", "初级", "appinstalled"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`install`（SW 安装事件）",
+        "isCorrect": false,
+        "description": "那是 SW 脚本安装，非 PWA 安装成功"
+      },
+      {
+        "text": "`beforeinstallprompt`",
+        "isCorrect": false,
+        "description": "那是安装前触发，收尾用 appinstalled"
+      },
+      {
+        "text": "`appinstalled`（安装成功后在 `window` 触发）",
+        "isCorrect": true,
+        "description": "正解，用于埋点与隐藏安装入口"
+      },
+      {
+        "text": "`activate`（SW 激活事件）",
+        "isCorrect": false,
+        "description": "那是 SW 生命周期事件，与 PWA 安装无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 与 PWA：iOS/iPadOS 上的 PWA 安装与 Chromium 有何关键差异？",
+    "explanation": "iOS 上没有 `beforeinstallprompt`——Safari 不支持这个事件，你无法用 JS 触发安装或自定义安装按钮，只能引导用户手动分享菜单 → 添加到主屏幕。版本线：iOS 16.3 及更早只有 Safari 能添加到主屏；iOS 16.4+ 起 Safari/Chrome/Edge/Firefox/Orion 都能从分享菜单安装。iOS 只认部分 manifest 字段，很多能力靠 Apple 私有的 `apple-touch-icon`、`apple-mobile-web-app-*` meta 补。且 iOS 上 Web Push 必须在已添加到主屏的 PWA 里才可用。",
+    "tags": ["service-worker", "中级", "ios-install"],
+    "categories": [
+      ["技术方向", "Service Worker 与 PWA"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "iOS 无 `beforeinstallprompt`，靠分享菜单→添加到主屏幕手动安装（16.4+ 各浏览器可用）",
+        "isCorrect": true,
+        "description": "正解，另需 apple-touch-icon 与 apple meta 补充"
+      },
+      {
+        "text": "iOS 与 Chromium 一样支持 `beforeinstallprompt`",
+        "isCorrect": false,
+        "description": "iOS 不支持该事件，须手动添加到主屏"
+      },
+      {
+        "text": "iOS 完全无法安装 PWA",
+        "isCorrect": false,
+        "description": "可通过添加到主屏幕安装"
+      },
+      {
+        "text": "iOS 安装 PWA 必须上架 App Store",
+        "isCorrect": false,
+        "description": "无需 App Store，走添加到主屏幕"
+      }
+    ]
+  }
+]

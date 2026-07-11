@@ -1,0 +1,1614 @@
+[
+  {
+    "stem": "Web Workers API：它把 JavaScript 放到哪里运行、与主线程是什么关系，最准确的描述是？",
+    "explanation": "Web Worker 是浏览器把 JS 搬到主线程之外的后台线程运行的标准机制（属 WHATWG HTML 现行标准的「Web workers」章）。worker 有独立的全局作用域（`self` / `WorkerGlobalScope`）、独立的事件循环，与主线程不共享变量、也碰不到 DOM，两个世界之间只能靠 `postMessage` 收发消息。它解决的唯一问题是别让 CPU 密集计算卡住主线程。",
+    "tags": ["web-workers", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "跑在独立后台线程、有自己的全局作用域和事件循环，与主线程不共享变量、只能靠 `postMessage` 通信",
+        "isCorrect": true,
+        "description": "后台线程 + 消息传递，正是 worker 的官方定位"
+      },
+      {
+        "text": "运行在主线程的一个高优先级微任务队列里，通过共享变量与主线程交换数据",
+        "isCorrect": false,
+        "description": "worker 是独立线程、不共享变量，也不在主线程"
+      },
+      {
+        "text": "是主线程的一个 `iframe` 沙箱，能访问父页面的 DOM 但不能访问网络",
+        "isCorrect": false,
+        "description": "worker 无 DOM，反而有 `fetch` / `WebSocket`"
+      },
+      {
+        "text": "一种把同步代码自动改写成异步的编译器特性，不涉及真正的多线程",
+        "isCorrect": false,
+        "description": "worker 是真并行的独立线程，不是编译改写"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：Dedicated、Shared、Service 三类 worker 的定位分工，正确的是？",
+    "explanation": "三类 worker 用途差别很大：Dedicated（专用）只有创建它的那个页面能连、随文档存活，用于绝大多数后台计算；Shared（共享）供同源多个页面/标签/iframe 共享同一实例，用于跨标签共享一条连接或一份状态；Service（服务）是网络代理型的特殊 worker，生命周期独立于页面、可被唤醒，用于离线缓存、请求拦截与推送。",
+    "tags": ["web-workers", "入门", "three-types"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Dedicated 供多标签共享、Shared 只服务单页面、Service 用于纯计算",
+        "isCorrect": false,
+        "description": "把专用与共享说反了，Service 也不做纯计算"
+      },
+      {
+        "text": "Dedicated 只服务创建它的页面、Shared 供同源多页共享一个实例、Service 是网络代理型特殊 worker",
+        "isCorrect": true,
+        "description": "专用 / 共享 / 服务的官方分工"
+      },
+      {
+        "text": "三者都是网络代理，区别只在缓存策略不同",
+        "isCorrect": false,
+        "description": "只有 Service Worker 是网络代理"
+      },
+      {
+        "text": "三者能力完全相同，只是命名不同、可随意互换使用",
+        "isCorrect": false,
+        "description": "连接者、生命周期、用途各不相同"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：理解主线程与 worker 通信，最核心的心智模型是？",
+    "explanation": "主线程和 worker 是两个完全隔离的 JS 世界，各有自己的全局对象、内存、事件循环，不能读写对方的变量。它们唯一的联系是一扇双向的门——`postMessage` 往门里塞数据、`onmessage` 在门这边接数据，双向对称。所以是「消息传递」而非「共享内存」（`SharedArrayBuffer` 是需要额外门槛的例外）。",
+    "tags": ["web-workers", "入门", "message-passing"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "两者共享同一份堆内存，改一边的对象另一边立即可见",
+        "isCorrect": false,
+        "description": "默认是隔离内存、不共享，SAB 才共享且有门槛"
+      },
+      {
+        "text": "worker 能直接调用主线程作用域里的函数",
+        "isCorrect": false,
+        "description": "作用域隔离，只能靠消息，函数还传不过去"
+      },
+      {
+        "text": "两个隔离世界，唯一联系是 `postMessage` 发、`onmessage` 收的一扇双向门——消息传递而非共享内存",
+        "isCorrect": true,
+        "description": "隔离 + 消息传递，正是核心模型"
+      },
+      {
+        "text": "worker 是主线程的子对象，通过属性读写共享状态",
+        "isCorrect": false,
+        "description": "不共享状态，只能消息往返"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：把重计算挪进 worker 能让「主线程不阻塞」，其根本原因是？",
+    "explanation": "浏览器给每个页面一条主线程，它要轮流干三件事：跑你的 JS、计算布局与绘制、响应用户输入——都在同一条线程上排队。一段跑 200ms 的同步循环会把后面的布局、绘制、输入全堵住。把这段计算搬到 worker 线程后，它与主线程真正并行，主线程始终空出来伺候用户。注意 worker 不是让代码变快，而是让重活不挡道。",
+    "tags": ["web-workers", "入门", "non-blocking"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "worker 让 CPU 主频临时提升，计算更快所以不卡",
+        "isCorrect": false,
+        "description": "worker 不改主频，总计算量也没减少"
+      },
+      {
+        "text": "worker 把同步代码变成 `setTimeout` 延后执行",
+        "isCorrect": false,
+        "description": "那是延后不是并行，跑起来照样卡"
+      },
+      {
+        "text": "worker 关闭了主线程的布局与绘制，腾出算力",
+        "isCorrect": false,
+        "description": "主线程照常渲染，worker 只是并行分担计算"
+      },
+      {
+        "text": "主线程单线程要轮流跑 JS、布局绘制、响应输入，重计算搬到 worker 后与之并行、不再堵住这条队列",
+        "isCorrect": true,
+        "description": "解放主线程队列，正是不阻塞的根因"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：在 worker 脚本内部，下列哪一组全局是「都不可用」的？",
+    "explanation": "worker 运行在 `WorkerGlobalScope`，全局对象是 `self`，最大特点是没有 DOM：`window`、`document`、`parent`、`frames` 以及任何 DOM 节点与 DOM API 都不可用。要更新界面，只能把结果 `postMessage` 回主线程、由主线程改 DOM。反过来 worker 里有 `fetch`、`WebSocket`、`IndexedDB`、`WebAssembly`、`OffscreenCanvas` 等。",
+    "tags": ["web-workers", "入门", "no-dom"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`window`、`document`、`parent` 与任何 DOM 节点",
+        "isCorrect": true,
+        "description": "无 DOM 是 worker 的硬边界，界面活交回主线程"
+      },
+      {
+        "text": "`self`、`fetch`、`postMessage`",
+        "isCorrect": false,
+        "description": "这三个在 worker 里都可用"
+      },
+      {
+        "text": "`IndexedDB`、`WebAssembly`、`OffscreenCanvas`",
+        "isCorrect": false,
+        "description": "这些正是 worker 内可用的能力"
+      },
+      {
+        "text": "`setTimeout`、`location`、`navigator`",
+        "isCorrect": false,
+        "description": "这些定时器与环境对象 worker 里都有"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：关于最常用的专用 Worker（Dedicated Worker），描述正确的是？",
+    "explanation": "专用 worker 由 `new Worker(url)` 创建，只有创建它的那个页面能连它，生命周期随创建它的文档；一个页面可以建多个、彼此独立。它承载绝大多数后台计算，是学习 worker 的基础。开三个标签就有三个互不相干的专用 worker，各算各的。",
+    "tags": ["web-workers", "入门", "dedicated-worker"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个专用 worker 会被同源所有标签自动共享",
+        "isCorrect": false,
+        "description": "那是共享 worker，专用 worker 仅创建它的页面能连"
+      },
+      {
+        "text": "仅创建它的页面能连、随该文档存活，一个页面可建多个且彼此独立，用于绝大多数后台计算",
+        "isCorrect": true,
+        "description": "一页独占、可多建，正是专用 worker"
+      },
+      {
+        "text": "专用 worker 生命周期独立于页面，关掉页面它仍在后台运行",
+        "isCorrect": false,
+        "description": "那是 Service Worker，专用 worker 随文档销毁"
+      },
+      {
+        "text": "专用 worker 主要用于拦截网络请求做离线缓存",
+        "isCorrect": false,
+        "description": "那是 Service Worker 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：下列哪种任务最适合下放到 worker？",
+    "explanation": "判断标准只有一条：这段活是不是「同步、耗时、会卡 UI 的纯计算」。适合的典型有加解密/哈希/压缩、大 JSON/CSV 解析、图像滤镜与音视频转码、语法高亮、物理模拟与大数组排序、WebAssembly 重计算等——输入输出可序列化、跑起来会冻结主线程。频繁读写 DOM、只是想延后执行、或几毫秒的极短任务都不适合。",
+    "tags": ["web-workers", "入门", "when-to-use"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "频繁读取和修改页面 DOM 的一段交互逻辑",
+        "isCorrect": false,
+        "description": "worker 够不着 DOM，来回消息反而更慢"
+      },
+      {
+        "text": "想让一段代码「稍后空闲时」再执行",
+        "isCorrect": false,
+        "description": "那用 `requestIdleCallback`，worker 是并行不是延后"
+      },
+      {
+        "text": "一次只花两三毫秒的短小计算",
+        "isCorrect": false,
+        "description": "启动加通信成本比计算还贵，不值得"
+      },
+      {
+        "text": "对几十 MB 数据做加解密 / 大 JSON 解析这类会冻结主线程的同步纯计算",
+        "isCorrect": true,
+        "description": "同步耗时卡 UI 的纯计算，正是 worker 的主场"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：主线程 `worker.postMessage(obj)` 后立刻修改 `obj`，worker 收到的会是什么？",
+    "explanation": "`postMessage` 底层用结构化克隆算法把数据深拷贝一份送过去，所以 worker 收到的是发出那一刻的快照，与主线程后续对 `obj` 的修改无关；反之亦然，两边各持一份、互不影响。想避免大对象深拷贝开销，才用 Transferable 移交所有权。",
+    "tags": ["web-workers", "入门", "copy-not-reference"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "同一个对象的引用，主线程改了 worker 那边也跟着变",
+        "isCorrect": false,
+        "description": "传的是拷贝不是引用，改一边不动另一边"
+      },
+      {
+        "text": "修改后的最新值，因为消息是异步发送的",
+        "isCorrect": false,
+        "description": "快照在调用瞬间已定，与异步无关"
+      },
+      {
+        "text": "`undefined`，因为对象在传输中被移交失效了",
+        "isCorrect": false,
+        "description": "克隆不会使原对象失效，那是 transfer 的语义"
+      },
+      {
+        "text": "发出那一刻 `obj` 的深拷贝快照，之后主线程的修改不影响 worker 那份",
+        "isCorrect": true,
+        "description": "结构化克隆是深拷贝，两边各一份互不影响"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：只是想让一段重计算「不要立刻跑、等页面空闲再跑」，最合适的做法是？",
+    "explanation": "`setTimeout` / `queueMicrotask` / `requestIdleCallback` 解决的是「什么时候跑」，把计算推迟到稍后，但真正跑起来时照样在主线程、照样冻结 UI。Worker 解决的是「在哪条线程跑」——让计算真正并行。所以「只想延后」用定时器/空闲回调即可，别为它付 worker 的启动与通信税。",
+    "tags": ["web-workers", "入门", "parallel-vs-defer"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 `requestIdleCallback` / `setTimeout` 延后执行——它们管「何时跑」，无需 worker",
+        "isCorrect": true,
+        "description": "延后用定时器 / 空闲回调，别付 worker 的启动税"
+      },
+      {
+        "text": "必须用 worker，因为只有 worker 能推迟执行",
+        "isCorrect": false,
+        "description": "worker 管并行不管延后，延后定时器就够"
+      },
+      {
+        "text": "用 worker 才能避免这段计算卡 UI",
+        "isCorrect": false,
+        "description": "若仍在主线程延后跑照样卡，这里需求只是延后"
+      },
+      {
+        "text": "用 `SharedArrayBuffer` 把计算共享出去",
+        "isCorrect": false,
+        "description": "SAB 是共享内存，与「延后执行」无关"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：创建一个专用 worker 的构造调用，写法正确的是？",
+    "explanation": "专用 worker 用 `new Worker(url, options)` 创建：`url` 是脚本地址（须同源，或 `blob:` / `data:`），`options` 可含 `type`（`'classic'` 默认 / `'module'`）、`credentials`、`name`。打包器项目推荐 `new Worker(new URL('./x.worker.js', import.meta.url), { type: 'module' })`，比裸字符串路径可靠。",
+    "tags": ["web-workers", "初级", "constructor"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`Worker.create('./w.js')`",
+        "isCorrect": false,
+        "description": "没有这个静态方法，要用 `new Worker(...)`"
+      },
+      {
+        "text": "`new Worker(new URL('./w.js', import.meta.url), { type: 'module' })`",
+        "isCorrect": true,
+        "description": "构造函数 + `new URL` 打包器写法，正解"
+      },
+      {
+        "text": "`worker.load('./w.js')`",
+        "isCorrect": false,
+        "description": "不存在的 API，构造即加载"
+      },
+      {
+        "text": "`new Thread('./w.js')`",
+        "isCorrect": false,
+        "description": "Web 平台没有 `Thread` 构造器"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：经典 worker 与模块 worker（`{ type: 'module' }`）在加载依赖上的区别是？",
+    "explanation": "经典 worker（默认）用 `importScripts('a.js', 'b.js')` 同步加载并执行外部脚本，不支持顶层 `import`；模块 worker 传 `{ type: 'module' }`，可用标准 `import` / `import()` / `export` 与 `import.meta`。模块 worker 的兼容性 Chrome/Edge 80+、Safari 15+、Firefox 114+（2023 中）已 Baseline。新项目优先模块 worker。",
+    "tags": ["web-workers", "初级", "classic-vs-module"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "两者都用 `import`，只是模块 worker 更快",
+        "isCorrect": false,
+        "description": "经典 worker 顶层 `import` 是语法错误"
+      },
+      {
+        "text": "经典 worker 用 `import`，模块 worker 用 `importScripts`",
+        "isCorrect": false,
+        "description": "正好说反了"
+      },
+      {
+        "text": "经典 worker 用 `importScripts()` 同步加载，模块 worker 用标准 `import`（FF 114+ 已 Baseline）",
+        "isCorrect": true,
+        "description": "importScripts vs import，正是两者分野"
+      },
+      {
+        "text": "模块 worker 里必须用 `importScripts`，`import` 被禁用",
+        "isCorrect": false,
+        "description": "模块 worker 恰恰支持 `import`、不支持 `importScripts`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：下列哪种值放进 `postMessage` 会抛 `DataCloneError`？",
+    "explanation": "结构化克隆能搬普通对象、数组、`Date`、`RegExp`、`Map`、`Set`、`ArrayBuffer`、TypedArray、`Blob`、`File`、`ImageData`、循环引用等，但传不了函数、DOM 节点、类的方法/原型链——含这些的对象会抛 `DataCloneError`。口诀：传数据，不传行为。",
+    "tags": ["web-workers", "初级", "clone-limits"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一个 `Map` 或 `Set`",
+        "isCorrect": false,
+        "description": "Map / Set 结构化克隆保真，可传"
+      },
+      {
+        "text": "一个 `Date` 或 `RegExp`",
+        "isCorrect": false,
+        "description": "两者都能被克隆保真"
+      },
+      {
+        "text": "一个 `ArrayBuffer` 或 `Uint8Array`",
+        "isCorrect": false,
+        "description": "二进制缓冲区可克隆（也可 transfer）"
+      },
+      {
+        "text": "一个函数或 DOM 节点（如 `document.body`）",
+        "isCorrect": true,
+        "description": "函数与 DOM 节点不可克隆，抛 DataCloneError"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`worker.terminate()` 与 worker 内部的 `self.close()` 的区别是？",
+    "explanation": "`worker.terminate()` 在主线程侧立即强杀 worker，正在跑的任务直接中断、terminate 后再 `postMessage` 无效；`self.close()` 由 worker 内部调用、自行了结，处理完当前任务后停止事件循环。两者都不给「优雅收尾」的机会——没有 `beforeterminate` 之类事件。",
+    "tags": ["web-workers", "初级", "terminate"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`terminate()` 在主线程侧立即强杀 worker，`self.close()` 由 worker 内部自我关闭；两者都无优雅收尾",
+        "isCorrect": true,
+        "description": "外部强杀 vs 内部自关，正解"
+      },
+      {
+        "text": "两者都会先触发 `beforeterminate` 事件让 worker 保存状态",
+        "isCorrect": false,
+        "description": "没有这种收尾事件，状态得自己提前存"
+      },
+      {
+        "text": "`terminate()` 只是暂停，`self.close()` 才真正销毁",
+        "isCorrect": false,
+        "description": "`terminate()` 是立即销毁不是暂停"
+      },
+      {
+        "text": "`self.close()` 从主线程调用，`terminate()` 在 worker 内调用",
+        "isCorrect": false,
+        "description": "调用方向说反了"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`SharedWorker` 与专用 `Worker` 最本质的区别是？",
+    "explanation": "专用 worker 是「一页一个」，`SharedWorker` 是「多页一个」——同源的多个页面/标签/iframe 共享同一个 worker 实例，用于多标签共用一条 WebSocket/SSE 长连接、一份内存状态或一个计算缓存。它不像专用 worker 直接 `postMessage`，而是通过 `sw.port`（一个 `MessagePort`）通信；只要还有一个页面连着它就活着。",
+    "tags": ["web-workers", "初级", "shared-worker"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "SharedWorker 能访问 DOM，专用 worker 不能",
+        "isCorrect": false,
+        "description": "两者都无 DOM，区别在共享与否"
+      },
+      {
+        "text": "SharedWorker 供同源多个页面/标签共享同一个实例（经 `sw.port` 通信），专用 worker 一页独占一个",
+        "isCorrect": true,
+        "description": "多页一实例 vs 一页一个，正是本质区别"
+      },
+      {
+        "text": "SharedWorker 运行更快，因为它用了多核",
+        "isCorrect": false,
+        "description": "单实例仍是单线程，区别不在速度"
+      },
+      {
+        "text": "SharedWorker 是同步的，专用 worker 是异步的",
+        "isCorrect": false,
+        "description": "两者通信都异步"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：为什么说 Service Worker 与专用/共享 worker 是「另一个物种」？",
+    "explanation": "专用与共享 worker 都是为计算服务的，靠 `postMessage` 收发数据。Service Worker 不是用来做计算的，而是坐在页面和网络之间当代理，有自己的注册、安装、激活生命周期，独立于页面、可被浏览器随时唤醒/回收，用于离线缓存、请求拦截、推送通知。它「碰巧也是 worker」（同样没有 DOM、事件驱动），但用途、API、心智完全不同。",
+    "tags": ["web-workers", "初级", "service-worker"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为 Service Worker 能直接操作 DOM，另外两者不能",
+        "isCorrect": false,
+        "description": "Service Worker 同样没有 DOM"
+      },
+      {
+        "text": "因为 Service Worker 运行在主线程上",
+        "isCorrect": false,
+        "description": "它也是独立于主线程的 worker"
+      },
+      {
+        "text": "它是网络代理、有独立于页面的注册/激活生命周期、可被唤醒，用途与另两者的「后台计算」完全不同",
+        "isCorrect": true,
+        "description": "网络代理 + 独立生命周期，定位迥异"
+      },
+      {
+        "text": "因为 Service Worker 用 `postMessage`，另两者不用",
+        "isCorrect": false,
+        "description": "三者都用 `postMessage`，区别在职责"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：下列哪一组 API 在 worker 内部「都可用」？",
+    "explanation": "worker 虽然没有 DOM，但有一套够搭完整数据/计算层的能力：`fetch`、`XMLHttpRequest`、`WebSocket`、`EventSource`、`IndexedDB`、`caches`、`WebAssembly`、`crypto`（Web Crypto）、`OffscreenCanvas`、`createImageBitmap`、Streams、`setTimeout` 等。不可用的是 DOM 与 Web Storage（`localStorage`/`sessionStorage`）。",
+    "tags": ["web-workers", "初级", "worker-scope-apis"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`document`、`localStorage`、`alert`",
+        "isCorrect": false,
+        "description": "DOM、Web Storage、alert 在 worker 里都不可用"
+      },
+      {
+        "text": "`window`、`parent`、`sessionStorage`",
+        "isCorrect": false,
+        "description": "这些都归主线程，worker 够不着"
+      },
+      {
+        "text": "`document.querySelector`、`history`",
+        "isCorrect": false,
+        "description": "依赖 DOM / 导航，worker 内不可用"
+      },
+      {
+        "text": "`fetch`、`IndexedDB`、`WebAssembly`、`OffscreenCanvas`",
+        "isCorrect": true,
+        "description": "这些正是 worker 内可用的数据/计算/图形能力"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：结构化克隆与 Transferable 移交在「拷贝还是搬家」上的根本区别是？",
+    "explanation": "结构化克隆是「复印一份给你」——深拷贝，原对象照常可用、内存里有两份；Transferable 移交是「把原件给你、我这份作废」——零拷贝把底层资源的所有权搬到对方，原对象随即 detached 失效、内存里始终只有一份。传大二进制用 transfer，传小对象或要保留原件用克隆。",
+    "tags": ["web-workers", "初级", "clone-vs-transfer"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "克隆是深拷贝、原对象仍可用（两份内存）；transfer 是移交所有权、原对象随即失效（一份内存）",
+        "isCorrect": true,
+        "description": "复印 vs 搬家，正是两者根本区别"
+      },
+      {
+        "text": "两者都会保留原对象，只是 transfer 更快",
+        "isCorrect": false,
+        "description": "transfer 后原对象会 detached 失效"
+      },
+      {
+        "text": "克隆零拷贝，transfer 才是深拷贝",
+        "isCorrect": false,
+        "description": "正好说反：克隆才是深拷贝"
+      },
+      {
+        "text": "两者都会使原对象失效，只是克隆更慢",
+        "isCorrect": false,
+        "description": "克隆不使原对象失效，只有 transfer 会"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：Comlink 这个库解决的核心问题是什么？",
+    "explanation": "Comlink（Google Chrome Labs 出品，约 1.1KB brotli）用 ES6 `Proxy` 把 worker 里 `expose` 的对象/方法，在主线程 `wrap` 成返回 Promise 的 async 调用——`postMessage` + `onmessage` + 手工 `switch(type)` 路由 + id 关联那层样板彻底隐形。你像调本地 async 函数一样 `await api.doWork(x)`，worker 里抛的异常会让对应的 `await` reject。",
+    "tags": ["web-workers", "初级", "comlink"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它把 worker 变成能访问 DOM 的线程",
+        "isCorrect": false,
+        "description": "Comlink 不改变 worker 无 DOM 的事实"
+      },
+      {
+        "text": "用 `Proxy` 把 worker 的方法包装成本地 async 调用，消灭 `postMessage` + 手工路由的样板",
+        "isCorrect": true,
+        "description": "RPC 化 worker 调用，正是 Comlink 的核心"
+      },
+      {
+        "text": "它是一个把代码并行编译到多核的编译器",
+        "isCorrect": false,
+        "description": "它只是通信封装，不做编译并行"
+      },
+      {
+        "text": "它替代 `new Worker`，自己创建线程池管理",
+        "isCorrect": false,
+        "description": "你仍用 `new Worker`，Comlink 只包通信"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：直接用裸 `postMessage` 做「请求-响应」式调用时，为什么样板代码多？",
+    "explanation": "`postMessage` 发出即返回、异步，对方回应过一会儿才经 `onmessage` 到达，所以「发一个请求、等一个响应」需要你自己给消息加 `id` 把请求和响应关联起来（用 Map 存 resolve），worker 端还要写一套对称的 `switch(type)` 路由、手工把成功/失败当消息回传——协议、路由、错误传播都手写，加一个方法要改多处。",
+    "tags": ["web-workers", "初级", "boilerplate"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `postMessage` 是同步阻塞的，要手写线程锁",
+        "isCorrect": false,
+        "description": "`postMessage` 异步且无锁，问题不在锁"
+      },
+      {
+        "text": "因为每次调用都要重建 worker",
+        "isCorrect": false,
+        "description": "worker 可复用，样板来自协议不是重建"
+      },
+      {
+        "text": "通信是异步的，需自己用 `id` 关联请求响应、手写 `switch` 路由和错误回传，加方法要改多处",
+        "isCorrect": true,
+        "description": "异步 + 手写协议/路由，正是样板之源"
+      },
+      {
+        "text": "因为 `postMessage` 不能传对象，只能传字符串",
+        "isCorrect": false,
+        "description": "它能传结构化克隆的对象，样板与此无关"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：Worker 并非免费加速器，它有哪两笔明确成本？",
+    "explanation": "worker 有两笔成本：① 启动成本——`new Worker` 要下载并解析脚本、创建独立 JS 上下文，冷启动几毫秒到几十毫秒；② 通信成本——`postMessage` 要对数据做结构化克隆序列化/反序列化，传大对象深拷贝本身就慢，来回频繁通信的序列化开销可能吃掉全部并行收益。",
+    "tags": ["web-workers", "初级", "cost-tradeoff"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "内存泄漏成本与 GC 停顿成本",
+        "isCorrect": false,
+        "description": "主要成本是启动与通信，不是这两项"
+      },
+      {
+        "text": "编译成本与类型检查成本",
+        "isCorrect": false,
+        "description": "worker 不涉及额外编译/类型开销"
+      },
+      {
+        "text": "没有任何成本，worker 永远比主线程快",
+        "isCorrect": false,
+        "description": "短任务下启动加通信可能比计算还贵"
+      },
+      {
+        "text": "启动成本（下载解析脚本 + 建上下文）与通信成本（结构化克隆序列化）",
+        "isCorrect": true,
+        "description": "启动 + 通信，正是 worker 的两笔开销"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：连接到 `SharedWorker` 后，主线程侧应通过什么来收发消息？",
+    "explanation": "与专用 worker 直接 `worker.postMessage` 不同，`SharedWorker` 要区分消息来自哪个页面，所以主线程侧通过 `sw.port`（一个 `MessagePort`）通信：`sw.port.postMessage(data)` 发、`sw.port.onmessage = …` 收。worker 侧在 `onconnect` 里用 `e.ports[0]` 拿到对应端口。用 `addEventListener` 监听时必须 `sw.port.start()` 手动开闸。",
+    "tags": ["web-workers", "初级", "shared-port"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "通过 `sw.port`（`MessagePort`）——`sw.port.postMessage` 发、`sw.port.onmessage` 收",
+        "isCorrect": true,
+        "description": "共享 worker 经端口通信，正解"
+      },
+      {
+        "text": "直接 `sw.postMessage(data)`，与专用 worker 一样",
+        "isCorrect": false,
+        "description": "共享 worker 要经 `sw.port`，不是 `sw` 本身"
+      },
+      {
+        "text": "通过全局 `BroadcastChannel` 广播",
+        "isCorrect": false,
+        "description": "那是另一种 API，共享 worker 用 port"
+      },
+      {
+        "text": "通过共享变量直接读写",
+        "isCorrect": false,
+        "description": "仍是消息传递、经 port，不共享变量"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：一个需要被频繁调用的后台计算，为什么不该每次调用都 `new Worker` 再 `terminate`？",
+    "explanation": "反复 `new Worker` / `terminate` 会把 worker 的启动成本（下载解析脚本、建独立上下文，几到几十毫秒）乘以调用次数，把本该摊薄的固定开销放大成主要瓶颈。长期任务应复用同一个 worker；高频、可并行的任务流则建一个 worker 池（大小约 `navigator.hardwareConcurrency`）按空闲分派。",
+    "tags": ["web-workers", "初级", "worker-reuse"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为浏览器限制每页只能创建一个 worker",
+        "isCorrect": false,
+        "description": "一页可建多个 worker，限制不在数量"
+      },
+      {
+        "text": "每次新建都重复付启动成本（下载解析 + 建上下文），把固定开销乘以调用次数——应复用或用池",
+        "isCorrect": true,
+        "description": "复用摊薄启动成本，正解"
+      },
+      {
+        "text": "因为 `terminate` 会删除 worker 脚本文件",
+        "isCorrect": false,
+        "description": "terminate 只销毁实例，不动文件"
+      },
+      {
+        "text": "因为新建 worker 必须用户手动授权",
+        "isCorrect": false,
+        "description": "创建 worker 无需授权，问题在成本"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：一个 `SharedWorker` 实例什么时候会被浏览器回收？",
+    "explanation": "共享 worker 的生命周期由「还有没有页面连着」决定：只要还有一个页面/标签连着它，它就活着并保持内存状态；当所有连接的页面都关闭或断开后，它才被回收。这正是它能跨标签维持一条 WebSocket、一份状态的基础——某个标签关掉，只要还有别的标签连着，共享实例和它持有的连接就不中断。",
+    "tags": ["web-workers", "初级", "shared-lifecycle"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "创建它的第一个页面一关闭就立即回收",
+        "isCorrect": false,
+        "description": "只要还有别的页面连着就不回收"
+      },
+      {
+        "text": "固定存活 5 分钟后自动回收",
+        "isCorrect": false,
+        "description": "没有固定时限，看是否还有连接"
+      },
+      {
+        "text": "永不回收，直到浏览器完全退出",
+        "isCorrect": false,
+        "description": "全部页面断开后即可回收"
+      },
+      {
+        "text": "当所有连接它的页面都关闭/断开后才被回收；只要还有一个连着它就存活",
+        "isCorrect": true,
+        "description": "有页面连着就活，全断才回收"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`new Worker(url, options)` 的 `options` 里，`type`、`credentials`、`name` 分别控制什么？",
+    "explanation": "`type` 取 `'classic'`（默认）或 `'module'`，决定 worker 脚本按经典脚本还是 ES 模块解析——直接影响能否在 worker 里写 `import`；`credentials` 取 `omit`/`same-origin`/`include`，是模块 worker 拉取脚本时的凭据策略；`name` 是给 worker 起的名字，worker 内可通过 `self.name` 读到、调试面板也可见。",
+    "tags": ["web-workers", "中级", "constructor-options"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "三者分别设置线程优先级、内存上限、CPU 核数",
+        "isCorrect": false,
+        "description": "这些都不是 worker 构造选项"
+      },
+      {
+        "text": "`type` 设 MIME 类型、`credentials` 设密码、`name` 设域名",
+        "isCorrect": false,
+        "description": "含义张冠李戴"
+      },
+      {
+        "text": "`type` 决定同步还是异步、`credentials` 决定是否加密、`name` 决定端口",
+        "isCorrect": false,
+        "description": "三项含义均不对"
+      },
+      {
+        "text": "`type` 定经典/模块解析、`credentials` 定拉脚本的凭据策略、`name` 给 worker 命名（`self.name` 可读）",
+        "isCorrect": true,
+        "description": "解析方式/凭据/命名，三项各司其职"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：在 Vite/webpack 项目里导入 worker，为什么推荐 `new Worker(new URL('./x.worker.js', import.meta.url), { type: 'module' })` 而非裸字符串路径？",
+    "explanation": "`new URL('./x.worker.js', import.meta.url)` 让打包器把 worker 当独立入口处理、产出单独 chunk、并正确改写路径，跨 Vite/Rollup/webpack 5/Parcel 通用、可 tree-shake。裸字符串路径 `new Worker('./x.worker.js')` 在打包/部署后相对路径经常错位，且打包器不会把它当模块处理。",
+    "tags": ["web-workers", "中级", "bundler-import"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`new URL(..., import.meta.url)` 让打包器把 worker 当独立入口正确产出 chunk、改写路径；裸字符串打包后易错位",
+        "isCorrect": true,
+        "description": "打包器据此产出 worker 产物，路径可靠"
+      },
+      {
+        "text": "裸字符串路径会触发跨域错误，`new URL` 能绕过同源限制",
+        "isCorrect": false,
+        "description": "两者都受同源约束，差别在打包解析"
+      },
+      {
+        "text": "`new URL` 写法运行时更快，减少了内存拷贝",
+        "isCorrect": false,
+        "description": "差别在构建期路径处理，不是运行速度"
+      },
+      {
+        "text": "只有 `new URL` 写法才允许传 `{ type: 'module' }`",
+        "isCorrect": false,
+        "description": "字符串路径也能传 module，区别在路径解析"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：关于 worker 脚本的同源约束，正确的是？",
+    "explanation": "worker 脚本必须与页面同源（或使用 `blob:`/`data:` URL）；子 worker（worker 里再 `new Worker`）也须与父页面同源。跨源脚本地址会触发 `error` 事件（现代浏览器不再抛同步 `SecurityError`）。要加载跨源代码，可以用内联 worker 包一层；此外经典 worker 的 `importScripts` 允许加载跨源脚本。",
+    "tags": ["web-workers", "中级", "same-origin"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "worker 脚本可以任意跨源加载，没有同源限制",
+        "isCorrect": false,
+        "description": "脚本地址须同源，跨源会触发 error"
+      },
+      {
+        "text": "worker 脚本须与页面同源（或 `blob:`/`data:`），子 worker 须与父页面同源；跨源地址触发 `error`",
+        "isCorrect": true,
+        "description": "同源约束 + 子 worker 同源，正解"
+      },
+      {
+        "text": "只有模块 worker 需要同源，经典 worker 不需要",
+        "isCorrect": false,
+        "description": "两者构造脚本都须同源"
+      },
+      {
+        "text": "同源约束只针对 `postMessage`，不针对脚本地址",
+        "isCorrect": false,
+        "description": "约束正是针对脚本地址"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`worker.onerror` 与 `worker.onmessageerror` 分别在什么时候触发？",
+    "explanation": "二者是两回事：`onerror` 在 worker 内部有未捕获异常冒泡到主线程时触发，事件是 `ErrorEvent`，带 `message`/`filename`/`lineno`/`colno` 定位字段；`onmessageerror` 在收到的消息无法反序列化（如对方传了当前环境克隆不了的值）时触发。前者是「worker 里代码抛了异常」，后者是「消息反序列化失败」。",
+    "tags": ["web-workers", "中级", "error-handling"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者都在 worker 崩溃时触发，完全等价",
+        "isCorrect": false,
+        "description": "一个是代码异常、一个是消息反序列化失败，不等价"
+      },
+      {
+        "text": "`onerror` 是消息解析失败，`onmessageerror` 是代码异常",
+        "isCorrect": false,
+        "description": "正好说反了"
+      },
+      {
+        "text": "`onerror` 接 worker 内未捕获异常（`ErrorEvent`），`onmessageerror` 接收到的消息反序列化失败",
+        "isCorrect": true,
+        "description": "代码异常 vs 反序列化失败，正解"
+      },
+      {
+        "text": "`onerror` 只在网络错误时触发，`onmessageerror` 只在超时时触发",
+        "isCorrect": false,
+        "description": "两者与网络/超时无关"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：创建 worker 后，为什么建议「先挂 `onmessage` 监听再 `postMessage` 发消息」？",
+    "explanation": "worker 可能很快就回消息，如果监听器挂晚了、在 worker 已经回复之后才 `worker.onmessage = …`，就会漏掉那条消息。所以最佳实践是先挂 `onmessage`（及 `onerror`）再发第一条 `postMessage`，避免竞态。这也是完整闭环示例里「先挂监听、再发请求」的原因。",
+    "tags": ["web-workers", "中级", "listener-timing"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `postMessage` 必须在 `onmessage` 之后才有定义",
+        "isCorrect": false,
+        "description": "顺序无强制语法要求，是为防竞态"
+      },
+      {
+        "text": "因为不先挂监听 worker 就不会启动",
+        "isCorrect": false,
+        "description": "worker 构造即启动，与监听顺序无关"
+      },
+      {
+        "text": "因为 `onmessage` 会阻塞 `postMessage`",
+        "isCorrect": false,
+        "description": "两者不互相阻塞，理由是防漏消息"
+      },
+      {
+        "text": "worker 可能很快回消息，监听器挂晚了会漏掉早到的响应——先挂再发避免竞态",
+        "isCorrect": true,
+        "description": "防止早到的响应被漏，正解"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：相比 `JSON.stringify`，`postMessage` 的结构化克隆额外能保真地传下列哪一类值？",
+    "explanation": "结构化克隆比 `JSON.parse(JSON.stringify())` 强得多——能搬 `Date`、`RegExp`、`Map`、`Set`、`ArrayBuffer`、TypedArray、`Blob`、`File`、`ImageData`，还能处理循环引用；而 JSON 会把 `Date` 变字符串、丢掉 `Map`/`Set`、遇循环引用报错。但它仍传不了函数、DOM 节点、类方法。",
+    "tags": ["web-workers", "中级", "structured-clone"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`Map`/`Set`、`Date`、`RegExp` 与含循环引用的对象",
+        "isCorrect": true,
+        "description": "这些正是结构化克隆强于 JSON 的地方"
+      },
+      {
+        "text": "函数与箭头函数",
+        "isCorrect": false,
+        "description": "函数不可克隆，抛 DataCloneError"
+      },
+      {
+        "text": "DOM 节点与事件对象",
+        "isCorrect": false,
+        "description": "DOM 节点不可克隆"
+      },
+      {
+        "text": "类实例的方法与原型链",
+        "isCorrect": false,
+        "description": "方法与原型链会丢，只留数据字段"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：执行 `worker.postMessage(buf, [buf])` 移交一个 `ArrayBuffer` 后，主线程再读 `buf.byteLength` 会得到？",
+    "explanation": "把对象放进 `postMessage` 第二个参数（transfer 列表）就是所有权移交——零拷贝把底层资源搬到 worker，发送方随即失去它。之后主线程读 `buf.byteLength` 得到 `0`（已 detached），继续读写会抛错。这是 transfer 的核心语义，不是 bug。若主线程还要保留数据，要先 `structuredClone` 留副本再 transfer 副本。",
+    "tags": ["web-workers", "中级", "transfer-detach"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原来的字节长度不变，因为 transfer 也会保留副本",
+        "isCorrect": false,
+        "description": "transfer 是搬家不留副本，原对象失效"
+      },
+      {
+        "text": "`0`——`buf` 已被移交、detached 失效，继续用会抛错",
+        "isCorrect": true,
+        "description": "移交后原对象 detached、读到 0，正是 transfer 语义"
+      },
+      {
+        "text": "`undefined`，因为 `buf` 被删除了",
+        "isCorrect": false,
+        "description": "对象仍在但已 detached，`byteLength` 是 0 不是 undefined"
+      },
+      {
+        "text": "抛 `DataCloneError`",
+        "isCorrect": false,
+        "description": "transfer 成功、读长度得 0；不可克隆才抛该错"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：要零拷贝移交一个 `ArrayBuffer` 给 worker，正确的调用是？",
+    "explanation": "transfer 的语法是 `postMessage(msg, [transferList])`——第二个参数是要移交的可转移对象数组，`msg` 里引用到它们的地方会指向搬过去的那份。移交 `ArrayBuffer` 就是 `worker.postMessage(buf, [buf])`；只写 `postMessage(buf)`（不带第二参）走的是结构化克隆深拷贝，不是移交。",
+    "tags": ["web-workers", "中级", "transfer-syntax"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`worker.postMessage(buf)`",
+        "isCorrect": false,
+        "description": "少了 transfer 列表，这是克隆不是移交"
+      },
+      {
+        "text": "`worker.postMessage(buf, { transfer: true })`",
+        "isCorrect": false,
+        "description": "第二参是数组不是配置对象"
+      },
+      {
+        "text": "`worker.postMessage(buf, [buf])`",
+        "isCorrect": true,
+        "description": "第二参列出要移交的对象，正是 transfer 语法"
+      },
+      {
+        "text": "`worker.transfer(buf)`",
+        "isCorrect": false,
+        "description": "没有这个方法，移交靠 postMessage 第二参"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：下列哪一组「都属于可转移（Transferable）对象」？",
+    "explanation": "可转移类型包括 `ArrayBuffer`、`MessagePort`、`ImageBitmap`、`OffscreenCanvas`、`ReadableStream`/`WritableStream`/`TransformStream`，以及媒体类 `VideoFrame`/`AudioData`/`MediaStreamTrack`、`RTCDataChannel` 等。普通对象、`Date`、`Map`/`Set`、`Blob`、以及 TypedArray 视图本身不可转移（只能被克隆）——转移 TypedArray 要放它的 `.buffer`。",
+    "tags": ["web-workers", "中级", "transferable-types"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`Date`、`Map`、`Blob`",
+        "isCorrect": false,
+        "description": "这些只能克隆，不在可转移列表"
+      },
+      {
+        "text": "普通对象、`Set`、`Uint8Array`（视图本身）",
+        "isCorrect": false,
+        "description": "视图本身不可转移，要转移其 `.buffer`"
+      },
+      {
+        "text": "`ArrayBuffer`、`MessagePort`、`ImageBitmap`、`OffscreenCanvas`",
+        "isCorrect": true,
+        "description": "这些都是标准可转移对象"
+      },
+      {
+        "text": "`RegExp`、`File`、`ImageData`",
+        "isCorrect": false,
+        "description": "三者可克隆但不可转移"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`OffscreenCanvas` 解决的核心问题是什么？",
+    "explanation": "普通 `<canvas>` 绑在 DOM 上、只能在主线程绘制，复杂的 WebGL/2D 渲染会和 UI 抢主线程。`OffscreenCanvas` 把画布从 DOM 解耦，让渲染整个跑在 worker 线程：主线程 `canvas.transferControlToOffscreen()` 拿到一个可转移的 `OffscreenCanvas`、transfer 给 worker，worker 直接对它 `getContext('webgl'/'2d')` 渲染，画到上面的内容由浏览器自动同步显示。",
+    "tags": ["web-workers", "中级", "offscreencanvas"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 canvas 渲染从主线程卸到 worker 线程，复杂 WebGL/2D 绘制不再和 UI 抢主线程",
+        "isCorrect": true,
+        "description": "渲染卸载到 worker，正是它的价值"
+      },
+      {
+        "text": "让 canvas 能在服务端 Node 里渲染",
+        "isCorrect": false,
+        "description": "它面向浏览器 worker 渲染，不是服务端"
+      },
+      {
+        "text": "把 canvas 变成矢量图以缩小体积",
+        "isCorrect": false,
+        "description": "与矢量化无关，是把渲染搬线程"
+      },
+      {
+        "text": "自动把 2D 绘制升级为 WebGL",
+        "isCorrect": false,
+        "description": "它不改绘制 API，只是换执行线程"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：在 `SharedWorker` 脚本内部，如何拿到某个新连接页面对应的通信端口？",
+    "explanation": "共享 worker 的入口是 `onconnect`，每有一个新页面连上就触发一次；在处理器里用 `const port = e.ports[0]` 拿到这条连接的 `MessagePort`，再在 `port` 上收发。worker 只有一个实例（全局状态共享），但每个连接的页面各持一条端口，worker 要自己维护一个端口列表才能广播给所有页面。",
+    "tags": ["web-workers", "中级", "onconnect"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接用全局 `self.port`",
+        "isCorrect": false,
+        "description": "共享 worker 没有单一全局 port，每连接各一条"
+      },
+      {
+        "text": "在 `self.onconnect = (e) => { const port = e.ports[0]; … }` 里取 `e.ports[0]`",
+        "isCorrect": true,
+        "description": "onconnect 触发、取 e.ports[0]，正是共享 worker 入口"
+      },
+      {
+        "text": "在 `self.onmessage` 里取 `e.source`",
+        "isCorrect": false,
+        "description": "共享 worker 入口是 onconnect 不是 onmessage"
+      },
+      {
+        "text": "调用 `self.getPort()` 主动获取",
+        "isCorrect": false,
+        "description": "没有这个 API，端口由 onconnect 事件给出"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：想在 worker 内做持久化键值存储，为什么不能用 `localStorage`，该用什么替代？",
+    "explanation": "`localStorage`/`sessionStorage`（Web Storage）在 worker 里不可用——它们归主线程管。要在 worker 里做持久存储，用 `IndexedDB`（worker 内可用）或 `caches`（Cache API）替代。这也是 worker「管算与网络/存储 IO、不管界面」心智的一部分。",
+    "tags": ["web-workers", "中级", "no-web-storage"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`localStorage` 在 worker 里可用，直接用即可",
+        "isCorrect": false,
+        "description": "Web Storage 在 worker 里不可用"
+      },
+      {
+        "text": "用 `document.cookie` 替代",
+        "isCorrect": false,
+        "description": "worker 无 DOM，够不着 `document`"
+      },
+      {
+        "text": "Web Storage 在 worker 里不可用，改用 `IndexedDB` 或 `caches`",
+        "isCorrect": true,
+        "description": "IndexedDB / caches 顶替不可用的 Web Storage"
+      },
+      {
+        "text": "用 `window.sessionStorage`",
+        "isCorrect": false,
+        "description": "worker 里既无 `window` 也无 Web Storage"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：面对高频、可并行的任务流，worker 池的大小取多少比较合理？",
+    "explanation": "worker 池建一组常驻 worker，按空闲把任务分派进去，既复用（省启动）又并行（吃满多核）。池大小取 `navigator.hardwareConcurrency`（逻辑核数）附近是合理默认——再多只会互相抢核、并不加速。生产可用成熟库（如 workerpool）或按「空闲队列」而非「轮询」分派以更均衡。",
+    "tags": ["web-workers", "中级", "worker-pool"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "越多越好，建几百个 worker 最快",
+        "isCorrect": false,
+        "description": "超过核数只会互相抢核，不再加速"
+      },
+      {
+        "text": "固定 1 个，多了会冲突",
+        "isCorrect": false,
+        "description": "1 个吃不满多核，池就是为并行"
+      },
+      {
+        "text": "约 `navigator.hardwareConcurrency`（逻辑核数）——再多只会互相抢核",
+        "isCorrect": true,
+        "description": "按核数取池大小，正是合理默认"
+      },
+      {
+        "text": "等于待处理任务总数，一任务一 worker",
+        "isCorrect": false,
+        "description": "那退化成每任务新建，启动成本爆炸"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`ImageBitmap` 配合 `createImageBitmap()` 在 worker 场景里的价值是什么？",
+    "explanation": "`ImageBitmap` 是一种已解码、可转移的位图对象。`createImageBitmap(src)`（主线程或 worker 均可用）把图片/`Blob`/`ImageData` 解码成 `ImageBitmap`，可以把「解码图片」这件往往不便宜的活挪进 worker，或在线程间零拷贝传图像。它能被 `drawImage()` 直接绘制、能 transfer、能配 `OffscreenCanvas` 与 `bitmaprenderer` 上下文。",
+    "tags": ["web-workers", "中级", "imagebitmap"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是已解码、可转移的位图；可在 worker 里 `createImageBitmap` 解码后零拷贝 transfer 回主线程上屏",
+        "isCorrect": true,
+        "description": "解码位图 + 可转移，图像管线进 worker 的拼图"
+      },
+      {
+        "text": "它是一种矢量图格式，体积比 PNG 小",
+        "isCorrect": false,
+        "description": "它是已解码的位图对象，不是矢量格式"
+      },
+      {
+        "text": "它只能在主线程创建，worker 里不可用",
+        "isCorrect": false,
+        "description": "`createImageBitmap` 在 worker 里也可用"
+      },
+      {
+        "text": "它不可转移，只能走结构化克隆",
+        "isCorrect": false,
+        "description": "它恰恰是可转移对象"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：关于 `importScripts()`，下列说法正确的是？",
+    "explanation": "`importScripts(...urls)` 仅经典 worker 可用，同步加载并执行外部脚本——它会阻塞 worker 线程直到全部脚本下载并执行完，脚本按参数顺序执行，加载失败抛 `NetworkError`。它允许加载跨源脚本（与模块 `import` 的同源限制不同）。模块 worker 里不可用 `importScripts`，改用标准 `import`。",
+    "tags": ["web-workers", "高级", "importscripts"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是异步的，返回 Promise 需 `await`",
+        "isCorrect": false,
+        "description": "它是同步阻塞加载，不返回 Promise"
+      },
+      {
+        "text": "仅经典 worker 可用，同步加载、可跨源、失败抛 `NetworkError`；模块 worker 改用 `import`",
+        "isCorrect": true,
+        "description": "经典专属 + 同步 + 可跨源，正解"
+      },
+      {
+        "text": "经典和模块 worker 都能用，效果与 `import` 相同",
+        "isCorrect": false,
+        "description": "模块 worker 不可用 `importScripts`"
+      },
+      {
+        "text": "只能加载同源脚本，跨源会被拒绝",
+        "isCorrect": false,
+        "description": "它恰恰允许加载跨源脚本"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：把一个类实例 `new Point(3)` 通过 `postMessage` 传给 worker，worker 收到的是什么？",
+    "explanation": "结构化克隆搬数据不搬行为：类实例的数据字段能过去，但方法与原型链会丢失——worker 收到的是一个只含数据字段的普通对象（如 `{ x: 3 }`），没有 `dist()` 之类方法，也不再是 `Point` 的实例。要在 worker 里用这个类，就在 worker 里也定义它、只传纯数据字段、在对面重建实例。",
+    "tags": ["web-workers", "高级", "class-instance"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一个完整的 `Point` 实例，方法和原型链都在",
+        "isCorrect": false,
+        "description": "方法与原型链会丢，不是完整实例"
+      },
+      {
+        "text": "抛 `DataCloneError`，类实例根本传不过去",
+        "isCorrect": false,
+        "description": "数据字段能过去，只是方法丢失，不抛错"
+      },
+      {
+        "text": "一个只含数据字段的普通对象（如 `{ x: 3 }`），方法与原型链丢失",
+        "isCorrect": true,
+        "description": "搬数据不搬行为，方法需在对面重建"
+      },
+      {
+        "text": "一个指向原实例的代理，调方法会回到主线程执行",
+        "isCorrect": false,
+        "description": "克隆不建代理，那是 Comlink.proxy 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：要零拷贝移交一个 `Uint8Array` 视图，transfer 列表里应该放什么？",
+    "explanation": "TypedArray（如 `Uint8Array`）本身不在可转移列表里，可转移的是它背后的 `ArrayBuffer`。所以要移交一个视图，消息体里放 `view`，transfer 列表里放 `view.buffer`：`postMessage(view, [view.buffer])`。底层 buffer 被搬走后，`view` 这个壳也随之变空（`byteLength` 变 0）。",
+    "tags": ["web-workers", "高级", "typedarray-buffer"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "放 `view` 本身，如 `postMessage(view, [view])`",
+        "isCorrect": false,
+        "description": "视图本身不可转移，会被忽略/报错"
+      },
+      {
+        "text": "放 `view.length`",
+        "isCorrect": false,
+        "description": "长度是数字，不是可转移对象"
+      },
+      {
+        "text": "无需 transfer 列表，TypedArray 默认零拷贝",
+        "isCorrect": false,
+        "description": "默认走克隆深拷贝，不零拷贝"
+      },
+      {
+        "text": "放 `view.buffer`，如 `postMessage(view, [view.buffer])`",
+        "isCorrect": true,
+        "description": "转移的是底层 buffer 而非视图本身，正解"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：在 `SharedWorker` 里用 `port.addEventListener('message', fn)` 监听却收不到消息，最可能漏了什么？",
+    "explanation": "`MessagePort` 的开闸规则：用 `port.onmessage = fn`（属性赋值）会隐式 `start`；用 `port.addEventListener('message', fn)` 则不会隐式开闸，必须再显式调用 `port.start()`，否则消息永远不会到达。忘了 `start()` 是共享 worker「消息发了收不到」最常见的坑。",
+    "tags": ["web-workers", "高级", "port-start"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "漏了 `port.start()`——用 `addEventListener` 监听时必须显式开闸（属性赋值 `onmessage` 才隐式 start）",
+        "isCorrect": true,
+        "description": "addEventListener 需手动 start，正是此坑"
+      },
+      {
+        "text": "漏了 `port.connect()`",
+        "isCorrect": false,
+        "description": "没有 `connect()` 方法，开闸靠 `start()`"
+      },
+      {
+        "text": "漏了在主线程再 `postMessage` 一次握手",
+        "isCorrect": false,
+        "description": "无需握手，缺的是 `start()`"
+      },
+      {
+        "text": "`addEventListener` 不支持 message 事件，只能用 `onmessage`",
+        "isCorrect": false,
+        "description": "支持，只是需配 `start()`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：要兼容 Firefox 的 `SharedWorker`，构造时有什么限制？",
+    "explanation": "Firefox 不支持 `{ type: 'module' }` 的 `SharedWorker`（普通脚本型可用）——这一点和专用 worker 不同（专用 worker 的模块类型 Firefox 114+ 已支持）。要兼容 Firefox 就别给共享 worker 传 `type: 'module'`，回落经典脚本 + `importScripts`。此外移动端对 SharedWorker 支持有限，上线前需实测并备降级。",
+    "tags": ["web-workers", "高级", "firefox-module-shared"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Firefox 完全不支持 SharedWorker，只能用专用 worker",
+        "isCorrect": false,
+        "description": "普通脚本型 SharedWorker 桌面 Firefox 支持"
+      },
+      {
+        "text": "Firefox 不支持 `{ type: 'module' }` 的 SharedWorker，需回落经典脚本 + `importScripts`",
+        "isCorrect": true,
+        "description": "module 型 SharedWorker Firefox 不支持，正解"
+      },
+      {
+        "text": "Firefox 要求 SharedWorker 必须传 `{ type: 'module' }`",
+        "isCorrect": false,
+        "description": "正好相反，module 型才是不支持的"
+      },
+      {
+        "text": "Firefox 的 SharedWorker 不能用 `sw.port`",
+        "isCorrect": false,
+        "description": "端口通信正常，限制在 module 类型"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：全局函数 `structuredClone()` 的作用是什么，它和 `postMessage` 是什么关系？",
+    "explanation": "`structuredClone()` 是与 `postMessage` 同款算法的全局函数，用来在同一个线程内做深拷贝（比 `JSON.parse(JSON.stringify())` 强，能搬 `Map`/`Set`/`Date`/循环引用/`ArrayBuffer`）。它也支持 `structuredClone(obj, { transfer: [buf] })` 在克隆时移交部分资源——被移交的 buffer 随即 detached 失效。",
+    "tags": ["web-workers", "高级", "structuredclone-fn"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是主线程给 worker 发消息的另一个别名，等价于 `postMessage`",
+        "isCorrect": false,
+        "description": "它是线程内深拷贝，不发消息"
+      },
+      {
+        "text": "它只能拷贝 JSON 兼容的数据，不如 `postMessage` 强",
+        "isCorrect": false,
+        "description": "两者同款算法，能力相同、强于 JSON"
+      },
+      {
+        "text": "同 `postMessage` 算法的线程内深拷贝函数，支持 `{ transfer }` 选项在克隆时移交资源",
+        "isCorrect": true,
+        "description": "线程内深拷贝 + transfer 选项，正解"
+      },
+      {
+        "text": "它把对象转成字符串再解析，等同 `JSON` 往返",
+        "isCorrect": false,
+        "description": "它保真 Map/Set/循环引用，远强于 JSON 往返"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：`SharedArrayBuffer` 与结构化克隆、Transferable 相比，最本质的不同是什么？",
+    "explanation": "克隆和 transfer 都是「一份数据只在一个地方」。`SharedArrayBuffer`（SAB）打破这点——它让主线程和 worker 同时映射到同一块物理内存，一边写、另一边立刻能读，无需再 `postMessage`；配 `Atomics` 做无锁同步。它是唯一的「共享内存」原语。",
+    "tags": ["web-workers", "高级", "sharedarraybuffer"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它传输更快，但仍是把数据拷贝一份给对方",
+        "isCorrect": false,
+        "description": "它不拷贝，是两线程共享同一块内存"
+      },
+      {
+        "text": "它移交所有权，移交后原线程失去访问权",
+        "isCorrect": false,
+        "description": "那是 transfer；SAB 两边都能一直访问"
+      },
+      {
+        "text": "它只能存字符串，不能存二进制",
+        "isCorrect": false,
+        "description": "它是二进制内存块，配 TypedArray 读写"
+      },
+      {
+        "text": "两条线程同时映射同一块物理内存、可同时读写（配 `Atomics` 同步），无需 `postMessage` 传数据",
+        "isCorrect": true,
+        "description": "真共享内存，正是 SAB 的本质"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：页面里 `new SharedArrayBuffer(1024)` 报错或 `crossOriginIsolated` 为 `false`，通常缺了什么？",
+    "explanation": "Spectre 之后，使用 SAB 的页面必须处于跨源隔离状态，即服务器给文档返回 `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp` 两个响应头。两头到位后 `window.crossOriginIsolated` 才为 `true`、`SharedArrayBuffer` 才能构造。代价是页面会被限制加载不带 CORP/CORS 许可的跨源资源。",
+    "tags": ["web-workers", "高级", "coop-coep"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "缺 COOP（`same-origin`）+ COEP（`require-corp`）两个响应头——跨源隔离满足后 `crossOriginIsolated` 才为 true",
+        "isCorrect": true,
+        "description": "COOP + COEP 是 SAB 的硬门槛，正解"
+      },
+      {
+        "text": "缺 HTTPS 证书",
+        "isCorrect": false,
+        "description": "光有 HTTPS 不够，还需 COOP + COEP"
+      },
+      {
+        "text": "缺 `Content-Type: application/wasm` 头",
+        "isCorrect": false,
+        "description": "与 WASM MIME 无关，缺的是隔离头"
+      },
+      {
+        "text": "缺用户在权限弹窗里点「允许共享内存」",
+        "isCorrect": false,
+        "description": "没有这种弹窗，靠响应头启用"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：不想为一小段 worker 逻辑单独维护文件时，「内联 worker」的标准做法是？",
+    "explanation": "把 worker 代码变成 `Blob`（`new Blob([code], { type: 'text/javascript' })`）→ `URL.createObjectURL(blob)` 得到 `blob:` URL → `new Worker(url)` 构造，即可不落独立文件。用完记得 `URL.revokeObjectURL(url)` 释放，避免内存泄漏。适合小工具、动态生成代码，代价是拿不到独立文件的缓存与 sourcemap 体验。",
+    "tags": ["web-workers", "高级", "inline-worker"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把代码字符串直接传给 `new Worker(codeString)`",
+        "isCorrect": false,
+        "description": "构造参数是 URL 不是源码字符串"
+      },
+      {
+        "text": "代码变 `Blob` → `URL.createObjectURL` → `new Worker(url)`，用完 `revokeObjectURL`",
+        "isCorrect": true,
+        "description": "Blob URL 内联 worker，记得释放，正解"
+      },
+      {
+        "text": "用 `eval()` 在 worker 里执行主线程传来的字符串",
+        "isCorrect": false,
+        "description": "内联靠 Blob URL，不是传字符串给 eval"
+      },
+      {
+        "text": "把代码写进 `data:` 之外无法内联 worker",
+        "isCorrect": false,
+        "description": "`blob:` URL 正是标准内联手段"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：用 Comlink `wrap` 出的代理对象，为什么连「读一个属性」都要 `await`？",
+    "explanation": "`wrap` 出来的代理上，方法调用返回 Promise，连读属性也返回 Promise（`await api.someProp`）——因为值在另一个线程，取回来必然异步。此外，函数不可克隆，要把回调传进 worker 得用 `Comlink.proxy(fn)` 包一层，Comlink 会反向建代理让 worker 能回调主线程。",
+    "tags": ["web-workers", "高级", "comlink-async"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为 Comlink 强制所有代码风格统一为 async",
+        "isCorrect": false,
+        "description": "不是风格要求，是跨线程取值必然异步"
+      },
+      {
+        "text": "因为属性值都被加密，`await` 负责解密",
+        "isCorrect": false,
+        "description": "与加密无关，是跨线程取值"
+      },
+      {
+        "text": "值在另一个线程，取回来必然异步——代理把属性读取也变成 Promise",
+        "isCorrect": true,
+        "description": "跨线程取值必然异步，正解"
+      },
+      {
+        "text": "因为 `Proxy` 本身就是异步对象",
+        "isCorrect": false,
+        "description": "`Proxy` 不是异步的，异步来自跨线程通信"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：为什么 Service Worker 没有 `terminate()` 方法，而专用 `Worker` 有？",
+    "explanation": "`terminate()` 是 `Worker` 的方法，用于从主线程侧立即强杀专用 worker。Service Worker 的生命周期由浏览器托管——浏览器根据需要随时唤醒/回收它，页面无权直接终止，所以它没有 `terminate()`。这正是两者定位不同的体现：专用 worker 是页面掌控的计算线程，Service Worker 是浏览器托管的网络代理。",
+    "tags": ["web-workers", "专家", "sw-no-terminate"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 Service Worker 运行更稳定，永不需要终止",
+        "isCorrect": false,
+        "description": "不是稳定问题，是生命周期归浏览器托管"
+      },
+      {
+        "text": "因为 Service Worker 其实有 `terminate()`，只是名字叫 `unregister()`",
+        "isCorrect": false,
+        "description": "`unregister` 是注销注册，不等于强杀线程"
+      },
+      {
+        "text": "因为 Service Worker 没有独立线程，无需终止",
+        "isCorrect": false,
+        "description": "它也是独立 worker，只是生命周期不由页面控"
+      },
+      {
+        "text": "它的生命周期由浏览器托管、可被随时唤醒/回收，页面无权直接终止；专用 worker 才由页面掌控",
+        "isCorrect": true,
+        "description": "浏览器托管 vs 页面掌控，正是差异根源"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：关于 `OffscreenCanvas` 的浏览器支持现状，准确的是？",
+    "explanation": "`OffscreenCanvas` 于 Chrome 69+/Firefox 105+/Safari 17+ 支持，2025 年底进入 Baseline（广泛可用）——Safari 17（2023 秋）是最后补齐的一环。目标含较老 Safari（<17）时，要做特性检测（`'OffscreenCanvas' in window`）+ 回落主线程渲染，或确认最低版本。",
+    "tags": ["web-workers", "专家", "offscreen-baseline"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Chrome/Firefox 早已支持、Safari 17 最后补齐，2025 年底进入 Baseline；老 Safari 需特性检测回落",
+        "isCorrect": true,
+        "description": "Safari 17 补齐、2025 末 Baseline，正解"
+      },
+      {
+        "text": "所有浏览器十年前就已支持，无需任何兼容处理",
+        "isCorrect": false,
+        "description": "Safari 直到 17（2023）才补齐"
+      },
+      {
+        "text": "仅 Chrome 支持，其他浏览器至今没有实现",
+        "isCorrect": false,
+        "description": "Firefox/Safari 均已支持并进入 Baseline"
+      },
+      {
+        "text": "它已被废弃，官方建议改回主线程 canvas",
+        "isCorrect": false,
+        "description": "它是现行推荐能力，非废弃"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：worker 内 `new OffscreenCanvas` 离屏画完一帧，如何零拷贝送回主线程 `<canvas>` 显示？",
+    "explanation": "worker 内 `off.transferToImageBitmap()` 从 `OffscreenCanvas` 抓当前帧成一个可转移的 `ImageBitmap`，`postMessage({ bitmap }, [bitmap])` 零拷贝送回；主线程拿页面 `<canvas>` 的 `bitmaprenderer` 上下文，`ctx.transferFromImageBitmap(bitmap)` 零拷贝上屏。这条 `transferToImageBitmap` → `bitmaprenderer` → `transferFromImageBitmap` 链路是 worker 离屏出图的标准手法。",
+    "tags": ["web-workers", "专家", "transfertoimagebitmap"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "把 `OffscreenCanvas` 序列化成 base64 字符串 `postMessage` 回去",
+        "isCorrect": false,
+        "description": "那是拷贝且昂贵，应走 ImageBitmap 零拷贝"
+      },
+      {
+        "text": "`transferToImageBitmap()` 出 `ImageBitmap` 移交回主线程，主线程用 `bitmaprenderer` 的 `transferFromImageBitmap()` 上屏",
+        "isCorrect": true,
+        "description": "transferToImageBitmap + bitmaprenderer，正解"
+      },
+      {
+        "text": "worker 里直接拿到主线程 `<canvas>` 的 2D 上下文绘制",
+        "isCorrect": false,
+        "description": "worker 无 DOM，够不着主线程 canvas"
+      },
+      {
+        "text": "用 `SharedArrayBuffer` 共享像素，主线程逐像素读",
+        "isCorrect": false,
+        "description": "标准做法是 ImageBitmap，不必逐像素"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：把一个 `SharedArrayBuffer` 发给 worker，为什么它不放进 `postMessage` 的 transfer 列表？",
+    "explanation": "SAB 的语义是「共享」而非「移交」——两条线程映射同一块内存，发送方发出后自己仍要继续访问这块内存。所以 `postMessage(sab)` 直接传（不放 transfer 列表），也不会 detached；worker 端用同一块内存构造 TypedArray 读写即可。相反，`ArrayBuffer` 放 transfer 列表是移交、原对象会失效——这正是 SAB 与 transfer 的关键区别。",
+    "tags": ["web-workers", "专家", "sab-not-transfer"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 SAB 太大，放 transfer 列表会超出消息大小限制",
+        "isCorrect": false,
+        "description": "与大小无关，是共享语义决定的"
+      },
+      {
+        "text": "因为 SAB 不是可转移对象，放进去会抛错崩溃",
+        "isCorrect": false,
+        "description": "根因是它要共享、发送方仍需访问，不该移交"
+      },
+      {
+        "text": "SAB 是共享内存、两边都要持续访问，直接传即可且不 detached；transfer 是移交会使原对象失效",
+        "isCorrect": true,
+        "description": "共享 vs 移交，正是 SAB 不入 transfer 列表的原因"
+      },
+      {
+        "text": "因为放 transfer 列表后 worker 反而读不到数据",
+        "isCorrect": false,
+        "description": "根因是共享语义，不是读不到"
+      }
+    ]
+  },
+  {
+    "stem": "Web Workers API：关于 Comlink 的工程细节，下列哪一项是准确的？",
+    "explanation": "Comlink 约 1.1KB（brotli）/ 1.2KB（gzip），依赖 ES6 `Proxy`；默认走结构化克隆，要零拷贝移交大 buffer 用 `Comlink.transfer(data, [data.buffer])`；配 `SharedWorker` 时主线程 `Comlink.wrap(sw.port)`（wrap 的是 port 不是 sw 本身）、worker 内 `onconnect = (e) => Comlink.expose(api, e.ports[0])`。回调要用 `Comlink.proxy(fn)` 包装。",
+    "tags": ["web-workers", "专家", "comlink-details"],
+    "categories": [
+      ["技术方向", "Web Workers API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "Comlink 有几百 KB，且要求 worker 必须是经典类型",
+        "isCorrect": false,
+        "description": "它约 1.1KB brotli，且不限 worker 类型"
+      },
+      {
+        "text": "配 SharedWorker 时 `Comlink.wrap(sw)` 直接包 sw 本身",
+        "isCorrect": false,
+        "description": "要 `wrap(sw.port)`，包的是端口不是 sw"
+      },
+      {
+        "text": "Comlink 默认就零拷贝移交所有 buffer，无需额外调用",
+        "isCorrect": false,
+        "description": "默认走克隆，移交要显式 `Comlink.transfer`"
+      },
+      {
+        "text": "约 1.1KB brotli、依赖 `Proxy`；移交用 `Comlink.transfer`、配 SharedWorker `wrap(sw.port)`、回调用 `Comlink.proxy`",
+        "isCorrect": true,
+        "description": "体积/transfer/port/proxy 细节都准确，正解"
+      }
+    ]
+  }
+]
