@@ -1,0 +1,1645 @@
+[
+  {
+    "stem": "Web Assembly：关于 WebAssembly 与 JavaScript 的关系，官方设计文档给出的定位是哪一项？",
+    "explanation": "WebAssembly 官方设计文档的原话是 designed to complement and run alongside JavaScript——与 JS 互补、并肩运行，而不是取代它。分工上 JS 负责 DOM 操作、事件、网络请求与生态胶水（这些 Wasm 一概做不了），Wasm 负责计算密集的纯计算；两者经 WebAssembly JS API 双向调用：JS 经 `instance.exports` 调 Wasm，Wasm 经导入调 JS。",
+    "tags": ["webassembly", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "设计目标是与 JavaScript 互补、并肩运行：JS 管表达力与 DOM 胶水，Wasm 管计算密集重活，二者双向调用",
+        "isCorrect": true,
+        "description": "官方原话 complement and run alongside JavaScript 的准确表述"
+      },
+      {
+        "text": "Wasm 旨在逐步取代 JavaScript，成为浏览器唯一的执行格式",
+        "isCorrect": false,
+        "description": "官方设计目标恰恰相反：complement and run alongside JavaScript，不是替代"
+      },
+      {
+        "text": "Wasm 与 JS 完全隔离运行，两者之间无法互相调用",
+        "isCorrect": false,
+        "description": "两者经 JS API 双向打通：exports 与 importObject 各管一个方向"
+      },
+      {
+        "text": "Wasm 只是 JS 的一种语法糖，最终仍被编译回 JS 执行",
+        "isCorrect": false,
+        "description": "Wasm 是独立的二进制格式，由引擎直接编译成机器码，不经 JS"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：MDN 对 WebAssembly 的定义由三个关键词组成，正确的组合是？",
+    "explanation": "MDN 的定义是三个关键词的组合：低层类汇编语言（low-level assembly-like language）、紧凑二进制格式（compact binary format）、接近原生的性能（near-native performance）。它为 C/C++、Rust、C# 等语言提供了 Web 编译目标；日常并不需要手写，产物由工具链生成，且同一份 `.wasm` 还能跑在 Node.js 与独立运行时中。",
+    "tags": ["webassembly", "入门", "definition"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "高层脚本语言、文本源码格式、解释执行",
+        "isCorrect": false,
+        "description": "三个关键词全反了：它是低层、二进制、编译到接近原生性能"
+      },
+      {
+        "text": "低层类汇编语言、紧凑二进制格式、接近原生的性能",
+        "isCorrect": true,
+        "description": "MDN 原话定义的三要素"
+      },
+      {
+        "text": "低层语言、必须由开发者手写、只能运行在浏览器",
+        "isCorrect": false,
+        "description": "几乎不手写（工具链生成），且 Node.js、独立运行时同样能跑"
+      },
+      {
+        "text": "领域特定语言、JSON 描述格式、依赖 JIT 预热才有性能",
+        "isCorrect": false,
+        "description": "Wasm 恰恰没有 JS 那种 JIT 预热与去优化的不确定性，二进制可提前编译"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：FFmpeg.wasm、Photoshop Web、Figma、Google Earth 这些真实落地案例的共同架构模式是？",
+    "explanation": "这些实证案例无一例外都是「JS 做壳、Wasm 做核」：UI、交互与胶水逻辑仍由 JS/TS 承担，久经考验的 C/C++ 计算内核（图像处理、渲染引擎、编解码器）编译成 Wasm 承担计算重活。例如 Figma 的 C++ 渲染与文档引擎在 Wasm 里，UI 层是 TS。这正是官方「互补而非替代」定位的落地形态。",
+    "tags": ["webassembly", "入门", "use-cases"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "整个应用完全用 Wasm 重写，不再包含任何 JavaScript",
+        "isCorrect": false,
+        "description": "「纯 Wasm 应用」目前不成立：没有 JS 胶水连 `console.log` 都做不到"
+      },
+      {
+        "text": "用 Wasm 接管 DOM 渲染层，业务计算留在 JS",
+        "isCorrect": false,
+        "description": "方向反了：Wasm 不能直接操作 DOM，接管的是计算内核"
+      },
+      {
+        "text": "JS 做壳、Wasm 做核：UI 与胶水逻辑归 JS/TS，C/C++ 计算内核编译成 Wasm",
+        "isCorrect": true,
+        "description": "四个案例的共同分工模式，笔记称之为实证路径"
+      },
+      {
+        "text": "用 Wasm 重写网络请求层来加速接口响应",
+        "isCorrect": false,
+        "description": "瓶颈在网络 IO 时 Wasm 帮不上忙，它加速的是 CPU 计算"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 模块内的代码想输出日志或读取当前时间，下列说法正确的是？",
+    "explanation": "Wasm 的沙箱模型是「最小权限 + 内存隔离」：代码没有任何默认能力，不能碰 DOM、发请求，连读当前时间都不行——一切外部能力都必须由 JS 经 importObject 显式注入，它自己只能读写自己的线性内存。「模块里怎么拿不到 console/fetch」不是 bug，而是沙箱模型本身；这也是 Wasm 能安全运行不可信编译产物的根基。",
+    "tags": ["webassembly", "入门", "sandbox"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Wasm 可以直接调用所有浏览器 Web API，无需任何注入",
+        "isCorrect": false,
+        "description": "Wasm 没有任何直接访问浏览器 API 的能力，全靠导入注入"
+      },
+      {
+        "text": "只要在模块里声明权限清单，引擎就会自动授予对应能力",
+        "isCorrect": false,
+        "description": "不存在这种清单机制，能力只能由 JS 经 importObject 逐个注入"
+      },
+      {
+        "text": "Wasm 能直接读系统时间，但不能操作 DOM",
+        "isCorrect": false,
+        "description": "时间也属于外部能力，同样必须经导入注入，没有例外"
+      },
+      {
+        "text": "Wasm 代码没有任何默认能力，日志、时间等一切外部能力都必须由 JS 经 importObject 显式授予",
+        "isCorrect": true,
+        "description": "最小权限沙箱模型的准确描述，Wasm 只能读写自己的线性内存"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：用「类与实例」做类比，`WebAssembly.Module` 与 `WebAssembly.Instance` 的正确分工是？",
+    "explanation": "MDN 定义：Module 是无状态的已编译代码，类比类或可执行文件，可以缓存、共享、多次实例化；Instance 是 Module 的有状态可执行实例，类比进程，持有 `exports` 对象——导出函数、memory、table 都从 `instance.exports` 上取。一次 `instantiateStreaming` 同时产出 `{ module, instance }`，日常调用只用 instance。",
+    "tags": ["webassembly", "入门", "module-instance"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Module 是无状态的已编译代码（类比类），Instance 是有状态的执行实例（类比进程），导出从 `instance.exports` 取",
+        "isCorrect": true,
+        "description": "MDN 定义的准确类比：一次编译（Module）、多份隔离状态（Instance）"
+      },
+      {
+        "text": "Module 持有运行状态，Instance 是无状态的编译产物",
+        "isCorrect": false,
+        "description": "正好说反了：无状态的是 Module，有状态的是 Instance"
+      },
+      {
+        "text": "两者完全等价，只是 API 演进中的新旧命名",
+        "isCorrect": false,
+        "description": "两者是「类与实例」的分工关系，不是别名"
+      },
+      {
+        "text": "导出函数挂在 Module 上，Instance 只负责编译字节码",
+        "isCorrect": false,
+        "description": "exports 在 Instance 上；编译产物才是 Module，Instance 不做编译"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：在浏览器中加载并运行一个 `.wasm` 文件，MDN 推荐的首选方式是？",
+    "explanation": "MDN 把 `WebAssembly.instantiateStreaming()` 称为 the primary API for compiling and instantiating WebAssembly code：`WebAssembly.instantiateStreaming(fetch(\"x.wasm\"), importObject)` 抓取、编译、实例化一步到位，且对下载中的字节流边下载边编译。注意目前不能用 `import` 语句直接加载 wasm（ESM 集成仍是提案），`<script>` 也不支持直接引入 `.wasm`。",
+    "tags": ["webassembly", "入门", "loading"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`import mod from \"./x.wasm\"` 直接用 ESM 导入",
+        "isCorrect": false,
+        "description": "ESM 集成尚未标准化，目前不能 import 直接加载 wasm，必须手动 fetch"
+      },
+      {
+        "text": "`WebAssembly.instantiateStreaming(fetch(\"x.wasm\"), importObject)` 流式抓取、编译、实例化一步到位",
+        "isCorrect": true,
+        "description": "MDN 钦点的 primary API，边下载边编译"
+      },
+      {
+        "text": "必须先用 XMLHttpRequest 拿到完整字节，再逐段手动编译，这是唯一途径",
+        "isCorrect": false,
+        "description": "ArrayBuffer 路线只是 MIME 不符等场景的兜底，不是唯一更不是首选"
+      },
+      {
+        "text": "`<script src=\"x.wasm\">` 直接引入即可自动执行",
+        "isCorrect": false,
+        "description": "浏览器不支持用 script 标签直接加载执行 wasm"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 `.wasm` 二进制与 WAT 文本格式的关系，正确的是？",
+    "explanation": "WAT（`.wat`）是用 S-表达式描述模块结构的人类可读文本格式，与二进制 `.wasm` 一一对应，由 wabt 工具集的 `wat2wasm`/`wasm2wat` 负责互转。日常开发几乎不手写 WAT（由工具链生成），但读懂它是理解模块结构、调试产物的基础——DevTools 反汇编视图展示的就是这种格式。Wasm 的执行模型是栈机：指令压栈、出栈。",
+    "tags": ["webassembly", "入门", "wat"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WAT 是另一门独立语言，需要单独的运行时才能执行",
+        "isCorrect": false,
+        "description": "WAT 只是 `.wasm` 的文本写法，两者一一对应，不是独立语言"
+      },
+      {
+        "text": "浏览器只能执行 WAT 文本，`.wasm` 二进制需要先反编译",
+        "isCorrect": false,
+        "description": "方向反了：浏览器执行的是二进制，WAT 是给人读的形式"
+      },
+      {
+        "text": "WAT 是 S-表达式写法的人类可读形式，与二进制一一对应，wabt 的 `wat2wasm`/`wasm2wat` 负责互转",
+        "isCorrect": true,
+        "description": "WAT 与二进制的关系及 wabt 工具集职责的准确描述"
+      },
+      {
+        "text": "WAT 已被废弃，DevTools 一律以十六进制字节展示模块",
+        "isCorrect": false,
+        "description": "未废弃，DevTools 反汇编视图展示的正是 WAT 格式"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：三大主线工具链与源语言的对应关系，正确的是？",
+    "explanation": "三大主线：Emscripten 对应 C/C++，历史最久、最成熟（asm.js 时代就存在），POSIX/OpenGL 模拟层无可替代；wasm-bindgen + wasm-pack 对应 Rust，产物是标准 npm 包，与前端生态融合最好；AssemblyScript 对应 TypeScript 语法子集，前端上手门槛最低。Kotlin/Dart 等自带 GC 的语言则靠 WasmGC 落地。",
+    "tags": ["webassembly", "入门", "toolchains"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Emscripten 编译 Rust，wasm-pack 编译 C/C++，AssemblyScript 编译 Python",
+        "isCorrect": false,
+        "description": "对应关系错位：Emscripten 是 C/C++ 路线，wasm-pack 是 Rust 路线"
+      },
+      {
+        "text": "三者都只支持 C 语言，区别仅在优化级别",
+        "isCorrect": false,
+        "description": "三者各自对应不同源语言，不是同一语言的不同优化档"
+      },
+      {
+        "text": "AssemblyScript 可以编译任意完整的 TypeScript 项目",
+        "isCorrect": false,
+        "description": "它只是 TS 语法子集，存量 TS 业务代码不能直接拿来编"
+      },
+      {
+        "text": "Emscripten 对应 C/C++（最成熟），wasm-bindgen + wasm-pack 对应 Rust，AssemblyScript 对应 TS 语法子集",
+        "isCorrect": true,
+        "description": "三大主线的准确对号，成熟度定性也与笔记一致"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：前端团队想把现有 TypeScript 业务代码直接交给 AssemblyScript 编译成 Wasm，可行吗？",
+    "explanation": "不可行。AssemblyScript 是带 `i32`/`u8`/`f64` 显式类型标注的 TypeScript 语法子集，不是完整 TS：静态类型收紧（用 Wasm 数值类型代替 number）、没有 `any`/union 的动态花样、闭包与 JS 内建对象支持受限。存量 TS 业务代码需要按它的类型系统重写。它的优势在于零新语言门槛、npm 原生工作流、产物小，适合小步试水中等强度计算。",
+    "tags": ["webassembly", "入门", "assemblyscript"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不可行——AssemblyScript 是带 `i32`/`f64` 显式标注的 TS 语法子集，动态特性受限，存量代码需按其类型系统重写",
+        "isCorrect": true,
+        "description": "「拿存量 TS 直接喂 AssemblyScript」正是易错点清单里的一条"
+      },
+      {
+        "text": "完全可行，AssemblyScript 支持全部 TypeScript 语法与动态特性",
+        "isCorrect": false,
+        "description": "它是语法子集，无 any/union 等动态花样，闭包等特性受限"
+      },
+      {
+        "text": "可行，只要安装 assemblyscript 包，tsc 就能直接产出 wasm",
+        "isCorrect": false,
+        "description": "编译器是 `asc` 不是 tsc，且语法子集限制依然存在"
+      },
+      {
+        "text": "不可行，因为 AssemblyScript 只接受纯 JavaScript 源码",
+        "isCorrect": false,
+        "description": "结论对但理由错：它接受的恰是带类型标注的 TS 语法子集"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 Wasm 3.0 规范的定稿状态，正确的是？",
+    "explanation": "Wasm 3.0 于 2025-09-17 正式定稿（webassembly.org 官方公告），是十年来最大规模的版本，包含 GC、memory64、多内存、类型化引用、尾调用、异常处理、relaxed SIMD、确定性 profile、自定义注解语法、JS String Builtins 共十项特性；公告原话是「已在多数主流浏览器 shipping」。注意 2017-10 达 Baseline 的是核心 JS API（MVP 时代），不是 3.0。",
+    "tags": ["webassembly", "入门", "wasm3"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仍处于草案阶段，所有浏览器都未实现",
+        "isCorrect": false,
+        "description": "已正式定稿且多数主流浏览器已 shipping"
+      },
+      {
+        "text": "2025-09-17 正式定稿，包含 GC、memory64、多内存、尾调用、异常处理等十项特性，官方称已在多数主流浏览器 shipping",
+        "isCorrect": true,
+        "description": "定稿日期、十项规模与 shipping 状态均与官方公告一致"
+      },
+      {
+        "text": "2017 年就已发布，浏览器支持的核心 JS API 就是 3.0",
+        "isCorrect": false,
+        "description": "2017-10 达 Baseline 的是核心 MVP JS API，3.0 定稿在 2025-09"
+      },
+      {
+        "text": "3.0 只包含 WasmGC 一项特性",
+        "isCorrect": false,
+        "description": "共十项特性，GC 只是其中影响最大的一项"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 Memory 与 Table 两个核心对象的本质，下列说法正确的是？",
+    "explanation": "`WebAssembly.Memory` 是一块可增长的线性内存，其 `buffer` 属性是一个 ArrayBuffer（shared 模式下是 SharedArrayBuffer），JS 侧必须套 TypedArray/DataView 视图读写；`WebAssembly.Table` 是存放函数引用等不透明值的可增长数组，支撑函数指针式的间接调用。无状态、可跨 Worker 共享的是 Module，不是 Instance。",
+    "tags": ["webassembly", "初级", "core-concepts"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Memory 的 `buffer` 是普通 JS 数组，可以直接 `push` 元素",
+        "isCorrect": false,
+        "description": "buffer 是 ArrayBuffer，需套 TypedArray/DataView 视图按字节读写"
+      },
+      {
+        "text": "Table 用来存放模块的字符串常量",
+        "isCorrect": false,
+        "description": "字符串常量走 data 段进线性内存，Table 存的是不透明引用"
+      },
+      {
+        "text": "Memory 的 `buffer` 属性是一个 ArrayBuffer；Table 是存放函数引用等不透明值的可增长数组",
+        "isCorrect": true,
+        "description": "两个对象本质的准确描述，与 MDN 定义一致"
+      },
+      {
+        "text": "Instance 无状态，可经 `postMessage()` 与 Worker 共享",
+        "isCorrect": false,
+        "description": "这两条特性属于 Module；Instance 有状态且不可结构化克隆"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：MDN 强调 `WebAssembly.Module` 的三个特性，下列哪一项不在其中？",
+    "explanation": "MDN 对 Module 的定义强调三点：stateless（无状态）、可经 `postMessage()` 高效共享给 Worker（结构化克隆传编译结果，不传源字节）、可多次实例化。这是「一次编译、多份隔离状态」的基础。持有运行时状态与线性内存是 Instance 的职责——每个 Instance 拥有各自独立的内存与全局量，互相隔离。",
+    "tags": ["webassembly", "初级", "module"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无状态（stateless）",
+        "isCorrect": false,
+        "description": "这正是 Module 三特性之一"
+      },
+      {
+        "text": "可经 `postMessage()` 高效共享给 Worker",
+        "isCorrect": false,
+        "description": "这是 Module 三特性之一：结构化克隆传编译结果"
+      },
+      {
+        "text": "可被多次实例化",
+        "isCorrect": false,
+        "description": "这是 Module 三特性之一，多实例间状态互相隔离"
+      },
+      {
+        "text": "持有模块的运行时状态与线性内存",
+        "isCorrect": true,
+        "description": "这是 Instance 的职责，Module 恰恰是无状态的——本项不属于 Module 特性"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`new WebAssembly.Memory({ initial: 10, maximum: 100 })` 中数字的单位是什么？",
+    "explanation": "Wasm 线性内存以页（page）为单位分配与增长，一页固定 64KiB。`initial: 10` 即初始 640KiB，`maximum: 100` 是增长上限；`memory.grow(页数)` 按页增长并返回增长前的旧页数。容易与操作系统常见的 4KiB 页混淆——Wasm 的页大小是规范固定的 64KiB。",
+    "tags": ["webassembly", "初级", "memory-page"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "单位是页（page），一页固定 64KiB——初始 10 页即 640KiB",
+        "isCorrect": true,
+        "description": "页 = 64KiB 是规范固定值，分配与增长都按页"
+      },
+      {
+        "text": "单位是字节，初始分配 10 字节",
+        "isCorrect": false,
+        "description": "单位是页不是字节，10 页是 640KiB"
+      },
+      {
+        "text": "单位是 MB，初始分配 10MB",
+        "isCorrect": false,
+        "description": "不是 MB，一页固定 64KiB"
+      },
+      {
+        "text": "单位是页，一页 4KiB，与操作系统内存页一致",
+        "isCorrect": false,
+        "description": "常见混淆点：Wasm 页是 64KiB，不是 OS 常见的 4KiB"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：JS 要把一个字符串交给 Wasm 函数处理，标准做法是？",
+    "explanation": "数值以外的数据不能直接过边界。标准流程是「写内存 + 传指针」：用 TextEncoder 把字符串编码成 UTF-8 字节，套 Uint8Array 视图复制进线性内存（通常先经模块导出的分配函数要一块地址），然后把「指针 + 长度」两个数字传过边界；反向读取时用 TextDecoder 解码。每次传递都含编码、复制、解码三重成本，实际项目多交给 wasm-bindgen/Emscripten 胶水自动生成这段封送代码。",
+    "tags": ["webassembly", "初级", "string-passing"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "直接把字符串作为参数传给导出函数即可，引擎自动转换",
+        "isCorrect": false,
+        "description": "只有数值能直通边界，字符串没有自动通道"
+      },
+      {
+        "text": "用 TextEncoder 编码成字节写入线性内存，再把「指针 + 长度」两个数字传过边界，反向用 TextDecoder 解码",
+        "isCorrect": true,
+        "description": "「写内存 + 传指针」的标准封送流程"
+      },
+      {
+        "text": "先 `JSON.stringify`，序列化结果会自动穿越边界",
+        "isCorrect": false,
+        "description": "序列化后仍是字符串，同样必须走写内存 + 传指针那条路"
+      },
+      {
+        "text": "字符串必须转成 Base64 才能被 Wasm 读取",
+        "isCorrect": false,
+        "description": "不存在 Base64 门槛，标准做法是 UTF-8 编码写入线性内存"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：C/C++ 代码里到处是函数指针，Wasm 为什么引入 Table 而不是让模块把函数地址直接写进线性内存？",
+    "explanation": "Wasm 的安全模型不允许把裸的代码地址暴露进线性内存。Table 是存放不透明引用（主要是 `funcref`）的可增长数组，Wasm 代码只能「按索引取引用来调用」（`call_indirect`），既实现了函数指针语义，又永远碰不到真实地址；调用处还会校验类型签名，不符即 trap。C/C++ 编译产物里的虚函数表、回调注册底层全靠这张表。",
+    "tags": ["webassembly", "初级", "table"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为线性内存容量太小，放不下函数地址",
+        "isCorrect": false,
+        "description": "与容量无关，是安全模型禁止暴露真实代码地址"
+      },
+      {
+        "text": "Table 只是性能优化，直接把地址写进内存也是允许的",
+        "isCorrect": false,
+        "description": "不允许：裸代码地址进线性内存违反安全模型"
+      },
+      {
+        "text": "安全模型不允许暴露真实代码地址——Table 存不透明引用，代码只能按索引取引用调用，实现函数指针语义又碰不到地址",
+        "isCorrect": true,
+        "description": "「把函数指针关进笼子」的设计动机"
+      },
+      {
+        "text": "Table 是为存放字符串常量设计的，与函数指针无关",
+        "isCorrect": false,
+        "description": "字符串常量走 data 段；Table 的存在意义正是间接调用"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：模块声明了 `(import \"console\" \"log\" (func $log (param i32)))`，JS 侧的 importObject 应该是哪种结构？",
+    "explanation": "Wasm 的每条导入声明都是两级名字：模块名 + 成员名。importObject 就是按这两级组织的普通 JS 对象——声明 `(import \"console\" \"log\" …)`，JS 侧就必须提供 `importObject.console.log` 且种类、签名匹配。缺失或类型不匹配在实例化阶段抛 LinkError。可注入的实体有四种：函数、Memory、Table、Global。",
+    "tags": ["webassembly", "初级", "import-object"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`{ \"console.log\": (n) => console.log(n) }`——用点连接的扁平字符串键",
+        "isCorrect": false,
+        "description": "不是扁平键，必须是嵌套的两级对象结构"
+      },
+      {
+        "text": "`{ log: (n) => console.log(n) }`——只需成员名一级",
+        "isCorrect": false,
+        "description": "缺了第一级模块名 console，实例化会抛 LinkError"
+      },
+      {
+        "text": "任意结构都行，引擎会按函数名模糊匹配",
+        "isCorrect": false,
+        "description": "匹配是逐条严格核对路径与种类，没有模糊匹配"
+      },
+      {
+        "text": "`{ console: { log: (n) => console.log(n) } }`——两级命名空间对齐模块名与成员名",
+        "isCorrect": true,
+        "description": "两级结构逐级对齐：第一级 console，第二级 log"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：调用 `WebAssembly.instantiateStreaming()` 直接抛出 TypeError（编译根本没开始），最高发的原因是？",
+    "explanation": "流式 API（instantiateStreaming/compileStreaming）要求响应头 `Content-Type: application/wasm`，不满足直接抛 TypeError。老版静态服务器、配置缺失的 nginx/CDN 是重灾区。健壮的加载函数用 try/catch 兜底：回退到 `fetch → response.arrayBuffer() → WebAssembly.instantiate(bytes, importObject)` 的非流式路线（不挑 MIME，但失去流式优势）。注意 MIME 错抛的是普通 TypeError，不属于 Wasm 三大错误类型。",
+    "tags": ["webassembly", "初级", "mime"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "响应的 `Content-Type` 不是 `application/wasm`——流式 API 的硬门槛，可回退 ArrayBuffer 路线",
+        "isCorrect": true,
+        "description": "MIME 门槛是流式加载 TypeError 的头号诱因"
+      },
+      {
+        "text": "`.wasm` 文件字节损坏",
+        "isCorrect": false,
+        "description": "字节损坏抛的是 CompileError，不是 TypeError"
+      },
+      {
+        "text": "importObject 缺少模块声明的导入项",
+        "isCorrect": false,
+        "description": "导入缺失抛的是 LinkError，且发生在实例化阶段"
+      },
+      {
+        "text": "模块运行时发生了内存越界访问",
+        "isCorrect": false,
+        "description": "越界是运行期 trap，抛 RuntimeError，且此时早已过加载阶段"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：CompileError、LinkError、RuntimeError 三类错误分别对应模块生命周期的哪个阶段？",
+    "explanation": "三个错误构造器各自绑定一个阶段，看到错误类型就能定位问题：CompileError 对应解码/验证（编译期），典型诱因是字节损坏、魔数不对、不支持的指令；LinkError 对应实例化/链接阶段，典型诱因是 importObject 缺项、种类不符、签名对不上；RuntimeError 对应运行期 trap，典型诱因是线性内存越界、整数除零、`unreachable`、`call_indirect` 签名不符。",
+    "tags": ["webassembly", "初级", "errors"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "CompileError 对应运行期崩溃，RuntimeError 对应字节解码失败",
+        "isCorrect": false,
+        "description": "两者正好对调了：解码失败是 CompileError，运行期 trap 是 RuntimeError"
+      },
+      {
+        "text": "CompileError 对应解码/验证，LinkError 对应实例化时导入不匹配，RuntimeError 对应运行期 trap（越界、除零、`unreachable`）",
+        "isCorrect": true,
+        "description": "按「编译 → 链接 → 运行」三阶段判错的准确对号"
+      },
+      {
+        "text": "LinkError 对应网络加载失败，与 importObject 无关",
+        "isCorrect": false,
+        "description": "LinkError 恰是导入不匹配的信号；网络失败是 fetch 层面的错误"
+      },
+      {
+        "text": "三者可以互换，只是同一个错误类的三个别名",
+        "isCorrect": false,
+        "description": "它们是三个独立构造器，各自绑定不同生命周期阶段"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 导出函数的签名里有一个 `i64` 参数，JS 侧调用 `fn(42)`（传入 Number）会发生什么？",
+    "explanation": "跨边界的 `i64` 参数与返回值在 JS 侧一律对应 BigInt：正确写法是 `fn(42n)`。传 Number 会直接抛 TypeError——引擎不做静默转换、不截断。这是 JS BigInt 集成规范的行为（自 2021 起 Baseline）。数值映射全景：`i32`/`f32`/`f64` 对应 Number，`i64` 对应 BigInt，`externref` 对应任意 JS 值。",
+    "tags": ["webassembly", "初级", "bigint"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "自动截断为 32 位整数继续执行",
+        "isCorrect": false,
+        "description": "不会静默截断，直接抛 TypeError"
+      },
+      {
+        "text": "引擎自动把 Number 转换为 BigInt",
+        "isCorrect": false,
+        "description": "没有自动转换，必须显式传 BigInt 字面量如 `42n`"
+      },
+      {
+        "text": "抛 TypeError——`i64` 在 JS 边界一律对应 BigInt，必须写 `fn(42n)`",
+        "isCorrect": true,
+        "description": "「`fn(42n)` 不是 `fn(42)`」是易错点清单原话"
+      },
+      {
+        "text": "正常执行但返回 NaN",
+        "isCorrect": false,
+        "description": "错误发生在参数检查阶段，函数根本不会执行"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：下列哪个场景最能发挥 WASM 的性能优势？",
+    "explanation": "WASM 的收益公式是「计算加速赚到的时间 − 跨边界调用与数据复制花掉的时间」。正收益场景是计算密集 + 边界交互少：一次传入大块数据、内部算很久、一次传回结果（如音视频转码）。反面清单：高频细粒度小调用（边界成本吃光收益，用了反而更慢的头号原因）、DOM 密集 UI（Wasm 碰不到 DOM）、瓶颈在网络 IO（提速的不是瓶颈）。",
+    "tags": ["webassembly", "初级", "use-case-decision"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "每帧调用几千次、每次传一小段字符串的工具函数",
+        "isCorrect": false,
+        "description": "高频细粒度交互的边界成本会吃光加速收益，这是负优化头号场景"
+      },
+      {
+        "text": "DOM 操作密集的表单交互页面",
+        "isCorrect": false,
+        "description": "Wasm 不能直接操作 DOM，每次更新都要跨回 JS，属负优化"
+      },
+      {
+        "text": "瓶颈在等待后端接口返回的列表页",
+        "isCorrect": false,
+        "description": "瓶颈在网络 IO 时，加速 CPU 计算无济于事"
+      },
+      {
+        "text": "一次传入大块二进制数据、内部长时间计算、一次传回结果的音视频转码",
+        "isCorrect": true,
+        "description": "计算密集 + 粗粒度边界，正是收益公式的正收益区"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`import { fn } from \"./mod.wasm\"` 这种写法在当前（2026 年）浏览器生产环境可用吗？",
+    "explanation": "不可用。MDN 原话是 WebAssembly is not yet integrated with `<script type=\"module\">` or `import` statements——ESM 集成（含 source phase imports 提案）仍在推进，Chrome/Firefox 只有原型实现。生产路径依旧是 fetch + `instantiateStreaming`。注意 webpack 等打包器的 wasm import 是打包器私有能力（如 `asyncWebAssembly`），不能当成平台标准。",
+    "tags": ["webassembly", "初级", "esm-integration"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不可用——ESM 集成仍是提案（Chrome/Firefox 仅原型），生产路径依旧是 fetch + `instantiateStreaming`；打包器的 wasm import 是私有能力",
+        "isCorrect": true,
+        "description": "MDN 原话「尚未与 import 集成」，别把打包器能力当平台标准"
+      },
+      {
+        "text": "可用，Wasm 3.0 已把 ESM 集成收编定稿",
+        "isCorrect": false,
+        "description": "ESM 集成不在 3.0 十项特性之列，仍是进行中的提案"
+      },
+      {
+        "text": "可用，2017 年核心 API Baseline 时就支持了",
+        "isCorrect": false,
+        "description": "2017 Baseline 的是 JS API（fetch + 编译实例化），不含 import 加载"
+      },
+      {
+        "text": "不可用，且规范已经放弃了这个方向",
+        "isCorrect": false,
+        "description": "并未放弃：提案与 source phase imports 都在推进中"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：想把 Wasm 重计算挪出主线程，同时避免在 Worker 里重复编译，标准做法是？",
+    "explanation": "Module 支持结构化克隆：主线程 `compileStreaming` 编译出 Module 后经 `postMessage()` 传给 Worker（传的是编译结果，不是源字节），Worker 侧再实例化运行——免去重复编译，各线程状态天然隔离。Worker 内可以使用全套 WebAssembly API。反之 Instance 不可克隆，非 shared 的 Memory 也不可跨线程传递。",
+    "tags": ["webassembly", "初级", "worker"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把实例化好的 Instance 直接 `postMessage()` 给 Worker",
+        "isCorrect": false,
+        "description": "Instance 不可结构化克隆，传不过去"
+      },
+      {
+        "text": "主线程编译出 Module，经 `postMessage()` 传给 Worker（结构化克隆共享编译结果），Worker 侧实例化运行",
+        "isCorrect": true,
+        "description": "「主线程编译、Worker 实例化」的标准架构"
+      },
+      {
+        "text": "Worker 里不能用 WebAssembly API，重计算只能留在主线程",
+        "isCorrect": false,
+        "description": "Worker 内可用全套 WebAssembly API，重计算放 Worker 正是标准做法"
+      },
+      {
+        "text": "把 `memory.buffer` 传给 Worker 即可共享全部状态",
+        "isCorrect": false,
+        "description": "非 shared 的 Memory 不可跨线程传递；共享内存需 `shared: true`（SharedArrayBuffer）"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：用 Rust + wasm-bindgen 写一个给 JS 用的 Wasm 库，Cargo.toml 里必须有的配置是？",
+    "explanation": "MDN 官方教程的两处必配：`[lib]` 下 `crate-type = [\"cdylib\"]`（编译为 C 风格动态库，Wasm 目标必需），以及依赖 `wasm-bindgen = \"0.2\"`（JS 与 Rust 之间的类型封送代码生成器）。环境侧是两件套：rustup 装 rustc + cargo，再 `cargo install wasm-pack`；项目用 `cargo new --lib` 创建。",
+    "tags": ["webassembly", "初级", "rust-toolchain"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`crate-type = [\"bin\"]`，因为要产出可执行文件",
+        "isCorrect": false,
+        "description": "产物是库不是可执行文件，必须是 cdylib"
+      },
+      {
+        "text": "无需任何特殊配置，`cargo build` 默认就产出 wasm 包",
+        "isCorrect": false,
+        "description": "默认目标是本机平台，需 cdylib 配置且用 wasm-pack 构建"
+      },
+      {
+        "text": "`[lib]` 下 `crate-type = [\"cdylib\"]`，并添加依赖 `wasm-bindgen = \"0.2\"`",
+        "isCorrect": true,
+        "description": "MDN 教程点名的两处必配"
+      },
+      {
+        "text": "只需在系统里安装 Emscripten 工具链",
+        "isCorrect": false,
+        "description": "Emscripten 是 C/C++ 路线，Rust 走 wasm-bindgen + wasm-pack"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Kotlin/Wasm 与 Flutter Web 的 Wasm 渲染模式能够落地，共同依赖的底层特性是？",
+    "explanation": "两者都踩着 WasmGC 落地：结构体/数组直接分配在引擎托管堆上，复用浏览器久经调优的 GC，不必把整个 GC 运行时编译进产物（旧路线体积几 MB 起步、且与 JS 堆互不知情）。官方公告点名的受益语言：Java、OCaml、Scala、Kotlin、Scheme、Dart。Flutter 的 Wasm 渲染模式用 WasmGC 编译 Dart，替代了此前「编译成 JS」的路线。",
+    "tags": ["webassembly", "初级", "wasmgc-languages"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "JSPI——挂起等待异步 JS 的能力",
+        "isCorrect": false,
+        "description": "JSPI 解决的是同步风格代码等异步 IO，不是 GC 语言的落地支柱"
+      },
+      {
+        "text": "memory64——64 位大内存寻址",
+        "isCorrect": false,
+        "description": "memory64 解决的是 4GB 天花板，与 GC 语言落地无关"
+      },
+      {
+        "text": "尾调用——栈不增长的调用指令",
+        "isCorrect": false,
+        "description": "尾调用服务函数式语言与解释器 dispatch，不是 GC 语言的落地前提"
+      },
+      {
+        "text": "WasmGC——结构体/数组分配在引擎托管堆，复用浏览器 GC，不必自带 GC 实现",
+        "isCorrect": true,
+        "description": "GC 语言阵营（Kotlin/Dart 等）上 Web 的共同底座"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：代码里缓存了 `const u8 = new Uint8Array(memory.buffer)`，之后某次调用触发了 `memory.grow()`，再访问 `u8[0]` 会怎样？",
+    "explanation": "非 shared 的 Memory 调用 `grow()` 时引擎可能整体搬迁内存，旧的 ArrayBuffer 会被 detach（长度归零不可用），基于它创建的所有 TypedArray 视图随之作废，继续读写会出错。工程守则：不要长期缓存 TypedArray 视图——要么用时从 `memory.buffer` 现建（视图创建很廉价），要么在每个可能触发增长的调用后统一刷新。更隐蔽的是 Wasm 侧代码内部的 `memory.grow` 指令同样会触发失效。",
+    "tags": ["webassembly", "中级", "memory-grow"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "旧视图已随 detach 的 ArrayBuffer 作废，继续读写出错——必须重新获取 `memory.buffer` 并重建视图",
+        "isCorrect": true,
+        "description": "grow 后旧 buffer detach 是头号坑，视图必须重建"
+      },
+      {
+        "text": "正常读到增长后内存里的数据，视图自动跟随",
+        "isCorrect": false,
+        "description": "旧视图不会跟随：底层 ArrayBuffer 已被 detach"
+      },
+      {
+        "text": "引擎会自动把旧视图重新绑定到新 buffer 上",
+        "isCorrect": false,
+        "description": "没有自动重绑定机制，重建视图是使用者的责任"
+      },
+      {
+        "text": "只有 `shared: true` 的内存才会发生视图失效",
+        "isCorrect": false,
+        "description": "正好相反：detach 发生在非 shared 内存上"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 `memory.grow(2)` 的返回值与线性内存的来源，正确的是？",
+    "explanation": "`grow(页数)` 按页增长并返回增长前的旧页数（不是新总页数，也不是 buffer 对象）。内存的来源有两种：JS 侧 `new WebAssembly.Memory()` 创建后经 importObject 导入（对应 WAT 的 `(import \"js\" \"mem\" (memory 1))`），或 Wasm 侧声明（`(memory 1)`）并导出，JS 从 `instance.exports.memory` 拿到同一对象。Emscripten、wasm-pack 的产物默认走「模块导出内存」这条路。",
+    "tags": ["webassembly", "中级", "memory-source"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`grow` 返回增长后的总页数；内存只能由 JS 创建后导入",
+        "isCorrect": false,
+        "description": "返回的是旧页数；内存也可由 Wasm 侧声明并导出"
+      },
+      {
+        "text": "`grow` 返回增长前的旧页数；内存可由 JS 创建导入，也可由 Wasm 声明导出，工具链产物默认走模块导出内存",
+        "isCorrect": true,
+        "description": "返回值语义与两种内存来源的准确描述"
+      },
+      {
+        "text": "`grow` 返回新的 ArrayBuffer 对象供直接使用",
+        "isCorrect": false,
+        "description": "返回的是页数数字，新 buffer 要从 `memory.buffer` 重新读取"
+      },
+      {
+        "text": "`grow` 无返回值，且内存一经创建不可增长",
+        "isCorrect": false,
+        "description": "grow 本身就是增长 API，且有明确的旧页数返回值"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`call_indirect` 按 Table 索引做间接调用时，如果目标函数的类型签名与调用处声明的不符，会发生什么？",
+    "explanation": "`call_indirect` 在调用时校验目标函数的类型签名，不符即 trap——浮到 JS 侧成为 RuntimeError。这是 Table「笼子」设计的另一半：既然 Wasm 只能按索引取不透明引用来调用，引擎就在调用点做签名校验兜住类型安全。WAT 侧的完整配套是 `(table N funcref)` 声明表、`elem` 段初始化表项、`call_indirect (type $sig)` 按栈顶索引调用。",
+    "tags": ["webassembly", "中级", "call-indirect"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "静默按错误的签名继续执行，结果未定义",
+        "isCorrect": false,
+        "description": "Wasm 不允许未定义行为逃逸，签名不符立即 trap"
+      },
+      {
+        "text": "抛 LinkError，因为这是链接问题",
+        "isCorrect": false,
+        "description": "LinkError 属实例化阶段；call_indirect 的签名校验发生在运行期"
+      },
+      {
+        "text": "立即 trap，浮到 JS 侧成为 RuntimeError——调用处签名校验是 Table 安全设计的一部分",
+        "isCorrect": true,
+        "description": "运行期签名校验失败属于 trap，对应 RuntimeError"
+      },
+      {
+        "text": "返回 undefined，由调用方自行判断",
+        "isCorrect": false,
+        "description": "trap 会终止执行并抛错，不会返回 undefined"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 `WebAssembly.Global`，下列说法正确的是？",
+    "explanation": "`new WebAssembly.Global({ value: \"i32\", mutable: true }, 0)` 创建后，JS 经 `.value` 读写，Wasm 侧的修改对 JS 同步可见。它可以被一个或多个 Module 导入/导出——MDN 点名的核心用途是多模块动态链接（多个模块共享同一全局状态，如栈指针）。注意 `mutable` 默认为 false（两侧都只读）；`i64` 类型的 Global 在 JS 侧以 BigInt 读写。",
+    "tags": ["webassembly", "中级", "global"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Global 默认可变，无需声明 `mutable`",
+        "isCorrect": false,
+        "description": "默认 `mutable: false`，此时两侧都只读"
+      },
+      {
+        "text": "Global 只能被 Wasm 侧读取，JS 侧不可见",
+        "isCorrect": false,
+        "description": "JS 经 `.value` 可读可写（mutable 时），两侧同步可见"
+      },
+      {
+        "text": "每个 Global 实例只能绑定给一个 Module 使用",
+        "isCorrect": false,
+        "description": "恰恰相反，可被多个模块共享正是它的核心价值"
+      },
+      {
+        "text": "JS 经 `.value` 读写；可被多个 Module 导入导出，是多模块动态链接的共享枢纽（如共享栈指针）",
+        "isCorrect": true,
+        "description": "Global 的访问方式与 MDN 点名的动态链接用途"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`compile`/`compileStreaming`/`instantiate`/`instantiateStreaming` 四个加载入口的正确区分维度是？",
+    "explanation": "四个入口本质是一张 2×2 的表：维度一是输入形态——字节（BufferSource）还是响应流（Response 或其 Promise）；维度二是产出——只编译得到 Module，还是编译 + 实例化得到实例结果。选择逻辑：能流式就流式；只有「编译一次、多次/跨线程实例化」的场景才值得单独 `compileStreaming`，绝大多数场景一行 `instantiateStreaming` 解决。",
+    "tags": ["webassembly", "中级", "js-api-matrix"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两个维度：输入是字节（BufferSource）还是响应流（Response）；产出是只编译的 Module 还是编译 + 实例化的结果",
+        "isCorrect": true,
+        "description": "2×2 矩阵的准确概括"
+      },
+      {
+        "text": "四者只是历史演进留下的别名，行为完全一致",
+        "isCorrect": false,
+        "description": "四者在输入形态与产出上均不同，不是别名"
+      },
+      {
+        "text": "streaming 版本是同步 API，非 streaming 版本返回 Promise",
+        "isCorrect": false,
+        "description": "四个入口全部返回 Promise；同步的只有 `validate`"
+      },
+      {
+        "text": "compile 系列已废弃，只应使用 instantiate 系列",
+        "isCorrect": false,
+        "description": "未废弃：分离编译（缓存、跨线程共享 Module）仍依赖 compile 系列"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`const result = await WebAssembly.instantiate(module, imports)`（入参是已编译的 Module 对象），随后取 `result.instance`，会拿到什么？",
+    "explanation": "`instantiate` 有双重载且返回结构不同：传 BufferSource（原始字节）resolve 为 `{ module, instance }`（ResultObject）；传已编译的 Module 则直接 resolve 为裸 Instance，没有外层包装。因此对后者解构 `.instance` 拿到的是 undefined——这是本 API 家族最容易踩的设计坑。判断依据永远是「入参是字节还是 Module」。",
+    "tags": ["webassembly", "中级", "instantiate-overload"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "正常拿到 Instance 对象",
+        "isCorrect": false,
+        "description": "传 Module 时 result 本身就是 Instance，`.instance` 属性并不存在"
+      },
+      {
+        "text": "undefined——传 Module 的重载直接 resolve 为裸 Instance，没有 `{ module, instance }` 包装",
+        "isCorrect": true,
+        "description": "双重载返回结构不同，对裸 Instance 解构 `.instance` 得 undefined"
+      },
+      {
+        "text": "抛 TypeError，因为入参类型不合法",
+        "isCorrect": false,
+        "description": "传 Module 是合法重载，不抛错，只是返回结构不同"
+      },
+      {
+        "text": "拿到传入的 Module 自身",
+        "isCorrect": false,
+        "description": "resolve 结果是 Instance，不会原样返回 Module"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：相比「fetch → `arrayBuffer()` → `instantiate`」的旧路线，`instantiateStreaming` 的真正优势是什么？",
+    "explanation": "流式 API 直接对下载中的字节流边收边编译，不必先在内存里攒出完整 ArrayBuffer：首字节到可执行的延迟更短、无需同时持有完整字节副本因而内存峰值更低——对动辄几 MB 到几十 MB 的大模块差异显著。注意它不改变编译产物质量与运行性能，且比非流式路线多一个 MIME 硬门槛（`application/wasm`）。",
+    "tags": ["webassembly", "中级", "streaming"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "编译产物的机器码质量更高，运行速度更快",
+        "isCorrect": false,
+        "description": "优势在加载阶段，运行性能与非流式路线一致"
+      },
+      {
+        "text": "不要求响应的 MIME 类型，兼容性更好",
+        "isCorrect": false,
+        "description": "恰恰相反：流式 API 才有 `application/wasm` 的硬门槛"
+      },
+      {
+        "text": "对下载中的字节流边收边编译，不必攒出完整 ArrayBuffer——首字节到可执行延迟更短、内存峰值更低",
+        "isCorrect": true,
+        "description": "流式编译优势的准确表述，大模块场景差异显著"
+      },
+      {
+        "text": "能绕过同源策略直接加载第三方 wasm",
+        "isCorrect": false,
+        "description": "与同源策略无关，跨域仍受 CORS 约束"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 importObject 与模块导入声明的匹配规则，正确的是？",
+    "explanation": "匹配规则是逐条严格核对：模块声明的每条导入，importObject 里必须存在同路径（两级命名空间）、同种类（函数/Memory/Table/Global）、签名或尺寸兼容的实体——缺给或给错立刻 LinkError；多给不报错（多余项被忽略）。实际工程中 importObject 几乎都由工具链胶水生成（Emscripten 的 `env`、wasm-bindgen 的 `__wbindgen_*` 族），排查时可先用 `Module.imports()` 反射查清单。",
+    "tags": ["webassembly", "中级", "link-error"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "importObject 提供了模块没声明的多余项也会报错",
+        "isCorrect": false,
+        "description": "多给不报错，多余项直接被忽略"
+      },
+      {
+        "text": "只要函数名对得上就行，签名与种类不做检查",
+        "isCorrect": false,
+        "description": "种类与签名都要核对，函数签名对不上同样抛 LinkError"
+      },
+      {
+        "text": "匹配失败抛 CompileError，因为发生在编译阶段",
+        "isCorrect": false,
+        "description": "导入匹配发生在实例化/链接阶段，抛的是 LinkError"
+      },
+      {
+        "text": "逐条严格核对：每条导入必须有同路径、同种类、签名兼容的实体，缺给或给错立刻 LinkError；多给则被忽略",
+        "isCorrect": true,
+        "description": "「缺给或给错报错、多给忽略」的完整匹配规则"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：拿到一个陌生的 `.wasm`，想在不实例化的前提下弄清它需要哪些导入、提供哪些导出，应该用什么？",
+    "explanation": "用 Module 的静态反射方法：`WebAssembly.Module.imports(module)` 与 `WebAssembly.Module.exports(module)`，分别返回导入/导出的声明清单（含 module/name/kind 字段），只需先 `compile`/`compileStreaming` 出 Module，无需实例化。另一个辅助入口 `WebAssembly.validate(bytes)` 是同步校验字节是否为合法 Wasm，只返回 boolean，适合前置检查不可信来源，但不提供清单。",
+    "tags": ["webassembly", "中级", "reflection"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`WebAssembly.Module.imports(module)` 与 `WebAssembly.Module.exports(module)` 静态方法，返回声明清单（name/kind）",
+        "isCorrect": true,
+        "description": "Module 反射两把刀，编译后即可查询声明"
+      },
+      {
+        "text": "必须先实例化，再遍历 `instance.exports` 逐个猜测",
+        "isCorrect": false,
+        "description": "反射方法就是为「不实例化先看清」设计的，且 exports 看不到导入需求"
+      },
+      {
+        "text": "`WebAssembly.validate(bytes)` 会返回完整的导入导出清单",
+        "isCorrect": false,
+        "description": "validate 只同步返回 boolean（合法性），不给清单"
+      },
+      {
+        "text": "用 `JSON.parse` 解析 wasm 字节读取元数据",
+        "isCorrect": false,
+        "description": "`.wasm` 是二进制格式，与 JSON 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 `.wasm` 模块的缓存机制，当前（2026 年）正确的说法是？",
+    "explanation": "`.wasm` 走正常的 HTTP 缓存策略（Cache-Control/ETag），现代引擎还会对大模块做编译产物的隐式缓存——同 URL 二次加载可跳过编译。注意早年规范中「IndexedDB 显式存 Module」的方案已被移除，不要再找这个 API。跨线程复用编译结果则靠 Module 的结构化克隆（`postMessage()`）。",
+    "tags": ["webassembly", "中级", "caching"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须手动把 Module 存入 IndexedDB 才能避免重复编译",
+        "isCorrect": false,
+        "description": "IndexedDB 显式存 Module 的方案已从规范移除，引擎有隐式编译缓存"
+      },
+      {
+        "text": "走正常 HTTP 缓存策略，现代引擎还对大模块做编译产物的隐式缓存；早年的 IndexedDB 显式存 Module 方案已被移除",
+        "isCorrect": true,
+        "description": "HTTP 缓存 + 隐式编译缓存 + 已移除方案三点齐全"
+      },
+      {
+        "text": "`.wasm` 不受 HTTP 缓存管辖，每次都会重新下载",
+        "isCorrect": false,
+        "description": "它就是普通 HTTP 资源，Cache-Control/ETag 正常生效"
+      },
+      {
+        "text": "每次页面加载都必然从头重新编译，无任何缓存手段",
+        "isCorrect": false,
+        "description": "同 URL 二次加载可命中引擎的隐式编译缓存"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：一个 C 函数用 Emscripten 编译后，JS 侧发现根本调不到它（未被 main 调用过），最可能的原因与正确修复是？",
+    "explanation": "未被 main 引用的函数会被死代码消除（DCE）裁掉。修复是在 C 侧给函数加 `EMSCRIPTEN_KEEPALIVE` 标注防裁剪；JS 侧经胶水暴露的 `Module.ccall(\"fn\", 返回类型, 参数类型数组, 参数数组)` 一次性调用，或 `Module.cwrap` 包装成可复用函数——两者对 string/array 类型还会自动完成封送。运行时辅助函数需经 `-s EXPORTED_RUNTIME_METHODS=ccall,cwrap` 显式导出。",
+    "tags": ["webassembly", "中级", "emscripten"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "C 函数天生不能被 JS 调用，必须重写成 JS",
+        "isCorrect": false,
+        "description": "导出 C 函数给 JS 调正是 Emscripten 的核心能力"
+      },
+      {
+        "text": "必须把函数改名为 `main` 才能被调用",
+        "isCorrect": false,
+        "description": "无需改名，KEEPALIVE 标注即可保留任意导出函数"
+      },
+      {
+        "text": "函数被死代码消除裁掉了——加 `EMSCRIPTEN_KEEPALIVE` 防裁剪，JS 侧经 `Module.ccall`/`cwrap` 调用",
+        "isCorrect": true,
+        "description": "DCE 裁剪与 KEEPALIVE 防裁剪是 Emscripten 路线的标准姿势"
+      },
+      {
+        "text": "Emscripten 产物只能整体执行，不支持按函数调用",
+        "isCorrect": false,
+        "description": "ccall/cwrap 就是按函数调用的官方接口"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`wasm-pack build --target web` 的产物在浏览器里 `import init, { greet } from \"./pkg/x.js\"` 后直接调 `greet()` 报错，原因是？",
+    "explanation": "`--target web` 产物必须先 `await init()`——init 内部才执行 fetch + 实例化，未初始化就调用导出函数是「函数是 undefined」的高发原因。另一个维度是 target 选错：web 目标给浏览器原生 ESM 直接用，bundler 目标（默认值）配 webpack/Vite 等打包器——两者的产物加载方式不同，选错是产物用不了的头号原因。",
+    "tags": ["webassembly", "中级", "wasm-pack"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`--target web` 的产物只能配 webpack 使用",
+        "isCorrect": false,
+        "description": "web 目标恰恰是给无打包器的浏览器原生 ESM 用的；配打包器的是 bundler 目标"
+      },
+      {
+        "text": "浏览器里必须先安装 Rust 运行时",
+        "isCorrect": false,
+        "description": "产物是自包含的 wasm + JS 胶水，使用方完全无感知 Rust"
+      },
+      {
+        "text": "`greet` 需要改经 `Module.ccall` 调用",
+        "isCorrect": false,
+        "description": "ccall 是 Emscripten 胶水的接口，wasm-bindgen 产物直接调导出函数"
+      },
+      {
+        "text": "必须先 `await init()`——它内部才做 fetch 与实例化，未初始化就调用导出函数自然失败",
+        "isCorrect": true,
+        "description": "web 目标的固定使用姿势：先 init 再调用"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：WasmGC 在三大浏览器的落地节奏，正确的是？",
+    "explanation": "落地节奏：Chrome 119（2023-10）→ Firefox 120（2023-11 前后）→ Safari 18.2（2024-12），约 2024 年末达成跨浏览器 Baseline。值得注意的是浏览器抢跑在规范定稿之前——GC 早在 2023-10 就上了 Chrome，而 Wasm 3.0 到 2025-09-17 才正式定稿；「规范追认实现」是 Wasm 社区的一贯节奏。今天面向现代浏览器可以直接按「可用」设计。",
+    "tags": ["webassembly", "中级", "wasmgc-baseline"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 119（2023-10）→ Firefox 120 → Safari 18.2（2024-12），约 2024 年末达跨浏览器 Baseline",
+        "isCorrect": true,
+        "description": "三家版本号与 Baseline 时点的准确口径"
+      },
+      {
+        "text": "2025-09 规范定稿后，浏览器才开始实现 WasmGC",
+        "isCorrect": false,
+        "description": "浏览器抢跑在前：Chrome 2023-10 就已发货，定稿是追认"
+      },
+      {
+        "text": "目前仅 Chrome 支持，Firefox 与 Safari 均未实现",
+        "isCorrect": false,
+        "description": "三大浏览器已全部支持，2024 末即达 Baseline"
+      },
+      {
+        "text": "2017-10 就随核心 API 一起达成了 Baseline",
+        "isCorrect": false,
+        "description": "2017-10 是核心 MVP JS API 的 Baseline，WasmGC 晚了七年"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 的尾调用特性（`return_call` 系指令）解决的问题与主要受益场景是？",
+    "explanation": "尾调用让处于尾位置的调用复用当前栈帧——调用不再增长栈，递归深度不受栈限制。主要受益者：函数式语言编译（Scheme/OCaml 的尾递归语义是语言规范要求）、解释器与状态机的 dispatch 循环（各处理函数之间互相尾跳转）。浏览器支持已齐：Chrome 112 / Firefox 121 / Safari 18.2，与 GC 同期完成 Baseline 收敛。",
+    "tags": ["webassembly", "中级", "tail-call"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让所有函数调用整体提速一个数量级",
+        "isCorrect": false,
+        "description": "它不是普适加速，只改变尾位置调用的栈行为"
+      },
+      {
+        "text": "尾位置的调用复用当前栈帧、栈不增长——函数式语言编译与解释器/状态机 dispatch 循环的刚需",
+        "isCorrect": true,
+        "description": "栈语义与两大受益场景的准确描述"
+      },
+      {
+        "text": "消除 JS 与 Wasm 之间的跨边界调用成本",
+        "isCorrect": false,
+        "description": "与跨边界成本无关，作用范围是 Wasm 内部的调用栈"
+      },
+      {
+        "text": "只是语法糖，不改变实际的栈行为",
+        "isCorrect": false,
+        "description": "恰恰相反，改变栈行为（不增长）正是它的全部意义"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 多内存（multiple memories）官方公告点名的用途，不包括下列哪项？",
+    "explanation": "多内存允许单个模块声明/导入多块内存并直接跨内存复制，`load`/`store`/`data` 指令都带内存索引。官方公告点名三类用途：安全分区（敏感数据与常规数据物理隔离）、工具链静态链接（多模块合并成一个时各自保留内存）、插桩检测（观测数据放独立内存不污染被测对象）。「突破单块内存 4GB 上限」是 memory64 的事，与多内存无关——此前想要两块内存只能拆成两个模块绕行。",
+    "tags": ["webassembly", "高级", "multi-memory"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "安全分区：把敏感数据与常规数据物理隔离在不同内存",
+        "isCorrect": false,
+        "description": "这是官方点名的用途之一"
+      },
+      {
+        "text": "工具链静态链接：多个模块合并成一个时各自保留内存",
+        "isCorrect": false,
+        "description": "这是官方点名的用途之一"
+      },
+      {
+        "text": "让单块内存突破 4GB 上限",
+        "isCorrect": true,
+        "description": "突破 4GB 天花板是 memory64 的职责，不是多内存的用途——本项不在其列"
+      },
+      {
+        "text": "插桩检测：观测数据放独立内存，不污染被测对象",
+        "isCorrect": false,
+        "description": "这是官方点名的用途之一"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 Wasm 3.0 的 memory64，下列说法正确的是？",
+    "explanation": "memory64 把内存与表的地址类型从 `i32` 升级为 `i64`，理论地址空间 16EB；但 Web 端实现出于工程与安全权衡，把 64 位内存的上限定在 16GB——浏览器场景的真实叙事是「4GB → 16GB」，让视频编辑、CAD、科学数据集有了余量；完整的大地址红利属于服务端/独立运行时。使用侧注意：64 位内存的地址在 JS 边界以 BigInt 表达。页大小不变，仍是 64KiB。",
+    "tags": ["webassembly", "高级", "memory64"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器里可以用满 16EB 的理论地址空间",
+        "isCorrect": false,
+        "description": "Web 端实现把上限定在 16GB，16EB 只是 i64 的理论空间"
+      },
+      {
+        "text": "memory64 的本质是把页大小从 64KiB 扩大到 128KiB",
+        "isCorrect": false,
+        "description": "页大小不变，变的是地址类型的位宽"
+      },
+      {
+        "text": "64 位内存的地址在 JS 边界仍以 Number 表达",
+        "isCorrect": false,
+        "description": "64 位地址超出 Number 安全整数范围，JS 边界用 BigInt"
+      },
+      {
+        "text": "地址类型从 `i32` 扩到 `i64`，Web 端上限 16GB——真实意义是打破 4GB 天花板；64 位地址在 JS 边界以 BigInt 表达",
+        "isCorrect": true,
+        "description": "理论空间、Web 上限与 BigInt 边界三点齐全"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：实例化一个模块时抛出的是 RuntimeError 而不是 LinkError，最可能的原因是？",
+    "explanation": "MDN 对 LinkError 的定义带一个精确的括号——「模块实例化期间的错误（besides traps from the start function）」：模块的 start 函数在实例化时自动执行，它内部 trap 抛的是 RuntimeError，虽然时间点在实例化期。这是按阶段判错的唯一例外。排查时若实例化抛 RuntimeError，应去查 start 函数内部的越界/除零等 trap，而不是导入匹配问题。",
+    "tags": ["webassembly", "高级", "start-function"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "模块的 start 函数在实例化时自动执行，其内部 trap 抛 RuntimeError——MDN 对 LinkError 的定义明确排除这一项",
+        "isCorrect": true,
+        "description": "按阶段判错的唯一例外，易错点清单专门点名"
+      },
+      {
+        "text": "不可能出现这种情况，实例化阶段只会抛 LinkError",
+        "isCorrect": false,
+        "description": "存在唯一例外：start 函数的 trap"
+      },
+      {
+        "text": "importObject 缺项时也会抛 RuntimeError",
+        "isCorrect": false,
+        "description": "导入缺失或不匹配抛的是 LinkError"
+      },
+      {
+        "text": "MIME 类型不对导致的 RuntimeError",
+        "isCorrect": false,
+        "description": "MIME 不符抛的是普通 TypeError，且发生在加载而非实例化"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 已经有了原生异常处理（`try_table`），那么线性内存越界这类 trap 能否在 Wasm 内部被 catch 住？",
+    "explanation": "不能。trap（越界访问、整数除零、`unreachable`、间接调用签名不符）的语义是「违反 Wasm 安全模型的操作立即终止执行」，它不是异常——异常处理提案的 `try_table` 不捕获 trap，trap 不可能被 Wasm 内部吞掉，只会浮到 JS 侧成为 RuntimeError（JS 的 try/catch 可以接住）。这是安全模型的刻意设计：安全违规不允许被内部掩盖。",
+    "tags": ["webassembly", "高级", "trap"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "能，`try_table` 可以捕获包括 trap 在内的一切错误",
+        "isCorrect": false,
+        "description": "try_table 只捕获 tag 标记的异常，不捕获 trap"
+      },
+      {
+        "text": "不能——trap 不是异常，必然浮到 JS 侧成为 RuntimeError；这是安全模型的刻意设计",
+        "isCorrect": true,
+        "description": "trap 不可被 Wasm 内部吞掉，安全违规不允许被掩盖"
+      },
+      {
+        "text": "能，只要声明一个专门匹配 trap 的特殊 tag",
+        "isCorrect": false,
+        "description": "不存在这种 tag，trap 与异常是两套机制"
+      },
+      {
+        "text": "不能，且 JS 侧也无法捕获，页面必然崩溃",
+        "isCorrect": false,
+        "description": "JS 侧可以用 try/catch 接住 RuntimeError，页面不必崩溃"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：多线程架构下，下列哪个对象可以直接 `postMessage()` 传给 Worker？",
+    "explanation": "只有 Module 支持结构化克隆——`postMessage()` 给 Worker/其他窗口等于免费分发编译结果，各线程各自实例化、状态天然隔离。Instance 不可克隆；非 shared 的 Memory 不可跨线程传递（要共享内存需 `{ shared: true }`，底层是 SharedArrayBuffer，且需要跨域隔离环境）；导出函数是绑定实例状态的函数对象，同样不可克隆。「Worker 间传 Instance/Memory」是易错点清单里的一条。",
+    "tags": ["webassembly", "高级", "structured-clone"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`WebAssembly.Instance`——把运行状态整体交给 Worker",
+        "isCorrect": false,
+        "description": "Instance 不可结构化克隆，状态不能整体搬移"
+      },
+      {
+        "text": "非 shared 的 `WebAssembly.Memory`——直接共享线性内存",
+        "isCorrect": false,
+        "description": "非 shared Memory 不可跨线程传，共享须 `shared: true`（SharedArrayBuffer）"
+      },
+      {
+        "text": "`WebAssembly.Module`——结构化克隆分发编译结果，各线程各自实例化",
+        "isCorrect": true,
+        "description": "Module 是唯一可直接 postMessage 的一等公民"
+      },
+      {
+        "text": "`instance.exports` 上的导出函数",
+        "isCorrect": false,
+        "description": "函数不可结构化克隆，且它绑定着实例状态"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：项目用了 wasm-bindgen 自动封送字符串，JS↔Wasm 的跨边界成本是否就此消失？",
+    "explanation": "没有消失。字符串跨边界的三重成本——编码（TextEncoder）→ 复制进线性内存 → 解码（TextDecoder）——与长度线性相关；胶水工具只是替你写了这段封送代码，成本本身仍在。因此接口设计仍是成败关键：「传一个 10MB 的 Uint8Array 进去、算完传回来」（两次复制）与「循环十万次、每次传一小段字符串」（十万次编解码）性能差几个数量级。把边界调用设计成粗粒度、批量化，是 Wasm 应用架构的第一原则。",
+    "tags": ["webassembly", "高级", "boundary-cost"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "是的，wasm-bindgen 用零拷贝技术彻底消除了字符串传递成本",
+        "isCorrect": false,
+        "description": "不存在零拷贝魔法，编码、复制、解码一步都不少"
+      },
+      {
+        "text": "成本转移给了浏览器后台线程，不再占用应用时间",
+        "isCorrect": false,
+        "description": "封送发生在调用路径上，同步占用应用时间"
+      },
+      {
+        "text": "字符串本来就能零成本直通边界，胶水只是提供类型提示",
+        "isCorrect": false,
+        "description": "数值以外的数据都不能直通边界，字符串必须封送"
+      },
+      {
+        "text": "没有——胶水只是替你写了「编码 → 复制 → 解码」这段代码，三重成本仍在且与长度线性相关，接口仍须粗粒度、批量化",
+        "isCorrect": true,
+        "description": "「成本不会因为代码是生成的就消失」是笔记的原话结论"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：wasm-bindgen 导出的 Rust struct 在 JS 侧长期持有时，正确的内存管理姿势是？",
+    "explanation": "wasm-bindgen 把导出的 Rust struct 表现为 JS 侧的句柄对象——真实数据留在线性内存，JS 拿到的只是引用。长期持有场景应显式调用生成的 `free()` 方法释放；新版 wasm-bindgen 借 FinalizationRegistry 做了兜底回收，但 FinalizationRegistry 不保证及时执行，显式释放才是确定性的做法。反方向的 `externref` 让 Wasm 持 JS 对象引用，同样只是句柄——每次实际操作都要回跨边界。",
+    "tags": ["webassembly", "高级", "handle-pattern"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是句柄对象（数据留在线性内存），应显式调用生成的 `free()`；FinalizationRegistry 只是不保证及时的兜底",
+        "isCorrect": true,
+        "description": "句柄模式的生命周期责任：显式 free 才是确定性做法"
+      },
+      {
+        "text": "JS 的 GC 会自动完整回收，无需任何处理",
+        "isCorrect": false,
+        "description": "数据在线性内存里，JS GC 管不到；FinalizationRegistry 兜底也不保证及时"
+      },
+      {
+        "text": "struct 数据已完整复制进 JS 堆，原线性内存自动释放",
+        "isCorrect": false,
+        "description": "走的是句柄传引用而非序列化复制，数据仍在线性内存"
+      },
+      {
+        "text": "需要手动调用 `memory.grow(-1)` 收缩内存完成释放",
+        "isCorrect": false,
+        "description": "grow 不接受负数，线性内存也不支持收缩"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：JSPI 的两个关键包装器 `WebAssembly.Suspending` 与 `WebAssembly.promising()` 的方向分工是？",
+    "explanation": "JSPI 解决「C/C++/Rust 存量同步代码要等 Web 异步 IO」的老大难：`WebAssembly.Suspending` 把返回 Promise 的 JS 函数包成可挂起导入——Wasm 内部以同步姿势调用它，引擎在此处挂起整个 Wasm 栈；`WebAssembly.promising()` 把 Wasm 导出函数包成返回 Promise 的 JS 函数——JS 侧 await 它，Wasm 挂起期间主线程不被阻塞。心智模型：Wasm 代码写起来是同步的，跑起来是异步的，挂起/恢复由引擎在边界完成，源语言零改造。",
+    "tags": ["webassembly", "高级", "jspi"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Suspending` 包 Wasm 导出，`promising()` 包 JS 导入——两者作用于出口与入口",
+        "isCorrect": false,
+        "description": "方向说反了：Suspending 包 JS 异步函数做导入，promising 包 Wasm 导出"
+      },
+      {
+        "text": "`Suspending` 把返回 Promise 的 JS 函数包成可挂起导入（Wasm 同步姿势调用）；`promising()` 把 Wasm 导出包成返回 Promise 的 JS 函数",
+        "isCorrect": true,
+        "description": "JSPI 双向包装器的准确分工"
+      },
+      {
+        "text": "两者都用于把模块包装进 Worker 以实现并行",
+        "isCorrect": false,
+        "description": "JSPI 与 Worker 无关，解决的是同步风格代码等待异步 JS"
+      },
+      {
+        "text": "`Suspending` 会同步阻塞主线程直到 Promise resolve",
+        "isCorrect": false,
+        "description": "挂起的是 Wasm 栈，主线程不被阻塞——这正是 JSPI 的价值"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：2026 年年中要在跨浏览器产品里使用 JSPI，正确的现状评估是？",
+    "explanation": "JSPI 支持现状（本站核实口径）：Chrome 137+ 与 Firefox 139+ 已正式发货，Safari 尚未支持——它是 Interop 2026 的重点项，预期 2026 年内补齐。在 Safari 补齐之前，需要覆盖全浏览器的产品要保留 Asyncify 退路（Emscripten 的全量代码变换方案，体积 +50% 起、运行时开销可观）或做特性检测降级/双构建。",
+    "tags": ["webassembly", "高级", "jspi-support"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "三大浏览器都已支持，可以直接无条件依赖",
+        "isCorrect": false,
+        "description": "Safari 尚未支持，无条件依赖会在 Safari 上翻车"
+      },
+      {
+        "text": "全部浏览器均未实现，JSPI 还只是纸面提案",
+        "isCorrect": false,
+        "description": "Chrome 137+ 与 Firefox 139+ 已正式发货"
+      },
+      {
+        "text": "Chrome 137+ 与 Firefox 139+ 已发货，Safari 未支持（Interop 2026 重点项）——需保留 Asyncify 退路或特性检测降级",
+        "isCorrect": true,
+        "description": "版本口径、Safari 缺口与兜底方案三点齐全"
+      },
+      {
+        "text": "只有 Safari 支持，Chrome 与 Firefox 尚未跟进",
+        "isCorrect": false,
+        "description": "正好说反了：缺的恰恰是 Safari"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 原生异常处理的工作机制，正确的是？",
+    "explanation": "3.0 原生方案：模块内声明异常标签（exception tag），`throw` 携带载荷抛出，`try_table` 按 tag 选择性捕获，新引用类型 `exnref` 承载异常。JS 侧完全对称：`WebAssembly.Tag` 定义/引用标签，`WebAssembly.Exception` 是可跨边界抛、接、再抛的异常对象——Wasm 抛的异常 JS 能 catch 并读载荷，JS 构造的 Exception 也能扔回 Wasm。它取代了旧日「绕道 JS 异常」的高成本 workaround（抛接一次跨两次边界，官方称既慢又难维护）。",
+    "tags": ["webassembly", "高级", "exception-handling"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 WAT 里直接复用 JS 的 try/catch 语法，由引擎翻译",
+        "isCorrect": false,
+        "description": "Wasm 有自己的 tag + try_table 指令体系，不是复用 JS 语法"
+      },
+      {
+        "text": "异常只能在 Wasm 内部消化，JS 侧永远不可见",
+        "isCorrect": false,
+        "description": "Wasm 异常可浮到 JS 被 catch 并读取载荷，双向互通"
+      },
+      {
+        "text": "3.0 的方案就是把异常转成 JS 异常绕一圈再回来",
+        "isCorrect": false,
+        "description": "绕道 JS 正是被 3.0 原生方案取代的旧 workaround"
+      },
+      {
+        "text": "声明异常标签（tag）带载荷抛出，`try_table` 按 tag 选择性捕获（`exnref` 承载）；JS 侧经 `WebAssembly.Tag`/`Exception` 跨边界双向抛接",
+        "isCorrect": true,
+        "description": "tag/try_table/exnref 机制与 JS 侧对称 API 的完整描述"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于 WasmGC 的设计哲学，下列理解正确的是？",
+    "explanation": "WasmGC 给 Wasm 增加了与线性内存并列的第二种存储——引擎托管堆，但它刻意保持低层：只提供 struct/array 与子类型/递归类型这些「形状」（含未装箱的小整数标量），类、接口、虚表等语言级语义一概没有——MDN 与官方公告都强调「高层构造留给编译器实现」。所以它不是「在 Wasm 里写 Java」，而是「Java 编译器多了一个高质量后端」。收益是体积、性能、内存正确性三重：不必自带 GC 运行时（旧路线几 MB 起步），且消除了跨堆循环引用泄漏的隐患。",
+    "tags": ["webassembly", "专家", "wasmgc-design"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "刻意保持低层——只提供 struct/array 与子类型/递归类型等「形状」，高级语义留给源语言编译器；它是给编译器的新后端，不是「Wasm 里写 Java」",
+        "isCorrect": true,
+        "description": "设计哲学的准确表述：低层形状 + 编译器承担高层语义"
+      },
+      {
+        "text": "WasmGC 内建了类、接口与虚表语义，源语言可直接一一映射",
+        "isCorrect": false,
+        "description": "刻意不做：只有 struct/array 等低层形状，高级语义留给编译器"
+      },
+      {
+        "text": "WasmGC 取代线性内存，成为模块唯一的存储形态",
+        "isCorrect": false,
+        "description": "托管堆是与线性内存并列的第二种存储，两者共存"
+      },
+      {
+        "text": "WasmGC 要求语言自带 GC 实现并注册给引擎调度",
+        "isCorrect": false,
+        "description": "恰恰相反：分配与回收全部交给宿主引擎的 GC，不再自带"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：`WebAssembly.JSTag` 的作用是什么？",
+    "explanation": "`WebAssembly.JSTag` 是一个内建的异常标签（Tag 实例），代表「JS 世界抛出的异常」——Wasm 侧在 `try_table` 中据此识别并捕获 JS 抛来的异常，补上异常互操作的最后一块拼图。至此双向闭环：Wasm 抛的异常 JS 能 catch 并读载荷（经 `WebAssembly.Exception`），JS 抛的异常 Wasm 也能识别捕获（经 JSTag）。它与 JSPI 家族（`Suspending`/`promising`）同属 3.0 时代的 JS API 新面孔，但职责在异常而非异步。",
+    "tags": ["webassembly", "专家", "jstag"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "给 Wasm 模块标注版本号，供引擎做兼容性检查",
+        "isCorrect": false,
+        "description": "与版本无关，它是异常互操作机制的一部分"
+      },
+      {
+        "text": "内建异常标签，代表 JS 世界抛出的异常——Wasm 侧据此在 `try_table` 中识别并捕获 JS 异常",
+        "isCorrect": true,
+        "description": "异常互操作的最后一块拼图：让 Wasm 捕获 JS 异常"
+      },
+      {
+        "text": "JSPI 中用来标记可挂起函数的标签",
+        "isCorrect": false,
+        "description": "可挂起导入用的是 `WebAssembly.Suspending`，JSTag 管异常识别"
+      },
+      {
+        "text": "把 Wasm 内部异常降级为 JS 控制台警告",
+        "isCorrect": false,
+        "description": "没有降级机制，它做的是让异常跨边界可识别"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 类型化引用带来的 `call_ref`，与传统 `call_indirect` 的本质区别是？",
+    "explanation": "类型化引用（typed function references）让引用类型不再只有笼统的 `funcref`/`externref`，而能精确描述「指向某签名函数」的引用；`call_ref` 据此做无运行时签名检查的间接调用——类型系统在编译验证期就保证了签名正确。相比之下 `call_indirect` 要查 Table 再在调用点校验签名（不符即 trap），多一层运行时开销。这也是 GC 语言虚调用（vtable dispatch）的性能底座。`call_indirect` 并未被移除，两者并存。",
+    "tags": ["webassembly", "专家", "call-ref"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`call_ref` 只是 `call_indirect` 的新别名，行为一致",
+        "isCorrect": false,
+        "description": "两者机制不同：一个免运行时检查，一个查表 + 校验"
+      },
+      {
+        "text": "`call_ref` 允许 Wasm 直接调用任意 JS 函数而无需导入",
+        "isCorrect": false,
+        "description": "JS 函数仍须经 importObject 注入，call_ref 管的是 Wasm 内部间接调用"
+      },
+      {
+        "text": "类型化引用精确描述「指向某签名函数」的引用，`call_ref` 据此免去运行时签名检查——比 `call_indirect` 的查表 + 校验更快，是 GC 语言虚调用的性能底座",
+        "isCorrect": true,
+        "description": "静态类型保证换掉运行时校验，正是类型化引用的价值"
+      },
+      {
+        "text": "`call_indirect` 已在 3.0 中被移除，必须迁移到 `call_ref`",
+        "isCorrect": false,
+        "description": "并未移除，两条指令并存，各有适用场景"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：Wasm 3.0 中 relaxed SIMD 与「确定性 profile」的关系，正确的是？",
+    "explanation": "relaxed SIMD 是「性能换确定性」的向量指令档：放宽部分操作的跨平台确定性要求，让引擎能直接映射到各硬件最快的指令。确定性 profile（deterministic profile）则反向服务需要可复现执行的场景（如区块链、可复现计算）：为浮点 NaN、relaxed SIMD 等非确定性点位规定统一行为——浏览器默认不启用该档。两者不是互斥对立，而是同一套规范给不同场景提供的两个档位：要性能选 relaxed，要逐位可复现选确定性档。",
+    "tags": ["webassembly", "专家", "relaxed-simd"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "relaxed SIMD 比固定宽度 SIMD 计算结果更精确、更可复现",
+        "isCorrect": false,
+        "description": "方向反了：relaxed 恰是放宽确定性来换性能"
+      },
+      {
+        "text": "确定性 profile 是浏览器的默认执行模式",
+        "isCorrect": false,
+        "description": "浏览器默认不启用该档，它服务区块链等可复现场景"
+      },
+      {
+        "text": "两者互斥：启用 relaxed SIMD 的模块永远无法确定性执行",
+        "isCorrect": false,
+        "description": "确定性 profile 正是为这些非确定性点位规定统一行为的档位"
+      },
+      {
+        "text": "relaxed SIMD 用放宽跨平台确定性换性能；确定性 profile 为浮点 NaN、relaxed SIMD 等非确定性点位规定统一行为，服务区块链/可复现计算——浏览器默认不启用",
+        "isCorrect": true,
+        "description": "两个特性各自的取舍方向与适用场景"
+      }
+    ]
+  },
+  {
+    "stem": "Web Assembly：关于组件模型（Component Model）与 WASI 的定位，正确的是？",
+    "explanation": "两者都不属于浏览器 Wasm 3.0 的范畴，而是浏览器之外生态的两块地基：WASI（WebAssembly System Interface）标准化系统接口（文件、网络、时钟、随机数），让 `.wasm` 在 Wasmtime 等独立运行时里以能力安全（capability-based）方式访问系统资源；组件模型在核心 Wasm 之上定义跨语言组件的接口类型（字符串、record、variant 等）与组合方式——Rust 组件调 Go 组件不再需要手工对齐线性内存布局，它也是 WASI 0.2+ 的地基。对前端的现实意义：边缘函数、插件系统、Serverless 里部署的很可能已是 Wasm。",
+    "tags": ["webassembly", "专家", "component-model"],
+    "categories": [
+      ["技术方向", "Web Assembly"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "两者均不属于浏览器 3.0 范畴——WASI 以能力安全方式标准化系统接口；组件模型定义跨语言组件的接口类型与组合，是 WASI 0.2+ 的地基",
+        "isCorrect": true,
+        "description": "服务端/边缘 Wasm 两块地基的准确定位"
+      },
+      {
+        "text": "两者都是 Wasm 3.0 十大特性中的两项",
+        "isCorrect": false,
+        "description": "均不属于浏览器 3.0 范畴，是浏览器外生态的地基"
+      },
+      {
+        "text": "WASI 是浏览器专用的系统接口，组件模型只服务前端打包",
+        "isCorrect": false,
+        "description": "恰恰相反：WASI 面向独立运行时，组件模型面向跨语言组件组合"
+      },
+      {
+        "text": "组件模型要求各语言组件手工对齐线性内存布局来互调",
+        "isCorrect": false,
+        "description": "它引入接口类型正是为了免除手工对齐内存布局"
+      }
+    ]
+  }
+]
