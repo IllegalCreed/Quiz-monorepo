@@ -201,6 +201,12 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
+            // 2026-07-11 选型调研定案：9 占位叶 → 17 叶（spec: docs/plans/20260711-web-api-trilogy.md）。
+            // 本章统一负责「浏览器 API 编程用法」——协议原理在网络章 net-realtime、
+            // 存储模型/选型在浏览器章 browser-storage、SW 缓存决策在 browser-cache，只链接不重复。
+            // 旧 9 叶名称/父子关系全不动（prod 已建 0 题节点），新 8 叶纯追加，无分类移动坑。
+            // 排除：WebTransport（太新，WebSocket 叶带过）/ Web Crypto（安全章）/ WebAuthn（安全章语义）
+            //   / Performance API（优化章）/ Canvas·SVG·WebGL·WebGPU·WAAPI（可视化章已收官）。
             name: "Web API",
             sort: 2,
             children: [
@@ -213,6 +219,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Web Storage API", sort: 7 },
               { name: "IndexedDB", sort: 8 },
               { name: "Web Workers API", sort: 9 },
+              // ---- 以下 2026-07-11 新增 8 叶 ----
+              { name: "Service Worker 与 PWA", sort: 10 },
+              { name: "Streams API", sort: 11 },
+              { name: "Observer 观察器 API", sort: 12 },
+              { name: "History 与 Navigation API", sort: 13 },
+              { name: "View Transitions API", sort: 14 },
+              { name: "File 与文件系统 API", sort: 15 },
+              { name: "跨上下文通信", sort: 16 },
+              { name: "常用杂项 API", sort: 17 },
             ],
           },
           {
