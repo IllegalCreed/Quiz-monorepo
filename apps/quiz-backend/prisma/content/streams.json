@@ -1,0 +1,1583 @@
+[
+  {
+    "stem": "Streams API：它在 WHATWG 标准里的准确技术定位是下列哪一项？",
+    "explanation": "Streams API 是 WHATWG Streams 标准定义的流式数据处理原语，把「陆续到达的数据」抽象成三类对象——可读流（`ReadableStream`，读源）、可写流（`WritableStream`，写汇）、转换流（`TransformStream`，读+写可插管道），以 chunk（数据块）为单位边到边处理、以背压反向协调上下游速度、以管道（`pipeThrough`/`pipeTo`）声明式串联处理链。它是 fetch `response.body`、`CompressionStream`、`TextDecoderStream` 等平台能力的共同底座，Node 18+/Deno/Bun 也内置同一套接口——不是框架，也不是第三方库。",
+    "tags": ["streams", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "由 WHATWG Streams 标准定义的流式数据处理原语，把陆续到达的数据抽象成可读/可写/转换三类流，以 chunk 为单位边到边处理",
+        "isCorrect": true,
+        "description": "三类流 + chunk + 背压 + 管道，正是官方定位"
+      },
+      {
+        "text": "一款需要 npm 安装的第三方流处理库，用前要先引入运行时",
+        "isCorrect": false,
+        "description": "它是浏览器与 Node 内置的标准能力，无需安装任何运行时"
+      },
+      {
+        "text": "Node.js 专有的 `stream` 模块，浏览器需 polyfill 才能用",
+        "isCorrect": false,
+        "description": "Web Streams 是跨端标准，浏览器原生支持、Node 也内置同款"
+      },
+      {
+        "text": "仅用于 `fetch` 下载的辅助 API，脱离 fetch 无法独立使用",
+        "isCorrect": false,
+        "description": "fetch 只是它的使用者之一，流可独立构造与组合"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：三类流（`ReadableStream`/`WritableStream`/`TransformStream`）的角色分工，下列对应正确的是？",
+    "explanation": "按 WHATWG 口径三类流对应数据流动的三个位置：`ReadableStream` 是读源（数据从这里流出，背后是 underlying source）、`WritableStream` 是写汇（数据流入这里落地，背后是 underlying sink）、`TransformStream` 是中间变换（一端 `writable` 写入、另一端 `readable` 读出，背后是 transformer，能插进管道中间）。",
+    "tags": ["streams", "入门", "three-streams"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Readable 管写入落地、Writable 管读取、Transform 管缓存",
+        "isCorrect": false,
+        "description": "三者职责被完全张冠李戴"
+      },
+      {
+        "text": "三者都只能读、区别只是速度快慢",
+        "isCorrect": false,
+        "description": "Writable 是写、Transform 是读写成对，并非都只读"
+      },
+      {
+        "text": "Transform 必须继承自 `ReadableStream` 才能工作",
+        "isCorrect": false,
+        "description": "Transform 是独立类型，由 writable/readable 两端组成，无继承关系"
+      },
+      {
+        "text": "`ReadableStream` 是读源（数据流出）、`WritableStream` 是写汇（数据落地）、`TransformStream` 是中间变换（写入端进、读取端出）",
+        "isCorrect": true,
+        "description": "读源 / 写汇 / 中间变换，正是三者分工"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：关于 chunk（数据块），下列说法正确的是？",
+    "explanation": "chunk 是流一次读/写的最小单元，可以是一个字节、一个 `Uint8Array`（字节流里常见 16 KiB 一块）、一个字符串或任意对象。两个要点：同一个流里各 chunk 的大小/类型可以不同（网络分片给的 `Uint8Array` 长度并不固定，别假设每块一样大）；chunk 的「大小」由排队策略里的 `size` 函数定义，默认按条数计（每块算 1）。",
+    "tags": ["streams", "入门", "chunk"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "chunk 是流读/写的最小单元，可为字节/`Uint8Array`/字符串/对象，同一流里大小与类型都可不同",
+        "isCorrect": true,
+        "description": "正是 chunk 的定义，别假设每块等大"
+      },
+      {
+        "text": "同一个流里所有 chunk 必须大小相同、类型一致",
+        "isCorrect": false,
+        "description": "各 chunk 大小/类型可不同，网络分片长度就不固定"
+      },
+      {
+        "text": "chunk 只能是 `Uint8Array`，不能是字符串或对象",
+        "isCorrect": false,
+        "description": "也可以是字符串、对象（对象流每块一条记录）"
+      },
+      {
+        "text": "chunk 的大小固定由浏览器决定，开发者无法干预",
+        "isCorrect": false,
+        "description": "大小由排队策略的 `size` 函数定义，可自定义"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：背压（backpressure）的核心心智模型是下列哪一句？",
+    "explanation": "背压是流区别于「一把梭」的核心价值。管道里上游飞快生产、下游慢慢消费时，若不加协调未消费的 chunk 会在中间无限堆积、内存照样爆。背压就是这条协调机制：下游忙不过来时，信号沿管道反向传播回上游，让上游放慢甚至暂停生产，等下游腾出手再恢复——数据正向流、压力反向传。",
+    "tags": ["streams", "入门", "backpressure"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "让上游尽快把所有数据一次性推给下游，越快越好",
+        "isCorrect": false,
+        "description": "那正是会导致堆积爆内存的做法，与背压相反"
+      },
+      {
+        "text": "下游主动丢弃处理不完的 chunk 以保证不堆积",
+        "isCorrect": false,
+        "description": "背压是让上游放慢而非丢数据，丢数据会丢信息"
+      },
+      {
+        "text": "由浏览器在内存不足时强制杀掉整条流",
+        "isCorrect": false,
+        "description": "背压是平滑限速协调，不是崩溃兜底"
+      },
+      {
+        "text": "下游忙不过来时信号反向传播回上游，让上游放慢/暂停生产，防止未消费 chunk 无限堆积",
+        "isCorrect": true,
+        "description": "数据正向流、压力反向传，正是背压定义"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：下列哪种场景「最该」用流、而不是一次性全量读？",
+    "explanation": "该用流的判据：数据大（大文件、大响应）、数据陆续到达（网络、串口、媒体、AI 逐 token）、要边到边处理（进度、边下边转）、要组合多段处理（解压+解码+落盘串成一条管道）。别用流的场景：几 KB 的一次性小数据——`await res.json()`/`await res.text()` 更直接，套流是过度工程。",
+    "tags": ["streams", "入门", "when-to-use"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "读取一个几 KB 的配置 JSON、一次性拿到结果",
+        "isCorrect": false,
+        "description": "小数据直接 `res.json()`，套流是过度工程"
+      },
+      {
+        "text": "对一个已在内存里的短字符串做一次大写转换",
+        "isCorrect": false,
+        "description": "无「陆续到达/大数据」，直接处理即可"
+      },
+      {
+        "text": "逐 token 渲染一个大模型的流式响应、边到边处理",
+        "isCorrect": true,
+        "description": "陆续到达 + 边到边，正是流的主场"
+      },
+      {
+        "text": "同步读取一个 8 字节的魔数头做判断",
+        "isCorrect": false,
+        "description": "极小同步数据，流只会徒增复杂度"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：为什么一个流同一时刻只能有一个 reader/writer（locked 语义）？",
+    "explanation": "读一个流要先 `getReader()`、写要先 `getWriter()`，拿到的那一刻流就 locked（`stream.locked` 为 `true`）。锁定保证 chunk 不被两个消费者抢——流只能顺序前进，两个 reader 同时 `read()` 会争抢同一批 chunk、语义不清，所以规范禁止。要「读两遍」只能 `tee()` 分流；`pipeTo`/`pipeThrough` 期间也会自动加锁/解锁。",
+    "tags": ["streams", "入门", "locked"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "流只能顺序前进，两个 reader 同时 `read()` 会争抢同一批 chunk、语义不清，故规范只允许一个消费者",
+        "isCorrect": true,
+        "description": "正是 locked 的动机：防止争抢 chunk"
+      },
+      {
+        "text": "因为流内部用了全局锁，多个 reader 会死锁",
+        "isCorrect": false,
+        "description": "不是死锁问题，是防止争抢 chunk 的语义设计"
+      },
+      {
+        "text": "因为 reader 对象无法被垃圾回收，多建会内存泄漏",
+        "isCorrect": false,
+        "description": "与 GC 无关，是 chunk 归属的语义约束"
+      },
+      {
+        "text": "锁定是可选的，传参就能同时开多个 reader",
+        "isCorrect": false,
+        "description": "无此开关；要读两遍须 `tee()` 分流"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：要「读」一个可读流、「写」一个可写流，第一步分别该做什么？",
+    "explanation": "读要先 `stream.getReader()` 拿到 reader（`ReadableStreamDefaultReader`），写要先 `stream.getWriter()` 拿到 writer（`WritableStreamDefaultWriter`）；拿到后流被 locked。之后读用 `reader.read()` 循环、写用 `writer.write()`（配合 `writer.ready`）。用管道（`pipeTo`/`pipeThrough`）时则不用手动拿 reader/writer，管道内部自理。",
+    "tags": ["streams", "入门", "reader-writer"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "读写都直接遍历 `stream` 数组下标即可",
+        "isCorrect": false,
+        "description": "流不是数组，没有下标随机访问"
+      },
+      {
+        "text": "读用 `stream.read()`、写用 `stream.write()` 直接调",
+        "isCorrect": false,
+        "description": "方法在 reader/writer 上，须先 `getReader()`/`getWriter()`"
+      },
+      {
+        "text": "读写前必须先 `await stream.open()` 打开流",
+        "isCorrect": false,
+        "description": "无 `open()` 方法，流构造即可用"
+      },
+      {
+        "text": "读先 `stream.getReader()` 拿 reader，写先 `stream.getWriter()` 拿 writer，随后流被锁定",
+        "isCorrect": true,
+        "description": "正是取手柄的第一步"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`fetch` 响应的 `response.body` 属于哪类流对象？",
+    "explanation": "`response.body` 是一个 `ReadableStream`——这正是 Streams API 与 fetch 的连接点。它的读取、下载进度、上传流属于 fetch 叶的「应用面」；而流的通用模型（三类流/背压/排队/BYOB/tee/管道/转换流）是 Streams 叶的主题。要边到边/进度就读 `response.body`，只要最终结果就用 `res.json()`/`res.text()`（内部帮你收流）。",
+    "tags": ["streams", "入门", "fetch-body"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它是一个 `WritableStream`，用于把请求体写出去",
+        "isCorrect": false,
+        "description": "响应体是读取方向，是 `ReadableStream`"
+      },
+      {
+        "text": "它是一个 `ReadableStream`，可用 `getReader()` 循环或接入管道",
+        "isCorrect": true,
+        "description": "正是 fetch 与 Streams 的连接点"
+      },
+      {
+        "text": "它是一个普通数组，可直接 `for` 下标遍历",
+        "isCorrect": false,
+        "description": "是流对象不是数组，须 reader 或 `for await`"
+      },
+      {
+        "text": "它是 `Blob`，须先 `.stream()` 才变流",
+        "isCorrect": false,
+        "description": "`response.body` 本身即 `ReadableStream`，无需转换"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：相比「一把梭」（等全部数据到齐再处理），流式处理的根本优势是什么？",
+    "explanation": "传统一把梭要等全部到齐再动手（`await res.text()` 等整份下载完、`fs.readFileSync` 把整个文件读进内存），数据一大就崩：内存（10 GB 全读进内存 OOM）、延迟（等最后一个字节才能开工）。流把数据分成 chunk、一到就处理、处理完就丢，于是峰值内存与数据总量解耦（无论 10 MB 还是 10 GB，同一时刻内存里只有少量 chunk），且首块即处理（第一个 chunk 到就能开工）。",
+    "tags": ["streams", "入门", "motivation"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "峰值内存与数据总量解耦、且首块到达即可开始处理，无需等全部到齐",
+        "isCorrect": true,
+        "description": "正是流的两大根本动机：恒定内存 + 首块即处理"
+      },
+      {
+        "text": "它能让数据传输的网络带宽变大、下载更快",
+        "isCorrect": false,
+        "description": "流不改变带宽，改变的是内存与延迟特性"
+      },
+      {
+        "text": "它会自动把数据压缩到更小以省内存",
+        "isCorrect": false,
+        "description": "压缩是可选的 `CompressionStream`，非流的固有属性"
+      },
+      {
+        "text": "它能跳过慢速网络、直接从缓存返回全部数据",
+        "isCorrect": false,
+        "description": "与缓存无关，是边到边处理的内存/延迟优势"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`new ReadableStream(underlyingSource)` 的 underlying source 用哪三个方法描述「数据从哪来、怎么续、怎么停」？",
+    "explanation": "underlying source 用三个可选方法：`start(controller)`（构造后立即调一次，做初始化/拉起数据源）、`pull(controller)`（内部队列没满时反复调，用来续喂 chunk——背压的关键钩子，队列满时浏览器不再调它）、`cancel(reason)`（消费者取消时调，释放数据源、清理副作用）。",
+    "tags": ["streams", "初级", "underlying-source"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`open` / `read` / `close`",
+        "isCorrect": false,
+        "description": "这是文件句柄式命名，非 Streams underlying source 的方法名"
+      },
+      {
+        "text": "`init` / `next` / `return`",
+        "isCorrect": false,
+        "description": "这是迭代器协议，不是 underlying source"
+      },
+      {
+        "text": "`start`（初始化一次）/ `pull`（队列未满时续喂，背压钩子）/ `cancel`（取消时释放源）",
+        "isCorrect": true,
+        "description": "正是 underlying source 三方法"
+      },
+      {
+        "text": "`connect` / `push` / `disconnect`",
+        "isCorrect": false,
+        "description": "非规范方法名，源不主动 push，是被 `pull` 拉"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：可读流控制器 `ReadableStreamDefaultController` 的 `enqueue`/`close`/`error` 分别做什么？",
+    "explanation": "控制器是操控流的手柄：`enqueue(chunk)` 把一块放进内部队列（消费者即可读到，`close()` 之后再 `enqueue` 会抛错）；`close()` 关流（不再接受 `enqueue`，队列里已入队的 chunk 消费者仍能读完，读完才收到 `done:true`）；`error(e)` 让流进入错误态，reader 的 `read()` 与 `closed` 都以 `e` reject。",
+    "tags": ["streams", "初级", "controller"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`enqueue` 立即清空队列、`close` 暂停流、`error` 打印日志",
+        "isCorrect": false,
+        "description": "三者语义被完全弄错"
+      },
+      {
+        "text": "`enqueue(chunk)` 入队一块、`close()` 关流（已入队仍可读完）、`error(e)` 让流进错误态使 read/closed reject",
+        "isCorrect": true,
+        "description": "正是控制器三方法"
+      },
+      {
+        "text": "`enqueue` 读一块、`close` 锁定流、`error` 重试",
+        "isCorrect": false,
+        "description": "enqueue 是入队不是读，close 是关流不是锁"
+      },
+      {
+        "text": "三个方法都只能在 `cancel` 回调里调用",
+        "isCorrect": false,
+        "description": "通常在 `start`/`pull` 里调，非仅限 cancel"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：消费一个现成可读流（如 `response.body`）的通用可移植套路是什么？",
+    "explanation": "通用读法：`getReader()` 拿 reader → `while(true)` 循环 `await reader.read()` → 遇 `done` 就 break → `finally` 里 `releaseLock()`。`read()` 返回 `Promise<{ done, value }>`：`done:false` 带 `value`（一块 chunk），`done:true` 表示读完。这是全浏览器安全的写法（与 fetch 叶口径一致），不依赖仍待 Safari 27 的 `for await`。",
+    "tags": ["streams", "初级", "read-loop"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "直接 `await stream.readAll()` 一次拿到所有 chunk 数组",
+        "isCorrect": false,
+        "description": "无此方法，流是逐块读的"
+      },
+      {
+        "text": "用 `stream.forEach(chunk => ...)` 同步遍历",
+        "isCorrect": false,
+        "description": "流无 `forEach`，须 reader 或 `for await`"
+      },
+      {
+        "text": "裸用 `for await (const chunk of stream)` 作为跨端首选写法",
+        "isCorrect": false,
+        "description": "`for await` 待 Safari 27，跨端不安全"
+      },
+      {
+        "text": "`getReader()` → `while` 循环 `await reader.read()`，遇 `done` break，`finally` 里 `releaseLock()`",
+        "isCorrect": true,
+        "description": "正是全浏览器安全的可移植套路"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`reader.read()` 返回的 `{ done, value }` 各字段语义是什么？",
+    "explanation": "`read()` 返回 `Promise<{ done, value }>`：`done:false` 时 `value` 是一块 chunk（继续处理）；`done:true` 时流已读完，`value` 为 `undefined`（应 break 退出循环）；若流出错则该 Promise reject（在 `try/catch` 里浮现）。",
+    "tags": ["streams", "初级", "read-protocol"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`done:true` 时 `value` 是最后剩余的全部数据",
+        "isCorrect": false,
+        "description": "`done:true` 时 `value` 是 `undefined`，不含数据"
+      },
+      {
+        "text": "`value` 恒为数组，`done` 表示是否为空",
+        "isCorrect": false,
+        "description": "`value` 是单块 chunk 不是数组"
+      },
+      {
+        "text": "`done` 是错误标志，`true` 表示读取失败",
+        "isCorrect": false,
+        "description": "`done:true` 表示正常读完，出错走 Promise reject"
+      },
+      {
+        "text": "`done:false` 时 `value` 是一块 chunk；`done:true` 时读完、`value` 为 `undefined`",
+        "isCorrect": true,
+        "description": "正是 read 协议"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`for await (const chunk of stream)` 遍历可读流，2026-07 的跨浏览器现状是什么？",
+    "explanation": "`ReadableStream` 实现了异步可迭代协议，可 `for await` 遍历（语法最简洁、自动 read 循环、自动 `releaseLock`、结束/出错自动收尾）。但兼容性是代价：异步迭代在 Chrome 124/Firefox 110 已支持，Safari 直到 27 才补齐——核于 2026-07 还不是跨浏览器安全写法。移植 MDN 的 `for await` 示例时，跨端代码换回 `getReader()` 循环。",
+    "tags": ["streams", "初级", "async-iteration"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "所有主流浏览器已支持多年，可放心裸用",
+        "isCorrect": false,
+        "description": "Safari 27 才补齐，跨端还不能裸用"
+      },
+      {
+        "text": "Chrome/Firefox 已支持，但 Safari 直到 27 才补齐；跨端仍用 `getReader()` 循环",
+        "isCorrect": true,
+        "description": "正是 2026-07 的兼容现状"
+      },
+      {
+        "text": "该语法从未进入规范，是非标准提案",
+        "isCorrect": false,
+        "description": "它是标准异步可迭代协议，只是 Safari 落地晚"
+      },
+      {
+        "text": "仅 Node 支持，浏览器全都不支持",
+        "isCorrect": false,
+        "description": "浏览器 Chrome/Firefox 已支持，只 Safari 迟"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：手写 read 循环时为什么要在 `finally` 里 `releaseLock()`？",
+    "explanation": "`getReader()` 让 `stream.locked` 变 `true`。不 `releaseLock()`，别的地方就拿不到新 reader，也不能 `pipeTo`/`tee`，还可能泄漏底层资源。所以用 `try/finally` 保证释放——释放后流才能重新被读或接管道。`for await` 正常结束会自动 `releaseLock`，手写循环则要自己照顾。",
+    "tags": ["streams", "初级", "release-lock"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不释放会立即抛出内存溢出错误",
+        "isCorrect": false,
+        "description": "不会立即 OOM，是流一直锁着无法再用"
+      },
+      {
+        "text": "释放锁会把已读的 chunk 退回队列",
+        "isCorrect": false,
+        "description": "释放锁不影响已读数据，只解除锁定"
+      },
+      {
+        "text": "不释放流会一直 locked，后续 `getReader`/`tee`/`pipeTo` 都用不了、还可能泄漏资源",
+        "isCorrect": true,
+        "description": "正是收尾必做 `releaseLock` 的原因"
+      },
+      {
+        "text": "`releaseLock` 会取消流、丢弃未读 chunk",
+        "isCorrect": false,
+        "description": "那是 `cancel` 的行为，`releaseLock` 只解锁不丢数据"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：需要把同一份可读流的数据「读两遍」（如一边渲染、一边写缓存），标准做法是什么？",
+    "explanation": "流只能顺序读一遍。要同一份数据读两次（经典场景：Service Worker 里一边把响应流给浏览器、一边写进 Cache），用 `tee()`：`const [a, b] = stream.tee()` 复制成两个独立分支（各自 reader、各自内部队列，互不影响读取进度），原流随即被锁。不能对同一流开两个 reader（会抛 `TypeError`）。",
+    "tags": ["streams", "初级", "tee"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用 `stream.tee()` 复制成两个独立分支 `[a, b]`，各自读、原流被锁",
+        "isCorrect": true,
+        "description": "正是「读两遍」的标准做法"
+      },
+      {
+        "text": "用两个 `getReader()` 同时读同一个流",
+        "isCorrect": false,
+        "description": "第二次 `getReader()` 会因 locked 抛 `TypeError`"
+      },
+      {
+        "text": "先 `await stream.toArray()` 缓存再遍历两次",
+        "isCorrect": false,
+        "description": "无此方法，且会丧失流式内存优势"
+      },
+      {
+        "text": "把 `response.body` 直接 `JSON.parse` 两次",
+        "isCorrect": false,
+        "description": "body 是流不是字符串，不能直接 parse"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`WritableStream` 的 underlying sink 用哪四个方法描述「数据怎么落地」？",
+    "explanation": "underlying sink 四个可选方法：`start(controller)`（构造后一次，初始化：打开文件/连接）、`write(chunk, controller)`（每块调一次，真正落地一块，返回的 Promise 兑现前 writer 视为「忙」——这就是可写流背压的实现基础）、`close(controller)`（正常收尾、冲刷缓冲、关句柄）、`abort(reason)`（异常中止、进入错误态、丢弃回滚释放）。",
+    "tags": ["streams", "初级", "underlying-sink"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`open` / `push` / `flush` / `end`",
+        "isCorrect": false,
+        "description": "非规范命名，Streams sink 用 write/close/abort"
+      },
+      {
+        "text": "`start`（初始化一次）/ `write`（每块落地，返回 Promise=背压）/ `close`（正常收尾）/ `abort`（异常中止）",
+        "isCorrect": true,
+        "description": "正是 underlying sink 四方法"
+      },
+      {
+        "text": "`connect` / `send` / `receive` / `disconnect`",
+        "isCorrect": false,
+        "description": "这是收发双向命名，sink 只负责写入落地"
+      },
+      {
+        "text": "`start` / `read` / `pull` / `cancel`",
+        "isCorrect": false,
+        "description": "read/pull/cancel 是可读流 source 的方法，不属 sink"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：高频往 `WritableStream` 写入时，正确的背压姿势是什么？",
+    "explanation": "写要先 `getWriter()` 拿 writer。高频写入的正确姿势是「先 `await writer.ready` 再 `write`」：`writer.ready` 是背压钩子——一个 Promise，队列低于高水位（可再接收）时兑现。写前 `await ready` 就能让写入速度自动跟随 sink 消费速度。只 `await write` 不代表队列没满（`write` 兑现只表示这块被接受），高频只 `await write` 会越过高水位、丢背压。",
+    "tags": ["streams", "初级", "writer-ready"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "每块先 `await writer.ready` 再 `writer.write(chunk)`，让写入跟随 sink 速度",
+        "isCorrect": true,
+        "description": "`ready` 才是背压信号，正确姿势"
+      },
+      {
+        "text": "每块都只 `await writer.write(chunk)`，不看 `ready`",
+        "isCorrect": false,
+        "description": "`write` 兑现≠队列没满，会丢背压"
+      },
+      {
+        "text": "用 `setTimeout` 手动每 100ms 写一块限速",
+        "isCorrect": false,
+        "description": "拍脑袋定时不是背压，`ready` 才精确反映 sink 状态"
+      },
+      {
+        "text": "一次性 `writer.write(allChunks)` 把全部写进去",
+        "isCorrect": false,
+        "description": "那正是丢背压、堆内存的一把梭写法"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`TransformStream` 的 transformer 用 `transform` 与 `flush` 两个方法分别做什么？",
+    "explanation": "`transform(chunk, controller)` 每块调一次：变换后用 `controller.enqueue(...)` 推到 readable 端。`flush(controller)` 在 writable 端关闭后调一次：冲刷内部累积的尾巴、做收尾。`flush` 是收尾的唯一机会——跨 chunk 攒着的半行、解码器里的残字节、分帧器里的半个包，都在 `flush` 里冲刷，漏写 `flush` 会丢结尾数据。",
+    "tags": ["streams", "初级", "transformer"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`transform` 只做日志、真正变换在 `flush` 里",
+        "isCorrect": false,
+        "description": "变换在 `transform`，`flush` 只做结尾冲刷"
+      },
+      {
+        "text": "`transform` 关流、`flush` 开流",
+        "isCorrect": false,
+        "description": "二者都不管开关流，是变换与收尾"
+      },
+      {
+        "text": "`transform` 每块变换后 `enqueue` 到 readable 端，`flush` 在写入端关闭后冲刷尾巴/收尾",
+        "isCorrect": true,
+        "description": "正是二者分工"
+      },
+      {
+        "text": "`flush` 每块调一次、`transform` 只调一次",
+        "isCorrect": false,
+        "description": "恰相反：`transform` 每块调、`flush` 结尾一次"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`readable.pipeThrough(transformStream)` 的语义是什么？",
+    "explanation": "`pipeThrough(ts)` = 把 `readable` 接到 `ts.writable`、并返回 `ts.readable`，因此能链式串联多段变换：`readable.pipeThrough(a).pipeThrough(b).pipeTo(sink)`。它自动处理背压（末端读得慢，回压一路传到最上游）、自动错误传播、自动锁定/解锁——比手写「读一段→变换→写一段」循环健壮得多。",
+    "tags": ["streams", "初级", "pipe-through"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它把 `readable` 的数据一次性复制进 transform、返回布尔成功标志",
+        "isCorrect": false,
+        "description": "返回的是下游 `readable`，非布尔，且是流式非一次性"
+      },
+      {
+        "text": "它会阻塞直到整个流处理完才返回",
+        "isCorrect": false,
+        "description": "返回下游 readable 是同步的，处理是异步流式的"
+      },
+      {
+        "text": "它等价于 `tee()`，把流分成两支",
+        "isCorrect": false,
+        "description": "`pipeThrough` 是串联变换，`tee` 是分流复制，语义不同"
+      },
+      {
+        "text": "把 `readable` 接到 `ts.writable` 并返回 `ts.readable`，可链式串联，自动背压+错误传播+锁定",
+        "isCorrect": true,
+        "description": "正是 `pipeThrough` 语义"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`CompressionStream('gzip')` 在类型上属于什么？怎么用？",
+    "explanation": "`CompressionStream` / `DecompressionStream` 本身就是 `TransformStream`——`pipeThrough` 一接就用，无需打包 pako 这类压缩库。典型：`readable.pipeThrough(new CompressionStream('gzip')).pipeTo(writable)` 边读边压边写、恒定内存。gzip/deflate/deflate-raw 是 Baseline 格式，放心用。",
+    "tags": ["streams", "初级", "compression"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它是一个需要 `await` 的普通函数，返回压缩后的字符串",
+        "isCorrect": false,
+        "description": "它是转换流不是一次性函数"
+      },
+      {
+        "text": "它是 `ReadableStream`，只能作管道起点",
+        "isCorrect": false,
+        "description": "它是 `TransformStream`，插在管道中间"
+      },
+      {
+        "text": "它本身就是一个 `TransformStream`，`pipeThrough(new CompressionStream('gzip'))` 即可流式压缩",
+        "isCorrect": true,
+        "description": "正是压缩流的用法，免第三方库"
+      },
+      {
+        "text": "它必须配合 WebAssembly 版 zlib 才能工作",
+        "isCorrect": false,
+        "description": "浏览器原生实现，无需额外 wasm 库"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：把字节流转成文本时，为什么优先用 `TextDecoderStream` 而非手动 `new TextDecoder().decode(chunk)`？",
+    "explanation": "`TextDecoderStream` 是转换流，`pipeThrough(new TextDecoderStream())` 自动处理跨 chunk 的多字节字符——一个 UTF-8 汉字被拆在两个 chunk 边界时不会乱码。手动 `decode(chunk)` 漏 `stream:true` 时，多字节字符跨块会截断乱码；要么全程 `decode(chunk, { stream:true })` + 结尾冲刷，要么直接用 `TextDecoderStream`（内部就带流式语义）。它已 Baseline（Chrome 71/Firefox 105/Safari 14.1）。",
+    "tags": ["streams", "初级", "text-decoder"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "手动 `decode` 更快，`TextDecoderStream` 只是语法糖无实质差别",
+        "isCorrect": false,
+        "description": "有实质差别：跨块多字节安全"
+      },
+      {
+        "text": "`TextDecoderStream` 自动处理跨 chunk 的多字节字符，手动 `decode` 漏 `stream:true` 会在块边界乱码",
+        "isCorrect": true,
+        "description": "正是优先用它的原因"
+      },
+      {
+        "text": "`TextDecoderStream` 能自动解压 gzip，`TextDecoder` 不能",
+        "isCorrect": false,
+        "description": "解压是压缩流的事，与文本解码无关"
+      },
+      {
+        "text": "只有 `TextDecoderStream` 支持中文，`TextDecoder` 只支持 ASCII",
+        "isCorrect": false,
+        "description": "二者都支持 UTF-8，差别在跨块流式处理"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：一个 `pull` 型 underlying source（如逐段读文件），为什么说它「天然有背压、不用手动节流」？",
+    "explanation": "`pull(controller)` 只在内部队列还能装（`desiredSize > 0`）时被浏览器调用。队列满（`desiredSize <= 0`）时浏览器不再调 `pull`，自动停止续喂——你什么都不用做就有背压。这正是「用流=自动背压」的体现：`pull` 源按需被索取，消费快就多调 `pull`、消费慢就少调甚至不调。",
+    "tags": ["streams", "中级", "pull-backpressure"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "队列满（`desiredSize <= 0`）时浏览器不再调 `pull`，队列有空位才继续调，自动停喂",
+        "isCorrect": true,
+        "description": "正是 pull 源的自动背压"
+      },
+      {
+        "text": "因为 `pull` 内部自带 `setInterval` 限速",
+        "isCorrect": false,
+        "description": "无定时器，是浏览器按队列水位决定是否调 `pull`"
+      },
+      {
+        "text": "因为 `pull` 一旦调用就永久停止，只喂一块",
+        "isCorrect": false,
+        "description": "`pull` 会反复调，只是队列满时暂停"
+      },
+      {
+        "text": "因为 `pull` 会自动压缩 chunk 以减少体积",
+        "isCorrect": false,
+        "description": "与压缩无关，是调用频率随队列水位自调"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：一个 push 型 source（如 WebSocket、定时器不停产出），要正确施加背压必须做什么？",
+    "explanation": "push 型源数据自己不停来，若不看背压信号，`enqueue` 会无脑堆队列直到内存吃紧——等于没有背压。push 源必须自己读 `controller.desiredSize`：`enqueue` 后若 `desiredSize <= 0` 就暂停底层源（如 `socket.pause()`），并在 `pull` 回调里恢复（`socket.resume()`）。`pull` 型源天然有背压，push 型要自我限压。",
+    "tags": ["streams", "中级", "push-backpressure"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "什么都不用做，push 源和 pull 源一样自动背压",
+        "isCorrect": false,
+        "description": "只有 pull 源自动，push 源必须自我限压"
+      },
+      {
+        "text": "在 `enqueue` 后读 `controller.desiredSize`，`<= 0` 就暂停底层源、`pull` 里恢复",
+        "isCorrect": true,
+        "description": "正是 push 源自我限压的做法"
+      },
+      {
+        "text": "把 `highWaterMark` 设成 `Infinity` 以容纳所有数据",
+        "isCorrect": false,
+        "description": "那是取消背压、放任堆积，与目标相反"
+      },
+      {
+        "text": "在 `write` 方法里返回 Promise 施压",
+        "isCorrect": false,
+        "description": "`write` 是可写流 sink 的事，push 可读源看 `desiredSize`"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：排队策略 `{ highWaterMark, size }` 里两个字段各自的含义是什么？",
+    "explanation": "排队策略决定「队列多满算满」。`highWaterMark`（高水位）是队列愿意缓冲的「chunk 总大小」上限，单位由 `size` 定义，非字节流默认 1（缓冲一块就算满）。`size(chunk)` 是算每个 chunk 大小的函数，决定 `highWaterMark` 用什么单位衡量，默认返回 1（按条数计），字节流常返回 `chunk.byteLength`（按字节计）。",
+    "tags": ["streams", "中级", "queuing-strategy"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`highWaterMark` 是队列缓冲上限、`size(chunk)` 计每块大小决定 highWaterMark 的单位（默认每块算 1）",
+        "isCorrect": true,
+        "description": "正是二者含义"
+      },
+      {
+        "text": "`highWaterMark` 是最大并发数、`size` 是超时时间",
+        "isCorrect": false,
+        "description": "与并发/超时无关，是队列容量与块大小"
+      },
+      {
+        "text": "`highWaterMark` 是最小缓冲、`size` 是最大缓冲",
+        "isCorrect": false,
+        "description": "都不是，`highWaterMark` 是上限、`size` 是单块计量"
+      },
+      {
+        "text": "两者都以毫秒为单位控制流速",
+        "isCorrect": false,
+        "description": "都不是时间单位，是容量与块大小的计量"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`desiredSize` 的计算公式与背压含义是什么？",
+    "explanation": "核心公式：`desiredSize = highWaterMark − 队列中所有 chunk 的 size 之和`——还能再收多少。`desiredSize > 0` 表示还能收 N 个大小，`<= 0` 表示满了、该背压了。例如每块 size=1、highWaterMark=3，则最多缓冲 3 块，第 4 块入队前 `desiredSize` 已 ≤0。它是可读流 push 源和可写流 writer 的共同背压信号。",
+    "tags": ["streams", "中级", "desired-size"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`desiredSize = 队列长度 × highWaterMark`，越大越该背压",
+        "isCorrect": false,
+        "description": "公式错，是减法不是乘法"
+      },
+      {
+        "text": "`desiredSize = highWaterMark − 队列中所有 chunk 的 size 之和`，`<= 0` 即背压生效信号",
+        "isCorrect": true,
+        "description": "正是公式与含义"
+      },
+      {
+        "text": "`desiredSize` 是已读取的字节总数，只增不减",
+        "isCorrect": false,
+        "description": "它是「还能再收多少」的动态余量，非累计读取量"
+      },
+      {
+        "text": "`desiredSize` 恒等于 `highWaterMark`，不随队列变化",
+        "isCorrect": false,
+        "description": "它随队列缓冲量动态变化"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：内建的 `CountQueuingStrategy` 与 `ByteLengthQueuingStrategy` 区别是什么？",
+    "explanation": "`CountQueuingStrategy({ highWaterMark })` 的 `size` 恒为 1，按条数计——适合对象流/记录流（「最多缓冲 N 条」）。`ByteLengthQueuingStrategy({ highWaterMark })` 的 `size` 取 `chunk.byteLength`，按字节计——适合字节流，用字节数直接控内存（「最多缓冲 N 字节」）。二者都免去自己写 `size` 函数。",
+    "tags": ["streams", "中级", "queuing-builtin"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者都按字节计，只是默认 `highWaterMark` 不同",
+        "isCorrect": false,
+        "description": "Count 按条数、ByteLength 才按字节"
+      },
+      {
+        "text": "`CountQueuingStrategy` 按时间、`ByteLengthQueuingStrategy` 按空间",
+        "isCorrect": false,
+        "description": "Count 按条数不是时间"
+      },
+      {
+        "text": "两者只能用于可写流，可读流不支持",
+        "isCorrect": false,
+        "description": "可读/可写流都能用"
+      },
+      {
+        "text": "`CountQueuingStrategy` 按条数（size 恒 1）、`ByteLengthQueuingStrategy` 按字节（size 取 `byteLength`）",
+        "isCorrect": true,
+        "description": "正是二者区别"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：用 `tee()` 把一个流分成两支后，什么情况会导致内存吃紧？",
+    "explanation": "`tee()` 的两个分支共享同一批上游 chunk，各有自己的内部队列。读得慢的一支会把未读 chunk 堆在它的队列里——两支消费速度差越大、数据越多，累积内存越多。所以别 `tee` 出一个「永远不读」或「慢半拍」的分支。这本质也是背压问题：某分支长期不读，上游的数据在它队列里越堆越多。",
+    "tags": ["streams", "中级", "tee-memory"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两支都读得一样快时内存最高",
+        "isCorrect": false,
+        "description": "恰相反，速度一致时队列几乎不累积"
+      },
+      {
+        "text": "`tee` 会把数据完整复制两份到磁盘，必然翻倍占用",
+        "isCorrect": false,
+        "description": "不是磁盘复制，是慢支队列在内存累积"
+      },
+      {
+        "text": "两支速度差太大时，读得慢的一支会把未读 chunk 堆在自己队列里累积内存",
+        "isCorrect": true,
+        "description": "正是 tee 的内存坑"
+      },
+      {
+        "text": "只要调了 `tee` 内存就固定翻十倍",
+        "isCorrect": false,
+        "description": "无固定倍数，取决于两支速度差"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`reader.cancel(reason)` 与源侧的 `controller.close()` 有什么本质区别？",
+    "explanation": "`cancel` 是消费侧说「我不要了、剩的别读了」——丢弃队列里所有未读 chunk，并调用 underlying source 的 `cancel(reason)` 去释放资源，返回的 Promise 在收尾完成后兑现。`close()` 是源侧说「没有更多了、把剩的读完」——不再入队，但已入队的 chunk 消费者仍能读完才收到 `done:true`。一个丢数据、一个留数据读完。",
+    "tags": ["streams", "中级", "cancel"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "语义不同：一个丢数据、一个读完剩余"
+      },
+      {
+        "text": "`cancel` 会读完所有数据再关，`close` 立即丢弃",
+        "isCorrect": false,
+        "description": "恰好说反了"
+      },
+      {
+        "text": "`close` 由消费者调、`cancel` 由源调",
+        "isCorrect": false,
+        "description": "恰相反：`cancel` 消费侧、`close` 源侧"
+      },
+      {
+        "text": "`cancel` 是消费侧丢弃未读 chunk + 通知源收尾；`close` 是源侧停止入队但让已入队的读完",
+        "isCorrect": true,
+        "description": "正是本质区别"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`new TransformStream()`（不传 transformer）的「恒等转换流」典型用途是什么？",
+    "explanation": "不传 transformer 时是恒等流——写进去什么、原样读出来。它的妙用是「凭空造一对相连的 `writable`/`readable`」：`const { readable, writable } = new TransformStream()`，一处往 `writable` 写、另一处从 `readable` 读，充当管道/缓冲的接头。fetch 上传流拿 `WritableStream` 接口、把自造流交给 `new Response(readable)` 等场景都用它。",
+    "tags": ["streams", "中级", "identity-transform"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用来把 chunk 加密后再读出",
+        "isCorrect": false,
+        "description": "恒等流不做任何变换，加密要自定义 transformer"
+      },
+      {
+        "text": "用来把流的数据永久缓存到磁盘",
+        "isCorrect": false,
+        "description": "恒等流不落盘，只是内存里透传接头"
+      },
+      {
+        "text": "造一对相连的 `writable`/`readable` 接头：一处写、另一处读，chunk 原样透传",
+        "isCorrect": true,
+        "description": "正是恒等流的妙用"
+      },
+      {
+        "text": "它会自动去重相同的 chunk",
+        "isCorrect": false,
+        "description": "无去重语义，是原样透传"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`TransformStream` 的 `transform` 方法里，一个输入 chunk 只能 `enqueue` 一次输出吗？",
+    "explanation": "不是。`transform` 里 `enqueue` 的次数不受限——这让转换流能做拆分（1 进 N 出）、合并/分帧（N 进 1 出）。例如「把字节流按行切成文本流」：把 chunk 累进 buffer、按换行符切分后逐行 `enqueue`（一进多出），最后半行留到下次、在 `flush` 里冲刷。转换流不必「一进一出」。",
+    "tags": ["streams", "中级", "transform-multi"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只能一进一出，`enqueue` 多次会抛错",
+        "isCorrect": false,
+        "description": "可 0/1/多次 `enqueue`，不抛错"
+      },
+      {
+        "text": "次数不受限，可 0/1/多次 `enqueue`，从而实现拆分、合并、分帧",
+        "isCorrect": true,
+        "description": "正是 transform 的灵活性"
+      },
+      {
+        "text": "每个 `transform` 必须恰好 `enqueue` 一次，否则丢数据",
+        "isCorrect": false,
+        "description": "次数自由，攒着晚点吐也行"
+      },
+      {
+        "text": "`enqueue` 只能在 `flush` 里调，`transform` 里不能调",
+        "isCorrect": false,
+        "description": "`transform` 里正是主要 `enqueue` 处"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：一个按行切分的转换流，为什么必须实现 `flush` 才不会丢数据？",
+    "explanation": "按行切分时把 chunk 累进 buffer、按换行符逐行 `enqueue`，最后一段可能是半行、留到下次拼接。当写入端关闭、不再有新 chunk 时，buffer 里可能还残留最后一段没有换行符的内容——`flush(controller)` 是写入端关闭后调用的唯一收尾机会，在这里把残留冲刷出去（`if (buffer) controller.enqueue(buffer)`）。漏写 `flush` 就会丢结尾那段数据。",
+    "tags": ["streams", "中级", "flush"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "写入端关闭后 buffer 里可能残留最后半行，`flush` 是收尾冲刷的唯一机会，漏写就丢尾",
+        "isCorrect": true,
+        "description": "正是必须实现 `flush` 的原因"
+      },
+      {
+        "text": "`flush` 只用来打印日志，不写它不影响数据",
+        "isCorrect": false,
+        "description": "`flush` 是冲刷残留的唯一机会，漏写丢尾"
+      },
+      {
+        "text": "每块处理完都必须调 `flush`，否则乱序",
+        "isCorrect": false,
+        "description": "`flush` 只在写入端关闭后调一次，非每块"
+      },
+      {
+        "text": "不写 `flush` 会导致整条管道立即崩溃",
+        "isCorrect": false,
+        "description": "不崩溃，只是悄悄丢结尾残留数据"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：用 `new ReadableStream({ type: 'bytes' })` 声明的字节流，与普通可读流有什么不同？",
+    "explanation": "字节流专门流字节（chunk 是 `Uint8Array`），并解锁一条零拷贝读取路径。两点不同：控制器变成 `ReadableByteStreamController`（多了 `byobRequest`）；支持 BYOB reader，能把数据直接写进消费者提供的 buffer、绕过流的内部队列拷贝。普通可读流做不到 BYOB——所以要零拷贝二进制读取，源头就得建成 `type:'bytes'`。默认 reader 读字节流也照样工作（拿到 `Uint8Array`）。",
+    "tags": ["streams", "中级", "byte-stream"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "字节流只能存放 8 位整数、不能超过 256 字节",
+        "isCorrect": false,
+        "description": "无此限制，chunk 是任意长度 `Uint8Array`"
+      },
+      {
+        "text": "控制器变成 `ReadableByteStreamController`（多 `byobRequest`）、支持 BYOB reader 零拷贝，chunk 是 `Uint8Array`",
+        "isCorrect": true,
+        "description": "正是字节流与普通可读流的不同"
+      },
+      {
+        "text": "字节流自动对数据做 gzip 压缩",
+        "isCorrect": false,
+        "description": "无自动压缩，压缩要显式 `CompressionStream`"
+      },
+      {
+        "text": "字节流不支持背压，只能一把梭读完",
+        "isCorrect": false,
+        "description": "字节流照样有背压和排队策略"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：要把「文本流 → 编码为字节 → gzip 压缩 → 落地」串成一条管道，中间「文本转字节」这段该用什么？",
+    "explanation": "用 `TextEncoderStream`（文本 → `Uint8Array` 字节的转换流）。典型管道：`textReadable.pipeThrough(new TextEncoderStream()).pipeThrough(new CompressionStream('gzip')).pipeTo(fileWritable)`——一条管道搞定编码+压缩+写、恒定内存。`TextEncoderStream`/`TextDecoderStream` 都已 Baseline。",
+    "tags": ["streams", "中级", "text-encoder"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`TextEncoderStream`：把文本 chunk 编码为 `Uint8Array` 字节的转换流，`pipeThrough` 串入管道",
+        "isCorrect": true,
+        "description": "正是「文本 → 字节」这段"
+      },
+      {
+        "text": "`JSON.stringify`",
+        "isCorrect": false,
+        "description": "那是对象转字符串，不是文本流转字节流"
+      },
+      {
+        "text": "`CompressionStream('utf-8')`",
+        "isCorrect": false,
+        "description": "utf-8 不是压缩格式，编码要用 `TextEncoderStream`"
+      },
+      {
+        "text": "`new TextDecoder()`",
+        "isCorrect": false,
+        "description": "那是字节转文本（反方向），且非流式转换流"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：Node.js 里如何拿到与浏览器同款的 Web Streams、并与 Node 老式 `stream` 互转？",
+    "explanation": "Node 18+/Deno/Bun 内置同一套 Web Streams，从 `node:stream/web` 导入（`import { ReadableStream, TransformStream } from 'node:stream/web'`）。与 Node 传统流互转：`Readable.toWeb(nodeReadable)`（老式→Web）、`Readable.fromWeb(webReadable)`（Web→老式），可写侧同理 `Writable.fromWeb/toWeb`。意义：同一段用 Web Streams 写的流处理逻辑（如自定义 `TransformStream` 解析器）能在浏览器和服务端复用。",
+    "tags": ["streams", "中级", "node-interop"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Node 完全不支持 Web Streams，只能用第三方 polyfill",
+        "isCorrect": false,
+        "description": "Node 18+ 内置，从 `node:stream/web` 导入"
+      },
+      {
+        "text": "从 `node:fs` 导入 Web Streams 构造器",
+        "isCorrect": false,
+        "description": "是 `node:stream/web`，不是 `node:fs`"
+      },
+      {
+        "text": "从 `node:stream/web` 导入构造器；用 `Readable.fromWeb/toWeb`、`Writable.fromWeb/toWeb` 与老式流互转",
+        "isCorrect": true,
+        "description": "正是 Node 互操作方式"
+      },
+      {
+        "text": "Web Streams 与 Node 老式流完全不能互转，须手动逐块搬运",
+        "isCorrect": false,
+        "description": "有 `fromWeb`/`toWeb` 官方互转 API"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`pipeTo(dest, options)` 的 `preventClose`/`preventAbort`/`preventCancel` 三个开关默认值与作用是什么？",
+    "explanation": "三个开关默认都 `false`，语义是「善始善终、错误双向传播」：`preventClose:false` 源正常结束时自动关闭 destination；`preventAbort:false` 源出错时 abort destination（错误往下游传）；`preventCancel:false` destination 出错时 cancel 源（错误往上游传）。设为 `true` 则分别「不关 dest / 不 abort dest / 不 cancel 源」，用于改变默认的结束与错误传播行为。",
+    "tags": ["streams", "高级", "pipe-options"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "三者默认都 `true`，即默认互不干扰",
+        "isCorrect": false,
+        "description": "默认全 `false`（善始善终、错误双向传播）"
+      },
+      {
+        "text": "它们控制管道的并发线程数",
+        "isCorrect": false,
+        "description": "与并发无关，是结束与错误的传播开关"
+      },
+      {
+        "text": "默认全 `false`（源结束自动关 dest、出错双向传播）；设 `true` 则分别阻止关闭/abort/cancel 的传播",
+        "isCorrect": true,
+        "description": "正是三开关的默认与语义"
+      },
+      {
+        "text": "三者只对 `pipeThrough` 有效、对 `pipeTo` 无效",
+        "isCorrect": false,
+        "description": "二者都支持这些 options"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：要把多个源「依次」写进同一个 `writable`（前几段结束不能关掉它、最后一段才关），该怎么设 `pipeTo` 的开关？",
+    "explanation": "默认 `preventClose:false` 会在每个源 `pipeTo` 结束时关闭 destination。要多段拼接进同一 writable，就对除最后一段外的每段设 `preventClose:true`（前几段结束别关 dest、留着继续接下一段），最后一段用默认（`preventClose:false`）才关。代码：`await sources[i].pipeTo(writable, { preventClose: !isLast })`。",
+    "tags": ["streams", "高级", "prevent-close"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每段都设 `preventAbort:true` 即可拼接",
+        "isCorrect": false,
+        "description": "`preventAbort` 管出错传播，拼接靠 `preventClose`"
+      },
+      {
+        "text": "把所有源都设 `preventCancel:true`",
+        "isCorrect": false,
+        "description": "`preventCancel` 管 dest 出错回传，与拼接无关"
+      },
+      {
+        "text": "除最后一段外每段设 `preventClose:true`，最后一段用默认让它关闭 dest",
+        "isCorrect": true,
+        "description": "正是多段拼接进同一 writable 的写法"
+      },
+      {
+        "text": "每段都用默认设置，`pipeTo` 会自动拼接不关闭",
+        "isCorrect": false,
+        "description": "默认会在每段结束关 dest，拼接必须 `preventClose`"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：手写 `reader.read()` + `writer.write()` 循环搬运数据时，最容易犯的「丢背压」错误是什么？",
+    "explanation": "典型翻车是不 `await writer.ready`：`while` 循环里 `read()` 出一块就 `writer.write(value)`，不等 `ready`。`write` 的 Promise 只表示「这块被接受」，不代表「队列没满」——writable 慢时队列无限涨，退化成一把梭、失去背压。正解：要么每次写前补 `await writer.ready`，要么干脆用 `readable.pipeTo(writable)`（管道自带完整背压）。",
+    "tags": ["streams", "高级", "manual-backpressure"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "忘记把 chunk 转成字符串",
+        "isCorrect": false,
+        "description": "与背压无关，是数据格式问题"
+      },
+      {
+        "text": "只 `writer.write(value)` 而不 `await writer.ready`，writable 慢时队列无限涨、退化成一把梭",
+        "isCorrect": true,
+        "description": "正是手写循环丢背压的典型"
+      },
+      {
+        "text": "忘记调用 `reader.read()` 两次",
+        "isCorrect": false,
+        "description": "read 一次一块是正常的，与背压无关"
+      },
+      {
+        "text": "在循环外提前 `releaseLock`",
+        "isCorrect": false,
+        "description": "那会抛错，但不是「丢背压」这个问题"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：BYOB reader（`getReader({ mode: 'byob' })`）相比默认 reader，「减少拷贝」的原理是什么？",
+    "explanation": "BYOB = Bring Your Own Buffer（自带缓冲区）。常规读取里源把数据放进流的内部队列、消费者 `read()` 时再拷到消费者手里——两次拷贝。BYOB 让消费者先把一块 buffer 交给流（`read(view)` 传入自己的 `ArrayBufferView`），源直接往这块 buffer 写、省掉中间那次拷贝。它仅用于字节流（`type:'bytes'`），对解析定长头+变长体这类需要精确控制每次读取大小的场景收益最大。",
+    "tags": ["streams", "高级", "byob"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "消费者先把自己的 buffer 交给流（`read(view)`），源直接写进这块 buffer，省掉「内部队列→消费者」的中间拷贝",
+        "isCorrect": true,
+        "description": "正是 BYOB 减拷贝的原理"
+      },
+      {
+        "text": "它把数据压缩后再传，因此更省",
+        "isCorrect": false,
+        "description": "与压缩无关，是省掉中间队列拷贝"
+      },
+      {
+        "text": "它跳过网络直接读缓存，因此更快",
+        "isCorrect": false,
+        "description": "与网络/缓存无关，是内存拷贝层面的优化"
+      },
+      {
+        "text": "它用多线程并行读取，因此更快",
+        "isCorrect": false,
+        "description": "不是并行，是零拷贝路径"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：字节流的 `autoAllocateChunkSize` 选项能带来什么？",
+    "explanation": "设了 `autoAllocateChunkSize`（如 `new ReadableStream({ type:'bytes', autoAllocateChunkSize: 4096 })`），即使消费者用普通 `getReader()`（不带 mode），浏览器也会自动分配该大小的 buffer 并暴露 `byobRequest`——源照样能走零拷贝写入，消费者无感。换句话说它让默认 reader 也能享受 BYOB 的零拷贝路径。",
+    "tags": ["streams", "高级", "auto-allocate"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它限制每个 chunk 最大不能超过该字节数，超了报错",
+        "isCorrect": false,
+        "description": "不是硬上限报错，是自动分配 buffer 尺寸"
+      },
+      {
+        "text": "它自动把小 chunk 合并成大 chunk 以省内存",
+        "isCorrect": false,
+        "description": "不是合并，是给默认 reader 配 buffer 走零拷贝"
+      },
+      {
+        "text": "它开启后 BYOB reader 才能工作",
+        "isCorrect": false,
+        "description": "BYOB reader 不依赖它；它是给默认 reader 用的"
+      },
+      {
+        "text": "让即使用普通 `getReader()` 的消费者，浏览器也自动分配该大小 buffer 并暴露 `byobRequest`，默认 reader 也享零拷贝",
+        "isCorrect": true,
+        "description": "正是 `autoAllocateChunkSize` 的作用"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：字节流源侧的 `controller.byobRequest` 该如何配合完成零拷贝交付？",
+    "explanation": "消费者发来 BYOB 读请求时 `ReadableByteStreamController.byobRequest` 非 `null`。源把数据写进 `byobRequest.view`（消费者提供的 buffer 视图，用 `view.buffer`/`view.byteOffset`/`view.byteLength` 定位），再调 `byobRequest.respond(bytesWritten)` 告知写入了多少字节、完成零拷贝交付；读到末尾时 `controller.close()` 后 `respond(0)`。",
+    "tags": ["streams", "高级", "byob-request"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把数据写进 `byobRequest.view` 对应的 buffer，再 `byobRequest.respond(bytesWritten)` 告知写入字节数完成交付",
+        "isCorrect": true,
+        "description": "正是零拷贝交付流程"
+      },
+      {
+        "text": "直接 `controller.enqueue(chunk)`，`byobRequest` 会自动填充",
+        "isCorrect": false,
+        "description": "走 BYOB 路径时应写 `view` 并 `respond`，非 `enqueue`"
+      },
+      {
+        "text": "调用 `byobRequest.close()` 结束请求",
+        "isCorrect": false,
+        "description": "无 `close()`，是 `respond(n)` 完成、`respondWithNewView` 换视图"
+      },
+      {
+        "text": "`byobRequest` 只读不可写，仅用于查询大小",
+        "isCorrect": false,
+        "description": "它正是用来写入 view 并 `respond` 的写入通道"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：对一个普通 `fetch` 响应的 `response.body`（服务器发了 `Content-Encoding: gzip`）再套 `DecompressionStream('gzip')`，会怎样？",
+    "explanation": "关键坑：浏览器对 HTTP 响应的 `Content-Encoding`（gzip/br 等）已经自动解压了——`response.body` 给你的是解压后的字节。所以不要对普通 `response.body` 再 `DecompressionStream`，那是二次解压、必错。手动 `DecompressionStream` 只用于 body 本身是你自定义压缩的数据（如接口返回一段你自己 gzip 的 payload、或读本地 `.gz` 文件）。",
+    "tags": ["streams", "高级", "auto-decompress"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "正常，浏览器不会自动解压，需要手动解",
+        "isCorrect": false,
+        "description": "浏览器已按 `Content-Encoding` 自动解压了"
+      },
+      {
+        "text": "会更快，因为双重解压能并行",
+        "isCorrect": false,
+        "description": "不存在并行加速，是对已解压数据再解压出错"
+      },
+      {
+        "text": "浏览器会智能识别并跳过重复解压",
+        "isCorrect": false,
+        "description": "不会跳过，手动再解就是错"
+      },
+      {
+        "text": "二次解压、必错——浏览器已按 `Content-Encoding` 自动解压，`response.body` 已是解压后字节",
+        "isCorrect": true,
+        "description": "正是这个坑：手动解压只用于自定义压缩 payload"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`CompressionStream`/`DecompressionStream` 的格式里，哪些是可放心用的 Baseline、哪些要先查支持？",
+    "explanation": "Baseline（放心用，2023-05 起 Widely）：`'gzip'`（RFC 1952）、`'deflate'`（zlib 包裹，RFC 1950）、`'deflate-raw'`（无头无校验，RFC 1951）。非 Baseline（先查支持）：规范近期新增的 `'brotli'`、`'zstd'`，Chromium 系逐步落地，2026-07 仍非 Baseline，跨端前必测/查 caniuse，别默认可用。非法格式抛 `TypeError`。",
+    "tags": ["streams", "高级", "compression-formats"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`brotli`/`zstd` 是 Baseline，`gzip` 反而是实验特性",
+        "isCorrect": false,
+        "description": "恰相反：gzip/deflate/deflate-raw 才是 Baseline"
+      },
+      {
+        "text": "只有 `gzip` 一种被支持，其余全非法",
+        "isCorrect": false,
+        "description": "deflate/deflate-raw 也是 Baseline"
+      },
+      {
+        "text": "`gzip`/`deflate`/`deflate-raw` 是 Baseline 放心用；`brotli`/`zstd` 新增但 2026-07 非 Baseline，先查支持",
+        "isCorrect": true,
+        "description": "正是格式支持现状"
+      },
+      {
+        "text": "所有格式都已 Baseline，随便用不用查",
+        "isCorrect": false,
+        "description": "brotli/zstd 尚非 Baseline，跨端前要查"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：可读流的错误是怎样从「源」传到「消费者」以及在管道里传播的？",
+    "explanation": "underlying source 的 `start`/`pull`/`cancel` 里 throw、或显式 `controller.error(e)` → 流进入错误态；该错误让 reader 的 `read()`（挂起的那次）与 `closed` 都以 `e` reject（在 `try/catch` 里浮现）。在管道里（`pipeThrough`/`pipeTo`），错误会沿管道传播给下游（可用 `preventAbort` 等改变行为）。",
+    "tags": ["streams", "高级", "error-propagation"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "源出错时流会静默吞掉错误、`read()` 照常返回 `done:true`",
+        "isCorrect": false,
+        "description": "不会静默，`read()`/`closed` 以错误 reject"
+      },
+      {
+        "text": "`controller.error(e)` 或源里 throw 让流进错误态，reader 的 `read()`/`closed` 以 `e` reject；管道里默认沿链传播",
+        "isCorrect": true,
+        "description": "正是错误从源到消费者及管道的传播路径"
+      },
+      {
+        "text": "错误只能通过全局 `window.onerror` 捕获",
+        "isCorrect": false,
+        "description": "通过 `read()`/`closed` 的 Promise reject 捕获"
+      },
+      {
+        "text": "管道里的错误只影响出错那一段，绝不传给其他段",
+        "isCorrect": false,
+        "description": "默认会沿管道传播给下游（可用 prevent 开关改）"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：为什么说「只 `await writer.write(chunk)` 就当作背压」是一种误解？",
+    "explanation": "`write` 的 Promise 只表示「这块被 sink 接受」，不代表「队列没满」。高频只 `await write` 可能让队列涨过高水位、`desiredSize` 变负——虽然仍能写，但丢了背压保护。`ready` 才是「该不该继续写」的信号：它在队列低于高水位（可再收）时才兑现。所以背压靠 `await writer.ready`、不靠 `await write`。",
+    "tags": ["streams", "高级", "write-vs-ready"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`write` 和 `ready` 完全等价，用哪个都行",
+        "isCorrect": false,
+        "description": "语义不同：write 表接受、ready 表可再收"
+      },
+      {
+        "text": "`write` 根本不返回 Promise，无法 await",
+        "isCorrect": false,
+        "description": "`write` 返回 Promise，但它不是背压信号"
+      },
+      {
+        "text": "只有 `desiredSize` 能做背压，`ready` 也没用",
+        "isCorrect": false,
+        "description": "`ready` 正是 `desiredSize` 的 Promise 化背压钩子"
+      },
+      {
+        "text": "`write` 兑现只表示这块被接受、不代表队列没满；`ready` 才是「可否继续写」的背压信号",
+        "isCorrect": true,
+        "description": "正是这个误解的实质"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：readable byte streams + BYOB reader 的 Baseline 状态与生产工程建议是什么？",
+    "explanation": "readable byte streams + BYOB 随 Firefox 133（2024-11）补齐后进入 Baseline（newly available）——Chrome/Safari 更早，Firefox 补齐后三大引擎齐活。核于 2026-07 主流可用，但仍处在「Baseline widely available」的 30 个月窗口内。工程建议：能力检测 + 回退——BYOB 只是优化，`getReader({ mode:'byob' })` 不可用时回退默认 `getReader()`（字节流用默认 reader 照样能读，拿到 `Uint8Array`）。",
+    "tags": ["streams", "专家", "byob-baseline"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "随 Firefox 133（2024-11）进 Baseline（newly available），仍在新窗口内；生产保留能力检测 + 默认 reader 回退",
+        "isCorrect": true,
+        "description": "正是 BYOB 的 Baseline 状态与工程建议"
+      },
+      {
+        "text": "早已 Widely available 多年，无需任何回退",
+        "isCorrect": false,
+        "description": "是随 FF133（2024-11）才进 Baseline，仍在新窗口内"
+      },
+      {
+        "text": "至今没有任何浏览器支持 BYOB",
+        "isCorrect": false,
+        "description": "三大引擎均已支持，FF133 补齐后 Baseline"
+      },
+      {
+        "text": "BYOB 是必选项，不支持就完全无法读字节流",
+        "isCorrect": false,
+        "description": "BYOB 是优化，默认 reader 照样能读字节流"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：用 `CompressionStream('deflate')` 压出来的数据，能用 `DecompressionStream('deflate-raw')` 解开吗？",
+    "explanation": "不能。压缩解压格式必须一致：`'deflate'` 是 zlib 封装（RFC 1950，带 zlib 头 + Adler-32 校验），`'deflate-raw'` 是裸 DEFLATE（RFC 1951，无头无校验）——两者头不同、不通用。同理 `gzip` 压的只能 `gzip` 解。选错格式解压会失败/报错。",
+    "tags": ["streams", "专家", "compression-compat"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "能，`deflate` 和 `deflate-raw` 只是别名",
+        "isCorrect": false,
+        "description": "不是别名：一个带 zlib 头+校验、一个无头无校验"
+      },
+      {
+        "text": "不能，`deflate`（zlib 封装，带头+校验）与 `deflate-raw`（裸 DEFLATE 无头无校验）头不同、不通用",
+        "isCorrect": true,
+        "description": "正是压缩/解压格式必须一致"
+      },
+      {
+        "text": "能，浏览器会自动识别实际格式",
+        "isCorrect": false,
+        "description": "不会自动识别，格式必须显式一致"
+      },
+      {
+        "text": "能，但只有前一半数据正确",
+        "isCorrect": false,
+        "description": "头不匹配会直接失败，非部分正确"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：要让一条 `pipeTo` 管道能被「取消按钮」中途终止，应该用什么？",
+    "explanation": "`pipeTo(dest, { signal })` 接受一个 `AbortSignal`，可中途取消整条管道：`const ac = new AbortController(); button.onclick = () => ac.abort(); await readable.pipeTo(writable, { signal: ac.signal })`——中途 `abort` 会让整条管道以 `AbortError` 终止（在 `catch` 里判 `e.name === 'AbortError'`）。这与手动 reader 循环里用 `AbortController` 取消是同一套机制。",
+    "tags": ["streams", "专家", "pipe-signal"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "调用 `pipeTo().cancel()`",
+        "isCorrect": false,
+        "description": "`pipeTo` 返回 Promise，无 `cancel()` 方法"
+      },
+      {
+        "text": "设 `preventCancel: true`",
+        "isCorrect": false,
+        "description": "那是阻止 dest 出错回传，不是主动取消管道"
+      },
+      {
+        "text": "给 `pipeTo(dest, { signal })` 传一个 `AbortSignal`，`ac.abort()` 让管道以 `AbortError` 终止",
+        "isCorrect": true,
+        "description": "正是取消管道的方式"
+      },
+      {
+        "text": "给 `pipeTo` 传 `timeout` 选项",
+        "isCorrect": false,
+        "description": "无 `timeout` 选项，取消用 `signal`"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：把可读流的 `highWaterMark` 设为 0 会产生什么效果？",
+    "explanation": "可读流设 `highWaterMark: 0` 表示「不预取、纯按需」——队列不主动缓冲，`desiredSize` 常为 0 或负，全靠消费拉动（消费者 `read()` 索取时才通过 `pull` 拉一块）。这在「绝不提前生产、严格按需」的场景有用。相对地，`highWaterMark` 拍脑袋设很大等于放宽缓冲、削弱背压，内存峰值随之上去。",
+    "tags": ["streams", "专家", "highwatermark-zero"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "表示无限缓冲，队列永远不满",
+        "isCorrect": false,
+        "description": "恰相反，是不缓冲、最严格按需"
+      },
+      {
+        "text": "会导致流立即报错无法构造",
+        "isCorrect": false,
+        "description": "hwm=0 是合法值，不报错"
+      },
+      {
+        "text": "表示不预取、纯按需：队列不主动缓冲，`desiredSize` 常 ≤0，全靠消费者 `read()` 拉动",
+        "isCorrect": true,
+        "description": "正是 highWaterMark=0 的语义"
+      },
+      {
+        "text": "表示自动选择最优缓冲大小",
+        "isCorrect": false,
+        "description": "不是自动优选，是明确的「零预取」"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：手动 `new TextDecoder().decode(chunk)` 逐块解码时，漏掉 `{ stream: true }` 会导致什么问题？",
+    "explanation": "手动逐块解码若不带 `stream:true`，一个多字节字符（如 UTF-8 汉字占 3 字节）被拆在两个 chunk 边界时会被截断、解出乱码/替换符。正解：要么全程 `decode(chunk, { stream:true })` 让解码器在内部保留残字节、跨块拼接，并在结尾冲刷；要么直接用 `TextDecoderStream`（内部就带流式语义，自动处理跨块多字节）。",
+    "tags": ["streams", "专家", "text-decode-trap"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "没有任何问题，`decode` 默认就是流式的",
+        "isCorrect": false,
+        "description": "默认非流式，跨块多字节会截断乱码"
+      },
+      {
+        "text": "跨 chunk 边界的多字节字符（如 UTF-8 汉字）被截断、解出乱码——须带 `stream:true` 或用 `TextDecoderStream`",
+        "isCorrect": true,
+        "description": "正是漏 `stream:true` 的坑"
+      },
+      {
+        "text": "会导致解码速度变慢但结果正确",
+        "isCorrect": false,
+        "description": "结果会错（乱码），非仅速度问题"
+      },
+      {
+        "text": "会自动丢弃所有非 ASCII 字符",
+        "isCorrect": false,
+        "description": "不是丢弃，是截断成乱码/替换符"
+      }
+    ]
+  },
+  {
+    "stem": "Streams API：`WritableStreamDefaultController` 的 `signal` 成员有什么用？",
+    "explanation": "`WritableStreamDefaultController` 成员很少，最常用的是 `error(reason)`（从 sink 侧主动让流出错）与 `signal`。`signal` 是一个 `AbortSignal`，当 `writer.abort()` 被调用时触发——sink 可在 `start` 里 `controller.signal.addEventListener('abort', () => stopInFlightWrite())` 监听它，用来中断正在进行的写操作（如取消一个进行中的网络请求）。",
+    "tags": ["streams", "专家", "writable-controller"],
+    "categories": [
+      ["技术方向", "Streams API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`signal` 用来通知消费者有新数据到达",
+        "isCorrect": false,
+        "description": "它是 abort 信号，不是数据到达通知"
+      },
+      {
+        "text": "`signal` 是流的唯一 reader 句柄",
+        "isCorrect": false,
+        "description": "可写流无 reader；`signal` 是 `AbortSignal`"
+      },
+      {
+        "text": "`signal` 存放最近一次写入的 chunk",
+        "isCorrect": false,
+        "description": "它不存数据，是中止信号"
+      },
+      {
+        "text": "`signal` 是 `AbortSignal`，`writer.abort()` 时触发，sink 可监听它中断正在进行的写",
+        "isCorrect": true,
+        "description": "正是 `signal` 的用途"
+      }
+    ]
+  }
+]
