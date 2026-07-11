@@ -1,0 +1,1893 @@
+[
+  {
+    "stem": "IndexedDB：关于它的基本定位，下列哪项描述最准确？",
+    "explanation": "IndexedDB 是浏览器内建的异步、事务型对象数据库，提供对象存储、索引、游标与版本化 schema。它不是关系型数据库（无 SQL、无表结构约束），也不是同步 API（localStorage 才是同步键值对），存储的是结构化克隆能处理的对象而非仅字符串。",
+    "tags": ["indexeddb", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器内建的异步、事务型对象数据库，支持对象存储、索引、游标与版本化 schema",
+        "isCorrect": true,
+        "description": "正解：这正是 IndexedDB 的核心定位"
+      },
+      {
+        "text": "浏览器提供的同步键值对存储，只能存字符串",
+        "isCorrect": false,
+        "description": "那是 localStorage 的特征，IndexedDB 是异步的且能存结构化对象"
+      },
+      {
+        "text": "基于 SQL 的关系型数据库，支持 JOIN 与表结构",
+        "isCorrect": false,
+        "description": "IndexedDB 是对象数据库，无 SQL；曾有的 Web SQL Database 已废弃"
+      },
+      {
+        "text": "只能在 Service Worker 中使用的离线缓存 API",
+        "isCorrect": false,
+        "description": "IndexedDB 在 window/Worker/Service Worker 全可用，且不是缓存专用 API"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：它的每个数据操作都返回一个 `IDBRequest`，操作结果是如何送达的？",
+    "explanation": "IndexedDB 是事件驱动的异步 API：每个操作返回 `IDBRequest`，结果通过 `success`/`error` 事件异步送达，`request.result` 装结果、`request.error` 装错误、`readyState` 标记 pending/done。它不是 Promise 原生返回（需自行包装或用 idb 库）。",
+    "tags": ["indexeddb", "入门", "request-model"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "操作直接返回 Promise，用 `await` 即可拿到结果",
+        "isCorrect": false,
+        "description": "原生 IndexedDB 返回 IDBRequest 而非 Promise，Promise 化要靠 idb 等库"
+      },
+      {
+        "text": "通过 `IDBRequest` 的 `success`/`error` 事件异步送达，结果在 `request.result` 里",
+        "isCorrect": true,
+        "description": "正解：事件驱动模型，result 装结果、error 装错误"
+      },
+      {
+        "text": "操作是同步的，函数返回值就是结果",
+        "isCorrect": false,
+        "description": "IndexedDB 全异步，同步返回的只是 IDBRequest 对象本身"
+      },
+      {
+        "text": "结果通过全局 `indexedDB.onresult` 回调统一派发",
+        "isCorrect": false,
+        "description": "不存在这样的全局回调，结果挂在各自的 IDBRequest 上"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：创建或删除对象存储（objectStore）与索引，只能在什么时机进行？",
+    "explanation": "`createObjectStore`/`deleteObjectStore`/`createIndex`/`deleteIndex` 只能在 `onupgradeneeded` 回调里进行——它运行在独占的 versionchange 事务里。平时用 `db.transaction()` 开的 readonly/readwrite 事务改不了 schema，且无法手动创建 versionchange 事务。",
+    "tags": ["indexeddb", "入门", "schema"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "任何 readwrite 事务里都可以建删 store 与索引",
+        "isCorrect": false,
+        "description": "readwrite 只能读写数据，改 schema 会抛 InvalidStateError"
+      },
+      {
+        "text": "在 `onsuccess` 拿到连接后随时可以建",
+        "isCorrect": false,
+        "description": "success 之后是正常使用期，无法再改 schema"
+      },
+      {
+        "text": "在 `onupgradeneeded` 回调里，即独占的 versionchange 事务中",
+        "isCorrect": true,
+        "description": "正解：升级事务是变更 schema 的唯一场所"
+      },
+      {
+        "text": "调用 `db.createObjectStore()` 时浏览器会自动开一个升级事务",
+        "isCorrect": false,
+        "description": "versionchange 事务只由 open 升级触发，不能被数据操作自动创建"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：使用 `indexedDB.open(\"myDB\", 2.5)` 打开数据库，实际生效的版本号是多少？",
+    "explanation": "版本号是从 1 起的无符号整数，传入小数会被取整（截断小数部分），所以 `2.5` 与 `2.1`、`2.4` 都被当作 2。若取整后与现存版本相同则不触发升级；若低于现存版本则抛 `VersionError`。",
+    "tags": ["indexeddb", "入门", "version"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "2.5，IndexedDB 支持小数版本号",
+        "isCorrect": false,
+        "description": "版本号只能是无符号整数，小数会被取整"
+      },
+      {
+        "text": "3，会向上取整",
+        "isCorrect": false,
+        "description": "是截断取整（向下），不是四舍五入或向上取整"
+      },
+      {
+        "text": "抛出 TypeError，拒绝非整数版本号",
+        "isCorrect": false,
+        "description": "不抛错，浏览器会静默取整为 2"
+      },
+      {
+        "text": "2，小数部分被截断",
+        "isCorrect": true,
+        "description": "正解：2.5 取整为 2"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：打开数据库（`open`）时可能触发哪些事件，顺序如何？",
+    "explanation": "`open` 的事件流：需要建库或升版本时先触发 `upgradeneeded`（在此建/改 schema），随后 `success` 拿到 `IDBDatabase` 连接；异常时 `error`；若旧连接仍占用旧版本导致升级受阻则触发 `blocked`。",
+    "tags": ["indexeddb", "入门", "open-events"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "先 `upgradeneeded`（建库/升版本时）再 `success`；另有 `error` 与 `blocked`",
+        "isCorrect": true,
+        "description": "正解：upgradeneeded → success，异常 error，受阻 blocked"
+      },
+      {
+        "text": "只有 `success` 一个事件，升级在其中完成",
+        "isCorrect": false,
+        "description": "建库/升级由独立的 upgradeneeded 事件承载，先于 success"
+      },
+      {
+        "text": "先 `success` 再 `upgradeneeded`，拿到连接后才升级",
+        "isCorrect": false,
+        "description": "顺序相反：upgradeneeded 先于 success，升级事务 complete 后才 success"
+      },
+      {
+        "text": "`open` 是同步的，无事件，直接返回数据库连接",
+        "isCorrect": false,
+        "description": "open 返回 IDBOpenDBRequest，通过事件异步送达连接"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：一次写入操作的 `IDBRequest` 触发了 `success`，能否就此认定数据已经落库？",
+    "explanation": "不能。单个请求 `success` 只代表“该请求被事务接受”，整笔事务是否落库以 `tx.oncomplete` 为准；若同事务后续请求出错未处理，整笔会 `abort` 回滚，包括这个已经 success 的请求。写入成败要以事务级事件为准。",
+    "tags": ["indexeddb", "入门", "transaction-commit"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "能，请求 `success` 就代表数据已永久写入",
+        "isCorrect": false,
+        "description": "请求 success 只是被接受，事务仍可能整笔回滚"
+      },
+      {
+        "text": "不能，要以 `tx.oncomplete` 为准；事务中止时已 success 的请求也会回滚",
+        "isCorrect": true,
+        "description": "正解：事务是原子单位，oncomplete 才算落库"
+      },
+      {
+        "text": "能，但仅限 readonly 事务",
+        "isCorrect": false,
+        "description": "readonly 不写数据，此问题针对写入；落库判断一律看 oncomplete"
+      },
+      {
+        "text": "不能，必须手动调用 `tx.commit()` 才算落库",
+        "isCorrect": false,
+        "description": "自动提交是常态，commit() 只是加速收尾，非落库前提"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`objectStore.add(value)` 与 `objectStore.put(value)` 的核心区别是什么？",
+    "explanation": "`add` 是“只插入”——键已存在时抛 `ConstraintError`；`put` 是 upsert——键存在则整条覆盖、不存在则插入。IndexedDB 没有“部分更新”原语，想改一个字段也要先 `get` 出来、改、再 `put` 回去（put 是整条替换而非合并补丁）。",
+    "tags": ["indexeddb", "入门", "add-put"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`add` 加到末尾，`put` 加到开头，仅位置不同",
+        "isCorrect": false,
+        "description": "对象存储按键有序，不存在“末尾/开头”的插入位置概念"
+      },
+      {
+        "text": "`add` 是同步的，`put` 是异步的",
+        "isCorrect": false,
+        "description": "两者都是异步、都返回 IDBRequest"
+      },
+      {
+        "text": "`add` 只插入（键存在抛 `ConstraintError`），`put` 是 upsert（存在则整条覆盖）",
+        "isCorrect": true,
+        "description": "正解：add 防覆盖、put 覆盖或插入"
+      },
+      {
+        "text": "`put` 只能更新已存在的记录，键不存在会报错",
+        "isCorrect": false,
+        "description": "put 是 upsert，键不存在时会插入而非报错"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`indexedDB` 入口在哪些执行环境中可用？",
+    "explanation": "IndexedDB 在 window（主线程）、Web Worker、Service Worker 中都可用（`WorkerGlobalScope.indexedDB`）。这让它适合做离线数据、后台同步等跨环境场景。它并非仅限主线程或仅限 Worker。",
+    "tags": ["indexeddb", "入门", "availability"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仅主线程（window），Worker 中不可用",
+        "isCorrect": false,
+        "description": "Worker 与 Service Worker 都能用 IndexedDB"
+      },
+      {
+        "text": "仅 Service Worker 中可用",
+        "isCorrect": false,
+        "description": "主线程与普通 Worker 同样可用"
+      },
+      {
+        "text": "仅在 HTTPS 且顶级窗口中可用",
+        "isCorrect": false,
+        "description": "无此限制，普通 http 页面与 iframe 也可用（受存储分区策略影响是另一回事）"
+      },
+      {
+        "text": "window、Web Worker、Service Worker 都可用",
+        "isCorrect": true,
+        "description": "正解：三种环境全支持"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：使用一个已打开的数据库连接读写数据，标准的三步流程是什么？",
+    "explanation": "标准三步：`db.transaction(stores, mode)` 开事务 → `tx.objectStore(name)` 拿到作用域内的对象存储 → 调 `add/put/get/getAll/...` 发请求。所有除“打开/删除数据库”外的读写都必须发生在事务里。",
+    "tags": ["indexeddb", "入门", "usage-flow"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`db.transaction(stores, mode)` → `tx.objectStore(name)` → 发 `add/get/...` 请求",
+        "isCorrect": true,
+        "description": "正解：开事务 → 取 store → 发请求"
+      },
+      {
+        "text": "直接在 `db` 上调 `db.get(store, key)`，无需事务",
+        "isCorrect": false,
+        "description": "原生 API 必须经事务；db.get 简写是 idb 库提供的（内部仍开事务）"
+      },
+      {
+        "text": "`db.connect()` → `db.query(sql)` → `db.commit()`",
+        "isCorrect": false,
+        "description": "IndexedDB 没有 SQL 查询，也无 connect/query 这类 API"
+      },
+      {
+        "text": "`db.beginTransaction()` → 操作 → `db.endTransaction()`",
+        "isCorrect": false,
+        "description": "事务没有显式的 begin/end 括号，创建即启动、自动提交"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：用 `indexedDB.open(\"app\", 3)` 打开，但该库当前版本已是 5，会发生什么？",
+    "explanation": "用低于现存版本的号去 `open` 会抛 `VersionError`。版本号只增不减，这正是“线上升到 v5、又发布 v4 旧代码”时老用户报错的原因——版本号发布只能递增。",
+    "tags": ["indexeddb", "初级", "version-error"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "静默降级到版本 3，删除高版本的 schema",
+        "isCorrect": false,
+        "description": "IndexedDB 不会降级或删 schema，而是直接报错"
+      },
+      {
+        "text": "`open` 请求触发 `error`，错误为 `VersionError`",
+        "isCorrect": true,
+        "description": "正解：版本号不可倒退，低于现存版本抛 VersionError"
+      },
+      {
+        "text": "正常打开版本 5，忽略传入的 3",
+        "isCorrect": false,
+        "description": "不会忽略，低版本号是明确的错误"
+      },
+      {
+        "text": "触发 `upgradeneeded`，把版本降为 3",
+        "isCorrect": false,
+        "description": "版本只增不减，不存在降级升级事务"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：下列哪一组值都可以直接用作对象存储的键（key）？",
+    "explanation": "合法键类型：数字（`NaN` 除外）、`Date`（有效日期）、字符串、二进制（`ArrayBuffer`/TypedArray）、以及由它们组成的数组。`boolean`、`null`、`undefined`、普通对象都不能当键（抛 `DataError`）。",
+    "tags": ["indexeddb", "初级", "key-types"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`boolean`、`null`、普通对象",
+        "isCorrect": false,
+        "description": "这三类都不能当键，会抛 DataError"
+      },
+      {
+        "text": "`undefined`、`Symbol`、函数",
+        "isCorrect": false,
+        "description": "均非法键；函数连值都存不了（DataCloneError）"
+      },
+      {
+        "text": "数字、字符串、`Date`、二进制、及它们组成的数组",
+        "isCorrect": true,
+        "description": "正解：这些都是合法键类型"
+      },
+      {
+        "text": "`NaN`、`Infinity`、任意对象",
+        "isCorrect": false,
+        "description": "NaN 非法键（Infinity 合法），任意对象非法键"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`get(key)` 查询一个不存在的键，会发生什么？",
+    "explanation": "`get` 查不到时请求正常 `success`，`request.result` 为 `undefined`，不报错。这带来一个副作用：`get` 分不清“记录存在且值为 undefined”和“记录不存在”——需要区分时用 `count(key)` 或 `getKey(key)` 判断存在性。",
+    "tags": ["indexeddb", "初级", "get-miss"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "请求触发 `error`，错误为 `NotFoundError`",
+        "isCorrect": false,
+        "description": "get 查不到不报错，NotFoundError 是访问不存在的 store 才抛"
+      },
+      {
+        "text": "请求 `success`，`result` 为 `null`",
+        "isCorrect": false,
+        "description": "是 undefined 而非 null"
+      },
+      {
+        "text": "抛出同步异常，需要 try/catch 捕获",
+        "isCorrect": false,
+        "description": "get 是异步请求，查不到走 success 事件返回 undefined"
+      },
+      {
+        "text": "请求 `success`，`result` 为 `undefined`，不报错",
+        "isCorrect": true,
+        "description": "正解：查不到返回 undefined，需 count/getKey 判存在性"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`autoIncrement` 键生成器在删除记录或清空 store 后，计数器会怎样？",
+    "explanation": "键生成器从 1 起、只增不减——删除记录、清空 store 都不会让号码回收复用。显式写入一个更大的整数键会把计数器推到它之后。计数器上限 2^53，之后不传 key 的 `add` 抛 `ConstraintError`。",
+    "tags": ["indexeddb", "初级", "auto-increment"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "计数器不受影响，只增不减、不回收已用号码",
+        "isCorrect": true,
+        "description": "正解：删记录/清空 store 都不重置计数器"
+      },
+      {
+        "text": "计数器重置回 1，重新分配号码",
+        "isCorrect": false,
+        "description": "计数器只增不减，删除/清空都不重置"
+      },
+      {
+        "text": "计数器回退到已删除记录中的最大键",
+        "isCorrect": false,
+        "description": "不回退，已用过的号码永不复用"
+      },
+      {
+        "text": "计数器与记录数同步，删一条减一",
+        "isCorrect": false,
+        "description": "计数器与当前记录数无关，只记“下一个要发的号”"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：建对象存储时 `keyPath` 与 `autoIncrement` 都不设（两者皆无），如何提供键？",
+    "explanation": "keyPath 与 autoIncrement 的四种组合中，两者皆无时是 out-of-line 键：`add`/`put` 必须显式传第二参数作为键（如 `store.add(value, \"theme\")`），可存任意值。设了 keyPath 就不许再传显式 key（否则 DataError）。",
+    "tags": ["indexeddb", "初级", "key-source"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器自动生成一个 UUID 作为键",
+        "isCorrect": false,
+        "description": "不会自动生成，那需要 autoIncrement"
+      },
+      {
+        "text": "`add`/`put` 时显式传第二参数作为键（out-of-line）",
+        "isCorrect": true,
+        "description": "正解：无 keyPath 无自增时必须显式传键"
+      },
+      {
+        "text": "用记录对象的第一个属性当键",
+        "isCorrect": false,
+        "description": "从属性取键需要设 keyPath 指定属性路径"
+      },
+      {
+        "text": "无法存储，必须至少设一个",
+        "isCorrect": false,
+        "description": "可以存储，只是键要显式传（且可存非对象的任意值）"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`IDBKeyRange.lowerBound(10, true)` 表示的范围是什么？",
+    "explanation": "`lowerBound(x, open?)` 表示 `key >= x`，第二参 `open=true` 时变为 `> x`（不含端点）。所以 `lowerBound(10, true)` 是 `key > 10`。记忆锚点：open 参数 = 开区间 = 不含端点，默认 false（含）。",
+    "tags": ["indexeddb", "初级", "keyrange"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`key >= 10`（含 10）",
+        "isCorrect": false,
+        "description": "第二参 true 表示开区间，不含 10"
+      },
+      {
+        "text": "`key <= 10`",
+        "isCorrect": false,
+        "description": "lowerBound 是下界（>=/>），upperBound 才是上界"
+      },
+      {
+        "text": "`key > 10`（不含 10）",
+        "isCorrect": true,
+        "description": "正解：open=true 使下界变开区间"
+      },
+      {
+        "text": "`key == 10`",
+        "isCorrect": false,
+        "description": "精确相等用 IDBKeyRange.only(10)"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`openCursor()` 与 `openKeyCursor()` 的关键区别是什么？",
+    "explanation": "`openCursor` 返回 `IDBCursorWithValue`（带 `value`，可 `update`/`delete`）；`openKeyCursor` 返回 `IDBCursor`（只有键、无 value，更快，但不能 `update`/`delete`，调用会抛 `InvalidStateError`）。只关心键时用 openKeyCursor 省去物化值的开销。",
+    "tags": ["indexeddb", "初级", "cursor-types"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "openKeyCursor 不物化 value 且不能改删，差异实质"
+      },
+      {
+        "text": "`openKeyCursor` 更慢因为要额外查键",
+        "isCorrect": false,
+        "description": "相反，不读值使它更快"
+      },
+      {
+        "text": "`openCursor` 只能正向遍历，`openKeyCursor` 只能反向",
+        "isCorrect": false,
+        "description": "方向由参数控制，与游标种类无关"
+      },
+      {
+        "text": "`openKeyCursor` 只有键、不读值、更快，且不能 `update`/`delete`",
+        "isCorrect": true,
+        "description": "正解：键游标轻量但只读键、不能原位改删"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`createIndex(name, keyPath, { multiEntry: true })` 的作用是什么？",
+    "explanation": "`multiEntry: true` 用于 keyPath 指向数组属性的场景：数组的每个元素单独建一条索引项——这是“按标签查文章”（一篇文章多个标签）的标准解法。限制：multiEntry 索引的 keyPath 不能是数组（不能与复合索引同用）。",
+    "tags": ["indexeddb", "初级", "multi-entry"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "keyPath 指向数组时，数组每个元素各建一条索引项",
+        "isCorrect": true,
+        "description": "正解：数组元素逐个入索引，适合多标签检索"
+      },
+      {
+        "text": "允许索引键重复，多条记录可共用同一索引值",
+        "isCorrect": false,
+        "description": "那是普通索引的默认行为；multiEntry 针对数组属性展开"
+      },
+      {
+        "text": "允许一个 store 建多个索引",
+        "isCorrect": false,
+        "description": "建多个索引是多次调用 createIndex，与 multiEntry 无关"
+      },
+      {
+        "text": "让索引跨多个对象存储生效",
+        "isCorrect": false,
+        "description": "索引属于单个 store，不能跨 store"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：给一个已有数据的 store 建 `{ unique: true }` 索引，若存量数据在该字段上已有重复值，会怎样？",
+    "explanation": "对已有数据建 unique 索引时，若存量已冲突，`createIndex` 会让整个升级事务失败（abort）——版本升不上去，回退到旧版本。正确做法是先用游标清洗数据消除重复，再建 unique 索引。",
+    "tags": ["indexeddb", "初级", "unique-index"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "索引建成，重复记录被自动去重删除",
+        "isCorrect": false,
+        "description": "IndexedDB 不会自动删数据，而是让升级失败"
+      },
+      {
+        "text": "升级事务失败、版本升不上去，需先清洗数据再建",
+        "isCorrect": true,
+        "description": "正解：存量冲突导致 createIndex 中止整个升级事务"
+      },
+      {
+        "text": "索引建成，重复值只保留第一条、其余跳过",
+        "isCorrect": false,
+        "description": "不会静默跳过，冲突直接使升级事务失败"
+      },
+      {
+        "text": "索引降级为普通（非 unique）索引",
+        "isCorrect": false,
+        "description": "不会降级，而是升级事务整笔失败"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：游标推进的 `continue()` 与 `advance(n)` 有什么不同？",
+    "explanation": "`continue()` 移到下一条；`continue(key)` 跳到不小于（prev 方向不大于）指定键的位置——跳段扫描；`advance(n)` 无脑跳过 n 条，是偏移分页的实现件。每次推进触发一次 `success`，`result` 为 `null` 表示扫完。",
+    "tags": ["indexeddb", "初级", "cursor-advance"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`continue()` 前进，`advance(n)` 后退 n 条",
+        "isCorrect": false,
+        "description": "advance 不是后退，方向由游标 direction 决定"
+      },
+      {
+        "text": "两者等价，`advance(1)` 就是 `continue()`",
+        "isCorrect": false,
+        "description": "语义上 advance(1) 近似 continue()，但 continue 还能带 key 跳段，advance 不能"
+      },
+      {
+        "text": "`continue()` 到下一条，`advance(n)` 跳过 n 条",
+        "isCorrect": true,
+        "description": "正解：advance 用于批量跳过，如偏移分页"
+      },
+      {
+        "text": "`advance(n)` 直接返回第 n 条，无需逐条触发事件",
+        "isCorrect": false,
+        "description": "advance 内部仍要线性走过被跳过的条目"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`count(query?)` 相比 `getAll(query?)` 的优势是什么？",
+    "explanation": "`count` 只返回匹配的条数，不物化任何值；`getAll` 会一次性把所有匹配值物化到内存（大集合内存峰值）。只需要数量时用 count，只需要键时用 getAllKeys/getKey——能用轻量版就别 getAll 载值。",
+    "tags": ["indexeddb", "初级", "count"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`count` 比 `getAll` 返回更多字段",
+        "isCorrect": false,
+        "description": "count 只返回一个数字，不返回记录字段"
+      },
+      {
+        "text": "`count` 是同步的，`getAll` 是异步的",
+        "isCorrect": false,
+        "description": "两者都是异步请求"
+      },
+      {
+        "text": "`count` 能统计所有 store，`getAll` 只能统计一个",
+        "isCorrect": false,
+        "description": "count 也只作用于单个 store/索引"
+      },
+      {
+        "text": "`count` 不物化任何值，只返回条数，内存开销小",
+        "isCorrect": true,
+        "description": "正解：只数不取值，避免 getAll 的内存峰值"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：复合索引 `keyPath: [\"author\", \"publishedAt\"]` 的键是如何排序的？",
+    "explanation": "复合索引的键是 `[author值, publishedAt值]` 数组，按元素序比较（先比第一元素，相等再比第二），于是支持“先按 author 后按 publishedAt”的排序遍历与前缀范围查询。记录缺任一字段则不进该索引。",
+    "tags": ["indexeddb", "初级", "compound-index"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "键是数组，按元素序比较（先第一元素、相等再比第二）",
+        "isCorrect": true,
+        "description": "正解：数组键逐元素比较，支持前缀范围查询"
+      },
+      {
+        "text": "把两个字段拼成字符串后按字典序比",
+        "isCorrect": false,
+        "description": "不是字符串拼接，是数组逐元素比较（保留类型）"
+      },
+      {
+        "text": "只按第一个字段排序，忽略第二个",
+        "isCorrect": false,
+        "description": "第一元素相等时会用第二元素继续比较"
+      },
+      {
+        "text": "随机顺序，复合索引不保证有序",
+        "isCorrect": false,
+        "description": "复合索引严格有序，正是其价值所在"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：为什么“打开一个事务放着、等用户点按钮时再往里写”这种设计在 IndexedDB 里行不通？",
+    "explanation": "事务遵循“活跃期无新请求且无未决请求即自动提交”的规则。事务只在创建它的任务、以及各请求 success/error 回调任务里活跃，其余时刻失活。等待用户操作期间控制权早已回到事件循环，事务已自动提交/失活，此时再发请求抛 `TransactionInactiveError`。",
+    "tags": ["indexeddb", "中级", "auto-commit"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "事务会一直挂起，直到内存耗尽崩溃",
+        "isCorrect": false,
+        "description": "事务不会无限挂起，而是活跃窗口一过就自动提交"
+      },
+      {
+        "text": "事务会在你等待用户时自动提交/失活，再发请求抛 `TransactionInactiveError`",
+        "isCorrect": true,
+        "description": "正解：事务不能闲置持有，会自动提交"
+      },
+      {
+        "text": "可以，事务默认永久有效直到手动 `commit()`",
+        "isCorrect": false,
+        "description": "恰恰相反，自动提交是常态，无法长期持有"
+      },
+      {
+        "text": "可以，只要设 `durability: \"strict\"` 就能长期持有",
+        "isCorrect": false,
+        "description": "durability 控制落盘语义，与事务活跃窗口无关"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：在事务中 `await fetch(...)` 拿远程数据后再 `store.put(remote)`，为什么会抛 `TransactionInactiveError`？",
+    "explanation": "失活边界是事件循环任务（task）。`await fetch()` 的续行代码在另一个任务里恢复执行，等待期间控制权回到事件循环，事务因无未决请求而自动提交。等 fetch 回来时事务早已失活，再发 put 请求即抛 `TransactionInactiveError`。正确姿势是把网络请求放事务外、事务内只发 IDB 请求。",
+    "tags": ["indexeddb", "中级", "await-trap"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`fetch` 与 IndexedDB 冲突，不能在同一页面使用",
+        "isCorrect": false,
+        "description": "两者可共存，问题在事务生命周期而非冲突"
+      },
+      {
+        "text": "远程数据格式不对，put 无法克隆",
+        "isCorrect": false,
+        "description": "报的是 TransactionInactiveError 而非 DataCloneError，与数据格式无关"
+      },
+      {
+        "text": "`await fetch` 的续行在另一个任务里恢复，其间事务已自动提交/失活",
+        "isCorrect": true,
+        "description": "正解：跨任务等待导致事务失活，这是头号深坑"
+      },
+      {
+        "text": "`await` 关键字本身会关闭所有事务",
+        "isCorrect": false,
+        "description": "await 一个包装 IDB 请求的 Promise 不越界；越界的是 await 非 IDB 异步"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：为什么用 idb 库连续 `await tx.store.put(a); await tx.store.put(b)` 不会让事务失活，而 `await fetch()` 会？",
+    "explanation": "失活边界是任务，不是“任何一次 await”。await 一个包装了 IDB 请求的 Promise 时，续行代码作为该请求 success 事件任务的微任务执行——彼时事务仍在活跃窗口。而 await fetch/setTimeout 的续行在别的任务里恢复，事务已提交。这正是 idb 能安全用 async/await 的原理。",
+    "tags": ["indexeddb", "中级", "await-boundary"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "idb 库内部为每个 await 重新开一个事务",
+        "isCorrect": false,
+        "description": "idb 不会偷开事务，靠的是微任务时机而非重开"
+      },
+      {
+        "text": "idb 库禁用了自动提交机制",
+        "isCorrect": false,
+        "description": "自动提交是规范级行为，库无法禁用"
+      },
+      {
+        "text": "`await` IDB 请求是同步的，不涉及事件循环",
+        "isCorrect": false,
+        "description": "IDB 请求异步，只是其 resolve 时机落在事务仍活跃的微任务检查点前"
+      },
+      {
+        "text": "IDB 请求的 Promise 在其 success 任务的微任务里 resolve，事务仍活跃；fetch 的续行在别的任务里",
+        "isCorrect": true,
+        "description": "正解：失活边界是 task，同任务微任务内事务仍活跃"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：两个作用域重叠的 `readwrite` 事务并发发起时，如何执行？",
+    "explanation": "readonly 事务任意多个可同时跑（即使作用域重叠）；readwrite 事务作用域重叠时互斥、按创建顺序依次串行执行，不重叠才可并行。所以“模式往小里选、作用域往小里列”是吞吐关键——全库大锁 `db.transaction(db.objectStoreNames, \"readwrite\")` 是吞吐杀手。",
+    "tags": ["indexeddb", "中级", "concurrency"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按创建顺序串行执行（作用域重叠的 readwrite 互斥）",
+        "isCorrect": true,
+        "description": "正解：重叠 readwrite 串行，不重叠才并行"
+      },
+      {
+        "text": "两者并行执行，靠行级锁避免冲突",
+        "isCorrect": false,
+        "description": "IndexedDB 无行级锁，重叠 readwrite 整体串行"
+      },
+      {
+        "text": "后发起的事务被拒绝，抛 `ConstraintError`",
+        "isCorrect": false,
+        "description": "不会拒绝，而是排队串行执行"
+      },
+      {
+        "text": "两者合并成一个大事务",
+        "isCorrect": false,
+        "description": "事务不会合并，各自独立按序执行"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：Chrome 121 起，事务 `durability` 的默认值发生了什么变化？",
+    "explanation": "Chrome 121 起默认策略从 strict 改为 relaxed（官方实测提速 3~30 倍），Firefox 自 40 起也是宽松语义。含义是 `tx.oncomplete` 触发时数据只保证交给了操作系统写缓冲，不等物理刷盘——`complete` ≠ 已刷盘。关键不可重算数据要显式 `{ durability: \"strict\" }`。",
+    "tags": ["indexeddb", "中级", "durability-default"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认从 relaxed 改为 strict，更安全但更慢",
+        "isCorrect": false,
+        "description": "方向相反，是改为更快的 relaxed"
+      },
+      {
+        "text": "默认从 strict 改为 relaxed，`complete` 不再保证已刷盘",
+        "isCorrect": true,
+        "description": "正解：Chrome 121 起默认 relaxed，提速但 complete≠刷盘"
+      },
+      {
+        "text": "移除了 durability 选项，统一强制刷盘",
+        "isCorrect": false,
+        "description": "选项仍在，只是默认值变了"
+      },
+      {
+        "text": "默认改为 default，交由存储桶策略且行为不变",
+        "isCorrect": false,
+        "description": "变化实质是落盘语义放宽为 relaxed，非无变化"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：事务内某请求出错（如 `ConstraintError`），若不做任何处理，会有什么后果？",
+    "explanation": "错误事件从 request 冒泡到 transaction 再到 database。未被 `event.preventDefault()` 的错误，其默认行为就是中止（abort）整个事务——已经成功的请求也一并回滚。想让某个可容忍的错误不中止事务，必须在请求的 error 回调里 `event.preventDefault()`。",
+    "tags": ["indexeddb", "中级", "error-abort"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只有出错的那个请求失败，其余照常提交",
+        "isCorrect": false,
+        "description": "默认会中止整笔，需 preventDefault 才能让事务继续"
+      },
+      {
+        "text": "浏览器自动重试该请求三次",
+        "isCorrect": false,
+        "description": "无自动重试机制"
+      },
+      {
+        "text": "默认中止整个事务，已成功的请求也回滚",
+        "isCorrect": true,
+        "description": "正解：未 preventDefault 的错误默认 abort 事务"
+      },
+      {
+        "text": "错误被静默吞掉，事务正常完成",
+        "isCorrect": false,
+        "description": "错误不会被静默吞，默认导致事务中止"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：想让某个请求的 `ConstraintError` 不中止事务、让事务继续，正确做法是什么？",
+    "explanation": "在请求的 error 回调里调 `event.preventDefault()`——取消错误的默认行为（中止事务），事务得以继续。`stopPropagation()` 只是阻止错误冒泡到上层监听器，救不了事务（拦冒泡拦不住中止）。两者语义不同。",
+    "tags": ["indexeddb", "中级", "prevent-default"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在请求 error 回调里 `event.stopPropagation()`",
+        "isCorrect": false,
+        "description": "stopPropagation 只拦冒泡，拦不住事务中止"
+      },
+      {
+        "text": "调用 `tx.commit()` 强制提交",
+        "isCorrect": false,
+        "description": "错误已触发中止流程，commit 救不回来"
+      },
+      {
+        "text": "用 try/catch 包住请求调用",
+        "isCorrect": false,
+        "description": "请求错误走异步 error 事件，try/catch 捕不到（同步抛的 DataError 才捕得到）"
+      },
+      {
+        "text": "在请求 error 回调里 `event.preventDefault()`",
+        "isCorrect": true,
+        "description": "正解：preventDefault 取消“中止事务”的默认行为"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：一条记录缺失某索引 keyPath 指向的字段，`index.getAll()` 会包含它吗？",
+    "explanation": "记录缺失索引 keyPath 指向的字段（或值不是合法键）时，该记录不会进入该索引——`index.getAll()` 拿到的可能比 `store.getAll()` 少。这不是 bug 是语义（稀疏索引）。复合索引同理：缺任一字段则不进索引。",
+    "tags": ["indexeddb", "中级", "sparse-index"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不包含，缺字段的记录不进该索引（稀疏索引语义）",
+        "isCorrect": true,
+        "description": "正解：无索引字段的记录被排除在索引外"
+      },
+      {
+        "text": "包含，索引键取默认值 `null`",
+        "isCorrect": false,
+        "description": "缺字段不会补 null 入索引，而是整条不进索引"
+      },
+      {
+        "text": "包含，索引会自动补一个空条目",
+        "isCorrect": false,
+        "description": "不会补条目，记录直接缺席于索引"
+      },
+      {
+        "text": "会抛 `DataError` 阻止写入",
+        "isCorrect": false,
+        "description": "写入正常，只是这条不进索引；不抛错"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：游标 `cursor.update(newValue)` 时，若 `newValue` 的主键与当前记录主键不一致，会怎样？",
+    "explanation": "`cursor.update` 改当前记录，但改出来的主键必须与当前主键一致，否则抛 `DataError`。想“改主键”只能 delete + add。此外 `update`/`delete` 只能用于 `openCursor`（值游标），键游标（openKeyCursor）调用会抛 `InvalidStateError`。",
+    "tags": ["indexeddb", "中级", "cursor-update"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "静默把记录搬到新主键位置",
+        "isCorrect": false,
+        "description": "不会静默搬迁，直接报 DataError"
+      },
+      {
+        "text": "抛 `DataError`，游标 update 不能改主键",
+        "isCorrect": true,
+        "description": "正解：改主键要 delete+add，update 不许改主键"
+      },
+      {
+        "text": "新增一条记录，旧记录保留",
+        "isCorrect": false,
+        "description": "update 是原位改，不新增；主键不一致直接报错"
+      },
+      {
+        "text": "正常更新，主键以新值为准",
+        "isCorrect": false,
+        "description": "主键不可通过 update 修改"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：一个连接持有数据库时，另一个标签页用更高版本号 `open` 触发升级，会发生什么？",
+    "explanation": "升级需要独占。若旧连接仍开着，升级侧的 `open` 请求触发 `blocked` 事件、升级挂起；同时旧连接侧收到 `versionchange` 事件——旧连接应主动 `db.close()` 让路，否则升级方一直 blocked。黄金搭档：每个连接拿到手就 `db.onversionchange = () => db.close()`。",
+    "tags": ["indexeddb", "中级", "blocked-versionchange"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "旧连接被强制关闭，升级立即进行",
+        "isCorrect": false,
+        "description": "浏览器不强关旧连接，需其主动 close"
+      },
+      {
+        "text": "升级失败并抛 `VersionError`",
+        "isCorrect": false,
+        "description": "是 blocked 挂起等待，非 VersionError（那是版本号倒退）"
+      },
+      {
+        "text": "升级侧触发 `blocked`、旧连接侧收 `versionchange`，旧连接应主动 `close()`",
+        "isCorrect": true,
+        "description": "正解：blocked/versionchange 配对，旧连接让路才能升级"
+      },
+      {
+        "text": "两个版本的库并存，各标签页用各自版本",
+        "isCorrect": false,
+        "description": "同名库只有一个版本，不会并存"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`readonly` 事务与 `readwrite` 事务在并发能力上的根本区别是什么？",
+    "explanation": "任意多个 readonly 事务可同时跑（即使作用域重叠）；readwrite 事务作用域重叠时互斥、按创建顺序串行。所以能 readonly 就别 readwrite——读事务不排队，写事务会把作用域重叠的后来者全部串行化。",
+    "tags": ["indexeddb", "中级", "readonly-concurrency"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者都完全串行，无并发",
+        "isCorrect": false,
+        "description": "readonly 可并发，并非全串行"
+      },
+      {
+        "text": "两者都完全并发，靠 MVCC 隔离",
+        "isCorrect": false,
+        "description": "重叠 readwrite 会串行，非完全并发"
+      },
+      {
+        "text": "readwrite 可并发，readonly 反而串行",
+        "isCorrect": false,
+        "description": "恰好相反"
+      },
+      {
+        "text": "readonly 可任意并发（含作用域重叠），readwrite 作用域重叠则串行",
+        "isCorrect": true,
+        "description": "正解：读不排队、写在重叠作用域上串行"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：下列哪种值无法通过结构化克隆算法存入 IndexedDB？",
+    "explanation": "结构化克隆决定能存什么：原始值、普通对象、数组、`Date`、`RegExp`、`Map`、`Set`、`Blob`、`File`、`ArrayBuffer`、TypedArray 都能原样存取；而函数、DOM 节点会抛 `DataCloneError`，`Error` 跨浏览器不一致，getter/setter 与原型链会丢失（类实例取出变普通对象）。",
+    "tags": ["indexeddb", "中级", "structured-clone"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "函数（或 DOM 节点）",
+        "isCorrect": true,
+        "description": "正解：函数、DOM 节点会抛 DataCloneError"
+      },
+      {
+        "text": "`Date` 对象",
+        "isCorrect": false,
+        "description": "Date 可原样存取"
+      },
+      {
+        "text": "`Map` 与 `Set`",
+        "isCorrect": false,
+        "description": "Map/Set 都能被结构化克隆存储"
+      },
+      {
+        "text": "`ArrayBuffer` 与 `Blob`",
+        "isCorrect": false,
+        "description": "二进制类型是一等公民，可存"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：升级迁移里用 `switch (oldVersion) { case 0: ...; case 1: ...; }` 且不写 `break`，这样设计的目的是什么？",
+    "explanation": "这是“迁移天梯”模式：不带 break 的 switch 从 oldVersion 对应的 case 顺序跌落，让任意旧版本用户逐级升到最新（v0 用户跑完所有 case，v1 用户从 case 1 跑起）。升级逻辑要幂等、可从任意中间态续。",
+    "tags": ["indexeddb", "高级", "migration-ladder"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "这是笔误，应该每个 case 都写 break",
+        "isCorrect": false,
+        "description": "故意不写 break，正是迁移天梯的关键"
+      },
+      {
+        "text": "让任意旧版本用户从其版本对应的 case 顺序跌落、逐级升到最新",
+        "isCorrect": true,
+        "description": "正解：fall-through 实现逐级迁移天梯"
+      },
+      {
+        "text": "让所有用户都从 case 0 重新建库",
+        "isCorrect": false,
+        "description": "从 oldVersion 对应 case 起跌落，不是都从 0 起"
+      },
+      {
+        "text": "避免触发 versionchange 事务",
+        "isCorrect": false,
+        "description": "迁移本就在 versionchange 事务里跑，与之无关"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：升级事务（versionchange）中迁移代码抛出未捕获异常导致事务 `abort`，结果是什么？",
+    "explanation": "versionchange 事务一旦 abort（迁移代码抛错、unique 索引撞存量数据等），版本升不上去、回到旧版本，schema 变更全部回滚。所以迁移代码务必防御性编写、保证幂等。这也是升级期“不可逆”的体现。",
+    "tags": ["indexeddb", "高级", "upgrade-abort"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "已执行的部分 schema 变更保留，只回滚出错之后的",
+        "isCorrect": false,
+        "description": "事务是原子的，整笔回滚而非部分保留"
+      },
+      {
+        "text": "库进入损坏状态，必须删库重建",
+        "isCorrect": false,
+        "description": "不会损坏，只是停留在旧版本"
+      },
+      {
+        "text": "版本升不上去、回到旧版本，schema 变更全部回滚",
+        "isCorrect": true,
+        "description": "正解：升级事务中止则整个升级回滚"
+      },
+      {
+        "text": "浏览器自动跳过出错步骤完成升级",
+        "isCorrect": false,
+        "description": "不会跳过，异常导致整个升级事务中止"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`cursor.continuePrimaryKey(indexKey, primaryKey)` 有什么使用限制？",
+    "explanation": "`continuePrimaryKey` 仅用于索引游标、且仅 next/prev 方向（对象存储游标或 unique 方向调用抛 `InvalidAccessError`）。用途是断点续扫：记住上次的 `(索引键, 主键)` 二元组，下个事务从这继续，重复索引值再多也不怕。",
+    "tags": ["indexeddb", "高级", "continue-primary-key"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任何游标都能用，无限制",
+        "isCorrect": false,
+        "description": "对象存储游标调用会抛 InvalidAccessError"
+      },
+      {
+        "text": "只能在 readwrite 事务里用",
+        "isCorrect": false,
+        "description": "限制在于游标种类与方向，与事务模式无关"
+      },
+      {
+        "text": "只能配 `advance()` 一起使用",
+        "isCorrect": false,
+        "description": "它本身就是一种推进动词，不与 advance 组合"
+      },
+      {
+        "text": "仅索引游标、仅 next/prev 方向可用，否则抛 `InvalidAccessError`",
+        "isCorrect": true,
+        "description": "正解：对象存储游标或 unique 方向调用会报错"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：在索引游标迭代中用 `cursor.update()` 修改了被索引的字段，可能出现什么问题？",
+    "explanation": "记录在索引里的位置随被索引字段的值移动，若移到游标行进方向的前方，同一趟迭代会再次撞见它——可能反复处理甚至死循环。所以在索引游标迭代中修改被索引字段时，处理逻辑要幂等，或改用主键游标/先收集再批量改。",
+    "tags": ["indexeddb", "高级", "cursor-reindex"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "记录在索引中移位到游标前方，同一趟迭代会被再次访问",
+        "isCorrect": true,
+        "description": "正解：重复遍历风险，需保证处理幂等"
+      },
+      {
+        "text": "索引会自动锁定，修改被拒绝",
+        "isCorrect": false,
+        "description": "修改不会被拒绝，问题在于遍历顺序被扰动"
+      },
+      {
+        "text": "游标立即失效并抛 `InvalidStateError`",
+        "isCorrect": false,
+        "description": "游标不会失效，只是可能重复撞见移位记录"
+      },
+      {
+        "text": "只影响性能，结果永远正确",
+        "isCorrect": false,
+        "description": "可能重复处理导致结果错误甚至死循环，非仅性能问题"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：把一个 class 实例（如 `new User(...)`）用 `put` 存入，再 `get` 取出，取回的是什么？",
+    "explanation": "存取都是深拷贝，由结构化克隆决定。类实例存入时只保留可枚举数据属性，原型链、类方法、getter/setter 全丢失——取回来是一个普通对象（`instanceof User` 为 false，方法调不了）。工程建议：存纯数据，取出后再用工厂/构造函数重建实例。",
+    "tags": ["indexeddb", "高级", "class-downgrade"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原样的 `User` 实例，方法可正常调用",
+        "isCorrect": false,
+        "description": "结构化克隆不保留原型链与方法"
+      },
+      {
+        "text": "一个普通对象——原型链与类方法丢失，`instanceof` 为 false",
+        "isCorrect": true,
+        "description": "正解：类实例降级为普通对象，需取出后重建"
+      },
+      {
+        "text": "存入时就抛 `DataCloneError`",
+        "isCorrect": false,
+        "description": "类实例的数据属性能存（只是丢方法），不抛错"
+      },
+      {
+        "text": "一个冻结（`Object.freeze`）的只读对象",
+        "isCorrect": false,
+        "description": "取出的是可变普通对象，不会被冻结"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`store.add(value)` 传入含函数的对象，与传入非法键，这两类错误的抛出方式有何共性？",
+    "explanation": "值不可结构化克隆（含函数、DOM 节点）抛 `DataCloneError`，键不合法或 keyPath 冲突抛 `DataError`——这两类错误都在调用当下同步抛出，而不是走请求的 error 事件。所以 try/catch（捕同步抛）与 onerror（捕异步错误）要两手都有。",
+    "tags": ["indexeddb", "高级", "sync-throw"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "都通过请求的 `onerror` 异步事件送达",
+        "isCorrect": false,
+        "description": "这两类是同步抛，不走 onerror"
+      },
+      {
+        "text": "都会静默失败，请求返回 undefined",
+        "isCorrect": false,
+        "description": "不会静默，会同步 throw"
+      },
+      {
+        "text": "都在调用当下同步抛出，需 try/catch 捕获，不走 error 事件",
+        "isCorrect": true,
+        "description": "正解：DataError/DataCloneError 是同步异常"
+      },
+      {
+        "text": "都触发 `tx.onabort` 但不抛异常",
+        "isCorrect": false,
+        "description": "调用点同步抛异常，需 try/catch"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：需要“倒序取最新 20 条记录”，`getAll` 直接做不到，原生方案是什么？",
+    "explanation": "`getAll` 不支持方向（不能倒序）。原生做法是用游标 `openCursor(range, \"prev\")` 反向遍历、取 20 条即停。3.0 新提案 `getAllRecords({ direction: \"prev\", count: 20 })` 能一行搞定，但它实验性、非 Baseline，生产要保留游标回退。",
+    "tags": ["indexeddb", "高级", "reverse-query"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`getAll(range, 20)` 加 `reverse: true` 选项",
+        "isCorrect": false,
+        "description": "getAll 没有 reverse 选项，也不支持方向"
+      },
+      {
+        "text": "取全部后在 JS 里 `.reverse().slice(0, 20)`",
+        "isCorrect": false,
+        "description": "可行但要物化全集、内存浪费，非推荐；游标更优"
+      },
+      {
+        "text": "IndexedDB 无法倒序，只能正序存储时预留",
+        "isCorrect": false,
+        "description": "游标 prev 方向即可倒序遍历"
+      },
+      {
+        "text": "用游标 `openCursor(range, \"prev\")` 反向遍历取 20 条即停",
+        "isCorrect": true,
+        "description": "正解：getAll 无方向，倒序靠游标 prev"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`getAll(query, count)` 相比游标，在大数据集上的主要取舍是什么？",
+    "explanation": "getAll 一次物化全部命中（大集合内存峰值高），但一次请求一次往返、引擎内部批量取，通常更快；游标每次只在手一条（低内存），但每条一次事件循环往返，条数大时显著变慢（慢在往返不在读）。工程折中是分块 getAll：`getAll(range, 500)` 循环搬运。",
+    "tags": ["indexeddb", "高级", "getall-vs-cursor"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "getAll 快但内存峰值高（一次物化全部），游标省内存但每条一次往返较慢",
+        "isCorrect": true,
+        "description": "正解：速度换内存，折中用分块 getAll"
+      },
+      {
+        "text": "getAll 又快又省内存，游标毫无优势",
+        "isCorrect": false,
+        "description": "getAll 内存峰值高，游标在超大集合/边扫边改上有价值"
+      },
+      {
+        "text": "游标一定比 getAll 快",
+        "isCorrect": false,
+        "description": "游标每条一次往返，大集合上通常更慢"
+      },
+      {
+        "text": "两者性能完全一样，只是写法不同",
+        "isCorrect": false,
+        "description": "内存与往返特征差异明显，非仅写法"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`IDBTransaction.commit()`（3.0）在什么情况下有实际意义？",
+    "explanation": "commit() 常被误解为“必须手动提交”，实际自动提交始终存在、通常不需调用它。它的作用是不再等未决请求的 success 事件逐个派发回来、立刻进入提交流程——适用于“最后一批写请求发完、结果无需逐个查看”的场景，能省几轮事件往返。调用后不能再发新请求。",
+    "tags": ["indexeddb", "高级", "commit"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它是提交事务的唯一方式，不调用数据不落库",
+        "isCorrect": false,
+        "description": "自动提交才是常态，commit 只是加速"
+      },
+      {
+        "text": "批量写完、无需逐个查看结果时，跳过等待事件派发、加速收尾",
+        "isCorrect": true,
+        "description": "正解：commit 是加速收尾，非必需"
+      },
+      {
+        "text": "它能让事务在 await 外部 Promise 后继续存活",
+        "isCorrect": false,
+        "description": "commit 是提前提交，反而结束事务；保活要靠别的手段"
+      },
+      {
+        "text": "它把 readonly 事务升级为 readwrite",
+        "isCorrect": false,
+        "description": "commit 不改变事务模式"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：实现深分页（跳到第 10000 条起的一页），为什么“键集分页”（keyset）优于 `advance(offset)` 偏移分页？",
+    "explanation": "偏移分页 `advance(n)` 仍要线性走过被跳过的条目，深页惩罚随偏移增大而线性上升。键集分页记住上页末键，下一页用 `IDBKeyRange.lowerBound(lastKey, true)` 直达页首、深页无额外惩罚。这与数据库层面 keyset pagination 优于 OFFSET 是同一道理。",
+    "tags": ["indexeddb", "高级", "keyset-pagination"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者性能一样，键集分页只是写法更短",
+        "isCorrect": false,
+        "description": "深页时性能差异显著，非仅写法"
+      },
+      {
+        "text": "`advance` 是 O(1) 跳转，比键集分页快",
+        "isCorrect": false,
+        "description": "advance 需线性走过被跳条目，非 O(1)"
+      },
+      {
+        "text": "键集分页用 range 直达页首、深页无惩罚；`advance` 仍要线性走过被跳过的条目",
+        "isCorrect": true,
+        "description": "正解：keyset 避免 offset 的线性扫描惩罚"
+      },
+      {
+        "text": "键集分页不需要索引，偏移分页需要",
+        "isCorrect": false,
+        "description": "两者都基于有序键；键集靠 range 定位，与是否需索引无必然关系"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：查询“某作者 2024 年的文章”，复合索引 `[\"author\", \"publishedAt\"]` 配合什么查询手段实现？",
+    "explanation": "复合索引键是数组，用数组键范围查询：`IDBKeyRange.bound([\"鲁迅\", new Date(\"2024-01-01\")], [\"鲁迅\", new Date(\"2025-01-01\")], false, true)`（上界开区间不含 2025）。这利用了复合索引“先按第一元素、相等再比第二元素”的排序，实现前缀+范围的组合查询。",
+    "tags": ["indexeddb", "高级", "compound-range"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "建两个单独索引 `by_author` 和 `by_date` 分别查再取交集",
+        "isCorrect": false,
+        "description": "可行但低效；复合索引一次范围查询即可"
+      },
+      {
+        "text": "用 SQL 的 WHERE author=? AND year=?",
+        "isCorrect": false,
+        "description": "IndexedDB 无 SQL"
+      },
+      {
+        "text": "全表 `getAll` 后在 JS 里 filter",
+        "isCorrect": false,
+        "description": "浪费内存与性能，复合索引正是为避免全表扫描而设"
+      },
+      {
+        "text": "用数组键的 `IDBKeyRange.bound`，下界 `[\"鲁迅\", 年初]`、上界 `[\"鲁迅\", 次年初]`",
+        "isCorrect": true,
+        "description": "正解：数组键范围查询复合索引"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：字符串前缀查询（找所有以 `abc` 开头的键）的惯用范围写法是什么？",
+    "explanation": "惯用法 `IDBKeyRange.bound(\"abc\", \"abc\\uffff\")`——用 `\\uffff`（排序上最大的字符）作哨兵上界封顶，近似“以 abc 开头”。因为字符串按 UTF-16 码元序排列，所有 abc 开头的字符串都落在 `\"abc\"` 与 `\"abc\\uffff\"` 之间。",
+    "tags": ["indexeddb", "专家", "prefix-query"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`IDBKeyRange.bound(\"abc\", \"abc\\uffff\")`，用最大字符作哨兵上界",
+        "isCorrect": true,
+        "description": "正解：\\uffff 哨兵封顶实现前缀匹配"
+      },
+      {
+        "text": "`IDBKeyRange.only(\"abc*\")`，用通配符",
+        "isCorrect": false,
+        "description": "IndexedDB 键范围不支持通配符/正则"
+      },
+      {
+        "text": "`IDBKeyRange.lowerBound(\"abc\")`，只设下界",
+        "isCorrect": false,
+        "description": "只设下界会包含所有 >= abc 的键，超出前缀范围"
+      },
+      {
+        "text": "`store.get(/^abc/)`，传正则",
+        "isCorrect": false,
+        "description": "get 不接受正则，只接受键或键范围"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：默认 relaxed durability 下，`tx.oncomplete` 已触发，但设备此刻突然断电，数据一定安全吗？",
+    "explanation": "不一定。relaxed 下 `complete` 只保证改动交给了操作系统写缓冲，不等物理刷盘。“提交成功后设备立刻断电”这个窗口里，relaxed 事务的数据可能丢失（OS 尚未刷盘）。接受不了这个风险的关键数据要显式 `{ durability: \"strict\" }` 换刷盘确认。",
+    "tags": ["indexeddb", "专家", "durability-window"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "一定安全，`complete` 保证已写入磁盘",
+        "isCorrect": false,
+        "description": "relaxed 下 complete 不等于物理刷盘"
+      },
+      {
+        "text": "不一定，relaxed 下 `complete` 只保证交给 OS 缓冲，断电窗口内可能丢",
+        "isCorrect": true,
+        "description": "正解：complete≠刷盘，关键数据用 strict"
+      },
+      {
+        "text": "一定安全，IndexedDB 有 WAL 日志保护",
+        "isCorrect": false,
+        "description": "relaxed 语义下不提供这种保证"
+      },
+      {
+        "text": "取决于数据大小，小数据总是立即刷盘",
+        "isCorrect": false,
+        "description": "与数据大小无关，取决于 durability 语义"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：一个事务里连续 add 了 5 条记录、前 4 条已触发 success，第 5 条报 `ConstraintError` 且未 preventDefault，最终库里有几条？",
+    "explanation": "0 条。未处理的请求错误默认中止（abort）整个事务，中止即全量回滚——包括那 4 条已经触发过 success 的请求。这正是“逐请求乐观更新 UI、事务失败再回滚”需要自己实现补偿的原因。",
+    "tags": ["indexeddb", "专家", "abort-rollback"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "4 条——已 success 的保留，出错的不写",
+        "isCorrect": false,
+        "description": "中止会回滚已成功的请求，不保留"
+      },
+      {
+        "text": "5 条——ConstraintError 只是警告",
+        "isCorrect": false,
+        "description": "ConstraintError 会中止事务，不是警告"
+      },
+      {
+        "text": "0 条——事务中止全量回滚，已 success 的 4 条也回滚",
+        "isCorrect": true,
+        "description": "正解：中止即整笔回滚，含已成功请求"
+      },
+      {
+        "text": "1 条——只保留最后成功提交的",
+        "isCorrect": false,
+        "description": "事务原子回滚，不存在部分保留"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：idb 库让你能写 `await tx.store.put(...)`，它是否消除了“事务内 await 非 IDB 异步会失活”的坑？",
+    "explanation": "没有。idb README 原话警告“不要在事务开始与结束之间 await 其他东西，否则事务会在你完成前关闭”。失活规则是规范级的，包装库只改善语法（把事件回调 Promise 化）、改不了事务生命周期——事务内 await fetch 一样失活。`tx.done` 是事务完成的 Promise，比听 oncomplete 顺手，但不改变失活边界。",
+    "tags": ["indexeddb", "专家", "idb-await"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "消除了，idb 内部会自动保活事务",
+        "isCorrect": false,
+        "description": "idb 不保活，README 明确警告别在事务内 await 其他东西"
+      },
+      {
+        "text": "消除了，idb 用 Promise 替代了事务机制",
+        "isCorrect": false,
+        "description": "idb 仍走原生事务，只是包了 Promise"
+      },
+      {
+        "text": "部分消除，只有 readonly 事务还有坑",
+        "isCorrect": false,
+        "description": "readonly/readwrite 都受同一失活规则约束"
+      },
+      {
+        "text": "没消除，失活是规范级的；idb 只 Promise 化语法，事务内 await fetch 一样失活",
+        "isCorrect": true,
+        "description": "正解：换库不换命，失活边界不变"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：Dexie 的 `Dexie.waitFor(promise)` 允许在事务内等待外部 Promise，它的原理与代价是什么？",
+    "explanation": "`Dexie.waitFor` 的原理是不停向事务发“保活”空请求，撑住活跃窗口，让事务在等待外部 Promise 时不失活。代价是事务持锁时间变长、阻塞其他作用域重叠的写事务——它是逃生舱不是常规姿势。常规做法仍是把异步准备放事务外。",
+    "tags": ["indexeddb", "专家", "dexie-waitfor"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "靠不停发保活空请求撑住事务，代价是拉长持锁、阻塞其他写事务",
+        "isCorrect": true,
+        "description": "正解：waitFor 是逃生舱，会加长持锁时间"
+      },
+      {
+        "text": "它绕过了 IndexedDB 事务机制，无任何代价",
+        "isCorrect": false,
+        "description": "它仍在原生事务内，靠保活请求撑住，有持锁代价"
+      },
+      {
+        "text": "它把外部 Promise 转成 IDB 请求，零开销",
+        "isCorrect": false,
+        "description": "外部 Promise 无法转成 IDB 请求，靠的是保活"
+      },
+      {
+        "text": "它会自动重开一个新事务续上",
+        "isCorrect": false,
+        "description": "不重开事务，而是撑住当前事务"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`indexedDB.deleteDatabase(name)` 在有其他连接开着该库时会怎样？",
+    "explanation": "`deleteDatabase` 返回 `IDBOpenDBRequest`，同样会被其他连接 `blocked`——删除挂起直到所有连接关闭（旧连接侧收 `versionchange` 事件，应主动 close）。删除一个不存在的库也算 `success`（幂等）。",
+    "tags": ["indexeddb", "中级", "delete-database"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "强制断开所有连接立即删除",
+        "isCorrect": false,
+        "description": "不强断连接，会 blocked 等待"
+      },
+      {
+        "text": "被其他连接 `blocked`，删除挂起直到连接全部关闭",
+        "isCorrect": true,
+        "description": "正解：删库也受 blocked 约束，旧连接需让路"
+      },
+      {
+        "text": "抛 `InvalidStateError` 拒绝删除",
+        "isCorrect": false,
+        "description": "不抛错，而是 blocked 挂起"
+      },
+      {
+        "text": "删除当前标签页的连接、保留其他标签页的库",
+        "isCorrect": false,
+        "description": "库是全局的，不存在“只删当前标签页的”"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：为什么不应把关键数据的写入绑定在 `beforeunload`/`unload` 事件里？",
+    "explanation": "MDN 明确警告：浏览器随时可能被用户退出，unload 阶段开的事务不保证完成。正确做法是“数据一变就写”（正常运行期持久化），unload 时最多提示“有未保存内容”。此外把写入绑 unload 还会破坏 bfcache。",
+    "tags": ["indexeddb", "中级", "unload-write"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`beforeunload` 里无法访问 IndexedDB",
+        "isCorrect": false,
+        "description": "能访问，问题是事务不保证完成"
+      },
+      {
+        "text": "unload 里的事务会自动变成 strict durability",
+        "isCorrect": false,
+        "description": "durability 不因 unload 改变，且核心问题是完成不了"
+      },
+      {
+        "text": "unload 阶段开的事务不保证完成，应在正常运行期数据一变就写",
+        "isCorrect": true,
+        "description": "正解：unload 事务可能来不及完成"
+      },
+      {
+        "text": "只要用 `tx.commit()` 就能保证 unload 里写完",
+        "isCorrect": false,
+        "description": "commit 也无法保证浏览器在关闭前完成写入"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：配额超限（`QuotaExceededError`）在写入时通过哪个事件送达？",
+    "explanation": "配额超限导致事务中止，`QuotaExceededError` 经 `tx.onabort` 收到（而非直接在请求的 onerror）。它是事务失败来源之一。配额与驱逐的机制细节属浏览器存储章范畴，本叶只需知道它走 onabort。",
+    "tags": ["indexeddb", "中级", "quota-abort"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通过 `window.onerror` 全局送达",
+        "isCorrect": false,
+        "description": "不走全局 window.onerror"
+      },
+      {
+        "text": "写入时同步抛出，需 try/catch",
+        "isCorrect": false,
+        "description": "配额超限是异步的事务中止，非同步抛"
+      },
+      {
+        "text": "静默丢弃超额数据，不报错",
+        "isCorrect": false,
+        "description": "会中止事务并经 onabort 报错，不静默"
+      },
+      {
+        "text": "通过 `tx.onabort` 送达，配额超限导致事务中止",
+        "isCorrect": true,
+        "description": "正解：QuotaExceededError 走 onabort"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：想在 store 里“存在即跳过、不存在才插入”（导入去重），最合适的写法是什么？",
+    "explanation": "用 `add` + 捕获 `ConstraintError`：add 遇已存在键抛 ConstraintError，正好实现“存在即跳过”。记得在该请求的 error 回调里 `event.preventDefault()` 保住事务（否则整笔中止）。用 put 会覆盖已有数据，不符合“跳过”语义。",
+    "tags": ["indexeddb", "中级", "add-dedup"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `add` 并在 error 回调 `preventDefault()` 吞掉 `ConstraintError`",
+        "isCorrect": true,
+        "description": "正解：add 天然防覆盖，捕获冲突即跳过"
+      },
+      {
+        "text": "用 `put`，它会自动跳过已存在的键",
+        "isCorrect": false,
+        "description": "put 是 upsert，会覆盖而非跳过"
+      },
+      {
+        "text": "先 `get` 判断再 `put`，无需处理错误",
+        "isCorrect": false,
+        "description": "可行但多一次往返，且非原子；add 更直接"
+      },
+      {
+        "text": "用 `add` 但不处理错误，让它静默失败",
+        "isCorrect": false,
+        "description": "不 preventDefault 会中止整个事务，必须处理"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`store.getAllKeys()` 相比 `store.getAll()`，适合什么场景？",
+    "explanation": "getAllKeys 只返回键数组、不物化值，比 getAll 轻量得多。当你只需要主键列表（如做存在性检查、构建键索引、只要 ID 集合）时用 getAllKeys/openKeyCursor，避免 getAll 载入全部值的内存与克隆开销。",
+    "tags": ["indexeddb", "初级", "get-all-keys"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "需要完整记录对象时",
+        "isCorrect": false,
+        "description": "要值应用 getAll，getAllKeys 只返回键"
+      },
+      {
+        "text": "只需要键列表、不需要值时——比 getAll 轻量",
+        "isCorrect": true,
+        "description": "正解：只取键省去物化值的开销"
+      },
+      {
+        "text": "需要按值排序时",
+        "isCorrect": false,
+        "description": "getAllKeys 返回键、按键序，不涉及按值排序"
+      },
+      {
+        "text": "两者性能一样，随便用",
+        "isCorrect": false,
+        "description": "getAllKeys 不载值，内存与开销更小"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`indexedDB.databases()` 的作用是什么？使用时需注意什么？",
+    "explanation": "`databases()` 返回当前源下所有数据库的 `[{ name, version }]` 列表（3.0 特性，已广泛支持）。注意历史兼容性：Firefox 曾一度缺席该 API，用前查兼容表。它不返回数据内容，只列库名与版本。",
+    "tags": ["indexeddb", "高级", "databases-enumerate"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回所有库的完整数据内容",
+        "isCorrect": false,
+        "description": "只返回库名与版本，不含数据"
+      },
+      {
+        "text": "删除当前源下的所有数据库",
+        "isCorrect": false,
+        "description": "那是 deleteDatabase 逐个删；databases 只枚举"
+      },
+      {
+        "text": "列出当前源的所有库 `[{ name, version }]`，注意 Firefox 曾缺席需查兼容",
+        "isCorrect": true,
+        "description": "正解：枚举库名与版本，3.0 特性有历史兼容性"
+      },
+      {
+        "text": "跨源列出浏览器所有站点的数据库",
+        "isCorrect": false,
+        "description": "受同源限制，只列当前源的库"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：Dexie 的 schema 声明 `db.version(1).stores({ friends: \"++id, name, *tags, &email\" })` 中，符号 `++`、`*`、`&` 分别代表什么？",
+    "explanation": "Dexie schema 用符号简写：`++` 自增主键、`&` 唯一索引、`*` multiEntry（数组展开）索引、`[a+b]` 复合索引。且只声明需要索引的字段（不像 SQL 要列全部列）。所以 `++id`=自增主键、`*tags`=multiEntry 标签索引、`&email`=唯一邮箱索引。",
+    "tags": ["indexeddb", "高级", "dexie-schema"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`++` 唯一、`*` 主键、`&` 复合",
+        "isCorrect": false,
+        "description": "符号含义对应错误"
+      },
+      {
+        "text": "`++` 自增、`*` 必填、`&` 外键",
+        "isCorrect": false,
+        "description": "* 是 multiEntry 非“必填”，& 是唯一非“外键”"
+      },
+      {
+        "text": "三者都表示普通索引，仅装饰作用",
+        "isCorrect": false,
+        "description": "各有明确语义，非装饰"
+      },
+      {
+        "text": "`++` 自增主键、`*` multiEntry 索引、`&` 唯一索引",
+        "isCorrect": true,
+        "description": "正解：Dexie 用符号简写索引类型"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：Dexie 的 `liveQuery(() => db.friends.toArray())` 提供了什么 IndexedDB 原生没有的能力？",
+    "explanation": "`liveQuery` 返回一个 Observable，数据一变自动重新发射——响应式查询。配 dexie-react-hooks 的 `useLiveQuery` 或 Vue 的适配，可做数据变化自动刷新的 UI。这是 IndexedDB 原生完全没有的能力（原生要自搭 BroadcastChannel 手动通知）。",
+    "tags": ["indexeddb", "高级", "dexie-livequery"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "响应式查询：数据一变自动重新发射，驱动 UI 自动刷新",
+        "isCorrect": true,
+        "description": "正解：liveQuery 是原生没有的响应式能力"
+      },
+      {
+        "text": "把查询结果永久缓存到内存，不再读库",
+        "isCorrect": false,
+        "description": "liveQuery 是响应式重查，非静态缓存"
+      },
+      {
+        "text": "让查询变成同步返回",
+        "isCorrect": false,
+        "description": "仍是异步的 Observable，非同步"
+      },
+      {
+        "text": "自动跨标签页同步数据",
+        "isCorrect": false,
+        "description": "liveQuery 主要是本页响应式；跨标签页同步是另一回事"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：一个连接注册了 `db.onversionchange = () => db.close()`，这个“礼仪”解决了什么问题？",
+    "explanation": "当别的标签页要升级数据库版本时，持有旧连接的这一页会收到 `versionchange` 事件；主动 `db.close()` 让路，升级方才不会一直 `blocked`。不写这个礼仪，别的标签页永远升不了级。黄金搭档还要配升级侧的 onblocked 提示“请关闭其他标签页”。",
+    "tags": ["indexeddb", "中级", "versionchange-etiquette"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在版本变化时自动迁移本地数据",
+        "isCorrect": false,
+        "description": "迁移在升级方的 upgradeneeded 里做，与此回调无关"
+      },
+      {
+        "text": "让本连接在别的标签页升级时主动让路，避免对方永远 `blocked`",
+        "isCorrect": true,
+        "description": "正解：versionchange→close 是多标签页升级的关键礼仪"
+      },
+      {
+        "text": "防止数据库被其他源访问",
+        "isCorrect": false,
+        "description": "跨源隔离是浏览器天然行为，与此无关"
+      },
+      {
+        "text": "让本页自动升级到新版本",
+        "isCorrect": false,
+        "description": "本页只是 close 让路，升级由发起方完成，本页需重新 open"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`store.delete(key)` 删除一个不存在的键，请求会成功还是失败？",
+    "explanation": "`delete` 是幂等的——删一个不存在的键也算请求成功（success），不报错。它也接受键范围（如 `delete(IDBKeyRange.bound(100, 200))`）做区间删除。这与 `get` 查不到返回 undefined 一样，是“不存在不算错”的设计。",
+    "tags": ["indexeddb", "初级", "delete-idempotent"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "失败，抛 `NotFoundError`",
+        "isCorrect": false,
+        "description": "delete 不存在的键不报错"
+      },
+      {
+        "text": "失败，请求触发 error 事件",
+        "isCorrect": false,
+        "description": "delete 幂等，走 success"
+      },
+      {
+        "text": "成功——`delete` 幂等，删不存在的键也算 success",
+        "isCorrect": true,
+        "description": "正解：delete 幂等，不存在不算错"
+      },
+      {
+        "text": "抛出同步异常",
+        "isCorrect": false,
+        "description": "键存在与否不影响 delete 成功，不抛异常"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：跨类型键排序中，数字键、字符串键、`Date` 键的相对顺序是怎样的？",
+    "explanation": "跨类型排序固定为 `number < Date < string < binary < array`。所以数字键总是排在 Date 前，Date 排在字符串前。同类型内再按各自规则比较（数字比值、字符串按 UTF-16 码元序、数组逐元素比较、前缀更短者小）。",
+    "tags": ["indexeddb", "中级", "key-ordering"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`string < number < Date`（字符串最小）",
+        "isCorrect": false,
+        "description": "顺序错误，数字才是最小"
+      },
+      {
+        "text": "按插入顺序，与类型无关",
+        "isCorrect": false,
+        "description": "键严格按类型与值排序，非插入序"
+      },
+      {
+        "text": "同一 store 不允许混用不同类型的键",
+        "isCorrect": false,
+        "description": "允许混用，且有明确的跨类型排序规则"
+      },
+      {
+        "text": "`number < Date < string`（数字最小、字符串最大）",
+        "isCorrect": true,
+        "description": "正解：完整序为 number<Date<string<binary<array"
+      }
+    ]
+  },
+  {
+    "stem": "IndexedDB：`cursor.value` 在 `openKeyCursor()` 打开的游标上访问，会得到什么？",
+    "explanation": "openKeyCursor 返回 `IDBCursor`（无 value 属性，只有 key 和 primaryKey）。它只读键、不物化值，所以拿不到 value（访问为 undefined），也因此不能 `update`/`delete`。要值就用 openCursor（返回 IDBCursorWithValue）。",
+    "tags": ["indexeddb", "中级", "key-cursor-value"],
+    "categories": [
+      ["技术方向", "IndexedDB"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "拿不到值——键游标不物化 value（也因此不能 update/delete）",
+        "isCorrect": true,
+        "description": "正解：openKeyCursor 只有键，无 value"
+      },
+      {
+        "text": "正常拿到完整记录值",
+        "isCorrect": false,
+        "description": "键游标不读值，要值用 openCursor"
+      },
+      {
+        "text": "拿到值的浅拷贝",
+        "isCorrect": false,
+        "description": "键游标根本不物化值"
+      },
+      {
+        "text": "抛 `InvalidStateError`",
+        "isCorrect": false,
+        "description": "访问 value 得到 undefined，不抛错；update/delete 才抛 InvalidStateError"
+      }
+    ]
+  }
+]

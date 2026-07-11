@@ -1,0 +1,1428 @@
+[
+  {
+    "stem": "WebSocket：作为浏览器原生对象，它最准确的技术定位是下列哪一项？",
+    "explanation": "`WebSocket` 是浏览器发起并维护全双工连接的原生对象——一个 `new WebSocket(url)` 就在客户端与服务端之间开一条持久、双向、任意一方随时可推消息的通道，彻底摆脱「请求—响应」轮询模型。它的 API 面极简：一个构造函数、`open` / `message` / `error` / `close` 四个事件、`send()` / `close()` 两个方法，外加 `readyState` / `bufferedAmount` / `binaryType` / `protocol` / `extensions` 几个只读属性。核心接口在各主流浏览器全绿十几年（Baseline Widely available）。",
+    "tags": ["websocket", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器原生的全双工长连接对象，一条连接上双方可同时随时收发，摆脱轮询模型",
+        "isCorrect": true,
+        "description": "「原生、全双工、长寿命」正是官方定位"
+      },
+      {
+        "text": "一个需要引入运行时库的第三方实时通信框架",
+        "isCorrect": false,
+        "description": "它是浏览器标准能力、零依赖，不是框架也无运行时库"
+      },
+      {
+        "text": "只能由服务器单向推送、客户端无法主动上行的订阅通道",
+        "isCorrect": false,
+        "description": "那是 SSE（`EventSource`）的单向模型，WebSocket 双向"
+      },
+      {
+        "text": "基于 HTTP 轮询模拟出的「伪长连接」，本质仍是反复请求",
+        "isCorrect": false,
+        "description": "它是真正的持久连接，正是为取代轮询而生"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：握手升级、帧切分、心跳、重连策略、关闭码的运维语义，这些内容的归属是？",
+    "explanation": "WebSocket 的协议层故事——如何借 HTTP 握手升级、帧怎么切、掩码为何非对称、心跳 / 重连 / 鉴权该怎么做、各关闭码的运维语义——都属于网络章。浏览器侧的 `WebSocket` 对象只把这些能力打包暴露成 API：构造、四事件、`send` / `close`、几个只读属性。二者分工是「协议与工程策略在网络章，对象 API 用法在本叶」。",
+    "tags": ["websocket", "入门", "scope-boundary"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "都属于浏览器 `WebSocket` 对象的 API 面，可直接在 JS 里配置",
+        "isCorrect": false,
+        "description": "握手 / 帧 / 心跳这些协议与策略并不通过对象 API 暴露"
+      },
+      {
+        "text": "已被 `WebSocketStream` 取代，无需再关心",
+        "isCorrect": false,
+        "description": "WebSocketStream 只补背压，与握手 / 心跳等协议策略无关"
+      },
+      {
+        "text": "属于协议与工程策略，归网络章；浏览器 `WebSocket` 对象只暴露 API 用法",
+        "isCorrect": true,
+        "description": "正是二者的分工边界"
+      },
+      {
+        "text": "由浏览器完全自动处理，开发者永远无需了解",
+        "isCorrect": false,
+        "description": "心跳 / 重连策略恰恰要应用层自己实现，并非自动"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：一个连接实例总共向你派发哪四个事件？",
+    "explanation": "`WebSocket` 继承自 `EventTarget`，一切通过事件通知：`open`（握手成功、进入 `OPEN`，事件对象是 `Event`）、`message`（收到一条消息，`MessageEvent`）、`error`（连接出错，`Event`，无细节）、`close`（连接关闭，`CloseEvent`）。与 SSE 不同，WebSocket 没有「命名事件」概念，服务端所有消息都只进 `message`。",
+    "tags": ["websocket", "入门", "events"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`connect` / `data` / `fail` / `disconnect`",
+        "isCorrect": false,
+        "description": "这些不是 WebSocket 的事件名"
+      },
+      {
+        "text": "`open` / `message` / `error` / `close`",
+        "isCorrect": true,
+        "description": "正是 WebSocket 的四个标准事件"
+      },
+      {
+        "text": "`open` / `data` / `error` / `end`",
+        "isCorrect": false,
+        "description": "收消息是 `message` 不是 `data`，关闭是 `close` 不是 `end`"
+      },
+      {
+        "text": "`open` / `message` / `ping` / `close`",
+        "isCorrect": false,
+        "description": "没有 `ping` 事件；心跳由应用层自己实现"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`readyState` 的取值比 `EventSource`（SSE）多出了哪一个状态？",
+    "explanation": "`WebSocket.readyState` 有四态：`CONNECTING(0)` / `OPEN(1)` / `CLOSING(2)` / `CLOSED(3)`，单向不可逆流动。`EventSource`（SSE）只有 `CONNECTING` / `OPEN` / `CLOSED` 三态——WebSocket 多出的正是 `CLOSING`，对应「关闭握手已发起、尚未完成」这个中间态，这是 WebSocket 有主动关闭握手、SSE 没有的体现。",
+    "tags": ["websocket", "入门", "ready-state"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`OPEN`",
+        "isCorrect": false,
+        "description": "OPEN 两态都有"
+      },
+      {
+        "text": "`RECONNECTING`",
+        "isCorrect": false,
+        "description": "不存在这个状态；WebSocket 也不自动重连"
+      },
+      {
+        "text": "`CONNECTING`",
+        "isCorrect": false,
+        "description": "CONNECTING 两态都有"
+      },
+      {
+        "text": "`CLOSING`",
+        "isCorrect": true,
+        "description": "正是关闭握手中的中间态，SSE 没有"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`new WebSocket(url)` 之后紧接着调用 `ws.send(\"hi\")`，会发生什么？",
+    "explanation": "构造函数即发起连接、但不阻塞——它同步返回一个 `readyState` 为 `CONNECTING(0)` 的实例，握手在后台进行。此时连接尚未就绪，`send()` 会抛 `InvalidStateError`。必须等到 `open` 事件（`readyState` 变 `OPEN`）之后才能发送。这是最常见的新手错误。",
+    "tags": ["websocket", "入门", "connecting-send"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "正常发送，构造函数会阻塞到连接建立完成",
+        "isCorrect": false,
+        "description": "构造不阻塞，返回时仍在 `CONNECTING`"
+      },
+      {
+        "text": "抛 `InvalidStateError`，因为此刻 `readyState` 还是 `CONNECTING`，必须等 `open` 后再发",
+        "isCorrect": true,
+        "description": "正是构造后立刻 `send` 的经典错误"
+      },
+      {
+        "text": "消息被静默丢弃、不报错",
+        "isCorrect": false,
+        "description": "静默丢弃发生在 `CLOSING` / `CLOSED`，`CONNECTING` 是抛异常"
+      },
+      {
+        "text": "浏览器自动缓存这条消息，`open` 后再发出",
+        "isCorrect": false,
+        "description": "标准不提供此行为，会直接抛异常"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：搭一个最小可用的客户端，下列步骤顺序哪一项正确？",
+    "explanation": "最小四件套：① `const ws = new WebSocket(\"wss://host/path\")` 构造即连接；② 在 `ws.onopen` 里开始 `send`（此前不能发）；③ 在 `ws.onmessage` 里收（`e.data` 是 `string` 或二进制）；④ 用完在 `ws.close()` 或页面 `pagehide` 里关闭。全程零依赖、纯浏览器标准 API。",
+    "tags": ["websocket", "入门", "quick-start"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`new WebSocket(url)` → 在 `onopen` 里 `send` → 在 `onmessage` 里收 → 用完 `close()`",
+        "isCorrect": true,
+        "description": "正是标准最小流程"
+      },
+      {
+        "text": "先 `send` 再 `new WebSocket` 建立连接，最后监听 `message`",
+        "isCorrect": false,
+        "description": "必须先构造才有实例，且 `send` 要等 `open`"
+      },
+      {
+        "text": "`new WebSocket(url)` → 立即 `send` → 收完浏览器自动关闭",
+        "isCorrect": false,
+        "description": "`send` 不能在 `open` 前，浏览器也不自动关"
+      },
+      {
+        "text": "先注册全局回调再由浏览器自动实例化连接",
+        "isCorrect": false,
+        "description": "没有自动实例化机制，必须显式 `new`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：仅需「服务器单向推送、客户端不上行」时，更省心的原生选择通常是哪一个？",
+    "explanation": "若场景只是「服务器有新数据主动告诉页面」（通知、日志、进度、行情），SSE（`EventSource`）更合适——它单向、纯文本，且自带自动重连与 `Last-Event-ID` 断点续传，省一大堆重连代码。WebSocket 是全双工双向、支持二进制，但不自动重连、需自己封装，适合「双方都要随时互推」的场景（聊天、协同编辑、实时对战）。",
+    "tags": ["websocket", "入门", "vs-sse"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WebSocket，因为它更现代、总是更优",
+        "isCorrect": false,
+        "description": "单向推送用 WebSocket 是杀鸡用牛刀，还得自己写重连"
+      },
+      {
+        "text": "WebRTC，因为它延迟最低",
+        "isCorrect": false,
+        "description": "WebRTC 面向点对点音视频 / 数据通道，不是服务器单推场景"
+      },
+      {
+        "text": "轮询 `fetch`，因为最简单可靠",
+        "isCorrect": false,
+        "description": "轮询正是长连接要取代的低效模型"
+      },
+      {
+        "text": "SSE（`EventSource`），单向、纯文本且自带自动重连",
+        "isCorrect": true,
+        "description": "单向推送选 SSE 最省心"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：关于浏览器对 `WebSocket` 对象的支持现状，下列说法正确的是？",
+    "explanation": "`WebSocket` 对象全接口是 Baseline Widely available，各主流浏览器全绿十几年（Chrome 5 / Safari 5 / Firefox 11 起）。2024 年新增了「构造函数直接接受 `http` / `https` 与相对 URL」这块较新基线（Chrome 125 / Firefox 124 / Safari 17.3）。而 `WebSocketStream` 则是实验、非标准、仅 Chromium。",
+    "tags": ["websocket", "入门", "baseline"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仍是实验特性，生产需 polyfill",
+        "isCorrect": false,
+        "description": "核心接口全绿十几年，无需 polyfill"
+      },
+      {
+        "text": "仅 Chromium 支持，Firefox / Safari 无",
+        "isCorrect": false,
+        "description": "那是 `WebSocketStream`；标准 WebSocket 全主流支持"
+      },
+      {
+        "text": "核心接口 Baseline 全绿十几年；构造接受 `http` / `https` / 相对 URL 是 2024 年新基线",
+        "isCorrect": true,
+        "description": "正是官方现状"
+      },
+      {
+        "text": "兼容性差，主要靠第三方库抹平",
+        "isCorrect": false,
+        "description": "对象本身兼容性在 2026 年完全不是问题"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：构造函数 `url` 参数接受哪些 scheme？",
+    "explanation": "`url` 传统上接受 `ws://` / `wss://`；2024 起新增接受 `http://` / `https://`（自动升级为 `ws` / `wss`：`http`→`ws`、`https`→`wss`）以及相对 URL（按当前脚本 base URL 解析）。这块新基线覆盖 Chrome 125 / Firefox 124 / Safari 17.3。生产环境一律用 `wss`。",
+    "tags": ["websocket", "初级", "url-scheme"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只能是 `ws`，`wss` 需另行开启",
+        "isCorrect": false,
+        "description": "`wss` 是加密 WebSocket，一直支持"
+      },
+      {
+        "text": "`ws` / `wss`，2024 起还接受 `http` / `https`（自动升级）与相对 URL",
+        "isCorrect": true,
+        "description": "正是当前的 scheme 白名单"
+      },
+      {
+        "text": "只能是 `http` / `https`",
+        "isCorrect": false,
+        "description": "传统 scheme 是 `ws` / `wss`，`http` / `https` 是 2024 才新增"
+      },
+      {
+        "text": "任意 scheme 都可以，浏览器会自动识别",
+        "isCorrect": false,
+        "description": "白名单外的 scheme（如 `ftp`）抛 `SyntaxError`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：给构造函数传入带 `#fragment` 的 URL 或非法 scheme（如 `ftp://…`），会怎样？",
+    "explanation": "构造时会校验 URL：带 `#...` fragment 或使用白名单（`ws` / `wss` / `http` / `https`）之外的 scheme，都会抛 `SyntaxError`。注意区分：HTTPS 页面里发起明文 `ws://` 属「混合内容」，那不是构造异常，而是连接建立失败走 `error`→`close`。",
+    "tags": ["websocket", "初级", "url-syntax-error"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "静默忽略非法部分，照常连接",
+        "isCorrect": false,
+        "description": "非法 URL 会直接抛异常，不会忽略"
+      },
+      {
+        "text": "抛 `InvalidAccessError`",
+        "isCorrect": false,
+        "description": "那是 `close()` 传非法码的异常，与 URL 无关"
+      },
+      {
+        "text": "返回 `null` 而不是实例",
+        "isCorrect": false,
+        "description": "构造函数不会返回 `null`，非法输入抛异常"
+      },
+      {
+        "text": "抛 `SyntaxError`",
+        "isCorrect": true,
+        "description": "fragment 与非法 scheme 都是构造期的 `SyntaxError`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`send()` 可以直接发送下列哪一组数据类型？",
+    "explanation": "`send(data)` 接受五类：`string`（UTF-8 文本帧）、`ArrayBuffer`、`TypedArray`（如 `Uint8Array`）、`DataView`、`Blob`（后四者都发二进制帧，`Blob.type` 被忽略）。一个方法通吃文本与二进制。它不接受普通对象——发 JSON 要先 `JSON.stringify` 成字符串。",
+    "tags": ["websocket", "初级", "send-types"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`string` / `ArrayBuffer` / `TypedArray` / `DataView` / `Blob`",
+        "isCorrect": true,
+        "description": "正是 `send` 的五种合法类型"
+      },
+      {
+        "text": "只有 `string`，二进制要先转 base64",
+        "isCorrect": false,
+        "description": "WebSocket 二进制是一等公民，无需 base64"
+      },
+      {
+        "text": "任意 JS 对象，浏览器自动序列化",
+        "isCorrect": false,
+        "description": "不会自动序列化，普通对象要自己 `stringify`"
+      },
+      {
+        "text": "只有 `ArrayBuffer` 和 `Blob` 两种二进制类型",
+        "isCorrect": false,
+        "description": "遗漏了 `string` / `TypedArray` / `DataView`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：在 `readyState` 为 `CONNECTING` 时调用 `send()`，标准规定的行为是？",
+    "explanation": "`CONNECTING(0)` 态调用 `send()` 抛 `InvalidStateError`——这是「`new` 完立刻 `send`」的经典错误，必须等 `open` 事件后（`OPEN` 态）再发。对比：`CLOSING` / `CLOSED` 态调用 `send()` 则是静默丢弃、不报错。",
+    "tags": ["websocket", "初级", "invalid-state-error"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "消息入队，`open` 后自动发出",
+        "isCorrect": false,
+        "description": "标准不缓存，直接抛异常"
+      },
+      {
+        "text": "正常发送",
+        "isCorrect": false,
+        "description": "连接尚未就绪，无法发送"
+      },
+      {
+        "text": "抛 `InvalidStateError`",
+        "isCorrect": true,
+        "description": "`CONNECTING` 态 `send` 的标准行为"
+      },
+      {
+        "text": "静默丢弃、不报错",
+        "isCorrect": false,
+        "description": "那是 `CLOSING` / `CLOSED` 的行为；`CONNECTING` 是抛异常"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：不做任何设置时，接收到的二进制帧在 `message` 事件里 `e.data` 是什么类型？",
+    "explanation": "`binaryType` 默认是 `\"blob\"`，所以二进制帧到达时 `e.data` 是一个 `Blob`（惰性、不立刻占内存）。要同步随机读字节须先把 `binaryType` 设为 `\"arraybuffer\"`，此时 `e.data` 才是 `ArrayBuffer`。文本帧不受影响，永远是 `string`。",
+    "tags": ["websocket", "初级", "binary-type"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`ArrayBuffer`，默认就能同步读字节",
+        "isCorrect": false,
+        "description": "那需要显式设 `binaryType` 为 `\"arraybuffer\"`"
+      },
+      {
+        "text": "`Uint8Array`",
+        "isCorrect": false,
+        "description": "二进制帧不会以 `TypedArray` 形式给出"
+      },
+      {
+        "text": "`string`",
+        "isCorrect": false,
+        "description": "文本帧才是 `string`，二进制帧默认是 `Blob`"
+      },
+      {
+        "text": "`Blob`，因为 `binaryType` 默认 `\"blob\"`",
+        "isCorrect": true,
+        "description": "正是默认行为"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：把一段 `RTCDataChannel` 的 `onmessage` 处理逻辑照搬到 `WebSocket`，最隐蔽的坑是什么？",
+    "explanation": "`WebSocket.binaryType` 默认 `\"blob\"`，而 `RTCDataChannel.binaryType` 默认 `\"arraybuffer\"`——两者正好相反。同一段 `e.data instanceof ArrayBuffer` 判断，换个 API 因默认不同就走了另一分支。跨 API 复用逻辑时应永远显式设一次 `binaryType`，别依赖默认。",
+    "tags": ["websocket", "初级", "rtc-datachannel"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "事件名不同，`RTCDataChannel` 用 `data` 事件",
+        "isCorrect": false,
+        "description": "两者都用 `message` 事件"
+      },
+      {
+        "text": "默认 `binaryType` 相反（WebSocket `\"blob\"` vs RTCDataChannel `\"arraybuffer\"`），`instanceof` 判断会走错分支",
+        "isCorrect": true,
+        "description": "正是最隐蔽的迁移坑"
+      },
+      {
+        "text": "`WebSocket` 不支持二进制，只能发文本",
+        "isCorrect": false,
+        "description": "WebSocket 二进制是一等公民"
+      },
+      {
+        "text": "`send()` 参数类型完全不同",
+        "isCorrect": false,
+        "description": "两者 `send` 都接受类似的二进制类型"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：服务端想让客户端区分「聊天消息」和「系统通知」两类消息，正确做法是？",
+    "explanation": "WebSocket 没有 SSE 那种「命名事件」（`event:` 字段）概念——服务端发来的每条消息，无论内容如何，都只进同一个 `message` 事件。要区分「消息类型」只能由应用层自己约定，比如在 JSON payload 里放一个 `type` 字段，`onmessage` 里按它分发。",
+    "tags": ["websocket", "初级", "no-named-events"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "服务端用不同的事件名，客户端 `addEventListener(\"chat\", …)` 监听",
+        "isCorrect": false,
+        "description": "那是 SSE 的命名事件，WebSocket 没有"
+      },
+      {
+        "text": "用两个不同的 `WebSocket` 连接分别收两类",
+        "isCorrect": false,
+        "description": "没必要，一条连接靠 payload 字段即可区分"
+      },
+      {
+        "text": "在 payload（如 JSON）里带一个 `type` 字段，`onmessage` 里按它分发",
+        "isCorrect": true,
+        "description": "WebSocket 无命名事件，类型自己约定"
+      },
+      {
+        "text": "依赖 `MessageEvent.origin` 区分消息类型",
+        "isCorrect": false,
+        "description": "`origin` 是来源的源，不承载业务类型"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：想知道连接「为什么失败」，应该从哪里读取诊断信息？",
+    "explanation": "`error` 事件对象刻意不携带任何错误细节（安全设计，防止泄露底层网络信息如内网端口探测）。真正的诊断信息在随后必定触发的 `close` 事件的 `CloseEvent` 里——看 `code`（如 `1006` 异常断开）和 `wasClean`。实践中 `onerror` 往往只打一行日志，重连逻辑挂在 `onclose` 上。",
+    "tags": ["websocket", "初级", "error-event"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "随后 `close` 事件 `CloseEvent` 的 `code` / `wasClean`",
+        "isCorrect": true,
+        "description": "`error` 无细节，诊断看 `close`"
+      },
+      {
+        "text": "`error` 事件对象的 `error.message` 属性",
+        "isCorrect": false,
+        "description": "`error` 事件不含任何错误细节"
+      },
+      {
+        "text": "`error` 事件对象的 `error.code` 属性",
+        "isCorrect": false,
+        "description": "同样不存在，`error` 事件是空的"
+      },
+      {
+        "text": "`navigator.onLine` 的返回值",
+        "isCorrect": false,
+        "description": "那只反映网络在线状态，不是关闭原因"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：一个连接被关闭（走到 `CLOSED`）后想重连，正确做法是？",
+    "explanation": "`WebSocket` 状态单向不可逆流动，走到 `CLOSED` 的实例即作废、不能复用，没有「恢复 / reopen」这回事。重连的唯一方式是 `new` 一个全新的 `WebSocket` 实例。这与 SSE 的 `EventSource`（实例可长期存活、自带重连）截然不同。",
+    "tags": ["websocket", "初级", "instance-reuse"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "调用旧实例的 `ws.open()` 重新打开",
+        "isCorrect": false,
+        "description": "WebSocket 没有 `open()` 方法"
+      },
+      {
+        "text": "把旧实例的 `readyState` 手动改回 `CONNECTING`",
+        "isCorrect": false,
+        "description": "`readyState` 只读，且无法复活实例"
+      },
+      {
+        "text": "直接再次 `ws.send()`，浏览器会自动重连",
+        "isCorrect": false,
+        "description": "`CLOSED` 态 `send` 静默丢弃，不会重连"
+      },
+      {
+        "text": "`new` 一个全新的 `WebSocket` 实例——旧实例已作废不可复用",
+        "isCorrect": true,
+        "description": "正是重连的唯一方式"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：网络异常导致连接断开（`close` 且 `code=1006`）后，浏览器会自动重连吗？",
+    "explanation": "不会。WebSocket 不自动重连——这与 SSE（`EventSource` 自带自动重连）截然相反。断线后重连逻辑必须自己写：在 `onclose` 里判断是否该重连、排程后 `new` 一个新实例。退避 / 抖动等具体策略属工程范畴（网络章），浏览器侧只给封装骨架。",
+    "tags": ["websocket", "初级", "no-auto-reconnect"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "会，浏览器按指数退避自动重连",
+        "isCorrect": false,
+        "description": "那是需自己实现的策略，浏览器不做"
+      },
+      {
+        "text": "会，但仅在 `code=1000` 时重连",
+        "isCorrect": false,
+        "description": "`1000` 是正常关闭，通常反而不该重连"
+      },
+      {
+        "text": "不会，WebSocket 不自动重连，须自己在 `onclose` 里排程 `new` 新实例",
+        "isCorrect": true,
+        "description": "正是与 SSE 的关键差异"
+      },
+      {
+        "text": "会，前提是设置了 `ws.autoReconnect = true`",
+        "isCorrect": false,
+        "description": "不存在该属性"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：调用 `ws.close()` 不传任何参数，关闭码是多少？",
+    "explanation": "`close([code[, reason]])` 不传参时默认按 `1000`（正常关闭）发起关闭握手。`close()` 是优雅关闭：它把状态推向 `CLOSING`→`CLOSED`，且不丢弃之前 `send` 但尚未发出的消息（会等它们发完再走关闭握手）；对已 `CLOSED` 的连接再调用是空操作（幂等）。",
+    "tags": ["websocket", "初级", "close-default-code"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`1000`（正常关闭）",
+        "isCorrect": true,
+        "description": "不传参的默认关闭码"
+      },
+      {
+        "text": "`1001`（Going Away）",
+        "isCorrect": false,
+        "description": "`1001` 是协议保留码，JS 不能主动传"
+      },
+      {
+        "text": "`0`（无码）",
+        "isCorrect": false,
+        "description": "`0` 属未使用段，且非默认"
+      },
+      {
+        "text": "`1006`（异常断开）",
+        "isCorrect": false,
+        "description": "`1006` 是只读合成码，不能主动传"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：SPA 里组件卸载 / 路由切走时，若不显式 `close()` 会有什么后果？",
+    "explanation": "`WebSocket` 不会自己关，也不会被 GC 提前回收。不显式 `close()` 会留下「幽灵连接」：常驻后台占着 TCP 与后端会话；更麻烦的是，开着的连接还会阻止页面进入 bfcache（往返缓存），让前进 / 后退秒开失效。所以组件卸载 / 离开页面必须主动 `close()`。",
+    "tags": ["websocket", "初级", "ghost-connection"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "无影响，浏览器会在组件卸载时自动关闭",
+        "isCorrect": false,
+        "description": "浏览器不会自动关，必须显式 `close`"
+      },
+      {
+        "text": "留下「幽灵连接」常驻后台，还会阻止页面进入 bfcache",
+        "isCorrect": true,
+        "description": "正是不 `close` 的两大后果"
+      },
+      {
+        "text": "连接立即被 GC 回收，无副作用",
+        "isCorrect": false,
+        "description": "挂着监听器的连接不会被提前回收"
+      },
+      {
+        "text": "只是多占一点内存，不影响页面行为",
+        "isCorrect": false,
+        "description": "还会挡 bfcache，影响导航体验"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`ws.close(code)` 中，你能主动传入的 `code` 合法取值是？",
+    "explanation": "`close()` 能主动传的 `code` 只有两类：`1000`（正常关闭），以及 `3000`–`4999`（其中 `3000`–`3999` 供库 / 框架 / 应用经 IANA 注册，`4000`–`4999` 私有约定）。其余任意整数（含 `0`–`999`、`1001`–`1015`）都抛 `InvalidAccessError`。协议保留码你在 `CloseEvent.code` 读得到、却写不进。",
+    "tags": ["websocket", "中级", "close-code-range"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "任意 `1000`–`4999` 的整数",
+        "isCorrect": false,
+        "description": "`1001`–`1015` 是保留码，不能主动传"
+      },
+      {
+        "text": "任意非负整数都合法",
+        "isCorrect": false,
+        "description": "`0`–`999` 等会抛 `InvalidAccessError`"
+      },
+      {
+        "text": "`1000` 或 `3000`–`4999`，其余抛 `InvalidAccessError`",
+        "isCorrect": true,
+        "description": "正是 `close()` 的合法码约束"
+      },
+      {
+        "text": "只能是 `1000`",
+        "isCorrect": false,
+        "description": "`3000`–`4999` 也合法（应用私有码）"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`ws.close(1000, reason)` 中 `reason` 的长度上限如何计算？",
+    "explanation": "`reason` 会被 UTF-8 编码，编码后字节数不能超过 123，超出抛 `SyntaxError`。关键是按「字节」而非「字符」算：非 ASCII 每字符占 2–4 字节（中文每字 3 字节），所以约 41 个中文字符就到上限，远不到 123 个字。要精确测量用 `new TextEncoder().encode(reason).length`。",
+    "tags": ["websocket", "中级", "close-reason-bytes"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "UTF-8 编码后 ≤ 123 字节，中文每字约 3 字节，超出抛 `SyntaxError`",
+        "isCorrect": true,
+        "description": "正是按字节的约束"
+      },
+      {
+        "text": "最多 123 个字符，中英文都按字符数算",
+        "isCorrect": false,
+        "description": "是按 UTF-8 字节算，不是字符数"
+      },
+      {
+        "text": "最多 1024 字节",
+        "isCorrect": false,
+        "description": "上限是 123 字节"
+      },
+      {
+        "text": "无长度限制，浏览器会自动截断",
+        "isCorrect": false,
+        "description": "有 123 字节硬上限，超出抛异常"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：在 `readyState` 为 `CLOSING` 或 `CLOSED` 时调用 `send()`，会怎样？",
+    "explanation": "`CLOSING(2)` / `CLOSED(3)` 态调用 `send()` 是静默丢弃——既不发送也不报错。这正是排查「消息神秘丢失」的头号嫌疑：连接已在关闭 / 已关闭，业务却还在 `send`，数据悄无声息地没了。对比 `CONNECTING` 态 `send()` 则是抛 `InvalidStateError`。",
+    "tags": ["websocket", "中级", "silent-discard"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "抛 `InvalidStateError`",
+        "isCorrect": false,
+        "description": "那是 `CONNECTING` 态；`CLOSING` / `CLOSED` 是静默丢弃"
+      },
+      {
+        "text": "抛 `InvalidAccessError`",
+        "isCorrect": false,
+        "description": "那是 `close()` 传非法码的异常"
+      },
+      {
+        "text": "触发一次自动重连后再发送",
+        "isCorrect": false,
+        "description": "WebSocket 不自动重连"
+      },
+      {
+        "text": "静默丢弃、既不发送也不报错——是「消息神秘丢失」的头号嫌疑",
+        "isCorrect": true,
+        "description": "正是 `CLOSING` / `CLOSED` 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：无脑 `for` 循环高速 `send()` 大量数据、完全不看缓冲，最坏会导致什么？",
+    "explanation": "`send()` 只把数据入本地发送缓冲就立即返回（异步、不等发出）。狂发不节流会让 `bufferedAmount` 飙升、内存膨胀；当数据无法再排入缓冲（缓冲满到发不出去），浏览器会自动关闭连接。所以大流量必须节流——轮询 `bufferedAmount`、留余量再喂下一块。",
+    "tags": ["websocket", "中级", "buffer-full"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器自动限速，发送变慢但连接安全",
+        "isCorrect": false,
+        "description": "浏览器不替你限速，缓冲会膨胀"
+      },
+      {
+        "text": "缓冲膨胀、内存上涨，缓冲满到发不出去时浏览器自动关闭连接",
+        "isCorrect": true,
+        "description": "正是不节流的最坏结果"
+      },
+      {
+        "text": "多余数据被静默丢弃，连接不受影响",
+        "isCorrect": false,
+        "description": "不是丢弃，而是缓冲满后连接被关"
+      },
+      {
+        "text": "`send()` 开始返回 `false` 表示失败",
+        "isCorrect": false,
+        "description": "`send` 无返回值，不返回 `false`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`close` 事件的 `CloseEvent` 上，用于排错的三个关键属性是？",
+    "explanation": "`CloseEvent` 是排错核心信息源，三件套：`code`（收到的关闭码，如 `1000` 正常、`1006` 异常无 Close 帧）、`reason`（服务端给的人类可读原因，UTF-8 字符串，可能为空）、`wasClean`（是否走完关闭握手，`true`=双方正常挥手，`false`=被硬断，典型伴随 `code=1006`）。",
+    "tags": ["websocket", "中级", "close-event"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`code` / `message` / `success`",
+        "isCorrect": false,
+        "description": "属性名不对，应是 `reason` / `wasClean`"
+      },
+      {
+        "text": "`status` / `statusText` / `ok`",
+        "isCorrect": false,
+        "description": "那是 fetch 的 `Response` 属性"
+      },
+      {
+        "text": "`code` / `reason` / `wasClean`",
+        "isCorrect": true,
+        "description": "正是 `CloseEvent` 的三个关键属性"
+      },
+      {
+        "text": "`errorCode` / `errorMessage` / `clean`",
+        "isCorrect": false,
+        "description": "属性名张冠李戴"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：关于关闭码 `1006`（异常断开、无 Close 帧），下列说法正确的是？",
+    "explanation": "`1006` 表示「连接异常断开、没收到 Close 帧」，是浏览器在 `CloseEvent` 里合成给你的信号——你读得到、却无法用 `close(1006)` 主动产生它（会抛 `InvalidAccessError`）。它常伴随 `wasClean=false`，是「网络掉了、该重连」的 API 层判据。同理 `1005`（无状态码）、`1015`（TLS 失败）也是只读不可写的保留码。",
+    "tags": ["websocket", "中级", "code-1006"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可以用 `close(1006, \"网络断开\")` 主动发送",
+        "isCorrect": false,
+        "description": "`1006` 只读，主动传会抛 `InvalidAccessError`"
+      },
+      {
+        "text": "表示服务端正常关闭，无需重连",
+        "isCorrect": false,
+        "description": "恰相反，`1006` 是异常断开、常作重连判据"
+      },
+      {
+        "text": "是 `3000`–`4999` 私有码之一",
+        "isCorrect": false,
+        "description": "`1006` 是协议保留码，不在私有段"
+      },
+      {
+        "text": "只能在 `CloseEvent.code` 读到（浏览器合成），不能用 `close()` 主动传",
+        "isCorrect": true,
+        "description": "正是 `1006` 的只读性"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`error` 与 `close` 两个事件的先后关系，以及重连逻辑该挂在哪里？",
+    "explanation": "`error` 事件之后必定紧跟一个 `close`。由于 `error` 不带任何细节，真正可用的诊断信息（`code` / `wasClean`）都在随后的 `CloseEvent` 里。因此实践中 `onerror` 往往只用来打一行日志，而重连 / 恢复逻辑统一挂在 `onclose` 上——那里才有判断「是否该重连」的依据。",
+    "tags": ["websocket", "中级", "error-close-order"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`error` 先、`close` 后；重连挂 `onclose`（那里才有 `code` / `wasClean`）",
+        "isCorrect": true,
+        "description": "正是正确的顺序与实践"
+      },
+      {
+        "text": "`close` 先于 `error`，重连挂 `onerror`",
+        "isCorrect": false,
+        "description": "顺序反了，是 `error` 先于 `close`"
+      },
+      {
+        "text": "只会触发 `error` 不会触发 `close`，重连挂 `onerror`",
+        "isCorrect": false,
+        "description": "`error` 后必有 `close`"
+      },
+      {
+        "text": "两者同时触发，挂哪个都一样",
+        "isCorrect": false,
+        "description": "有明确先后，且判据在 `close`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：只读属性 `bufferedAmount` 的语义，下列描述正确的是？",
+    "explanation": "`bufferedAmount` 是已通过 `send()` 排队、但尚未发送到网络的字节数——一个实时「水位表」，不是累计计数器。每次 `send()` 让它增加（文本按 UTF-8 字节、二进制按 `byteLength`），后台数据陆续发出让它回落，全部发完归 `0`。它是发送侧背压的唯一入口。",
+    "tags": ["websocket", "中级", "buffered-amount"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "连接建立以来累计发送的总字节数，只增不减",
+        "isCorrect": false,
+        "description": "它是实时水位、会回落，不是累计量"
+      },
+      {
+        "text": "已 `send()` 排队但尚未发出网络的字节数，发出即回落、全发完归 0",
+        "isCorrect": true,
+        "description": "正是实时水位语义"
+      },
+      {
+        "text": "已成功送达服务端并被确认的字节数",
+        "isCorrect": false,
+        "description": "它衡量的是「还没发出网络」的量，不是已确认量"
+      },
+      {
+        "text": "接收缓冲区里等待处理的字节数",
+        "isCorrect": false,
+        "description": "它是发送侧的量，与接收无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：想在发送缓冲降到某阈值时得到「可以继续发了」的通知，标准 `WebSocket` 提供了什么机制？",
+    "explanation": "标准 `WebSocket` 没有 `bufferedamountlow` 事件（那是 `RTCDataChannel` 的，配 `bufferedAmountLowThreshold`）。WebSocket 发送节流只能主动轮询 `bufferedAmount`——配合 `requestAnimationFrame` 或计时器周期性回来看水位是否降下去，再喂下一块。这正是 WebSocket 发送背压比 WebRTC 更「手动」的根本原因。",
+    "tags": ["websocket", "中级", "no-bufferedamountlow"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`bufferedamountlow` 事件 + `bufferedAmountLowThreshold` 阈值",
+        "isCorrect": false,
+        "description": "那是 `RTCDataChannel` 的，WebSocket 没有"
+      },
+      {
+        "text": "`drain` 事件，缓冲清空时触发",
+        "isCorrect": false,
+        "description": "那是 Node.js Stream 的事件，浏览器 WebSocket 没有"
+      },
+      {
+        "text": "`await ws.flush()` 等缓冲清空",
+        "isCorrect": false,
+        "description": "不存在 `flush()` 方法"
+      },
+      {
+        "text": "没有此类事件，只能主动轮询 `bufferedAmount`",
+        "isCorrect": true,
+        "description": "正是标准 WebSocket 的现实"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：客户端声明可接受的子协议、以及读取服务端最终选中值，分别通过什么？",
+    "explanation": "子协议在 API 侧只有「传数组 + 读属性」：构造第二参 `protocols` 传字符串或字符串数组（按偏好排序）声明客户端能接受哪些；握手完成后读只读属性 `ws.protocol` 拿到服务端选中的那一个。同一连接最终只会选中一个；服务端可以一个都不选，此时 `ws.protocol` 为空串。协商机制本身属工程策略（网络章）。",
+    "tags": ["websocket", "中级", "subprotocol"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "构造第二参传，`ws.subprotocol` 读",
+        "isCorrect": false,
+        "description": "读的属性叫 `protocol` 不是 `subprotocol`"
+      },
+      {
+        "text": "用 `ws.setProtocol()` 方法设置和读取",
+        "isCorrect": false,
+        "description": "不存在该方法"
+      },
+      {
+        "text": "构造第二参 `protocols` 传数组，握手后读只读属性 `ws.protocol`",
+        "isCorrect": true,
+        "description": "正是 API 侧的传与读"
+      },
+      {
+        "text": "通过自定义 `Sec-WebSocket-Protocol` 请求头设置",
+        "isCorrect": false,
+        "description": "浏览器侧不能设自定义握手头"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：需要用 `DataView` 同步、随机地解析收到的二进制协议字节，`binaryType` 应设为？",
+    "explanation": "要同步、随机地读字节（`DataView` / `TypedArray` 解析二进制协议、喂 WASM 内存），设 `binaryType = \"arraybuffer\"`——数据直接在内存、可立即 `new DataView(e.data)` 随机读。若是大文件 / 只需整体转手（塞进 `URL.createObjectURL`、`<img>`、下载）则用默认 `\"blob\"`——惰性、不立刻占内存。稳妥在 `open` 前就设好。",
+    "tags": ["websocket", "中级", "arraybuffer"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "设为 `\"arraybuffer\"`，`e.data` 即 `ArrayBuffer`，可直接 `new DataView` 随机读",
+        "isCorrect": true,
+        "description": "正是同步读字节的选择"
+      },
+      {
+        "text": "保持默认 `\"blob\"`，直接 `new DataView(blob)`",
+        "isCorrect": false,
+        "description": "`Blob` 不能直接喂 `DataView`，须先 `await blob.arrayBuffer()`"
+      },
+      {
+        "text": "设为 `\"stream\"`",
+        "isCorrect": false,
+        "description": "`binaryType` 没有 `\"stream\"` 这个值"
+      },
+      {
+        "text": "设为 `\"text\"` 让浏览器自动解码",
+        "isCorrect": false,
+        "description": "没有 `\"text\"` 值；二进制帧不该当文本解"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：关于 `message` 事件的 `MessageEvent`，下列说法正确的是？",
+    "explanation": "`MessageEvent.data` 的类型取决于帧与 `binaryType`：文本帧恒为 `string`；二进制帧是 `Blob`（默认）或 `ArrayBuffer`（若设了 `binaryType`）。`origin` 是消息来源的源。`lastEventId` 在 WebSocket 场景恒为空串——那属性是 SSE 用的，WS 上无意义。",
+    "tags": ["websocket", "中级", "message-event"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`data` 永远是字符串，二进制也会被转成字符串",
+        "isCorrect": false,
+        "description": "二进制帧是 `Blob` / `ArrayBuffer`，不转字符串"
+      },
+      {
+        "text": "`data` 类型取决于帧与 `binaryType`（文本→string，二进制→Blob/ArrayBuffer），`lastEventId` 恒空",
+        "isCorrect": true,
+        "description": "正是 `MessageEvent` 的实情"
+      },
+      {
+        "text": "`lastEventId` 记录上一条消息的 ID，可用于断点续传",
+        "isCorrect": false,
+        "description": "那是 SSE 的机制，WS 上 `lastEventId` 恒空"
+      },
+      {
+        "text": "`data` 一定是 `ArrayBuffer`",
+        "isCorrect": false,
+        "description": "文本帧是 `string`，二进制默认是 `Blob`"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：为了不阻止页面进入 bfcache（往返缓存），应在哪个事件里关闭连接？",
+    "explanation": "开着的 WebSocket 连接会阻止页面进入 bfcache，让前进 / 后退秒开失效。正确做法是在 `pagehide` 事件里 `close()` 并把引用置 `null`——`pagehide` 既覆盖真正卸载，也覆盖进入 bfcache 的情形，且不破坏缓存。切勿用 `unload` / `beforeunload`（它们本身就使页面丧失 bfcache 资格）。",
+    "tags": ["websocket", "高级", "bfcache-pagehide"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`unload` 里 `close()`",
+        "isCorrect": false,
+        "description": "`unload` 会直接破坏 bfcache 资格"
+      },
+      {
+        "text": "`beforeunload` 里 `close()`",
+        "isCorrect": false,
+        "description": "`beforeunload` 同样使页面不可缓存"
+      },
+      {
+        "text": "不用关，bfcache 会自动冻结连接",
+        "isCorrect": false,
+        "description": "开着的连接反而阻止进入 bfcache"
+      },
+      {
+        "text": "`pagehide` 里 `close()` 并置 `null`",
+        "isCorrect": true,
+        "description": "正是保住 bfcache 的离场关连接方式"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：页面从 bfcache 恢复时想重建连接，`pageshow` 回调里的判断关键是什么？",
+    "explanation": "`pageshow` 回调要判 `event.persisted`：只有为 `true` 才表示「从 bfcache 复活」，此时需重建连接；正常首次加载（`persisted=false`）由常规初始化流程建连，别重复。而且 `pagehide` 里关掉的旧实例已 `CLOSED` 作废，`pageshow` 里只能 `new` 一个新实例——WebSocket 没有「恢复 / reopen」。",
+    "tags": ["websocket", "高级", "pageshow-persisted"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "判 `event.persisted` 为 `true`（从 bfcache 复活），并 `new` 一个新实例",
+        "isCorrect": true,
+        "description": "正是重建的判断与做法"
+      },
+      {
+        "text": "判 `event.isTrusted`，为真才重建",
+        "isCorrect": false,
+        "description": "判据是 `persisted` 不是 `isTrusted`"
+      },
+      {
+        "text": "直接复用 `pagehide` 里保存的旧实例 `ws.reopen()`",
+        "isCorrect": false,
+        "description": "旧实例已作废，且无 `reopen()`"
+      },
+      {
+        "text": "无需判断，每次 `pageshow` 都重建",
+        "isCorrect": false,
+        "description": "首次加载的 `pageshow` 不该重复建连"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：用 `unload` 或 `beforeunload` 事件来关闭连接做离场清理，主要问题是什么？",
+    "explanation": "`unload` / `beforeunload` 这两个事件的存在本身就使页面丧失 bfcache 资格——用它们收尾，等于亲手破坏了往返缓存的快速导航体验。要关 WebSocket、做离场清理，一律用 `pagehide`（覆盖卸载与进入 bfcache 两种情形且不破坏缓存），恢复用 `pageshow` 判 `persisted`。",
+    "tags": ["websocket", "高级", "unload-bfcache"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "没问题，这是关闭连接的推荐方式",
+        "isCorrect": false,
+        "description": "恰恰是反模式，会破坏 bfcache"
+      },
+      {
+        "text": "它们不会在移动端触发",
+        "isCorrect": false,
+        "description": "主要问题是破坏 bfcache，不在于触发与否"
+      },
+      {
+        "text": "这两个事件会使页面丧失 bfcache 资格，破坏往返缓存",
+        "isCorrect": true,
+        "description": "正是不该用它们的原因"
+      },
+      {
+        "text": "它们只能同步执行，无法调 `close()`",
+        "isCorrect": false,
+        "description": "`close()` 是同步的，能调；问题在 bfcache"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：移动端页面切后台可能被系统冻结 / 杀连接，最佳的「连接健康检查并按需重连」挂接点是？",
+    "explanation": "`visibilitychange` 管「页面还在但切后台 / 切回前台」。切后台系统可能冻结甚至杀网络，连接悄悄变「半开」而你这侧无感知；`document.visibilityState` 变 `visible` 的一刻正是立即检查连接、必要时重连的最佳时机（`if (!ws || ws.readyState !== WebSocket.OPEN) connect()`）。切后台则可按需断连省资源。",
+    "tags": ["websocket", "高级", "visibilitychange"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`online` / `offline` 事件",
+        "isCorrect": false,
+        "description": "那反映网络在线，切后台不一定触发；前后台切换用 `visibilitychange`"
+      },
+      {
+        "text": "`visibilitychange`，在 `visibilityState` 变 `visible` 时检查 `readyState` 并按需重连",
+        "isCorrect": true,
+        "description": "正是前后台切换的挂接点"
+      },
+      {
+        "text": "`focus` / `blur` 事件",
+        "isCorrect": false,
+        "description": "不如 `visibilitychange` 精确对应前后台可见性"
+      },
+      {
+        "text": "`resize` 事件",
+        "isCorrect": false,
+        "description": "与前后台切换无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：自动重连封装里，如何避免「用户主动关闭后仍不停重连」？",
+    "explanation": "重连封装要区分「用户主动关」与「异常断开」：维护一个 `closedByUser` 标志，用户调封装的 `close()` 时置 `true`；`onclose` 里若 `closedByUser` 为真（或 `code===1000` 正常关闭）就直接 return、不排程重连；只有异常断开（如 `1006`）才 `new` 新实例重连。这样主动关闭不会触发无谓重连。",
+    "tags": ["websocket", "高级", "reconnect-wrapper"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 `onerror` 里判断是否用户关闭",
+        "isCorrect": false,
+        "description": "`error` 无细节，无法据此判断；应在 `onclose` 用标志"
+      },
+      {
+        "text": "用 `try/catch` 包住 `close()` 捕获用户意图",
+        "isCorrect": false,
+        "description": "`close()` 不抛异常，捕获不到意图"
+      },
+      {
+        "text": "依赖 `CloseEvent.wasClean` 唯一区分",
+        "isCorrect": false,
+        "description": "`wasClean` 区分的是握手是否干净，不等于「用户是否主动」"
+      },
+      {
+        "text": "维护 `closedByUser` 标志，主动 `close()` 时置真，`onclose` 里据此（或 `code===1000`）跳过重连",
+        "isCorrect": true,
+        "description": "正是区分两者的通用做法"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：封装层的 `send()` 为彻底规避 `CONNECTING` 态抛 `InvalidStateError`，应怎么设计？",
+    "explanation": "封装层 `send` 要么先判 `readyState === OPEN` 再发，要么在未连上时把数据入「待发队列」，等 `open` 后统一补发。这样无论调用时连接处于什么状态都不会在 `CONNECTING` 态直接 `send` 而抛 `InvalidStateError`。重连封装通常两者结合：`OPEN` 直发，否则入队，`onopen` 里 flush 队列。",
+    "tags": ["websocket", "高级", "send-guard"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 `send` 前 `sleep(1000)` 等连接就绪",
+        "isCorrect": false,
+        "description": "无法可靠等待，且阻塞主线程；应判状态或入队"
+      },
+      {
+        "text": "用 `try/catch` 吞掉 `InvalidStateError` 即可",
+        "isCorrect": false,
+        "description": "吞异常会丢消息，不如入队补发"
+      },
+      {
+        "text": "判 `readyState===OPEN` 才直发，否则入待发队列，`open` 后补发",
+        "isCorrect": true,
+        "description": "正是规避异常的设计"
+      },
+      {
+        "text": "把 `binaryType` 设为 `\"arraybuffer\"` 就不会抛了",
+        "isCorrect": false,
+        "description": "`binaryType` 与 `send` 时机异常无关"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：消息到达速度快过 `onmessage` 的处理速度时，标准 `WebSocket` 提供了什么接收端流控入口？",
+    "explanation": "标准 `WebSocket` 的 `onmessage` 是推模型——消息一到就回调，你没有任何 API 办法告诉浏览器「慢点、我还没处理完」。这是标准 WebSocket 的能力短板（无接收背压）：消息会在渲染进程堆积（内存涨）或把主线程占到 100% CPU。API 层无解，只能应用层缓解：重处理移到 Web Worker、做采样 / 丢帧 / 合并、或让服务端限速。`WebSocketStream` 才用 Streams 补上背压。",
+    "tags": ["websocket", "高级", "receive-backpressure"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "没有任何接收背压入口——API 层无解，只能靠 Worker / 采样 / 服务端限速缓解",
+        "isCorrect": true,
+        "description": "正是标准 WebSocket 的短板"
+      },
+      {
+        "text": "`ws.pause()` / `ws.resume()` 暂停接收",
+        "isCorrect": false,
+        "description": "标准 WebSocket 没有 `pause` / `resume`"
+      },
+      {
+        "text": "设 `ws.receiveHighWaterMark` 阈值",
+        "isCorrect": false,
+        "description": "不存在该属性"
+      },
+      {
+        "text": "`onmessage` 返回一个 Promise，浏览器会等它 resolve",
+        "isCorrect": false,
+        "description": "事件回调返回值不被浏览器等待"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：关于「协议帧分片」与「应用层分片」，下列说法正确的是？",
+    "explanation": "两者层次不同：协议帧分片（一条大消息拆成多个 `FIN=0` 续帧，`opcode=0x0`）是传输层的事，浏览器自动收发、你在 `onmessage` 拿到的永远是重组好的完整消息，看不见分片。应用层分片是你在业务里主动把大数据切块加序号、接收端按序号拼——目的是避免单条几十 MB 巨消息整个重组进内存、并能配合 `bufferedAmount` 背压逐块发。",
+    "tags": ["websocket", "高级", "fragmentation"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者是同一回事，都需要开发者手动实现",
+        "isCorrect": false,
+        "description": "层次不同：帧分片浏览器自动，应用层分片才手动"
+      },
+      {
+        "text": "帧分片浏览器自动收发（你看不见），应用层分片是业务主动切块加序号、避免巨消息占满内存",
+        "isCorrect": true,
+        "description": "正是两者的区别"
+      },
+      {
+        "text": "协议帧分片要开发者在 `onmessage` 里手动拼接续帧",
+        "isCorrect": false,
+        "description": "浏览器自动重组，你拿到的是完整消息"
+      },
+      {
+        "text": "应用层分片由浏览器自动完成",
+        "isCorrect": false,
+        "description": "应用层分片恰恰要业务自己切块加序号"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：想在浏览器里给 WebSocket 握手加一个 `Authorization` 请求头，可行吗？",
+    "explanation": "不可行。`WebSocket` 构造函数没有传自定义请求头的入口——`Authorization`、任意 `Sec-*` 头都设不了，这是浏览器安全模型的硬约束。因此浏览器侧鉴权只能走 Cookie（同源自动带）、URL query 短时效 ticket、或把 token 塞进 `Sec-WebSocket-Protocol` 子协议夹带（这些路线取舍见网络章）。Node / 移动原生客户端不受此限。",
+    "tags": ["websocket", "高级", "handshake-headers"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可以，传构造函数第三参 `{ headers }`",
+        "isCorrect": false,
+        "description": "构造函数没有第三参，也不接受 `headers`"
+      },
+      {
+        "text": "可以，设 `ws.headers[\"Authorization\"]`",
+        "isCorrect": false,
+        "description": "不存在 `headers` 属性"
+      },
+      {
+        "text": "可以，但只能在 `wss` 下设置",
+        "isCorrect": false,
+        "description": "无论 `ws` / `wss` 浏览器都不能设握手头"
+      },
+      {
+        "text": "不行，浏览器侧不能设自定义握手头，鉴权改走 Cookie / ticket / 子协议夹带",
+        "isCorrect": true,
+        "description": "正是硬约束与替代路线"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：关于 `WebSocketStream` 的标准化与浏览器支持现状，正确的是？",
+    "explanation": "`WebSocketStream` 是为解决标准 `WebSocket` 无背压短板而生的新 API，但它实验、非标准、仅 Chromium（Chrome 124+），Firefox / Safari 完全不支持、也未进标准轨道。用前必须 `if (\"WebSocketStream\" in window)` 特性检测 + 对其余浏览器降级回标准 `WebSocket`（自己补背压节流）。绝大多数项目应以「标准 WebSocket + 封装骨架」为现实答案。",
+    "tags": ["websocket", "专家", "websocketstream"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "已是 WHATWG 现行标准、各浏览器全绿",
+        "isCorrect": false,
+        "description": "恰相反，非标准、仅 Chromium"
+      },
+      {
+        "text": "Firefox / Safari 支持，唯独 Chromium 不支持",
+        "isCorrect": false,
+        "description": "支持面正好反了"
+      },
+      {
+        "text": "实验、非标准、仅 Chromium（Chrome 124+），Firefox / Safari 无，用前须特性检测 + 降级",
+        "isCorrect": true,
+        "description": "正是其现状"
+      },
+      {
+        "text": "是 `WebSocket` 的官方替代品，应优先在生产使用",
+        "isCorrect": false,
+        "description": "它非标准、不能作生产主线"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：`WebSocketStream` 的 `opened` 与 `closed` 两个 Promise 分别 resolve 出什么？",
+    "explanation": "`WebSocketStream` 是 Promise + Streams 形态：`opened` Promise 在连上后 resolve 出 `{ readable, writable, extensions, protocol }`（可读 / 可写流 + 协商结果）；`closed` Promise 在连接关闭后 resolve 出 `{ closeCode, reason }`。主动关用 `wss.close({ closeCode, reason })`，码约束同标准 `close()`（`1000` 或 `3000`–`4999`）。",
+    "tags": ["websocket", "专家", "websocketstream-promise"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`opened`→`{ readable, writable, extensions, protocol }`，`closed`→`{ closeCode, reason }`",
+        "isCorrect": true,
+        "description": "正是两个 Promise 的结果"
+      },
+      {
+        "text": "`opened`→`CloseEvent`，`closed`→`MessageEvent`",
+        "isCorrect": false,
+        "description": "那是标准 WebSocket 的事件对象，不是 Promise 结果"
+      },
+      {
+        "text": "`opened`→布尔值，`closed`→错误码整数",
+        "isCorrect": false,
+        "description": "resolve 的是对象不是标量"
+      },
+      {
+        "text": "`opened`→`WebSocket` 实例，`closed`→`undefined`",
+        "isCorrect": false,
+        "description": "结构不对"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：相比标准 `WebSocket`，`WebSocketStream` 在背压与建连中止上多了什么能力？",
+    "explanation": "`WebSocketStream` 用 `ReadableStream` / `WritableStream` 天然带背压——`await reader.read()` 读得慢时上游自动放缓（补上标准 WebSocket 无接收背压的短板）、`await writer.write()` 发得快过网络时自动等，收发两侧都不再需手动轮询 `bufferedAmount`。此外构造支持 `signal`（`AbortSignal`），可在握手完成前中止连接——这是标准 `WebSocket` 完全没有的能力（它只能等 `open` 或失败）。",
+    "tags": ["websocket", "专家", "websocketstream-backpressure"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "多了自动重连和心跳保活",
+        "isCorrect": false,
+        "description": "那些仍需自己实现，与 `WebSocketStream` 无关"
+      },
+      {
+        "text": "收发两侧的 Streams 天然背压，加上 `AbortSignal` 可在握手完成前中止连接",
+        "isCorrect": true,
+        "description": "正是相比标准 WebSocket 的增量"
+      },
+      {
+        "text": "多了自定义握手头能力",
+        "isCorrect": false,
+        "description": "浏览器侧同样不能设握手头"
+      },
+      {
+        "text": "多了命名事件支持",
+        "isCorrect": false,
+        "description": "没有命名事件；这是 SSE 概念"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：在 HTTPS 页面里 `new WebSocket(\"ws://host/path\")`（明文），会以什么形式失败？",
+    "explanation": "HTTPS 页发起明文 `ws://` 属「混合内容」，会被浏览器拦截——但这不是构造函数抛的异常，而是连接建立失败，走 `error`→`close`。要与真正的构造异常区分：带 `#fragment` 或非法 scheme 才是构造期 `SyntaxError`。生产一律用 `wss://`。",
+    "tags": ["websocket", "专家", "mixed-content"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "构造函数立即抛 `SyntaxError`",
+        "isCorrect": false,
+        "description": "混合内容不是构造异常；`SyntaxError` 是 fragment / 非法 scheme"
+      },
+      {
+        "text": "构造函数抛 `InvalidAccessError`",
+        "isCorrect": false,
+        "description": "那是 `close()` 传非法码的异常"
+      },
+      {
+        "text": "静默降级为 `wss://` 自动连接",
+        "isCorrect": false,
+        "description": "浏览器不会自动升级 `ws`→`wss`，会拦截"
+      },
+      {
+        "text": "不是构造异常，而是被「混合内容」拦截、连接建立失败，走 `error`→`close`",
+        "isCorrect": true,
+        "description": "正是混合内容的失败形式"
+      }
+    ]
+  },
+  {
+    "stem": "WebSocket：调用 `ws.close(1000)` 时，之前 `send()` 了但尚未发出网络的消息会怎样？",
+    "explanation": "`close()` 是优雅关闭，不丢弃已排队的消息——关闭握手会等这些 `send()` 过但未发出的消息发完，再开始走 `CLOSING`→`CLOSED`。想「立刻硬断、丢弃未发数据」浏览器侧没有直接手段。另外 `close()` 对已 `CLOSED` 的连接是空操作（幂等），重复调用不报错。",
+    "tags": ["websocket", "专家", "close-graceful"],
+    "categories": [
+      ["技术方向", "WebSocket"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "立即丢弃，连接马上硬断",
+        "isCorrect": false,
+        "description": "`close` 是优雅关闭，会等已排队消息发完"
+      },
+      {
+        "text": "抛异常，提示仍有未发送数据",
+        "isCorrect": false,
+        "description": "`close` 不因有排队数据抛异常"
+      },
+      {
+        "text": "不丢弃——关闭握手会等它们发完再走 `CLOSING`→`CLOSED`；想立刻硬断浏览器侧无直接手段",
+        "isCorrect": true,
+        "description": "正是 `close` 的优雅语义"
+      },
+      {
+        "text": "消息被移到接收缓冲区",
+        "isCorrect": false,
+        "description": "发送缓冲与接收无关，不会互转"
+      }
+    ]
+  }
+]

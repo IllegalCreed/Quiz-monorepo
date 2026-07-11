@@ -1,0 +1,1490 @@
+[
+  {
+    "stem": "Web Storage API：它由哪三部分构成？",
+    "explanation": "Web Storage API 由一个 `Storage` 接口（`getItem` / `setItem` / `removeItem` / `clear` / `key` 五方法加 `length` 一属性）、两个实例（`window.localStorage` 按源共享且持久、`window.sessionStorage` 按页签隔离且关页即清）、以及一个跨文档广播的 storage 事件构成。它不是独立规范，而是定义在 WHATWG HTML 标准的 Web storage 章，自 2015-07 起 Baseline Widely available。",
+    "tags": ["web-storage", "入门", "overview"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一个 `Storage` 接口 + 两个实例（`localStorage` / `sessionStorage`）+ 一个 storage 事件",
+        "isCorrect": true,
+        "description": "接口、两实例、事件三件，正是官方构成"
+      },
+      {
+        "text": "一个数据库连接池 + 事务管理器 + 异步查询接口",
+        "isCorrect": false,
+        "description": "那是 IndexedDB 的心智，Web Storage 无连接无事务"
+      },
+      {
+        "text": "三个相互独立的全局函数，分别负责读、写、删",
+        "isCorrect": false,
+        "description": "读写删都是同一个 `Storage` 接口上的方法"
+      },
+      {
+        "text": "一套基于 Promise 的异步键值 API，需先 `open()` 建立连接",
+        "isCorrect": false,
+        "description": "Web Storage 是同步的、无需 open，异步的是 IndexedDB"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`Storage` 接口的全部成员是下列哪一组？",
+    "explanation": "整个接口只有五个方法加一个属性：`setItem(key, value)` 写、`getItem(key)` 读、`removeItem(key)` 删单键、`clear()` 清空、`key(index)` 按索引取键名，外加只读属性 `length`（键值对个数）。没有第七个方法——所有深度都藏在这六个成员的边界语义里。",
+    "tags": ["web-storage", "入门", "api-members"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`set` / `get` / `delete` / `has` / `size`（与 `Map` 同名）",
+        "isCorrect": false,
+        "description": "那是 `Map` 的成员，Web Storage 用的是 Item 系列"
+      },
+      {
+        "text": "`push` / `pop` / `read` / `write` / `count`",
+        "isCorrect": false,
+        "description": "这些方法在 `Storage` 上都不存在"
+      },
+      {
+        "text": "`save` / `load` / `drop` / `flush` / `count`",
+        "isCorrect": false,
+        "description": "凭空杜撰的成员名，接口里没有"
+      },
+      {
+        "text": "`setItem` / `getItem` / `removeItem` / `clear` / `key` 五方法 + `length` 属性",
+        "isCorrect": true,
+        "description": "五方法一属性，就是接口的全部成员"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`localStorage` 与 `sessionStorage` 最核心的差异是什么？",
+    "explanation": "两者共用同一套 `Storage` 接口、方法完全相同，差异只在「数据活多久、谁能看见」：`localStorage` 按源隔离、持久保存，同源所有页签共享同一份，浏览器重启仍在；`sessionStorage` 按「页签 + 源」隔离，同源两个页签各持一份互不可见，关闭页签即清除。",
+    "tags": ["web-storage", "入门", "local-vs-session"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`localStorage` 只能存字符串，`sessionStorage` 能直接存对象",
+        "isCorrect": false,
+        "description": "两者都只存字符串，存对象都要 JSON 往返"
+      },
+      {
+        "text": "隔离粒度与生命周期不同——`localStorage` 按源共享且持久，`sessionStorage` 按页签隔离且关页即清",
+        "isCorrect": true,
+        "description": "同一套接口，差异全在活多久、谁能看见"
+      },
+      {
+        "text": "`localStorage` 是同步的，`sessionStorage` 是异步的",
+        "isCorrect": false,
+        "description": "两者都同步阻塞主线程，无异步版本"
+      },
+      {
+        "text": "`localStorage` 容量无限，`sessionStorage` 限制为 5 KB",
+        "isCorrect": false,
+        "description": "两者容量口径一致（约 5 MiB/源），非无限也非 5 KB"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：对一个从未存过的键调用 `getItem`，返回值是什么？",
+    "explanation": "规范规定 `getItem` 对不存在的键返回 `null`（注意不是 `undefined`）。`null` 是「没有这个键」的规范信号，读侧永不抛错。这与许多人直觉的 `undefined` 不同，也是判断存在性时必须用 `=== null` 而非 falsy 判断的原因。",
+    "tags": ["web-storage", "入门", "null-return"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`undefined`",
+        "isCorrect": false,
+        "description": "常见误解——`getItem` 缺键返回的是 `null` 不是 `undefined`"
+      },
+      {
+        "text": "空字符串 `\"\"`",
+        "isCorrect": false,
+        "description": "空串是「存过空值」，与「没存过」要靠 `null` 区分"
+      },
+      {
+        "text": "`null`",
+        "isCorrect": true,
+        "description": "规范信号：缺键返回 `null`，且不抛错"
+      },
+      {
+        "text": "抛出 `ReferenceError`",
+        "isCorrect": false,
+        "description": "读侧永不抛错，缺键只是返回 `null`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`localStorage.setItem(\"user\", { name: \"Alex\" })` 之后，`getItem(\"user\")` 读回的是什么？",
+    "explanation": "Web Storage 只能存字符串——`setItem` 对任何非字符串入参先做隐式 `String()` 转换。普通对象 `String()` 的结果是 `\"[object Object]\"`，原对象数据实质丢失。存结构化数据必须先 `JSON.stringify` 手动序列化。",
+    "tags": ["web-storage", "入门", "string-only"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "字符串 `\"[object Object]\"`——对象被 `String()` 转换，数据丢失",
+        "isCorrect": true,
+        "description": "只存字符串，对象被强制字符串化后什么都不剩"
+      },
+      {
+        "text": "原样的对象 `{ name: \"Alex\" }`",
+        "isCorrect": false,
+        "description": "Storage 不保存对象引用，读回必是字符串"
+      },
+      {
+        "text": "`null`",
+        "isCorrect": false,
+        "description": "写入成功了，读回的是字符串化结果而非 `null`"
+      },
+      {
+        "text": "JSON 字符串 `{\"name\":\"Alex\"}`（`setItem` 自动 `JSON.stringify`）",
+        "isCorrect": false,
+        "description": "`setItem` 用的是 `String()` 不是 `JSON.stringify`，需手动序列化"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：关于它的规范归属，正确的说法是？",
+    "explanation": "Web Storage 没有独立规范仓库，它定义在 WHATWG HTML 标准的 Web storage 章。自 2015-07 起 Baseline Widely available——全绿十几年、无兼容碎片、无 polyfill 负担、API 形态零演进；代价是「只存字符串、同步阻塞」这些先天设定被永久锁死。",
+    "tags": ["web-storage", "入门", "spec"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它是 W3C 发布的独立 Web Storage Level 2 规范",
+        "isCorrect": false,
+        "description": "不存在独立规范，定义在 WHATWG HTML 标准里"
+      },
+      {
+        "text": "它属于 ECMAScript（JavaScript 语言标准）的一部分",
+        "isCorrect": false,
+        "description": "它是浏览器 Web 平台 API，不属于 ECMAScript"
+      },
+      {
+        "text": "它是 Chrome 私有 API，尚未进入任何标准",
+        "isCorrect": false,
+        "description": "早已 Baseline 全绿，是全主流浏览器标准能力"
+      },
+      {
+        "text": "它没有独立规范，定义在 WHATWG HTML 标准的 Web storage 章，2015 年起已 Baseline 全绿",
+        "isCorrect": true,
+        "description": "无独立仓库、归属 HTML 标准、十几年全绿"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：关于 `sessionStorage` 的存活时间，下列哪项正确？",
+    "explanation": "`sessionStorage` 绑定「页面会话」：刷新页面、甚至崩溃后「恢复标签页」都不清除，只有真正关闭该页签（或关浏览器）才清。所以它是「防误刷新丢数据」的天然容器，适合表单草稿、向导步骤这类单页签临时态。`localStorage` 则持久，重启仍在。",
+    "tags": ["web-storage", "入门", "lifecycle"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "刷新页面就会清空",
+        "isCorrect": false,
+        "description": "页面会话跨刷新存活，刷新不清"
+      },
+      {
+        "text": "刷新与「恢复标签页」都不清，只有关闭页签才清除",
+        "isCorrect": true,
+        "description": "会话比直觉顽强，防误刷新的天然容器"
+      },
+      {
+        "text": "与 `localStorage` 一样，浏览器重启后依然保留",
+        "isCorrect": false,
+        "description": "关页签/关浏览器即清，不跨重启"
+      },
+      {
+        "text": "每次导航到新页面都会清空",
+        "isCorrect": false,
+        "description": "同页签内的页面会话延续，非每次导航清空"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：跨页签共享的主题偏好、与仅本页签的多步表单草稿，分别更适合放哪个存储？",
+    "explanation": "主题、语言等需要跨页签一致的偏好应放 `localStorage`（按源共享、持久，一处改动还能借 storage 事件通知其他页签）；多步表单草稿、向导步骤等只属于当前页签的临时态应放 `sessionStorage`（页签隔离、关页即清、刷新不丢）。",
+    "tags": ["web-storage", "入门", "use-case"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "都放 `localStorage`——`sessionStorage` 已被废弃",
+        "isCorrect": false,
+        "description": "`sessionStorage` 并未废弃，页签隔离语义独一份"
+      },
+      {
+        "text": "都放 `sessionStorage`——更安全",
+        "isCorrect": false,
+        "description": "主题需跨页签一致，放 session 各页签互不可见"
+      },
+      {
+        "text": "主题偏好放 `localStorage`，表单草稿放 `sessionStorage`",
+        "isCorrect": true,
+        "description": "跨页签共享用 local，单页签临时态用 session"
+      },
+      {
+        "text": "主题偏好放 `sessionStorage`，表单草稿放 `localStorage`",
+        "isCorrect": false,
+        "description": "正好放反了，草稿放 local 会跨页签串味"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：只读属性 `length` 表示什么？",
+    "explanation": "`length` 返回当前源在该存储区里键值对的个数，常与 `key(index)` 搭配做正统遍历（`for (let i = 0; i < localStorage.length; i++)`）。一个细节：它会数上「与原型成员同名的键」（如键名恰为 `\"setItem\"`），而 `Object.keys` 数不到这类键——批量操作要用 `length` + `key(i)`。",
+    "tags": ["web-storage", "入门", "length"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "当前源在该存储区的键值对个数",
+        "isCorrect": true,
+        "description": "键的数量，配 `key(i)` 做正统遍历"
+      },
+      {
+        "text": "所有值的字符总长度（字节数）",
+        "isCorrect": false,
+        "description": "`length` 数的是键个数，不是字节体积"
+      },
+      {
+        "text": "剩余可用配额（字节）",
+        "isCorrect": false,
+        "description": "Web Storage 没有标准 API 直接读剩余配额"
+      },
+      {
+        "text": "最后一次写入的值的长度",
+        "isCorrect": false,
+        "description": "与单次写入无关，是全部键的计数"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：执行 `localStorage.setItem(42, 99)` 后，实际存进去的键和值是什么？",
+    "explanation": "`setItem` 的键与值都会被强制 `String()` 转换后再存。所以 `setItem(42, 99)` 实际存的是字符串键 `\"42\"` 到字符串值 `\"99\"`；之后读取也要用字符串键 `getItem(\"42\")`。键值「都是字符串」是 Web Storage 一切序列化问题的总根源。",
+    "tags": ["web-storage", "初级", "string-coercion"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "数字键 `42` → 数字值 `99`，类型原样保留",
+        "isCorrect": false,
+        "description": "Storage 不保存数字类型，键值都被字符串化"
+      },
+      {
+        "text": "字符串键 `\"42\"` → 字符串值 `\"99\"`，都被 `String()` 转换",
+        "isCorrect": true,
+        "description": "键与值一律 `String()` 后落盘"
+      },
+      {
+        "text": "抛 `TypeError`，键必须是字符串",
+        "isCorrect": false,
+        "description": "非字符串不报错，会被隐式转换而非拒绝"
+      },
+      {
+        "text": "键 `\"42\"` → 值 `99`（只有键被转换）",
+        "isCorrect": false,
+        "description": "值同样被字符串化，`99` 也会变 `\"99\"`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`localStorage.setItem(\"count\", 1)` 后，表达式 `localStorage.getItem(\"count\") + 1` 的结果是什么？",
+    "explanation": "存入时 `1` 被转成字符串 `\"1\"`，读回来还是字符串 `\"1\"`。`\"1\" + 1` 触发字符串拼接，结果是 `\"11\"` 而非 `2`。同理布尔存回读是 `\"true\"`。数字、布尔参与运算前必须先 `Number()` 或显式转换。",
+    "tags": ["web-storage", "初级", "string-arithmetic"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`2`（数字加法）",
+        "isCorrect": false,
+        "description": "读回是字符串，不会走数字加法"
+      },
+      {
+        "text": "抛 `TypeError`",
+        "isCorrect": false,
+        "description": "字符串 + 数字合法，触发拼接不抛错"
+      },
+      {
+        "text": "`\"11\"`（字符串拼接——读回的是字符串 `\"1\"`）",
+        "isCorrect": true,
+        "description": "`\"1\" + 1` 拼接成 `\"11\"`，运算前需 `Number()`"
+      },
+      {
+        "text": "`NaN`",
+        "isCorrect": false,
+        "description": "`\"1\"` 能参与拼接，结果确定为 `\"11\"`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：对一个不存在的键调用 `removeItem`，会发生什么？",
+    "explanation": "`removeItem` 删除不存在的键是静默无操作——不抛错、不改变存储、也不广播 storage 事件（因为「没有发生修改」）。这与 `getItem` 缺键返回 `null`、`key(i)` 越界返回 `null` 一样，都体现了 Web Storage「读/删侧永不抛错」的设计。",
+    "tags": ["web-storage", "初级", "remove"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "抛出 `KeyError`",
+        "isCorrect": false,
+        "description": "删缺键不抛错，且 JS 无 `KeyError`"
+      },
+      {
+        "text": "返回 `false` 表示删除失败",
+        "isCorrect": false,
+        "description": "`removeItem` 返回 `undefined`，无成功/失败布尔"
+      },
+      {
+        "text": "触发一次 `newValue` 为 `null` 的 storage 事件",
+        "isCorrect": false,
+        "description": "没有修改就没有事件，删缺键不广播"
+      },
+      {
+        "text": "静默无操作——不抛错、不改变存储、也不触发事件",
+        "isCorrect": true,
+        "description": "无变化即无事件，读删侧永不抛错"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：当 `index` 超出键的个数时，`localStorage.key(index)` 返回什么？",
+    "explanation": "`key(index)` 按索引返回键名，越界时返回 `null`（不抛错）。此外键的顺序由浏览器实现决定，规范只保证「键数不变期间顺序稳定」——依赖「第 0 个键是谁」跨浏览器一致是错的。",
+    "tags": ["web-storage", "初级", "key-method"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`null`",
+        "isCorrect": true,
+        "description": "越界返回 `null`，与读侧不抛错一致"
+      },
+      {
+        "text": "`undefined`",
+        "isCorrect": false,
+        "description": "返回的是 `null` 而非 `undefined`"
+      },
+      {
+        "text": "空字符串 `\"\"`",
+        "isCorrect": false,
+        "description": "越界不返回空串，返回 `null`"
+      },
+      {
+        "text": "抛 `RangeError`",
+        "isCorrect": false,
+        "description": "越界不抛错，安静返回 `null`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`localStorage.clear()` 会清除哪些数据？",
+    "explanation": "`clear()` 清空「当前源在该存储区」的全部键值对——包括同源第三方脚本写入的键（它们与你共用同一个 `localStorage`）。因此工程上应「只删自己命名空间前缀下的键」，绝不裸调 `clear()`，否则会误清别人的数据。它不影响其他源，也不影响 `sessionStorage`。",
+    "tags": ["web-storage", "初级", "clear"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只清除当前页面这次会话写入的键",
+        "isCorrect": false,
+        "description": "`clear()` 不区分是谁写的，全清"
+      },
+      {
+        "text": "清空当前源在该存储区的全部键值对（含同源第三方脚本的键）",
+        "isCorrect": true,
+        "description": "整源整存储区一锅端，故不能裸调"
+      },
+      {
+        "text": "清除所有源的 `localStorage`（全局清空）",
+        "isCorrect": false,
+        "description": "只影响当前源，跨源数据不受影响"
+      },
+      {
+        "text": "同时清空 `localStorage` 和 `sessionStorage`",
+        "isCorrect": false,
+        "description": "只清被调用的那个存储区，两者独立"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：要监听存储变更的 storage 事件，应把监听器加在哪个对象上？",
+    "explanation": "storage 事件挂在 `window` 上监听：`window.addEventListener(\"storage\", handler)`。回调里可用 `e.storageArea === localStorage` 区分是哪个存储区发生了变化。事件不是加在 `localStorage` 对象本身上的。",
+    "tags": ["web-storage", "初级", "event-listener"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`localStorage.addEventListener(\"storage\", handler)`",
+        "isCorrect": false,
+        "description": "事件不在 `Storage` 对象上派发，挂它收不到"
+      },
+      {
+        "text": "`document.addEventListener(\"storage\", handler)`",
+        "isCorrect": false,
+        "description": "storage 事件目标是 `window` 不是 `document`"
+      },
+      {
+        "text": "`window.addEventListener(\"storage\", handler)`",
+        "isCorrect": true,
+        "description": "官方入口，配 `e.storageArea` 区分来源"
+      },
+      {
+        "text": "`navigator.storage.addEventListener(\"change\", handler)`",
+        "isCorrect": false,
+        "description": "`navigator.storage` 是配额 API，无此事件"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：页签 A 执行 `localStorage.setItem(...)` 后，页签 A 自己在 `window` 上注册的 storage 监听器会被触发吗？",
+    "explanation": "不会。storage 事件只通知「同源的其他文档」——发起修改的页面自己不触发，这是本 API 的头号考点，也是最常见的调试困惑（「我 setItem 之后自己的 listener 怎么不跑？」）。想跨页签同步，发起页要自己先应用变更，监听器只服务其他页签。",
+    "tags": ["web-storage", "初级", "event-self"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "会，`setItem` 后同步触发本页监听器",
+        "isCorrect": false,
+        "description": "本页永远收不到自己的修改事件"
+      },
+      {
+        "text": "会，但要等到下一个事件循环才异步触发",
+        "isCorrect": false,
+        "description": "不是时机问题，是设计上就不发给自己"
+      },
+      {
+        "text": "只有值真的变化时才触发本页",
+        "isCorrect": false,
+        "description": "无论是否变化，发起页都不触发"
+      },
+      {
+        "text": "不会——事件只发给同源的「其他」文档，发起页自己不触发",
+        "isCorrect": true,
+        "description": "头号考点：自己改自己收不到"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：要把对象 `{ theme: \"dark\", fontSize: 14 }` 存进 `localStorage` 并正确读回，标准做法是？",
+    "explanation": "因为只存字符串，结构化数据的标准姿势是 JSON 往返：写时 `setItem(key, JSON.stringify(obj))`，读时 `JSON.parse(getItem(key) ?? \"{}\")`（用 `??` 兜底缺键）。直接 `setItem(key, obj)` 会把对象变成 `\"[object Object]\"`。",
+    "tags": ["web-storage", "初级", "json"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "写 `setItem(k, JSON.stringify(obj))`，读 `JSON.parse(getItem(k) ?? \"{}\")`",
+        "isCorrect": true,
+        "description": "JSON 往返 + 缺键兜底，标准姿势"
+      },
+      {
+        "text": "直接 `setItem(k, obj)`，`getItem` 会自动还原对象",
+        "isCorrect": false,
+        "description": "直接存对象会变 `\"[object Object]\"`，无法还原"
+      },
+      {
+        "text": "用 `setItem(k, obj.toString())` 存，读时 `eval` 还原",
+        "isCorrect": false,
+        "description": "`toString()` 同样丢数据，`eval` 更是安全隐患"
+      },
+      {
+        "text": "对象无法存入 `localStorage`，只能改用 Cookie 存储",
+        "isCorrect": false,
+        "description": "JSON 序列化后完全可存，无需改用 Cookie"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：在浏览器地址栏手动新开一个页签访问同源页面，它能读到另一个页签 `sessionStorage` 里的数据吗？",
+    "explanation": "不能。`sessionStorage` 按「页签 + 源」隔离，每个页签持有独立副本、互不可见，手动新开的页签得到的是空的独立副本。只有经 `window.open` 等有 opener 的方式打开、或用浏览器「复制标签页」功能，新页签才会带一份初始快照（之后各自独立）。跨页签共享数据是 `localStorage` 的能力。",
+    "tags": ["web-storage", "初级", "session-isolation"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "能，同源页签的 `sessionStorage` 始终共享",
+        "isCorrect": false,
+        "description": "session 按页签隔离，同源也不共享"
+      },
+      {
+        "text": "能，但只能读不能写",
+        "isCorrect": false,
+        "description": "根本读不到，不存在只读共享一说"
+      },
+      {
+        "text": "不能——`sessionStorage` 按页签隔离，新页签是空的独立副本",
+        "isCorrect": true,
+        "description": "手动新开即空副本，跨页签共享用 local"
+      },
+      {
+        "text": "不能，且访问会抛 `SecurityError`",
+        "isCorrect": false,
+        "description": "访问不抛错，只是读到的是自己的空副本"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：为什么每个 `setItem` 调用都应放进 try-catch？",
+    "explanation": "`setItem` 是整个 API 唯一会常态抛错的入口——存储区满时同步抛 `QuotaExceededError`（约 5 MiB/源）。读侧（`getItem`/`key`）永不抛错、`removeItem` 删缺键也静默，唯独写操作可能失败。所以规矩是：每一个 `setItem` 都要 try-catch，满时清理可再生数据或降级到 IndexedDB。",
+    "tags": ["web-storage", "初级", "quota"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `setItem` 是异步的，可能 reject",
+        "isCorrect": false,
+        "description": "`setItem` 是同步的，不返回 Promise"
+      },
+      {
+        "text": "因为键名非法时 `setItem` 会抛 `SyntaxError`",
+        "isCorrect": false,
+        "description": "键名会被字符串化，不存在非法键抛错"
+      },
+      {
+        "text": "没必要，`setItem` 从不抛错",
+        "isCorrect": false,
+        "description": "满时同步抛 `QuotaExceededError`，必须防"
+      },
+      {
+        "text": "因为存储满时 `setItem` 会同步抛 `QuotaExceededError`——这是本 API 唯一常态异常",
+        "isCorrect": true,
+        "description": "写侧唯一常态异常口，必须 try-catch"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：判断某个键是否存过值，为什么推荐用 `getItem(key) === null` 而不是 `if (!getItem(key))`？",
+    "explanation": "`getItem` 缺键返回 `null`，但存过空字符串 `\"\"` 或 `\"0\"` 的键也是 falsy。用 `if (!getItem(key))` 会把「存过空串/`\"0\"`」误判成「没存过」。只有与 `null` 显式比较，才能把「确实没存过」和「存过一个 falsy 字符串」区分开。",
+    "tags": ["web-storage", "初级", "null-check"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "falsy 判断会把存过 `\"\"` 或 `\"0\"` 的键误判为不存在，`=== null` 才能区分",
+        "isCorrect": true,
+        "description": "空串/`\"0\"` 也是 falsy，须用 `null` 精确判存在"
+      },
+      {
+        "text": "`!getItem` 会抛错，`=== null` 不会",
+        "isCorrect": false,
+        "description": "两种写法都不抛错，差异在语义准确性"
+      },
+      {
+        "text": "两者完全等价，只是风格差异",
+        "isCorrect": false,
+        "description": "对存过 falsy 字符串的键结果不同，不等价"
+      },
+      {
+        "text": "`getItem` 缺键返回 `undefined`，必须用 `=== null` 强制转换",
+        "isCorrect": false,
+        "description": "缺键返回的就是 `null` 不是 `undefined`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`localStorage.theme = \"dark\"`、`localStorage[\"theme\"] = \"dark\"`、`localStorage.setItem(\"theme\", \"dark\")` 三种写法，官方推荐哪种？",
+    "explanation": "MDN 明确三种写法都能写入，但官方建议「始终使用方法式 `setItem`/`getItem`」。原因不是风格洁癖：属性式在键名撞上 `length`/`setItem`/`key` 等原型成员时会出现读写不对称（原型遮蔽），且不可信键名走属性式赋值等于把外部输入直接当对象属性名（`\"__proto__\"` 之类）用，是原型污染式风险面。",
+    "tags": ["web-storage", "初级", "property-access"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "点号式 `localStorage.theme`——最简洁",
+        "isCorrect": false,
+        "description": "简洁但有原型遮蔽坑，官方不推荐"
+      },
+      {
+        "text": "方法式 `setItem`/`getItem`——避免原型遮蔽与不可信键名的原型污染式风险",
+        "isCorrect": true,
+        "description": "键名永远当数据处理，官方推荐"
+      },
+      {
+        "text": "方括号式 `localStorage[\"theme\"]`——兼容性最好",
+        "isCorrect": false,
+        "description": "与点号同属属性式，同样有遮蔽风险"
+      },
+      {
+        "text": "三种完全等价，随便用",
+        "isCorrect": false,
+        "description": "读写不对称与安全风险让它们并不等价"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`StorageEvent` 在 `Event` 基础上新增的五个只读字段是哪些？",
+    "explanation": "`StorageEvent` 加五个字段：`key`（变动的键名）、`oldValue`（变动前的值）、`newValue`（变动后的值）、`url`（发起修改的文档地址）、`storageArea`（被修改的哪个 `Storage` 对象，用来区分 local/session）。它们的 `null` 组合本身就编码了「发生了什么操作」。",
+    "tags": ["web-storage", "中级", "event-fields"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`type` / `target` / `timeStamp` / `bubbles` / `cancelable`",
+        "isCorrect": false,
+        "description": "这些是 `Event` 基类的通用属性，非新增字段"
+      },
+      {
+        "text": "`key` / `value` / `action` / `source` / `timestamp`",
+        "isCorrect": false,
+        "description": "字段名对不上，无 `action`/`source`"
+      },
+      {
+        "text": "`key` / `oldValue` / `newValue` / `url` / `storageArea`",
+        "isCorrect": true,
+        "description": "五字段正解，`null` 组合编码操作类型"
+      },
+      {
+        "text": "`name` / `before` / `after` / `origin` / `storage`",
+        "isCorrect": false,
+        "description": "杜撰的字段名，规范里不存在"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：当另一个页签调用 `clear()` 时，本页收到的 storage 事件里 `key`、`oldValue`、`newValue` 分别是什么？",
+    "explanation": "`clear()` 触发的事件里 `key`、`oldValue`、`newValue` 三者全为 `null`——因为它不是针对某个具体键的操作。工程上的直接推论：`e.key === null` 就是「整个存储区被清空」的信号，要按最坏情况处理（如强制登出）。",
+    "tags": ["web-storage", "中级", "clear-event"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "三者全为 `null`",
+        "isCorrect": true,
+        "description": "非针对单键，`key === null` 即整区被清"
+      },
+      {
+        "text": "`key` 为 `\"*\"`，两个 value 为 `null`",
+        "isCorrect": false,
+        "description": "`key` 是 `null` 不是通配符 `\"*\"`"
+      },
+      {
+        "text": "`key` 为空字符串，两个 value 为原值",
+        "isCorrect": false,
+        "description": "三者都是 `null`，不保留原值"
+      },
+      {
+        "text": "`clear()` 不触发 storage 事件",
+        "isCorrect": false,
+        "description": "`clear()` 确实广播事件，只是三字段全 `null`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：storage 事件中，`oldValue` 为 `null` 而 `newValue` 有值、与 `oldValue` 有值而 `newValue` 为 `null`，分别对应什么操作？",
+    "explanation": "`oldValue === null`（新值非空）对应「新增一个此前不存在的键」；`newValue === null`（旧值非空）对应「删除一个已存在的键」。这是「多页签登出同步」的核心信号——监听到 `e.newValue === null` 即知该键被删。（若三者全 `null` 则是 `clear()`。）",
+    "tags": ["web-storage", "中级", "event-null"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "分别是「更新」和「新增」",
+        "isCorrect": false,
+        "description": "更新时 old/new 都有值，对不上题设"
+      },
+      {
+        "text": "分别是「清空」和「刷新」",
+        "isCorrect": false,
+        "description": "清空是三字段全 `null`，且无「刷新」操作"
+      },
+      {
+        "text": "两者都表示读取操作",
+        "isCorrect": false,
+        "description": "读取不触发 storage 事件"
+      },
+      {
+        "text": "分别是「新增键」（`oldValue=null`）和「删除键」（`newValue=null`）",
+        "isCorrect": true,
+        "description": "`null` 位置编码新增/删除，登出同步靠它"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：连续两次 `setItem(\"k\", \"v\")` 写入完全相同的值，第二次会触发 storage 事件吗？",
+    "explanation": "不会。`setItem` 的完整语义是三步：键不存在则新增；存在且值不同则更新；存在且值相同则直接返回（不算修改）。第二次写相同值没有发生任何变化，因此不广播 storage 事件。「重复写同一个值刷不出事件」不是 bug。同理 `removeItem` 删不存在的键也无事件。",
+    "tags": ["web-storage", "中级", "no-op-event"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "会，每次 `setItem` 都触发事件",
+        "isCorrect": false,
+        "description": "无修改就无事件，值相同不广播"
+      },
+      {
+        "text": "不会——值相同即无操作，没有修改就没有事件",
+        "isCorrect": true,
+        "description": "`setItem` 三步语义：值相同直接返回"
+      },
+      {
+        "text": "会，但 `oldValue` 与 `newValue` 相等",
+        "isCorrect": false,
+        "description": "根本不触发，谈不上字段取值"
+      },
+      {
+        "text": "会触发，但只在 `sessionStorage` 上",
+        "isCorrect": false,
+        "description": "与存储类型无关，值相同都不触发"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`JSON.parse(null)` 与 `JSON.parse(\"undefined\")` 的结果分别是什么？",
+    "explanation": "`JSON.parse(null)` 不抛错——`null` 被转成字符串 `\"null\"` 再解析，返回 `null`。而 `JSON.parse(\"undefined\")` 抛 `SyntaxError`（`\"undefined\"` 不是合法 JSON）。所以 `JSON.parse(getItem(missing))` 碰巧不炸（缺键返回 `null`），但这是巧合；一旦库里存了字符串 `\"undefined\"` 或脏 JSON，照样 `SyntaxError`——`parse` 仍须 try-catch。",
+    "tags": ["web-storage", "中级", "json-parse"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者都返回 `null`",
+        "isCorrect": false,
+        "description": "`parse(\"undefined\")` 会抛 `SyntaxError`"
+      },
+      {
+        "text": "两者都抛 `SyntaxError`",
+        "isCorrect": false,
+        "description": "`parse(null)` 不抛错，返回 `null`"
+      },
+      {
+        "text": "`JSON.parse(null)` 抛错，`JSON.parse(\"undefined\")` 返回 `undefined`",
+        "isCorrect": false,
+        "description": "正好反了，抛错的是 `parse(\"undefined\")`"
+      },
+      {
+        "text": "`JSON.parse(null)` 返回 `null`（不抛错），`JSON.parse(\"undefined\")` 抛 `SyntaxError`",
+        "isCorrect": true,
+        "description": "`null` 被转成 `\"null\"` 解析；`\"undefined\"` 非法 JSON"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：变量意外为 `undefined` 时执行 `setItem(\"token\", undefined)`，会埋下什么隐患？",
+    "explanation": "`undefined` 被 `String()` 转成字符串 `\"undefined\"` 存入。几天后另一处 `JSON.parse(getItem(\"token\"))` 会抛 `SyntaxError`——因为 `\"undefined\"` 不是合法 JSON。典型的「写侧的 bug 在读侧爆炸」，栈里看不到肇事者。防御在写侧：值可能缺失时要么不写，要么先拦截。",
+    "tags": ["web-storage", "中级", "undefined-string"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "存进的是字符串 `\"undefined\"`，日后 `JSON.parse` 会抛 `SyntaxError`",
+        "isCorrect": true,
+        "description": "写侧 bug 在读侧爆炸，防御在写侧拦截"
+      },
+      {
+        "text": "`setItem` 立刻抛 `TypeError`，无法写入",
+        "isCorrect": false,
+        "description": "`undefined` 被字符串化写入，当场不报错"
+      },
+      {
+        "text": "存进真正的 `undefined`，读回也是 `undefined`",
+        "isCorrect": false,
+        "description": "Storage 只存字符串，存的是 `\"undefined\"`"
+      },
+      {
+        "text": "该键被自动删除（等价于 `removeItem`）",
+        "isCorrect": false,
+        "description": "不会删键，反而写入了字符串 `\"undefined\"`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：把含 `Date` 字段的对象 `JSON.stringify` 存入、再 `JSON.parse` 读回，`Date` 字段变成了什么？",
+    "explanation": "`JSON.stringify` 把 `Date` 序列化为 ISO 8601 字符串，`JSON.parse` 回来是普通字符串而非 `Date` 对象——下游一调 `getTime()` 就报错。这是最高频的「JSON 丢形」现场。恢复姿势：用 `JSON.parse` 的 reviver 按键名 `new Date(value)`，或干脆一开始就存时间戳数字。",
+    "tags": ["web-storage", "中级", "date"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仍是 `Date` 对象，类型无损",
+        "isCorrect": false,
+        "description": "JSON 往返丢类型，读回不再是 `Date`"
+      },
+      {
+        "text": "变成 ISO 8601 字符串（不再是 `Date`），需 reviver 或存时间戳恢复",
+        "isCorrect": true,
+        "description": "最高频丢形现场，`getTime()` 会炸"
+      },
+      {
+        "text": "变成毫秒时间戳数字",
+        "isCorrect": false,
+        "description": "`stringify` 产出的是 ISO 字符串不是数字"
+      },
+      {
+        "text": "变成 `null`",
+        "isCorrect": false,
+        "description": "`Date` 可序列化，不会丢成 `null`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：用 `length` + `key(i)` 遍历存储时，关于键的顺序，正确的认识是？",
+    "explanation": "键的顺序由浏览器实现决定，规范只保证「键数不变期间顺序稳定」，不同浏览器（甚至同一浏览器不同会话）顺序可以不同。凡是依赖「第 0 个键是谁」「键按插入顺序排列」的代码都是错的。遍历本身用 `length` + `key(i)` 是正统，但别对顺序作跨浏览器假设。",
+    "tags": ["web-storage", "中级", "iteration-order"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "键严格按插入顺序（先进先出）排列",
+        "isCorrect": false,
+        "description": "规范不保证插入顺序，别依赖"
+      },
+      {
+        "text": "键按字母序自动排序",
+        "isCorrect": false,
+        "description": "无自动排序，顺序由实现决定"
+      },
+      {
+        "text": "键的顺序由实现决定，不保证跨浏览器一致，别依赖",
+        "isCorrect": true,
+        "description": "只保证键数不变期间稳定，跨浏览器可不同"
+      },
+      {
+        "text": "键按最近访问时间排序（LRU）",
+        "isCorrect": false,
+        "description": "不存在 LRU 排序，纯属虚构"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：在 `for (let i = 0; i < localStorage.length; i++)` 循环中直接 `removeItem(localStorage.key(i))` 删除匹配键，会有什么问题？",
+    "explanation": "边遍历边删会漏项——删除一个键后，后面的键索引整体前移，而 `i++` 又前进一位，于是跳过了紧挨的下一个键。正确姿势是「两轮」：第一轮只把要删的键名收集进数组快照，第二轮再逐个 `removeItem`。",
+    "tags": ["web-storage", "中级", "iterate-delete"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "没问题，会正确删除所有匹配键",
+        "isCorrect": false,
+        "description": "索引前移会导致漏删，并不正确"
+      },
+      {
+        "text": "会抛 `ConcurrentModificationError`",
+        "isCorrect": false,
+        "description": "JS 无此错误，遍历删除只是静默漏项"
+      },
+      {
+        "text": "会把不匹配的键也一起删掉",
+        "isCorrect": false,
+        "description": "不会误删，问题是漏删匹配键"
+      },
+      {
+        "text": "会漏删——删除使后续索引前移，`i++` 跳过下一个键；应先收集快照再删",
+        "isCorrect": true,
+        "description": "两轮法：先收集键名快照，再逐个删"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：一个页面里同时跑着你的代码和第三方脚本，都用同一个 `localStorage`。要清掉「只属于你的」键，正确做法是？",
+    "explanation": "同源的第三方脚本、微前端子应用与你共用同一个 `localStorage`，裸调 `clear()` 会把它们的键一并清掉（事故）。正确做法：给自己的键统一加命名空间前缀（如 `myapp:`），清理时用 `length` + `key(i)` 收集本前缀下的键名快照再逐个删除——绝不裸 `clear()`。",
+    "tags": ["web-storage", "中级", "namespace"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "给自己的键加统一前缀，遍历 `key(i)` 只删本前缀的键，绝不裸调 `clear()`",
+        "isCorrect": true,
+        "description": "命名空间前缀 + 定向删除，不误伤他人"
+      },
+      {
+        "text": "直接 `localStorage.clear()`，简单高效",
+        "isCorrect": false,
+        "description": "会连第三方脚本的键一起清，是事故"
+      },
+      {
+        "text": "调 `sessionStorage.clear()` 就能只清自己的",
+        "isCorrect": false,
+        "description": "清的是另一个存储区，与目标无关"
+      },
+      {
+        "text": "用 `delete localStorage` 删除整个对象",
+        "isCorrect": false,
+        "description": "`delete` 删不掉全局存储对象，做法无效"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：Web Storage 每次读写都同步阻塞主线程。对「编辑器草稿」这类每秒变多次的高频写，最合适的优化是？",
+    "explanation": "高频写应「防抖/节流合并落盘」——停止变化若干毫秒后才真正 `setItem`，把中间态合并掉，而非每次键入都写。配套姿势还有「启动时一次读入内存、之后读走内存写透回存储」，以及「别把所有状态塞成一个巨型 JSON 键」（小改动要整串重序列化）。",
+    "tags": ["web-storage", "中级", "performance"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次键入都立即 `setItem`，保证不丢",
+        "isCorrect": false,
+        "description": "高频同步写正是卡顿来源，应合并"
+      },
+      {
+        "text": "防抖/节流合并落盘——停止变化一段时间后才写一次",
+        "isCorrect": true,
+        "description": "合并中间态，把同步开销压到最低"
+      },
+      {
+        "text": "改用 `sessionStorage`，它是异步的不阻塞",
+        "isCorrect": false,
+        "description": "`sessionStorage` 同样同步阻塞，非异步"
+      },
+      {
+        "text": "把整份编辑器状态塞进一个巨型 JSON 键，一次写完",
+        "isCorrect": false,
+        "description": "巨型单键每次小改都整串重序列化，更慢"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：用浏览器「复制标签页」功能或 `window.open` 打开同源新页签时，新页签的 `sessionStorage` 是什么状态？",
+    "explanation": "普通手动新开的页签得到空副本；但经「复制标签页」或有 opener 的 `window.open` 打开时，新页签会带一份源页签 `sessionStorage` 的初始快照。关键在「初始」二字——拷贝完成那一刻起两份就各自独立，之后各改各的，互不同步。",
+    "tags": ["web-storage", "中级", "session-snapshot"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "始终与源页签实时双向同步",
+        "isCorrect": false,
+        "description": "只带初始快照，之后不再同步"
+      },
+      {
+        "text": "永远是空的，不会带任何数据",
+        "isCorrect": false,
+        "description": "手动新开才是空副本；复制/opener 带快照"
+      },
+      {
+        "text": "带一份初始快照，之后两份各自独立、互不同步",
+        "isCorrect": true,
+        "description": "关键在「初始」，拷贝后各改各的"
+      },
+      {
+        "text": "与源页签共享同一份，改一处两处都变",
+        "isCorrect": false,
+        "description": "session 按页签隔离，不共享同一份"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`sessionStorage` 的改动能通过 storage 事件通知到「另一个页签」吗？",
+    "explanation": "不能。不同页签的 `sessionStorage` 是相互独立的副本，改这份不可能通知那份。`sessionStorage` 的 storage 事件只在「同一页签内」的同源文档之间传播（典型是页面与它的同源 iframe）。「跨页签同步」是 `localStorage` 的专利。",
+    "tags": ["web-storage", "中级", "session-event"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "能，与 `localStorage` 一样跨页签广播",
+        "isCorrect": false,
+        "description": "跨页签同步是 local 专利，session 做不到"
+      },
+      {
+        "text": "能，但只在无痕模式下",
+        "isCorrect": false,
+        "description": "与无痕模式无关，各页签始终独立副本"
+      },
+      {
+        "text": "不能，且 `sessionStorage` 根本不触发 storage 事件",
+        "isCorrect": false,
+        "description": "session 会触发事件，只是限同页签内传播"
+      },
+      {
+        "text": "不能——各页签独立副本；`sessionStorage` 的事件只在同页签内（如同源 iframe）传播",
+        "isCorrect": true,
+        "description": "同页签多文档可收，跨页签收不到"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：执行 `localStorage.setItem = \"hello\"` 后，`localStorage.getItem(\"setItem\")` 与 `typeof localStorage.setItem` 分别是什么？",
+    "explanation": "`Storage` 带「命名 setter」，任何属性赋值都会真的写进存储——所以 `localStorage.getItem(\"setItem\")` 读回 `\"hello\"`（数据确实在库里）。但属性式「读」时原型成员优先，`localStorage.setItem` 依然是那个方法，`typeof` 为 `\"function\"`。写得进、读不回，这就是原型遮蔽导致的读写不对称，也是「一律用方法式」的实证理由。",
+    "tags": ["web-storage", "高级", "prototype-shadow"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者都是 `\"hello\"`",
+        "isCorrect": false,
+        "description": "属性式读时原型方法优先，读不回 `\"hello\"`"
+      },
+      {
+        "text": "`getItem(\"setItem\")` 是 `\"hello\"`（写进了库），但 `typeof localStorage.setItem` 是 `\"function\"`（读回的是方法）",
+        "isCorrect": true,
+        "description": "写得进读不回，原型遮蔽下读写不对称"
+      },
+      {
+        "text": "赋值直接抛 `TypeError`，不允许覆盖方法",
+        "isCorrect": false,
+        "description": "命名 setter 允许赋值，不抛错"
+      },
+      {
+        "text": "两者都是 `\"function\"`——赋值被忽略",
+        "isCorrect": false,
+        "description": "赋值没被忽略，`getItem` 能读到 `\"hello\"`"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`clear()` 后依次 `setItem(\"setItem\", \"hello\")` 和 `setItem(\"theme\", \"dark\")`，此时 `localStorage.length` 与 `Object.keys(localStorage)` 分别是什么？",
+    "explanation": "`length` 为 `2`（两个键都数得到）；但 `Object.keys(localStorage)` 只返回 `[\"theme\"]`——与原型成员同名的键 `\"setItem\"` 被隐藏了。命名属性的可见性规则规定「原型链上已有同名成员时，命名属性不暴露」，`Object.keys` 自然看不见。结论：批量操作（导出、清理、迁移）一律用 `length` + `key(i)`。",
+    "tags": ["web-storage", "高级", "object-keys"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`length` 为 `2`，但 `Object.keys` 只有 `[\"theme\"]`——与原型成员同名的 `\"setItem\"` 键被枚举隐藏",
+        "isCorrect": true,
+        "description": "命名属性遇同名原型成员不暴露，批量用 `key(i)`"
+      },
+      {
+        "text": "两者都反映 2 个键，完全一致",
+        "isCorrect": false,
+        "description": "`Object.keys` 有盲区，数不到 `\"setItem\"` 键"
+      },
+      {
+        "text": "`length` 为 1（`\"setItem\"` 覆盖了方法不算键），`Object.keys` 为 `[\"theme\"]`",
+        "isCorrect": false,
+        "description": "`length` 是 2，同名键照样计数"
+      },
+      {
+        "text": "`setItem(\"setItem\", ...)` 会抛错，根本存不进去",
+        "isCorrect": false,
+        "description": "同名键能正常写入，只是枚举时被隐藏"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：把 `Map`、`Set`、`Blob` 这类对象放进要 `JSON.stringify` 的结构里存储，读回来会变成什么？",
+    "explanation": "`JSON.stringify` 对 `Map` / `Set` / `RegExp` / `Error` / `Blob` / `ArrayBuffer` 一律产出 `\"{}\"`，读回是空对象——数据全丢（`TypedArray` 则变成索引键对象）。这类「静默变形」比抛错更危险：写时一切正常，几周后读出结构对不上。需要保形存取 `Date`/`Map`/二进制，那是 IndexedDB 结构化克隆的管辖区。",
+    "tags": ["web-storage", "高级", "json-lossy"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原样保留，`Map` 读回仍是 `Map`",
+        "isCorrect": false,
+        "description": "JSON 无法表达 `Map`，读回是空对象"
+      },
+      {
+        "text": "抛 `TypeError`，`JSON.stringify` 拒绝这些类型",
+        "isCorrect": false,
+        "description": "不抛错，而是静默序列化成 `\"{}\"`"
+      },
+      {
+        "text": "变成数组 `[]`",
+        "isCorrect": false,
+        "description": "变成的是空对象 `\"{}\"` 不是空数组"
+      },
+      {
+        "text": "变成空对象 `\"{}\"`——数据全丢（保形需求应改用 IndexedDB）",
+        "isCorrect": true,
+        "description": "静默变形最危险，保形去 IndexedDB"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`NaN` / `Infinity` 与 `BigInt` / 循环引用，在 `JSON.stringify` 时的行为有何本质不同？",
+    "explanation": "`NaN` 和 `Infinity` 被静默转成 `null`（无声变形，最危险）；而 `BigInt` 和循环引用会当场抛 `TypeError`（显式炸，你立刻知道）。工程结论：静默丢比抛错更需警惕——放进 Storage 的对象形状要保持「纯 JSON」（字符串、有限数字、布尔、`null`、普通对象、数组），其余先手动转换。",
+    "tags": ["web-storage", "高级", "json-throw"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "四者都被转成 `null`",
+        "isCorrect": false,
+        "description": "`BigInt`/循环引用会抛错，不是转 `null`"
+      },
+      {
+        "text": "四者都抛 `TypeError`",
+        "isCorrect": false,
+        "description": "`NaN`/`Infinity` 是静默转 `null` 不抛错"
+      },
+      {
+        "text": "`NaN`/`Infinity` 静默变 `null`；`BigInt`/循环引用抛 `TypeError`",
+        "isCorrect": true,
+        "description": "静默变形 vs 显式炸，前者更需警惕"
+      },
+      {
+        "text": "`NaN`/`Infinity` 抛错；`BigInt`/循环引用变 `null`",
+        "isCorrect": false,
+        "description": "正好反了，抛错的是后一组"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：在 `setItem` 的 catch 块里，如何准确判断「这确实是配额超限」而非其他异常？",
+    "explanation": "MDN 官方判错姿势是 `e instanceof DOMException && e.name === \"QuotaExceededError\"`。这一步必要，因为访问存储还可能抛 `SecurityError`（禁站点数据、不透明源）——两者要分开处理。确认是配额问题后再执行「清理可再生数据→重试→降级」。",
+    "tags": ["web-storage", "高级", "quota-detect"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`e instanceof DOMException && e.name === \"QuotaExceededError\"`",
+        "isCorrect": true,
+        "description": "MDN 官方判错姿势，精确区分配额错"
+      },
+      {
+        "text": "`e.code === 22`（唯一可靠判据，跨浏览器一致）",
+        "isCorrect": false,
+        "description": "数字 code 已被废弃，官方用 `e.name`"
+      },
+      {
+        "text": "`e.message.includes(\"quota\")`（匹配错误文案）",
+        "isCorrect": false,
+        "description": "文案随浏览器/语言变化，不可靠"
+      },
+      {
+        "text": "无需判断，catch 到的一定是配额错误",
+        "isCorrect": false,
+        "description": "还可能是 `SecurityError`，须区分"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：要实现「任一页签登出，其余同源页签自动跳登录页」，在 storage 监听器里应如何判断？",
+    "explanation": "登出时 `removeItem(\"session:alive\")`，其他页签收到的事件 `e.newValue === null`（键被删）即登出信号；`clear()` 场景则是 `e.key === null`（整区清空），也按登出处理。发起页因「不通知自己」要自行跳转。这正是 `null` 字段作为「操作编码」的实战用法。",
+    "tags": ["web-storage", "高级", "cross-tab"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "判断 `e.newValue === \"\"`（空字符串表示登出）",
+        "isCorrect": false,
+        "description": "删除时 `newValue` 是 `null` 不是空串"
+      },
+      {
+        "text": "判断 `e.newValue === null`（键被删）或 `e.key === null`（`clear()`），即登出信号",
+        "isCorrect": true,
+        "description": "`null` 位置编码删除/清空，正是登出信号"
+      },
+      {
+        "text": "判断 `e.type === \"logout\"`",
+        "isCorrect": false,
+        "description": "storage 事件的 `type` 恒为 `\"storage\"`"
+      },
+      {
+        "text": "`sessionStorage` 的 storage 事件跨页签广播，监听它即可",
+        "isCorrect": false,
+        "description": "session 不跨页签，跨页签同步得用 local"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：用 TypeScript 给 Storage 做「键名拼错、值类型不符在编译期就报错」的封装，核心思路是什么？",
+    "explanation": "声明一张 Schema 接口把「键名 → 值类型」的映射写出来（如 `{ \"app:theme\": \"light\" | \"dark\"; \"app:fontSize\": number }`），再让 `get`/`set` 走泛型约束 `K extends keyof Schema & string`。于是键名拼写错误、值类型不符都在编译期暴露，JSON 往返也被收口到一处。`Storage` 通过构造函数注入还便于单测传内存实现。",
+    "tags": ["web-storage", "高级", "typescript"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把所有值都声明为 `any`，运行时再校验",
+        "isCorrect": false,
+        "description": "`any` 放弃了编译期检查，与目标相悖"
+      },
+      {
+        "text": "用 `as unknown as T` 强转绕过类型检查",
+        "isCorrect": false,
+        "description": "强转只是骗过编译器，拼错照样漏"
+      },
+      {
+        "text": "给 `localStorage` 全局打 `declare` 补丁，改写 `getItem` 返回类型",
+        "isCorrect": false,
+        "description": "全局改签名污染面大且键名仍不受约束"
+      },
+      {
+        "text": "声明「键名→值类型」的 Schema 接口，`get`/`set` 走泛型约束，编译期即报错",
+        "isCorrect": true,
+        "description": "Schema 映射 + 泛型约束，拼错与类型不符都在编译期暴露"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：Web Storage 没有原生过期机制，要给键实现 TTL（存活时限），通用做法是？",
+    "explanation": "把值包进带过期时间戳的「信封」`{ v: 值, e: 过期时间戳 }` 再 `JSON.stringify` 落盘；读时检查 `Date.now() > envelope.e`，过期就 `removeItem` 并当作不存在（惰性过期）。要点是「惰性」——没被再次读到的过期键会一直占配额，补救时机是启动全量扫一轮，或 `setItem` 抛配额错时清一轮过期键腾位。",
+    "tags": ["web-storage", "高级", "ttl"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "调 `setItem(key, value, ttl)`——第三个参数就是过期时间",
+        "isCorrect": false,
+        "description": "`setItem` 只接受两个参数，无 TTL 形参"
+      },
+      {
+        "text": "用 `setTimeout` 到点自动 `removeItem`",
+        "isCorrect": false,
+        "description": "定时器随页面刷新丢失，不能持久化过期"
+      },
+      {
+        "text": "把值包成带过期时间戳的信封 `{ v, e }` 存，读时检查过期即删（惰性过期）",
+        "isCorrect": true,
+        "description": "信封封装 + 读时惰性过期，通用做法"
+      },
+      {
+        "text": "`sessionStorage` 自带 TTL，直接用它",
+        "isCorrect": false,
+        "description": "session 是关页清，不是按时限过期"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：出现下列哪种情况时，应考虑从 Web Storage 迁移到 IndexedDB？",
+    "explanation": "出现任一信号就该迁 IndexedDB：单值几十 KB 以上或总量逼近 MiB 级（同步开销 + 5 MiB 天花板）、需要保形存储 `Date`/`Map`/二进制、需要按字段索引查询/排序/分页、要在 Worker/Service Worker 里访问、写入频率高到防抖也救不了。Web Storage 的定位是「小体量、结构扁平、同步读写」的偏好类数据。",
+    "tags": ["web-storage", "高级", "indexeddb"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "需要保形存二进制/`Date`、要在 Worker 里访问、要按字段索引查询、或数据逼近 MiB 级",
+        "isCorrect": true,
+        "description": "这些正是 Web Storage 的先天短板，该升级"
+      },
+      {
+        "text": "只要数据超过 3 个键就该迁",
+        "isCorrect": false,
+        "description": "键数量不是迁移判据，扁平小数据继续用"
+      },
+      {
+        "text": "需要跨页签同步时——`localStorage` 做不到",
+        "isCorrect": false,
+        "description": "跨页签同步恰恰是 `localStorage` 的强项"
+      },
+      {
+        "text": "任何时候 IndexedDB 都更优，Web Storage 已过时应弃用",
+        "isCorrect": false,
+        "description": "小体量偏好数据 Web Storage 更顺手，未过时"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：`SecurityError` 与 `QuotaExceededError` 分别在什么时候抛出，本质区别是什么？",
+    "explanation": "`QuotaExceededError` 是「存储可用但满了」——`setItem` 写入超配额时同步抛。`SecurityError` 是「根本不让你碰」——用户禁用站点数据、代码运行在 `data:` 等不透明源时，连访问 `window.localStorage` 属性本身就抛（还没到 `setItem`）。所以严谨封装连「取到 storage 对象」这步都要包进 try-catch，且判错要用 `e.name` 精确区分二者。",
+    "tags": ["web-storage", "专家", "exceptions"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "两者是同一个错误的不同别名",
+        "isCorrect": false,
+        "description": "是两类不同异常，触发时机与含义都不同"
+      },
+      {
+        "text": "`QuotaExceededError` 是「可用但满了」（`setItem` 时）；`SecurityError` 是「不让碰」（访问 `localStorage` 属性本身就抛）",
+        "isCorrect": true,
+        "description": "满 vs 禁用，判错要用 `e.name` 精确区分"
+      },
+      {
+        "text": "`SecurityError` 是满了，`QuotaExceededError` 是被禁用（正好相反）",
+        "isCorrect": false,
+        "description": "两者含义说反了"
+      },
+      {
+        "text": "两者都只在 `setItem` 时抛，访问属性从不抛错",
+        "isCorrect": false,
+        "description": "`SecurityError` 在访问 `localStorage` 属性时就可能抛"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：网上老文章说「隐私/无痕模式下 localStorage 写不进去」，用现代浏览器验证，这个说法准确吗？",
+    "explanation": "这是「历史 vs 现状」的经典坑。历史侧：旧版 Safari 隐私模式下 `localStorage` 对象存在、`getItem` 正常，但配额为 0——任何 `setItem` 一律抛 `QuotaExceededError`，老经验说的就是它。现状侧：现代浏览器（含 Safari）隐私窗口内 `localStorage` 可正常读写，只是会话结束（关闭隐私窗口）即全部清除，表现如 `sessionStorage`。所以那句老话描述的是已成历史的行为。",
+    "tags": ["web-storage", "专家", "safari"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "准确——现代浏览器隐私模式下 `localStorage` 仍然写不进",
+        "isCorrect": false,
+        "description": "现代浏览器可正常写，那是旧行为"
+      },
+      {
+        "text": "准确——隐私模式下 `localStorage` 对象根本不存在",
+        "isCorrect": false,
+        "description": "对象一直存在，历史坑是配额为 0"
+      },
+      {
+        "text": "不准确——现代浏览器隐私模式下 `localStorage` 永久保存",
+        "isCorrect": false,
+        "description": "隐私模式关窗即清，并非永久保存"
+      },
+      {
+        "text": "不准确——那是旧 Safari「配额 0」的历史行为；现代浏览器可正常写，只是关窗即清",
+        "isCorrect": true,
+        "description": "历史配额 0 vs 现状可写关窗即清"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：MDN 官方的 `storageAvailable` 检测函数在 catch 块里，为什么光判断 `e.name === \"QuotaExceededError\"` 还不够、还要加 `storage.length !== 0`？",
+    "explanation": "因为旧 Safari 隐私模式的「配额 0」也抛 `QuotaExceededError`，但那时存储根本不可用。区分办法：抛配额错「且库里确实已有数据」（`length !== 0`）说明存储活着只是满了，判为可用；抛配额错但库恒空（`length === 0`）就是「配额为 0」的不可用形态。此外 `storage = window[type]` 这步本身要放进 try（可能抛 `SecurityError`），`SecurityError` 直接落到不可用。",
+    "tags": ["web-storage", "专家", "feature-detection"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "旧 Safari 隐私模式「配额 0」也抛该错，但存储不可用；`length !== 0` 用来区分「真满（可用）」与「配额 0（不可用）」",
+        "isCorrect": true,
+        "description": "有存量=活着只是满了；库恒空=配额 0 不可用"
+      },
+      {
+        "text": "`length !== 0` 是为了确认存储没被清空",
+        "isCorrect": false,
+        "description": "目的是区分「真满」与「配额 0」，非防清空"
+      },
+      {
+        "text": "多此一举，判断 `e.name` 就足够了",
+        "isCorrect": false,
+        "description": "配额 0 也抛同名错，仅判 `name` 会误判"
+      },
+      {
+        "text": "`length !== 0` 是为了绕过 `SecurityError`",
+        "isCorrect": false,
+        "description": "`SecurityError` 由 `instanceof`/`name` 判别处理"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：给存储结构做版本迁移（如 `v1→v2→v3` 逐版本迁移函数链），为什么每个迁移函数必须「幂等」？",
+    "explanation": "存储会活得比代码久，方案是「版本号键 + 逐版本迁移函数链」。幂等是硬要求，因为版本号写入可能失败、迁移中途用户可能关页，下次启动会重跑部分迁移——每个迁移函数都要做到「已迁过再跑一遍不出错」。数据不值钱时也可以奢侈解法：结构对不上直接清掉重建。",
+    "tags": ["web-storage", "专家", "migration"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "幂等能让迁移并行执行，提升性能",
+        "isCorrect": false,
+        "description": "迁移是同步串行的，与并行性能无关"
+      },
+      {
+        "text": "幂等是为了让迁移函数返回布尔值",
+        "isCorrect": false,
+        "description": "幂等是「重跑无害」，与返回值无关"
+      },
+      {
+        "text": "版本号写失败或迁移中途关页会导致重跑，幂等保证「重跑无害」",
+        "isCorrect": true,
+        "description": "中断/写号失败会重跑，须重跑不出错"
+      },
+      {
+        "text": "幂等能自动回滚失败的迁移",
+        "isCorrect": false,
+        "description": "幂等不提供回滚，只保证重跑安全"
+      }
+    ]
+  },
+  {
+    "stem": "Web Storage API：在 SSR（Nuxt/Next 等）项目里使用 `localStorage`，为什么既要 `typeof window` 守卫、又要等组件挂载后（`onMounted`/`useEffect`）再读？",
+    "explanation": "两层原因。其一防炸：服务端没有 `window`，模块顶层一句 `localStorage.getItem` 就让 SSR 直接抛错——所以要 `typeof window === \"undefined\"` 守卫，且模块顶层不碰 storage。其二防水合错位：服务端渲染的 HTML 不可能包含用户本地 storage 值，客户端首帧若直接按 storage 渲染会与服务端产物对不上——所以首帧用默认值，挂载后（只在浏览器执行）再从 storage 恢复。",
+    "tags": ["web-storage", "专家", "ssr"],
+    "categories": [
+      ["技术方向", "Web Storage API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "纯粹为了性能，与正确性无关",
+        "isCorrect": false,
+        "description": "两者都是正确性问题：防炸与防水合错位"
+      },
+      {
+        "text": "`typeof window` 防「服务端无 `window`」抛错；挂载后再读防「首帧按 storage 渲染与服务端 HTML 对不上」的水合错位",
+        "isCorrect": true,
+        "description": "一防 SSR 抛错，二防客户端首帧水合错位"
+      },
+      {
+        "text": "因为 `localStorage` 在服务端是异步的，要等挂载",
+        "isCorrect": false,
+        "description": "服务端根本没有 `localStorage`，谈不上异步"
+      },
+      {
+        "text": "只需 `typeof window` 守卫即可，挂载后再读是多余的",
+        "isCorrect": false,
+        "description": "首帧直接读 storage 会导致水合错位，须等挂载"
+      }
+    ]
+  }
+]
