@@ -1,0 +1,1800 @@
+[
+  {
+    "stem": "Fetch API：`fetch()` 函数的准确技术定位与返回值是下列哪一项？",
+    "explanation": "Fetch API 是 WHATWG Fetch 标准定义的浏览器原生网络请求接口，`fetch()` 调用后返回 `Promise<Response>`，与 `async/await` 原生衔接。核心 API 自 2017-03 起 Baseline Widely available 多年全绿；Node 18+（基于 undici 实现）、Deno、Bun 及各边缘运行时内置同一套接口，使它成为跨端统一的网络层标准——今天写 `fetch()` 的代码是所有 JS 运行时的公约数。它是对「网络请求」的全新设计，不基于 XMLHttpRequest，也不需要任何安装引入。",
+    "tags": ["fetch", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "jQuery `$.ajax` 的浏览器内置版，底层仍基于 XMLHttpRequest 实现",
+        "isCorrect": false,
+        "description": "fetch 是 WHATWG 的全新标准设计，与 XHR 是并列的两套体系，不基于 XHR"
+      },
+      {
+        "text": "需要 npm 安装的官方网络库，浏览器与 Node 都要显式引入后才能使用",
+        "isCorrect": false,
+        "description": "浏览器原生全局函数，Node 18+/Deno/Bun 也内置，零安装零引入"
+      },
+      {
+        "text": "WHATWG Fetch 标准定义的原生网络请求接口，返回 `Promise<Response>`，浏览器与 Node 18+/Deno/Bun 同款",
+        "isCorrect": true,
+        "description": "标准定位：Promise 化的原生接口，跨端统一的网络层公约数"
+      },
+      {
+        "text": "仅 Service Worker 内可用的专用请求接口，页面主线程仍要用 XHR",
+        "isCorrect": false,
+        "description": "主线程、Web Worker、SW 全都可用；反倒是 SW 里没有 XHR"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：服务器返回 404 或 500 状态码时，`fetch()` 返回的 Promise 会怎样？",
+    "explanation": "这是 fetch 的头号语义：Promise 只反映「网络对话是否完成」，与业务成败无关。服务器哪怕回了 404/500，对话也算完成——Promise 照样 fulfill，只是 `response.ok === false`、`response.status` 为对应错误码。只有网络层失败（断网、DNS 失败、CORS 被拦、URL 非法等）才 reject（抛 `TypeError`）。因此 `if (!response.ok) throw ...` 的自查一步不能省，这是新手第一大坑。",
+    "tags": ["fetch", "入门", "http-errors"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "reject，抛出带状态码的 HTTPError，在 catch 里按状态码分流",
+        "isCorrect": false,
+        "description": "原生 fetch 没有 HTTPError，HTTP 错误码根本不会 reject；自动抛非 2xx 是封装库行为"
+      },
+      {
+        "text": "照样 fulfill，`response.ok` 为 `false`——必须自查 `ok` 或 `status`",
+        "isCorrect": true,
+        "description": "HTTP 层错误不 reject，手查 `response.ok` 是不可省略的样板步骤"
+      },
+      {
+        "text": "404 会 reject 而 500 会 fulfill，客户端错误与服务端错误处理不同",
+        "isCorrect": false,
+        "description": "4xx 与 5xx 一视同仁，都 fulfill，不存在区别对待"
+      },
+      {
+        "text": "取决于 `mode` 选项：`cors` 模式 reject，`same-origin` 模式 fulfill",
+        "isCorrect": false,
+        "description": "该语义与 mode 无关，任何模式下 HTTP 错误码都不 reject"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`response.ok` 在什么条件下为 `true`？",
+    "explanation": "`response.ok` 是 `response.status` 处于 200–299 区间的布尔快捷判断——判成败用它，别手比 `=== 200`（201 Created、204 No Content 等同样是成功）。304 Not Modified 不在 2xx 区间内，`ok` 为 `false`，属于「不算错也不算 ok」；`no-cors` 跨域产生的 opaque 响应 status 恒为 0，`ok` 恒为 `false`。",
+    "tags": ["fetch", "入门", "response-ok"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "status 恰好等于 200 时",
+        "isCorrect": false,
+        "description": "整个 2xx 区间都为 true，只认 200 会误伤 201/204 等成功响应"
+      },
+      {
+        "text": "status 在 200–399 之间，重定向与 304 也算 ok",
+        "isCorrect": false,
+        "description": "3xx 不在 ok 范围内，304 的 ok 为 false"
+      },
+      {
+        "text": "只要 `fetch()` 没有抛出异常，`ok` 就为 `true`",
+        "isCorrect": false,
+        "description": "404/500 不抛异常但 ok 为 false，两者是独立维度"
+      },
+      {
+        "text": "status 在 200–299 区间时，如 200/201/204 均为 `true`",
+        "isCorrect": true,
+        "description": "MDN 口径：ok 即 status 落在 200–299 的布尔快捷方式"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：用 `fetch()` 发送 JSON 的 POST 请求，下列哪组配置是完整且正确的？",
+    "explanation": "POST JSON 三件缺一不可：`method: \"POST\"`、`headers: { \"Content-Type\": \"application/json\" }`、`body: JSON.stringify(data)`。fetch 是刻意保持低层的 API：body 不会自动序列化（直接传对象会被 `toString()` 成 `[object Object]`），`Content-Type` 也不会自动设为 JSON——这两件都要手动做，这是它与 Axios 等封装库的显著差别。",
+    "tags": ["fetch", "入门", "post-json"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`method: \"POST\"` + 手动设 `Content-Type: application/json` + `body: JSON.stringify(data)`",
+        "isCorrect": true,
+        "description": "三件齐备：方法、内容类型头、手动序列化的 body，一个都不能少"
+      },
+      {
+        "text": "`method: \"POST\"` + `body: data`——fetch 会自动序列化对象并设好 Content-Type",
+        "isCorrect": false,
+        "description": "不会自动序列化：对象会被 toString 成 `[object Object]`，自动 JSON 是封装库的能力"
+      },
+      {
+        "text": "`method: \"POST\"` + `json: data`——fetch 原生支持 json 快捷选项",
+        "isCorrect": false,
+        "description": "原生没有 json 选项，那是 ky/ofetch 等封装库提供的糖"
+      },
+      {
+        "text": "把数据放进 `params` 选项，fetch 自动决定放查询串还是请求体",
+        "isCorrect": false,
+        "description": "原生没有 params 选项，查询串要自己拼进 URL"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：给 GET 请求传参数，下列说法正确的是？",
+    "explanation": "规范规定 GET/HEAD 请求不能带 body——给 GET 塞 body 会直接抛 `TypeError`，这是硬性禁止而非「不推荐」。GET 传参的正确方式是把参数拼进 URL 查询串，标准姿势是用 `URLSearchParams` 构造（自动处理编码），拼接到 URL 的问号之后。",
+    "tags": ["fetch", "入门", "get-params"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把参数对象传给 `body`，浏览器自动把它转成查询串",
+        "isCorrect": false,
+        "description": "GET/HEAD 带 body 直接抛 TypeError，不存在自动转换"
+      },
+      {
+        "text": "GET 可以带 body，只是语义上不推荐",
+        "isCorrect": false,
+        "description": "是硬性禁止：规范规定 GET/HEAD 带 body 抛 TypeError"
+      },
+      {
+        "text": "GET/HEAD 带 body 会抛 `TypeError`，参数应该用 `URLSearchParams` 拼进 URL 查询串",
+        "isCorrect": true,
+        "description": "查询串是 GET 传参的唯一通道，URLSearchParams 自动处理编码"
+      },
+      {
+        "text": "必须手动对每个参数做 `encodeURIComponent` 再拼接字符串，平台没有现成工具",
+        "isCorrect": false,
+        "description": "`URLSearchParams` 就是现成工具，构造时自动完成编码"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：用 `FormData` 作为 body 上传文件时，`Content-Type` 请求头应该怎么处理？",
+    "explanation": "用 `FormData` 作 body 时，浏览器会自动生成 `multipart/form-data` 类型头，并附带本次请求专用的 boundary 分隔符。如果手写 `Content-Type: multipart/form-data`，会因为缺少 boundary 导致服务端无法解析请求体——这是文件上传的高频事故。正确做法：完全不设 Content-Type，交给浏览器。",
+    "tags": ["fetch", "入门", "formdata"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "必须手动设置 `Content-Type: multipart/form-data`，否则服务端不认",
+        "isCorrect": false,
+        "description": "手写恰恰会丢 boundary，服务端反而解析失败"
+      },
+      {
+        "text": "不要手动设置——浏览器会自动生成带 boundary 的 `multipart/form-data`",
+        "isCorrect": true,
+        "description": "boundary 是每次请求动态生成的，只有浏览器能正确写全"
+      },
+      {
+        "text": "设置成 `application/octet-stream`，文件上传统一用这个类型",
+        "isCorrect": false,
+        "description": "FormData 对应 multipart 编码，octet-stream 会让服务端按原始字节流误解析"
+      },
+      {
+        "text": "设置成 `application/json`，FormData 会被自动序列化为 JSON 发送",
+        "isCorrect": false,
+        "description": "FormData 不会转 JSON，这样设置类型与实际编码完全不符"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：下列哪组场景会导致 `fetch()` 返回的 Promise 以 `TypeError` reject？",
+    "explanation": "`fetch()` 在网络层失败时 reject，错误类型是 `TypeError`：断网/DNS 解析失败、URL 非法、URL 携带 `user:pass@` 凭据、CORS 被拦截、`integrity` 校验不匹配、`redirect: \"error\"` 遇到重定向、GET 带 body 等。对照记忆另两类：HTTP 404/500 是 fulfill 不 reject；主动取消抛的是 `AbortError`/`TimeoutError`（均为 `DOMException`），不是 `TypeError`。",
+    "tags": ["fetch", "入门", "reject-typeerror"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "断网、DNS 失败、URL 非法、CORS 被拦——网络层与配置类失败",
+        "isCorrect": true,
+        "description": "这组正是 TypeError 的经典触发面：对话根本没能完成"
+      },
+      {
+        "text": "服务器返回 404 或 500 等 HTTP 错误码",
+        "isCorrect": false,
+        "description": "HTTP 层错误照样 fulfill，不进 catch"
+      },
+      {
+        "text": "调用 `controller.abort()` 主动取消请求",
+        "isCorrect": false,
+        "description": "取消抛的是 AbortError（DOMException），与 TypeError 可按 name 区分"
+      },
+      {
+        "text": "`AbortSignal.timeout()` 到点触发超时",
+        "isCorrect": false,
+        "description": "超时抛 TimeoutError（DOMException），不是 TypeError"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`fetch()` 返回的 Promise 在什么时刻 fulfill？",
+    "explanation": "fetch 在收到状态行 + 响应头时就 fulfill——此时 body 可能还在网络上传输。这解释了两件事：读 body 的 `response.json()`/`text()` 为什么是又一个异步步骤（返回 Promise）；body 读取阶段为什么还可能失败（传输中断、JSON 非法）甚至被 `abort()` 打断。「等 body 全部到达才 fulfill」是常见误解。",
+    "tags": ["fetch", "入门", "fulfill-timing"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "等响应 body 全部下载完成后才 fulfill，所以 `json()` 可以同步返回",
+        "isCorrect": false,
+        "description": "body 到齐前就 fulfill 了，json() 因此必须是异步的"
+      },
+      {
+        "text": "TCP 连接建立成功即 fulfill，还没收到任何响应数据",
+        "isCorrect": false,
+        "description": "连接建立还不够，要等到状态行与响应头到达"
+      },
+      {
+        "text": "请求体发送完毕即 fulfill，与响应到达无关",
+        "isCorrect": false,
+        "description": "fulfill 的判据是收到响应元信息，不是发送完成"
+      },
+      {
+        "text": "收到状态行与响应头即 fulfill，body 可能仍在传输——所以读 body 是另一个异步步骤",
+        "isCorrect": true,
+        "description": "头到即兑现，body 的到达与解析是后续独立的异步阶段"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：与 XMLHttpRequest 对比，XHR 目前仅存的不可替代能力是哪一项？",
+    "explanation": "fetch 在异步模型（Promise）、对象模型（Request/Response 一等对象）、流式读取（`response.body`）、取消（AbortSignal 可组合）、SW/Cache API 集成等维度全面胜出；XHR 唯一不可替代的是上传进度事件 `xhr.upload.onprogress`——fetch 的上传进度原生缺位（上传流仅 Chromium 且限制多）。下载进度 fetch 可以基于 `response.body` 手动累计实现，不算 XHR 独有。结论：新代码没有理由再写 XHR，只剩「上传大文件要精确进度条」一条存量场景。",
+    "tags": ["fetch", "入门", "xhr-comparison"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "同步请求模式，可以阻塞等待结果",
+        "isCorrect": false,
+        "description": "同步 XHR 早已废弃且阻塞主线程，是被 fetch 设计上杜绝的缺点而非优势"
+      },
+      {
+        "text": "上传进度事件 `xhr.upload.onprogress`——fetch 原生缺位",
+        "isCorrect": true,
+        "description": "上传进度是 XHR 仅存的不可替代点，fetch 上传流仅 Chromium 且限制多"
+      },
+      {
+        "text": "取消请求的能力，fetch 请求发出后无法中断",
+        "isCorrect": false,
+        "description": "fetch 有 AbortController 体系，取消能力反而更强、可组合"
+      },
+      {
+        "text": "读取响应头的能力，fetch 拿不到响应头",
+        "isCorrect": false,
+        "description": "`response.headers` 就是标准的 Headers 对象，读头没有问题"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：不传任何选项时，`fetch(url)` 的默认行为组合是下列哪一项？",
+    "explanation": "关键默认值：`method: \"GET\"`、`mode: \"cors\"`（允许跨域并走 CORS 协商）、`credentials: \"same-origin\"`（仅同源请求携带凭据）、`cache: \"default\"`（标准 HTTP 缓存语义）、`redirect: \"follow\"`（自动跟随重定向）、`referrer: \"about:client\"`、`priority: \"auto\"`、`keepalive: false`。两个高频误解：以为默认跨域也带 Cookie（那是 `include`）、以为默认禁止跨域（那是 `same-origin` 模式）。",
+    "tags": ["fetch", "入门", "defaults"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`mode: \"same-origin\"` + `credentials: \"omit\"`——默认既不允许跨域也不带 Cookie",
+        "isCorrect": false,
+        "description": "默认 mode 是 cors（允许跨域协商），credentials 是 same-origin 而非 omit"
+      },
+      {
+        "text": "`mode: \"no-cors\"` + `credentials: \"include\"`——默认跨域不协商且总是带 Cookie",
+        "isCorrect": false,
+        "description": "no-cors 与 include 都必须显式声明，均不是默认值"
+      },
+      {
+        "text": "`method: \"GET\"`、`mode: \"cors\"`、`credentials: \"same-origin\"`、`redirect: \"follow\"`",
+        "isCorrect": true,
+        "description": "与 RequestInit 默认值表一致：GET + CORS 协商 + 仅同源带凭据 + 自动跟随重定向"
+      },
+      {
+        "text": "`cache: \"no-store\"`——fetch 默认绕过 HTTP 缓存直连网络",
+        "isCorrect": false,
+        "description": "默认是 cache: default，遵循标准 HTTP 缓存语义而非绕过"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：一次 `fetch()` 调用的完整错误面分为网络层、取消层、HTTP 层，三者的表现与捕获方式对应正确的是？",
+    "explanation": "三层错误面：网络层（断网、DNS 失败、CORS 被拦、URL 非法）→ Promise reject 抛 `TypeError`，用 try/catch 捕获；取消层（主动中止或超时）→ reject 抛 `AbortError` 或 `TimeoutError`（均为 `DOMException`），在 catch 中按 `err.name` 分流；HTTP 层（服务器返回 4xx/5xx）→ fulfill，catch 根本捕不到，必须手查 `response.ok`。「在 catch 里等 HTTP 错误」是典型误区——4xx/5xx 永远不会进 catch。",
+    "tags": ["fetch", "初级", "error-layers"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "网络层 reject 抛 `TypeError`；取消层 reject 抛 `AbortError`/`TimeoutError`；HTTP 层 fulfill，只能手查 `response.ok`",
+        "isCorrect": true,
+        "description": "三层三种通道：TypeError 进 catch、DOMException 按 name 分流、HTTP 错误查 ok"
+      },
+      {
+        "text": "三层全部 reject，catch 里按错误类型分流即可，无需检查 `response.ok`",
+        "isCorrect": false,
+        "description": "HTTP 层不 reject，跳过 ok 检查会把 404/500 当成功处理"
+      },
+      {
+        "text": "三层全部 fulfill，所有错误都要靠检查 response 的属性来发现",
+        "isCorrect": false,
+        "description": "网络层与取消层是真 reject，catch 是必须有的"
+      },
+      {
+        "text": "网络层 fulfill 一个 `status: 0` 的响应；HTTP 层错误则 reject",
+        "isCorrect": false,
+        "description": "恰好说反：网络层 reject，HTTP 层 fulfill；status 0 是 opaque 响应的特征"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：对同一个 `Response` 对象连续调用两次 `response.json()` 会发生什么？",
+    "explanation": "body 是流，只能消费一次。第一次 `json()` 读取后 body 进入 disturbed 状态、`bodyUsed` 置为 `true`；第二次调用任何读取方法都会抛 `TypeError`。需要读两次（典型：SW 里一份回页面、一份进缓存）时，必须在第一次读取之前先 `clone()`，克隆后两份各自拥有一次读取机会。",
+    "tags": ["fetch", "初级", "body-once"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "两次都成功，第二次直接返回缓存的解析结果",
+        "isCorrect": false,
+        "description": "读取方法不做结果缓存，第二次是直接抛错"
+      },
+      {
+        "text": "第二次返回 `null`，静默失败",
+        "isCorrect": false,
+        "description": "是抛 TypeError 的显式失败，不是返回空值"
+      },
+      {
+        "text": "两次并发调用会自动合并成一次读取，只有串行调用才报错",
+        "isCorrect": false,
+        "description": "不存在合并机制，body 消费一次后再读一律抛错"
+      },
+      {
+        "text": "第一次成功且 `bodyUsed` 变 `true`，第二次抛 `TypeError`",
+        "isCorrect": true,
+        "description": "body 单次消费：disturbed 之后任何读取方法都抛 TypeError"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`response.clone()` 的调用时机有什么硬性要求？",
+    "explanation": "铁律：克隆必须发生在任何读取之前——对 `bodyUsed === true` 的对象调用 `clone()` 本身就抛 `TypeError`，「读完才想起要克隆」是做不到的。克隆成功后两份各自可读一次、互不影响（SW「一份回页面、一份进缓存」的标准模式）。另注意克隆不是免费的：两份流的数据各自缓冲，一方读得慢会让内存积压另一方的数据，海量大响应别无脑克隆。",
+    "tags": ["fetch", "初级", "clone-timing"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "任何时候都可以 clone，包括读取 body 之后",
+        "isCorrect": false,
+        "description": "对 bodyUsed 为 true 的对象调用 clone() 本身就抛 TypeError"
+      },
+      {
+        "text": "必须在任何一方读取 body 之前调用——对 `bodyUsed === true` 的对象 clone 直接抛 `TypeError`",
+        "isCorrect": true,
+        "description": "克隆永远是第一动作，读过之后连克隆的机会都没有"
+      },
+      {
+        "text": "只能在 Service Worker 中调用，页面主线程没有 clone 方法",
+        "isCorrect": false,
+        "description": "clone 是 Response/Request 的标准方法，任何环境都可用"
+      },
+      {
+        "text": "clone 后两份共享同一个 body，仍然总共只能读一次",
+        "isCorrect": false,
+        "description": "克隆后两份各自独立，各有一次读取机会"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`Response` 的六种 body 读取方法（`json()`/`text()`/`blob()`/`arrayBuffer()`/`bytes()`/`formData()`）的共同特征是？",
+    "explanation": "六读方法的共同特征：全部异步（返回 Promise）、全部全量读完 body 才兑现（想边到边处理要改用 `response.body` 流式读取）、全部消费掉唯一一次读取机会（`bodyUsed` 置 true）、格式不符时 reject。这套方法是 `Request` 与 `Response` 共享的 body 混入——`request.json()` 在 SW 里解析拦截到的请求体同样常用。",
+    "tags": ["fetch", "初级", "body-methods"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "全部同步返回结果，无需 await",
+        "isCorrect": false,
+        "description": "六个方法全部返回 Promise，body 可能还在传输，必然是异步的"
+      },
+      {
+        "text": "可以对同一响应依次调用多个方法，各取所需格式",
+        "isCorrect": false,
+        "description": "body 单次消费，第二个方法必抛 TypeError"
+      },
+      {
+        "text": "都返回 Promise、都全量读完 body 才兑现、都消费掉唯一一次读取机会",
+        "isCorrect": true,
+        "description": "异步、全量、单次消费——三特征对六个方法一体适用"
+      },
+      {
+        "text": "只有 `json()` 会消费 body，其余方法可以重复调用",
+        "isCorrect": false,
+        "description": "六个方法一视同仁，全都消费 body"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：接口返回 204 No Content（空 body），此时调用 `response.json()` 会怎样？",
+    "explanation": "`json()` 对空 body 同样会解析失败而 reject（`SyntaxError` 类错误）——空字符串不是合法 JSON。所以对可能返回 204 的接口（DELETE 类接口高发），要先判 `response.status === 204` 或看 `Content-Length`，再决定读不读 body。注意 204 本身是成功状态（在 200–299 区间内，`ok` 为 `true`），坑只在读取阶段。",
+    "tags": ["fetch", "初级", "empty-json"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "解析失败 reject——空 body 不是合法 JSON，应先判 `status === 204` 再决定是否读取",
+        "isCorrect": true,
+        "description": "空串进 JSON 解析器必炸，先判状态码是标准防御"
+      },
+      {
+        "text": "返回 `null`——JSON 解析器对空输入有专门处理",
+        "isCorrect": false,
+        "description": "没有专门处理，空输入就是非法 JSON，直接 reject"
+      },
+      {
+        "text": "返回空对象 `{}`",
+        "isCorrect": false,
+        "description": "不存在兜底为对象的行为，是解析错误"
+      },
+      {
+        "text": "204 会让 `fetch()` 本身 reject，代码走不到 `json()` 这一步",
+        "isCorrect": false,
+        "description": "204 是成功状态码，fetch 正常 fulfill 且 ok 为 true"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：不检查 `response.ok` 直接 `await response.json()`，而请求实际返回了 404 HTML 错误页——最终会看到什么错误？",
+    "explanation": "404 不会让 fetch reject，代码径直走到 `json()`；把 HTML 错误页塞进 JSON 解析器，得到一个报错点在解析层的 `SyntaxError`（形如 Unexpected token 之类）——报错位置「莫名其妙」，真正的病因却是漏查了 `ok`。这是 fetch 头号易错点的典型症状：永远先查 `ok` 再读 body，让 HTTP 错误在正确的层被发现。",
+    "tags": ["fetch", "初级", "syntax-error"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "fetch 阶段就抛出 404 相关的网络错误",
+        "isCorrect": false,
+        "description": "404 属 HTTP 层，fetch 照样 fulfill，不会在这一步报错"
+      },
+      {
+        "text": "`json()` 返回 `undefined`，后续代码拿到空数据",
+        "isCorrect": false,
+        "description": "json() 是 reject 而非返回空值"
+      },
+      {
+        "text": "浏览器自动跳转到错误页，脚本不会报错",
+        "isCorrect": false,
+        "description": "fetch 不会触发页面导航，错误页只是响应体"
+      },
+      {
+        "text": "`json()` 阶段抛 `SyntaxError`——HTML 错误页被当 JSON 解析，病因是漏查了 `ok`",
+        "isCorrect": true,
+        "description": "报错在解析层、病根在 ok 检查缺失，是最经典的误导性报错"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：用 `AbortController` 取消请求后，被取消的 `fetch()` 会以什么方式结束？工程上应如何对待这类错误？",
+    "explanation": "`controller.abort()` 后，fetch 的 Promise 以 `AbortError`（`DOMException`）reject；不传参时这是默认错误，也可用 `abort(reason)` 自定义。关键工程共识：取消不等于失败——组件卸载、用户切换搜索词导致的取消是预期内流程，catch 里应按 `err.name === \"AbortError\"` 识别后静默收尾：别灌进错误监控（全是噪声），更不该重试（用户都取消了）。",
+    "tags": ["fetch", "初级", "abort-controller"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Promise 永远保持 pending，不 resolve 也不 reject",
+        "isCorrect": false,
+        "description": "会明确地 reject，不会悬空"
+      },
+      {
+        "text": "以 `TypeError` reject，与断网错误不可区分",
+        "isCorrect": false,
+        "description": "取消抛 AbortError（DOMException），按 err.name 与网络错误可清晰区分"
+      },
+      {
+        "text": "以 `AbortError`（`DOMException`）reject——这是预期内流程，应按 `err.name` 识别后静默处理，勿上报勿重试",
+        "isCorrect": true,
+        "description": "AbortError 是正常业务流的一部分，静默收尾是标准姿势"
+      },
+      {
+        "text": "fulfill 一个 `status: 0` 的空响应",
+        "isCorrect": false,
+        "description": "取消是 reject 路径，status 0 是 opaque 响应的特征，两回事"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：给请求加超时，`AbortSignal.timeout(8000)` 相比手写 `setTimeout` + `controller.abort()` 的核心优势是？",
+    "explanation": "两点优势：一是错误可区分——`timeout()` 超时抛 `TimeoutError`，用户取消抛 `AbortError`，catch 里按 `err.name` 就能对「超时提示重试、取消静默闭嘴」做不同处理；手写模式两者都抛 `AbortError`，要区分只能自定义 abort reason。二是免清理——不用自己 `clearTimeout`，没有定时器泄漏。用法一行：`fetch(url, { signal: AbortSignal.timeout(8000) })`。注意计时覆盖整个响应期（连接、头、body 传输全算），大文件下载按总时长估。",
+    "tags": ["fetch", "初级", "signal-timeout"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "手写方案无法真正中断请求，`timeout()` 才能触达网络层",
+        "isCorrect": false,
+        "description": "手写 abort() 同样能真正中断请求，差距不在这里"
+      },
+      {
+        "text": "超时抛 `TimeoutError`，与用户取消的 `AbortError` 天然可区分，且无需手动清理定时器",
+        "isCorrect": true,
+        "description": "错误可区分 + 免清理，正是官方工厂方法的两大价值"
+      },
+      {
+        "text": "`timeout()` 只计首字节到达时间，比手写更精确",
+        "isCorrect": false,
+        "description": "计时覆盖整个响应期（含 body 传输），不是只算首字节"
+      },
+      {
+        "text": "`timeout()` 超时后会自动重试一次再报错",
+        "isCorrect": false,
+        "description": "没有任何自动重试，超时即 reject"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`fetch(url, options)` 与 `new Request(url, options)` 的参数关系，以及两处同时传选项时的优先级是？",
+    "explanation": "两者签名完全一致——同一套选项既可以进 `Request()` 构造器（让请求成为可传递、可存储、可当缓存键的一等值），也可以直接进 `fetch()`。`fetch(request, options)` 两处同时配置时，`fetch()` 直接传的选项覆盖 Request 对象上的同名配置。这套等价关系是 SW 拦截转发、请求模板复用的基础。",
+    "tags": ["fetch", "初级", "request-equivalence"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Request 构造器只接受 URL，选项必须传给 fetch",
+        "isCorrect": false,
+        "description": "Request 构造器收完整的选项集，与 fetch 同签名"
+      },
+      {
+        "text": "两者选项集不同：Request 不支持配置 body",
+        "isCorrect": false,
+        "description": "Request 同样支持 body 等全部选项"
+      },
+      {
+        "text": "同时传时以 Request 对象上的配置为准",
+        "isCorrect": false,
+        "description": "优先级相反：fetch 直接传的选项覆盖 Request 上的同名项"
+      },
+      {
+        "text": "签名完全一致；同名选项以 `fetch()` 直接传入的为准",
+        "isCorrect": true,
+        "description": "同一套选项两个入口，fetch 直传优先——MDN 明确口径"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`Response` 的三个静态工厂方法各自的用途，对应正确的是？",
+    "explanation": "`Response.json(data, init)` 一行构造 JSON 响应并自动设置 `Content-Type: application/json`（SW mock 接口、测试桩、边缘函数返回 JSON 的标准姿势；2023-09 补齐，2026-03 起 Widely available）；`Response.error()` 构造 type 为 `error`、status 0 的网络错误响应（SW 缓存兜底失败时「如实上报网络失败」，而不是编造一个 500）；`Response.redirect(url, status)` 构造重定向响应（默认 302）。注意静态 `Response.json()` 是「造响应」，与实例方法 `response.json()`「读响应」方向相反。",
+    "tags": ["fetch", "初级", "static-factories"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`Response.json()` 造 JSON 响应并自动设 Content-Type；`Response.error()` 造网络错误响应；`Response.redirect()` 造重定向响应",
+        "isCorrect": true,
+        "description": "三个工厂各司其职，全是 SW/mock/边缘函数场景的刚需"
+      },
+      {
+        "text": "`Response.json()` 是实例方法 `response.json()` 的别名，用来解析响应体",
+        "isCorrect": false,
+        "description": "方向相反：静态方法构造响应，实例方法解析响应"
+      },
+      {
+        "text": "`Response.error()` 用于构造任意 HTTP 错误码（如 404/500）的响应",
+        "isCorrect": false,
+        "description": "它构造的是 type 为 error、status 0 的网络错误表示；HTTP 错误码用 new Response 配 status"
+      },
+      {
+        "text": "`Response.redirect()` 会立即让当前页面跳转到目标 URL",
+        "isCorrect": false,
+        "description": "只是构造一个重定向响应对象（供 SW 等使用），不触发页面导航"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`credentials` 选项三个取值的语义，正确的是？",
+    "explanation": "「凭据」= HTTP Cookie + TLS 客户端证书 + `Authorization`/`Proxy-Authorization` 头。`credentials` 同时管发（请求带不带凭据）与收（响应里的 `Set-Cookie` 认不认）：`omit` 任何情况都不带、也忽略 Set-Cookie；`same-origin`（默认）仅同源请求带；`include` 跨域也带（需服务端 `Access-Control-Allow-Credentials: true` 且 ACAO 写具体源配合）。默认是 `same-origin` 而非 `include`——「为什么跨域没带 Cookie」的第一排查点。",
+    "tags": ["fetch", "初级", "credentials"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`omit`/`same-origin`/`include` 三档，默认 `include`——跨域也自动带 Cookie",
+        "isCorrect": false,
+        "description": "默认是 same-origin，跨域带凭据必须显式声明 include"
+      },
+      {
+        "text": "`omit` 永不带凭据；`same-origin`（默认）仅同源请求带；`include` 跨域也带",
+        "isCorrect": true,
+        "description": "三档语义与默认值的准确表述，且收发两侧同时受控"
+      },
+      {
+        "text": "该选项只管 Cookie 的发送，不影响响应中 `Set-Cookie` 的接收",
+        "isCorrect": false,
+        "description": "发与收都管：omit 连响应里的 Set-Cookie 也会被忽略"
+      },
+      {
+        "text": "想带 Cookie 也可以直接在 `headers` 里写 `Cookie` 头，效果与 include 等价",
+        "isCorrect": false,
+        "description": "Cookie 是禁设头，脚本设置被静默忽略，凭据只能走 credentials 声明"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`cache` 选项中 `no-store` 与 `no-cache` 的区别，正确的是？",
+    "explanation": "两个名字极易记反：`no-store` = 完全绕过缓存，不读也不写，直连网络；`no-cache` = 命中缓存也必发条件请求向服务器验证，304 才用缓存，验证后仍会使用与更新缓存。语义沿用 `Cache-Control` 同名指令。六档全景：`default`（标准语义）/`no-store`（不读不写）/`reload`（不读但写）/`no-cache`（必验证）/`force-cache`（过期也用）/`only-if-cached`（只用缓存，须配 `mode: \"same-origin\"`）。",
+    "tags": ["fetch", "初级", "cache-options"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`no-cache` 完全不碰缓存，`no-store` 必发条件请求验证——两者正好互换",
+        "isCorrect": false,
+        "description": "恰好记反了，这正是本组选项考察的经典混淆"
+      },
+      {
+        "text": "两者完全等价，都表示禁用缓存",
+        "isCorrect": false,
+        "description": "语义差别很大：一个彻底绕过，一个验证后仍可复用缓存"
+      },
+      {
+        "text": "`no-store` 不读不写完全绕过缓存；`no-cache` 命中也必发条件请求，验证通过（304）才用缓存",
+        "isCorrect": true,
+        "description": "与 Cache-Control 同名指令一致：no-store 绝缘、no-cache 必验证"
+      },
+      {
+        "text": "`no-store` 只是不读缓存，响应仍会写入缓存",
+        "isCorrect": false,
+        "description": "no-store 读写全禁；「不读但写」是 reload 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：跨域请求被 CORS 报错拦住，改成 `mode: \"no-cors\"` 之后会发生什么？",
+    "explanation": "`no-cors` 绕过的只是报错，不是限制：请求能发出去，但响应变成 opaque——`status` 恒 0、`ok` 恒 `false`、headers 为空、body 为 `null`、`text()` 读到空串，连请求成功与否都无从判断（服务器回 200 还是 404 都看不见）。想读跨域响应只有一条正路：服务端配 CORS 响应头 + `mode: \"cors\"`。`no-cors` 的正经用途只有「纯发送不看结果」和「SW 缓存跨域静态资源」两个；业务代码里出现它，九成是被当成了绕过 CORS 的偏方。",
+    "tags": ["fetch", "初级", "no-cors"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "报错消失但数据也没了——响应变 opaque：status 恒 0、body 读不到，连成败都无从判断",
+        "isCorrect": true,
+        "description": "no-cors 换来的是被封箱的 opaque 响应，绕过报错不等于拿到数据"
+      },
+      {
+        "text": "报错消失且能正常读到响应——`no-cors` 就是关闭 CORS 检查的开关",
+        "isCorrect": false,
+        "description": "不存在关闭检查的开关，安全模型换来的是全读不到的 opaque"
+      },
+      {
+        "text": "请求会被浏览器直接拒发",
+        "isCorrect": false,
+        "description": "请求能发出去（这是它可用于埋点的原因），只是响应被封箱"
+      },
+      {
+        "text": "浏览器自动降级用 JSONP 方式绕过限制",
+        "isCorrect": false,
+        "description": "不存在自动 JSONP 机制，那是历史上的手工偏方"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`keepalive: true` 选项解决的是什么问题？",
+    "explanation": "普通 fetch 会随页面销毁被取消——页面卸载瞬间发出的「最后一发」上报（会话时长、性能指标、未保存草稿）大概率丢失。`keepalive: true` 让请求脱离页面生命周期：页面关了请求也继续发送直至完成。它是离页上报的 Baseline 主线（Chrome 66/Safari 13 早已支持，Firefox 133 于 2024-11 补齐后全绿），配合 `pagehide`/`visibilitychange` 时机使用；代价是 body 有 64 KiB 在途共享配额。注意别与 HTTP 的 Keep-Alive 连接复用概念混淆。",
+    "tags": ["fetch", "初级", "keepalive"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "让 TCP 连接保持复用，减少后续请求的握手开销",
+        "isCorrect": false,
+        "description": "那是 HTTP Keep-Alive 连接复用的概念，与这个选项无关"
+      },
+      {
+        "text": "让请求失败后自动重连重发",
+        "isCorrect": false,
+        "description": "fetch 没有任何内建重试，keepalive 也不提供"
+      },
+      {
+        "text": "让服务器保持长连接向页面持续推送数据",
+        "isCorrect": false,
+        "description": "服务器推送是 SSE/WebSocket 的领域"
+      },
+      {
+        "text": "页面卸载后请求继续存活直至完成——离页埋点上报不再丢数据",
+        "isCorrect": true,
+        "description": "keepalive 的本职：请求脱离页面生命周期，卸载不中断"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：「fetch 不把 HTTP 404/500 当错误」常被吐槽，XMLHttpRequest 在同一场景下的行为是？",
+    "explanation": "这不是 fetch 独有的怪癖，而是 HTTP 客户端的通用语义：XHR 收到 4xx/5xx 时同样触发 `onload`（而非 `onerror`），需要自查 `xhr.status`；`onerror` 同样只管网络层错误。两边的差别只在 API 形态（事件回调 vs Promise），对「HTTP 错误码算不算异常」的回答完全一致——都算「成功拿到了响应」。把 4xx/5xx 自动转为异常的是 Axios/ky 这类封装库的产品化选择。",
+    "tags": ["fetch", "初级", "xhr-semantics"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "XHR 会触发 `onerror`，处理比 fetch 更合理",
+        "isCorrect": false,
+        "description": "XHR 的 onerror 同样只管网络错误，4xx/5xx 不会触发它"
+      },
+      {
+        "text": "XHR 同样触发 `onload` 而非 `onerror`，也要自查 `xhr.status`——两者语义一致",
+        "isCorrect": true,
+        "description": "HTTP 错误码在两套 API 里都算「成功拿到响应」，这是通用语义"
+      },
+      {
+        "text": "XHR 会直接抛出异常中断脚本执行",
+        "isCorrect": false,
+        "description": "不存在抛异常的路径，事件模型里错误也走回调"
+      },
+      {
+        "text": "XHR 会自动重试直到拿到 2xx 为止",
+        "isCorrect": false,
+        "description": "XHR 没有任何自动重试机制"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`response.type` 的五个取值与产生场景，对应正确的是？",
+    "explanation": "五值：`basic`（同源请求，除 `Set-Cookie` 等禁读头外都能读）；`cors`（跨域 CORS 成功，仅暴露 CORS-safelisted 响应头或 `Access-Control-Expose-Headers` 放行的头）；`opaque`（`mode: \"no-cors\"` 跨域，status 0 什么都读不到）；`opaqueredirect`（`redirect: \"manual\"` 遇重定向）；`error`（`Response.error()` 构造）。常被忽略的一条：`cors` 类型连响应头都只给白名单——前端要读自定义头（如 `X-Request-Id`），服务端必须加 `Access-Control-Expose-Headers`。",
+    "tags": ["fetch", "中级", "response-type"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`basic` 表示 GET 请求、`cors` 表示 POST 请求——按请求方法区分",
+        "isCorrect": false,
+        "description": "type 反映的是同源/跨域与响应可见性，与请求方法无关"
+      },
+      {
+        "text": "`opaque` 表示响应体是二进制格式，无法按文本解析",
+        "isCorrect": false,
+        "description": "opaque 是 no-cors 跨域的封箱响应，与内容格式无关"
+      },
+      {
+        "text": "`basic` 同源 / `cors` 跨域协商成功 / `opaque` no-cors 跨域 / `opaqueredirect` redirect manual / `error` 来自 `Response.error()`",
+        "isCorrect": true,
+        "description": "五值五场景的准确对应；cors 类型还只暴露白名单响应头"
+      },
+      {
+        "text": "type 只有 `basic` 与 `cors` 两个值，其余是 status 的别名",
+        "isCorrect": false,
+        "description": "五个取值都真实存在，且与 status 是独立字段"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：用 `for...of` 遍历 `Headers` 对象时，下列哪组「隐藏规则」真实存在？",
+    "explanation": "三条遍历规则（MDN 口径）：名字全部以小写呈现；按名字典序排序（不是插入序）；同名头的值合并为一条（逗号拼接）。所以别拿头的顺序或大小写做协议。合并规则的头号受害者是 `Set-Cookie`（多条拼一起无法拆分），因此标准提供了专用的 `getSetCookie()`。另外 Headers 在构造时还做输入净化：名字统一小写、值去首尾空白、非法头名直接抛 `TypeError`。",
+    "tags": ["fetch", "中级", "headers-iteration"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "保持插入顺序，并原样保留名字的大小写",
+        "isCorrect": false,
+        "description": "遍历既不保插入序也不保大小写，全部小写化并按字典序"
+      },
+      {
+        "text": "按值的字母序排序，名字保持原大小写",
+        "isCorrect": false,
+        "description": "排序键是头名（小写化后），不是值"
+      },
+      {
+        "text": "顺序随机，每次遍历结果可能不同",
+        "isCorrect": false,
+        "description": "顺序是确定的字典序，并非随机"
+      },
+      {
+        "text": "名字全小写、按名字典序排序、同名头的值合并为逗号拼接的一条",
+        "isCorrect": true,
+        "description": "三条隐藏规则的完整表述——Set-Cookie 正是合并规则的受害者"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：想给 `fetch()` 拿到的响应补一个自定义头（如 `X-Cache: HIT`），正确做法是？",
+    "explanation": "`Headers` 对象带内部 guard 分级：`fetch()` 响应的 headers 是 immutable——`set()`/`append()`/`delete()` 一律抛 `TypeError`，「直接改」做不到（`clone()` 出来的副本同样保持 immutable）。正确姿势是用旧响应重建一个新 Response：`new Response(original.body, { status, statusText, headers })`，把旧头展开进新 Headers 再追加。这是 SW 里给响应打缓存标记的标准模式。对照：自己 `new Headers()` 的随便改，`new Response()`/`Response.json()` 构造的可改非禁头。",
+    "tags": ["fetch", "中级", "immutable-headers"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 `new Response(original.body, {...})` 重建响应并构造新的 Headers——fetch 响应的头是 immutable 的",
+        "isCorrect": true,
+        "description": "改不了就重建，SW 给响应追加头的标准姿势"
+      },
+      {
+        "text": "直接 `response.headers.set(\"X-Cache\", \"HIT\")` 即可",
+        "isCorrect": false,
+        "description": "fetch 响应头带 immutable guard，set 直接抛 TypeError"
+      },
+      {
+        "text": "改用 `append()`，追加操作可以绕过只读限制",
+        "isCorrect": false,
+        "description": "guard 对 set/append/delete 一视同仁，全部抛错"
+      },
+      {
+        "text": "先 `clone()` 再改，克隆件的 headers 是可写的",
+        "isCorrect": false,
+        "description": "克隆保持同样的 guard，克隆件的头一样不可变"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：在 `headers` 里手动设置 `Cookie`、`Origin`、`Host` 这类请求头会发生什么？",
+    "explanation": "它们属于 Forbidden request headers（禁设头，还包括 `Content-Length`、`Connection`、`Sec-*`/`Proxy-*` 前缀等），由浏览器全权接管——脚本设置不报错但静默无效，这是安全模型的一部分（防伪造来源、防请求走私）。要带凭据走 `credentials` 选项；`Referer` 有正门：独立的 `referrer` 选项（传空串则整个省略该头），粒度再由 `referrerPolicy` 控制。「设了不生效还不报错」正是这类问题难排查的原因。",
+    "tags": ["fetch", "中级", "forbidden-headers"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "抛出 `TypeError`，阻止请求发出",
+        "isCorrect": false,
+        "description": "不抛错——静默忽略恰恰是它难排查的原因"
+      },
+      {
+        "text": "设置被静默忽略，不报错也不生效——凭据走 `credentials` 选项，`Referer` 走 `referrer` 选项",
+        "isCorrect": true,
+        "description": "禁设头由浏览器接管，脚本写入无声无息地失效"
+      },
+      {
+        "text": "正常生效，浏览器完全信任脚本设置的请求头",
+        "isCorrect": false,
+        "description": "若能随意伪造 Origin/Host，同源模型就形同虚设"
+      },
+      {
+        "text": "弹出权限确认框，用户同意后生效",
+        "isCorrect": false,
+        "description": "不存在这样的授权交互"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：把同一个带 body 的 `Request` 对象传给 `fetch()` 发送两次，会发生什么？",
+    "explanation": "请求体和响应体一样是流——发送这个动作就是在读流。第一次 `fetch(request)` 正常；第二次抛 `TypeError`（Body has already been consumed）。要重复发送，克隆必须赶在第一次发送之前：`const req2 = req1.clone()`，之后两份各自消费各自的 body、互不影响。无 body 的 GET/HEAD Request 不存在此问题，可以放心复用同一个对象。",
+    "tags": ["fetch", "中级", "request-body-once"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两次都正常——Request 只是配置模板，可以无限复用",
+        "isCorrect": false,
+        "description": "带 body 的 Request 发送即消费；「随便复用」只对无 body 的成立"
+      },
+      {
+        "text": "第二次自动复用第一次缓存的 body 数据",
+        "isCorrect": false,
+        "description": "流被消费后不留缓存，直接抛错"
+      },
+      {
+        "text": "第一次正常，第二次抛 `TypeError`——发送即消费 body，复用需在首次发送前 `clone()`",
+        "isCorrect": true,
+        "description": "请求体也是流：发送就是读流，二次发送必须提前克隆"
+      },
+      {
+        "text": "两次请求会被浏览器自动合并去重成一次",
+        "isCorrect": false,
+        "description": "fetch 不做请求去重合并"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`new Request(oldRequest, { body: newBody })` 这种「以旧请求为模板二次构造」的行为是？",
+    "explanation": "`Request` 构造器的第一个参数可以是另一个 `Request`——新请求继承模板的全部配置（method、headers、mode、credentials 等），第二个参数里给出的选项覆盖同名项。这是请求模板复用（同配置只换 body 派生变体）与 Service Worker 改写请求（`fetch(new Request(event.request, { headers: patched }))`）的标准姿势，也是「请求是一等的值」这个对象模型优势的直接体现。",
+    "tags": ["fetch", "中级", "request-template"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "抛 `TypeError`——Request 构造器的第一个参数只接受 URL 字符串",
+        "isCorrect": false,
+        "description": "第一参数也接受 Request 对象，这正是模板派生的入口"
+      },
+      {
+        "text": "新请求只继承 URL，其余配置全部回到默认值",
+        "isCorrect": false,
+        "description": "全部配置都被继承，只有显式覆盖的项才变化"
+      },
+      {
+        "text": "新旧两个 Request 共享同一份配置，改一个另一个跟着变",
+        "isCorrect": false,
+        "description": "二次构造产出独立对象，不存在联动"
+      },
+      {
+        "text": "新请求继承模板全部配置，第二参数中的选项覆盖同名项——SW 改写转发请求的标准姿势",
+        "isCorrect": true,
+        "description": "模板继承 + 局部覆盖，请求模板复用与 SW 改写都靠它"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`AbortSignal.any([userSignal, AbortSignal.timeout(8000)])` 组合信号的行为语义是？",
+    "explanation": "`AbortSignal.any(signals)` 把多个信号并成一个：任一源信号触发即中止（语义对标 `Promise.race`），且组合信号的 reason 取第一个触发的源信号的 reason——用户取消仍是 `AbortError`、超时仍是 `TimeoutError`，catch 里按 `err.name` 的分流在组合后依然成立。这让「用户能取消 + 超时兜底」在只收一个 signal 的 fetch 上优雅落地，层层传递的封装还能逐层叠加自己的中止条件。Baseline Newly available 2024-03（Chrome 116 / Firefox 124 / Safari 17.4）。",
+    "tags": ["fetch", "中级", "signal-any"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "任一信号触发即中止，reason 取第一个触发的源信号——`AbortError`/`TimeoutError` 分流依然成立",
+        "isCorrect": true,
+        "description": "语义对标 Promise.race，且错误身份在组合后不丢失"
+      },
+      {
+        "text": "所有信号都触发才中止，语义对标 `Promise.all`",
+        "isCorrect": false,
+        "description": "是任一触发即中止（race 语义），不是全部"
+      },
+      {
+        "text": "组合后错误统一变成 `AbortError`，无法再区分超时与取消",
+        "isCorrect": false,
+        "description": "reason 保留首个触发源的身份，分流不受影响"
+      },
+      {
+        "text": "fetch 的 `signal` 选项本身就能接收信号数组，不需要 `any()`",
+        "isCorrect": false,
+        "description": "signal 只收单个 AbortSignal，合并多源正是 any() 存在的意义"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`fetch()` 已经 fulfill、正在 `await response.json()` 读取 body 时调用 `controller.abort()`，结果是？",
+    "explanation": "取消覆盖整个响应体传输期：fetch fulfill 只代表状态行和头到了，body 可能还在流式传输中——此时 `abort()` 依然有效，读 body 的 Promise（`json()`/`text()`/流式 `read()`）会以 `AbortError` reject。所以「fulfill 之后就安全了」是误解，读 body 与流式读取的代码同样要能 catch 取消错误。",
+    "tags": ["fetch", "中级", "abort-body-phase"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "abort 无效——fetch 已经 fulfill，取消窗口已经关闭",
+        "isCorrect": false,
+        "description": "取消覆盖到最后一个字节，fulfill 不是取消能力的终点"
+      },
+      {
+        "text": "`json()` 的 Promise 以 `AbortError` reject——取消覆盖整个响应体传输期",
+        "isCorrect": true,
+        "description": "body 读取阶段同样受 signal 管辖，读取 Promise 被中止"
+      },
+      {
+        "text": "已读到的部分数据会正常返回，只是内容不完整",
+        "isCorrect": false,
+        "description": "不会返回部分结果，是明确的 reject"
+      },
+      {
+        "text": "此时会抛 `TimeoutError` 而不是 `AbortError`",
+        "isCorrect": false,
+        "description": "controller.abort() 抛 AbortError；TimeoutError 专属 AbortSignal.timeout()"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：在重试循环里复用同一个 `AbortSignal.timeout(8000)` 信号（创建在循环外），会导致什么问题？",
+    "explanation": "信号是一次性的：一旦 aborted 永远是 aborted，把已中止的 signal 交给新 fetch 会立即 reject。timeout 信号放循环外，只有第一轮有真正的超时保护；一旦某轮超时触发，signal 永久处于 aborted 态，后续每一轮重试都秒败。正确做法：每轮请求新建 controller / 新调一次 `AbortSignal.timeout()`。这是重试封装里最隐蔽的高发 bug 之一。",
+    "tags": ["fetch", "中级", "signal-single-use"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "没有问题，signal 本来就设计为可以跨请求复用",
+        "isCorrect": false,
+        "description": "aborted 状态不可逆，复用已触发的信号会秒杀新请求"
+      },
+      {
+        "text": "每轮循环 signal 都会自动重新计时 8 秒",
+        "isCorrect": false,
+        "description": "timeout 信号只计时一次，不存在自动重置"
+      },
+      {
+        "text": "第二轮起超时时间会累加成 16 秒、24 秒",
+        "isCorrect": false,
+        "description": "没有累加机制，问题出在一次性而非时长"
+      },
+      {
+        "text": "一旦某轮超时触发，signal 永久 aborted，后续每轮请求立即 reject——超时信号必须每轮新建",
+        "isCorrect": true,
+        "description": "信号一次性 + 循环外创建 = 首轮之后全部秒败的隐蔽 bug"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：对失败的请求做自动重试，下列哪类错误不该重试？",
+    "explanation": "重试三前提之一是「错误可重试」：网络层 `TypeError`、`TimeoutError`、HTTP 5xx/429 值得重试；4xx（参数错、未授权、不存在）是业务错误，重多少次都是错，还给服务端加压；`AbortError` 更不该重试——用户都主动取消了。另外两个前提：方法幂等（GET/HEAD/PUT/DELETE 天然幂等，POST 需幂等键）、次数封顶 + 指数退避 + 随机抖动（尊重 `Retry-After` 响应头）。",
+    "tags": ["fetch", "中级", "retry-rules"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "断网等网络层 `TypeError` 错误",
+        "isCorrect": false,
+        "description": "网络抖动是典型的可重试场景"
+      },
+      {
+        "text": "HTTP 503 服务不可用",
+        "isCorrect": false,
+        "description": "5xx 服务端故障值得退避后重试"
+      },
+      {
+        "text": "HTTP 400/401/404 等 4xx 业务错误，以及用户主动取消的 `AbortError`",
+        "isCorrect": true,
+        "description": "业务错误重试无意义还加压；取消是用户意志，重试违背预期"
+      },
+      {
+        "text": "`AbortSignal.timeout()` 触发的 `TimeoutError`",
+        "isCorrect": false,
+        "description": "超时属于网络类可重试错误（配合退避与次数封顶）"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：POST 下单请求超时了，为什么不能直接盲目重试？工程上的标准解法是？",
+    "explanation": "超时不等于服务端没收到：请求可能已到达并被处理，只是响应没能回来——盲目重试会重复下单、重复扣款。GET/HEAD/PUT/DELETE 语义幂等、重试安全；POST 不幂等。工程解法是幂等键：客户端为每笔业务生成唯一的 `Idempotency-Key` 请求头，服务端按键去重，同一键的重试不会重复执行副作用。",
+    "tags": ["fetch", "中级", "idempotency-key"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "超时不代表服务端没收到，盲目重试可能重复下单——客户端生成唯一 `Idempotency-Key`，服务端按键去重",
+        "isCorrect": true,
+        "description": "幂等键让「安全重试非幂等操作」成为可能，是支付类接口的标配"
+      },
+      {
+        "text": "POST 重试没有风险——超时说明请求肯定没到达服务端",
+        "isCorrect": false,
+        "description": "超时只说明响应没回来，请求完全可能已被处理"
+      },
+      {
+        "text": "把 POST 改成 GET 发送，就可以安全重试了",
+        "isCorrect": false,
+        "description": "改动词不改语义，副作用操作伪装成 GET 反而破坏约定"
+      },
+      {
+        "text": "浏览器会自动对超时的 POST 请求去重，无需处理",
+        "isCorrect": false,
+        "description": "浏览器不做业务级去重，这必须由应用层解决"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`credentials: \"include\"` 的跨域请求要真正成功，服务端响应必须同时满足哪两个条件？",
+    "explanation": "`include` 是 CSRF 风险放大器，规范要求双向确认——服务端响应必须同时满足：`Access-Control-Allow-Credentials: true`；`Access-Control-Allow-Origin` 写具体的请求源，此时 `*` 通配被禁用。缺任何一条，浏览器把响应按网络错误处理（fetch reject TypeError）。此外 Cookie 自身的 `SameSite` 属性是独立的第三道闸，与 CORS 头无关。",
+    "tags": ["fetch", "中级", "credentials-include"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只要 `Access-Control-Allow-Origin: *` 就够了",
+        "isCorrect": false,
+        "description": "凭据模式下 * 通配被禁用，还缺 Allow-Credentials"
+      },
+      {
+        "text": "`Access-Control-Allow-Credentials: true`，且 `Access-Control-Allow-Origin` 写具体请求源（`*` 被禁用）",
+        "isCorrect": true,
+        "description": "双向确认缺一不可，否则浏览器按网络错误处理"
+      },
+      {
+        "text": "服务端无需任何配合，`include` 是纯客户端行为",
+        "isCorrect": false,
+        "description": "跨域凭据必须服务端显式点头，这正是安全设计"
+      },
+      {
+        "text": "只需 `Access-Control-Allow-Credentials: true`，ACAO 可以继续用 `*`",
+        "isCorrect": false,
+        "description": "凭据模式禁用通配，ACAO 必须写具体源"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：跨站请求已设 `credentials: \"include\"`、服务端凭据类 CORS 头也配齐了，Cookie 仍没带出去——头号排查方向是？",
+    "explanation": "`SameSite` 是另一道独立的闸且优先级更高：Cookie 自身标了 `SameSite=Strict` 或 `Lax`（现代浏览器默认按 Lax 处理）时，跨站请求无论 credentials 怎么设都带不出去。要跨站发送，Cookie 需要 `SameSite=None; Secure`。这是「为什么 include 了还没 Cookie」的头号答案——credentials 与 SameSite 两套开关都要过。",
+    "tags": ["fetch", "中级", "samesite"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器缓存了旧响应，清缓存即可恢复",
+        "isCorrect": false,
+        "description": "HTTP 缓存与 Cookie 发送逻辑无关"
+      },
+      {
+        "text": "fetch 不支持跨站携带 Cookie，必须换回 XHR",
+        "isCorrect": false,
+        "description": "include 就是跨站带凭据的正规通道，XHR 同样受 SameSite 约束"
+      },
+      {
+        "text": "还需要在 `headers` 里手动补一个 `Cookie` 头",
+        "isCorrect": false,
+        "description": "Cookie 是禁设头，手写被静默忽略"
+      },
+      {
+        "text": "检查 Cookie 的 `SameSite` 属性——`Strict`/`Lax` 会拦截跨站发送，与 credentials 配置无关",
+        "isCorrect": true,
+        "description": "SameSite 优先级更高，是 include 失效的头号原因"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`mode` 选项四个取值的行为，对应正确的是？",
+    "explanation": "`cors`（fetch 默认）：跨域走 CORS 协商，简单请求直发、非简单先预检，服务端头不对则 reject TypeError；`same-origin`：跨域直接网络错误（请求根本不发），强约束「绝不出本源」；`no-cors`：跨域不协商也不预检，但方法限 GET/HEAD/POST、头限 CORS-safelisted（`Range` 也不许），响应变 opaque；`navigate`：仅浏览器文档导航时自建，脚本里传它没有意义。",
+    "tags": ["fetch", "中级", "mode"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`cors` 默认走 CORS 协商；`same-origin` 跨域直接报错不发；`no-cors` 不协商但响应 opaque；`navigate` 仅文档导航",
+        "isCorrect": true,
+        "description": "四值四行为的准确对应，cors 是 fetch 的默认值"
+      },
+      {
+        "text": "默认是 `same-origin`，跨域请求必须显式改成 `cors` 才能发",
+        "isCorrect": false,
+        "description": "fetch 的默认 mode 就是 cors（HTML 元素发起的请求才多为 no-cors）"
+      },
+      {
+        "text": "`no-cors` 表示服务端已关闭 CORS 校验，响应可以正常读取",
+        "isCorrect": false,
+        "description": "no-cors 是客户端单方面不协商，换来的是读不到的 opaque 响应"
+      },
+      {
+        "text": "`navigate` 用于在脚本里主动发起页面跳转请求",
+        "isCorrect": false,
+        "description": "navigate 由浏览器导航自建，脚本传入没有意义"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：想拿到重定向响应的 `Location` 头自己决定跳不跳，用 `redirect: \"manual\"` 可行吗？",
+    "explanation": "不可行——`manual` 的命名极具误导性：它返回 `type: \"opaqueredirect\"` 的响应，status 为 0、头体几乎全滤掉，读不到 `Location`（安全考虑），它是为 SW 原样存储/回放重定向设计的，页面脚本几乎用不上。脚本侧能做的是事后侦测：默认 `follow` 跟随后检查 `response.redirected`（是否发生过跳转）与 `response.url`（最终落点），校验落点还在可信域，防开放重定向把带凭据的请求送去恶意源。`redirect: \"error\"` 则是遇重定向直接 reject。",
+    "tags": ["fetch", "中级", "redirect-manual"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可行——manual 模式下 `headers.get(\"Location\")` 可以读到目标地址",
+        "isCorrect": false,
+        "description": "opaqueredirect 的头全被滤掉，Location 读不到"
+      },
+      {
+        "text": "可行，但只对同源重定向有效",
+        "isCorrect": false,
+        "description": "同源也一样拿不到，manual 不是给页面脚本用的"
+      },
+      {
+        "text": "不可行——manual 返回 status 0 的 opaqueredirect，读不到 Location；脚本只能用 `redirected`/`url` 事后校验",
+        "isCorrect": true,
+        "description": "manual 为 SW 存储回放而设；页面侧靠 follow + 事后校验落点"
+      },
+      {
+        "text": "不可行——`manual` 会让 fetch 直接 reject",
+        "isCorrect": false,
+        "description": "遇重定向直接 reject 是 redirect: error 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：body 读取方法 `bytes()` 的返回类型与兼容基线，正确的是？",
+    "explanation": "`bytes()` 返回 `Promise<Uint8Array>`，替代「`arrayBuffer()` 再手包一层 `new Uint8Array()`」的老写法，读文件签名、二进制解析更直接。兼容基线：Baseline Newly available 2025-01——Firefox 128、Safari 18.0 先行支持，Chrome 132 最后补齐（Node 20.16+/22.3+ 也有）。这个「Firefox/Safari 先行、Chrome 收尾」的顺序与多数特性相反，是记忆点。要兜老浏览器，用 `new Uint8Array(await res.arrayBuffer())` 等价替代。",
+    "tags": ["fetch", "高级", "bytes"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 `Promise<ArrayBuffer>`，只是 `arrayBuffer()` 的别名",
+        "isCorrect": false,
+        "description": "返回的是 Uint8Array，省掉手包一层的样板正是它的价值"
+      },
+      {
+        "text": "返回 `Promise<Uint8Array>`；Baseline 2025-01——Firefox 128/Safari 18.0 先行，Chrome 132 补齐",
+        "isCorrect": true,
+        "description": "类型与基线俱准；Chrome 反而是最后补齐的一家"
+      },
+      {
+        "text": "同步返回 `Uint8Array`，不需要 await",
+        "isCorrect": false,
+        "description": "六读方法全部异步，bytes() 也返回 Promise"
+      },
+      {
+        "text": "Chrome 最早支持，Safari 至今未实现",
+        "isCorrect": false,
+        "description": "顺序正好相反：Safari 18 已支持，Chrome 132 才补齐"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：按 `err.name === \"TimeoutError\"` 识别 `AbortSignal.timeout()` 的超时，在旧版 Chromium 上有什么坑？",
+    "explanation": "Chrome/Edge 103–123 的实现有偏差：超时抛的是 `AbortError` 而非 `TimeoutError`（BCD 标注 partial），124 起才修正为正确抛 `TimeoutError`。面向存量老 Chromium 用户的产品，只认 `TimeoutError` 会把这些版本的超时误判成用户取消，进而按「静默收尾」吞掉本该提示重试的错误——`AbortError` 分支里别把「取消」当成唯一可能，要留兜底逻辑。Firefox/Safari 没有这个偏差。",
+    "tags": ["fetch", "高级", "chromium-timeout-bug"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome/Edge 103–123 超时误抛 `AbortError`，124 起才修正为 `TimeoutError`——老版本上超时会被误判成用户取消",
+        "isCorrect": true,
+        "description": "BCD 标注 partial 的著名偏差，错误分流要为老 Chromium 留兜底"
+      },
+      {
+        "text": "旧版 Chrome 的超时抛 `TypeError`，与网络错误混在一起",
+        "isCorrect": false,
+        "description": "误抛的是 AbortError（取消类），不是 TypeError"
+      },
+      {
+        "text": "旧版 Chrome 不支持 `timeout()`，调用直接抛 ReferenceError，因此没有误抛问题",
+        "isCorrect": false,
+        "description": "Chrome 103 起就支持该方法，问题恰恰是支持但错误名不对"
+      },
+      {
+        "text": "这个坑在 Firefox 与 Safari 上同样存在",
+        "isCorrect": false,
+        "description": "是 Chromium 特有的实现偏差，另两家没有"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`Headers` 的同名值合并规则对哪个响应头是灾难？标准的解法是什么？",
+    "explanation": "遍历与 `get()` 时同名头的值合并为逗号拼接的一条，而 `Set-Cookie` 的值本身可含逗号，多条拼一起后无法再正确拆分——它是合并规则的头号受害者。因此标准新增了专用方法 `headers.getSetCookie()`：返回字符串数组、每条 cookie 一项（2023-09 补齐，2026-03 起 Widely available）。另注意浏览器侧 `fetch()` 响应本就读不到 `Set-Cookie`（禁读头），这个方法主要服务 Node/边缘运行时里的同款 Headers 对象。",
+    "tags": ["fetch", "高级", "get-set-cookie"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Content-Type`——合并后 MIME 解析失败，解法是专用的 getContentType 方法",
+        "isCorrect": false,
+        "description": "Content-Type 通常只有一条，也不存在 getContentType 方法"
+      },
+      {
+        "text": "`Authorization`——解法是专用的 getAuthorization 方法",
+        "isCorrect": false,
+        "description": "Authorization 是请求头且单值，不受合并困扰，也无此方法"
+      },
+      {
+        "text": "`Cache-Control`——多值合并后缓存策略失效",
+        "isCorrect": false,
+        "description": "Cache-Control 本身就是逗号分隔的指令列表，合并语义无损"
+      },
+      {
+        "text": "`Set-Cookie`——多条合并后无法拆分；专用 `getSetCookie()` 返回数组，主要服务 Node/边缘运行时",
+        "isCorrect": true,
+        "description": "cookie 值可含逗号，合并即破坏；getSetCookie 是唯一的多条出口"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：Service Worker 大量缓存 `no-cors` 拿到的 opaque 响应，存储配额上有什么隐患？",
+    "explanation": "opaque 响应能被 Cache API 存储（这正是它存在的意义：SW 缓存跨域 CDN 静态资源，能存能回放，就是不能看），但浏览器为防跨域信息泄露（不能让页面推测真实体积），会给每个 opaque 响应记一个远大于实际的保守配额占用——Chromium 系约 7 MB 级别。缓存几十个跨域小图标就可能虚记数百 MB，意外撑爆存储配额。解法：让源站开 CORS，改用 `mode: \"cors\"` 缓存能如实计量的响应。",
+    "tags": ["fetch", "高级", "opaque-quota"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "opaque 响应无法被 Cache API 存储，缓存调用直接抛错",
+        "isCorrect": false,
+        "description": "能存能回放正是 opaque 的正经用途，问题在配额计价"
+      },
+      {
+        "text": "opaque 响应会绕过配额统计，无限占用磁盘",
+        "isCorrect": false,
+        "description": "方向相反：不是不计量，而是按远大于实际的保守值计量"
+      },
+      {
+        "text": "每个 opaque 响应按远大于实际的保守值计入配额（Chromium 约 7 MB 级），大量缓存会意外撑爆存储",
+        "isCorrect": true,
+        "description": "防泄露的虚记策略：小图标也按 MB 级计价，积少成多爆配额"
+      },
+      {
+        "text": "opaque 响应缓存后每次命中仍会发网络请求验证，缓存形同虚设",
+        "isCorrect": false,
+        "description": "命中后可直接回放，不存在强制回源验证"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`integrity` 选项的 SRI 校验不通过时，`fetch()` 的表现是？",
+    "explanation": "`integrity` 接受「算法-Base64 摘要」格式（算法限 `sha256`/`sha384`/`sha512`），用于校验从 CDN 等半信任源拉取的静态资产未被篡改，语义与 `<script integrity>` 属性一致。哈希不匹配时不会 fulfill 一个「坏响应」，而是整个按网络错误 reject（`TypeError`）——落在 catch 分支，不是 `!response.ok`。写通用错误处理时要能识别这一类：它与断网、CORS 拦截同属网络层错误面。",
+    "tags": ["fetch", "高级", "integrity"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fulfill 一个 `ok` 为 `false` 的响应，`status` 是专门的校验失败码",
+        "isCorrect": false,
+        "description": "不走 HTTP 错误通道，根本不会 fulfill"
+      },
+      {
+        "text": "按网络错误处理：Promise 直接以 `TypeError` reject，而不是返回 `!ok` 的响应",
+        "isCorrect": true,
+        "description": "校验失败归入网络层错误面，在 catch 里现身"
+      },
+      {
+        "text": "浏览器弹出安全警告，由用户决定是否继续使用该响应",
+        "isCorrect": false,
+        "description": "没有用户交互环节，直接程序化拒绝"
+      },
+      {
+        "text": "自动重新下载一次，第二次仍不匹配才报错",
+        "isCorrect": false,
+        "description": "没有自动重试，一次不匹配即 reject"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`priority` 选项的取值与实际效力，正确的是？",
+    "explanation": "取值 `high`/`low`/`auto`（默认，非法值也回落 auto）。它是调度提示（hint）而非强制指令——浏览器在同类型请求之间参考它调整优先级（首屏关键数据配 `high`、预取配 `low`），不保证返回顺序，也不改变请求间依赖的语义正确性（关键依赖仍靠代码顺序与 await 表达）。与 `<img fetchpriority>` 属性同属 Fetch Priority 体系。Baseline Newly available 2024-10：Chrome 101 早已支持、Safari 17.2 跟进、Firefox 132 补齐后达成。",
+    "tags": ["fetch", "高级", "priority"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "取值 1–10 的数字，数字越大调度优先级越高",
+        "isCorrect": false,
+        "description": "是三个枚举值 high/low/auto，不是数字刻度"
+      },
+      {
+        "text": "是强制指令：`high` 的请求保证先于 `low` 的返回",
+        "isCorrect": false,
+        "description": "只是 hint，浏览器参考性调度，不保证任何顺序"
+      },
+      {
+        "text": "仍是 Chromium 独占的实验特性，其他浏览器不支持",
+        "isCorrect": false,
+        "description": "Safari 17.2、Firefox 132 已跟进，2024-10 起进入 Baseline"
+      },
+      {
+        "text": "`high`/`low`/`auto` 三值，仅是同类请求间的调度提示；Firefox 132 补齐后于 2024-10 进 Baseline",
+        "isCorrect": true,
+        "description": "hint 语义 + Baseline 时间线的准确表述"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：用 `for await (const chunk of response.body)` 直接异步迭代响应流，当前（2026 年中）的跨浏览器可移植性如何？",
+    "explanation": "ReadableStream 的异步迭代 Chrome 124（2024-04）、Firefox 110 已支持，但 Safari 要到 27 才补齐——核于 2026-07 仍不是跨浏览器安全写法，MDN 示例里的 `for await` 直接照抄到生产会在 Safari 上翻车。可移植读法是 `getReader()` + `while` 循环 `await reader.read()`（按 `{ value, done }` 协议消费），全浏览器安全；或做特性检测后分支。",
+    "tags": ["fetch", "高级", "async-iteration"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不可移植——Safari 直到 27 才支持异步迭代；可移植写法是 `getReader()` + `read()` 循环",
+        "isCorrect": true,
+        "description": "Safari 是最后短板，getReader 循环才是全绿姿势"
+      },
+      {
+        "text": "完全可移植，三大浏览器多年前就都支持了",
+        "isCorrect": false,
+        "description": "Safari 27 之前不支持，这正是 MDN 示例照抄翻车的点"
+      },
+      {
+        "text": "不可移植——该语法只存在于 Node，浏览器一律不支持",
+        "isCorrect": false,
+        "description": "Chrome 124/Firefox 110 已支持，短板只在 Safari"
+      },
+      {
+        "text": "可移植性取决于响应的 Content-Type 类型",
+        "isCorrect": false,
+        "description": "迭代能力是流接口层面的事，与响应内容类型无关"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：流式读取文本时 `decoder.decode(value, { stream: true })` 里的 `stream: true` 起什么作用？省略它会怎样？",
+    "explanation": "网络分块与字符边界无关——UTF-8 里一个汉字占 3 字节，随时可能被拦腰截断在两个 chunk 之间。`stream: true` 让解码器记住跨块截断的多字节序列，等下一块续上再输出；省略它则每块独立解码，截断处输出乱码替换符（AI 打字机效果偶发「锟斤拷」式乱码的经典病根）。收尾还要再调一次不带参数的 `decode()` 冲刷缓冲残字节。更省事的管道方案：`response.body.pipeThrough(new TextDecoderStream())`（Chrome 71/Firefox 105/Safari 14.1，全绿）。",
+    "tags": ["fetch", "高级", "text-decoder"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "开启增量返回模式，让 `decode()` 变成异步方法",
+        "isCorrect": false,
+        "description": "decode 始终是同步方法，选项管的是跨块状态记忆"
+      },
+      {
+        "text": "只是性能优化开关，不影响输出正确性",
+        "isCorrect": false,
+        "description": "是正确性问题：缺了它多字节字符截断处必出乱码"
+      },
+      {
+        "text": "让解码器记住跨块截断的多字节序列、下一块续上；省略则截断处周期性输出乱码，结尾还需空参 `decode()` 冲刷",
+        "isCorrect": true,
+        "description": "跨块安全的关键：状态化解码 + 收尾冲刷缺一不可"
+      },
+      {
+        "text": "声明数据来自流式响应，否则解码器拒绝工作",
+        "isCorrect": false,
+        "description": "不带该选项解码器照样工作，只是截断处出乱码"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`keepalive: true` 请求的 body 体积配额规则是？",
+    "explanation": "keepalive 请求的 body 上限 64 KiB，且这个额度由所有在途 keepalive 请求共享（规范口径：新请求 body + 在途 keepalive 字节 ≤ 64 KiB）——超限立即 reject `TypeError`，不是排队等待。大报文要先压缩、采样或拆分，或接受丢弃部分数据。Baseline 侧：Chrome 66（2018）、Safari 13（2019）早已支持，Firefox 133（2024-11）补齐后才进 Baseline——需兼容更老 Firefox 的产品要留 `sendBeacon` 兜底。",
+    "tags": ["fetch", "高级", "keepalive-quota"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "单个请求上限 64 KiB，各请求的配额相互独立",
+        "isCorrect": false,
+        "description": "额度是所有在途 keepalive 请求共享的，不是每请求独立"
+      },
+      {
+        "text": "没有体积限制，只有并发请求数的限制",
+        "isCorrect": false,
+        "description": "限制的正是在途字节总量，并发数没有单独规定"
+      },
+      {
+        "text": "超限的请求会自动排队，等在途请求完成后再发出",
+        "isCorrect": false,
+        "description": "超限是立即 reject TypeError，没有排队机制"
+      },
+      {
+        "text": "64 KiB 且由所有在途 keepalive 请求共享，超限立即 reject `TypeError`——大报文要压缩或拆分",
+        "isCorrect": true,
+        "description": "在途共享 + 立即失败，正是大报文上报要提前设计的原因"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：离页上报选型时，`fetch(url, { keepalive: true })` 相比 `navigator.sendBeacon()` 的优势有哪些？",
+    "explanation": "keepalive fetch：任意 HTTP 方法、可自定义头（如 `Content-Type: application/json`、认证头）、响应可读（Promise 正常兑现）、Service Worker 内可用；sendBeacon：仅 POST、无自定义头、只返回入队布尔拿不到响应、SW 内不可用。体积限制两边同级。结论：新代码一律 keepalive fetch，sendBeacon 退为老浏览器（主要是 Firefox 133 之前）的回退方案。两者共同的残留问题是「什么时机调用」（unload 系事件不可靠）——那是 `fetchLater()` 要根治的。",
+    "tags": ["fetch", "高级", "sendbeacon"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "sendBeacon 即将从标准中移除，keepalive 是唯一合法选择",
+        "isCorrect": false,
+        "description": "sendBeacon 没有被移除，只是定位退为兜底"
+      },
+      {
+        "text": "keepalive fetch 支持任意方法、自定义头、可读响应、SW 内可用——这四样 sendBeacon 全都没有",
+        "isCorrect": true,
+        "description": "四个维度全面胜出，sendBeacon 只剩支持面老的兜底价值"
+      },
+      {
+        "text": "keepalive fetch 没有体积限制，而 sendBeacon 有",
+        "isCorrect": false,
+        "description": "keepalive 恰有 64 KiB 在途共享配额，两边体积限制同级"
+      },
+      {
+        "text": "两者能力完全等价，纯粹是 API 风格差异",
+        "isCorrect": false,
+        "description": "方法、头、响应、SW 四个维度都有实打实的能力差"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：基于 `response.body` 手动累计字节并对照 `Content-Length` 实现下载进度条，为什么进度可能算出超过 100%？",
+    "explanation": "口径差：`Content-Length` 是线上传输的字节数（gzip 等压缩后），而 `reader.read()` 拿到的是解压后的字节——解压字节 ÷ 压缩字节自然可能超过 100%。配套还有两个陷阱：分块传输编码（chunked）下 `Content-Length` 可能整个缺失，进度条要能降级为「已下载 X MB」的不确定态；跨域时该头还需服务端 `Access-Control-Expose-Headers: Content-Length` 放行，否则读出来是空。",
+    "tags": ["fetch", "高级", "download-progress"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`Content-Length` 是压缩后的传输字节数，而 `read()` 拿到的是解压后字节——两者口径不一致",
+        "isCorrect": true,
+        "description": "线上字节对解压字节，除出来自然可能大于 1"
+      },
+      {
+        "text": "浏览器会预取额外数据，导致累计值偏大",
+        "isCorrect": false,
+        "description": "read() 只交付响应本体的字节，没有预取混入"
+      },
+      {
+        "text": "`read()` 返回的 chunk 之间有重叠区间，需要去重",
+        "isCorrect": false,
+        "description": "chunk 是连续切片，不存在重叠"
+      },
+      {
+        "text": "`Content-Length` 的单位是 KB 而 `byteLength` 的单位是字节",
+        "isCorrect": false,
+        "description": "两者单位都是字节，差异在压缩前后而非单位"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`body` 传 `ReadableStream` 做流式上传（Chromium 105+），下列哪组限制是真实存在的「四硬限」？",
+    "explanation": "四硬限（Chrome 官方文档口径）：`duplex: \"half\"` 必填，缺了直接 TypeError（浏览器只支持半双工，显式声明消除与 Deno 等运行时的歧义）；遇 303 以外的重定向直接 reject（重放 body 需缓冲整条流、违背流式初衷，303 会改成 GET 丢弃 body 所以放行）；必触发 CORS 预检、`no-cors` 禁用（无 `Content-Length` 的请求属「新型请求」）；HTTP/1.x 连接直接 reject（请求方向的 chunked 兼容风险大，仅 H2/H3）。且 Firefox/Safari 未实现，工程上是「检测支持则流式、否则整体上传」的渐进增强项。",
+    "tags": ["fetch", "专家", "upload-stream"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "必须 `duplex: \"full\"`、仅限同源请求、仅限 GET 方法、仅 HTTP/1.1",
+        "isCorrect": false,
+        "description": "四条全错：half 而非 full、可跨域（必预检）、GET 不能带 body、恰恰禁 HTTP/1.x"
+      },
+      {
+        "text": "只有一条限制：body 必须预先声明总长度",
+        "isCorrect": false,
+        "description": "流式上传恰恰不需要预知长度；长度必须已知是 fetchLater 的限制"
+      },
+      {
+        "text": "`duplex: \"half\"` 必填；303 以外的重定向直接 reject；必触发 CORS 预检且禁 `no-cors`；仅 HTTP/2、HTTP/3",
+        "isCorrect": true,
+        "description": "与 Chrome 官方文档的四硬限逐条对应"
+      },
+      {
+        "text": "限制只有浏览器版本一条，其余行为与普通 body 完全一致",
+        "isCorrect": false,
+        "description": "重定向、预检、协议版本三方面都有额外硬限制"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：流式上传必须声明的 `duplex: \"half\"`（半双工）意味着什么？想「边发边收」该怎么办？",
+    "explanation": "半双工 = 整个请求体发送完毕，才能开始读取响应——请求与响应不能同时双向流动。Deno 等运行时曾默认全双工，浏览器强制显式声明 `half` 以消除歧义（浏览器不支持 full）。想要真双工（边发边收）目前的替代方案是拆成两个 fetch：一个流式上行、一个流式下行，服务端用 ID 关联两条通道。",
+    "tags": ["fetch", "专家", "duplex-half"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "half 指单次只能上传文件的一半，另一半走第二个请求",
+        "isCorrect": false,
+        "description": "half 说的是通信方向性，与数据量对半无关"
+      },
+      {
+        "text": "请求体发完才能开始读响应——真双工需拆成两个 fetch（一发一收，服务端按 ID 关联）",
+        "isCorrect": true,
+        "description": "半双工语义 + 双 fetch 替代方案，正是当前工程现实"
+      },
+      {
+        "text": "half 指带宽减半，防止上传挤占下载通道",
+        "isCorrect": false,
+        "description": "与带宽分配无关，是「先发完再收」的时序约束"
+      },
+      {
+        "text": "half 只是过渡取值，浏览器已支持 `duplex: \"full\"` 边发边收",
+        "isCorrect": false,
+        "description": "浏览器不支持 full，这正是必须显式声明 half 的原因"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：检测当前浏览器是否支持流式上传，Chrome 官方的特性检测方案基于什么原理？",
+    "explanation": "两个信号结合：在 `new Request()` 的选项对象上用 getter 定义 `duplex` 属性——支持流式上传的浏览器构造时会读取 `duplex`，getter 被触发即记下 `duplexAccessed = true`；同时利用「不支持流式 body 的浏览器会把 `ReadableStream` 当普通对象 `toString()` 成字符串」的行为——此时请求会自动带上 `Content-Type: text/plain;charset=UTF-8` 头。最终判定 `duplexAccessed && !hasContentType` 同时成立才算支持。全程纯对象构造，不发出任何真实请求。",
+    "tags": ["fetch", "专家", "feature-detection"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "读取 `fetch.duplex` 静态属性判断是否为字符串",
+        "isCorrect": false,
+        "description": "fetch 函数上不存在这样的静态属性"
+      },
+      {
+        "text": "试发一个真实的流式请求，失败则判定不支持",
+        "isCorrect": false,
+        "description": "官方方案纯本地构造探测，不需要发出网络请求"
+      },
+      {
+        "text": "检查 `navigator.userAgent` 是否为 Chrome 105 以上",
+        "isCorrect": false,
+        "description": "UA 嗅探不可靠且不是官方方案"
+      },
+      {
+        "text": "在选项上用 getter 探测 `duplex` 是否被读取，同时看流 body 是否被 `toString()` 成字符串（自动带 text/plain 头）——两个信号同时成立才算支持",
+        "isCorrect": true,
+        "description": "getter 探测 + Content-Type 旁证，Chrome 官方检测的精妙原理"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：`fetchLater()`（Chrome 135+）的配额体系，正确的一组数字是？",
+    "explanation": "为防离页带宽滥用设计的分层配额（单位 KiB）：顶级文档总额 640 = 512（顶级文档 + 同源直接子框架共享）+ 128（跨域子框架公共池：每个跨域 iframe 入 DOM 时预分配 8，约前 16 个有份）；同一上报源（请求 URL 的 origin）在途合计不超 64；且 URL 长度 + 请求头 + 请求体全部计入。`Permissions-Policy: deferred-fetch` / `deferred-fetch-minimal` 可重划配额（如把某跨域子框架升到 64，或整池收回）。超限抛 `QuotaExceededError`。",
+    "tags": ["fetch", "专家", "fetchlater-quota"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "顶级文档共 640 KiB = 512（顶级 + 同源子框架）+ 128（跨域子框架池，每框架默认 8 KiB）；单上报源并发上限 64 KiB，URL + 头 + 体全部计入",
+        "isCorrect": true,
+        "description": "640/512/128/8/64 五个数字与计量口径全部对应官方规则"
+      },
+      {
+        "text": "每个页面每个请求各 64 MB，实际场景根本用不完",
+        "isCorrect": false,
+        "description": "量级差了三个数量级，配额是 KiB 级的紧约束"
+      },
+      {
+        "text": "与 keepalive 共用同一个 64 KiB 总池，再无其他层级",
+        "isCorrect": false,
+        "description": "fetchLater 有独立的 640 KiB 分层体系，不与 keepalive 共池"
+      },
+      {
+        "text": "配额只计请求体大小，URL 与请求头不占额度",
+        "isCorrect": false,
+        "description": "URL 长度、头、体全部计入——长 URL 也烧配额"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：调用 `fetchLater()` 时，为什么官方口径是「几乎所有调用都应该包 try/catch」？",
+    "explanation": "两个原因叠加：配额是共享资源——第三方脚本、其他组件都在同一个 640 KiB 池里注册，你的调用随时可能因池子被挤占而抛 `QuotaExceededError`；且被 `Permissions-Policy` 限制与真超额抛的是同一个错误，两种失因不可区分，无法预先精确判断「还剩多少额度」。所以标准姿势是防御性 try/catch，捕获 `QuotaExceededError` 后降级走 keepalive fetch 上报，保证数据不丢。",
+    "tags": ["fetch", "专家", "quota-exceeded"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 fetchLater 的网络错误也以同步异常抛出，而不是走 Promise",
+        "isCorrect": false,
+        "description": "它压根不暴露网络结果（响应不可读），要防的是注册时的配额异常"
+      },
+      {
+        "text": "因为 fetchLater 在 Firefox 里会抛 SyntaxError",
+        "isCorrect": false,
+        "description": "Firefox 未实现该 API；要点是 Chromium 上的配额异常"
+      },
+      {
+        "text": "配额被第三方脚本共享挤占，随时可能抛 `QuotaExceededError`，且 Permissions Policy 拒绝与真超额同错误不可区分——捕获后应降级 keepalive fetch",
+        "isCorrect": true,
+        "description": "共享配额的不可预测性 + 失因不可区分，防御性捕获是标配"
+      },
+      {
+        "text": "官方没有这个建议，fetchLater 设计上从不抛异常",
+        "isCorrect": false,
+        "description": "官方明确建议防御性捕获，QuotaExceededError 真实存在"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：关于 `fetchLater()` 的硬性限制与返回值，正确的是？",
+    "explanation": "硬限制：仅 HTTPS（不受信 URL 抛 TypeError）；body 不能是 `ReadableStream`（延迟请求的长度必须已知）；`activateAfter` 为负抛 RangeError；分离窗口（已移除 iframe 的 window）调用无效；实际发送时刻浏览器可为批量/省电前后微调。返回值是 `FetchLaterResult`，只有一个 `activated` 布尔（是否已发出）——发出后的响应（状态、头、体）完全不可读、被丢弃，它是纯上报通道；想改 payload 只能 `abort()` 旧注册再注册新的。",
+    "tags": ["fetch", "专家", "fetchlater-limits"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "http 与 https 都支持，body 也支持流式",
+        "isCorrect": false,
+        "description": "仅 HTTPS，且 body 禁用流——长度必须已知"
+      },
+      {
+        "text": "返回 `Promise<Response>`，页面存活期间可以读到响应",
+        "isCorrect": false,
+        "description": "响应设计上完全不可读，需要回执的上报走普通 fetch/keepalive"
+      },
+      {
+        "text": "`activateAfter` 传负值表示立即发送",
+        "isCorrect": false,
+        "description": "负值直接抛 RangeError，立即发送该用普通 fetch"
+      },
+      {
+        "text": "仅 HTTPS、body 不能是流、`activateAfter` 负值抛 RangeError；返回 `FetchLaterResult` 仅含 `activated` 布尔，响应不可读",
+        "isCorrect": true,
+        "description": "硬限制与纯上报通道定位的完整准确表述"
+      }
+    ]
+  },
+  {
+    "stem": "Fetch API：流式上传时想要一个「随写随传」的写接口，但 fetch 的 `body` 只接收 `ReadableStream`——标准技巧是什么？",
+    "explanation": "`new TransformStream()` 不传参数就是恒等管道：`writable` 端写进什么，`readable` 端原样流出什么。把 `readable` 交给 fetch 当 body（配 `duplex: \"half\"`），生产侧拿 `writable.getWriter()` 随写随传、`close()` 收尾；把中间的恒等管道换成 `CompressionStream` 还能实现「边压缩边上传」。这是把「拉模型」的 ReadableStream 转成「推模型」写接口的标准姿势。",
+    "tags": ["fetch", "专家", "transform-stream"],
+    "categories": [
+      ["技术方向", "Fetch API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "直接 `new WritableStream()` 传给 fetch 的 `body`",
+        "isCorrect": false,
+        "description": "body 不接受 WritableStream，只收可读流"
+      },
+      {
+        "text": "`new TransformStream()` 恒等管道——`readable` 端给 fetch 当 body，`writable` 端拿 writer 随写随传；换 `CompressionStream` 可边压边传",
+        "isCorrect": true,
+        "description": "恒等管道桥接推/拉两种模型，Chrome 官方示例同款技巧"
+      },
+      {
+        "text": "先把数据全部写入 Blob 再整体上传——流式写接口不存在",
+        "isCorrect": false,
+        "description": "全量缓冲恰恰放弃了流式，TransformStream 桥接才是正解"
+      },
+      {
+        "text": "对 `ReadableStream` 调用 `getWriter()` 拿到写端",
+        "isCorrect": false,
+        "description": "ReadableStream 只有 getReader，写端在 TransformStream 的 writable 上"
+      }
+    ]
+  }
+]
