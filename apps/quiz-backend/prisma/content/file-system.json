@@ -1,0 +1,1583 @@
+[
+  {
+    "stem": "File 与文件系统 API：关于 `File` 与 `Blob` 的关系，下列说法正确的是？",
+    "explanation": "`File` 是 `Blob` 的子类——就是「一个带了文件名和修改时间的 Blob」，额外多出 `name`、`lastModified`、`webkitRelativePath` 等元数据。记住这层继承关系后一切就通了：凡是接受 `Blob` 的 API（`FileReader`、`URL.createObjectURL`、`fetch` 的 body、`createImageBitmap` 等）都能直接接受 `File`。两者自 2015 年起是全浏览器 Baseline，也能在 Web Worker 里用。",
+    "tags": ["file-system", "入门", "inheritance"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`File` 与 `Blob` 是两个互不相关的类型，彼此不能替代",
+        "isCorrect": false,
+        "description": "恰恰相反，File 是 Blob 的子类，可无缝替代 Blob"
+      },
+      {
+        "text": "`Blob` 是 `File` 的子类，`File` 才是更底层的字节容器",
+        "isCorrect": false,
+        "description": "继承方向反了，Blob 才是底层字节容器"
+      },
+      {
+        "text": "`File` 是 `Blob` 的子类，多了 `name`、`lastModified` 等元数据，凡接受 `Blob` 处都能接受 `File`",
+        "isCorrect": true,
+        "description": "继承关系正确，这是本 API 的核心心智模型"
+      },
+      {
+        "text": "`File` 只能由 `<input>` 产生、`Blob` 只能由 `new Blob()` 产生，二者来源完全隔离",
+        "isCorrect": false,
+        "description": "两者来源并不隔离，且 File 本身就是 Blob"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：对 `Blob` 对象最准确的描述是？",
+    "explanation": "`Blob`（Binary Large Object）表示一段**不可变**的原始字节，外加一个 MIME `type` 标签，是浏览器里通用的「字节 + 类型」容器。它不可变（造好不能改内容）、惰性（数据可能还在磁盘上不一定全在内存），能喂给几乎所有吃二进制的 API。",
+    "tags": ["file-system", "入门", "blob-basics"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一段**不可变**的原始字节，外加一个 MIME `type` 标签的通用数据容器",
+        "isCorrect": true,
+        "description": "不可变字节 + 类型标签，正是 Blob 的定义"
+      },
+      {
+        "text": "一个可随时改内容的可变字节数组，类似 `Array`",
+        "isCorrect": false,
+        "description": "Blob 不可变，造好后内容不能改"
+      },
+      {
+        "text": "浏览器专用的图片格式，只能存图像数据",
+        "isCorrect": false,
+        "description": "Blob 存任意二进制，不限于图像"
+      },
+      {
+        "text": "指向磁盘文件绝对路径的引用对象",
+        "isCorrect": false,
+        "description": "前端拿不到磁盘绝对路径，Blob 只是内存字节"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：浏览器操作文件的「三层能力」分工，对应正确的是？",
+    "explanation": "浏览器操作文件是三层能力叠加：最底层 File/Blob + FileReader **只读**用户主动交出的文件（全浏览器 Baseline）；往上 File System Access 让 Web 应用**读写用户可见的真实文件与目录**（仅 Chromium）；第三层 OPFS 是**源私有、免授权**的高性能沙盒文件系统（主入口已 Baseline）。三者能力与支持面各异。",
+    "tags": ["file-system", "入门", "three-layers"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "三层都能读写用户桌面上的任意文件，区别只是 API 新旧",
+        "isCorrect": false,
+        "description": "能力与支持面差异极大，并非只是新旧之分"
+      },
+      {
+        "text": "File API 负责写磁盘、File System Access 负责读、OPFS 负责网络传输",
+        "isCorrect": false,
+        "description": "职责张冠李戴，OPFS 也与网络传输无关"
+      },
+      {
+        "text": "三层必须叠加使用，缺一层就无法读文件",
+        "isCorrect": false,
+        "description": "三条路线各自独立，File API 单独就能读文件"
+      },
+      {
+        "text": "File/Blob/FileReader 只读用户交出的文件、File System Access 读写用户**可见**文件、OPFS 源**私有**高性能读写",
+        "isCorrect": true,
+        "description": "只读 / 读写可见 / 私有高性能，正是三层分工"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：仅用 File API（`<input>`/拖放 + `Blob`/`FileReader` 读法）能做与不能做的是？",
+    "explanation": "File API 这一层只能拿到用户通过 `<input>` 选择或拖进来的文件，读成文本/二进制/DataURL 做上传、预览、解析。它**拿不到磁盘绝对路径**（`input.value` 里只是假路径 `C:\\fakepath\\...`）、**写不回原文件**、也**访问不了用户没主动交出的文件**。覆盖面最广、全浏览器 Baseline。",
+    "tags": ["file-system", "入门", "file-api-readonly"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "能任意遍历用户磁盘目录并静默读取任意文件",
+        "isCorrect": false,
+        "description": "只能读用户主动交出的文件，无法静默遍历磁盘"
+      },
+      {
+        "text": "能读用户通过 input/拖放**主动交出**的文件，但拿不到磁盘绝对路径、也写不回原文件",
+        "isCorrect": true,
+        "description": "只读、拿不到路径、写不回，正是 File API 的边界"
+      },
+      {
+        "text": "能直接把修改后的内容原地保存回用户选中的原文件",
+        "isCorrect": false,
+        "description": "写回原文件是 File System Access 的能力，File API 做不到"
+      },
+      {
+        "text": "能在无用户交互的情况下自动弹出文件选择框",
+        "isCorrect": false,
+        "description": "文件选择必须由用户交互触发，不能自动弹窗"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：用 `URL.createObjectURL(blob)` 造了 `blob:` URL 后，为什么必须调用 `URL.revokeObjectURL`？",
+    "explanation": "每次 `createObjectURL` 都会在文档里登记一个映射，**让对应的 Blob 无法被垃圾回收**，一直活到显式 `revokeObjectURL` 或整个文档卸载。在列表里给上百张图各造一个 URL 又不释放，就是一条稳定的内存泄漏曲线。规范做法：图片 `onload` 后、下载 `click` 后立即撤销。",
+    "tags": ["file-system", "入门", "object-url"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "不撤销会导致 URL 立即失效、图片无法显示",
+        "isCorrect": false,
+        "description": "不撤销 URL 反而长期有效，问题在于泄漏"
+      },
+      {
+        "text": "撤销只是可选优化，现代浏览器会自动回收、无实际影响",
+        "isCorrect": false,
+        "description": "浏览器不会自动回收，忘撤就是稳定泄漏"
+      },
+      {
+        "text": "每个 object URL 常驻到文档卸载、让对应 `Blob` 无法被垃圾回收，不释放就是稳定的内存泄漏",
+        "isCorrect": true,
+        "description": "阻止 Blob 被 GC，正是必须 revoke 的原因"
+      },
+      {
+        "text": "不撤销会把 `Blob` 内容自动上传到服务器造成隐私泄漏",
+        "isCorrect": false,
+        "description": "object URL 只是本地内存引用，不会上传任何数据"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：下列哪一项**不是**前端合法获得 `File` 对象的途径？",
+    "explanation": "前端拿到 `File` 只有几条合法途径，共同点是**都拿不到磁盘绝对路径**：`<input type=\"file\">` 的 `input.files`、拖放的 `event.dataTransfer.files`、`new File(...)` 构造、`canvas.toBlob`、`fetch().then(r => r.blob())`、以及 File System Access / OPFS 句柄的 `handle.getFile()`。浏览器出于安全从不允许用磁盘绝对路径字符串直接读取任意本地文件。",
+    "tags": ["file-system", "入门", "file-sources"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "传入磁盘绝对路径字符串，浏览器据此直接读取任意本地文件",
+        "isCorrect": true,
+        "description": "这是**不合法**途径——安全限制下前端拿不到也不能用绝对路径"
+      },
+      {
+        "text": "`<input type=\"file\">` 的 `input.files`",
+        "isCorrect": false,
+        "description": "这是最常见的合法来源"
+      },
+      {
+        "text": "拖放事件的 `event.dataTransfer.files`",
+        "isCorrect": false,
+        "description": "拖放是合法来源之一"
+      },
+      {
+        "text": "File System Access / OPFS 句柄的 `handle.getFile()`",
+        "isCorrect": false,
+        "description": "由句柄取 File 是合法来源"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`Blob` 的两个只读属性 `size` 与 `type` 分别表示什么？",
+    "explanation": "`Blob` 只有两个只读属性：`size` 是**字节数**（注意是编码后的字节数，不是字符数），`type` 是 **MIME 字符串**——它只是个标签，未知时是空字符串 `''`，浏览器不保证它与实际内容一致。",
+    "tags": ["file-system", "入门", "blob-props"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`size` 是字符数、`type` 是文件扩展名",
+        "isCorrect": false,
+        "description": "size 是字节数非字符数，type 是 MIME 非扩展名"
+      },
+      {
+        "text": "`size` 是像素尺寸、`type` 是编码格式",
+        "isCorrect": false,
+        "description": "Blob 与像素、编码格式无关"
+      },
+      {
+        "text": "`size` 是行数、`type` 是换行风格",
+        "isCorrect": false,
+        "description": "完全不符，换行风格是 endings 选项的事"
+      },
+      {
+        "text": "`size` 是**字节数**（编码后）、`type` 是 **MIME 字符串**（未知时为空串 `''`）",
+        "isCorrect": true,
+        "description": "字节数 + MIME 标签，正是两个只读属性"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：跨浏览器「触发文件下载」的通用做法（万能式）是？",
+    "explanation": "浏览器没有直接的「保存文件」API（`showSaveFilePicker` 仅 Chromium），跨浏览器的通用下载靠 object URL + 隐藏 `<a download>`：`Blob` → `URL.createObjectURL` → 造 `<a download='名字'>` → `a.click()` → `URL.revokeObjectURL`。`download` 属性让链接触发「下载」而非「导航」，最后记得撤 URL 避免泄漏。",
+    "tags": ["file-system", "入门", "download"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "调用 `window.saveFile(blob)` 直接弹出保存框",
+        "isCorrect": false,
+        "description": "不存在这个 API"
+      },
+      {
+        "text": "`Blob` → `URL.createObjectURL` → 造 `<a download='名字'>` → `a.click()` → `URL.revokeObjectURL`",
+        "isCorrect": true,
+        "description": "object URL + a[download] 是全浏览器通用下载式"
+      },
+      {
+        "text": "必须用 `showSaveFilePicker`，否则无法下载",
+        "isCorrect": false,
+        "description": "showSaveFilePicker 仅 Chromium，不是通用方案"
+      },
+      {
+        "text": "把 `Blob` 转成 base64 后用 `location.href` 跳转",
+        "isCorrect": false,
+        "description": "会当作导航而非下载，大文件还会爆 URL 长度"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：OPFS（源私有文件系统）的三个决定性特征是？",
+    "explanation": "OPFS（Origin Private File System）有三个决定性特征：**源私有**（每个源独立一棵树，别的源和用户在文件管理器里都看不到、路径不暴露）、**免授权**（没有 picker、没有权限弹窗、没有用户激活要求，直接 `getDirectory()` 就能读写）、**高性能**（为字节级/随机/高频读写优化，Worker 内同步 API 吞吐达数据库级）。",
+    "tags": ["file-system", "入门", "opfs-intro"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "**源私有**（用户在文件管理器看不到）、**免授权**（无 picker/权限弹窗/用户激活）、为**高性能**字节读写设计",
+        "isCorrect": true,
+        "description": "私有 + 免授权 + 高性能，正是 OPFS 三特征"
+      },
+      {
+        "text": "全局共享（所有源共用一棵树）、需每次授权、只能异步低速读写",
+        "isCorrect": false,
+        "description": "三点全错，OPFS 恰是源私有、免授权、可高性能"
+      },
+      {
+        "text": "就是用户桌面上的一个可见文件夹，和 File System Access 完全一样",
+        "isCorrect": false,
+        "description": "OPFS 用户不可见，与 File System Access 是两个世界"
+      },
+      {
+        "text": "一块只能存文本、不能存二进制的小容量缓存",
+        "isCorrect": false,
+        "description": "OPFS 专为大容量字节级读写设计，不限文本"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：相比 `Blob`，`File` 额外拥有的字段是？",
+    "explanation": "`File` 独有三个字段：`name`（文件名，不含路径）、`lastModified`（最后修改时间，**毫秒时间戳** number）、`webkitRelativePath`（用 `webkitdirectory` 选目录时文件相对所选目录的路径，否则空串）。历史字段 `lastModifiedDate`（Date 对象）已废弃，改用 `new Date(file.lastModified)`。",
+    "tags": ["file-system", "初级", "file-fields"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`path`（磁盘绝对路径）、`owner`、`permissions`",
+        "isCorrect": false,
+        "description": "前端拿不到绝对路径与权限位，无这些字段"
+      },
+      {
+        "text": "`width`、`height`、`duration`",
+        "isCorrect": false,
+        "description": "这些是媒体元数据，不是 File 的字段"
+      },
+      {
+        "text": "`name`（文件名）、`lastModified`（毫秒时间戳）、`webkitRelativePath`（目录选择时的相对路径）",
+        "isCorrect": true,
+        "description": "正是 File 相比 Blob 多出的三个字段"
+      },
+      {
+        "text": "`encoding`、`mimeType`、`checksum`",
+        "isCorrect": false,
+        "description": "MIME 用 type（继承自 Blob），无 encoding/checksum 字段"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`new Blob(parts, options)` 的第一参 `parts` 可以包含哪些元素？",
+    "explanation": "`parts` 是一个数组，元素可**混合类型、按序拼接**：字符串、`ArrayBuffer`、TypedArray/`DataView`、甚至其它 `Blob` 都行。第二参 `options` 有 `type`（MIME）与 `endings`（换行处理）。例如 `new Blob(['{}', new Uint8Array([10]), new Blob(['尾'])], { type: 'application/json' })`。",
+    "tags": ["file-system", "初级", "blob-construct"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只能是单个字符串，不接受数组",
+        "isCorrect": false,
+        "description": "第一参就是数组，且元素类型可混合"
+      },
+      {
+        "text": "只能是 `File` 对象",
+        "isCorrect": false,
+        "description": "字符串、TypedArray、Blob 等都可，不限 File"
+      },
+      {
+        "text": "只能是数字数组表示字节",
+        "isCorrect": false,
+        "description": "裸数字数组不会被当字节，需 TypedArray"
+      },
+      {
+        "text": "字符串、`ArrayBuffer`、TypedArray/`DataView`、甚至其它 `Blob` 混合组成的数组，按序拼接",
+        "isCorrect": true,
+        "description": "混合类型按序拼接，正是 blobParts 的规则"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`<input type=\"file\">` 的 `input.files` 属性的类型是？",
+    "explanation": "`input.files` 是一个 **`FileList`**——类数组对象（有 `length` 和索引，但不是真正的 `Array`），常用 `Array.from(input.files)` 或展开运算符转成数组再遍历。要注意：同一文件重复选不触发 `change`，需在处理后清空 `input.value = ''`。",
+    "tags": ["file-system", "初级", "filelist"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`FileList`——一个类数组对象（非真正的 `Array`），常用 `Array.from()` 转成数组再遍历",
+        "isCorrect": true,
+        "description": "FileList 是类数组，需 Array.from 转换"
+      },
+      {
+        "text": "一个真正的 `Array<File>`，可直接用 `.map()`",
+        "isCorrect": false,
+        "description": "它是类数组，没有 map 等数组方法"
+      },
+      {
+        "text": "单个 `File` 对象（多选时被覆盖）",
+        "isCorrect": false,
+        "description": "始终是 FileList，多选时含多个 File"
+      },
+      {
+        "text": "磁盘路径字符串数组",
+        "isCorrect": false,
+        "description": "拿不到磁盘路径，元素是 File 对象"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：实现拖放读取文件时，关于事件处理正确的是？",
+    "explanation": "拖放的关键是：**必须在 `dragover` 里 `preventDefault()`**，否则浏览器会直接打开文件、`drop` 根本不触发；拖进来的文件在 `event.dataTransfer.files`（`FileList`），`drop` 里也要 `preventDefault()` 阻止默认打开行为。进阶可用 `dataTransfer.items` 的 `getAsFile()` / `getAsFileSystemHandle()`。",
+    "tags": ["file-system", "初级", "drag-drop"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "只需监听 `drop`，无需处理 `dragover`",
+        "isCorrect": false,
+        "description": "不在 dragover 里 preventDefault，drop 不会触发"
+      },
+      {
+        "text": "必须在 `dragover` 里 `preventDefault()`（否则浏览器直接打开文件、`drop` 不触发），拖入的文件在 `event.dataTransfer.files`",
+        "isCorrect": true,
+        "description": "dragover 阻止默认 + dataTransfer.files，正是拖放要点"
+      },
+      {
+        "text": "拖入文件在 `event.target.files`，和 input 一样",
+        "isCorrect": false,
+        "description": "拖放文件在 dataTransfer.files，不是 target.files"
+      },
+      {
+        "text": "拖放拿到的是磁盘路径，不是 `File` 对象",
+        "isCorrect": false,
+        "description": "拿到的是 File 对象，仍无磁盘绝对路径"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：把一个 `File` 读成文本，最简洁的「新式」写法是？",
+    "explanation": "新代码首选 `Blob` 自带的 Promise 方法——短、可 `await`、可组合：`const text = await file.text()` 直接读成 UTF-8 字符串。同类还有 `await file.arrayBuffer()`、`await file.bytes()`、`file.stream()`。相比旧式 `FileReader` 的事件回调，心智负担骤降。",
+    "tags": ["file-system", "初级", "blob-text"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`file.toString()` 直接同步拿到内容",
+        "isCorrect": false,
+        "description": "toString 返回 [object File] 之类，读不到内容"
+      },
+      {
+        "text": "`file.readText()` 同步回调",
+        "isCorrect": false,
+        "description": "不存在 readText 方法"
+      },
+      {
+        "text": "`const text = await file.text()`——`Blob` 自带的 Promise 方法，返回 UTF-8 字符串",
+        "isCorrect": true,
+        "description": "Blob.text() 是新式首选，返回 Promise<string>"
+      },
+      {
+        "text": "`JSON.parse(file)`",
+        "isCorrect": false,
+        "description": "File 不是 JSON 字符串，需先读成文本"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`FileReader` 的三个 `readAs*` 方法与其 `result` 类型，对应正确的是？",
+    "explanation": "`FileReader` 是异步、事件驱动的旧式读法，结果放在 `reader.result`：`readAsText(blob, encoding?)` → 字符串（默认 UTF-8，可指定编码）；`readAsDataURL(blob)` → `data:` URL（base64 内联，可直接当 `img.src`）；`readAsArrayBuffer(blob)` → `ArrayBuffer`。`readAsBinaryString` 已废弃。",
+    "tags": ["file-system", "初级", "filereader"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "三者都返回字符串，无区别",
+        "isCorrect": false,
+        "description": "readAsArrayBuffer 返回 ArrayBuffer 而非字符串"
+      },
+      {
+        "text": "`readAsText`→`ArrayBuffer`、`readAsDataURL`→`Blob`、`readAsArrayBuffer`→`string`",
+        "isCorrect": false,
+        "description": "对应关系被完全打乱"
+      },
+      {
+        "text": "三者都返回 `Promise`，可直接 `await`",
+        "isCorrect": false,
+        "description": "FileReader 是事件驱动、非 Promise，结果在 result"
+      },
+      {
+        "text": "`readAsText`→字符串、`readAsDataURL`→`data:` URL 字符串（base64 内联）、`readAsArrayBuffer`→`ArrayBuffer`",
+        "isCorrect": true,
+        "description": "三个 readAs 方法的 result 类型，对应正确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`blob.slice(start, end, contentType?)` 的作用与特性是？",
+    "explanation": "`Blob.slice()` 是处理大文件的关键：**零拷贝**地切出字节区间 `[start, end)` 返回一个**新 `Blob`**（负数从末尾算）。它**本身不读数据**——只记录「从哪到哪」的视图，真正的 I/O 发生在你对切片调 `arrayBuffer()`/`text()` 时。是分片上传、断点续传的基础。",
+    "tags": ["file-system", "初级", "slice"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "**零拷贝**切出字节区间 `[start, end)` 返回一个新 `Blob`，本身不触发 I/O，是分片上传/断点续传的基础",
+        "isCorrect": true,
+        "description": "零拷贝切片、惰性不读数据，正是 slice 的特性"
+      },
+      {
+        "text": "把 `Blob` 内容立即读进内存并返回字符串",
+        "isCorrect": false,
+        "description": "slice 只记区间不读数据，也不返回字符串"
+      },
+      {
+        "text": "修改原 `Blob`，删掉指定区间的字节",
+        "isCorrect": false,
+        "description": "Blob 不可变，slice 返回新 Blob 不改原对象"
+      },
+      {
+        "text": "按行切分文本返回数组",
+        "isCorrect": false,
+        "description": "slice 按字节区间切，与按行无关"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：File System Access 三个 picker 的返回值形态，正确的是？",
+    "explanation": "三个入口返回值形态各异，是最容易记错的点：`showOpenFilePicker` 返回 **`Promise<FileSystemFileHandle[]>`（数组，哪怕单选也是长度 1 的数组）**；`showSaveFilePicker` 返回 **`Promise<FileSystemFileHandle>`（单个）**；`showDirectoryPicker` 返回 **`Promise<FileSystemDirectoryHandle>`（目录句柄）**。用户点取消时三者都以 `AbortError` reject。",
+    "tags": ["file-system", "初级", "picker-return"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "三者都返回单个 `FileSystemFileHandle`",
+        "isCorrect": false,
+        "description": "open 返数组、directory 返目录句柄，并非都是单文件句柄"
+      },
+      {
+        "text": "`showOpenFilePicker` 返回**句柄数组**（哪怕单选）、`showSaveFilePicker` 返回**单个**文件句柄、`showDirectoryPicker` 返回**目录句柄**",
+        "isCorrect": true,
+        "description": "数组 / 单个 / 目录句柄，三者形态正确"
+      },
+      {
+        "text": "三者都返回数组",
+        "isCorrect": false,
+        "description": "只有 open 返数组，save/directory 返单个"
+      },
+      {
+        "text": "`showOpenFilePicker` 返单个、`showSaveFilePicker` 返数组",
+        "isCorrect": false,
+        "description": "恰好说反了"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：关于 File System Access 三个 picker 的浏览器支持面，正确的是？",
+    "explanation": "这是必须刻在脑子里的约束：`showOpenFilePicker`/`showSaveFilePicker`/`showDirectoryPicker` **仅 Chromium（Chrome/Edge 桌面）实现、非 Baseline**，Firefox 与 Safari 出于隐私考量长期不落地。面向公网必须写 `<input>` + `<a download>` 降级；用 `'showOpenFilePicker' in window` 特性检测，且只在 HTTPS/localhost 可用。",
+    "tags": ["file-system", "初级", "fs-access-support"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "已是全浏览器 Baseline，可当默认能力直接用",
+        "isCorrect": false,
+        "description": "非 Baseline，不能当默认能力"
+      },
+      {
+        "text": "只有 Firefox 支持",
+        "isCorrect": false,
+        "description": "恰恰相反，Firefox 长期不支持"
+      },
+      {
+        "text": "**仅 Chromium（Chrome/Edge 桌面）实现、非 Baseline**，Firefox 与 Safari 长期不支持，面向公网必须写降级",
+        "isCorrect": true,
+        "description": "仅 Chromium、非 Baseline，正是 picker 的支持面"
+      },
+      {
+        "text": "仅 Safari 支持",
+        "isCorrect": false,
+        "description": "Safari 也不支持三个 picker（仅支持 OPFS 部分）"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：获取 OPFS 根目录的**唯一入口**是？",
+    "explanation": "OPFS 的唯一入口是 `await navigator.storage.getDirectory()`，返回源私有根 `FileSystemDirectoryHandle`。它**免授权**——没有 picker、没有权限弹窗、没有用户激活要求，代码直接调用即可读写。主入口已跨浏览器 Baseline（Chrome 102 / Safari 15.2 / Firefox 111 起），仅安全上下文可用。",
+    "tags": ["file-system", "初级", "opfs-entry"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`await window.showDirectoryPicker()`",
+        "isCorrect": false,
+        "description": "那是选用户可见目录、仅 Chromium，不是 OPFS 入口"
+      },
+      {
+        "text": "`new FileSystemDirectoryHandle()`",
+        "isCorrect": false,
+        "description": "句柄不能直接 new 构造"
+      },
+      {
+        "text": "`await navigator.opfs.root()`",
+        "isCorrect": false,
+        "description": "不存在这个 API"
+      },
+      {
+        "text": "`await navigator.storage.getDirectory()`——返回源私有根 `FileSystemDirectoryHandle`，免授权、无需 picker/用户激活",
+        "isCorrect": true,
+        "description": "storage.getDirectory() 是 OPFS 唯一入口"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`dirHandle.getFileHandle(name, { create: true })` 与不传 `create` 的区别是？",
+    "explanation": "`getFileHandle`/`getDirectoryHandle` 的 `{ create: true }`：条目存在则返回、不存在则**创建**；不传（或 `create: false`）时，若条目不存在则抛 `NotFoundError`。这个选项在 File System Access 与 OPFS 里通用。",
+    "tags": ["file-system", "初级", "create-option"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`{ create: true }` 时不存在就创建该文件；缺省或 `false` 时若文件不存在抛 `NotFoundError`",
+        "isCorrect": true,
+        "description": "create 控制「不存在则建」还是「不存在则抛错」"
+      },
+      {
+        "text": "两者完全一样，`create` 参数被忽略",
+        "isCorrect": false,
+        "description": "create 直接决定不存在时的行为，不会被忽略"
+      },
+      {
+        "text": "`{ create: true }` 会删除已存在的同名文件",
+        "isCorrect": false,
+        "description": "存在则返回原文件，不会删除"
+      },
+      {
+        "text": "不传 `create` 时会自动创建，传 `true` 反而报错",
+        "isCorrect": false,
+        "description": "恰好说反，不传时不存在才抛 NotFoundError"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：上传前预览用户选中的图片，首选方案与理由是？",
+    "explanation": "预览首选 object URL：`img.src = URL.createObjectURL(file)`，`img.onload` 里 `URL.revokeObjectURL(url)`（DOM 已持有解码结果，撤 URL 不影响显示）。它零拷贝、比 `readAsDataURL` 省内存——DataURL 会把图片 base64 内联、**体积涨约 33%**、大图造出巨长字符串。只有需要把图片当字符串持久化/传输时才选 DataURL。",
+    "tags": ["file-system", "初级", "image-preview"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`readAsDataURL` 内联 base64，因为它更省内存",
+        "isCorrect": false,
+        "description": "DataURL 体积涨约 33%，反而更费内存"
+      },
+      {
+        "text": "先上传到服务器再拿回 URL 预览",
+        "isCorrect": false,
+        "description": "多余的网络往返，本地即可预览"
+      },
+      {
+        "text": "`img.src = URL.createObjectURL(file)`，`img.onload` 里 `revokeObjectURL`——零拷贝、比 `readAsDataURL` 省内存、无 base64 +33% 膨胀",
+        "isCorrect": true,
+        "description": "object URL 零拷贝省内存，是预览首选"
+      },
+      {
+        "text": "把图片转成 canvas 再截图",
+        "isCorrect": false,
+        "description": "绕远且损质，预览无需 canvas"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：导出含中文的 CSV 时，为避免 Excel 打开乱码，通常的做法是？",
+    "explanation": "Excel 打开 UTF-8 的 CSV 时若无字节顺序标记会按本地编码猜、导致中文乱码。规范做法是在 CSV 字符串前加 **UTF-8 BOM** 前缀：`new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })`，再走通用下载式。",
+    "tags": ["file-system", "初级", "csv-export"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "把内容转成 GBK 编码字符串",
+        "isCorrect": false,
+        "description": "浏览器字符串是 UTF-16，转 GBK 麻烦且非通用解法"
+      },
+      {
+        "text": "在 CSV 字符串前加 **UTF-8 BOM** 前缀（`new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })`）",
+        "isCorrect": true,
+        "description": "加 BOM 让 Excel 正确识别 UTF-8，中文不乱码"
+      },
+      {
+        "text": "把逗号全部换成分号",
+        "isCorrect": false,
+        "description": "分隔符与编码乱码无关"
+      },
+      {
+        "text": "用 `.xlsx` 扩展名即可，编码无关",
+        "isCorrect": false,
+        "description": "改扩展名不改内容编码，仍会乱码"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`new Blob(['中文']).size` 的值是多少（默认 UTF-8）？",
+    "explanation": "`Blob.size` 是**编码后的字节数**，不是字符数。UTF-8 下一个汉字占 3 字节，所以 `'中文'` 两个字共 6 字节，`size` 为 6。若想要字符数应该用 `str.length`。",
+    "tags": ["file-system", "中级", "size-bytes"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2——等于字符数",
+        "isCorrect": false,
+        "description": "size 是字节数不是字符数，2 是字符数"
+      },
+      {
+        "text": "4",
+        "isCorrect": false,
+        "description": "UTF-8 汉字是 3 字节/字，不是 2"
+      },
+      {
+        "text": "0——`Blob` 不统计中文",
+        "isCorrect": false,
+        "description": "Blob 统计所有字节，中文照算"
+      },
+      {
+        "text": "6——`size` 是编码后字节数，UTF-8 下每个汉字占 3 字节，`'中文'` 两字共 6 字节",
+        "isCorrect": true,
+        "description": "3 字节 × 2 字 = 6，size 是字节数"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：关于 `<input>` 拿到的 `file.type`，安全上正确的认知是？",
+    "explanation": "`file.type` 只是浏览器按扩展名/嗅探给出的**标签**——可能为空字符串，也可能被用户伪造，浏览器不保证它与实际内容一致。因此**安全校验不能只信 `type`（或扩展名）**，服务端必须按文件魔数/内容校验，前端可先卡大小/类型减少无效上传。",
+    "tags": ["file-system", "中级", "type-security"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`file.type` 只是个由扩展名/嗅探推断的标签，可能为空串也可能被伪造，**安全校验不能只信它**，服务端须按魔数/内容校验",
+        "isCorrect": true,
+        "description": "type 可伪造、只是标签，安全须按内容校验"
+      },
+      {
+        "text": "`file.type` 由浏览器读取文件真实内容严格计算，绝对可信",
+        "isCorrect": false,
+        "description": "type 不校验内容，不可作为安全依据"
+      },
+      {
+        "text": "`file.type` 等于文件的磁盘权限位",
+        "isCorrect": false,
+        "description": "type 是 MIME 标签，与权限位无关"
+      },
+      {
+        "text": "`file.type` 一定非空且与内容一致",
+        "isCorrect": false,
+        "description": "type 可能为空串，也可能与内容不一致"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：在有了 `blob.text()`/`arrayBuffer()` 等 Promise 读法后，`FileReader` 仍**不可替代**的场景是？",
+    "explanation": "新代码大多能用 `Blob` 的 Promise 方法替代 `FileReader`，但三种情况它仍不可替代：需要 `progress` **进度事件**、需要 `abort()` **中途取消**、或需要读成 **DataURL**（`readAsDataURL`）。这些能力是 `Blob` 的 `text()`/`arrayBuffer()` 给不了的。",
+    "tags": ["file-system", "中级", "filereader-when"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "任何读文件场景都必须用 `FileReader`",
+        "isCorrect": false,
+        "description": "多数场景已可用 Blob 的 Promise 方法替代"
+      },
+      {
+        "text": "`FileReader` 已完全废弃，没有任何场景需要",
+        "isCorrect": false,
+        "description": "它未废弃，进度/取消/DataURL 场景仍需它"
+      },
+      {
+        "text": "需要 `progress` 进度事件、需要 `abort()` 中途取消、或需要 `readAsDataURL`——这些是 `Blob` Promise 方法给不了的",
+        "isCorrect": true,
+        "description": "进度 / 取消 / DataURL，正是 FileReader 的三块自留地"
+      },
+      {
+        "text": "只有读纯 ASCII 文本时才需要 `FileReader`",
+        "isCorrect": false,
+        "description": "读文本反而是 blob.text() 更简洁"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：要把一个 **GBK 编码**的文件正确读成文本，正确做法是？",
+    "explanation": "`blob.text()` 固定按 **UTF-8** 解码，对 GBK 文件会乱码。正确做法是用 `blob.arrayBuffer()` 拿字节再 `new TextDecoder('gbk').decode(buf)`；或用 `FileReader.readAsText(blob, 'gbk')`——`readAsText` 的第二参可**指定编码**，这也是它相较 `blob.text()` 的一处优势。",
+    "tags": ["file-system", "中级", "encoding"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接 `await blob.text()`——它会自动识别 GBK",
+        "isCorrect": false,
+        "description": "blob.text() 固定 UTF-8，不会识别 GBK"
+      },
+      {
+        "text": "`blob.text()` 固定按 UTF-8 解码不适用；改用 `blob.arrayBuffer()` + `new TextDecoder('gbk').decode(buf)`，或 `FileReader.readAsText(blob, 'gbk')`",
+        "isCorrect": true,
+        "description": "TextDecoder 或 readAsText 指定编码，正确读 GBK"
+      },
+      {
+        "text": "GBK 文件无法在浏览器读取",
+        "isCorrect": false,
+        "description": "用 `TextDecoder('gbk')` 完全可读"
+      },
+      {
+        "text": "把文件后缀改成 `.utf8` 即可",
+        "isCorrect": false,
+        "description": "改后缀不改字节编码，仍是 GBK"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`readAsDataURL` 产生的 `data:` URL 与 `createObjectURL` 产生的 `blob:` URL，关键差异是？",
+    "explanation": "`data:` URL 把内容 **base64 内联**进字符串——体积约 **+33%**、是可持久化的普通字符串（能存 localStorage/发送），但字符串本身占内存。`blob:` URL 是**指向内存的零拷贝引用**——极短、页面级（刷新即失效）、**须手动 `revokeObjectURL`** 否则泄漏。预览/下载走 `blob:` 并及时撤销；要把图当字符串序列化才用 `data:`。",
+    "tags": ["file-system", "中级", "dataurl-vs-objecturl"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者完全等价，可互换",
+        "isCorrect": false,
+        "description": "体积、内存、可持久化性都不同，并不等价"
+      },
+      {
+        "text": "`data:` URL 零拷贝、`blob:` URL 膨胀 33%",
+        "isCorrect": false,
+        "description": "说反了，是 data: 膨胀约 33%"
+      },
+      {
+        "text": "`blob:` URL 可跨会话持久化，`data:` URL 刷新即失效",
+        "isCorrect": false,
+        "description": "说反了，blob: 页面级失效、data: 是可持久化字符串"
+      },
+      {
+        "text": "`data:` URL 把内容 base64 内联（体积约 +33%、是可持久化的普通字符串）；`blob:` URL 是指向内存的零拷贝引用、页面级、须手动 `revokeObjectURL`",
+        "isCorrect": true,
+        "description": "内联 base64 vs 内存引用，差异正确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：用 `handle.createWritable()` 写文件时，写入内容**何时**真正落到目标文件？",
+    "explanation": "`createWritable()` 写入的是一个**临时文件**，原文件保持不变，直到 `close()` 才把临时文件**原子替换**到目标文件。这个原子写语义意味着：中途崩溃或不调用 `close()`，原文件安然无恙、改动全部丢弃。所以写完必须 `await writable.close()`。",
+    "tags": ["file-system", "中级", "create-writable"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`write()` 写入的是临时文件、原文件保持不变，直到 `close()` 才**原子替换**到目标文件；不调 `close()` 改动全丢",
+        "isCorrect": true,
+        "description": "写临时文件、close 才原子落盘，正是其语义"
+      },
+      {
+        "text": "每次 `write()` 立即同步落到目标文件",
+        "isCorrect": false,
+        "description": "write 只写临时文件，close 才落盘"
+      },
+      {
+        "text": "打开 `createWritable()` 的瞬间原文件就被清空并保存",
+        "isCorrect": false,
+        "description": "原文件在 close 前不受影响"
+      },
+      {
+        "text": "需要手动调用 `handle.save()` 落盘",
+        "isCorrect": false,
+        "description": "没有 save() 方法，落盘靠 writable.close()"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：为什么 `showOpenFilePicker` 等不能在页面加载时直接调用？",
+    "explanation": "三个 picker 都要求**瞬时用户激活**（transient activation）——必须在 `click` 等用户手势的回调里调用，否则抛 `SecurityError`。这是为了防止页面加载时静默弹窗骚扰用户。此外它们只在安全上下文（HTTPS/localhost）可用。",
+    "tags": ["file-system", "中级", "user-activation"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为它们是同步 API，加载时会阻塞渲染",
+        "isCorrect": false,
+        "description": "它们是异步 Promise API，原因不在阻塞"
+      },
+      {
+        "text": "因为它们需要先 import 某个库",
+        "isCorrect": false,
+        "description": "是浏览器原生 API，无需 import"
+      },
+      {
+        "text": "三个 picker 都要求**瞬时用户激活**（须在 click 等手势回调里调用），否则抛 `SecurityError`——不能静默弹窗",
+        "isCorrect": true,
+        "description": "需用户激活、否则 SecurityError，正是原因"
+      },
+      {
+        "text": "因为加载时 `window` 尚未定义",
+        "isCorrect": false,
+        "description": "window 早已存在，与它无关"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：遍历目录时区分「文件」与「子目录」句柄，应依据哪个属性？",
+    "explanation": "`FileSystemHandle` 基类的 `kind` 属性用来分流：值为 `'file'`（`FileSystemFileHandle`）或 `'directory'`（`FileSystemDirectoryHandle`）。遍历时按 `handle.kind` 判断，是文件就 `getFile()`，是目录就可递归。`entries()` 异步迭代器给出 `[name, handle]` 对。",
+    "tags": ["file-system", "中级", "handle-kind"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`handle.type`——MIME 类型",
+        "isCorrect": false,
+        "description": "句柄没有 type 属性，MIME 在 File 上"
+      },
+      {
+        "text": "`handle.kind`——值为 `'file'`（`FileSystemFileHandle`）或 `'directory'`（`FileSystemDirectoryHandle`）",
+        "isCorrect": true,
+        "description": "kind 区分 file/directory，是遍历分流依据"
+      },
+      {
+        "text": "`handle.isDirectory`——布尔值",
+        "isCorrect": false,
+        "description": "不存在 isDirectory，用的是 kind"
+      },
+      {
+        "text": "靠文件名有没有扩展名判断",
+        "isCorrect": false,
+        "description": "扩展名不可靠，目录也可含点号"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：句柄的 `queryPermission({ mode })` 与 `requestPermission({ mode })`，说法正确的是？",
+    "explanation": "句柄携带权限状态，可查可求：`queryPermission` 查、`requestPermission` 求（会弹窗、需用户激活）。`mode` 取 `'read'`/`'readwrite'`，返回 `'granted'`/`'denied'`/`'prompt'`。要特别注意：**这两个方法是 Chromium 非标准扩展**，不是所有浏览器都有。",
+    "tags": ["file-system", "中级", "permission"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它们是 W3C 标准、全浏览器可用",
+        "isCorrect": false,
+        "description": "它们是 Chromium 非标准扩展，非全浏览器可用"
+      },
+      {
+        "text": "`mode` 只能是 `'open'` 或 `'close'`",
+        "isCorrect": false,
+        "description": "`mode` 取 `'read'`/`'readwrite'`，不是 open/close"
+      },
+      {
+        "text": "`requestPermission` 无需用户激活，可随时静默调用",
+        "isCorrect": false,
+        "description": "它会弹窗、需用户激活，不能静默调用"
+      },
+      {
+        "text": "`mode` 取 `'read'`/`'readwrite'`，返回 `'granted'`/`'denied'`/`'prompt'`；且这两个方法是 **Chromium 非标准扩展**",
+        "isCorrect": true,
+        "description": "mode 取值、返回值与「Chromium 非标准」均正确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：想实现「最近打开的文件」，把 `FileSystemHandle` 持久化下来，正确的存法是？",
+    "explanation": "`FileSystemHandle` 是**可结构化克隆**的——可直接 `put` 进 **IndexedDB**（不能进 `localStorage`，那只存字符串），实现「最近打开的文件/文件夹」。取回后句柄引用仍指向原文件，但复用前必须重新 `requestPermission`（权限不随句柄持久化）。",
+    "tags": ["file-system", "中级", "handle-indexeddb"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`FileSystemHandle` 可**结构化克隆**，直接 `put` 进 **IndexedDB**；不能存 `localStorage`（它只存字符串）",
+        "isCorrect": true,
+        "description": "句柄可克隆存 IndexedDB，localStorage 存不了"
+      },
+      {
+        "text": "用 `JSON.stringify(handle)` 存进 `localStorage`",
+        "isCorrect": false,
+        "description": "句柄序列化不成有效 JSON，localStorage 存不了"
+      },
+      {
+        "text": "把句柄转成磁盘路径字符串存 cookie",
+        "isCorrect": false,
+        "description": "拿不到磁盘路径，句柄也不是字符串"
+      },
+      {
+        "text": "句柄根本无法持久化，只能每次重新 picker",
+        "isCorrect": false,
+        "description": "句柄可结构化克隆存 IndexedDB 持久化"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：用 `dirHandle.removeEntry(name, options)` 删除一个**非空子目录**，正确的调用是？",
+    "explanation": "`removeEntry(name, { recursive })` 删除子条目：删非空目录必须传 `{ recursive: true }`，否则会失败。清空整个 OPFS 可对根调 `remove({ recursive: true })`。较新的句柄自身 `remove()` 方法也可删自己。",
+    "tags": ["file-system", "中级", "remove-entry"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`removeEntry(name)`——默认就能删非空目录",
+        "isCorrect": false,
+        "description": "默认删不了非空目录，需 recursive"
+      },
+      {
+        "text": "`removeEntry(name, { recursive: true })`——`recursive` 为真才能删非空目录",
+        "isCorrect": true,
+        "description": "recursive:true 才能递归删非空目录"
+      },
+      {
+        "text": "`removeEntry(name, { force: true })`",
+        "isCorrect": false,
+        "description": "选项是 recursive 不是 force"
+      },
+      {
+        "text": "非空目录无法删除，必须逐个删完文件",
+        "isCorrect": false,
+        "description": "recursive:true 可一次递归删除"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：OPFS 的 `createSyncAccessHandle()` 有一条**硬约束**，是？",
+    "explanation": "`createSyncAccessHandle()` 返回的 `FileSystemSyncAccessHandle`，其读写方法**全是同步的**，且**只能在 Dedicated Web Worker 里使用**——主线程调用会抛错。这是刻意设计：同步 I/O 若放主线程会卡死 UI。它跨浏览器可用（与 OPFS 主入口同批：Chrome 102 / Safari 15.2 / Firefox 111），是 SQLite WASM 的性能主力。",
+    "tags": ["file-system", "中级", "sync-access-worker"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只能在主线程用，Worker 里不可用",
+        "isCorrect": false,
+        "description": "恰好相反，同步句柄只能在 Worker 里用"
+      },
+      {
+        "text": "只能读不能写",
+        "isCorrect": false,
+        "description": "它同时支持同步 read 与 write"
+      },
+      {
+        "text": "返回的 `FileSystemSyncAccessHandle` 方法全同步，**只能在 Dedicated Web Worker 里使用**，主线程调用会抛错",
+        "isCorrect": true,
+        "description": "全同步 + 限 Worker，正是硬约束"
+      },
+      {
+        "text": "只对 File System Access 的可见文件有效，OPFS 不能用",
+        "isCorrect": false,
+        "description": "恰恰相反，它是 OPFS 专属能力"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：面向公网时，`showOpenFilePicker`/`showSaveFilePicker` 不支持的降级路线是？",
+    "explanation": "面向公网必须给 Firefox/Safari 一条退路：**打开**降级为隐藏的 `<input type='file'>`（Promise 化 change 事件）；**保存**降级为 `Blob` + `URL.createObjectURL` + `<a download>` 触发下载。功能近似（能开能存），但降级路线的「保存」永远是另存/下载一个新文件，**失去写回原文件的原子语义**。可用 browser-fs-access 库自动封装这套优先/降级逻辑。",
+    "tags": ["file-system", "中级", "fallback"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "打开降级为隐藏 `<input type='file'>`；保存降级为 `Blob` + `URL.createObjectURL` + `<a download>` 触发下载——功能近似，但失去「写回原文件」的原子语义",
+        "isCorrect": true,
+        "description": "input 开 + a.download 存，是标准降级路线"
+      },
+      {
+        "text": "降级为把文件内容显示在 `alert` 里",
+        "isCorrect": false,
+        "description": "alert 无法读写文件，不是降级方案"
+      },
+      {
+        "text": "无法降级，非 Chromium 浏览器只能提示用户换浏览器",
+        "isCorrect": false,
+        "description": "有成熟降级路线，无需强制换浏览器"
+      },
+      {
+        "text": "降级为调用 `localStorage` 存文件",
+        "isCorrect": false,
+        "description": "localStorage 只存字符串、容量小，不适合文件"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：关于 `createSyncAccessHandle()` 的「异步获取、同步使用」，正确的是？",
+    "explanation": "这是个易混点：`createSyncAccessHandle()` 本身是 `async`（要 `await`），但它**返回的句柄上**的 `read`/`write`/`getSize`/`truncate`/`flush`/`close` **全是同步**方法（无 `await`）。此外 `close()` 会释放对文件的**独占锁**——忘了关会锁死文件、别处再开失败。",
+    "tags": ["file-system", "高级", "sync-access-lock"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "整个流程全异步，每个方法都要 `await`",
+        "isCorrect": false,
+        "description": "句柄上的方法全同步，无需 await"
+      },
+      {
+        "text": "整个流程全同步，`createSyncAccessHandle()` 也不用 `await`",
+        "isCorrect": false,
+        "description": "获取句柄本身是 async，要 await"
+      },
+      {
+        "text": "`read`/`write` 同步，但 `getSize`/`close` 异步",
+        "isCorrect": false,
+        "description": "句柄上所有方法都是同步的，不分家"
+      },
+      {
+        "text": "`createSyncAccessHandle()` 本身是 `async`（要 `await`），但返回句柄上的 `read`/`write`/`getSize`/`truncate`/`flush`/`close` **全同步**；`close()` 释放**独占锁**",
+        "isCorrect": true,
+        "description": "异步获取 + 同步使用 + close 释放锁，全对"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：默认 `createWritable()` 会清空原文件重写；要在原内容基础上**局部增量修改**，正确做法是？",
+    "explanation": "`createWritable()` 默认**清空重写**。要在原内容基础上增量改，用 `createWritable({ keepExistingData: true })` 保留原数据，再用 `seek(pos)`/`write(data)` 局部覆盖、`truncate(size)` 裁剪。写流还支持 `write({ type: 'write', position, data })` 指定位置写。",
+    "tags": ["file-system", "高级", "keep-existing-data"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认就保留原数据，无需额外选项",
+        "isCorrect": false,
+        "description": "默认清空重写，需显式 keepExistingData"
+      },
+      {
+        "text": "`createWritable({ keepExistingData: true })` 保留原内容，再用 `seek(pos)`/`write(data)` 局部覆盖、`truncate(size)` 裁剪",
+        "isCorrect": true,
+        "description": "keepExistingData + seek/truncate，正是增量改法"
+      },
+      {
+        "text": "先 `getFile()` 读出全部、拼好、再整体 `write` 是唯一办法",
+        "isCorrect": false,
+        "description": "不是唯一办法，keepExistingData 可直接局部改"
+      },
+      {
+        "text": "用 `createWritable({ append: true })`",
+        "isCorrect": false,
+        "description": "没有 append 选项，是 keepExistingData"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：把句柄存进 IndexedDB、下次会话取回后，为什么通常还要再 `requestPermission`？",
+    "explanation": "**句柄能持久化，但权限不能**——重开会话后取回的句柄，`queryPermission` 多为 `'prompt'`，必须在用户手势里 `requestPermission` 重新确权才能读写。这是隐私设计：不让站点重开就静默复用上次的文件访问权。",
+    "tags": ["file-system", "高级", "permission-persist"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "取回的句柄已失效，必须重新 picker",
+        "isCorrect": false,
+        "description": "句柄仍有效指向原文件，只是要重新确权"
+      },
+      {
+        "text": "IndexedDB 会自动清空句柄的读写能力",
+        "isCorrect": false,
+        "description": "IndexedDB 不改句柄，是权限本身不持久化"
+      },
+      {
+        "text": "**句柄能持久化，但权限不能**——重开会话后 `queryPermission` 多为 `'prompt'`，必须在用户手势里 `requestPermission` 重新确权",
+        "isCorrect": true,
+        "description": "权限不随句柄持久化，需重新确权"
+      },
+      {
+        "text": "因为句柄每次取回都指向不同的文件",
+        "isCorrect": false,
+        "description": "句柄取回仍指向同一原文件"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：OPFS 与 File System Access（picker）在「文件归属与可见性」上的根本区别是？",
+    "explanation": "一句话：**OPFS 是「应用自己的高速私有磁盘」**——源私有、用户在文件管理器里不可见、属应用私有数据（清站点数据即没）；**File System Access 是「借用户之手读写用户可见的真实文件」**——操作用户桌面上可见的文件、归用户所有、独立于站点数据。选 OPFS 存应用内部大数据，选 File System Access 操作用户能看到的文档。",
+    "tags": ["file-system", "高级", "private-vs-visible"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "OPFS 是「应用自己的高速私有磁盘」——源私有、用户不可见、属应用数据（清站点数据即没）；File System Access 是「借用户之手读写用户可见的真实文件」——归用户所有、独立于站点数据",
+        "isCorrect": true,
+        "description": "私有应用数据 vs 用户可见文件，区别正确"
+      },
+      {
+        "text": "两者都操作用户可见文件，只是 API 名字不同",
+        "isCorrect": false,
+        "description": "OPFS 文件用户不可见，二者是两个世界"
+      },
+      {
+        "text": "OPFS 的文件用户能在文件管理器里看到，File System Access 的看不到",
+        "isCorrect": false,
+        "description": "说反了，OPFS 才是用户不可见"
+      },
+      {
+        "text": "OPFS 归用户所有，File System Access 归应用所有",
+        "isCorrect": false,
+        "description": "归属反了，OPFS 属应用、picker 操作用户文件"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：上传一个 GB 级大文件，正确的**内存友好**做法是？",
+    "explanation": "大文件**别整体读进内存**。用 `file.slice(start, start + CHUNK)` 分片、只在上传每片时才对该片 `arrayBuffer()` 按需读（`slice` 本身零拷贝、只记区间不读数据），或用 `file.stream()` 流式处理——避免把整个 GB 级文件塞进内存。对大文件直接 `arrayBuffer()`/`text()` 会撑爆内存。",
+    "tags": ["file-system", "高级", "chunk-upload"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`await file.arrayBuffer()` 一次性读进内存再上传",
+        "isCorrect": false,
+        "description": "整体读会把 GB 级文件塞满内存"
+      },
+      {
+        "text": "`await file.text()` 转字符串上传",
+        "isCorrect": false,
+        "description": "同样整体入内存，且二进制文件转文本会坏"
+      },
+      {
+        "text": "先 `readAsDataURL` 转 base64 再传",
+        "isCorrect": false,
+        "description": "base64 还膨胀 33%，更费内存"
+      },
+      {
+        "text": "用 `file.slice()` 分片、只在上传每片时才对该片 `arrayBuffer()` 按需读（`slice` 零拷贝不读数据），或用 `file.stream()` 流式",
+        "isCorrect": true,
+        "description": "slice 分片/stream 流式，内存友好"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：要把用户的图片/附件**离线保存**，相比转 base64 存，更优的做法是？",
+    "explanation": "`Blob`/`File` 可被**结构化克隆**，直接作为记录的一个字段 `put` 进 IndexedDB——比转 base64 字符串存更省空间、更快（省去编解码和 +33% 膨胀）。取回后用 object URL 预览（记得 revoke）。这属于「结构化数据里夹二进制」的场景。",
+    "tags": ["file-system", "高级", "blob-indexeddb"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须先 `readAsDataURL` 转 base64 字符串再存",
+        "isCorrect": false,
+        "description": "base64 膨胀且慢，不如直接存 Blob"
+      },
+      {
+        "text": "`Blob`/`File` 可被**结构化克隆**，直接作为记录的一个字段 `put` 进 IndexedDB——比转 base64 更省空间、更快",
+        "isCorrect": true,
+        "description": "Blob 可克隆直接存 IndexedDB，省且快"
+      },
+      {
+        "text": "存进 `localStorage`——它能直接存 `Blob`",
+        "isCorrect": false,
+        "description": "localStorage 只存字符串，存不了 Blob"
+      },
+      {
+        "text": "`Blob` 无法持久化，只能存磁盘路径",
+        "isCorrect": false,
+        "description": "Blob 可克隆持久化，且前端无磁盘路径"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：对「文件系统 API」做特性检测，正确的策略是？",
+    "explanation": "「文件系统 API」不是一个整体开关——三条路线支持面差异极大，必须按**具体入口**分别检测：`'showOpenFilePicker' in window`（picker）、`'getDirectory' in navigator.storage`（OPFS 根）、`'createSyncAccessHandle' in FileSystemFileHandle.prototype`（同步句柄）。OPFS 可用**不代表** picker 可用（Safari/Firefox 正是「有 OPFS、无 picker」）。",
+    "tags": ["file-system", "高级", "feature-detect"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "检测一个总开关 `'fileSystemAPI' in window` 即可代表三条路线",
+        "isCorrect": false,
+        "description": "不存在这种总开关，须分入口检测"
+      },
+      {
+        "text": "用 `navigator.userAgent` 判断浏览器名再决定",
+        "isCorrect": false,
+        "description": "UA 嗅探不可靠，应做能力检测"
+      },
+      {
+        "text": "按「具体入口」分别检测——`'showOpenFilePicker' in window`、`'getDirectory' in navigator.storage`、`'createSyncAccessHandle' in FileSystemFileHandle.prototype`；OPFS 可用不代表 picker 可用",
+        "isCorrect": true,
+        "description": "按入口分别检测，正是正确策略"
+      },
+      {
+        "text": "只要 OPFS 可用就说明 picker 也可用",
+        "isCorrect": false,
+        "description": "Safari/Firefox 有 OPFS 却无 picker，反例明确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：通过句柄 `handle.getFile()` 拿到 `File` 后，磁盘上的文件又被外部程序改了，此时该 `File` 会？",
+    "explanation": "`getFile()` 返回的是**读取那一刻的磁盘快照**——它是当时内容的静态副本，不会自动跟随后续磁盘变化。文件后来在磁盘上被改了，要重新 `getFile()` 拿新内容。这是句柄读的重要语义。",
+    "tags": ["file-system", "高级", "getfile-snapshot"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`getFile()` 返回的是**读取那一刻的磁盘快照**，不会自动跟随后续磁盘变化——要拿新内容必须重新 `getFile()`",
+        "isCorrect": true,
+        "description": "getFile 是快照，变更后需重新 getFile"
+      },
+      {
+        "text": "`File` 是活引用，会自动同步磁盘最新内容",
+        "isCorrect": false,
+        "description": "File 是静态快照，不会自动同步"
+      },
+      {
+        "text": "`File` 会抛出「文件已过期」异常",
+        "isCorrect": false,
+        "description": "旧 File 仍可用，只是内容是旧的，不抛异常"
+      },
+      {
+        "text": "原 `File` 内容会被自动清空",
+        "isCorrect": false,
+        "description": "旧快照内容不变，不会被清空"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：数据载体选型（`File` / `Blob` / `ArrayBuffer` / `Stream`），下列对应关系正确的是？",
+    "explanation": "按「要拿它干什么」选：需要文件名/修改时间 → `File`；在 API 间传整块字节（上传 body、`createObjectURL`、存 IndexedDB）→ `Blob`；要解析/改写二进制（配 `DataView`/TypedArray、算哈希）→ `ArrayBuffer`；超大/边读边处理/管道 → `ReadableStream`。口诀：只读小数据 `text()`、解析二进制 `arrayBuffer()`、超大管道 `stream()`。",
+    "tags": ["file-system", "高级", "data-carrier-choice"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任何场景都优先用 `ArrayBuffer`",
+        "isCorrect": false,
+        "description": "解析二进制才用 ArrayBuffer，非万能首选"
+      },
+      {
+        "text": "`Stream` 适合小数据，`Blob` 适合超大文件",
+        "isCorrect": false,
+        "description": "说反了，超大/管道才用 Stream"
+      },
+      {
+        "text": "`File` 只能用于下载，不能读",
+        "isCorrect": false,
+        "description": "File 就是 Blob，可读可传"
+      },
+      {
+        "text": "要文件名/修改时间→`File`；跨 API 传整块字节→`Blob`；解析/改写二进制→`ArrayBuffer`；超大/边读边处理/管道→`ReadableStream`",
+        "isCorrect": true,
+        "description": "四种载体各按用途选，对应正确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：OPFS 主入口 `getDirectory()` 与 `createSyncAccessHandle()` 达到**跨浏览器**可用的大致时间线是？",
+    "explanation": "OPFS 主入口 `navigator.storage.getDirectory()` 与 Worker 内的 `createSyncAccessHandle()` 自 **2023 年 3 月**起在三大浏览器可用：**Chrome 102 / Safari 15.2 / Firefox 111**。这使 OPFS 成为「既跨浏览器又高性能」的路线，与仅 Chromium 的 picker 形成鲜明对比。",
+    "tags": ["file-system", "高级", "opfs-baseline"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "至今仅 Chromium 支持，Safari/Firefox 均无",
+        "isCorrect": false,
+        "description": "那是 picker；OPFS 三大浏览器都支持"
+      },
+      {
+        "text": "2023 年 3 月起 **Chrome 102 / Safari 15.2 / Firefox 111** 三大浏览器均可用（`createSyncAccessHandle` 限 Dedicated Worker）",
+        "isCorrect": true,
+        "description": "版本与时间线正确，OPFS 已跨浏览器 Baseline"
+      },
+      {
+        "text": "仅 Safari 支持 OPFS",
+        "isCorrect": false,
+        "description": "三大浏览器都支持，不止 Safari"
+      },
+      {
+        "text": "OPFS 从未在任何浏览器落地",
+        "isCorrect": false,
+        "description": "OPFS 早已跨浏览器落地"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：关于 `createSyncAccessHandle()` 的**并发/锁**语义，正确的是？",
+    "explanation": "`createSyncAccessHandle()` 默认对文件加**独占锁**——同一文件同时只能有一个 sync handle，`close()` 前别处再开会失败。新标准支持 `createSyncAccessHandle({ mode })`（`'read-only'`/`'readwrite'`/`'readwrite-unsafe'`）放宽并发，但兼容面窄；保守写法就是「用完即 `close()`」以释放锁。",
+    "tags": ["file-system", "专家", "sync-lock-mode"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "天然支持任意多个 sync handle 并发写同一文件，无需担心冲突",
+        "isCorrect": false,
+        "description": "默认独占锁，同一文件只能有一个 sync handle"
+      },
+      {
+        "text": "完全不加锁，谁都能随时读写",
+        "isCorrect": false,
+        "description": "默认加独占锁，并非无锁"
+      },
+      {
+        "text": "默认对文件加**独占锁**——同一文件只能有一个 sync handle，`close()` 前别处再开会失败；新标准 `createSyncAccessHandle({ mode })`（`'read-only'`/`'readwrite'`/`'readwrite-unsafe'`）可放宽但兼容面窄",
+        "isCorrect": true,
+        "description": "独占锁 + mode 放宽（兼容窄），锁语义正确"
+      },
+      {
+        "text": "锁在 5 秒后自动释放，无需手动 `close()`",
+        "isCorrect": false,
+        "description": "锁不会自动释放，必须 close() 显式释放"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：为什么 OPFS 的 `FileSystemSyncAccessHandle` 是 SQLite WASM 的**性能主力**？",
+    "explanation": "把 SQLite 编译成 WASM 跑在浏览器里，需要一个**支持随机偏移读写 + 同步语义**的持久后端。`FileSystemSyncAccessHandle` 恰好提供 `read/write(buffer, { at })` 的随机访问和**全同步**调用，正对 SQLite VFS 的胃口。这也是官方反复强调「OPFS 为数据库类高性能场景设计」的原因，`wa-sqlite`/官方 `sqlite-wasm` 都以它为持久层。",
+    "tags": ["file-system", "专家", "sqlite-wasm"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "SQLite 需要一个「支持**随机偏移读写 + 同步语义**」的持久后端，而 `FileSystemSyncAccessHandle` 恰好提供 `read/write(buf, { at })` 的随机访问和全同步调用，正对 SQLite VFS 的胃口",
+        "isCorrect": true,
+        "description": "随机偏移 + 同步语义，正合 SQLite VFS 需求"
+      },
+      {
+        "text": "因为 OPFS 会自动把数据同步到云端数据库",
+        "isCorrect": false,
+        "description": "OPFS 是本地私有沙盒，不涉及云端"
+      },
+      {
+        "text": "因为 sync handle 内置了 SQL 查询引擎",
+        "isCorrect": false,
+        "description": "它只是字节级读写句柄，无 SQL 引擎"
+      },
+      {
+        "text": "因为它比 IndexedDB 支持更复杂的索引查询",
+        "isCorrect": false,
+        "description": "索引查询是 IndexedDB 的强项，非 sync handle 的角色"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：`FileSystemWritableFileStream` 接口本身已跨浏览器（Baseline），但为什么「picker → 写回可见文件」整条链条**仍非 Baseline**？",
+    "explanation": "关键在**入口**：`FileSystemWritableFileStream` 写流接口近年虽已跨浏览器，但它在 File System Access 里的入口——`showSaveFilePicker` 等 picker——**仍锁 Chromium**，所以「picker → 写回用户可见文件」这条链依然非 Baseline。而 OPFS 里用**同一个** `createWritable` 才是真正跨浏览器（因为 OPFS 入口 `getDirectory()` 已 Baseline）。这正说明特性检测要按「具体入口」而非「整个接口」。",
+    "tags": ["file-system", "专家", "writable-baseline"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "因为 `close()` 方法只有 Chromium 实现",
+        "isCorrect": false,
+        "description": "close 并非只有 Chromium，问题在 picker 入口"
+      },
+      {
+        "text": "因为写流接口本身也仅 Chromium",
+        "isCorrect": false,
+        "description": "写流接口近年已跨浏览器，卡点在 picker"
+      },
+      {
+        "text": "因为 Firefox/Safari 的写流是只读的",
+        "isCorrect": false,
+        "description": "不存在「只读的写流」，说法自相矛盾"
+      },
+      {
+        "text": "写流接口虽已跨浏览器，但它的入口 picker（`showSaveFilePicker` 等）**仍锁 Chromium**，故整条链非 Baseline；OPFS 里同一个 `createWritable` 才真跨浏览器",
+        "isCorrect": true,
+        "description": "卡在 picker 入口，OPFS 入口才 Baseline，正确"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：基于 `Blob.slice` 实现大文件**断点续传**，核心步骤正确的是？",
+    "explanation": "断点续传的核心：给每片编号，**先问服务端「已收哪些片」再只补传缺片**；限制并发（如 3~4 片）避免连接饱和、片内失败重试吸收网络抖动。`slice` 切片零成本（只记区间），真正 I/O 发生在 `fetch(body = chunk)` 时。想要秒传/去重可给每片算哈希（`crypto.subtle.digest` + `chunk.arrayBuffer()`）。",
+    "tags": ["file-system", "专家", "resumable-upload"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "每次都从第 0 片重新全部上传，忽略已传部分",
+        "isCorrect": false,
+        "description": "那不叫断点续传，白白重传已完成的片"
+      },
+      {
+        "text": "给每片编号，**先问服务端「已收哪些片」再只补传缺片**；限制并发、片内失败重试；`slice` 切片零成本，真正 I/O 在 `fetch(body = chunk)` 时",
+        "isCorrect": true,
+        "description": "先问后传 + 限并发 + 重试，正是断点续传要点"
+      },
+      {
+        "text": "把整个文件一次性 `arrayBuffer()` 后再分片，保证顺序",
+        "isCorrect": false,
+        "description": "整体读违背大文件初衷，会撑爆内存"
+      },
+      {
+        "text": "断点续传必须依赖 File System Access，File API 做不到",
+        "isCorrect": false,
+        "description": "纯 File API 的 slice + fetch 即可实现"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：关于 OPFS/IndexedDB 数据的「持久化与配额」，`navigator.storage` 提供的两个相关 API 是？",
+    "explanation": "`await navigator.storage.persist()` 申请把本源存储（含 OPFS 与 IndexedDB）标记为**持久**、降低被自动清理的概率；`await navigator.storage.estimate()` 查询用量与配额。完整的配额上限、驱逐规则属浏览器存储章，本 API 层只需记住这两个方法。",
+    "tags": ["file-system", "专家", "persist-estimate"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`navigator.storage.lock()` 锁定配额、`navigator.storage.free()` 释放",
+        "isCorrect": false,
+        "description": "不存在 lock/free 这两个方法"
+      },
+      {
+        "text": "`navigator.storage.setQuota(n)` 直接设定配额上限",
+        "isCorrect": false,
+        "description": "配额由浏览器决定，不能由脚本直接设定"
+      },
+      {
+        "text": "`await navigator.storage.persist()` 申请把本源存储标记为**持久**、降低被清理概率；`await navigator.storage.estimate()` 查询用量与配额",
+        "isCorrect": true,
+        "description": "persist 申请持久、estimate 查用量配额，正确"
+      },
+      {
+        "text": "OPFS 数据永不被驱逐，无需任何 API",
+        "isCorrect": false,
+        "description": "默认存储可能被驱逐，需 persist 降低风险"
+      }
+    ]
+  },
+  {
+    "stem": "File 与文件系统 API：目录句柄的 `resolve(handle)` 与 `isSameEntry(other)` 分别用来做什么？",
+    "explanation": "`dirHandle.resolve(handle)` 算出某句柄相对本目录的**路径段数组**（如 `['assets', 'data.json']`；若不在该目录子树下返回 `null`）；`handle.isSameEntry(other)` 判断两个句柄是否指向**同一条目**（返回 `Promise<boolean>`）。前者用于定位，后者用于去重/比对。",
+    "tags": ["file-system", "专家", "resolve-issameentry"],
+    "categories": [
+      ["技术方向", "File 与文件系统 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`dir.resolve(handle)` 返回该句柄相对本目录的**路径段数组**（如 `['assets','data.json']`，不在子树下返 `null`）；`handle.isSameEntry(other)` 判断两句柄是否指向**同一条目**",
+        "isCorrect": true,
+        "description": "resolve 算相对路径段、isSameEntry 判同一条目，正确"
+      },
+      {
+        "text": "`resolve` 用来解析 `Promise`，`isSameEntry` 用来比较文件大小",
+        "isCorrect": false,
+        "description": "二者与解析 Promise、比大小都无关"
+      },
+      {
+        "text": "`resolve` 删除条目，`isSameEntry` 创建条目",
+        "isCorrect": false,
+        "description": "删除是 removeEntry、创建是 getXxxHandle(create)"
+      },
+      {
+        "text": "两者都是 `FileReader` 的方法",
+        "isCorrect": false,
+        "description": "它们是目录/句柄的方法，与 FileReader 无关"
+      }
+    ]
+  }
+]

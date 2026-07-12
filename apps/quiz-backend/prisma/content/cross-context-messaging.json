@@ -1,0 +1,1521 @@
+[
+  {
+    "stem": "跨上下文通信：为什么主文档、`<iframe>`、`window.open` 弹窗、Web Worker、同源多标签页之间不能直接读写彼此的变量，只能靠「传消息」？",
+    "explanation": "这些执行环境各有独立的全局对象和事件循环，内存互不相通——一个环境里的变量另一个环境根本读不到；同源策略又把「跨源直接读对方变量 / DOM」这条路彻底堵死，哪怕同源，跨标签页也没有共享内存。所以浏览器提供了一组受控的消息通道（`postMessage` / `MessageChannel` / `BroadcastChannel`），让它们在明确知道对方是谁的前提下安全交换数据；Web Locks 则负责协调而非传数据。",
+    "tags": ["cross-context-messaging", "入门", "context-isolation"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "浏览器为省内存把非活动上下文的变量表压成只读，运行时无法写入",
+        "isCorrect": false,
+        "description": "不存在这种「压缩只读」机制，隔离来自各上下文独立的全局与事件循环"
+      },
+      {
+        "text": "它们共享同一个全局对象，直接读写会引发竞态，浏览器因此禁止",
+        "isCorrect": false,
+        "description": "恰恰相反，各上下文的全局对象彼此独立、内存不相通"
+      },
+      {
+        "text": "各执行环境有独立的全局对象与事件循环、内存互不相通，同源策略又封死跨源直接访问，只能靠消息通道交换数据",
+        "isCorrect": true,
+        "description": "独立全局 + 同源策略双重隔离，消息是唯一受控桥梁"
+      },
+      {
+        "text": "跨上下文读变量默认走网络同步请求，延迟太高所以被禁用",
+        "isCorrect": false,
+        "description": "跨上下文通信不走网络，也从不「同步变量」，只是传消息"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：本叶四种标准机制各占一个生态位，下列「机制 → 定位」的对应，哪一组全部正确？",
+    "explanation": "四机制分工是：`window.postMessage`——跨文档 / 跨源点对点，是唯一能跨过同源策略的通道；`MessageChannel` / `MessagePort`——建一条私有双向管道、可把一端 port 转移出去做直连；`BroadcastChannel`——同源多上下文一对多广播；Web Locks（`navigator.locks`）——不是传消息，而是跨标签页协调与选主。",
+    "tags": ["cross-context-messaging", "入门", "mechanism-overview"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`postMessage`=跨源点对点、`MessageChannel`=私有双向管道、`BroadcastChannel`=同源一对多广播、Web Locks=协调 / 选主",
+        "isCorrect": true,
+        "description": "四者生态位划分正是官方口径：点对点 / 专线 / 广播 / 协调"
+      },
+      {
+        "text": "`postMessage`=同源广播、`MessageChannel`=选主、`BroadcastChannel`=跨源点对点、Web Locks=私有管道",
+        "isCorrect": false,
+        "description": "四者职责被完全打乱错配"
+      },
+      {
+        "text": "`postMessage`=选主、`MessageChannel`=同源广播、`BroadcastChannel`=协调、Web Locks=跨源点对点",
+        "isCorrect": false,
+        "description": "同样张冠李戴，且 Web Locks 从不跨源传数据"
+      },
+      {
+        "text": "四者其实等价，随便用哪个都行，只是命名不同",
+        "isCorrect": false,
+        "description": "四者拓扑与能力差异巨大，绝非等价"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：面对一个具体需求要选机制，下列「场景 → 首选机制」的速记，哪一条是错误的？",
+    "explanation": "选型速记：跨源 / 跨文档点对点（`<iframe>`、弹窗、跨源窗口）→ `postMessage`（唯一能跨源）；要一条私有双向管道或把通信端交给 Worker / 子框架直连 → `MessageChannel`；同源多标签一对多广播（登出、主题、数据失效）→ `BroadcastChannel`；多标签里「只让一个干活」的选主与互斥 → Web Locks。用 `BroadcastChannel` 做跨源通信是错的——它仅同源同分区。",
+    "tags": ["cross-context-messaging", "入门", "selection"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "跨源 `<iframe>` / 弹窗点对点传数据 → `postMessage`",
+        "isCorrect": false,
+        "description": "正确：只有 postMessage 能跨过同源策略"
+      },
+      {
+        "text": "同源多标签页里只让一个连 WebSocket / 跑轮询 → Web Locks 选主",
+        "isCorrect": false,
+        "description": "正确：选主 / 互斥正是 Web Locks 的用途"
+      },
+      {
+        "text": "要一条私有双向管道、把端口交给 Worker 直连 → `MessageChannel`",
+        "isCorrect": false,
+        "description": "正确：私有专线 + 端口转移是 MessageChannel 的招牌"
+      },
+      {
+        "text": "跨源窗口一对多广播登出状态 → `BroadcastChannel`",
+        "isCorrect": true,
+        "description": "错在「跨源」：BroadcastChannel 仅同源同分区，跨源须用 postMessage"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`window.postMessage` 在这组机制里最不可替代的定位是什么？",
+    "explanation": "同源策略禁止一个窗口直接读另一个跨源窗口的变量、DOM、`document`，而 `window.postMessage` 是唯一能「跨越同源策略、在两个窗口 / 文档间点对点传消息」的标准方法——`<iframe>`、`window.open` 弹窗、跨源窗口通信全靠它，第三方支付 / 登录 / 地图 / 编辑器嵌入都建立在它之上。它把安全责任交给发送端（限定收方源）和接收端（校验发方源）双向把关。",
+    "tags": ["cross-context-messaging", "入门", "positioning"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它是把 `localStorage` 变更同步到多标签页的专用事件",
+        "isCorrect": false,
+        "description": "那是 storage 事件，且只同源、只字符串，与 postMessage 无关"
+      },
+      {
+        "text": "它是唯一能跨越同源策略、在跨源窗口 / `<iframe>` / 弹窗间点对点传消息的标准通道",
+        "isCorrect": true,
+        "description": "跨源点对点是它不可替代的核心定位，也是头号安全面"
+      },
+      {
+        "text": "它是一对多广播总线，一处发同源所有上下文都收到",
+        "isCorrect": false,
+        "description": "那是 BroadcastChannel 的一对多广播，postMessage 是点对点"
+      },
+      {
+        "text": "它是多标签页选主用的协调 API，不传业务数据",
+        "isCorrect": false,
+        "description": "选主是 Web Locks；postMessage 恰恰是传数据的"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：入门要先认清「跨上下文」的四类典型场景，下列哪一项不属于本叶讨论的执行环境？",
+    "explanation": "本叶的四类场景是：① 主页 ↔ `<iframe>` 子框架（同源或跨源，第三方支付 / 登录 / 地图 / 编辑器）；② 主页 ↔ `window.open` 弹窗 / 新窗口（弹窗有 `window.opener` 指回打开它的窗口）；③ 主页 ↔ Web Worker 后台线程；④ 同源的多个标签页 / 窗口互相同步。它们各有独立全局与事件循环，只能靠传消息通信。同一函数内的两个闭包共享同一全局作用域，不是「跨上下文」。",
+    "tags": ["cross-context-messaging", "入门", "scenarios"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "主文档与嵌入的跨源 `<iframe>` 之间",
+        "isCorrect": false,
+        "description": "属于场景①，是最典型的跨上下文通信面"
+      },
+      {
+        "text": "同一个脚本文件里两个共享同一全局作用域的闭包之间",
+        "isCorrect": true,
+        "description": "同一全局作用域内的闭包直接共享内存，根本不是跨上下文"
+      },
+      {
+        "text": "主线程与 Web Worker 后台线程之间",
+        "isCorrect": false,
+        "description": "属于场景③，Worker 无 DOM，与主线程只能 postMessage"
+      },
+      {
+        "text": "同源打开的多个标签页 / 窗口之间",
+        "isCorrect": false,
+        "description": "属于场景④，跨标签页无共享内存，需广播 / 协调"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：为什么说 `BroadcastChannel` 能把「多标签页同步」写成三行代码？它的一句话定位是什么？",
+    "explanation": "`BroadcastChannel` 是同源下多个浏览上下文（标签页 / `<iframe>` / Worker）之间的一对多广播总线：`new BroadcastChannel(\"名字\")` 连入频道、`bc.postMessage(data)` 广播、`bc.onmessage` 接收——同源所有连到同名频道的上下文都收到。它不必两两建连，登出 / 主题 / 购物车这类「一处改、处处变」一句广播搞定，且天然不回发给自己，省掉最常见的回声判重。",
+    "tags": ["cross-context-messaging", "入门", "broadcast-intro"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它给每两个标签页建立一条独立 TCP 连接，故代码短",
+        "isCorrect": false,
+        "description": "它不建网络连接，是浏览器内的同源广播总线"
+      },
+      {
+        "text": "它把数据写进 `localStorage`，其他页读盘拿到",
+        "isCorrect": false,
+        "description": "那是 storage 事件路线；BroadcastChannel 不落盘、直接传对象"
+      },
+      {
+        "text": "它需要一个中心服务器转发，因此三行即可",
+        "isCorrect": false,
+        "description": "它是浏览器本地机制，不需要任何服务器"
+      },
+      {
+        "text": "它是同源一对多广播总线，连同名频道即互通，一句 `postMessage` 广播给所有其他上下文",
+        "isCorrect": true,
+        "description": "同名入网 + 一句广播 + 不回发自己，正是三行代码的由来"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：向一个跨源 `<iframe>` 发消息，`window.postMessage` 的标准调用形态是下列哪一个？",
+    "explanation": "发送的通用形态是「拿到目标窗口引用 → `目标window.postMessage(message, targetOrigin, transfer?)`」。这里目标窗口引用是 `iframe.contentWindow`，第一参数是任意可结构化克隆的数据，第二参数 `targetOrigin` 限定接收方必须匹配的源（要写明子框架的源，不能省略成跨源默认），第三参数是可选的 transfer 移交列表。",
+    "tags": ["cross-context-messaging", "初级", "postmessage-signature"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`iframe.contentWindow.postMessage(data, \"https://child.example\")`",
+        "isCorrect": true,
+        "description": "目标窗口引用 + 数据 + 明确的 targetOrigin，标准形态"
+      },
+      {
+        "text": "`iframe.postMessage(data)`——直接对 `<iframe>` 元素调用即可",
+        "isCorrect": false,
+        "description": "要对 iframe.contentWindow（窗口）调用，不是元素本身，且缺 targetOrigin"
+      },
+      {
+        "text": "`window.postMessage(data, iframe)`——把 `<iframe>` 当第二参数",
+        "isCorrect": false,
+        "description": "第二参数是 targetOrigin 字符串，不是元素引用"
+      },
+      {
+        "text": "`postMessage.to(iframe, data)`——用静态方法路由",
+        "isCorrect": false,
+        "description": "不存在这种 API，postMessage 是窗口 / 端口上的方法"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：接收 `postMessage` 消息时，监听器该挂在哪、数据从哪个字段取？",
+    "explanation": "接收方给自己的 `window` 挂 `message` 监听：`window.addEventListener(\"message\", (event) => {...})`。对方传来的数据在 `event.data`（结构化克隆的副本），发送窗口的源在 `event.origin`（唯一可信身份依据），发送窗口引用在 `event.source`（回复用），随消息转移来的端口在 `event.ports`。数据绝不在 `event.message` 或 `event.payload` 这类不存在的字段上。",
+    "tags": ["cross-context-messaging", "初级", "receive-data"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "监听 `document` 的 `receive` 事件，数据在 `event.payload`",
+        "isCorrect": false,
+        "description": "事件名是 message、挂在 window，且无 payload 字段"
+      },
+      {
+        "text": "监听 `window` 的 `postmessage` 事件，数据在 `event.message`",
+        "isCorrect": false,
+        "description": "事件名是 message 不是 postmessage，数据在 event.data"
+      },
+      {
+        "text": "给 `window` 挂 `message` 监听，数据在 `event.data`",
+        "isCorrect": true,
+        "description": "window 的 message 事件 + event.data，正是标准接收方式"
+      },
+      {
+        "text": "给目标 `<iframe>` 元素挂 `load` 监听，数据在 `iframe.data`",
+        "isCorrect": false,
+        "description": "load 只表示加载完成，不携带消息数据"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：向弹窗发送包含会话令牌的消息，第二参数 `targetOrigin` 为什么绝不能用 `*`？",
+    "explanation": "这是发送端的安全铁律①。`targetOrigin` 用 `*` 表示「发给任意源」。MDN 明确警告：恶意站点可以在你不知情的情况下改变目标窗口的 location，从而截获用 `postMessage` 发送的数据。也就是你以为在跟 `https://secure.example` 通信，但那个窗口可能已被导航到 `https://evil.example`，用 `*` 就等于把 token 直接送给攻击者。凡携带敏感信息的消息，`targetOrigin` 必须写死对方确切的源。",
+    "tags": ["cross-context-messaging", "初级", "targetorigin-security"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为目标窗口可能已被导航到恶意源，用 `*` 会把敏感数据投递给攻击者截获",
+        "isCorrect": true,
+        "description": "MDN 原文：恶意站点可改窗口 location 截获数据，故须写死源"
+      },
+      {
+        "text": "因为 `*` 会让消息广播给同源所有标签页，造成信息扩散",
+        "isCorrect": false,
+        "description": "postMessage 是点对点，`*` 只是放宽收方源匹配，不会广播"
+      },
+      {
+        "text": "因为 `*` 会触发 `DataCloneError`，消息根本发不出去",
+        "isCorrect": false,
+        "description": "`*` 能正常发出，问题是安全上可被截获而非克隆失败"
+      },
+      {
+        "text": "因为用 `*` 时浏览器会自动把消息加密，性能开销过大",
+        "isCorrect": false,
+        "description": "postMessage 不因 targetOrigin 加密，风险是数据被明文截获"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`message` 监听器里公认的「头号安全点」是哪一步？",
+    "explanation": "这是接收端的安全铁律②，也是整套 API 最重要的一行：`if (event.origin !== 期望源) return;`。收到的每一条消息都可能来自任何窗口（iframe 层级里从顶到底任何文档，包括恶意站点都能发），所以监听器第一行就必须校验 `event.origin`，非白名单一律丢弃。MDN 还建议：若不打算接收外站消息，干脆别挂 `message` 监听——这是规避安全问题最彻底的办法。",
+    "tags": ["cross-context-messaging", "初级", "origin-validation"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "先用 `event.source` 反查对方是否在白名单里",
+        "isCorrect": false,
+        "description": "source 是回信地址不是身份凭证，不能拿它做认证"
+      },
+      {
+        "text": "先检查 `event.data` 是不是字符串，不是就丢弃",
+        "isCorrect": false,
+        "description": "验结构是第二步，且数据可以是对象；第一步永远是验来源"
+      },
+      {
+        "text": "监听器第一行校验 `event.origin`，非期望源立即 `return` 丢弃",
+        "isCorrect": true,
+        "description": "先验来源再处理，是整套 API 最重要的一行、头号安全点"
+      },
+      {
+        "text": "先调用 `event.stopPropagation()` 阻止消息冒泡到其他监听器",
+        "isCorrect": false,
+        "description": "message 事件的安全靠校验来源，与阻止冒泡无关"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：关于 `event.source`，下列说法哪一个正确？",
+    "explanation": "`event.source` 是发送窗口的引用（`WindowProxy`），作用是「安全回复」——收到消息后可直接 `event.source.postMessage(数据, event.origin)`，`origin` 回填 `targetOrigin` 天然打回正确对端，不必事先持有对方引用。但关键区分：`event.source` 是「往哪回」的回信地址，不能拿它当身份认证。判断消息可不可信永远看 `event.origin`（源不可伪造）；把 `source` 当身份、跳过 `origin` 校验是常见安全误解。",
+    "tags": ["cross-context-messaging", "初级", "event-source"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它是对方源的字符串，可直接用来做身份认证",
+        "isCorrect": false,
+        "description": "源是 event.origin（字符串），source 是窗口引用，且不做认证"
+      },
+      {
+        "text": "它是发送窗口的引用，用于安全回复，但不能当身份凭证——身份看 `origin`",
+        "isCorrect": true,
+        "description": "回信地址 vs 身份依据的关键区分正是此点"
+      },
+      {
+        "text": "它是消息数据本身，等价于 `event.data`",
+        "isCorrect": false,
+        "description": "数据在 event.data；source 是发送窗口引用"
+      },
+      {
+        "text": "它随消息转移来的端口数组，从中取 port 建直连",
+        "isCorrect": false,
+        "description": "端口在 event.ports；source 是窗口引用"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：父页面向刚插入的跨源 `<iframe>` 发首条消息，为什么要等 `<iframe>` 的 `load` 事件？",
+    "explanation": "父页面通过 `iframe.contentWindow` 拿到子框架窗口引用发消息。但若发得太早，子框架脚本尚未执行、`message` 监听尚未挂上，消息会直接丢失（`postMessage` 不排队等对方就绪）。所以要么等 `<iframe>` 的 `load` 事件再发首条，要么用更稳的握手：让子框架先发一条 `ready`，父页面收到 `ready` 再开始发。",
+    "tags": ["cross-context-messaging", "初级", "contentwindow"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `load` 之前 `iframe.contentWindow` 是 `null`，取不到窗口引用",
+        "isCorrect": false,
+        "description": "contentWindow 早已存在，问题是子框架监听尚未就绪"
+      },
+      {
+        "text": "因为 `targetOrigin` 只有在 `load` 后才允许写具体源",
+        "isCorrect": false,
+        "description": "targetOrigin 任何时刻都能写具体源，与 load 无关"
+      },
+      {
+        "text": "因为跨源 `<iframe>` 必须 `load` 后才和父页面同源",
+        "isCorrect": false,
+        "description": "跨源 iframe 加载后仍跨源，load 不改变源"
+      },
+      {
+        "text": "因为发得太早时子框架脚本还没执行、`message` 监听未挂，消息会丢失",
+        "isCorrect": true,
+        "description": "postMessage 不等对方就绪，监听未挂上则消息直接丢弃"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`window.open` 打开的弹窗完成 OAuth 登录后，要把结果回传给主窗口，标准做法是什么？",
+    "explanation": "`window.open` 打开的弹窗里，`window.opener` 指回打开它的主窗口。弹窗登录完成后用 `window.opener.postMessage({ type: \"auth-result\", token }, \"https://host.example\")` 把结果带确切 `targetOrigin` 送回主窗口；主窗口挂 `message` 监听并校验 `event.origin` 后处理、再 `popup.close()`。这正是「弹窗登录」的经典骨架。绝不能用 `*` 传 token。",
+    "tags": ["cross-context-messaging", "初级", "opener"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "弹窗把 token 写进 `localStorage`，主窗口轮询读取",
+        "isCorrect": false,
+        "description": "跨源弹窗与主窗口不同源，localStorage 不互通；应走 postMessage"
+      },
+      {
+        "text": "主窗口直接读 `popup.document` 里的 token 变量",
+        "isCorrect": false,
+        "description": "跨源窗口被同源策略封死，读不到对方 document / 变量"
+      },
+      {
+        "text": "弹窗调用 `window.parent.postMessage` 冒泡回主窗口",
+        "isCorrect": false,
+        "description": "弹窗的上级是 window.opener 不是 window.parent（后者用于 iframe）"
+      },
+      {
+        "text": "弹窗用 `window.opener.postMessage(结果, 主窗口的确切源)` 回传，主窗口校验 `origin` 后处理",
+        "isCorrect": true,
+        "description": "opener 回传 + 确切 targetOrigin + 主窗口验 origin，正是弹窗登录骨架"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`postMessage` 的消息走「结构化克隆算法」，下列哪一类值可以原样传递？",
+    "explanation": "结构化克隆比 JSON 强得多，能传：原始值、普通对象、数组、`Date`、`RegExp`、`Map`、`Set`、`ArrayBuffer`、TypedArray、`Blob`、`File`、`ImageBitmap`、`MessagePort` 等，且是深拷贝（对端拿到副本，改它不影响你）。传不了的是函数、DOM 节点、含方法的类实例（会抛 `DataCloneError`）。所以 `Map` / `Set` / `Date` 这类 JSON 表达不了的结构可以直接传。",
+    "tags": ["cross-context-messaging", "初级", "structured-clone"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "普通函数与箭头函数",
+        "isCorrect": false,
+        "description": "函数无法结构化克隆，含它会抛 DataCloneError"
+      },
+      {
+        "text": "`Map` / `Set` / `Date` / `ArrayBuffer` / `Blob`",
+        "isCorrect": true,
+        "description": "这些正是结构化克隆能原样深拷贝的类型，比 JSON 强"
+      },
+      {
+        "text": "DOM 节点（如 `document.body`）",
+        "isCorrect": false,
+        "description": "DOM 节点不可克隆传递，会抛 DataCloneError"
+      },
+      {
+        "text": "带方法的自定义类实例，方法会原样保留",
+        "isCorrect": false,
+        "description": "取回会变普通对象、方法与原型丢失（含方法则报错）"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：让同源多个标签页都连入同一条广播总线，`BroadcastChannel` 的创建 / 收 / 发三步分别怎么写？",
+    "explanation": "三步：① 创建 / 入网 `const bc = new BroadcastChannel(\"频道名\")`（构造参数只有一个频道名，同名即同频道）；② 接收 `bc.onmessage = (e) => e.data`（或 `bc.addEventListener(\"message\", ...)`）；③ 发送 `bc.postMessage(data)`——无 `targetOrigin`、无收方地址，广播给频道上所有其他订阅者，走结构化克隆。",
+    "tags": ["cross-context-messaging", "初级", "broadcastchannel-basics"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`BroadcastChannel.connect(url)` 建连 → `bc.send()` 发 → `bc.poll()` 收",
+        "isCorrect": false,
+        "description": "不存在 connect / send / poll，构造只传频道名，收发是 postMessage / onmessage"
+      },
+      {
+        "text": "`new BroadcastChannel(host, port)` → `bc.emit()` → `bc.on()`",
+        "isCorrect": false,
+        "description": "构造只有一个频道名参数，也没有 emit / on 这类 API"
+      },
+      {
+        "text": "`new BroadcastChannel(\"名\")` 入网 → `bc.postMessage(data)` 发 → `bc.onmessage` 收",
+        "isCorrect": true,
+        "description": "同名入网 + postMessage 广播 + onmessage 接收，正是三步"
+      },
+      {
+        "text": "`new BroadcastChannel(\"名\", targetOrigin)` → `bc.postMessage(data, origin)` → `bc.onmessage`",
+        "isCorrect": false,
+        "description": "BroadcastChannel 无 targetOrigin，构造与发送都不带源参数"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：同一个 `BroadcastChannel` 实例 `bc.postMessage(x)` 后，本上下文的 `bc.onmessage` 会不会因为这次发送而触发？",
+    "explanation": "不会。这是 `BroadcastChannel` 最省心的设计：WHATWG HTML 的 `postMessage` 算法在收集接收者时有一步明确的「Remove source from destinations」——把发送者自己的 `BroadcastChannel` 对象从投递列表里移除。所以广播出去的只有别人收到，你不用像用 storage 或自造事件总线那样费心「区分是别人发的还是自己刚发的」。（注意是同一个实例不收自己发的；若同页开了两个连同名频道的实例，另一个实例会收到。）",
+    "tags": ["cross-context-messaging", "初级", "no-echo"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不会——WHATWG 算法「Remove source from destinations」把发送者自己移出投递列表，天然不回声",
+        "isCorrect": true,
+        "description": "规范明确移除 source，广播不回发给发送者自己"
+      },
+      {
+        "text": "会——广播是无差别扩散，发送者自己也会收到一份副本",
+        "isCorrect": false,
+        "description": "恰恰相反，规范专门把发送者移出接收列表"
+      },
+      {
+        "text": "会，但只有第一次 `postMessage` 会回发，之后不再回声",
+        "isCorrect": false,
+        "description": "任何一次都不回发给同一发送实例，无「仅第一次」之说"
+      },
+      {
+        "text": "取决于是否设置了 `bc.echo = false`",
+        "isCorrect": false,
+        "description": "不存在 echo 选项，不回发是规范默认行为"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`new MessageChannel()` 到底创建了什么？它相对 `window.postMessage` 解决了什么痛点？",
+    "explanation": "`new MessageChannel()` 一次造出一对用管道连通（entangled）的 `MessagePort`（`port1` / `port2`），一端发、另一端收。它解决的痛点是：`window.postMessage` 的所有消息都撞在接收窗口同一个 `window.onmessage` 上，多来源多类型混在一起得靠 `origin` + `type` 分拣，像公共广场喊话；`MessageChannel` 给一条私有专线——留一端自用、把另一端转移给对端，消息只在这对 port 间流动，互不干扰。",
+    "tags": ["cross-context-messaging", "初级", "messagechannel-ports"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "创建一个全局广播频道，所有窗口自动接入",
+        "isCorrect": false,
+        "description": "那是 BroadcastChannel；MessageChannel 是点对点专线"
+      },
+      {
+        "text": "创建一个 WebSocket 连接对象，用于连服务器",
+        "isCorrect": false,
+        "description": "MessageChannel 是浏览器内的端口对，不涉及网络"
+      },
+      {
+        "text": "创建一对连通的 `MessagePort`（`port1` / `port2`），构成私有双向专线，避免消息全挤在 `window.onmessage`",
+        "isCorrect": true,
+        "description": "一对 entangled port + 私有专线，正是它的本质与价值"
+      },
+      {
+        "text": "创建一个只读的消息日志，用于回放历史消息",
+        "isCorrect": false,
+        "description": "它是活的双向通道，不是历史日志"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：用 `port.addEventListener(\"message\", handler)` 方式接收 `MessagePort` 消息，为什么必须额外调用 `port.start()`？",
+    "explanation": "`MessagePort` 的消息队列初始是禁用的（WHATWG：「A port message queue can be enabled or disabled, and is initially disabled」）。队列没启用，消息进不来。用 `addEventListener(\"message\", ...)` 挂监听不会自动启用队列，必须显式 `port.start()` 才开始派发消息。MDN 原文：`start()`「only needed when using EventTarget.addEventListener; it is implied when using onmessage」。",
+    "tags": ["cross-context-messaging", "中级", "port-start"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为端口消息队列初始禁用，`addEventListener` 不会隐式启用，必须显式 `start()` 才派发消息",
+        "isCorrect": true,
+        "description": "队列初始 disabled + addEventListener 不隐式启用，故须手动 start"
+      },
+      {
+        "text": "因为 `start()` 会重新建立与对端的 entangle 关系",
+        "isCorrect": false,
+        "description": "port 一创建即 entangled，start 只是启用本端消息队列"
+      },
+      {
+        "text": "因为 `addEventListener` 只能收一次，`start()` 用来重置监听",
+        "isCorrect": false,
+        "description": "addEventListener 可持续收，start 与「重置」无关"
+      },
+      {
+        "text": "因为 `start()` 负责把 port 转移给对端上下文",
+        "isCorrect": false,
+        "description": "转移 port 用 postMessage 的 transfer 列表，与 start 无关"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：用 `port.onmessage = fn` 赋值方式接收端口消息时，还需要手动调 `port.start()` 吗？",
+    "explanation": "不需要。WHATWG 规定 `The first time a MessagePort object onmessage IDL attribute is set, the port message queue must be enabled, as if the start() method had been called`——首次给 `onmessage` 赋值会隐式启用消息队列，等同自动调用了 `start()`。所以口诀是：`port.onmessage = fn` 自动 start、直接能收；`port.addEventListener(\"message\", fn)` 必须手动 `port.start()`。",
+    "tags": ["cross-context-messaging", "中级", "onmessage-implicit-start"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "需要，`onmessage` 和 `addEventListener` 一样都得手动 `start()`",
+        "isCorrect": false,
+        "description": "两者行为不同：onmessage 赋值会隐式启用队列"
+      },
+      {
+        "text": "不需要，首次给 `onmessage` 赋值会隐式启用消息队列，等同自动 `start()`",
+        "isCorrect": true,
+        "description": "WHATWG：设置 onmessage 即如同调用 start()，隐式启动"
+      },
+      {
+        "text": "不需要，但必须先调 `port.open()` 才能赋值 `onmessage`",
+        "isCorrect": false,
+        "description": "不存在 port.open()；onmessage 赋值即隐式启用"
+      },
+      {
+        "text": "需要，且要在赋值 `onmessage` 之前调用 `start()`",
+        "isCorrect": false,
+        "description": "onmessage 赋值本身就隐式 start，无需前置调用"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：一段代码用 `port.addEventListener(\"message\", cb)` 挂了监听却漏了 `port.start()`，运行时会出现什么现象？",
+    "explanation": "会出现「代码看着没错、一条消息都收不到、又不报任何错」的经典排查点。因为端口消息队列初始禁用，`addEventListener` 不隐式启用，漏了 `port.start()` 队列永远不派发，回调一次都不触发；而这不是错误，浏览器不会抛异常也不打印警告。排查方向：用 `addEventListener` 风格时检查是否漏了 `start()`，或改用 `port.onmessage =`（隐式 start）。",
+    "tags": ["cross-context-messaging", "中级", "start-missing-symptom"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "控制台抛出 `PortNotStartedError`，提示调用 `start()`",
+        "isCorrect": false,
+        "description": "浏览器不报任何错，正是它难排查的原因"
+      },
+      {
+        "text": "回调会收到消息，但顺序被打乱",
+        "isCorrect": false,
+        "description": "漏 start 是一条都收不到，不是乱序"
+      },
+      {
+        "text": "对端 `postMessage` 会同步抛错，提示对方未就绪",
+        "isCorrect": false,
+        "description": "对端发送不报错，消息只是滞留在未启用的队列"
+      },
+      {
+        "text": "回调一次都不触发、且不抛任何错误",
+        "isCorrect": true,
+        "description": "队列未启用→静默不派发，是「不报错却收不到」的经典坑"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：要让主页面和 `<iframe>` 走一条私有专线，把 `MessageChannel` 的一端交过去，对端从哪里取出转移来的 port？",
+    "explanation": "父页面造通道、留 `port1`、用一次 `iframe.contentWindow.postMessage(\"交付\", \"https://widget.example\", [channel.port2])` 把 `port2` 放进 transfer 列表转移过去。`<iframe>` 侧在 `message` 事件里从 `event.ports[0]` 取出转移来的 port（`ports` 是数组，转移几个取几个），再挂 `onmessage`（或 `addEventListener` + `start()`）。之后两端各用自己的 port 直连，不再撞全局 `window.onmessage`。",
+    "tags": ["cross-context-messaging", "中级", "port-transfer"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对端从 `event.ports[0]` 取出转移来的 port，再挂监听",
+        "isCorrect": true,
+        "description": "转移来的 port 在 event.ports 数组里，按下标取"
+      },
+      {
+        "text": "对端从 `event.data.port` 里取，port 随数据一起克隆过来",
+        "isCorrect": false,
+        "description": "port 不在 data 里（也不被克隆），在 event.ports 中"
+      },
+      {
+        "text": "对端调用 `MessageChannel.receive()` 静态方法领取",
+        "isCorrect": false,
+        "description": "不存在该 API；转移来的 port 从 event.ports 取"
+      },
+      {
+        "text": "对端用 `new MessagePort()` 自行重建同一个 port",
+        "isCorrect": false,
+        "description": "MessagePort 不能 new，且 port 是被转移不是重建"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：把 `MessagePort`（或 `ArrayBuffer`）通过 transfer 列表转移给另一个上下文后，原上下文里那个对象还能用吗？",
+    "explanation": "不能。`MessagePort` 是 Transferable 对象，转移的本质是移交所有权——WHATWG / MDN：「A port, after it is sent, can no longer be used by the original context」。转移后原上下文里那个 port 立即失效（neutered），只能在新宿主用；一个 port 同一时刻只属于一个上下文。这和 `postMessage` 转移 `ArrayBuffer`（转移后 `byteLength` 变 0）是同一套零拷贝移交语义。",
+    "tags": ["cross-context-messaging", "中级", "port-neutered"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "能，转移只是复制一份，原上下文保留可用副本",
+        "isCorrect": false,
+        "description": "transfer 是移交所有权（零拷贝），不是复制副本"
+      },
+      {
+        "text": "能，但只能读不能发，写操作被冻结",
+        "isCorrect": false,
+        "description": "转移后原对象整体失效（neutered），读写都不可用"
+      },
+      {
+        "text": "取决于 `mode` 参数是否设为 `shared`",
+        "isCorrect": false,
+        "description": "transfer 无 shared 选项，转移即独占移交"
+      },
+      {
+        "text": "不能，转移后原 port 立即 neutered 失效，只有新宿主能用",
+        "isCorrect": true,
+        "description": "端口只属一个上下文，移交所有权后原持有者失效"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`port.postMessage(data)` 与 `window.postMessage(data, targetOrigin)` 在参数上最关键的差别是什么？",
+    "explanation": "`port.postMessage` 没有 `targetOrigin` 参数——因为管道已经是私有专线，消息只在这一对 port 间流动，不需要再限定收方源，也不会广播到 `window.onmessage`；它第二参数是可选的 transfer 列表。而 `window.postMessage` 必须带 `targetOrigin` 限定收方源，且所有消息都撞在全局 `window.onmessage`。所以给 `port.postMessage` 传一个「源字符串」当第二参数是常见误用。",
+    "tags": ["cross-context-messaging", "中级", "port-no-targetorigin"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`port.postMessage` 只能发字符串，`window.postMessage` 能发对象",
+        "isCorrect": false,
+        "description": "两者都走结构化克隆、都能发对象"
+      },
+      {
+        "text": "`port.postMessage` 是同步阻塞的，`window.postMessage` 是异步的",
+        "isCorrect": false,
+        "description": "两者都是异步消息，不阻塞"
+      },
+      {
+        "text": "`port.postMessage` 没有 `targetOrigin` 参数（专线已私有），第二参数是 transfer 列表",
+        "isCorrect": true,
+        "description": "私有专线无需限定收方源，故无 targetOrigin，第二参数是 transfer"
+      },
+      {
+        "text": "`port.postMessage` 会广播给所有 port，`window.postMessage` 才是点对点",
+        "isCorrect": false,
+        "description": "port 消息只在这对 port 间流动，恰恰是点对点专线"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：把一个 64 MB 的 `ArrayBuffer` 用 `postMessage` 发给渲染窗口，怎样避免昂贵的深拷贝？",
+    "explanation": "结构化克隆是深拷贝，大对象很贵。Transferable 对象（`ArrayBuffer`、`MessagePort`、`ImageBitmap`、`OffscreenCanvas` 等）可用第三参数 transfer 列表移交所有权（零拷贝）：`otherWindow.postMessage({ buffer }, 源, [buffer])`。移交后本上下文里该 `buffer` 立即失效（`byteLength === 0`），只有对端能用。这几乎零成本，是大二进制数据跨上下文传递的正解。",
+    "tags": ["cross-context-messaging", "中级", "transfer-ownership"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 `ArrayBuffer` 先 `JSON.stringify` 再发，字符串更省内存",
+        "isCorrect": false,
+        "description": "ArrayBuffer 无法 JSON 序列化，且字符串化更慢更占内存"
+      },
+      {
+        "text": "把 `buffer` 放进第三参数 transfer 列表零拷贝移交，移交后本地 `byteLength` 变 0",
+        "isCorrect": true,
+        "description": "Transferable 移交所有权，几乎零成本，本地随即失效"
+      },
+      {
+        "text": "调用 `buffer.compress()` 压缩后再克隆",
+        "isCorrect": false,
+        "description": "ArrayBuffer 无 compress 方法，真正的解法是 transfer 移交"
+      },
+      {
+        "text": "把 `targetOrigin` 设为 `*`，浏览器会自动改用零拷贝",
+        "isCorrect": false,
+        "description": "targetOrigin 与拷贝方式无关，零拷贝靠第三参数 transfer"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：下列哪一组对象属于可放进 `postMessage` transfer 列表零拷贝移交的 Transferable？",
+    "explanation": "Transferable 对象包括 `ArrayBuffer`、`MessagePort`、`ImageBitmap`、`OffscreenCanvas` 等——它们能放进 transfer 列表移交所有权，移交后原上下文里对象失效。而普通对象、`Map` / `Set`、`Date`、`Blob` 这类虽可结构化克隆，却不是 Transferable，不能移交（只能拷贝）；函数、DOM 节点连克隆都不行。",
+    "tags": ["cross-context-messaging", "中级", "transferable-types"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "普通对象、`Map`、`Set`",
+        "isCorrect": false,
+        "description": "它们可结构化克隆但不是 Transferable，只能拷贝不能移交"
+      },
+      {
+        "text": "`ArrayBuffer`、`MessagePort`、`ImageBitmap`",
+        "isCorrect": true,
+        "description": "这三者正是典型 Transferable，可零拷贝移交所有权"
+      },
+      {
+        "text": "函数、DOM 节点",
+        "isCorrect": false,
+        "description": "两者连克隆都做不到（DataCloneError），更谈不上移交"
+      },
+      {
+        "text": "`Date`、`RegExp`、`Blob`",
+        "isCorrect": false,
+        "description": "可克隆但非 Transferable，不能放进 transfer 列表移交"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`BroadcastChannel` 的消息不带任何发送者身份、也不带语义，实践中要怎样弥补？",
+    "explanation": "WHATWG / MDN 明确：API 不给消息附加任何语义（`does not associate any semantics to messages`），协议由使用方自行实现。所以消息里没有「谁发的」「是什么类型」，全靠往 payload 里自带字段：约定俗成的三件套是 `type`（消息种类，用来 switch 分发）、`senderId`（发送者标识，溯源 / 去重 / 选择性忽略）、以及业务字段。虽然同一实例不会收到自己发的，但多实例 / 调试时 `senderId` 仍是有用的溯源信息。",
+    "tags": ["cross-context-messaging", "中级", "sender-id"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "调用 `bc.setSender(id)` 让浏览器自动在消息头附上发送者",
+        "isCorrect": false,
+        "description": "不存在该 API，发送者信息完全靠使用方自带"
+      },
+      {
+        "text": "读取 `event.origin` 就能拿到发送标签页的唯一 id",
+        "isCorrect": false,
+        "description": "同源广播里 origin 都相同，无法区分具体发送者"
+      },
+      {
+        "text": "在 payload 里自带 `type`（分发）和 `senderId`（溯源）等约定字段",
+        "isCorrect": true,
+        "description": "API 无语义无身份，靠 payload 自带 type / senderId 弥补"
+      },
+      {
+        "text": "靠 `event.source` 拿到发送者的窗口引用来识别",
+        "isCorrect": false,
+        "description": "BroadcastChannel 的 message 事件没有 source 字段（那是 window.postMessage）"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`BroadcastChannel` 与老式 storage 事件都能做多标签页同步，二者最本质的差别是哪一组？",
+    "explanation": "`BroadcastChannel` 是专为广播设计的消息总线：传任意结构化克隆数据、不落盘、发送者自己不触发。storage 事件是 `localStorage` 变更的副产物：只能传字符串、且不在写入页自身触发（需从 `event.newValue` 读回值）、是老浏览器兜底方案。所以本质差别是「专用广播总线（任意数据、不落盘）」对「存储变更副产物（仅字符串、要读回值）」。二者都不回发给写入 / 发送方自己。",
+    "tags": ["cross-context-messaging", "中级", "vs-storage-event"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`BroadcastChannel` 只能同步字符串，storage 事件能同步任意对象",
+        "isCorrect": false,
+        "description": "正好反了：storage 事件仅字符串，BroadcastChannel 传任意结构化数据"
+      },
+      {
+        "text": "storage 事件会回发给写入页自己，`BroadcastChannel` 不回发",
+        "isCorrect": false,
+        "description": "storage 事件也不在写入页自身触发，二者都不回发自己"
+      },
+      {
+        "text": "`BroadcastChannel` 仅跨源可用，storage 事件仅同源可用",
+        "isCorrect": false,
+        "description": "两者都仅同源；BroadcastChannel 不能跨源"
+      },
+      {
+        "text": "`BroadcastChannel` 是专用广播总线（任意结构化数据、不落盘），storage 事件是存储变更副产物（仅字符串、要读回值）",
+        "isCorrect": true,
+        "description": "本质是「广播总线」对「存储变更副产物」，数据能力与落盘差异明显"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`BroadcastChannel` 的作用范围仅限「同源」，实际上还受什么进一步约束？",
+    "explanation": "`BroadcastChannel` 只在同源上下文间互通，且更精确地说是同一存储分区（storage partition）内。现代浏览器按顶级站点对存储分区：如果你在 `a.com` 页面里嵌了来自 `b.com` 的 `<iframe>`，同时又单独打开了一个 `b.com` 页面——尽管那个 `<iframe>` 和独立的 `b.com` 页技术上同源，它们仍不能通过 `BroadcastChannel` 互通，因为分属不同存储分区。日常直觉：同一站点的多标签页 / 窗口能广播，跨站点一律不通。",
+    "tags": ["cross-context-messaging", "中级", "same-origin-partition"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "受「存储分区」约束——不同顶级站点下的同源上下文分属不同分区，互不互通",
+        "isCorrect": true,
+        "description": "同源之外还须同存储分区，嵌入的 b.com 与独立 b.com 页不通"
+      },
+      {
+        "text": "受频道名长度约束——超过 32 字符的频道名会被静默截断隔离",
+        "isCorrect": false,
+        "description": "不存在频道名长度隔离一说，约束来自存储分区"
+      },
+      {
+        "text": "受标签页数量约束——同源超过 6 个标签页后新页收不到广播",
+        "isCorrect": false,
+        "description": "无标签页数量上限；真正约束是存储分区"
+      },
+      {
+        "text": "受 HTTPS 约束——只有安全上下文才能广播",
+        "isCorrect": false,
+        "description": "仅安全上下文是 Web Locks 的限制，非 BroadcastChannel"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：即使校验了 `event.origin`，为什么还要校验 `event.data` 的结构才能防住 XSS？",
+    "explanation": "校验来源只解决「谁发的」，不解决「发来的是不是安全内容」。MDN 警告：即便验证了身份，仍应始终校验收到消息的语法，否则你所信任站点上的一个安全漏洞，就可能在你的站点上打开一个 XSS 漏洞。换句话说，把 `event.data` 不加校验地塞进 `innerHTML`、`eval`、`new Function` 等 sink，就是把被信任站点的 XSS 变成自己的 XSS。所以要在验完来源后再验数据的类型 / 形状 / 字段，并用白名单 / 转义处理。",
+    "tags": ["cross-context-messaging", "中级", "xss"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `event.origin` 可以被发送方伪造，必须靠 data 结构二次确认身份",
+        "isCorrect": false,
+        "description": "origin 不可伪造；验结构针对的是内容安全不是身份"
+      },
+      {
+        "text": "因为不验结构会导致 `DataCloneError`，消息无法读取",
+        "isCorrect": false,
+        "description": "克隆在接收前已完成，不验结构不会报 DataCloneError"
+      },
+      {
+        "text": "因为浏览器要求每个 `message` 监听器显式声明数据 schema 才放行",
+        "isCorrect": false,
+        "description": "浏览器无此要求，验结构是开发者的安全责任"
+      },
+      {
+        "text": "因为把未校验的 `event.data` 塞进 `innerHTML` / `eval` 等 sink，被信任站点的 XSS 会传染成你的 XSS",
+        "isCorrect": true,
+        "description": "验来源不等于验内容，未净化的 data 进 sink 即 XSS 传染"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：父页面在 `<iframe>` 一 `appendChild` 插入后立刻 `postMessage`，结果消息丢了。最稳妥的修法是什么？",
+    "explanation": "太早发时子框架脚本尚未执行、`message` 监听未就绪，`postMessage` 不排队等待，消息直接丢失。修法：要么等 `<iframe>` 的 `load` 事件再发首条消息，更稳的是做一次 `ready` 握手——让子框架加载后先向父页面发一条 `ready`，父页面收到 `ready` 再开始发正式消息。这样无论子框架何时就绪都不会丢消息。",
+    "tags": ["cross-context-messaging", "中级", "iframe-load-timing"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "等 `<iframe>` 的 `load` 事件再发，或让子框架先发 `ready` 握手后父页面再发",
+        "isCorrect": true,
+        "description": "等 load 或 ready 握手确保对端监听就绪，消息不再丢"
+      },
+      {
+        "text": "把 `targetOrigin` 从具体源改成 `*`，消息就不会丢",
+        "isCorrect": false,
+        "description": "丢消息因对端未就绪，与 targetOrigin 取值无关，改 * 还降低安全"
+      },
+      {
+        "text": "连续快速发 3 次同样的消息，总有一次能到",
+        "isCorrect": false,
+        "description": "对端就绪前发几次都会丢，正解是等就绪或握手"
+      },
+      {
+        "text": "改用 `iframe.postMessage` 直接对元素发送即可绕过时序",
+        "isCorrect": false,
+        "description": "postMessage 是窗口方法且时序问题不变，元素上无此方法"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：把一个带方法的类实例 `new User()` 直接 `postMessage` 出去，会发生什么？",
+    "explanation": "结构化克隆传不了函数、DOM 节点、含方法的类实例。具体表现有两种：如果对象里含真正的函数（如方法定义在实例自身属性上）会抛 `DataCloneError`；而普通类实例被克隆后会变成普通对象——数据字段还在，但方法与原型链丢失（对端拿到的不再是 `User` 实例，调用方法会报错）。所以跨上下文只应传纯数据，由对端按需重建对象 / 恢复行为。",
+    "tags": ["cross-context-messaging", "中级", "dataclone-error"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对端会拿到完整的 `User` 实例，方法和原型链原样保留",
+        "isCorrect": false,
+        "description": "结构化克隆丢失方法与原型，对端拿到的不是原类实例"
+      },
+      {
+        "text": "方法与原型丢失（退化成普通对象）；若含真正的函数属性则抛 `DataCloneError`",
+        "isCorrect": true,
+        "description": "类实例克隆退化为纯数据对象，含函数则直接 DataCloneError"
+      },
+      {
+        "text": "浏览器自动调用实例的 `toJSON()` 转成字符串再传",
+        "isCorrect": false,
+        "description": "结构化克隆不走 toJSON，行为与 JSON 序列化不同"
+      },
+      {
+        "text": "方法会被序列化成字符串，对端 `eval` 还原",
+        "isCorrect": false,
+        "description": "函数无法克隆传递，不会被序列化成可还原的字符串"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`navigator.locks.request(name, async () => {...})` 中，锁在什么时刻被释放？",
+    "explanation": "锁在回调返回时自动释放——所以通常把回调写成 `async` 函数，它彻底跑完（返回的 Promise resolve）锁才释放。这也是选主写法的基础：如果回调返回一个永不 resolve 的 Promise，锁就一直被持有。作用域限同源：`https://example.com` 的锁与 `https://example.org:8080` 的锁互不影响。不需要手动 `unlock()`，用回调作用域界定持有期是 Web Locks 的核心设计。",
+    "tags": ["cross-context-messaging", "中级", "weblocks-basics"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在下一次 `navigator.locks.request` 同名锁时，旧锁被顶替释放",
+        "isCorrect": false,
+        "description": "后来者会排队等待，不会顶替；释放看回调是否返回"
+      },
+      {
+        "text": "必须显式调用 `lock.release()` 才释放，否则永久持有",
+        "isCorrect": false,
+        "description": "无 release 方法，锁靠回调返回自动释放"
+      },
+      {
+        "text": "在回调返回（其返回的 Promise resolve）时自动释放",
+        "isCorrect": true,
+        "description": "回调作用域界定持有期，返回即释放，无需手动解锁"
+      },
+      {
+        "text": "在固定 30 秒超时后由浏览器强制释放",
+        "isCorrect": false,
+        "description": "无固定超时，持有期由回调是否返回决定"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`MessageChannel` 建直连时，「转移 `port2` 的那一次 `window.postMessage`」还需不需要遵守 postMessage 的安全规则？",
+    "explanation": "需要。转移 port 的那次调用本身就是一次普通的 `window.postMessage`——发送端仍要写明 `targetOrigin`（不能用 `*` 敷衍），接收端仍要先校验 `event.origin` 再从 `event.ports[0]` 取 port。只有这次握手完成、专线建立之后，专线上后续的 `port.postMessage` 才不必再带 `targetOrigin`（管道已私有）。把握手这步当成不需要校验来源，是常见疏漏。",
+    "tags": ["cross-context-messaging", "中级", "handshake-security"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不需要，转移 port 是独立机制，天然免疫跨源攻击",
+        "isCorrect": false,
+        "description": "转移那次仍是普通 postMessage，安全规则照旧适用"
+      },
+      {
+        "text": "不需要，只要之后 `port.postMessage` 是私有的，握手怎么写都安全",
+        "isCorrect": false,
+        "description": "握手若不校验来源，port 可能被交给恶意窗口，专线也就失守"
+      },
+      {
+        "text": "需要，握手这次仍要写明 `targetOrigin`、接收端仍要校验 `event.origin` 再取 port",
+        "isCorrect": true,
+        "description": "转移是普通 postMessage，安全铁律照旧；建连后专线才免 targetOrigin"
+      },
+      {
+        "text": "需要，但只要把 `targetOrigin` 设为 `*` 就等于已校验",
+        "isCorrect": false,
+        "description": "`*` 恰恰放弃了收方限定，是反面做法，不等于校验"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：用 Web Locks 做多标签页选主（leader election），让拿到锁的标签页「一直当 leader」的经典写法是什么？",
+    "explanation": "选主诀窍是「让回调永远不返回」——回调返回一个永不 resolve 的 Promise（`return new Promise(() => {})`），锁就一直被这个标签页持有，它就一直是 leader（连 WebSocket / 跑轮询 / 做后台同步）。关键优势是异常自动释放：leader 标签页被关闭或崩溃，浏览器自动释放锁，正在 `request` 排队的其他标签页里会有一个立刻拿到锁、接任 leader。这比用 `localStorage` 自造「心跳锁 + 过期判定」健壮得多。",
+    "tags": ["cross-context-messaging", "高级", "leader-election"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在回调里 `setInterval` 每秒重新 `request` 一次同名锁续期",
+        "isCorrect": false,
+        "description": "无需续期，持有期靠回调不返回维持，重复 request 反而排队"
+      },
+      {
+        "text": "回调里 `return new Promise(() => {})`（永不 resolve），锁一直持有 = 一直当 leader",
+        "isCorrect": true,
+        "description": "永不 resolve 的回调让锁长持，本页崩溃时自动释放由后继补位"
+      },
+      {
+        "text": "回调返回后立刻再次 `request`，利用重入保持 leader",
+        "isCorrect": false,
+        "description": "回调一返回锁就释放，leader 立刻卸任，重入也抢不回顺位"
+      },
+      {
+        "text": "调用 `lock.keepAlive()` 让浏览器维持 leader 身份",
+        "isCorrect": false,
+        "description": "不存在 keepAlive；长持靠回调返回永不 resolve 的 Promise"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：Web Locks 的 `mode` 选项 `\"exclusive\"` 与 `\"shared\"` 分别是什么语义？",
+    "explanation": "`mode` 默认 `\"exclusive\"`：同名锁同源只能一个持有者（用于独占临界区、选主）。`\"shared\"`：多个 `shared` 请求可同时持有——用来实现读者-写者（readers-writer）模式：多个「读」持 shared 并行，「写」持 exclusive 独占，写要等所有读释放。一句话：exclusive 是独占，shared 是可并行共享的「读」。",
+    "tags": ["cross-context-messaging", "高级", "lock-mode"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`exclusive` 独占（同名仅一个持有）；`shared` 可多个同时持有（读者-写者的「读」）",
+        "isCorrect": true,
+        "description": "exclusive=独占、shared=可并行的读，正是读写者模式基础"
+      },
+      {
+        "text": "`exclusive` 仅本标签页可见；`shared` 全网站共享给所有源",
+        "isCorrect": false,
+        "description": "两种 mode 作用域都限同源，与「跨源共享」无关"
+      },
+      {
+        "text": "`exclusive` 立即返回；`shared` 会排队等待",
+        "isCorrect": false,
+        "description": "排队与否由 ifAvailable 决定，不是 mode 的语义"
+      },
+      {
+        "text": "`exclusive` 只读锁；`shared` 可读可写锁",
+        "isCorrect": false,
+        "description": "恰恰相反的直觉误解：shared 才是可并行的「读」"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：Web Locks 的 `ifAvailable: true` 选项有什么用？回调会以什么参数被调用？",
+    "explanation": "`ifAvailable: true` 表示锁不能立即授予就不等待（不排队），回调立即以 `null` 调用。典型用法是「抢不到就当自己不是 leader」——`request(name, { ifAvailable: true }, (lock) => { if (lock === null) { setupFollower(); return; } /* 抢到=leader */ })`。它把「能拿则拿、拿不到走另一条路（当 follower）」表达得很干净，避免无谓排队挂起。",
+    "tags": ["cross-context-messaging", "高级", "if-available"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "锁被占用时抛出 `LockUnavailableError`，需 try/catch 捕获",
+        "isCorrect": false,
+        "description": "不抛错，而是回调以 lock === null 调用"
+      },
+      {
+        "text": "让请求排队但设 5 秒超时，超时后回调收 `null`",
+        "isCorrect": false,
+        "description": "ifAvailable 是「不排队」，超时靠 signal，不是它"
+      },
+      {
+        "text": "抢占同名已持有的锁并夺过来",
+        "isCorrect": false,
+        "description": "抢占是 steal；ifAvailable 是拿不到就不等待"
+      },
+      {
+        "text": "拿不到锁就不排队，回调立即以 `null` 调用（用于「抢不到就当 follower」）",
+        "isCorrect": true,
+        "description": "不等待 + 回调收 null，正是快速判定自己是否 leader 的手段"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：Web Locks 的 `steal: true` 选项做什么？为什么要慎用？",
+    "explanation": "`steal: true` 是抢占：释放同名的已持有锁、把它夺过来授予本请求，并抢在排队请求前面。用途是原 leader 疑似卡死时强制夺权换主。慎用的原因：它会打断原持有者的临界区，可能破坏其一致性假设——原 leader 以为自己还持锁、还在安全地做事，锁却被偷走了。正确做法优先靠「异常自动释放」换主，仅在确诊 leader 卡死时才 steal。",
+    "tags": ["cross-context-messaging", "高级", "steal"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "抢占——释放同名已持有的锁并夺过来、绕过排队；会打断原持有者临界区，故慎用",
+        "isCorrect": true,
+        "description": "强制夺权用于 leader 卡死，代价是破坏原持有者一致性假设"
+      },
+      {
+        "text": "偷偷复制一份锁，让两个标签页同时当 leader",
+        "isCorrect": false,
+        "description": "锁不可复制，steal 是夺走，仍只一个持有者"
+      },
+      {
+        "text": "把锁的持有期延长一倍，防止被别人抢",
+        "isCorrect": false,
+        "description": "steal 是主动抢别人的锁，不是延长自己的持有"
+      },
+      {
+        "text": "将锁降级为 `shared`，允许多个读者进入",
+        "isCorrect": false,
+        "description": "降级是 mode 语义，steal 与读写模式无关"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：想给一个可能长时间等待的 Web Locks 请求加「3 秒拿不到就放弃」的超时，用哪个选项？",
+    "explanation": "用 `signal` 选项传入一个 `AbortSignal`：`const c = new AbortController(); setTimeout(() => c.abort(), 3000); await navigator.locks.request(\"slow\", { signal: c.signal }, cb)`。被中止时锁请求 reject 一个 `AbortError`（可在 catch 里判 `err.name === \"AbortError\"`）。这就是给锁请求做超时 / 取消的标准方式。`ifAvailable` 是「完全不等待」，而 `signal` 允许等一段时间再放弃，二者用途不同。",
+    "tags": ["cross-context-messaging", "高级", "signal-timeout"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`timeout: 3000` —— 直接传毫秒数给 request",
+        "isCorrect": false,
+        "description": "没有 timeout 选项，超时靠 signal + AbortController"
+      },
+      {
+        "text": "`ifAvailable: true` —— 它内置 3 秒等待窗口",
+        "isCorrect": false,
+        "description": "ifAvailable 是完全不等待，不含任何等待窗口"
+      },
+      {
+        "text": "`ttl: 3000` —— 设置锁的存活时间",
+        "isCorrect": false,
+        "description": "无 ttl 选项；请求超时用 signal"
+      },
+      {
+        "text": "`signal` 传 `AbortSignal`，配 `AbortController` + `setTimeout` 到点 `abort()`，请求 reject `AbortError`",
+        "isCorrect": true,
+        "description": "signal 是标准的请求取消 / 超时机制，中止时抛 AbortError"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：关于 Web Locks 的可用环境限制，下列说法正确的是？",
+    "explanation": "Web Locks 仅在安全上下文（HTTPS）+ Worker 可用，`localhost` 被视作安全上下文（本地开发可用），线上必须 HTTPS；在普通 HTTP 页上 `navigator.locks` 不可用。它的作用域限同源。这与 `BroadcastChannel`（无 HTTPS 要求）不同，是把 Web Locks 用在 HTTP 页时「拿不到 `navigator.locks`」的原因。",
+    "tags": ["cross-context-messaging", "高级", "https-secure-context"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "任意 HTTP / HTTPS 页面都能用，无安全上下文要求",
+        "isCorrect": false,
+        "description": "Web Locks 仅安全上下文可用，HTTP 页拿不到 navigator.locks"
+      },
+      {
+        "text": "仅安全上下文（HTTPS，`localhost` 视作安全）+ Worker 可用，作用域限同源",
+        "isCorrect": true,
+        "description": "HTTPS/localhost 安全上下文 + 同源作用域，是其硬性限制"
+      },
+      {
+        "text": "可以跨源协调，只要两个源都启用了 CORS",
+        "isCorrect": false,
+        "description": "作用域严格限同源，CORS 不能让锁跨源"
+      },
+      {
+        "text": "只能在主线程用，Worker 里不可用",
+        "isCorrect": false,
+        "description": "恰恰相反，Worker 里也可用"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：Web Locks 选主相比用 `localStorage` 自造「心跳锁」，最大的健壮性优势是什么？",
+    "explanation": "最大优势是异常自动释放：持锁的 leader 标签页崩溃或被关闭，浏览器会自动释放锁，正在 `request` 排队的其他标签页里立刻有一个拿到锁、接任 leader。而自造 `localStorage` 心跳锁要自己处理时钟漂移、僵尸持有者（崩溃了没来得及清锁）、死锁一堆边界，既复杂又易错。Web Locks 把「持有者消失即释放」交给浏览器，从根上免掉这些坑。",
+    "tags": ["cross-context-messaging", "高级", "auto-release"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它能把锁持久化到磁盘，浏览器重启后仍保留 leader",
+        "isCorrect": false,
+        "description": "锁不持久化，页面 / 浏览器关闭即释放，这恰是优势所在"
+      },
+      {
+        "text": "它允许跨源标签页也参与同一次选主",
+        "isCorrect": false,
+        "description": "作用域限同源，跨源不参与"
+      },
+      {
+        "text": "持锁标签页崩溃 / 关闭时锁自动释放，排队者立即补位——免掉自造锁的僵尸持有者 / 死锁边界",
+        "isCorrect": true,
+        "description": "异常自动释放 + 顺位补位，是相对心跳锁的核心健壮性"
+      },
+      {
+        "text": "它的加锁 / 解锁是同步阻塞的，逻辑更简单",
+        "isCorrect": false,
+        "description": "Web Locks 是异步的（基于 Promise），并非同步阻塞"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：多标签页要「共享一份状态或一条长连接」时，`SharedWorker` 相比 `BroadcastChannel` 的本质区别是什么？",
+    "explanation": "`BroadcastChannel` 是去中心化广播总线，无共享状态——它只负责扩散消息，每个页各存各的状态。`SharedWorker` 是中心化单实例后台线程：多页连到同一个 worker 实例，状态可集中在 worker 里、一条长连接（如 WebSocket）多页复用、集中调度。所以要在多页间共享一份状态 / 一条连接用 `SharedWorker`；纯广播、无共享状态、代码最短用 `BroadcastChannel`（Safari 对 SharedWorker 支持历史曲折，用前需核对）。",
+    "tags": ["cross-context-messaging", "高级", "vs-sharedworker"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`SharedWorker` 只能同源、`BroadcastChannel` 能跨源，这是本质区别",
+        "isCorrect": false,
+        "description": "两者都仅同源；本质区别是中心化共享 vs 去中心化广播"
+      },
+      {
+        "text": "`SharedWorker` 是中心化单实例（可持共享状态 / 单一长连接），`BroadcastChannel` 是去中心化广播（无共享状态）",
+        "isCorrect": true,
+        "description": "中心化单实例 vs 去中心化总线，决定了能否共享状态 / 连接"
+      },
+      {
+        "text": "`BroadcastChannel` 能持有共享状态，`SharedWorker` 只能转发消息",
+        "isCorrect": false,
+        "description": "正好反了：SharedWorker 才能集中持有共享状态"
+      },
+      {
+        "text": "二者完全等价，`SharedWorker` 只是 `BroadcastChannel` 的旧名",
+        "isCorrect": false,
+        "description": "二者是不同机制，绝非等价或改名"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：为多标签页「同步状态」选方案，下列排序哪一个符合「新项目默认 → 老浏览器兜底 → 共享连接」的推荐路径？",
+    "explanation": "同步状态的推荐路径：默认首选 `BroadcastChannel`（同源一对多、代码最短、2022 起 Baseline）；要兼容很老的浏览器退回 storage 事件兜底（仅字符串、写入页不触发、要从 `event.newValue` 读回值）；要在多页间共享一份状态 / 一条长连接则用 `SharedWorker`（或用 Web Locks 选主 + 普通 Worker + 广播替代）；已用 Service Worker 且想让后台事件同时通知所有页，用 `clients.matchAll()` 转发。",
+    "tags": ["cross-context-messaging", "高级", "sync-comparison"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 `BroadcastChannel` → 老浏览器兜底 storage 事件 → 共享连接用 `SharedWorker`",
+        "isCorrect": true,
+        "description": "首选广播、老浏览器退回 storage、共享连接上 SharedWorker，正是推荐路径"
+      },
+      {
+        "text": "默认 storage 事件 → 新项目才升级到 `BroadcastChannel` → 共享连接用 `postMessage`",
+        "isCorrect": false,
+        "description": "storage 事件是兜底不是默认；共享连接是 SharedWorker 不是 postMessage"
+      },
+      {
+        "text": "默认 `SharedWorker` → 退回 `BroadcastChannel` → 老浏览器用 Web Locks",
+        "isCorrect": false,
+        "description": "纯同步默认是 BroadcastChannel；Web Locks 是选主不是老浏览器兜底"
+      },
+      {
+        "text": "默认 `postMessage` 两两互发 → 退回广播 → 共享用 storage 事件",
+        "isCorrect": false,
+        "description": "多标签同步不用两两 postMessage，首选就是广播总线"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：Web Locks 选主 + `BroadcastChannel` 分发的「组合拳」里，为什么 leader 收到 WebSocket 推送后自己也要 `applyRealtime(data)`？",
+    "explanation": "因为 `BroadcastChannel` 不回发给发送者自己（「Remove source from destinations」）。leader 是唯一连 WebSocket 的标签页，收到推送后 `bc.postMessage(data)` 只会送达其他 follower 标签页，leader 自己收不到自己发的广播。所以 leader 必须先 `applyRealtime(data)` 自己消费一遍，再广播给其余标签页——这正是「不回发给自己」特性在组合拳里的直接后果。",
+    "tags": ["cross-context-messaging", "高级", "leader-broadcast-combo"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `BroadcastChannel` 有丢包，leader 自己消费是为了兜底重试",
+        "isCorrect": false,
+        "description": "同源广播不丢包；leader 自消费是因为广播不回发给自己"
+      },
+      {
+        "text": "因为 follower 会把数据回传给 leader，leader 要先处理避免重复",
+        "isCorrect": false,
+        "description": "follower 不回传；leader 收不到自己的广播才需自消费"
+      },
+      {
+        "text": "因为 `BroadcastChannel` 不回发给发送者自己，leader 广播出去的数据本页收不到，须手动 `apply`",
+        "isCorrect": true,
+        "description": "不回发自己→leader 自己那份得手动消费，再广播给其余页"
+      },
+      {
+        "text": "因为只有 leader 调 `applyRealtime` 才能触发其他页刷新",
+        "isCorrect": false,
+        "description": "其他页靠收到广播各自 apply；leader 自消费只管自己那份"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`MessageChannel` 有一项 `window.postMessage` 做不到的独特能力，是下列哪一个？",
+    "explanation": "独特能力是：把一对 port 分别交给两个不同的上下文（如两个 Worker、或两个 `<iframe>`），它们就能不经主线程中转直接通信——主线程只负责牵线（把两个 port 分发下去），之后不参与转发。纯 `window.postMessage` 做不到这种「第三方牵线、两端直连」，因为它总是「窗口 A 直接发给窗口 B」，没有可转移的独立端口。这也是 RPC 库（如 Comlink）多路复用的底座。",
+    "tags": ["cross-context-messaging", "高级", "worker-direct-connect"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "它能自动加密所有跨上下文消息",
+        "isCorrect": false,
+        "description": "MessageChannel 不加密，独特能力是端口转移建直连"
+      },
+      {
+        "text": "它能广播给同源所有标签页",
+        "isCorrect": false,
+        "description": "广播是 BroadcastChannel；MessageChannel 是点对点专线"
+      },
+      {
+        "text": "它能同步（阻塞）返回对端的响应",
+        "isCorrect": false,
+        "description": "port 通信是异步的，没有同步返回"
+      },
+      {
+        "text": "把两端 port 分别交给两个上下文，让它们不经主线程中转直接通信",
+        "isCorrect": true,
+        "description": "主线程牵线、两端 port 直连，是纯 postMessage 做不到的"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：要在两个跨源上下文间真正共享同一块内存（`SharedArrayBuffer`，而非拷贝），页面必须满足什么条件？",
+    "explanation": "要跨上下文共享 `SharedArrayBuffer`（真正共享内存），页面必须处于跨源隔离（cross-origin isolated）状态，靠两个响应头开启：`Cross-Origin-Opener-Policy: same-origin` 和 `Cross-Origin-Embedder-Policy: require-corp`。运行时用 `Window.crossOriginIsolated`（`true` / `false`）检测是否已隔离；未隔离时 `postMessage` 一个 `SharedArrayBuffer` 会失败。这属于高级并发场景（多线程共享内存），入门通常用不到。",
+    "tags": ["cross-context-messaging", "专家", "sharedarraybuffer"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "只要把 `SharedArrayBuffer` 放进 transfer 列表移交即可",
+        "isCorrect": false,
+        "description": "共享内存靠跨源隔离，SharedArrayBuffer 是共享非移交"
+      },
+      {
+        "text": "只要双方都用 HTTPS 就自动共享",
+        "isCorrect": false,
+        "description": "HTTPS 不够，还须 COOP + COEP 达成跨源隔离"
+      },
+      {
+        "text": "只要 `targetOrigin` 写死对方源即可共享内存",
+        "isCorrect": false,
+        "description": "targetOrigin 是安全限定，与共享内存能力无关"
+      },
+      {
+        "text": "页面须跨源隔离：设 `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp`，`crossOriginIsolated` 为 `true`",
+        "isCorrect": true,
+        "description": "COOP + COEP 开启跨源隔离，crossOriginIsolated 为真才能共享"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`a.com` 页面里嵌了一个 `b.com` 的 `<iframe>`，同时又单独打开了一个 `b.com` 页面，二者能否通过 `BroadcastChannel` 互通？",
+    "explanation": "不能。`BroadcastChannel` 不仅要同源，还要同一存储分区。现代浏览器按顶级站点划分存储分区：嵌在 `a.com` 里的 `b.com` `<iframe>` 属于「顶级站点 a.com」的分区，独立打开的 `b.com` 页属于「顶级站点 b.com」的分区——尽管两个 `b.com` 上下文技术上同源，却分属不同存储分区，`BroadcastChannel` 不互通。这是「同源但被存储分区隔开」的经典情形。",
+    "tags": ["cross-context-messaging", "专家", "storage-partition"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "能，只要频道名相同、二者又同源，就一定互通",
+        "isCorrect": false,
+        "description": "同源不足够，还须同存储分区，此处分区不同故不通"
+      },
+      {
+        "text": "能，但只有嵌入的 `<iframe>` 能收到独立页发的，反向不行",
+        "isCorrect": false,
+        "description": "分区隔离是双向不通，不存在单向可达"
+      },
+      {
+        "text": "不能，二者分属不同存储分区（顶级站点不同），即便同源也被隔离",
+        "isCorrect": true,
+        "description": "存储分区按顶级站点划分，同源但异分区→BroadcastChannel 不通"
+      },
+      {
+        "text": "不能，因为跨 `<iframe>` 广播需要额外的 `postMessage` 授权",
+        "isCorrect": false,
+        "description": "原因是存储分区隔离，与所谓「广播授权」无关"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：`MessagePort` 可以「接力转移」（A → B → C 多次转移）吗？任一时刻有几个活跃持有者？",
+    "explanation": "可以多次接力转移（A→B→C），但每转移一次，前一持有者立即失效（neutered）；任一时刻只有一个活跃持有者。这与端口「只属一个上下文」的语义一致——转移给谁，就只有谁能用。所以 A 把 port 转给 B 后 A 失效，B 再转给 C 后 B 失效，最终只有 C 能用。这套语义和 `postMessage` 转移 `ArrayBuffer`（转移后原持有者 `byteLength` 变 0）完全一致。",
+    "tags": ["cross-context-messaging", "专家", "port-relay-transfer"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "可多次接力转移，但每次转移后前一持有者立即失效，同一时刻仅一个活跃持有者",
+        "isCorrect": true,
+        "description": "接力转移合法，所有权逐跳移交，任一时刻只一个活跃持有者"
+      },
+      {
+        "text": "不能再转移，port 一旦转移出去就永久锁定在第一个接收者",
+        "isCorrect": false,
+        "description": "port 可继续接力转移，并非锁死在首个接收者"
+      },
+      {
+        "text": "可转移，且转移后 A、B、C 三方都能同时收发",
+        "isCorrect": false,
+        "description": "同一时刻只一个活跃持有者，前手转移即失效"
+      },
+      {
+        "text": "只能转移给 Worker，不能在窗口之间接力转移",
+        "isCorrect": false,
+        "description": "窗口 / Worker 均可接收与再转移，无此限制"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：目标是一个 `data:` URL 这类「不透明源」的上下文时，`targetOrigin` 该怎么填？",
+    "explanation": "`data:` URL、`file:` 这类不透明源（opaque origin）没有确定的源可匹配，此时 `targetOrigin` 只能用 `*`（写具体源会永远匹配不上、消息投不出去）。但正因为它没有可校验的确定源，这种通道本就不该传敏感数据。这是「`targetOrigin` 必须写死具体源」这条铁律的少数例外——不是放松安全，而是不透明源客观上无源可写。",
+    "tags": ["cross-context-messaging", "专家", "opaque-origin"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "填 `\"null\"` 字符串，不透明源的源就是字面量 null",
+        "isCorrect": false,
+        "description": "targetOrigin 用字面 null 字符串匹配不上，正解是 `*`"
+      },
+      {
+        "text": "只能用 `*`（不透明源无确定源可匹配），且这种通道不该传敏感数据",
+        "isCorrect": true,
+        "description": "opaque origin 无源可写，用 `*` 但须避开敏感数据"
+      },
+      {
+        "text": "填加载它的父页面的源即可精确匹配",
+        "isCorrect": false,
+        "description": "data: 上下文的源不是父页面源，写父源匹配不上"
+      },
+      {
+        "text": "省略第二参数，让它默认回退到同源匹配",
+        "isCorrect": false,
+        "description": "默认 `/` 是同源，不透明源匹配不上；须显式 `*`"
+      }
+    ]
+  },
+  {
+    "stem": "跨上下文通信：调试「锁为什么拿不到 / 当前 leader 是谁」时，Web Locks 提供了哪个观测手段？",
+    "explanation": "`navigator.locks.query()` 返回当前源锁管理器状态的一个快照：`{ held, pending }`，其中 `held` 是已持有的锁列表（每项含 `name` / `mode` / `clientId`）、`pending` 是排队等待的请求。它用于调试「锁为什么拿不到」、观察 leader 归属。它是某一时刻的快照（不是订阅式监听），配合选主的 `exclusive` / `shared` 语义能看清谁独占、谁在等。",
+    "tags": ["cross-context-messaging", "专家", "locks-query"],
+    "categories": [
+      ["技术方向", "跨上下文通信"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "`navigator.locks.query()` 返回 `{ held, pending }` 快照，列出已持有与排队中的锁（name / mode / clientId）",
+        "isCorrect": true,
+        "description": "query() 给出锁状态快照，是调试选主 / 观察 leader 的手段"
+      },
+      {
+        "text": "`navigator.locks.on(\"change\", cb)` 订阅锁变更事件",
+        "isCorrect": false,
+        "description": "无订阅式事件 API，观测靠 query() 取快照"
+      },
+      {
+        "text": "`lock.inspect()` 打印单个锁的持有者调用栈",
+        "isCorrect": false,
+        "description": "无 inspect 方法，全局状态用 navigator.locks.query()"
+      },
+      {
+        "text": "在 DevTools Console 输入 `locks.list()` 列出所有锁",
+        "isCorrect": false,
+        "description": "标准 API 是 navigator.locks.query()，无 locks.list()"
+      }
+    ]
+  }
+]

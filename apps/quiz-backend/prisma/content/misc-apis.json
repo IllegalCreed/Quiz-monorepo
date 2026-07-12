@@ -1,0 +1,1614 @@
+[
+  {
+    "stem": "常用杂项 API：关于这一批 API（剪贴板 / 分享 / 通知 / 页面可见性 / 唤醒锁 / 定位 / URLPattern / 权限查询等）被收在一处讲的原因，最准确的说法是？",
+    "explanation": "「常用杂项 API」是 Web API 章的收尾合集叶，把一批小而常用、各自不足以单独成叶的平台能力收在一处。它们体量不一、场景各异，被收在一起不是为了凑数，而是因为共享同一套底层契约——安全上下文（HTTPS）、用户激活（用户手势）、权限模型（Permissions API / Permissions Policy）、特性检测渐进增强。与其在八处各讲一遍这套共性，不如在一叶里把地基讲透，再逐个 API 讲它独有的部分。",
+    "tags": ["misc-apis", "入门", "collection"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "它们都属于同一个 W3C 规范，由同一个工作组统一维护",
+        "isCorrect": false,
+        "description": "它们分属 W3C/WHATWG 的多个独立规范仓库，并非同一规范"
+      },
+      {
+        "text": "它们必须组合使用，缺一个另一个就无法工作",
+        "isCorrect": false,
+        "description": "各 API 相互独立、可单独使用，不存在强绑定"
+      },
+      {
+        "text": "它们各自不足以单独成叶，却共享安全上下文 + 用户激活 + 权限模型 + 特性检测这套共性契约",
+        "isCorrect": true,
+        "description": "共性地基相同，正是把它们收在一处的理由"
+      },
+      {
+        "text": "它们都是已被废弃、仅作兼容保留的历史 API",
+        "isCorrect": false,
+        "description": "多数已 Baseline 且活跃使用，并非废弃"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：本合集反复强调的「四条共性地基」指的是下列哪一组？",
+    "explanation": "这批贴系统的小 API 绝大多数都遵循同一套四件套：① 安全上下文（几乎全要 HTTPS，localhost/127.0.0.1 放行）；② 用户激活（很多能力要由真实用户手势触发）；③ 权限模型（部分走 Permissions API 三态查询 + Permissions Policy）；④ 特性检测与渐进增强（先探测再用、拿不到就优雅降级）。摸透这四条，剩下的 API 都是同一套心智的变奏。",
+    "tags": ["misc-apis", "入门", "foundations"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "安全上下文（HTTPS）、用户激活（手势）、权限模型、特性检测与渐进增强",
+        "isCorrect": true,
+        "description": "正是贯穿全叶的四件套地基"
+      },
+      {
+        "text": "打包构建、路由、状态管理、服务端渲染",
+        "isCorrect": false,
+        "description": "这些是框架/工程概念，与本叶平台 API 无关"
+      },
+      {
+        "text": "TypeScript 类型、单元测试、CI/CD、代码审查",
+        "isCorrect": false,
+        "description": "属于研发流程，不是这批 API 的运行契约"
+      },
+      {
+        "text": "WebGL、WebAssembly、WebSocket、WebRTC",
+        "isCorrect": false,
+        "description": "这些是另外的大主题 API，不是本叶讲的共性地基"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：关于「安全上下文」的判定，下列哪一项正确？",
+    "explanation": "安全上下文的判定：线上必须是 `https://`；本地开发中 `http://localhost`、`http://127.0.0.1`、`file://` 被当作安全上下文以方便调试；而 `http://example.com` 这样的线上明文页面不是安全上下文。在非安全上下文里，`navigator.clipboard`、`navigator.share`、`navigator.wakeLock` 等要么是 `undefined`，要么调用即抛 `NotAllowedError`/`SecurityError`。最直接的自查是 `window.isSecureContext`。",
+    "tags": ["misc-apis", "入门", "secure-context"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只有 `https://` 才算安全上下文，`localhost` 也必须上 HTTPS",
+        "isCorrect": false,
+        "description": "`http://localhost`/`127.0.0.1` 被特意放行为安全上下文"
+      },
+      {
+        "text": "任何 `http://` 页面都算安全上下文",
+        "isCorrect": false,
+        "description": "线上明文 `http://` 不是安全上下文"
+      },
+      {
+        "text": "是否安全上下文由服务器一个响应头单独声明，与协议无关",
+        "isCorrect": false,
+        "description": "判定主要看协议/来源，HTTPS 与本地地址放行"
+      },
+      {
+        "text": "`https://` 与本地 `localhost`/`127.0.0.1`/`file://` 算安全上下文，线上明文 `http://` 不算",
+        "isCorrect": true,
+        "description": "这正是安全上下文的判定规则，`window.isSecureContext` 可自查"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：为什么写剪贴板、唤起系统分享、让手机震动这类操作通常要写在点击等事件回调里？",
+    "explanation": "浏览器不允许页面在没有用户参与的情况下静默调用这些「打扰用户」的能力，要求由一次真实用户手势（点击、按键、触摸）触发，这套机制叫瞬时用户激活（transient activation）。所以 `navigator.share`、`clipboard.writeText`、`navigator.vibrate`、多数浏览器的 `Notification.requestPermission` 都应写在 `click` 等手势回调里，不能在定时器或纯脚本里裸调。",
+    "tags": ["misc-apis", "入门", "user-activation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "因为这些 API 只能在事件回调里被 JS 引擎解析到",
+        "isCorrect": false,
+        "description": "与解析无关，是运行时的用户激活要求"
+      },
+      {
+        "text": "因为它们受瞬时用户激活约束，必须由真实用户手势触发，不能脚本静默调用",
+        "isCorrect": true,
+        "description": "transient activation 正是这批 API 的门槛之一"
+      },
+      {
+        "text": "因为事件回调里性能更好，能避免主线程阻塞",
+        "isCorrect": false,
+        "description": "与性能无关，是安全/防打扰机制"
+      },
+      {
+        "text": "因为只有事件回调里 `this` 才指向 `window`",
+        "isCorrect": false,
+        "description": "与 `this` 指向无关"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.permissions.query({ name })` 的作用是下列哪一项？",
+    "explanation": "Permissions API 是一条只读的权限状态总线。`query()` 只告诉你某项权限「现在是什么状态」（`granted`/`denied`/`prompt`），它不会弹授权窗、也不申请权限。真正触发授权提示，仍要靠调用对应的 API 本身（`getCurrentPosition`、`requestPermission`、`getUserMedia` 等）。它可用来「先查后用」，在 `denied` 时直接短路、不再无谓弹窗。",
+    "tags": ["misc-apis", "入门", "permissions"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只读查询某权限当前的三态状态，不弹窗、不申请",
+        "isCorrect": true,
+        "description": "query 是只读总线，授权仍靠调用对应 API"
+      },
+      {
+        "text": "弹出系统授权窗，向用户申请该权限",
+        "isCorrect": false,
+        "description": "query 不弹窗，弹窗靠调用对应 API 本身"
+      },
+      {
+        "text": "程序化地授予或撤销某项权限",
+        "isCorrect": false,
+        "description": "网页无法程序化授予/撤销权限"
+      },
+      {
+        "text": "一次性返回浏览器支持的所有权限清单",
+        "isCorrect": false,
+        "description": "它按传入的 name 查单项，不枚举全部"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：判断当前浏览器「有没有」Web Share 或屏幕唤醒锁能力，最合适的粗粒度探测是？",
+    "explanation": "特性检测从粗到细有几种手段，最粗的一层是用 `in` 运算符查「有没有这个 API」：`\"share\" in navigator`、`\"wakeLock\" in navigator`、`\"Notification\" in window`。更细一层是能力探针（`navigator.canShare({ files })`、`ClipboardItem.supports(type)`）查「支不支持某种具体用法」。这批 API 平台割裂是常态，「先探测、后使用、拿不到就降级」是默认姿势。",
+    "tags": ["misc-apis", "入门", "feature-detection"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 `typeof navigator.share === \"string\"` 判断",
+        "isCorrect": false,
+        "description": "存在时 `share` 是函数不是字符串，判断错误"
+      },
+      {
+        "text": "直接调用 `navigator.share()`，靠 `try/catch` 是否报错来判断",
+        "isCorrect": false,
+        "description": "盲调既可能打扰用户又浪费激活，应先探测"
+      },
+      {
+        "text": "用 `in` 运算符，如 `\"share\" in navigator`、`\"wakeLock\" in navigator`",
+        "isCorrect": true,
+        "description": "in 运算符是查「有没有该 API」的标准粗粒度探测"
+      },
+      {
+        "text": "检查 `navigator.userAgent` 里的浏览器名与版本号",
+        "isCorrect": false,
+        "description": "UA 嗅探不可靠，应做能力检测而非版本判断"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：把一段纯文本复制到系统剪贴板，现代首选的方法是？",
+    "explanation": "现代异步剪贴板的入口是 `navigator.clipboard`，写纯文本用 `navigator.clipboard.writeText(str)`，返回 `Promise<void>`，是四个方法里最常用、支持面最广的一个。它只在安全上下文存在、且不暴露给 Web Worker，一般要在用户手势内调用。老的同步 `document.execCommand(\"copy\")` 已废弃，仅作兜底降级。",
+    "tags": ["misc-apis", "入门", "clipboard"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`document.copy(text)`",
+        "isCorrect": false,
+        "description": "不存在这个 API"
+      },
+      {
+        "text": "`navigator.clipboard.writeText(text)`",
+        "isCorrect": true,
+        "description": "现代异步剪贴板写纯文本的首选方法，返回 Promise"
+      },
+      {
+        "text": "`window.clipboardData.setData(text)`",
+        "isCorrect": false,
+        "description": "那是早期 IE 的私有接口，非现代标准"
+      },
+      {
+        "text": "`navigator.clipboard.copyText(text)`",
+        "isCorrect": false,
+        "description": "方法名不存在，写文本是 `writeText`"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：要判断页面当前是否对用户可见（前台标签、未最小化），应读取哪个属性？",
+    "explanation": "Page Visibility API 用 `document.visibilityState` 表示可见性，取值 `\"visible\"` 或 `\"hidden\"`，并在变化时于 `document` 上触发 `visibilitychange` 事件。早期的布尔属性 `document.hidden` 已不推荐，一律用语义更清晰的 `visibilityState`。它常用于页面转后台时暂停轮询/动画/视频以省电。",
+    "tags": ["misc-apis", "入门", "page-visibility"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`window.isVisible`",
+        "isCorrect": false,
+        "description": "不存在这个属性"
+      },
+      {
+        "text": "`document.focusState`",
+        "isCorrect": false,
+        "description": "没有这个属性，可见性用 `visibilityState`"
+      },
+      {
+        "text": "`navigator.visibility`",
+        "isCorrect": false,
+        "description": "可见性挂在 `document` 上而非 `navigator`"
+      },
+      {
+        "text": "`document.visibilityState`（`\"visible\"` / `\"hidden\"`）",
+        "isCorrect": true,
+        "description": "正是页面可见性的标准属性，配合 `visibilitychange` 事件"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：本地开发时在 `http://localhost:3000` 调试剪贴板/定位，通常可以正常工作，原因是？",
+    "explanation": "安全上下文的判定对本地开发做了放行：`http://localhost`、`http://127.0.0.1`、`file://` 都被当作安全上下文，方便调试。所以本地 `http://localhost` 上这些需要安全上下文的 API 依然可用；而线上一旦是明文 `http://`（非 localhost）就不再是安全上下文，这些能力会失效。`window.isSecureContext` 在 localhost 下返回 `true`。",
+    "tags": ["misc-apis", "初级", "secure-context"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "因为浏览器对所有 `http://` 页面都开放这些 API",
+        "isCorrect": false,
+        "description": "线上明文 http 不是安全上下文，会失效"
+      },
+      {
+        "text": "因为端口 3000 是被浏览器特批的调试端口",
+        "isCorrect": false,
+        "description": "与端口号无关，是 localhost 主机名被放行"
+      },
+      {
+        "text": "因为开发模式下浏览器关闭了所有安全上下文检查",
+        "isCorrect": false,
+        "description": "检查仍在，只是 localhost 被判为安全上下文"
+      },
+      {
+        "text": "因为 `localhost`/`127.0.0.1`/`file://` 被特意判定为安全上下文",
+        "isCorrect": true,
+        "description": "本地放行正是为方便调试，`isSecureContext` 在此返回 true"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：点击回调里先 `await fetch(...)` 拿数据、再 `await navigator.share(data)`，常常报 `NotAllowedError`，最可能的原因是？",
+    "explanation": "瞬时用户激活的关键在「瞬时」二字：手势带来的激活窗口很短（秒级）且会被消耗。如果在手势回调里先 `await` 一个耗时请求，等它完成时激活窗口往往已过期，此时再调受激活约束的 `navigator.share`/`clipboard.write` 就会抛 `NotAllowedError`。正解是把异步准备提前、手势一到就第一时间调用受约束的 API。",
+    "tags": ["misc-apis", "初级", "user-activation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`fetch` 返回的数据格式不对，导致 `share` 参数非法",
+        "isCorrect": false,
+        "description": "那会是 TypeError 而非激活相关的 NotAllowedError"
+      },
+      {
+        "text": "`await` 等待期间用户激活窗口已过期，`share` 因激活失效被拒",
+        "isCorrect": true,
+        "description": "激活是瞬时且会被消耗的，异步等待后常已失效"
+      },
+      {
+        "text": "`navigator.share` 必须在 Web Worker 里调用",
+        "isCorrect": false,
+        "description": "恰相反，share 不暴露给 Worker，只在主线程"
+      },
+      {
+        "text": "一次点击只能调用一个异步 API",
+        "isCorrect": false,
+        "description": "没有这种限制，问题在激活过期"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：异步剪贴板 `navigator.clipboard` 的四个核心方法与用途，对应正确的是？",
+    "explanation": "异步剪贴板四个方法两两成对——文本一对、富内容一对：`writeText(str)` → `Promise<void>` 写纯文本、`readText()` → `Promise<string>` 读纯文本、`write(items)` → `Promise<void>` 写富内容（`ClipboardItem[]`）、`read()` → `Promise<ClipboardItem[]>` 读富内容。全部返回 Promise，取代了老的同步 `execCommand`。",
+    "tags": ["misc-apis", "初级", "clipboard"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`writeText`/`readText` 收发纯文本，`write`/`read` 收发 `ClipboardItem[]` 富内容",
+        "isCorrect": true,
+        "description": "文本一对、富内容一对，正是四方法的分工"
+      },
+      {
+        "text": "`writeText` 写文件、`readText` 读图片、`write`/`read` 处理纯文本",
+        "isCorrect": false,
+        "description": "张冠李戴，writeText/readText 是纯文本"
+      },
+      {
+        "text": "四个方法都是同步的，直接返回结果而非 Promise",
+        "isCorrect": false,
+        "description": "四方法都返回 Promise，异步剪贴板本质是异步"
+      },
+      {
+        "text": "`write`/`read` 只能处理纯文本，富内容要用 `writeRich`/`readRich`",
+        "isCorrect": false,
+        "description": "富内容正是用 write/read + ClipboardItem，无 writeRich"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：在浏览器 DevTools 的 Console 里直接执行 `navigator.clipboard.readText()` 常常失败，主要原因是？",
+    "explanation": "读剪贴板比写危险得多（网页能窥探你从别处复制的密码/验证码），浏览器把门设得更严：读要求文档处于焦点，否则直接 `NotAllowedError`。在 Console 里执行时焦点在 DevTools 上、页面文档没焦点，因此失败；由页面按钮点击触发时文档才有焦点。可用 `document.hasFocus()` 自查。",
+    "tags": ["misc-apis", "初级", "clipboard"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Console 里不能执行任何异步代码",
+        "isCorrect": false,
+        "description": "Console 可执行异步代码，问题在文档焦点"
+      },
+      {
+        "text": "`readText` 已被浏览器移除",
+        "isCorrect": false,
+        "description": "readText 未移除，失败是因缺少文档焦点"
+      },
+      {
+        "text": "读剪贴板要求文档处于焦点，而此时焦点在 DevTools 上",
+        "isCorrect": true,
+        "description": "读需要文档焦点，Console 触发时焦点不在页面"
+      },
+      {
+        "text": "必须先调用一次 `writeText` 才能 `readText`",
+        "isCorrect": false,
+        "description": "读不依赖先写，根因是焦点"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：关于 `document.execCommand(\"copy\")`，下列说法正确的是？",
+    "explanation": "`document.execCommand(\"copy\"/\"cut\"/\"paste\")` 是异步剪贴板普及前的老同步 API，返回布尔值表示成败。它已被废弃，新代码一律以 `navigator.clipboard` 为主，`execCommand` 仅作超老浏览器的最后兜底（放在 `catch` 分支里）。典型降级写法是把文本塞进一个选中的 `textarea` 再执行命令。",
+    "tags": ["misc-apis", "初级", "execcommand"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "它在非安全上下文里也无法使用",
+        "isCorrect": false,
+        "description": "它作为老 API 恰恰是不依赖安全上下文的兜底"
+      },
+      {
+        "text": "它是推荐的现代写法，应优先于 `navigator.clipboard`",
+        "isCorrect": false,
+        "description": "恰相反，它已废弃，异步剪贴板才是首选"
+      },
+      {
+        "text": "它返回 `Promise`，可以 `await` 判断成败",
+        "isCorrect": false,
+        "description": "它是同步的，返回布尔值不是 Promise"
+      },
+      {
+        "text": "它是已废弃的同步 API，仅在 `navigator.clipboard` 不可用时作兜底降级",
+        "isCorrect": true,
+        "description": "废弃但仍可兜底，新代码优先用异步剪贴板"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.share(data)` 的 `data`（ShareData）至少要满足什么条件？",
+    "explanation": "`navigator.share(data)` 唤起系统原生分享面板，`ShareData` 字段为 `{ title?, text?, url?, files? }`，全部可选，但至少要有一个有效字段，否则抛 `TypeError`。其中 `url` 最常用。`share()` 返回 `Promise<void>`，必须在用户手势内、安全上下文调用。",
+    "tags": ["misc-apis", "初级", "web-share"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "必须四个字段 `title`/`text`/`url`/`files` 全部提供",
+        "isCorrect": false,
+        "description": "字段都可选，只需至少一个有效"
+      },
+      {
+        "text": "必须提供 `files`，否则无法唤起分享面板",
+        "isCorrect": false,
+        "description": "files 可选，url/text/title 任一即可"
+      },
+      {
+        "text": "`data` 必须是字符串，不能是对象",
+        "isCorrect": false,
+        "description": "data 是 ShareData 对象，不是字符串"
+      },
+      {
+        "text": "`title`/`text`/`url`/`files` 至少提供一个有效字段，否则抛 `TypeError`",
+        "isCorrect": true,
+        "description": "至少一个有效字段是硬要求，url 最常用"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：用户在系统分享面板上点了「取消」，`navigator.share()` 的 Promise 会怎样？应如何处理？",
+    "explanation": "用户在分享面板上取消，`share()` 会以 `AbortError` 拒绝。这是正常操作、不是错误，应当作正常流程处理，不要当异常报给用户。典型写法是 `catch (err) { if (err.name !== \"AbortError\") console.error(err); }`——只有非取消的错误才真正上报。",
+    "tags": ["misc-apis", "初级", "web-share"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Promise 会一直挂起，永不 resolve 也不 reject",
+        "isCorrect": false,
+        "description": "取消会立即以 AbortError 拒绝，不会挂起"
+      },
+      {
+        "text": "Promise 正常 resolve，无法区分是否取消",
+        "isCorrect": false,
+        "description": "取消是 reject 为 AbortError，可以区分"
+      },
+      {
+        "text": "Promise 以 `AbortError` 拒绝，应当作正常取消处理、不报错",
+        "isCorrect": true,
+        "description": "取消即 AbortError，用 err.name 判断后跳过"
+      },
+      {
+        "text": "抛出 `TypeError`，需提示用户分享数据非法",
+        "isCorrect": false,
+        "description": "取消是 AbortError，TypeError 是数据非法的情况"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`Notification.requestPermission()` 现代形式返回的 Promise 解析值有哪三种？",
+    "explanation": "`Notification.requestPermission()` 现代形式返回 `Promise<\"granted\" | \"denied\" | \"default\">`：`granted` 允许、`denied` 拒绝、`default` 未决定。旧式回调形 `requestPermission(cb)` 仍被支持但现代代码用 Promise 形。申请应在用户手势内进行，申请前先读静态属性 `Notification.permission` 避免重复弹窗。",
+    "tags": ["misc-apis", "初级", "notification"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`\"granted\"` / `\"denied\"` / `\"default\"`",
+        "isCorrect": true,
+        "description": "通知权限的三态，default 表示尚未决定"
+      },
+      {
+        "text": "`\"allow\"` / `\"block\"` / `\"ask\"`",
+        "isCorrect": false,
+        "description": "用词不对，标准值是 granted/denied/default"
+      },
+      {
+        "text": "`\"granted\"` / `\"denied\"` / `\"prompt\"`",
+        "isCorrect": false,
+        "description": "prompt 是 Permissions API 的三态；通知申请返回的是 default"
+      },
+      {
+        "text": "`true` / `false` / `null`",
+        "isCorrect": false,
+        "description": "返回的是字符串枚举而非布尔"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：申请通知权限前，先读取哪个值可以避免对已授权/已拒绝的用户重复弹窗？",
+    "explanation": "静态属性 `Notification.permission` 反映当前通知权限（`granted`/`denied`/`default`）。申请前先读它：已是 `granted` 就直接用、已是 `denied` 就别再弹（弹也没用），只有 `default`（未决定）时才调用 `requestPermission()` 申请。这样避免重复打扰用户。",
+    "tags": ["misc-apis", "初级", "notification"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "静态属性 `Notification.permission`（`granted`/`denied`/`default`）",
+        "isCorrect": true,
+        "description": "读当前权限现状，避免对已决定用户重复弹窗"
+      },
+      {
+        "text": "实例属性 `new Notification().state`",
+        "isCorrect": false,
+        "description": "没有这个属性，且创建实例本身就会弹通知"
+      },
+      {
+        "text": "`navigator.notificationPermission`",
+        "isCorrect": false,
+        "description": "权限挂在 Notification 静态属性上，不在 navigator"
+      },
+      {
+        "text": "`document.permissions.notification`",
+        "isCorrect": false,
+        "description": "不存在此路径，静态属性是 Notification.permission"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：仪表盘页面希望「切到后台就停止轮询、回到前台再恢复」，应监听什么？",
+    "explanation": "监听 `document` 上的 `visibilitychange` 事件，在回调里判断 `document.visibilityState`：转 `\"hidden\"` 就停轮询/停动画/暂停视频，转 `\"visible\"` 就恢复。这是最典型的省电、省流量、省 CPU 模式，同理适用于暂停 `requestAnimationFrame`、降 WebSocket 心跳频率等。",
+    "tags": ["misc-apis", "初级", "page-visibility"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "监听 `window` 的 `blur`/`focus` 事件判断前后台",
+        "isCorrect": false,
+        "description": "blur/focus 不等价于可见性（如弹窗夺焦），应用 visibilitychange"
+      },
+      {
+        "text": "监听 `document` 的 `visibilitychange`，据 `visibilityState` 停/恢复",
+        "isCorrect": true,
+        "description": "正是页面可见性的标准省电模式"
+      },
+      {
+        "text": "轮询 `setInterval` 里读 `navigator.onLine`",
+        "isCorrect": false,
+        "description": "onLine 是网络在线状态，与前后台无关"
+      },
+      {
+        "text": "监听 `document` 的 `scroll` 事件",
+        "isCorrect": false,
+        "description": "滚动与页面可见性无关"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：申请屏幕唤醒锁（防止屏幕变暗/熄屏）的正确调用是？",
+    "explanation": "`navigator.wakeLock.request(\"screen\")` 返回 `Promise<WakeLockSentinel>`，其中 `\"screen\"` 是目前唯一支持的唤醒锁类型，用途是阻止屏幕自动变暗/熄灭/锁屏（扫码、导航、菜谱、演示等场景）。需要安全上下文、文档可见，建议在用户手势内申请。",
+    "tags": ["misc-apis", "初级", "wake-lock"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`navigator.wakeLock.request(\"system\")`",
+        "isCorrect": false,
+        "description": "没有 system 类型，唯一类型是 screen"
+      },
+      {
+        "text": "`navigator.wakeLock.request(\"screen\")`，返回 `Promise<WakeLockSentinel>`",
+        "isCorrect": true,
+        "description": "screen 是唯一支持的唤醒锁类型"
+      },
+      {
+        "text": "`navigator.wakeLock.acquire()`（无参）",
+        "isCorrect": false,
+        "description": "方法是 request 且需传类型，不是 acquire"
+      },
+      {
+        "text": "`screen.keepAwake = true`",
+        "isCorrect": false,
+        "description": "不存在此属性，用 wakeLock.request"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：Geolocation 的「单次定位 / 持续追踪 / 停止追踪」分别对应哪三个方法？",
+    "explanation": "`navigator.geolocation` 三个方法：`getCurrentPosition(success, error?, options?)` 取一次；`watchPosition(success, error?, options?)` 持续追踪、返回一个数字 `watchId`、位置变化时反复回调；`clearWatch(watchId)` 停止追踪。用完 `watchPosition` 必须 `clearWatch`，否则持续耗电耗流量。",
+    "tags": ["misc-apis", "初级", "geolocation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "`locate()` / `track()` / `stop()`",
+        "isCorrect": false,
+        "description": "方法名不对"
+      },
+      {
+        "text": "`getPosition()` / `watch()` / `unwatch()`",
+        "isCorrect": false,
+        "description": "名称不准确，正确是 getCurrentPosition/watchPosition/clearWatch"
+      },
+      {
+        "text": "`getCurrentPosition()` / `watchPosition()` / `clearWatch(id)`",
+        "isCorrect": true,
+        "description": "单次/持续/停止的标准三方法"
+      },
+      {
+        "text": "`getCurrentPosition()` 一个方法通过参数切换三种模式",
+        "isCorrect": false,
+        "description": "三种能力是三个独立方法"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.permissions.query()` 返回的 `PermissionStatus.state` 三态中，`prompt` 表示什么？",
+    "explanation": "三态：`granted`（已明确允许，可直接用）、`denied`（已明确拒绝或被 Permissions Policy 挡，别再弹、走降级）、`prompt`（尚未决定——调用对应 API 时会弹授权窗）。注意 `query` 本身只读、不弹窗；`prompt` 状态下真正触发弹窗的是调用对应 API（如 `getCurrentPosition`）。",
+    "tags": ["misc-apis", "初级", "permissions"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "已授权，可以直接使用",
+        "isCorrect": false,
+        "description": "那是 granted；prompt 是尚未决定"
+      },
+      {
+        "text": "已被永久拒绝，无法再申请",
+        "isCorrect": false,
+        "description": "那是 denied；prompt 是未决定"
+      },
+      {
+        "text": "尚未决定，调用对应 API 时会弹出授权窗",
+        "isCorrect": true,
+        "description": "prompt = 未决定，调用对应 API 触发弹窗"
+      },
+      {
+        "text": "权限名不被浏览器支持",
+        "isCorrect": false,
+        "description": "不支持的名会抛 TypeError，而非返回 prompt"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：关于 `navigator.vibrate()`，下列说法正确的是？",
+    "explanation": "`navigator.vibrate(pattern)` 让移动设备震动，参数是单个数字（毫秒）或数字数组（震/停交替，如 `[200, 100, 200]`），`vibrate(0)`/`vibrate([])` 取消。它需用户激活、仅在有震动硬件的移动端生效；桌面浏览器与 iOS Safari 不支持，调用静默无效果。只能当锦上添花的触觉反馈，不能作为关键交互的唯一反馈。",
+    "tags": ["misc-apis", "初级", "vibration"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "桌面 Chrome 上调用也会让机箱/外设震动",
+        "isCorrect": false,
+        "description": "桌面不支持，静默无效果"
+      },
+      {
+        "text": "参数为数字或数字数组（震/停交替），仅移动端生效，iOS Safari 不支持",
+        "isCorrect": true,
+        "description": "移动限定、桌面与 iOS Safari 无效，需用户激活"
+      },
+      {
+        "text": "它返回 `Promise`，可 `await` 震动结束",
+        "isCorrect": false,
+        "description": "它同步返回布尔，不是 Promise"
+      },
+      {
+        "text": "`vibrate(0)` 会触发一次超短震动",
+        "isCorrect": false,
+        "description": "`vibrate(0)`/`vibrate([])` 是取消震动"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：分享按钮点击后需要用到一份异步获取的数据，如何写才不会因用户激活过期而失败？",
+    "explanation": "受激活约束的调用要放在手势回调的「第一时间」，避免调用前有会消耗激活的 `await`。若必须用异步数据，应把异步准备提前（在点击前或更早备好），点击回调里直接对已备好的数据调用 `navigator.share(preparedData)`，此时手势仍新鲜、激活有效。反例是回调里先 `await fetch(...)` 再 `share`，激活已在等待中过期。",
+    "tags": ["misc-apis", "中级", "user-activation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在回调里先 `await fetch()` 拿数据再 `share()`，浏览器会自动续期激活",
+        "isCorrect": false,
+        "description": "激活不会自动续期，await 后常已过期"
+      },
+      {
+        "text": "把 `share()` 放到 `setTimeout(..., 0)` 里延后调用",
+        "isCorrect": false,
+        "description": "脱离手势同步栈会丢激活，更容易失败"
+      },
+      {
+        "text": "用两次点击，第一次 fetch、第二次 share，但共用第一次的激活",
+        "isCorrect": false,
+        "description": "激活不能跨手势复用，第二次要用第二次自己的激活"
+      },
+      {
+        "text": "把异步数据提前备好，点击回调里第一时间对已备数据调用 `share()`",
+        "isCorrect": true,
+        "description": "手势一到就调用、调用前无消耗激活的 await，才能保住激活"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：用 `navigator.clipboard.write()` 复制富内容时，一个 `ClipboardItem` 能同时携带纯文本版与 HTML 版，其意义是？",
+    "explanation": "`ClipboardItem` 允许一个剪贴板项同时携带多种表示（同一份内容的纯文本版 + HTML 版 + 图片版），如 `new ClipboardItem({ \"text/html\": htmlBlob, \"text/plain\": plainBlob })`。粘贴目标按自己的能力挑一种：粘进富文本编辑器带格式，粘进纯文本框自动退回纯文本。值可为 `Blob` 或 `Promise<Blob|string>`。",
+    "tags": ["misc-apis", "中级", "clipboard-item"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "粘贴目标按自身能力挑一种表示——富文本框取 HTML、纯文本框取 plain",
+        "isCorrect": true,
+        "description": "多表示让同一次复制适配不同粘贴目标"
+      },
+      {
+        "text": "会把两种表示拼接成一个字符串一起粘贴",
+        "isCorrect": false,
+        "description": "不拼接，目标只挑其中一种表示"
+      },
+      {
+        "text": "只有第一个键会生效，其余被忽略",
+        "isCorrect": false,
+        "description": "多表示都保留，目标各取所需"
+      },
+      {
+        "text": "必须两种表示的内容完全一致，否则报错",
+        "isCorrect": false,
+        "description": "两者是同一内容的不同格式，无需字节一致也不报错"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：写图片（如 `image/png`）到剪贴板前，用什么先探测浏览器是否支持该 MIME 类型？",
+    "explanation": "用静态方法 `ClipboardItem.supports(mime)` 探测能不能写某类型，如 `ClipboardItem.supports(\"image/png\")`。`text/plain`、`text/html`、`image/png` 是跨浏览器较稳的三种；其他类型（如 `image/svg+xml`）支持不一，写前务必 `supports()` 探测。它是静态方法（挂在 `ClipboardItem` 上而非实例）。",
+    "tags": ["misc-apis", "中级", "clipboard-item"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "实例方法 `new ClipboardItem({}).supports(\"image/png\")`",
+        "isCorrect": false,
+        "description": "supports 是静态方法，不在实例上"
+      },
+      {
+        "text": "`navigator.clipboard.supports(\"image/png\")`",
+        "isCorrect": false,
+        "description": "supports 挂在 ClipboardItem 上，不在 clipboard"
+      },
+      {
+        "text": "`ClipboardItem.canWrite(\"image/png\")`",
+        "isCorrect": false,
+        "description": "方法名是 supports 不是 canWrite"
+      },
+      {
+        "text": "静态方法 `ClipboardItem.supports(\"image/png\")`",
+        "isCorrect": true,
+        "description": "静态探针，先问能不能写某 MIME 再写"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.clipboard.read()` 返回 `ClipboardItem[]` 后，如何取出其中的图片 Blob？",
+    "explanation": "读富内容时遍历每个 `item`，`item.types` 是该项携带的所有 MIME 字符串数组；找到目标类型后用 `item.getType(mime)` 取回对应表示的 `Blob`（返回 `Promise<Blob>`）。例如 `item.types.find(t => t.startsWith(\"image/\"))`，再 `await item.getType(imageType)` 拿到 Blob，可喂给 `URL.createObjectURL`。",
+    "tags": ["misc-apis", "中级", "clipboard"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "遍历 `item.types` 找到目标 MIME，再 `await item.getType(mime)` 取 `Blob`",
+        "isCorrect": true,
+        "description": "types 列出表示、getType 取指定表示的 Blob"
+      },
+      {
+        "text": "直接读 `item.value` 拿到图片数据",
+        "isCorrect": false,
+        "description": "没有 value 属性，取表示用 getType"
+      },
+      {
+        "text": "用 `item.readAsBlob()` 读取",
+        "isCorrect": false,
+        "description": "无此方法，读表示是 getType"
+      },
+      {
+        "text": "`read()` 直接返回 `Blob[]`，无需再取",
+        "isCorrect": false,
+        "description": "返回的是 ClipboardItem[]，需 getType 取 Blob"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：在生产代码里对剪贴板「读」（`readText`/`read`）要格外做好降级，主要因为哪一点？",
+    "explanation": "剪贴板「读」比「写」更敏感，各家门槛更高，尤其 Firefox 面向网页的 `readText`/`read` 落地明显晚于 Chromium：长期只有浏览器扩展能读，普通网页读到 2024 年 Firefox 125 起才逐步开放（配合一次性「粘贴」提示）。因此不能把网页读当默认可用，要对「不支持 / 被拒」做好降级。写（`writeText`）的支持面则广得多。",
+    "tags": ["misc-apis", "中级", "clipboard-firefox"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为 `readText` 已在所有浏览器被移除",
+        "isCorrect": false,
+        "description": "未被移除，是 Firefox 网页读落地晚"
+      },
+      {
+        "text": "因为读剪贴板不需要安全上下文，反而更不稳定",
+        "isCorrect": false,
+        "description": "读同样要安全上下文，问题在跨浏览器支持差异"
+      },
+      {
+        "text": "因为 Firefox 面向网页的读支持落地晚（网页读约 FF125+ 起才逐步开放）",
+        "isCorrect": true,
+        "description": "读的跨浏览器支持不齐，Firefox 尤其晚，需备降级"
+      },
+      {
+        "text": "因为读只能在 Web Worker 里进行",
+        "isCorrect": false,
+        "description": "剪贴板不暴露给 Worker，读在主线程"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`\"share\" in navigator` 为真，就能直接 `navigator.share({ files: [file] })` 分享文件吗？",
+    "explanation": "不能。`share` 支持不代表 `files` 支持——文件分享在各平台差异极大。应先用 `navigator.canShare({ files: [file] })` 专门探测「能不能分享文件」，返回 `true` 再 `share`，否则降级（如提供下载）。`canShare(data)` 返回布尔，是分享前的能力探针，尤其用于文件场景。",
+    "tags": ["misc-apis", "中级", "web-share-files"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "能，`\"share\" in navigator` 为真即代表支持分享任意内容",
+        "isCorrect": false,
+        "description": "share 存在不代表支持 files，须单独探测"
+      },
+      {
+        "text": "不能，要先用 `navigator.canShare({ files })` 探测文件是否可分享",
+        "isCorrect": true,
+        "description": "文件支持另说，canShare({files}) 专门探测"
+      },
+      {
+        "text": "能，但要先 `await navigator.share.supports(\"files\")`",
+        "isCorrect": false,
+        "description": "无此 API，文件探测用 canShare({files})"
+      },
+      {
+        "text": "不能，必须改用 Clipboard 的 `write` 分享文件",
+        "isCorrect": false,
+        "description": "文件分享仍走 share，只是先用 canShare 探测"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：在移动端可靠地弹一条系统通知，应优先用哪种方式？",
+    "explanation": "通知有两种：页面级 `new Notification()` 生命周期绑当前页面，且多数移动浏览器直接抛 `TypeError`；持久通知 `registration.showNotification()`（Service Worker）脱离页面存活、可后台点击，是移动端唯一可行的方式，还支持 `actions` 动作按钮、可用 `registration.getNotifications()` 取回。因此移动端用 SW 的 `showNotification`，别用 `new Notification()`。",
+    "tags": ["misc-apis", "中级", "notification-types"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "页面级 `new Notification()`，移动端体验最好",
+        "isCorrect": false,
+        "description": "移动端多抛 TypeError，不可靠"
+      },
+      {
+        "text": "Service Worker 的 `registration.showNotification()`，移动端唯一可行",
+        "isCorrect": true,
+        "description": "持久通知脱离页面存活、移动端可靠，还支持 actions"
+      },
+      {
+        "text": "用 `alert()` 弹浏览器对话框代替",
+        "isCorrect": false,
+        "description": "alert 不是系统通知，也会阻塞"
+      },
+      {
+        "text": "两者在移动端完全等价，随便用",
+        "isCorrect": false,
+        "description": "页面级在移动端多不支持，二者不等价"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：想给通知加「打开 / 忽略」这类动作按钮（`actions`），有什么限制？",
+    "explanation": "通知的 `actions`（动作按钮）仅 Service Worker 持久通知（`registration.showNotification`）支持，页面级 `new Notification()` 不支持。按钮点击在 SW 全局作用域的 `notificationclick` 事件里处理，通过 `event.action` 区分点了哪个按钮，用 `event.waitUntil()` 保证异步完成前 SW 不被杀。",
+    "tags": ["misc-apis", "中级", "notification-actions"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "页面级 `new Notification()` 也支持 `actions`，只是最多两个",
+        "isCorrect": false,
+        "description": "页面级不支持 actions，仅 SW 通知支持"
+      },
+      {
+        "text": "`actions` 需要额外申请一个独立权限",
+        "isCorrect": false,
+        "description": "无独立权限，限制在于必须是 SW 通知"
+      },
+      {
+        "text": "`actions` 仅 SW 持久通知支持，点击在 SW 的 `notificationclick` 里按 `event.action` 处理",
+        "isCorrect": true,
+        "description": "动作按钮是 SW 通知专属能力"
+      },
+      {
+        "text": "`actions` 在所有通知上都支持，与页面级/SW 无关",
+        "isCorrect": false,
+        "description": "有关，页面级不支持 actions"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：iOS/iPadOS 上让 Web 通知能弹出，最关键的前提是？",
+    "explanation": "iOS/iPadOS 的 Web 通知只对已「添加到主屏幕」的 PWA 生效（iOS 16.4+ 起支持），普通 Safari 标签页里既弹不出通知也拿不到权限。这几乎是移动 Web 通知最大的现实约束。桌面则页面级与持久通知都可用（用户可能在系统层面全局关闭）。",
+    "tags": ["misc-apis", "中级", "notification-ios"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须先把站点「添加到主屏幕」装成 PWA（iOS 16.4+），普通 Safari 标签页不行",
+        "isCorrect": true,
+        "description": "iOS 只对已装 PWA 生效，是最大现实约束"
+      },
+      {
+        "text": "只要升级到 iOS 16.4+，普通 Safari 标签页即可收通知",
+        "isCorrect": false,
+        "description": "还须装到主屏，标签页拿不到权限"
+      },
+      {
+        "text": "必须在 App Store 上架一个原生 App 壳",
+        "isCorrect": false,
+        "description": "不需上架，装成主屏 PWA 即可"
+      },
+      {
+        "text": "iOS 完全不支持 Web 通知，无解",
+        "isCorrect": false,
+        "description": "16.4+ 装 PWA 后可用，并非无解"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：可靠地在「用户即将离开页面」时保存草稿/上报，应挂在哪个事件而非 `unload`/`beforeunload`？",
+    "explanation": "应挂在 `visibilitychange`（转 `\"hidden\"` 时）而非 `unload`/`beforeunload`：后者执行不可靠（移动端切走进程可能直接杀，回调根本不跑），且会破坏 bfcache（注册 `unload` 让页面无法进往返缓存）。`visibilitychange` 转 `\"hidden\"` 是最可靠的「即将离开」信号，配合 `navigator.sendBeacon()` 上报最稳妥。",
+    "tags": ["misc-apis", "中级", "page-visibility"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仍应用 `beforeunload`，它最可靠",
+        "isCorrect": false,
+        "description": "beforeunload 不可靠且破坏 bfcache"
+      },
+      {
+        "text": "用 `window` 的 `blur` 事件",
+        "isCorrect": false,
+        "description": "blur 不等价于离开，切窗口也触发"
+      },
+      {
+        "text": "用 `pagehide` 并阻止默认行为弹确认框",
+        "isCorrect": false,
+        "description": "保存/上报用 visibilitychange 转 hidden 更稳"
+      },
+      {
+        "text": "挂 `visibilitychange` 转 `\"hidden\"` 时，配合 `navigator.sendBeacon()` 上报",
+        "isCorrect": true,
+        "description": "转 hidden 是最可靠的即将离开信号，不破坏 bfcache"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.wakeLock.request(\"screen\")` 解析出的 `WakeLockSentinel` 是用来做什么的？",
+    "explanation": "`WakeLockSentinel` 是「持有凭证」：`sentinel.release()` 主动释放（返回 `Promise`）、`sentinel.released`（布尔，是否已释放）、`sentinel.type`（`\"screen\"`）、以及 `release` 事件（任何原因释放都触发，包括主动释放和系统/隐藏自动释放）。用完即放，别长期霸占（唤醒锁耗电）。",
+    "tags": ["misc-apis", "中级", "wake-lock"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它是持有凭证，可 `release()` 主动释放、读 `released`/`type`、监听 `release` 事件",
+        "isCorrect": true,
+        "description": "sentinel 代表当前持有的锁，用于释放与状态查询"
+      },
+      {
+        "text": "它是一个布尔值，`true` 表示申请成功",
+        "isCorrect": false,
+        "description": "它是对象（WakeLockSentinel），不是布尔"
+      },
+      {
+        "text": "它是被点亮屏幕的定时器 id，用 `clearTimeout` 取消",
+        "isCorrect": false,
+        "description": "释放用 sentinel.release()，不是 clearTimeout"
+      },
+      {
+        "text": "它是错误对象，仅在申请失败时返回",
+        "isCorrect": false,
+        "description": "申请成功才返回 sentinel，失败走 catch"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：申请了屏幕唤醒锁后，切到别的标签再切回来却发现屏幕又会熄灭，正确的解释与对策是？",
+    "explanation": "唤醒锁最容易踩的坑：页面一旦转为 `\"hidden\"`（切标签、最小化、锁屏），唤醒锁会被系统自动释放；回到 `\"visible\"` 时不会自动恢复，必须重新 `request`。标准配方是把它和 Page Visibility 绑定——在 `visibilitychange` 里，若之前持有过锁且页面重新 `\"visible\"`，就重新申请一次。",
+    "tags": ["misc-apis", "中级", "wake-lock"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "唤醒锁一旦申请就永久有效，熄屏是系统 bug",
+        "isCorrect": false,
+        "description": "转 hidden 会自动释放，并非永久有效"
+      },
+      {
+        "text": "转 `\"hidden\"` 时锁被自动释放，回到 `\"visible\"` 须重新 `request` 重获",
+        "isCorrect": true,
+        "description": "隐藏自动释放、回前台不自动恢复，配合 visibilitychange 重申"
+      },
+      {
+        "text": "只要不调用 `release()`，切标签也不会释放",
+        "isCorrect": false,
+        "description": "隐藏会由系统自动释放，与是否手动 release 无关"
+      },
+      {
+        "text": "需要改用 `request(\"system\")` 才能跨标签保持",
+        "isCorrect": false,
+        "description": "无 system 类型，对策是回前台重新 request"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`getCurrentPosition` 的第三个参数 `PositionOptions` 中，`enableHighAccuracy: true` 的影响是？",
+    "explanation": "`PositionOptions` 三项：`enableHighAccuracy`（布尔，默认 `false`，开启则尽量用 GPS，更准但更慢、更耗电）、`timeout`（毫秒，默认 `Infinity`，等待上限，超时走 `TIMEOUT`）、`maximumAge`（毫秒，默认 `0`，可接受的缓存位置最大「年龄」，设大可秒回但可能偏旧）。`enableHighAccuracy` 应只在真需要 GPS 精度时开。",
+    "tags": ["misc-apis", "中级", "geolocation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让定位瞬间返回，不再等待",
+        "isCorrect": false,
+        "description": "高精度通常更慢；秒回靠调大 maximumAge"
+      },
+      {
+        "text": "强制使用缓存位置以省电",
+        "isCorrect": false,
+        "description": "缓存用 maximumAge；高精度反而更耗电"
+      },
+      {
+        "text": "设定等待位置的超时时间",
+        "isCorrect": false,
+        "description": "超时是 timeout；enableHighAccuracy 管精度"
+      },
+      {
+        "text": "尽量用 GPS 取更高精度，但更慢、更耗电",
+        "isCorrect": true,
+        "description": "高精度换来准确度，代价是速度与耗电"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`GeolocationPositionError.code` 为 `1` 时代表哪种失败？",
+    "explanation": "定位错误码：`1` = `PERMISSION_DENIED`（用户拒绝授权）、`2` = `POSITION_UNAVAILABLE`（定位信息不可用，如无 GPS/网络定位失败）、`3` = `TIMEOUT`（超时）。错误回调收到 `GeolocationPositionError`，按 `code` 分流处理；`denied` 时别再触发弹窗，引导去设置或走降级（手动输入城市等）。",
+    "tags": ["misc-apis", "中级", "geolocation"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "定位超时",
+        "isCorrect": false,
+        "description": "超时是 code 3（TIMEOUT）"
+      },
+      {
+        "text": "定位信息不可用",
+        "isCorrect": false,
+        "description": "不可用是 code 2（POSITION_UNAVAILABLE）"
+      },
+      {
+        "text": "用户拒绝了定位授权（`PERMISSION_DENIED`）",
+        "isCorrect": true,
+        "description": "code 1 即用户拒绝授权"
+      },
+      {
+        "text": "浏览器不支持 Geolocation",
+        "isCorrect": false,
+        "description": "不支持用特性检测判断，不是 code 1"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`const p = new URLPattern({ pathname: \"/users/:id\" })`，要拿到匹配到的 `id` 值，正确做法是？",
+    "explanation": "`pattern.test(url)` 只返回布尔（匹不匹配）；`pattern.exec(url)` 匹配则返回结构化结果、否则 `null`。命名分组的值在对应 URL 分量的 `groups` 里：`p.exec(\"https://x.com/users/42\").pathname.groups.id === \"42\"`。`exec` 返回对象按 URL 分量分层（`protocol`/`hostname`/`pathname`/`search`…），每个分量有 `.input` 与 `.groups`。",
+    "tags": ["misc-apis", "中级", "urlpattern"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "`p.test(url).id`",
+        "isCorrect": false,
+        "description": "test 只返回布尔，取不到分组值"
+      },
+      {
+        "text": "`p.match(url).params.id`",
+        "isCorrect": false,
+        "description": "无 match 方法，用 exec，且分组在 pathname.groups"
+      },
+      {
+        "text": "`p.exec(url).id`",
+        "isCorrect": false,
+        "description": "分组在分量下，应是 exec(url).pathname.groups.id"
+      },
+      {
+        "text": "`p.exec(url).pathname.groups.id`",
+        "isCorrect": true,
+        "description": "exec 结果按分量分层，命名分组在 pathname.groups"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：以为 `await navigator.permissions.query({ name: \"camera\" })` 会向用户申请摄像头权限，这个理解错在哪？",
+    "explanation": "`query()` 只读，不会弹授权窗，只报现状。真正触发授权提示仍要调用对应 API 本身——摄像头是 `navigator.mediaDevices.getUserMedia({ video: true })`。正确用法是用 `query` 先探路（`denied` 就短路不再尝试），`prompt`/`granted` 时再调用 `getUserMedia` 才真正弹窗申请。",
+    "tags": ["misc-apis", "高级", "permissions"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "没错，`query` 确实会弹摄像头授权窗",
+        "isCorrect": false,
+        "description": "query 不弹窗，这正是误解所在"
+      },
+      {
+        "text": "错在权限名应为 `webcam` 而非 `camera`",
+        "isCorrect": false,
+        "description": "名字是 camera，错在以为 query 会申请"
+      },
+      {
+        "text": "错在 `query` 只读查状态、不申请；真正申请要调 `getUserMedia`",
+        "isCorrect": true,
+        "description": "query 只读，授权靠调用对应 API 触发"
+      },
+      {
+        "text": "错在 `query` 必须传第二个参数才会申请",
+        "isCorrect": false,
+        "description": "query 无论如何都不申请，只读现状"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：用户在使用中途去浏览器设置里改了通知权限，页面想实时同步 UI，应怎么做？",
+    "explanation": "`PermissionStatus` 是「活的」，能监听 `change` 事件：`status.onchange` 或 `status.addEventListener(\"change\", …)`，用户在设置里改动权限时触发。例如查询 `{ name: \"notifications\" }` 后监听 change，在回调里据 `status.state` 更新通知开关 UI。",
+    "tags": ["misc-apis", "高级", "permissions"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无法感知，只能刷新页面后重新 `query`",
+        "isCorrect": false,
+        "description": "PermissionStatus 可监听 change，无需刷新"
+      },
+      {
+        "text": "监听 `PermissionStatus` 的 `change` 事件（`status.onchange`），据 `state` 更新 UI",
+        "isCorrect": true,
+        "description": "status 是活对象，change 事件实时反映权限改动"
+      },
+      {
+        "text": "轮询 `Notification.permission`，每秒读一次",
+        "isCorrect": false,
+        "description": "有事件驱动的 change，轮询低效且不必要"
+      },
+      {
+        "text": "监听 `window` 的 `permissionchange` 全局事件",
+        "isCorrect": false,
+        "description": "没有该全局事件，监听在 PermissionStatus 上"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：为什么 `navigator.permissions.query({ name: \"clipboard-read\" })` 必须包在 `try/catch` 里？",
+    "explanation": "可查询的权限名各家浏览器不一：`geolocation`/`notifications`/`push`/`camera`/`microphone`/`screen-wake-lock` 较通用，但 `clipboard-read`/`clipboard-write` 基本只有 Chromium 认，Firefox/Safari 查这俩名会抛 `TypeError`。所以 `query()` 本身必须 `try/catch`，把「查不了」当成「未知、直接尝试调用」处理，否则整段逻辑会崩。",
+    "tags": ["misc-apis", "高级", "permissions-clipboard"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`clipboard-read`/`clipboard-write` 基本仅 Chromium 认，Firefox/Safari 查它会抛 `TypeError`",
+        "isCorrect": true,
+        "description": "可查名单各家不一，查不支持名会抛错，须 try/catch"
+      },
+      {
+        "text": "因为 `query` 是同步的，可能抛同步异常",
+        "isCorrect": false,
+        "description": "query 返回 Promise，问题在名字不被认时抛 TypeError"
+      },
+      {
+        "text": "因为剪贴板读会消耗用户激活，可能超时",
+        "isCorrect": false,
+        "description": "query 只读不消耗激活，根因是权限名差异"
+      },
+      {
+        "text": "因为该查询必须在 Web Worker 里执行",
+        "isCorrect": false,
+        "description": "与线程无关；Permissions 主线程/Worker 都可用"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：即便用户已授权定位，iframe 里 `getCurrentPosition` 仍拿不到位置，最可能是哪道「门」没过？",
+    "explanation": "这批 API 的可用性由三道叠加的门共同决定（与关系，缺一不可）：用户授权（Permissions）、用户激活（transient activation，一次手势）、权限策略（Permissions Policy，站点/iframe 层的允许清单）。iframe 里用定位/摄像头/唤醒锁必须显式 `<iframe allow=\"geolocation\">` 或响应头 `Permissions-Policy`，否则即便用户授权了、`query` 也会直接返回 `denied`。",
+    "tags": ["misc-apis", "高级", "three-gates"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用户授权门——需要再弹一次授权窗",
+        "isCorrect": false,
+        "description": "题设已授权，问题在 iframe 的策略门"
+      },
+      {
+        "text": "用户激活门——需要用户再点一次",
+        "isCorrect": false,
+        "description": "定位不强制手势；iframe 缺的是权限策略"
+      },
+      {
+        "text": "权限策略门——iframe 未 `allow=\"geolocation\"`，被 Permissions Policy 挡",
+        "isCorrect": true,
+        "description": "iframe 需显式 allow，否则策略门不过、query 返回 denied"
+      },
+      {
+        "text": "安全上下文门——iframe 内不算安全上下文",
+        "isCorrect": false,
+        "description": "iframe 可在安全上下文内，缺的是 allow 策略"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：想在调用 `navigator.share` 前用 `permissions.query` 查一下「分享权限」状态，为什么行不通？",
+    "explanation": "Web Share 不走可查询的 Permissions 权限——它没有可查的权限名，靠的是用户激活 + `web-share` 权限策略。同类的还有 Clipboard 写、Vibration，也主要靠用户激活而非可查权限。对这类 API，只能保证「在手势回调里、激活未过期时调用」，失败就 `catch` 降级，不能靠 `query` 先查三态。",
+    "tags": ["misc-apis", "高级", "web-share"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为权限名叫 `webshare` 而不是 `web-share`",
+        "isCorrect": false,
+        "description": "Web Share 根本没有可查权限名，改名也查不到"
+      },
+      {
+        "text": "因为 `query` 只能在 HTTPS 下用，而 share 不要求 HTTPS",
+        "isCorrect": false,
+        "description": "share 同样要安全上下文；根因是它不走可查权限"
+      },
+      {
+        "text": "因为要先 `await navigator.share.permission`",
+        "isCorrect": false,
+        "description": "无此属性，Web Share 不暴露可查权限"
+      },
+      {
+        "text": "Web Share 无可查权限名，靠用户激活 + `web-share` 策略，只能手势内调用后 `catch` 降级",
+        "isCorrect": true,
+        "description": "它不走 Permissions，query 查不到，靠激活约束"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：关于 Screen Wake Lock 的浏览器支持面，下列描述正确的是？",
+    "explanation": "屏幕唤醒锁支持面：Chromium 系全支持、Safari 16.4+ 支持、Firefox 目前尚未支持。因此务必 `\"wakeLock\" in navigator` 探测，不支持就降级（如提示用户手动调长熄屏时间）。它需要安全上下文、文档可见，Permissions 名也叫 `screen-wake-lock`。",
+    "tags": ["misc-apis", "高级", "wake-lock-support"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chromium 全支持、Safari 16.4+ 支持、Firefox 暂未支持",
+        "isCorrect": true,
+        "description": "三家支持面正是如此，须探测 + 降级"
+      },
+      {
+        "text": "三大浏览器均已完整支持，无需探测",
+        "isCorrect": false,
+        "description": "Firefox 暂未支持，必须探测降级"
+      },
+      {
+        "text": "仅 Firefox 支持，Chromium/Safari 都不支持",
+        "isCorrect": false,
+        "description": "恰相反，Firefox 暂无、另两家支持"
+      },
+      {
+        "text": "是 Safari 26 才新增的，Safari 16.4 不支持",
+        "isCorrect": false,
+        "description": "Wake Lock 是 Safari 16.4+；Safari 26 那批对应 URLPattern"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：URLPattern 于 2025-09-15 转为 Baseline Newly available，补齐最后一块支持的浏览器是？",
+    "explanation": "URLPattern 各浏览器起点：Chrome 95（2021-10-19，早就有）、Firefox 142（2025-08-19）、Safari 26（2025-09-15，最后补齐）。2025-09-15 转为 Baseline Newly available。易混点：URLPattern 的 Safari 支持是 Safari 26，不是 Safari 16.4（16.4 那批新增的是 Screen Wake Lock 等，不含 URLPattern）。旧环境可用 urlpattern-polyfill。",
+    "tags": ["misc-apis", "高级", "urlpattern-baseline"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 95",
+        "isCorrect": false,
+        "description": "Chrome 95 早在 2021 就支持，是最早的一家"
+      },
+      {
+        "text": "Safari 26（2025-09-15）",
+        "isCorrect": true,
+        "description": "Safari 26 最后补齐，促成 2025-09-15 转正 Baseline"
+      },
+      {
+        "text": "Safari 16.4",
+        "isCorrect": false,
+        "description": "易混点：URLPattern 是 Safari 26 而非 16.4"
+      },
+      {
+        "text": "Firefox 142",
+        "isCorrect": false,
+        "description": "Firefox 142（2025-08）先于 Safari，不是最后一家"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：关于 Battery Status API（`navigator.getBattery()`）的现状，下列正确的是？",
+    "explanation": "Battery Status（`navigator.getBattery()` → `Promise<BatteryManager>`，含 `charging`/`level`/`chargingTime`/`dischargingTime` + 事件）现状：Firefox 已移除、Safari 从未实现、仅 Chromium 保留，因指纹追踪的隐私风险整体处于淘汰态势。新项目不要依赖它。这类「读设备状态」的 API 因指纹风险整体收缩。",
+    "tags": ["misc-apis", "高级", "battery"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "三大浏览器都支持，可放心用于生产",
+        "isCorrect": false,
+        "description": "仅 Chromium 保留，FF 已移除、Safari 从未实现"
+      },
+      {
+        "text": "仅 Chromium 保留（Firefox 已移除、Safari 从未实现），因隐私收缩，新项目别依赖",
+        "isCorrect": true,
+        "description": "指纹风险致其淘汰，当增强且必探测"
+      },
+      {
+        "text": "它是最新推荐的省电优化 API",
+        "isCorrect": false,
+        "description": "恰相反，它正被抛弃、不推荐"
+      },
+      {
+        "text": "它返回同步的 `BatteryManager`，无需 `await`",
+        "isCorrect": false,
+        "description": "getBattery 返回 Promise，需 await"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：`navigator.connection`（Network Information API）里，相对最值得读、也较可用的信号是哪个？",
+    "explanation": "Network Information（`navigator.connection`）报告网络质量：`effectiveType`（slow-2g/2g/3g/4g）、`downlink`、`rtt`、`saveData`（省流量偏好，布尔）、`type` + `change` 事件。它是 Chromium 独占的非标准/实验特性，Firefox 与 Safari 均不支持。其中 `saveData` 是相对最值得读的信号（尊重用户「省流量」意愿，如为真就别预加载大资源），但同样要 `if (conn)` 探测后用。",
+    "tags": ["misc-apis", "高级", "network-info"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "`saveData`（用户的省流量偏好），为真时应避免预加载大资源",
+        "isCorrect": true,
+        "description": "saveData 最值得尊重，但仍需先探测 connection 存在"
+      },
+      {
+        "text": "`downlink`，它在所有浏览器都精确可靠",
+        "isCorrect": false,
+        "description": "Network Information 是 Chromium 独占非标准，并非各家可靠"
+      },
+      {
+        "text": "`type`，它是唯一标准化的字段",
+        "isCorrect": false,
+        "description": "整个 API 都非标准，saveData 才是最该关注的信号"
+      },
+      {
+        "text": "`effectiveType`，可据它判断用户套餐资费",
+        "isCorrect": false,
+        "description": "它估的是网络质量档位，不代表资费；最该读的是 saveData"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：下列哪一组 API 在 Web Worker 里可用（而不是仅限主线程）？",
+    "explanation": "Worker 可达性不一：Permissions、Notifications、URLPattern 在 Web Worker 里可用；而 Clipboard、Web Share、Geolocation、Wake Lock 基本仅主线程（它们绑用户交互/文档焦点/可见性）。URLPattern 在 Service Worker 里可用，很适合做 fetch 请求分流。",
+    "tags": ["misc-apis", "高级", "worker"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Clipboard、Web Share、Geolocation",
+        "isCorrect": false,
+        "description": "这三者基本仅主线程，不在 Worker"
+      },
+      {
+        "text": "Wake Lock、Geolocation、Clipboard",
+        "isCorrect": false,
+        "description": "均仅主线程，不可在 Worker"
+      },
+      {
+        "text": "Permissions、Notifications、URLPattern",
+        "isCorrect": true,
+        "description": "这三者在 Web Worker 可用，URLPattern 适合 SW 分流"
+      },
+      {
+        "text": "Web Share、Wake Lock、Vibration",
+        "isCorrect": false,
+        "description": "这些绑主线程交互，不在 Worker"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：URLPattern 模式 `/books/:id(\\d+)` 的含义是？",
+    "explanation": "URLPattern 模式语法：`:name` 命名分组（抽取值）、`*` 通配（贪婪，零或多字符）、`(正则)` 正则组、`?`/`+`/`*` 修饰（可选/一或多/零或多）、`{...}` 非捕获分组（配修饰用，如 `/search{/}?` 可选尾斜杠）。`/books/:id(\\d+)` 表示命名分组 `id` 且只匹配数字——`/books/123` 匹配、`/books/abc` 不匹配，`id` 值经 `exec(url).pathname.groups.id` 取出。",
+    "tags": ["misc-apis", "专家", "urlpattern-syntax"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "匹配字面路径 `/books/:id(\\d+)`，不做任何捕获",
+        "isCorrect": false,
+        "description": "它是模式而非字面量，:id 会捕获"
+      },
+      {
+        "text": "`id` 可匹配任意字符，`(\\d+)` 只是注释",
+        "isCorrect": false,
+        "description": "`(\\d+)` 是正则约束，限定 id 仅数字"
+      },
+      {
+        "text": "匹配 `/books/` 后跟一个或多个 `d` 字母",
+        "isCorrect": false,
+        "description": "`\\d` 是数字类，不是字母 d"
+      },
+      {
+        "text": "命名分组 `id`，且值被正则 `\\d+` 限定为数字（`/books/123` 匹配、`/books/abc` 不匹配）",
+        "isCorrect": true,
+        "description": ":id 捕获 + (\\d+) 约束为数字，值在 pathname.groups.id"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：把屏幕唤醒锁和 Page Visibility 绑在一起的「标准配方」核心是哪一步？",
+    "explanation": "因为唤醒锁在页面转 `\"hidden\"` 时被系统自动释放、回到 `\"visible\"` 不自动恢复，标准配方是：在 `visibilitychange` 回调里判断——若之前持有过锁（`wakeLock !== null`）且页面重新 `\"visible\"`，就重新 `request(\"screen\")` 重获。首次仍在用户手势内申请。这样切走再回来屏幕才不会又熄。",
+    "tags": ["misc-apis", "专家", "wake-lock-recipe"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "在 `visibilitychange` 里，页面重新 `\"visible\"` 且此前持有过锁时，重新 `request` 重获",
+        "isCorrect": true,
+        "description": "隐藏自动释放，回前台必须重申，这是配方核心"
+      },
+      {
+        "text": "在 `visibilitychange` 转 `\"hidden\"` 时立刻再 `request` 一次",
+        "isCorrect": false,
+        "description": "hidden 下申请会被拒；应在回到 visible 时重申"
+      },
+      {
+        "text": "用 `setInterval` 每秒 `request` 一次以保活",
+        "isCorrect": false,
+        "description": "无谓耗电，正解是随可见性变化重申"
+      },
+      {
+        "text": "监听 `sentinel` 的 `release` 事件后立即无条件重申",
+        "isCorrect": false,
+        "description": "隐藏下重申会失败，须等回到 visible 再申请"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：为提高授权通过率、避免用户下意识拒绝，推荐的权限申请工程范式是？",
+    "explanation": "推荐范式：① 最小权限 + 恰时申请（just-in-time）——别一进页面就连弹一串授权，用到某能力、由用户操作触发时才申请；② 先给理由再弹系统窗（pre-prompt）——系统授权窗只弹得起一次「印象」，被拒后再要就难，先用页面 UI 解释「为什么需要」，用户同意后再触发真正的系统窗；③ `denied` 就别再弹，引导去设置或走降级。反例是 `load` 时就抢通知 + 定位权限。",
+    "tags": ["misc-apis", "专家", "best-practices"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "页面加载时一次性申请所有可能用到的权限，省得以后打扰",
+        "isCorrect": false,
+        "description": "一进页面连弹转化率极低，应恰时申请"
+      },
+      {
+        "text": "在 `denied` 后反复弹窗，直到用户同意",
+        "isCorrect": false,
+        "description": "denied 后弹也没用还烦人，应停止并引导设置"
+      },
+      {
+        "text": "用 `permissions.query` 直接把权限从 `prompt` 改成 `granted`",
+        "isCorrect": false,
+        "description": "query 只读不能改状态，无法程序化授予"
+      },
+      {
+        "text": "最小权限 + 恰时申请，先用页面 UI 说明理由（pre-prompt）再触发系统窗，`denied` 就走降级",
+        "isCorrect": true,
+        "description": "just-in-time + pre-prompt + 优雅降级，提高通过率"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：产品要做「一键关闭通知」，关于用 Permissions API 程序化撤销权限，正确的认识是？",
+    "explanation": "Permissions API 没有 `revoke()`（早期提案已移除）。网页不能替用户撤销已授予的权限；用户只能自己去浏览器设置里改。因此「关闭通知」页面能做的是停止使用（不再 `showNotification`）+ 提示用户如何在设置里彻底关闭，而不是假装能程序化收回权限。",
+    "tags": ["misc-apis", "专家", "no-revoke"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "调 `navigator.permissions.revoke({ name: \"notifications\" })` 即可撤销",
+        "isCorrect": false,
+        "description": "没有 revoke 方法，早期提案已移除"
+      },
+      {
+        "text": "无法程序化撤销，页面只能停止使用并提示用户去设置里关闭",
+        "isCorrect": true,
+        "description": "Permissions 无 revoke，撤销权在用户的浏览器设置"
+      },
+      {
+        "text": "把权限 `query` 的 `state` 手动赋值为 `\"denied\"` 即可",
+        "isCorrect": false,
+        "description": "state 只读，不能赋值改权限"
+      },
+      {
+        "text": "调用 `Notification.requestPermission(\"denied\")` 传参撤销",
+        "isCorrect": false,
+        "description": "requestPermission 不接受这种参数，也不能撤销"
+      }
+    ]
+  },
+  {
+    "stem": "常用杂项 API：下列关于「Safari 版本」与「是否走可查 Permissions」的说法，哪一项完全正确？",
+    "explanation": "两个高频易混点：① Screen Wake Lock 是 Safari 16.4+ 支持，而 URLPattern 是 Safari 26 才补齐（别把 URLPattern 记成 16.4）；② 走可查 Permissions 的是定位/通知/推送/摄像头/麦克风/唤醒锁/持久存储等，而 Web Share、Clipboard 写、Vibration 主要靠用户激活、没有可查权限名，URLPattern/Page Visibility 不涉敏感资源无需授权。",
+    "tags": ["misc-apis", "专家", "pitfalls"],
+    "categories": [
+      ["技术方向", "常用杂项 API"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "URLPattern 在 Safari 16.4 落地，Wake Lock 要到 Safari 26",
+        "isCorrect": false,
+        "description": "记反了：Wake Lock 是 16.4、URLPattern 是 26"
+      },
+      {
+        "text": "Web Share 走可查的 `web-share` Permissions 名，可 `query` 三态",
+        "isCorrect": false,
+        "description": "Web Share 无可查权限名，靠用户激活 + 策略"
+      },
+      {
+        "text": "Wake Lock 是 Safari 16.4+、URLPattern 是 Safari 26；Web Share/Clipboard 写/Vibration 靠激活而非可查权限",
+        "isCorrect": true,
+        "description": "版本与权限归属都对，正是两个易混点的正解"
+      },
+      {
+        "text": "Page Visibility 需要 `page-visibility` 权限授权才能用",
+        "isCorrect": false,
+        "description": "Page Visibility 不涉敏感资源，无需授权"
+      }
+    ]
+  }
+]
