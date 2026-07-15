@@ -1181,8 +1181,177 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "Skills",
             sort: 8,
             children: [
-              { name: "Superpowers", sort: 1 },
-              { name: "Everything Claude Code", sort: 2 },
+              {
+                name: "规范、发现与创作",
+                sort: 1,
+                children: [
+                  { name: "Agent Skills 规范与生态", sort: 1 },
+                  { name: "Skills CLI 与 find-skills", sort: 2 },
+                  { name: "Anthropic Skills", sort: 3 },
+                  { name: "Skill Creator 与 Skill 评测", sort: 4 },
+                ],
+              },
+              {
+                name: "工程方法与上下文管理",
+                sort: 2,
+                children: [
+                  { name: "Superpowers", sort: 1 },
+                  { name: "Everything Claude Code", sort: 2 },
+                  { name: "Grill Me", sort: 3 },
+                  { name: "Grill With Docs", sort: 4 },
+                  { name: "gstack", sort: 5 },
+                  { name: "Compound Engineering", sort: 6 },
+                  { name: "GSD Core", sort: 7 },
+                  { name: "Addy Osmani Agent Skills", sort: 8 },
+                  { name: "BMAD Method", sort: 9 },
+                  { name: "Caveman", sort: 10 },
+                ],
+              },
+              {
+                name: "框架与应用开发",
+                sort: 3,
+                children: [
+                  {
+                    name: "Web 框架与元框架",
+                    sort: 1,
+                    children: [
+                      { name: "Vercel Agent Skills", sort: 1 },
+                      { name: "Next.js Workflow Skills", sort: 2 },
+                      { name: "Vue Skills", sort: 3 },
+                      { name: "Antfu Skills", sort: 4 },
+                      { name: "Nuxt Skills", sort: 5 },
+                      { name: "Angular Developer Skill", sort: 6 },
+                      { name: "Svelte AI Tools", sort: 7 },
+                    ],
+                  },
+                  {
+                    name: "路由、状态与数据流",
+                    sort: 2,
+                    children: [
+                      { name: "React Router Skill", sort: 1 },
+                      { name: "TanStack Router & Start Skills", sort: 2 },
+                      { name: "Redux Toolkit Skills", sort: 3 },
+                    ],
+                  },
+                  {
+                    name: "组件系统",
+                    sort: 3,
+                    children: [
+                      { name: "shadcn Skill", sort: 1 },
+                      { name: "Nuxt UI Skill", sort: 2 },
+                    ],
+                  },
+                  {
+                    name: "应用服务集成",
+                    sort: 4,
+                    children: [
+                      { name: "Better Auth Skills", sort: 1 },
+                      { name: "Stripe Skills", sort: 2 },
+                    ],
+                  },
+                  {
+                    name: "移动与跨端",
+                    sort: 5,
+                    children: [
+                      { name: "Expo Skills", sort: 1 },
+                      { name: "Callstack React Native Skills", sort: 2 },
+                      { name: "Software Mansion Skills", sort: 3 },
+                      { name: "Flutter Agent Plugins", sort: 4 },
+                    ],
+                  },
+                  {
+                    name: "后端框架与运行时",
+                    sort: 6,
+                    children: [
+                      { name: "Matteo Collina Node.js Skills", sort: 1 },
+                      { name: "NestJS Best Practices", sort: 2 },
+                      { name: "Deno Skills", sort: 3 },
+                    ],
+                  },
+                  {
+                    name: "AI 应用开发",
+                    sort: 7,
+                    children: [
+                      { name: "Vercel AI SDK Skills", sort: 1 },
+                      { name: "Mastra Skills", sort: 2 },
+                      { name: "LangChain & LangGraph Skills", sort: 3 },
+                      { name: "CopilotKit Skills", sort: 4 },
+                      { name: "assistant-ui Skills", sort: 5 },
+                    ],
+                  },
+                ],
+              },
+              {
+                name: "数据库与数据工程",
+                sort: 4,
+                children: [
+                  { name: "Supabase Agent Skills", sort: 1 },
+                  { name: "Firebase Agent Skills", sort: 2 },
+                  { name: "Prisma Skills", sort: 3 },
+                  { name: "dbt Agent Skills", sort: 4 },
+                  { name: "ClickHouse Agent Skills", sort: 5 },
+                  { name: "DuckDB Skills", sort: 6 },
+                ],
+              },
+              {
+                name: "云原生、DevOps 与可观测性",
+                sort: 5,
+                children: [
+                  { name: "Azure Skills Plugin", sort: 1 },
+                  { name: "AWS Agent Toolkit", sort: 2 },
+                  { name: "Cloudflare Skills", sort: 3 },
+                  { name: "HashiCorp Agent Skills", sort: 4 },
+                  { name: "可观测性 Skills", sort: 5 },
+                ],
+              },
+              {
+                name: "设计、Web 质量与多媒体",
+                sort: 6,
+                children: [
+                  { name: "Impeccable", sort: 1 },
+                  { name: "Web Quality Skills", sort: 2 },
+                  { name: "Remotion Skills", sort: 3 },
+                  { name: "HyperFrames", sort: 4 },
+                ],
+              },
+              {
+                name: "浏览器、测试与检索自动化",
+                sort: 7,
+                children: [
+                  { name: "Agent Browser", sort: 1 },
+                  { name: "Playwright CLI", sort: 2 },
+                  { name: "Browser Use", sort: 3 },
+                  { name: "Firecrawl CLI", sort: 4 },
+                ],
+              },
+              {
+                name: "安全审计与供应链治理",
+                sort: 8,
+                children: [
+                  { name: "Skill 安全与供应链治理", sort: 1 },
+                  { name: "Trail of Bits Skills", sort: 2 },
+                ],
+              },
+              {
+                name: "AI / ML 与科研工作流",
+                sort: 9,
+                children: [
+                  { name: "Hugging Face Skills", sort: 1 },
+                  { name: "Gemini Skills", sort: 2 },
+                  { name: "Google DeepMind Science Skills", sort: 3 },
+                  { name: "AI 论文复现 Skills", sort: 4 },
+                ],
+              },
+              {
+                name: "文档、办公与业务工作流",
+                sort: 10,
+                children: [
+                  { name: "Anthropic Knowledge Work Plugins", sort: 1 },
+                  { name: "Google Workspace CLI Skills", sort: 2 },
+                  { name: "Lark / 飞书 CLI Skills", sort: 3 },
+                  { name: "Marketing Skills", sort: 4 },
+                ],
+              },
             ],
           },
           {
