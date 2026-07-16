@@ -94,6 +94,6 @@ VitePress sidebar：新建「框架与应用开发」组 →「Web 框架与元�
 
 ## 全批门禁 + 生产
 
-- [ ] VitePress build 0 死链 / 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
-- [ ] 三仓库 Conventional Commits 提交推送
-- [ ] **生产（待确认，无需分类迁移）**：import:content:prod（5 文件）→ 查 5 叶真实 ID 回填 → rebuild/commit/push → rsync 部署（笔记 + 5 幻灯片，两路独立不并发）
+- [x] VitePress build 0 死链（754s 真实成功）/ 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
+- [x] 三仓库 Conventional Commits 提交推送（quiz `868dd1e` / slide `9a74323` / VitePress `b3dadd7`）
+- [x] **生产完成（无需分类迁移）**：import:content:prod 新增 88 题（20+14+18+21+15）→ 查真实 ID（597/598/599/600/602）回填 → rebuild 694s + commit `ae47113`/push → rsync 部署笔记（0 误删 SlideStack）+ 5 幻灯片 → **全 10 页 HTTP 200 上线**（2026-07-17）
