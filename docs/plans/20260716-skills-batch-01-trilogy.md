@@ -137,9 +137,21 @@ sidebar：`.vitepress/config.mts` Skills 节点重构为两分组「规范、发
 - [x] `git diff --check`（三仓库全通过）
 - [x] 三仓库分别 Conventional Commits 提交并推送
 
-## 生产操作（须逐一取得用户明确确认，禁止擅自执行）
+## 生产操作（已获用户逐一确认后执行）
 
-1. **分类迁移**（遵 20260715 计划）：原地保留 Superpowers ID 332 / Everything Claude Code ID 333，只改 parentId 到「工程方法与上下文管理」，Skills sort 7→8，不删重建。
-2. **题库导入 prod**：`pnpm -C apps/quiz-backend run import:content:prod`（幂等只增）。
-3. **回填测试链接**：只读查 5 个真实叶 ID → 回填 VitePress `?category={ID}` → 重新 build/commit/push。
-4. **笔记部署 ECS** / **幻灯片部署 ECS**：三路独立 rsync，各自单独确认，禁混跑。
+1. ✅ **分类迁移**（2026-07-16 完成）：新建「规范、发现与创作」(id=581)、「工程方法与上下文管理」(id=582) 于 Skills(331) 下；Superpowers(332)/ECC(333) 原地 reparent → 582（题数仍 22/21，43 条关联保留）；Skills sort 7→8。
+2. ✅ **题库导入 prod**（2026-07-16 完成）：`import:content:prod -- <5 文件>`，新增 142 题，0 道找不到分类；建 Skills 完整 69 叶树。
+3. ✅ **只读验收**：Skills 10 一级子类 / 69 叶 / 无同父同名 / 332-333 仍 22-21。
+4. ⏳ **部署 ECS**：笔记 dist rsync / 幻灯片 5 包 rsync，两路独立、各自确认、禁混跑。
+
+### 本批 5 叶生产库真实数字叶 ID（已回填 VitePress 测试链接）
+
+| 叶                        | 分类 ID | 父节点                   | 题数 |
+| ------------------------- | ------: | ------------------------ | ---: |
+| Agent Skills 规范与生态   | **583** | 581 规范、发现与创作     |   36 |
+| Skills CLI 与 find-skills | **584** | 581 规范、发现与创作     |   29 |
+| Grill Me                  | **587** | 582 工程方法与上下文管理 |   22 |
+| Grill With Docs           | **588** | 582 工程方法与上下文管理 |   21 |
+| gstack                    | **589** | 582 工程方法与上下文管理 |   34 |
+
+测试链接：`https://quiz.illegalscreed.cn/?category={ID}`。
