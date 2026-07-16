@@ -99,8 +99,20 @@ VitePress sidebar：在「工程方法与上下文管理」组内 gstack 之后�
 
 > 批 2 合计：笔记 20 页 · 幻灯片 41 页（0 溢出）· 题库 **114 题**（25+22+24+22+21）。
 
-## 全批门禁 + 生产
+## 全批门禁 + 生产（已完成）
 
-- [ ] VitePress build 0 死链 / 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff --check ×3
-- [ ] 三仓库 Conventional Commits 提交推送
-- [ ] **生产（待确认，无需分类迁移）**：import:content:prod（5 文件）→ 只读查 5 叶真实 ID 回填测试链接 → rebuild/commit/push → rsync 部署（笔记 + 5 幻灯片，两路独立不并发）
+- [x] VitePress build 0 死链（exit 0，5 叶 × 4 页产出）/ 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff --check ×3
+- [x] 三仓库 Conventional Commits 提交推送（quiz 36be813 / VitePress 81d23aa+823266e / SlideStack 228f3ad）
+- [x] **生产（已获确认执行，无需分类迁移）**：import:content:prod 新增 114 题（0 找不到分类）→ 回填 5 叶真实 ID → rebuild/commit/push → rsync 部署
+
+### 本批 5 叶生产库真实数字叶 ID（已回填测试链接）
+
+| 叶                       | 分类 ID | 题数 |
+| ------------------------ | ------: | ---: |
+| Compound Engineering     | **590** |   25 |
+| GSD Core                 | **591** |   22 |
+| Addy Osmani Agent Skills | **592** |   24 |
+| BMAD Method              | **593** |   22 |
+| Caveman                  | **594** |   21 |
+
+**「工程方法与上下文管理」组现满 10 叶**（Superpowers/ECC/Grill Me/Grill With Docs/gstack + 本批 5 叶）——整组收满。
