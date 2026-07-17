@@ -83,6 +83,6 @@
 
 ## 全批门禁 + 生产
 
-- [ ] VitePress build 0 死链 / 4 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
-- [ ] 三仓库 Conventional Commits 提交推送
-- [ ] **生产（待确认，无需分类迁移）**：import:content:prod（4 文件）→ 查 4 叶真实 ID 回填 → rebuild/commit/push → rsync 部署（笔记 + 4 幻灯片，两路独立不并发）→ HTTP 200 抽验
+- [x] VitePress build 0 死链（784s + 回填后 812s 真实成功）/ 4 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
+- [x] 三仓库 Conventional Commits 提交推送（quiz `fb9ee0e` / slide `5c270d6` / VitePress `352a541`）
+- [x] **生产完成（无需分类迁移）**：import:content:prod 新增 80 题（20+21+20+19）→ 查真实 ID（Expo 615 / Callstack 616 / Software Mansion 617 / Flutter 618；移动与跨端 614 子组由 import 自动建）回填 → rebuild + commit `69ee7c7`/push → rsync 部署笔记（0 误删 SlideStack）+ 4 幻灯片 → **全 8 页 HTTP 200 上线**（2026-07-17）
