@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "DuckDB Skills：它是什么，由谁出品？",
+    "explanation": "DuckDB Skills（duckdb/duckdb-skills）是 DuckDB 官方（GitHub duckdb 组织，即 DuckDB Foundation / DuckDB Labs）出品的一个 Claude Code 插件，MIT 开源（v0.2.4）。它把 DuckDB 的数据探索能力打包成一组可按需调用的 skill——读文件、查库、搜文档、检索历史会话、装扩展。注意它是官方 duckdb 组织，不是 MotherDuck（那是独立的云端 serverless DuckDB 服务公司）。",
+    "tags": ["DuckDB Skills", "入门", "定位"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "DuckDB 官方（duckdb 组织）出的 Claude Code 插件，MIT",
+        "isCorrect": true,
+        "description": "把 DuckDB 数据探索接进 agent"
+      },
+      {
+        "text": "MotherDuck 的云端 serverless 服务",
+        "isCorrect": false,
+        "description": "是官方 duckdb org，非 MotherDuck"
+      },
+      {
+        "text": "一个前端 UI 框架",
+        "isCorrect": false,
+        "description": "是数据探索技能集，非框架"
+      },
+      {
+        "text": "一个 npm 包管理器",
+        "isCorrect": false,
+        "description": "与包管理无关"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：如何安装它？",
+    "explanation": "它是 Claude Code 插件（仓库带 .claude-plugin/marketplace.json），在 Claude Code 里两步装：先 /plugin marketplace add duckdb/duckdb-skills 把 GitHub 仓库注册为插件市场，再 /plugin install duckdb-skills@duckdb-skills 安装。装后 skill 以 /duckdb-skills:name 形式可用。注意它不是用 npx skills add 装的。",
+    "tags": ["DuckDB Skills", "入门", "安装"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "/plugin marketplace add duckdb/duckdb-skills 再 /plugin install duckdb-skills@duckdb-skills",
+        "isCorrect": true,
+        "description": "Claude Code 插件市场两步装"
+      },
+      {
+        "text": "npx skills add duckdb/duckdb-skills",
+        "isCorrect": false,
+        "description": "它是 Claude Code 插件，非该装法"
+      },
+      {
+        "text": "npm install -g duckdb-skills",
+        "isCorrect": false,
+        "description": "不是全局 npm 包"
+      },
+      {
+        "text": "brew install duckdb-skills",
+        "isCorrect": false,
+        "description": "brew 装的是 DuckDB CLI，非本插件"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：底层的 DuckDB 是一个什么样的数据库？",
+    "explanation": "DuckDB 是一个 in-process（进程内 / 嵌入式）分析型（OLAP）SQL 数据库：列式存储 + 向量化执行，为聚合、扫描、分析查询优化，零外部依赖、无需起服务，能直接查询 CSV/Parquet/JSON 等文件，被称为「分析界的 SQLite」。它区别于客户端-服务器架构的 OLTP 行式事务库。",
+    "tags": ["DuckDB Skills", "入门", "DuckDB"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "in-process（嵌入式）分析型 OLAP 列式 SQL 库",
+        "isCorrect": true,
+        "description": "分析界的 SQLite，直读文件"
+      },
+      {
+        "text": "客户端-服务器架构的 OLTP 行式事务库",
+        "isCorrect": false,
+        "description": "DuckDB 是嵌入式列式 OLAP"
+      },
+      {
+        "text": "一个 NoSQL 文档数据库",
+        "isCorrect": false,
+        "description": "是 SQL 关系型分析库"
+      },
+      {
+        "text": "一个分布式消息队列",
+        "isCorrect": false,
+        "description": "与消息队列无关"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：attach-db 这个 skill 做什么？",
+    "explanation": "attach-db 附加一个 .duckdb 库文件供交互查询：校验库（PRAGMA version）→ 探索 schema（用 duckdb_tables() 列表 + DESCRIBE + 数行数）→ 问你把会话状态存哪 → 把 ATTACH/USE 追加到共享的 state.sql，让后续 skill（如 query）能用 duckdb -init 自动恢复会话。支持附加多个库。",
+    "tags": ["DuckDB Skills", "中级", "attach-db"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "附加 DuckDB 库、探索 schema、写 state.sql 供后续 skill 恢复",
+        "isCorrect": true,
+        "description": "支持多库追加"
+      },
+      {
+        "text": "只是打开系统文件管理器",
+        "isCorrect": false,
+        "description": "是附加并探索库"
+      },
+      {
+        "text": "删除数据库文件",
+        "isCorrect": false,
+        "description": "是附加，非删除"
+      },
+      {
+        "text": "把数据库部署到云端",
+        "isCorrect": false,
+        "description": "是本地附加，非部署"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：所有 skill 共享的 state.sql 有什么特性？",
+    "explanation": "state.sql 是每个项目一份、所有 skill 共享的 DuckDB 初始化文件，内容是纯 SQL（ATTACH/USE/LOAD/CREATE SECRET/CREATE MACRO）。它只追加、幂等（append-only, idempotent）——attach-db 追加时先查重、用 ATTACH IF NOT EXISTS，绝不覆盖别的 skill 写的内容。任何 skill 用 duckdb -init state.sql 恢复会话。",
+    "tags": ["DuckDB Skills", "中级", "state"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "所有 skill 共享、只追加、幂等，duckdb -init 恢复",
+        "isCorrect": true,
+        "description": "存 ATTACH/LOAD/SECRET/宏"
+      },
+      {
+        "text": "每个 skill 各写一份，每次全覆盖",
+        "isCorrect": false,
+        "description": "是共享且只追加，不覆盖"
+      },
+      {
+        "text": "是一个加密的二进制文件",
+        "isCorrect": false,
+        "description": "是纯文本 SQL 文件"
+      },
+      {
+        "text": "每次运行都会被清空重建",
+        "isCorrect": false,
+        "description": "只追加、幂等，可安全复用"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：state.sql 可以存在哪两个位置？",
+    "explanation": "首次需要状态时，skill 会问你把 state.sql 存哪：一是项目目录（.duckdb-skills/state.sql，与项目同处、可选 gitignore），二是主目录（~/.duckdb-skills/项目 id/state.sql，保持仓库干净，项目 id 由项目根路径把斜杠换成连字符得到）。",
+    "tags": ["DuckDB Skills", "中级", "state"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "项目目录 .duckdb-skills/ 或主目录 ~/.duckdb-skills/项目 id/",
+        "isCorrect": true,
+        "description": "两处任选，可 gitignore"
+      },
+      {
+        "text": "只能存在 /tmp 临时目录",
+        "isCorrect": false,
+        "description": "存项目或主目录，非临时目录"
+      },
+      {
+        "text": "存在 DuckDB 库文件内部",
+        "isCorrect": false,
+        "description": "是独立的 SQL 文件"
+      },
+      {
+        "text": "只能存在云端对象存储",
+        "isCorrect": false,
+        "description": "本地文件，非云端"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：query 的两种执行模式是什么？",
+    "explanation": "query 有两种模式：ad-hoc 模式（带 --file、或 SQL 直接引用文件、或没有 state.sql 时）对 :memory: 跑并开沙箱查文件；session 模式（存在 state.sql 且引用表名/自然语言/无文件引用的 SQL 时）用 duckdb -init state.sql 查信任的已附加库。二者按输入自动判定。",
+    "tags": ["DuckDB Skills", "高级", "query"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "ad-hoc（沙箱查文件）与 session（查信任的已附加库）",
+        "isCorrect": true,
+        "description": "按输入自动判定"
+      },
+      {
+        "text": "读模式和写模式",
+        "isCorrect": false,
+        "description": "是 ad-hoc 与 session，非读写"
+      },
+      {
+        "text": "同步和异步模式",
+        "isCorrect": false,
+        "description": "与同步异步无关"
+      },
+      {
+        "text": "单机和分布式模式",
+        "isCorrect": false,
+        "description": "DuckDB 是嵌入式单机"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：query 的 ad-hoc 模式为查陌生文件做了什么安全设计？",
+    "explanation": "ad-hoc 模式对 :memory: 跑查询时开沙箱：SET allowed_paths=['文件路径'] 只放行被引用的那个文件、SET enable_external_access=false 禁外部访问、SET allow_persistent_secrets=false 禁持久 secret、SET lock_configuration=true 锁死配置。这让查陌生文件更安全。",
+    "tags": ["DuckDB Skills", "高级", "query"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "enable_external_access=false + allowed_paths + lock_configuration，只放行引用文件",
+        "isCorrect": true,
+        "description": "沙箱化查陌生文件"
+      },
+      {
+        "text": "关闭所有安全检查以求最快",
+        "isCorrect": false,
+        "description": "恰恰是加沙箱限制"
+      },
+      {
+        "text": "用 root 权限运行",
+        "isCorrect": false,
+        "description": "与提权无关，是收紧权限"
+      },
+      {
+        "text": "允许访问任意本地文件",
+        "isCorrect": false,
+        "description": "只放行被引用的文件"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：query 执行前为什么要估结果规模？",
+    "explanation": "query 执行前会估结果规模（session 用 duckdb_tables() 的 estimated_size，ad-hoc 探源 count()），避免把巨大结果集打回对话烧掉大量 token：源超过 100 万行且没有 LIMIT/聚合时，会提醒你加 LIMIT 1000 或聚合；数据超过 10GB 时额外提醒查询可能较慢。DESCRIBE/SUMMARIZE/聚合这类天然有界的查询跳过估算。",
+    "tags": ["DuckDB Skills", "中级", "query"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "源超 100 万行且无 LIMIT/聚合就提醒加 LIMIT，防爆 token",
+        "isCorrect": true,
+        "description": "避免大结果烧 token"
+      },
+      {
+        "text": "总是无条件返回全部行",
+        "isCorrect": false,
+        "description": "恰恰要拦大结果"
+      },
+      {
+        "text": "随机丢弃部分行",
+        "isCorrect": false,
+        "description": "是提醒加 LIMIT，非随机丢"
+      },
+      {
+        "text": "永远只返回第一行",
+        "isCorrect": false,
+        "description": "是按规模提醒，非只取一行"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：Friendly SQL 指什么？",
+    "explanation": "Friendly SQL 是 DuckDB 提供的一套更好写的 SQL 惯用法：FROM 前置（FROM t WHERE ... 隐式 SELECT *）、GROUP BY ALL（按所有非聚合列自动分组）、SELECT * EXCLUDE/REPLACE（通配里剔除/改列）、COLUMNS(*) 正则批量选列、count() 免写 count(*)、FILTER 条件聚合、SUMMARIZE 统计画像等。query 生成 SQL 时优先这些写法。",
+    "tags": ["DuckDB Skills", "中级", "Friendly SQL"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "FROM 前置、GROUP BY ALL、SELECT * EXCLUDE 等更简洁的 DuckDB 写法",
+        "isCorrect": true,
+        "description": "DuckDB 招牌 SQL 方言"
+      },
+      {
+        "text": "必须严格把 SELECT 写在最前面",
+        "isCorrect": false,
+        "description": "Friendly SQL 支持 FROM 前置"
+      },
+      {
+        "text": "一种不支持聚合的简化 SQL",
+        "isCorrect": false,
+        "description": "支持聚合且更强"
+      },
+      {
+        "text": "就是普通 MySQL 语法别名",
+        "isCorrect": false,
+        "description": "是 DuckDB 专有增强"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：read-file 靠什么识别不同格式的文件？",
+    "explanation": "read-file 的核心是一个内联的 read_any 表宏——它按文件扩展名用 ILIKE 分派到对应的 read_* 函数：.csv 走 read_csv、.json 走 read_json_auto、.parquet 走 read_parquet、.avro 走 read_avro、.xlsx 走 read_xlsx、.shp/.gpkg 走 st_read、.sqlite 走 sqlite_scan 等。读完自动 DESCRIBE + 数行数 + 取前 20 行样本。",
+    "tags": ["DuckDB Skills", "中级", "read-file"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "一个 read_any 表宏按扩展名自动分派到对应 read_* 函数",
+        "isCorrect": true,
+        "description": "auto-detect by extension"
+      },
+      {
+        "text": "需要你手动指定每种格式的读取器",
+        "isCorrect": false,
+        "description": "是自动分派"
+      },
+      {
+        "text": "只能读 CSV 一种格式",
+        "isCorrect": false,
+        "description": "支持多种格式"
+      },
+      {
+        "text": "把所有文件当纯文本逐字节读",
+        "isCorrect": false,
+        "description": "按格式用对应读取函数"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：read-file 支持读哪些数据文件？",
+    "explanation": "read-file 能读 CSV、JSON（含 jsonl/ndjson/geojson）、Parquet、Avro、Excel（xlsx）、空间格式（shp/gpkg/kml）、SQLite 库、Jupyter notebook（ipynb）等，本地或远程（S3/GCS/Azure/HTTPS）均可。它明确不用于读源代码。",
+    "tags": ["DuckDB Skills", "中级", "read-file"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CSV/JSON/Parquet/Avro/Excel/SQLite/空间/Jupyter 等",
+        "isCorrect": true,
+        "description": "本地或远程均可"
+      },
+      {
+        "text": "只支持 CSV 文件",
+        "isCorrect": false,
+        "description": "支持多种数据格式"
+      },
+      {
+        "text": "只支持 SQL 脚本文件",
+        "isCorrect": false,
+        "description": "读的是数据文件"
+      },
+      {
+        "text": "只支持图片文件",
+        "isCorrect": false,
+        "description": "是数据文件，非图片"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：duckdb-docs 用什么机制搜索文档？",
+    "explanation": "duckdb-docs 先 INSTALL httpfs; INSTALL fts;，再用 fts 扩展的 match_bm25 对本地缓存的搜索索引做全文搜索。索引托管在 duckdb.org/data/docs-search.duckdb（DuckDB 文档 + 博客）和 ducklake.select/data/docs-search.duckdb（DuckLake），缓存超过 2 天自动重新拉取。自然语言问题会先抽取技术关键词再搜。",
+    "tags": ["DuckDB Skills", "高级", "duckdb-docs"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 fts 扩展的 match_bm25 对本地缓存索引做全文搜索",
+        "isCorrect": true,
+        "description": "DuckDB + DuckLake 两套索引"
+      },
+      {
+        "text": "调用 OpenAI 做向量语义检索",
+        "isCorrect": false,
+        "description": "是 DuckDB fts 的 BM25 全文搜索"
+      },
+      {
+        "text": "每次实时爬取整个官网",
+        "isCorrect": false,
+        "description": "搜本地缓存索引，非实时爬"
+      },
+      {
+        "text": "只搜本地代码里的注释",
+        "isCorrect": false,
+        "description": "搜官方文档与博客"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：install-duckdb 安装扩展的语法是怎样的？",
+    "explanation": "install-duckdb 每个参数是 name 或 name@repo：name 生成 INSTALL name;（从核心装），name@repo 生成 INSTALL name FROM repo;（装社区扩展，如 gcs@community）。加 --update 则更新扩展（UPDATE EXTENSIONS），并对比 latest_stable_version.txt 检查 DuckDB CLI 是否最新、必要时引导升级。",
+    "tags": ["DuckDB Skills", "中级", "install-duckdb"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "name 装 INSTALL name；name@repo 装 INSTALL name FROM repo；--update 更新",
+        "isCorrect": true,
+        "description": "支持核心与社区扩展"
+      },
+      {
+        "text": "只能一次装一个扩展且不能指定仓库",
+        "isCorrect": false,
+        "description": "可多个、可 name@repo"
+      },
+      {
+        "text": "用 npm install 装扩展",
+        "isCorrect": false,
+        "description": "是 DuckDB 的 INSTALL 语句"
+      },
+      {
+        "text": "必须从源码编译每个扩展",
+        "isCorrect": false,
+        "description": "INSTALL 直接装预编译扩展"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：s3-explore 如何做到探查远程数据而不下载全量？",
+    "explanation": "s3-explore 探查 S3/R2/GCS/MinIO 时刻意不拉全量：列桶用 read_blob 只选 filename/size/last_modified，绝不选 content（选 content 会下载文件真身）；Parquet 行数从 parquet_metadata 元数据求和 row_group_num_rows 拿，不读数据；DuckDB 把 WHERE 谓词下推进 S3 上的 Parquet，远程大集也能高效过滤。",
+    "tags": ["DuckDB Skills", "高级", "s3-explore"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "列桶只取 filename/size（不取 content），Parquet 用 parquet_metadata，谓词下推",
+        "isCorrect": true,
+        "description": "靠元数据与下推，零全量下载"
+      },
+      {
+        "text": "先把整个桶下载到本地再查",
+        "isCorrect": false,
+        "description": "恰恰是避免下载"
+      },
+      {
+        "text": "必须逐个文件完整下载后统计",
+        "isCorrect": false,
+        "description": "用元数据即可拿行数"
+      },
+      {
+        "text": "只能查完全公开的桶",
+        "isCorrect": false,
+        "description": "凭证走 CREATE SECRET，私有桶也行"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：convert-file 怎么转换文件格式？",
+    "explanation": "convert-file 用一条 COPY (FROM 输入) TO 输出 (FORMAT ...) 转格式，输出格式由输出文件扩展名推断（不给输出名默认转成同名 .parquet）。提到按某列分区就加 PARTITION_BY（仅 Parquet/CSV），提到用 zstd 就给 Parquet 加 CODEC 'zstd'。意义在于 Parquet/Excel 等二进制格式 AI 无法直接产出，交给 DuckDB 写。",
+    "tags": ["DuckDB Skills", "中级", "convert-file"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 COPY ... TO ... (FORMAT ...) 转格式，支持 PARTITION_BY、CODEC zstd",
+        "isCorrect": true,
+        "description": "输出格式由扩展名推断"
+      },
+      {
+        "text": "只能把别的格式转成 CSV",
+        "isCorrect": false,
+        "description": "支持 Parquet/JSON/Excel/GeoJSON 等"
+      },
+      {
+        "text": "需要另装第三方转换工具",
+        "isCorrect": false,
+        "description": "DuckDB 的 COPY 一条搞定"
+      },
+      {
+        "text": "会就地修改并覆盖原文件",
+        "isCorrect": false,
+        "description": "写到你指定的输出文件"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：spatial 做空间分析有哪些关键点？",
+    "explanation": "spatial 用 DuckDB 空间扩展答地理问题，缺数据时用 Overture Maps（免费全球 POI/建筑/道路/边界，GeoParquet on S3，无需 API key）。三条铁律：SET geometry_always_xy = true 让坐标按经度纬度解释（否则球面距离全错）；查 Overture 先按 bbox 过滤利用谓词下推避免拉全量；真实距离用 ST_Distance_Spheroid（返回 WGS84 米，需 POINT_2D 输入）。",
+    "tags": ["DuckDB Skills", "高级", "spatial"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "空间扩展 + Overture 免费数据；geometry_always_xy、bbox 先过滤、球面函数需 POINT_2D",
+        "isCorrect": true,
+        "description": "无需 API key 的全球数据"
+      },
+      {
+        "text": "必须付费购买 Google Maps API",
+        "isCorrect": false,
+        "description": "Overture 免费无需 API key"
+      },
+      {
+        "text": "只能处理平面坐标，不支持真实地球距离",
+        "isCorrect": false,
+        "description": "有 ST_Distance_Spheroid 球面距离"
+      },
+      {
+        "text": "不支持读取远程空间数据",
+        "isCorrect": false,
+        "description": "可直接查 S3 上的 GeoParquet"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：read-memories 这个 skill 做什么？",
+    "explanation": "read-memories 用 read_ndjson 搜索历史 Claude Code 会话日志（~/.claude/projects/*/*.jsonl），恢复过往的决策、模式、未决 TODO 等上下文；加 --here 只搜当前项目。它静默工作——吸收结果、用于当前回答，不向用户复述原始日志。",
+    "tags": ["DuckDB Skills", "中级", "read-memories"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 read_ndjson 搜历史会话日志（.jsonl）恢复过往上下文，静默工作",
+        "isCorrect": true,
+        "description": "--here 可只搜当前项目"
+      },
+      {
+        "text": "清空所有历史聊天记录",
+        "isCorrect": false,
+        "description": "是检索，非清空"
+      },
+      {
+        "text": "读取并转储系统物理内存",
+        "isCorrect": false,
+        "description": "读的是会话日志文件"
+      },
+      {
+        "text": "把本地日志上传到云端",
+        "isCorrect": false,
+        "description": "本地检索，不上传"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：关于它的平台支持与归属，以下哪个正确？",
+    "explanation": "这组 skill 官方只在 macOS / Linux 测过，Windows 尚未完全支持（部分 shell 命令、路径处理可能异常）。它是 DuckDB 官方（duckdb 组织 / DuckDB Foundation）的开源插件，不是 MotherDuck 的云端服务；且依赖本地 DuckDB CLI，未装时会引导 install-duckdb。",
+    "tags": ["DuckDB Skills", "入门", "边界"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "macOS/Linux 已测、Windows 未完全支持；是官方 duckdb，非 MotherDuck",
+        "isCorrect": true,
+        "description": "依赖本地 DuckDB CLI"
+      },
+      {
+        "text": "只支持 Windows",
+        "isCorrect": false,
+        "description": "是 macOS/Linux 已测，Windows 未完全支持"
+      },
+      {
+        "text": "它是 MotherDuck 的云端产品",
+        "isCorrect": false,
+        "description": "是官方 duckdb org 的本地插件"
+      },
+      {
+        "text": "无需本地 DuckDB CLI 即可用",
+        "isCorrect": false,
+        "description": "DuckDB CLI 是硬前置"
+      }
+    ]
+  },
+  {
+    "stem": "DuckDB Skills：这些 skill 之间如何协作？",
+    "explanation": "它们互相引用、协同工作：所有 skill 共享同一个 state.sql（read-file 建的 SECRET/宏被 query 复用，attach-db 附加的库处处可见）；read-file 建议接 query 深入探索、建议 attach-db 持久化大文件；query/read-file/read-memories 遇到 DuckDB 报错会自动查 duckdb-docs；缺扩展时各 skill 自动委派 install-duckdb。",
+    "tags": ["DuckDB Skills", "中级", "协作"],
+    "categories": [
+      ["技术方向", "DuckDB Skills"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "共享 state.sql，read-file 建议接 query，出错自动查 duckdb-docs",
+        "isCorrect": true,
+        "description": "互相引用、协同"
+      },
+      {
+        "text": "彼此完全独立，无任何共享状态",
+        "isCorrect": false,
+        "description": "共享 state.sql 且互相委派"
+      },
+      {
+        "text": "必须由用户手动把结果在 skill 间复制粘贴",
+        "isCorrect": false,
+        "description": "靠共享状态自动衔接"
+      },
+      {
+        "text": "一次会话只能使用其中一个 skill",
+        "isCorrect": false,
+        "description": "可协同使用多个"
+      }
+    ]
+  }
+]
