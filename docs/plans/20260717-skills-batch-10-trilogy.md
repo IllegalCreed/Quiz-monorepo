@@ -70,6 +70,6 @@
 
 ## 全批门禁 + 生产（build 一次）
 
-- [ ] 静态扫崩点 + 5 Slidev 0 溢出 + Quiz audit 0 errors
-- [ ] 提交推送 quiz JSON + 幻灯片
-- [ ] **确认生产** → import → 查真实 ID 回填 + sidebar → VitePress build 一次 → 提交推送 → rsync 部署 → HTTP 200
+- [x] 静态扫崩点（0）+ 5 Slidev 0 溢出（observability logql/promql/traceql→text 修 Shiki 硬崩）+ Quiz audit 0 errors（19663 题）
+- [x] 提交推送 quiz JSON + 幻灯片（quiz `be5e1f3` / slide `5c552ec`）
+- [x] **生产完成（build 一次流程，无需迁移）**：import 100 题 → 查真实 ID（Azure 637 / AWS 638 / Cloudflare 639 / HashiCorp 640 / 可观测性 641；云原生组 636 由 import 自动建）回填 + sidebar 新建组 → **VitePress build 唯一一次**（851s 真实成功）→ 提交推送 VitePress `8a7e57c`（单 commit）→ rsync 部署笔记（0 误删 SlideStack）+ 5 幻灯片 → **全 10 页 HTTP 200 上线**（2026-07-18）
