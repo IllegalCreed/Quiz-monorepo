@@ -97,6 +97,6 @@
 
 ## 全批门禁 + 生产（build 一次流程）
 
-- [ ] 静态扫崩点（mustache/裸角括号）+ 5 Slidev 0 溢出 + Quiz audit 0 errors
-- [ ] 提交推送 quiz JSON + 幻灯片（ID 无关先落袋）
-- [ ] **确认生产** → import:content:prod（5 文件）→ 查 5 叶真实 ID 回填 → sidebar → **VitePress build 一次** → git diff → 提交推送 VitePress → rsync 部署（笔记 + 5 幻灯片）→ HTTP 200 抽验
+- [x] 静态扫崩点（0）+ 5 Slidev 0 溢出（LangChain 修 1 页）+ Quiz audit 0 errors（19445 题）
+- [x] 提交推送 quiz JSON + 幻灯片（quiz `58a9023` / slide `f53b553`）
+- [x] **生产完成（build 一次新流程，无需迁移）**：import:content:prod 新增 99 题（20+20+19+20+20）→ 查真实 ID（Vercel AI SDK 624 / Mastra 625 / LangChain 626 / CopilotKit 627 / assistant-ui 628；AI 应用开发 623 子组由 import 自动建）回填 + sidebar → **VitePress build 唯一一次**（848s 真实成功，dist 真实 ID）→ 提交推送 VitePress `9412a3c`（单 commit）→ rsync 部署笔记（0 误删 SlideStack）+ 5 幻灯片 → **全 10 页 HTTP 200 上线**（2026-07-17）。**「build 一次」流程首次实战、省掉第二次全量 build。**
