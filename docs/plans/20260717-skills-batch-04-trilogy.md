@@ -98,6 +98,6 @@
 
 ## 全批门禁 + 生产
 
-- [ ] VitePress build 0 死链 / 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
-- [ ] 三仓库 Conventional Commits 提交推送
-- [ ] **生产（待确认，无需分类迁移）**：import:content:prod（5 文件）→ 查 5 叶真实 ID 回填 → rebuild/commit/push → rsync 部署（笔记 + 5 幻灯片，两路独立不并发）→ HTTP 200 抽验
+- [x] VitePress build 0 死链（878s + 回填后 870s 真实成功）/ 5 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
+- [x] 三仓库 Conventional Commits 提交推送（quiz `1f06538` / slide `15600ae` / VitePress `563f1e6`）
+- [x] **生产完成（无需分类迁移）**：import:content:prod 新增 100 题（20+19+20+20+21）→ 查真实 ID（Nuxt 601 / Svelte 603 / React Router 605 / TanStack 606 / Redux 607；路由子组 604 由 import 自动建）回填 → rebuild + commit `580ef07`/push → rsync 部署笔记（0 误删 SlideStack）+ 5 幻灯片 → **全 10 页 HTTP 200 上线**（2026-07-17）
