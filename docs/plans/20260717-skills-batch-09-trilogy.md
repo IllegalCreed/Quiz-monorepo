@@ -77,6 +77,6 @@
 
 ## 全批门禁 + 生产（build 一次）
 
-- [ ] 静态扫崩点 + 6 Slidev 0 溢出 + Quiz audit 0 errors
-- [ ] 提交推送 quiz JSON + 幻灯片
-- [ ] **确认生产** → import → 查真实 ID 回填 + sidebar → VitePress build 一次 → 提交推送 → rsync 部署 → HTTP 200
+- [x] 静态扫崩点（0）+ 6 Slidev 0 溢出（Supabase two-cols slot 已修）+ Quiz audit 0 errors（19563 题）
+- [x] 提交推送 quiz JSON + 幻灯片（quiz `d3f4bd6` / slide `2ec4cfe`）
+- [x] **生产完成（build 一次流程，无需迁移）**：import 118 题 → 查真实 ID（Supabase 630 / Firebase 631 / Prisma 632 / dbt 633 / ClickHouse 634 / DuckDB 635；数据库与数据工程 629 组由 import 自动建）回填 + sidebar 新建组 → **VitePress build 唯一一次**（907s 真实成功）→ 提交推送 VitePress `330d3a5`（单 commit）→ rsync 部署笔记（0 误删 SlideStack）+ 6 幻灯片 → **全 12 页 HTTP 200 上线**（2026-07-17）
