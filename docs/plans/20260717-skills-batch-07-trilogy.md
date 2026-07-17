@@ -75,6 +75,6 @@
 
 ## 全批门禁 + 生产
 
-- [ ] VitePress build 0 死链 / 3 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
-- [ ] 三仓库 Conventional Commits 提交推送
-- [ ] **生产（待确认，无需分类迁移）**：import:content:prod（3 文件）→ 查 3 叶真实 ID 回填 → rebuild/commit/push → rsync 部署（笔记 + 3 幻灯片，两路独立不并发）→ HTTP 200 抽验
+- [x] VitePress build 0 死链（1001s + 回填后 1234s 真实成功）/ 3 Slidev 0 溢出 / Quiz audit 0 errors / git diff ×3
+- [x] 三仓库 Conventional Commits 提交推送（quiz `c14810f` / slide `7ade0a7` / VitePress `63601d4`）
+- [x] **生产完成（无需分类迁移）**：import:content:prod 新增 60 题（20×3）→ 查真实 ID（Matteo Collina 620 / NestJS 621 / Deno 622；后端框架与运行时 619 子组由 import 自动建）回填 → rebuild + commit `0dac4fa`/push → rsync 部署笔记（0 误删 SlideStack）+ 3 幻灯片 → **全 6 页 HTTP 200 上线**（2026-07-17）
