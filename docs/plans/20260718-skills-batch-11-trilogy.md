@@ -64,5 +64,5 @@
 ## 全批门禁 + 生产（build 一次）
 
 - [x] 静态扫崩点（0 mustache / 0 裸标签 / 围栏语言全 Shiki 认识）+ 4 Slidev 0 溢出 + Quiz audit **0 errors**（19742 题 / 0 重复 stem）+ JSON 全角引号（0 转义 ASCII 双引号）
-- [ ] 提交推送 quiz JSON + 幻灯片
-- [ ] **确认生产** → import → 查真实 ID 回填 + sidebar 新建组 → VitePress build 一次 → 提交推送 → rsync 部署 → HTTP 200
+- [x] 提交推送 quiz JSON（`c0b15b7`）+ 幻灯片（SlideStack `ce439b7`）
+- [x] **生产完成（build 一次流程，分类树批 1 已建，无需迁移）**：import 79 题到 RDS → 查真实 ID（Impeccable 643 / Web Quality 644 / Remotion 645 / HyperFrames 646；组节点「设计、Web 质量与多媒体」= 642，批 1 已建）回填 4 页 index.md + sidebar 新建组 → **VitePress build 唯一一次**（1098s 真实成功）→ 提交推送 VitePress `6910f6f`（单 commit）→ rsync 部署笔记（dry-run 确认 0 误删 SlideStack）+ 4 幻灯片 → **全 12 路 HTTP 200 上线**（4 笔记 + 4 幻灯片 + 4 测试题接口，2026-07-18）
