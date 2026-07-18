@@ -58,5 +58,5 @@
 ## 全批门禁 + 生产（build 一次）
 
 - [x] 静态扫崩点（mustache 9 处 v-pre 包裹 + scheme→text）+ 2 Slidev 0 溢出 + Quiz audit **0 errors**（19861 题 / 0 重复 stem）
-- [ ] 提交推送 quiz JSON + 幻灯片
-- [ ] **确认生产** → import → 查真实 ID 回填 + sidebar 新建组 → VitePress build 一次 → 提交推送 → rsync 部署 → HTTP 200
+- [x] 提交推送 quiz JSON + 幻灯片
+- [x] **生产完成（build 一次流程，分类树批 1 已建，无需迁移）**：import 40 题到 RDS → 查真实 ID（Skill 安全与供应链治理 653 / Trail of Bits Skills 654；组节点「安全审计与供应链治理」= 652，批 1 已建）回填 2 页 index.md + sidebar 新建组 → **VitePress build 唯一一次**（835s 真实成功，v-pre 修复验证无崩）→ 提交推送 VitePress（单 commit）→ rsync 部署笔记（dry-run 确认 0 误删 SlideStack）+ 2 幻灯片 → **全 6 路 HTTP 200 上线**（2 笔记 + 2 幻灯片 + 2 测试题接口，2026-07-18）
