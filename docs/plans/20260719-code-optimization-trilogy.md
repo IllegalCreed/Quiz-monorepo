@@ -56,5 +56,5 @@
 - [x] 改 categories.ts（单叶→组+2叶）✓；prod 核查 id158 0题0子 ✓
 - [x] 产出 2 叶三件套 ✓ 39 题
 - [x] 门禁：audit 0 errors + 2 幻灯片 0 溢出 + 0 崩点
-- [ ] 提交 quiz/slide/categories.ts
-- [ ] **确认生产** → prod 清孤儿 158 + import 建新叶拿 ID + 回填 index + sidebar text→link → VitePress build 一次 → 部署 → HTTP 200
+- [x] 提交 quiz/slide/categories.ts
+- [x] **生产完成**：prod 删孤儿 158（0题0子）→ import 建新分类树（代码优化组 674 / 代码分割 675 / Tree Shaking 676）+ 灌 39 题 → 回填 2 页 index.md + sidebar 占位 text→link → **VitePress build 一次**（1015s）→ 提交推送 → rsync 部署笔记（0 误删 SlideStack）+ 2 幻灯片 → **全 6 路 HTTP 200 上线**（2 笔记 + 2 幻灯片 + 2 测试题，2026-07-19）。栈方法实测 sidebar：代码优化 L2 → 代码分割/Tree Shaking L3，层级正确。
