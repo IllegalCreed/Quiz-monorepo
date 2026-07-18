@@ -92,5 +92,5 @@ config.mts 已有 7 叶占位（text 无 link），产出后改 text→link（�
 - [x] 改 categories.ts（单叶→组+7叶）✓；prod 核查 id157 0题0子 ✓
 - [x] 产出 7 叶三件套（调研结论驱动）✓ 140 题
 - [x] 门禁：audit **0 errors**（20160 题/0 重复）+ 7 幻灯片 **0 溢出** + 崩点修 + lighthouse 前缀统一
-- [ ] 提交 quiz/slide/categories.ts
-- [ ] **确认生产** → prod 清孤儿 157 + import 建新叶拿 ID + 回填 index + sidebar text→link → VitePress build 一次 → 部署 → HTTP 200
+- [x] 提交 quiz/slide/categories.ts
+- [x] **生产完成**：prod 删孤儿 157（0题0子校验，BigInt 比较坑修）→ import 建新分类树（性能优化组 665 / 4 叶 666-669 / 性能评估组 670 / 3 工具叶 671-673）+ 灌 140 题 → 回填 7 页 index.md（666-673）+ sidebar 占位 text→link（含 async 多指南 vue/react、list 原理）→ **VitePress build 一次**（864s）→ 提交推送 → rsync 部署笔记（0 误删 SlideStack）+ 7 幻灯片 → **全 21 路 HTTP 200 上线**（7 笔记 + 7 幻灯片 + 7 测试题，2026-07-19）。栈方法实测 sidebar 性能优化组层级正确（4 叶 + 性能评估组 3 工具叶）。
