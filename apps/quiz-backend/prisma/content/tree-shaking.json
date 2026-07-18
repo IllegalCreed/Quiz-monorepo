@@ -1,0 +1,591 @@
+[
+  {
+    "stem": "Tree Shaking：本质是什么？",
+    "explanation": "Tree Shaking 是**构建期死代码消除**（dead code elimination）：打包器在编译期扫一遍 ESM 静态依赖图，标记「打包进来但没被引用」的导出为 unused，再在压缩阶段（Terser / esbuild）真正删除。它治「下了没用」，与治「下太多」的代码分割正交。",
+    "tags": ["tree-shaking", "定位", "构建期"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "构建期死代码消除（dead code elimination）",
+        "isCorrect": true,
+        "description": "打包器扫 ESM 静态依赖图，标记并删除未引用导出"
+      },
+      {
+        "text": "运行期懒加载未用模块",
+        "isCorrect": false,
+        "description": "那是代码分割（dynamic import / 异步组件）的事"
+      },
+      {
+        "text": "压缩代码（删空白 / 短名）",
+        "isCorrect": false,
+        "description": "那是 minify（Terser / esbuild）的事；shaking 删的是「整段没人用」的导出"
+      },
+      {
+        "text": "浏览器缓存策略",
+        "isCorrect": false,
+        "description": "Tree Shaking 发生在构建期，与浏览器缓存无关"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：为什么 ESM 是前提、CJS 不能 shake？",
+    "explanation": "Tree Shaking 依赖**静态可分析性**：ESM 的顶层 `import/export` 在编译期就能确定依赖图（顶层、字面量、不能放 if/循环里）；CommonJS 的 `require()` / `module.exports` 是运行期值，可在 `if` / 循环里动态调，依赖图必须运行起来才能确定，打包器只能保守地保留全部代码。这是 lodash(CJS) vs lodash-es、moment vs date-fns 的根本差别。",
+    "tags": ["tree-shaking", "esm", "cjs", "前提"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "ESM 的 import/export 静态可分析，CJS 的 require 是运行期值不可分析",
+        "isCorrect": true,
+        "description": "根本原因：静态 vs 动态依赖图"
+      },
+      {
+        "text": "CJS 文件体积更大，打包器跳过",
+        "isCorrect": false,
+        "description": "体积与能否 shake 无关"
+      },
+      {
+        "text": "CJS 不支持 minify，所以不能 shake",
+        "isCorrect": false,
+        "description": "minify 与 shake 是两件事；CJS 也能压缩，只是不剪未用导出"
+      },
+      {
+        "text": "ESM 自带 tree shaking 内置功能，CJS 没有",
+        "isCorrect": false,
+        "description": "shaking 由打包器实现，不是模块系统自带"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：与代码分割的核心区别是什么？",
+    "explanation": "Tree Shaking 与代码分割**正交**。Tree Shaking 治「下了没用」——决定哪些**死代码不进** bundle（静态依赖图剪枝，构建期完成）。代码分割治「下太多」——决定哪些**活代码延迟加载、何时进** bundle（运行期分块，dynamic import() / Vue defineAsyncComponent / React lazy / 路由懒加载）。两者配合是性能优化标准两段式：先 shaking 收口、再分割切 chunk。",
+    "tags": ["tree-shaking", "代码分割", "边界"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Tree Shaking 治「下了没用」（构建期剪枝），代码分割治「下太多」（运行期分块）",
+        "isCorrect": true,
+        "description": "正交关系：先 shaking 收口、再分割切 chunk"
+      },
+      {
+        "text": "Tree Shaking 是代码分割的子集",
+        "isCorrect": false,
+        "description": "两者解决不同问题，不是包含关系"
+      },
+      {
+        "text": "代码分割替代 Tree Shaking",
+        "isCorrect": false,
+        "description": "二者配合而非替代"
+      },
+      {
+        "text": "Tree Shaking 决定运行期加载顺序",
+        "isCorrect": false,
+        "description": "运行期加载归代码分割；shaking 是构建期"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：package.json 的 sideEffects 字段三态语义是？",
+    "explanation": "`sideEffects` 三态：`false` = 整包可 shake（适合纯 ESM 工具库、组件库 JS 部分）；`Array<string>` = 白名单 glob（保留 CSS / polyfill / 全局补丁等真实副作用文件，其余可 shake）；缺省 = 保守保留整模块（仅 usedExports 单导出级剪枝，模块顶层副作用代码全部保留）。该字段由 Webpack 4 引入，现已是 Webpack / Rollup / Vite / esbuild 跨工具行业标准。",
+    "tags": ["tree-shaking", "sideEffects", "package.json"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "false（整包可 shake）/ Array 白名单（保留有副作用的文件）/ 缺省（保守保留整模块）",
+        "isCorrect": true,
+        "description": "三态语义；库作者应显式声明，缺省等于放弃优化"
+      },
+      {
+        "text": "true / false / undefined",
+        "isCorrect": false,
+        "description": "字段不接受 true；只能是 false / 数组 / 缺省"
+      },
+      {
+        "text": "all / none / partial",
+        "isCorrect": false,
+        "description": "没有 all / partial 这种取值"
+      },
+      {
+        "text": "enabled / disabled / auto",
+        "isCorrect": false,
+        "description": "没有这种命名"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：mode: 'production' 一键启用哪些优化？",
+    "explanation": "Webpack `mode: 'production'` 一键启用 tree shaking 全套：`usedExports`（标记未引用导出）+ `sideEffects`（按 package.json 字段跳过整模块）+ `innerGraph`（未使用导出内部图分析，Webpack 5+ 所有 mode 默认开）+ `concatenateModules`（Scope Hoisting）+ `mangleExports`（短名压缩导出标识符）+ `minimize`（Terser / esbuild 真正删除死代码）。dev 模式默认禁用 `minimize` 与 `concatenateModules`，shaking 标记存在但**不删除**——这是 dev 验证 tree shaking 无效的原因。",
+    "tags": ["tree-shaking", "webpack", "mode", "production"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usedExports + sideEffects + innerGraph + concatenateModules + mangleExports + minimize",
+        "isCorrect": true,
+        "description": "六件套全开；minimize 才是真正删除的环节"
+      },
+      {
+        "text": "仅 minimize（Terser）",
+        "isCorrect": false,
+        "description": "minimize 是最后一步删除，还需 usedExports 等先标记"
+      },
+      {
+        "text": "仅 sourceMap 和 mode 标识",
+        "isCorrect": false,
+        "description": "production 模式启用的远不止这些"
+      },
+      {
+        "text": "仅 Hot Module Replacement 关闭",
+        "isCorrect": false,
+        "description": "HMR 是 dev 模式特性，与 tree shaking 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：usedExports 与 sideEffects 的核心区别？",
+    "explanation": "二者是**两件事、配合使用**：`usedExports` 粒度是**单个导出**——标记每个导出被使用情况，让 Terser 在 minify 时删除未引用者；任何模块都自动分析。`sideEffects` 粒度是**整模块**——按 package.json `sideEffects` 字段跳过整模块的解析（更彻底的模块级剪枝），需库作者声明字段配合。顺序是：sideEffects 先跳过整模块 → usedExports 标记剩余导出 → minimize 真正删除。",
+    "tags": ["tree-shaking", "webpack", "usedExports", "sideEffects"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usedExports 标记单导出，sideEffects 按字段跳过整模块（后者更彻底）",
+        "isCorrect": true,
+        "description": "二者配合：模块级先用 sideEffects、再用 usedExports 标剩余"
+      },
+      {
+        "text": "两者是同一件事的不同名称",
+        "isCorrect": false,
+        "description": "粒度不同：单导出 vs 整模块"
+      },
+      {
+        "text": "usedExports 跳过整模块，sideEffects 标记单导出",
+        "isCorrect": false,
+        "description": "语义反了"
+      },
+      {
+        "text": "两者互斥，只能开一个",
+        "isCorrect": false,
+        "description": "两者配合使用，不互斥"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：为什么只设 usedExports: true 却不开 minimize，死代码仍在 bundle？",
+    "explanation": "Webpack 只在编译期用 `usedExports` **标记**未引用导出（在 module 的 exports 元数据里记录），真正**删除**发生在 `minimize: true` 后的压缩阶段（Terser / esbuild 读 usedExports 标记后剪掉死代码）。`mode: 'production'` 默认 `minimize: true`；若手动设 `minimize: false` 或 dev 模式默认禁用 minimize，则 usedExports 标记存在但 bundle 体积无变化。验证 shaking 是否生效必须 production build 后比较 bundle 体积或看 stats 的 usedExports 字段。",
+    "tags": ["tree-shaking", "webpack", "minimize", "terser"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usedExports 只标记 unused，真正删除发生在 minimize 阶段（Terser）",
+        "isCorrect": true,
+        "description": "标记和删除是两步；minimize 缺失则死代码保留"
+      },
+      {
+        "text": "usedExports 是 Rollup 选项、Webpack 不识别",
+        "isCorrect": false,
+        "description": "usedExports 是 Webpack 选项，Rollup 用 treeshake.*"
+      },
+      {
+        "text": "Webpack 5 默认就删除死代码，无需 minimize",
+        "isCorrect": false,
+        "description": "Webpack 5 只默认启用 usedExports，删除仍要 minimize"
+      },
+      {
+        "text": "minimize 反而会保留死代码",
+        "isCorrect": false,
+        "description": "minimize 正是删除死代码的环节"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：Rollup treeshake 的三预设 smallest / safest / recommended 各有何差异？",
+    "explanation": "Rollup `treeshake` 三预设：`'smallest'` 最激进——`moduleSideEffects: false`、`tryCatchDeoptimization: false`，体积最小但有正确性风险（可能误删有副作用的代码）；`'safest'` 最保守，保留更多代码以保证正确；`'recommended'`（默认，等价于 `true`）平衡选择——`annotations: true`、`propertyReadSideEffects: true`、`tryCatchDeoptimization: true`。大多数项目应使用 recommended；只有体积极致敏感且测试充分时才考虑 smallest。",
+    "tags": ["tree-shaking", "rollup", "treeshake"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "smallest 最激进（体积最小有风险）、safest 最保守、recommended 平衡（默认）",
+        "isCorrect": true,
+        "description": "三预设按体积 vs 正确性权衡"
+      },
+      {
+        "text": "smallest 用于生产、recommended 用于开发",
+        "isCorrect": false,
+        "description": "预设与开发/生产无关，是体积 vs 正确性的权衡"
+      },
+      {
+        "text": "三者完全等价，仅命名不同",
+        "isCorrect": false,
+        "description": "三预设的 moduleSideEffects / tryCatchDeoptimization 配置不同"
+      },
+      {
+        "text": "recommended 默认禁用注解",
+        "isCorrect": false,
+        "description": "recommended 的 annotations 默认 true（尊重 #__PURE__）"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：/*#__PURE__*/ 与 /*@__NO_SIDE_EFFECTS__*/ 的区别？",
+    "explanation": "`/*#__PURE__*/` 是**通用注解**（Rollup / Webpack / Terser / esbuild 都支持），标记**单次函数调用 / 构造 / IIFE** 为无副作用——该调用未引用返回值时整段可删，常用于 IIFE、`class extends mixin(Base)` 表达式、工厂调用。`/*@__NO_SIDE_EFFECTS__*/` 是 **Rollup 专属**，标记**整函数 / 箭头函数声明**为无副作用——一次注解覆盖**所有调用点**，比每个调用都加 `#__PURE__` 更省事。Vue / React 编译器会自动给 h() / createElement() 等加 `#__PURE__`，业务代码通常不需要手动加。",
+    "tags": ["tree-shaking", "注解", "pure", "rollup"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "#__PURE__ 标单次调用（通用）、@__NO_SIDE_EFFECTS__ 标整函数声明（Rollup 专属，覆盖所有调用点）",
+        "isCorrect": true,
+        "description": "前者点级、后者函数级；Rollup 库作者优先用后者"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "粒度不同：单次调用 vs 整函数声明"
+      },
+      {
+        "text": "@__NO_SIDE_EFFECTS__ 是 Webpack 专属",
+        "isCorrect": false,
+        "description": "NO_SIDE_EFFECTS__ 是 Rollup 专属"
+      },
+      {
+        "text": "#__PURE__ 只对 React 有效",
+        "isCorrect": false,
+        "description": "#__PURE__ 是跨工具通用注解"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：Vite 8 用 Rolldown 替代 Rollup 后，下列哪项迁移正确？",
+    "explanation": "Vite 8（2026）起 Rolldown（Rust 实现，比 Rollup 快 10–30×）成为**唯一打包器**。关键迁移：`build.rollupOptions` → `build.rolldownOptions`（配置入口改名）；`output.manualChunks` 对象形式**已移除**（静默不生效，分包策略失效）；`output.manualChunks` 函数形式已**弃用警告**，迁移到 `output.codeSplitting`。Vite 7 用 `rolldown-vite` 包做过渡预览。仍写 `manualChunks` 的项目：对象被忽略（静默陷阱）、函数告警。",
+    "tags": ["tree-shaking", "vite", "rolldown", "迁移"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "build.rollupOptions → build.rolldownOptions；output.manualChunks → output.codeSplitting",
+        "isCorrect": true,
+        "description": "manualChunks 对象形式已移除（静默不生效），函数形式弃用"
+      },
+      {
+        "text": "build.rollupOptions 仍可用，只是性能更慢",
+        "isCorrect": false,
+        "description": "Vite 8 已替换为 rolldownOptions，rollupOptions 被忽略"
+      },
+      {
+        "text": "Vite 8 仍默认用 Rollup，Rolldown 是可选插件",
+        "isCorrect": false,
+        "description": "Vite 8 Rolldown 是唯一打包器；Vite 7 才是预览"
+      },
+      {
+        "text": "Rolldown 不支持 tree shaking",
+        "isCorrect": false,
+        "description": "Rolldown 完整支持 tree shaking，行为对齐 Rollup"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：为何 import.meta.env.DEV 条件分支在 prod build 时被 tree-shake？",
+    "explanation": "`import.meta.env.DEV` 是 Vite 的**编译期常量**——prod build 时被静态替换为字面量 `false`（`PROD` → `true`、`MODE` → 'production'）。`if (import.meta.env.DEV) {...}` 在 prod build 变为 `if (false) {...}`，死代码消除阶段整段被删。**反模式**：改成 `const isDev = process.env.NODE_ENV !== 'production'` 会失去静态可分析性（isDev 是运行期变量），prod build 不会 tree-shake 这段代码——必须直接用编译期常量。",
+    "tags": ["tree-shaking", "vite", "编译期常量", "import-meta-env"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "DEV 是编译期常量，prod build 静态替换为 false 后整段死代码消除",
+        "isCorrect": true,
+        "description": "改成运行期变量 const isDev 会失去静态可分析性"
+      },
+      {
+        "text": "DEV 在运行期判断，浏览器决定是否执行",
+        "isCorrect": false,
+        "description": "DEV 是编译期常量，prod build 阶段就被替换"
+      },
+      {
+        "text": "条件分支永远不能被 tree-shake",
+        "isCorrect": false,
+        "description": "编译期常量条件分支在 prod build 会被 shake"
+      },
+      {
+        "text": "只有 if (false) 写法才能 shake",
+        "isCorrect": false,
+        "description": "DEV 等编译期常量在 prod build 会变成 false，等价于 if (false)"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：库包含 polyfill，package.json 的 sideEffects 应如何声明？",
+    "explanation": "包含 polyfill（core-js / regenerator / whatwg-fetch）、CSS-in-JS 运行时、`Array.prototype` 扩展、全局补丁的库**不能用 `sideEffects: false`**——polyfill 在被 import 时即修改全局，未直接调用导出但仍有可观察影响；标 false 后打包器认为「未引用导出即无副作用」，整 polyfill 模块被删，运行时崩溃（dev 不报错、prod 崩）。正确做法是**白名单**：在 package.json 的 sideEffects 字段中列入数组 `['*.css', './src/polyfills.js']`，把有真实副作用的文件保留、其余 JS 仍可 shake。",
+    "tags": ["tree-shaking", "sideEffects", "polyfill", "反模式"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用白名单数组列出有副作用的文件（如 *.css、./src/polyfills.js），保留这些、其余可 shake",
+        "isCorrect": true,
+        "description": "白名单是 sideEffects 三态语义中的安全档；保留 *.css 与 polyfills.js"
+      },
+      {
+        "text": "sideEffects: false（整包可 shake）",
+        "isCorrect": false,
+        "description": "polyfill 会被误删，dev 正常 prod 崩"
+      },
+      {
+        "text": "不写 sideEffects 字段（缺省）",
+        "isCorrect": false,
+        "description": "缺省 = 保守保留整模块，等于放弃所有 shake 优化"
+      },
+      {
+        "text": "把 polyfill 单独打包、主包写 false",
+        "isCorrect": false,
+        "description": "拆包可行但更复杂，白名单更直接"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：barrel 文件（index.ts re-export）为什么常导致 shaking 失效？",
+    "explanation": "Barrel 文件（`export * from './Button'`、`export { default as Button } from './Button'` 等）是组件库的常见组织方式，但**对打包器是陷阱**——若该包没声明 `sideEffects: false`，打包器为安全保守地保留整张依赖图（所有被 re-export 的模块全部加入 bundle），典型症状是「只引一个 Button 却打入全部 100+ 组件」。解法：① 库作者声明 `sideEffects: false`；② 业务侧深路径 `import Button from 'lib/Button'` 绕过 barrel；③ 鼓励深路径 import 比 `import { Button } from 'lib'` 更稳。",
+    "tags": ["tree-shaking", "barrel", "re-export", "反模式"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "barrel 让打包器为安全保留整张依赖图；需声明 sideEffects: false 或深路径 import",
+        "isCorrect": true,
+        "description": "组件库典型症状：只引一个 Button 却打入全部组件"
+      },
+      {
+        "text": "barrel 文件体积小，不影响 shaking",
+        "isCorrect": false,
+        "description": "barrel 自身小但牵入的依赖图大"
+      },
+      {
+        "text": "barrel 是反模式，应完全禁用",
+        "isCorrect": false,
+        "description": "配合 sideEffects: false 仍可用，不必完全禁用"
+      },
+      {
+        "text": "barrel 让打包器更快",
+        "isCorrect": false,
+        "description": "反而让打包器保守保留更多代码"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：Tailwind v4 / v3 / PurgeCSS 三种 CSS 按需方案如何配置？",
+    "explanation": "CSS 按需生成与 JS tree shaking 是姊妹优化。**Tailwind v4** 默认开启 tree-shaking + CSS-first 配置，用 `@source` 指令声明扫描路径，入口 CSS 形如 `@import 'tailwindcss'` 后跟 `@source '../src/**/*.{vue,js}'`。**Tailwind v3** 在 `tailwind.config.js` 配 `content: ['./src/**/*.{vue,js}']` 数组。**PurgeCSS** 是独立跨方案工具，配 `content` / `defaultExtractor`，可接 Webpack / PostCSS 插件。三者都靠「扫描源码、保留用到的类名」机制——动态拼接类名（如 `bg-${color}-500`）扫不到，类名会被误删，需用完整类名 + safelist。",
+    "tags": ["tree-shaking", "tailwind", "purgecss", "css"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "v4 用 @source 指令 + 默认开启；v3 用 tailwind.config.js 的 content 数组；PurgeCSS 独立工具",
+        "isCorrect": true,
+        "description": "三者都靠扫描源码保留用到的类名"
+      },
+      {
+        "text": "Tailwind v4 必须显式启用 tree-shaking",
+        "isCorrect": false,
+        "description": "v4 默认开启 tree-shaking"
+      },
+      {
+        "text": "v3 用 @source 指令、v4 用 content 数组",
+        "isCorrect": false,
+        "description": "v3 用 content 数组、v4 用 @source 指令，反了"
+      },
+      {
+        "text": "PurgeCSS 只能配合 Tailwind 使用",
+        "isCorrect": false,
+        "description": "PurgeCSS 是独立跨方案工具"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：为什么 polyfill 特性检测写在 try{} 内会被 Rollup 保留？",
+    "explanation": "Rollup `treeshake.tryCatchDeoptimization` 选项默认 `true`——表示 try / catch 内的代码**不被 shake**（保守假设 try 块可能抛错、有副作用）。Polyfill 特性检测的常见模式 `try { Object.create(null); } catch { /* polyfill */ }` 因此被 Rollup 整体保留，无法被 tree-shake。解法：① 重写为显式 if 条件判断（`if (!('IntersectionObserver' in window))`）；② 用 `treeshake.manualPureFunctions: ['featureDetect']` 自定义纯函数清单；③ 切换到 `'smallest'` 预设（`tryCatchDeoptimization: false`）但需充分测试。",
+    "tags": ["tree-shaking", "rollup", "tryCatchDeoptimization", "polyfill"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Rollup 默认 tryCatchDeoptimization: true，保守保留 try 内代码不被 shake",
+        "isCorrect": true,
+        "description": "解法：改写为显式 if 或 manualPureFunctions 或 smallest 预设"
+      },
+      {
+        "text": "try-catch 与 tree-shaking 无关",
+        "isCorrect": false,
+        "description": "tryCatchDeoptimization 是 Rollup 关键 treeshake 子选项"
+      },
+      {
+        "text": "polyfill 在 try 内会被自动删除",
+        "isCorrect": false,
+        "description": "恰恰相反，try 内代码默认保留"
+      },
+      {
+        "text": "Webpack 不存在类似问题",
+        "isCorrect": false,
+        "description": "Webpack 也有类似的保守判定，只是选项名不同"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：下列哪些场景会导致 shaking 失效（多反模式辨识）？",
+    "explanation": "Tree shaking 失效的典型场景：① CJS 库（lodash / moment）的 require 不可静态分析；② 库不写 sideEffects 字段（缺省 = 保守保留整模块）；③ barrel 文件 + 缺 sideEffects（保留整张依赖图）；④ sideEffects: false 设过头误伤 CSS / polyfill；⑤ try-catch 内 polyfill 特性检测（Rollup 默认 tryCatchDeoptimization: true）；⑥ 改 import.meta.env.DEV 为运行期变量；⑦ 只标 usedExports 不开 minimize（dev 模式默认）；⑧ 动态拼接 Tailwind 类名（扫不到）；⑨ Vite 8 仍写 manualChunks（对象移除 / 函数弃用）。",
+    "tags": ["tree-shaking", "失效场景", "反模式"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CJS 库 / barrel 缺 sideEffects / DEV 改运行期变量 / 只标 usedExports 不开 minimize",
+        "isCorrect": true,
+        "description": "四类典型失效场景，都会让打包器保守保留代码"
+      },
+      {
+        "text": "只有 CJS 不可 shake 一种",
+        "isCorrect": false,
+        "description": "失效场景有 9+ 种，CJS 只是其一"
+      },
+      {
+        "text": "Vite 8 用 Rolldown 后所有 shaking 问题都自动解决",
+        "isCorrect": false,
+        "description": "Rolldown 解决性能问题，shaking 失效场景依旧"
+      },
+      {
+        "text": "Tree Shaking 永远不会失效",
+        "isCorrect": false,
+        "description": "反模式很多，需逐项排查"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：库作者发布 ESM 库的最小最佳实践是什么？",
+    "explanation": "库作者最小最佳实践：① `package.json` 双入口——`main`（CJS）+ `module`（ESM），打包器自动选 ESM；② 显式声明 `sideEffects`（纯 JS 库 false、含 CSS / polyfill 用白名单）；③ 对工厂函数声明加 `/*#__PURE__*/`（单次调用）或 `/*@__NO_SIDE_EFFECTS__*/`（Rollup 整函数声明）；④ 避免 barrel 文件，或对 barrel 也声明 sideEffects: false 并鼓励深路径 import；⑤ 提供 ESM 等价物（lodash-es / date-fns），让业务侧能 shake；⑥ production build 验证 bundle 体积变化符合预期。",
+    "tags": ["tree-shaking", "库作者", "最佳实践"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "双入口 main+module、声明 sideEffects、加 #__PURE__ 注解、避免 barrel、production 验证",
+        "isCorrect": true,
+        "description": "六件套是库作者最小最佳实践"
+      },
+      {
+        "text": "只发布 CJS 单入口即可",
+        "isCorrect": false,
+        "description": "CJS 库无法被业务侧 shake"
+      },
+      {
+        "text": "把所有副作用代码标 sideEffects: false",
+        "isCorrect": false,
+        "description": "polyfill / CSS 标 false 会被误删"
+      },
+      {
+        "text": "库不用关心 tree-shaking，业务侧自行处理",
+        "isCorrect": false,
+        "description": "库侧声明是 tree-shaking 生效的前提"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：lodash 与 lodash-es 在 tree shaking 上的根本差别是？",
+    "explanation": "`lodash` 是 **CommonJS** 包（`module.exports = _`），打包器对它无法做静态分析——`import { get } from 'lodash'` 实际是 interop 引入整包，bundle 里塞入 200+ 函数。`lodash-es` 是同一 API 的 **ESM** 包，`import { get } from 'lodash-es'` 可被 tree-shake，bundle 只含 get。更稳的做法是深路径 import：`import get from 'lodash-es/get'` 直接绕过 barrel / re-export 链，不依赖打包器对 re-export 的静态分析能力。",
+    "tags": ["tree-shaking", "lodash", "lodash-es", "cjs"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "lodash 是 CJS 不可 shake、lodash-es 是 ESM 可 shake；深路径 lodash-es/get 更稳",
+        "isCorrect": true,
+        "description": "同一 API 的 CJS vs ESM 双胞胎，是 shaking 教学经典案例"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "模块系统根本不同，shake 行为截然不同"
+      },
+      {
+        "text": "lodash 比 lodash-es 更小",
+        "isCorrect": false,
+        "description": "体积相若，但 lodash 引入即全量、lodash-es 可 shake"
+      },
+      {
+        "text": "lodash-es 已废弃",
+        "isCorrect": false,
+        "description": "lodash-es 是 lodash 的官方 ESM 等价物，仍在维护"
+      }
+    ]
+  },
+  {
+    "stem": "Tree Shaking：验证 shaking 是否生效的正确方法是什么？",
+    "explanation": "正确验证方法：① **production build**（dev 模式默认禁用 minimize / concatenateModules，shaking 标记存在但不删除——dev 验证无效）；② 看 **webpack stats 的 usedExports / providedExports 字段**（true = 该导出被使用、false = unused 应被删）；③ **比较 bundle 体积**（开关 sideEffects / mode 前后对比 `ls -lh dist/main.js`）；④ **webpack-bundle-analyzer 可视化**（`--analyze` flag）。反模式：在 dev 模式验证、只看 usedExports 标记不看 bundle 体积、忽视 sideEffects 字段。",
+    "tags": ["tree-shaking", "验证", "stats", "bundle-analyzer"],
+    "categories": [
+      ["技术方向", "Tree Shaking"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "production build 后看 stats 的 usedExports 字段 / 比较 bundle 体积 / bundle-analyzer 可视化",
+        "isCorrect": true,
+        "description": "dev 模式验证无效，必须 production build"
+      },
+      {
+        "text": "在 dev 模式启动观察控制台输出",
+        "isCorrect": false,
+        "description": "dev 默认禁用 minimize，shaking 标记但不删除"
+      },
+      {
+        "text": "只要代码用 ESM 就能保证 shaking 生效",
+        "isCorrect": false,
+        "description": "ESM 是前提但不充分，还需 sideEffects / minimize 等"
+      },
+      {
+        "text": "看 npm 包的 README 即可",
+        "isCorrect": false,
+        "description": "需实际 build 后验证，不能依赖文档"
+      }
+    ]
+  }
+]

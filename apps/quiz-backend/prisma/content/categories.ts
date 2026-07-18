@@ -678,7 +678,16 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               },
             ],
           },
-          { name: "代码优化（代码分割 / Tree Shaking）", sort: 3 },
+          {
+            // 2026-07-19 单叶 → 组+2叶（与 sidebar 占位对齐）。代码分割讲策略与构建配置，
+            // Tree Shaking 讲构建期死代码消除；与性能优化·异步组件章界定边界（组件级 lazy API 归异步组件）。
+            name: "代码优化",
+            sort: 3,
+            children: [
+              { name: "代码分割", sort: 1 },
+              { name: "Tree Shaking", sort: 2 },
+            ],
+          },
           { name: "网络优化（CDN / 缓存 / 压缩）", sort: 4 },
           {
             name: "用户体验优化（懒加载和预加载 / 交互优化 / 可访问性）",
