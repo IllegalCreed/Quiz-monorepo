@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "按需引入：前端 tree-shaking 真正发生需要哪三个前提条件？",
+    "explanation": "tree-shaking 依赖三个前提并用——**ES Module 静态结构**（import/export 是声明，编译期可静态分析）+ **package.json 的 sideEffects 字段**（声明哪些文件有副作用不能剪）+ **bundler tree-shaking 能力**（Vite/Rollup/Webpack 5+ 生产模式）。缺一即退化为整包引入。CommonJS 的 require 是运行时值，无法静态分析，这是 CJS lodash 整包不可 tree-shake 的根因。",
+    "tags": ["按需引入", "tree-shaking", "ESM", "sideEffects"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "ESM 静态结构 + sideEffects 字段 + bundler 支持",
+        "isCorrect": true,
+        "description": "三者并用，缺一退化"
+      },
+      {
+        "text": "Webpack + Babel + TypeScript",
+        "isCorrect": false,
+        "description": "这是构建工具组合，不是 tree-shaking 前提"
+      },
+      {
+        "text": "CommonJS + Node 18 + ESBuild",
+        "isCorrect": false,
+        "description": "CJS 无法 tree-shake（动态 require）"
+      },
+      {
+        "text": "HTTP/2 + CDN + Code Splitting",
+        "isCorrect": false,
+        "description": "这是网络层与代码分割，与 tree-shaking 无关"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：为什么 CommonJS 的 lodash 整包无法被 tree-shake？",
+    "explanation": "CommonJS 的 require/module.exports 是**运行时值**，可写在 if、循环、函数体内，bundler 无法在不执行代码的前提下判断哪些导出被用到——只能整包打包。ES Module 的 import/export 是**顶层声明**，导入导出关系在编译期完全确定，bundler 才能从入口出发追踪每个导出是否被引用，未被引用的代码段可安全剪掉。",
+    "tags": ["按需引入", "CommonJS", "lodash", "ESM"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CJS 的 require 是运行时值，无法静态分析导入关系",
+        "isCorrect": true,
+        "description": "动态性使 tree-shaking 失效"
+      },
+      {
+        "text": "lodash 包没有声明 version 字段",
+        "isCorrect": false,
+        "description": "与版本字段无关"
+      },
+      {
+        "text": "Webpack 不支持 CommonJS 模块",
+        "isCorrect": false,
+        "description": "Webpack 支持 CJS，但无法 tree-shake"
+      },
+      {
+        "text": "lodash 没提供 TypeScript 类型",
+        "isCorrect": false,
+        "description": "@types/lodash 是有的，与 tree-shaking 无关"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：下列哪种 lodash 引入方式会被 bundler tree-shake？",
+    "explanation": "**`import { debounce } from 'lodash-es'`** 是 ESM 命名导入，bundler 静态分析可只打包 debounce。而 `import _ from 'lodash-es'` 默认导入会聚合全部方法破坏 tree-shaking；`import _ from 'lodash'` 是 CJS 整包导入；`require('lodash')` 是 CJS 运行时值。",
+    "tags": ["按需引入", "lodash-es", "ESM", "命名导入"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "import { debounce } from 'lodash-es'",
+        "isCorrect": true,
+        "description": "ESM 命名导入即 tree-shake"
+      },
+      {
+        "text": "import _ from 'lodash-es'",
+        "isCorrect": false,
+        "description": "默认导入聚合全部方法，破坏 tree-shaking"
+      },
+      {
+        "text": "import _ from 'lodash'",
+        "isCorrect": false,
+        "description": "CJS 整包动态导出"
+      },
+      {
+        "text": "const _ = require('lodash')",
+        "isCorrect": false,
+        "description": "CJS 运行时值，无法静态分析"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：CJS 项目里想近似「按需」引入 lodash 单方法，正确写法是？",
+    "explanation": "CJS 项目无法享受 ESM tree-shaking，可改用 **子路径导入** `import debounce from 'lodash/debounce'` 手动指定方法路径，bundler 只会拉取该文件。这是 CJS 项目下的备选方案，仍是整方法文件粒度（不像 lodash-es 那么精细），但远胜于 `import _ from 'lodash'`。",
+    "tags": ["按需引入", "lodash", "子路径"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "import debounce from 'lodash/debounce'",
+        "isCorrect": true,
+        "description": "子路径直接指向方法文件"
+      },
+      {
+        "text": "import { debounce } from 'lodash'",
+        "isCorrect": false,
+        "description": "lodash 是 CJS 整包，命名导入仍拉整个库"
+      },
+      {
+        "text": "import _ from 'lodash' 然后 _.debounce",
+        "isCorrect": false,
+        "description": "默认导入聚合全部方法"
+      },
+      {
+        "text": "import * as lodash from 'lodash'",
+        "isCorrect": false,
+        "description": "命名空间导入仍是整包"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：babel-plugin-lodash 用在 lodash-es 项目里会怎样？",
+    "explanation": "**babel-plugin-lodash 是针对 CJS lodash 做子路径重写的插件**——把 `import _ from 'lodash'; _.debounce(...)` 重写成 `import debounce from 'lodash/debounce'`。lodash-es 本身就是 ESM 命名导入即 tree-shake，配 babel-plugin-lodash **多余甚至可能冲突**。lodash-es 项目应该直接命名导入，不要这个插件。",
+    "tags": ["按需引入", "babel-plugin-lodash", "lodash-es"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "多余甚至冲突，lodash-es 直接命名导入即可",
+        "isCorrect": true,
+        "description": "插件为 CJS lodash 设计"
+      },
+      {
+        "text": "必须配置才能 tree-shake",
+        "isCorrect": false,
+        "description": "lodash-es ESM 即 tree-shake，不需插件"
+      },
+      {
+        "text": "可以减小 50% 体积",
+        "isCorrect": false,
+        "description": "无收益，反而可能冲突"
+      },
+      {
+        "text": "会自动转换为 CommonJS",
+        "isCorrect": false,
+        "description": "方向相反"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：Element Plus 自动按需为什么必须 AutoImport + Components 双插件并用？",
+    "explanation": "Element Plus 命令式 API（ElMessage/ElMessageBox/ElLoading 等）与模板组件（<el-button>/<el-input>）由两个不同插件分管——**AutoImport + ElementPlusResolver 负责命令式 API 的注入，Components + ElementPlusResolver 负责模板组件注册与样式注入**。只装 AutoImport 会让 <el-button> 不渲染，只装 Components 会让 ElMessage() 未定义。同一个 ElementPlusResolver 协同两边：一个管 JS API、一个管组件 DOM 与 CSS。",
+    "tags": ["按需引入", "Element Plus", "unplugin", "双插件"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "AutoImport 管 ElMessage 等命令式 API，Components 管模板组件+样式",
+        "isCorrect": true,
+        "description": "分工不同，缺一会缺 API 或缺组件"
+      },
+      {
+        "text": "AutoImport 管模板组件，Components 管 API",
+        "isCorrect": false,
+        "description": "分工说反了"
+      },
+      {
+        "text": "双插件只是为了性能",
+        "isCorrect": false,
+        "description": "是功能分工，非仅性能"
+      },
+      {
+        "text": "其实只装 Components 就够了",
+        "isCorrect": false,
+        "description": "ElMessage 会未定义"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ElementPlusResolver 想改 Element Plus 主题 SCSS 变量，importStyle 应该选？",
+    "explanation": "`importStyle: 'css'`（默认）引入的是**预编译 CSS 产物**，无法再改 SCSS 变量（变量已在编译期固化）；`'sass'` 引入 SCSS 源码，配合 vite.config 的 `css.preprocessorOptions.scss.additionalData` 注入 `@use 'element-plus/theme-chalk/src/common/var.scss'` 才能覆盖主题变量；`false` 不引样式。改主题变量必须切 'sass' + additionalData，并注意业务/变量 scss 分离（避免热更新慢）。",
+    "tags": ["按需引入", "Element Plus", "主题定制", "importStyle"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "importStyle: 'sass' 配合 additionalData 注入 @forward var.scss",
+        "isCorrect": true,
+        "description": "改 SCSS 变量必须引 SCSS 源码"
+      },
+      {
+        "text": "importStyle: 'css' 直接覆盖 CSS 变量",
+        "isCorrect": false,
+        "description": "CSS 是预编译产物，变量已固化改不了"
+      },
+      {
+        "text": "importStyle: false 然后 import 全量 CSS",
+        "isCorrect": false,
+        "description": "失去按需意义，且仍改不了 SCSS 变量"
+      },
+      {
+        "text": "任意 importStyle 都能改",
+        "isCorrect": false,
+        "description": "只有 'sass' 路径能改"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：Element Plus 主题定制时 sass 推荐用 @use / @forward 而非 @import 的原因？",
+    "explanation": "Sass 团队将废弃 `@import`，且 `@use`/`@forward` 解决了 `@import` 的**变量重复输出**问题——`@import` 把变量在多个文件里反复输出，`@use` 则按命名空间隔离、`@forward` 转发可一次覆盖。Element Plus 官方主题定制示例使用 `@forward 'element-plus/theme-chalk/src/common/var.scss' with ($colors: (...))`。",
+    "tags": ["按需引入", "Element Plus", "sass", "@use"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "@use/@forward 解决变量重复输出，且 @import 将被废弃",
+        "isCorrect": true,
+        "description": "Sass 团队明确方向"
+      },
+      {
+        "text": "@import 性能更好",
+        "isCorrect": false,
+        "description": "相反，@import 反复输出变量更慢"
+      },
+      {
+        "text": "Element Plus 不支持 @use",
+        "isCorrect": false,
+        "description": "官方推荐 @forward var.scss"
+      },
+      {
+        "text": "@use 只能用于函数，不能用于变量",
+        "isCorrect": false,
+        "description": "@use 完全支持变量"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts 按需引入的「五件套」分别是什么？",
+    "explanation": "ECharts tree-shaking 友好的五个入口：`echarts/core`（核心运行时，不含任何图表/组件/渲染器）+ `echarts/charts`（BarChart/LineChart/PieChart 等图表）+ `echarts/components`（TitleComponent/TooltipComponent/GridComponent 等组件）+ `echarts/features`（LabelLayout/UniversalTransition 等特性）+ `echarts/renderers`（CanvasRenderer/SVGRenderer 渲染器）。导入后再用 `echarts.use([...])` 显式注册。",
+    "tags": ["按需引入", "ECharts", "五件套"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "core + charts + components + features + renderers",
+        "isCorrect": true,
+        "description": "五件套入口，再用 echarts.use 注册"
+      },
+      {
+        "text": "core + utils + types + theme + i18n",
+        "isCorrect": false,
+        "description": "不是这五个"
+      },
+      {
+        "text": "main + lib + src + dist + types",
+        "isCorrect": false,
+        "description": "这是目录结构不是入口"
+      },
+      {
+        "text": "vue + react + angular + svelte + solid",
+        "isCorrect": false,
+        "description": "无关"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts 只 import 了 BarChart 但忘了 echarts.use 注册，会发生什么？",
+    "explanation": "ECharts 按需导入时**只 import 不 echarts.use 注册，运行时不报错但图表/组件静默失效**——图表区域空白，无任何错误信息。这是新手最常踩坑，因为代码看起来「正常」却无渲染。正确做法是 import 后必须 echarts.use([BarChart, ...])。",
+    "tags": ["按需引入", "ECharts", "use", "静默失效"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "运行时不报错但图表静默失效（空白，无错误信息）",
+        "isCorrect": true,
+        "description": "新手最常踩坑"
+      },
+      {
+        "text": "立即抛出 ReferenceError",
+        "isCorrect": false,
+        "description": "不会，import 已成功"
+      },
+      {
+        "text": "自动注册所有组件",
+        "isCorrect": false,
+        "description": "不会自动注册"
+      },
+      {
+        "text": "降级到 Canvas 默认渲染",
+        "isCorrect": false,
+        "description": "不会，未注册就是不生效"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts tree-shaking 接口下为何必须显式注册 CanvasRenderer 或 SVGRenderer？",
+    "explanation": "ECharts tree-shaking 接口下，**core 不含任何 renderer**——这是官方明确的设计：让用户精确选择渲染后端。CanvasRenderer 与 SVGRenderer 必须二选一注册，否则会**运行时报错**（无法渲染）。只用 SVG 模式时只引 SVGRenderer 可省去 Canvas 代码（移动端轻量场景常用）。",
+    "tags": ["按需引入", "ECharts", "CanvasRenderer", "SVGRenderer"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "core 不含 renderer，必须二选一注册，漏注册会报错",
+        "isCorrect": true,
+        "description": "官方设计：精确选择渲染后端"
+      },
+      {
+        "text": "core 默认包含 CanvasRenderer",
+        "isCorrect": false,
+        "description": "core 不含任何 renderer"
+      },
+      {
+        "text": "SVGRenderer 已被废弃",
+        "isCorrect": false,
+        "description": "两者都可用，二选一"
+      },
+      {
+        "text": "可以同时注册两个 renderer 自动切换",
+        "isCorrect": false,
+        "description": "官方推荐二选一，避免包体冗余"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts v5+ 关于默认导入的限制是什么？",
+    "explanation": "ECharts v5+ 起源码用 TypeScript 重写，**仅 named export**——`import echarts from 'echarts'` 这种默认导入会抛错（无 default export）。必须用命名空间导入 `import * as echarts from 'echarts/core'`（按需）或 `import * as echarts from 'echarts'`（全量）。",
+    "tags": ["按需引入", "ECharts", "named export", "v5"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仅 named export，import echarts from 'echarts' 会抛错",
+        "isCorrect": true,
+        "description": "必须用 import * as echarts"
+      },
+      {
+        "text": "默认导入仍是推荐写法",
+        "isCorrect": false,
+        "description": "v5+ 已禁用"
+      },
+      {
+        "text": "v5+ 改为 CommonJS 导出",
+        "isCorrect": false,
+        "description": "相反，v5+ 是纯 ESM + named"
+      },
+      {
+        "text": "v5+ 不再支持 ESM",
+        "isCorrect": false,
+        "description": "v5+ 全面拥抱 ESM"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts TS 项目里 ComposeOption 类型拼接的作用是什么？",
+    "explanation": "ComposeOption 把已注册的 series 与 component 的 Option 类型联合起来，**拼接出最小 Option 类型**——例如 `type ECOption = ComposeOption<BarSeriesOption | GridComponentOption>`。好处是：series 写了 `type: 'pie'` 但没注册 PieChart 时，TS 编译期就报错；运行时则是静默失效。类型按需是按需引入的「编译期守门员」。",
+    "tags": ["按需引入", "ECharts", "ComposeOption", "TypeScript"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "拼接最小 Option 类型，编译期查「用了未注册的组件」",
+        "isCorrect": true,
+        "description": "把运行时静默失效变成编译期错误"
+      },
+      {
+        "text": "把所有 ECharts 类型打包导出",
+        "isCorrect": false,
+        "description": "ComposeOption 反而是按需拼接"
+      },
+      {
+        "text": "提供运行时校验",
+        "isCorrect": false,
+        "description": "纯编译期，运行时已擦除"
+      },
+      {
+        "text": "替代 echarts.use 注册",
+        "isCorrect": false,
+        "description": "类型与运行时注册是两件事"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：ECharts v6 相对 v5 的破坏性变更主要是什么？tree-shaking API 是否变化？",
+    "explanation": "ECharts v6 主要破坏性变更是**默认主题调整**（图例默认移到底部）、**富文本继承**（richInheritPlainLabel）、**标签溢出规避**策略升级——都是行为层变化。**tree-shaking API 与 v5 完全一致**：仍是 `echarts/core` + 五件套 + `echarts.use([...])` 模板，无需改动。",
+    "tags": ["按需引入", "ECharts", "v6", "破坏性变更"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认主题/图例位置、富文本继承；tree-shaking API 不变",
+        "isCorrect": true,
+        "description": "行为层变，按需接口沿用 v5"
+      },
+      {
+        "text": "tree-shaking API 全部重写",
+        "isCorrect": false,
+        "description": "API 与 v5 一致"
+      },
+      {
+        "text": "echarts.use 改为 echarts.register",
+        "isCorrect": false,
+        "description": "API 名未变"
+      },
+      {
+        "text": "v6 移除了 SVGRenderer",
+        "isCorrect": false,
+        "description": "SVGRenderer 仍存在"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：package.json 的 sideEffects: false 意味着什么？",
+    "explanation": "**`sideEffects: false`** 声明整个包没有任何副作用——所有未被引用的导出都可被 bundler 安全剪掉。这是 tree-shaking 的前提。但库作者需谨慎：如果模块实际有副作用（CSS 注入、修改全局变量、polyfill），设 false 会误删这些代码。常见做法是用数组白名单 ［*.css、./src/polyfills.js］ 精确声明有副作用的文件。",
+    "tags": ["按需引入", "sideEffects", "package.json"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "整包无副作用，所有未引用导出可被剪",
+        "isCorrect": true,
+        "description": "tree-shaking 友好声明"
+      },
+      {
+        "text": "禁止 bundler 进行任何优化",
+        "isCorrect": false,
+        "description": "相反，鼓励剪枝"
+      },
+      {
+        "text": "等同于不设 sideEffects",
+        "isCorrect": false,
+        "description": "不设时保守按有副作用处理，不剪"
+      },
+      {
+        "text": "只用于 CSS 文件",
+        "isCorrect": false,
+        "description": "可声明整个包无副作用"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：库设 sideEffects: false 但实际模块有 CSS 注入副作用，bundler 会怎样？",
+    "explanation": "Bundler 在 `sideEffects: false` 下会**误删**未引用导出文件里的所有语句——包括 CSS 注入、`console.log`（Webpack 在某些场景连这个都剪）、全局变量修改、polyfill 注册。这是库作者最该警惕的字段。正确做法是用数组白名单 ［*.css、*.scss、./src/polyfills.js］ 精确声明有副作用的文件。",
+    "tags": ["按需引入", "sideEffects", "副作用", "误删"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "误删 CSS 注入、polyfill、全局修改等副作用代码",
+        "isCorrect": true,
+        "description": "库作者最该警惕"
+      },
+      {
+        "text": "自动检测并保留有副作用的代码",
+        "isCorrect": false,
+        "description": "sideEffects 是声明，bundler 按声明执行"
+      },
+      {
+        "text": "升级 bundler 即可解决",
+        "isCorrect": false,
+        "description": "升级不解决声明错误"
+      },
+      {
+        "text": "无影响",
+        "isCorrect": false,
+        "description": "误删副作用是真实风险"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：unplugin-auto-import 生成的 auto-imports.d.ts 应该如何处理？",
+    "explanation": "**`auto-imports.d.ts` 与 `components.d.ts` 必须提交 git**——CI 环境与新同事拉代码即有类型，避免 TS 报错与 IDE 红线。简单 `.gitignore` 会让 CI build 失败、新同事上手就满屏错误。`dts: true` 选项生成这两个文件，提交后即使重新生成也只是 diff 校验，不会引入冲突。",
+    "tags": ["按需引入", "unplugin-auto-import", "dts", "git"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "提交到仓库，CI/同事拉代码即有类型",
+        "isCorrect": true,
+        "description": "避免 CI build 失败与 IDE 红线"
+      },
+      {
+        "text": "加入 .gitignore 自动生成",
+        "isCorrect": false,
+        "description": "CI 会缺类型，IDE 红线"
+      },
+      {
+        "text": "仅在本地保留，不进版本控制",
+        "isCorrect": false,
+        "description": "同上，团队协作会踩坑"
+      },
+      {
+        "text": "手动维护，永不自动生成",
+        "isCorrect": false,
+        "description": "违背 dts: true 的初衷"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：unplugin-auto-import 的 imports 选项用于什么？",
+    "explanation": "`imports` 选项接受 preset 数组，如 `['vue', 'vue-router', 'pinia', '@vueuse/core']`，自动注入这些库的 API（如 `ref`/`reactive`/`computed`/`useRouter`/`defineStore` 等）到所有匹配文件，无需手写 import。`dirs` 用于自动导入自定义目录（如 composables、stores），`resolvers` 用于库 API 解析器（如 ElementPlusResolver 解析 ElMessage）。",
+    "tags": ["按需引入", "unplugin-auto-import", "imports", "preset"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "preset 数组，如 ['vue','vue-router','pinia']，自动注入常用 API",
+        "isCorrect": true,
+        "description": "免去手写 import vue/router/pinia API"
+      },
+      {
+        "text": "导入 CSS 样式",
+        "isCorrect": false,
+        "description": "imports 是 JS API，不是 CSS"
+      },
+      {
+        "text": "声明哪些文件有副作用",
+        "isCorrect": false,
+        "description": "副作用是 package.json sideEffects"
+      },
+      {
+        "text": "列出要 tree-shake 的库",
+        "isCorrect": false,
+        "description": "imports 是自动注入，不是 tree-shake 清单"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：下列哪个是 Element Plus 按需 + Sass 主题定制的完整流程？",
+    "explanation": "完整流程：**① vite.config 切 `importStyle: 'sass'`**（引入 SCSS 源码，非预编译 CSS）→ **② `css.preprocessorOptions.scss.additionalData` 注入业务变量文件**（如 `@use '@/styles/element-vars.scss' as *`）→ **③ 业务 scss 用 `@forward 'element-plus/theme-chalk/src/common/var.scss' with ($colors: (...))` 覆盖变量**。注意业务/变量 scss 必须分离，否则 additionalData 注入会反复编译大量 scss 致热更新极慢。",
+    "tags": ["按需引入", "Element Plus", "主题定制", "Sass"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "importStyle:'sass' + additionalData 注入 + @forward 覆盖 var.scss",
+        "isCorrect": true,
+        "description": "三步完整流程"
+      },
+      {
+        "text": "importStyle:'css' + 全局 CSS 变量 --el-color-primary",
+        "isCorrect": false,
+        "description": "CSS 变量能改部分运行时颜色，但改不了 SCSS 编译期变量"
+      },
+      {
+        "text": "app.use(ElementPlus) 然后改 dist/index.css",
+        "isCorrect": false,
+        "description": "改产物不可维护，且失去按需"
+      },
+      {
+        "text": "覆盖 node_modules 里的 element-plus 源码",
+        "isCorrect": false,
+        "description": "patch-package 也不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "按需引入：下列哪种是「反模式」会破坏 tree-shaking 或导致按需失效？",
+    "explanation": "多个反模式都会破坏按需：① `import _ from 'lodash-es'` 默认导入聚合全部方法；② `import echarts from 'echarts'` v5+ 仅 named export 会抛错；③ ECharts 只 import 不 `echarts.use` 静默失效；④ Element Plus 全量 + 按需混用导致重复打包；⑤ 用 `importStyle:'css'` 改 SCSS 变量（改不了）。其中默认导入 lodash-es 是最典型、最常被新项目踩的反模式。",
+    "tags": ["按需引入", "反模式", "tree-shaking"],
+    "categories": [
+      ["技术方向", "按需引入"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "import _ from 'lodash-es' 默认导入聚合全部方法",
+        "isCorrect": true,
+        "description": "破坏 tree-shaking 的典型反模式"
+      },
+      {
+        "text": "import { debounce } from 'lodash-es' 命名导入",
+        "isCorrect": false,
+        "description": "这是推荐写法"
+      },
+      {
+        "text": "echarts.use([BarChart, CanvasRenderer]) 显式注册",
+        "isCorrect": false,
+        "description": "这是推荐写法"
+      },
+      {
+        "text": "ElementPlusResolver 配 importStyle:'sass' 改主题",
+        "isCorrect": false,
+        "description": "这是推荐写法"
+      }
+    ]
+  }
+]

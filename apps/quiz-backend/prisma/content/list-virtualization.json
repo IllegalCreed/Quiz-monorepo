@@ -1,0 +1,632 @@
+[
+  {
+    "stem": "虚拟化：长列表虚拟化的核心原理是什么？",
+    "explanation": "虚拟化的核心思想是「只渲染当前可见区 + 一段 overscan 缓冲区的 DOM 节点」，其余项完全不进 DOM 树；通过几何计算（基于 scrollTop、视口高度、itemSize）实时换出可见项，用绝对定位 + transform/top 还原滚动位置。它不缓存全部数据到 DOM、也不是无限滚动加载，而是把 DOM 节点数从 O(N) 降到 O(可见 + overscan) 这一常量级。",
+    "tags": ["虚拟化", "原理", "overscan"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "只渲染可见区 + overscan 缓冲区的 DOM，用绝对定位还原滚动位置",
+        "isCorrect": true,
+        "description": "几何计算 + 绝对定位，DOM 数 O(可见)"
+      },
+      {
+        "text": "把所有数据缓存到内存，DOM 按需懒加载",
+        "isCorrect": false,
+        "description": "虚拟化并不缓存全部 DOM，而是不创建"
+      },
+      {
+        "text": "通过分页让用户每次只看一页，减少 DOM",
+        "isCorrect": false,
+        "description": "那是分页，不是虚拟化"
+      },
+      {
+        "text": "用 canvas 绘制列表，绕开 DOM 渲染",
+        "isCorrect": false,
+        "description": "虚拟化仍是 DOM 渲染，只是节点数少"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：为什么虚拟化能把 10 万条数据的渲染降到几十个 DOM 节点？",
+    "explanation": "虚拟化只把「视口能看到的 + 上下各 overscan 行」渲染成 DOM，非可见区的项完全不创建 DOM 节点。10 万条数据、视口高 480px、行高 40px、overscan 4，渲染窗口仅 [26,46] 共 21 个节点——比全量少三个数量级。关键不是「销毁」而是「压根不创建」。",
+    "tags": ["虚拟化", "DOM数量", "性能"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "因为只渲染视口 + overscan 命中的几十个节点，其余根本不创建",
+        "isCorrect": true,
+        "description": "几何计算只让可见区进 DOM"
+      },
+      {
+        "text": "因为浏览器会自动回收看不见的 DOM",
+        "isCorrect": false,
+        "description": "浏览器不会自动回收，是虚拟化不创建"
+      },
+      {
+        "text": "因为数据按需从后端分页加载",
+        "isCorrect": false,
+        "description": "那是无限滚动，与 DOM 减少无关"
+      },
+      {
+        "text": "因为虚拟化使用 Web Worker 渲染",
+        "isCorrect": false,
+        "description": "虚拟化不依赖 Worker"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual、react-window、vue-virtual-scroller 三库的核心定位差异是？",
+    "explanation": "TanStack Virtual 是 headless（hooks/类）方案，提供跨框架适配器（React/Vue/Svelte/Solid 等），控制力最强但样板代码多；react-window 是 React 组件式，开箱即用；vue-virtual-scroller 是 Vue 3.3+ 组件式，提供 RecycleScroller / DynamicScroller 双形态。三者均活跃维护，按框架与控制力需求选型。",
+    "tags": ["虚拟化", "三库", "选型"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "TanStack headless/跨框架，react-window 是 React 组件式，vue-virtual-scroller 是 Vue 组件式",
+        "isCorrect": true,
+        "description": "三者形态与定位不同"
+      },
+      {
+        "text": "三者都是 React 专用",
+        "isCorrect": false,
+        "description": "vue-virtual-scroller 是 Vue 专用"
+      },
+      {
+        "text": "三者功能完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "形态与生态差异明显"
+      },
+      {
+        "text": "TanStack 最弱、react-window 最强",
+        "isCorrect": false,
+        "description": "没有强弱之分，只有适用场景"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual 的 useVirtualizer 必填选项包含哪三项？",
+    "explanation": "useVirtualizer 的三个必填选项是：①count（列表总条数）；②getScrollElement（返回滚动父元素的函数，通常是 ref.current）；③estimateSize（() => number，返回初始预估行高）。三者缺一不可——没有 count 不知道有多少项，没有 getScrollElement 拿不到滚动位置，没有 estimateSize 无法估算可见窗口。",
+    "tags": ["虚拟化", "tanstack-virtual", "useVirtualizer"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "count + getScrollElement + estimateSize",
+        "isCorrect": true,
+        "description": "三项必填，缺一不可"
+      },
+      {
+        "text": "items + itemSize + keyField",
+        "isCorrect": false,
+        "description": "那是 vue-virtual-scroller 的 RecycleScroller"
+      },
+      {
+        "text": "rowCount + rowHeight + rowComponent",
+        "isCorrect": false,
+        "description": "那是 react-window v2 的 List"
+      },
+      {
+        "text": "overscan + gap + lanes",
+        "isCorrect": false,
+        "description": "这三项都是可选的"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual 中获取「当前应渲染的虚拟项数组」用哪个实例方法？",
+    "explanation": "Virtualizer 实例的 getVirtualItems() 返回当前应渲染的虚拟项数组（每项含 index、start、size、key），渲染时 map 这个数组、用 vi.start 做 transform 定位即可。getTotalSize() 返回总尺寸用于撑滚动条；scrollToIndex(i,{align}) 是命令式跳转；measure() 是手动触发整体重测。",
+    "tags": ["虚拟化", "tanstack-virtual", "实例方法"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "getVirtualItems()",
+        "isCorrect": true,
+        "description": "返回应渲染的虚拟项数组"
+      },
+      {
+        "text": "getTotalSize()",
+        "isCorrect": false,
+        "description": "那是列表总尺寸（撑滚动条用）"
+      },
+      {
+        "text": "scrollToIndex()",
+        "isCorrect": false,
+        "description": "那是命令式跳转"
+      },
+      {
+        "text": "measure()",
+        "isCorrect": false,
+        "description": "那是手动整体重测"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack 动态测量场景下，estimateSize 取「接近最大值」的真正原因是什么？",
+    "explanation": "估小（如返回 0 或最小值）时，首屏几十个项位置都偏低，ResizeObserver 测出真实高度后会触发批量向上修正——所有项位置同时变化，整列视觉上「跳一下」。估大时虽然初始间隙偏大，但首次测量后修正方向一致（都是向下收缩），肉眼难以察觉。这是「修正方向一致性」带来的视觉体验差异。",
+    "tags": ["虚拟化", "tanstack-virtual", "estimateSize", "原理"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "估大能让首屏修正方向一致（向下收缩），不出现明显跳动",
+        "isCorrect": true,
+        "description": "修正方向一致性是关键"
+      },
+      {
+        "text": "估大能减少 ResizeObserver 触发次数",
+        "isCorrect": false,
+        "description": "触发次数与估值大小无关"
+      },
+      {
+        "text": "估大能让 getTotalSize 更准确",
+        "isCorrect": false,
+        "description": "getTotalSize 在测量后会更新，与初值无关"
+      },
+      {
+        "text": "估大能省掉 measureElement 调用",
+        "isCorrect": false,
+        "description": "measureElement 仍需挂载以触发测量"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual 中 getItemKey 在哪些场景下必须返回稳定唯一 id（而非 index）？",
+    "explanation": "getItemKey 必须返回稳定唯一 id 的场景：①动态测量（measureElement）——index 错位会导致测量缓存错乱；②增删——前面插入或删除会让后续所有 index 错位，输入框值、状态错配；③反转流（anchorTo:'end'）——需稳定 key 区分 prepend 与 append。简而言之：只要列表会变动就要稳定 key。",
+    "tags": ["虚拟化", "tanstack-virtual", "getItemKey", "键值"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "动态测量、增删、反转流场景都必须用稳定 id",
+        "isCorrect": true,
+        "description": "index 错位会引发状态错配"
+      },
+      {
+        "text": "只有静态列表才需要稳定 id",
+        "isCorrect": false,
+        "description": "静态列表 index 不会错位，反而最不迫切"
+      },
+      {
+        "text": "只有横向滚动才需要",
+        "isCorrect": false,
+        "description": "横向滚动与键值无关"
+      },
+      {
+        "text": "永远不需要，index 就够用",
+        "isCorrect": false,
+        "description": "增删场景下 index 必错位"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：把 getItemKey 返回成 index 会导致什么后果？",
+    "explanation": "在动态测量、增删、反转流场景下，把 getItemKey 设成 index 会导致 React/Vue 的 reconciliation 错配：原本 key=5 的 DOM 现在被 key=6 复用，输入框值、内部状态、动画状态都会跟着错乱。最典型的现象是「列表里输入框的值跳到了别的行」。",
+    "tags": ["虚拟化", "tanstack-virtual", "getItemKey", "反模式"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "增删后状态错配、输入框值乱跳、测量缓存错乱",
+        "isCorrect": true,
+        "description": "index 错位是经典 bug 源"
+      },
+      {
+        "text": "首次渲染变慢",
+        "isCorrect": false,
+        "description": "首渲染性能与 key 选择无关"
+      },
+      {
+        "text": "滚动到指定位置失败",
+        "isCorrect": false,
+        "description": "scrollToIndex 与 key 无关"
+      },
+      {
+        "text": "不会产生任何问题",
+        "isCorrect": false,
+        "description": "动态 / 增删场景必踩"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual 的 measureElement ref 回调依赖哪个属性识别元素对应序号？",
+    "explanation": "measureElement 是 ref 回调，内部通过元素的 data-index 属性来识别这个 DOM 对应的虚拟项序号，从而把测量结果写入正确 index 的缓存。因此 JSX 里必须给子项设 data-index={vi.index}，且 ref={rowVirtualizer.measureElement}——两者缺一不可。",
+    "tags": ["虚拟化", "tanstack-virtual", "measureElement", "动态测量"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "data-index 属性",
+        "isCorrect": true,
+        "description": "measureElement 靠它识别 index"
+      },
+      {
+        "text": "key 属性",
+        "isCorrect": false,
+        "description": "key 是 React reconciliation 用，不是测量用"
+      },
+      {
+        "text": "data-key 属性",
+        "isCorrect": false,
+        "description": "标准属性是 data-index"
+      },
+      {
+        "text": "id 属性",
+        "isCorrect": false,
+        "description": "id 与 index 没有对应关系"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：虚拟化列表被 display:none 隐藏后还原时，为什么会出现整列重测与抖动？",
+    "explanation": "父容器 display:none 时，子项的 getBoundingClientRect 返回全 0，ResizeObserver 会把所有项测成 0 写入缓存；还原 display 后这些 0 测量值不再正确，所有可见项需要重新测量并修正位置，整列出现明显抖动。TanStack 提供 useCachedMeasurements:true 选项保留隐藏前的测量缓存，避免归零。",
+    "tags": [
+      "虚拟化",
+      "tanstack-virtual",
+      "useCachedMeasurements",
+      "display-none"
+    ],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "display:none 让 ResizeObserver 把所有项测成 0，还原后需重测",
+        "isCorrect": true,
+        "description": "测量归零触发整列重排"
+      },
+      {
+        "text": "因为 display:none 触发了垃圾回收",
+        "isCorrect": false,
+        "description": "display 不触发 GC"
+      },
+      {
+        "text": "因为虚拟化实例被销毁了",
+        "isCorrect": false,
+        "description": "实例仍存在，只是测量值错误"
+      },
+      {
+        "text": "因为浏览器渲染管线重新启动",
+        "isCorrect": false,
+        "description": "与渲染管线无关，是测量值问题"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：TanStack Virtual v3 聊天/日志反转流场景应如何配置？",
+    "explanation": "聊天与日志场景下新消息从底部追加，用户可能正在看历史。默认 anchorTo:'start' 会让新消息把当前可见项顶出视口。v3 的反转流组合是：anchorTo:'end'（锚定视口底端）+ followOnAppend:true（追加新项时自动跟随到底）+ scrollEndThreshold:30（距底 30px 内才算「在底端」）。这样用户滚到历史时不被抢，滚到底时新消息自动跟随。",
+    "tags": ["虚拟化", "tanstack-virtual", "anchorTo", "聊天流"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "anchorTo:'end' + followOnAppend:true + scrollEndThreshold",
+        "isCorrect": true,
+        "description": "v3 反转流标准组合"
+      },
+      {
+        "text": "anchorTo:'start' + followOnAppend:false",
+        "isCorrect": false,
+        "description": "默认 start 会把可见项顶出视口"
+      },
+      {
+        "text": "用 scrollToIndex(0) 跳到首项",
+        "isCorrect": false,
+        "description": "聊天流要锚定底端不是顶端"
+      },
+      {
+        "text": "用 getTotalSize() 撑高度即可",
+        "isCorrect": false,
+        "description": "撑高度与反转流锚定无关"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：react-window v1 与 v2 的核心 API 差异是什么？",
+    "explanation": "v1 用 FixedSizeList / VariableSizeList / FixedSizeGrid / VariableSizeGrid，子项通过 children render-prop 渲染，需手动 React.memo 与 resetAfterIndex；v2 重构为 List / Grid 组件式 + rowComponent / cellComponent + rowProps，rowHeight 支持 useDynamicRowHeight 返回的动态缓存，ResizeObserver 成为基线，内置自动 memo 与自动 sizing、双向 overscan。v1 仍维护但拿不到 v2 新特性。",
+    "tags": ["虚拟化", "react-window", "v1-v2", "API差异"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "v1 是 FixedSizeList/VariableSizeList + children render-prop；v2 是 List/Grid + rowComponent + 自动 memo/sizing",
+        "isCorrect": true,
+        "description": "v2 围绕组件式重构"
+      },
+      {
+        "text": "v1 是组件式，v2 是 hooks 式",
+        "isCorrect": false,
+        "description": "反了，v2 才是组件式"
+      },
+      {
+        "text": "v1 不再维护，必须升级",
+        "isCorrect": false,
+        "description": "v1 仍维护，仅拿不到新特性"
+      },
+      {
+        "text": "v1 与 v2 API 完全相同，只是版本号变了",
+        "isCorrect": false,
+        "description": "v2 是有破坏性变更的大版本"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：react-window v2 的 List 组件必填 props 包含哪些？",
+    "explanation": "v2 List 的必填 props 是：rowComponent（渲染单行的组件）、rowCount（总行数）、rowHeight（行高，支持 number / 百分比 / 函数 / useDynamicRowHeight 返回的动态缓存）、rowProps（透传给 rowComponent 的数据，即便为空对象 {} 也必填）。height / width 用于容器尺寸。",
+    "tags": ["虚拟化", "react-window", "v2", "必填props"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "rowComponent + rowCount + rowHeight + rowProps",
+        "isCorrect": true,
+        "description": "v2 List 四件套，rowProps 必填"
+      },
+      {
+        "text": "itemCount + itemSize + children",
+        "isCorrect": false,
+        "description": "那是 v1 的 FixedSizeList"
+      },
+      {
+        "text": "items + itemSize + keyField",
+        "isCorrect": false,
+        "description": "那是 vue-virtual-scroller"
+      },
+      {
+        "text": "count + getScrollElement + estimateSize",
+        "isCorrect": false,
+        "description": "那是 TanStack Virtual"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：react-window 的 FixedSizeList 与 VariableSizeList 的核心差异是？",
+    "explanation": "FixedSizeList 用固定 itemSize（number），index↔offset 是 O(1) 计算（i*itemSize），性能最优；VariableSizeList 的 itemSize 是函数 (i) => number，需维护测量缓存前缀和，向上滚动时可能因尺寸修正产生跳动，且修改尺寸后需手动调 resetAfterIndex 才能更新。等高优先选 Fixed，变高才用 Variable。",
+    "tags": ["虚拟化", "react-window", "FixedSize", "VariableSize"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "FixedSize 等高 O(1) 计算；Variable 变高需测量缓存与 resetAfterIndex",
+        "isCorrect": true,
+        "description": "性能与复杂度的核心差异"
+      },
+      {
+        "text": "FixedSize 支持虚拟化，Variable 不支持",
+        "isCorrect": false,
+        "description": "两者都是虚拟化"
+      },
+      {
+        "text": "FixedSize 只能横向滚动，Variable 才能纵向",
+        "isCorrect": false,
+        "description": "方向与组件无关"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "性能与用法差异明显"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：react-window v2 中 useDynamicRowHeight 这个 hook 的作用是？",
+    "explanation": "useDynamicRowHeight() 返回一个动态行高测量缓存，把它传给 List 的 rowHeight prop，v2 会自动用 ResizeObserver 测量每个行组件的真实高度并缓存，向上滚动时也能正确还原位置。这是 v2 把 ResizeObserver 设为基线、自动 sizing 优势的体现——v1 时代需手动写 itemSize 函数 + resetAfterIndex 才能实现同等效果。",
+    "tags": ["虚拟化", "react-window", "v2", "useDynamicRowHeight"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回动态行高测量缓存，传给 List 的 rowHeight 实现自动测量",
+        "isCorrect": true,
+        "description": "v2 自动 sizing 的核心 hook"
+      },
+      {
+        "text": "返回固定行高数字",
+        "isCorrect": false,
+        "description": "固定行高直接传 number 即可"
+      },
+      {
+        "text": "获取命令式 ref",
+        "isCorrect": false,
+        "description": "那是 useListRef"
+      },
+      {
+        "text": "处理滚动事件",
+        "isCorrect": false,
+        "description": "与事件无关"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：vue-virtual-scroller 渲染「已知等高」列表应选哪个组件？",
+    "explanation": "RecycleScroller 专门用于等高 / 接近等高的列表，通过复用 DOM 节点（recycle）而非销毁重建，配合 itemSize 数字实现 O(1) 的 index↔offset 计算，性能最优。DynamicScroller 用于动态高度，会通过 ResizeObserver + size-dependencies 测量。等高优先 RecycleScroller。",
+    "tags": ["虚拟化", "vue-virtual-scroller", "RecycleScroller", "选型"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "RecycleScroller（配合 itemSize 数字）",
+        "isCorrect": true,
+        "description": "等高场景首选，性能最优"
+      },
+      {
+        "text": "DynamicScroller",
+        "isCorrect": false,
+        "description": "动态高度才用 DynamicScroller"
+      },
+      {
+        "text": "WindowScroller",
+        "isCorrect": false,
+        "description": "WindowScroller 是页面级滚动，不是等高场景的标志"
+      },
+      {
+        "text": "useTableColumnWidths",
+        "isCorrect": false,
+        "description": "那是表格列宽的 headless composable"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：vue-virtual-scroller 中 DynamicScrollerItem 的 size-dependencies 应如何写？",
+    "explanation": "size-dependencies 是个数组，必须列出**真正影响尺寸的字段**，如 [item.title, item.body]。内部靠这个数组变化重测：字段变了触发 ResizeObserver 重测；不写则内容变化时不重测导致错位，传整个 item 对象则过度触发重排。常见错误是传 item（引用每次都变）或漏写关键字段。",
+    "tags": [
+      "虚拟化",
+      "vue-virtual-scroller",
+      "DynamicScrollerItem",
+      "size-dependencies"
+    ],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "列出影响尺寸的字段数组，如 [item.title, item.body]",
+        "isCorrect": true,
+        "description": "只列真正影响尺寸的字段"
+      },
+      {
+        "text": "传整个 item 对象",
+        "isCorrect": false,
+        "description": "引用每次都变，会过度触发重排"
+      },
+      {
+        "text": "传一个空数组",
+        "isCorrect": false,
+        "description": "内容变化时不会重测，导致错位"
+      },
+      {
+        "text": "传 index 数字",
+        "isCorrect": false,
+        "description": "size-dependencies 是字段数组"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：vue-virtual-scroller v3 的安装/兼容性陷阱包含哪些？",
+    "explanation": "vue-virtual-scroller v3 的兼容性约束：①仅支持 Vue 3.3+（Vue 2 必须用 v1 分支）；②ESM only，没有 CommonJS 入口，老式 require 引入会报错；③必须 import 'vue-virtual-scroller/index.css'，否则定位全乱、肉眼可见的错位——这是最常见的「装好但不工作」原因。",
+    "tags": ["虚拟化", "vue-virtual-scroller", "兼容性", "安装陷阱"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Vue 3.3+ / ESM only / 必须 import CSS；Vue 2 用 v1 分支",
+        "isCorrect": true,
+        "description": "三大陷阱，缺一即坑"
+      },
+      {
+        "text": "支持 Vue 2 / CommonJS / 无需 CSS",
+        "isCorrect": false,
+        "description": "全错"
+      },
+      {
+        "text": "支持所有 Vue 版本",
+        "isCorrect": false,
+        "description": "v3 仅支持 Vue 3.3+"
+      },
+      {
+        "text": "仅 SSR 可用，浏览器端不支持",
+        "isCorrect": false,
+        "description": "v3 主要在浏览器端用"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：vue-virtual-scroller 漏 import CSS（vue-virtual-scroller/index.css）会导致什么现象？",
+    "explanation": "vue-virtual-scroller 的内部样式（如 .vue-recycle-scroller__item-view 的绝对定位、过渡动画等）依赖其自带 CSS。漏 import 会出现列表项定位全乱、肉眼可见的错位、滚动时项之间叠在一起。这是新手最常踩的坑，排查时应先检查入口或组件是否 import 了 CSS。",
+    "tags": ["虚拟化", "vue-virtual-scroller", "css", "陷阱"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "列表项定位全乱、错位、堆叠",
+        "isCorrect": true,
+        "description": "缺乏绝对定位样式导致"
+      },
+      {
+        "text": "完全报错跑不起来",
+        "isCorrect": false,
+        "description": "组件能渲染，只是定位错乱"
+      },
+      {
+        "text": "毫无影响，CSS 是可选的",
+        "isCorrect": false,
+        "description": "内部样式是必须的"
+      },
+      {
+        "text": "仅暗色模式失效",
+        "isCorrect": false,
+        "description": "与主题无关"
+      }
+    ]
+  },
+  {
+    "stem": "虚拟化：下列哪一项是虚拟化的「共同反模式」？",
+    "explanation": "虚拟化的共同反模式集中在三大类：①容器配置错误（漏 overflow:auto 或固定高度，子项 absolute 定位后无滚动容器）；②键值错误（key 设成 index，增删后状态错配）；③组件选型错误（动态高度用 RecycleScroller 或 FixedSizeList，导致尺寸错算）。这三类与具体库无关，是几何模型本身的约束。",
+    "tags": ["虚拟化", "反模式", "overflow", "key"],
+    "categories": [
+      ["技术方向", "虚拟化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "父容器漏设 overflow:auto 或固定高度，且 key 设成 index",
+        "isCorrect": true,
+        "description": "几何模型与键值的两大经典陷阱"
+      },
+      {
+        "text": "把 estimateSize 设为 40",
+        "isCorrect": false,
+        "description": "合理估值不是反模式"
+      },
+      {
+        "text": "给列表项加边框",
+        "isCorrect": false,
+        "description": "样式与虚拟化无关"
+      },
+      {
+        "text": "使用 TypeScript 类型",
+        "isCorrect": false,
+        "description": "类型是推荐做法"
+      }
+    ]
+  }
+]

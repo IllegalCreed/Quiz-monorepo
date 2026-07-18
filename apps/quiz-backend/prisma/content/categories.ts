@@ -657,8 +657,26 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             ],
           },
           {
-            name: "性能优化（异步组件 / 按需引入 / 虚拟化 / 事件及属性优化 / 性能评估）",
+            // 2026-07-18 选型调研定稿：占位单叶 → 组+7叶（与 sidebar 占位对齐）。
+            // 4 叶通用手段（异步组件/按需引入/虚拟化/事件及属性优化）+ 性能评估组（3 工具叶）。
+            // 调研结论见 docs/plans/20260718-perf-optimization-trilogy.md + workflow journal。
+            name: "性能优化",
             sort: 2,
+            children: [
+              { name: "异步组件", sort: 1 },
+              { name: "按需引入", sort: 2 },
+              { name: "虚拟化", sort: 3 },
+              { name: "事件及属性优化", sort: 4 },
+              {
+                name: "性能评估",
+                sort: 5,
+                children: [
+                  { name: "Lighthouse", sort: 1 },
+                  { name: "Webpack Bundle Analyzer", sort: 2 },
+                  { name: "rollup-plugin-visualizer", sort: 3 },
+                ],
+              },
+            ],
           },
           { name: "代码优化（代码分割 / Tree Shaking）", sort: 3 },
           { name: "网络优化（CDN / 缓存 / 压缩）", sort: 4 },

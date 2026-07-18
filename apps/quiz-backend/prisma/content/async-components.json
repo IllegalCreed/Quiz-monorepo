@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "异步组件：异步组件的核心定位是什么？",
+    "explanation": "异步组件把组件的「定义」本身做成异步获取——只保留一个 loader，等组件真正被渲染时才通过动态 import() 拉取对应 chunk，并在加载期间用 fallback 兜底。使用方仍按普通组件写。它配合构建工具的 ESM 动态 import() 自动产生独立 chunk，是首屏性能优化与按需加载的标配能力。",
+    "tags": ["异步组件", "定位", "代码分割"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把组件定义做成异步获取，渲染时才动态 import() 加载",
+        "isCorrect": true,
+        "description": "使用方无感知，loader 返回 Promise 触发代码分割"
+      },
+      {
+        "text": "用 async/await 包装的组件",
+        "isCorrect": false,
+        "description": "async 函数不等于异步组件，关键在 loader + 动态 import"
+      },
+      {
+        "text": "必须配合 Web Worker 才能工作的组件",
+        "isCorrect": false,
+        "description": "异步组件与 Web Worker 无关"
+      },
+      {
+        "text": "只有 SSR 才能用的组件",
+        "isCorrect": false,
+        "description": "CSR 也大量使用异步组件做代码分割"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：使用异步组件做代码分割的最主要动机是什么？",
+    "explanation": "大型应用所有组件同步打包会让主 bundle 越来越大，下载/解析/执行时间随之上升，用户首屏根本看不到的模块（设置面板、二级路由、巨型图表库）也占用首屏预算。异步组件配合构建工具的动态 import() 自动产生独立 chunk，把首屏不需要的代码延迟到真正渲染时才下载，是缩减首屏 JS 体积的核心手段。",
+    "tags": ["异步组件", "代码分割", "性能"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "缩减首屏 JS 体积，把不需要立即用的代码延后加载",
+        "isCorrect": true,
+        "description": "代码分割是首屏性能优化的核心"
+      },
+      {
+        "text": "减少组件之间的耦合度",
+        "isCorrect": false,
+        "description": "耦合度由设计决定，与异步无关"
+      },
+      {
+        "text": "让组件支持并发渲染",
+        "isCorrect": false,
+        "description": "并发渲染是另一回事"
+      },
+      {
+        "text": "避免使用 TypeScript 类型检查",
+        "isCorrect": false,
+        "description": "异步组件仍有类型"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 的 defineAsyncComponent 选项 delay 默认值是多少？为什么不是 0？",
+    "explanation": "Vue 的 delay 默认 200ms。设计意图：在快网上加载几乎瞬时完成，立即显示 loadingComponent 又瞬间被替换会形成闪烁（flicker），200ms 内完成则根本不显示 loading。改成 0 会增加无意义闪烁，除非确有需求（如展示骨架屏做品牌动效），应保留默认。",
+    "tags": ["异步组件", "vue", "delay", "flicker"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "200ms；避免快网下 loading 一闪而过造成 flicker",
+        "isCorrect": true,
+        "description": "200ms 内完成则不显示 loading"
+      },
+      {
+        "text": "0ms；尽快显示 loading 让用户感知",
+        "isCorrect": false,
+        "description": "0 会增加无意义闪烁"
+      },
+      {
+        "text": "1000ms；等待较慢网络",
+        "isCorrect": false,
+        "description": "1000ms 太长，会延迟 loading 显示"
+      },
+      {
+        "text": "Infinity；永不显示 loading",
+        "isCorrect": false,
+        "description": "Infinity 是 timeout 的默认值不是 delay"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 的 defineAsyncComponent 选项 timeout 默认值是多少？超时后会怎样？",
+    "explanation": "Vue 的 timeout 默认 Infinity（永不超时）。当 timeout 被设置且加载超过该值时，会显示 errorComponent（与 loader reject 同走 errorComponent 路径）。这是 Vue 的统一错误展示机制——加载失败和加载超时共用 errorComponent。",
+    "tags": ["异步组件", "vue", "timeout", "errorComponent"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Infinity；超过设置的 timeout 显示 errorComponent",
+        "isCorrect": true,
+        "description": "默认永不超时；超时与 reject 同走 errorComponent"
+      },
+      {
+        "text": "3000ms；超过显示 loadingComponent",
+        "isCorrect": false,
+        "description": "超时走 errorComponent 不是 loading"
+      },
+      {
+        "text": "200ms；超过重新加载",
+        "isCorrect": false,
+        "description": "200 是 delay 默认值，不会自动重载"
+      },
+      {
+        "text": "0ms；立即抛错",
+        "isCorrect": false,
+        "description": "0 不在 timeout 默认值范围"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 的 onError 回调签名是什么？",
+    "explanation": "Vue 的 onError 回调签名是 (error, retry, fail, attempts)。error 是失败原因；retry 是函数，调用它会重试 loader；fail 是函数，调用它会终止并走 errorComponent；attempts 是当前尝试次数（从 1 开始）。可在该回调里实现限流重试、指数退避等策略。",
+    "tags": ["异步组件", "vue", "onError", "重试"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "(error, retry, fail, attempts)",
+        "isCorrect": true,
+        "description": "retry() 重试，fail() 终止走 errorComponent"
+      },
+      {
+        "text": "(error, retryCount, maxRetries)",
+        "isCorrect": false,
+        "description": "缺少 retry/fail 函数与 attempts 计数"
+      },
+      {
+        "text": "(error) 仅一个参数，无法主动重试",
+        "isCorrect": false,
+        "description": "onError 接 4 个参数"
+      },
+      {
+        "text": "(loader, retry, fail)",
+        "isCorrect": false,
+        "description": "第一个参数是 error 不是 loader"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 中 async 组件在 <Suspense> 父链下的默认行为是什么？",
+    "explanation": "Vue async 组件默认 suspensible=true，意味着组件的 loading/error/delay/timeout 处理被全权交给上层 <Suspense> 接管——组件自身的 loadingComponent/errorComponent/delay/timeout 会被忽略，loading 由 Suspense 的 #fallback 统一展示。如果想让组件自己管理 loading/error/delay/timeout，需要显式设置 suspensible:false。",
+    "tags": ["异步组件", "vue", "suspensible", "Suspense"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认 suspensible=true，自身 loading/error/delay/timeout 被 Suspense 接管忽略",
+        "isCorrect": true,
+        "description": "由 Suspense 的 #fallback 统一展示 loading"
+      },
+      {
+        "text": "默认 suspensible=false，组件自管 loading",
+        "isCorrect": false,
+        "description": "默认是 true，不是 false"
+      },
+      {
+        "text": "默认禁用 loader 直到 Suspense 卸载",
+        "isCorrect": false,
+        "description": "loader 会被 Suspense 触发"
+      },
+      {
+        "text": "默认抛错，必须显式设置 suspensible 才能用",
+        "isCorrect": false,
+        "description": "默认值就是可用值，无需显式声明"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue <Suspense> 的 #default 与 #fallback 插槽各允许多少个直接子节点？",
+    "explanation": "Vue <Suspense> 的 #default 与 #fallback 插槽**每个只允许 1 个直接子节点**，多根节点会报错。多个异步组件应在 #default 子节点内部组合（例如用 div 包住），而不是直接平铺多个根级组件。同一 boundary 内任一异步组件 suspend 都会触发整体 fallback；希望分别 fallback 就要改用嵌套 Suspense。",
+    "tags": ["异步组件", "vue", "Suspense", "插槽"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "各只能有 1 个直接子节点",
+        "isCorrect": true,
+        "description": "多根节点会报错，多个异步组件应内部组合"
+      },
+      {
+        "text": "任意多个，无限制",
+        "isCorrect": false,
+        "description": "单子节点是硬约束"
+      },
+      {
+        "text": "#default 多个，#fallback 只能 1 个",
+        "isCorrect": false,
+        "description": "两边都是单子节点"
+      },
+      {
+        "text": "#fallback 不能有子节点",
+        "isCorrect": false,
+        "description": "fallback 必须有 1 个子节点作为占位"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 嵌套 <Suspense> 自哪个版本起支持？如何让内层 boundary 委托给父级？",
+    "explanation": "Vue 嵌套 <Suspense> 需要 3.3+。给内层 <Suspense> 加 suspensible prop 后，会把 async 依赖处理与 pending/resolve/fallback 事件全权委托给父 boundary——不加则内层被当同步组件处理，两个 Dynamic 同时变化时会出现空节点和多次 patch 循环。这是处理嵌套异步组件（如 layout 路由内的子路由）的标准做法。",
+    "tags": ["异步组件", "vue", "嵌套", "Suspense", "3.3"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "3.3+；内层加 suspensible prop 委托给父 boundary",
+        "isCorrect": true,
+        "description": "不加会导致空节点和多次 patch"
+      },
+      {
+        "text": "3.0+；自动委托无需配置",
+        "isCorrect": false,
+        "description": "3.0 不支持嵌套 Suspense 委托"
+      },
+      {
+        "text": "3.5+；用 Lazy Hydration 替代",
+        "isCorrect": false,
+        "description": "3.5 是 Lazy Hydration 版本"
+      },
+      {
+        "text": "2.7+；用 v-if 模拟",
+        "isCorrect": false,
+        "description": "Vue 2 不支持 Suspense"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue 3.5+ Lazy Hydration 提供了哪四种内置策略？",
+    "explanation": "Vue 3.5+ Lazy Hydration 提供四种内置策略：hydrateOnIdle（浏览器空闲时）、hydrateOnVisible({ rootMargin })（进入视口时）、hydrateOnMediaQuery('(max-width:500px)')（媒体查询匹配时）、hydrateOnInteraction('click' | [...])（用户与组件交互时）。也支持自定义 HydrationStrategy(hydrate, forEachElement)。Lazy Hydration 仅适用于 SSR 场景，能进一步降低低端机首屏水合负担。",
+    "tags": ["异步组件", "vue", "Lazy Hydration", "3.5", "SSR"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "hydrateOnIdle / hydrateOnVisible / hydrateOnMediaQuery / hydrateOnInteraction",
+        "isCorrect": true,
+        "description": "另支持自定义 HydrationStrategy，仅 SSR"
+      },
+      {
+        "text": "lazyOnLoad / lazyOnScroll / lazyOnClick / lazyOnHover",
+        "isCorrect": false,
+        "description": "命名错误，应是 hydrate 前缀"
+      },
+      {
+        "text": "useIdle / useVisible / useMediaQuery / useInteraction",
+        "isCorrect": false,
+        "description": "命名混淆了 React use 前缀"
+      },
+      {
+        "text": "lazy-idle / lazy-visible / lazy-media / lazy-interaction",
+        "isCorrect": false,
+        "description": "命名错误"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue <Suspense> 提供哪些事件？",
+    "explanation": "Vue <Suspense> 提供三个事件：pending（进入 pending 状态时触发）、resolve（default 完成、所有 async 依赖就绪时触发）、fallback（fallback 内容被显示时触发）。注意 <Suspense> 自身不提供错误事件——异步错误需用父级 onErrorCaptured / errorCaptured 钩子捕获。",
+    "tags": ["异步组件", "vue", "Suspense", "事件"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "pending / resolve / fallback",
+        "isCorrect": true,
+        "description": "进入 pending、解析完成、显示 fallback"
+      },
+      {
+        "text": "load / success / error",
+        "isCorrect": false,
+        "description": "没有这些事件名"
+      },
+      {
+        "text": "start / end / cancel",
+        "isCorrect": false,
+        "description": "事件名错误"
+      },
+      {
+        "text": "pending / resolve / error",
+        "isCorrect": false,
+        "description": "没有 error 事件，错误用 onErrorCaptured 捕获"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React lazy(load) 中 load 的返回契约是什么？",
+    "explanation": "React lazy 的 load 必须是无参函数，返回 Promise 或 thenable。React 等待 resolve 后**取 .default 作为组件**——解析值必须含 .default 且 .default 必须是合法 React 组件类型（函数或 class）。load 只在第一次需要该组件时调用一次，结果（Promise 与解析值）会被缓存，后续再渲染不会重新加载。",
+    "tags": ["异步组件", "react", "lazy", "default"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回 Promise，解析值必须含 .default 且为合法组件类型",
+        "isCorrect": true,
+        "description": "lazy 自动从 module.default 取组件"
+      },
+      {
+        "text": "返回 Promise，解析值为组件本身",
+        "isCorrect": false,
+        "description": "必须从 .default 取"
+      },
+      {
+        "text": "返回组件函数",
+        "isCorrect": false,
+        "description": "load 返回 Promise 不是组件"
+      },
+      {
+        "text": "返回 JSX 元素",
+        "isCorrect": false,
+        "description": "load 返回 Promise 不是 JSX"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：为什么 React lazy 必须在模块顶层声明？",
+    "explanation": "React lazy 如果写在组件函数体内，每次渲染都会生成**新的 lazy 类型实例**，React 会把整棵子树当成新组件树，**重置所有内部状态**（输入框内容、组件内部 state、DOM 焦点等）。这是官方 troubleshooting 明确列出的反模式。lazy 必须在模块顶层声明，这样实例稳定，子树状态可跨渲染保留。",
+    "tags": ["异步组件", "react", "lazy", "反模式"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "组件内声明会导致每次渲染产生新 lazy 实例，子树状态被重置",
+        "isCorrect": true,
+        "description": "官方明确列为反模式"
+      },
+      {
+        "text": "顶层声明性能更快，仅此而已",
+        "isCorrect": false,
+        "description": "不只是性能，是状态会被重置的语义问题"
+      },
+      {
+        "text": "顶层声明是 TypeScript 要求",
+        "isCorrect": false,
+        "description": "与 TS 无关"
+      },
+      {
+        "text": "组件内声明会导致编译错误",
+        "isCorrect": false,
+        "description": "能编译，只是行为错误"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React 中 lazy 的 loader 抛错时，错误会被谁捕获？",
+    "explanation": "React 中 lazy 的 loader Promise reject 时，React 把 rejection 作为 throw 抛给**最近的 Error Boundary**。React **没有内置 errorComponent 选项**（与 Vue 不同），必须自己写 Error Boundary（class 组件，实现 getDerivedStateFromError + componentDidCatch），并包在 Suspense 外层。否则错误无法优雅降级，直接报错。",
+    "tags": ["异步组件", "react", "Error Boundary", "错误处理"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "最近的 Error Boundary（React 无内置 errorComponent）",
+        "isCorrect": true,
+        "description": "Error Boundary 必须是 class 组件"
+      },
+      {
+        "text": "<Suspense> 的 fallback",
+        "isCorrect": false,
+        "description": "fallback 是 loading 不是 error"
+      },
+      {
+        "text": "lazy 组件自身",
+        "isCorrect": false,
+        "description": "lazy 是包装器，无错误状态"
+      },
+      {
+        "text": "window.onerror 全局处理",
+        "isCorrect": false,
+        "description": "React 错误默认被框架捕获"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React Suspense 不在以下哪个场景下激活？",
+    "explanation": "React Suspense 的激活条件包括：lazy 加载、use() 读 Promise、<link rel=stylesheet precedence>、流式 SSR HTML、（Canary）<ViewTransition> 等待字体图片。**不激活**的场景包括：useEffect 内的 fetch、事件处理器（onClick 等）内的 fetch、普通 await 在事件回调里。这是 React 官方明确列出的不激活清单——不能期待这些场景触发 Suspense。",
+    "tags": ["异步组件", "react", "Suspense", "激活条件"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "useEffect 或事件处理器内的 fetch",
+        "isCorrect": true,
+        "description": "官方明确不激活，需用 use() 或 Suspense-aware 数据库"
+      },
+      {
+        "text": "lazy(() => import()) 加载组件",
+        "isCorrect": false,
+        "description": "这是 Suspense 的主要激活场景"
+      },
+      {
+        "text": "use(Promise) 读 Promise",
+        "isCorrect": false,
+        "description": "React 19 起支持，能激活 Suspense"
+      },
+      {
+        "text": "流式 SSR HTML",
+        "isCorrect": false,
+        "description": "服务端流式传输能激活 Suspense"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React 中 startTransition 的作用是什么？",
+    "explanation": "React 中 startTransition 用于包裹会触发 suspend 的状态更新（如路由跳转、Tab 切换）。它会把这些更新标记为非紧急，让 React **尽量保留已显示内容**直到新内容就绪，避免把已揭示 UI 直接换成 fallback 造成跳变。Suspense-aware 路由默认会用 startTransition 包裹导航。useTransition() 还可拿到 isPending 状态用于 UI 反馈。",
+    "tags": ["异步组件", "react", "startTransition", "useTransition"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "包裹会 suspend 的更新，让 React 保留旧 UI 直到新内容就绪",
+        "isCorrect": true,
+        "description": "避免已显示内容被打回 fallback"
+      },
+      {
+        "text": "加速 lazy 加载速度",
+        "isCorrect": false,
+        "description": "startTransition 不影响加载速度"
+      },
+      {
+        "text": "替代 Suspense 的功能",
+        "isCorrect": false,
+        "description": "两者配合使用，不能替代"
+      },
+      {
+        "text": "让 Error Boundary 自动捕获错误",
+        "isCorrect": false,
+        "description": "与错误捕获无关"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React 切换不同实体（如用户 profile）希望立即显示 fallback，应如何处理？",
+    "explanation": "React 中给 Suspense 加 key={id}（如 key={userId}）可重置 boundary。不加 key 时旧内容会继续显示直到新内容就绪（默认行为）；加 key 后跨实体切换会立即显示 fallback 而非保留旧数据。这是处理「希望立即丢弃旧数据」场景的标准做法。",
+    "tags": ["异步组件", "react", "Suspense", "key"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "给 Suspense 加 key={id}",
+        "isCorrect": true,
+        "description": "key 变化会重置 boundary，立即显示 fallback"
+      },
+      {
+        "text": "用 useState 强制重置",
+        "isCorrect": false,
+        "description": "更复杂且容易出错"
+      },
+      {
+        "text": "调用 Suspense 的 reset 方法",
+        "isCorrect": false,
+        "description": "Suspense 没有 reset 方法"
+      },
+      {
+        "text": "包一层 <div key>",
+        "isCorrect": false,
+        "description": "key 应加在 Suspense 上"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：React 嵌套 Suspense 实现「一起揭示」与「逐步揭示」分别应如何写？",
+    "explanation": "React 中「一起揭示」是把多个 lazy 组件放在**同一个** boundary 内，全部就绪后才整体出现；「逐步揭示」是各 lazy 组件各自包一层 boundary，各自按就绪顺序揭示。合理分层能避免长时间白屏——但官方明确「不要给每个组件都包 Suspense boundary」，粒度应贴合用户期望的 loading 序列（问设计师 loading 应放在哪）。",
+    "tags": ["异步组件", "react", "嵌套", "Suspense"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "一起揭示=同 boundary；逐步揭示=各自 boundary",
+        "isCorrect": true,
+        "description": "边界组合决定揭示策略"
+      },
+      {
+        "text": "一起揭示=各自 boundary；逐步揭示=同 boundary",
+        "isCorrect": false,
+        "description": "正好相反"
+      },
+      {
+        "text": "两种策略写法相同，区别在 fallback 内容",
+        "isCorrect": false,
+        "description": "写法不同"
+      },
+      {
+        "text": "只能用 startTransition 控制",
+        "isCorrect": false,
+        "description": "startTransition 与揭示策略无关"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue Router 用 () => import() 做路由懒加载，会触发 <Suspense> 吗？",
+    "explanation": "Vue Router 的 () => import() 路由懒加载**「目前」不会**触发 <Suspense>——这是 Vue 官方明确的。只有其内部 async 子组件或 async setup 才会触发 Suspense。Vue Router 的路由懒加载与 async 组件在概念上是分开的：路由懒加载是为了代码分割，<Suspense> 是为了等待 async 子组件/setup 的依赖。两者经常配合使用但机制独立。",
+    "tags": ["异步组件", "vue", "vue-router", "Suspense"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不会；只有路由内部 async 子组件或 async setup 才会触发",
+        "isCorrect": true,
+        "description": "官方明确两者机制独立"
+      },
+      {
+        "text": "会；所有 () => import() 都自动触发 Suspense",
+        "isCorrect": false,
+        "description": "Vue Router 路由懒加载不会触发"
+      },
+      {
+        "text": "取决于是否设置了 suspensible",
+        "isCorrect": false,
+        "description": "suspensible 是组件选项，与路由懒加载无关"
+      },
+      {
+        "text": "需要手动配置 router.suspense = true",
+        "isCorrect": false,
+        "description": "没有此 API"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：Vue <Suspense> 进入 resolved 状态后，何时会重新进入 pending？",
+    "explanation": "Vue <Suspense> 进入 resolved 状态后，**只有 #default 根节点被替换**才会重新进入 pending。深层新出现的 async 依赖不会触发——这是常见的误解。例如切到新 Tab 但 #default 根节点未变（只是内部子组件切换），不会显示 fallback；如果想触发 loading，需要让根节点变化（如用 key 重置）或用嵌套 Suspense。",
+    "tags": ["异步组件", "vue", "Suspense", "状态机"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "只有 #default 根节点被替换时",
+        "isCorrect": true,
+        "description": "深层新 async 依赖不会触发"
+      },
+      {
+        "text": "任意子组件发生变化时",
+        "isCorrect": false,
+        "description": "深层变化不触发"
+      },
+      {
+        "text": "每次重新渲染时",
+        "isCorrect": false,
+        "description": "重新渲染不一定进 pending"
+      },
+      {
+        "text": "外部状态变化时",
+        "isCorrect": false,
+        "description": "取决于是否替换根节点"
+      }
+    ]
+  },
+  {
+    "stem": "异步组件：过度分割（每个小组件都 lazy）会有什么后果？",
+    "explanation": "过度分割（每个小组件都 lazy）会触发 **chunk waterfall**（瀑布请求）——多个小 chunk 串行/瀑布式请求，反而损害性能。应在大粒度边界做分割：路由级最划算，其次是重组件（如大对话框、复杂图表、二级标签页）。fallback 也要保持轻量（spinner / skeleton），过重会增加首次揭示的渲染负担。",
+    "tags": ["异步组件", "过度分割", "waterfall", "性能"],
+    "categories": [
+      ["技术方向", "异步组件"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "触发 chunk waterfall（瀑布请求），反而损害性能",
+        "isCorrect": true,
+        "description": "应在路由或重组件边界分割"
+      },
+      {
+        "text": "提升首屏速度，越多越好",
+        "isCorrect": false,
+        "description": "过度分割有害"
+      },
+      {
+        "text": "对性能无影响",
+        "isCorrect": false,
+        "description": "明显有影响"
+      },
+      {
+        "text": "只影响 SSR，CSR 无所谓",
+        "isCorrect": false,
+        "description": "CSR 同样受影响"
+      }
+    ]
+  }
+]

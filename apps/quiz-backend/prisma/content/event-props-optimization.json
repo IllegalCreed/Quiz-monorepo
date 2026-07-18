@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "事件及属性优化：本主题处理的两条并行主线是什么？",
+    "explanation": "「事件及属性优化」同时处理两类高频性能问题：① 高频事件回调带来的主线程压力（防抖/节流/委托/passive 降频）② 框架过度重渲染带来的浪费（React 记忆化/Vue 浅响应缩小渲染范围）。两者本质相同：减少主线程上不必要的计算与渲染。",
+    "tags": ["事件及属性优化", "定位", "性能优化"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "高频事件回调频率 + 框架过度重渲染次数",
+        "isCorrect": true,
+        "description": "事件侧降频，渲染侧缩小范围，共同减少主线程工作"
+      },
+      {
+        "text": "网络请求并发数 + 打包体积",
+        "isCorrect": false,
+        "description": "那属于网络优化与打包优化，不属事件及属性优化"
+      },
+      {
+        "text": "内存泄漏 + GC 频率",
+        "isCorrect": false,
+        "description": "属内存优化范畴"
+      },
+      {
+        "text": "首屏白屏 + 字体闪烁",
+        "isCorrect": false,
+        "description": "属加载性能与体验优化"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：debounce 与 throttle 在「连续点击 5 次、wait=200ms」下的默认行为区别是？",
+    "explanation": "Lodash 默认配置下：debounce 默认 `{ leading:false, trailing:true }`，5 次连续点击会在停手后 200ms 执行 1 次（共 1 次）；throttle 默认 `{ leading:true, trailing:true }`，首次立即执行，停手后 200ms 补 1 次（共 2 次）。两者的关键区别在于「等停手才执行」vs「固定频率至少执行一次」。",
+    "tags": ["事件及属性优化", "防抖", "节流"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "debounce 执行 1 次（停手后）；throttle 执行 2 次（首立即 + 停手后补）",
+        "isCorrect": true,
+        "description": "默认选项：debounce {trailing:true}，throttle {leading+trailing:true}"
+      },
+      {
+        "text": "两者都执行 5 次",
+        "isCorrect": false,
+        "description": "都做了降频处理，不会每次都执行"
+      },
+      {
+        "text": "debounce 执行 5 次，throttle 执行 1 次",
+        "isCorrect": false,
+        "description": "把语义搞反了"
+      },
+      {
+        "text": "两者都执行 1 次",
+        "isCorrect": false,
+        "description": "throttle 默认有 leading，会立即执行首次"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：下列场景与防抖节流的搭配，错误的是？",
+    "explanation": "防抖用于「停手后才需要执行」（搜索框、resize、表单校验）；节流用于「需要固定频率跟手」（滚动加载、拖拽、mousemove）。按钮防连点常用 throttle 配合 `trailing:false`（首次响应、后续忽略）。搜索框用 throttle 是错的——会变成「每 300ms 至少发一次」，反而可能比直接调用更频繁。",
+    "tags": ["事件及属性优化", "防抖", "节流", "场景选型"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "搜索框自动补全用 throttle 100ms",
+        "isCorrect": true,
+        "description": "应该用 debounce——用户停手才发请求；throttle 会狂发请求"
+      },
+      {
+        "text": "滚动加载用 throttle 100ms",
+        "isCorrect": false,
+        "description": "正确——按节奏跟手"
+      },
+      {
+        "text": "拖拽 mousemove 用 throttle 16~50ms",
+        "isCorrect": false,
+        "description": "正确——跟手不卡帧"
+      },
+      {
+        "text": "window resize 用 debounce 200ms",
+        "isCorrect": false,
+        "description": "正确——拖动结束后再算一次"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：在 React 中正确使用 lodash debounce 的关键约束是？",
+    "explanation": "在 React 函数组件中，每次 render 都会重新执行函数体——若在 render 中调用 `_.debounce(fn, 200)`，每次都创建新实例，永远等不到「上次调用 200ms 后」，防抖完全失效。正确做法是用 `useMemo` / `useRef` 只创建一次实例；并在 `useEffect` 的 cleanup 中调用 `.cancel()`，避免组件卸载后仍触发回调 setState（造成内存泄漏与警告）。",
+    "tags": ["事件及属性优化", "防抖", "react", "useMemo", "useEffect"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 useMemo 只创建一次实例；useEffect cleanup 调 .cancel()",
+        "isCorrect": true,
+        "description": "单实例保证防抖有效；cleanup 避免卸载后 setState"
+      },
+      {
+        "text": "每次 render 调用 _.debounce(fn, 200) 创建新实例",
+        "isCorrect": false,
+        "description": "每次新实例会让防抖完全失效"
+      },
+      {
+        "text": "在 onChange 回调里调用 _.debounce(fn, 200)(value)",
+        "isCorrect": false,
+        "description": "同上，每次都新建，防抖失效"
+      },
+      {
+        "text": "用 useState 存储 debounce 实例",
+        "isCorrect": false,
+        "description": "useState 设值会触发重渲染，且初始化不适合放函数实例"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：lodash debounce 的默认 options（不传第三参）是？",
+    "explanation": "Lodash 4.17.15 文档明确：`_.debounce(func, [wait=0], [options={}])` 的 options 默认 `{ leading:false, trailing:true }`；maxWait 未设。throttle 等价 debounce 带 `maxWait=wait` 且默认 `{ leading:true, trailing:true }`。",
+    "tags": ["事件及属性优化", "防抖", "lodash"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "{ leading: false, trailing: true }",
+        "isCorrect": true,
+        "description": "首次不立即执行，停手后才补一次"
+      },
+      {
+        "text": "{ leading: true, trailing: true }",
+        "isCorrect": false,
+        "description": "那是 throttle 的默认选项"
+      },
+      {
+        "text": "{ leading: true, trailing: false }",
+        "isCorrect": false,
+        "description": "那是「按钮防连点」的常用自定义配置，非默认"
+      },
+      {
+        "text": "{ leading: false, trailing: false }",
+        "isCorrect": false,
+        "description": "两者都关 = 永远不执行，无意义"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：使用事件委托时，定位「实际点击的列表项」最稳妥的写法是？",
+    "explanation": "事件委托把监听器绑在父容器，子项事件冒泡上来处理。`event.target` 是实际触发事件的最深元素——可能是 li 内部的 span、svg、icon；直接取值会被子元素干扰。正确做法是用 `event.target.closest('[data-id]')` 上溯到带 `data-id` 的目标项。`event.currentTarget` 始终是父容器（监听器绑定者）。",
+    "tags": ["事件及属性优化", "事件委托", "closest", "currentTarget"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "event.target.closest('[data-id]') 上溯到目标项",
+        "isCorrect": true,
+        "description": "closest 自动跳过内部 span/svg 等干扰元素"
+      },
+      {
+        "text": "event.target.dataset.id 直接读取",
+        "isCorrect": false,
+        "description": "target 可能是内部子节点（如 span），dataset.id 不存在"
+      },
+      {
+        "text": "event.currentTarget.dataset.id",
+        "isCorrect": false,
+        "description": "currentTarget 是父容器（如 ul），本身无 data-id"
+      },
+      {
+        "text": "在内部每个子元素上都加监听器",
+        "isCorrect": false,
+        "description": "那是反模式，违背委托的本意（监听器数量随项数线性增长）"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：关于 event.target 与 event.currentTarget 的区别，正确说法是？",
+    "explanation": "MDN 官方定义：`event.target` 是**实际触发**事件的元素（DOM 树中最深的元素，例如被点击的按钮或内部 span）；`event.currentTarget` 是**当前注册**监听器的元素，在冒泡/捕获过程中等于「当前访问到的那个祖先」。事件冒泡阶段由内向外，捕获阶段由外向内。",
+    "tags": ["事件及属性优化", "事件委托", "事件流"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "target 是实际触发元素（最深）；currentTarget 是监听器绑定者",
+        "isCorrect": true,
+        "description": "MDN 标准定义，委托中两者常不同"
+      },
+      {
+        "text": "target 是监听器绑定者，currentTarget 是触发者",
+        "isCorrect": false,
+        "description": "语义完全颠倒"
+      },
+      {
+        "text": "两者始终相等",
+        "isCorrect": false,
+        "description": "在事件委托 / 冒泡场景两者常不同"
+      },
+      {
+        "text": "target 是父元素，currentTarget 是子元素",
+        "isCorrect": false,
+        "description": "无此对应关系"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：addEventListener 第三个参 { passive: true } 的作用与限制是？",
+    "explanation": "passive: true 是开发者向浏览器承诺「监听器内不会调用 preventDefault()」。浏览器据此可以并行滚动而无需等待监听器跑完——这是滚动卡顿的核心优化。副作用：监听器内调 preventDefault() 会被忽略且控制台报警。现代 Chrome/Firefox 已对 document 上的 touchstart/touchmove 默认按 passive 处理。",
+    "tags": ["事件及属性优化", "passive", "滚动优化"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "承诺不调 preventDefault，浏览器并行滚动不卡顿",
+        "isCorrect": true,
+        "description": "passive listener 让滚动这类高频事件不再阻塞主线程"
+      },
+      {
+        "text": "监听器只执行一次后自动解绑",
+        "isCorrect": false,
+        "description": "那是 once: true 的作用"
+      },
+      {
+        "text": "在捕获阶段而非冒泡阶段触发",
+        "isCorrect": false,
+        "description": "那是 capture: true 的作用"
+      },
+      {
+        "text": "使监听器在 Web Worker 中执行",
+        "isCorrect": false,
+        "description": "无此能力，监听器仍跑在主线程"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：React useMemo 值得使用的 3 类有效场景是？",
+    "explanation": "React 官方 Reference 的 useMemo Deep Dive 明确列出 3 类值得 useMemo 的场景：① 计算昂贵且依赖少变（如 >1ms 级的过滤、排序、转换大数组）② 计算结果作为 prop 传给被 memo 包裹的子组件（避免引用变化触发重渲染）③ 计算结果作为其他 Hook 的依赖（避免下游 Hook 反复重跑）。其他场景下用 useMemo 只增加首屏开销无收益，还降低可读性。",
+    "tags": ["事件及属性优化", "react", "useMemo", "场景"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "昂贵计算 + 传给 memo 子组件 + 作其他 Hook 依赖",
+        "isCorrect": true,
+        "description": "官方 Deep Dive 明确列举的 3 类"
+      },
+      {
+        "text": "所有计算都加 useMemo 提升性能",
+        "isCorrect": false,
+        "description": "小计算用 useMemo 反增首屏开销、降低可读性"
+      },
+      {
+        "text": "只有在 useEffect 内部使用时才需要",
+        "isCorrect": false,
+        "description": "useEffect 内通常不需要 useMemo"
+      },
+      {
+        "text": "异步获取数据后必须用 useMemo 包裹",
+        "isCorrect": false,
+        "description": "异步数据缓存应用 useState / useSWR 等，与 useMemo 无关"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：useCallback(fn, deps) 与 useMemo 的关系是？",
+    "explanation": "React 官方文档明确：`useCallback(fn, dependencies)` ≡ `useMemo(() => fn, dependencies)`。两者完全等价——useCallback 缓存函数本身（不调用），useMemo 缓存「calculateValue 调用后的返回值」（在 useCallback 这等价场景下，calculateValue 就是「返回 fn 本身」的箭头函数）。",
+    "tags": ["事件及属性优化", "react", "useCallback", "useMemo"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "useCallback(fn, deps) ≡ useMemo(() => fn, deps)",
+        "isCorrect": true,
+        "description": "两者完全等价，只是写法糖"
+      },
+      {
+        "text": "useCallback 调用 fn，useMemo 缓存 fn",
+        "isCorrect": false,
+        "description": "useCallback 不调用 fn，只缓存函数本身"
+      },
+      {
+        "text": "useMemo 缓存函数，useCallback 缓存值",
+        "isCorrect": false,
+        "description": "语义完全颠倒"
+      },
+      {
+        "text": "两者完全无关",
+        "isCorrect": false,
+        "description": "官方明确两者等价"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：以下哪段代码会让 React.memo 失效（无法跳过重渲染）？",
+    "explanation": "memo 默认对 props 做浅比较（Object.is 逐项）。若父组件传内联对象/函数 prop，每次 render 都是新引用，浅比较不等，memo 失效。典型反模式：`<List items={items.filter(x)}/>`（filter 每次返回新数组）、`<Button onClick={() => handleClick(id)}/>`（箭头函数每次新建）。正解是配合 useMemo / useCallback 稳定引用。",
+    "tags": ["事件及属性优化", "react", "memo", "useMemo"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "<List items={items.filter(x)} /> 直接传内联计算结果",
+        "isCorrect": true,
+        "description": "filter 每次返回新数组，引用变化导致 memo 浅比较失效"
+      },
+      {
+        "text": "<List items={visibleItems} /> visibleItems = useMemo(...)",
+        "isCorrect": false,
+        "description": "useMemo 稳定了引用，memo 可正常工作"
+      },
+      {
+        "text": "<Profile name={name} age={age} /> 传原始值",
+        "isCorrect": false,
+        "description": "原始值用 Object.is 比较，无引用问题"
+      },
+      {
+        "text": "<Header /> 无 props 子组件",
+        "isCorrect": false,
+        "description": "无 props 时 memo 总能跳过"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：自定义 memo 的 arePropsEqual 第二参时的两个官方 Pitfall 是？",
+    "explanation": "React 官方 memo Pitfall 明确两个坑：① 不要用深比较——对大对象深比较可能卡顿数秒，得不偿失；② 必须把函数 prop 也纳入比较——若漏掉函数 prop，组件闭包会读到旧的 props/state，产生「明明传了新函数却调到旧版」的难调 bug。默认浅比较（不传第二参）通常最安全。",
+    "tags": ["事件及属性优化", "react", "memo", "arePropsEqual"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "禁用深比较；必须比较函数 prop",
+        "isCorrect": true,
+        "description": "两个官方 Pitfall 同时避免"
+      },
+      {
+        "text": "应该用 JSON.stringify 做深比较",
+        "isCorrect": false,
+        "description": "深比较可能卡顿数秒，官方明确反对"
+      },
+      {
+        "text": "函数 prop 无需比较，省略即可",
+        "isCorrect": false,
+        "description": "漏掉函数 prop 会让组件读到旧闭包，难调 bug"
+      },
+      {
+        "text": "只比较第一个 prop 就够了",
+        "isCorrect": false,
+        "description": "不充分的比较会跳过必要更新"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：React Compiler（2026 正式可用）对手写 memoize 的影响是？",
+    "explanation": "React Compiler 在编译期自动 memoize 值、函数、组件，编译产物甚至比 memo + useMemo 组合更全面（会缓存中间值）。启用后，React 官方在 useMemo / useCallback / memo 三页 Reference 均注明「通常无需手动 memoize」。多数场景下可移除手动三者；迁移期间可与手写代码共存，但移除前应先 Profiler 确认无回归。",
+    "tags": ["事件及属性优化", "react", "react-compiler", "memo"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "编译期自动 memoize，多数场景可移除手动 useMemo/useCallback/memo",
+        "isCorrect": true,
+        "description": "官方明确推荐启用 Compiler 后通常无需手动 memoize"
+      },
+      {
+        "text": "React Compiler 是运行时库，需 import 后才能用",
+        "isCorrect": false,
+        "description": "它是编译器（babel 插件），不是运行时库"
+      },
+      {
+        "text": "Compiler 与手写 memo 完全互斥，不能共存",
+        "isCorrect": false,
+        "description": "迁移期可共存，新代码不手写，老代码逐步移除"
+      },
+      {
+        "text": "Compiler 仅适用于类组件",
+        "isCorrect": false,
+        "description": "Compiler 主要服务函数组件与 Hooks"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：以下代码运行后控制台输出是什么？\n\n```js\nconst state = shallowRef({ count: 0 });\nstate.value.count = 1;\nconsole.log(state.value.count);\n```\n",
+    "explanation": "Vue shallowRef 仅对 `.value` 的访问做响应式追踪，深层属性不可响应。`state.value.count = 1` 实际**修改了**原始对象的属性，所以读取 `state.value.count` 得到的是已修改的 1，但**不会触发任何依赖更新**（依赖此 ref 的 effect 不会重跑）。要触发更新需 `state.value = {count: 1}` 整体替换，或调用 `triggerRef(state)`。",
+    "tags": ["事件及属性优化", "vue", "shallowRef"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "输出 1，但不触发依赖更新",
+        "isCorrect": true,
+        "description": "深层属性已被改但响应式追踪不到"
+      },
+      {
+        "text": "输出 0，因为修改无效",
+        "isCorrect": false,
+        "description": "修改本身有效（深层是普通对象），只是不触发响应"
+      },
+      {
+        "text": "输出 1，并触发依赖更新",
+        "isCorrect": false,
+        "description": "shallowRef 不追踪深层属性变化"
+      },
+      {
+        "text": "抛出 TypeError",
+        "isCorrect": false,
+        "description": "不会抛错，深层就是普通 JS 对象"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：触发 Vue shallowRef 依赖更新的正确方式是？",
+    "explanation": "shallowRef 仅 `.value` 访问响应，深层属性变化不触发。两种触发方式：① 整体替换 `.value`（如 `state.value = {count: 1}`）② 调用 `triggerRef(state)` 手动强制触发依赖此 ref 的所有 effect。常用于「先深层 mutate 第三方库内部对象，再手动通知 Vue」的场景。",
+    "tags": ["事件及属性优化", "vue", "shallowRef", "triggerRef"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "state.value = { ...newValue } 整体替换 或 triggerRef(state)",
+        "isCorrect": true,
+        "description": "官方文档明确的两种触发方式"
+      },
+      {
+        "text": "state.value.count = 2 直接深层赋值",
+        "isCorrect": false,
+        "description": "shallowRef 不追踪深层属性，不触发更新"
+      },
+      {
+        "text": "Vue.forceUpdate()",
+        "isCorrect": false,
+        "description": "Vue 3 无此 API"
+      },
+      {
+        "text": "state.refresh()",
+        "isCorrect": false,
+        "description": "无此方法"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：关于 Vue shallowReactive 的行为，正确说法是？",
+    "explanation": "Vue 官方文档明确 shallowReactive：① 仅根级属性响应（顶层 mutate 触发更新）② 嵌套对象不转响应式（`isReactive(state.user)` 返回 false）③ ref 不自动解包。官方「Use with Caution」特别警告：不要嵌套进深 reactive 对象内，会出现「根级响应、深层不响应」的不一致反应式树，难调试。",
+    "tags": ["事件及属性优化", "vue", "shallowReactive"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "根级响应、嵌套不响应；不可嵌套进深 reactive",
+        "isCorrect": true,
+        "description": "官方文档与 Use with Caution 警告的核心"
+      },
+      {
+        "text": "所有层级都响应，只是性能更好",
+        "isCorrect": false,
+        "description": "那是 reactive 的行为，不是 shallowReactive"
+      },
+      {
+        "text": "只有嵌套响应，根级不响应",
+        "isCorrect": false,
+        "description": "完全颠倒"
+      },
+      {
+        "text": "与 reactive 完全等价",
+        "isCorrect": false,
+        "description": "两者有本质区别"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：Vue v-memo 指令的正确用法与陷阱是？",
+    "explanation": "Vue 官方文档明确：v-memo 接受依赖数组，依赖全等则跳过子树与 VNode 创建；`v-memo=\"[]\"`（空数组永远全等）等价 `v-once`（只渲染一次）。WARNING：v-memo 必须与 v-for 在**同一元素**，写在 v-for 内部子元素上不生效。依赖数组必须写全真实变化的值，漏写会导致 UI 不刷新。主要场景是 v-for length > 1000 的大列表微优化。",
+    "tags": ["事件及属性优化", "vue", "v-memo", "v-for"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "与 v-for 同元素；依赖全等跳过子树；[] 等价 v-once",
+        "isCorrect": true,
+        "description": "官方文档与 WARNING 的核心要点"
+      },
+      {
+        "text": "v-memo 必须写在 v-for 内部子元素上",
+        "isCorrect": false,
+        "description": "官方明确 WARNING：必须与 v-for 同元素，写在内部不生效"
+      },
+      {
+        "text": "v-memo 没有依赖数组，自动比较所有 props",
+        "isCorrect": false,
+        "description": "必须显式传依赖数组"
+      },
+      {
+        "text": "v-memo 用于所有组件提升性能",
+        "isCorrect": false,
+        "description": "仅 v-for length > 1000 性能关键场景才用"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：以下代码运行后 React 行为是？\n\n```tsx\nconst onClick = useCallback(() => doSomething(a));\n```\n",
+    "explanation": "React 官方 Troubleshooting 明确：useCallback（与 useMemo）若忘记传第二参依赖数组，每次渲染都会重新计算/新建函数，等于完全没缓存。正确写法必须传依赖数组（无依赖时传 `[]`，依赖 a 时传 `[a]`）。ESLint 的 react-hooks/rules-of-hooks 与 react-hooks/exhaustive-deps 规则会捕获此类问题。",
+    "tags": ["事件及属性优化", "react", "useCallback", "依赖数组"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次 render 都新建函数，等于完全没缓存",
+        "isCorrect": true,
+        "description": "官方 Troubleshooting 明确列出的反模式"
+      },
+      {
+        "text": "永远缓存第一次的函数",
+        "isCorrect": false,
+        "description": "无依赖数组时无任何缓存逻辑"
+      },
+      {
+        "text": "只在 a 变化时新建函数",
+        "isCorrect": false,
+        "description": "未传 deps，无法推断 a 是依赖"
+      },
+      {
+        "text": "TypeScript 编译报错",
+        "isCorrect": false,
+        "description": "TS 不会报错（第二参是可选），靠 ESLint hooks 规则捕获"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：useMemo 返回对象的正确写法是？",
+    "explanation": "useMemo 的第一参是 calculateValue 函数。若要返回对象字面量，箭头函数 `() => {key:val}` 会被 JavaScript 当作函数体（`{}` 是代码块），返回 undefined。正解两种：① 用括号包裹 `() => ({key:val})` 让 JS 识别为表达式 ② 显式 `() => { return {key:val}; }`。这是 useMemo 高频踩坑点。",
+    "tags": ["事件及属性优化", "react", "useMemo", "语法坑"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "useMemo(() => ({ key: value }), [dep])",
+        "isCorrect": true,
+        "description": "括号让箭头函数返回对象字面量"
+      },
+      {
+        "text": "useMemo(() => { key: value }, [dep])",
+        "isCorrect": false,
+        "description": "被当代码块，返回 undefined"
+      },
+      {
+        "text": "useMemo({ key: value }, [dep])",
+        "isCorrect": false,
+        "description": "第一参必须是函数"
+      },
+      {
+        "text": "useMemo(return { key: value }, [dep])",
+        "isCorrect": false,
+        "description": "语法错误，return 不能在箭头函数表达式位置"
+      }
+    ]
+  },
+  {
+    "stem": "事件及属性优化：以下哪一项不是事件及属性优化的常见反模式？",
+    "explanation": "事件及属性优化的常见反模式包括：useMemo 忘传依赖、给 memo 子组件传内联对象/函数、自定义 arePropsEqual 用深比较、shallowRef.value.count++ 期望触发、shallowReactive 嵌套进深 reactive、v-memo 漏依赖或写在 v-for 内层、卸载未 cancel debounce、每次 render 新建 debounce 实例、委托里直接用 event.target、滥用 stopPropagation。「用 children 组合传递 JSX 减少 memo 需求」是 React 官方推荐的**正解**（从源头减少 memoize 需求），不是反模式。",
+    "tags": ["事件及属性优化", "反模式", "react"],
+    "categories": [
+      ["技术方向", "事件及属性优化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 children 组合传递 JSX 从源头减少 memoize 需求",
+        "isCorrect": true,
+        "description": "这是官方推荐的正解，不是反模式"
+      },
+      {
+        "text": "useMemo 忘传第二参依赖数组",
+        "isCorrect": false,
+        "description": "常见反模式：等于完全没缓存"
+      },
+      {
+        "text": "给 memo 子组件传内联对象/函数 prop",
+        "isCorrect": false,
+        "description": "常见反模式：memo 浅比较失效"
+      },
+      {
+        "text": "卸载时未 cancel debounce/throttle 实例",
+        "isCorrect": false,
+        "description": "常见反模式：卸载后仍 setState / 内存泄漏"
+      }
+    ]
+  }
+]
