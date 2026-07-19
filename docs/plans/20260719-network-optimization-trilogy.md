@@ -20,4 +20,4 @@
 
 ## 生产流程（删 159 + import 建新树）
 
-删孤儿 159（0题0子）→ import 建新分类树（网络优化组+5 叶）+ 灌 100 题 → 查 ID → 回填 5 页 index.md + sidebar text→link → build 一次 → 部署 → HTTP 200
+**生产完成（2026-07-19）**：prod 删孤儿 159（0题0子）→ import 建新分类树（网络优化组 681 / CDN 682 / HTTP 缓存 683 / 压缩 684 / HTTP/2·HTTP/3 685 / Service Worker 缓存 686）+ 灌 100 题 → 回填 5 页 index.md + sidebar 占位→5 叶 link → **VitePress build 一次**（1145s）→ 提交推送（9fc1ce3）→ rsync 部署笔记（0 误删 SlideStack）+ 5 幻灯片 → **全 15 路 HTTP 200 上线**（5 笔记 + 5 幻灯片 + 5 测试题）。栈方法实测 sidebar：网络优化 L2 → 5 叶 L3，层级正确。
