@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/2 多路复用的核心机制是什么？",
+    "explanation": "HTTP/2 在**单条 TCP 连接**上以二进制分帧的方式并行承载多个 stream，每个 stream 承载一次请求/响应。这意味着浏览器不再需要为绕开 HTTP/1.1 应用层队头阻塞而开多条 TCP 连接，一条连接即可并行跑上百条 stream。",
+    "tags": ["http/2", "多路复用", "stream", "tcp"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "单条 TCP 连接上并行承载多个二进制 stream",
+        "isCorrect": true,
+        "description": "HTTP/2 Server 还可复用同一连接的拥塞控制与 TLS 上下文"
+      },
+      {
+        "text": "每个请求各自开一条 TCP 连接，并行处理",
+        "isCorrect": false,
+        "description": "这是 HTTP/1.1 浏览器的做法，会带来大量握手开销"
+      },
+      {
+        "text": "服务端把多个响应合并成一个超大 body 返回",
+        "isCorrect": false,
+        "description": "那是合并响应，不是多路复用"
+      },
+      {
+        "text": "用 WebSocket 在一条连接上跑 HTTP 请求",
+        "isCorrect": false,
+        "description": "WebSocket 是另一种协议，与 h2 多路复用无关"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/1.1 时代的域名分片（static1/static2 子域）在 HTTP/2 下会变成什么？",
+    "explanation": "HTTP/1.1 浏览器对每个 origin 限制 ~6 条连接，开发者用 static1/static2 分片绕开此上限。HTTP/2 单 TCP 多路复用让一个 origin 一条连接就够，分片变成**纯开销**——每分片都要额外 DNS + TCP + TLS 握手，且每分片独立拥塞控制反而拖慢整体。Cloudflare 与 MDN 共识：HTTP/2 下应移除域名分片。",
+    "tags": ["http/2", "域名分片", "多路复用", "反模式"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "纯开销，应移除",
+        "isCorrect": true,
+        "description": "多路复用让分片彻底失效，反而拖慢整体"
+      },
+      {
+        "text": "仍然必要，能进一步提速",
+        "isCorrect": false,
+        "description": "h2 单连接已足够，分片只会增加握手开销"
+      },
+      {
+        "text": "在 HTTP/3 上需要，HTTP/2 上不需要",
+        "isCorrect": false,
+        "description": "h2 / h3 单连接多路复用机制相同，分片都失效"
+      },
+      {
+        "text": "只对静态资源有效，动态接口仍需分片",
+        "isCorrect": false,
+        "description": "类型与是否分片无关"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/2 帧的帧头结构是怎样的？",
+    "explanation": "HTTP/2 每个帧由 **9 字节帧头 + payload** 组成：Length(24bit) + Type(8bit) + Flags(8bit) + Reserved(1bit) + Stream Identifier(31bit)。Type 区分 10 种帧类型（DATA/HEADERS/SETTINGS/WINDOW_UPDATE/GOAWAY 等）。",
+    "tags": ["http/2", "帧格式", "二进制分帧"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Length(24) + Type(8) + Flags(8) + Reserved(1) + Stream ID(31)",
+        "isCorrect": true,
+        "description": "共 9 字节，9 字节后是 payload"
+      },
+      {
+        "text": "Method(8) + Path(16) + Headers(变长)",
+        "isCorrect": false,
+        "description": "那是 HTTP/1.1 文本请求行格式"
+      },
+      {
+        "text": "Version(8) + Status(16) + Body-Length(32)",
+        "isCorrect": false,
+        "description": "不存在这种结构"
+      },
+      {
+        "text": "Magic(4) + Type(4) + Length(16) + CRC(8)",
+        "isCorrect": false,
+        "description": "那是 WebSocket / 其他协议的帧格式"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：以下哪个是 HTTP/2 用于协商连接参数（如 HPACK 动态表大小、最大并发流）的帧类型？",
+    "explanation": "**SETTINGS 帧（Type=0x4）**用于连接两端协商参数，包括 SETTINGS_HEADER_TABLE_SIZE（HPACK 动态表上限）、SETTINGS_MAX_CONCURRENT_STREAMS（并发流上限）、SETTINGS_INITIAL_WINDOW_SIZE（流级流量控制）、SETTINGS_MAX_FRAME_SIZE 等共 6 项。",
+    "tags": ["http/2", "settings", "帧类型"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SETTINGS（Type=0x4）",
+        "isCorrect": true,
+        "description": "协商 HPACK 表大小、最大并发流、初始窗口等"
+      },
+      {
+        "text": "HEADERS（Type=0x1）",
+        "isCorrect": false,
+        "description": "HEADERS 用于传输压缩后的请求/响应头"
+      },
+      {
+        "text": "PING（Type=0x6）",
+        "isCorrect": false,
+        "description": "PING 用于心跳 / RTT 测量"
+      },
+      {
+        "text": "WINDOW_UPDATE（Type=0x8）",
+        "isCorrect": false,
+        "description": "WINDOW_UPDATE 用于流量控制窗口调整"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HPACK 头部压缩的三大机制是什么？",
+    "explanation": "HPACK（RFC 7541）三件套：①**静态表 61 项预定义首部**（如索引 2=`:method GET`）；②**动态表 FIFO**（受 SETTINGS_HEADER_TABLE_SIZE 控制，默认 4096 字节）；③**静态 Huffman 编码**（非自适应，抗 CRIME 类压缩预言机攻击）。",
+    "tags": ["hpack", "头部压缩", "静态表", "huffman"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "静态表 + 动态表 + 静态 Huffman 编码",
+        "isCorrect": true,
+        "description": "RFC 7541 三件套"
+      },
+      {
+        "text": "gzip + 字典 + 自适应 Huffman",
+        "isCorrect": false,
+        "description": "自适应 Huffman 会有 CRIME 类风险，HPACK 不用"
+      },
+      {
+        "text": "Brotli + 共享字典 + LRU 缓存",
+        "isCorrect": false,
+        "description": "Brotli 用于 body 压缩，不是 HPACK"
+      },
+      {
+        "text": "LZ77 + Deflate + 共享字典",
+        "isCorrect": false,
+        "description": "那是 gzip 的底层算法"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HPACK 为什么用静态 Huffman 编码而不是自适应 Huffman？",
+    "explanation": "自适应压缩（如 gzip 的 LZ77 / 自适应 Huffman）会响应明文频率，攻击者可通过观察压缩后长度反推秘密字段（如 CSRF Token、Session Cookie），这就是 **CRIME 攻击**（2012）。HPACK 用**静态 Huffman 表**（非自适应、不响应明文频率），从设计上排除压缩预言机风险。",
+    "tags": ["hpack", "crime", "安全", "huffman"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "避免 CRIME 类压缩预言机攻击（不响应明文频率）",
+        "isCorrect": true,
+        "description": "静态 Huffman 无法被攻击者用作长度 oracle"
+      },
+      {
+        "text": "静态 Huffman 编码率更高",
+        "isCorrect": false,
+        "description": "自适应通常压缩率更高，但安全风险大"
+      },
+      {
+        "text": "静态 Huffman 解码速度更快",
+        "isCorrect": false,
+        "description": "速度差异不是主要原因"
+      },
+      {
+        "text": "RFC 没有规定具体编码方式，静态只是默认实现",
+        "isCorrect": false,
+        "description": "RFC 7541 强制规定使用静态 Huffman 表"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：Server Push 现状是什么？",
+    "explanation": "**Chrome 106（2022-09）默认禁用 HTTP/2 Server Push**，业界实测采用率从 1.25% 跌到 0.7%，Firefox / Safari 跟进，HTTP/3 多数服务器（nginx、Cloudflare）根本未实现 push。原因：服务端无法可靠知道浏览器缓存了什么，常推已缓存资源，push promise 与 cache 撞车。",
+    "tags": ["server-push", "弃用", "chrome-106"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 106（2022-09）默认禁用，事实性废弃",
+        "isCorrect": true,
+        "description": "新项目不应再用 Server Push"
+      },
+      {
+        "text": "Chrome 仍在默认启用，所有现代浏览器都支持",
+        "isCorrect": false,
+        "description": "Chrome 106 已默认禁用"
+      },
+      {
+        "text": "Server Push 仅在 HTTP/3 中弃用，HTTP/2 仍推荐",
+        "isCorrect": false,
+        "description": "h2 也已弃用，且 h3 多数未实现 push"
+      },
+      {
+        "text": "Server Push 是新规范，2024 年才标准化",
+        "isCorrect": false,
+        "description": "Push 自 RFC 7540 就存在，但已事实废弃"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：弃用 Server Push 后的推荐替代方案是什么？",
+    "explanation": "**103 Early Hints（RFC 8297）+ `<link rel=\"preload\">`**。服务端在最终响应前先发 103 状态码 + Link 头，浏览器在「server think time」内并行预取关键资源，但**由浏览器决定是否实际加载**（缓存命中即跳过），避免了 Push 的撞车问题。",
+    "tags": ["server-push", "103-early-hints", "preload", "替代方案"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "103 Early Hints（RFC 8297）+ <link rel=\"preload\">",
+        "isCorrect": true,
+        "description": "由浏览器决定是否加载，避免缓存撞车"
+      },
+      {
+        "text": "继续用 Server Push，但只在 HTTP/3 上",
+        "isCorrect": false,
+        "description": "HTTP/3 多数服务器根本未实现 push"
+      },
+      {
+        "text": "用 WebSocket 主动推资源",
+        "isCorrect": false,
+        "description": "WebSocket 不适合资源推送场景"
+      },
+      {
+        "text": "用 Service Worker 拦截并缓存所有请求",
+        "isCorrect": false,
+        "description": "Service Worker 是另一层机制，不替代 Server Push 的协议级预热"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：RFC 9113 对旧版优先级方案的态度是什么？",
+    "explanation": "RFC 7540 旧 PRIORITY 帧用 **weight 1-256 + dependency tree**（依赖树）表达优先级。**RFC 9113（2022-06）正式弃用此方案**，新服务器会忽略 PRIORITY 帧。新方案是 RFC 9218 的 `Priority: u=0..7; i=?0|1` 头字段。",
+    "tags": ["优先级", "priority", "rfc-9113", "rfc-9218"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "正式弃用旧 PRIORITY 帧（weight 1-256 + dependency tree）",
+        "isCorrect": true,
+        "description": "RFC 9113 弃用旧优先级树，改用 RFC 9218"
+      },
+      {
+        "text": "保留并推荐继续使用",
+        "isCorrect": false,
+        "description": "新服务器会忽略旧 PRIORITY 帧"
+      },
+      {
+        "text": "仅在 HTTP/3 中弃用，HTTP/2 保留",
+        "isCorrect": false,
+        "description": "RFC 9113 是 HTTP/2 文档，明确弃用"
+      },
+      {
+        "text": "改名为 RESOURCE_PRIORITY 帧但语义不变",
+        "isCorrect": false,
+        "description": "没有这种改名"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：RFC 9218 新优先级方案的 Priority 头字段格式是什么？",
+    "explanation": "RFC 9218 用 `Priority` 头表达优先级：`Priority: u=<0-7>; i=?<0|1>`。**u=urgency** 取值 0-7，**0 最高 / 7 最低**；**i=?incremental**，`?1` 表示可增量交付（流式），`?0` 表示一次性。HTTP/2 用头字段承载，HTTP/3 用 PRIORITY_UPDATE 帧（type 0x24/0x25）。",
+    "tags": ["优先级", "priority", "rfc-9218", "urgency"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Priority: u=0..7; i=?0|1（u=0 最高，i=?1 可增量）",
+        "isCorrect": true,
+        "description": "RFC 9218 标准格式"
+      },
+      {
+        "text": "Priority: weight=1..256; dep=<stream-id>",
+        "isCorrect": false,
+        "description": "这是 RFC 7540 旧 PRIORITY 帧格式，已弃用"
+      },
+      {
+        "text": "Priority: high|low|auto",
+        "isCorrect": false,
+        "description": "那是 HTML 层 fetchpriority 属性，不是协议头"
+      },
+      {
+        "text": "Priority: urgent|normal|background",
+        "isCorrect": false,
+        "description": "不存在这种格式"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTML 层的 fetchpriority 属性作用是什么？",
+    "explanation": "**Fetch Priority API** 通过 HTML 属性 `fetchpriority=\"high|low|auto\"` 与协议优先级协作。浏览器启发式按资源类型默认排序（CSS > img > script），无法识别 hero 图 / 首屏字体这种**语义优先级**，导致 LCP 元素被排到低优先级后启动。显式标注可在 HTML 解析瞬间影响 h2 / h3 流优先级。",
+    "tags": ["fetchpriority", "lcp", "fetch-priority-api"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "给 LCP / hero 资源显式标注优先级，弥补浏览器启发式不足",
+        "isCorrect": true,
+        "description": "可用于 <img>/<script>/<link>/<iframe>/<fetch()>"
+      },
+      {
+        "text": "替代 HTTP/2 流优先级，独立工作",
+        "isCorrect": false,
+        "description": "fetchpriority 是协作而非替代"
+      },
+      {
+        "text": "仅对 JavaScript fetch() 有效",
+        "isCorrect": false,
+        "description": "可用在多种 HTML 元素上"
+      },
+      {
+        "text": "控制资源是否懒加载",
+        "isCorrect": false,
+        "description": "懒加载是 loading=\"lazy\" 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/3 的传输层协议是什么？",
+    "explanation": "**HTTP/3 跑在 QUIC 上，QUIC 基于 UDP**（非 TCP）。QUIC 在 UDP 之上实现可靠传输 + TLS 1.3 内嵌（RFC 9001）+ 独立 stream + Connection ID。把握手与加密合并为 1-RTT，重连可降至 0-RTT。",
+    "tags": ["http/3", "quic", "udp", "传输层"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "QUIC（基于 UDP）",
+        "isCorrect": true,
+        "description": "RFC 9000 定义 QUIC 为 UDP 上的可靠传输"
+      },
+      {
+        "text": "TCP + TLS 1.3",
+        "isCorrect": false,
+        "description": "那是 HTTP/2 的传输栈"
+      },
+      {
+        "text": "WebSocket",
+        "isCorrect": false,
+        "description": "WebSocket 是另一种协议"
+      },
+      {
+        "text": "SCTP",
+        "isCorrect": false,
+        "description": "SCTP 是另一种传输协议，WebRTC DataChannel 才用"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/3 是如何消除 TCP 队头阻塞（HOL）的？",
+    "explanation": "HTTP/2 仍跑在 TCP 上，TCP 是字节流协议——一个包丢了，后续包都要等重传完成才能交付应用层，**所有 h2 stream 都被卡住**。HTTP/3 的 QUIC 把每条 stream **独立加密、独立重传**，丢包**只阻塞丢包的 stream**，其他 stream 照常交付。",
+    "tags": ["http/3", "quic", "hol", "队头阻塞"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "QUIC 把每条 stream 独立加密独立重传，丢包只阻塞该 stream",
+        "isCorrect": true,
+        "description": "这是 h3 相对 h2 最本质的传输层优势"
+      },
+      {
+        "text": "HTTP/3 把多个 TCP 连接合并管理",
+        "isCorrect": false,
+        "description": "h3 不用 TCP，用 QUIC over UDP"
+      },
+      {
+        "text": "HTTP/3 增加更多并发 stream 数量",
+        "isCorrect": false,
+        "description": "数量并不能消除 TCP 层 HOL"
+      },
+      {
+        "text": "HTTP/3 用更大的接收缓冲区",
+        "isCorrect": false,
+        "description": "缓冲区大小与 HOL 无关"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：QUIC 0-RTT early data 的安全风险是什么？应如何处理？",
+    "explanation": "0-RTT early data 由上次会话密钥派生，**缺前向保密、可被重放**（RFC 9001 E.5）。攻击者重放会导致重复执行事务（扣两次款 / 重复创建）。**客户端必须仅发幂等请求（GET / HEAD）**，POST / 支付 / 写操作必须等 1-RTT 握手完成。",
+    "tags": ["0-rtt", "重放攻击", "安全", "幂等"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "可被重放，仅放幂等 GET/HEAD，POST/支付必须等 1-RTT",
+        "isCorrect": true,
+        "description": "RFC 9001 E.5、Cloudflare / ETH 调研均强调"
+      },
+      {
+        "text": "0-RTT 与 1-RTT 安全级别完全相同，可放心用于所有请求",
+        "isCorrect": false,
+        "description": "0-RTT 缺前向保密，有重放风险"
+      },
+      {
+        "text": "0-RTT 只能在 HTTPS 上用，所以是安全的",
+        "isCorrect": false,
+        "description": "HTTPS 加密不等于防重放"
+      },
+      {
+        "text": "服务端有去重机制，所以无需关心",
+        "isCorrect": false,
+        "description": "应用层去重困难，应从协议层避免"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：QUIC 的 Connection ID 解决了什么问题？",
+    "explanation": "TCP 用 **4 元组**（源 IP / 源端口 / 目的 IP / 目的端口）标识连接，IP 变了连接就断。QUIC 用 **Connection ID**（8 字节可变）标识连接，与 IP 解耦——Wi-Fi 切蜂窝时 IP 变化，**连接不丢、流不重传**。服务端通过 NEW_CONNECTION_ID 帧预发新 CID，按 CID 复用连接状态。",
+    "tags": ["quic", "connection-id", "连接迁移"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "连接迁移：网络切换 IP 变化时连接不丢",
+        "isCorrect": true,
+        "description": "Wi-Fi → 蜂窝、基站切换都不掉线"
+      },
+      {
+        "text": "提高吞吐量上限",
+        "isCorrect": false,
+        "description": "CID 与吞吐量无关"
+      },
+      {
+        "text": "替代 TLS 证书校验",
+        "isCorrect": false,
+        "description": "CID 不替代证书，仅是连接标识"
+      },
+      {
+        "text": "加密数据包内容",
+        "isCorrect": false,
+        "description": "加密由 TLS 1.3 负责，CID 不参与加密"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：QPACK 与 HPACK 的关键差异是什么？",
+    "explanation": "**QPACK（RFC 9204）**是 HTTP/3 的头部压缩方案。关键差异：①静态表 **99 项**（HPACK 是 61 项，多出 date / server 等）；②用**独立 Encoder / Decoder 单向流**（Stream type 0x02/0x03）做显式 ACK；③编码端用 **Insert Count 阈值**判断是否安全引用动态表条目，超过阈值则退化为字面量，**消除压缩层 HOL**。",
+    "tags": ["qpack", "hpack", "头部压缩", "rfc-9204"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "静态表 99 vs 61 项 + 独立 ACK 流 + Insert Count 阈值避免压缩层 HOL",
+        "isCorrect": true,
+        "description": "QPACK 显式 ACK 是为消除 QUIC 无序带来的压缩 HOL"
+      },
+      {
+        "text": "QPACK 用 gzip，HPACK 用 Brotli",
+        "isCorrect": false,
+        "description": "QPACK 与 HPACK 都不用 gzip / Brotli"
+      },
+      {
+        "text": "QPACK 压缩率比 HPACK 低 50%",
+        "isCorrect": false,
+        "description": "QPACK 静态表更大，压缩率通常更高"
+      },
+      {
+        "text": "QPACK 只用于 HTTP/2，HPACK 用于 HTTP/3",
+        "isCorrect": false,
+        "description": "顺序反了：HPACK 是 h2、QPACK 是 h3"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：浏览器是如何发现并尝试 HTTP/3 的？",
+    "explanation": "浏览器**不能直接发起 h3 请求**（DNS 只告诉 IP，不知道服务器支持 h3）。协商靠 **Alt-Svc 响应头**：`Alt-Svc: h3=\":443\"; ma=86400`。首次仍走 HTTP/2，收到响应后缓存 Alt-Svc，后续请求才尝试 HTTP/3。**UDP/443 必须可达**，否则浏览器回退 h2 还要付重试开销。",
+    "tags": ["alt-svc", "http/3", "协商", "udp-443"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "首次走 h2 收到 Alt-Svc 头，缓存后下次尝试 h3（UDP/443 必通）",
+        "isCorrect": true,
+        "description": "Alt-Svc 是 h3 协商发现的唯一机制"
+      },
+      {
+        "text": "DNS 记录直接返回 h3 标志",
+        "isCorrect": false,
+        "description": "DNS 只返回 IP / CNAME，不指示协议"
+      },
+      {
+        "text": "浏览器先发 OPTIONS 探测",
+        "isCorrect": false,
+        "description": "OPTIONS 是 CORS 预检，与协议协商无关"
+      },
+      {
+        "text": "服务器主动把客户端切到 h3",
+        "isCorrect": false,
+        "description": "切换由浏览器决定，服务端只能通过 Alt-Svc 暗示"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：开启 HTTP/3 但未放通 UDP/443 会发生什么？",
+    "explanation": "QUIC 跑在 UDP/443 上。许多企业网 / 中间盒 / LB 对 UDP 限速或丢弃，导致 QUIC 包丢失。浏览器会**回退 HTTP/2**，但每次尝试 + 超时 + 回退都有重试开销，反而比直接走 h2 更慢。部署 h3 前必须先验证整条链路的 UDP/443 通畅。",
+    "tags": ["http/3", "udp-443", "防火墙", "回退"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器不停回退 h2，产生重试开销，可能比不开 h3 更慢",
+        "isCorrect": true,
+        "description": "部署 h3 前必须验证 UDP/443 链路"
+      },
+      {
+        "text": "浏览器自动用 TCP/443 跑 h3",
+        "isCorrect": false,
+        "description": "h3 必须走 UDP，TCP 上跑的是 h2"
+      },
+      {
+        "text": "服务器把 h3 包改用 TCP 重传",
+        "isCorrect": false,
+        "description": "QUIC 是 UDP 协议，不会自动迁到 TCP"
+      },
+      {
+        "text": "完全无法访问网站",
+        "isCorrect": false,
+        "description": "浏览器会回退到 h2 仍能访问，只是有额外开销"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：以下关于 HTTP/2 与 HTTP/3 性能对比，哪种说法是正确的？",
+    "explanation": "HTTP/3 **并非永远比 HTTP/2 快**。Cloudflare 实测大对象传输时 QUIC 默认拥塞算法（New Reno / CUBIC）可能不如调优过的 h2 + BBR——1MB 页面 h3 2.33s vs h2 2.30s。但 0-RTT 重连场景 h3 显著优于 h2（重复访问 TTFB -12.4%）。是否升级需基于自身业务画像（首访占比 / 重访占比 / 资源大小分布）。",
+    "tags": ["性能对比", "拥塞算法", "bbr", "cubic"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "h3 在重连场景显著优于 h2，但大对象传输可能略慢",
+        "isCorrect": true,
+        "description": "升级 h3 需基于业务画像，不能盲目切换"
+      },
+      {
+        "text": "h3 在所有场景都比 h2 快",
+        "isCorrect": false,
+        "description": "大对象 + 默认拥塞算法时 h3 可能更慢"
+      },
+      {
+        "text": "h3 与 h2 性能完全相同",
+        "isCorrect": false,
+        "description": "两者传输层差异显著"
+      },
+      {
+        "text": "h2 永远比 h3 快",
+        "isCorrect": false,
+        "description": "重连 / 移动场景 h3 通常更快"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP/2·HTTP/3：HTTP/2 与 HTTP/3 的现行标准 RFC 分别是什么？",
+    "explanation": "**HTTP/2 = RFC 9113**（2022-06，取代 RFC 7540）。**HTTP/3 = RFC 9114**（2022-06）。底层 QUIC = RFC 9000（2021-05）+ RFC 9001（TLS 集成）+ RFC 9002（丢包与拥塞）。HPACK = RFC 7541（仍现行），QPACK = RFC 9204。RFC 9218 是新的优先级方案。",
+    "tags": ["rfc", "版本", "rfc-9113", "rfc-9114"],
+    "categories": [
+      ["技术方向", "HTTP/2·HTTP/3"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "HTTP/2 = RFC 9113；HTTP/3 = RFC 9114",
+        "isCorrect": true,
+        "description": "两者均于 2022-06 标准化"
+      },
+      {
+        "text": "HTTP/2 = RFC 7540；HTTP/3 = RFC 9114",
+        "isCorrect": false,
+        "description": "RFC 7540 已被 RFC 9113 取代"
+      },
+      {
+        "text": "HTTP/2 = RFC 2616；HTTP/3 = RFC 9113",
+        "isCorrect": false,
+        "description": "RFC 2616 是 HTTP/1.1 旧标准"
+      },
+      {
+        "text": "HTTP/2 = RFC 7230；HTTP/3 = RFC 9000",
+        "isCorrect": false,
+        "description": "RFC 7230 是 HTTP/1.1 拆分后的消息语法；RFC 9000 是 QUIC 不是 h3"
+      }
+    ]
+  }
+]

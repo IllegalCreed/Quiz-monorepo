@@ -692,7 +692,20 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "Polyfill 按需加载", sort: 4 },
             ],
           },
-          { name: "网络优化（CDN / 缓存 / 压缩）", sort: 4 },
+          {
+            // 2026-07-19 选型评估：单叶 → 组+5叶（CDN/HTTP缓存/压缩/HTTP2·3/Service Worker）。
+            // 边界：preload/prefetch 构建器魔法注释归代码分割叶，本叶 HTTP 缓存讲 link 标签资源提示；
+            // 浏览器缓存机制原理归浏览器基础章，本叶讲缓存策略配置。
+            name: "网络优化",
+            sort: 4,
+            children: [
+              { name: "CDN", sort: 1 },
+              { name: "HTTP 缓存", sort: 2 },
+              { name: "压缩", sort: 3 },
+              { name: "HTTP/2·HTTP/3", sort: 4 },
+              { name: "Service Worker 缓存", sort: 5 },
+            ],
+          },
           {
             name: "用户体验优化（懒加载和预加载 / 交互优化 / 可访问性）",
             sort: 5,

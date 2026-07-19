@@ -1,0 +1,627 @@
+[
+  {
+    "stem": "Service Worker 缓存：与 HTTP 缓存（Cache-Control / ETag）最本质的区别是？",
+    "explanation": "Cache API 是**独立于 HTTP 缓存的高层 API**——MDN 与 Chrome 官方文档都明确它**不读响应头字段**（Cache-Control / max-age / ETag / Last-Modified 全部无效），缓存条目除非主动 `delete` 否则**永不过期**，过期策略必须由 JS（或 Workbox `ExpirationPlugin`）自己实现。HTTP 缓存则由浏览器自动管理、由响应头驱动、按 `max-age` 自动过期。查找顺序是 SW 缓存 → HTTP 缓存 → 网络。",
+    "tags": ["service-worker-cache", "http-cache", "边界", "expiration"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SW 缓存不读响应头、永不过期，过期必须自实现",
+        "isCorrect": true,
+        "description": "Cache API 独立于 HTTP 缓存头，需 ExpirationPlugin 或手动 delete"
+      },
+      {
+        "text": "SW 缓存由 Cache-Control 头驱动，自动按 max-age 过期",
+        "isCorrect": false,
+        "description": "Cache API 不读 Cache-Control，这是 HTTP 缓存的行为"
+      },
+      {
+        "text": "SW 缓存只能存 GET 请求的响应，HTTP 缓存可存任意方法",
+        "isCorrect": false,
+        "description": "HTTP 缓存默认也只缓存 GET/HEAD；这是共性不是差异"
+      },
+      {
+        "text": "SW 缓存比 HTTP 缓存更慢，所以只用于离线场景",
+        "isCorrect": false,
+        "description": "SW 缓存命中是同步本地读取，比 HTTP 缓存查找更快"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`caches.open('app-v1')` 的返回值类型是？",
+    "explanation": "`caches`（CacheStorage 全局对象）的 `open(name)` 方法返回 `Promise<Cache>`，resolve 为对应的命名缓存容器对象。后续 `cache.match/put/add/delete` 都是 Cache 接口的方法，操作容器内的 Request-Response 对。命名版本化（`app-v1` / `static-v2`）是 activate 阶段区分新旧、安全 `caches.delete` 旧版本的关键。",
+    "tags": ["service-worker-cache", "cachestorage", "caches-open"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Promise<Cache>",
+        "isCorrect": true,
+        "description": "resolve 为命名缓存容器对象，再用 cache.match/put 操作条目"
+      },
+      {
+        "text": "Promise<Response>",
+        "isCorrect": false,
+        "description": "那是 cache.match 的返回类型"
+      },
+      {
+        "text": "Promise<string[]>",
+        "isCorrect": false,
+        "description": "那是 caches.keys() 的返回类型"
+      },
+      {
+        "text": "Promise<boolean>",
+        "isCorrect": false,
+        "description": "那是 caches.has / caches.delete 的返回类型"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`caches.delete(name)` 与 `cache.delete(request)` 的差别是？",
+    "explanation": "`caches.delete(name)` 是 **CacheStorage 级**的方法，删整张命名缓存容器（`app-v1` 整张表），返回 `Promise<boolean>`；`cache.delete(request)` 是 **Cache 级**的方法，删该容器内的一条 Request-Response 对。activate 阶段清旧版本用 `caches.delete(旧版本名)`，运行时删单条过期资源用 `cache.delete(单 URL)`。",
+    "tags": ["service-worker-cache", "cachestorage", "cache", "delete"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前者删整张命名缓存，后者删容器内单条",
+        "isCorrect": true,
+        "description": "CacheStorage.delete vs Cache.delete 的语义差别"
+      },
+      {
+        "text": "前者删单条，后者删整张命名缓存",
+        "isCorrect": false,
+        "description": "搞反了——前者是 CacheStorage 级删整张，后者是 Cache 级删单条"
+      },
+      {
+        "text": "两者等价，只是不同写法",
+        "isCorrect": false,
+        "description": "完全是两个不同对象层级的方法"
+      },
+      {
+        "text": "前者只能删空缓存，后者可删任意缓存",
+        "isCorrect": false,
+        "description": "无此限制；caches.delete 可直接删非空命名缓存"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`cache.match(request)` 未命中时的行为是？",
+    "explanation": "`cache.match` 未命中时**resolve 为 `undefined`**，**不是 reject**——这是 MDN 明确的行为，也是手写策略时的高频踩坑点。正确写法是 `const hit = await cache.match(req); if (hit) return hit;` 然后回退到网络；写成 `try/catch` 抓不到未命中场景。`matchAll` 类似返回空数组而非 reject。",
+    "tags": ["service-worker-cache", "cache", "match", "undefined"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "resolve 为 undefined（非 reject）",
+        "isCorrect": true,
+        "description": "高频陷阱：必须判空，不能 try/catch"
+      },
+      {
+        "text": "reject 抛 NotFoundError",
+        "isCorrect": false,
+        "description": "Cache API 不抛错，只 resolve undefined"
+      },
+      {
+        "text": "resolve 为 null",
+        "isCorrect": false,
+        "description": "MDN 明确是 undefined，不是 null"
+      },
+      {
+        "text": "永久挂起不 resolve",
+        "isCorrect": false,
+        "description": "不会挂起；命中或未命中都立即 resolve"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`cache.addAll(urls)` 的核心特性是？",
+    "explanation": "`addAll` 是**原子性批量预缓存**——任一 URL fetch 失败（如 404）则整批 reject、整个 `addAll` 调用失败、若在 install 事件里用 `waitUntil` 包住则**整个 SW 安装失败**、下次注册时重试。这保证预缓存要么全部可用要么回退上一版。预缓存清单必须全部可访问，install 阶段 `addAll(['/', '/app.js', '/style.css'])` 是 app shell 的标配写法。",
+    "tags": ["service-worker-cache", "cache", "addall", "原子性", "install"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原子性：任一 URL 失败则整批 reject",
+        "isCorrect": true,
+        "description": "install 时 addAll 失败会让整个 SW 安装失败"
+      },
+      {
+        "text": "部分成功：失败的跳过，成功的仍缓存",
+        "isCorrect": false,
+        "description": "addAll 不是部分成功模式，是全有或全无"
+      },
+      {
+        "text": "并行缓存但允许部分失败，失败条目记入日志",
+        "isCorrect": false,
+        "description": "无此部分成功模式"
+      },
+      {
+        "text": "仅能缓存同源 URL，跨域直接全部失败",
+        "isCorrect": false,
+        "description": "跨域可缓存（opaque 响应），关键是 atomicity"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`cache.match(req, { ignoreSearch: true })` 的效果与陷阱是？",
+    "explanation": "`ignoreSearch: true` 让匹配**忽略 URL 查询串**——`/api?a=1` 与 `/api?a=2` 会被视为同一条命中。**对带查询参数的 API 是灾难**（不同查询返同一缓存→脏数据），仅适用于「URL 查询参数只是版本号变更、实际内容不变」的静态资源场景（如 `?v=1` → `?v=2`）。三选项中还有 `ignoreMethod`（默认 false → POST 不匹配）、`ignoreVary`（默认 false → 校验 Vary 头）。",
+    "tags": ["service-worker-cache", "cache", "match", "ignoresearch"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "忽略 URL 查询串，让 ?v=1 与 ?v=2 命中同一条",
+        "isCorrect": true,
+        "description": "仅用于静态资源版本号变更；对 API 会返脏数据"
+      },
+      {
+        "text": "忽略请求方法，让 POST 也能命中",
+        "isCorrect": false,
+        "description": "那是 ignoreMethod 的作用"
+      },
+      {
+        "text": "跳过 Vary 头校验",
+        "isCorrect": false,
+        "description": "那是 ignoreVary 的作用"
+      },
+      {
+        "text": "强制只匹配同源 URL",
+        "isCorrect": false,
+        "description": "ignoreSearch 与同源无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`cache.put(request, response)` 前为何必须 `response.clone()`？",
+    "explanation": "Response 底层是 **ReadableStream，流只能读一次**——被 `put` 消费后再次返回浏览器会得到空体或 `already read` 错误。标准模式：`const res = await fetch(req); await cache.put(req, res.clone()); return res;`——副本入缓存、原响应返回浏览器。`addAll` 内部已处理 clone 无需手写；同理 `fetch(event.request)` 后想再 `put` 时 request 也可能被消费，必要时 `event.request.clone()`。",
+    "tags": ["service-worker-cache", "cache", "put", "clone", "stream"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Response 是流只能读一次，clone 让副本入缓存、原响应返浏览器",
+        "isCorrect": true,
+        "description": "标准模式：put 前必 clone"
+      },
+      {
+        "text": "clone 是性能优化，避免响应被压缩",
+        "isCorrect": false,
+        "description": "clone 与压缩无关，是流的单次消费约束"
+      },
+      {
+        "text": "clone 用于跨域响应的 CORS 处理",
+        "isCorrect": false,
+        "description": "CORS 与 clone 无关；clone 解决流消费问题"
+      },
+      {
+        "text": "clone 是 Promise 等待响应完全下载",
+        "isCorrect": false,
+        "description": "clone 不等待下载，是创建流的副本"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：以下哪一组是业界标准的五大缓存策略？",
+    "explanation": "MDN 与 Chrome Workbox 文档统一用五大策略：**cache-only**（仅缓存）/ **network-only**（仅网络）/ **cache-first**（缓存优先，未命中才网络，适合哈希静态资源）/ **network-first**（网络优先，失败回退缓存，适合 HTML / API）/ **stale-while-revalidate**（立即返旧 + 后台更新，适合头像字体）。Workbox v7 提供了对应的 `CacheOnly` / `NetworkOnly` / `CacheFirst` / `NetworkFirst` / `StaleWhileRevalidate` 五个策略类。",
+    "tags": ["service-worker-cache", "strategy", "five-strategies", "workbox"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "cache-only / network-only / cache-first / network-first / stale-while-revalidate",
+        "isCorrect": true,
+        "description": "MDN 与 Workbox 统一的五大策略"
+      },
+      {
+        "text": "fresh / stale / expired / revalidated / bypass",
+        "isCorrect": false,
+        "description": "那是 HTTP 缓存状态描述，不是 SW 策略名"
+      },
+      {
+        "text": "memory / disk / indexedDB / session / local",
+        "isCorrect": false,
+        "description": "那是浏览器存储位置，不是缓存策略"
+      },
+      {
+        "text": "LRU / FIFO / LFU / ARC / MRU",
+        "isCorrect": false,
+        "description": "那是通用缓存淘汰算法，不是 SW 策略"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：哈希命名的静态资源（`app.[hash].js`）最常用哪种策略？",
+    "explanation": "哈希命名的静态资源用 **cache-first**——内容变 hash 就变 → URL 永远稳定 → 缓存内容永远新鲜，无需协商、无需后台更新，命中即返最快。`app.[abc123].js` 部署新版本时 hash 变 → 新 URL → 自然走首次网络请求；旧 URL 永不再请求但留在缓存里，靠版本化命名 + activate 清理淘汰。HTML / API 用 network-first 才合理。",
+    "tags": ["service-worker-cache", "strategy", "cache-first", "hash"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cache-first",
+        "isCorrect": true,
+        "description": "URL 永不变 → 内容永新鲜 → 命中即返最快"
+      },
+      {
+        "text": "network-only",
+        "isCorrect": false,
+        "description": "浪费——哈希资源永不变，每次发网络无意义"
+      },
+      {
+        "text": "cache-only",
+        "isCorrect": false,
+        "description": "首次进入无缓存就 504；首次仍要网络回写"
+      },
+      {
+        "text": "network-first",
+        "isCorrect": false,
+        "description": "适合 HTML/API；哈希资源用 cache-first 更优"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：HTML 文档与关键 API 最常用的策略是？",
+    "explanation": "HTML 文档 / 关键 API 用 **network-first**——优先拿最新内容（新鲜度），失败时（断网或 5xx）回退到缓存（可用性），实现「在线新鲜 + 离线可用」兼顾。配合 `networkTimeoutSeconds` 还能在网络超时时快速回退。HTML 走 cache-first 永远不更新会让用户看不到新版（部署后旧页面残留），是常见反模式。",
+    "tags": ["service-worker-cache", "strategy", "network-first", "html"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "network-first（网络优先，失败回退缓存）",
+        "isCorrect": true,
+        "description": "兼顾新鲜度与可用性，离线回退到缓存"
+      },
+      {
+        "text": "cache-only（仅查缓存）",
+        "isCorrect": false,
+        "description": "首次进入或断网时失败；HTML 永不更新是反模式"
+      },
+      {
+        "text": "network-only（仅网络）",
+        "isCorrect": false,
+        "description": "断网即失败，无法离线"
+      },
+      {
+        "text": "cache-first（缓存优先）",
+        "isCorrect": false,
+        "description": "HTML 走 cache-first 永远看不到新版"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`stale-while-revalidate`（SWR）最适合缓存哪种资源？",
+    "explanation": "SWR 流程：**立即返回旧副本 + 后台 fetch 更新缓存**。要快（旧副本瞬间出）+ 要最终一致（后台更新）。最适合**头像 / 字体 / 非关键图**这类「不是最新也能用，但要尽快显示，下次能更新就行」的资源。不适合 HTML（用户期望看到最新内容）也不适合强一致 API（断网期间可能返旧数据）。",
+    "tags": [
+      "service-worker-cache",
+      "strategy",
+      "swr",
+      "stale-while-revalidate"
+    ],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "头像 / 字体 / 非关键图（要快 + 要最终一致）",
+        "isCorrect": true,
+        "description": "立即返旧 + 后台更新，平衡新鲜度与可用性"
+      },
+      {
+        "text": "POST 写操作（要强一致）",
+        "isCorrect": false,
+        "description": "写操作永远不要缓存；SWR 也不适合写操作"
+      },
+      {
+        "text": "HTML 文档（用户期望最新）",
+        "isCorrect": false,
+        "description": "HTML 用 network-first 更合适；SWR 会让用户先看旧版"
+      },
+      {
+        "text": "实时股价 / 库存（要绝对实时）",
+        "isCorrect": false,
+        "description": "实时数据用 network-only；SWR 会返陈旧值"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`ExtendableEvent.waitUntil` 与 `FetchEvent.respondWith` 的用途区别？",
+    "explanation": "**`ExtendableEvent.waitUntil(promise)`** 用于 install / activate 事件——告诉浏览器「SW 在 promise resolve 前不要进入下一阶段」，保证预缓存写入完成、旧缓存清理完成；**`FetchEvent.respondWith(promise)`** 用于 fetch 事件，劫持响应、必须 resolve 一个 Response 对象（否则浏览器抛 `TypeError`）。两者都在事件对象上调，但场景与语义完全不同。",
+    "tags": ["service-worker-cache", "waituntil", "respondwith", "event"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "waitUntil 用于 install/activate 延长存活，respondWith 用于 fetch 劫持响应",
+        "isCorrect": true,
+        "description": "两者语义与场景完全不同"
+      },
+      {
+        "text": "waitUntil 用于 fetch，respondWith 用于 install",
+        "isCorrect": false,
+        "description": "搞反了——fetch 用 respondWith，install 用 waitUntil"
+      },
+      {
+        "text": "两者等价，可互换使用",
+        "isCorrect": false,
+        "description": "完全不同的 API，不能互换"
+      },
+      {
+        "text": "waitUntil 同步阻塞，respondWith 异步非阻塞",
+        "isCorrect": false,
+        "description": "两者都是异步 Promise 接口，不阻塞"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：新 SW 安装后默认进入 `waiting` 状态的触发条件是？",
+    "explanation": "新 SW 安装成功后，若**已有旧 SW 仍活跃**（且有受控页面打开），新 SW 进入 `waiting` 状态，等所有旧页面关闭后才激活（避免新旧 SW 同时拦截造成混乱）。`self.skipWaiting()` 让新 SW 跳过 waiting 立即激活；`clients.claim()` 让新 SW 立即控制未受控的旧页面。两者**仅用于紧急热修复**——正常更新让新 SW 自然进 waiting 更安全，因为旧页面可能用旧 fetch、新 SW 已激活，存在版本不一致风险。",
+    "tags": ["service-worker-cache", "lifecycle", "waiting", "skipwaiting"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "已有旧 SW 活跃且页面未关闭",
+        "isCorrect": true,
+        "description": "默认等所有旧页面关闭才激活，避免冲突"
+      },
+      {
+        "text": "网络断开导致 SW 无法下载",
+        "isCorrect": false,
+        "description": "下载失败是 install 失败，不进 waiting"
+      },
+      {
+        "text": "HTTPS 证书即将过期",
+        "isCorrect": false,
+        "description": "证书过期会让注册失败，不是 waiting 触发条件"
+      },
+      {
+        "text": "Cache API 配额不足",
+        "isCorrect": false,
+        "description": "配额不足会让 addAll 失败，不是 waiting 触发条件"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：`navigationPreload.enable()` 解决了什么问题？",
+    "explanation": "SW 冷启动约 50ms（移动端 ~250ms、极端 >500ms），若用 network-first，导航请求要等 SW 启动完才发出（串行延迟）。导航预加载让**网络请求与 SW 启动并行**——`activate` 里 `registration.navigationPreload.enable()` 启用，浏览器在 SW 启动的同时并行发出导航请求，请求自动带 `Service-Worker-Navigation-Preload: true` 头，SW 用 `await event.preloadResponse` 拿到并行结果。破解冷启动瓶颈是 PWA 性能优化的关键。",
+    "tags": ["service-worker-cache", "navigation-preload", "cold-start"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "并行解决 SW 冷启动 50–500ms 串行延迟",
+        "isCorrect": true,
+        "description": "让网络请求与 SW 启动并行发出"
+      },
+      {
+        "text": "提前预缓存所有静态资源",
+        "isCorrect": false,
+        "description": "那是 install 阶段 addAll 的职责"
+      },
+      {
+        "text": "替代 caches.match，性能更快",
+        "isCorrect": false,
+        "description": "navigationPreload 与 Cache 查找是不同维度"
+      },
+      {
+        "text": "强制服务器返回更小的响应体",
+        "isCorrect": false,
+        "description": "服务器可据此返不同内容，但不强制"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：启用 `navigationPreload` 后在 fetch 事件里应如何处理 `event.preloadResponse`？",
+    "explanation": "**正确做法是 `await event.preloadResponse`** 拿到并行预加载的响应，非空则返回。即使不用预加载结果，也要 `event.waitUntil(event.preloadResponse.catch(() => undefined))` 兜住它，否则控制台会报 `navigation preload request was cancelled before preloadResponse settled` 且浪费已发出的预加载请求。`event.preloadResponse` 在未启用导航预加载时 resolve 为 `undefined`，需 feature-detect 后再 enable。",
+    "tags": ["service-worker-cache", "navigation-preload", "preloadresponse"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "await event.preloadResponse，非空则返回；不用也要 waitUntil 兜住防 cancel 警告",
+        "isCorrect": true,
+        "description": "标准模式：先 await 再分支"
+      },
+      {
+        "text": "直接忽略，浏览器会自动用预加载结果",
+        "isCorrect": false,
+        "description": "忽略会让预加载请求被 cancel，控制台报警"
+      },
+      {
+        "text": "用 fetch(event.request) 覆盖预加载结果",
+        "isCorrect": false,
+        "description": "浪费已发出的预加载请求，且串行化"
+      },
+      {
+        "text": "用 caches.match 替代 preloadResponse",
+        "isCorrect": false,
+        "description": "二者不同维度——preloadResponse 是网络结果不是缓存"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：跨域 `mode: 'no-cors'` 的 opaque 响应有何特征？",
+    "explanation": "跨域请求若 `mode: 'no-cors'`（如第三方图床、CDN 字体），响应是 **opaque** 的：`status === 0`（不是真实状态码）、`headers` 不可读（`get(...)` 永远返 `null`）、`body` 不可读（但可整体缓存）。要缓存它必须用 `statuses: [0, 200]` 白名单（默认 `[200]` 会拒掉）。**不要**尝试读 `headers.get('content-type')` 做分流——永远 `null`，要改用 `request.destination`。",
+    "tags": ["service-worker-cache", "opaque", "cors", "no-cors"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "status === 0、headers 不可读，缓存需 statuses: [0, 200]",
+        "isCorrect": true,
+        "description": "opaque 是安全隔离的跨域响应"
+      },
+      {
+        "text": "status === 200、headers 可读",
+        "isCorrect": false,
+        "description": "这是正常 CORS 通过的响应，不是 opaque"
+      },
+      {
+        "text": "status === 403、body 完全可读",
+        "isCorrect": false,
+        "description": "opaque 不返回 403，且 body 不可读"
+      },
+      {
+        "text": "无法被 Cache API 缓存",
+        "isCorrect": false,
+        "description": "可缓存，只是需 statuses 含 0"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：Workbox v7 中实现「按 `maxEntries` / `maxAgeSeconds` 自动淘汰过期条目」的插件是？",
+    "explanation": "**`ExpirationPlugin({ maxEntries, maxAgeSeconds, purgeOnQuotaError })`** 是 Workbox 的过期管理插件——按条目数上限（LRU 淘汰）+ 时间上限（按 `maxAgeSeconds` 秒数过期）自动清理缓存条目并回收存储空间。`purgeOnQuotaError: true` 让插件只在配额超限时才清理（保守策略）。配套常用：`CacheableResponsePlugin({ statuses: [0, 200] })` 按状态码白名单过滤响应；`BroadcastUpdatePlugin` 缓存更新通知页面。",
+    "tags": ["service-worker-cache", "workbox", "expirationplugin"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ExpirationPlugin",
+        "isCorrect": true,
+        "description": "maxEntries + maxAgeSeconds 双维度淘汰"
+      },
+      {
+        "text": "CacheableResponsePlugin",
+        "isCorrect": false,
+        "description": "那是按状态码白名单过滤，不是过期淘汰"
+      },
+      {
+        "text": "BroadcastUpdatePlugin",
+        "isCorrect": false,
+        "description": "那是缓存更新通知，不淘汰条目"
+      },
+      {
+        "text": "BackgroundSyncPlugin",
+        "isCorrect": false,
+        "description": "那是失败请求重试，与过期无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：Service Worker 注册必须满足的硬性条件是？",
+    "explanation": "Service Worker 是中间人代理，**仅在 HTTPS 安全上下文（含 localhost 例外）下注册**——HTTP 下可被注入篡改，浏览器拒绝注册。scope 默认为 SW 脚本所在目录，需要扩大 scope 时服务器要返回 `Service-Worker-Navigation-Preload`... 不对，是 `Service-Worker-Allowed` 响应头。注册失败的常见原因：非 HTTPS、跨域脚本（需 CORS）、scope 越权（超出脚本目录且无 `Service-Worker-Allowed`）。",
+    "tags": ["service-worker-cache", "https", "scope", "register"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "HTTPS（仅 localhost / 127.0.0.1 例外）",
+        "isCorrect": true,
+        "description": "SW 是中间人代理，HTTP 下可被篡改"
+      },
+      {
+        "text": "页面必须使用 HTTP/2 协议",
+        "isCorrect": false,
+        "description": "SW 与 HTTP 协议版本无关，HTTP/1.1 也行"
+      },
+      {
+        "text": "服务器必须支持 WebSocket",
+        "isCorrect": false,
+        "description": "SW 与 WebSocket 无关"
+      },
+      {
+        "text": "浏览器必须是 Chrome 内核",
+        "isCorrect": false,
+        "description": "全主流浏览器都支持（含 Firefox/Safari/Edge）"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：缓存名版本化（`app-v1` / `app-v2`）的核心目的是？",
+    "explanation": "缓存名带版本号让 **activate 阶段能精确区分新旧**——`caches.keys()` 拿到全部命名缓存名，过滤白名单后 `caches.delete(旧版本名)` 安全淘汰。直接叫 `'app'`（不版本化）会导致：①activate 无法区分新旧条目；②部署新版后旧资源永远残留；③配额被吃光触发浏览器**整体清除**该 origin 所有缓存（含当前版本）。配套做法：install 写新版本缓存 → activate 清白名单外的所有旧版本。",
+    "tags": ["service-worker-cache", "versioning", "activate", "quota"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让 activate 能区分新旧并安全 caches.delete 旧版本",
+        "isCorrect": true,
+        "description": "版本化是清旧缓存的前提"
+      },
+      {
+        "text": "让浏览器自动按版本号过期",
+        "isCorrect": false,
+        "description": "Cache API 不自动过期，与版本号无关"
+      },
+      {
+        "text": "提升缓存查找性能",
+        "isCorrect": false,
+        "description": "性能无差异；版本化是清理需求"
+      },
+      {
+        "text": "使缓存名符合 HTTP 缓存规范",
+        "isCorrect": false,
+        "description": "命名是 JS 字符串，与 HTTP 规范无关"
+      }
+    ]
+  },
+  {
+    "stem": "Service Worker 缓存：以下哪一项**不属于** Service Worker 缓存的典型反模式？",
+    "explanation": "正确做法（不是反模式）：**HTML 文档用 network-first 让首页能更新**——兼顾新鲜度与离线可用。真正的高频反模式包括：①把 Cache-Control 当 SW 过期依据（Cache API 不读响应头）；②put 前不 clone（流只能读一次）；③缓存名不版本化；④install addAll 含 404（原子性导致整批失败）；⑤对所有请求都缓存（含 POST 写操作返脏数据）；⑥导航走 cache-first 永不更新（用户永远看旧 HTML）；⑦启用 navigationPreload 不 await 也不 waitUntil 兜住。",
+    "tags": ["service-worker-cache", "anti-pattern", "best-practice"],
+    "categories": [
+      ["技术方向", "Service Worker 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "HTML 文档用 network-first，失败回退缓存",
+        "isCorrect": true,
+        "description": "这是最佳实践，不是反模式"
+      },
+      {
+        "text": "缓存名直接叫 'app' 不版本化",
+        "isCorrect": false,
+        "description": "反模式——无法区分新旧、配额被吃光"
+      },
+      {
+        "text": "install 阶段 addAll 包含 404 资源",
+        "isCorrect": false,
+        "description": "反模式——原子性导致整批 reject、SW 安装失败"
+      },
+      {
+        "text": "启用 navigationPreload 但不 await preloadResponse",
+        "isCorrect": false,
+        "description": "反模式——控制台报 cancel 警告且浪费预加载请求"
+      }
+    ]
+  }
+]

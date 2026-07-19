@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "HTTP 缓存：no-cache 与 no-store 的核心语义差别是？",
+    "explanation": "**no-cache 允许存储**，但每次使用前必须向源服务器发条件请求再校验，命中返 304 几乎零成本；**no-store 才是真正完全不存储**任何缓存（请求与响应均不存）。这是 HTTP 缓存最高频陷阱——很多人误以为 no-cache 等于「不缓存」，实际它只是「每次必校验」。",
+    "tags": ["http-cache", "no-cache", "no-store", "强缓存"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "no-cache 允许存储但每次必校验；no-store 完全不存储",
+        "isCorrect": true,
+        "description": "正确。no-cache 是「每次必校验」，no-store 才是真禁止"
+      },
+      {
+        "text": "no-cache 完全不存储；no-store 允许存储但每次校验",
+        "isCorrect": false,
+        "description": "颠倒了两者语义"
+      },
+      {
+        "text": "两者完全等价，都表示不缓存",
+        "isCorrect": false,
+        "description": "no-cache 不等于不缓存，仍允许存储"
+      },
+      {
+        "text": "no-cache 用于浏览器；no-store 用于 CDN",
+        "isCorrect": false,
+        "description": "两者都是响应头指令，作用于所有缓存层"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：生产环境对「带 hash 指纹的静态资源」与「HTML 文档」的标准缓存策略对比是？",
+    "explanation": "**版本化静态资源**（构建器产出的 app.[hash].js、style.[hash].css、字体）配 `public, max-age=31536000, immutable`——内容变 hash 就变 URL 也变，旧 URL 副本永久有效；**HTML 入口配 no-cache**——HTML 是资源引用清单，必须每次协商才能拿到新 hash 引用，304 几乎零成本。这是 web.dev 推荐的黄金组合。",
+    "tags": ["http-cache", "策略组合", "immutable", "hash"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "资源 public, max-age=31536000, immutable；HTML no-cache",
+        "isCorrect": true,
+        "description": "正确。版本化资源长强缓存 + immutable；HTML 每次协商拿新 hash 引用"
+      },
+      {
+        "text": "资源 no-cache；HTML public, max-age=31536000",
+        "isCorrect": false,
+        "description": "完全反了。资源 hash 已唯一不必每次协商；HTML 长缓存会让部署后用户拿不到新版"
+      },
+      {
+        "text": "两者都配 public, max-age=31536000, immutable",
+        "isCorrect": false,
+        "description": "HTML 长强缓存会导致部署后用户拿不到新资源引用"
+      },
+      {
+        "text": "两者都配 no-store",
+        "isCorrect": false,
+        "description": "no-store 完全不缓存，丢失所有缓存优化"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：private 指令的核心目的是？",
+    "explanation": "**private 表示响应仅允许浏览器私有缓存存储，禁止共享缓存（CDN / 代理）存储**。其核心目的是防止「个性化 / 认证后响应」被共享缓存泄露给其他用户——若漏加 private，CDN 会缓存可缓存的响应，把一个用户的隐私数据 / 会话页返回给另一个用户，造成信息泄露。",
+    "tags": ["http-cache", "private", "共享缓存", "安全"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防止个性化 / 认证响应被 CDN / 共享缓存泄露给其他用户",
+        "isCorrect": true,
+        "description": "正确。漏加 private 会让共享缓存泄漏他人数据"
+      },
+      {
+        "text": "让资源仅由 CDN 缓存，不让浏览器缓存",
+        "isCorrect": false,
+        "description": "反了。private 反而禁止 CDN 缓存，只允许浏览器"
+      },
+      {
+        "text": "让响应完全不缓存",
+        "isCorrect": false,
+        "description": "完全不缓存是 no-store 的职责"
+      },
+      {
+        "text": "强制每次协商才使用副本",
+        "isCorrect": false,
+        "description": "那是 no-cache 的职责；private 只管作用域"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：public 指令的真正用途是？",
+    "explanation": "private 是默认值——普通响应（无 Authorization 头）默认就能被共享缓存存储，无需显式 public。**public 的真正用途是覆盖 Authorization 头触发的「默认私有」行为**：带 Authorization 的响应默认只允许浏览器缓存，若想让 CDN 也缓存必须显式 public。普通场景下显式 public 是无意义的噪音。",
+    "tags": ["http-cache", "public", "authorization", "共享缓存"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "覆盖 Authorization 头触发的默认私有，解锁共享缓存",
+        "isCorrect": true,
+        "description": "正确。普通响应默认可被共享缓存，无需显式 public"
+      },
+      {
+        "text": "让响应被更多人看到",
+        "isCorrect": false,
+        "description": "public 与可见性无关，只管缓存作用域"
+      },
+      {
+        "text": "让浏览器永久缓存",
+        "isCorrect": false,
+        "description": "长期缓存是 max-age 的职责"
+      },
+      {
+        "text": "所有响应都必须显式加 public",
+        "isCorrect": false,
+        "description": "普通响应默认就能被共享缓存，不必显式"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：相比 Last-Modified，ETag 优于它的具体原因是？",
+    "explanation": "ETag 是内容指纹（通常是 hash），**精度高于 Last-Modified 的 1 秒粒度时间戳**。ETag 能识别「内容变了但 mtime 没变」「1 秒内多次改」「内容未变但 mtime 变了（如 touch）」等情况；Last-Modified 只反映文件改动时间不反映内容，且最小 1 秒粒度容易漏判。同时设置时客户端两个条件都发，服务端应两个都满足才返 304。",
+    "tags": ["http-cache", "etag", "last-modified", "协商缓存"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ETag 是内容指纹，能识别 mtime 漏判且无粒度限制",
+        "isCorrect": true,
+        "description": "正确。ETag 反映内容本身，精度任意"
+      },
+      {
+        "text": "ETag 字节数更短，节省带宽",
+        "isCorrect": false,
+        "description": "ETag 通常比 Last-Modified 长，与体积无关"
+      },
+      {
+        "text": "ETag 不依赖服务端实现",
+        "isCorrect": false,
+        "description": "ETag 必须服务端生成（通常内容 hash）"
+      },
+      {
+        "text": "Last-Modified 已被 RFC 9111 废弃",
+        "isCorrect": false,
+        "description": "Last-Modified 仍是标准验证器，作为兜底"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：副本过期后，完整的协商缓存流程是？",
+    "explanation": "**完整协商流程**：① 客户端发现本地副本过期（max-age 到期或被 no-cache 标记）→ ② 把本地缓存的 ETag / Last-Modified 装进 If-None-Match / If-Modified-Since 发条件请求 → ③ 服务端比对：未变返 **304 Not Modified（几乎无 body）+ 新鲜期更新**，变了返 200 OK + 新副本 → ④ 命中则客户端复用本地缓存。",
+    "tags": ["http-cache", "协商缓存", "304", "if-none-match"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "客户端带 If-None-Match / If-Modified-Since 发条件请求，命中返 304，复用本地副本",
+        "isCorrect": true,
+        "description": "正确。304 几乎无 body，省带宽同时保证内容新鲜"
+      },
+      {
+        "text": "客户端直接发普通 GET，服务端自动判断是否返 304",
+        "isCorrect": false,
+        "description": "不发条件请求头则服务端无法判断是否未变"
+      },
+      {
+        "text": "客户端清空本地缓存，重新下载完整资源",
+        "isCorrect": false,
+        "description": "那是未命中或硬刷新，丢失协商优化"
+      },
+      {
+        "text": "客户端发 If-Match 头，命中返 200",
+        "isCorrect": false,
+        "description": "If-Match 是 PUT 乐观锁用，命中失败返 412"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：Cache-Control 与 Expires 同时存在时的优先级是？",
+    "explanation": "**Cache-Control（HTTP/1.1）覆盖 Expires（HTTP/1.0）**。Expires 用绝对日期（如 `Wed, 21 Oct 2026 07:28:00 GMT`），依赖客户端时钟有漂移风险；Cache-Control 用相对秒数（max-age）更可靠。新项目一律用 Cache-Control，不要依赖 Expires。",
+    "tags": ["http-cache", "cache-control", "expires", "优先级"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Cache-Control 覆盖 Expires",
+        "isCorrect": true,
+        "description": "正确。HTTP/1.1 优先于 HTTP/1.0"
+      },
+      {
+        "text": "Expires 覆盖 Cache-Control",
+        "isCorrect": false,
+        "description": "反了。HTTP/1.0 字段优先级更低"
+      },
+      {
+        "text": "取两者中较长的有效期",
+        "isCorrect": false,
+        "description": "不是取长者，是 Cache-Control 直接覆盖"
+      },
+      {
+        "text": "取两者中较短的有效期",
+        "isCorrect": false,
+        "description": "不是取短者，是 Cache-Control 直接覆盖"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：响应头完全不设 Cache-Control 时会发生什么？",
+    "explanation": "**不设 Cache-Control 不等于不缓存**——浏览器和中间缓存会按启发式规则（heuristic freshness）推断新鲜期：约 `(date - last_modified) × 10%`。例：Last-Modified 是 100 天前，浏览器可能给 10 天新鲜期，结果出乎意料地长且不可控。**始终显式设置 Cache-Control**——哪怕只是 no-cache 或 no-store。",
+    "tags": ["http-cache", "启发式缓存", "last-modified"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器按启发式规则（约 (date - last_modified) × 10%）自行推断新鲜期",
+        "isCorrect": true,
+        "description": "正确。结果常出乎意料，必须显式设置 Cache-Control"
+      },
+      {
+        "text": "浏览器完全不缓存，每次重新下载",
+        "isCorrect": false,
+        "description": "不设 ≠ 不缓存，启发式会让浏览器自决"
+      },
+      {
+        "text": "浏览器询问服务端该如何缓存",
+        "isCorrect": false,
+        "description": "缓存策略由响应头声明，不会反问"
+      },
+      {
+        "text": "默认缓存 1 小时",
+        "isCorrect": false,
+        "description": "没有固定默认值，启发式取决于 Last-Modified"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：immutable 指令的作用与适用场景是？",
+    "explanation": "**immutable 让浏览器在新鲜期内连用户刷新触发的条件请求都跳过**——浏览器默认对未过期资源在刷新时仍发条件请求（拿 304），immutable 跳过这一步。Facebook 报告版本化资源加 immutable 后省 60% 请求量。**只对内容永不变化的 hash 资源有意义**，HTML / API 这类需每次校验的不要加。",
+    "tags": ["http-cache", "immutable", "强缓存", "RFC 8246"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跳过用户刷新时对未过期资源的条件请求，仅适用 hash 资源",
+        "isCorrect": true,
+        "description": "正确。RFC 8246；不支持的浏览器安全忽略"
+      },
+      {
+        "text": "让响应永久缓存，永不过期",
+        "isCorrect": false,
+        "description": "永久缓存由 max-age=31536000 实现，immutable 只跳过条件请求"
+      },
+      {
+        "text": "适用于所有响应包括 HTML 与 API",
+        "isCorrect": false,
+        "description": "HTML / API 需要每次校验，加 immutable 反而拿不到新版"
+      },
+      {
+        "text": "等同于 no-store 的反向语义",
+        "isCorrect": false,
+        "description": "完全不同——immutable 是「允许缓存且跳过条件请求」"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：max-age=0, must-revalidate 与 no-cache 的关系是？",
+    "explanation": "**max-age=0, must-revalidate 在现代浏览器与 no-cache 行为一致**——可存储但每次必校验。它是 HTTP/1.0 缓存不支持 no-cache 时的回退方案。新项目直接写 no-cache 即可，写一长串（如 no-store + max-age=0, must-revalidate）反而是无效噪音，因为指令冲突时按最严格执行。",
+    "tags": ["http-cache", "max-age", "must-revalidate", "no-cache"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者在现代浏览器行为等价，都是「可存但每次必校验」",
+        "isCorrect": true,
+        "description": "正确。max-age=0, must-revalidate 是 HTTP/1.0 回退方案"
+      },
+      {
+        "text": "max-age=0, must-revalidate 完全不缓存，no-cache 每次校验",
+        "isCorrect": false,
+        "description": "max-age=0 仍允许存储，只是立即过期"
+      },
+      {
+        "text": "两者完全等价于 no-store",
+        "isCorrect": false,
+        "description": "no-store 才是真正不存储"
+      },
+      {
+        "text": "max-age=0, must-revalidate 是新标准替代 no-cache",
+        "isCorrect": false,
+        "description": "反过来——no-cache 是新标准，前者是回退"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：stale-while-revalidate=<秒> 指令的语义是？",
+    "explanation": "**stale-while-revalidate=<秒>** 表示副本过期后 N 秒内可一边返回旧副本、一边后台异步再校验，对用户隐藏重新验证的延迟。适合「可容忍短暂过期」的接口 / 资源。RFC 5861 定义；Chrome 75+ 支持，Firefox 至今未原生支持（实际多由 Service Worker 模拟）。",
+    "tags": ["http-cache", "stale-while-revalidate", "RFC 5861"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "过期窗口内一边返回旧副本、一边后台异步再校验",
+        "isCorrect": true,
+        "description": "正确。对用户隐藏重新验证的延迟"
+      },
+      {
+        "text": "过期后直接返回 504 错误，强制重新下载",
+        "isCorrect": false,
+        "description": "那是 must-revalidate 的语义"
+      },
+      {
+        "text": "让响应永久缓存，不校验",
+        "isCorrect": false,
+        "description": "永久缓存是 max-age + immutable 的组合"
+      },
+      {
+        "text": "源站出错时才返回过期副本",
+        "isCorrect": false,
+        "description": "那是 stale-if-error，不是 stale-while-revalidate"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：<link rel=\"preload\"> 必须配 as 属性的原因是？",
+    "explanation": "**preload 缺 as 属性会导致资源重复下载一次**——MDN 与 web.dev 都明确这一点。as 让浏览器：① 应用正确的 CSP 策略；② 发送正确的 Accept 头；③ 设定正确的优先级；④ 避免重复请求。as 取值如 script / style / font / image / fetch / track。",
+    "tags": ["http-cache", "preload", "as", "资源提示"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "缺 as 资源会重复下载一次；as 让浏览器应用正确 CSP / Accept / 优先级",
+        "isCorrect": true,
+        "description": "正确。as 是 preload 的必填搭档"
+      },
+      {
+        "text": "as 仅是文档说明，无实际作用",
+        "isCorrect": false,
+        "description": "as 直接影响下载行为与优先级"
+      },
+      {
+        "text": "as 控制资源是否跨源",
+        "isCorrect": false,
+        "description": "跨源由 crossorigin 属性控制"
+      },
+      {
+        "text": "as 替代 type 属性",
+        "isCorrect": false,
+        "description": "type 是 MIME 类型，与 as 用途不同"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：<link rel=\"preload\"> 字体必须加 crossorigin 的原因是？",
+    "explanation": "**字体强制走 CORS 匿名模式**——浏览器加载字体时必然以匿名 CORS 方式发起请求。preload 字体时若缺 crossorigin 属性，预加载的请求与实际字体请求的 CORS 模式不一致，**字体会被下载两次**（且第二次才真正可用），浪费带宽。正确写法：`<link rel=\"preload\" href=\"/font.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>`。",
+    "tags": ["http-cache", "preload", "crossorigin", "字体"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "字体强制 CORS 匿名模式，缺失会让字体下载两次",
+        "isCorrect": true,
+        "description": "正确。预加载与实际请求 CORS 模式必须一致"
+      },
+      {
+        "text": "crossorigin 让字体跨域访问",
+        "isCorrect": false,
+        "description": "字体本就强制 CORS，crossorigin 是让 preload 与实际请求一致"
+      },
+      {
+        "text": "crossorigin 提升字体优先级",
+        "isCorrect": false,
+        "description": "优先级由 fetchpriority 控制"
+      },
+      {
+        "text": "crossorigin 替代 as=font",
+        "isCorrect": false,
+        "description": "as=font 仍必填，crossorigin 是另一个必填搭档"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：preconnect 与 dns-prefetch 的功能差别与使用取舍是？",
+    "explanation": "**preconnect 提前完成 DNS + TCP + TLS 完整握手**，每条都会真开一条 TCP+TLS 连接占 socket；**dns-prefetch 只提前解析 DNS**，开销极小。取舍：只对最关键的跨源（字体 CDN、关键 API 域名）用 preconnect，其他用 dns-prefetch 省 socket。Google Fonts 推荐对 fonts.googleapis.com 和 fonts.gstatic.com 都加 preconnect。",
+    "tags": ["http-cache", "preconnect", "dns-prefetch", "资源提示"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "preconnect 完成 DNS+TCP+TLS（限最关键跨源）；dns-prefetch 仅 DNS（其他用）",
+        "isCorrect": true,
+        "description": "正确。preconnect 占 socket，滥用会拖慢"
+      },
+      {
+        "text": "preconnect 只做 DNS；dns-prefetch 做 DNS+TCP+TLS",
+        "isCorrect": false,
+        "description": "完全反了"
+      },
+      {
+        "text": "两者完全等价，可互换使用",
+        "isCorrect": false,
+        "description": "preconnect 真开连接，dns-prefetch 不会"
+      },
+      {
+        "text": "preconnect 用于未来页面；dns-prefetch 用于当前页",
+        "isCorrect": false,
+        "description": "两者都用于当前页即将访问的跨源；时间维度由 preload/prefetch 区分"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：<link rel=\"prefetch\"> 的特点与流量浪费风险是？",
+    "explanation": "**prefetch 用于未来导航可能用到的资源，低优先级、浏览器空闲时下载**，缓存到 HTTP 缓存供下次导航命中。流量成本：用户不一定真访问该页，prefetch 仍消耗带宽——应基于分析数据高置信度再用；移动端 / Save-Data 用户更谨慎。滥用 prefetch 会拖慢当前页且浪费用户流量。",
+    "tags": ["http-cache", "prefetch", "资源提示", "流量"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "低优先级预取未来导航资源，仅在用户高概率访问时用，移动端谨慎",
+        "isCorrect": true,
+        "description": "正确。prefetch 消耗流量但不一定被使用"
+      },
+      {
+        "text": "高优先级预取当前页关键资源",
+        "isCorrect": false,
+        "description": "那是 preload 的职责"
+      },
+      {
+        "text": "完全不消耗流量，只发 DNS 查询",
+        "isCorrect": false,
+        "description": "那是 dns-prefetch"
+      },
+      {
+        "text": "prefetch 必须配合 crossorigin 才能用",
+        "isCorrect": false,
+        "description": "crossorigin 不是 prefetch 的必填项"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：给 LCP 图片加 fetchpriority=\"high\" 的优化原理是？",
+    "explanation": "浏览器默认给图片低优先级、布局后才提升——分**两阶段下载**，导致 LCP 图片在第一下载阶段跑不起来。**fetchpriority=\"high\" 让 LCP 图片在第一下载阶段就跑**，绕过两阶段延迟，直接改善 LCP 指标。Fetch Priority API 还可用于 link / script / iframe 显式调高或降低（low）资源优先级。",
+    "tags": ["http-cache", "fetchpriority", "LCP", "Fetch Priority API"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "绕过浏览器默认「低优先级 + 布局后才提升」的两阶段延迟",
+        "isCorrect": true,
+        "description": "正确。让 LCP 图片在第一下载阶段就跑"
+      },
+      {
+        "text": "减小图片体积",
+        "isCorrect": false,
+        "description": "fetchpriority 只改优先级，不改内容"
+      },
+      {
+        "text": "让图片不经过 HTTP 缓存直接下载",
+        "isCorrect": false,
+        "description": "fetchpriority 与缓存层无关"
+      },
+      {
+        "text": "替代 preload 的功能",
+        "isCorrect": false,
+        "description": "fetchpriority 调优先级，preload 触发预拉取；两者常配合用"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：Vary 响应头的作用与典型场景是？",
+    "explanation": "**Vary 声明缓存键依赖的请求头维度**——同 URL 返回不同内容时必配，否则共享缓存会错发版本。典型场景：`Vary: Accept-Encoding` 避免把 br 压缩版错发给不支持 br 的客户端；`Vary: User-Agent` 区分移动 / 桌面 HTML（但会让 CDN 缓存键爆炸，优先用客户端提示如 Sec-CH-UA-Mobile）；`Vary: Accept-Language` 区分多语言。",
+    "tags": ["http-cache", "vary", "缓存键", "协商"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明缓存键依赖的请求头维度，避免同 URL 不同版本错发",
+        "isCorrect": true,
+        "description": "正确。如 Vary: Accept-Encoding 防止 br 版错发"
+      },
+      {
+        "text": "控制响应过期时间",
+        "isCorrect": false,
+        "description": "过期由 Cache-Control: max-age 控制"
+      },
+      {
+        "text": "声明响应支持的内容类型",
+        "isCorrect": false,
+        "description": "那是 Content-Type 的职责"
+      },
+      {
+        "text": "替代 ETag 作为验证器",
+        "isCorrect": false,
+        "description": "Vary 是缓存键维度，与 ETag 验证器无关"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：s-maxage 指令与 max-age 的关系是？",
+    "explanation": "**s-maxage 仅对共享缓存（CDN / 代理）生效，且会覆盖 max-age**。这让 CDN 与浏览器新鲜期解耦：`Cache-Control: max-age=600, s-maxage=86400` 表示浏览器缓存 10 分钟、CDN 缓存 1 天。常见于「接口数据 CDN 共享但客户端要快速感知更新」场景。私有缓存（浏览器）只看 max-age，忽略 s-maxage。",
+    "tags": ["http-cache", "s-maxage", "max-age", "CDN"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "s-maxage 仅对共享缓存生效，且覆盖 max-age",
+        "isCorrect": true,
+        "description": "正确。让 CDN 与浏览器新鲜期解耦"
+      },
+      {
+        "text": "s-maxage 仅对浏览器生效，覆盖 max-age",
+        "isCorrect": false,
+        "description": "s-maxage 是共享缓存专用，浏览器忽略它"
+      },
+      {
+        "text": "s-maxage 与 max-age 完全等价",
+        "isCorrect": false,
+        "description": "两者作用层不同，s-maxage 是共享缓存层"
+      },
+      {
+        "text": "s-maxage 替代 max-age 用于所有缓存层",
+        "isCorrect": false,
+        "description": "私有缓存不识别 s-maxage，仍需 max-age"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：以下哪种是「版本化资源」的正确做法？",
+    "explanation": "**版本化资源应使用文件名 hash 指纹（app.a3f9b2c1.js）而非 query string（?v=2）**——部分老代理 / CDN 不缓存含 `?` 的 URL，文件名 hash 更通用。Cache-Control: max-age=31536000 是 web.dev 推荐的最大值（1 年），配合 immutable 跳过刷新触发的条件请求，Facebook 报告省 60% 请求量。",
+    "tags": ["http-cache", "hash", "版本化", "max-age"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "文件名 hash（app.[hash].js）+ Cache-Control: max-age=31536000, immutable",
+        "isCorrect": true,
+        "description": "正确。web.dev 推荐最大值，hash 保证内容唯一"
+      },
+      {
+        "text": "query string 版本号（app.js?v=2）+ Cache-Control: no-cache",
+        "isCorrect": false,
+        "description": "部分老代理 / CDN 不缓存含 ? 的 URL；no-cache 浪费协商往返"
+      },
+      {
+        "text": "文件名 hash + Cache-Control: no-cache",
+        "isCorrect": false,
+        "description": "hash 已保证唯一，强制每次协商是浪费往返"
+      },
+      {
+        "text": "query string 版本号 + Cache-Control: max-age=31536000",
+        "isCorrect": false,
+        "description": "?v=N 不被部分代理 / CDN 缓存，文件名 hash 更通用"
+      }
+    ]
+  },
+  {
+    "stem": "HTTP 缓存：服务端忽略 If-None-Match / If-Modified-Since 直接返回 200 + 完整 body 的后果是？",
+    "explanation": "**丢失协商缓存优化，白白消耗带宽与用户流量**——客户端发条件请求本意是「未变就给我 304」，服务端忽略验证器直接返 200 + 完整 body 等于把协商缓存机制废掉。正确做法：服务端读取 If-None-Match / If-Modified-Since，比对当前 ETag / Last-Modified，未变返 304（几乎无 body），变了才返 200 + 新副本。",
+    "tags": ["http-cache", "协商缓存", "服务端", "if-none-match"],
+    "categories": [
+      ["技术方向", "HTTP 缓存"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "丢失协商缓存优化，浪费带宽与用户流量",
+        "isCorrect": true,
+        "description": "正确。客户端得不到 304，每次都拉完整 body"
+      },
+      {
+        "text": "客户端会缓存更久",
+        "isCorrect": false,
+        "description": "缓存时长由 Cache-Control 控制，与服务端是否返 304 无关"
+      },
+      {
+        "text": "客户端报错阻止加载",
+        "isCorrect": false,
+        "description": "客户端不会阻止，正常接收 200 + body"
+      },
+      {
+        "text": "浏览器自动重试协商",
+        "isCorrect": false,
+        "description": "浏览器不会重试，按 200 处理"
+      }
+    ]
+  }
+]

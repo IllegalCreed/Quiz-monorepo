@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "压缩：HTTP 传输压缩的本质定位是什么？",
+    "explanation": "HTTP 传输压缩是在响应字节流送出网络前对其做**无损编码**以减小字节数的过程，由 Content-Encoding 响应头声明算法，浏览器自动解压。它与构建期对源码的语法改造（Minification）正交——压缩后字节流可精确还原，Minification 后注释/原名不可还原，两者叠加使用。",
+    "tags": ["压缩", "定位", "传输压缩"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "传输层对响应字节流做无损编码，浏览器自动解压",
+        "isCorrect": true,
+        "description": "Content-Encoding 声明算法，浏览器原生解压"
+      },
+      {
+        "text": "构建期对源码做语法等价改写减体积",
+        "isCorrect": false,
+        "description": "那是 Minification（代码压缩），归代码优化叶"
+      },
+      {
+        "text": "HTTP/2 头部专用的 HPACK 压缩",
+        "isCorrect": false,
+        "description": "HPACK 专压 header，本章讲 body 字节流压缩"
+      },
+      {
+        "text": "把 JPEG/PNG 转换为 WebP 的图片格式优化",
+        "isCorrect": false,
+        "description": "那是图片格式优化，归资源优化叶"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：gzip、deflate、brotli、zstd 中哪个是事实兜底标准？",
+    "explanation": "gzip（RFC 1952，1996）基于 LZ77+Huffman，是**全平台全浏览器 100% 支持**的事实兜底标准。所有现代算法（brotli/zstd）在不支持的客户端上都需要回退到 gzip。deflate 因歧义被弃用，brotli 仅 HTTPS 通告，zstd 浏览器覆盖约 77%。",
+    "tags": ["压缩", "算法", "gzip", "兜底"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "gzip（RFC 1952）",
+        "isCorrect": true,
+        "description": "全平台 100% 支持，事实兜底"
+      },
+      {
+        "text": "deflate（RFC 1950/1951）",
+        "isCorrect": false,
+        "description": "HTTP 中有 zlib/raw 歧义，新项目弃用"
+      },
+      {
+        "text": "brotli（RFC 7932）",
+        "isCorrect": false,
+        "description": "仅 HTTPS 通告，老 Safari/IE 不支持"
+      },
+      {
+        "text": "zstd（RFC 8478）",
+        "isCorrect": false,
+        "description": "Safari 26 才追上，覆盖约 77%"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：deflate 在 HTTP 中的「歧义陷阱」指什么？",
+    "explanation": "RFC 2616 原文规定 Content-Encoding: deflate 应是 zlib 格式（RFC 1950，raw deflate 外加 2 字节头 + 4 字节 Adler-32 校验），但实际大量服务器（含历史 IIS）发的是 raw deflate（RFC 1951 裸流）。浏览器只能靠试错兜底判断两种格式，因此新项目应直接用 gzip/br，跳过 deflate。",
+    "tags": ["压缩", "deflate", "歧义", "RFC"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RFC 说 deflate = zlib（RFC 1950），但实际服务器常发 raw deflate（RFC 1951）",
+        "isCorrect": true,
+        "description": "规范与实现长期不统一，浏览器只能试错兜底"
+      },
+      {
+        "text": "deflate 算法本身存在压缩率不稳定的问题",
+        "isCorrect": false,
+        "description": "算法本身稳定，问题在格式约定"
+      },
+      {
+        "text": "deflate 不支持 q 值权重协商",
+        "isCorrect": false,
+        "description": "q 值是 Accept-Encoding 的协议机制，与算法无关"
+      },
+      {
+        "text": "deflate 在 HTTPS 上才被浏览器通告",
+        "isCorrect": false,
+        "description": "那是 brotli 的特性，deflate 在 HTTP/HTTPS 都通告"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：brotli 仅在哪种通道上被浏览器通告？",
+    "explanation": "浏览器**只在 HTTPS 请求里**才会发出 Accept-Encoding: br。这是历史安全设计：避免 BREACH/CRIME 类时序攻击在加密通道上利用压缩比推断明文。明文 HTTP 上浏览器不声明 br，服务器强行发会被忽略或解码失败。本地 http://localhost 调试看不到 brotli 是这个原因。",
+    "tags": ["压缩", "brotli", "HTTPS", "BREACH"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "仅 HTTPS（明文 HTTP 浏览器不声明 br）",
+        "isCorrect": true,
+        "description": "历史安全设计，避免 BREACH/CRIME 时序攻击"
+      },
+      {
+        "text": "仅 HTTP（明文才能发 br）",
+        "isCorrect": false,
+        "description": "正好相反，明文 HTTP 不声明 br"
+      },
+      {
+        "text": "HTTP 与 HTTPS 都通告",
+        "isCorrect": false,
+        "description": "明文 HTTP 上浏览器不发 br"
+      },
+      {
+        "text": "仅 HTTP/2+ 才通告（与协议版本有关）",
+        "isCorrect": false,
+        "description": "约束是 HTTPS 而非 HTTP 版本"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：zstandard（zstd）何时正式进入 Baseline？",
+    "explanation": "zstd（RFC 8478，2018）浏览器侧较新：Chrome 124+ / Edge 124+ / Firefox 已支持，但 Safari 26 才追上。Can I Use 全球支持约 77%，于 2026 年 2 月正式进入 Baseline——已可生产用但必须保留 br/gzip 兜底链以兼容老客户端。",
+    "tags": ["压缩", "zstd", "Baseline", "兼容性"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2026 年 2 月（Safari 26 才追上 Chrome/Firefox）",
+        "isCorrect": true,
+        "description": "全球支持约 77%，进入 Baseline"
+      },
+      {
+        "text": "2018 年（RFC 8478 发布即 Baseline）",
+        "isCorrect": false,
+        "description": "RFC 发布 ≠ 浏览器覆盖达 Baseline"
+      },
+      {
+        "text": "2016 年与 brotli 同步",
+        "isCorrect": false,
+        "description": "brotli 是 2016 年，zstd 浏览器支持晚得多"
+      },
+      {
+        "text": "zstd 尚未进入 Baseline",
+        "isCorrect": false,
+        "description": "2026-02 已进入 Baseline"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：Accept-Encoding 中「gzip;q=0.8, identity;q=0」的含义？",
+    "explanation": "q 值是 Accept-Encoding 的权重：1.0（或缺省）= 最想要，0 = 拒绝。例：br;q=1.0, gzip;q=0.8, identity;q=0 表示：最想要 br，次选 gzip（权重 0.8），明确拒绝不编码（identity）。`*` 是通配，表示接受任意未显式声明的编码。",
+    "tags": ["压缩", "Accept-Encoding", "q值", "协商"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "gzip 权重 0.8；identity q=0 表示拒绝不编码（必须压缩）",
+        "isCorrect": true,
+        "description": "q=0 即拒绝该算法"
+      },
+      {
+        "text": "gzip 优先级最高；identity 是首选",
+        "isCorrect": false,
+        "description": "q 值越大越优先，0 是拒绝"
+      },
+      {
+        "text": "gzip 占 80% 概率；identity 占 0%",
+        "isCorrect": false,
+        "description": "q 值不是概率，是优先级权重"
+      },
+      {
+        "text": "gzip 不接受；identity 是必选",
+        "isCorrect": false,
+        "description": "正好相反"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：响应头「Content-Encoding: deflate, gzip」的正确解码顺序？",
+    "explanation": "Content-Encoding 可叠加多个值，按**列出顺序**应用——先 deflate 再 gzip 包外层；解码时**反向剥层**：先解 gzip 再解 deflate。实际生产极少叠加，单一 brotli 或 gzip 已是最佳点，叠加只增加 CPU 开销与复杂度，常作为面试题而非生产实践。",
+    "tags": ["压缩", "Content-Encoding", "叠加", "解码顺序"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先解 gzip，再解 deflate（反向剥层）",
+        "isCorrect": true,
+        "description": "编码方向是先 deflate 再 gzip，解码反向"
+      },
+      {
+        "text": "先解 deflate，再解 gzip（按列出顺序）",
+        "isCorrect": false,
+        "description": "解码是编码的反向，必须反向剥层"
+      },
+      {
+        "text": "只需解 gzip，deflate 是兜底标记",
+        "isCorrect": false,
+        "description": "两者都需解开，deflate 不是标记"
+      },
+      {
+        "text": "只需解 deflate，gzip 是冗余头",
+        "isCorrect": false,
+        "description": "两者都生效，缺一不可"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：Vary: Accept-Encoding 的核心作用是什么？",
+    "explanation": "同一 URL 会因 Accept-Encoding 返回不同字节（gzip/br/zstd/identity 四种版本）。Vary: Accept-Encoding 告诉缓存（浏览器/CDN/代理）此响应内容随 Accept-Encoding 变化，必须把它纳入缓存键，否则会把压缩版返给不支持的客户端（缓存中毒，乱码或解码失败）。",
+    "tags": ["压缩", "Vary", "缓存", "缓存中毒"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "告诉缓存此响应随 Accept-Encoding 变化，必须把它纳入缓存键",
+        "isCorrect": true,
+        "description": "防止 CDN 把压缩版串给不支持客户端（缓存中毒）"
+      },
+      {
+        "text": "强制服务器只返回 brotli 编码",
+        "isCorrect": false,
+        "description": "Vary 是缓存指令，不强制算法选择"
+      },
+      {
+        "text": "禁用 CDN 缓存此响应",
+        "isCorrect": false,
+        "description": "Cache-Control: no-store 才禁用缓存"
+      },
+      {
+        "text": "声明响应可能跨域共享",
+        "isCorrect": false,
+        "description": "跨域由 CORS 头控制，与 Vary 无关"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：nginx 的 gzip_vary 指令默认值是什么？",
+    "explanation": "nginx 的 gzip_vary 默认是 **off**——必须显式 gzip_vary on; 才会输出 Vary: Accept-Encoding 响应头。这是生产中最常见的压缩配置事故：开启 gzip 但忘开 gzip_vary，CDN/反向代理把压缩版缓存到不支持的客户端，导致局部乱码。同理 gzip 默认 off、gzip_proxied 默认 off、gzip_comp_level 默认 1、gzip_types 默认仅 text/html。",
+    "tags": ["压缩", "nginx", "gzip_vary", "默认值"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "off（必须显式 gzip_vary on 才输出 Vary 头）",
+        "isCorrect": true,
+        "description": "默认 off 是最常见事故源头"
+      },
+      {
+        "text": "on（默认输出 Vary: Accept-Encoding）",
+        "isCorrect": false,
+        "description": "默认是 off，必须显式开启"
+      },
+      {
+        "text": "auto（按客户端 UA 自动判断）",
+        "isCorrect": false,
+        "description": "无 auto 取值"
+      },
+      {
+        "text": "仅在 HTTPS 下默认 on",
+        "isCorrect": false,
+        "description": "与协议无关，默认就是 off"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：nginx 的 gzip_static on 与 always 有何区别？",
+    "explanation": "gzip_static on：按 Accept-Encoding 协商后发 .gz（推荐）；gzip_static always：**无视** Accept-Encoding 一律发 .gz——仅适用于确定所有客户端都支持 gzip 的封闭环境（如内网 API），公网服务千万别用，否则会破坏不支持 gzip 的客户端（老爬虫、部分代理）。",
+    "tags": ["压缩", "nginx", "gzip_static", "always"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "on 走 Accept-Encoding 协商；always 无视协商一律发 .gz",
+        "isCorrect": true,
+        "description": "公网服务用 on，封闭环境才能用 always"
+      },
+      {
+        "text": "on 仅对小文件生效；always 对所有文件生效",
+        "isCorrect": false,
+        "description": "区别在是否协商，与文件大小无关"
+      },
+      {
+        "text": "on 是动态压缩；always 是预压缩",
+        "isCorrect": false,
+        "description": "两者都是发预压缩 .gz，区别在协商逻辑"
+      },
+      {
+        "text": "on 仅 HTTPS 生效；always 任意协议",
+        "isCorrect": false,
+        "description": "与协议无关"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：nginx 的 gzip_comp_level 默认值与生产甜点？",
+    "explanation": "nginx 的 gzip_comp_level 默认是 **1**（最低档），生产甜点是 **6**。级别 9 仅比 6 多省 1-3% 但 CPU 成本激增 3-5 倍，不适合 on-the-fly 动态请求。解压速度与压缩级别基本无关，所以静态预压缩才用 9，动态响应用 6 即可。",
+    "tags": ["压缩", "nginx", "gzip_comp_level", "级别"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 1，甜点 6（9 仅多省 1-3% 但 CPU 激增）",
+        "isCorrect": true,
+        "description": "动态响应用 6，离线预压缩才用 9"
+      },
+      {
+        "text": "默认 6，甜点 9",
+        "isCorrect": false,
+        "description": "默认是 1，9 不是动态响应甜点"
+      },
+      {
+        "text": "默认 9，甜点 1",
+        "isCorrect": false,
+        "description": "默认是 1，但甜点不是 1"
+      },
+      {
+        "text": "默认 0（关闭），甜点 11",
+        "isCorrect": false,
+        "description": "gzip level 范围 1-9，0 是关闭"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：nginx 的 gzip_types 指令默认包含哪些 MIME？",
+    "explanation": "nginx 的 gzip_types 默认**仅 text/html**——其他文本类型（CSS、JS、JSON、SVG、XML）都必须显式声明才会压缩。生产配置通常加 text/css、text/javascript、application/javascript、application/json、application/xml、image/svg+xml 等。同时注意不要把 image/jpeg、video/mp4、font/woff2 等已压缩的二进制加进去——二次压缩无收益甚至变大。",
+    "tags": ["压缩", "nginx", "gzip_types", "MIME"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅 text/html（其他文本类型必须显式声明）",
+        "isCorrect": true,
+        "description": "默认非常保守，生产需扩展"
+      },
+      {
+        "text": "所有 text/* 与 application/* 类型",
+        "isCorrect": false,
+        "description": "默认只 text/html，不是通配"
+      },
+      {
+        "text": "全部 MIME（默认全压）",
+        "isCorrect": false,
+        "description": "默认仅 text/html，避免误压二进制"
+      },
+      {
+        "text": "仅 image/jpeg 与 video/mp4",
+        "isCorrect": false,
+        "description": "图片/视频本就不该压"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：下列哪类资源**不应该**被传输压缩？",
+    "explanation": "JPEG/PNG/WebP/AVIF/GIF/MP4/WOFF2 等二进制资源内部已用更贴近数据特征的算法压过一轮，再套 gzip/brotli 通常**压不动甚至因加头变大**，纯浪费 CPU。尤其 WOFF2 本身已 brotli 压过。nginx 默认 gzip_types 不含这些 MIME 是有道理的。文本类（JS/CSS/HTML/SVG/JSON）才是压缩的有效对象。",
+    "tags": ["压缩", "反模式", "二进制", "WOFF2"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "JPEG / PNG / WebP / MP4 / WOFF2 等已压缩二进制",
+        "isCorrect": true,
+        "description": "二次压缩无收益甚至变大，纯浪费 CPU"
+      },
+      {
+        "text": "JS / CSS / HTML / SVG / JSON 等文本资源",
+        "isCorrect": false,
+        "description": "文本类才是压缩主要对象，可省 70%+"
+      },
+      {
+        "text": "所有 application/javascript 资源",
+        "isCorrect": false,
+        "description": "JS 是首选压缩对象"
+      },
+      {
+        "text": "API 返回的 JSON 响应",
+        "isCorrect": false,
+        "description": "JSON 文本压缩收益高"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：WOFF2 字体不该再用 brotli 压缩的原因？",
+    "explanation": "WOFF2 字体格式本身就基于 brotli 压缩——其内部已对字体表数据用过 brotli 编码，再套 brotli/gzip 通常压不动（同算法二次压缩边际收益接近零），还可能因压缩头开销变大。WOFF（旧版）则用 zlib。只有未压缩的 TTF/OTF 才能从传输压缩中受益。",
+    "tags": ["压缩", "WOFF2", "字体", "二次压缩"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "WOFF2 内部已用 brotli 压过，二次压缩无收益甚至变大",
+        "isCorrect": true,
+        "description": "同算法二次压缩边际收益接近零"
+      },
+      {
+        "text": "WOFF2 是矢量格式，压缩会失真",
+        "isCorrect": false,
+        "description": "传输压缩是无损的，不会失真"
+      },
+      {
+        "text": "WOFF2 体积太小，不值得压缩",
+        "isCorrect": false,
+        "description": "体积大小不是主因，是内部已压缩"
+      },
+      {
+        "text": "浏览器不支持 WOFF2 的传输压缩",
+        "isCorrect": false,
+        "description": "支持是支持的，但二次压缩无意义"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：传输压缩与 Minification 的根本区别是什么？",
+    "explanation": "Minification 是**构建期对源码的有损语法改造**（删空白/注释、缩短变量名、常量折叠），输出仍是 JS/CSS/HTML 但可读性降低，注释/原名**不可还原**。传输压缩是**传输期对字节流的无损编码**，解码能精确还原原始字节。两者**叠加使用**：先 minify 把源码降到最小，再 brotli/gzip 压这个最小化后的字节流，乘性收益最大。",
+    "tags": ["压缩", "Minification", "边界", "有损无损"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Minification 是构建期有损改造；Compression 是传输期无损编码（可还原）",
+        "isCorrect": true,
+        "description": "两者正交且叠加"
+      },
+      {
+        "text": "两者本质相同，都是删除冗余字符",
+        "isCorrect": false,
+        "description": "完全不同：阶段、对象、可逆性都不同"
+      },
+      {
+        "text": "Minification 是传输期；Compression 是构建期",
+        "isCorrect": false,
+        "description": "正好相反"
+      },
+      {
+        "text": "Minification 比 Compression 更省字节",
+        "isCorrect": false,
+        "description": "两者对象不同，不能直接比较，应叠加"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：brotli 与 gzip 同级别压缩率对比？",
+    "explanation": "brotli 比 gzip 同级别高 **15-25%** 压缩率（文本资源）。得益于内置 120KB Web 静态字典（常见 JS/CSS 关键词预置）+ 二阶 Huffman + context modeling。HTTP Archive 统计显示，brotli 在生产环境文本压缩使用率**已超过 gzip**（得益于 CDN 与现代浏览器普及）。",
+    "tags": ["压缩", "brotli", "gzip", "压缩率"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "brotli 比 gzip 同级别高 15-25%（文本资源）",
+        "isCorrect": true,
+        "description": "得益于内置 Web 静态字典"
+      },
+      {
+        "text": "gzip 比 brotli 高 15-25%",
+        "isCorrect": false,
+        "description": "正好相反"
+      },
+      {
+        "text": "两者压缩率基本相同",
+        "isCorrect": false,
+        "description": "brotli 显著优于 gzip"
+      },
+      {
+        "text": "brotli 仅在图片上优于 gzip",
+        "isCorrect": false,
+        "description": "图片不该用任何文本压缩"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：静态文本资源的最佳压缩实践？",
+    "explanation": "静态资源（JS/CSS/HTML/SVG/JSON）应在**构建期离线预压缩**生成 .br（brotli level 11）和 .gz（gzip level 9）双产物，交给 nginx brotli_static on + gzip_static on 直发文件——零运行期 CPU。brotli level 9-11 压缩极慢（比 level 6 慢 10-100 倍），**绝不用于动态请求的 on-the-fly**。",
+    "tags": ["压缩", "静态预压缩", "brotli_static", "最佳实践"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "构建期生成 .br(level 11) + .gz(level 9)，nginx brotli_static+gzip_static 直发",
+        "isCorrect": true,
+        "description": "零运行期 CPU，级别可拉满"
+      },
+      {
+        "text": "运行期 nginx brotli_comp_level 11 实时压缩",
+        "isCorrect": false,
+        "description": "level 11 极慢，会拖垮 TTFB"
+      },
+      {
+        "text": "仅用 CDN 自动压缩，无需服务器配置",
+        "isCorrect": false,
+        "description": "CDN 支持不一，最佳实践仍是预压缩双产物"
+      },
+      {
+        "text": "禁用压缩，靠源码 Minification 即可",
+        "isCorrect": false,
+        "description": "Minification 与 Compression 应叠加"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：压缩级别提升对解压速度的影响？",
+    "explanation": "解压速度与压缩级别**基本无关**——压缩耗时随级别近似指数增长，但解压仍按算法本身的吞吐（如 gzip 约 500MB/s、zstd >1GB/s）。所以静态资源宁可用高级别离线压：压缩成本构建期一次付清，移动端解压依然快，收益最大化（brotli 11 比 6 多省 5-10%）。",
+    "tags": ["压缩", "级别", "解压速度", "权衡"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "解压速度与级别基本无关（高级别只增加压缩耗时）",
+        "isCorrect": true,
+        "description": "解压按算法本身吞吐，与级别无关"
+      },
+      {
+        "text": "级别越高，解压越慢",
+        "isCorrect": false,
+        "description": "解压速度与级别基本无关"
+      },
+      {
+        "text": "级别越高，解压越快",
+        "isCorrect": false,
+        "description": "解压速度与级别无关，不是变快"
+      },
+      {
+        "text": "解压速度与压缩级别成反比",
+        "isCorrect": false,
+        "description": "两者基本独立"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：本地 http://localhost 调试看不到 brotli 响应的原因？",
+    "explanation": "浏览器**只在 HTTPS 请求里**才会发出 Accept-Encoding: br（历史安全设计，避免 BREACH/CRIME 时序攻击）。本地 http://localhost 是明文 HTTP，浏览器不发 br，服务器自然不会返回 brotli 编码——这不是配置错误，验证 brotli 必须 HTTPS（可用 mkcert 本地签证书或 vite --https）。",
+    "tags": ["压缩", "brotli", "localhost", "HTTPS"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "明文 HTTP 浏览器不声明 br（必须 HTTPS 才能验证 brotli）",
+        "isCorrect": true,
+        "description": "用 mkcert 或 vite --https 起本地 HTTPS 验证"
+      },
+      {
+        "text": "localhost 默认禁用所有压缩",
+        "isCorrect": false,
+        "description": "压缩与域名无关，是协议层约束"
+      },
+      {
+        "text": "nginx 默认不对 localhost 启用 brotli",
+        "isCorrect": false,
+        "description": "服务器配置正常，是浏览器侧不声明 br"
+      },
+      {
+        "text": "brotli 在 localhost 上不被支持",
+        "isCorrect": false,
+        "description": "支持是支持的，但浏览器不发 br 头"
+      }
+    ]
+  },
+  {
+    "stem": "压缩：CDN 缓存中毒导致乱码的根因？",
+    "explanation": "同一 URL 因 Accept-Encoding 返回不同字节（gzip/br/zstd/identity）。若响应未带 Vary: Accept-Encoding（或 nginx 忘开 gzip_vary on，默认 off），CDN 不把 Accept-Encoding 纳入缓存键，会把 brotli 版本缓存给后续请求的老爬虫/不支持客户端，导致解不开 → 乱码或拒绝渲染。这是 HTTP 压缩最常见的生产事故。",
+    "tags": ["压缩", "缓存中毒", "Vary", "CDN"],
+    "categories": [
+      ["技术方向", "压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "缺 Vary: Accept-Encoding，CDN 把压缩版串给不支持客户端",
+        "isCorrect": true,
+        "description": "nginx gzip_vary 默认 off 是事故主因"
+      },
+      {
+        "text": "CDN 不支持 brotli 解码",
+        "isCorrect": false,
+        "description": "现代 CDN 都支持，问题在缓存键"
+      },
+      {
+        "text": "浏览器 Accept-Encoding 头丢失",
+        "isCorrect": false,
+        "description": "请求头正常，是响应缺 Vary 导致缓存键不全"
+      },
+      {
+        "text": "服务器返回了 Content-Length 不匹配的字节流",
+        "isCorrect": false,
+        "description": "与 Content-Length 无关"
+      }
+    ]
+  }
+]

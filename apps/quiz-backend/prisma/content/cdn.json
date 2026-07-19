@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "CDN：边缘节点（PoP）相对源站的核心性能收益不包括以下哪一项？",
+    "explanation": "CDN 的核心性能收益是**三要素叠加**：① 更短 RTT（边缘节点离用户物理距离近，TCP/TLS 握手与首字节往返缩短）；② 连接预热/复用（边缘与源之间维持长连接、TLS 1.3 1-RTT、HTTP/2 多路复用、HTTP/3 QUIC 消除队头阻塞）；③ 缓存卸载回源（CHR 高时绝大多数请求在边缘终结，源站压力骤降）。CPU 计算下沉并不是 CDN 的核心收益——CDN 主要做缓存与传输优化，不做应用逻辑计算。",
+    "tags": ["cdn", "三要素", "rtt", "性能"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "更短 RTT（边缘节点离用户物理距离更近）",
+        "isCorrect": false,
+        "description": "这是三要素之一，直接降 TTFB → 改善 LCP/FCP"
+      },
+      {
+        "text": "连接预热/复用（TLS 1.3 1-RTT、HTTP/2 multiplexing）",
+        "isCorrect": false,
+        "description": "这是三要素之一，回源握手开销可忽略"
+      },
+      {
+        "text": "缓存卸载回源（CHR 高时源站几乎不被打）",
+        "isCorrect": false,
+        "description": "这是三要素之一，扛得住突发流量"
+      },
+      {
+        "text": "CPU 计算下沉到边缘（应用逻辑在边缘执行）",
+        "isCorrect": true,
+        "description": "CDN 主要做缓存与传输优化，不做应用逻辑计算"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：origin pull 与 purge 的本质区别是什么？",
+    "explanation": "**origin pull** 是缓存未命中时 CDN **被动**代用户向源站请求并缓存；**purge** 是用户**主动**调用 Purge API 让已有缓存条目立即失效，下次请求才会触发新的 origin pull。eviction 是边缘空间不足时自动 LRU 淘汰，与请求/手动操作无关。",
+    "tags": ["cdn", "origin-pull", "purge", "eviction"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "origin pull 是被动拉取并缓存；purge 是主动让已有缓存失效",
+        "isCorrect": true,
+        "description": "前者由未命中触发，后者由 Purge API 触发"
+      },
+      {
+        "text": "两者都是 CDN 自动行为，区别在 TTL 长短",
+        "isCorrect": false,
+        "description": "purge 是用户主动调用 API，不是自动行为"
+      },
+      {
+        "text": "origin pull 是删除缓存；purge 是写入缓存",
+        "isCorrect": false,
+        "description": "语义完全反过来：origin pull 是拉取并写入，purge 是删除"
+      },
+      {
+        "text": "两者等价，都是让缓存条目过期",
+        "isCorrect": false,
+        "description": "前者是拉，后者是删，方向相反"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：生产环境推荐的目标缓存命中率（CHR）是多少？",
+    "explanation": "**CHR ≥ 90%** 是生产环境 CDN 运营的常规目标。低于这个数字通常先排查 query 参数归一化、Vary 滥用、带 Set-Cookie 响应被缓存等治理问题，而不是先怀疑源站。CHR = 缓存命中请求数 / 总请求数。",
+    "tags": ["cdn", "chr", "命中率"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "≥ 90%",
+        "isCorrect": true,
+        "description": "生产环境常规目标，低于此先排查 query/Vary/Set-Cookie"
+      },
+      {
+        "text": "≥ 50%",
+        "isCorrect": false,
+        "description": "标准过低，意味着源站一半请求被打"
+      },
+      {
+        "text": "100%（必须全命中）",
+        "isCorrect": false,
+        "description": "不现实，首次访问必然未命中"
+      },
+      {
+        "text": "≥ 30%",
+        "isCorrect": false,
+        "description": "标准过低，CDN 几乎没起作用"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：以下哪种情况不会拉低 cache hit ratio（CHR）？",
+    "explanation": "CHR 杀手主要有三类：① **query 参数未归一化**（utm_id、referral_id、参数顺序不同被当不同 cache key）；② **滥用 Vary**（如 Vary: User-Agent 不做归一化会让同一资源几千份缓存）；③ **带 Set-Cookie 的响应**（缓存层通常不缓存，且漏加 private 会泄漏）。忽略无关 query 参数（utm 等）是 CHR 治理的正确做法，不会拉低 CHR。",
+    "tags": ["cdn", "chr", "query", "vary"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "URL 上有大量未归一化的 utm_id、referral_id 参数",
+        "isCorrect": false,
+        "description": "默认每个值都是不同 cache key，造成缓存碎片"
+      },
+      {
+        "text": "在 CDN 配置中忽略 utm_*、referral_id 等无关 query",
+        "isCorrect": true,
+        "description": "这是 CHR 治理的正确做法"
+      },
+      {
+        "text": "响应头写 Vary: User-Agent 但不做归一化",
+        "isCorrect": false,
+        "description": "UA 不稳定会让同一资源产生大量变体"
+      },
+      {
+        "text": "对带 Set-Cookie 的登录响应期望被共享缓存",
+        "isCorrect": false,
+        "description": "缓存层通常不缓存含 Set-Cookie 的响应"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Cache-Control: public, max-age=600, s-maxage=86400 的实际效果是什么？",
+    "explanation": "**s-maxage 仅对共享/CDN 缓存生效，覆盖 max-age，浏览器忽略 s-maxage**。所以浏览器按 max-age=600 缓存 10 分钟，CDN 按 s-maxage=86400 缓存 1 天。这是把「用户感知新鲜度」（浏览器 10 分钟内强制刷新拿新内容）与「CDN 命中率」（CDN 缓存 1 天卸源）解耦的关键指令。",
+    "tags": ["cdn", "s-maxage", "max-age", "cache-control"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "浏览器缓存 10 分钟，CDN 缓存 1 天",
+        "isCorrect": true,
+        "description": "s-maxage 覆盖 max-age 仅对共享缓存生效，浏览器按 max-age 走"
+      },
+      {
+        "text": "浏览器和 CDN 都缓存 1 天",
+        "isCorrect": false,
+        "description": "浏览器忽略 s-maxage，仍按 max-age=600 走"
+      },
+      {
+        "text": "浏览器和 CDN 都缓存 10 分钟",
+        "isCorrect": false,
+        "description": "s-maxage 会覆盖 max-age 对 CDN 生效，CDN 走 86400"
+      },
+      {
+        "text": "完全不缓存，每次都回源",
+        "isCorrect": false,
+        "description": "那是 no-store 的行为，与此配置无关"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：no-cache 指令的精确语义是什么？",
+    "explanation": "**no-cache ≠ 不缓存**。它的精确语义是「可存储但每次复用前必须向源站 revalidate」——即缓存层仍可保存响应，但每次给用户用之前要先发条件请求（If-None-Match / If-Modified-Since）向源站确认是否变化。要完全不缓存必须用 **no-store**。常见误用是以为 no-cache 等于不缓存。",
+    "tags": ["cdn", "no-cache", "no-store", "语义"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可缓存，但每次复用前必须向源站 revalidate",
+        "isCorrect": true,
+        "description": "条件请求确认变化后才用，304 续命或 200 拉新"
+      },
+      {
+        "text": "完全不缓存，每次都重新拉取",
+        "isCorrect": false,
+        "description": "那是 no-store 的语义"
+      },
+      {
+        "text": "只缓存在浏览器，不缓存在 CDN",
+        "isCorrect": false,
+        "description": "那是 private 的语义"
+      },
+      {
+        "text": "缓存 0 秒，等同于 max-age=0 但不发条件请求",
+        "isCorrect": false,
+        "description": "no-cache 会发条件请求，不是简单 0 秒"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：登录后返回的个性化响应（含 Set-Cookie）应配置什么 Cache-Control？",
+    "explanation": "个性化响应必须加 **Cache-Control: private**（或 no-store），表示只进浏览器私有缓存，不进共享缓存。否则会被共享缓存复用给其他用户导致信息泄漏。CDN 默认会缓存任何未标 no-store/private 的可缓存响应，含 Set-Cookie 的响应漏加 private 是高发安全问题。",
+    "tags": ["cdn", "private", "set-cookie", "安全"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "private（只进浏览器私有缓存，不进共享缓存）",
+        "isCorrect": true,
+        "description": "防止个性化响应被共享给他人，避免数据泄漏"
+      },
+      {
+        "text": "public, max-age=3600（让 CDN 缓存 1 小时）",
+        "isCorrect": false,
+        "description": "会把 A 用户的个性化数据缓存给 B 用户，严重安全问题"
+      },
+      {
+        "text": "s-maxage=86400（让 CDN 长缓存）",
+        "isCorrect": false,
+        "description": "s-maxage 只控制共享缓存，不会自动加 private"
+      },
+      {
+        "text": "immutable（新鲜期内不发条件请求）",
+        "isCorrect": false,
+        "description": "immutable 只控制 revalidate 行为，不阻止共享缓存"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：标准 cache-busting 模式的正确组合是？",
+    "explanation": "**cache-busting 模式**：① 静态资源用版本化文件名（带内容 hash），配 Cache-Control: public, max-age=31536000, immutable——内容永不变可激进缓存，immutable 省一次条件请求；② HTML 入口配 Cache-Control: no-cache——强制每次 revalidate 拿新 hash 引用。HTML 没法 hash 化，所以必须靠 no-cache 让用户看到新版本。",
+    "tags": ["cdn", "cache-busting", "hash", "immutable"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "静态资源 hash 文件名 + max-age=31536000 + immutable；HTML 用 no-cache",
+        "isCorrect": true,
+        "description": "前者内容永不变可激进缓存，后者每次拿新 hash 引用"
+      },
+      {
+        "text": "静态资源用 no-cache；HTML 用 max-age=31536000",
+        "isCorrect": false,
+        "description": "完全反过来：静态资源每次都 revalidate 浪费，HTML 长缓存用户拿不到更新"
+      },
+      {
+        "text": "全部资源都用 max-age=31536000 + immutable",
+        "isCorrect": false,
+        "description": "HTML 没法 hash 化，长缓存会让用户拿不到更新"
+      },
+      {
+        "text": "全部资源都用 no-cache + s-maxage=0",
+        "isCorrect": false,
+        "description": "静态资源也每次 revalidate 是巨大浪费，CDN 几乎没起作用"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Cloudflare 的 CDN-Cache-Control 与 Cloudflare-CDN-Cache-Control 区别是？",
+    "explanation": "**CDN-Cache-Control**（标准草案）会被 Cloudflare 识别并**透传**给下游其他 CDN，同时控制本 CDN 与下游 CDN；**Cloudflare-CDN-Cache-Control**（Cloudflare 私有变体）只对 Cloudflare 本 CDN 生效，**不透传**给下游。Surrogate-Control 则被本 CDN 识别但不透传。三者让你逐层精细管理 origin / 本 CDN / 下游 CDN / 浏览器 五层 TTL。",
+    "tags": ["cdn", "cdn-cache-control", "cloudflare", "透传"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CDN-Cache-Control 透传下游；Cloudflare-CDN-Cache-Control 只对本 CDN 生效",
+        "isCorrect": true,
+        "description": "前者影响下游 CDN，后者仅 Cloudflare 一层"
+      },
+      {
+        "text": "两者完全等价，只是命名不同",
+        "isCorrect": false,
+        "description": "正是为了区分透传性才设计了两个头"
+      },
+      {
+        "text": "Cloudflare-CDN-Cache-Control 会透传但 CDN-Cache-Control 不会",
+        "isCorrect": false,
+        "description": "透传关系正好相反"
+      },
+      {
+        "text": "两者都不被 Cloudflare 识别，仅下游 CDN 用",
+        "isCorrect": false,
+        "description": "Cloudflare 都识别，区别在是否透传"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Surrogate-Key / Cache-Tag 的核心价值是什么？",
+    "explanation": "**Surrogate-Key / Cache-Tag** 是给缓存资源打标签的响应头，让 Purge API 能**按 key 批量失效**（如 footer 改了 purge 所有带 surrogate-key=footer 的资源）。相比 purge-all（整站命中率瞬时归零、源站被打）或按 URL 逐个 purge（数量大时不可行），分组失效是大规模内容更新的正确解。soft purge 是变体：标记过期但继续服务直到新版本就绪。",
+    "tags": ["cdn", "surrogate-key", "cache-tag", "purge"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按标签批量 purge，远胜 purge-all",
+        "isCorrect": true,
+        "description": "footer 改了 purge 所有引用它的页，不影响其他缓存"
+      },
+      {
+        "text": "加密缓存内容防止被篡改",
+        "isCorrect": false,
+        "description": "Surrogate-Key 与加密无关，是失效分组标识"
+      },
+      {
+        "text": "替代 Cache-Control 控制 TTL",
+        "isCorrect": false,
+        "description": "它管的是失效分组，不管 TTL"
+      },
+      {
+        "text": "给客户端识别 CDN 厂商",
+        "isCorrect": false,
+        "description": "这是 CDN 内部用的响应头，不面向客户端"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：stale-while-revalidate 与 stale-if-error 的核心作用是？",
+    "explanation": "**stale-while-revalidate=N**：过期后 N 秒内可先返旧值后台刷新（隐藏用户感知的延迟）。**stale-if-error=N**：源站返回 5xx / 不可达时，N 秒内仍复用旧响应（CDN 自带容灾层）。两者组合提升性能与可用性。CloudFront 上两者会与 Max TTL 取较小值生效——Max TTL 限制了能用多久。",
+    "tags": ["cdn", "stale-while-revalidate", "stale-if-error", "可用性"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "前者过期先返旧后台刷新；后者源站故障时复用旧值",
+        "isCorrect": true,
+        "description": "前者隐藏延迟，后者提供容灾兜底"
+      },
+      {
+        "text": "两者都是禁用缓存的指令",
+        "isCorrect": false,
+        "description": "恰恰相反，都是让缓存过期后仍能被用的指令"
+      },
+      {
+        "text": "前者控制浏览器缓存；后者控制 CDN 缓存",
+        "isCorrect": false,
+        "description": "两者对浏览器与共享缓存都生效，不分层"
+      },
+      {
+        "text": "两者等价，只是 RFC 不同",
+        "isCorrect": false,
+        "description": "语义完全不同：一个是过期后台刷新，一个是故障兜底"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：CloudFront 中源站 Cache-Control: no-store 但 cache policy 配了 Min TTL=60，会发生什么？",
+    "explanation": "这是经典踩坑点：**CloudFront 的 Min TTL > 0 会覆盖源站的 no-cache/no-store/private 指令**。也就是说，即使源站明确写了 no-store，CloudFront 仍会按 Min TTL=60 缓存 60 秒——源站不可达时仍可能返回旧对象。要强制报错必须配 stale-if-error=0 才行。所以设置 Min TTL > 0 时务必确认源站语义。",
+    "tags": ["cdn", "cloudfront", "min-ttl", "no-store"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CloudFront 仍会缓存 60 秒（Min TTL 覆盖 no-store）",
+        "isCorrect": true,
+        "description": "源站不可达时仍可能返回旧对象，需配 stale-if-error=0 才能强制报错"
+      },
+      {
+        "text": "CloudFront 完全不缓存（no-store 优先级最高）",
+        "isCorrect": false,
+        "description": "Min TTL > 0 会覆盖 no-store，这是经典坑"
+      },
+      {
+        "text": "CloudFront 报错拒绝服务",
+        "isCorrect": false,
+        "description": "CloudFront 不会因冲突报错，会按 Min TTL 走"
+      },
+      {
+        "text": "CloudFront 用 Default TTL 而非 Min TTL",
+        "isCorrect": false,
+        "description": "Default TTL 只在源站无 Cache-Control 时用，这里源站有 no-store"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：CloudFront Origin Shield 与 Cloudflare Tiered Cache 的共同作用是？",
+    "explanation": "两者都是**边缘与源之间的中间缓存层**：所有边缘 PoP 的 origin pull 先打到中间层（Origin Shield / 中心 PoP），由中间层集中回源。优点：① 集中回源——源站只看到中间层一个客户端，连接数大幅减少；② 提升 CHR——边缘未命中时中间层可能已缓存；③ 抗抖动——源站瞬时故障时中间层缓存兜底。",
+    "tags": ["cdn", "origin-shield", "tiered-cache", "chr"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在边缘与源之间加中间缓存层，集中回源提升 CHR",
+        "isCorrect": true,
+        "description": "把多边缘未命中合并成一次回源，源站压力骤降"
+      },
+      {
+        "text": "替换源站成为唯一存储",
+        "isCorrect": false,
+        "description": "中间层仍是缓存层，不是源数据的存储"
+      },
+      {
+        "text": "加密边缘与源之间的传输",
+        "isCorrect": false,
+        "description": "加密是 TLS 的事，与中间缓存层无关"
+      },
+      {
+        "text": "加速静态资源构建",
+        "isCorrect": false,
+        "description": "构建发生在发布前，CDN 不参与构建"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Image CDN 的 format=auto 参数通常基于什么协商输出格式？",
+    "explanation": "Image CDN 的 format=auto 会基于请求的 **Accept 头**自动协商——如果浏览器 Accept: image/avif，返回 AVIF；否则降级到 WebP 或 JPEG。AVIF 比 WebP/JPEG 压缩率显著更高，按需生成省存储与回源。配合 HTML `<img srcset sizes>` 让浏览器按 DPR / 视口选最优尺寸。",
+    "tags": ["cdn", "image-cdn", "avif", "accept"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "请求的 Accept 头（协商 AVIF/WebP/JPEG）",
+        "isCorrect": true,
+        "description": "支持 AVIF 就返 AVIF，否则降级 WebP/JPEG"
+      },
+      {
+        "text": "客户端 User-Agent 字符串",
+        "isCorrect": false,
+        "description": "格式协商基于 Accept，不是 UA"
+      },
+      {
+        "text": "客户端 IP 地理位置",
+        "isCorrect": false,
+        "description": "地理位置不影响图片编码格式协商"
+      },
+      {
+        "text": "请求的 Referer 头",
+        "isCorrect": false,
+        "description": "Referer 是来源页面，与格式协商无关"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：以下哪个 CDN 协议增益直接消除了 TCP 层的连接级队头阻塞？",
+    "explanation": "**HTTP/3 基于 QUIC/UDP**，消除了 HTTP/2 在 TCP 层的**连接级队头阻塞**——丢包只阻塞单流而非整个连接。HTTP/2 虽有多路复用但仍跑在 TCP 上，一个包丢失会阻塞所有流。TLS 1.3 把握手从 2-RTT 压到 1-RTT；Brotli 是压缩算法，与队头阻塞无关。",
+    "tags": ["cdn", "http3", "quic", "队头阻塞"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "HTTP/3（基于 QUIC/UDP）",
+        "isCorrect": true,
+        "description": "QUIC 在 UDP 上自己管流，丢包只阻塞单流"
+      },
+      {
+        "text": "HTTP/2（多路复用 + 流优先级）",
+        "isCorrect": false,
+        "description": "HTTP/2 仍跑在 TCP 上，连接级队头阻塞仍在"
+      },
+      {
+        "text": "TLS 1.3（1-RTT 握手）",
+        "isCorrect": false,
+        "description": "TLS 1.3 改的是握手开销，与队头阻塞无关"
+      },
+      {
+        "text": "Brotli 压缩（静态 11 / 动态 4）",
+        "isCorrect": false,
+        "description": "Brotli 是压缩算法，与传输层队头阻塞无关"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Cache-Control: immutable 指令的浏览器支持现状是？",
+    "explanation": "**immutable（RFC 8246）** 告诉浏览器「新鲜期内不发条件请求」，省一次往返。但浏览器支持有限：**Firefox / Safari 支持，Chromium 系（Chrome、Edge、Brave 等）不支持**——Chrome 仍会对 reload 发条件请求。把 immutable 当跨浏览器万能是反模式。",
+    "tags": ["cdn", "immutable", "浏览器兼容"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Firefox/Safari 支持；Chromium 系不支持",
+        "isCorrect": true,
+        "description": "Chrome 仍会对 reload 发条件请求"
+      },
+      {
+        "text": "所有现代浏览器都支持",
+        "isCorrect": false,
+        "description": "Chromium 系（Chrome/Edge/Brave）不支持"
+      },
+      {
+        "text": "只有 Chrome 支持，其他都不支持",
+        "isCorrect": false,
+        "description": "正好相反，Chrome 不支持"
+      },
+      {
+        "text": "所有浏览器都不支持，仅 CDN 识别",
+        "isCorrect": false,
+        "description": "Firefox/Safari 已支持多年"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：Cache-Control: public 在带 Authorization 头的请求场景下有什么作用？",
+    "explanation": "默认情况下，**带 Authorization 头的响应不会被共享缓存**（HTTP 缓存规范的安全保护）。但如果响应显式带 **Cache-Control: public**，就会**解锁共享缓存**对带 Authorization 响应的缓存。同样效果还可通过 s-maxage 或 must-revalidate 等指令等价解锁（按 RFC 9111，这些指令出现也视为同意共享缓存）。这是带登录态 API 响应要在 CDN 缓存时的关键配置点——但务必谨慎，避免不同用户的敏感数据被共享。",
+    "tags": ["cdn", "public", "authorization", "共享缓存"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "解锁共享缓存，允许缓存带 Authorization 的响应",
+        "isCorrect": true,
+        "description": "默认带 Authorization 不进共享缓存，public 显式同意"
+      },
+      {
+        "text": "禁止共享缓存，只允许浏览器缓存",
+        "isCorrect": false,
+        "description": "那是 private 的作用"
+      },
+      {
+        "text": "强制 CDN 每次回源校验",
+        "isCorrect": false,
+        "description": "那是 no-cache 的作用"
+      },
+      {
+        "text": "禁止任何缓存",
+        "isCorrect": false,
+        "description": "那是 no-store 的作用"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：以下哪种做法能彻底避免 HTML 入口「用户拿不到更新」的问题？",
+    "explanation": "**HTML 没法 hash 化**（HTML 是入口文件，URL 是固定的 /），如果给它配长 max-age，浏览器会缓存住旧的 HTML，用户拿不到新版本引用的 hash 资源。**正确解**：HTML 配 no-cache（每次都 revalidate 拿新版本），同时静态资源用 hash 文件名 + 长 max-age + immutable——这样 HTML 的新版本能立即被看到，新 hash 资源走新 URL 旧缓存安静过期。",
+    "tags": ["cdn", "html", "no-cache", "cache-busting"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HTML 用 no-cache；静态资源用 hash + immutable",
+        "isCorrect": true,
+        "description": "HTML 每次校验拿新引用，静态资源走新 URL 自然失效"
+      },
+      {
+        "text": "HTML 用 max-age=31536000；静态资源用 no-cache",
+        "isCorrect": false,
+        "description": "完全反过来，HTML 长缓存会让用户拿不到新版本"
+      },
+      {
+        "text": "HTML 和静态资源都用 max-age=31536000",
+        "isCorrect": false,
+        "description": "HTML 没法 hash 化，长缓存会让用户拿不到更新"
+      },
+      {
+        "text": "频繁调用 purge-all 清除 HTML 缓存",
+        "isCorrect": false,
+        "description": "purge-all 会整站命中率瞬时归零、源站被打"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：以下哪条陈述是关于 CloudFront cache key 的正确描述？",
+    "explanation": "CloudFront cache key 由 **URL path + 选定 query + headers + cookies** 组成。这意味着不归一化 query（如 utm 等无关参数）会导致同一资源多份缓存。**Managed-CachingOptimized** 是最小化 cache key 的托管策略——把无关 query/headers/cookies 排除在外，提升 CHR。这也是为何 CHR 治理的第一步通常是查 cache key 配置。",
+    "tags": ["cdn", "cloudfront", "cache-key", "managed-policy"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "由 URL path + 选定 query + headers + cookies 组成",
+        "isCorrect": true,
+        "description": "Managed-CachingOptimized 是最小化它的托管策略"
+      },
+      {
+        "text": "仅由 URL path 决定，忽略 query/headers/cookies",
+        "isCorrect": false,
+        "description": "默认会纳入选定的 query/headers/cookies"
+      },
+      {
+        "text": "由源站 IP 地址唯一决定",
+        "isCorrect": false,
+        "description": "源站 IP 与 cache key 无关"
+      },
+      {
+        "text": "由响应体内容哈希决定",
+        "isCorrect": false,
+        "description": "响应体哈希是 ETag，不是 cache key"
+      }
+    ]
+  },
+  {
+    "stem": "CDN：以下关于 Vary 头在 CDN 上的行为，哪条正确？",
+    "explanation": "**Vary** 让 CDN 按请求头派生不同变体（如 Vary: Accept-Encoding 让 gzip/br 各一份；Vary: Accept 让 webp/jpeg 各一份）。但 **CDN 对 Vary 支持有限**——滥用会击穿命中率甚至响应不进缓存：① Vary: * 等于完全不缓存；② Vary: User-Agent 不做归一化会让同一资源产生几千份变体。如果必须按 UA 区分，应在 CDN 上做归一化（如按设备大类 mobile/tablet/desktop 派生）。",
+    "tags": ["cdn", "vary", "chr", "归一化"],
+    "categories": [
+      ["技术方向", "CDN"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "按请求头派生变体，但 CDN 支持有限，滥用会击穿 CHR",
+        "isCorrect": true,
+        "description": "Vary: * 完全不缓存；Vary: User-Agent 不归一化会爆炸"
+      },
+      {
+        "text": "Vary 完全不影响 CDN 缓存，仅浏览器用",
+        "isCorrect": false,
+        "description": "CDN 会按 Vary 派生变体，影响显著"
+      },
+      {
+        "text": "Vary 越多越好，能提升命中率",
+        "isCorrect": false,
+        "description": "恰恰相反，Vary 多了会让变体爆炸、命中率骤降"
+      },
+      {
+        "text": "Vary 是请求头，由客户端发送",
+        "isCorrect": false,
+        "description": "Vary 是响应头，由源站发送告诉缓存按什么派生"
+      }
+    ]
+  }
+]
