@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "Polyfill 按需加载：Polyfill 在前端工程中的本质作用是什么？",
+    "explanation": "Polyfill 是补齐**老浏览器缺失的运行时 API**的代码，用等价 ES5 代码补回现代浏览器才有的 Promise、Array.includes、Object.fromEntries 等。它与「语法降级」（class / 箭头函数等**语法**层面的转译）是两件事，由 @babel/preset-env 同时负责但属不同维度。",
+    "tags": ["polyfill", "概念", "运行时"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "补齐老浏览器缺失的运行时 API（如 Promise、Array.includes）",
+        "isCorrect": true,
+        "description": "Polyfill = 运行时 API 补齐，由 core-js 提供"
+      },
+      {
+        "text": "把 ES6+ 语法转译成 ES5 语法（如 class → function）",
+        "isCorrect": false,
+        "description": "那是「语法降级」（syntax transform），与 Polyfill 是两件事"
+      },
+      {
+        "text": "压缩 JavaScript 代码体积",
+        "isCorrect": false,
+        "description": "压缩是 Terser / esbuild 的工作"
+      },
+      {
+        "text": "为浏览器添加新版本特性的实验性支持",
+        "isCorrect": false,
+        "description": "Polyfill 补的是稳定 API，不是实验特性"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：为何不能在入口直接全量 import \"core-js\"？",
+    "explanation": "全量 import \"core-js\" 会让任何浏览器都吃下完整 polyfill（core-js@3 全量压缩后仍数百 KB），现代浏览器白付代价、体积爆炸、维护性差。按需加载的核心思路是按 targets 裁剪 + 按实际使用注入，让现代浏览器不下载老浏览器才需要的 polyfill。",
+    "tags": ["polyfill", "全量", "按需"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "全量体积数百 KB，现代浏览器白付代价且无法按 targets 裁剪",
+        "isCorrect": true,
+        "description": "核心问题：体积爆炸 + 现代浏览器不需要其中大部分"
+      },
+      {
+        "text": "全量 import 会导致 JavaScript 语法错误",
+        "isCorrect": false,
+        "description": "语法没错，只是体积浪费"
+      },
+      {
+        "text": "core-js 不支持全量 import 语法",
+        "isCorrect": false,
+        "description": "支持，但需配 useBuiltIns:'entry' 才能按需拆解"
+      },
+      {
+        "text": "全量 import 只能在 Node 环境运行",
+        "isCorrect": false,
+        "description": "core-js 浏览器与 Node 都能运行"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：@babel/preset-env 的 useBuiltIns 选项有几个取值？",
+    "explanation": "useBuiltIns 有三个取值：**'usage'**（每文件按实际使用的 API 注入，最精细）/ **'entry'**（替换入口处 import \"core-js/stable\" 为按 targets 拆解的具体模块清单）/ **false**（不自动注入也不转换入口）。三者互斥，应用项目默认 'usage'，库项目默认 false。",
+    "tags": ["babel", "preset-env", "useBuiltIns"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "三个：'usage' / 'entry' / false",
+        "isCorrect": true,
+        "description": "三模式互斥，应用默认 usage，库默认 false"
+      },
+      {
+        "text": "两个：true / false",
+        "isCorrect": false,
+        "description": "漏了 usage / entry 的区分"
+      },
+      {
+        "text": "四个：'usage' / 'entry' / 'auto' / false",
+        "isCorrect": false,
+        "description": "没有 'auto' 模式"
+      },
+      {
+        "text": "五个：'usage' / 'entry' / 'manual' / 'smart' / false",
+        "isCorrect": false,
+        "description": "没有 manual / smart"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：useBuiltIns 三个取值中，应用项目的默认推荐是哪个？",
+    "explanation": "应用项目默认推荐 **useBuiltIns: 'usage'**。Babel 会静态扫描每个文件，找出文件中实际用到的现代 API（Promise、Array.includes 等），在该文件顶部注入对应的 core-js/modules/es.xxx import。粒度最精细，bundler 能 tree-shake 掉没用的 polyfill 模块。",
+    "tags": ["babel", "useBuiltIns", "应用", "usage"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "'usage'（每文件按实际使用注入，最精细）",
+        "isCorrect": true,
+        "description": "粒度最细、能 tree-shake，应用默认"
+      },
+      {
+        "text": "'entry'（替换入口 import）",
+        "isCorrect": false,
+        "description": "粒度比 usage 粗，整项目一次性补"
+      },
+      {
+        "text": "false（不注入）",
+        "isCorrect": false,
+        "description": "false 是库的默认，应用不会用"
+      },
+      {
+        "text": "不设置（用默认值）",
+        "isCorrect": false,
+        "description": "不设置等同 false，应用需要显式写 usage"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：库（npm 包）构建时 useBuiltIns 应该用什么？",
+    "explanation": "库构建应该用 **useBuiltIns: false**（配合 @babel/plugin-transform-runtime 的 corejs: 3）。库被各种消费者引用，消费者有自己的 polyfill 策略；库如果在构建时把 polyfill 打进产物并修改原生原型，会污染消费者的全局环境。库只负责语法降级，polyfill 留给应用层决定。",
+    "tags": ["babel", "useBuiltIns", "库", "false"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "false（不注入，配合 transform-runtime + corejs:3）",
+        "isCorrect": true,
+        "description": "库用 false + runtime，走 core-js-pure 不污染消费者全局"
+      },
+      {
+        "text": "'usage'（每文件按使用注入）",
+        "isCorrect": false,
+        "description": "会污染消费者全局，库不能用"
+      },
+      {
+        "text": "'entry'（替换入口 import）",
+        "isCorrect": false,
+        "description": "库入口不应有 core-js import"
+      },
+      {
+        "text": "库与应用一样，都用 'usage'",
+        "isCorrect": false,
+        "description": "库与应用的方案必须差异化"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：useBuiltIns: 'usage' 与 'entry' 的注入位置差异是什么？",
+    "explanation": "**'usage'** 在每个使用现代 API 的文件顶部注入对应的 core-js/modules/es.xxx import（粒度最细，按文件实际使用）；**'entry'** 只替换入口文件中显式写的 import \"core-js/stable\" 整行为按 targets 拆解的具体模块清单（粒度入口级，整项目一次性补）。两者互斥，只能取其一。",
+    "tags": ["babel", "useBuiltIns", "usage", "entry"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "usage 在每文件顶部按实际使用注入；entry 在入口整行替换 import",
+        "isCorrect": true,
+        "description": "usage 粒度最细，entry 粒度入口级"
+      },
+      {
+        "text": "usage 在入口注入；entry 在每文件注入",
+        "isCorrect": false,
+        "description": "正好说反了"
+      },
+      {
+        "text": "两者都在入口注入，只是导入语句不同",
+        "isCorrect": false,
+        "description": "注入位置不同是核心区别"
+      },
+      {
+        "text": "两者完全等价，可互换",
+        "isCorrect": false,
+        "description": "互斥，不能互换"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：corejs 选项如果漏写或写错版本会发生什么？",
+    "explanation": "corejs 选项必须显式写明且与应用实际装的 core-js minor 一致（如装 core-js@3.33 就写 '3.33'）。**漏写或写 '3' 会按默认 core-js@2 处理并告警**，且无法用到 3.x 后续 minor 新增的 polyfill（如 3.33 之后新增的 feature 会被漏注入或重复注入）。",
+    "tags": ["babel", "corejs", "版本"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按默认 core-js@2 处理并告警，与实际装的 core-js@3 不一致",
+        "isCorrect": true,
+        "description": "默认值是 core-js@2，会与实际安装的 3 冲突"
+      },
+      {
+        "text": "Babel 自动检测并选择正确的 core-js 版本",
+        "isCorrect": false,
+        "description": "Babel 不会自动检测，必须显式写明"
+      },
+      {
+        "text": "构建直接失败，报错退出",
+        "isCorrect": false,
+        "description": "不会报错退出，只告警并按默认处理"
+      },
+      {
+        "text": "没有任何影响，按 core-js@3 处理",
+        "isCorrect": false,
+        "description": "默认按 core-js@2 处理"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：core-js@3 相比 core-js@2 的核心新增是什么？",
+    "explanation": "core-js@2 自 2018 年起进入 feature freeze（仅维护、不新增 feature）；core-js@3 是唯一活跃主版本，新增 URL / URLSearchParams / queueMicrotask / Array.flat / flatMap / Object.fromEntries / Promise.allSettled / globalThis 等大量 API，模块前缀也由 2 的 es6./es7. 改为 3 的 es./esnext.。新项目必须用 core-js@3。",
+    "tags": ["core-js", "版本", "core-js-3"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "新增 URL / queueMicrotask / Array.flat / Object.fromEntries 等 API",
+        "isCorrect": true,
+        "description": "3.x 持续新增，2 已 feature freeze"
+      },
+      {
+        "text": "core-js@2 与 core-js@3 功能完全相同",
+        "isCorrect": false,
+        "description": "2 已进入 feature freeze，3 持续新增"
+      },
+      {
+        "text": "core-js@3 删除了 core-js@2 的全部 API",
+        "isCorrect": false,
+        "description": "3 是 2 的超集，不是删除"
+      },
+      {
+        "text": "core-js@3 仅是性能优化，API 不变",
+        "isCorrect": false,
+        "description": "API 显著扩展"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：core-js 与 core-js-pure 的本质区别是什么？",
+    "explanation": "**core-js 修改全局对象与原生原型**（polyfill），用户代码可直接 `arr.includes(x)`；**core-js-pure 不污染全局、需显式 import**（ponyfill），用户代码 `includes(arr, x)` 显式传 receiver。前者用于应用（消费者隔离环境），后者用于库（不污染消费者全局）。",
+    "tags": ["core-js", "core-js-pure", "polyfill", "ponyfill"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "core-js 修改全局与原生原型（polyfill）；core-js-pure 不污染全局（ponyfill）",
+        "isCorrect": true,
+        "description": "前者用于应用，后者用于库"
+      },
+      {
+        "text": "core-js 是 polyfill；core-js-pure 是性能优化版",
+        "isCorrect": false,
+        "description": "pure 不是性能版，是不污染版"
+      },
+      {
+        "text": "core-js 只能 Node 用；core-js-pure 浏览器用",
+        "isCorrect": false,
+        "description": "两者都是同构的"
+      },
+      {
+        "text": "两者完全相同，只是包名不同",
+        "isCorrect": false,
+        "description": "行为不同：一个改全局，一个不改"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：库项目用 @babel/plugin-transform-runtime + corejs:3 的去污染机制是什么？",
+    "explanation": "@babel/plugin-transform-runtime 把 polyfill 从「修改全局」变成「从 @babel/runtime-corejs3 引入」，底层是 core-js-pure。它把 `arr.includes(x)` 转成 `_includesInstanceProperty(arr).call(arr, x)`，每个使用点单独 import；不修改全局与原生原型，消费者应用感知不到库注入了什么。解决了旧 @babel/runtime 不支持实例方法的问题。",
+    "tags": ["babel", "transform-runtime", "库", "去污染"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把 arr.includes(x) 转成 _includesInstanceProperty(arr).call(arr, x)，底层走 core-js-pure",
+        "isCorrect": true,
+        "description": "不修改全局与原型，消费者感知不到"
+      },
+      {
+        "text": "在入口注入 import \"core-js\" 全量加载",
+        "isCorrect": false,
+        "description": "那会污染全局，与 transform-runtime 相反"
+      },
+      {
+        "text": "通过 tree-shake 删除未使用的 polyfill",
+        "isCorrect": false,
+        "description": "tree-shake 是 bundler 的职责，不是 transform-runtime 的"
+      },
+      {
+        "text": "把 core-js 替换成更小的 polyfill 库",
+        "isCorrect": false,
+        "description": "transform-runtime 底层仍是 core-js-pure"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：@babel/polyfill 在 Babel 哪个版本起被弃用？",
+    "explanation": "**@babel/polyfill 自 Babel 7.4（2019）起弃用**——它内部一次性引入了 core-js@2 全量 + regenerator-runtime，无法按需。等价替代是 `import \"core-js/stable\"` + `import \"regenerator-runtime/runtime\"` 两行，并分别安装 core-js 和 regenerator-runtime 两个包。",
+    "tags": ["babel", "polyfill", "弃用", "babel-7-4"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Babel 7.4（2019），替代为 import \"core-js/stable\" + import \"regenerator-runtime/runtime\"",
+        "isCorrect": true,
+        "description": "拆成两个独立包，可按需注入"
+      },
+      {
+        "text": "Babel 6.0（2017），替代为 core-js-pure",
+        "isCorrect": false,
+        "description": "弃用发生在 7.4，不是 6.0"
+      },
+      {
+        "text": "Babel 8.0（2025），暂未弃用",
+        "isCorrect": false,
+        "description": "早在 7.4 就已弃用"
+      },
+      {
+        "text": "@babel/polyfill 至今未弃用",
+        "isCorrect": false,
+        "description": "已弃用多年"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：browserslist 与 @babel/preset-env 的集成方式是什么？",
+    "explanation": "preset-env 默认读取 .browserslistrc 或 package.json.browserslist 作为 targets 数据源；该配置同时被 Autoprefixer、eslint-plugin-compat 等多工具共享（单一事实源）。可用 preset-env 的 targets 选项直接覆盖、ignoreBrowserslistConfig 忽略外部配置、configPath/browserslistEnv 指定配置文件路径与 env 名。",
+    "tags": ["browserslist", "preset-env", "targets"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "preset-env 默认读取 .browserslistrc / package.json.browserslist，可用 targets 选项覆盖",
+        "isCorrect": true,
+        "description": "browserslist 是单一事实源，被多工具共享"
+      },
+      {
+        "text": "preset-env 不读 browserslist，必须用 targets 选项",
+        "isCorrect": false,
+        "description": "默认就读 browserslist"
+      },
+      {
+        "text": "browserslist 只服务 Autoprefixer，与 Babel 无关",
+        "isCorrect": false,
+        "description": "Babel 也读它"
+      },
+      {
+        "text": "preset-env 与 browserslist 互斥，不能同时用",
+        "isCorrect": false,
+        "description": "两者是集成关系"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：@vitejs/plugin-legacy 的双产物机制是什么？",
+    "explanation": "@vitejs/plugin-legacy 同时产出 modern（<script type=\"module\">）+ legacy（<script nomodule>）两套 bundle，浏览器自选。modern chunk 基于现代浏览器目标，polyfill 极少；legacy chunk 基于 legacy targets，走 Babel preset-env + core-js 注入按 targets 裁剪的完整 polyfill。HTML 同时注入两种 script，浏览器自选；Safari 10.1 / iOS 10.3 的 module/nomodule bug 已内置修复。",
+    "tags": ["vite", "plugin-legacy", "双产物", "module-nomodule"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同时产出 type=\"module\" modern + nomodule legacy 两套 bundle，浏览器自选",
+        "isCorrect": true,
+        "description": "现代浏览器不下载 IE11 才需要的 polyfill"
+      },
+      {
+        "text": "产出单一 bundle，用条件注释区分浏览器",
+        "isCorrect": false,
+        "description": "那是 IE conditional comment 思路，不是 plugin-legacy"
+      },
+      {
+        "text": "只产出 legacy bundle，强制所有浏览器加载 polyfill",
+        "isCorrect": false,
+        "description": "失去了双产物的意义"
+      },
+      {
+        "text": "运行时通过 navigator.userAgent 动态选择 polyfill",
+        "isCorrect": false,
+        "description": "是构建期分流，不是运行时 UA 检测"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：polyfill.io 域名在 2024 年发生了什么安全事件？",
+    "explanation": "polyfill.io 域名在 **2024-02 被中国公司 Funnull 收购后发生供应链攻击事件**（注入恶意代码）。Cloudflare 已在其网络层自动重写该域名的链接，社区共识是「不再引用该域名」。替代方案：自托管 core-js（可用 core-js-builder 按 targets 构建定制 bundle），或用 cdnjs.cloudflare.com/polyfill、polyfill-fastly.io 镜像。",
+    "tags": ["polyfill-io", "供应链攻击", "安全"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2024-02 被 Funnull 收购后供应链攻击，社区不再引用该域名",
+        "isCorrect": true,
+        "description": "改自托管 core-js 或 cdn.cloudflare.com / polyfill-fastly.io 镜像"
+      },
+      {
+        "text": "polyfill.io 服务下线，无替代方案",
+        "isCorrect": false,
+        "description": "有 cdn.cloudflare.com / polyfill-fastly.io 镜像和自托管方案"
+      },
+      {
+        "text": "polyfill.io 升级到 v4，需要付费",
+        "isCorrect": false,
+        "description": "不是付费问题，是供应链攻击"
+      },
+      {
+        "text": "polyfill.io 仍是官方推荐方案",
+        "isCorrect": false,
+        "description": "已不推荐，社区共识是不再用"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：useBuiltIns: 'usage' 模式静态分析的典型陷阱是什么？",
+    "explanation": "useBuiltIns: 'usage' 依赖 Babel 静态扫描，但**动态 import()、字符串动态属性访问（obj[methodName]）、第三方依赖内部的 API 使用**等场景可能漏注入。应用 debug:true 核对实际注入清单与触发它的 target，再用 include 选项数组兜底处理静态分析遗漏的 polyfill（如 ['es.math.sign', 'es.array.includes']）。",
+    "tags": ["babel", "usage", "静态分析", "陷阱"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "动态 import / 第三方依赖内部 API 使用 / 字符串动态属性访问可能漏注入",
+        "isCorrect": true,
+        "description": "需用 debug:true 核对 + include 兜底"
+      },
+      {
+        "text": "静态分析总是注入多余 polyfill，体积爆炸",
+        "isCorrect": false,
+        "description": "问题相反：是漏注入不是多注入"
+      },
+      {
+        "text": "静态分析不支持 ES2020+ 语法",
+        "isCorrect": false,
+        "description": "支持新语法，问题是动态场景"
+      },
+      {
+        "text": "静态分析与构建速度有关，与 polyfill 无关",
+        "isCorrect": false,
+        "description": "直接关系到 polyfill 是否正确注入"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：preset-env 的 include / exclude 选项主要用于什么？",
+    "explanation": "include 用于**强制包含**特定 polyfill——处理 useBuiltIns:'usage' 静态分析遗漏（第三方依赖内部用、字符串动态属性访问）、原生实现有 bug 需强制覆盖的场景。exclude 用于**强制排除**——某 targets 下原生已稳定不需要、某 polyfill 与环境冲突。两者都支持字符串（精确匹配如 'es.math.sign'）和 RegExp（/^es.math\\./）。",
+    "tags": ["babel", "include", "exclude", "兜底"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "强制包含 / 排除特定 polyfill，处理静态分析遗漏或原生实现 bug",
+        "isCorrect": true,
+        "description": "支持字符串与 RegExp 格式"
+      },
+      {
+        "text": "指定构建入口文件",
+        "isCorrect": false,
+        "description": "入口由 bundler 配置，不在此"
+      },
+      {
+        "text": "控制 Babel 启用的语法插件",
+        "isCorrect": false,
+        "description": "语法插件由 targets 自动决定"
+      },
+      {
+        "text": "排除 node_modules 中的依赖",
+        "isCorrect": false,
+        "description": "那是 bundler 的 ignore 配置"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：preset-env 的 shippedProposals 与 corejs.proposals 的差异是什么？",
+    "explanation": "**shippedProposals: true**（preset-env 顶层）只引入已 shipped 到浏览器的 Stage-3 提案 polyfill，体积较小、风险较低；**corejs: { version, proposals: true }** 引入 core-js 支持的全部提案（含未广泛落地者），体积大、spec 变更风险大。优先用 shippedProposals，仅在确实需要未落地提案时才用 proposals: true。",
+    "tags": ["babel", "shippedProposals", "proposals"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "shippedProposals 只引入已 shipped 浏览器的 Stage-3；proposals 引入 core-js 全部提案（含未落地）",
+        "isCorrect": true,
+        "description": "前者保守，后者激进"
+      },
+      {
+        "text": "shippedProposals 是 core-js 的选项；proposals 是 preset-env 的选项",
+        "isCorrect": false,
+        "description": "正好反了"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "范围与风险都不同"
+      },
+      {
+        "text": "shippedProposals 引入全部提案；proposals 只引入已 shipped",
+        "isCorrect": false,
+        "description": "反了"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：preset-env 的 debug: true 选项主要用于什么？",
+    "explanation": "debug: true 让 Babel 在每次构建时 console.log 输出：实际启用的 polyfill 清单（按 plugin 列出）、触发每个 polyfill 的 target 浏览器、最终的 targets 解析结果。用法：跑一次构建看 console 输出，重点核对 targets 是否符合预期（有无意外旧浏览器导致 polyfill 暴增）、实际注入清单是否合理、第三方依赖的隐式需求有没有被遗漏。",
+    "tags": ["babel", "debug", "核对"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "打印实际注入的 polyfill 清单 + 触发它的 target 浏览器，核对按需加载结果",
+        "isCorrect": true,
+        "description": "上线前跑一次，立即发现 targets 太宽 / 静态分析遗漏"
+      },
+      {
+        "text": "输出 Babel 编译后的最终 JavaScript 代码",
+        "isCorrect": false,
+        "description": "看编译产物用 --verbose 或输出文件即可"
+      },
+      {
+        "text": "仅在构建失败时打印错误堆栈",
+        "isCorrect": false,
+        "description": "那是错误日志，不是 debug"
+      },
+      {
+        "text": "自动修复 useBuiltIns 配置错误",
+        "isCorrect": false,
+        "description": "只输出报告，不会自动改配置"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：core-js@2 与 core-js@3 混装会发生什么？",
+    "explanation": "core-js@2 与 core-js@3 混装会让 preset-env 注入重复或错误版本的 polyfill，并打印告警。应统一升到 core-js@3——可用 npm ls core-js 检查混装情况，再 npm uninstall core-js@2 + npm install core-js@3 统一版本。新项目必须用 core-js@3，core-js@2 仅维护老项目。",
+    "tags": ["core-js", "混装", "版本"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "preset-env 告警，可能注入重复或错误版本的 polyfill",
+        "isCorrect": true,
+        "description": "应统一升到 core-js@3"
+      },
+      {
+        "text": "Babel 自动选择版本号较高的那个",
+        "isCorrect": false,
+        "description": "不会自动选择，会告警"
+      },
+      {
+        "text": "构建直接失败，无法运行",
+        "isCorrect": false,
+        "description": "不会直接失败，会告警继续"
+      },
+      {
+        "text": "core-js@2 与 core-js@3 可以无冲突共存",
+        "isCorrect": false,
+        "description": "会有冲突，必须统一"
+      }
+    ]
+  },
+  {
+    "stem": "Polyfill 按需加载：以下哪种是构建库时的典型反模式？",
+    "explanation": "构建库时的典型反模式：**用 core-js（非 pure）或 preset-env useBuiltIns:'entry'/'usage'**——会修改消费者的原生原型与全局，污染消费者应用环境。正确做法：用 @babel/plugin-transform-runtime + corejs:3（配合 @babel/runtime-corejs3，底层走 core-js-pure）或 useBuiltIns: false，让 polyfill 不被打进库产物。",
+    "tags": ["库", "反模式", "去污染"],
+    "categories": [
+      ["技术方向", "Polyfill 按需加载"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 useBuiltIns: 'usage' 把 polyfill 打进库产物，修改消费者全局",
+        "isCorrect": true,
+        "description": "应改用 transform-runtime + corejs:3 或 useBuiltIns: false"
+      },
+      {
+        "text": "用 useBuiltIns: false 让消费者自己处理 polyfill",
+        "isCorrect": false,
+        "description": "这是正确做法，不是反模式"
+      },
+      {
+        "text": "配合 transform-runtime 注入 core-js-pure",
+        "isCorrect": false,
+        "description": "这是正确做法"
+      },
+      {
+        "text": "依赖消费者应用的 polyfill 策略",
+        "isCorrect": false,
+        "description": "这是正确思路"
+      }
+    ]
+  }
+]

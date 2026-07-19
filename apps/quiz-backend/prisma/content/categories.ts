@@ -667,9 +667,11 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "按需引入", sort: 2 },
               { name: "虚拟化", sort: 3 },
               { name: "事件及属性优化", sort: 4 },
+              { name: "渲染性能", sort: 5 },
+              { name: "图片优化", sort: 6 },
               {
                 name: "性能评估",
-                sort: 5,
+                sort: 7,
                 children: [
                   { name: "Lighthouse", sort: 1 },
                   { name: "Webpack Bundle Analyzer", sort: 2 },
@@ -686,6 +688,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "代码分割", sort: 1 },
               { name: "Tree Shaking", sort: 2 },
+              { name: "代码压缩", sort: 3 },
+              { name: "Polyfill 按需加载", sort: 4 },
             ],
           },
           { name: "网络优化（CDN / 缓存 / 压缩）", sort: 4 },

@@ -1,0 +1,633 @@
+[
+  {
+    "stem": "代码压缩：在前端工具谱系中的本质定位是什么？",
+    "explanation": "代码压缩（Minification）是**构建期对源码做语法等价改写以减小产物体积**的过程——移除空白、缩短变量、重写更紧凑的等价语法。它不改变运行时行为，输出仍是 JS/CSS/HTML，与传输压缩（gzip/brotli）正交且叠加生效。",
+    "tags": ["minification", "定位", "构建"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "构建期对源码做语法等价改写以减小产物体积",
+        "isCorrect": true,
+        "description": "输出仍是 JS/CSS/HTML，仅是更短的等价写法"
+      },
+      {
+        "text": "传输层把字节流再编码，浏览器自动解压",
+        "isCorrect": false,
+        "description": "那是 gzip/brotli 传输压缩，归【网络优化】叶"
+      },
+      {
+        "text": "打包期删除未引用的导出（DCE）",
+        "isCorrect": false,
+        "description": "那是 tree shaking，打包器职责"
+      },
+      {
+        "text": "故意让人读不懂代码（控制流扁平化、字符串加密）",
+        "isCorrect": false,
+        "description": "那是混淆（Obfuscation），与压缩目标不同"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：与 HTTP 传输压缩（gzip/brotli）的关系是？",
+    "explanation": "代码压缩（源码语法等价改写）与 HTTP 传输压缩（gzip/brotli）**正交且叠加生效**——压缩后的 JS 再 gzip 还能再小 70%+。两层独立工作，缺一不可：典型 100KB JS 源码 → 压缩 70KB → gzip 25KB。",
+    "tags": ["minification", "gzip", "边界"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "正交且叠加生效，两层都开收益最大",
+        "isCorrect": true,
+        "description": "压缩改源码、gzip 编码字节流，互不冲突"
+      },
+      {
+        "text": "二选一即可，开 gzip 就不用压缩",
+        "isCorrect": false,
+        "description": "典型误区：少一层就少一份收益"
+      },
+      {
+        "text": "互斥，开了压缩就不能开 gzip",
+        "isCorrect": false,
+        "description": "二者机制完全独立，绝不互斥"
+      },
+      {
+        "text": "gzip 会破坏压缩成果，必须二选一",
+        "isCorrect": false,
+        "description": "gzip 是无损压缩，不会破坏任何源码"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：生产开、开发关的根本原因是？",
+    "explanation": "esbuild 官方原话：minified code downloads faster but is harder to debug。mangle 会把错误栈中的变量名改成 `a/b/c` 形态，离开 source map 几乎不可读——开发期开压缩严重干扰调试。Vite/Webpack 默认都按此行事：Vite SSR `build.minify=false`，Webpack `mode='development'` 自动关 `minimize`。",
+    "tags": ["minification", "开发模式", "mangle"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "mangle 重命名标识符后，错误栈变成 a/b/c 不可读",
+        "isCorrect": true,
+        "description": "生产开 hidden source map 还原；开发直接看源码"
+      },
+      {
+        "text": "压缩会让代码运行变慢",
+        "isCorrect": false,
+        "description": "压缩反而让 parse/执行更快（更短源码）"
+      },
+      {
+        "text": "压缩会破坏 Vue/React 组件运行时",
+        "isCorrect": false,
+        "description": "压缩是语法等价改写，不影响运行时语义"
+      },
+      {
+        "text": "压缩需要付费 license",
+        "isCorrect": false,
+        "description": "Terser/esbuild/SWC/lightningcss 全部开源免费"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：三大 JS 压缩器（Terser/esbuild/SWC）的核心定位差异？",
+    "explanation": "Terser（JS 实现）是**压缩率标杆**，Webpack 5 默认但慢；esbuild（Go）是**最快通用 minifier**，秒级；SWC（Rust）是 Next.js/Rspack 默认，选项与 Terser 几乎一一对应；Vite 7 起默认改用 Oxc（Rust，比 terser 快 30~90x）。",
+    "tags": ["minification", "terser", "esbuild", "swc", "oxc"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Terser=压缩率标杆 · esbuild/SWC=快档 · Oxc=Vite 7 默认最快",
+        "isCorrect": true,
+        "description": "Terser 慢但压最紧；Rust/Go 工具链以微小压缩率损失换 30~90x 速度"
+      },
+      {
+        "text": "esbuild 是压缩率最高的工具",
+        "isCorrect": false,
+        "description": "压缩率标杆仍是 Terser，esbuild 略低 0.5~2%"
+      },
+      {
+        "text": "SWC 是 Go 写的极速压缩器",
+        "isCorrect": false,
+        "description": "SWC 是 Rust 写的，Go 那是 esbuild"
+      },
+      {
+        "text": "Terser 已废弃被 Oxc 全面替代",
+        "isCorrect": false,
+        "description": "Terser 仍是 Webpack 5 默认，压缩率标杆地位未变"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Terser 的三大选项组是？",
+    "explanation": "Terser 的核心 API `minify(code, options)` 接受三大选项组：`compress`（压缩分析，传 false 跳过）、`mangle`（重命名标识符，默认 true，传 false 跳过）、`format`（输出格式如 comments/beautify）。这三组是 JS 压缩器的事实标准，esbuild/SWC 都在模仿。",
+    "tags": ["minification", "terser", "compress", "mangle"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "compress / mangle / format",
+        "isCorrect": true,
+        "description": "压缩分析 / 标识符重命名 / 输出格式"
+      },
+      {
+        "text": "whitespace / identifiers / syntax",
+        "isCorrect": false,
+        "description": "那是 esbuild 的 minify 三合一命名"
+      },
+      {
+        "text": "minify / drop / keep",
+        "isCorrect": false,
+        "description": "这是行为描述不是 Terser 选项组"
+      },
+      {
+        "text": "input / output / target",
+        "isCorrect": false,
+        "description": "这是通用编译器选项，不是 Terser 三大组"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Terser compress.drop_console 与 drop_debugger 的默认值分别是？",
+    "explanation": "Terser 默认 `drop_debugger:true`（删 debugger 语句）但 `drop_console:false`（默认保留所有 console）。drop_console 支持数组形式如 `['log','info']` 只删部分方法、保留 error/warn。",
+    "tags": ["minification", "terser", "drop_console", "drop_debugger"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "drop_console=false / drop_debugger=true",
+        "isCorrect": true,
+        "description": "debugger 默认删；console 默认保留"
+      },
+      {
+        "text": "drop_console=true / drop_debugger=true",
+        "isCorrect": false,
+        "description": "console 默认不删，需显式开"
+      },
+      {
+        "text": "drop_console=false / drop_debugger=false",
+        "isCorrect": false,
+        "description": "debugger 默认就删"
+      },
+      {
+        "text": "drop_console=true / drop_debugger=false",
+        "isCorrect": false,
+        "description": "两者都反了"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：esbuild minify=true 等价于哪三个独立 flag 全开？",
+    "explanation": "esbuild 的 `minify=true` 是三合一开关，等价于 `minifyWhitespace + minifyIdentifiers + minifySyntax` 三个独立 flag 全开——分别负责去空白、重命名局部标识符、重写更紧凑语法（如 `true` → `!0`、合并条件）。可独立启用实现精细化控制。",
+    "tags": ["minification", "esbuild", "minify"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "minifyWhitespace / minifyIdentifiers / minifySyntax",
+        "isCorrect": true,
+        "description": "去空白 / 重命名标识符 / 重写语法"
+      },
+      {
+        "text": "dropWhitespace / renameIdentifiers / rewriteSyntax",
+        "isCorrect": false,
+        "description": "命名风格错了，esbuild 实际是 minify* 前缀"
+      },
+      {
+        "text": "whitespace / mangle / syntax",
+        "isCorrect": false,
+        "description": "少了 minify 前缀"
+      },
+      {
+        "text": "trimSpaces / shortenNames / foldConstants",
+        "isCorrect": false,
+        "description": "这些不是 esbuild 的选项命名"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：esbuild 默认不混淆顶层声明名的根本原因是？",
+    "explanation": "esbuild 默认只混淆函数内的局部标识符，不混淆顶层 `function foo` / `class Bar` 的名字——因为它**不知道输出会被注入到其他代码的什么位置**（如果是全局作用域可能撞名）。要让 esbuild 安全混淆顶层名，必须启用 bundling（所有代码在自己 scope 内）或显式设置 `format`（iife/cjs/esm，告诉 esbuild 输出会被包在 scope 里）。",
+    "tags": ["minification", "esbuild", "mangle", "toplevel"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "输出可能被注入到其他代码中，全局作用域可能撞名",
+        "isCorrect": true,
+        "description": "启用 bundling 或设 format 才能安全混淆顶层"
+      },
+      {
+        "text": "esbuild 算法不支持混淆顶层",
+        "isCorrect": false,
+        "description": "支持，只是默认保守不开"
+      },
+      {
+        "text": "顶层名都是 export 的，混淆会破坏导出",
+        "isCorrect": false,
+        "description": "esbuild 能区分 export 名和内部名"
+      },
+      {
+        "text": "顶层名混淆会让 source map 失效",
+        "isCorrect": false,
+        "description": "source map 能记录 mangle 前后映射"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：依赖 Function.prototype.name 的代码必须配置什么？",
+    "explanation": "AngularJS 用 `function.toString()` 读参数名做 DI、MobX 装饰器读类名做注册、styled-components 用 .name 做 displayName——这类反射依赖若 mangle 把名字改成 a/b/c 会运行时崩。必须显式 keep names：Terser `keep_classnames:true`+`keep_fnames:true`、esbuild `keepNames:true`、SWC `mangle.keepClassNames:true`+`keepFnNames:true`。",
+    "tags": ["minification", "keep_names", "mangle", "反射"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Terser: keep_classnames+keep_fnames / esbuild: keepNames / SWC: keepClassNames+keepFnNames",
+        "isCorrect": true,
+        "description": "三套等价选项，默认全 false，依赖反射时必须开"
+      },
+      {
+        "text": "不需要配置，压缩器会自动检测 .name 反射",
+        "isCorrect": false,
+        "description": "压缩器无法静态检测动态反射，必须显式配置"
+      },
+      {
+        "text": "禁用 mangle 即可",
+        "isCorrect": false,
+        "description": "禁 mangle 会损失大量压缩收益，正确做法是 keep names"
+      },
+      {
+        "text": "改用 Oxc 就不会有此问题",
+        "isCorrect": false,
+        "description": "Oxc 同样有 mangle，同样需要 keep names"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：esbuild 中 drop:['console'] 与 pure:['console.log'] 的关键区别？",
+    "explanation": "esbuild 的 `drop:['console']` 会**删所有 console 方法**（含 log/info/warn/error）；`pure:['console.log']` 只把 `console.log` 标记为无副作用，只删 log 但保留 error/warn。生产环境想保留错误监控就用 pure 精细控制。",
+    "tags": ["minification", "esbuild", "drop", "pure", "console"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "drop:['console'] 删所有 console 方法；pure:['console.log'] 只删 log 保留 error/warn",
+        "isCorrect": true,
+        "description": "pure 更精细，可保留错误上报"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "语义不同：drop 一刀切，pure 可分级"
+      },
+      {
+        "text": "drop 只删 console.log，pure 删所有 console",
+        "isCorrect": false,
+        "description": "正好说反了"
+      },
+      {
+        "text": "pure 会破坏程序逻辑，drop 不会",
+        "isCorrect": false,
+        "description": "两者都是标记无副作用，安全删调用"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：cssnano 的三大 preset 风格差异？",
+    "explanation": "cssnano 的 preset 系统分三档：`default`（安全默认，不改语义）、`advanced`（激进，重写 calc、合并长选择器、删更多注释）、`lite`（仅基础，只去空白不优化）。postcss.config.js 中 `require('cssnano')({ preset: ['default', { svgo: false }] })`，选项命名去 postcss- 前缀转 camelCase。",
+    "tags": ["minification", "cssnano", "preset", "css"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "default=安全 / advanced=激进重写calc合并选择器 / lite=仅基础",
+        "isCorrect": true,
+        "description": "advanced 需充分测试，可能改语义"
+      },
+      {
+        "text": "default=最快 / advanced=最慢 / lite=最压缩",
+        "isCorrect": false,
+        "description": "preset 区分的是激进程度，不是速度或压缩率"
+      },
+      {
+        "text": "三档只是名字不同，实际行为一致",
+        "isCorrect": false,
+        "description": "三档开启的 transform 集合明显不同"
+      },
+      {
+        "text": "只有 default 是官方支持的，advanced 已废弃",
+        "isCorrect": false,
+        "description": "三档都在维护，advanced 用于追求极限压缩"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：lightningcss 相对 cssnano 的核心优势是？",
+    "explanation": "lightningcss（Rust）相对 cssnano（PostCSS）的核心优势是**一体化**——同时做压缩 + 浏览器降级 + vendor prefix 注入，替代 autoprefixer + postcss-preset-env + cssnano 三件套。速度快 10x+，且按真实浏览器 targets 决定输出（避免对现代浏览器输出冗余前缀）。Vite 7 起默认。",
+    "tags": ["minification", "lightningcss", "cssnano", "css"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "压缩 + 浏览器降级 + vendor prefix 一体化，快 10x+",
+        "isCorrect": true,
+        "description": "替代三件套，Vite 7 默认"
+      },
+      {
+        "text": "压缩率比 cssnano 高 50%",
+        "isCorrect": false,
+        "description": "压缩率接近，主要优势在速度和一体化"
+      },
+      {
+        "text": "支持 PostCSS 插件生态，cssnano 不支持",
+        "isCorrect": false,
+        "description": "正好相反：cssnano 依赖 PostCSS，lightningcss 自带"
+      },
+      {
+        "text": "只压缩不降级，需要配 autoprefixer",
+        "isCorrect": false,
+        "description": "lightningcss 内置降级，无需 autoprefixer"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：html-minifier-terser 的最大配置陷阱？",
+    "explanation": "html-minifier-terser 默认**所有选项全部关闭**，必须显式开启。最大陷阱是 `collapseWhitespace:true` 必须配 `conservativeCollapse:true`——否则 inline 元素间的单空格会被全部去掉，导致 `<span>hello</span> <span>world</span>` 变成 `helloworld`。",
+    "tags": ["minification", "html", "html-minifier-terser"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认所有选项全关，collapseWhitespace 必须配 conservativeCollapse",
+        "isCorrect": true,
+        "description": "否则 inline 元素间空格丢失，文字粘连"
+      },
+      {
+        "text": "默认全部开启，需手动关掉激进选项",
+        "isCorrect": false,
+        "description": "正好相反，默认全关"
+      },
+      {
+        "text": "只支持 CLI 不支持编程式 API",
+        "isCorrect": false,
+        "description": "提供 minify(html, options) 编程式 API"
+      },
+      {
+        "text": "不支持压缩内联 JS/CSS",
+        "isCorrect": false,
+        "description": "minifyJS（用 Terser）+ minifyCSS（用 clean-css）"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Vite 7 的 build.minify 与 build.cssMinify 默认值是？",
+    "explanation": "Vite 7 起 `build.minify` 默认 `'oxc'`（client，基于 Rust 的 Oxc 工具链，比 terser 快 30~90x），`build.cssMinify` 默认 `'lightningcss'`。`'esbuild'` 选项已被官方标记 deprecated 未来移除。SSR 输出 `build.minify` 默认 `false`（SSR 跑在服务器不需要下载）。",
+    "tags": ["minification", "vite", "oxc", "lightningcss"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "minify='oxc' / cssMinify='lightningcss'",
+        "isCorrect": true,
+        "description": "Vite 7 默认全 Rust 工具链"
+      },
+      {
+        "text": "minify='esbuild' / cssMinify='esbuild'",
+        "isCorrect": false,
+        "description": "那是 Vite 6 及之前的默认"
+      },
+      {
+        "text": "minify='terser' / cssMinify='cssnano'",
+        "isCorrect": false,
+        "description": "那是 Webpack 旧项目风格，非 Vite 默认"
+      },
+      {
+        "text": "minify=false / cssMinify=false",
+        "isCorrect": false,
+        "description": "Vite 7 client 默认开压缩"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Webpack 5 配置 optimization.minimizer 的关键陷阱？",
+    "explanation": "Webpack 5 的 `optimization.minimizer` 一旦写入**任何 plugin 就整体覆盖**内置默认 `[TerserPlugin]`，没有 merge 机制。社区最常见错误：只加 `new CssMinimizerPlugin()` 期望「在默认基础上追加」，结果 JS 完全没被压缩。正确做法是必须显式 `[new TerserPlugin(), new CssMinimizerPlugin()]` 双列。",
+    "tags": [
+      "minification",
+      "webpack",
+      "terser-webpack-plugin",
+      "css-minimizer"
+    ],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "加任何 plugin 会覆盖默认 TerserPlugin，必须显式双列",
+        "isCorrect": true,
+        "description": "无 merge 机制，写一个就全替换"
+      },
+      {
+        "text": "minimizer 数组自动 merge 默认 TerserPlugin",
+        "isCorrect": false,
+        "description": "这是社区最大误解，实际是覆盖不是 merge"
+      },
+      {
+        "text": "Webpack 不支持自定义 minimizer",
+        "isCorrect": false,
+        "description": "支持，但要注意覆盖行为"
+      },
+      {
+        "text": "只在 production 模式才会覆盖默认",
+        "isCorrect": false,
+        "description": "覆盖与 mode 无关，只看是否写了 minimizer 数组"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：esbuild 的 legalComments 选项有几种模式？",
+    "explanation": "esbuild legalComments 五种：`none`（全删）/ `inline`（保留原位，非 bundling 默认）/ `eof`（挪到文件尾，bundling 默认）/ `linked`（生成 .LEGAL.txt 链回）/ `external`（输出到外部文件不写回 bundle）。「legal comment」定义：含 @license / @preserve 或以 //! //*! 开头的注释。npm 依赖的 OSS 许可证必须保留，否则合规风险。",
+    "tags": ["minification", "esbuild", "legalComments", "license"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "none / inline / eof / linked / external（共 5 种）",
+        "isCorrect": true,
+        "description": "bundling 默认 eof，非 bundling 默认 inline"
+      },
+      {
+        "text": "true / false（仅 2 种）",
+        "isCorrect": false,
+        "description": "实际是 5 种枚举值"
+      },
+      {
+        "text": "keep / discard / extract（3 种）",
+        "isCorrect": false,
+        "description": "命名错了"
+      },
+      {
+        "text": "default / strict / loose（3 种）",
+        "isCorrect": false,
+        "description": "这些是 tsconfig 的选项命名风格"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Vite lib 模式不应强制 minify whitespace 的原因是？",
+    "explanation": "Vite 文档明确警告：lib 模式默认用 'es' format 不 minify whitespace——因为 minify whitespace 会破坏 tree-shaking 的 `/*#__PURE__*/` 注释（被 minifier 当成普通注释删掉），导致消费者（应用项目）无法 tree shake 你的库，bundle 体积膨胀。",
+    "tags": ["minification", "vite", "lib", "tree-shaking"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "minify whitespace 会破坏 /*#__PURE__*/ 注释，消费者无法 tree shake",
+        "isCorrect": true,
+        "description": "库的产物必须保留 pure 注释给消费者用"
+      },
+      {
+        "text": "lib 模式不支持 minify 选项",
+        "isCorrect": false,
+        "description": "支持，只是默认保守不开 whitespace minify"
+      },
+      {
+        "text": "minify 会让库的体积变大",
+        "isCorrect": false,
+        "description": "minify 本身减小体积，问题是消费者侧"
+      },
+      {
+        "text": "lib 模式不能输出 ESM 格式",
+        "isCorrect": false,
+        "description": "lib 默认就是 esm，与 minify 无关"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Terser 的 Fast Minify Mode 指什么？",
+    "explanation": "Terser 的 Fast Minify Mode 指**只做 mangle + 去 whitespace，跳过 compress 的复杂分析**——配置 `compress:false` + `mangle:true`。通常能拿到 95% 的压缩收益、耗时降到 1/10。esbuild 默认就是这种风格，以 Terser 1/10 的耗时换取 95% 的压缩率，性价比极高。",
+    "tags": ["minification", "terser", "fast-minify", "性能"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "compress:false + mangle:true，跳过压缩分析只重命名+去空白",
+        "isCorrect": true,
+        "description": "拿 95% 收益，耗时降到 1/10"
+      },
+      {
+        "text": "完全禁用压缩只去空白",
+        "isCorrect": false,
+        "description": "还要做 mangle 才能拿到 95% 收益"
+      },
+      {
+        "text": "用多线程并行加速",
+        "isCorrect": false,
+        "description": "那是 parallel 选项，与 Fast Minify Mode 无关"
+      },
+      {
+        "text": "Terser 不支持这种模式",
+        "isCorrect": false,
+        "description": "支持，正是 compress:false 配置"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：Terser pure_funcs 与 package.json sideEffects 的关系？",
+    "explanation": "Terser `pure_funcs:['fn']` 标记单个函数无副作用，minifier 删除其调用语句；`package.json sideEffects:false` 是给打包器（webpack/rollup）的信号，让打包器跳过整个未用文件。两者协作：sideEffects:false 让 bundler 删整文件死代码，pure_funcs 让 minifier 删调用语句，组合实现最大 DCE。",
+    "tags": [
+      "minification",
+      "terser",
+      "pure_funcs",
+      "sideEffects",
+      "tree-shaking"
+    ],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "pure_funcs 标记函数无副作用让 minifier 删调用；sideEffects:false 让打包器跳过整文件",
+        "isCorrect": true,
+        "description": "两者协作实现最大 DCE"
+      },
+      {
+        "text": "两者完全等价，二选一即可",
+        "isCorrect": false,
+        "description": "作用层级不同：pure_funcs 在 minifier，sideEffects 在 bundler"
+      },
+      {
+        "text": "pure_funcs 是给打包器用的，sideEffects 是给 minifier 用的",
+        "isCorrect": false,
+        "description": "正好说反了"
+      },
+      {
+        "text": "两者互斥，同时配置会冲突",
+        "isCorrect": false,
+        "description": "两者协作，不冲突"
+      }
+    ]
+  },
+  {
+    "stem": "代码压缩：lightningcss 配置时 targets 选项为何必配？",
+    "explanation": "lightningcss 必须配 `targets`（用 `browserslistToTargets(browserslist('>= 0.25%'))` 转换）——按真实浏览器矩阵决定是否保留 vendor prefix / 是否降级语法。不配 targets 会输出冗余 -webkit- 前缀（目标是现代浏览器时）或漏降级（目标是老浏览器时）。Vite 中 `build.cssTarget` 可独立于 JS target 设置。",
+    "tags": ["minification", "lightningcss", "targets", "browserslist"],
+    "categories": [
+      ["技术方向", "代码压缩"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按真实浏览器矩阵决定保留前缀/降级，避免冗余或漏降级",
+        "isCorrect": true,
+        "description": "用 browserslistToTargets 转换 browserslist 字符串"
+      },
+      {
+        "text": "targets 是必填项，不配会启动失败",
+        "isCorrect": false,
+        "description": "可选，不配只是输出不够优化，不会报错"
+      },
+      {
+        "text": "targets 决定 CSS 文件名后缀",
+        "isCorrect": false,
+        "description": "与文件名无关"
+      },
+      {
+        "text": "targets 只影响速度不影响输出",
+        "isCorrect": false,
+        "description": "直接影响输出是否带前缀/降级"
+      }
+    ]
+  }
+]

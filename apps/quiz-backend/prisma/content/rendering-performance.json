@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "渲染性能：web.dev 像素流水线的五个阶段依次是？",
+    "explanation": "web.dev 渲染性能总纲给出像素流水线五阶段顺序为 **JavaScript → Style → Layout → Paint → Composite**：JS 改 DOM/样式后，浏览器先重新匹配选择器（Style），如有几何变化就重排（Layout），再栅格化填充像素（Paint），最后合成各图层上屏（Composite）。整条流水线是连锁的——Layout 必引发 Paint，Paint 必引发 Composite；但反过来不成立。",
+    "tags": ["渲染性能", "像素流水线", "pipeline"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "JavaScript → Style → Layout → Paint → Composite",
+        "isCorrect": true,
+        "description": "web.dev 总纲标准顺序，每一步都是上一步的下游"
+      },
+      {
+        "text": "Style → Layout → JavaScript → Paint → Composite",
+        "isCorrect": false,
+        "description": "JS 是流水线的源头触发器，不可能在 Layout 之后"
+      },
+      {
+        "text": "JavaScript → Paint → Layout → Composite → Style",
+        "isCorrect": false,
+        "description": "Style 必在 Layout 之前，Paint 必在 Layout 之后"
+      },
+      {
+        "text": "Style → JavaScript → Composite → Layout → Paint",
+        "isCorrect": false,
+        "description": "Composite 是最后一步，不可能在 Layout 之前"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：60fps 屏幕下单帧预算与开发者实际可用的预算分别是？",
+    "explanation": "60fps 对应每秒 60 帧，单帧理论预算 = 1000ms / 60 ≈ **16.6ms**。但浏览器自身开销（合成、输入处理、GC、GPU 同步等）会占用一部分，**开发者实际可用约 10ms**。web.dev 建议工程目标：JS ≤ 5ms，Layout + Paint ≤ 5ms，留余量给浏览器自身。",
+    "tags": ["渲染性能", "帧预算", "60fps"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "约 16.6ms / 约 10ms",
+        "isCorrect": true,
+        "description": "扣掉浏览器自身开销后开发者实际可用约 10ms"
+      },
+      {
+        "text": "约 33.3ms / 约 20ms",
+        "isCorrect": false,
+        "description": "这是 30fps 的预算，远低于流畅体验要求"
+      },
+      {
+        "text": "约 8.3ms / 约 5ms",
+        "isCorrect": false,
+        "description": "这是 120Hz 高刷屏的预算，不是 60fps"
+      },
+      {
+        "text": "约 4.16ms / 约 2ms",
+        "isCorrect": false,
+        "description": "这是 240Hz 高刷屏的预算"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：reflow（Layout）与 repaint（Paint）的因果关系是什么？",
+    "explanation": "**reflow 必然引发 repaint**（几何变了，像素也得重画），但 **repaint 不一定触发 reflow**（如改 `color` 只重画像素，几何未变）。这是判断 CSS 属性代价的核心规则：改 `color` 只走 Style→Paint→Composite，改 `width` 走 Style→Layout→Paint→Composite。",
+    "tags": ["渲染性能", "reflow", "repaint"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "reflow 必引发 repaint，但 repaint 不一定 reflow",
+        "isCorrect": true,
+        "description": "改几何既重排又重绘，改视觉只重绘"
+      },
+      {
+        "text": "repaint 必引发 reflow，但 reflow 不一定 repaint",
+        "isCorrect": false,
+        "description": "因果关系反了，几何不变则不需要 reflow"
+      },
+      {
+        "text": "二者互不引发，完全独立",
+        "isCorrect": false,
+        "description": "改几何必然需要重画像素"
+      },
+      {
+        "text": "二者总是同时触发",
+        "isCorrect": false,
+        "description": "改 color 时只 repaint，不 reflow"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：下列 CSS 属性中，仅触发 Composite（跳过 Layout 和 Paint）的是？",
+    "explanation": "web.dev 明确指出**只有 `transform` 和 `opacity` 两个 CSS 属性**能在合成器线程独立处理，改它们只走 Style → Composite，**完全跳过 Layout 和 Paint**。这是动画首选这两个属性的根本原因——主线程繁忙时仍能在合成器线程继续动画。`color` 触发 Paint、`width` 触发 Layout，`filter` 仅部分场景视为合成器属性。",
+    "tags": ["渲染性能", "合成器属性", "transform", "opacity"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "transform 与 opacity",
+        "isCorrect": true,
+        "description": "仅这两个属性可在合成器线程独立处理"
+      },
+      {
+        "text": "color 与 background-color",
+        "isCorrect": false,
+        "description": "二者触发 Paint → Composite，含栅格化"
+      },
+      {
+        "text": "width 与 height",
+        "isCorrect": false,
+        "description": "二者触发 Layout → Paint → Composite，最贵"
+      },
+      {
+        "text": "margin 与 padding",
+        "isCorrect": false,
+        "description": "几何属性，触发完整 Layout"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：改 `box-shadow` 会触发流水线的哪些阶段？",
+    "explanation": "`box-shadow` 是视觉属性（不影响几何），改它触发 **Style → Paint → Composite**：仍需 Paint（栅格化像素）但跳过 Layout。这是中等代价路径——比 Layout 属性（如 `width`）便宜，但仍比 `transform`/`opacity`（仅 Composite）贵。要进一步优化可改用预合成层或部分场景下用 `filter: drop-shadow()`。",
+    "tags": ["渲染性能", "paint", "box-shadow"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Style → Paint → Composite（跳过 Layout）",
+        "isCorrect": true,
+        "description": "视觉属性走中等代价路径"
+      },
+      {
+        "text": "Style → Composite（跳过 Layout 和 Paint）",
+        "isCorrect": false,
+        "description": "这是 transform/opacity 才有的特权"
+      },
+      {
+        "text": "Style → Layout → Paint → Composite（最贵）",
+        "isCorrect": false,
+        "description": "这是几何属性（width/top 等）才走的路径"
+      },
+      {
+        "text": "仅 Style，不动其他阶段",
+        "isCorrect": false,
+        "description": "改 box-shadow 必须重画像素"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：强制同步布局（forced synchronous layout）的成因是？",
+    "explanation": "正常情况下浏览器把一帧的 DOM 修改攒到 Style 阶段一起处理。但**改完样式后立即读取几何属性**（如 `offsetWidth`、`getBoundingClientRect`、`scrollTop`）会让浏览器被迫**立即同步算布局**才能返回最新值——这就是强制同步布局。典型反例：`element.classList.add('big'); console.log(element.offsetHeight);`。",
+    "tags": ["渲染性能", "强制同步布局", "forced-layout"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JS 改样式后立即读取几何属性（offsetWidth / getBoundingClientRect 等）",
+        "isCorrect": true,
+        "description": "浏览器被迫立即同步算布局才能返回值"
+      },
+      {
+        "text": "用 CSS transition 而非 JS 逐帧驱动动画",
+        "isCorrect": false,
+        "description": "声明式动画不会触发强制同步布局"
+      },
+      {
+        "text": "在 requestAnimationFrame 回调里读取 timestamp",
+        "isCorrect": false,
+        "description": "timestamp 是 DOMHighResTimeStamp，不触发布局"
+      },
+      {
+        "text": "页面 DOM 节点数超过 1500 个",
+        "isCorrect": false,
+        "description": "DOM 大小影响 Layout 成本，但不直接触发强制同步布局"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：下列读取 API 中，会触发强制同步布局的是？",
+    "explanation": "强制布局的几何 API 清单（Paul Irish 经典）：`offsetWidth/Height/Top/Left`、`clientWidth/Height/Top/Left`、`scrollTop/Left/Width/Height`、`getBoundingClientRect()`、`getClientRects()`、`scrollIntoView()`、`scrollTo()`、`getComputedStyle()`（查询几何属性时）。`performance.now()` 返回纯时间戳，不涉及 DOM 几何计算，**不触发强制布局**。",
+    "tags": ["渲染性能", "强制同步布局", "API"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "element.offsetWidth",
+        "isCorrect": true,
+        "description": "几何属性读取，触发强制布局"
+      },
+      {
+        "text": "performance.now()",
+        "isCorrect": false,
+        "description": "纯时间戳查询，不涉及 DOM 几何"
+      },
+      {
+        "text": "console.log(element)",
+        "isCorrect": false,
+        "description": "打印引用不读取几何"
+      },
+      {
+        "text": "element.className",
+        "isCorrect": false,
+        "description": "字符串属性，不触发几何计算"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：以下哪段代码是经典的布局抖动（layout thrashing）反模式？",
+    "explanation": "**布局抖动 = 单帧/单任务内多次 read-write-read-write 交替**，每次 read 都触发一次强制同步布局。经典反模式即循环里读写交替：`for (...) { el.style.width = box.offsetWidth + 'px'; }`——每次循环都因前一次写入被迫重新算布局，N 个元素就 N 次强制同步布局，性能从 O(N) 退化到 O(N²)。",
+    "tags": ["渲染性能", "布局抖动", "layout-thrashing"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "for (i) { el.style.width = box.offsetWidth + 'px'; }",
+        "isCorrect": true,
+        "description": "循环里读写交替，每次 read 触发强制布局"
+      },
+      {
+        "text": "const w = box.offsetWidth; for (i) { el.style.width = w + 'px'; }",
+        "isCorrect": false,
+        "description": "这是 read-then-write 正解，只读一次"
+      },
+      {
+        "text": "requestAnimationFrame(() => { el.style.opacity = 0.5; })",
+        "isCorrect": false,
+        "description": "rAF 回调内单次合成器属性写入，无问题"
+      },
+      {
+        "text": "el.classList.add('active')",
+        "isCorrect": false,
+        "description": "单次写入不触发强制布局"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：避免布局抖动的正确模式是？",
+    "explanation": "web.dev 原话是 **read-then-write**：**先把所有几何属性读取完成（此时复用上一帧布局），再做样式写入**。即「批量读、再批量写」——把 read 阶段与 write 阶段分开，避免在循环或任务内读写交替。也可用 FastDOM 模式：把读放进 measure 队列、写放进 mutate 队列，浏览器交替执行。",
+    "tags": ["渲染性能", "read-then-write", "best-practice"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "批量读、再批量写（read-then-write）",
+        "isCorrect": true,
+        "description": "把读取挪到所有写入之前，复用上一帧布局"
+      },
+      {
+        "text": "用 setTimeout 把每次写入推迟到下一个任务",
+        "isCorrect": false,
+        "description": "过度调度，且 setTimeout 不与刷新率对齐"
+      },
+      {
+        "text": "把所有 DOM 操作放进 requestIdleCallback",
+        "isCorrect": false,
+        "description": "rIC 是低优先级空闲期，不保证视觉一致性"
+      },
+      {
+        "text": "改用 visibility: hidden 替代 display: none",
+        "isCorrect": false,
+        "description": "与布局抖动规避无关"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：will-change 的正确使用策略是？",
+    "explanation": "MDN 官方建议：will-change 是**最后手段**，仅在出现真实性能问题后用；**用脚本动态开关**（hover/focus 时设、animationEnd/transitionEnd 后置回 `auto`）；**绝不全局常驻**（`* { will-change: transform; }` 会导致层爆炸）；需**提前给浏览器优化时间**（变化发生前一帧以上设置）。「预防性」全局优化是误用。",
+    "tags": ["渲染性能", "will-change", "层提升"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "最后手段、脚本动态开关、绝不全局常驻",
+        "isCorrect": true,
+        "description": "MDN 官方推荐用法"
+      },
+      {
+        "text": "全局写 `* { will-change: transform; }` 预防性优化",
+        "isCorrect": false,
+        "description": "层爆炸，浪费 GPU 内存与带宽"
+      },
+      {
+        "text": "写进基础样式表长期挂着，让浏览器持续优化",
+        "isCorrect": false,
+        "description": "浏览器无法释放优化资源，长期占内存"
+      },
+      {
+        "text": "只在 animationEnd 时设置一次，之后不再管",
+        "isCorrect": false,
+        "description": "时序错了，应在变化前设置，结束后回收"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：层爆炸（layer explosion）的本质代价是？",
+    "explanation": "每个合成层都要**把纹理上传到 GPU**，消耗 GPU 内存与 CPU↔GPU 带宽。若全局提升过多元素（`* { will-change: transform; transform: translateZ(0); }`），每层都建合成层 → 纹理占满 GPU 内存、上传带宽打满，**低端设备反而严重掉帧**。修复方法是只对确实要动画的元素提升。",
+    "tags": ["渲染性能", "层爆炸", "GPU", "memory"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每层都要把纹理上传 GPU，消耗内存与带宽",
+        "isCorrect": true,
+        "description": "层越多，纹理上传开销越大"
+      },
+      {
+        "text": "层数越多，浏览器的合成阶段越快",
+        "isCorrect": false,
+        "description": "合成阶段本身在合成器线程，但纹理上传打满带宽反而更慢"
+      },
+      {
+        "text": "层爆炸只影响 CPU，不影响 GPU",
+        "isCorrect": false,
+        "description": "正相反，主要影响 GPU 内存与带宽"
+      },
+      {
+        "text": "层爆炸只会增加首次加载时间，不影响运行时帧率",
+        "isCorrect": false,
+        "description": "运行时帧率反而严重掉，低端机尤其明显"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：CSS contain 的 strict 与 content 速记值如何展开？",
+    "explanation": "MDN / CSS Containment Module Level 2 定义：**strict = size layout paint style**（全隔离，含 size 易导致尺寸塌陷），**content = layout paint style**（不含 size，是最常用的安全值）。日常对第三方 widget、卡片、列表项用 `contain: content` 即可隔离布局与重绘范围。",
+    "tags": ["渲染性能", "css-contain", "containment"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "strict = size layout paint style；content = layout paint style",
+        "isCorrect": true,
+        "description": "MDN/Containment Level 2 标准展开"
+      },
+      {
+        "text": "strict = layout paint；content = size layout paint",
+        "isCorrect": false,
+        "description": "展开错了，二者混了"
+      },
+      {
+        "text": "strict = size layout；content = paint style",
+        "isCorrect": false,
+        "description": "缺了关键维度"
+      },
+      {
+        "text": "strict = paint；content = layout",
+        "isCorrect": false,
+        "description": "只剩单个维度，速记意义不对"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：contain: paint 的性能来源是？",
+    "explanation": "`contain: paint` 语义为**后代不会绘制到容器边界框外**。这意味着当容器在视口外（离屏）时，浏览器**可直接跳过整个子树的 Paint**——这是其性能来源。代价是会创建新的堆叠上下文与包含块，可能改变 `position: fixed` 的定位锚点。",
+    "tags": ["渲染性能", "css-contain", "paint"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "后代不绘制到容器边界外，离屏时可跳过子树绘制",
+        "isCorrect": true,
+        "description": "浏览器可省去整个子树的 Paint 阶段"
+      },
+      {
+        "text": "把所有后代强制提升为合成层",
+        "isCorrect": false,
+        "description": "那是 will-change 的行为，不是 contain"
+      },
+      {
+        "text": "禁止子树触发 reflow",
+        "isCorrect": false,
+        "description": "那是 contain: layout 的语义"
+      },
+      {
+        "text": "禁用子树的 CSS 动画",
+        "isCorrect": false,
+        "description": "contain 不影响动画语法"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：使用 contain: size 时需要特别注意什么？",
+    "explanation": "`contain: size` 让**容器的尺寸与子元素无关**——浏览器无需为子元素算尺寸即可确定容器尺寸。代价是**子元素不再撑开容器**，若不配合 `contain-intrinsic-size` 给出预估尺寸，容器尺寸会塌陷为 0。`strict` 含 `size` 也有同样问题，慎用。",
+    "tags": ["渲染性能", "css-contain", "size", "坑"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "子元素不再撑开容器，须配 contain-intrinsic-size 防塌陷",
+        "isCorrect": true,
+        "description": "contain-intrinsic-size 给出预估尺寸"
+      },
+      {
+        "text": "子元素会自动变成 position: fixed",
+        "isCorrect": false,
+        "description": "与定位无关"
+      },
+      {
+        "text": "容器无法应用任何背景",
+        "isCorrect": false,
+        "description": "contain 不限制背景"
+      },
+      {
+        "text": "子树会被自动隐藏",
+        "isCorrect": false,
+        "description": "那是 content-visibility: hidden 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：requestAnimationFrame 的回调签名与行为是？",
+    "explanation": "`requestAnimationFrame(callback)` 接收一个回调，回调**单参为 `DOMHighResTimeStamp`**（与 `performance.now()` 同时间基），返回 id 供 `cancelAnimationFrame(id)` 取消。**同一帧内多个回调共享同一个时间戳**（标记该帧回调开始时刻），频率对齐显示刷新率（60/120/240Hz），**页面不可见时浏览器自动暂停**。",
+    "tags": ["渲染性能", "requestAnimationFrame", "rAF"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "单参 DOMHighResTimeStamp；同帧多回调共享时间戳；页面不可见自动暂停",
+        "isCorrect": true,
+        "description": "rAF 与刷新率对齐且自动节能"
+      },
+      {
+        "text": "无参；多个回调各自读 performance.now()；后台继续跑",
+        "isCorrect": false,
+        "description": "rAF 有 timestamp 参数，且后台自动暂停"
+      },
+      {
+        "text": "单参 HTMLElement；只对传入元素重绘",
+        "isCorrect": false,
+        "description": "rAF 不接收元素参数"
+      },
+      {
+        "text": "单参 boolean；表示是否首次调用",
+        "isCorrect": false,
+        "description": "参数是时间戳，不是布尔值"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：为什么优先用 requestAnimationFrame 而非 setTimeout 驱动动画？",
+    "explanation": "`setTimeout(fn, 16)` **不与刷新率同步**——回调可能落在两帧之间导致丢帧（jank）；`setInterval(fn, 16)` 同上且会堆积、后台标签仍继续跑（浪费电）。`requestAnimationFrame` **对齐显示刷新率**（60/120/240Hz），在帧开始时拿到时间戳便于基于真实时间做插值；**页面不可见时浏览器自动暂停**，节能且不浪费主线程。",
+    "tags": ["渲染性能", "requestAnimationFrame", "setTimeout"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "rAF 对齐刷新率，页面不可见时自动暂停",
+        "isCorrect": true,
+        "description": "setTimeout 不与刷新率同步，后台仍跑"
+      },
+      {
+        "text": "setTimeout 比 rAF 更精确",
+        "isCorrect": false,
+        "description": "setTimeout 受事件队列与 minimum delay 影响，可能偏离刷新率"
+      },
+      {
+        "text": "rAF 只能在主线程跑，setTimeout 可以跑在 Web Worker",
+        "isCorrect": false,
+        "description": "二者都不能在 Worker 跑（Worker 中无 DOM）"
+      },
+      {
+        "text": "rAF 回调不接受参数，setTimeout 可以传参",
+        "isCorrect": false,
+        "description": "rAF 回调接受 DOMHighResTimeStamp"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：translateZ(0) 或 transform: translate3d(0,0,0) hack 的用途是？",
+    "explanation": "**`translateZ(0)` / `transform: translate3d(0,0,0)`** 是**不支持 will-change 的旧浏览器**强制创建合成层的层提升 hack——浏览器看到 3D 变换就会为该元素提升到独立合成层。现代浏览器优先用 `will-change`；translateZ hack 在所有浏览器仍可用但通常没必要，滥用会导致层爆炸。",
+    "tags": ["渲染性能", "translateZ", "层提升", "hack"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在不支持 will-change 的旧浏览器强制创建合成层",
+        "isCorrect": true,
+        "description": "旧时代层提升 hack，现代浏览器优先用 will-change"
+      },
+      {
+        "text": "把元素移动到 z 轴 0 像素的位置",
+        "isCorrect": false,
+        "description": "视觉上确实在 z=0，但目的不是位移"
+      },
+      {
+        "text": "禁用该元素的硬件加速",
+        "isCorrect": false,
+        "description": "正相反，是开启硬件加速"
+      },
+      {
+        "text": "提升元素的 z-index",
+        "isCorrect": false,
+        "description": "z-index 与 translateZ 不同"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：动画驱动 `left` 改为 `transform: translateX()` 后会带来什么收益？",
+    "explanation": "`left` 是几何属性，改它会触发完整 **Style → Layout → Paint → Composite**（最贵路径）。`transform: translateX()` 是合成器属性，改它只走 **Style → Composite**，**完全跳过 Layout 和 Paint**，且在合成器线程独立处理——主线程繁忙时仍能继续动画。这是动画属性选择的核心规则。",
+    "tags": ["渲染性能", "transform", "left", "动画优化"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跳过 Layout 和 Paint，仅在合成器线程跑",
+        "isCorrect": true,
+        "description": "合成器属性绕过几何与栅格化"
+      },
+      {
+        "text": "动画会变得更精确（亚像素级）",
+        "isCorrect": false,
+        "description": "transform 不一定更精确，关键在合成器线程独立"
+      },
+      {
+        "text": "不再触发 Style 阶段",
+        "isCorrect": false,
+        "description": "Style 阶段必走（重新匹配）"
+      },
+      {
+        "text": "减少 JS 执行时间",
+        "isCorrect": false,
+        "description": "JS 量没变，是流水线阶段减少了"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：以下哪种是 `will-change` 的误用？",
+    "explanation": "MDN 官方明确：**绝不做「预防性」优化**——只在出现真实性能问题后作为最后手段才用 `will-change`。把 `will-change` 写进全局样式表（`* { will-change: transform; }`）或长期常驻不回收都是误用：会让浏览器长期持有优化资源/层，浪费内存，甚至提前创建堆叠上下文影响视觉。",
+    "tags": ["渲染性能", "will-change", "误用"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在基础样式表写 `* { will-change: transform; }` 做预防性优化",
+        "isCorrect": true,
+        "description": "层爆炸 + 浪费内存，MDN 明确反对"
+      },
+      {
+        "text": "hover 时设 will-change，transitionend 时置回 auto",
+        "isCorrect": false,
+        "description": "这是 MDN 推荐的动态开关用法"
+      },
+      {
+        "text": "动画卡顿后用 will-change 提升元素到合成层",
+        "isCorrect": false,
+        "description": "这是「最后手段」的正确场景"
+      },
+      {
+        "text": "用 JS 在变化发生前设置 will-change",
+        "isCorrect": false,
+        "description": "提前给浏览器优化时间是对的"
+      }
+    ]
+  },
+  {
+    "stem": "渲染性能：滚动/resize 等高频事件回调里推荐的优化模式是？",
+    "explanation": "高频事件回调里直接做重 DOM 读写会拖垮帧率。正确模式：**回调里只读必要值 + 用 requestAnimationFrame 调度真正的写**——把重活推迟到帧边界（与刷新率对齐），并加 ticking 标志防止同帧多次调度。这避免在事件触发间隙（可能远高于刷新率）反复触发 DOM 修改。",
+    "tags": ["渲染性能", "scroll", "requestAnimationFrame", "高频事件"],
+    "categories": [
+      ["技术方向", "渲染性能"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "回调里只读必要值 + rAF 调度真正的写",
+        "isCorrect": true,
+        "description": "把重活推迟到帧边界，与刷新率对齐"
+      },
+      {
+        "text": "在回调里直接同步修改所有 DOM",
+        "isCorrect": false,
+        "description": "scroll 触发频率远高于刷新率，会拖垮帧"
+      },
+      {
+        "text": "用 setInterval 每 16ms 检查一次状态",
+        "isCorrect": false,
+        "description": "setInterval 不与刷新率同步，且后台仍跑"
+      },
+      {
+        "text": "用 MutationObserver 监听滚动",
+        "isCorrect": false,
+        "description": "MutationObserver 监听 DOM 变化，与滚动无关"
+      }
+    ]
+  }
+]
