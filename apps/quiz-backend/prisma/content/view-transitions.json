@@ -1,1613 +1,638 @@
 [
   {
-    "stem": "View Transitions API：它最准确的技术定位是下列哪一项？",
-    "explanation": "View Transitions API 让浏览器自动为「DOM 更新前后的视觉状态」抓快照并补间——你只管把 DOM 从旧状态改成新状态，浏览器负责「从旧样子平滑变到新样子」，把过去要手写的每一帧中间态降为声明式一句话加少量 CSS。它是 W3C CSS View Transitions Module Level 1/2 规范定义的浏览器原生能力，不是动画库、也不是某框架的私有特性。",
-    "tags": ["view-transitions", "入门", "positioning"],
+    "stem": "过渡动画：View Transitions API 两种触发模式的本质区别是什么？",
+    "explanation": "View Transitions API 有两种触发形态：**同文档（SPA）** 由 JS 主动调用 `document.startViewTransition(callback)`，开发者控制抓快照的时机；**跨文档（MPA）** 由 CSS 声明 `@view-transition { navigation: auto }`，浏览器在同源导航时自动接管。前者依赖开发者抓旧/新快照，后者完全由浏览器在导航时调度。",
+    "tags": ["view-transitions", "触发模式", "spa", "mpa", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
       ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "让浏览器自动为 DOM 更新前后的视觉状态抓快照并补间的原生能力，开发者只写最终状态、不写中间帧",
+        "text": "同文档由 JS 主动调 document.startViewTransition；跨文档由 CSS @view-transition 声明 + 同源导航自动触发",
         "isCorrect": true,
-        "description": "抓旧快照→改 DOM→抓新快照→补间，正是官方定位"
+        "description": "前者开发者控制时机，后者浏览器在导航时接管"
       },
       {
-        "text": "一个需要 npm 安装的 JS 动画库，提供时间线编排与物理弹簧",
+        "text": "两者都由 document.startViewTransition 触发，只是参数不同",
         "isCorrect": false,
-        "description": "它是浏览器标准能力，且不做时间线/物理，那是 JS 动画库的活"
+        "description": "跨文档 VT 完全不需要 JS，是 CSS at-rule"
       },
       {
-        "text": "仅 Chrome 私有的页面切换特效，其他浏览器完全无法使用",
+        "text": "两者都由 CSS 声明，只是同文档用 view-transition-name、跨文档用 navigation",
         "isCorrect": false,
-        "description": "同文档核心已进 Baseline，三大引擎都支持"
+        "description": "同文档必须有 JS 主动调用，CSS 只是配样式"
       },
       {
-        "text": "一套替代 CSS `transition`/`@keyframes` 的元素属性过渡语法",
+        "text": "同文档用 @view-transition，跨文档用 startViewTransition",
         "isCorrect": false,
-        "description": "它补的是前后两态之间，元素自身属性过渡仍归 CSS"
+        "description": "说反了"
       }
     ]
   },
   {
-    "stem": "View Transitions API：在同文档场景触发一次最简过渡，最小写法是下列哪一项？",
-    "explanation": "同文档过渡的唯一入口是 `document.startViewTransition(updateCallback)`：把「改 DOM」这一步放进回调，浏览器会在回调运行前抓旧快照、回调后抓新快照并自动补间。无需任何额外 CSS，这一句就能得到默认的交叉淡入淡出。",
-    "tags": ["view-transitions", "入门", "minimal-usage"],
+    "stem": "过渡动画：::view-transition-old 与 ::view-transition-new 伪元素分别代表什么？",
+    "explanation": "`::view-transition-old(name)` 是**旧视图的静态快照**（旧 DOM 渲染的定格截图），`::view-transition-new(name)` 是**新视图的实时表示**（新 DOM 的实时渲染，VT 期间通常被截图）。默认 root 转场是 cross-fade：old 的 opacity 从 1→0，new 的 opacity 从 0→1。",
+    "tags": ["view-transitions", "伪元素", "old", "new", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
       ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "给要过渡的元素加一个约定的 `view-transition` 类名，浏览器自动识别",
-        "isCorrect": false,
-        "description": "不存在这种自动识别的 class 约定"
-      },
-      {
-        "text": "调用 `document.animate()` 并传入 keyframes",
-        "isCorrect": false,
-        "description": "那是 Web Animations API，不是 View Transitions 入口"
-      },
-      {
-        "text": "先 `new ViewTransition()` 再手动 `start()`",
-        "isCorrect": false,
-        "description": "`ViewTransition` 是返回值不是构造器，无 new 用法"
-      },
-      {
-        "text": "`document.startViewTransition(() => { 改DOM() })`，回调里做 DOM 变更",
+        "text": "old = 旧视图的静态快照；new = 新视图的实时表示；默认 root cross-fade（old 1→0、new 0→1）",
         "isCorrect": true,
-        "description": "把 DOM 变更包进回调，其余交给浏览器，正是最小用法"
+        "description": "两者都是截图快照，默认动画是 opacity 交叉淡入淡出"
+      },
+      {
+        "text": "old = 即将出现的视图；new = 已经显示的视图",
+        "isCorrect": false,
+        "description": "old/new 命名基于「转场前/后」而非视觉位置"
+      },
+      {
+        "text": "old 是动态实时渲染，new 是静态截图",
+        "isCorrect": false,
+        "description": "说反了，old 才是定格截图"
+      },
+      {
+        "text": "两者都是同一张图，只是 opacity 不同",
+        "isCorrect": false,
+        "description": "分别对应旧 DOM 与新 DOM 两张不同的截图"
       }
     ]
   },
   {
-    "stem": "View Transitions API：它的核心机制（心智模型）按顺序是下列哪一条？",
-    "explanation": "整条流水线是：抓旧状态快照 → 运行 `updateCallback` 更新 DOM（其间渲染被抑制）→ 抓新状态快照 → 在 `::view-transition` 伪元素树上跑动画 → 收尾销毁伪元素树。理解这条时间线，后面所有 API 都是它的展开。",
-    "tags": ["view-transitions", "入门", "mechanism"],
+    "stem": "过渡动画：view-transition-name 的唯一性约束是什么？",
+    "explanation": "`view-transition-name` 让元素脱离 root 独立 morph，**核心约束：每个 name 在 `document.startViewTransition` 调用前与回调结束后必须各恰好出现一次**。如果某 name 在前后分别出现多个元素，浏览器无法配对，该 name 的转场会被跳过并在控制台报错。列表页常见模式是「点击后才赋名」或用 `view-transition-name: match-element` 让元素自动生成。",
+    "tags": ["view-transitions", "view-transition-name", "唯一性", "中级"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "先播放动画 → 再更新 DOM → 最后抓快照",
-        "isCorrect": false,
-        "description": "顺序颠倒，快照必须在 DOM 更新前后各抓一次"
-      },
-      {
-        "text": "抓旧快照 → 更新 DOM（渲染抑制）→ 抓新快照 → 伪元素树上补间",
-        "isCorrect": true,
-        "description": "四步流水线，正是官方心智模型"
-      },
-      {
-        "text": "抓一次快照 → 更新 DOM → 直接用该快照循环播放",
-        "isCorrect": false,
-        "description": "需要新旧两张快照配对，不是单张循环"
-      },
-      {
-        "text": "更新 DOM → 用户看到中间态 → 再决定是否过渡",
-        "isCorrect": false,
-        "description": "更新期间渲染被抑制，用户看不到中间态"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：在 `updateCallback` 执行期间，页面渲染处于什么状态？",
-    "explanation": "回调是「渲染抑制窗口」：`updateCallback` 执行时页面不重绘，无论回调内部改了多少次 DOM，用户只会看到「改完」的结果，不会看到闪烁的中间态。这也是为什么回调里不能塞 `await fetch()` 等无关异步——那会把整页冻在旧态直到异步结束。",
-    "tags": ["view-transitions", "入门", "render-suppression"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "正常重绘，用户能实时看到每一次 DOM 改动",
-        "isCorrect": false,
-        "description": "恰相反，此窗口渲染被抑制"
-      },
-      {
-        "text": "页面被卸载后重新加载",
-        "isCorrect": false,
-        "description": "同文档过渡不卸载文档，只是抑制渲染"
-      },
-      {
-        "text": "渲染被抑制，用户看不到「改到一半」的中间态",
-        "isCorrect": true,
-        "description": "正是渲染抑制窗口的意义"
-      },
-      {
-        "text": "冻结 JS 主线程，任何脚本都无法执行",
-        "isCorrect": false,
-        "description": "JS 照常执行，被抑制的是渲染绘制不是脚本"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`document.startViewTransition()` 的返回值是什么？",
-    "explanation": "它同步返回一个 `ViewTransition` 对象，是你观测与干预这次过渡的全部把手：带 `updateCallbackDone`/`ready`/`finished` 三个 Promise 和 `skipTransition()` 方法（以及 `types`）。",
-    "tags": ["view-transitions", "入门", "view-transition-object"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "一个 `ViewTransition` 对象，带三个 Promise 和 `skipTransition()`",
-        "isCorrect": true,
-        "description": "正是过渡对象，用于挂生命周期钩子"
-      },
-      {
-        "text": "一个布尔值，表示浏览器是否支持过渡",
-        "isCorrect": false,
-        "description": "支持与否用特性检测判断，返回的是过渡对象"
-      },
-      {
-        "text": "被替换的 DOM 节点",
-        "isCorrect": false,
-        "description": "返回的是过渡对象，不是 DOM 节点"
-      },
-      {
-        "text": "一个 CSS 字符串，包含生成的关键帧",
-        "isCorrect": false,
-        "description": "不返回 CSS，定制动画靠伪元素样式"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：完全不给任何元素命名 `view-transition-name` 时，一次过渡的默认视觉效果是什么？",
-    "explanation": "浏览器 UA 样式表内置 `:root { view-transition-name: root }`，所以默认永远至少存在一组 `root`，其旧快照淡出、新快照淡入 → 整页交叉淡入淡出。这也是「默认根转场易全屏闪」的来源。",
-    "tags": ["view-transitions", "入门", "default-animation"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "什么都不会发生，必须先命名才有动画",
-        "isCorrect": false,
-        "description": "默认就有 root 组，零配置也有转场"
-      },
-      {
-        "text": "抛出错误，提示缺少 `view-transition-name`",
-        "isCorrect": false,
-        "description": "命名是可选的，缺名不报错"
-      },
-      {
-        "text": "元素逐个从左飞入",
-        "isCorrect": false,
-        "description": "默认是整页交叉淡入淡出，不是飞入"
-      },
-      {
-        "text": "整页（`root` 组）交叉淡入淡出",
-        "isCorrect": true,
-        "description": "UA 内置 `:root{view-transition-name:root}` 使然"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：同一套机制覆盖的两种触发场景分别是什么？",
-    "explanation": "同文档（SPA）用 JS `document.startViewTransition(updateCallback)` 触发；跨文档（MPA）用 CSS `@view-transition { navigation: auto }` 在同源导航时自动触发，可零 JavaScript。二者共享同一棵伪元素树与命名规则，学一次两处通用。",
-    "tags": ["view-transitions", "入门", "spa-mpa"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "服务端渲染与客户端渲染",
-        "isCorrect": false,
-        "description": "与 SSR/CSR 无关，分的是同文档/跨文档"
-      },
-      {
-        "text": "同文档 SPA 用 JS `startViewTransition`；跨文档 MPA 用 CSS `@view-transition`",
-        "isCorrect": true,
-        "description": "两种作用范围，共享同一套心智"
-      },
-      {
-        "text": "移动端与桌面端",
-        "isCorrect": false,
-        "description": "与设备无关"
-      },
-      {
-        "text": "开发环境与生产环境",
-        "isCorrect": false,
-        "description": "与环境无关"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`view-transition-name` 在过渡中承担的两个基本职责是什么？",
-    "explanation": "`view-transition-name` 做两件事：① 让元素从整页快照里「独立」出来、单独成一组；② 作为新旧两态之间的「配对钥匙」——旧态元素与新态元素带相同的名，浏览器就把它俩当同一物、在 `::view-transition-group(name)` 上补间位置与尺寸。",
-    "tags": ["view-transitions", "入门", "name-basics"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "设置动画时长和缓动曲线",
-        "isCorrect": false,
-        "description": "时长缓动靠伪元素上的 animation 属性，不是 name"
-      },
-      {
-        "text": "指定元素的层级 z-index",
-        "isCorrect": false,
-        "description": "name 不管层级"
-      },
-      {
-        "text": "让元素单独成组，并作为新旧两态的配对钥匙",
-        "isCorrect": true,
-        "description": "成组 + 配对，正是它的两个职责"
-      },
-      {
-        "text": "声明该元素使用哪个 UA 关键帧",
-        "isCorrect": false,
-        "description": "name 是标识不是关键帧选择器"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：它被命名为「transition」而非「animation」，最贴切的原因是？",
-    "explanation": "「你改 DOM」和「动画」是解耦的——你写的永远是「最终状态」，从不写中间帧，浏览器负责在前后两态之间补间。这正是「transition」（前后两态之间）与「animation」（自定义时间线、逐帧编排）的区别，也解释了它为何不做时间线/手势/物理。",
-    "tags": ["view-transitions", "入门", "transition-vs-animation"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "入门"]
-    ],
-    "options": [
-      {
-        "text": "你只声明前后两个状态，中间帧由浏览器补间，而非自定义时间线",
-        "isCorrect": true,
-        "description": "前后两态之间补间，正是 transition 语义"
-      },
-      {
-        "text": "它只能用于 CSS `transition` 属性",
-        "isCorrect": false,
-        "description": "与 CSS transition 属性无关，是独立机制"
-      },
-      {
-        "text": "它的动画时长固定为 0.25s 不可改",
-        "isCorrect": false,
-        "description": "时长可通过伪元素 animation-duration 自定义"
-      },
-      {
-        "text": "它不产生任何视觉变化",
-        "isCorrect": false,
-        "description": "它恰恰产生前后态之间的视觉补间"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：传给 `startViewTransition` 的 `updateCallback` 应当承担什么职责？",
-    "explanation": "`updateCallback` 只做「把 DOM 从旧状态改到新状态」这一件事；它可以是同步的，也可以返回一个 `Promise`（浏览器会等它 resolve 后再抓新快照，用于异步渲染完成的场景）。里面不应塞入无关的网络请求或定时器。",
-    "tags": ["view-transitions", "初级", "update-callback"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "负责抓取旧快照和新快照",
-        "isCorrect": false,
-        "description": "抓快照是浏览器的活，回调只改 DOM"
-      },
-      {
-        "text": "只把 DOM 从旧状态改到新状态，可同步或返回 Promise",
-        "isCorrect": true,
-        "description": "职责单一，可返回 Promise 等异步渲染"
-      },
-      {
-        "text": "负责销毁伪元素树",
-        "isCorrect": false,
-        "description": "伪元素树由浏览器在收尾时销毁"
-      },
-      {
-        "text": "定义过渡的关键帧和时长",
-        "isCorrect": false,
-        "description": "关键帧时长靠 CSS 伪元素样式，不在回调里"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：元素「自身属性」的入场/悬停/颜色渐变，更适合用什么来做？",
-    "explanation": "单个元素属性变化（无需「前后两态配对」）是 CSS `transition`/`@keyframes` 的活，原生更轻。View Transitions 的专长是「状态切换/页面导航」的跨态转场（列表↔详情、Tab 切换、路由跳转），尤其擅长形变。三者是分工不是替代。",
-    "tags": ["view-transitions", "初级", "css-boundary"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "View Transitions，因为它能做一切动画",
-        "isCorrect": false,
-        "description": "它只补前后两态之间，不覆盖单元素属性过渡"
-      },
-      {
-        "text": "必须用 JS 动画库如 GSAP",
-        "isCorrect": false,
-        "description": "单属性过渡 CSS 原生即可，无需库"
-      },
-      {
-        "text": "`@view-transition` at-rule",
-        "isCorrect": false,
-        "description": "那是跨文档导航转场的开关，不管单元素属性"
-      },
-      {
-        "text": "CSS `transition` / `@keyframes`",
-        "isCorrect": true,
-        "description": "单元素属性变化 CSS 原生最轻，正是它的活"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：下列哪类动画需求不属于它的职责，应交给 JS 动画库（WAAPI/GSAP 等）？",
-    "explanation": "View Transitions 只补「前后两态之间」，不做时间线编排、物理弹簧、手势跟随、循环动画、SVG 路径动画——那些是 WAAPI/GSAP/Framer Motion/Anime.js 的地盘。可叠加：用它做路由转场骨架，在 `ready` 后用 WAAPI 给伪元素加花样。",
-    "tags": ["view-transitions", "初级", "js-lib-boundary"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "列表项点击后飞到详情页大图的形变",
-        "isCorrect": false,
-        "description": "这正是 View Transitions 的强项形变补间"
-      },
-      {
-        "text": "路由切换时整页交叉淡入淡出",
-        "isCorrect": false,
-        "description": "这也是 View Transitions 的典型用法"
-      },
-      {
-        "text": "持续循环的加载动画、手势跟随与物理弹簧",
-        "isCorrect": true,
-        "description": "时间线/手势/物理不是它的活，归 JS 动画库"
-      },
-      {
-        "text": "Tab 切换时的内容过渡",
-        "isCorrect": false,
-        "description": "状态切换转场是 View Transitions 的场景"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：「同文档核心」进入 Baseline（Newly available）的时间与浏览器版本，下列哪项正确？",
-    "explanation": "同文档核心（`startViewTransition`、`view-transition-name`/`-class`、`match-element`、`:active-view-transition`）于 2025-10 随 Firefox 144 补齐而进入 Baseline Newly available，对应 Chrome 111+ / Safari 18+ / Firefox 144+，是可放心使用的安全区（旧版本仍需特性检测降级）。",
-    "tags": ["view-transitions", "初级", "baseline-support"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "2025-10 进 Baseline，Chrome 111+ / Safari 18+ / Firefox 144+",
-        "isCorrect": true,
-        "description": "Firefox 144 补齐后进 Baseline，正是同文档核心口径"
-      },
-      {
-        "text": "至今仅 Chrome 支持，Safari/Firefox 均无",
-        "isCorrect": false,
-        "description": "Safari 18、Firefox 144 都已支持同文档核心"
-      },
-      {
-        "text": "2020 年即三大引擎全绿",
-        "isCorrect": false,
-        "description": "时间线不符，Firefox 144（2025）才补齐"
-      },
-      {
-        "text": "只有 Safari 支持，Chrome 尚未实现",
-        "isCorrect": false,
-        "description": "Chrome 111 起就支持，恰是最早的一个"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：为什么不写任何 CSS、也不命名任何元素，一次 `startViewTransition` 也会有可见转场？",
-    "explanation": "因为浏览器 UA 样式表里内置了 `:root { view-transition-name: root }`，于是默认永远至少存在一组名为 `root` 的快照，其旧/新快照各自淡出淡入，形成整页交叉淡入淡出。",
-    "tags": ["view-transitions", "初级", "ua-root"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "浏览器随机挑一个元素来做动画",
-        "isCorrect": false,
-        "description": "不是随机，是 UA 给 :root 内置了 root 名"
-      },
-      {
-        "text": "UA 样式内置 `:root { view-transition-name: root }`，默认有一组 `root`",
-        "isCorrect": true,
-        "description": "内置根组使零配置也有整页淡入淡出"
-      },
-      {
-        "text": "`startViewTransition` 会自动给所有元素命名",
-        "isCorrect": false,
-        "description": "它不会自动给所有元素命名，只默认含 root"
-      },
-      {
-        "text": "因为 `updateCallback` 里必须写动画代码",
-        "isCorrect": false,
-        "description": "回调只改 DOM，默认动画来自 UA 内置 root"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：给列表缩略图和详情页大图同一个 `view-transition-name`，「缩略图飞出来放大」的形变补间由谁完成？",
-    "explanation": "同名元素在新旧两态位置/尺寸不同时，`::view-transition-group(name)` 会自动对 `transform` 与 `width`/`height` 做平滑补间——你一行坐标都不用算，响应式布局下也不会算错，因为浏览器读的是真实布局盒。这是本 API 最省事的杀手锏。",
-    "tags": ["view-transitions", "初级", "morph"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "需要你用 JS 手动计算起止坐标再逐帧插值",
-        "isCorrect": false,
-        "description": "恰恰相反，浏览器自动补间，无需手算坐标"
-      },
-      {
-        "text": "靠 CSS `transition: all` 实现",
-        "isCorrect": false,
-        "description": "不依赖 transition 属性，是 group 的形变补间"
-      },
-      {
-        "text": "无法实现，View Transitions 只能淡入淡出",
-        "isCorrect": false,
-        "description": "形变补间正是它的强项"
-      },
-      {
-        "text": "浏览器在 `::view-transition-group(name)` 上自动补间位置与尺寸",
-        "isCorrect": true,
-        "description": "同名成组，group 自动形变，零坐标计算"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：CSS 属性 `view-transition-name` 的默认值是什么，含义是什么？",
-    "explanation": "默认值是 `none`，表示该元素「不单独成组」（并入父级快照）。它还有实战用途「用完即清」：跨文档场景常在过渡前用 JS 临时打标、快照抓完后把 `viewTransitionName` 复位成 `none`，避免残留标记在下次过渡里撞名。",
-    "tags": ["view-transitions", "初级", "name-none"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "`auto`，表示自动生成唯一名",
-        "isCorrect": false,
-        "description": "自动唯一名是 match-element，不是默认值"
-      },
-      {
-        "text": "`root`，表示并入根组",
-        "isCorrect": false,
-        "description": "root 是 UA 给 :root 的值，不是通用默认"
-      },
-      {
-        "text": "`none`，表示不单独成组、并入父级快照",
-        "isCorrect": true,
-        "description": "none 是默认值，也是「用完即清」的复位值"
-      },
-      {
-        "text": "`inherit`，继承父元素的名",
-        "isCorrect": false,
-        "description": "默认是 none 不是 inherit"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：同文档场景做渐进增强的标准特性检测写法是？",
-    "explanation": "检测 `document.startViewTransition` 是否存在即可：`if (!document.startViewTransition) { 直接改DOM(); return; }`；也可用 `in` 运算符判断 `document` 上是否有该方法。不支持时直接更新 DOM、不进过渡流程，天然降级。",
-    "tags": ["view-transitions", "初级", "feature-detect"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "`if (!document.startViewTransition) { 直接改DOM(); return; }`",
-        "isCorrect": true,
-        "description": "检测方法是否存在，不支持就直接改 DOM"
-      },
-      {
-        "text": "读取 `navigator.userAgent` 判断浏览器名",
-        "isCorrect": false,
-        "description": "UA 嗅探不可靠，应做能力检测"
-      },
-      {
-        "text": "`try { new ViewTransition() } catch {}`",
-        "isCorrect": false,
-        "description": "ViewTransition 不可 new，此法无效"
-      },
-      {
-        "text": "检查 `window.ViewTransition` 是否为函数",
-        "isCorrect": false,
-        "description": "同文档检测的标准是 `document.startViewTransition` 的存在性"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：跨文档（MPA）开启导航转场的 CSS 写法是？",
-    "explanation": "跨文档几乎零 JS：源页与目标页都声明 `@view-transition { navigation: auto }`，浏览器在同源导航时自动抓两侧文档快照并过渡。`navigation: auto` 表示同源导航自动过渡，`none` 表示关闭。",
-    "tags": ["view-transitions", "初级", "at-rule"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "`@media view-transition { enable: true }`",
-        "isCorrect": false,
-        "description": "无此 media 语法，是 @view-transition at-rule"
-      },
-      {
-        "text": "`@view-transition { navigation: auto }`（两侧同源页面都写）",
-        "isCorrect": true,
-        "description": "at-rule 开关，navigation:auto 同源导航自动过渡"
-      },
-      {
-        "text": "在 `<html>` 上加一个自定义的 view-transition 开关属性",
-        "isCorrect": false,
-        "description": "无此 HTML 属性，用 CSS at-rule"
-      },
-      {
-        "text": "调用 `document.enableCrossDocumentTransition()`",
-        "isCorrect": false,
-        "description": "无此 API，跨文档靠 CSS 声明而非 JS"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：不支持 `@view-transition` 的浏览器遇到跨文档导航会怎样？",
-    "explanation": "不支持的浏览器直接「忽略」`@view-transition` 规则，导航退化为普通硬切——不报错、不白屏。这使跨文档转场成为「零成本降级」的典范，MPA 因此无需任何 JS 特性检测。",
-    "tags": ["view-transitions", "初级", "mpa-fallback"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "抛出解析错误，导航中断",
-        "isCorrect": false,
-        "description": "未知 at-rule 被忽略，不会报错"
-      },
-      {
-        "text": "阻塞页面直到超时",
-        "isCorrect": false,
-        "description": "不阻塞，直接硬切"
-      },
-      {
-        "text": "自动下载 polyfill",
-        "isCorrect": false,
-        "description": "浏览器不会自动下载 polyfill"
-      },
-      {
-        "text": "直接忽略该规则，退化为普通硬切，不报错不白屏",
-        "isCorrect": true,
-        "description": "零成本降级，正是 MPA 无需 JS 检测的原因"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：同文档过渡的 JS 入口方法挂在哪个对象上？",
-    "explanation": "同文档、文档级过渡的唯一入口是 `Document.startViewTransition()`（即 `document.startViewTransition(...)`）。Level 2 方向有元素级 `element.startViewTransition()`（scoped），但支持面窄于文档级，本叶以文档级为准。",
-    "tags": ["view-transitions", "初级", "entry-point"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "`window.startViewTransition()`",
-        "isCorrect": false,
-        "description": "挂在 document 上，不是 window"
-      },
-      {
-        "text": "`navigator.startViewTransition()`",
-        "isCorrect": false,
-        "description": "不在 navigator 上"
-      },
-      {
-        "text": "`document.startViewTransition()`（Document 方法）",
-        "isCorrect": true,
-        "description": "文档级入口，正确"
-      },
-      {
-        "text": "`HTMLElement.prototype.startViewTransition()` 是唯一入口",
-        "isCorrect": false,
-        "description": "元素级是 Level 2 且支持窄，文档级才是主入口"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：跨文档（MPA）转场需要写 JS 特性检测吗？",
-    "explanation": "不需要。跨文档靠 CSS `@view-transition` 声明，不支持的浏览器直接忽略它、退化为硬切，是天然降级；无需任何 JS 检测。而同文档才需要 `document.startViewTransition` 的存在性检测。",
-    "tags": ["view-transitions", "初级", "feature-detect-mpa"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "不需要，不支持的浏览器忽略 `@view-transition` 自动硬切降级",
-        "isCorrect": true,
-        "description": "CSS 声明式，天然降级，无需 JS 检测"
-      },
-      {
-        "text": "需要，必须先 `if (document.startViewTransition)` 才能写 CSS",
-        "isCorrect": false,
-        "description": "那是同文档的检测，跨文档纯 CSS 无需它"
-      },
-      {
-        "text": "需要轮询 `navigation` 事件判断支持",
-        "isCorrect": false,
-        "description": "无需轮询，未知 at-rule 自动忽略"
-      },
-      {
-        "text": "需要在服务端 UA 嗅探后决定是否下发 CSS",
-        "isCorrect": false,
-        "description": "UA 嗅探不必要，浏览器会自行忽略不支持的规则"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`ViewTransition` 对象上的三个生命周期 Promise 分别叫什么？",
-    "explanation": "三个 Promise 是 `updateCallbackDone`（回调完成、DOM 已更新）、`ready`（伪元素树建好、动画即将开始）、`finished`（动画结束、新视图可交互）。此外还有 `skipTransition()` 方法与 `types`。",
-    "tags": ["view-transitions", "初级", "promises-overview"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "初级"]
-    ],
-    "options": [
-      {
-        "text": "`start` / `pause` / `end`",
-        "isCorrect": false,
-        "description": "命名不符，无这三个成员"
-      },
-      {
-        "text": "`updateCallbackDone` / `ready` / `finished`",
-        "isCorrect": true,
-        "description": "正是过渡对象的三个 Promise"
-      },
-      {
-        "text": "`before` / `during` / `after`",
-        "isCorrect": false,
-        "description": "无此命名"
-      },
-      {
-        "text": "`loaded` / `painted` / `done`",
-        "isCorrect": false,
-        "description": "无此命名"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：三个生命周期 Promise 的 resolve 时序（先后顺序）是？",
-    "explanation": "固定时序为 `updateCallbackDone`（DOM 已更新）→（伪元素树建立）→ `ready`（动画将开始）→（动画播放）→ `finished`（动画结束、可交互）。",
-    "tags": ["view-transitions", "中级", "promise-order"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
       ["难度", "中级"]
     ],
     "options": [
       {
-        "text": "`ready` → `updateCallbackDone` → `finished`",
-        "isCorrect": false,
-        "description": "顺序错，updateCallbackDone 在 ready 之前"
-      },
-      {
-        "text": "`finished` → `ready` → `updateCallbackDone`",
-        "isCorrect": false,
-        "description": "完全颠倒"
-      },
-      {
-        "text": "`updateCallbackDone` → `ready` → `finished`",
+        "text": "每个 name 在 startViewTransition 调用前与回调后必须各恰好出现一次，多对一会令该 name 转场被跳过",
         "isCorrect": true,
-        "description": "DOM 更新 → 树就绪 → 动画结束，正确时序"
+        "description": "浏览器需配对前后两个快照，多对一无法配对"
       },
       {
-        "text": "三者同时 resolve，无先后",
+        "text": "同一 name 在页面上可以无限次出现，浏览器自动选第一个",
         "isCorrect": false,
-        "description": "有严格先后，不是同时"
+        "description": "多对一会让该 name 转场被跳过并报错"
+      },
+      {
+        "text": "name 只能在调用前出现一次，回调后不能再出现",
+        "isCorrect": false,
+        "description": "前后各一次才能配对 morph"
+      },
+      {
+        "text": "name 在前后出现次数不限，浏览器会按 DOM 顺序自动匹配",
+        "isCorrect": false,
+        "description": "浏览器不会自动选择，必须严格一对一"
       }
     ]
   },
   {
-    "stem": "View Transitions API：同一时刻页面上两个正在渲染的元素带了相同的 `view-transition-name`，会发生什么？",
-    "explanation": "唯一性是硬约束：撞名会让 `ViewTransition.ready` reject、整个过渡被「跳过」——DOM 照常更新，但没有任何动画（不是凑合 animate，是彻底不 animate）。列表/重复元素要么用 `match-element` 自动唯一名，要么把唯一 id 拼进名字。",
-    "tags": ["view-transitions", "中级", "name-uniqueness"],
+    "stem": "过渡动画：如何用 startViewTransition 实现前进/后退方向感动画？",
+    "explanation": "调用 `document.startViewTransition({update, types: ['forwards' | 'backwards']})`，把方向以 type 数组传入。配合 `:active-view-transition-type(<ident>)` 伪类，按方向匹配不同的 `@keyframes`——前进时 old 向左滑出、new 从右滑入；后退时方向相反。这才能符合用户的认知模型。",
+    "tags": [
+      "view-transitions",
+      "types",
+      "方向感",
+      "active-view-transition-type",
+      "中级"
+    ],
     "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
       ["难度", "中级"]
     ],
     "options": [
       {
-        "text": "两个元素合并成一个快照，动画正常",
-        "isCorrect": false,
-        "description": "不会合并，撞名直接跳过整个过渡"
-      },
-      {
-        "text": "后者覆盖前者，仅后者参与动画",
-        "isCorrect": false,
-        "description": "不是覆盖，是整过渡被跳过"
-      },
-      {
-        "text": "浏览器自动追加序号使其唯一",
-        "isCorrect": false,
-        "description": "不会自动去重，需你用 match-element 或拼 id"
-      },
-      {
-        "text": "`ready` reject、整个过渡被跳过（DOM 仍更新但无动画）",
+        "text": "用 {update, types:['forwards'|'backwards']} 传方向，配合 :active-view-transition-type() 伪类套不同 keyframes",
         "isCorrect": true,
-        "description": "唯一性硬约束，撞名即彻底不 animate"
+        "description": "types + 伪类是官方方向感的标准写法"
+      },
+      {
+        "text": "在 update 回调里读 history.state 决定动画方向",
+        "isCorrect": false,
+        "description": "VT 自己不知道方向，必须通过 types 显式传入"
+      },
+      {
+        "text": "用 transition: direction forwards CSS 属性",
+        "isCorrect": false,
+        "description": "不存在该 CSS 属性"
+      },
+      {
+        "text": "通过 ViewTransition.skipTransition() 在后退时跳过动画",
+        "isCorrect": false,
+        "description": "skipTransition 是取消，不是切换方向"
       }
     ]
   },
   {
-    "stem": "View Transitions API：`ViewTransition.skipTransition()` 的准确语义是什么？",
-    "explanation": "它「跳动画不跳 DOM 更新」：立刻把过渡推进到结束态，正在播的动画被砍掉、伪元素树尽快销毁，但 `updateCallback` 照样跑、`finished` 照常 resolve。用于连点/用户已切走时的即时收敛。",
-    "tags": ["view-transitions", "中级", "skip-transition"],
+    "stem": "过渡动画：跨文档 View Transitions 生效必须满足哪些硬约束？",
+    "explanation": "跨文档 VT（`@view-transition { navigation: auto }`）的硬约束：**同源（scheme + host + port 一致）、无跨源重定向、navigationType ∈ {traverse, push, replace}**（reload / 表单 POST 不触发），**且 push/replace 必须由用户交互触发**（点击链接可以，程序化 `location.href = ...` 可能不触发）。此外当前文档与目标文档都必须声明 `navigation: auto`。",
+    "tags": ["view-transitions", "跨文档", "mpa", "约束", "高级"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "跳过动画部分，但 DOM 仍更新，`finished` 仍 resolve",
-        "isCorrect": true,
-        "description": "只砍动画不砍更新，正是其语义"
-      },
-      {
-        "text": "取消整次过渡，DOM 回滚到旧状态",
-        "isCorrect": false,
-        "description": "DOM 不回滚，更新照常完成"
-      },
-      {
-        "text": "暂停动画，可稍后 `resume()`",
-        "isCorrect": false,
-        "description": "是直达结束态，无暂停/恢复语义"
-      },
-      {
-        "text": "阻止 `finished` resolve",
-        "isCorrect": false,
-        "description": "finished 照常 resolve，不受影响"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`::view-transition` 伪元素树从根到叶的五层结构顺序是？",
-    "explanation": "从根到叶：`::view-transition`（根覆盖层）→ `::view-transition-group(name)`（每组）→ `::view-transition-image-pair(name)`（配对容器）→ `::view-transition-old(name)` / `::view-transition-new(name)`（旧/新快照）。整棵树挂在 `:root` 上、浮在页面内容之上。",
-    "tags": ["view-transitions", "中级", "pseudo-tree"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "`::view-transition-old` → `::view-transition-new` → `::view-transition`",
-        "isCorrect": false,
-        "description": "层级颠倒，root 覆盖层才是最外层"
-      },
-      {
-        "text": "`::view-transition` → `group(name)` → `image-pair(name)` → `old(name)`/`new(name)`",
-        "isCorrect": true,
-        "description": "根→组→配对容器→旧/新快照，正确五层"
-      },
-      {
-        "text": "`::view-transition-group` → `::view-transition` → `::view-transition-pair`",
-        "isCorrect": false,
-        "description": "顺序与命名都不对"
-      },
-      {
-        "text": "只有 `::view-transition-old` 和 `::view-transition-new` 两层",
-        "isCorrect": false,
-        "description": "遗漏了根、group、image-pair 三层"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：为动态列表/网格的每一项自动生成唯一 `view-transition-name`，最省事的取值是？",
-    "explanation": "`view-transition-name: match-element`（已随 Firefox 144 进入同文档 Baseline）让浏览器按元素身份自动派发唯一名，省去手工把 id 拼进名字，特别适合重复元素。",
-    "tags": ["view-transitions", "中级", "match-element"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "`view-transition-name: auto`",
-        "isCorrect": false,
-        "description": "无 auto 取值，自动唯一名是 match-element"
-      },
-      {
-        "text": "`view-transition-name: unique`",
-        "isCorrect": false,
-        "description": "无 unique 取值"
-      },
-      {
-        "text": "`view-transition-name: match-element`",
-        "isCorrect": true,
-        "description": "按元素身份自动生成唯一名，FF144 已含"
-      },
-      {
-        "text": "`view-transition-name: none`",
-        "isCorrect": false,
-        "description": "none 是不成组，不会生成唯一名"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：默认（UA 提供的）过渡动画由哪两部分组成？",
-    "explanation": "默认动画两条规则：① 淡入淡出——`::view-transition-old(name)` 从 `opacity:1→0`、`::view-transition-new(name)` 从 `opacity:0→1`；② 形变补间——同名元素新旧位置/尺寸不同时，`::view-transition-group(name)` 对 `transform` 与 `width`/`height` 做平滑补间。",
-    "tags": ["view-transitions", "中级", "default-animation-detail"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "仅有一个从左到右的滑动",
-        "isCorrect": false,
-        "description": "默认是淡入淡出 + 形变，不是滑动"
-      },
-      {
-        "text": "旋转加缩放",
-        "isCorrect": false,
-        "description": "默认不含旋转"
-      },
-      {
-        "text": "仅改变颜色，不动位置",
-        "isCorrect": false,
-        "description": "默认含位置尺寸的形变补间"
-      },
-      {
-        "text": "`old` 淡出 + `new` 淡入与 `group` 的位置尺寸形变补间",
-        "isCorrect": true,
-        "description": "淡入淡出在 old/new，形变在 group，正是默认两部分"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：位置与尺寸的形变补间发生在伪元素树的哪一层？",
-    "explanation": "形变动画发生在 `::view-transition-group(name)` 层——位置、尺寸的补间加在 group 上（默认 `transform` + `width`/`height` 一起动）。想统一调某组时长/缓动就选 group；而淡入淡出等「出场/入场」外观写在 `old`/`new` 上。",
-    "tags": ["view-transitions", "中级", "group-layer"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "`::view-transition-group(name)`",
-        "isCorrect": true,
-        "description": "形变补间发生在 group，位置尺寸都在此层"
-      },
-      {
-        "text": "`::view-transition-old(name)`",
-        "isCorrect": false,
-        "description": "old 承载旧快照外观，形变在 group"
-      },
-      {
-        "text": "`::view-transition`（根）",
-        "isCorrect": false,
-        "description": "根是覆盖层容器，不承担形变"
-      },
-      {
-        "text": "`::view-transition-image-pair(name)`",
-        "isCorrect": false,
-        "description": "image-pair 是隔离配对容器，形变在 group"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：为什么不应在 `updateCallback` 里 `await fetch()` 等无关异步？",
-    "explanation": "`updateCallback` 是渲染抑制窗口，里面 `await fetch()`/`setTimeout` 会把整页「冻」在旧态直到异步完成，观感是卡顿。正确姿势是数据先在过渡外取好，回调里只做纯粹、快速的同步 DOM 变更。",
-    "tags": ["view-transitions", "中级", "async-callback"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "会导致快照抓取失败并报错",
-        "isCorrect": false,
-        "description": "不报错，问题是拉长渲染抑制窗口卡页面"
-      },
-      {
-        "text": "回调是渲染抑制窗口，异步会把页面冻在旧态、造成卡顿",
-        "isCorrect": true,
-        "description": "数据应先取好，回调只做同步 DOM 变更"
-      },
-      {
-        "text": "`await` 在回调里语法不允许",
-        "isCorrect": false,
-        "description": "语法允许（回调可 async），只是不该塞无关异步"
-      },
-      {
-        "text": "会让 `finished` 永不 resolve",
-        "isCorrect": false,
-        "description": "finished 仍会 resolve，问题在观感卡顿"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：想让 header、标题、主图在一次过渡中各自播放不同动画、互不干扰，正确做法是？",
-    "explanation": "给不同元素起不同的 `view-transition-name`，它们各自成组（各自的 `::view-transition-group`）、各自定制动画、并行播放，互不干扰。例如 header 横向收放、标题延迟淡入、主图形变，三线并行。",
-    "tags": ["view-transitions", "中级", "multi-element"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "给它们同一个 name，写一段动画",
-        "isCorrect": false,
-        "description": "同名会撞名跳过；独立过渡需不同名"
-      },
-      {
-        "text": "只能整页一起动，无法分别定制",
-        "isCorrect": false,
-        "description": "命名成组后可分别定制并行"
-      },
-      {
-        "text": "给每个元素不同的 `view-transition-name`，各自成组分别定制",
-        "isCorrect": true,
-        "description": "不同名 → 独立 group → 并行互不干扰"
-      },
-      {
-        "text": "用多次 `startViewTransition` 嵌套调用",
-        "isCorrect": false,
-        "description": "一次过渡内靠不同命名即可，无需嵌套"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：「默认根转场易全屏闪」这个坑的对策是什么？",
-    "explanation": "不命名任何元素时，`:root`（`root` 组）承担整页交叉淡入淡出，大面积内容跳变时观感突兀。对策是把真正要动的元素单独命名成组，并给 `::view-transition-old(root)/new(root)` 收敛或关掉默认动画，避免整页大面积闪烁。",
-    "tags": ["view-transitions", "中级", "root-fullscreen"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "把过渡时长调到 5 秒以上",
-        "isCorrect": false,
-        "description": "拉长时长只会更明显，不解决全屏闪"
-      },
-      {
-        "text": "彻底禁用 View Transitions",
-        "isCorrect": false,
-        "description": "无需禁用，拆分快照即可"
-      },
-      {
-        "text": "给每个元素都命名",
-        "isCorrect": false,
-        "description": "命名过多反而抓太多快照拖性能，应只命名主角"
-      },
-      {
-        "text": "把要动的主角单独命名成组，并给 `root` 组收敛/关掉默认动画",
-        "isCorrect": true,
-        "description": "拆分快照 + 收敛 root，正是对策"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：view transition types 的用途是什么？",
-    "explanation": "types 给一次过渡贴上「类型标签」（如 `forward`/`backward`），让 CSS 据此分场景用不同动画——「前进」新页从右滑入、「后退」从左滑入，同一套 DOM 方向相反。再用 `:active-view-transition-type()` 按类型写样式。",
-    "tags": ["view-transitions", "中级", "types"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "给一次过渡贴类型标签，让 CSS 据此分场景用不同动画",
-        "isCorrect": true,
-        "description": "如前进/后退分流不同动画，正是 types 的用途"
-      },
-      {
-        "text": "指定过渡使用的图片格式",
-        "isCorrect": false,
-        "description": "与图片格式无关"
-      },
-      {
-        "text": "限制过渡只能在特定元素类型上触发",
-        "isCorrect": false,
-        "description": "不限制元素类型，是给过渡贴场景标签"
-      },
-      {
-        "text": "声明 TypeScript 类型定义",
-        "isCorrect": false,
-        "description": "与 TS 无关，是运行时的过渡类型标签"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`document.startViewTransition()` 支持哪两种调用签名？",
-    "explanation": "两种签名：① 直接传回调 `startViewTransition(updateCallback)`；② 传选项对象 `startViewTransition({ update, types })`，用 `update` 字段承载 DOM 变更、`types` 字段携带 view transition types。",
-    "tags": ["view-transitions", "中级", "signatures"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "只支持传回调，无对象签名",
-        "isCorrect": false,
-        "description": "还支持 { update, types } 对象签名"
-      },
-      {
-        "text": "传回调 `startViewTransition(cb)`，或传对象 `startViewTransition({ update, types })`",
-        "isCorrect": true,
-        "description": "两种签名，对象签名可携带 types"
-      },
-      {
-        "text": "`startViewTransition(oldState, newState)` 传两个状态",
-        "isCorrect": false,
-        "description": "无此双参签名"
-      },
-      {
-        "text": "`startViewTransition(duration, easing)`",
-        "isCorrect": false,
-        "description": "时长缓动靠 CSS，不是入参"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：想一次性给所有过渡组（含默认 `root`）统一调整动画时长，选择器怎么写？",
-    "explanation": "用通配 `*`：`::view-transition-group(*) { animation-duration: 0.5s }` 一次命中所有组（含默认的 root 组与所有命名组）。个别组再用具体名（如 `::view-transition-group(root)`）单独覆盖。",
-    "tags": ["view-transitions", "中级", "wildcard"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "`::view-transition-group(all)`",
-        "isCorrect": false,
-        "description": "通配符是 *，不是 all"
-      },
-      {
-        "text": "`* ::view-transition-group`",
-        "isCorrect": false,
-        "description": "写法不对，通配应作参数 group(*)"
-      },
-      {
-        "text": "`::view-transition-group(*)`",
-        "isCorrect": true,
-        "description": "* 通配命中所有组，正确写法"
-      },
-      {
-        "text": "`::view-transition-group()` 留空",
-        "isCorrect": false,
-        "description": "留空无效，需用 * 通配"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：关于主流框架对它的集成，下列说法正确的是？",
-    "explanation": "主流框架多已把它封成开关或钩子：Astro `<ClientRouter />`（原 `<ViewTransitions />`）与 `transition:name` 指令、SvelteKit 在 `onNavigate` 里包 `startViewTransition`、Vue Router/Nuxt（`experimental.viewTransition`）、Next 社区 `next-view-transitions`、React Router `<Link viewTransition>`。它们共同点是在路由切换处替你包过渡/输出 `@view-transition` 并处理命名与降级。",
-    "tags": ["view-transitions", "中级", "framework"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "中级"]
-    ],
-    "options": [
-      {
-        "text": "所有框架都必须手写 `startViewTransition`，无内建支持",
-        "isCorrect": false,
-        "description": "多数框架已有一行开关或钩子封装"
-      },
-      {
-        "text": "只有 Chrome 系框架能集成",
-        "isCorrect": false,
-        "description": "框架集成与浏览器厂商无关"
-      },
-      {
-        "text": "集成后就不再需要考虑降级",
-        "isCorrect": false,
-        "description": "跨文档/types 缺 Firefox，仍需渐进增强"
-      },
-      {
-        "text": "Astro/SvelteKit/Vue Router/Next/React Router 等多已封成开关或钩子",
-        "isCorrect": true,
-        "description": "在路由切换处替你包过渡并处理命名降级"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：关于 view transition types 与跨文档 `@view-transition` 的支持现状，下列哪项最准确？",
-    "explanation": "这两块的唯一短板是 Firefox：view transition types 在 Chrome 125+ 与 Safari 18+ 可用，跨文档 `@view-transition` 在 Chrome 126+ 与 Safari 18.2+ 可用，但 Firefox 均不支持（144 初版不含 types、也不支持跨文档）。所以别再说「仅 Chromium」——Safari 早已跟上，真正缺口只剩 Firefox；因未全绿，二者都未进 Baseline，生产用必须渐进增强。",
-    "tags": ["view-transitions", "高级", "firefox-gap"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
       ["难度", "高级"]
     ],
     "options": [
       {
-        "text": "Chrome 与 Safari 都支持，唯一缺口是 Firefox，故未进 Baseline",
+        "text": "同源 + 无跨源重定向 + navigationType ∈ {traverse,push,replace} + push/replace 必须用户交互触发",
         "isCorrect": true,
-        "description": "Safari 已跟上，短板只剩 Firefox，正是最新口径"
+        "description": "四项硬约束缺一不可"
       },
       {
-        "text": "仅 Chromium 支持，Safari 与 Firefox 都不支持",
+        "text": "只要两个页面都声明了 @view-transition 就一定会触发",
         "isCorrect": false,
-        "description": "过时说法；Safari（types 18+/跨文档 18.2+）已支持"
+        "description": "还要满足同源、用户交互触发等多重约束"
       },
       {
-        "text": "三大引擎已全绿并进入 Baseline",
+        "text": "任何 navigation 类型（含 reload 和表单 POST）都会触发",
         "isCorrect": false,
-        "description": "Firefox 尚缺，二者均未进 Baseline"
+        "description": "reload 和 POST 不触发"
       },
       {
-        "text": "仅 Firefox 支持，Chrome/Safari 不支持",
+        "text": "可以用 JS 模拟 location.href 跳转来触发跨文档 VT",
         "isCorrect": false,
-        "description": "恰相反，Firefox 才是唯一缺口"
+        "description": "程序化跳转可能不触发，必须用户交互"
       }
     ]
   },
   {
-    "stem": "View Transitions API：`view-transition-class` 与 `view-transition-name` 的关键区别，下列哪项正确？",
-    "explanation": "`view-transition-class`（Firefox 144 已含、Baseline）是「样式钩子」：不要求唯一、不让元素单独成组，只为「一条 CSS 规则批量样式化多个快照」而生；每个元素仍需各自的 `view-transition-name` 才能成组。选择器用 `.类名`：`::view-transition-group(.card)`。",
-    "tags": ["view-transitions", "高级", "view-transition-class"],
+    "stem": "过渡动画：prefers-reduced-motion 媒体查询检测的是什么？",
+    "explanation": "`prefers-reduced-motion` 是 Media Queries Level 5 定义的媒体查询，检测 OS 级「减少动效」设置——Windows 设置 / macOS 系统偏好 / iOS / Android 辅助功能都有该开关。两个值：`reduce`（已开启）与 `no-preference`（默认）。该特性跨浏览器自 2020-01 起 **Baseline Widely available**。",
+    "tags": ["view-transitions", "prefers-reduced-motion", "a11y", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "class 也要求唯一，且会让元素单独成组",
-        "isCorrect": false,
-        "description": "恰相反，class 不唯一、不单独成组"
-      },
-      {
-        "text": "class 不要求唯一、不单独成组，纯样式钩子；元素仍需各自的 `name`",
+        "text": "OS 级「减少动效」设置，取值为 reduce 或 no-preference，跨浏览器自 2020-01 起 Baseline Widely available",
         "isCorrect": true,
-        "description": "class 批量样式化，成组仍靠 name，正确"
+        "description": "用户在系统辅助功能里开启，浏览器通过媒体查询透出"
       },
       {
-        "text": "class 可完全替代 name，命名从此不必写",
+        "text": "用户在浏览器里手动配置的动效偏好",
         "isCorrect": false,
-        "description": "class 不能成组，name 不可省"
+        "description": "是 OS 级设置，不是浏览器配置"
       },
       {
-        "text": "class 只能用于跨文档、name 只能用于同文档",
+        "text": "页面加载速度慢时浏览器自动设置的标记",
         "isCorrect": false,
-        "description": "二者都同文档/跨文档通用，区别不在此"
+        "description": "和加载速度无关"
+      },
+      {
+        "text": "开发者用 JS 设置 document.reduceMotion = true 的标志",
+        "isCorrect": false,
+        "description": "是只读媒体查询，无法用 JS 设置"
       }
     ]
   },
   {
-    "stem": "View Transitions API：选择器 `::view-transition-group(.card)` 与 `::view-transition-group(card)` 的区别是？",
-    "explanation": "带点 `.card` 命中所有带 `view-transition-class: card` 的快照组；不带点 `card` 则命中 `view-transition-name` 恰好为 `card` 的那一个组。前者按 class 批量、后者按 name 精确，二者不同。",
-    "tags": ["view-transitions", "高级", "class-selector"],
+    "stem": "过渡动画：WCAG 2.3.3 与 2.2.2 两条动效规则的区别是什么？",
+    "explanation": "**WCAG 2.3.3 Animation from Interactions（Level AAA）** 管「用户交互触发的非必要动效」——点击展开、悬停放大、转场等，要求可关闭，例外是 `essential`（动效本身是功能）。**WCAG 2.2.2 Pause, Stop, Hide（Level A）** 管「页面自动播放的动效」——轮播、自动滚动、装饰循环，要求 Pause/Stop/Hide 三选一，5 秒以下自动结束可豁免。",
+    "tags": ["view-transitions", "wcag", "a11y", "中级"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
     ],
     "options": [
       {
-        "text": "两者完全等价",
-        "isCorrect": false,
-        "description": "不等价，一个按 class 一个按 name"
-      },
-      {
-        "text": "`.card` 命中名叫 card 的组，`card` 命中带 card 类的组",
-        "isCorrect": false,
-        "description": "说反了，点前缀才是按 class"
-      },
-      {
-        "text": "`.card` 命中带 `view-transition-class: card` 的所有组；`card` 命中名为 card 的单一组",
+        "text": "2.3.3（AAA）管用户交互触发的动效；2.2.2（A）管页面自动播放的动效",
         "isCorrect": true,
-        "description": "点=按 class 批量，无点=按 name 精确"
+        "description": "前者针对交互触发，后者针对自动播放"
       },
       {
-        "text": "`card`（无点）会报语法错误",
+        "text": "2.3.3 与 2.2.2 是同一条规则，只是不同等级",
         "isCorrect": false,
-        "description": "无点是合法的按 name 选择，不报错"
+        "description": "两条规则管辖范围不同"
+      },
+      {
+        "text": "2.3.3 管视频字幕，2.2.2 管动效",
+        "isCorrect": false,
+        "description": "字幕规则是 1.2.x 系列"
+      },
+      {
+        "text": "2.3.3 是 A 级，2.2.2 是 AAA 级",
+        "isCorrect": false,
+        "description": "等级说反了"
       }
     ]
   },
   {
-    "stem": "View Transitions API：想覆盖默认淡入淡出的「出场/入场」外观、以及调整「整组节奏」（时长/缓动/延迟），分别写在哪一层？",
-    "explanation": "写在 `::view-transition-old(name)` / `::view-transition-new(name)` 上覆盖「出场/入场」外观（如自定义 `animation` 做上滑离场、下滑进场）；写在 `::view-transition-group(name)` 上调「整组节奏」（`animation-duration`/`timing-function`/`delay`）与形变。自定义动画几乎必带 `both` 填充模式，避免首尾帧回弹。",
-    "tags": ["view-transitions", "高级", "override-animation"],
+    "stem": "过渡动画：CSS transition 与 animation 的选用准则是什么？",
+    "explanation": "**CSS transition** 用于单次状态变化——一个属性值切到另一个值，浏览器在两个值之间插值。**CSS animation** 配合 `@keyframes` 用于多关键帧、循环、反向播放、暂停等复杂场景。准则：能用 transition 解决别用 animation；transition 写在元素基础规则上，触发态（:hover / class 切换）只改属性值。",
+    "tags": [
+      "view-transitions",
+      "transition",
+      "animation",
+      "keyframes",
+      "入门"
+    ],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "外观和节奏都只能写在 `::view-transition`（根）上",
-        "isCorrect": false,
-        "description": "根是容器，外观在 old/new、节奏在 group"
-      },
-      {
-        "text": "外观写在 `group`，节奏写在 `old`/`new`",
-        "isCorrect": false,
-        "description": "说反了，外观在 old/new、节奏在 group"
-      },
-      {
-        "text": "两者都必须用 JS 设置，CSS 无法覆盖",
-        "isCorrect": false,
-        "description": "CSS 覆盖伪元素 animation 即可，无需 JS"
-      },
-      {
-        "text": "外观写在 `old`/`new`，整组节奏写在 `group`",
+        "text": "单次状态变化用 transition-*；多关键帧/循环/反向播放用 @keyframes + animation-*",
         "isCorrect": true,
-        "description": "出场入场在 old/new，时长缓动在 group，正确分层"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：三个 Promise 中，唯一会 reject 的是哪个？`finished` 在动画被跳过时会怎样？",
-    "explanation": "`ready` 是唯一会 reject 的——同名冲突、`visibilityState: hidden` 等导致过渡被跳过时，从 `ready.catch` 能感知，所以挂在 `ready.then` 里的自定义动画要配 `.catch` 兜底。而 `finished` 只要 DOM 更新成功就会 resolve（即便动画被跳过）。",
-    "tags": ["view-transitions", "高级", "ready-reject"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
-    ],
-    "options": [
-      {
-        "text": "`ready` 会 reject；`finished` 只要 DOM 更新成功仍会 resolve",
-        "isCorrect": true,
-        "description": "ready 唯一会 reject，finished 更新成功即 resolve"
+        "description": "两者底层都走 Web Animations 但表达力不同"
       },
       {
-        "text": "`finished` 会 reject；`ready` 从不 reject",
+        "text": "所有动画都用 animation，transition 已废弃",
         "isCorrect": false,
-        "description": "说反了，ready 才是唯一会 reject 的"
+        "description": "transition 是稳定的 Baseline Widely available 特性"
       },
       {
-        "text": "三个 Promise 都会 reject",
-        "isCorrect": false,
-        "description": "只有 ready 会 reject"
-      },
-      {
-        "text": "动画被跳过时 `finished` 也 reject",
-        "isCorrect": false,
-        "description": "DOM 更新成功 finished 仍 resolve，不 reject"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：跨文档转场里 `pageswap` 与 `pagereveal` 两个事件的触发时机与用途是？",
-    "explanation": "`pageswap`（`PageSwapEvent`）在旧页即将卸载前于旧页触发，`e.viewTransition`/`e.activation` 用来给「离场」元素打标；`pagereveal`（`PageRevealEvent`）在新页首次渲染时于新页触发，用来给「入场」元素打标。二者都用于在过渡前后临时调整 `view-transition-name` 做跨页配对。",
-    "tags": ["view-transitions", "高级", "pageswap-pagereveal"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
-    ],
-    "options": [
-      {
-        "text": "`pageswap` 在新页渲染后触发，`pagereveal` 在旧页卸载前触发",
-        "isCorrect": false,
-        "description": "说反了，pageswap 在旧页离场前、pagereveal 在新页首渲染"
-      },
-      {
-        "text": "`pageswap` 旧页离场前（打标离场元素）、`pagereveal` 新页首渲染时（打标入场元素）",
-        "isCorrect": true,
-        "description": "两侧各一事件，用于跨页命名配对，正确"
-      },
-      {
-        "text": "两者都在旧页触发，用途相同",
-        "isCorrect": false,
-        "description": "分别在旧页/新页触发，用途相反"
-      },
-      {
-        "text": "它们是同文档 SPA 的事件，与跨文档无关",
-        "isCorrect": false,
-        "description": "恰是跨文档 MPA 的 JS 定制点"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：设置 view transition types 的三条途径，下列哪项完整且正确？",
-    "explanation": "三条路：① SPA 用选项对象 `startViewTransition({ update, types: [\"forward\"] })`；② MPA 用 at-rule 描述符 `@view-transition { types: slide }`；③ 运行时改 `transition.types`（`ViewTransitionTypeSet`，支持 `add`/`delete`/`has`）。",
-    "tags": ["view-transitions", "高级", "set-types"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
-    ],
-    "options": [
-      {
-        "text": "只能在 `startViewTransition` 的第二个参数里传",
-        "isCorrect": false,
-        "description": "还可用 at-rule 描述符与运行时 transition.types"
-      },
-      {
-        "text": "只能用 CSS `@view-transition { types }`",
-        "isCorrect": false,
-        "description": "SPA 选项对象与运行时 types 也可设"
-      },
-      {
-        "text": "SPA `{ update, types }`、MPA `@view-transition { types }`、运行时 `transition.types` 增删",
-        "isCorrect": true,
-        "description": "三条途径齐全，正确"
-      },
-      {
-        "text": "通过给元素加 `data-vt-type` 属性",
-        "isCorrect": false,
-        "description": "无此属性约定"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`:active-view-transition` 与 `:active-view-transition-type()` 的支持面区别是？",
-    "explanation": "无参的 `:active-view-transition`（匹配任意过渡进行中的根元素）已随同文档核心进入 Baseline；而 `:active-view-transition-type(x)`（仅某类型激活时匹配）随 view transition types，缺 Firefox。所以按类型分场景的样式必须渐进增强，Firefox 上落到「无类型」默认动画。",
-    "tags": ["view-transitions", "高级", "active-selectors"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "高级"]
-    ],
-    "options": [
-      {
-        "text": "两者都已进 Baseline，可放心使用",
-        "isCorrect": false,
-        "description": "带类型的那个缺 Firefox，未进 Baseline"
-      },
-      {
-        "text": "两者都缺 Firefox",
-        "isCorrect": false,
-        "description": "无参的 :active-view-transition 已 Baseline"
-      },
-      {
-        "text": "无参那个缺 Firefox，带类型那个已 Baseline",
+        "text": "transition 用于循环动画，animation 用于单次切换",
         "isCorrect": false,
         "description": "说反了"
       },
       {
-        "text": "无参 `:active-view-transition` 已 Baseline；带类型 `:active-view-transition-type()` 随 types、缺 Firefox",
-        "isCorrect": true,
-        "description": "前者安全区，后者需渐进增强，正确"
+        "text": "transition 和 animation 完全等价，只是语法不同",
+        "isCorrect": false,
+        "description": "animation 支持关键帧/循环/反向，transition 不支持"
       }
     ]
   },
   {
-    "stem": "View Transitions API：为尊重 `prefers-reduced-motion`（用户要求减少动效），推荐的落地做法是？",
-    "explanation": "两种落法：① CSS 把动画包进 `@media (prefers-reduced-motion: no-preference)`，reduce 时规则不生效、退化为近乎瞬时；② JS 检测 `matchMedia(\"(prefers-reduced-motion: reduce)\").matches` 为真就 `skipTransition()`（DOM 仍更新）。「减少动效」不等于「零过渡」，常保留极短淡入淡出、去掉大幅位移。",
-    "tags": ["view-transitions", "高级", "reduced-motion"],
+    "stem": "过渡动画：micro-interaction 优先用 transform/opacity/filter 而非 width/height/top 的原因？",
+    "explanation": "`transform` / `opacity` / `filter` 是**合成器属性**，只触发 compositor 不引发 layout/paint，60fps 稳定。`width` / `height` / `top` / `margin` 是 layout 属性，每帧都触发 reflow（重排），主线程阻塞必然掉帧。高频 micro-interaction 必须用合成器属性。",
+    "tags": ["view-transitions", "性能", "合成器", "transform", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "合成器属性只触发 compositor 不引发 layout/paint；layout 属性每帧 reflow 必掉帧",
+        "isCorrect": true,
+        "description": "transform/opacity/filter 走 GPU 合成，width/height 走 CPU 重排"
+      },
+      {
+        "text": "transform 比 width 视觉效果更好看",
+        "isCorrect": false,
+        "description": "原因是性能（合成器 vs layout），不是视觉"
+      },
+      {
+        "text": "transform 是新特性，width 是老特性",
+        "isCorrect": false,
+        "description": "新旧与是否触发 reflow 无关"
+      },
+      {
+        "text": "width/height/top 不能用于 CSS 动画",
+        "isCorrect": false,
+        "description": "可以用于动画，但会掉帧，不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：view-transition-class 与 view-transition-scope 的用途分别是什么？",
+    "explanation": "**view-transition-class** 给一组快照统一加 class，用一条规则批量样式化（例如所有 card-morph 的 `::view-transition-group.card-morph` 共享动画时长）。**view-transition-scope** 把 `view-transition-name` 的发现隔离到某子树，用于并发/嵌套转场（如弹窗内列表 + 外层路由同时转）避免命名冲突。两者均为 Baseline Newly available（2025-10-14）。",
+    "tags": [
+      "view-transitions",
+      "view-transition-class",
+      "view-transition-scope",
+      "中级"
+    ],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "class 给一组快照批量加 class 统一样式化；scope 把命名发现隔离到子树，并发/嵌套转场避免命名冲突",
+        "isCorrect": true,
+        "description": "分别解决「批量样式」与「命名隔离」两个问题"
+      },
+      {
+        "text": "class 是给元素加 CSS class；scope 是限制元素的可视区域",
+        "isCorrect": false,
+        "description": "在 VT 语境下两者作用完全不同"
+      },
+      {
+        "text": "class 用于命名元素；scope 用于声明动画类型",
+        "isCorrect": false,
+        "description": "命名用 view-transition-name，类型用 types"
+      },
+      {
+        "text": "两者都已被废弃，新版浏览器不再支持",
+        "isCorrect": false,
+        "description": "两者都是 2025-10-14 才进入 Baseline Newly available 的新特性"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：为何在 startViewTransition 前必须做特性检测？",
+    "explanation": "**渐进增强必填**：`if (!document.startViewTransition) { updateDOM(); return; }`。原因有二：① 旧浏览器或部分支持的浏览器（早期 Safari、Firefox 旧版、用户关闭 JS 等）没有该 API，直接调用会 TypeError；② 用户开启了 `prefers-reduced-motion: reduce` 时，即便支持也应走降级路径。特性检测保证「基础 DOM 更新一定发生」，转场是锦上添花。",
+    "tags": ["view-transitions", "渐进增强", "特性检测", "入门"],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "覆盖不支持浏览器与 reduce-motion 关闭场景，保证基础 DOM 更新一定发生",
+        "isCorrect": true,
+        "description": "VT 是锦上添花，基础功能不能依赖它"
+      },
+      {
+        "text": "因为 startViewTransition 是异步 API，必须先 await",
+        "isCorrect": false,
+        "description": "同步调用即可，特性检测是为兼容性"
+      },
+      {
+        "text": "因为浏览器会自动报错并阻止 DOM 更新",
+        "isCorrect": false,
+        "description": "TypeError 后基础 DOM 更新会失败，必须自己降级"
+      },
+      {
+        "text": "特性检测只是最佳实践，不写也能跑",
+        "isCorrect": false,
+        "description": "不写在旧浏览器上会直接报错且功能失效"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：同文档 VT 与跨文档 VT 当前的 Baseline 状态分别是什么？",
+    "explanation": "**同文档 VT（document.startViewTransition + view-transition-name + view-transition-class + match-element + :active-view-transition）自 2025-10-14 进入 Baseline Newly available**，由 Firefox 144 发布推动，Chrome 111 / Safari 18 已先期支持，属 Interop 2025 focus area。**跨文档 VT（@view-transition at-rule）尚未 Baseline**，MDN 标 Limited availability，仅 Chrome 126+ 支持，Firefox/Safari 仍部分或未支持。",
+    "tags": ["view-transitions", "baseline", "版本", "compatibility", "中级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同文档 VT 已 Baseline Newly available（2025-10-14）；跨文档 VT 尚未 Baseline（Limited availability，仅 Chrome 126+）",
+        "isCorrect": true,
+        "description": "Firefox 144 推动同文档进入 Baseline，跨文档仍需谨慎"
+      },
+      {
+        "text": "两者都已 Baseline Widely available",
+        "isCorrect": false,
+        "description": "跨文档 VT 仅 Chrome 126+ 支持"
+      },
+      {
+        "text": "两者都尚未进入 Baseline",
+        "isCorrect": false,
+        "description": "同文档已 Baseline Newly available"
+      },
+      {
+        "text": "同文档仅 Chrome 支持，跨文档全浏览器支持",
+        "isCorrect": false,
+        "description": "完全说反了"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：ViewTransition 对象的三个 Promise 分别在何时 resolve？",
+    "explanation": "`document.startViewTransition(cb)` 返回的 ViewTransition 对象有 **updateCallbackDone**（updateCallback resolve 时 resolve）、**ready**（伪元素创建完毕、动画即将开始时 resolve）、**finished**（转场动画彻底结束、overlay 移除时 resolve）。三者覆盖「回调完成 → 动画就绪 → 动画结束」三阶段。",
+    "tags": ["view-transitions", "promise", "view-transition", "中级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "updateCallbackDone：cb resolve；ready：伪元素就绪动画可播放；finished：动画彻底结束、overlay 移除",
+        "isCorrect": true,
+        "description": "三个阶段覆盖回调整个生命周期"
+      },
+      {
+        "text": "三者都在动画结束时同时 resolve",
+        "isCorrect": false,
+        "description": "三者分别对应不同阶段"
+      },
+      {
+        "text": "ready 最先 resolve，updateCallbackDone 其次，finished 最后",
+        "isCorrect": false,
+        "description": "updateCallbackDone 最先，ready 其次，finished 最后"
+      },
+      {
+        "text": "只有 finished 一个 Promise，其余是同步属性",
+        "isCorrect": false,
+        "description": "三个都是 Promise"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：ViewTransition.skipTransition() 的行为是什么？",
+    "explanation": "`skipTransition()` 跳到转场末态——伪元素 overlay 移除、显示真实新 DOM，**不会半截卡在中间**。`finished` Promise 会 reject（除非 updateCallback 本身已 reject）。常用于「用户开始新转场或切走页面」时取消正在进行的转场。",
+    "tags": ["view-transitions", "skip-transition", "view-transition", "中级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跳到末态、移除 overlay、显示真实新 DOM，不会半截卡住；finished Promise 会 reject",
+        "isCorrect": true,
+        "description": "取消转场但保证 DOM 处于最终状态"
+      },
+      {
+        "text": "暂停动画，再次调用继续播放",
+        "isCorrect": false,
+        "description": "暂停是 animation-play-state: paused，不是 skipTransition"
+      },
+      {
+        "text": "回退到旧 DOM，撤销所有更改",
+        "isCorrect": false,
+        "description": "DOM 更新已完成，不会撤销"
+      },
+      {
+        "text": "什么都不做，只是标记事件",
+        "isCorrect": false,
+        "description": "会立即结束转场"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：::view-transition-* 5 个伪元素的树结构是什么？",
+    "explanation": "VT 期间挂在顶层 overlay 上的 5 个伪元素：`::view-transition`（overlay 根，固定铺满视口）下挂 `::view-transition-group(name)`（命名元素容器，承担位置/尺寸变化）下挂 `::view-transition-image-pair(name)`（old+new 堆叠容器），后者下挂 `::view-transition-old(name)` 与 `::view-transition-new(name)` 两个截图。",
+    "tags": ["view-transitions", "伪元素", "结构", "中级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "::view-transition → group(name) → image-pair(name) → old(name) + new(name)",
+        "isCorrect": true,
+        "description": "五层嵌套，old/new 是 image-pair 的子元素"
+      },
+      {
+        "text": "::view-transition → old + new + group + image-pair 平级",
+        "isCorrect": false,
+        "description": "不是平级，是嵌套结构"
+      },
+      {
+        "text": "只有 old 与 new 两个伪元素",
+        "isCorrect": false,
+        "description": "共 5 个伪元素"
+      },
+      {
+        "text": "::view-transition → root → image-pair → old + new",
+        "isCorrect": false,
+        "description": "中间层是 group(name)，root 是默认 name 不是单独层"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：为何不能用 JS 手写「旧内容叠在新内容上」的快照层替代 VT API？",
+    "explanation": "JS 手写快照层会把旧新内容**同时存在 DOM 中**，导致三个可访问性灾难：① 屏幕阅读器混乱（同一内容出现两次）；② 焦点丢失或错乱（用户 Tab 时跳到旧快照）；③ live region 异常公告（重复朗读）。这正是 View Transition API 要解决的核心难题——浏览器在转场结束原子切换 DOM，转场期间旧新不会同时存在于可访问性树。",
+    "tags": ["view-transitions", "a11y", "反模式", "快照层", "高级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
       ["难度", "高级"]
     ],
     "options": [
       {
-        "text": "用 `@media (prefers-reduced-motion: no-preference)` 包动画，或检测到 reduce 就 `skipTransition()`",
+        "text": "旧新内容同时存在 DOM 导致读屏混乱、焦点丢失、live region 异常公告——VT 原子切换 DOM 才能避免",
         "isCorrect": true,
-        "description": "CSS 媒体查询或 JS 跳过，二选一皆可"
+        "description": "VT 的核心价值之一就是解决可访问性"
       },
       {
-        "text": "无需处理，View Transitions 自动尊重该偏好",
+        "text": "手写快照层性能差，VT 性能更好",
         "isCorrect": false,
-        "description": "它不会自动尊重，需开发者主动兜"
+        "description": "性能不是主要原因，可访问性才是"
       },
       {
-        "text": "reduce 时彻底不更新 DOM",
+        "text": "手写快照层代码量太大",
         "isCorrect": false,
-        "description": "应更新 DOM 只弱化/跳过动画，不能不更新"
+        "description": "代码量是次要问题"
       },
       {
-        "text": "把动画时长设为 0.01ms 即可，无需检测偏好",
+        "text": "手写快照层已被 W3C 禁止",
         "isCorrect": false,
-        "description": "应显式检测偏好，硬编码微时长不规范"
+        "description": "没有被禁止，只是不推荐"
       }
     ]
   },
   {
-    "stem": "View Transitions API：关于命名与性能，下列纪律哪项正确？",
-    "explanation": "每个 `view-transition-name` 都会让浏览器抓两张位图（旧态一张、新态一张）并纳入伪元素树。所以命名要克制：给一个长列表的每一项都命名 = 抓成百上千张快照、帧率与内存双输；大列表只给「真正跨态移动的主角」（如被点的那项 + 详情主图）命名，其余走整页 `root` 淡入淡出即可。",
-    "tags": ["view-transitions", "高级", "performance"],
+    "stem": "过渡动画：CSS transition 应该声明在元素基础态还是触发态（:hover）？为什么？",
+    "explanation": "**transition 应声明在元素基础规则上**，触发态（`:hover` / class 切换）只改属性值。如果写在 `:hover` 上，浏览器只在移入时应用 transition 属性，移出时该属性不再生效，导致「移入有动画、移出瞬切」的怪异体验。",
+    "tags": ["view-transitions", "transition", "css", "反模式", "中级"],
     "categories": [
-      ["技术方向", "View Transitions API"],
+      ["技术方向", "过渡动画"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "声明在基础态，触发态只改属性值；否则会移入有动画、移出瞬切",
+        "isCorrect": true,
+        "description": "transition 是元素的固有属性，应写在基础规则上"
+      },
+      {
+        "text": "声明在 :hover 上效果更好",
+        "isCorrect": false,
+        "description": "会导致移出瞬间跳变"
+      },
+      {
+        "text": "声明在哪都一样",
+        "isCorrect": false,
+        "description": "声明位置直接决定动画方向"
+      },
+      {
+        "text": "应该声明在 @media 查询里",
+        "isCorrect": false,
+        "description": "媒体查询与 transition 声明位置无关"
+      }
+    ]
+  },
+  {
+    "stem": "过渡动画：跨文档 VT 的 pagereveal 与 pageswap 事件分别在哪个文档触发？",
+    "explanation": "**Window: pageswap**（携带 PageSwapEvent）在**即将被卸载的源文档**上触发，可在此修改即将开始的 ViewTransition 的 types。**Window: pagereveal**（携带 PageRevealEvent）在**即将被显示的目标文档**上触发，可在此基于 navigation.activation 来源决定方向 type。配合 `<link rel='expect'>` 声明关键内容，浏览器在抓新快照前会等待稳定首绘。",
+    "tags": ["view-transitions", "跨文档", "pagereveal", "pageswap", "高级"],
+    "categories": [
+      ["技术方向", "过渡动画"],
       ["难度", "高级"]
     ],
     "options": [
       {
-        "text": "命名越多动画越流畅，应尽量多命名",
-        "isCorrect": false,
-        "description": "恰相反，命名越多抓越多位图越拖性能"
-      },
-      {
-        "text": "每个 name 抓两张位图，命名要克制、只给跨态移动的主角命名",
+        "text": "pageswap 在源文档触发（携带 PageSwapEvent）；pagereveal 在目标文档触发（携带 PageRevealEvent）",
         "isCorrect": true,
-        "description": "大列表只命名主角，其余走 root，正确纪律"
+        "description": "两者分别在被卸载/被显示文档上触发"
       },
       {
-        "text": "命名不产生任何额外开销",
+        "text": "两者都在目标文档触发",
         "isCorrect": false,
-        "description": "每个 name 抓两张位图，有开销"
+        "description": "pageswap 在源文档"
       },
       {
-        "text": "给长列表每一项命名是官方推荐做法",
+        "text": "两者都在源文档触发",
         "isCorrect": false,
-        "description": "恰是要避免的反模式，会抓海量快照"
+        "description": "pagereveal 在目标文档"
+      },
+      {
+        "text": "两者通过 JS 主动 dispatch 触发",
+        "isCorrect": false,
+        "description": "由浏览器在导航时自动派发"
       }
     ]
   },
   {
-    "stem": "View Transitions API：为什么业务逻辑不能假设「动画一定会播放」？",
-    "explanation": "有多条路径都会导致「无动画但 DOM 更新成功」这一恒等结果：`view-transition-name` 撞名、`visibilityState: hidden`（页面不可见）、主动 `skipTransition()`、浏览器不支持——它们殊途同归。因此关键逻辑（数据更新、埋点、状态切换）不能挂在「动画一定发生」上，应绑在 `finished`（DOM 更新成功即 resolve）或回调完成上。",
-    "tags": ["view-transitions", "专家", "animation-not-guaranteed"],
+    "stem": "过渡动画：View Transitions API 的本质定位是什么？",
+    "explanation": "VT 是 **W3C CSS View Transitions Module Level 1/2 定义的浏览器原生能力**，让浏览器为「DOM 更新前后的视觉状态」抓快照并补间。它**不是 JS 动画库**（不提供时间线编排 / 物理弹簧，那是 GSAP / Motion One 的活），也**不替代路由**——同文档 VT 仍需自己 `updateTheDOMSomehow`（更新 history + 渲染新视图），VT 只负责表现层快照。",
+    "tags": ["view-transitions", "定位", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "因为动画总是异步且必然成功",
-        "isCorrect": false,
-        "description": "并非必然，多条路径会无动画"
-      },
-      {
-        "text": "因为 `finished` 从不 resolve",
-        "isCorrect": false,
-        "description": "finished 在 DOM 更新成功时会 resolve"
-      },
-      {
-        "text": "撞名/不可见/`skipTransition()`/不支持都会「无动画但 DOM 已更新」，殊途同归",
+        "text": "浏览器原生快照补间能力（W3C 规范），不是动画库、不替代路由，只负责表现层",
         "isCorrect": true,
-        "description": "多条来路都无动画，逻辑不能绑动画"
+        "description": "VT 是表现层机制，路由仍需自己处理"
       },
       {
-        "text": "因为动画只在开发环境播放",
+        "text": "一个 JS 动画库，提供时间线编排和物理弹簧",
         "isCorrect": false,
-        "description": "与环境无关，是上述多条运行时路径"
+        "description": "时间线和物理是 JS 动画库的活"
+      },
+      {
+        "text": "现代前端路由库的标准部分",
+        "isCorrect": false,
+        "description": "VT 不替代路由"
+      },
+      {
+        "text": "某框架的私有特性（如 React/Vue 专属）",
+        "isCorrect": false,
+        "description": "是浏览器原生能力，与框架无关"
       }
     ]
   },
   {
-    "stem": "View Transitions API：跨文档转场里用 JS 临时设 `viewTransitionName` 后，为什么要在 `finished`/`ready` 后复位为 `none`？",
-    "explanation": "「打标 + 抓完即复位」是跨文档固定套路：`view-transition-name` 只需在抓快照那一刻存在，之后若留着，会在 bfcache（前进/后退缓存）恢复页面时造成同名残留、下次过渡撞名。所以 `pageswap` 里 `await e.viewTransition.finished`、`pagereveal` 里 `await e.viewTransition.ready` 后把它设回 `none`。",
-    "tags": ["view-transitions", "专家", "cross-doc-naming"],
+    "stem": "过渡动画：默认 root 转场动画是什么？",
+    "explanation": "不写任何自定义时，**默认 root 转场是 cross-fade**：`::view-transition-old(root)` 的 opacity 从 1→0（旧视图淡出），`::view-transition-new(root)` 的 opacity 从 0→1（新视图淡入）。这是「旧淡出 + 新淡入」的最朴素效果，可通过给 `::view-transition-old/new(root)` 自定义 `@keyframes` 覆盖为滑动、缩放、morph 等。",
+    "tags": ["view-transitions", "default", "cross-fade", "root", "入门"],
     "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
+      ["技术方向", "过渡动画"],
+      ["难度", "入门"]
     ],
     "options": [
       {
-        "text": "为了释放内存，与撞名无关",
-        "isCorrect": false,
-        "description": "主因是防 bfcache 恢复时残留撞名"
-      },
-      {
-        "text": "复位是可选的，不复位也无副作用",
-        "isCorrect": false,
-        "description": "不复位会在 bfcache 恢复时撞名，有副作用"
-      },
-      {
-        "text": "因为 `none` 会触发一次额外动画",
-        "isCorrect": false,
-        "description": "none 是复位不触发动画"
-      },
-      {
-        "text": "防止 bfcache 恢复页面时该名残留、下次过渡撞名",
+        "text": "root cross-fade：::view-transition-old(root) opacity 1→0、::view-transition-new(root) opacity 0→1",
         "isCorrect": true,
-        "description": "打标+抓完即复位，正是跨文档固定套路"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：关于 Level 2 的元素级 `element.startViewTransition()`（scoped transitions），下列说法正确的是？",
-    "explanation": "元素级 `element.startViewTransition()`（作用域过渡）是 Level 2 方向的更细粒度能力，在较新 Chromium 铺开中，支持面窄于文档级 `document.startViewTransition()`，用前需查兼容表。目前生产以文档级为准。",
-    "tags": ["view-transitions", "专家", "scoped"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
-    ],
-    "options": [
-      {
-        "text": "它是 Level 2 的更细粒度能力，支持面窄于文档级，用前查兼容表",
-        "isCorrect": true,
-        "description": "scoped transitions 较新、支持窄，以文档级为主"
+        "description": "旧淡出 + 新淡入，默认约 250ms"
       },
       {
-        "text": "它比文档级更成熟、支持面更广",
+        "text": "默认从左向右滑动",
         "isCorrect": false,
-        "description": "恰相反，支持面窄于文档级"
+        "description": "需自定义 keyframes 才有方向感"
       },
       {
-        "text": "它已进入 Baseline，可放心生产使用",
+        "text": "默认 scale 缩放",
         "isCorrect": false,
-        "description": "尚在铺开、支持窄，未进 Baseline"
+        "description": "默认是 opacity cross-fade，无 scale"
       },
       {
-        "text": "它是 `document.startViewTransition` 的别名",
+        "text": "默认无动画，瞬切",
         "isCorrect": false,
-        "description": "作用域不同，是元素级而非文档级别名"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：调用 `startViewTransition` 时若文档处于 `visibilityState: hidden`（最小化/切后台），会发生什么？",
-    "explanation": "文档不可见时过渡被直接跳过、只更新 DOM——不必特判，但要知道此时无动画（`ready` 会 reject、`finished` 仍 resolve）。这也是「不能假设动画必然播放」的一条来路。",
-    "tags": ["view-transitions", "专家", "visibility-hidden"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
-    ],
-    "options": [
-      {
-        "text": "过渡照常播放，动画在后台继续跑",
-        "isCorrect": false,
-        "description": "不可见时过渡被跳过，不播放动画"
-      },
-      {
-        "text": "过渡被跳过、只更新 DOM（`ready` reject、`finished` 仍 resolve）",
-        "isCorrect": true,
-        "description": "不可见即跳过动画但 DOM 照常更新"
-      },
-      {
-        "text": "抛出异常终止脚本",
-        "isCorrect": false,
-        "description": "不抛异常，只是跳过动画"
-      },
-      {
-        "text": "浏览器排队等页面可见后再播放",
-        "isCorrect": false,
-        "description": "不排队补播，直接跳过"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：`::view-transition-old(name)` 与 `::view-transition-new(name)` 的本质区别，以及父层 `image-pair` 的默认设置是什么？",
-    "explanation": "`old` 是更新前的静态位图（不再变化），`new` 是新 DOM 的实时表示（内容会随新 DOM 继续变）；二者都以「被替换内容」（类似 `<img>`）渲染，可用 `object-fit`/`object-position`。父层 `::view-transition-image-pair(name)` 默认 `isolation: isolate` 以便 `mix-blend-mode` 生效，做自定义 clip 动画时常需改回 `isolation: auto`。",
-    "tags": ["view-transitions", "专家", "old-new-snapshot"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
-    ],
-    "options": [
-      {
-        "text": "`old` 和 `new` 都是实时表示，可交互点击",
-        "isCorrect": false,
-        "description": "old 是静态位图不实时，二者也不可交互"
-      },
-      {
-        "text": "`old` 是新状态、`new` 是旧状态",
-        "isCorrect": false,
-        "description": "命名反了，old 为旧、new 为新"
-      },
-      {
-        "text": "`old` 是静态位图、`new` 是实时表示；`image-pair` 默认 `isolation: isolate`",
-        "isCorrect": true,
-        "description": "旧静态/新实时，配对容器默认隔离供混合模式"
-      },
-      {
-        "text": "两者都不能用 CSS 处理",
-        "isCorrect": false,
-        "description": "都以被替换内容渲染，可用 object-fit 等 CSS"
-      }
-    ]
-  },
-  {
-    "stem": "View Transitions API：过渡前后布局尺寸骤变导致快照「跳变」（内容跳变/CLS），应如何缓解？",
-    "explanation": "过渡前后布局若骤变，快照会「跳」。对策是过渡前预留尺寸/骨架屏，或用同名元素让尺寸变化走形变补间而非硬跳，使变化连续。这属于常见坑之一，与「根元素全屏闪」「回调塞异步」并列。",
-    "tags": ["view-transitions", "专家", "cls"],
-    "categories": [
-      ["技术方向", "View Transitions API"],
-      ["难度", "专家"]
-    ],
-    "options": [
-      {
-        "text": "无解，只能接受跳变",
-        "isCorrect": false,
-        "description": "可用预留尺寸/骨架或形变补间缓解"
-      },
-      {
-        "text": "把过渡时长设为 0 即可",
-        "isCorrect": false,
-        "description": "时长为 0 只是不动画，不解决布局跳变"
-      },
-      {
-        "text": "给页面加 `overflow: hidden`",
-        "isCorrect": false,
-        "description": "隐藏溢出不解决尺寸骤变的跳感"
-      },
-      {
-        "text": "过渡前预留尺寸/骨架屏，或用同名元素让尺寸变化走形变补间",
-        "isCorrect": true,
-        "description": "让变化连续，正是缓解内容跳变的对策"
+        "description": "有默认 cross-fade 动画"
       }
     ]
   }
