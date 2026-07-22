@@ -719,7 +719,18 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "可访问性", sort: 4 },
             ],
           },
-          { name: "搜索引擎优化", sort: 6 },
+          {
+            // 2026-07-21 选型评估：单叶 → 组+4叶（技术SEO/页面SEO/结构化数据/GEO）。
+            // 边界：CWV 机制归性能优化章，本叶讲 SEO 影响；SSR/SSG 实现归框架章，本叶讲爬虫意义。
+            name: "搜索引擎优化",
+            sort: 6,
+            children: [
+              { name: "技术 SEO", sort: 1 },
+              { name: "页面 SEO", sort: 2 },
+              { name: "结构化数据", sort: 3 },
+              { name: "GEO", sort: 4 },
+            ],
+          },
         ],
       },
 
