@@ -1034,11 +1034,12 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         sort: 12,
         children: [
           {
-            name: "攻击方式（XSS / CSRF / SQL 注入 / SSRF / DDoS / MITM）",
+            // 2026-07-21 选型评估：单叶保持（6 种攻击合一叶，不拆碎叶）
+            name: "攻击方式",
             sort: 1,
           },
           {
-            name: "加密（对称加密和非对称加密 / 公钥基础设施 / Crypto.js / Web Crypto API）",
+            name: "加密",
             sort: 2,
           },
           {
@@ -1053,9 +1054,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           {
             name: "安全框架",
             sort: 4,
-            children: [{ name: "Helmet.js", sort: 1 }],
+            children: [
+              {
+                name: "OWASP Top 10 与前端防护（CSP / HTTP 安全头 / Helmet / CORS）",
+                sort: 1,
+              },
+              { name: "供应链安全", sort: 2 },
+            ],
           },
-          { name: "漏洞扫描（ZAP / Burp Suite / Nessus / Nmap）", sort: 5 },
+          { name: "漏洞扫描", sort: 5 },
         ],
       },
 

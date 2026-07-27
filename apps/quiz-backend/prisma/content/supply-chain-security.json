@@ -1,0 +1,627 @@
+[
+  {
+    "stem": "供应链安全：SRI 的 integrity 属性写多个 hash 时浏览器的处理规则是什么？",
+    "explanation": "MDN SRI 规范明确：integrity 属性空格分隔的多个 hash 中，浏览器会**选最强算法**（SHA-256 < SHA-384 < SHA-512）做校验；如果是同算法多 hash，**任一匹配即通过**；完全不匹配则返回网络错误并阻止执行。这是为了兼容升级期（同时挂新旧 hash）以及让客户端能优先用更强的算法。",
+    "tags": ["SRI", "integrity", "hash 算法", "MDN"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "选最强算法校验；同算法多 hash 任一匹配即通过；完全不匹配则返回网络错误阻止执行",
+        "isCorrect": true,
+        "description": "MDN 规范：跨算法选最强、同算法任一通过、全不匹配则阻止"
+      },
+      {
+        "text": "按声明顺序逐个尝试，命中第一个就通过",
+        "isCorrect": false,
+        "description": "不是顺序优先，而是算法强度优先"
+      },
+      {
+        "text": "所有 hash 都必须匹配才算通过",
+        "isCorrect": false,
+        "description": "这会让升级期挂新旧 hash 的方案不可行"
+      },
+      {
+        "text": "选最弱算法以加快校验速度",
+        "isCorrect": false,
+        "description": "正相反，浏览器选最强算法"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`npm ci` 与 `npm install` 的核心差异是什么？",
+    "explanation": "npm 官方明文区分：`npm ci` 要求 lockfile 存在且严格按 lockfile 安装、**不可修改 lockfile**、会先移除 node_modules 再重装，更快更确定，是 CI / 生产部署的标准命令。`npm install` 会按 semver 范围改写 lockfile，依赖树会漂移、可被 PR 中插入的恶意版本污染。pnpm 等价物是 `install --frozen-lockfile`。",
+    "tags": ["npm ci", "npm install", "lockfile", "CI"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`npm ci` 严格按 lockfile 安装且不可修改 lockfile，`npm install` 会按 semver 范围改写 lockfile",
+        "isCorrect": true,
+        "description": "前者确定性、CI 用；后者会漂移、本地用"
+      },
+      {
+        "text": "两者完全等价，只是 `ci` 是 install 的别名",
+        "isCorrect": false,
+        "description": "ci 是独立命令，语义不同"
+      },
+      {
+        "text": "`npm install` 比 `npm ci` 更严格，因为它会校验 lockfile",
+        "isCorrect": false,
+        "description": "正好相反，ci 才是严格的那个"
+      },
+      {
+        "text": "`npm ci` 会跳过 lockfile 直接从 registry 拉最新版本",
+        "isCorrect": false,
+        "description": "ci 强依赖 lockfile，缺 lockfile 直接报错"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`.npmrc` 中设 `ignore-scripts=true` 后以下哪项仍然会执行？",
+    "explanation": "npm 官方文档明确：`ignore-scripts=true` 仅阻止 **lifecycle 脚本**（preinstall/install/postinstall/preprepare/prepare/postprepare 等），但 `npm run <script>` / `npm start` / `npm test` 这些**显式调用的 scripts 字段**仍会照常执行；同时 node-gyp 等原生编译也会失效。社区工具 `can-i-ignore-scripts` 可评估某项目能否安全开启此项。",
+    "tags": ["ignore-scripts", "lifecycle", "npm run", "盲区"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`npm run build` 等显式调用的 scripts 字段",
+        "isCorrect": true,
+        "description": "ignore-scripts 只挡 lifecycle，显式 npm run 仍执行"
+      },
+      {
+        "text": "依赖的 postinstall 脚本",
+        "isCorrect": false,
+        "description": "postinstall 是 lifecycle，会被阻止"
+      },
+      {
+        "text": "依赖的 preinstall 脚本",
+        "isCorrect": false,
+        "description": "preinstall 也是 lifecycle，会被阻止"
+      },
+      {
+        "text": "依赖的 install 脚本",
+        "isCorrect": false,
+        "description": "install 是 lifecycle，会被阻止"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：dependency confusion（依赖混淆）攻击的核心入口是什么？",
+    "explanation": "Alex Birsan 2021 用此手法打进过 Apple / Microsoft / PayPal 等 35+ 公司。攻击链是：受害者私有 scope 包名（如 `@mycorp/utils`）在公共 npm registry 未占位 → 攻击者抢先在公共 registry 发布同名恶意包 → 受害者 CI 配置允许从公共 registry 拉取（或私服查找顺序错）→ 私有包被公共同名恶意包替换。防御三件套：scope 锁定私有 registry 且禁止回退公共 + 在公共 registry 抢注同名/同 scope 占位 + virtual registry 配置正确查找顺序。",
+    "tags": ["dependency confusion", "私包", "scope", "Alex Birsan"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "私有 scope 同名包在公共 npm registry 未占位，且 CI 允许回退到公共 registry",
+        "isCorrect": true,
+        "description": "私有包被公共同名恶意包替换是攻击入口"
+      },
+      {
+        "text": "用户在终端拼错了包名导致装到恶意包",
+        "isCorrect": false,
+        "description": "这是 typosquatting，不是 dependency confusion"
+      },
+      {
+        "text": "maintainer 账号被盗后发布恶意版本",
+        "isCorrect": false,
+        "description": "这是 account takeover，不是 dependency confusion"
+      },
+      {
+        "text": "postinstall 脚本执行任意代码",
+        "isCorrect": false,
+        "description": "这是 install scripts 投毒，不是 dependency confusion"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：typosquatting（拼写抢注）攻击最有效的两道防御是什么？",
+    "explanation": "typosquatting 依赖用户拼错包名（如 `loadsh` 冒充 `lodash`）才能得手。两道有效防御：① **lockfile 锁定**——已安装的包不会因为拼写错误被替换，因为 lockfile 里有完整的来源 hash；② **安装前核对包名**（npm 官网 / `npm view <pkg>` 检查 maintainer、周下载量、最近版本时间）。社区工具 Socket Dev 等扫描服务可补充。`strict-ssl=true` 防 MITM，不防 typosquatting。",
+    "tags": ["typosquatting", "lockfile", "包名核对"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "lockfile 锁定已安装的包 + 安装前核对 maintainer / 下载量 / 版本时间",
+        "isCorrect": true,
+        "description": "锁住依赖 + 装前核对是直接防御"
+      },
+      {
+        "text": "开启 `strict-ssl=true` + 启用 HTTPS",
+        "isCorrect": false,
+        "description": "strict-ssl 防 MITM，不防 typosquatting"
+      },
+      {
+        "text": "禁用 postinstall 脚本",
+        "isCorrect": false,
+        "description": "禁 postinstall 防的是 install scripts 投毒，不防 typosquatting"
+      },
+      {
+        "text": "只使用 yarn 不要使用 npm",
+        "isCorrect": false,
+        "description": "typosquatting 在 yarn / pnpm 生态同样存在"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：postinstall 是 npm 投毒最常用的载体，主要原因是什么？",
+    "explanation": "npm lifecycle 脚本顺序：preinstall → install → **postinstall** → prepublish(已弃用) → preprepare → prepare → postprepare。postinstall 是首选投毒载体因为：① 执行时机晚于杀软扫描；② 可读 `process.env` 凭据（NPM_TOKEN / AWS 等）；③ 跨平台执行任意 JS（无需触发构建即被 install）；④ 一个被传递依赖到几千个项目的包能放大几千倍。`npm@7+` 起 `prepare` 改为后台运行需 `--foreground-scripts`。",
+    "tags": ["postinstall", "lifecycle", "投毒", "凭据"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "执行晚于杀软扫描、可读 env 凭据、跨平台执行任意 JS、易通过传递依赖放大",
+        "isCorrect": true,
+        "description": "四点合起来让 postinstall 成为最佳投毒载体"
+      },
+      {
+        "text": "它只能在 Linux 上运行，所以攻击面小",
+        "isCorrect": false,
+        "description": "完全错——postinstall 跨平台执行"
+      },
+      {
+        "text": "它由浏览器在加载页面时执行",
+        "isCorrect": false,
+        "description": "postinstall 在 npm install 时执行，不是浏览器"
+      },
+      {
+        "text": "它必须由用户手动触发才能运行",
+        "isCorrect": false,
+        "description": "npm install 时自动触发，无需手动"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：关于 npm 默认配置，以下哪个说法是正确的？",
+    "explanation": "npm 官方文档明确：`strict-ssl` 默认为 **true**（强制 HTTPS 验证），关掉它等于打开 MITM 大门，是经典反模式；`ignore-scripts` 默认为 **false**（即 npm 默认允许执行 lifecycle 脚本，这也是攻击面所在）；`unsafe-perm` 在 root 时默认 false（非 root 时为 true）。这些默认值的组合决定了 npm 的安全基线。",
+    "tags": ["默认配置", "strict-ssl", "ignore-scripts", "unsafe-perm"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "`strict-ssl` 默认 true；`ignore-scripts` 默认 false；`unsafe-perm` 默认 root 时 false、非 root 时 true",
+        "isCorrect": true,
+        "description": "三个默认值都符合 npm 官方文档"
+      },
+      {
+        "text": "`strict-ssl` 默认 false，需要手动开启",
+        "isCorrect": false,
+        "description": "strict-ssl 默认就是 true，关闭才是反模式"
+      },
+      {
+        "text": "`ignore-scripts` 默认 true，npm 默认禁止 lifecycle",
+        "isCorrect": false,
+        "description": "ignore-scripts 默认 false，npm 默认开脚本"
+      },
+      {
+        "text": "`unsafe-perm` 在任何情况下都默认 true",
+        "isCorrect": false,
+        "description": "root 时默认 false 以防提权"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：SRI 的 `integrity` 属性为何强制与 `crossorigin=\"anonymous\"` 搭配？",
+    "explanation": "MDN 解释：在 no-cors 模式下启用 SRI 会带来 **XS-Leak**——攻击者可借加载成功 / 失败事件**推断跨域资源内容**。浏览器要求 SRI 切换到 CORS 模式（`crossorigin=\"anonymous\"`），同时 CDN 必须返回 `Access-Control-Allow-Origin` 头。若只加 `integrity` 漏了 `crossorigin`，浏览器拒绝校验，**脚本反而加载不出来**——这是最常见的 SRI 配置错误。",
+    "tags": ["SRI", "crossorigin", "XS-Leak", "CORS"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "no-cors 模式下启用 SRI 会带来 XS-Leak（推断跨域内容），必须切到 CORS 模式并由 CDN 返回 ACAO 头",
+        "isCorrect": true,
+        "description": "XS-Leak 是浏览器强制 crossorigin 的根本原因"
+      },
+      {
+        "text": "crossorigin 只是性能优化，不加也能校验",
+        "isCorrect": false,
+        "description": "不加 crossorigin 浏览器拒绝校验，脚本加载不出来"
+      },
+      {
+        "text": "crossorigin 的作用是加密传输 tarball",
+        "isCorrect": false,
+        "description": "加密由 HTTPS 负责，与 crossorigin 无关"
+      },
+      {
+        "text": "crossorigin 用于避免 CSP 报错，与 SRI 无关",
+        "isCorrect": false,
+        "description": "crossorigin 与 SRI 强相关，是 CORS 模式开关"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`npm audit --audit-level=high` 的「阈值」语义陷阱是什么？",
+    "explanation": "npm 官方文档明确：`--audit-level` **只改阈值不过滤报告**——它决定命令的 exit code（达到阈值则 exit 非零），但漏洞清单仍**全部列出**。`--audit-level` 取值：null / info / low / moderate / high / critical / none。要真正过滤报告需配合 `--omit=dev`（排除 dev 依赖）或第三方工具如 audit-ci。",
+    "tags": ["npm audit", "audit-level", "阈值", "陷阱"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它只决定命令 exit code 是否非零，漏洞清单仍全部列出（不过滤报告）",
+        "isCorrect": true,
+        "description": "改阈值不过滤报告，是关键陷阱"
+      },
+      {
+        "text": "它会自动过滤掉所有低于 high 的漏洞，不在报告中显示",
+        "isCorrect": false,
+        "description": "报告仍全部显示，只是 exit code 受阈值影响"
+      },
+      {
+        "text": "它会自动修复所有 high 以上漏洞",
+        "isCorrect": false,
+        "description": "audit 只报告不修复，修复要用 audit fix"
+      },
+      {
+        "text": "它会按字母顺序重新排序漏洞列表",
+        "isCorrect": false,
+        "description": "audit-level 与排序无关"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：pnpm v10+ 默认禁用依赖 postinstall 后，如何精细放行可信构建脚本？",
+    "explanation": "pnpm v10+ 默认禁用依赖的 postinstall，避免一了之丢失白名单审计价值（即 `dangerouslyAllowAllBuilds: true` 反模式）。正确做法是用 **`onlyBuiltDependencies`（v11 改名 `allowBuilds`）** 字段在 `pnpm-workspace.yaml` 显式列出允许跑构建脚本的依赖（如 esbuild / swc / prisma）。本仓库 `apps/quiz-backend` 有 `postinstall: pnpm run prisma:generate`，必须白名单放行 prisma 才能生成 client。",
+    "tags": ["pnpm v10", "allowBuilds", "onlyBuiltDependencies", "白名单"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在 `pnpm-workspace.yaml` 用 `onlyBuiltDependencies`（v11 改名 `allowBuilds`）显式列出可信依赖",
+        "isCorrect": true,
+        "description": "白名单字段精确放行，保留审计价值"
+      },
+      {
+        "text": "全局设置 `dangerouslyAllowAllBuilds: true`",
+        "isCorrect": false,
+        "description": "这是反模式，等于回到 npm 默认行为"
+      },
+      {
+        "text": "在 `.npmrc` 写 `ignore-scripts=false`",
+        "isCorrect": false,
+        "description": "这是 npm 的全局开关，不是 pnpm 的白名单机制"
+      },
+      {
+        "text": "升级到 pnpm v11 默认就放行所有",
+        "isCorrect": false,
+        "description": "v11 仍然默认禁，只是字段改名 + 加 minimumReleaseAge"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`npm audit fix --force` 为何被官方明确警告危险？",
+    "explanation": "npm 官方明文警告：`--force` 选项允许 **SemVer 主版本变更**（包括 breaking change），可能直接打断生产构建。正确流程是先 `npm audit fix --dry-run` 预览变更、评估影响后再决定是否执行。直接 `--force` 跳过 SemVer 约束是「为了消警报而引入新事故」的典型反模式。",
+    "tags": ["audit fix", "force", "SemVer", "breaking change"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "它允许 SemVer 主版本跳变（含 breaking change），可能直接打断生产构建",
+        "isCorrect": true,
+        "description": "跳过 SemVer 主版本约束是核心风险"
+      },
+      {
+        "text": "它会删除 node_modules 重新安装",
+        "isCorrect": false,
+        "description": "删除重装是 npm ci 的行为，与 fix --force 无关"
+      },
+      {
+        "text": "它会强制关闭 strict-ssl",
+        "isCorrect": false,
+        "description": "fix --force 不动 TLS 配置"
+      },
+      {
+        "text": "它会向 npm registry 上传项目源码",
+        "isCorrect": false,
+        "description": "audit fix 完全是本地操作，不上传源码"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：audit-ci 的 allowlist 三种精度（module / advisory / path）的差异是什么？",
+    "explanation": "IBM audit-ci 的 allowlist 支持：① **module** 精度——按包名豁免，如 `\"axios\"`，但**不含该包的传递依赖**；② **advisory** 精度——按 GHSA ID 精确豁免，如 `\"GHSA-xxxx-xxxx-xxxx\"`；③ **path** 精度——按依赖链路，含 `*` 通配符，如 `\"pkg>pkg>pkg\"`。NSPRecord 对象还提供 `active / expiry / notes` 字段，防止漏洞豁免被遗忘。",
+    "tags": ["audit-ci", "allowlist", "GHSA", "NSPRecord"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "module 按包名（不含传递依赖）/ advisory 按 GHSA ID / path 按 `pkg>pkg>pkg` 链路含 `*` 通配",
+        "isCorrect": true,
+        "description": "三种精度从粗到细，覆盖不同豁免场景"
+      },
+      {
+        "text": "module 包含传递依赖，advisory 不包含",
+        "isCorrect": false,
+        "description": "module 反而不含传递依赖"
+      },
+      {
+        "text": "path 精度不支持 `*` 通配符",
+        "isCorrect": false,
+        "description": "path 支持 `*` 通配，正是其灵活性所在"
+      },
+      {
+        "text": "三种精度等价，只是写法不同",
+        "isCorrect": false,
+        "description": "三种精度的语义明显不同"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：lockfile-lint 与 npm audit 为何是互补关系而非替代？",
+    "explanation": "两者覆盖**不同攻击面**：`npm audit` 查**已知 CVE**（漏洞数据库匹配），不能发现 lockfile 中被注入的非预期 registry / host；`lockfile-lint --allowed-hosts npm yarn --validate-https` 校验依赖**来源 host 白名单 + HTTPS + 完整性**，发现 lockfile 被注入非预期 registry（恶意替换来源），但不查 CVE。两者并用才能覆盖「内容漏洞」与「来源篡改」两类风险。注意 pnpm 因「lockfile 不维护 tarball 源」反而对 lockfile-lint 不敏感。",
+    "tags": ["lockfile-lint", "npm audit", "互补", "host 白名单"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "npm audit 查已知 CVE，lockfile-lint 查 lockfile 中的 host / registry 注入，两者覆盖不同攻击面",
+        "isCorrect": true,
+        "description": "互补覆盖「内容漏洞」+「来源篡改」"
+      },
+      {
+        "text": "lockfile-lint 是 npm audit 的替代品，跑 lockfile-lint 就不需要 audit",
+        "isCorrect": false,
+        "description": "两者覆盖面不同，不能互相替代"
+      },
+      {
+        "text": "npm audit 已经包含 lockfile-lint 的全部功能",
+        "isCorrect": false,
+        "description": "audit 不检查 host 白名单与 HTTPS 来源"
+      },
+      {
+        "text": "lockfile-lint 主要查传递依赖的 CVE",
+        "isCorrect": false,
+        "description": "lockfile-lint 不查 CVE，查 host / HTTPS / 完整性"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：CycloneDX 与 SPDX 作为 SBOM 标准，最关键的差异是什么？",
+    "explanation": "CycloneDX 由 Ecma TC54 维护，已标准化为 **ECMA-424**（当前 1.7，2025-10-21 发布），原生内嵌 VEX（漏洞可利用性声明）、依赖图完整、CI/CD 性能优化，起点强项是**漏洞管理**。SPDX 由 Linux Foundation 维护，标准化为 **ISO/IEC 5962:2021**，VEX 走单独 profile，起点强项是**许可证合规**。两者都能生成 bom，但项目场景偏漏洞管理选 CycloneDX，偏许可证合规选 SPDX。",
+    "tags": ["CycloneDX", "SPDX", "SBOM", "ECMA-424", "VEX"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CycloneDX 是 ECMA-424 + 原生 VEX + 漏洞管理强；SPDX 是 ISO 5962:2021 + 单独 profile VEX + 许可证合规强",
+        "isCorrect": true,
+        "description": "标准、VEX 位置、起点强项三者都不同"
+      },
+      {
+        "text": "两者完全等价，都是 ISO 标准",
+        "isCorrect": false,
+        "description": "CycloneDX 是 Ecma 标准（ECMA-424），SPDX 是 ISO 标准"
+      },
+      {
+        "text": "SPDX 原生内嵌 VEX，CycloneDX 没有 VEX",
+        "isCorrect": false,
+        "description": "反了，CycloneDX 才是原生内嵌 VEX"
+      },
+      {
+        "text": "CycloneDX 只用于许可证合规，SPDX 只用于漏洞管理",
+        "isCorrect": false,
+        "description": "起点强项正好相反"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`.npmrc` 配置的优先级链从高到低的正确顺序是什么？",
+    "explanation": "npm 官方文档明确的优先级链（高 → 低）：**命令行 flag** > **环境变量 `npm_config_*`** > **项目 `.npmrc`**（仓库根）> **用户 `~/.npmrc`** > **全局 `$PREFIX/etc/npmrc`** > **内置默认**。排查「为何这个包仍被安装」「为何 ignore-scripts 没生效」时，沿这条链从高到低找覆盖。`.env.production.local` 的环境变量可能通过 `npm_config_*` 覆盖项目 .npmrc，这是常见踩坑点。",
+    "tags": [".npmrc", "配置优先级", "环境变量", "排查"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "命令行 > npm_config_* 环境变量 > 项目 .npmrc > 用户 ~/.npmrc > 全局 > 内置默认",
+        "isCorrect": true,
+        "description": "六层从高到低的官方优先级链"
+      },
+      {
+        "text": "项目 .npmrc > 命令行 > 用户 ~/.npmrc > 环境变量",
+        "isCorrect": false,
+        "description": "命令行 flag 永远最高，环境变量高于项目 .npmrc"
+      },
+      {
+        "text": "内置默认 > 全局 > 用户 > 项目 > 环境变量 > 命令行",
+        "isCorrect": false,
+        "description": "顺序完全反了"
+      },
+      {
+        "text": "用户 ~/.npmrc 永远优先于项目 .npmrc",
+        "isCorrect": false,
+        "description": "项目 .npmrc 优先于用户 ~/.npmrc"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：SLSA Build L1 / L2 / L3 的递进要求分别是什么？",
+    "explanation": "SLSA v1.0 spec 明确：**L1** 仅要求 provenance **存在**（可未签名），任何 CI 输出都能达到；**L2** 要求**托管平台**（如 GitHub Actions / GitLab CI）**生成并签名** provenance；**L3** 要求**构建平台硬隔离**防篡改，签名密钥对构建步骤**不可见**（隔离构建机 + 参数化）。`npm publish --provenance` 实际把包从 L1 提到 **L2**（GitHub Actions 自动签名 provenance）。",
+    "tags": ["SLSA", "Build L1", "Build L2", "Build L3", "provenance"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "L1 provenance 存在（可未签名）/ L2 托管平台生成并签名 / L3 构建隔离且密钥对构建步骤不可见",
+        "isCorrect": true,
+        "description": "L1→L2→L3 沿「存在→签名→隔离」递进"
+      },
+      {
+        "text": "L1 要求硬隔离，L3 只要求 provenance 存在",
+        "isCorrect": false,
+        "description": "完全反了，L3 才是最高级"
+      },
+      {
+        "text": "L1 / L2 / L3 都要求签名，只是签名算法不同",
+        "isCorrect": false,
+        "description": "L1 的 provenance 可以未签名"
+      },
+      {
+        "text": "L3 不需要 provenance，只需要构建隔离",
+        "isCorrect": false,
+        "description": "L3 必须有 provenance + 隔离 + 签名"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`npm publish --provenance` 启用的前置条件是什么？",
+    "explanation": "npm 官方文档列出前置：① npm CLI **9.5.0+**；② `package.json.repository` 字段**公开**且与 CI 来源**大小写敏感匹配**；③ 使用 **GitHub Actions** 或 **GitLab CI** 的**云端托管 runner**（不支持自托管 runner，因为需要平台 OIDC）；④ GitHub Actions 需 `permissions.id-token: write`；⑤ GitLab 需 `id_tokens.SIGSTORE_ID_TOKEN`。可在 `package.json` 设 `publishConfig.provenance: true` 或环境变量 `NPM_CONFIG_PROVENANCE=true`。",
+    "tags": ["provenance", "npm publish", "GitHub Actions", "OIDC"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "npm CLI 9.5.0+ + repository 字段公开且大小写匹配 + GitHub/GitLab 云端托管 runner + id-token 权限",
+        "isCorrect": true,
+        "description": "四项前置缺一不可，自托管 runner 不支持"
+      },
+      {
+        "text": "只要 npm CLI 任意版本 + 私有 GitHub 仓库即可",
+        "isCorrect": false,
+        "description": "需 9.5.0+，且仓库需公开（OIDC 来源必须可验证）"
+      },
+      {
+        "text": "支持自托管 runner，无需云端托管",
+        "isCorrect": false,
+        "description": "不支持自托管 runner，OIDC 需托管平台签发"
+      },
+      {
+        "text": "需要在 npmjs.com 网页上传 GPG 密钥",
+        "isCorrect": false,
+        "description": "provenance 是 keyless，无需上传密钥"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：Sigstore 的 keyless 签名原理与三组件的协作关系是什么？",
+    "explanation": "Sigstore 三组件：**Fulcio CA**（基于 OIDC token 签发**短期临时证书**，是 keyless 核心）、**Rekor**（不可篡改的**透明日志账本**，公开可审计）、**Cosign / CLI**（签名 / 验证工具）。keyless 原理：用 OIDC 身份（GitHub Actions / GitLab CI 的 short-lived token）替代**长期密钥**——签名时 Fulcio 用 OIDC token 签发短期证书，签名事件写入 Rekor 透明日志；验证方查 Rekor 确认签名发生过，再验证证书链。整个过程不留长期密钥。",
+    "tags": ["Sigstore", "Fulcio", "Rekor", "keyless", "OIDC"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Fulcio CA 用 OIDC token 签发短期证书 + Rekor 记录透明日志 + Cosign 签名/验证；用 OIDC 身份替代长期密钥",
+        "isCorrect": true,
+        "description": "keyless 的核心是不留长期密钥，靠 OIDC + 透明日志"
+      },
+      {
+        "text": "Fulcio 是密钥托管服务，用户上传长期私钥",
+        "isCorrect": false,
+        "description": "Sigstore 正好相反，不留长期密钥"
+      },
+      {
+        "text": "Rekor 是签名算法库，Cosign 是透明日志",
+        "isCorrect": false,
+        "description": "Rekor 才是透明日志，Cosign 是 CLI 工具"
+      },
+      {
+        "text": "keyless 即不签名，只上传明文代码",
+        "isCorrect": false,
+        "description": "keyless 仍要签名，只是用 OIDC 替代长期密钥"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`npm audit signatures` 验证的两类对象分别是什么？",
+    "explanation": "npm CLI v10 的 `npm audit signatures` 输出类似「Verified 52 signatures and 12 attestations in 1247 packages」。两类对象：① **registry signatures**（**ECDSA**）——**所有包都有**，由 npm registry 自动签发；② **attestations**——**带 provenance 的包才有**，即用 `npm publish --provenance` 发布的包才会被验证 attestation。两类计数都给出来，让用户能区分「registry 签名验证」与「provenance attestation 验证」两个层次。",
+    "tags": [
+      "audit signatures",
+      "registry signatures",
+      "attestations",
+      "ECDSA"
+    ],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "registry signatures（ECDSA，所有包都有）与 attestations（带 provenance 的包才有）",
+        "isCorrect": true,
+        "description": "两类对象层次不同，provenance 是更高一层的验证"
+      },
+      {
+        "text": "ECDSA 签名和 RSA 签名",
+        "isCorrect": false,
+        "description": "两类不是按算法分，而是按对象类型（registry vs attestation）"
+      },
+      {
+        "text": "HTTPS 证书和 SSH 密钥",
+        "isCorrect": false,
+        "description": "与 HTTPS / SSH 无关"
+      },
+      {
+        "text": "包的 license 与 dependencies",
+        "isCorrect": false,
+        "description": "与 license / dependencies 无关"
+      }
+    ]
+  },
+  {
+    "stem": "供应链安全：`provenance` 与 `pnpm.overrides` 在使用上的重要边界是什么？",
+    "explanation": "两个常见反模式：① 把 `npm publish --provenance` 当成「包就安全了」——官方明确 provenance 只提供「where & how built」的可验证链接，**不保证无恶意代码**，仍需源码审计；② 用 `pnpm.overrides` / npm `overrides` 把 transitive 依赖锁死到老旧版本**长期不升级**——overrides 是**临时止血**手段，应跟踪上游修复后及时移除，否则债务累积到下次 major 升级爆雷。两者都体现了「工具是辅助、不是终点」的工程态度。",
+    "tags": ["provenance 边界", "overrides", "临时止血", "源码审计"],
+    "categories": [
+      ["技术方向", "供应链安全"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "provenance 不保证无恶意代码（仍需源码审计）；overrides 是临时止血，应跟踪上游修复后及时移除",
+        "isCorrect": true,
+        "description": "两者都有边界，不能当银弹"
+      },
+      {
+        "text": "provenance 启用后无需再审计源码",
+        "isCorrect": false,
+        "description": "官方明确 provenance 不保证无恶意代码"
+      },
+      {
+        "text": "overrides 应永久保留，移除会引入新漏洞",
+        "isCorrect": false,
+        "description": "overrides 是临时手段，长期保留会让下次 major 升级爆雷"
+      },
+      {
+        "text": "provenance 与 overrides 互斥，不能同时使用",
+        "isCorrect": false,
+        "description": "两者完全独立，可同时使用"
+      }
+    ]
+  }
+]

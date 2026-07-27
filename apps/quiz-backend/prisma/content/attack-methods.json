@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "攻击方式：XSS 的三种类型存储型、反射型、DOM 型的核心区分依据是什么？",
+    "explanation": "OWASP 按「载荷是否持久化 + 触发链路」区分 XSS 三类：存储型持久化在服务端 DB（如留言板），用户访问受感染页面即触发，影响大量用户，危害最大；反射型不持久化，单次请求经服务器响应反射回来，常通过钓鱼链接触发；DOM 型纯客户端，不经服务器响应，由 sink（如 innerHTML、eval）触发。",
+    "tags": ["xss", "攻击类型", "存储型", "反射型", "dom型"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "载荷是否持久化在服务端 + 是否经过服务器响应触发",
+        "isCorrect": true,
+        "description": "存储型持久化 DB，反射型经响应反射，DOM 型不经服务器"
+      },
+      {
+        "text": "载荷长度是否超过 1024 字节",
+        "isCorrect": false,
+        "description": "载荷长度与 XSS 类型无关"
+      },
+      {
+        "text": "攻击是否使用 HTTPS 通道",
+        "isCorrect": false,
+        "description": "通道类型不影响 XSS 分类"
+      },
+      {
+        "text": "受害者的浏览器是否为 Chrome",
+        "isCorrect": false,
+        "description": "浏览器品牌不影响 XSS 分类"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：DOM 型 XSS 与反射型 XSS 的本质区别是什么？",
+    "explanation": "DOM 型 XSS 完全不经过服务器响应——载荷在客户端 sink（如 innerHTML、document.write、eval）执行，服务器日志中看不到载荷。因此服务端 WAF 挡不住 DOM 型 XSS，必须靠前端 sink 防护与 Trusted Types API。反射型 XSS 的载荷会出现在服务器响应中，WAF 可识别。",
+    "tags": ["xss", "dom型", "反射型", "waf"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "DOM 型不经服务器响应，载荷在客户端 sink 执行，WAF 挡不住",
+        "isCorrect": true,
+        "description": "服务器日志看不到载荷，必须靠前端防护"
+      },
+      {
+        "text": "DOM 型比反射型危害更大，因为它持久化在数据库",
+        "isCorrect": false,
+        "description": "持久化的是存储型 XSS，不是 DOM 型"
+      },
+      {
+        "text": "反射型只能通过 GET 触发，DOM 型只能通过 POST 触发",
+        "isCorrect": false,
+        "description": "HTTP 方法与 XSS 类型无必然关系"
+      },
+      {
+        "text": "DOM 型需要服务端配合，反射型纯客户端执行",
+        "isCorrect": false,
+        "description": "正好说反了——DOM 型纯客户端，反射型经服务器响应"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：Trusted Types API 把 DOM 注入点（sink）分为哪三类？",
+    "explanation": "Trusted Types API 把 DOM 注入点分为三类 sink：HTML sink（innerHTML、outerHTML、document.write、insertAdjacentHTML）对应 TrustedHTML；JS sink（eval、Function、setTimeout 传字符串）对应 TrustedScript；JS URL sink（script.src、location.href、location.replace）对应 TrustedScriptURL。policy 通过 createHTML / createScript / createScriptURL 创建对应可信对象。",
+    "tags": ["xss", "trusted types", "sink", "policy"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HTML sink（innerHTML/document.write）+ JS sink（eval/Function）+ JS URL sink（script.src/location.href）",
+        "isCorrect": true,
+        "description": "三类 sink 分别对应 TrustedHTML / TrustedScript / TrustedScriptURL"
+      },
+      {
+        "text": "GET sink + POST sink + DELETE sink",
+        "isCorrect": false,
+        "description": "HTTP 方法不是 sink 分类依据"
+      },
+      {
+        "text": "同源 sink + 跨站 sink + 数据库 sink",
+        "isCorrect": false,
+        "description": "源/数据库与 sink 无关"
+      },
+      {
+        "text": "Cookie sink + LocalStorage sink + SessionStorage sink",
+        "isCorrect": false,
+        "description": "存储 API 不是 Trusted Types 的 sink"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：CSP nonce-based 模式的关键约束是什么？",
+    "explanation": "nonce-based CSP 要求 nonce 必须每个 HTTP 响应都重新生成且不可预测（用 CSPRNG）。当 script-src 含 nonce 或 hash 时，'unsafe-inline' 会被浏览器忽略——这是开发者常误解的点，以为同时声明 unsafe-inline 仍生效。strict-dynamic 允许受信任脚本加载子脚本但会降低安全性。",
+    "tags": ["csp", "nonce", "unsafe-inline", "strict-dynamic"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "nonce 必须每 HTTP 响应重新生成；含 nonce/hash 时 unsafe-inline 被浏览器忽略",
+        "isCorrect": true,
+        "description": "这是 nonce-based CSP 的两条核心约束"
+      },
+      {
+        "text": "nonce 是固定字符串，部署一次永久使用",
+        "isCorrect": false,
+        "description": "固定 nonce 等于没有 nonce，可被预测重放"
+      },
+      {
+        "text": "nonce 与 unsafe-inline 同时声明时 unsafe-inline 优先",
+        "isCorrect": false,
+        "description": "正好相反——含 nonce 时 unsafe-inline 被忽略"
+      },
+      {
+        "text": "nonce 必须存入 Cookie 才生效",
+        "isCorrect": false,
+        "description": "nonce 是响应头/属性，与 Cookie 无关"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：浏览器原生 Sanitizer API 与第三方库 DOMPurify 的关键区别是什么？",
+    "explanation": "Sanitizer API 是浏览器原生 API，配合 element.setHTML() 原生集成，实例可复用；DOMPurify 是第三方 JS 库，返回字符串需手动插入 DOM。Sanitizer API 当前 MDN 标注 Limited Availability（不在 Baseline），生产环境常仍需 DOMPurify 兜底。",
+    "tags": ["sanitizer", "dompurify", "浏览器原生"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Sanitizer 是浏览器原生 API 配合 setHTML 集成；DOMPurify 是第三方库返回字符串需手动插入",
+        "isCorrect": true,
+        "description": "原生集成 vs 字符串返回是核心差异"
+      },
+      {
+        "text": "DOMPurify 是浏览器原生 API，Sanitizer 是第三方库",
+        "isCorrect": false,
+        "description": "正好说反"
+      },
+      {
+        "text": "Sanitizer 性能更差，DOMPurify 是无副作用纯函数",
+        "isCorrect": false,
+        "description": "性能/副作用不是核心区别"
+      },
+      {
+        "text": "DOMPurify 已被 Sanitizer API 完全取代",
+        "isCorrect": false,
+        "description": "Sanitizer 浏览器支持有限，DOMPurify 仍是业界事实标准"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：Sanitizer API 中 setHTML() 与 setHTMLUnsafe() 的默认行为有何不同？",
+    "explanation": "setHTML() 是安全方法，默认用默认消毒配置自动消毒；setHTMLUnsafe() 默认不消毒，必须显式传入 new Sanitizer() 实例才消毒。这是常考陷阱：开发者常误以为 setHTMLUnsafe 也自动消毒，导致未消毒的用户输入直接插入 DOM 造成 XSS。",
+    "tags": ["sanitizer", "sethtml", "sethtmlunsafe", "陷阱"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "setHTML 默认自动消毒；setHTMLUnsafe 默认不消毒，必须显式传 Sanitizer",
+        "isCorrect": true,
+        "description": "API 命名即语义——Unsafe 后缀即默认不消毒"
+      },
+      {
+        "text": "两者都默认自动消毒，只是命名不同",
+        "isCorrect": false,
+        "description": "常见陷阱——setHTMLUnsafe 默认不消毒"
+      },
+      {
+        "text": "setHTMLUnsafe 默认消毒且不可禁用，setHTML 可配置",
+        "isCorrect": false,
+        "description": "正好说反"
+      },
+      {
+        "text": "两者行为完全一致，仅性能不同",
+        "isCorrect": false,
+        "description": "默认行为差异是核心区别"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：CSRF 的 Synchronizer Token 与 Signed Double-Submit Cookie 模式该如何选型？",
+    "explanation": "选型依据是是否有服务端会话存储：Synchronizer Token Pattern 是有状态方案，Token 存于服务端会话，适用传统 Web；Signed Double-Submit Cookie 用 HMAC-SHA256(sessionSecret, sessionId+random) 签名，是无状态方案，适用 JWT / 微服务。Naive Double-Submit（仅比较 Cookie 与请求参数）易被子域 Cookie 注入绕过，必须用 Signed 版本。",
+    "tags": ["csrf", "synchronizer token", "double submit", "hmac"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "看是否有服务端会话存储——有状态用 Synchronizer，无状态用 Signed Double-Submit HMAC",
+        "isCorrect": true,
+        "description": "服务端会话是否可存是核心选型依据"
+      },
+      {
+        "text": "看后端用什么编程语言——Java 用 Token，Node 用 Double-Submit",
+        "isCorrect": false,
+        "description": "语言与选型无关"
+      },
+      {
+        "text": "Signed Double-Submit 不安全，必须用 Naive Double-Submit",
+        "isCorrect": false,
+        "description": "正好说反——Naive 才不安全"
+      },
+      {
+        "text": "两者完全等价，任意选",
+        "isCorrect": false,
+        "description": "状态/无状态差异显著"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：SameSite=Lax 是现代浏览器的默认值，但它的防护边界是什么？",
+    "explanation": "SameSite=Lax 自 Chrome 84（2020）起为默认值，仅阻止不安全方法（POST/PUT/DELETE）跨站，**GET 顶层导航仍带 Cookie**。因此若有 GET 端点执行状态变更（如 /delete?id=1），SameSite=Lax 失效。它对客户端 CSRF（同源 JS）也无效，旧浏览器不执行——只能作为纵深防御。",
+    "tags": ["csrf", "samesite", "lax", "默认值"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅阻止不安全方法（POST/PUT/DELETE），GET 顶层导航仍带 Cookie；GET 状态变更端点会失效",
+        "isCorrect": true,
+        "description": "Lax 的关键边界是 GET 顶层导航仍带 Cookie"
+      },
+      {
+        "text": "完全阻断所有跨站请求，等同于 Strict",
+        "isCorrect": false,
+        "description": "完全阻断的是 Strict，不是 Lax"
+      },
+      {
+        "text": "对所有方法都带 Cookie，等同于 None",
+        "isCorrect": false,
+        "description": "那是 None 的行为"
+      },
+      {
+        "text": "只对 HTTPS 请求生效，HTTP 请求不受影响",
+        "isCorrect": false,
+        "description": "SameSite 与协议无关"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：为什么说 XSS 能绕过所有 CSRF 防护？",
+    "explanation": "OWASP 反复强调 XSS 防御是 CSRF 防御的前提。原因是 XSS 可在受害者浏览器内读取页面里的 CSRF Token（DOM 中的隐藏字段、meta 标签、JS 变量），或直接以受害者身份发请求。Token 模式、Double-Submit、SameSite 都依赖「攻击者无法读取受害者页面」这一前提，XSS 直接打破这个前提。因此 XSS 与 CSRF 不是独立问题。",
+    "tags": ["xss", "csrf", "owasp", "前提"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "XSS 可在受害者浏览器内读取 CSRF Token 或直接发请求，打破 CSRF 防御前提",
+        "isCorrect": true,
+        "description": "XSS 防御是 CSRF 防御的前提"
+      },
+      {
+        "text": "XSS 可以直接攻破服务器的数据库",
+        "isCorrect": false,
+        "description": "XSS 是客户端攻击，不直接攻破数据库"
+      },
+      {
+        "text": "XSS 可以禁用浏览器的 Cookie",
+        "isCorrect": false,
+        "description": "XSS 不能禁用 Cookie，只能读取/利用"
+      },
+      {
+        "text": "XSS 与 CSRF 是完全独立的问题，互不影响",
+        "isCorrect": false,
+        "description": "OWASP 明确否定这一观点"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：参数化查询为什么能防 SQL 注入？",
+    "explanation": "参数化查询在预编译阶段已固定 SQL 结构，数据库始终把占位符（? 或 :name）传入的值当字面数据，攻击者输入 ' OR '1'='1 只作字符串字面值匹配，不会被解析为 SQL 逻辑。代码与数据在预编译时已分离，这是参数化的本质。转义是 fragile 的最后手段。",
+    "tags": ["sql注入", "参数化查询", "预编译"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "预编译阶段已固定 SQL 结构，数据库把占位符传入值当字面数据，不解析为 SQL 逻辑",
+        "isCorrect": true,
+        "description": "代码与数据在预编译时分离"
+      },
+      {
+        "text": "参数化会自动删除输入中的单引号",
+        "isCorrect": false,
+        "description": "参数化不删除字符，而是把整串当字面数据"
+      },
+      {
+        "text": "参数化只对 MySQL 有效，PostgreSQL 无效",
+        "isCorrect": false,
+        "description": "参数化是 SQL 标准行为，所有主流数据库都支持"
+      },
+      {
+        "text": "参数化通过加密用户输入实现",
+        "isCorrect": false,
+        "description": "参数化不加密，是结构分离"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：Prisma ORM 中哪个接口若用字符串拼接仍会导致 SQL 注入？",
+    "explanation": "Prisma/TypeORM/Sequelize 默认查询接口是参数化的安全接口，但 raw 接口需注意：Prisma 的 $queryRaw`...${var}` 模板字符串形式让 ORM 自动参数化是安全的；$queryRawUnsafe(...) 用字符串拼接则会注入。TypeORM 的 query() 同理。规则：raw 查询必须用占位符或模板字符串，不能拼接。",
+    "tags": ["sql注入", "prisma", "orm", "queryraw"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "$queryRawUnsafe 若用字符串拼接会注入；$queryRaw 模板字符串形式让 ORM 自动参数化",
+        "isCorrect": true,
+        "description": "raw 接口必须用模板字符串或占位符"
+      },
+      {
+        "text": "Prisma 所有接口都安全，无注入风险",
+        "isCorrect": false,
+        "description": "$queryRawUnsafe 拼接字符串会注入"
+      },
+      {
+        "text": "$queryRaw 模板字符串形式会注入，必须用 $queryRawUnsafe",
+        "isCorrect": false,
+        "description": "正好说反"
+      },
+      {
+        "text": "Prisma 已完全禁用 raw 接口，不存在此问题",
+        "isCorrect": false,
+        "description": "Prisma 提供 $queryRaw / $queryRawUnsafe / $executeRaw"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：SSRF 防护为什么必须禁用 HTTP 重定向（followRedirect=false）？",
+    "explanation": "仅校验入口 URL 没用——攻击者把无害 URL（如 attacker.com）通过白名单校验后，用 302 重定向跳到 169.254.169.254（AWS/Azure 云元数据）或 RFC1918 内网，绕过校验。DNS Pinning 攻击还要同时查 A 和 AAAA 记录，防解析到内网。云环境用 IMDSv2 替代 IMDSv1 也是关键。",
+    "tags": ["ssrf", "重定向", "imds", "白名单"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "入口 URL 校验通过后，攻击者用 302 跳到云元数据或内网，绕过校验",
+        "isCorrect": true,
+        "description": "禁重定向是 SSRF 铁律之一"
+      },
+      {
+        "text": "禁用重定向是为了节省服务器带宽",
+        "isCorrect": false,
+        "description": "带宽不是核心原因，安全才是"
+      },
+      {
+        "text": "禁用重定向会破坏正常业务，永远不应禁用",
+        "isCorrect": false,
+        "description": "对外发起的请求通常应禁用重定向"
+      },
+      {
+        "text": "重定向不影响 SSRF，只关注入口 URL 即可",
+        "isCorrect": false,
+        "description": "重定向是 SSRF 主要绕过手段之一"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：HSTS 防御 MITM 的两层机制是什么？preload 指令解决什么问题？",
+    "explanation": "HSTS（RFC 6797）的两层机制：①浏览器自动把 HTTP 升级为 HTTPS（防协议降级）②不允许用户绕过证书错误（防伪造证书的「点击继续」）。preload 指令解决「首次访问前 HSTS 不生效」的漏洞——浏览器出厂内置 HSTS 域名列表，前提是 max-age≥31536000 且含 includeSubDomains，提交到 hstspreload.org。",
+    "tags": ["hsts", "mitm", "preload", "rfc6797"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动 HTTP→HTTPS 升级 + 不允许绕过证书错误；preload 解决首次访问前 HSTS 不生效",
+        "isCorrect": true,
+        "description": "两层机制 + preload 列表是完整防御"
+      },
+      {
+        "text": "HSTS 加密传输内容，防止中间人读取",
+        "isCorrect": false,
+        "description": "加密是 TLS 的事，HSTS 是强制 HTTPS"
+      },
+      {
+        "text": "HSTS 通过 Cookie 实现会话跟踪",
+        "isCorrect": false,
+        "description": "HSTS 与 Cookie 无关"
+      },
+      {
+        "text": "HSTS 只能在 HTTP 响应下发",
+        "isCorrect": false,
+        "description": "正好相反——HSTS 必须只在 HTTPS 响应下发"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：OWASP Top 10 在 2025 版的关键变化是什么？",
+    "explanation": "OWASP Top 10:2025 已发布为现行版本，2021 版归档。关键变化：A01 Broken Access Control 仍居 #1；Security Misconfiguration 从 2021 的 #5 升至 2025 的 #2；SSRF 在 2021 为社区补充（#A10），2025 正式并入主流注入/访问控制讨论；Injection（含 XSS、SQLi）仍是 A03。引用 OWASP 时应优先用 2025 版编号。",
+    "tags": ["owasp", "top10", "2025", "ssrf"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "A01 仍居 #1；Security Misconfiguration 升至 #2；SSRF 正式并入主流讨论",
+        "isCorrect": true,
+        "description": "2025 版的核心变化"
+      },
+      {
+        "text": "2025 版完全删除了 SSRF",
+        "isCorrect": false,
+        "description": "SSRF 是并入主流，不是删除"
+      },
+      {
+        "text": "2021 版仍是现行版本，2025 未发布",
+        "isCorrect": false,
+        "description": "2025 已发布为现行版本"
+      },
+      {
+        "text": "Injection 退出了 Top 10",
+        "isCorrect": false,
+        "description": "Injection 仍是 A03"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：为什么 OWASP 推荐用 nonce-based Strict CSP 而非 allowlist CSP？",
+    "explanation": "allowlist CSP 难维护且常无意中白名单不安全域名——仅集成 Google Analytics 就需加 187 个域名。nonce-based Strict CSP（script-src 'nonce-{RANDOM}'; object-src 'none'; base-uri 'none'）根本不依赖域名白名单，nonce 每响应重新生成不可预测，更安全也更易维护。",
+    "tags": ["csp", "nonce", "allowlist", "strict csp"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "allowlist 难维护（仅 GA 就要加 187 个域名），nonce 方式不依赖域名白名单",
+        "isCorrect": true,
+        "description": "维护成本与误白名单风险是核心原因"
+      },
+      {
+        "text": "allowlist 性能更差",
+        "isCorrect": false,
+        "description": "性能不是核心原因"
+      },
+      {
+        "text": "nonce-based 允许所有域名加载脚本",
+        "isCorrect": false,
+        "description": "nonce-based 反而不依赖域名"
+      },
+      {
+        "text": "allowlist 已被浏览器废弃，无法使用",
+        "isCorrect": false,
+        "description": "allowlist 仍可用，只是不推荐"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：SSRF 防护的黑名单至少应阻断哪个 IP 地址以防止云元数据泄露？",
+    "explanation": "169.254.169.254 是 AWS EC2 / Azure VM 的实例元数据服务（IMDS）地址，SSRF 攻击者可通过它窃取临时凭证、IAM 角色、用户数据等。Google Cloud 对应 metadata.google.internal。黑名单至少还应阻断 127.0.0.0/8、RFC1918（10/172.16/192.168）、::1/128、224.0.0.0/4。但黑名单只是兜底，主防御是白名单 + 禁重定向 + IMDSv2。",
+    "tags": ["ssrf", "imds", "169.254.169.254", "aws"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "169.254.169.254（AWS / Azure IMDS 云元数据地址）",
+        "isCorrect": true,
+        "description": "该地址可窃取云实例的临时凭证"
+      },
+      {
+        "text": "8.8.8.8（Google 公共 DNS）",
+        "isCorrect": false,
+        "description": "公共 DNS 不是 SSRF 主要目标"
+      },
+      {
+        "text": "0.0.0.0（默认路由）",
+        "isCorrect": false,
+        "description": "0.0.0.0/8 应阻但不是云元数据"
+      },
+      {
+        "text": "255.255.255.255（广播地址）",
+        "isCorrect": false,
+        "description": "广播地址不是云元数据地址"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：哪个 CSP 指令可强制启用 Trusted Types，使所有 DOM sink 拒绝字符串？",
+    "explanation": "CSP 指令 require-trusted-types-for 'script' 强制启用 Trusted Types——传字符串进 DOM sink（innerHTML、eval、script.src 等）会抛 TypeError。配合 trusted-types 指令限定允许的 policy 名白名单。这是 DOM 型 XSS 的最后闸门，但启用时必须先配 policy 否则应用直接挂。",
+    "tags": ["csp", "trusted types", "require-trusted-types-for"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "require-trusted-types-for 'script'（配合 trusted-types 指令限定 policy 名）",
+        "isCorrect": true,
+        "description": "该指令强制所有 DOM sink 走 policy"
+      },
+      {
+        "text": "upgrade-insecure-requests",
+        "isCorrect": false,
+        "description": "该指令是 HTTP→HTTPS 升级，与 Trusted Types 无关"
+      },
+      {
+        "text": "frame-ancestors 'none'",
+        "isCorrect": false,
+        "description": "该指令是防 Clickjacking"
+      },
+      {
+        "text": "default-src 'self'",
+        "isCorrect": false,
+        "description": "default-src 不涉及 Trusted Types"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：CSRF Token 比较为什么必须用 constantTimeEquals（常量时间比较）？",
+    "explanation": "普通字符串比较存在时序侧信道——遇到第一个不匹配字节即返回，攻击者可测量响应时间逐字节爆破 Token。constantTimeEquals 无论是否匹配都比较完整字符串，耗时与输入无关，消除时序侧信道。同理 Token 必须用 CSPRNG 生成，否则普通伪随机可预测。每会话/每请求唯一。",
+    "tags": ["csrf", "token", "constanttimeequals", "时序攻击"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "普通字符串比较存在时序侧信道，攻击者可逐字节爆破 Token",
+        "isCorrect": true,
+        "description": "常量时间比较消除时序侧信道"
+      },
+      {
+        "text": "常量时间比较比普通比较更快",
+        "isCorrect": false,
+        "description": "常量时间比较通常更慢，但更安全"
+      },
+      {
+        "text": "普通比较会自动转大小写导致错误",
+        "isCorrect": false,
+        "description": "大小写与比较函数选择无关"
+      },
+      {
+        "text": "常量时间比较是为了节省内存",
+        "isCorrect": false,
+        "description": "节省内存与比较函数无关"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：HSTS preload 列表的申请前提条件是什么？",
+    "explanation": "提交到 hstspreload.org 让浏览器出厂内置 HSTS 域名列表，堵上「首次访问前 HSTS 不生效」的漏洞。前提：max-age≥31536000（至少 1 年）且必须含 includeSubDomains 指令。提交后需等待各大浏览器更新内置列表，提交撤销流程耗时较长需谨慎。",
+    "tags": ["hsts", "preload", "hstspreload.org"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "max-age≥31536000 且含 includeSubDomains，提交到 hstspreload.org",
+        "isCorrect": true,
+        "description": "两条前提缺一不可"
+      },
+      {
+        "text": "max-age 任意值即可，无需 includeSubDomains",
+        "isCorrect": false,
+        "description": "max-age 必须至少 31536000"
+      },
+      {
+        "text": "必须提交到 Google AdWords 审核",
+        "isCorrect": false,
+        "description": "preload 由 hstspreload.org 维护"
+      },
+      {
+        "text": "只需购买商业 SSL 证书即可自动加入",
+        "isCorrect": false,
+        "description": "preload 与证书购买无关"
+      }
+    ]
+  },
+  {
+    "stem": "攻击方式：XSS 的纵深防御四件套是什么？为什么单层都不够？",
+    "explanation": "XSS 纵深防御四件套：①输出编码（服务端/模板自动转义）②CSP（nonce-based Strict CSP）③Trusted Types（DOM sink 强制 policy）④Sanitizer API/DOMPurify（富文本消毒）。单层都不够：CSP 不替代输入消毒（编码是输入侧），输出编码挡不住 DOM 型 XSS（DOM 型不经服务器），Trusted Types 是 DOM sink 的最后闸门，富文本场景必须消毒。",
+    "tags": ["xss", "纵深防御", "csp", "trusted types", "sanitizer"],
+    "categories": [
+      ["技术方向", "攻击方式"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "输出编码 + CSP nonce + Trusted Types + Sanitizer/DOMPurify",
+        "isCorrect": true,
+        "description": "四件套组合形成纵深防御"
+      },
+      {
+        "text": "HTTPS + 防火墙 + 杀软 + VPN",
+        "isCorrect": false,
+        "description": "那是基础设施层，非应用层 XSS 防御"
+      },
+      {
+        "text": "CAPTCHA + 短信验证 + 邮件验证 + 实名认证",
+        "isCorrect": false,
+        "description": "那是身份认证手段，与 XSS 无关"
+      },
+      {
+        "text": "CSP 单独使用即可，无需其他层",
+        "isCorrect": false,
+        "description": "CSP 不替代输入消毒，单层不够"
+      }
+    ]
+  }
+]

@@ -1,0 +1,603 @@
+[
+  {
+    "stem": "SAML：在 SAML 2.0 协议中，IdP（Identity Provider）的核心职责是什么？",
+    "explanation": "SAML 2.0 由 OASIS 2005 年发布，定义了三角色：IdP（Identity Provider，身份提供方）负责认证 Principal（通常为用户）并签发已签名的 XML 断言（Assertion）；SP（Service Provider，服务提供方）消费断言并授予业务访问；Principal 是被认证的主体。IdP 是信任链的发起点，私钥只在 IdP，断言单向流向 SP。IdP 不发 Access Token（这是 OAuth 2.0 Authorization Server 的职责），也不消费断言（这是 SP 的职责）。",
+    "tags": ["SAML", "IdP", "SP", "Principal", "角色", "OASIS"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "认证 Principal 并签发已签名的 XML 断言（Assertion）给 SP",
+        "isCorrect": true,
+        "description": "IdP 是信任发起点，签发已签名的 SAML Assertion 给 SP 消费"
+      },
+      {
+        "text": "消费 SAML 断言并授予 Principal 业务访问",
+        "isCorrect": false,
+        "description": "这是 SP（Service Provider）的职责，不是 IdP"
+      },
+      {
+        "text": "签发 Access Token 给客户端调用受保护 API",
+        "isCorrect": false,
+        "description": "这是 OAuth 2.0 Authorization Server 的职责，SAML 协议不含 Access Token"
+      },
+      {
+        "text": "维护业务会话并校验 SP 的 ACS URL",
+        "isCorrect": false,
+        "description": "维护业务会话与校验 ACS URL 是 SP 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：一条 SAML Assertion 内可包含的三类 Statement 分别是什么？",
+    "explanation": "SAML 2.0 Assertion 是 IdP 签发的 XML 容器，可包含三类 Statement：①Authentication Statement（认证声明，含 AuthnInstant 认证时间、AuthnContextClassRef 认证方式如 PasswordProtectedTransport、SessionIndex）；②Attribute Statement（属性声明，含用户邮箱、姓名、角色等属性）；③Authorization Decision Statement（授权决策声明，Permit/Deny，实际生产使用较少）。三者在同一 Assertion 内可同时存在。",
+    "tags": ["SAML", "Assertion", "Statement", "Authentication", "Attribute"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Authentication Statement / Attribute Statement / Authorization Decision Statement",
+        "isCorrect": true,
+        "description": "三类 Statement 分别承载认证方式、用户属性、授权决策"
+      },
+      {
+        "text": "Issuer Statement / Subject Statement / Audience Statement",
+        "isCorrect": false,
+        "description": "Issuer/Subject/Audience 是 Assertion 的结构元素，不是三类 Statement"
+      },
+      {
+        "text": "Signature Statement / Digest Statement / Reference Statement",
+        "isCorrect": false,
+        "description": "这是 XML 签名的子元素，不是 SAML Statement"
+      },
+      {
+        "text": "Header Statement / Payload Statement / Token Statement",
+        "isCorrect": false,
+        "description": "这是 JWT 的三段式隐喻，与 SAML Assertion 无关"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：SP 在收到 IdP 返回的 Response 时，下列哪个字段必须等于 SP 此前发出的 AuthnRequest 的 ID，用于防 Replay 攻击？",
+    "explanation": "SAML 2.0 协议中，SP 发出 AuthnRequest 时携带 ID（如 _req123），IdP 在 Response 中通过 InResponseTo 字段引用它。SP 必须校验 Response 的 InResponseTo 等于此前保存的 AuthnRequest ID，否则拒绝。这是 Replay 攻击防御的第一道闸——缺失这一校验是 Google SSO 历史漏洞的根因。IdP-Initiated SSO 是例外（无 AuthnRequest），但需更严格的 Destination/Audience/Recipient 校验。Destination、Audience、Recipient 是跨 SP 重放防御字段，与 AuthnRequest ID 关联无关。",
+    "tags": ["SAML", "InResponseTo", "Replay", "AuthnRequest", "安全"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Response 的 InResponseTo",
+        "isCorrect": true,
+        "description": "InResponseTo 引用 AuthnRequest ID，是 Replay 防御第一道闸"
+      },
+      {
+        "text": "Response 的 Destination",
+        "isCorrect": false,
+        "description": "Destination 应等于 SP 的 ACS URL，是跨 SP 重放防御字段"
+      },
+      {
+        "text": "Conditions 内的 Audience",
+        "isCorrect": false,
+        "description": "Audience 应等于 SP 的 EntityID，是跨 SP 重放防御字段"
+      },
+      {
+        "text": "SubjectConfirmationData 的 Recipient",
+        "isCorrect": false,
+        "description": "Recipient 应等于 SP 的 ACS URL，是跨 SP 重放防御字段"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：HTTP Redirect Binding 对 SAML 消息的编码顺序是什么？",
+    "explanation": "OASIS SAML 2.0 Bindings 规范定义 HTTP Redirect Binding 的编码流程：①将 SAML 消息（如 AuthnRequest XML）序列化为 UTF-8 字节；②用 zlib DEFLATE 算法压缩（无压缩头）；③Base64 编码；④URL 编码（percent-encoding）；⑤拼为 URL query 参数（SAMLRequest 或 SAMLResponse）；⑥浏览器 HTTP 302 重定向到目标 URL。关键差异：HTTP Redirect 多了 DEFLATE 压缩步骤（因 URL 长度受限，需尽量缩短）；HTTP POST 不做 DEFLATE 压缩，直接 Base64 后放入表单字段。Redirect 因 URL 长度限制（~2000-8000 字节）只适合短消息如 AuthnRequest。",
+    "tags": ["SAML", "HTTP Redirect", "Binding", "DEFLATE", "Base64"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "UTF-8 字节 → DEFLATE 压缩 → Base64 编码 → URL 编码 → URL query 参数",
+        "isCorrect": true,
+        "description": "Redirect 多了 DEFLATE 压缩步骤以缩短长度"
+      },
+      {
+        "text": "UTF-8 字节 → Base64 编码 → HTML 表单隐藏字段",
+        "isCorrect": false,
+        "description": "这是 HTTP POST Binding 的编码，不做 DEFLATE"
+      },
+      {
+        "text": "UTF-8 字节 → AES 加密 → Base64 编码 → URL query",
+        "isCorrect": false,
+        "description": "SAML Binding 不做对称加密，加密是 SAML Encryption 的独立功能"
+      },
+      {
+        "text": "UTF-8 字节 → Gzip 压缩 → Hex 编码 → HTTP Header",
+        "isCorrect": false,
+        "description": "用 Gzip/Hex/Header 都不是 SAML Binding 的方式"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：HTTP POST Binding 与 HTTP Redirect Binding 在编码方式上的关键差异是什么？",
+    "explanation": "OASIS SAML 2.0 Bindings 规范定义两者的关键差异：HTTP Redirect 做 DEFLATE 压缩（因 URL 长度受限要缩短），HTTP POST 不做 DEFLATE 直接 Base64 编码后放入 HTML 表单隐藏字段 SAMLResponse。POST 不受 URL 长度限制，适合含已签名 Assertion 的长 Response；因 POST 传递的是断言本体，断言必须签名（独立 XML 签名）。Redirect 因 URL 长度限制（~2000-8000 字节）只适合短消息如 AuthnRequest。典型组合：SP→IdP 用 Redirect 传 AuthnRequest，IdP→SP 用 POST 传含签名的 Response。",
+    "tags": ["SAML", "HTTP POST", "HTTP Redirect", "Binding", "DEFLATE"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "POST 不做 DEFLATE 压缩，直接 Base64 后放入 HTML 表单字段",
+        "isCorrect": true,
+        "description": "POST 用于长消息（含签名的 Response），不做压缩"
+      },
+      {
+        "text": "POST 用 AES 加密，Redirect 用 RSA 加密",
+        "isCorrect": false,
+        "description": "Binding 不做加密，加密是 SAML Encryption 的独立功能"
+      },
+      {
+        "text": "POST 用 SOAP 信封包装，Redirect 用 JSON 包装",
+        "isCorrect": false,
+        "description": "这是 SAML SOAP Binding 与 JSON Web Token 的概念，与 POST/Redirect 无关"
+      },
+      {
+        "text": "POST 走 HTTP/2，Redirect 走 HTTP/1.1",
+        "isCorrect": false,
+        "description": "HTTP 协议版本与 Binding 选择无关"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：HTTP Artifact Binding 与 Redirect/POST 相比的核心特征是什么？",
+    "explanation": "OASIS SAML 2.0 Bindings 规范定义 HTTP Artifact Binding：发送方生成短固定长度的 artifact（如 AAQAAMh48/...），通过 GET 或 POST 把 artifact 传给接收方；接收方随后用 SAML SOAP ArtifactResolve 请求向后端换真实 SAML 消息。核心优势：断言不经过浏览器，最适合极敏感场景或断言过大的情况。代价：增加一次后端 SOAP 往返，延迟与复杂度高，生产中使用较少。Redirect/POST 都把消息直接通过浏览器传递（前者 URL query，后者表单字段）。",
+    "tags": ["SAML", "HTTP Artifact", "Binding", "SOAP", "ArtifactResolve"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅传固定长度 artifact，接收方通过后端 SOAP 解析换取真实消息，断言不经过浏览器",
+        "isCorrect": true,
+        "description": "断言不暴露给浏览器，适合极敏感场景"
+      },
+      {
+        "text": "用 JWT 替代 XML，减少消息体积",
+        "isCorrect": false,
+        "description": "SAML 始终用 XML，与 JWT 无关"
+      },
+      {
+        "text": "通过 WebSocket 长连接推送断言",
+        "isCorrect": false,
+        "description": "SAML 2.0 规范不含 WebSocket 传输方式"
+      },
+      {
+        "text": "把消息嵌入 HTTP Cookie 中自动传输",
+        "isCorrect": false,
+        "description": "SAML Binding 不用 Cookie 传输"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：下列哪个 NameID Format 隐私强度最高，每次会话生成新的随机假名且会话结束销毁？",
+    "explanation": "SAML 2.0 NameID Format 五种取值：transient（每次会话生成新随机假名，会话结束销毁，隐私最强）；persistent（持久假名，按 SP 隔离——同一用户在不同 SP 看到不同 ID，需跨会话关联又怕跨 SP 追踪的场景用）；email-address（直接用邮箱，简单但邮箱可复用、可变更，隐私弱）；X509SubjectName（证书 Subject，依赖 PKI）；entity（非人类主体，服务间身份）。生产推荐 persistent 或 transient；email-address 仅在不在乎邮箱变更的内部系统用。",
+    "tags": ["SAML", "NameID", "transient", "persistent", "隐私"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "transient",
+        "isCorrect": true,
+        "description": "每次会话新随机假名，会话结束销毁，隐私最强"
+      },
+      {
+        "text": "persistent",
+        "isCorrect": false,
+        "description": "持久假名按 SP 隔离，跨会话可关联，隐私次之"
+      },
+      {
+        "text": "email-address",
+        "isCorrect": false,
+        "description": "邮箱可复用、可变更，隐私弱，邮箱变更即跨 SP 关联断裂"
+      },
+      {
+        "text": "X509SubjectName",
+        "isCorrect": false,
+        "description": "依赖 PKI 证书，强身份但非「最高隐私」语义"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：XML 签名 Enveloped 结构中，<ds:Reference URI=\"#_abc\"> 指向的是什么？",
+    "explanation": "XML 数字签名（XMLDSig）的 Enveloped 形态把 <ds:Signature> 节点嵌入被签元素内部。<ds:Reference URI=\"#_abc\"> 通过 ID 引用被签的元素（即 ID=_abc 的 Assertion）。验证阶段一对 Reference 指向的元素做 C14N 规范化 + enveloped transform（移除 <ds:Signature> 节点本身）后算 SHA-256 哈希，与 <ds:DigestValue> 比对。SP 必须验证 Reference URI 指向的元素与业务逻辑实际读取的 Assertion 是同一节点，否则攻击者可注入额外的恶意 Assertion（XSW 攻击）。KeyInfo 内嵌的是证书提示但不应被信任。",
+    "tags": ["SAML", "XML 签名", "Reference", "DigestValue", "C14N"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "被签名的 Assertion 元素（其 ID=_abc）",
+        "isCorrect": true,
+        "description": "Reference URI 通过 ID 引用被签元素，是 XSW 防御的关键检查点"
+      },
+      {
+        "text": "IdP 的签名公钥证书",
+        "isCorrect": false,
+        "description": "证书在 <ds:KeyInfo> 内，不应被信任（应从预共享 metadata 读）"
+      },
+      {
+        "text": "RelayState 携带的原始 URL",
+        "isCorrect": false,
+        "description": "RelayState 是协议层的上下文字段，与签名 Reference 无关"
+      },
+      {
+        "text": "SP 的 ACS URL",
+        "isCorrect": false,
+        "description": "ACS URL 在 SubjectConfirmationData/Recipient 中，不是 Reference URI"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：XML 签名的两阶段验证中，阶段一的 Digest 验证具体做什么？",
+    "explanation": "XMLDSig 两阶段验证：阶段一（Digest 验证，Reference 完整性）：①解析 <ds:Reference URI=\"#_abc\"> 找到 ID=_abc 的元素；②对元素应用 Transforms——通常是 enveloped-signature（移除 <ds:Signature> 子节点本身，避免签名签自己）和 xml-exc-c14n（C14N 规范化为字节流）；③对规范化后的字节流算 SHA-256 哈希；④与 <ds:DigestValue> 比对，不匹配则拒绝。阶段二是对 <ds:SignedInfo> 做 C14N 后用公钥验 <ds:SignatureValue>。许多 XSW 漏洞根因是只做阶段二跳过阶段一。",
+    "tags": ["SAML", "XML 签名", "两阶段验证", "Digest", "C14N"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对 Reference 指向元素做 C14N + enveloped transform 后算哈希，与 DigestValue 比对",
+        "isCorrect": true,
+        "description": "阶段一验证 Reference 完整性（被签内容未被篡改）"
+      },
+      {
+        "text": "用 IdP 公钥对 SignedInfo 做 RSA-SHA256 验签",
+        "isCorrect": false,
+        "description": "这是阶段二（SignatureValue 验证），不是阶段一"
+      },
+      {
+        "text": "用 TLS 证书验证 HTTPS 连接的真实性",
+        "isCorrect": false,
+        "description": "TLS 证书与 SAML XML 签名是两层独立机制"
+      },
+      {
+        "text": "校验 NotBefore / NotOnOrAfter 时间窗口",
+        "isCorrect": false,
+        "description": "这是 Assertion Conditions 校验，不是 XML 签名阶段"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：XSW（XML Signature Wrapping）攻击能够成功的根本原因是什么？",
+    "explanation": "XSW（XML Signature Wrapping）是一类针对 XML 签名的攻击，根本原因是「签名验证库」与「应用数据提取」使用不同的 XML 节点集。攻击者在合法 Response 内注入额外的恶意 Assertion：签名库遍历到原始（合法的）Assertion 验签通过；应用代码用 getElementsByTagName('//saml:Assertion') 提取，可能拿到攻击者注入的恶意 Assertion（如 NameID=admin@attacker）。防御组合拳：①wantAssertionsSigned=true 强制每条 Assertion 独立签名；②应用从签名库返回的已验证节点集读数据；③绝对 XPath 或基于 ID 的引用，禁用 getElementsByTagName；④同一组件做签名验证与数据提取。",
+    "tags": ["SAML", "XSW", "XML 签名", "wantAssertionsSigned", "安全"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "签名验证库验签的节点与应用数据提取的节点不是同一个",
+        "isCorrect": true,
+        "description": "根因：签名验证与数据提取使用不同节点集"
+      },
+      {
+        "text": "SAML Response 用了 Base64 编码而非加密",
+        "isCorrect": false,
+        "description": "Base64 是编码不是加密，但与 XSW 无关"
+      },
+      {
+        "text": "TLS 证书链不完整导致中间人",
+        "isCorrect": false,
+        "description": "XSW 是应用层 XML 签名绕过，与 TLS 无关"
+      },
+      {
+        "text": "IdP 的私钥被泄露",
+        "isCorrect": false,
+        "description": "私钥泄露导致伪造断言，不是 XSW；XSW 用合法签名绕过应用层"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：防御 Replay 攻击的最佳组合拳是什么？",
+    "explanation": "SAML Replay 攻击防御是组合拳，单一手段都不够：①InResponseTo 关联——Response 的 InResponseTo 必须等于 SP 此前保存的 AuthnRequest ID，且 SubjectConfirmationData 的 InResponseTo 也校验；②Assertion ID 去重缓存——SP 用 Redis TTL 缓存近期已消费的 Assertion ID，重复提交立即拒绝；③极短 NotOnOrAfter 时间窗口——IdP→SP 传递典型 1 分钟足够；④OneTimeUse 元素——IdP 在 Conditions 中声明，SP 应尊重（语义提示非强制）。任一单独都不够，必须组合。仅 TLS 1.2+ 不能防 Replay（攻击者可在 TLS 内重放合法断言）。",
+    "tags": ["SAML", "Replay", "InResponseTo", "Assertion ID", "防御"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "InResponseTo 关联 + Assertion ID 去重缓存 + 极短 NotOnOrAfter（约 1 分钟）+ OneTimeUse",
+        "isCorrect": true,
+        "description": "四者组合是 Replay 防御的完整闭环"
+      },
+      {
+        "text": "仅依赖 TLS 1.2+ 加密通信通道",
+        "isCorrect": false,
+        "description": "TLS 防嗅探但不能防在通道内重放合法断言"
+      },
+      {
+        "text": "仅依赖 Response 整体签名",
+        "isCorrect": false,
+        "description": "签名防篡改但不防重放——重放的是合法签名断言"
+      },
+      {
+        "text": "用 SHA-512 替代 SHA-256 签名",
+        "isCorrect": false,
+        "description": "提高签名强度不防 Replay"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：跨 SP 重放防御的三件套字段（任一不匹配立即拒绝）是什么？",
+    "explanation": "跨 SP 重放攻击：攻击者从 SP-A 截获一条合法的已签名 SAML Response，提交给 SP-B 冒充原用户登录。防御三件套（任一不匹配立即拒绝）：①Destination（Response 顶层属性）应等于 SP 的 ACS URL；②Audience（Conditions 内 AudienceRestriction 的子元素）应等于 SP 的 EntityID；③Recipient（SubjectConfirmationData 的属性）应等于 SP 的 ACS URL。攻击者若把 SP-A 的 Response 提交给 SP-B，三者（特别是 Audience=SP-A 的 EntityID）都不会匹配 SP-B，SP-B 拒绝。InResponseTo 是同 SP 内的 Replay 防御，与跨 SP 重放无关。",
+    "tags": ["SAML", "跨 SP 重放", "Destination", "Audience", "Recipient"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Destination（Response）+ Audience（Conditions）+ Recipient（SubjectConfirmationData）",
+        "isCorrect": true,
+        "description": "三者共同构成跨 SP 重放防御"
+      },
+      {
+        "text": "Issuer + IssueInstant + Version",
+        "isCorrect": false,
+        "description": "Issuer 校验是身份校验，IssueInstant/Version 是元数据"
+      },
+      {
+        "text": "InResponseTo + NotBefore + NotOnOrAfter",
+        "isCorrect": false,
+        "description": "InResponseTo 是同 SP 内 Replay 防御，时间窗口是时效校验"
+      },
+      {
+        "text": "ID + SessionIndex + AuthnInstant",
+        "isCorrect": false,
+        "description": "ID 用于 Assertion 去重，SessionIndex 用于 SLO"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：关于 SAML 2.0 与 OIDC（OpenID Connect）的协议范围差异，下列哪个描述准确？",
+    "explanation": "SAML 2.0 与 OIDC 的根本差异：SAML 是纯身份认证 + 属性断言协议，**无 Access Token、不定义 API 授权框架**——要做 API 授权需另接 OAuth 2.0 或用 RFC 7522 把 SAML 断言当 OAuth 2.0 Bearer 凭证。OIDC 是 OAuth 2.0 之上的身份层，原生包含 Access Token（API 授权）+ ID Token（身份认证）+ Refresh Token（续期）。其他差异：SAML 用 XML Assertion，OIDC 用 JSON + JWT；SAML 元数据是 XML 互换，OIDC 是 .well-known/openid-configuration 即时发现；SAML 主战场传统企业浏览器（Salesforce/政府联邦），OIDC 主战场 SPA/移动端/API-first。",
+    "tags": ["SAML", "OIDC", "OAuth 2.0", "协议范围", "对比"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SAML 是纯身份认证 + 属性断言协议（无 Access Token）；OIDC 是 OAuth 2.0 之上含 Access Token + ID Token + 授权",
+        "isCorrect": true,
+        "description": "协议范围的根本差异：SAML 只认证身份，OIDC 认证 + 授权一体"
+      },
+      {
+        "text": "SAML 是 OIDC 的子集，两者完全兼容",
+        "isCorrect": false,
+        "description": "SAML 早于 OIDC 9 年发布（2005 vs 2014），数据格式与协议都不同"
+      },
+      {
+        "text": "OIDC 是 SAML 的 XML 替代品，仅数据格式不同",
+        "isCorrect": false,
+        "description": "差异远不止数据格式——协议范围、传输、元数据发现都不同"
+      },
+      {
+        "text": "两者都基于 OAuth 2.0，仅 token 格式不同",
+        "isCorrect": false,
+        "description": "SAML 不基于 OAuth 2.0，是独立的身份联邦协议"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：根据 NIST SP 800-131A Rev.2，下列哪个签名算法在 SAML 中已被明确禁用？",
+    "explanation": "NIST SP 800-131A Rev.2 已禁止 SHA-1 用于数字签名，要求 2030-12-31 前全面退役。在 SAML 中具体涉及：①SignatureMethod 算法 http://www.w3.org/2000/09/xmldsig#rsa-sha1（RSA-SHA-1）禁用；②DigestMethod 算法 http://www.w3.org/2000/09/xmldsig#sha1 禁用。现代 SAML 实现最低要求 RSA-SHA-256（samlify 默认 requestSignatureAlgorithm 即此值；@node-saml/passport-saml 通过 signatureAlgorithm: 'sha256' 配置）。RSA-SHA-384、RSA-SHA-512、ECDSA-SHA-256 都是合法且可接受的算法。",
+    "tags": ["SAML", "SHA-1", "NIST", "签名算法", "安全"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RSA-SHA-1（http://www.w3.org/2000/09/xmldsig#rsa-sha1）",
+        "isCorrect": true,
+        "description": "NIST 已禁 SHA-1 用于数字签名，2030-12-31 前全面退役"
+      },
+      {
+        "text": "RSA-SHA-256（http://www.w3.org/2001/04/xmldsig-more#rsa-sha256）",
+        "isCorrect": false,
+        "description": "RSA-SHA-256 是现代 SAML 的推荐默认算法"
+      },
+      {
+        "text": "RSA-SHA-512",
+        "isCorrect": false,
+        "description": "高位宽 SHA-2 算法完全可接受"
+      },
+      {
+        "text": "ECDSA-SHA-256",
+        "isCorrect": false,
+        "description": "椭圆曲线 + SHA-256 是合法的现代化算法"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：在 SP-Initiated Web Browser SSO 流程中，IdP 把含已签名 Assertion 的 Response 传回 SP 通常使用哪种 Binding？",
+    "explanation": "SP-Initiated Web Browser SSO 的典型组合：①SP → IdP 用 HTTP Redirect Binding 传 AuthnRequest（消息短，URL 长度足够）；②IdP → SP 用 HTTP POST Binding 传含已签名 Assertion 的 Response——因 Response 包含 XML 签名后的整条 Assertion 通常几 KB，超过 URL 长度限制，必须走表单 POST；且 POST 传递的是断言本体，断言必须签名。SAML SOAP 通常用于后端直连（如 ArtifactResolve）。HTTP Artifact 因增加一次后端 SOAP 往返延迟较高，生产使用较少。SAML metadata 不用于运行时 Response 传递，仅用于配置阶段证书交换。",
+    "tags": ["SAML", "HTTP POST", "Binding", "SP-Initiated", "Web Browser SSO"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HTTP POST Binding（Base64 编码 + HTML 表单自动提交）",
+        "isCorrect": true,
+        "description": "POST 用于含签名 Assertion 的长 Response，断言必须签名"
+      },
+      {
+        "text": "HTTP Redirect Binding（DEFLATE + URL query）",
+        "isCorrect": false,
+        "description": "Redirect 受 URL 长度限制，不适合含签名断言的长 Response"
+      },
+      {
+        "text": "SAML SOAP Binding（后端直连）",
+        "isCorrect": false,
+        "description": "SOAP 用于后端直连如 ArtifactResolve，不用于浏览器 Response 传递"
+      },
+      {
+        "text": "SAML metadata exchange",
+        "isCorrect": false,
+        "description": "metadata 仅用于配置阶段证书交换，不传递运行时 Response"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：关于 RelayState 字段的描述，下列哪个是正确的？",
+    "explanation": "RelayState 是 SAML binding-specific 字段，SP 在 AuthnRequest 中携带上下文（如用户原始 URL /dashboard），IdP 须原样返回。RelayState 是双刃剑：①合法用途——SP 在用户登录成功后重定向回原始页面；②风险——若 SP 把 RelayState 当作重定向目标且未做 allowlist 校验，攻击者可构造恶意 IdP-Initiated 链接，RelayState=https://attacker.com/phishing，导致 Open Redirect 漏洞被钓鱼利用。防御：若 RelayState 契约是 URL，必须 allowlist 校验（仅允许本站相对路径或预定义域名）。RelayState 不是签名核心、不参与认证、不能携带已签名断言。",
+    "tags": ["SAML", "RelayState", "Open Redirect", "安全", "IdP-Initiated"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RelayState 是 SP 携带的上下文字段，IdP 须原样返回；若是 URL 必须 allowlist 校验防 Open Redirect",
+        "isCorrect": true,
+        "description": "RelayState 是双刃剑——合法用途携带上下文，未校验则成 Open Redirect 入口"
+      },
+      {
+        "text": "RelayState 是 IdP 签发的访问令牌，可跨服务复用",
+        "isCorrect": false,
+        "description": "SAML 无 Access Token 概念，RelayState 不是令牌"
+      },
+      {
+        "text": "RelayState 是 SAML Response 的数字签名值",
+        "isCorrect": false,
+        "description": "签名在 <ds:SignatureValue> 内，与 RelayState 无关"
+      },
+      {
+        "text": "RelayState 是 SAML 协议强制要求的字段，缺失即拒绝",
+        "isCorrect": false,
+        "description": "RelayState 可选，IdP 不要求必填"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：关于 SubjectConfirmation 的三种 Method，下列哪一项描述准确？",
+    "explanation": "SAML 2.0 SubjectConfirmation 三种 Method：①bearer（持有即用）——持有 Response/Assertion 即可证明主体身份，是 Web Browser SSO 的事实标准（95% 部署），安全强度中等，依赖 TLS + 极短时间窗口 + Assertion ID 去重缓存；②holder-of-key（须证明掌握密钥）——主体必须证明掌握某个密钥（如客户端证书绑定），安全强度最高，多用于 ECP/PAOS 等非浏览器高敏感场景；③sender-vouches（发送方担保）——发送方代为担保主体身份，安全强度低，用于中间代理场景，少用。生产中绝大多数浏览器 SSO 用 bearer。",
+    "tags": [
+      "SAML",
+      "SubjectConfirmation",
+      "bearer",
+      "holder-of-key",
+      "sender-vouches"
+    ],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bearer（持有即用，最常用）/ holder-of-key（须证明掌握密钥，强度最高）/ sender-vouches（发送方担保，少用）",
+        "isCorrect": true,
+        "description": "三者安全强度递减：holder-of-key > bearer > sender-vouches"
+      },
+      {
+        "text": "bearer 只能用于移动端，holder-of-key 只能用于浏览器",
+        "isCorrect": false,
+        "description": "正相反——bearer 是浏览器 SSO 主流，holder-of-key 多用于 ECP 非浏览器场景"
+      },
+      {
+        "text": "三种 Method 等价，仅命名不同",
+        "isCorrect": false,
+        "description": "三种 Method 的安全模型与适用场景差异显著"
+      },
+      {
+        "text": "sender-vouches 是浏览器 SSO 的事实标准",
+        "isCorrect": false,
+        "description": "bearer 才是浏览器 SSO 的事实标准"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：在 @node-saml/passport-saml 或 samlify 中，下列哪个配置组合是防御 XSW 与确保签名强度的最低底线？",
+    "explanation": "SAML SP 库的最低安全底线：①wantAssertionsSigned=true——强制每条 Assertion 独立签名，仅验 Response 级签名挡不住攻击者在已签 Response 内注入未签恶意 Assertion 的 XSW 变体；②wantAuthnResponseSigned=true（samlify）/ wantMessageSigned=true——同时验 Response 整体签名；③signatureAlgorithm: 'sha256'（passport-saml）/ requestSignatureAlgorithm 配 rsa-sha256（samlify 默认）——禁用 SHA-1，符合 NIST SP 800-131A Rev.2。三者缺一不可。仅 wantAssertionsSigned=true 但允许 sha1、或仅 sha256 但不强制断言签名都留漏洞。",
+    "tags": [
+      "SAML",
+      "passport-saml",
+      "samlify",
+      "wantAssertionsSigned",
+      "RSA-SHA-256"
+    ],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "wantAssertionsSigned=true + wantAuthnResponseSigned=true + signatureAlgorithm: 'sha256'",
+        "isCorrect": true,
+        "description": "三者组合是 SP 安全底线，缺一不可"
+      },
+      {
+        "text": "wantAssertionsSigned=false + signatureAlgorithm: 'sha1'",
+        "isCorrect": false,
+        "description": "未强制断言签名 + SHA-1 都是反模式，会被 XSW 与碰撞攻击击穿"
+      },
+      {
+        "text": "仅 signatureAlgorithm: 'sha512' 即可",
+        "isCorrect": false,
+        "description": "高签名算法不能替代强制断言签名（XSW 防御）"
+      },
+      {
+        "text": "仅 wantAssertionsSigned=true 即可",
+        "isCorrect": false,
+        "description": "缺 wantAuthnResponseSigned 与 sha256 仍留漏洞"
+      }
+    ]
+  },
+  {
+    "stem": "SAML：下列哪种做法属于 SAML 部署的反模式（应避免）？",
+    "explanation": "SAML 反模式包括：①仅验 Response 级签名、断言未独立签名（wantAssertionsSigned=false）——XSW 直接绕过；②用 getElementsByTagName('//saml:Assertion') 提取业务数据——签名验证库与业务读取使用不同节点集，XSW 可绕过；③信任 XML 文档内 <ds:KeyInfo> 选公钥——攻击者可自带 KeyInfo 冒充 IdP；④用 TLS 服务器证书兼任 SAML 签名证书——TLS 证书由公共 CA 签发、生命周期短、暴露面大；⑤通过电子邮件交换证书——中间人篡改风险，应用 metadata URL；⑥跳过 InResponseTo/Destination/Audience/Recipient；⑦不维护 Assertion ID 去重；⑧XML 解析器未禁 DTD（XXE）；⑨IdP-Initiated 未对 RelayState allowlist（Open Redirect）；⑩在 SPA/移动端硬上 SAML（应换 OIDC）。预共享 metadata 本地读取证书、HSM 保护私钥、签名证书独立于 TLS 才是正确实践。",
+    "tags": ["SAML", "反模式", "XSW", "XXE", "TLS"],
+    "categories": [
+      ["技术方向", "SAML"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 TLS 服务器证书兼任 SAML 签名证书，通过电子邮件交换给合作方",
+        "isCorrect": true,
+        "description": "两条反模式叠加：TLS 证书不可兼任 + 邮件交换有篡改风险"
+      },
+      {
+        "text": "从预共享 metadata 本地读取 IdP 签名证书，忽略文档内 KeyInfo",
+        "isCorrect": false,
+        "description": "这是正确实践，不是反模式"
+      },
+      {
+        "text": "用 HSM 保护 IdP 签名私钥，签名证书独立于 TLS",
+        "isCorrect": false,
+        "description": "这是正确实践，不是反模式"
+      },
+      {
+        "text": "SP 开启 wantAssertionsSigned=true 并维护 Assertion ID 去重缓存",
+        "isCorrect": false,
+        "description": "这是正确实践，不是反模式"
+      }
+    ]
+  }
+]

@@ -1,0 +1,653 @@
+[
+  {
+    "stem": "OAuth 2.0：本授权框架解决的核心问题是什么？",
+    "explanation": "OAuth 2.0（RFC 6749）解决的核心问题是「第三方授权」——让用户（Resource Owner）把对自己资源（Resource Server）的有限访问权，在「不交出自己凭据（用户名密码）」的前提下委托给第三方应用（Client），由授权服务器（AS）签发短期令牌作为令牌化凭据。它是授权框架（authorization），不是认证协议（authentication）——用 OAuth 做「登录」需叠加 OpenID Connect。",
+    "tags": ["OAuth 2.0", "定位", "授权框架"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "让用户把对资源的有限访问权委托给第三方应用，且不交出自己凭据",
+        "isCorrect": true,
+        "description": "OAuth 2.0 的核心：令牌化委托替代凭据委托"
+      },
+      {
+        "text": "提供比 Basic Auth 更安全的用户名密码传输方式",
+        "isCorrect": false,
+        "description": "OAuth 根本不传输用户密码给 Client"
+      },
+      {
+        "text": "取代 HTTPS 提供传输层加密",
+        "isCorrect": false,
+        "description": "那是 TLS 的职责，OAuth 反而依赖 TLS"
+      },
+      {
+        "text": "实现跨域单点登录（SSO）的标准协议",
+        "isCorrect": false,
+        "description": "SSO/登录是 OIDC 的职责，OAuth 不是认证协议"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：下列哪个不是 OAuth 2.0 的四个核心角色之一？",
+    "explanation": "RFC 6749 定义的四个核心角色是：Resource Owner（用户，能授权访问的实体）、Client（第三方应用）、Authorization Server（AS，签发 token）、Resource Server（RS，受保护资源所在服务器）。Identity Provider（IdP）是 OIDC/SSO 场景的角色，不属 OAuth 2.0 核心角色定义。",
+    "tags": ["OAuth 2.0", "角色", "RFC 6749"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Identity Provider（IdP）",
+        "isCorrect": true,
+        "description": "IdP 是 OIDC/SSO 场景的角色，不属 OAuth 2.0 核心 4 角色"
+      },
+      {
+        "text": "Resource Owner（资源所有者）",
+        "isCorrect": false,
+        "description": "用户，4 角色之一"
+      },
+      {
+        "text": "Authorization Server（授权服务器）",
+        "isCorrect": false,
+        "description": "AS 签发 token，4 角色之一"
+      },
+      {
+        "text": "Client（客户端）",
+        "isCorrect": false,
+        "description": "第三方应用，4 角色之一"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Authorization Code 流程中，授权码 code 通过哪种方式回传给客户端？",
+    "explanation": "RFC 6749 §4.1.2 规定，Authorization Code 流程下，AS 在用户同意授权后，通过 HTTP 302 重定向到 redirect_uri，并把 code 与 state 放在 redirect_uri 的 **query component**（即 `?code=xxx&state=yyy`）回传。与此相对，已废弃的 Implicit 流程把 access_token 放在 **fragment**（`#access_token=xxx`）回传——这是两者关键区别之一。",
+    "tags": ["OAuth 2.0", "Authorization Code", "redirect_uri"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "通过 redirect_uri 的 query component（?code=xxx）",
+        "isCorrect": true,
+        "description": "302 重定向 + query 参数，是 Authorization Code 的标志"
+      },
+      {
+        "text": "通过 redirect_uri 的 fragment（#code=xxx）",
+        "isCorrect": false,
+        "description": "fragment 是已废弃的 Implicit 流程的方式（且 Implicit 放的是 access_token 不是 code）"
+      },
+      {
+        "text": "通过 Authorization 响应头返回",
+        "isCorrect": false,
+        "description": "code 必须经 user agent（浏览器）跳转，不能放进响应头"
+      },
+      {
+        "text": "通过 POST 请求体直接返回给 Client 后端",
+        "isCorrect": false,
+        "description": "code 经 user agent 跳转，不经 AS-Client 直连"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：根据 RFC 9700，下列哪种流程已被正式废弃？",
+    "explanation": "RFC 9700（Best Current Practice for OAuth 2.0 Security，2025-01，BCP 284）正式废弃了两种 grant：① Implicit Grant（§2.1.2，response_type=token），因 token 经 URI fragment 泄露到浏览器历史/Referer/代理日志、无法 sender-constrain、无法防 token injection；② Resource Owner Password Credentials Grant（§2.4，grant_type=password），因把用户名密码直接交给 client、无法支持 MFA/WebAuthn、助长钓鱼。RFC 9700 同时强制所有客户端使用 Authorization Code + PKCE。",
+    "tags": ["OAuth 2.0", "RFC 9700", "废弃流程"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Implicit Grant（response_type=token）",
+        "isCorrect": true,
+        "description": "RFC 9700 §2.1.2 正式移除 Implicit Grant"
+      },
+      {
+        "text": "Authorization Code Grant（response_type=code）",
+        "isCorrect": false,
+        "description": "Auth Code 是 RFC 9700 强制推荐的首选流程"
+      },
+      {
+        "text": "Client Credentials Grant（grant_type=client_credentials）",
+        "isCorrect": false,
+        "description": "Client Credentials 是 M2M 场景的推荐流程"
+      },
+      {
+        "text": "Refresh Token Grant（grant_type=refresh_token）",
+        "isCorrect": false,
+        "description": "Refresh Token 是续期机制，未被废弃"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Implicit Grant 被废弃的核心技术原因是什么？",
+    "explanation": "Implicit Grant（response_type=token）把 access_token 通过 redirect_uri 的 URI fragment 直接回传，这个 fragment 会泄露到：①浏览器历史；②跳转外链时的 Referer header；③反向代理/CDN 访问日志。此外 token 无法 sender-constrain（fragment 暴露给所有能读 JS 的脚本），也无法防 token injection（任意站可往回灌 token）。RFC 6749 还规定 Implicit 流程 MUST NOT 签发 refresh_token。综合上述原因，RFC 9700 §2.1.2 正式废弃它。",
+    "tags": ["OAuth 2.0", "Implicit", "RFC 9700", "废弃"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "access_token 经 URI fragment 回传，泄露到浏览器历史/Referer/代理日志，且无法 sender-constrain",
+        "isCorrect": true,
+        "description": "fragment 是高泄露面载体，且 token 天然不绑定发送方"
+      },
+      {
+        "text": "Implicit 流程要求客户端保管 client_secret，公开客户端做不到",
+        "isCorrect": false,
+        "description": "Implicit 本就是为 public client 设计，不需要 client_secret"
+      },
+      {
+        "text": "Implicit 不支持 HTTPS，被中间人攻击",
+        "isCorrect": false,
+        "description": "Implicit 同样要求 TLS，问题不在传输层"
+      },
+      {
+        "text": "Implicit 签发的 refresh_token 容易被窃取",
+        "isCorrect": false,
+        "description": "RFC 6749 §4.2.2 明确 Implicit MUST NOT 签发 refresh_token"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：PKCE 中 code_challenge_method=S256 时，code_challenge 如何计算？",
+    "explanation": "RFC 7636 §4.2 规定 S256 方式下：code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))。其中 code_verifier 是客户端生成的 43~128 字符随机串（RFC 3986 unreserved 字符集，≥256 位熵）。BASE64URL 不带等号填充。AS 在 /token 端点收到 code_verifier 后，按同一算法算哈希，与 /authorize 时存的 code_challenge 比对，一致才发 token。",
+    "tags": ["OAuth 2.0", "PKCE", "S256", "RFC 7636"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "code_challenge = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))",
+        "isCorrect": true,
+        "description": "RFC 7636 §4.2 规定的 S256 算法"
+      },
+      {
+        "text": "code_challenge = MD5(code_verifier)",
+        "isCorrect": false,
+        "description": "MD5 已不安全，PKCE 不用 MD5"
+      },
+      {
+        "text": "code_challenge = code_verifier 本身（明文）",
+        "isCorrect": false,
+        "description": "那是 plain 方式，不防请求观测者，不应在新实现使用"
+      },
+      {
+        "text": "code_challenge = HMAC-SHA256(client_secret, code_verifier)",
+        "isCorrect": false,
+        "description": "PKCE 不依赖 client_secret，public client 也用 PKCE"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：关于 PKCE 的 code_verifier，下列哪项约束是错的？",
+    "explanation": "RFC 7636 §4.1 规定 code_verifier 必须满足：①长度 43~128 字符；②字符集为 RFC 3986 unreserved（ALPHA / DIGIT / \"-\" / \".\" / \"_\" / \"~\"）；③熵 ≥ 256 位（推荐用 32 字节密码学随机数 → base64url 编码得 43 字符）。「必须可读且不少于 8 位」不是 RFC 7636 的要求——code_verifier 是不透明字符串，对用户可读性无要求。",
+    "tags": ["OAuth 2.0", "PKCE", "code_verifier"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必须可读且不少于 8 位字符",
+        "isCorrect": true,
+        "description": "RFC 7636 没有此约束；推荐 ≥256 位熵，43~128 字符即可"
+      },
+      {
+        "text": "长度必须在 43~128 字符之间",
+        "isCorrect": false,
+        "description": "这是 RFC 7636 §4.1 的硬约束"
+      },
+      {
+        "text": "字符集必须是 RFC 3986 unreserved（含 - . _ ~）",
+        "isCorrect": false,
+        "description": "这是为了避免 URL 编码问题"
+      },
+      {
+        "text": "推荐熵 ≥ 256 位",
+        "isCorrect": false,
+        "description": "32 字节随机 → base64url 即达 256 位熵"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：PKCE 提供的 CSRF 防护为何被认为比 state 参数更强？",
+    "explanation": "state 参数的 CSRF 防护依赖「攻击者无法构造合法 state」（一次性 + 绑定 user-agent session）。但如果攻击者能读取授权响应（例如通过 Referer、恶意 redirect、能读到 fragment），他就能同时拿到 state 与 code，state 防护失效。PKCE 则不同：即便攻击者读到 code，没有 code_verifier（永远不离开客户端、不进 URL/fragment/header）也无法在 /token 兑换——PKCE 把授权码绑死到客户端持有的 verifier，提供了更高级别的 CSRF 与授权码注入防护。",
+    "tags": ["OAuth 2.0", "PKCE", "state", "CSRF"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "即便攻击者能读取授权响应（拿到 state 与 code），没 code_verifier 仍无法兑换",
+        "isCorrect": true,
+        "description": "verifier 永不离开客户端，是 PKCE 的核心防御点"
+      },
+      {
+        "text": "PKCE 的 state 值比普通 state 更长，更难猜",
+        "isCorrect": false,
+        "description": "PKCE 不替代 state，两者并行使用"
+      },
+      {
+        "text": "PKCE 自动启用 TLS 双向认证",
+        "isCorrect": false,
+        "description": "那是 mTLS（RFC 8705），与 PKCE 无关"
+      },
+      {
+        "text": "PKCE 让 AS 不再需要校验 state",
+        "isCorrect": false,
+        "description": "RFC 9700 仍要求 state 与 PKCE 同时使用"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：state 参数与 PKCE 的关系应当如何？",
+    "explanation": "RFC 9700 §2.1 与 OWASP OAuth Cheat Sheet 都明确：state 与 PKCE 各自防御目标不同，应「同时使用」而非二选一。state 主要防 CSRF（攻击者诱导用户走完他人 flow），PKCE 主要防授权码注入（拿到 code 也无法兑换）并提供更高级别 CSRF 防护。此外 OIDC 场景的 nonce 还能通过 ID Token 的 at_hash 缓解 token injection，iss 防 mix-up attack。纵深防御叠加才完整。",
+    "tags": ["OAuth 2.0", "state", "PKCE", "纵深防御"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同时使用——两者防御目标不同（state 防 CSRF，PKCE 防授权码注入），叠加才完整",
+        "isCorrect": true,
+        "description": "RFC 9700 推荐的纵深防御"
+      },
+      {
+        "text": "二选一——有了 PKCE 就不需要 state",
+        "isCorrect": false,
+        "description": "RFC 9700 仍要求 state 用于 CSRF 防护"
+      },
+      {
+        "text": "二选一——state 比 PKCE 更标准，应优先 state",
+        "isCorrect": false,
+        "description": "state 无法防御授权码注入，二者不能互替"
+      },
+      {
+        "text": "互斥——同时启用会冲突导致 token 端点返回错误",
+        "isCorrect": false,
+        "description": "两者无冲突，主流程都同时启用"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Client Credentials Grant 的典型适用场景与签发特征是？",
+    "explanation": "Client Credentials Grant（grant_type=client_credentials，RFC 6749 §4.4）专为「机器到机器（M2M）」设计：客户端访问自己的资源（不是某个用户的资源），无 Resource Owner 参与。典型场景包括定时任务调内部 API、微服务间互调、CI 调部署 API。RFC 6749 §4.4.3 规定：Client Credentials 流程**不签发 refresh_token**——客户端缓存 token 直到 expires_in 临近，过期前重新换一张即可。",
+    "tags": ["OAuth 2.0", "Client Credentials", "M2M"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "M2M/服务间通信，无 user 参与，不签发 refresh_token",
+        "isCorrect": true,
+        "description": "RFC 6749 §4.4.3 明确不签发 refresh_token"
+      },
+      {
+        "text": "第三方应用读取用户 GitHub 仓库，签发 refresh_token",
+        "isCorrect": false,
+        "description": "那是 Authorization Code 的场景"
+      },
+      {
+        "text": "SPA 用户登录，签发 id_token",
+        "isCorrect": false,
+        "description": "那是 OIDC 的场景（且 SPA 应用应使用 Auth Code + PKCE）"
+      },
+      {
+        "text": "M2M 通信但需签发 refresh_token 以便长期续期",
+        "isCorrect": false,
+        "description": "Client Credentials 不签发 refresh_token"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：下列哪个 redirect_uri 配置是 RFC 9700 允许的安全做法？",
+    "explanation": "RFC 9700 §2.1 规定 redirect_uri 必须「精确字符串比对」（RFC 3986 §6.2.1）——不 normalize、不前缀、不正则、不通配。MUST 是绝对 URI、MUST NOT 含 fragment。唯一例外是 RFC 8252 §7.3 规定的 native app loopback：`http://127.0.0.1` 或 `http://[::1]` 允许动态端口（因为每次启动端口可能不同）。其他选项都违反精确匹配规则：前缀匹配会被攻击者注册 `app.example.com.evil.com` 或利用开放重定向器劫持 code。",
+    "tags": ["OAuth 2.0", "redirect_uri", "RFC 9700"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "注册 https://app.example.com/cb 并做精确字符串匹配；native app 用 http://127.0.0.1:{port} 动态端口",
+        "isCorrect": true,
+        "description": "精确匹配 + loopback 例外（RFC 8252 §7.3）"
+      },
+      {
+        "text": "注册 https://app.example.com/* 并按前缀匹配所有子路径",
+        "isCorrect": false,
+        "description": "前缀匹配会让攻击者注册 app.example.com.evil.com 命中"
+      },
+      {
+        "text": "注册 *.example.com 通配符以支持多子域",
+        "isCorrect": false,
+        "description": "通配符匹配严格禁止"
+      },
+      {
+        "text": "注册 https://app.example.com/cb#section 允许 fragment 区分页面",
+        "isCorrect": false,
+        "description": "redirect_uri MUST NOT 含 fragment"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Bearer Token 的三种传递方式中，RFC 6750 推荐的优先级是？",
+    "explanation": "RFC 6750 §2 规定 Bearer Token 有三种传递方式：① Authorization 请求头（§2.1，`Authorization: Bearer <token>`）——RS MUST 支持、推荐；② 表单 body 参数（§2.2，`access_token=xxx`）——SHOULD NOT、不得用于 GET；③ URI query 参数（§2.3，`?access_token=xxx`）——SHOULD NOT、易泄露到日志/历史/Referer。优先级：Authorization 头 > body > query。Authorization 头是唯一 MUST 支持的方式，应作为首选。",
+    "tags": ["OAuth 2.0", "Bearer Token", "RFC 6750"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Authorization 头（MUST 支持）> POST body（SHOULD NOT）> URI query（SHOULD NOT）",
+        "isCorrect": true,
+        "description": "RFC 6750 §2.1/2.2/2.3 的明确语义"
+      },
+      {
+        "text": "URI query > POST body > Authorization 头",
+        "isCorrect": false,
+        "description": "完全反了：URI query 是 SHOULD NOT"
+      },
+      {
+        "text": "POST body > Authorization 头 > URI query",
+        "isCorrect": false,
+        "description": "Authorization 头才是 MUST 支持"
+      },
+      {
+        "text": "三者等价，由客户端自选",
+        "isCorrect": false,
+        "description": "RFC 6750 明确区分了 SHOULD NOT 与 MUST"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：把 access_token 放进 URL query 参数会带来什么主要风险？",
+    "explanation": "RFC 6750 §2.3 与 RFC 9700 §4.3.2 都明确：URL query 形式的 token（?access_token=xxx）会泄露到多个长期留存的载体：①浏览器历史（持久化数月）；②Web 服务器访问日志（按合规要求长期保存）；③CDN/反向代理日志；④跳转外链时的 Referer header（泄露给第三方）。泄露面远大于 Authorization 头部（头部不进 URL 不进日志）。因此 §2.3 标记为 SHOULD NOT，推荐改用 Authorization 头。",
+    "tags": ["OAuth 2.0", "Bearer Token", "URL query", "泄露"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "URL 会进入浏览器历史、服务器日志、CDN 日志、Referer 等多个泄露面",
+        "isCorrect": true,
+        "description": "URL 是高泄露面载体，远超 Authorization 头部"
+      },
+      {
+        "text": "URL query 会让 token 自动过期失效",
+        "isCorrect": false,
+        "description": "过期由 expires_in 决定，与传递方式无关"
+      },
+      {
+        "text": "URL query 不支持 HTTPS，会被中间人窃听",
+        "isCorrect": false,
+        "description": "HTTPS 下 query 同样加密传输，问题在落盘的日志"
+      },
+      {
+        "text": "URL query 会让 token 长度超过 HTTP 头部限制",
+        "isCorrect": false,
+        "description": "URL 与 header 都有长度限制，但这不是核心风险"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：RS 在 access_token 过期时返回的 HTTP 状态码与错误码应是？",
+    "explanation": "RFC 6750 §3.1 规定：当 access_token 过期、被吊销、格式错或签名错时，RS 返回 **HTTP 401 Unauthorized**，并在 WWW-Authenticate 响应头中带 `error=\"invalid_token\"`、error_description、可选的 error_uri 与 scope。三种错误码对应：invalid_request=400、invalid_token=401（认证失败）、insufficient_scope=403（认证成功但权限不足）。",
+    "tags": ["OAuth 2.0", "Bearer Token", "错误码", "RFC 6750"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HTTP 401 + WWW-Authenticate: Bearer error=\"invalid_token\"",
+        "isCorrect": true,
+        "description": "RFC 6750 §3.1 规定的过期/吊销/格式错场景"
+      },
+      {
+        "text": "HTTP 400 + error=\"invalid_request\"",
+        "isCorrect": false,
+        "description": "invalid_request=400 用于缺参数/格式错，不是 token 过期"
+      },
+      {
+        "text": "HTTP 403 + error=\"insufficient_scope\"",
+        "isCorrect": false,
+        "description": "403 是 token 有效但 scope 不足"
+      },
+      {
+        "text": "HTTP 500 + error=\"server_error\"",
+        "isCorrect": false,
+        "description": "500 是 AS 内部错误，不是 token 过期"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：scope 参数的语法规则下列哪项正确？",
+    "explanation": "RFC 6749 §3.3 定义 scope 的 ABNF：scope = scope-token *( SP scope-token )，其中 scope-token 由 1 个或多个 NQCHAR 组成。NQCHAR 排除了双引号、反斜杠与控制字符。关键规则：① 空格分隔（不是逗号）；② 大小写敏感；③ 客户端省略 scope 时 AS 用默认值或返回 invalid_scope；④ AS 实际签发的 scope 与请求不同时 MUST 在响应中回传 scope 字段。",
+    "tags": ["OAuth 2.0", "scope", "RFC 6749"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "空格分隔、大小写敏感、实际签发与请求不同时必须在响应中回传 scope",
+        "isCorrect": true,
+        "description": "RFC 6749 §3.3 的核心规则"
+      },
+      {
+        "text": "逗号分隔、大小写不敏感、按需省略",
+        "isCorrect": false,
+        "description": "scope 是空格分隔且大小写敏感"
+      },
+      {
+        "text": "JSON 数组形式、必须与请求完全一致",
+        "isCorrect": false,
+        "description": "scope 是空格分隔字符串，AS 可只签发部分"
+      },
+      {
+        "text": "分号分隔、可包含任意 ASCII 字符",
+        "isCorrect": false,
+        "description": "分隔符与字符集都错"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Refresh Token 在 public client 上的安全要求（RFC 9700）是？",
+    "explanation": "RFC 9700 §2.2.2 规定：public client（无法保管对称密钥的客户端，如 SPA/Mobile/Native App）的 refresh token **必须 sender-constrained 或启用 rotation**。原因：public client 无法保管对称密钥，token 一旦泄露即可被任意方重放。两种解决方案：① Rotation——每次刷新失效旧 RT、签发新 RT，重放旧 RT 时触发告警；② Sender-constraining——DPoP（RFC 9449）用客户端私钥签名或 mTLS（RFC 8705）绑定到 TLS 客户端证书。",
+    "tags": ["OAuth 2.0", "Refresh Token", "RFC 9700", "public client"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "必须 sender-constrained（DPoP/mTLS）或启用 rotation（rotation 触发重放告警）",
+        "isCorrect": true,
+        "description": "RFC 9700 §2.2.2 对 public client 的强制要求"
+      },
+      {
+        "text": "public client 不应签发 refresh token",
+        "isCorrect": false,
+        "description": "可以签发，但必须 sender-constrain 或 rotation"
+      },
+      {
+        "text": "public client 的 refresh token 应放在 localStorage",
+        "isCorrect": false,
+        "description": "localStorage 易被 XSS 窃取，且无 sender 约束"
+      },
+      {
+        "text": "public client 的 refresh token 应通过 URL query 传递",
+        "isCorrect": false,
+        "description": "URL query 是高泄露面载体"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：下列哪种客户端认证方式最适合 confidential client 且不暴露对称密钥？",
+    "explanation": "对 confidential client，RFC 9700 推荐使用**非对称**客户端认证（无需 AS 存敏感对称密钥）：① private_key_jwt（RFC 7523）——客户端用私钥签 JWT，AS 用客户端预注册的公钥验签；② mTLS（RFC 8705）——绑定 TLS 客户端证书。两者都不需要在 AS 与 client 之间共享对称密钥，泄露面小。client_secret_basic（HTTP Basic）/ client_secret_post（body 参数）是传统对称方式，对称密钥一旦泄露即被冒充，且若放前端/移动端会被反编译窃取。",
+    "tags": ["OAuth 2.0", "客户端认证", "mTLS", "private_key_jwt"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "private_key_jwt（RFC 7523）或 mTLS（RFC 8705）——非对称，无需 AS 存对称密钥",
+        "isCorrect": true,
+        "description": "RFC 9700 推荐的非对称认证方式"
+      },
+      {
+        "text": "client_secret_basic（HTTP Basic 头）",
+        "isCorrect": false,
+        "description": "对称密钥，泄露即冒充；不推荐"
+      },
+      {
+        "text": "client_secret_post（body 参数）",
+        "isCorrect": false,
+        "description": "易进访问日志，对称密钥风险更高"
+      },
+      {
+        "text": "把 client_secret 编译进前端 SPA 代码",
+        "isCorrect": false,
+        "description": "前端代码可反编译，secret 必然泄露"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：关于 OAuth 2.1 与 RFC 9700 的版本关系，下列哪项描述准确？",
+    "explanation": "RFC 9700（2025-01 发布的 BCP 284）是**现行**的 Best Current Practice，正式更新了 RFC 6749/6750/6819 的安全建议，废弃了 Implicit（§2.1.2）与 Password（§2.4）grant，强制所有客户端使用 Authorization Code + PKCE。OAuth 2.1（draft-ietf-oauth-v2-1-15，2026-03）仍是 Internet-Draft（work in progress），Intended Status 为 Standards Track，意在取代 RFC 6749 与 RFC 6750，把 RFC 9700+PKCE 固化进核心规范。但 OAuth 2.1 **尚未成为 RFC**——正式引用仍应使用 RFC 6749 + RFC 9700，且无需等 OAuth 2.1 落地即可在现有系统实施 9700。",
+    "tags": ["OAuth 2.0", "版本", "RFC 9700", "OAuth 2.1"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RFC 9700 是现行 BCP（2025-01），OAuth 2.1 仍是草案，正式引用以 RFC 6749 + RFC 9700 为准",
+        "isCorrect": true,
+        "description": "实操结论：现在就实施 9700，不等 2.1"
+      },
+      {
+        "text": "OAuth 2.1 已于 2024 年正式成为 RFC，取代 RFC 6749",
+        "isCorrect": false,
+        "description": "OAuth 2.1 截止 2026-03 仍是草案"
+      },
+      {
+        "text": "RFC 9700 是草案，OAuth 2.1 是现行 BCP",
+        "isCorrect": false,
+        "description": "两者状态刚好说反"
+      },
+      {
+        "text": "RFC 9700 与 RFC 6749 互不相关，分别管不同协议",
+        "isCorrect": false,
+        "description": "RFC 9700 正式更新了 RFC 6749 的安全条款"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：下列哪个是 RFC 9700 明确禁止或反对的反模式？",
+    "explanation": "RFC 9700 §2.1 明确禁止 authorization endpoint 开启 CORS——只有 token endpoint 与 metadata endpoint MAY 支持 CORS。原因：authorization endpoint 是 user agent（浏览器）直接访问的，CORS 会让任意域 JS 都能发起跨域授权请求读取响应。其他选项都是 RFC 9700 推荐的做法：所有客户端加 PKCE、redirect_uri 精确匹配 + HTTPS、AS 防降级。",
+    "tags": ["OAuth 2.0", "反模式", "CORS", "RFC 9700"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 authorization endpoint 上开启 CORS 允许跨域请求",
+        "isCorrect": true,
+        "description": "RFC 9700 §2.1 明确禁止 authorization endpoint 开 CORS"
+      },
+      {
+        "text": "对所有客户端（含 confidential）启用 PKCE",
+        "isCorrect": false,
+        "description": "RFC 9700 §2.1.1 RECOMMENDED，是推荐做法"
+      },
+      {
+        "text": "redirect_uri 做精确字符串匹配",
+        "isCorrect": false,
+        "description": "RFC 9700 §2.1 强制要求"
+      },
+      {
+        "text": "AS 检测 PKCE 降级（无 challenge 却带 verifier 必须拒绝）",
+        "isCorrect": false,
+        "description": "RFC 9700 推荐的降级防御"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：Implicit 流程的 access_token 与 Authorization Code 流程的 code 在回传位置上的关键差异是？",
+    "explanation": "这是区分两种流程的关键技术点：Authorization Code 流程的 code 通过 redirect_uri 的 **query component**（即 `?code=xxx&state=yyy`）回传，code 是一次性凭据需再到 /token 兑换；而（已废弃的）Implicit 流程的 access_token 通过 redirect_uri 的 **fragment**（即 `#access_token=xxx`）直接回传——fragment 部分不会发送到服务器（仅留在客户端），但会泄露到浏览器历史与 Referer。这是 Implicit 被废弃的核心原因之一。",
+    "tags": ["OAuth 2.0", "Authorization Code", "Implicit", "回传位置"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Authorization Code 的 code 经 query（?code=xxx）；Implicit 的 access_token 经 fragment（#access_token=xxx）",
+        "isCorrect": true,
+        "description": "RFC 6749 §4.1.2 vs §4.2.2 的明确差异"
+      },
+      {
+        "text": "两者都经 query 回传",
+        "isCorrect": false,
+        "description": "Implicit 用 fragment，不是 query"
+      },
+      {
+        "text": "两者都经 fragment 回传",
+        "isCorrect": false,
+        "description": "Authorization Code 用 query，不是 fragment"
+      },
+      {
+        "text": "Authorization Code 经 fragment，Implicit 经 query",
+        "isCorrect": false,
+        "description": "刚好说反"
+      }
+    ]
+  },
+  {
+    "stem": "OAuth 2.0：关于 OAuth 2.0 与 OpenID Connect（OIDC）的边界，下列哪项描述准确？",
+    "explanation": "OAuth 2.0 是**授权框架（authorization）**，定义如何把对资源的有限访问权委托给第三方。它不是认证协议——不能用来可靠地「认证用户身份」。用 OAuth 做「登录」需叠加 OpenID Connect（OIDC）：OIDC 在 OAuth 之上加 id_token（包含用户身份的 JWT）、/userinfo 端点、nonce、at_hash 等机制。直接用 OAuth 做 SSO/登录会遭遇 token substitution 攻击（攻击者把他人 token 注入到自己的流程）。本主题聚焦 RFC 6749/9700/7636/6750；OIDC、introspection、JWKS、device flow 等属相邻主题。",
+    "tags": ["OAuth 2.0", "OIDC", "认证", "授权", "边界"],
+    "categories": [
+      ["技术方向", "OAuth 2.0"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "OAuth 2.0 是授权框架；做「登录」需叠加 OIDC（在 OAuth 之上加 id_token 与 /userinfo）",
+        "isCorrect": true,
+        "description": "授权 vs 认证的边界，OIDC 是叠加层"
+      },
+      {
+        "text": "OAuth 2.0 本身就是认证协议，可以独立做 SSO",
+        "isCorrect": false,
+        "description": "OAuth 不是认证协议，直接做 SSO 会遇 token substitution"
+      },
+      {
+        "text": "OIDC 是 OAuth 2.0 的旧版本，已被取代",
+        "isCorrect": false,
+        "description": "OIDC 是 OAuth 之上的扩展层，不是替代品"
+      },
+      {
+        "text": "OAuth 与 OIDC 完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "两者职责不同：授权 vs 认证"
+      }
+    ]
+  }
+]

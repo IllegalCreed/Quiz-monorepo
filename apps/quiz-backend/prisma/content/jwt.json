@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "JWT：一条合法的 JWT 由几段以点号 . 拼接的文本组成？",
+    "explanation": "RFC 7519 规定 JWT 的序列化形态是 JWS Compact Serialization：由三段文本——JOSE Header、JWE Payload（claim 集合）、Signature——各自做 Base64URL 编码后，用点号 . 拼成 header.payload.signature。这是与 JWS Compact 一致的三段式，与 JWE Compact（五段）不同。注意三段都只是 Base64URL 编码（不是加密），其中 Signature 才是密码学校验和，前两段任何人都能解码读明文。",
+    "tags": ["JWT", "三段式", "Base64URL", "RFC 7519"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "三段：header.payload.signature",
+        "isCorrect": true,
+        "description": "RFC 7519 + JWS Compact Serialization 的标准三段式"
+      },
+      {
+        "text": "两段：header.payload（signature 是可选的）",
+        "isCorrect": false,
+        "description": "alg:none 仍要写空 signature 段，三段结构是硬约束"
+      },
+      {
+        "text": "四段：version.header.payload.signature",
+        "isCorrect": false,
+        "description": "JWT 不带版本号字段，版本由 alg/kid 间接表达"
+      },
+      {
+        "text": "五段：保护头 + 密钥头 + IV + 密文 + 认证标签",
+        "isCorrect": false,
+        "description": "这是 JWE Compact Serialization（五段），不是 JWT 的默认 JWS 形态"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：Base64URL 编码与普通 Base64 编码相比有哪些差异？",
+    "explanation": "Base64URL 是 RFC 7515 定义的 URL-safe 变体，与普通 Base64 的差异：①字符 + 替换为 -、/ 替换为 _，避免 URL 中需要再次编码；②去掉末尾 = 填充，缩短长度；③不插入换行 / 空白。这些差异让 JWT 可直接放进 URL query 或 fragment、HTTP header 而无需 URL 编码，是 JWT 选 Base64URL 而非普通 Base64 的根本原因。",
+    "tags": ["JWT", "Base64URL", "URL-safe", "RFC 7515"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "+ 替换为 -、/ 替换为 _，并去掉 = 填充",
+        "isCorrect": true,
+        "description": "URL-safe 字符替换 + 去填充，避免 URL 再编码"
+      },
+      {
+        "text": "用 AES 加密后再 Base64，比普通 Base64 更安全",
+        "isCorrect": false,
+        "description": "Base64URL 是编码不是加密，与 AES 无关"
+      },
+      {
+        "text": "用 SHA-256 哈希后截短为 32 字节再编码",
+        "isCorrect": false,
+        "description": "Base64URL 是可逆编码，不是哈希"
+      },
+      {
+        "text": "用大小写敏感的全 ASCII 字符集（含中文）",
+        "isCorrect": false,
+        "description": "Base64URL 字符集与普通 Base64 一样是 ASCII，无中文"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：根据 RFC 7519，下列哪个不是七个注册 claim 之一？",
+    "explanation": "RFC 7519 §4.1 定义的七个注册 claim 是：iss（签发者）、sub（主体）、aud（受众）、exp（过期）、nbf（生效前）、iat（签发时间）、jti（唯一 ID）。csrf 不在注册 claim 列表中，CSRF 是 Web 攻击名而非 JWT 字段；防止 CSRF 通常靠 SameSite Cookie + CSRF token，与 JWT claim 无关。所有注册 claim 全部 OPTIONAL，但若使用必须遵守语义。",
+    "tags": ["JWT", "注册声明", "RFC 7519", "claim"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "csrf",
+        "isCorrect": true,
+        "description": "csrf 是攻击名，不是 JWT 注册 claim"
+      },
+      {
+        "text": "iss（Issuer，签发者）",
+        "isCorrect": false,
+        "description": "iss 是注册 claim §4.1.1"
+      },
+      {
+        "text": "exp（Expiration Time，过期）",
+        "isCorrect": false,
+        "description": "exp 是注册 claim §4.1.4"
+      },
+      {
+        "text": "jti（JWT ID，唯一标识）",
+        "isCorrect": false,
+        "description": "jti 是注册 claim §4.1.7，用于防重放"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：exp 声明使用什么格式表示过期时间？",
+    "explanation": "RFC 7519 §2 定义 NumericDate 为「自 1970-01-01T00:00:00Z UTC 起的秒数，忽略闰秒」，是一个数字（JSON number）。exp（§4.1.4）、nbf、iat 都用此类型，**不是** ISO 8601 字符串（如 2026-12-31T23:59:59Z）。过期后 RFC 7519 §4.1.4 明确规定 MUST NOT 接受这条 token，是合规要求而非建议。jsonwebtoken 的 verify() 默认 ignoreExpiration=false 即拒绝过期 token。",
+    "tags": ["JWT", "exp", "NumericDate", "RFC 7519"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "NumericDate——自 1970-01-01 UTC 起的秒数（忽略闰秒）",
+        "isCorrect": true,
+        "description": "RFC 7519 §2 定义，是 JSON number 类型"
+      },
+      {
+        "text": "ISO 8601 字符串，如 2026-12-31T23:59:59Z",
+        "isCorrect": false,
+        "description": "exp 不用 ISO 字符串，是数字秒数"
+      },
+      {
+        "text": "Unix 毫秒时间戳（13 位数字）",
+        "isCorrect": false,
+        "description": "JWT 用秒不是毫秒（10 位数字）"
+      },
+      {
+        "text": "RFC 2822 邮件日期格式，如 Mon, 31 Dec 2026 23:59:59 +0000",
+        "isCorrect": false,
+        "description": "RFC 2822 与 JWT 无关"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：HS256、RS256、ES256 三种算法的本质区别是什么？",
+    "explanation": "三者分别属于不同密码学族：HS256 是 HMAC-SHA256（对称），签发与验证共用同一共享密钥，适合单体应用；RS256 是 RSASSA-PKCS1-v1_5（非对称 RSA），私钥签发、公钥验证，适合多服务/跨组织场景（验证方只持公钥）；ES256 是 ECDSA 椭圆曲线（P-256），同样私签公验，但密钥更短、性能更高，适合移动端/IoT。三者的核心区别不是安全性高低，而是密钥模型——对称与非对称决定了「密钥分发与泄露面」。",
+    "tags": ["JWT", "HS256", "RS256", "ES256", "算法选型"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "HS256 是对称（共享密钥），RS256/ES256 是非对称（私签公验）",
+        "isCorrect": true,
+        "description": "对称 vs 非对称是三者的本质分界线"
+      },
+      {
+        "text": "HS256 最弱、RS256 中等、ES256 最强",
+        "isCorrect": false,
+        "description": "安全性都达标，区别在密钥模型而非强弱"
+      },
+      {
+        "text": "HS256 用于加密 payload，RS256/ES256 用于签名",
+        "isCorrect": false,
+        "description": "三种都是签名算法，不加密 payload"
+      },
+      {
+        "text": "HS256 由 RSA 实现，RS256 由 HMAC 实现，ES256 由 ECDSA 实现",
+        "isCorrect": false,
+        "description": "正好相反：HS256 是 HMAC，RS256 才是 RSA"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：为什么分布式系统优先用 RS256 / ES256 而非 HS256？",
+    "explanation": "HS256 是对称算法，签发与验证共用同一共享密钥——这意味着每个需要验证 token 的微服务都得持有这份共享密钥，密钥扩散面大；任一服务被攻破泄露密钥，整个 token 体系全盘沦陷（攻击者可签发任意身份的 token）。RS256/ES256 是非对称算法，私钥只在签发方（如统一的 Auth 服务），所有验证微服务只持公钥——公钥泄露不影响签发安全，密钥泄露面最小。这是分布式系统优先非对称的根本原因。",
+    "tags": ["JWT", "HS256", "RS256", "分布式", "密钥分发"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "非对称密钥泄露面最小——私钥只在签发方，验证服务只持公钥",
+        "isCorrect": true,
+        "description": "这是分布式系统优先 RS256/ES256 的核心原因"
+      },
+      {
+        "text": "HS256 已被 RFC 7519 废弃，分布式必须用 RS256",
+        "isCorrect": false,
+        "description": "HS256 仍是 RFC 7519 MUST 实现，未废弃"
+      },
+      {
+        "text": "RS256 签名比 HS256 短，省网络带宽",
+        "isCorrect": false,
+        "description": "RS256 签名（256B）比 HS256（32B）长得多"
+      },
+      {
+        "text": "HS256 不支持 setIssuer / setAudience 等 claim 校验",
+        "isCorrect": false,
+        "description": "claim 校验与算法无关，HS256/RS256 都支持"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：alg:none 攻击能成功的根本原因是什么？",
+    "explanation": "alg 头字段本身是 token 自报的、未受信任的元数据（RFC 7519 §11.1）。RFC 7519 §6 允许 alg=none 的 Unsecured JWT（无 signature 段）。攻击者把 header 的 alg 改成 none、payload 改成任意内容（如 admin 身份）、signature 段留空——若服务端 verify() 不显式传 algorithms 白名单，或显式接受 none，会跳过验签直接信任 payload。根本原因是「服务端信任了 token 自报的 alg」而非「按服务端配置白名单决定信任」。防御唯一手段：verify() 必传 algorithms 白名单（如 ['RS256']），生产实现普遍在白名单里禁用 none。",
+    "tags": ["JWT", "alg:none 攻击", "未签名", "algorithms 白名单"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "服务端信任 token 自报的 alg，未按白名单决定是否验签",
+        "isCorrect": true,
+        "description": "alg 是不可信元数据，所有信任必须建立在密码学校验通过的基础上"
+      },
+      {
+        "text": "none 算法本身有密码学漏洞，能被逆向算出 secret",
+        "isCorrect": false,
+        "description": "none 没有密码学操作，谈不上逆向"
+      },
+      {
+        "text": "JWT 的 Base64URL 编码能被暴力破解还原明文",
+        "isCorrect": false,
+        "description": "Base64URL 是可逆编码，本来就不用破解"
+      },
+      {
+        "text": "浏览器自动把 Authorization 头泄露给攻击者",
+        "isCorrect": false,
+        "description": "与 alg:none 攻击原理无关"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：RS256→HS256 算法混淆攻击的核心机制是什么？",
+    "explanation": "RS256→HS256 算法混淆攻击针对原本用 RS256（RSA 公钥公开可拿）的服务端：①攻击者下载服务端的 RSA 公钥（JWKS 端点公开）；②把 header 的 alg 改成 HS256、payload 改成任意内容；③用 RSA 公钥的字符串形式当作 HMAC 的 secret，算 HS256 签名；④若服务端 verify() 不传 algorithms 白名单，jsonwebtoken 这类库会按 key 类型自动推断——拿到 RSA 公钥 + 看到 alg=HS256，就把公钥当 HMAC secret 验签，验签通过；⑤攻击者以任意身份操作。防御唯一手段：verify(token, publicKey, { algorithms: ['RS256'] })——显式白名单是密码学契约，不依赖库的「自动推断」。",
+    "tags": ["JWT", "RS256", "HS256", "算法混淆", "algorithms 白名单"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "篡改 alg 让服务端把 RSA 公钥当 HMAC 密钥验签，验签通过",
+        "isCorrect": true,
+        "description": "利用「库按 key 类型推断算法」的漏洞，需白名单防御"
+      },
+      {
+        "text": "通过中间人截获 RS256 私钥后用 HS256 重新签名",
+        "isCorrect": false,
+        "description": "私钥一旦泄露任何算法都救不了，与混淆攻击无关"
+      },
+      {
+        "text": "利用 RSA 算法本身的概率签名弱点伪造签名",
+        "isCorrect": false,
+        "description": "RS256 是确定性的 PKCS1-v1_5，混淆攻击不利用 RSA 弱点"
+      },
+      {
+        "text": "暴力枚举 HS256 的 256 位密钥空间",
+        "isCorrect": false,
+        "description": "暴力枚举不现实，混淆攻击是逻辑漏洞而非算力漏洞"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：防御 alg:none 与算法混淆两类攻击的「唯一可靠手段」是什么？",
+    "explanation": "RFC 8725 §3.1 明确：verify() 必须显式传 algorithms 白名单（如 ['RS256']）。alg 头字段是 token 自报的、未受信任的元数据——若服务端信任 token 自报的 alg，就会落入 alg:none（攻击者改成 none 跳过验签）和 RS256→HS256（攻击者改成 HS256 让库把公钥当 HMAC secret）两类攻击。即便某些库「会按 key 类型自动推断算法」也不能依赖，因为推断行为在不同库 / 版本之间不一致。显式白名单才是密码学契约，是 RFC 8725 推荐的唯一可靠手段。jsonwebtoken: jwt.verify(token, key, { algorithms: ['RS256'] })。",
+    "tags": ["JWT", "algorithms 白名单", "RFC 8725", "安全"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "verify() 显式传 algorithms 白名单（如 ['RS256']）",
+        "isCorrect": true,
+        "description": "RFC 8725 §3.1 推荐的唯一可靠手段"
+      },
+      {
+        "text": "对所有 token 都用 try-catch 包裹 verify() 调用",
+        "isCorrect": false,
+        "description": "异常处理不能修复密码学校验缺失"
+      },
+      {
+        "text": "把 JWT 存到 localStorage 减少传输",
+        "isCorrect": false,
+        "description": "存储位置与算法白名单无关，且 localStorage 是反模式"
+      },
+      {
+        "text": "对 payload 额外做一次 SHA-256 校验",
+        "isCorrect": false,
+        "description": "SHA-256 是哈希不可逆、无密钥，不能替代签名"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：aud（受众）声明的校验规则是什么？",
+    "explanation": "RFC 7519 §4.1.3 规定：每个处理 JWT 的应用 MUST 验证 aud 声明是否包含自身（即本服务的标识）。如果 aud 不匹配（token 是给别的服务的），应用 MUST 拒绝处理。aud 的目的是防止「A 服务的 token 被拿到 B 服务用」这类跨服务 token 误用 / 转用攻击。jsonwebtoken 的 verify(token, key, { audience: 'my-api' }) 会校验 aud。注意：aud 是 StringOrURI 或其数组，可多值（一条 token 可同时给多个受众）。",
+    "tags": ["JWT", "aud", "受众", "RFC 7519"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "aud 必须包含本服务的标识，不匹配 MUST 拒绝处理",
+        "isCorrect": true,
+        "description": "RFC 7519 §4.1.3 强制要求"
+      },
+      {
+        "text": "aud 是可选的，不传 verify() 也无害",
+        "isCorrect": false,
+        "description": "claim 本身可选，但若 token 带了 aud 则必须校验"
+      },
+      {
+        "text": "aud 只是元数据，仅用于日志记录",
+        "isCorrect": false,
+        "description": "aud 是安全校验项，不是日志元数据"
+      },
+      {
+        "text": "aud 必须等于 iss，否则拒绝",
+        "isCorrect": false,
+        "description": "aud 与 iss 是不同概念，无相等约束"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：jti 声明的核心用途是什么？",
+    "explanation": "jti（JWT ID，§4.1.7）是 token 的唯一标识符，对大小写敏感。它的核心用途是防重放攻击——服务端在 Redis / 内存里维护「已用过的 jti 列表」，每次收到 token 时检查 jti 是否已用过：用过则拒绝（说明 token 被复制重放）。代价是引入了服务端状态（与 JWT 无状态理念相违背），所以通常只对 Refresh Token 或敏感操作 token 启用 jti 校验，Access Token 一般不维护 jti 列表。jti 也是 RFC 7519 七个注册 claim 之一，全部 OPTIONAL。",
+    "tags": ["JWT", "jti", "防重放", "RFC 7519"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "唯一标识 token，配合服务端列表防重放攻击",
+        "isCorrect": true,
+        "description": "jti 是防重放的注册 claim，需服务端维护已用列表"
+      },
+      {
+        "text": "存储 JWT 的 JSON 序列化版本号",
+        "isCorrect": false,
+        "description": "jti 是标识符不是版本号"
+      },
+      {
+        "text": "作为 JWT 与 JWE 之间的转换 ID",
+        "isCorrect": false,
+        "description": "jti 与 JWE 无关"
+      },
+      {
+        "text": "签发方的 Java Type Identifier（类型标识）",
+        "isCorrect": false,
+        "description": "jti 是 JWT ID 的缩写，与 Java 无关"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：关于 JWT payload 加密的正确认知是？",
+    "explanation": "JWT 的默认形态是 JWS（签名），不是 JWE（加密）。JWS 只对 header.payload 做签名防篡改，payload 仅 Base64URL 编码——任何拿到 token 的人都能 Base64URL 解码读到明文 claim。把密码、身份证号、手机号、密钥等敏感数据放进 payload，等于把这些信息「裸奔」交给任何能拿到 token 的人（包括浏览器扩展、日志采集、代理服务器等）。如果 payload 内容需要保密，必须使用 JWE（RFC 7516）做加密，或者把敏感数据放服务端、JWT 里只放引用 ID。这是 RFC 8725 §4 明确强调的隐私要求。",
+    "tags": ["JWT", "payload", "JWE", "加密", "隐私"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "payload 仅 Base64URL 编码不加密，任何人可 decode 读明文",
+        "isCorrect": true,
+        "description": "标准 JWS 不加密；保密必须用 JWE"
+      },
+      {
+        "text": "payload 默认用 AES-256 加密，只有持有 secret 才能读",
+        "isCorrect": false,
+        "description": "JWS 不加密；AES 加密是 JWE 的范围"
+      },
+      {
+        "text": "payload 用 RSA 公钥加密，只能用私钥解密",
+        "isCorrect": false,
+        "description": "这是 JWE 的特性，标准 JWT（JWS）不加密"
+      },
+      {
+        "text": "payload 内容是哈希值，不可逆",
+        "isCorrect": false,
+        "description": "payload 是可逆编码，不是哈希"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：根据 OWASP，下列哪种 token 存储方式被明令禁止？",
+    "explanation": "OWASP Session Management Cheat Sheet 明令禁止把 JWT / 会话凭证存到 localStorage 或 sessionStorage——原因是这两者对页面内任何 JS（包括被注入的恶意脚本、被投毒的第三方 npm 依赖、被劫持的 CDN 资源）完全可读，任意 XSS 都能 localStorage.getItem('token') 拖走全部凭证。OWASP 推荐的存储组合：Access Token 放内存（JS 变量 / app state，刷新即丢），Refresh Token 放 HttpOnly + Secure + SameSite=Strict Cookie（JS 不可读，免疫 XSS）。HttpOnly Cookie 把 XSS 风险压到 CSRF，而 CSRF 可由 SameSite 缓解。",
+    "tags": ["JWT", "localStorage", "OWASP", "存储", "XSS"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "localStorage / sessionStorage",
+        "isCorrect": true,
+        "description": "OWASP 明令禁止——任意 XSS 即可拖走全部凭证"
+      },
+      {
+        "text": "HttpOnly + Secure + SameSite=Strict Cookie",
+        "isCorrect": false,
+        "description": "OWASP 推荐用于 Refresh Token"
+      },
+      {
+        "text": "内存（JS 变量 / app state）",
+        "isCorrect": false,
+        "description": "OWASP 推荐用于 Access Token"
+      },
+      {
+        "text": "__Host- 前缀 Cookie（强制 Secure + 无 Domain + Path=/）",
+        "isCorrect": false,
+        "description": "OWASP 强烈推荐用于会话凭证"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：HttpOnly Cookie 相比 localStorage 存 token 的核心优势是？",
+    "explanation": "HttpOnly Cookie 通过 Set-Cookie 头设置后，浏览器在后续请求自动带上，但 document.cookie API 读不到（HttpOnly 标志的本意就是「禁止 JS 访问」）。这意味着即使页面被 XSS 注入了恶意脚本，也无法通过 document.cookie 拖走 token。代价是 Cookie 会自动随同站请求带，需配 SameSite=Strict（或 Lax）+ CSRF token 防御 CSRF。OWASP 推荐用 HttpOnly + Secure + SameSite=Strict Cookie 存 Refresh Token，把 XSS 风险压到 CSRF，而 CSRF 可由 SameSite 缓解——是当代凭证安全的标配。",
+    "tags": ["JWT", "HttpOnly Cookie", "localStorage", "XSS", "CSRF"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JS 不可读 document.cookie，免疫 XSS 拖走 token",
+        "isCorrect": true,
+        "description": "HttpOnly 标志本意就是禁止 JS 访问"
+      },
+      {
+        "text": "比 localStorage 容量更大，可存更多 claim",
+        "isCorrect": false,
+        "description": "Cookie 容量（4KB）远小于 localStorage（5MB+）"
+      },
+      {
+        "text": "不会随 HTTP 请求自动带，节省带宽",
+        "isCorrect": false,
+        "description": "Cookie 反而会自动带，是它的特性也是 CSRF 来源"
+      },
+      {
+        "text": "天然免疫 CSRF 攻击",
+        "isCorrect": false,
+        "description": "Cookie 自动带反而是 CSRF 来源，需 SameSite 缓解"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：Refresh Token 轮换 + 复用检测的核心逻辑是什么？",
+    "explanation": "RFC 9700 / Auth0 推荐的 Refresh Token 安全机制：①轮换——每次使用 Refresh Token 都签发新的 Refresh Token 并吊销旧的（攻击者即使盗了某次 RT 也只能用一次）；②复用检测——当检测到「已轮换的旧 RT 被再次提交」时，立即吊销整条 token 链（token family，含当前所有有效 token），强制用户重新认证。逻辑依据是：「合法用户用新 RT」+「攻击者用旧 RT」同时出现 = token 链已分叉 = 必有攻击者。固定不变的 Refresh Token 一旦被盗可无限续期，且无法察觉——是高危反模式。",
+    "tags": ["JWT", "Refresh Token", "轮换", "复用检测", "RFC 9700"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "每次刷新发新 RT + 吊销旧 RT；旧 RT 被再提交时吊销整条 token family",
+        "isCorrect": true,
+        "description": "RFC 9700 / Auth0 推荐的轮换 + 复用检测"
+      },
+      {
+        "text": "签发一条永不过期的 RT，定期让用户重新登录",
+        "isCorrect": false,
+        "description": "固定不轮换的 RT 是高危反模式"
+      },
+      {
+        "text": "每次刷新只换 Access Token，Refresh Token 永久有效",
+        "isCorrect": false,
+        "description": "不轮换 RT 无法在被盗时察觉"
+      },
+      {
+        "text": "把所有 RT 都存内存，重启即清空",
+        "isCorrect": false,
+        "description": "重启清空会让所有用户强制重新登录，与轮换机制无关"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：相比 Session（服务端会话），JWT 在「即时吊销」上的核心局限是？",
+    "explanation": "JWT 是无状态凭证——服务端不存 session，验签通过即信任。这意味着 JWT 在 exp 之前，服务端无法单方面让某条 token 失效（除非引入 blocklist / 黑名单维护已吊销的 jti，但这就引入了服务端状态，抵消了 JWT 的无状态优势）。Session 则相反——服务端删 session 记录即可即时吊销，代价是需要共享存储（如 Redis）支持横向扩展。生产常见折中方案：opaque token + Redis 后端（token 是随机串、服务端实时查权限），或短 exp JWT + blocklist（jti 写入 Redis 黑名单）。需要即时吊销（如踢人下线、改密后失效旧 token）的场景应优先 Session 或混合方案。",
+    "tags": ["JWT", "Session", "即时吊销", "blocklist"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JWT 在 exp 前无法单方面失效，除非引入 blocklist 抵消无状态优势",
+        "isCorrect": true,
+        "description": "需要即时吊销应优先 Session 或混合方案"
+      },
+      {
+        "text": "JWT 一旦签发无法验证真伪，只能等用户主动登出",
+        "isCorrect": false,
+        "description": "JWT 可验签，问题在于无法吊销而非无法验证"
+      },
+      {
+        "text": "JWT 必须用 Redis 才能工作",
+        "isCorrect": false,
+        "description": "JWT 设计初衷就是无状态，不需 Redis"
+      },
+      {
+        "text": "JWT 不支持横向扩展",
+        "isCorrect": false,
+        "description": "JWT 天然适合横向扩展（无共享存储），是它的优势"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：jsonwebtoken 的 verify() 中，clockTolerance 参数的作用是？",
+    "explanation": "clockTolerance 是 jsonwebtoken verify() 的可选参数（单位：秒），用于处理「时钟漂移」——多机部署时，签发方与验证方的系统时钟可能差几秒。如果时钟严格同步，exp / nbf / iat 校验会因几秒差异误判 token 过期或未生效。设置 clockTolerance: 5 表示「允许 ±5 秒的时钟偏移」，即在 exp 之后 5 秒内或 nbf 之前 5 秒内仍接受 token。这是分布式系统校验 JWT 时的标配。其他 verify 选项：algorithms（白名单必传）、audience/issuer/subject/jwtid（claim 校验）、ignoreExpiration（默认 false）、maxAge（拒绝签发过老的 token）。",
+    "tags": ["JWT", "jsonwebtoken", "clockTolerance", "时钟漂移", "verify"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "处理签发方与验证方的系统时钟漂移，允许 ±N 秒误差",
+        "isCorrect": true,
+        "description": "如 clockTolerance: 5 表示 ±5 秒时钟偏移容忍"
+      },
+      {
+        "text": "设置 token 的最大有效期（maxAge 的别名）",
+        "isCorrect": false,
+        "description": "maxAge 是独立选项，与 clockTolerance 不同"
+      },
+      {
+        "text": "限制 verify() 调用的超时时间",
+        "isCorrect": false,
+        "description": "verify() 是同步密码学操作，无网络超时概念"
+      },
+      {
+        "text": "校验 token 签发频率是否超过阈值",
+        "isCorrect": false,
+        "description": "clockTolerance 与签发频率无关"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：jsonwebtoken 的 decode() 与 verify() 的关键区别是什么？",
+    "explanation": "jsonwebtoken 的 decode(token) 仅对 token 的 payload 段做 Base64URL 解码返回 claim 对象——不验签、不校验 exp/aud/iss 等任何 claim。任何来自不可信源的 token 必须用 verify()（含密码学校验 + claim 校验），绝不能用 decode()。decode() 只适合「已知 token 合法」的场景下快速读 claim（如本地调试、读自己的 token）。常见的灾难性反模式：把 decode() 当作校验用——攻击者可任意改 payload，decode 不发现篡改，应用就以篡改后的 claim（如 admin）授权。RFC 7519 §11.1 明确：所有信任决策都必须建立在密码学校验通过的基础上。",
+    "tags": ["JWT", "decode", "verify", "jsonweboken", "反模式"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "decode() 仅 Base64URL 解码不验签，verify() 含密码学校验 + claim 校验",
+        "isCorrect": true,
+        "description": "decode 不能用于不可信源 token，必须用 verify"
+      },
+      {
+        "text": "decode() 比 verify() 更安全，因为它不暴露 secret",
+        "isCorrect": false,
+        "description": "decode 无任何校验，是反模式"
+      },
+      {
+        "text": "decode() 是 verify() 的别名，行为一致",
+        "isCorrect": false,
+        "description": "两者完全不同，verify 才是完整校验"
+      },
+      {
+        "text": "decode() 仅用于 HS256，verify() 用于 RS256",
+        "isCorrect": false,
+        "description": "decode 不区分算法，因为它根本不验签"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：Authorization: Bearer 头与 Cookie 传输 JWT 的核心取舍是？",
+    "explanation": "两种主流传输方式各有取舍：①Authorization: Bearer <token>——前端手动加到请求头，不触发 CORS 复杂请求（无 Cookie 不被浏览器同源策略自动处理），适合 SPA / 移动端 / 跨域 API；缺点是前端必须自己管理存储位置与请求拦截。②Cookie（HttpOnly + Secure + SameSite）——浏览器自动随请求带，前端无需手动管理；缺点是自动随请求带导致 CSRF 风险（需 SameSite + CSRF token 缓解），且跨域需配置 CORS withCredentials。jwt.io 推荐 Bearer，OWASP 推荐用 HttpOnly Cookie 存 Refresh Token、Bearer 头携带 Access Token 是当代 SPA + API 的常见组合。",
+    "tags": ["JWT", "Bearer", "Cookie", "CORS", "CSRF"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Bearer 不触发 CORS 复杂请求但需前端管理；Cookie 自动带但需防 CSRF",
+        "isCorrect": true,
+        "description": "两者各有取舍，当代常见组合：AT Bearer + RT HttpOnly Cookie"
+      },
+      {
+        "text": "Bearer 必须用 HTTPS，Cookie 可以用 HTTP",
+        "isCorrect": false,
+        "description": "两者都应配 Secure 强制 HTTPS"
+      },
+      {
+        "text": "Cookie 容量比 Bearer 头大，能存更多 claim",
+        "isCorrect": false,
+        "description": "Cookie 容量（4KB）反而比 Authorization 头限制更严"
+      },
+      {
+        "text": "Bearer 头会自动被浏览器跨域带，无需 CORS",
+        "isCorrect": false,
+        "description": "Bearer 头不被浏览器自动管理，正是它不触发 CORS 复杂请求的原因"
+      }
+    ]
+  },
+  {
+    "stem": "JWT：JWT 的本质定位是什么？",
+    "explanation": "RFC 7519 把 JWT 定义为「在两方之间传输 claim 集合的紧凑、URL-safe 方式」——它是一种「跨信任方传输已签名 claim」的凭证载体，不是「session 替代品」也不是「状态容器」。它的设计目标是无状态验签（验证方不查服务端）、跨语言跨平台（标准 JSON + Base64URL）、跨域传输友好（URL-safe）。常见误用：把 JWT 当 session 存储希望「立刻吊销某用户」（与无状态设计相违背）、把敏感数据放 payload 希望保密（标准 JWS 不加密）。理解「JWT 是凭证而非状态」是避免常见反模式的关键。",
+    "tags": ["JWT", "定位", "凭证", "RFC 7519"],
+    "categories": [
+      ["技术方向", "JWT"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "跨信任方传输已签名 claim 集合的凭证载体",
+        "isCorrect": true,
+        "description": "RFC 7519 的核心定位，是凭证而非状态"
+      },
+      {
+        "text": "替代传统服务端 session 的状态容器",
+        "isCorrect": false,
+        "description": "JWT 是凭证不是状态存储，强行当 session 用会出现吊销难题"
+      },
+      {
+        "text": "一种加密协议，用于端到端加密通信",
+        "isCorrect": false,
+        "description": "标准 JWS 只签名不加密，加密是 JWE 的范围"
+      },
+      {
+        "text": "HTTP 替代协议，取代 REST API",
+        "isCorrect": false,
+        "description": "JWT 是 token 格式，不替代任何协议"
+      }
+    ]
+  }
+]
