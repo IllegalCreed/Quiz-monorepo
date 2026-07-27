@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "GAN：原始论文中生成对抗网络的核心价值函数是？",
+    "explanation": "Goodfellow 2014 原论文定义的极大极小价值函数为 min_G max_D V(D,G) = E_{x~p_data}[log D(x)] + E_{z~p_z}[log(1 - D(G(z)))]。判别器 D 最大化（把真样本判真、假样本识破），生成器 G 最小化（让 D 把假样本也判真）。其中 D(x)∈(0,1) 是 x 为真样本的概率，z 是噪声。整个 GAN 是一个零和博弈。",
+    "tags": ["gan", "minmax", "公式"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "min_G max_D  E[log D(x)] + E[log(1 - D(G(z)))]",
+        "isCorrect": true,
+        "description": "D 最大化（识破假货），G 最小化（骗过 D），零和博弈"
+      },
+      {
+        "text": "max_G min_D  E[log D(x)] + E[log(1 - D(G(z)))]",
+        "isCorrect": false,
+        "description": "min/max 方向反了，G 应是最小化方（想让假样本被判真）"
+      },
+      {
+        "text": "min_G max_D  E[D(x)] + E[D(G(z))]",
+        "isCorrect": false,
+        "description": "缺少 log，且 log(1-D(...)) 才是让假样本被识破的正确项"
+      },
+      {
+        "text": "min_G max_D  E[log(1 - D(x))] + E[log D(G(z))]",
+        "isCorrect": false,
+        "description": "真假样本项写反，D 应对真样本输出高概率（log D(x)）"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：在博弈达到全局最优（纳什均衡）时，判别器 D 的输出是什么？",
+    "explanation": "Goodfellow 在原论文证明：当 G 的分布 p_g 完全等于数据分布 p_data 时达到全局最优，此时最优判别器 D*(x) = p_data(x)/(p_data(x)+p_g(x)) = 1/2。直觉是 G 造的样本与真样本分布完全一致，判别器再也分不出真假，只能输出 0.5（瞎猜）。这是 GAN 训练成功的理论标志。",
+    "tags": ["gan", "最优点", "理论"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "对任意样本 x，D(x) = 1/2",
+        "isCorrect": true,
+        "description": "p_g = p_data 时 D 完全无法区分，输出恒为 0.5"
+      },
+      {
+        "text": "对真样本 D(x)=1，对假样本 D(G(z))=0",
+        "isCorrect": false,
+        "description": "这是训练初期的表现，D 轻松区分；最优态 D 已无判别力"
+      },
+      {
+        "text": "对所有样本 D(x) = 1",
+        "isCorrect": false,
+        "description": "若 D 全输出 1 说明它把所有样本都判真，并非均衡态"
+      },
+      {
+        "text": "D(x) 随机在 [0,1] 内波动",
+        "isCorrect": false,
+        "description": "均衡态是确定的 1/2，不是随机波动"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：生成器 G 的输入通常是什么？",
+    "explanation": "GAN 的生成器输入是一个随机噪声向量 z，通常采样自标准正态分布 N(0,I) 或均匀分布，维度常取 100。G 的作用是把 z 映射到样本空间 G(z)。z 所在的空间称为隐空间（latent space），训练良好的 GAN 隐空间具有可插值性和线性可加性，支持语义编辑。z 不是真实数据也不是标签。",
+    "tags": ["gan", "生成器", "噪声"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "从标准正态分布 N(0, I) 采样的随机噪声 z",
+        "isCorrect": true,
+        "description": "G 把噪声 z 映射成样本，z 所在空间是隐空间"
+      },
+      {
+        "text": "真实训练样本 x",
+        "isCorrect": false,
+        "description": "那是判别器的输入之一，G 不直接看真实样本"
+      },
+      {
+        "text": "类别标签 y",
+        "isCorrect": false,
+        "description": "标签是条件 GAN（CGAN）的额外输入，普通 GAN 不用"
+      },
+      {
+        "text": "判别器 D 的输出",
+        "isCorrect": false,
+        "description": "D 的输出是损失信号传回 G，不是 G 的输入"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：训练时 G 和 D 的更新方式是？",
+    "explanation": "GAN 不能一次性反向传播，因为 G 与 D 目标相反。Goodfellow 原论文算法：每个训练迭代先 k 步更新 D（梯度上升最大化 V，原论文 k=1），再 1 步更新 G（梯度下降最小化 V）。这是交替优化（alternating optimization），保证 D 不会太强（否则 G 梯度消失）也不会太弱。",
+    "tags": ["gan", "训练算法", "交替优化"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "交替进行：先 k 步更新 D（梯度上升），再 1 步更新 G（梯度下降）",
+        "isCorrect": true,
+        "description": "原论文算法，k=1，D 与 G 交替优化"
+      },
+      {
+        "text": "同时用一个大损失函数一次性反向传播更新两者",
+        "isCorrect": false,
+        "description": "G 与 D 目标相反，无法合成单一损失同时优化"
+      },
+      {
+        "text": "只更新 G，D 固定不变",
+        "isCorrect": false,
+        "description": "D 不变则 G 学到的「骗术」很快过时，无法持续"
+      },
+      {
+        "text": "先训练完 D 再训练 G，分两阶段",
+        "isCorrect": false,
+        "description": "分两阶段会导致 D 与 G 能力不匹配，需交替进行"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：实践中 G 的损失为何常改用 -log D(G(z)) 最大化，而非原论文的 log(1-D(G(z))) 最小化？",
+    "explanation": "训练初期 G 很差，D 轻松识破假样本，D(G(z))≈0，此时 log(1-D(G(z)))≈log1=0 且梯度极小，G 学不动（梯度消失）。改用最大化 log D(G(z))（即 -log D 损失），在 D(G(z)) 接近 0 时梯度很大，G 能快速学习。两者理论最优解相同，但后者优化路径更顺畅，是工程标配。",
+    "tags": ["gan", "非饱和损失", "梯度"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "训练初期 D(G(z))≈0，log(1-D(G(z))) 梯度过小，-log D(G(z)) 梯度更大、学习更快",
+        "isCorrect": true,
+        "description": "非饱和损失（non-saturating loss）解决初期梯度消失"
+      },
+      {
+        "text": "-log D(G(z)) 的理论最优解不同，质量更高",
+        "isCorrect": false,
+        "description": "两种形式理论最优解相同，区别只在优化路径"
+      },
+      {
+        "text": "log(1-D(G(z))) 数学上不收敛",
+        "isCorrect": false,
+        "description": "原论文形式理论可收敛，只是初期梯度小"
+      },
+      {
+        "text": "-log D(G(z)) 能避免模式崩溃",
+        "isCorrect": false,
+        "description": "改损失形式不解决模式崩溃，需 WGAN/多样性正则等手段"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：什么是「模式崩溃」（mode collapse）？",
+    "explanation": "模式崩溃指生成器 G 收敛到只生成少数几种（甚至一种）样本，丧失多样性。例如训练人脸 GAN 结果生成 1 万张图都是同一张脸。根源是 G 找到一个能稳定骗过 D 的局部最优，反复输出该样本。对策包括 Minibatch discrimination、Unrolled GAN、特征匹配、改用 WGAN 等。",
+    "tags": ["gan", "模式崩溃", "多样性"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "G 只能生成少数几种样本，无法覆盖数据分布的全部模式",
+        "isCorrect": true,
+        "description": "丧失多样性是模式崩溃的核心特征"
+      },
+      {
+        "text": "判别器 D 训练崩溃，输出全为 0",
+        "isCorrect": false,
+        "description": "这是 D 的问题，模式崩溃专指 G 输出多样性丧失"
+      },
+      {
+        "text": "GAN 训练损失发散到无穷大",
+        "isCorrect": false,
+        "description": "发散是训练不稳定，不等于模式崩溃（崩溃时损失可能正常）"
+      },
+      {
+        "text": "生成样本分辨率过低、模糊",
+        "isCorrect": false,
+        "description": "这是质量问题，与多样性问题是两个维度"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：训练 D 时，假样本 G(z) 传给 D 前为何要 detach()？",
+    "explanation": "训练 D 时只应更新 D 的参数，不应让梯度流回 G。若不 detach，反向传播会同时更新 G（朝着让 D 误判的方向），破坏 G 与 D 的交替优化逻辑。detach() 切断计算图，G(z) 当作常量输入 D，梯度只更新 D。训练 G 时则不 detach，让梯度从 D 流回 G。",
+    "tags": ["gan", "实现", "计算图"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "切断计算图，避免梯度流回 G，保证 D 更新时不改变 G 参数",
+        "isCorrect": true,
+        "description": "训练 D 时 G(z) 应视为常量，只更新 D"
+      },
+      {
+        "text": "detach() 能加速训练",
+        "isCorrect": false,
+        "description": "detach 不改变速度，只切断梯度流"
+      },
+      {
+        "text": "防止 G(z) 数值溢出",
+        "isCorrect": false,
+        "description": "detach 与数值稳定性无关，是梯度路径控制"
+      },
+      {
+        "text": "让 D 能处理批量数据",
+        "isCorrect": false,
+        "description": "批量处理与 detach 无关"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：DCGAN 提出的图像 GAN 架构准则中，错误的是？",
+    "explanation": "DCGAN（Radford 2015）三大准则：用步长卷积/转置卷积替代池化；全用 BatchNorm（但 G 输出层与 D 输入层除外）；激活函数用 ReLU/LeakyReLU（G 输出用 Tanh）。生成器输出必须用 Tanh 归一化到 [-1,1]，而非 ReLU（ReLU 输出无界会失控）。BatchNorm 在 D 输入层也不用。",
+    "tags": ["dcgan", "架构", "准则"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "生成器输出层用 ReLU 激活",
+        "isCorrect": true,
+        "description": "应输出层用 Tanh 归一到 [-1,1]，ReLU 无界会失控（这是错误的准则描述）"
+      },
+      {
+        "text": "用转置卷积（G）和步长卷积（D）替代池化",
+        "isCorrect": false,
+        "description": "这是 DCGAN 正确准则，让网络自学下采样"
+      },
+      {
+        "text": "全用 BatchNorm（G 输出层和 D 输入层除外）",
+        "isCorrect": false,
+        "description": "这是 DCGAN 正确准则，稳定训练"
+      },
+      {
+        "text": "G 用 ReLU，D 用 LeakyReLU(0.2)",
+        "isCorrect": false,
+        "description": "这是 DCGAN 正确准则的激活函数选择"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：原始 GAN 训练不稳定的数学根源是什么？",
+    "explanation": "原 GAN 目标等价于最小化 p_data 与 p_g 的 JS 散度。当两分布不相交（训练初期几乎总是如此）时 JS 散度恒为常数 log2，梯度为零，G 收不到有效梯度信号；当 D 太强时 G 梯度完全消失。这正是 WGAN 用 Wasserstein 距离替换 JS 散度的动机——Wasserstein 距离即使分布不相交也提供平滑梯度。",
+    "tags": ["gan", "js散度", "梯度消失"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "等价优化 JS 散度，两分布不相交时梯度为零，G 学不动",
+        "isCorrect": true,
+        "description": "JS 散度在不相交时是常数，无梯度——WGAN 的核心改进点"
+      },
+      {
+        "text": "Adam 优化器在 GAN 上数值不稳定",
+        "isCorrect": false,
+        "description": "Adam 本身稳定，问题在损失函数的梯度特性"
+      },
+      {
+        "text": "BatchNorm 导致梯度爆炸",
+        "isCorrect": false,
+        "description": "BatchNorm 反而稳定训练，非根源"
+      },
+      {
+        "text": "网络层数太深导致梯度消失",
+        "isCorrect": false,
+        "description": "GAN 不稳与层数无直接关系，是 JS 散度特性所致"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：WGAN 用 Wasserstein 距离替换 JS 散度，主要优势是？",
+    "explanation": "WGAN（Arjovsky 2017）的核心改进是用 Wasserstein 距离（Earth-Mover 距离）替换 JS 散度。JS 散度在两分布不相交时梯度为零，而 Wasserstein 距离即使分布完全不相交仍提供平滑、非零的梯度，指向对方分布。此外 Wasserstein 距离的损失值与生成质量单调相关（loss 越低图越好），可作为训练进度指标，而原 GAN 损失无法反映质量。",
+    "tags": ["wgan", "wasserstein距离", "稳定性"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "即使两分布不相交也提供平滑梯度，且损失与生成质量单调相关",
+        "isCorrect": true,
+        "description": "WGAN 两大核心收益：连续梯度 + 可监控的损失"
+      },
+      {
+        "text": "生成速度比原 GAN 快几百倍",
+        "isCorrect": false,
+        "description": "WGAN 不改变推理速度，只改训练稳定性"
+      },
+      {
+        "text": "完全消除了模式崩溃",
+        "isCorrect": false,
+        "description": "WGAN 缓解但非完全消除模式崩溃"
+      },
+      {
+        "text": "不再需要判别器，只需生成器",
+        "isCorrect": false,
+        "description": "WGAN 仍需 critic（判别器改称），只是输出实数而非概率"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：WGAN 的 critic 必须满足什么数学约束？",
+    "explanation": "WGAN 的 critic（判别器改名）必须满足 1-Lipschitz 约束（梯度模长 ≤ 1），这是 Wasserstein 距离通过 Kantorovich-Rubinstein 对偶表达的前提。原 WGAN 用权重裁剪（weight clipping）硬约束，但粗暴且损害容量；WGAN-GP 改用梯度惩罚 λ·E[(‖∇D‖₂-1)²] 软约束，更优雅有效。",
+    "tags": ["wgan", "lipschitz", "约束"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "1-Lipschitz 连续（梯度模长 ≤ 1）",
+        "isCorrect": true,
+        "description": "WGAN 对偶推导的前提，权重裁剪或梯度惩罚用于强制满足"
+      },
+      {
+        "text": "单调递增",
+        "isCorrect": false,
+        "description": "Lipschitz 约束与单调性无关"
+      },
+      {
+        "text": "输出在 [0,1] 区间",
+        "isCorrect": false,
+        "description": "那是普通判别器（Sigmoid）的要求，WGAN critic 输出是实数"
+      },
+      {
+        "text": "凸函数",
+        "isCorrect": false,
+        "description": "critic 不要求凸性，只要求 Lipschitz"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：WGAN-GP 用梯度惩罚替代权重裁剪，梯度惩罚项的形式是？",
+    "explanation": "WGAN-GP（Gulrajani 2017）的梯度惩罚为在损失中加 λ·E_{x̂}[(‖∇_{x̂} f(x̂)‖₂ - 1)²]，其中 x̂ = ε·x_real + (1-ε)·x_fake 是真伪样本间的随机插值点，λ 常取 10。它惩罚 critic 对输入梯度的模长偏离 1，软性强制 1-Lipschitz 约束。比权重裁剪更优雅，不损害模型容量，是 WGAN 的事实标准。",
+    "tags": ["wgan-gp", "梯度惩罚", "公式"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "λ · E_{x̂}[ (‖∇_{x̂} f(x̂)‖₂ - 1)² ]，x̂ 为真伪样本间插值，λ 常取 10",
+        "isCorrect": true,
+        "description": "惩罚梯度模长偏离 1，软约束 1-Lipschitz"
+      },
+      {
+        "text": "λ · E[ ‖f(x)‖² ]，惩罚输出范数",
+        "isCorrect": false,
+        "description": "梯度惩罚针对的是对【输入】的梯度，不是输出范数"
+      },
+      {
+        "text": "λ · E[ (f(x) - 1)² ]，约束输出为 1",
+        "isCorrect": false,
+        "description": "这是约束输出值，与 Lipschitz 无关"
+      },
+      {
+        "text": "λ · E[ ‖∇f‖₂ ]，惩罚梯度模长",
+        "isCorrect": false,
+        "description": "应惩罚【偏离 1】的平方，非梯度模长本身"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：WGAN/WGAN-GP 的 critic 为什么不能用 BatchNorm？",
+    "explanation": "BatchNorm 在批内对样本做归一化，使同批样本的统计量耦合，这破坏了 critic 对单个样本独立估计梯度的需求，进而破坏 1-Lipschitz 梯度惩罚的估计正确性。WGAN-GP 应改用 LayerNorm（对单样本的特征通道归一化，不引入批间耦合），保证梯度惩罚的有效性。",
+    "tags": ["wgan-gp", "batchnorm", "归一化"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "BatchNorm 使批内样本耦合，破坏对单个样本梯度的独立估计与 1-Lipschitz 惩罚",
+        "isCorrect": true,
+        "description": "应改用 LayerNorm，避免批间统计耦合"
+      },
+      {
+        "text": "BatchNorm 会显著减慢训练速度",
+        "isCorrect": false,
+        "description": "BatchNorm 通常加速训练，问题在梯度估计正确性"
+      },
+      {
+        "text": "BatchNorm 与 Wasserstein 距离数学上不兼容",
+        "isCorrect": false,
+        "description": "非数学不兼容，是梯度惩罚估计被破坏"
+      },
+      {
+        "text": "BatchNorm 要求批大小过大",
+        "isCorrect": false,
+        "description": "批大小不是核心原因，关键是批内耦合"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：条件 GAN（CGAN）如何实现可控生成？",
+    "explanation": "CGAN（Mirza & Osindero 2014）把条件 y（类别标签、文本、图像等）同时拼接到生成器 G 和判别器 D 的输入。G(z,y) 生成符合条件 y 的样本，D(x,y) 判断样本 x 是否既真实又符合条件 y。目标是 min_G max_D E[log D(x|y)] + E[log(1-D(G(z|y)|y))]。后续 Pix2Pix、Text-to-Image、StyleGAN 都是 CGAN 的延伸。",
+    "tags": ["cgan", "条件生成", "架构"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把条件 y 拼接到 G 和 D 的输入，G(z,y) 生成符合 y 的样本，D(x,y) 联合判别",
+        "isCorrect": true,
+        "description": "条件注入 G 与 D，实现可控生成"
+      },
+      {
+        "text": "只在生成器输入加条件，判别器不看条件",
+        "isCorrect": false,
+        "description": "若 D 不看 y，G 可忽略 y 也能骗过 D，条件失效"
+      },
+      {
+        "text": "用条件 y 替代噪声 z",
+        "isCorrect": false,
+        "description": "条件 GAN 仍需随机性，y 与 z 并存"
+      },
+      {
+        "text": "通过修改损失函数加入条件，不改网络输入",
+        "isCorrect": false,
+        "description": "CGAN 的核心就是把 y 注入网络输入"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：CycleGAN 如何在无配对数据下实现图像翻译（如马↔斑马）？",
+    "explanation": "CycleGAN（Zhu 2017）用两个生成器 G:X→Y、F:Y→X 和两个判别器，核心是循环一致性损失 L_cyc = E_x[‖F(G(x))-x‖_1] + E_y[‖G(F(y))-y‖_1]，强制样本翻译过去再翻译回来≈原样本（保留内容只改风格）。配合对抗损失 L_GAN，总损失 L_GAN + λ·L_cyc（λ 常取 10）。这摆脱了 Pix2Pix 那样的配对数据依赖。",
+    "tags": ["cyclegan", "循环一致性", "图像翻译"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "双 G 双 D + 循环一致性损失 L_cyc = E[‖F(G(x))-x‖] + E[‖G(F(y))-y‖]",
+        "isCorrect": true,
+        "description": "循环一致性保证内容保留，是无需配对的关键"
+      },
+      {
+        "text": "用一个生成器和一个判别器，通过强 L2 损失",
+        "isCorrect": false,
+        "description": "单向 G 无法保证翻译的可逆性与内容保留"
+      },
+      {
+        "text": "必须收集大量配对数据",
+        "isCorrect": false,
+        "description": "CycleGAN 的核心价值就是摆脱配对依赖"
+      },
+      {
+        "text": "用预训练分类器指导翻译方向",
+        "isCorrect": false,
+        "description": "CycleGAN 不依赖分类器，靠对抗+循环损失"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：StyleGAN 用什么机制把风格注入生成器每层？",
+    "explanation": "StyleGAN（Karras 2019）用 AdaIN（Adaptive Instance Normalization）把风格向量 w 注入每层。w 由噪声 z 经映射网络得到。AdaIN 公式为 AdaIN(x_i, w) = w_scale·(x_i - μ(x_i))/σ(x_i) + w_bias，即对每层特征做实例归一化后用 w 给的 scale/bias 重新缩放。这使不同层 w 控制不同粒度风格（高层控姿态、低层控发色），并配合随机噪声控制微观随机性（发丝、雀斑）。",
+    "tags": ["stylegan", "adain", "风格注入"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "AdaIN（自适应实例归一化），用风格 w 给每层特征的 scale/bias",
+        "isCorrect": true,
+        "description": "w 由映射网络得到，逐层 AdaIN 注入，实现风格解耦"
+      },
+      {
+        "text": "把风格直接拼接到输入噪声 z",
+        "isCorrect": false,
+        "description": "那只在输入端注入一次，无法逐层控制"
+      },
+      {
+        "text": "用自注意力机制",
+        "isCorrect": false,
+        "description": "自注意力是 BigGAN/SAGAN 的技术，非 StyleGAN"
+      },
+      {
+        "text": "用谱归一化",
+        "isCorrect": false,
+        "description": "谱归一化是 SNGAN 的稳定技术，与风格注入无关"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：BigGAN 的「截断技巧」（truncation trick）作用是？",
+    "explanation": "BigGAN（Brock 2019）的截断技巧是采样噪声 z 时从截断正态分布（丢弃离均值过远的样本）采样。阈值越小，z 越集中在均值附近，生成样本越「标准」、质量越高，但多样性下降；阈值越大，多样性高但可能出现怪样本。这直观体现了 GAN「质量 vs 多样性」的核心权衡，通过调阈值在两者间取舍。",
+    "tags": ["biggan", "截断技巧", "质量多样性"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从截断正态采样 z，阈值越小质量越高但多样性下降，权衡质量与多样性",
+        "isCorrect": true,
+        "description": "截断技巧直观体现质量-多样性权衡"
+      },
+      {
+        "text": "截断判别器的输出以稳定训练",
+        "isCorrect": false,
+        "description": "截断作用于噪声采样，不是判别器输出"
+      },
+      {
+        "text": "丢弃训练集中的低质量样本",
+        "isCorrect": false,
+        "description": "与训练数据无关，是生成采样时的技巧"
+      },
+      {
+        "text": "减少网络层数以加速推理",
+        "isCorrect": false,
+        "description": "截断与网络结构无关"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：评估生成质量最主流的指标 FID 衡量的是什么？",
+    "explanation": "FID（Fréchet Inception Distance）用预训练 Inception 网络提取真实样本与生成样本的特征，假设两组特征都服从高斯分布，计算两个高斯分布之间的 Fréchet 距离（考虑均值与协方差）。FID 越低，生成分布与真实分布越接近，质量与多样性都越好。FID 已成为 GAN 评估事实标准，远比不参考真实数据的 IS（Inception Score）可靠。",
+    "tags": ["fid", "评估", "指标"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "真实与生成样本在 Inception 特征空间的 Fréchet 距离，越低越好",
+        "isCorrect": true,
+        "description": "同时反映质量与多样性，是主流指标"
+      },
+      {
+        "text": "生成样本被 Inception 分类器正确分类的比例",
+        "isCorrect": false,
+        "description": "那是 IS 的部分逻辑，且 IS 不与真实数据对比"
+      },
+      {
+        "text": "生成样本的像素级均方误差",
+        "isCorrect": false,
+        "description": "像素级指标对生成任务无意义（无配对）"
+      },
+      {
+        "text": "判别器 D 的损失值",
+        "isCorrect": false,
+        "description": "原 GAN 损失不与质量单调相关，不能作指标"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：训练中若判别器 D 远强于生成器 G，会出现什么问题？",
+    "explanation": "D 太强时，D(G(z))≈0 且 D 在假样本附近梯度趋于零（JS 散度饱和），G 收到的梯度信号消失，无法学习。这是 GAN 训练失衡的典型表现。对策：降低 D 容量或更新次数、用 WGAN（Wasserstein 距离不饱和）、用非饱和损失 -log D(G(z))、加正则等。理想是 G 与 D 能力匹配、同步进步。",
+    "tags": ["gan", "判别器", "梯度消失"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "G 梯度消失，无法学习，训练停滞",
+        "isCorrect": true,
+        "description": "D 太强→梯度饱和→G 学不动，需控制 D 能力或换 WGAN"
+      },
+      {
+        "text": "G 学得更快，迅速收敛",
+        "isCorrect": false,
+        "description": "相反，G 反而学不动"
+      },
+      {
+        "text": "必然发生模式崩溃",
+        "isCorrect": false,
+        "description": "模式崩溃是另一问题，D 太强主要导致 G 梯度消失"
+      },
+      {
+        "text": "FID 自动降到最低",
+        "isCorrect": false,
+        "description": "梯度消失导致 G 不进步，FID 不会好"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：WGAN 的 critic 输出与普通 GAN 判别器输出的区别是？",
+    "explanation": "普通 GAN 判别器输出经过 Sigmoid，是 [0,1] 区间的概率（样本为真的概率）。WGAN 的 critic（评论家）不评估概率，而是估计一个实数 f(x) 用于计算 Wasserstein 距离，因此输出层无 Sigmoid，输出是无界实数。这是 WGAN 与原 GAN 在工程实现上的明显区别之一。",
+    "tags": ["wgan", "critic", "输出"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "critic 输出无界实数（无 Sigmoid），普通判别器输出 [0,1] 概率（有 Sigmoid）",
+        "isCorrect": true,
+        "description": "critic 估计 Wasserstein 距离的实数，非概率"
+      },
+      {
+        "text": "两者都用 Sigmoid 输出概率",
+        "isCorrect": false,
+        "description": "WGAN critic 不用 Sigmoid"
+      },
+      {
+        "text": "critic 输出在 [-1,1]，普通判别器输出 [0,1]",
+        "isCorrect": false,
+        "description": "critic 输出无界，不在 [-1,1]"
+      },
+      {
+        "text": "critic 不输出任何值，只传梯度",
+        "isCorrect": false,
+        "description": "critic 必须输出实数参与损失计算"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：StyleGAN2 相比 StyleGAN 主要解决了什么问题？",
+    "explanation": "StyleGAN2（Karras 2020）主要针对 StyleGAN 的 AdaIN 引入的伪影（blob-like artifacts，水滴状伪影）进行修复。原因是 AdaIN 会让每层特征归一化后某个特征主导，导致异常值。StyleGAN2 移除 AdaIN 改用权重调制与解调（weight demodulation），并加入 path length regularization（路径长度正则）使隐空间更线性，显著提升图像质量与可编辑性。",
+    "tags": ["stylegan2", "adain", "伪影"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "去除 AdaIN 引入的水滴状伪影，改用权重解调 + path length regularization",
+        "isCorrect": true,
+        "description": "StyleGAN2 修复 AdaIN 伪影，提升质量与可编辑性"
+      },
+      {
+        "text": "把分辨率从 1024 提升到 2048",
+        "isCorrect": false,
+        "description": "分辨率提升非 StyleGAN2 主要贡献"
+      },
+      {
+        "text": "用 Transformer 替换卷积",
+        "isCorrect": false,
+        "description": "StyleGAN2 仍是卷积架构"
+      },
+      {
+        "text": "完全取消映射网络",
+        "isCorrect": false,
+        "description": "映射网络是 StyleGAN 的核心，仍保留"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：谱归一化（Spectral Normalization）的作用机制是？",
+    "explanation": "谱归一化（Miyato et al. 2018，SNGAN）通过约束每层权重矩阵的谱范数（最大奇异值）为 1 来强制判别器满足 Lipschitz 连续性。相比 WGAN 的权重裁剪和 WGAN-GP 的梯度惩罚，谱归一化实现简单（对权重做幂迭代估最大奇异值再除掉）、不增加计算开销、效果稳定，被广泛用于稳定 GAN 训练，是 SNGAN/BigGAN 等的标配。",
+    "tags": ["spectral-norm", "lipschitz", "稳定性"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "约束每层权重矩阵的最大奇异值为 1，强制判别器 Lipschitz 连续",
+        "isCorrect": true,
+        "description": "用幂迭代估计谱范数并归一化权重，简单高效"
+      },
+      {
+        "text": "对输入样本做归一化",
+        "isCorrect": false,
+        "description": "谱归一化作用于权重矩阵，非输入样本"
+      },
+      {
+        "text": "对输出做 Sigmoid 归一化",
+        "isCorrect": false,
+        "description": "那是普通判别器，与谱归一化无关"
+      },
+      {
+        "text": "对损失函数加惩罚项",
+        "isCorrect": false,
+        "description": "谱归一化改权重，不在损失函数加项"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：给定固定 G，最优判别器 D*_G(x) 的表达式是？",
+    "explanation": "Goodfellow 原论文证明：对固定的生成器 G（其分布为 p_g），使价值函数 V 最大化的最优判别器为 D*_G(x) = p_data(x) / (p_data(x) + p_g(x))。当 p_g = p_data 时退化为 1/2（全局最优）。这个表达式是 GAN 理论分析的基石，进一步可证明最优 D 下 G 的目标等价于最小化 JS 散度。",
+    "tags": ["gan", "最优判别器", "理论"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "D*_G(x) = p_data(x) / (p_data(x) + p_g(x))",
+        "isCorrect": true,
+        "description": "固定 G 时使 V 最大化的判别器，全局最优退化为 1/2"
+      },
+      {
+        "text": "D*_G(x) = p_data(x) · p_g(x)",
+        "isCorrect": false,
+        "description": "形式错误，应为比值而非乘积"
+      },
+      {
+        "text": "D*_G(x) = p_g(x) / p_data(x)",
+        "isCorrect": false,
+        "description": "分子分母颠倒，且缺少 +p_g(x) 项"
+      },
+      {
+        "text": "D*_G(x) = 1/2（恒定）",
+        "isCorrect": false,
+        "description": "1/2 是 p_g=p_data 全局最优态，固定 G 的一般最优是比值形式"
+      }
+    ]
+  },
+  {
+    "stem": "GAN：相比扩散模型，GAN 在当前生成模型生态中的核心定位是？",
+    "explanation": "扩散模型在图像生成质量与多模态条件控制上已超越 GAN，但 GAN 在两个维度仍不可替代：(1) 推理速度极快（单次前向出图，比扩散快几百倍），适合实时交互；(2) 隐空间可编辑性强（可插值、线性可加）。因此 GAN 在实时生成、风格迁移、超分、视频生成等延迟敏感场景仍是首选，而高保真可控图像生成主流已转向扩散模型。",
+    "tags": ["gan", "对比", "生态定位"],
+    "categories": [
+      ["技术方向", "生成对抗网络（GAN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "实时生成（单次前向）与强隐空间可编辑性场景的首选",
+        "isCorrect": true,
+        "description": "GAN 推理快、隐空间可控，在延迟敏感场景不可替代"
+      },
+      {
+        "text": "已在所有生成任务中被扩散模型完全取代",
+        "isCorrect": false,
+        "description": "实时、超分、风格迁移等场景 GAN 仍是主力"
+      },
+      {
+        "text": "仅用于学术研究，工业界已无人使用",
+        "isCorrect": false,
+        "description": "StyleGAN、换脸、数据增强等工业应用广泛"
+      },
+      {
+        "text": "只能生成低分辨率图像，无法扩展",
+        "isCorrect": false,
+        "description": "StyleGAN3 可生成 1024×1024，BigGAN 扩展到大规模"
+      }
+    ]
+  }
+]

@@ -1,0 +1,715 @@
+[
+  {
+    "stem": "CNN：卷积神经网络的三大核心设计支柱是什么？",
+    "explanation": "CNN 通过三大设计支柱大幅降低参数量并利用图像的归纳偏置：①局部连接——每个神经元只连接输入的一个小区域（感受野）而非全部像素，参数量随核大小而非输入大小增长；②参数共享——同一卷积核在整张特征图上滑动复用同一组权重，假设「特征平移不变」，大幅减参；③多通道堆叠——一层用多个核学不同特征，输出在深度方向堆叠成特征图。cs231n 实例：AlexNet 第一层若用全连接需 1.05 亿参数，用卷积只要约 3.5 万。",
+    "tags": ["局部连接", "参数共享", "多通道", "cs231n"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "局部连接 + 参数共享 + 多通道堆叠",
+        "isCorrect": true,
+        "description": "cs231n 定义 CNN 的三大支柱"
+      },
+      {
+        "text": "全连接 + 激活函数 + 池化",
+        "isCorrect": false,
+        "description": "全连接是 MLP 的特征，CNN 正是要替代它"
+      },
+      {
+        "text": "残差连接 + BatchNorm + Dropout",
+        "isCorrect": false,
+        "description": "这些是训练技巧，非 CNN 结构支柱"
+      },
+      {
+        "text": "注意力 + 嵌入 + 解码",
+        "isCorrect": false,
+        "description": "这是 Transformer 的组成"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：卷积层输出空间尺寸由哪个公式决定？",
+    "explanation": "cs231n 给出卷积输出空间尺寸公式：output = (W - F + 2P) / S + 1，其中 W 是输入尺寸、F 是核大小、P 是零填充、S 是步长。该值必须为整数，否则配置非法（PyTorch 会报错）。例如 W=224, F=3, S=1, P=1 → (224-3+2)/1+1=224（同型卷积，尺寸不变）；F=3, S=2, P=1 → (224-3+2)/2+1=112.5 非法，但 (224-3+2)/2+1 实际计算为 112.5 不合法，常用 padding 调整。dilation 会增大有效核大小为 F+(F-1)(dilation-1)。",
+    "tags": ["输出尺寸", "卷积公式", "cs231n"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "(W - F + 2P) / S + 1，必须为整数否则非法",
+        "isCorrect": true,
+        "description": "W=输入尺寸 F=核 P=填充 S=步长"
+      },
+      {
+        "text": "W × F × P × S",
+        "isCorrect": false,
+        "description": "不是连乘关系"
+      },
+      {
+        "text": "(W + F) / S",
+        "isCorrect": false,
+        "description": "缺少 padding 项且形式不对"
+      },
+      {
+        "text": "W - F + S",
+        "isCorrect": false,
+        "description": "形式错误"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：为什么图像分类用 CNN 而非 MLP？以 224×224 RGB 图为例。",
+    "explanation": "一张 224×224 RGB 图有 224×224×3=150528 个输入像素。若第一层 MLP 有 1000 个神经元，仅这一层就需 1.5 亿参数——既严重过拟合又算不动。CNN 用局部连接（每个神经元只看 3×3 局部）+ 参数共享（同一核全图复用），同样 1000 个 3×3 核只要 3×3×3×1000=27000 参数，少了 5000 倍。此外 CNN 内建的平移不变性归纳偏置让它在小数据上泛化更好。这是 CNN 在图像领域的事实标准地位根基。",
+    "tags": ["CNN", "MLP", "参数量", "图像分类"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "MLP 在 224×224 图上参数量爆炸（1.5 亿/层），CNN 用局部连接+参数共享减参数千倍",
+        "isCorrect": true,
+        "description": "参数效率是 CNN 优于 MLP 的关键"
+      },
+      {
+        "text": "MLP 不能处理图像",
+        "isCorrect": false,
+        "description": "MLP 技术上能处理，只是参数太多不实用"
+      },
+      {
+        "text": "CNN 不需要训练",
+        "isCorrect": false,
+        "description": "CNN 仍需训练"
+      },
+      {
+        "text": "MLP 没有 GPU 加速",
+        "isCorrect": false,
+        "description": "两者都能 GPU 加速"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：PyTorch 图像张量的标准维度顺序是什么？",
+    "explanation": "PyTorch 图像张量约定为 NCHW：[Batch, Channel, Height, Width]。例如 batch=32 的 224×224 RGB 图是 [32, 3, 224, 224]。这与「Channel-first」对应，区别于 TensorFlow 默认的 NHWC（Channel-last）。新手最常犯的错是漏掉 batch 维（传 [3,224,224] 而非 [1,3,224,224]）或把 H/W 放在 Channel 前（误用 NHWC）。卷积层 nn.Conv2d 的输入必须严格符合 NCHW。",
+    "tags": ["NCHW", "维度顺序", "PyTorch"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "[Batch, Channel, Height, Width]（NCHW）",
+        "isCorrect": true,
+        "description": "PyTorch 是 channel-first"
+      },
+      {
+        "text": "[Batch, Height, Width, Channel]（NHWC）",
+        "isCorrect": false,
+        "description": "这是 TensorFlow 默认"
+      },
+      {
+        "text": "[Channel, Batch, Height, Width]",
+        "isCorrect": false,
+        "description": "Batch 必须在第一维"
+      },
+      {
+        "text": "[Height, Width, Channel, Batch]",
+        "isCorrect": false,
+        "description": "顺序全错"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：cs231n 指出现代网络中最常用的池化类型是哪种？",
+    "explanation": "cs231n 明确：Max Pooling 是最常用的池化操作，取区域最大值，保留最强响应特征。Average Pooling（取均值）已「recently fallen out of favor」（失宠）。更现代的趋势是用 stride=2 卷积代替池化做下采样——卷积可学习如何降采样，比固定的 max 操作更灵活。但 Global Average Pooling（全局平均池化）仍是分类头标配，替代末端全连接层大幅减参（GoogLeNet 起流行）。",
+    "tags": ["池化", "Max Pooling", "cs231n"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Max Pooling（最大池化），保留最强响应",
+        "isCorrect": true,
+        "description": "cs231n 指出 Max Pooling 最常用"
+      },
+      {
+        "text": "Average Pooling（平均池化）",
+        "isCorrect": false,
+        "description": "cs231n 说它已失宠"
+      },
+      {
+        "text": "L2-norm Pooling",
+        "isCorrect": false,
+        "description": "极少使用"
+      },
+      {
+        "text": "Min Pooling",
+        "isCorrect": false,
+        "description": "几乎不用"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：为什么 VGG 提倡堆叠多个 3×3 卷积而非直接用单个大核（如 7×7）？",
+    "explanation": "VGG 的核心洞察：3 个 3×3 卷积（参数 27·C²）的感受野等于 1 个 7×7 卷积（参数 49·C²），但参数少近一半，且每层卷积后接 ReLU 增加了非线性次数（3 次而非 1 次），表达力更强。这是「更深更窄更优」的工程证据。小核堆叠从此成为现代 CNN 主流（ResNet、EfficientNet 全用 3×3）。",
+    "tags": ["VGG", "3x3卷积", "感受野", "堆叠小核"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "3 个 3×3 参数更少（27 vs 49）、感受野相同、非线性更多",
+        "isCorrect": true,
+        "description": "VGG 的核心洞察"
+      },
+      {
+        "text": "3×3 卷积计算比 7×7 更慢",
+        "isCorrect": false,
+        "description": "堆叠小核总计算量更少"
+      },
+      {
+        "text": "大核无法在 GPU 上运行",
+        "isCorrect": false,
+        "description": "大核完全可用"
+      },
+      {
+        "text": "3×3 卷积不需要激活函数",
+        "isCorrect": false,
+        "description": "两者都需激活引入非线性"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：ResNet 的残差连接（skip connection）解决的核心问题是什么？",
+    "explanation": "ResNet（He et al. 2015）发现：单纯加深网络反而训练效果变差（退化问题，非过拟合）。原因是深层网络梯度难以传回浅层（梯度消失/退化）。残差连接让 block 学习残差 F(x)=y-x 而非直接学 y，并让梯度通过 +x 这条捷径直通到浅层，缓解梯度消失。这使得网络可训到 152 层甚至更深，精度持续提升。ResNet50 是工业界默认主干。",
+    "tags": ["ResNet", "残差连接", "梯度消失", "深度"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "退化问题——网络加深反而效果变差，残差连接让梯度直通，可训上百层",
+        "isCorrect": true,
+        "description": "ResNet 突破了深度瓶颈"
+      },
+      {
+        "text": "过拟合——残差连接是正则化",
+        "isCorrect": false,
+        "description": "退化问题非过拟合，ResNet 解决的是优化困难"
+      },
+      {
+        "text": "参数量过大——残差连接减参",
+        "isCorrect": false,
+        "description": "残差连接实际略微增加参数"
+      },
+      {
+        "text": "计算速度慢——残差连接加速",
+        "isCorrect": false,
+        "description": "残差连接是为可训练性，非速度"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：1×1 卷积的核心用途是什么？",
+    "explanation": "1×1 卷积不改变空间尺寸（每个像素独立处理），只在通道维做线性组合。三大用途：①通道降维——把 512 通道降到 64，参数与计算量降 8 倍（Inception 瓶颈层）；②通道升维——低成本增加非线性表达（ResNet 瓶颈块）；③跨通道信息融合——让不同通道特征交互（等效逐像素全连接）。Inception 用 1×1 在 3×3/5×5 卷积前降通道，把参数从爆炸式增长压到可控。",
+    "tags": ["1x1卷积", "通道变换", "Inception", "瓶颈层"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "不改变空间尺寸，做通道降维/升维与跨通道信息融合",
+        "isCorrect": true,
+        "description": "Inception 瓶颈层的关键"
+      },
+      {
+        "text": "扩大空间感受野",
+        "isCorrect": false,
+        "description": "1×1 的感受野就是单像素"
+      },
+      {
+        "text": "代替池化做下采样",
+        "isCorrect": false,
+        "description": "下采样需 stride>1 的卷积"
+      },
+      {
+        "text": "替代全连接层做分类",
+        "isCorrect": false,
+        "description": "分类仍需线性层"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：空洞卷积（Dilated Convolution）的主要作用是什么？常用于哪类任务？",
+    "explanation": "空洞卷积在核元素之间插入间隔（dilation>1），在不增加参数量和计算量的前提下扩大有效感受野。普通 3×3 卷积感受野是 3，dilation=2 时有效核大小变为 5（感受野 5），dilation=4 时变为 9。这使得网络能用少层数覆盖大区域，特别适合语义分割（DeepLab 系列）——分割需要大感受野理解全局语义，又不能像池化那样丢失空间分辨率。",
+    "tags": ["空洞卷积", "感受野", "语义分割", "DeepLab"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不增加参数而扩大感受野，常用于语义分割（DeepLab）",
+        "isCorrect": true,
+        "description": "dilation>1 在核元素间插间隔"
+      },
+      {
+        "text": "减少参数量",
+        "isCorrect": false,
+        "description": "参数量不变，只是有效感受野变大"
+      },
+      {
+        "text": "加速卷积计算",
+        "isCorrect": false,
+        "description": "计算量不变"
+      },
+      {
+        "text": "替代 BatchNorm",
+        "isCorrect": false,
+        "description": "两者完全无关"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：感受野（Receptive Field）的概念是什么？为什么堆叠小核能扩大它？",
+    "explanation": "感受野指一个神经元在原始输入上「看到」的区域大小。第一层 3×3 卷积每个神经元看 3×3；第二层 3×3 卷积的每个神经元，其输入来自第一层的 3×3 个神经元，这些神经元覆盖了原始输入的 5×5 区域，故第二层感受野是 5。每加一层 3×3 stride=1 卷积，感受野扩大 2。三个 3×3 堆叠感受野为 7，等价于一个 7×7 卷积但参数少一半、非线性多。这是 VGG/ResNet 用小核堆叠的依据。",
+    "tags": ["感受野", "堆叠小核", "VGG"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "神经元在原始输入上看到的区域；每加一层 3×3 卷积感受野扩大 2",
+        "isCorrect": true,
+        "description": "3 个 3×3 堆叠感受野=7×7"
+      },
+      {
+        "text": "卷积核的物理大小",
+        "isCorrect": false,
+        "description": "那是 kernel size，感受野是相对原始输入的"
+      },
+      {
+        "text": "批量大小",
+        "isCorrect": false,
+        "description": "完全无关"
+      },
+      {
+        "text": "池化窗口大小",
+        "isCorrect": false,
+        "description": "池化是另一种操作"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：AlexNet（2012）引爆深度学习的三大关键贡献是什么？",
+    "explanation": "AlexNet（Krizhevsky et al. 2012）在 ImageNet 大赛以巨大优势夺冠（Top-5 错误率从 26% 降到 15.3%），引爆深度学习。三大贡献：①用 ReLU 替代 Sigmoid——解决梯度饱和，训练速度提升约 6 倍；②Dropout 正则化——全连接层 Dropout=0.5，强力抑制过拟合；③GPU 训练——双 GTX 580 并行，证明大数据+大模型+大算力可行。它确立了「数据+算力+深度」的范式。",
+    "tags": ["AlexNet", "ReLU", "Dropout", "GPU", "ImageNet"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ReLU 替代 Sigmoid + Dropout 正则化 + GPU 训练",
+        "isCorrect": true,
+        "description": "三大贡献确立了深度学习范式"
+      },
+      {
+        "text": "残差连接 + BatchNorm + Attention",
+        "isCorrect": false,
+        "description": "这些是后续 ResNet/Transformer 的贡献"
+      },
+      {
+        "text": "空洞卷积 + 1×1 卷积 + 全局平均池化",
+        "isCorrect": false,
+        "description": "这是 GoogLeNet/DeepLab 的创新"
+      },
+      {
+        "text": "LSTM + Seq2Seq + Beam Search",
+        "isCorrect": false,
+        "description": "这是 RNN/机器翻译的技术"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：特征金字塔网络（FPN）解决什么问题？它的核心结构是什么？",
+    "explanation": "FPN（Lin et al. 2017）解决目标检测中多尺度物体检测问题——小物体需在高分辨率特征图检测、大物体在低分辨率检测，但传统金字塔每层语义强弱不一。FPN 用「自顶向下 + 横向连接」：主干前向产生分辨率递减的 C2-C5；顶层语义强的特征上采样后与下层横向连接融合，输出 P2-P5 每层都既有高分辨率又有强语义。它是 RetinaNet、Mask R-CNN、YOLOv3+ 的核心组件。",
+    "tags": ["FPN", "特征金字塔", "目标检测", "多尺度"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "多尺度检测；自顶向下上采样 + 横向连接融合，让每层都有高分辨率+强语义",
+        "isCorrect": true,
+        "description": "FPN 是现代检测器标配"
+      },
+      {
+        "text": "图像分类精度；用更深的主干",
+        "isCorrect": false,
+        "description": "FPN 是检测/分割结构，非分类主干"
+      },
+      {
+        "text": "训练速度；用更少的层",
+        "isCorrect": false,
+        "description": "FPN 增加了横向连接，略增计算"
+      },
+      {
+        "text": "过拟合；用更强的正则化",
+        "isCorrect": false,
+        "description": "FPN 与正则化无关"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：GoogLeNet/Inception 用什么机制在保持精度的同时把参数量降到 4M？",
+    "explanation": "GoogLeNet（2014）用两个机制把参数降到 4M（AlexNet 是 60M）：①Inception 模块——同一层并行用 1×1、3×3、5×5 卷积和池化，再沿通道维拼接，让网络自选多尺度特征；②1×1 卷积降维——在昂贵的 3×3/5×5 卷积前加 1×1 减通道数，把参数压到可控。它还率先用全局平均池化（GAP）替代末端大全连接层，砍掉了 VGG 那种上百M 参数的分类头。",
+    "tags": ["GoogLeNet", "Inception", "1x1卷积", "全局平均池化"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Inception 多尺度并行模块 + 1×1 卷积降维 + 全局平均池化替代大 FC",
+        "isCorrect": true,
+        "description": "三招组合把参数降到 4M"
+      },
+      {
+        "text": "更少的层数和通道",
+        "isCorrect": false,
+        "description": "Inception 实际用了 22 层"
+      },
+      {
+        "text": "更小的输入分辨率",
+        "isCorrect": false,
+        "description": "Inception 输入仍是 224×224"
+      },
+      {
+        "text": "更强的 L2 正则化",
+        "isCorrect": false,
+        "description": "正则化不直接减参"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：语义分割任务中，U-Net 的「跳跃连接」起什么作用？",
+    "explanation": "U-Net 是医学影像分割的标杆架构，采用对称的编码器-解码器结构。其核心是跳跃连接（skip connection）：把编码器每层的高分辨率特征直接拼接到对应分辨率的解码器层。作用是补偿下采样丢失的空间细节——编码器虽提取了强语义但分辨率低，跳跃连接把精细的边界、纹理信息传给解码器，使其能精确恢复物体轮廓。这对像素级分割至关重要。",
+    "tags": ["U-Net", "语义分割", "跳跃连接", "编码器解码器"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把编码器高分辨率细节传给解码器，恢复空间边界精度",
+        "isCorrect": true,
+        "description": "U-Net 的灵魂"
+      },
+      {
+        "text": "减少参数量",
+        "isCorrect": false,
+        "description": "拼接实际增加通道数"
+      },
+      {
+        "text": "加速训练",
+        "isCorrect": false,
+        "description": "跳跃连接主要为精度"
+      },
+      {
+        "text": "替代 BatchNorm",
+        "isCorrect": false,
+        "description": "两者无关"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：为什么现代 CNN（ResNet 之后）倾向用 stride=2 卷积代替池化做下采样？",
+    "explanation": "cs231n 指出现代趋势是用 stride=2 卷积代替 MaxPool 做下采样。原因：池化（max/avg）是固定的不可学习操作，而 strided 卷积是可学习的——网络可以学到「如何最优地降采样」而非机械取最大值或均值。这通常带来精度提升。但全局平均池化（GAP）仍保留用于分类头，因为它把整个特征图压缩成单一向量，等效于「找到最显著的整体响应」，比 FC 更不易过拟合。",
+    "tags": ["下采样", "stride卷积", "池化", "cs231n"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "stride 卷积可学习如何降采样，比固定的 max/avg 操作更灵活",
+        "isCorrect": true,
+        "description": "cs231n 指出的现代趋势"
+      },
+      {
+        "text": "stride 卷积计算更慢所以淘汰池化",
+        "isCorrect": false,
+        "description": "原因相反——卷积更灵活"
+      },
+      {
+        "text": "池化已被证明有害",
+        "isCorrect": false,
+        "description": "GAP 仍广泛使用"
+      },
+      {
+        "text": "stride 卷积不需要激活函数",
+        "isCorrect": false,
+        "description": "两者都常配激活"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：EfficientNet 的「复合缩放」核心思想是什么？",
+    "explanation": "EfficientNet（Tan & Le 2019）发现：之前的工作要么只加深（ResNet）、要么只加宽、要么只增分辨率，三者不协同。复合缩放用一个统一系数 φ 同时按固定比例缩放深度（α^φ）、宽度（β^φ）、输入分辨率（γ^φ），其中 α·β²·γ²≈2，三者协同。配合神经架构搜索（NAS）找到基线 B0，再缩放出 B1-B7。EfficientNet-B7 以更少参数达到更高 ImageNet 精度（Top-1 84.4%）。",
+    "tags": ["EfficientNet", "复合缩放", "NAS"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用统一系数 φ 同时按固定比例协同缩放深度、宽度、分辨率",
+        "isCorrect": true,
+        "description": "比单一维度缩放更高效"
+      },
+      {
+        "text": "只增加层数",
+        "isCorrect": false,
+        "description": "那是 ResNet 的思路"
+      },
+      {
+        "text": "只增加通道数",
+        "isCorrect": false,
+        "description": "那是宽度缩放，单一维度"
+      },
+      {
+        "text": "只增加输入分辨率",
+        "isCorrect": false,
+        "description": "那是分辨率缩放，单一维度"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：迁移学习时，如何根据自有数据量决定冻结主干还是全网络微调？",
+    "explanation": "CV 工业标准做法：用 ImageNet 预训练主干 + 自定义分类头。数据量决定策略：①数据少（每类 <100 张）——冻结主干，只训新分类头，避免小数据过拟合；②数据中（每类 ~1000 张）——解冻最后几个残差块微调；③数据多（每类 >10000 张）——全网络解冻微调，让特征适配新领域。所有情况都先替换并只训新头若干 epoch 让头收敛，再决定解冻范围，避免随机初始化的头破坏预训练特征。",
+    "tags": ["迁移学习", "预训练", "微调", "冻结"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "数据少冻结主干只训头；数据中解冻末层；数据多全网络微调",
+        "isCorrect": true,
+        "description": "数据量决定解冻范围"
+      },
+      {
+        "text": "无论数据多少都全网络微调",
+        "isCorrect": false,
+        "description": "小数据全微调会过拟合"
+      },
+      {
+        "text": "无论数据多少都只训头",
+        "isCorrect": false,
+        "description": "大数据下浪费特征适配机会"
+      },
+      {
+        "text": "永远从头训练",
+        "isCorrect": false,
+        "description": "浪费预训练权重"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：为什么 CNN 对图像的「平移不变性」是内建的？哪两个机制贡献了它？",
+    "explanation": "CNN 内建平移不变性（同一物体出现在图像不同位置都能识别）来自两个机制：①卷积核的全图滑动复用（参数共享）——同一组权重在每个位置应用，确保「猫在左上角」和「猫在右下角」激活同样的特征；②池化——max/avg 池化对局部小位移鲁棒（物体移动一两个像素，max 池化结果可能不变）。这使得 CNN 无需数据增强就能初步处理平移，而 MLP 完全没有这种归纳偏置，每个位置的权重独立。",
+    "tags": ["平移不变性", "参数共享", "池化", "归纳偏置"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "卷积核全图滑动复用（参数共享）+ 池化对局部位移鲁棒",
+        "isCorrect": true,
+        "description": "两个机制共同贡献平移不变性"
+      },
+      {
+        "text": "BatchNorm + Dropout",
+        "isCorrect": false,
+        "description": "这些是训练稳定技巧，与平移无关"
+      },
+      {
+        "text": "全连接层 + Softmax",
+        "isCorrect": false,
+        "description": "全连接层反而破坏平移不变性"
+      },
+      {
+        "text": "残差连接 + LayerNorm",
+        "isCorrect": false,
+        "description": "这些不提供平移不变性"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：cs231n 给出 AlexNet 第一层从全连接换卷积后参数从多少降到多少？这说明什么？",
+    "explanation": "cs231n 实例：AlexNet 第一层若用全连接（11×11×3 输入连到 96 个神经元）需约 1.05 亿参数，换成卷积（11×11×3×96 个核参数 + 偏置）只有约 3.5 万参数——少了约 3000 倍。这说明局部连接 + 参数共享的威力：CNN 能在保持表达能力的同时，把参数量降低几个数量级，这是 AlexNet 能在 ImageNet 上跑通且不过拟合的工程根基，也是 CNN 取代 MLP 成为图像领域标准的根本原因。",
+    "tags": ["AlexNet", "参数共享", "cs231n", "参数效率"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "从约 1.05 亿降到约 3.5 万，说明局部连接+参数共享可减参数数千倍",
+        "isCorrect": true,
+        "description": "cs231n 的经典对比"
+      },
+      {
+        "text": "从 3.5 万升到 1.05 亿，说明卷积更费参",
+        "isCorrect": false,
+        "description": "方向反了"
+      },
+      {
+        "text": "参数量不变，只是计算方式不同",
+        "isCorrect": false,
+        "description": "参数量差异巨大"
+      },
+      {
+        "text": "两者都没有可学习参数",
+        "isCorrect": false,
+        "description": "都有参数"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：全局平均池化（GAP）相比末端全连接层有什么优势？由哪个架构率先采用？",
+    "explanation": "全局平均池化把每个通道的整张特征图取平均得到一个值，[C,H,W] → [C]。相比末端大全连接层（如 VGG 的 4000 万参数 FC），GAP 优势：①几乎无参数，大幅减参防过拟合；②对空间平移更鲁棒（全局统计）；③输出直接对应类别数。GoogLeNet/Inception 率先大规模采用 GAP 替代 FC，是后续 ResNet、EfficientNet 等几乎所有现代 CNN 分类头的标配。",
+    "tags": ["全局平均池化", "GAP", "GoogLeNet", "分类头"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "几乎无参数、防过拟合、对平移鲁棒；GoogLeNet 率先大规模采用",
+        "isCorrect": true,
+        "description": "GAP 是现代 CNN 分类头标配"
+      },
+      {
+        "text": "参数量更大但精度更高",
+        "isCorrect": false,
+        "description": "GAP 几乎无参数"
+      },
+      {
+        "text": "由 ResNet 首创",
+        "isCorrect": false,
+        "description": "GoogLeNet 早于 ResNet 采用"
+      },
+      {
+        "text": "只能用于回归任务",
+        "isCorrect": false,
+        "description": "GAP 主要用于分类头"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：输入尺寸 224、核 3、步长 1、填充 1 的卷积，输出尺寸是多少？这是什么配置？",
+    "explanation": "代入 cs231n 公式 (W - F + 2P)/S + 1 = (224 - 3 + 2×1)/1 + 1 = 224。这种 F=3, S=1, P=(F-1)/2=1 的配置让输出尺寸等于输入尺寸，称为「同型卷积」（same convolution）。它是现代 CNN 主干最常见的配置——堆叠多层时不改变特征图空间尺寸，只在通道维变换特征，便于网络对齐和加残差连接。ResNet 的残差块默认全用同型卷积。",
+    "tags": ["同型卷积", "输出尺寸", "padding"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "224，这是同型卷积（输出尺寸=输入尺寸），现代 CNN 主干最常用",
+        "isCorrect": true,
+        "description": "F=3,S=1,P=1 是同型配置"
+      },
+      {
+        "text": "222，尺寸缩小",
+        "isCorrect": false,
+        "description": "padding=1 已补偿，尺寸不变"
+      },
+      {
+        "text": "112，减半",
+        "isCorrect": false,
+        "description": "那是 stride=2 的结果"
+      },
+      {
+        "text": "226，尺寸增大",
+        "isCorrect": false,
+        "description": "padding 不会让尺寸超过输入"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：分组卷积（Grouped Convolution）和深度可分离卷积（Depthwise Separable Conv）的区别是什么？",
+    "explanation": "分组卷积把输入通道分成 g 组，每组独立做卷积再拼接，参数量降为 1/g，ResNeXt 用它提升表达力。深度可分离卷积是分组卷积的极端形式（g=输入通道数）：先每个通道单独卷积（depthwise），再用 1×1 跨通道融合（pointwise）。MobileNet 用它把参数和计算量降约 8-9 倍，是移动端 CNN 的核心。两者都是用「分解」降参的技巧，深度可分离更彻底。",
+    "tags": ["分组卷积", "深度可分离卷积", "MobileNet", "ResNeXt"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "分组卷积分 g 组；深度可分离是 g=通道数的极端形式+1×1 融合，MobileNet 用它",
+        "isCorrect": true,
+        "description": "深度可分离是分组卷积的极端+pointwise"
+      },
+      {
+        "text": "两者完全相同",
+        "isCorrect": false,
+        "description": "深度可分离多了 1×1 融合步骤"
+      },
+      {
+        "text": "分组卷积只用于 NLP",
+        "isCorrect": false,
+        "description": "两者都是 CV 技术"
+      },
+      {
+        "text": "深度可分离参数更多",
+        "isCorrect": false,
+        "description": "正相反，它大幅减参"
+      }
+    ]
+  },
+  {
+    "stem": "CNN：在分类头之前用全局平均池化（GAP）时，如果输入是 [B, 512, 7, 7]，输出是什么？",
+    "explanation": "全局平均池化对每个通道的整个 H×W 特征图取平均，[B, C, H, W] → [B, C, 1, 1]（或 squeeze 成 [B, C]）。所以 [B, 512, 7, 7] → [B, 512, 1, 1]。这把每个通道压缩成单一标量，相当于「该通道特征的整体强度」，再接一个 nn.Linear(512, num_classes) 即得分类 logits。这种结构无空间参数，远比把 512×7×7=25088 展平接大 FC（参数量巨大）高效，是 ResNet/EfficientNet 的标配分类头。",
+    "tags": ["全局平均池化", "GAP", "分类头", "维度"],
+    "categories": [
+      ["技术方向", "卷积神经网络（CNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[B, 512, 1, 1]（每通道取空间平均，H×W 压成 1×1）",
+        "isCorrect": true,
+        "description": "nn.AdaptiveAvgPool2d((1,1)) 的输出"
+      },
+      {
+        "text": "[B, 512, 7, 7]（不变）",
+        "isCorrect": false,
+        "description": "GAP 会压缩空间维"
+      },
+      {
+        "text": "[B, 1, 7, 7]（只留 batch）",
+        "isCorrect": false,
+        "description": "压缩的是空间维，不是通道"
+      },
+      {
+        "text": "[B, 25088]（展平）",
+        "isCorrect": false,
+        "description": "那是 flatten，不是 GAP"
+      }
+    ]
+  }
+]

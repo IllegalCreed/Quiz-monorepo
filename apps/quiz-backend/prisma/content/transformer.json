@@ -1,0 +1,777 @@
+[
+  {
+    "stem": "Transformer：Self-Attention 的核心公式是？",
+    "explanation": "Transformer 的核心公式是 Attention(Q,K,V)=softmax(QK^T/√dk)·V。Q(Query 查询)与 K(Key 键)点积算相关性分数，除以 √dk 稳定梯度，softmax 归一化成权重，再加权求和 V(Value 值)。直觉理解：「我问(Q)，谁相关(K)，取它的内容(V)」。",
+    "tags": ["transformer", "self-attention", "公式"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Attention(Q,K,V) = softmax(QK^T/√dk) · V",
+        "isCorrect": true,
+        "description": "Q·K 点积算相关性，softmax 归一化，加权 V"
+      },
+      {
+        "text": "Attention(Q,K,V) = softmax(QV^T) · K",
+        "isCorrect": false,
+        "description": "Q 应与 K 点积（不是 V），且缺 √dk 缩放"
+      },
+      {
+        "text": "Attention(Q,K,V) = QK^T · V / dk",
+        "isCorrect": false,
+        "description": "缺少 softmax 归一化，且除以 dk 而非 √dk"
+      },
+      {
+        "text": "Attention(Q,K,V) = tanh(QK^T) · V",
+        "isCorrect": false,
+        "description": "用 softmax 不是 tanh，tanh 不能保证权重和为 1"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：注意力公式中为何要除以 √dk？",
+    "explanation": "Q·K^T 点积的方差随维度 dk 线性增长。dk 大时（如 64）点积值可能很大，把 softmax 推入饱和区（输出接近 one-hot，梯度接近 0，学习停滞）。除以 √dk 把方差缩回 1 量级，稳定梯度。这是数值稳定性技巧，经验上 √dk 比 dk 效果更好（方差恰好为 1）。",
+    "tags": ["transformer", "attention", "缩放", "梯度稳定"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "dk 大时点积值大，softmax 饱和梯度消失，除以 √dk 稳定梯度",
+        "isCorrect": true,
+        "description": "把方差缩回 1 量级，避免 softmax 进入饱和区"
+      },
+      {
+        "text": "为了减少计算量，加速矩阵乘法",
+        "isCorrect": false,
+        "description": "除法本身是计算，不减反增，目的是稳定而非加速"
+      },
+      {
+        "text": "为了让注意力权重和为 1",
+        "isCorrect": false,
+        "description": "softmax 已保证和为 1，与 √dk 无关"
+      },
+      {
+        "text": "为了防止梯度爆炸",
+        "isCorrect": false,
+        "description": "目的是防梯度消失（softmax 饱和），不是爆炸"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Multi-Head Attention（多头注意力）的作用是？",
+    "explanation": "Multi-Head 把 Q/K/V 拆成 h 份（原论文 h=8），每份独立做注意力再拼接。好处：不同头关注不同子空间——有的看语法关系、有的看语义相似、有的看长距离指代，模型表达力更强。每头维度 dk=d_model/h=64，总参数量与单头 d_model 相同（计算量不增）。",
+    "tags": ["transformer", "multi-head", "注意力"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "并行多个注意力头，捕捉不同子空间的关系模式",
+        "isCorrect": true,
+        "description": "如语法/语义/指代不同关系，表达力更强且计算量不增"
+      },
+      {
+        "text": "减少模型参数量，提升训练速度",
+        "isCorrect": false,
+        "description": "多头不减少参数（总维度不变），也不是为提速"
+      },
+      {
+        "text": "让模型能处理更长的序列",
+        "isCorrect": false,
+        "description": "序列长度由位置编码和显存决定，与头数无关"
+      },
+      {
+        "text": "替代位置编码，让模型感知顺序",
+        "isCorrect": false,
+        "description": "多头与位置编码是两个独立机制"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：为何必须引入位置编码（Positional Encoding）？",
+    "explanation": "Self-Attention 本身是排列不变的（permutation-invariant）——打乱输入顺序，注意力输出不变（除了位置编码部分）。这意味着「猫咬狗」和「狗咬猫」对模型来说一样，无法感知语序。必须额外加位置编码注入顺序信息，模型才能区分 token 的先后。",
+    "tags": ["transformer", "位置编码", "排列不变"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Self-Attention 排列不变，必须加位置信息才能感知顺序",
+        "isCorrect": true,
+        "description": "不加位置编码则语序信息丢失，「猫咬狗」=「狗咬猫」"
+      },
+      {
+        "text": "为了加速注意力计算",
+        "isCorrect": false,
+        "description": "位置编码是加法/旋转操作，与计算速度无关"
+      },
+      {
+        "text": "为了让 softmax 输出和为 1",
+        "isCorrect": false,
+        "description": "softmax 本身保证和为 1，与位置编码无关"
+      },
+      {
+        "text": "为了减少模型参数量",
+        "isCorrect": false,
+        "description": "位置编码反而增加少量参数（学习式）或计算"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：原始论文的 sinusoidal 位置编码用的是？",
+    "explanation": "原始 Transformer 用固定的正弦余弦编码：PE(pos,2i)=sin(pos/10000^(2i/d_model))、PE(pos,2i+1)=cos(pos/10000^(2i/d_model))。不同维度用不同频率的正余弦（波长几何级数增长），无需训练。优点是理论上可外推到更长序列，缺点是实际外推效果一般。",
+    "tags": ["transformer", "sinusoidal", "位置编码"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不同频率的正弦和余弦函数组合",
+        "isCorrect": true,
+        "description": "sin/cos 波长几何级数增长，无需训练"
+      },
+      {
+        "text": "可学习的嵌入向量（类似词嵌入）",
+        "isCorrect": false,
+        "description": "这是学习式绝对编码（BERT/GPT-2 用），不是原始 sinusoidal"
+      },
+      {
+        "text": "基于相对距离的偏置项",
+        "isCorrect": false,
+        "description": "这是相对位置编码（T5），不是原始方案"
+      },
+      {
+        "text": "复数旋转矩阵",
+        "isCorrect": false,
+        "description": "这是 RoPE（现代主流），不是原始论文方案"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：相比 RNN，Transformer 的核心优势是？",
+    "explanation": "Transformer 两大革命性优势：①全并行计算（序列所有位置同时算注意力，无需像 RNN 逐步计算，GPU 友好，训练效率数量级提升）；②长程依赖 O(1)（任意两个 token 距离为常数，无论多远直接交互，彻底解决 RNN 梯度消失/长距离遗忘）。代价是 O(n²) 复杂度和需外挂位置编码。",
+    "tags": ["transformer", "rnn", "并行", "长程依赖"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "全并行计算 + 任意位置 O(1) 直接交互",
+        "isCorrect": true,
+        "description": "克服 RNN 的逐步计算和长距离梯度消失"
+      },
+      {
+        "text": "参数量更少，训练更快",
+        "isCorrect": false,
+        "description": "Transformer 参数量通常更多，优势在并行不在量少"
+      },
+      {
+        "text": "不需要任何位置信息",
+        "isCorrect": false,
+        "description": "恰恰相反，Transformer 必须加位置编码"
+      },
+      {
+        "text": "注意力复杂度更低",
+        "isCorrect": false,
+        "description": "O(n²) 比 RNN 的 O(n) 更高，并行是优势而非复杂度低"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：原始论文的 Encoder 和 Decoder 各有几层？",
+    "explanation": "原始论文 base 模型用 N=6 层 Encoder + 6 层 Decoder。每个 Encoder 层含 2 个子层（Multi-Head Self-Attention + FFN），每个 Decoder 层含 3 个子层（Masked Self-Attention + Cross-Attention + FFN），每个子层外包残差连接 + LayerNorm。",
+    "tags": ["transformer", "encoder", "decoder", "结构"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Encoder 6 层 + Decoder 6 层",
+        "isCorrect": true,
+        "description": "原论文 base 模型 N=6"
+      },
+      {
+        "text": "Encoder 12 层 + Decoder 12 层",
+        "isCorrect": false,
+        "description": "这是 BERT-base 的层数，且 BERT 无 Decoder"
+      },
+      {
+        "text": "Encoder 1 层 + Decoder 1 层",
+        "isCorrect": false,
+        "description": "单层无法学到复杂表示，原论文是 6 层"
+      },
+      {
+        "text": "Encoder 24 层 + Decoder 24 层",
+        "isCorrect": false,
+        "description": "这是 BERT-large 规模，非原始论文"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Decoder 的掩码自注意力（Masked Self-Attention）作用是？",
+    "explanation": "Decoder 生成时是自回归的（一个一个 token 生成）。若不掩码，训练时当前位置会「偷看」到未来的 token（答案泄漏），导致训练/推理不一致。掩码自注意力用上三角 mask 把未来位置的注意力分数设为 -inf，softmax 后权重为 0，保证当前位置只能看前面已生成的内容。",
+    "tags": ["transformer", "decoder", "掩码", "自回归"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防止当前位置看到未来 token，保证自回归生成不泄漏答案",
+        "isCorrect": true,
+        "description": "上三角 mask 置 -inf，softmax 后权重为 0"
+      },
+      {
+        "text": "减少计算量，加速训练",
+        "isCorrect": false,
+        "description": "掩码不减少计算（仍算全矩阵），是逻辑约束"
+      },
+      {
+        "text": "替代位置编码",
+        "isCorrect": false,
+        "description": "掩码与位置编码是两个独立机制"
+      },
+      {
+        "text": "防止过拟合",
+        "isCorrect": false,
+        "description": "掩码是因果性约束，与过拟合无关"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：BERT、GPT、T5 分别属于哪种变体？",
+    "explanation": "三大变体：①Encoder-only（BERT）双向注意力，适合理解类任务（分类/NER/问答）；②Decoder-only（GPT）单向自回归，适合生成类任务（对话/代码/创作）；③Encoder-Decoder（T5）完整结构，适合序列到序列任务（翻译/摘要）。Decoder-only 因 Scaling 友好、数据利用率高成为现代 LLM 主流。",
+    "tags": ["transformer", "bert", "gpt", "t5", "变体"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "BERT = Encoder-only，GPT = Decoder-only，T5 = Encoder-Decoder",
+        "isCorrect": true,
+        "description": "三大范式对应三类任务：理解/生成/序列到序列"
+      },
+      {
+        "text": "三者都是 Decoder-only",
+        "isCorrect": false,
+        "description": "BERT 是 Encoder-only，T5 是 Enc-Dec"
+      },
+      {
+        "text": "BERT = Decoder-only，GPT = Encoder-only",
+        "isCorrect": false,
+        "description": "正好相反：BERT 是 Enc-only，GPT 是 Dec-only"
+      },
+      {
+        "text": "三者都是 Encoder-Decoder",
+        "isCorrect": false,
+        "description": "只有 T5 是完整 Enc-Dec"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Decoder-only 为何成为现代 LLM 主流？",
+    "explanation": "Decoder-only 成为主流原因：①生成任务天然自回归，结构最契合；②结构简单（无需 Encoder），参数效率高；③Scaling 友好，参数/数据增加性能可预测提升；④训练数据利用率高（每个 token 都是训练信号，Next Token Prediction 自监督）；⑤GPT 系列证明了「足够大的 Decoder-only + 海量数据」能涌现通用能力。",
+    "tags": ["transformer", "decoder-only", "llm", "scaling"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "结构简单、Scaling 友好、数据利用率高、自回归契合生成",
+        "isCorrect": true,
+        "description": "GPT 系列验证了 Decoder-only + 大数据能涌现通用能力"
+      },
+      {
+        "text": "计算复杂度比 Encoder-only 低",
+        "isCorrect": false,
+        "description": "复杂度相同（都 O(n²)），优势不在复杂度"
+      },
+      {
+        "text": "不需要位置编码",
+        "isCorrect": false,
+        "description": "Decoder-only 仍需位置编码（如 RoPE）"
+      },
+      {
+        "text": "参数量天然更少",
+        "isCorrect": false,
+        "description": "参数量取决于规模配置，与变体类型无关"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：RoPE（旋转位置编码）的核心原理是？",
+    "explanation": "RoPE（苏剑林 2021）把位置表为复数旋转，乘性地作用于 Q 和 K——位置 m 的 Q/K 向量旋转角度 m·θ。数学性质：旋转后 Q_m·K_n 的点积只依赖 (m-n) 相对位置。优势：统一绝对与相对（形式绝对效果相对）、外推性强（训练短推理长仍有效）、兼容 Flash Attention。使用者：LLaMA/Qwen/Mistral 等几乎所有现代开源 LLM。",
+    "tags": ["transformer", "rope", "旋转位置编码", "位置编码"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把位置表为复数旋转乘性作用于 Q/K，使点积只依赖相对位置",
+        "isCorrect": true,
+        "description": "形式绝对、效果相对，外推性强，LLaMA/Qwen 主力"
+      },
+      {
+        "text": "为每个绝对位置学一个嵌入向量",
+        "isCorrect": false,
+        "description": "这是学习式绝对编码（BERT），不是 RoPE"
+      },
+      {
+        "text": "在 attention score 上加线性距离偏置",
+        "isCorrect": false,
+        "description": "这是 ALiBi，不是 RoPE"
+      },
+      {
+        "text": "用正弦余弦函数加到词嵌入上",
+        "isCorrect": false,
+        "description": "这是原始 sinusoidal，不是 RoPE"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：ALiBi 位置编码方案的独特之处是？",
+    "explanation": "ALiBi（Attention with Linear Biases）完全不用位置编码嵌入，直接在 attention score 上加线性偏置：attention_score(i,j)=Q_i·K_j - m·(i-j)，距离越远惩罚越大（m 是与头相关的斜率）。优势：免位置嵌入、结构简单、外推性极强（训练 1024 推理 2048 不重训）。使用者：BLOOM、MPT。",
+    "tags": ["transformer", "alibi", "位置编码", "外推"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "免位置嵌入，直接在 attention 加 -m·距离 的线性偏置",
+        "isCorrect": true,
+        "description": "训练短推理长，外推性极强（BLOOM/MPT 用）"
+      },
+      {
+        "text": "用旋转矩阵作用于 Q/K",
+        "isCorrect": false,
+        "description": "这是 RoPE，不是 ALiBi"
+      },
+      {
+        "text": "为每个位置学一个嵌入向量",
+        "isCorrect": false,
+        "description": "这是学习式绝对编码，ALiBi 不用嵌入"
+      },
+      {
+        "text": "用正弦余弦编码位置",
+        "isCorrect": false,
+        "description": "这是 sinusoidal，ALiBi 不用函数编码"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：学习式绝对位置编码（BERT/GPT-2 用）的主要缺陷是？",
+    "explanation": "学习式绝对位置编码为每个绝对位置学一个嵌入向量，简单有效但无法外推——训练时只见过固定长度（如 BERT 的 512 位置），推理时遇到更长序列（如 1024）就崩溃，因为没见过那些位置的嵌入。这是后来 RoPE/ALiBi 等外推性方案兴起的原因。",
+    "tags": ["transformer", "位置编码", "外推", "bert"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无法外推到训练时未见过的更长序列",
+        "isCorrect": true,
+        "description": "训练 512 推理 1024 会崩，需 RoPE/ALiBi 替代"
+      },
+      {
+        "text": "计算速度太慢",
+        "isCorrect": false,
+        "description": "学习式编码只是查表，速度很快"
+      },
+      {
+        "text": "参数量太大",
+        "isCorrect": false,
+        "description": "参数量可控（max_len × d_model），不是主要问题"
+      },
+      {
+        "text": "不支持多头注意力",
+        "isCorrect": false,
+        "description": "位置编码与多头机制正交，可配合使用"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：注意力机制的复杂度是多少？",
+    "explanation": "自注意力的时间和空间复杂度都是 O(n²)，n 是序列长度——因为要构造 n×n 的注意力矩阵。序列长度增长时显存与计算爆炸：4K 序列注意力矩阵 16M、32K 是 1G、128K 单层就 16G。这是长上下文 LLM 的主要瓶颈，催生 Flash Attention（IO 优化）、稀疏注意力、线性注意力等优化方向。",
+    "tags": ["transformer", "复杂度", "o(n²)", "长上下文"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "O(n²) 时间 + O(n²) 空间（n 是序列长度）",
+        "isCorrect": true,
+        "description": "n×n 注意力矩阵，长上下文是主要瓶颈"
+      },
+      {
+        "text": "O(n) 时间 + O(n) 空间",
+        "isCorrect": false,
+        "description": "这是 RNN 的复杂度，Transformer 是 O(n²)"
+      },
+      {
+        "text": "O(n log n) 时间",
+        "isCorrect": false,
+        "description": "这是某些优化注意力（如 Performer 近似）的目标，非标准注意力"
+      },
+      {
+        "text": "O(1) 常数复杂度",
+        "isCorrect": false,
+        "description": "O(1) 指的是任意两位置的交互路径长度，不是总复杂度"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：KV Cache 在自回归推理中的作用是？",
+    "explanation": "Decoder 生成时每步都要对所有历史 token 算注意力。若不缓存，第 t 步要重算 t-1 次历史 K/V，计算量 O(t²)。KV Cache 把历史 K/V 缓存，新 token 只算自己的 Q 去查缓存，每步降到 O(t)。代价是显存随序列长度线性增长（长上下文推理贵的原因）。",
+    "tags": ["transformer", "kv-cache", "推理优化", "自回归"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "缓存历史 K/V，每步从 O(t²) 降到 O(t)",
+        "isCorrect": true,
+        "description": "新 token 只算 Q 去查缓存，避免重复计算"
+      },
+      {
+        "text": "减少模型参数量",
+        "isCorrect": false,
+        "description": "KV Cache 不改参数，是推理时的缓存策略"
+      },
+      {
+        "text": "降低注意力复杂度从 O(n²) 到 O(n)",
+        "isCorrect": false,
+        "description": "单步降到 O(t)，但总复杂度仍是 O(n²)（n 步累加）"
+      },
+      {
+        "text": "替代位置编码",
+        "isCorrect": false,
+        "description": "KV Cache 与位置编码无关"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Flash Attention 的核心优化思路是？",
+    "explanation": "Flash Attention（Tri Dao 2022）针对标准注意力的显存读写瓶颈——要把 n×n 矩阵写到 HBM（高带宽内存）再读回。它把注意力分块在 SRAM（片上高速缓存）内计算，避免中间矩阵落盘，不改变数学结果但快 2-4 倍、省 5-20 倍显存。现代 LLM 训练标配。",
+    "tags": ["transformer", "flash-attention", "io优化", "训练加速"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "分块在 SRAM 内计算，避免 n×n 矩阵落盘 HBM",
+        "isCorrect": true,
+        "description": "IO 感知优化，快 2-4 倍省 5-20 倍显存，数学结果不变"
+      },
+      {
+        "text": "用近似算法降低注意力精度换取速度",
+        "isCorrect": false,
+        "description": "Flash Attention 是精确的（exact），不是近似"
+      },
+      {
+        "text": "减少注意力头数",
+        "isCorrect": false,
+        "description": "Flash Attention 不改模型结构，是计算内核优化"
+      },
+      {
+        "text": "跳过部分注意力计算",
+        "isCorrect": false,
+        "description": "稀疏注意力才跳过，Flash Attention 全量计算"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Pre-Norm 相比 Post-Norm 的优势是？",
+    "explanation": "原论文用 Post-Norm（LayerNorm(x+Sublayer(x))），但深网络训练不稳定。现代多用 Pre-Norm（x+Sublayer(LayerNorm(x))）——让残差路径「干净」（无 LayerNorm 阻挡），深网络梯度更稳定。GPT-2 之后几乎所有 LLM 都用 Pre-Norm。",
+    "tags": ["transformer", "pre-norm", "post-norm", "训练稳定"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "残差路径无 LayerNorm 阻挡，深网络梯度更稳定",
+        "isCorrect": true,
+        "description": "Pre-Norm：x+Sub(LN(x))，现代 LLM 标配"
+      },
+      {
+        "text": "计算速度更快",
+        "isCorrect": false,
+        "description": "Pre-Norm 计算量相近，优势在稳定性不在速度"
+      },
+      {
+        "text": "减少模型参数量",
+        "isCorrect": false,
+        "description": "两者参数量相同（都有 LayerNorm）"
+      },
+      {
+        "text": "完全替代残差连接",
+        "isCorrect": false,
+        "description": "Pre-Norm 仍需残差连接，只是 LayerNorm 位置不同"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：原始论文中 d_model、h、dk、d_ff 的关系是？",
+    "explanation": "原始 base 模型：d_model=512（模型维度），h=8（注意力头数），dk=dv=d_model/h=64（每头维度），d_ff=2048（FFN 内层，4×d_model）。多头拆分保证总维度不变（8 头×64=512），计算量与单头 d_model 相同。FFN 内层扩大 4 倍是经验配置，增加非线性表达力。",
+    "tags": ["transformer", "参数", "d_model", "维度"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "d_model=512, h=8, dk=64, d_ff=2048（=4×d_model）",
+        "isCorrect": true,
+        "description": "dk=d_model/h，d_ff 通常 4×d_model"
+      },
+      {
+        "text": "d_model=512, h=8, dk=512（每头全维度）",
+        "isCorrect": false,
+        "description": "dk 应是 d_model/h=64，不是全维度"
+      },
+      {
+        "text": "d_ff = d_model（不扩大）",
+        "isCorrect": false,
+        "description": "d_ff 通常 4×d_model=2048，扩大增加表达力"
+      },
+      {
+        "text": "h 和 d_model 无关，可任意设",
+        "isCorrect": false,
+        "description": "dk=d_model/h 必须整除，两者相关"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Encoder-only 模型（如 BERT）适合什么任务？",
+    "explanation": "Encoder-only（BERT/RoBERTa）用双向注意力（每个位置能看到全序列），训练目标多为 Masked LM（完形填空）。它擅长理解类任务：文本分类、命名实体识别（NER）、问答、情感分析、句子相似度。因为它能同时看到前后文，理解更充分。但不擅长开放式生成（无自回归能力）。",
+    "tags": ["transformer", "encoder-only", "bert", "任务"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "理解类任务：分类、NER、问答、相似度",
+        "isCorrect": true,
+        "description": "双向注意力，理解充分，但不擅长生成"
+      },
+      {
+        "text": "开放式文本生成（如写文章、写代码）",
+        "isCorrect": false,
+        "description": "生成是 Decoder-only（GPT）的强项"
+      },
+      {
+        "text": "机器翻译（序列到序列）",
+        "isCorrect": false,
+        "description": "翻译是 Encoder-Decoder（T5）的强项"
+      },
+      {
+        "text": "图像生成",
+        "isCorrect": false,
+        "description": "图像生成用扩散模型/GAN，非文本 Encoder"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Cross-Attention（交叉注意力）出现在哪里？",
+    "explanation": "Cross-Attention 出现在 Encoder-Decoder 架构的 Decoder 层中（第 2 个子层）。它的 Q 来自 Decoder，K/V 来自 Encoder 的输出——这是 Decoder「看」Encoder 编码信息的地方，用于翻译/摘要等序列到序列任务。Encoder-only 和 Decoder-only 模型没有 Cross-Attention。",
+    "tags": ["transformer", "cross-attention", "encoder-decoder"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Encoder-Decoder 架构的 Decoder 层（Q 来自 Decoder，K/V 来自 Encoder）",
+        "isCorrect": true,
+        "description": "是解码器「看」编码信息的桥梁"
+      },
+      {
+        "text": "Encoder-only 模型的自注意力",
+        "isCorrect": false,
+        "description": "Encoder 自注意力 Q/K/V 同源，不是交叉"
+      },
+      {
+        "text": "Decoder-only 模型的自注意力",
+        "isCorrect": false,
+        "description": "Decoder-only 无 Cross-Attention（没有 Encoder 输出）"
+      },
+      {
+        "text": "所有 Transformer 变体都有",
+        "isCorrect": false,
+        "description": "只有 Encoder-Decoder 完整架构才有"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：FFN（Feed-Forward Network）的结构是？",
+    "explanation": "Transformer 的 FFN 是两层线性变换+ReLU 激活：FFN(x)=max(0, xW1+b1)W2+b2。它对每个位置独立变换（position-wise），先升维（d_model=512→d_ff=2048）再降回（2048→512），增加非线性表达力。d_ff 通常 4×d_model 是经验配置。现代 LLM 常用 GELU/SiLU 替代 ReLU。",
+    "tags": ["transformer", "ffn", "前馈网络"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两层线性变换 + ReLU，先升维到 d_ff 再降回 d_model",
+        "isCorrect": true,
+        "description": "position-wise，d_ff 通常 4×d_model 增加表达力"
+      },
+      {
+        "text": "单层线性变换",
+        "isCorrect": false,
+        "description": "单层线性无非线性，FFN 是两层+激活"
+      },
+      {
+        "text": "循环神经网络",
+        "isCorrect": false,
+        "description": "FFN 是前馈网络，无循环"
+      },
+      {
+        "text": "卷积层",
+        "isCorrect": false,
+        "description": "FFN 是全连接，非卷积"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：Encoder-Decoder 架构（如 T5）适合什么任务？",
+    "explanation": "Encoder-Decoder 完整架构（T5/BART/Whisper）适合序列到序列任务：机器翻译（源语言→目标语言）、文本摘要（长文→短文）、语音识别（音频→文本）。Encoder 双向理解输入，Decoder 自回归生成输出，Cross-Attention 连接两者。现代 LLM 多用 Decoder-only 统一所有任务，但翻译/摘要/语音等特定场景 Enc-Dec 仍有优势。",
+    "tags": ["transformer", "encoder-decoder", "t5", "seq2seq"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "序列到序列：翻译、摘要、语音识别",
+        "isCorrect": true,
+        "description": "Enc 编码输入，Dec 生成输出，Cross-Attn 连接"
+      },
+      {
+        "text": "纯文本分类",
+        "isCorrect": false,
+        "description": "分类用 Encoder-only（BERT）更高效"
+      },
+      {
+        "text": "开放式对话生成",
+        "isCorrect": false,
+        "description": "对话生成用 Decoder-only（GPT）更主流"
+      },
+      {
+        "text": "图像分类",
+        "isCorrect": false,
+        "description": "图像用 CNN/ViT，非文本 Enc-Dec"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：原始论文《Attention Is All You Need》发表于哪一年？",
+    "explanation": "Transformer 由 Google 团队发表，论文《Attention Is All You Need》发表于 2017 年（arXiv:1706.03762）。它最初用于机器翻译（WMT 英德/英法），但随后成为整个 NLP 乃至多模态的统一底座，是现代大语言模型（GPT/BERT/T5/LLaMA 等）的基石。",
+    "tags": ["transformer", "历史", "论文"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "2017 年",
+        "isCorrect": true,
+        "description": "Vaswani et al.，《Attention Is All You Need》"
+      },
+      {
+        "text": "2015 年",
+        "isCorrect": false,
+        "description": "2015 是 ResNet 年，Transformer 是 2017"
+      },
+      {
+        "text": "2019 年",
+        "isCorrect": false,
+        "description": "2019 是 GPT-2/BERT 爆发期，Transformer 原始论文更早"
+      },
+      {
+        "text": "2021 年",
+        "isCorrect": false,
+        "description": "2021 是 RoPE/扩散模型兴起，Transformer 原论文是 2017"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：以下哪种情况会导致 Transformer 无法感知语序？",
+    "explanation": "Self-Attention 排列不变——若不加位置编码，打乱输入顺序注意力输出完全相同（除了位置编码部分）。所以忘加位置编码会让「猫咬狗」和「狗咬猫」对模型一样，完全丧失语序信息。这是新手最易忽略的错误：Transformer 必须配位置编码才能感知顺序。",
+    "tags": ["transformer", "位置编码", "排列不变", "陷阱"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不加任何位置编码",
+        "isCorrect": true,
+        "description": "Self-Attention 排列不变，必须加位置信息"
+      },
+      {
+        "text": "使用多头注意力",
+        "isCorrect": false,
+        "description": "多头与位置感知无关，仍需位置编码"
+      },
+      {
+        "text": "增加模型层数",
+        "isCorrect": false,
+        "description": "层数不提供位置信息，仍需位置编码"
+      },
+      {
+        "text": "使用更大的 d_model",
+        "isCorrect": false,
+        "description": "维度大小与位置感知无关"
+      }
+    ]
+  },
+  {
+    "stem": "Transformer：RoPE 相比学习式绝对位置编码的核心优势是？",
+    "explanation": "RoPE 的核心优势是外推性强——训练时用短序列（如 4K），推理时可扩展到更长序列（如 32K/128K）仍有效，配合 NTK-aware scaling 更佳。学习式绝对编码无法外推（训练 512 推理 1024 就崩）。此外 RoPE 兼容 Flash Attention（不破坏高效计算流程），且形式绝对效果相对（统一两者）。这使 RoPE 成为 LLaMA/Qwen/Mistral 等现代 LLM 的主流选择。",
+    "tags": ["transformer", "rope", "外推", "位置编码"],
+    "categories": [
+      ["技术方向", "Transformer"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "外推性强（训练短推理长）+ 兼容 Flash Attention",
+        "isCorrect": true,
+        "description": "现代 LLM 首选，LLaMA/Qwen/Mistral 都用"
+      },
+      {
+        "text": "计算速度更快",
+        "isCorrect": false,
+        "description": "RoPE 有旋转计算，速度不是主要优势"
+      },
+      {
+        "text": "参数量更少",
+        "isCorrect": false,
+        "description": "RoPE 无参数（固定旋转），学习式有参数，但优势在外推不在省参数"
+      },
+      {
+        "text": "完全不需要训练",
+        "isCorrect": false,
+        "description": "RoPE 本身无需训练，但整个模型仍需训练"
+      }
+    ]
+  }
+]

@@ -1,0 +1,715 @@
+[
+  {
+    "stem": "扩散模型：核心思想是？",
+    "explanation": "扩散模型由前向过程和反向过程组成。前向过程是一个固定的马尔可夫链，逐步给真实数据加高斯噪声直到退化为纯噪声 x_T~N(0,I)；反向过程训练神经网络学习逐步去噪，从纯噪声还原出数据样本。直觉像「把墨水滴入清水扩散均匀（前向），再学会倒放从均匀墨水还原墨滴（反向）」。DDPM（Ho et al. 2020）给出了清晰可训的目标。",
+    "tags": ["diffusion", "原理", "前向反向"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "前向过程逐步加高斯噪声把数据变成纯噪声，反向过程训练网络逐步去噪还原数据",
+        "isCorrect": true,
+        "description": "加噪+去噪两过程，是扩散模型的核心范式"
+      },
+      {
+        "text": "生成器与判别器对抗博弈",
+        "isCorrect": false,
+        "description": "那是 GAN，扩散模型无对抗结构"
+      },
+      {
+        "text": "用自回归方式逐 token 生成",
+        "isCorrect": false,
+        "description": "那是自回归模型（GPT），扩散是迭代去噪"
+      },
+      {
+        "text": "编码器把数据压成向量再解码",
+        "isCorrect": false,
+        "description": "那是自编码器/VAE，扩散是迭代加噪去噪"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDPM 的简化训练损失是？",
+    "explanation": "DDPM（Ho et al. 2020）的核心贡献是简化损失：让神经网络 ε_θ 预测每步加入的噪声 ε，损失为 L_simple = E[‖ε - ε_θ(x_t, t)‖²]。完整形式是 E_{t,x_0,ε}[‖ε - ε_θ(√ᾱ_t·x_0 + √(1-ᾱ_t)·ε, t)‖²]，其中 x_t 由闭式解算出。这个去掉了变分下界加权项的简化损失效果反而比完整 ELBO 更好，成为事实标准。",
+    "tags": ["ddpm", "损失", "公式"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "L_simple = E[ ‖ε - ε_θ(x_t, t)‖² ]，网络预测噪声 ε",
+        "isCorrect": true,
+        "description": "DDPM 简化损失，预测噪声用 MSE"
+      },
+      {
+        "text": "L = -E[log D(x)]，判别器损失",
+        "isCorrect": false,
+        "description": "那是 GAN 损失，扩散无判别器"
+      },
+      {
+        "text": "L = E[‖x_0 - x̂_0‖²]，直接预测原图",
+        "isCorrect": false,
+        "description": "DDPM 让网络预测噪声 ε，不是直接预测 x_0"
+      },
+      {
+        "text": "L = KL(q‖p)，纯 KL 散度",
+        "isCorrect": false,
+        "description": "完整 ELBO 含 KL 项，但简化后是预测噪声的 MSE"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：前向过程的单步转移 q(x_t|x_{t-1}) 是什么分布？",
+    "explanation": "DDPM 前向是固定马尔可夫链，每步加一点高斯噪声：q(x_t|x_{t-1}) = N(√(1-β_t)·x_{t-1}, β_t·I)，β_t 是第 t 步的方差调度（variance schedule），DDPM 默认线性从 1e-4 增到 2e-2，T=1000。均值是缩放后的上一步样本，方差是 β_t。这个过程不需学习，是预设的。",
+    "tags": ["diffusion", "前向", "高斯"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "高斯分布 N(√(1-β_t)·x_{t-1}, β_t·I)",
+        "isCorrect": true,
+        "description": "均值缩放上一步样本，方差为 β_t"
+      },
+      {
+        "text": "均匀分布",
+        "isCorrect": false,
+        "description": "前向加的是高斯噪声，非均匀分布"
+      },
+      {
+        "text": "伯努利分布",
+        "isCorrect": false,
+        "description": "伯努利是离散二值，扩散是连续高斯"
+      },
+      {
+        "text": "拉普拉斯分布",
+        "isCorrect": false,
+        "description": "DDPM 用高斯噪声，部分改进用拉普拉斯但非默认"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：训练时如何从原图 x_0 一步得到任意时间步 t 的加噪样本 x_t？",
+    "explanation": "借助重参数化可写出前向的闭式解：令 α_t=1-β_t、ᾱ_t=∏α_i，则 q(x_t|x_0)=N(√ᾱ_t·x_0, (1-ᾱ_t)·I)，等价采样式 x_t = √ᾱ_t·x_0 + √(1-ᾱ_t)·ε，ε~N(0,I)。这是训练核心——无需逐步跑前向，随机采 t 和 ε 直接算 x_t。训练时对每个样本随机采一个 t，构造对应 x_t 让网络预测 ε。",
+    "tags": ["diffusion", "闭式解", "重参数"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "x_t = √ᾱ_t·x_0 + √(1-ᾱ_t)·ε，令 α_t=1-β_t、ᾱ_t=∏α_i",
+        "isCorrect": true,
+        "description": "闭式解，一步从原图到任意 t，无需逐步加噪"
+      },
+      {
+        "text": "逐步迭代 t 次 q(x_t|x_{t-1})，无捷径",
+        "isCorrect": false,
+        "description": "存在闭式解，训练时一步算出，无需逐步"
+      },
+      {
+        "text": "x_t = x_0 + t·ε",
+        "isCorrect": false,
+        "description": "缺少 √ᾱ_t 等缩放因子，形式错误"
+      },
+      {
+        "text": "x_t = β_t·x_0 + ε",
+        "isCorrect": false,
+        "description": "系数错误，应是 √ᾱ_t 与 √(1-ᾱ_t)"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：α_t、ᾱ_t（累积乘积）的定义是？",
+    "explanation": "扩散模型定义 α_t = 1 - β_t（β_t 是方差调度），累积乘积 ᾱ_t = ∏_{i=1}^{t} α_i。ᾱ_t 表示「截至第 t 步信号保留的比例」，随 t 增大单调递减。DDPM 中 β_t 递增使 ᾱ_T 趋近 0，保证最终 x_T 是纯高斯噪声。ᾱ_t 出现在闭式解 q(x_t|x_0) 与采样公式中。",
+    "tags": ["diffusion", "alphabar", "方差调度"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "α_t = 1 - β_t，ᾱ_t = ∏_{i=1}^{t} α_i（累积乘积）",
+        "isCorrect": true,
+        "description": "ᾱ_t 是 α 的累积乘积，单调递减"
+      },
+      {
+        "text": "α_t = β_t，ᾱ_t = Σα_i",
+        "isCorrect": false,
+        "description": "应是 1-β_t 与累积乘积（非求和）"
+      },
+      {
+        "text": "α_t = √β_t，ᾱ_t = α_t²",
+        "isCorrect": false,
+        "description": "定义错误"
+      },
+      {
+        "text": "α_t 是学习参数，ᾱ_t 是它的指数",
+        "isCorrect": false,
+        "description": "α_t 由 β_t 决定，非学习参数"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDPM 默认的时间步数 T 与方差调度是？",
+    "explanation": "DDPM（Ho et al. 2020）默认 T=1000，方差调度 β_t 从 1e-4 线性递增到 2e-2。T 大是为了让每步加噪足够小，反向过程近似高斯更精确；β_t 递增是为了让 ᾱ_T 趋近 0，保证最终 x_T 是纯噪声。采样需迭代 T=1000 步是 DDPM 慢的根源，DDIM 等加速方法把步数降到几十。",
+    "tags": ["ddpm", "超参", "方差调度"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "T=1000，β_t 线性从 1e-4 增到 2e-2",
+        "isCorrect": true,
+        "description": "DDPM 默认配置，T 大、β 线性递增"
+      },
+      {
+        "text": "T=10，β_t 固定为 0.5",
+        "isCorrect": false,
+        "description": "T 太小则每步加噪过大，反向近似失效"
+      },
+      {
+        "text": "T=1000，β_t 固定为常数",
+        "isCorrect": false,
+        "description": "DDPM 用线性递增，非固定常数"
+      },
+      {
+        "text": "T=100，β_t 从 0.9 递减到 0.1",
+        "isCorrect": false,
+        "description": "方向错，β_t 应递增使 ᾱ_T→0"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDPM 的去噪网络 ε_θ 事实标准的架构是？",
+    "explanation": "DDPM 的去噪网络几乎都用 U-Net（带跳跃连接的编码器-解码器）。关键组件：时间步 t 用正弦位置编码注入每层（让网络知道去噪阶段）；编码器-解码器间的跳跃连接保留高频细节（对去噪关键）；中间分辨率层加自注意力捕捉长程依赖。近期 DiT（Diffusion Transformer）用 Transformer 替代 U-Net，是大规模新方向（Sora 基于 DiT）。",
+    "tags": ["ddpm", "unet", "架构"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "U-Net，带跳跃连接的编码器-解码器 + 时间嵌入",
+        "isCorrect": true,
+        "description": "U-Net 是扩散去噪的事实标准架构"
+      },
+      {
+        "text": "纯 Transformer 解码器",
+        "isCorrect": false,
+        "description": "那是 DiT 等新方向，传统 DDPM 用 U-Net"
+      },
+      {
+        "text": "全卷积分类网络",
+        "isCorrect": false,
+        "description": "分类网络无跳跃连接与上采样，不适合去噪"
+      },
+      {
+        "text": "循环神经网络（RNN）",
+        "isCorrect": false,
+        "description": "扩散不用 RNN，去噪是空间任务用 U-Net"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：U-Net 中的时间步 t 如何注入网络？",
+    "explanation": "扩散模型的 U-Net 需要感知当前去噪的时间步 t（不同 t 对应不同尺度去噪）。常用方法是把 t 编码成向量注入每层，最常用的是类似 Transformer 的正弦位置编码（sinusoidal position embedding），把 t 映射成高维向量后加到 U-Net 的每一层。这样同一网络能处理所有 t，区分不同去噪阶段。",
+    "tags": ["diffusion", "时间嵌入", "unet"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用正弦位置编码把 t 变成向量，加到 U-Net 每层",
+        "isCorrect": true,
+        "description": "类似 Transformer 位置编码，让网络感知去噪阶段"
+      },
+      {
+        "text": "把 t 作为输入图像的额外通道",
+        "isCorrect": false,
+        "description": "标量 t 直接拼接维度不匹配，效果差"
+      },
+      {
+        "text": "为每个 t 训练独立网络",
+        "isCorrect": false,
+        "description": "T=1000 个网络不可行，且无法泛化"
+      },
+      {
+        "text": "t 不需要注入，网络自动学习",
+        "isCorrect": false,
+        "description": "不注入 t 网络无法区分去噪阶段，质量崩塌"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDIM 相比 DDPM 的核心改进是？",
+    "explanation": "DDIM（Song et al. 2020）提出非马尔可夫的前向过程，推导出可大幅减少步数的反向采样器。关键特性：(1) 模型无需重训，用训好的 DDPM 直接换采样器；(2) 引入随机性控制参数 η，η=0 时完全确定性，20-50 步即达 DDPM 1000 步的质量；(3) η=0 时给定初始噪声输出固定，支持隐空间语义插值。DDIM 是扩散加速采样奠基。",
+    "tags": ["ddim", "加速", "采样"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "非马尔可夫确定性采样（η=0），20-50 步达 DDPM 千步质量，模型无需重训",
+        "isCorrect": true,
+        "description": "DDIM 加速 + 确定性 + 可插值，无需重训"
+      },
+      {
+        "text": "用更大的 U-Net 提升质量",
+        "isCorrect": false,
+        "description": "DDIM 不改网络，改的是采样过程"
+      },
+      {
+        "text": "把扩散搬到潜空间",
+        "isCorrect": false,
+        "description": "那是 LDM（Stable Diffusion），非 DDIM"
+      },
+      {
+        "text": "训练新损失函数提升稳定性",
+        "isCorrect": false,
+        "description": "DDIM 不改训练，只改采样器"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：Stable Diffusion（LDM）为什么把扩散放到潜空间而非像素空间？",
+    "explanation": "LDM（Rombach et al. 2022）发现图像的感知信息远低于像素冗余。它先训练一个 VAE 自编码器把图像压缩到低维潜空间（如 64×64×4，相比 512×512×3 压缩约 48 倍），然后在潜空间做扩散。这样 U-Net 处理的张量小几十倍，算力与显存大幅降低，让扩散能在消费级 GPU 上运行。最后用 VAE 解码器把潜向量还原成图像。",
+    "tags": ["ldm", "stable-diffusion", "潜空间"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "VAE 编码器把图像压到低维潜空间，扩散在小张量上做，算力降几十倍",
+        "isCorrect": true,
+        "description": "两阶段：感知压缩（VAE）+ 潜在扩散（U-Net）"
+      },
+      {
+        "text": "潜空间的样本质量比像素空间高",
+        "isCorrect": false,
+        "description": "动机是算力，不是质量本身"
+      },
+      {
+        "text": "潜空间无需训练 U-Net",
+        "isCorrect": false,
+        "description": "仍需训练 U-Net，只是在小张量上训"
+      },
+      {
+        "text": "潜空间消除了对文本条件的需求",
+        "isCorrect": false,
+        "description": "条件机制与潜空间独立，LDM 仍用文本条件"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：LDM/Stable Diffusion 如何把文本条件注入 U-Net？",
+    "explanation": "LDM 在 U-Net 的每个分辨率层插入交叉注意力层（cross-attention）注入文本条件。文本 prompt 经 CLIP 文本编码器得到 token 特征序列 τ（如 77×768），U-Net 每层的交叉注意力中 Query 来自潜特征 z_t，Key/Value 来自文本特征 τ，即 CrossAttention(Q,K,V)=softmax(Q·K^T/√d)·V。这使 U-Net 去噪时能「看到」文本，且机制通用，可接受文本、布局、掩码等任意条件。",
+    "tags": ["ldm", "交叉注意力", "文本条件"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "U-Net 每层加交叉注意力，Q 来自潜特征，K/V 来自 CLIP 文本特征",
+        "isCorrect": true,
+        "description": "交叉注意力是 LDM 条件注入机制，灵活通用"
+      },
+      {
+        "text": "把文本直接拼接到输入噪声",
+        "isCorrect": false,
+        "description": "文本与噪声维度不匹配，拼接不可行"
+      },
+      {
+        "text": "用单独的判别器约束文本一致性",
+        "isCorrect": false,
+        "description": "LDM 无判别器，靠交叉注意力"
+      },
+      {
+        "text": "训练后微调时才加入文本",
+        "isCorrect": false,
+        "description": "交叉注意力是架构内组件，非微调"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：Classifier-Free Guidance（CFG）的采样公式是？",
+    "explanation": "CFG（Ho & Salimans 2022）用单一网络联合训练条件与无条件模型，推理时外插：ε̃ = (1+w)·ε_θ(x_t,t|c) - w·ε_θ(x_t,t|∅)。训练时以一定概率（如 10%）丢弃条件 c 置 ∅，让网络同时学条件和无条件预测。w 是引导强度，w 增大生成更贴合条件、质量更高但多样性下降，文生图常用 w=7.5。这沿「条件-无条件」方向外推放大条件信号。",
+    "tags": ["cfg", "引导", "公式"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ε̃ = (1+w)·ε(x|c) - w·ε(x|∅)，w 为引导强度，联合训练条件与无条件模型",
+        "isCorrect": true,
+        "description": "CFG 外插放大条件信号，w 常用 7-9"
+      },
+      {
+        "text": "ε̃ = ε(x|c) + w·∇log p(c|x)，用分类器梯度引导",
+        "isCorrect": false,
+        "description": "那是 Classifier Guidance（需额外分类器），CFG 无需分类器"
+      },
+      {
+        "text": "ε̃ = w·ε(x|c)，直接缩放条件输出",
+        "isCorrect": false,
+        "description": "缺少无条件项的减法，外插不正确"
+      },
+      {
+        "text": "ε̃ = ε(x|c) + ε(x|∅)，简单相加",
+        "isCorrect": false,
+        "description": "应是带系数的外插，非简单相加"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：CFG 训练时如何让同一网络同时学会条件和无条件预测？",
+    "explanation": "CFG 训练时对条件扩散模型 ε_θ(x_t,t|c)，以一定概率（通常 10%）随机把条件 c 替换为空标记 ∅。这样同一网络既学会带条件的 ε_θ(·|c)，又学会无条件的 ε_θ(·|∅)。推理时该网络做两次前向（一次带条件、一次带 ∅），用 CFG 公式组合。优点是无需训练额外分类器（对比 Classifier Guidance 需要预训练分类器算梯度）。",
+    "tags": ["cfg", "训练", "条件丢弃"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "训练时以一定概率（如 10%）把条件 c 替换为 ∅，同一网络学两种预测",
+        "isCorrect": true,
+        "description": "条件随机丢弃（dropout）让单网络兼学条件与无条件"
+      },
+      {
+        "text": "训练两个完全独立的网络",
+        "isCorrect": false,
+        "description": "CFG 用单一网络，非两个独立网络"
+      },
+      {
+        "text": "先训练条件模型再微调无条件",
+        "isCorrect": false,
+        "description": "是联合训练，非分阶段"
+      },
+      {
+        "text": "用强化学习从奖励学习条件",
+        "isCorrect": false,
+        "description": "CFG 是简单条件丢弃，与 RL 无关"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：增大 CFG 引导强度 w 的影响是？",
+    "explanation": "CFG 的引导强度 w 控制条件影响。w 增大，生成更贴合条件（文本描述更精确）、视觉质量更高（细节更锐利），但多样性下降、可能出现过饱和与伪影。w=1 是标准条件采样，w=0 退化为纯条件模型。这本质是沿「条件方向」外推，类似 GAN 截断技巧，直观体现质量-多样性权衡。文生图默认 w≈7-9，过大（如 30）会过饱和。",
+    "tags": ["cfg", "引导强度", "权衡"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "更贴合条件、质量更高，但多样性下降、可能过饱和",
+        "isCorrect": true,
+        "description": "w 大放大条件，质量-多样性权衡"
+      },
+      {
+        "text": "生成速度线性加快",
+        "isCorrect": false,
+        "description": "w 不影响步数与速度，只影响输出分布"
+      },
+      {
+        "text": "多样性显著提升",
+        "isCorrect": false,
+        "description": "相反，w 增大降低多样性"
+      },
+      {
+        "text": "完全消除过拟合",
+        "isCorrect": false,
+        "description": "w 与过拟合无关，且过大反而出伪影"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDPM 预测噪声 ε_θ 与分数函数 ∇log p(x) 的关系是？",
+    "explanation": "Lilian Weng 博客推导表明，DDPM 预测的噪声 ε_θ 与扰动数据分布的分数函数等价：s_θ(x_t,t) ≈ ∇_{x_t} log q(x_t) = -ε_θ(x_t,t)/√(1-ᾱ_t)。即预测噪声等价于估计分数（差一个缩放因子 √(1-ᾱ_t)）。这把 DDPM 与基于分数的生成模型、朗之万动力学统一，是 Score-SDE 框架的理论基础。",
+    "tags": ["diffusion", "分数模型", "等价"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "∇log p(x_t) ≈ -ε_θ(x_t,t) / √(1-ᾱ_t)，预测噪声等价估计分数",
+        "isCorrect": true,
+        "description": "差一个缩放因子，DDPM 与分数模型数学等价"
+      },
+      {
+        "text": "两者完全无关，是不同范式",
+        "isCorrect": false,
+        "description": "它们在 Score-SDE 框架下统一，关系明确"
+      },
+      {
+        "text": "ε_θ = ∇log p(x_t)，完全相等",
+        "isCorrect": false,
+        "description": "差缩放因子 1/√(1-ᾱ_t)，非完全相等"
+      },
+      {
+        "text": "ε_θ = log p(x_t)，是对数概率",
+        "isCorrect": false,
+        "description": "分数是 log p 的梯度，非 log p 本身"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：朗之万动力学（Langevin dynamics）采样的迭代式是？",
+    "explanation": "朗之万动力学用分数梯度迭代采样：x_t = x_{t-1} + (δ/2)·∇_x log p(x_{t-1}) + √δ·ε，ε~N(0,I)。即每步沿分数方向（对数概率梯度，指向高密度区）移动一小步再加噪声。只要能估计分数 ∇log p(x)（DDPM 的 ε_θ 等价），就能从分布采样。这是分数模型与扩散模型统一的基础。",
+    "tags": ["langevin", "分数", "采样"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "x_t = x_{t-1} + (δ/2)·∇log p(x_{t-1}) + √δ·ε，沿分数梯度加噪声",
+        "isCorrect": true,
+        "description": "朗之万动力学用分数迭代采样"
+      },
+      {
+        "text": "x_t = x_{t-1} - δ·∇log p + ε，反向梯度无系数",
+        "isCorrect": false,
+        "description": "应加（δ/2）系数且方向是正（指向高密度）"
+      },
+      {
+        "text": "x_t = ∇log p(x_{t-1})",
+        "isCorrect": false,
+        "description": "缺少加性更新与噪声项"
+      },
+      {
+        "text": "x_t = x_{t-1} + δ·ε，纯随机游走",
+        "isCorrect": false,
+        "description": "缺少分数梯度引导项"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：标准 DDPM 采样慢的根本原因是？",
+    "explanation": "标准 DDPM 采样需从 x_T 出发迭代 T=1000 步反向去噪，每步都要跑一次 U-Net 前向，因此生成一张图耗时数秒到数分钟。这是扩散相比 GAN（单次前向）的最大短板。T 大是为了每步加噪足够小、反向高斯近似精确。DDIM/DPM-Solver/LCM 等通过改采样器或蒸馏，把步数降到几十甚至几步，是扩散落地的关键。",
+    "tags": ["ddpm", "采样", "效率"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "需迭代 T=1000 步，每步都跑一次 U-Net 前向",
+        "isCorrect": true,
+        "description": "千步迭代+每步网络前向，是慢的根源"
+      },
+      {
+        "text": "U-Net 参数量过大",
+        "isCorrect": false,
+        "description": "单次 U-Net 不慢，慢在千次迭代"
+      },
+      {
+        "text": "训练数据不足",
+        "isCorrect": false,
+        "description": "采样速度与数据量无关"
+      },
+      {
+        "text": "方差调度不合理",
+        "isCorrect": false,
+        "description": "调度影响质量，迭代步数才是慢的根源"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：相比 GAN，扩散模型的主要优势是？",
+    "explanation": "扩散模型相比 GAN 的核心优势：(1) 训练稳定——单一 MSE 损失无对抗博弈震荡；(2) 生成质量与多样性顶尖，几乎无模式崩溃，FID 全面超越 GAN；(3) 概率意义清晰，优化 ELBO 有理论保证；(4) 条件控制极强，CFG + 交叉注意力灵活注入文本等条件。代价是采样慢、算力消耗大。扩散已成为图像/视频/音频生成的统治范式。",
+    "tags": ["diffusion", "gan", "对比"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "训练稳定、质量多样性顶尖、几乎无模式崩溃、条件控制强",
+        "isCorrect": true,
+        "description": "扩散相比 GAN 的核心优势（代价是采样慢）"
+      },
+      {
+        "text": "采样速度比 GAN 快几百倍",
+        "isCorrect": false,
+        "description": "相反，扩散采样比 GAN 慢得多"
+      },
+      {
+        "text": "完全不需要训练数据",
+        "isCorrect": false,
+        "description": "扩散仍需大量训练数据"
+      },
+      {
+        "text": "网络架构更简单",
+        "isCorrect": false,
+        "description": "扩散用 U-Net + 迭代，结构不比 GAN 简单"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：Latent Consistency Models（LCM）的核心思想是？",
+    "explanation": "LCM（Luo et al. 2023）训练一个一致性函数 f_θ(z_t,t)→z_0，要求沿同一条扩散轨迹（从同一 z_0 加噪得到的不同 z_t）输出一致，即 f_θ(z_t,t)=f_θ(z_{t'},t')。在 LDM 潜空间上对 Stable Diffusion 做一致性蒸馏，结合 CFG，实现 1-4 步极速高质量生成（对比标准 SD 的 20-50 步）。LCM 让扩散在质量-速度上逼近 GAN，是 2023 年加速里程碑。",
+    "tags": ["lcm", "一致性", "蒸馏"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "训练一致性函数，使同一轨迹任意步输出一致，蒸馏成 1-4 步极速生成",
+        "isCorrect": true,
+        "description": "一致性蒸馏 + LDM，几步出图"
+      },
+      {
+        "text": "用更多步换取更高质量",
+        "isCorrect": false,
+        "description": "LCM 目标是减少步数，而非增加"
+      },
+      {
+        "text": "完全重新设计 U-Net 架构",
+        "isCorrect": false,
+        "description": "LCM 是蒸馏方法，不改基础架构"
+      },
+      {
+        "text": "只能生成低分辨率图像",
+        "isCorrect": false,
+        "description": "LCM 继承 LDM 分辨率能力"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDIM 的随机性参数 η 的作用是？",
+    "explanation": "DDIM 引入随机性控制参数 η≥0：η=0 时采样完全确定性（给定初始噪声 x_T 输出固定），η=1 时退化为标准 DDPM 的随机采样。η=0 的确定性模式是 DDIM 常用配置——既加速（20-50 步达千步质量），又支持隐空间语义插值（两个噪声线性插值生成平滑过渡的图，DDPM 因随机做不到）。",
+    "tags": ["ddim", "eta", "随机性"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "η=0 完全确定性（支持语义插值），η=1 退化为 DDPM 随机采样",
+        "isCorrect": true,
+        "description": "η 控制随机性，η=0 是 DDIM 常用确定性模式"
+      },
+      {
+        "text": "η 控制采样步数",
+        "isCorrect": false,
+        "description": "η 控制随机性，步数是另一参数"
+      },
+      {
+        "text": "η 控制方差调度 β_t",
+        "isCorrect": false,
+        "description": "β_t 是训练时预设，η 是采样时的随机性参数"
+      },
+      {
+        "text": "η 控制网络层数",
+        "isCorrect": false,
+        "description": "η 与网络结构无关"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：训练时为何每个样本随机采一个时间步 t 而非固定 t？",
+    "explanation": "DDPM 训练时对每个样本从 [1,T] 均匀随机采一个 t，构造对应的 x_t 让网络预测 ε。随机采 t 是为了让网络均衡学习所有去噪阶段（从轻噪到重噪），避免对某个 t 过拟合。若固定 t，网络只能去某个阶段的噪，无法完成从纯噪声到数据的完整反向过程。随机 t 也使每次梯度覆盖不同噪声水平，训练更高效。",
+    "tags": ["ddpm", "训练", "时间步采样"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "均匀随机采 t 让网络均衡学习所有去噪阶段，避免对单一 t 过拟合",
+        "isCorrect": true,
+        "description": "随机 t 覆盖所有噪声水平，是 DDPM 训练设计"
+      },
+      {
+        "text": "固定 t 训练更快",
+        "isCorrect": false,
+        "description": "固定 t 则网络只学单阶段，无法完整生成"
+      },
+      {
+        "text": "只用 t=T（纯噪声）训练",
+        "isCorrect": false,
+        "description": "只学纯噪声阶段，无法还原数据"
+      },
+      {
+        "text": "t 必须按时间顺序遍历",
+        "isCorrect": false,
+        "description": "采样是无序随机的，无需按顺序"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：DDPM 反向过程 p_θ(x_{t-1}|x_t) 的分布形式是？",
+    "explanation": "DDPM 用神经网络参数化反向过程：p_θ(x_{t-1}|x_t) = N(μ_θ(x_t,t), Σ_θ(x_t,t))，是高斯分布，均值 μ_θ 由网络给出，方差 Σ_θ 在 DDPM 中通常固定为与 β_t 相关的常数（不学习）。DDPM 的关键简化是把 μ_θ 重参数化为由预测噪声 ε_θ 表示的形式：μ_θ = (1/√α_t)·(x_t - (1-α_t)/√(1-ᾱ_t)·ε_θ)，于是只需预测 ε。",
+    "tags": ["ddpm", "反向过程", "高斯"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "高斯分布 N(μ_θ(x_t,t), Σ_θ)，均值由网络给出，方差常固定",
+        "isCorrect": true,
+        "description": "反向是高斯，μ_θ 由 ε_θ 重写，Σ_θ 常固定"
+      },
+      {
+        "text": "均匀分布",
+        "isCorrect": false,
+        "description": "反向是高斯，非均匀"
+      },
+      {
+        "text": "离散分布",
+        "isCorrect": false,
+        "description": "DDPM 是连续高斯，非离散"
+      },
+      {
+        "text": "由网络直接预测 x_0 的确定值",
+        "isCorrect": false,
+        "description": "DDPM 预测噪声 ε 而非直接 x_0，且是分布非确定值"
+      }
+    ]
+  },
+  {
+    "stem": "扩散模型：在连续时间下，扩散过程可统一写成什么数学对象？",
+    "explanation": "Song et al. 2021（Score-Based Generative Modeling through SDEs）把 DDPM、分数模型、朗之万动力学统一到一个连续时间随机微分方程（SDE）：dx = f(x,t)dt + g(t)dw，其中 w 是布朗运动。前向扩散对应一个 SDE，反向生成对应其反向 SDE（需分数函数）。不同离散化对应不同模型（DDPM、分数模型、概率流 ODE）。这个统一框架让 DDIM、概率流 ODE、各类加速采样器在同一理论下推导。",
+    "tags": ["diffusion", "sde", "统一框架"],
+    "categories": [
+      ["技术方向", "扩散模型"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "随机微分方程（SDE）：dx = f(x,t)dt + g(t)dw，w 为布朗运动",
+        "isCorrect": true,
+        "description": "连续时间 SDE 统一 DDPM/分数模型/朗之万"
+      },
+      {
+        "text": "常微分方程（ODE）无随机项",
+        "isCorrect": false,
+        "description": "概率流 ODE 是去随机化特例，完整形式是 SDE 含 dw"
+      },
+      {
+        "text": "马尔可夫决策过程（MDP）",
+        "isCorrect": false,
+        "description": "MDP 是强化学习对象，与扩散无关"
+      },
+      {
+        "text": "偏微分方程（PDE）含空间导数",
+        "isCorrect": false,
+        "description": "扩散 SDE 是时间随机过程，非空间 PDE"
+      }
+    ]
+  }
+]

@@ -1,0 +1,715 @@
+[
+  {
+    "stem": "特征工程：业界常说「数据决定模型的上限，算法只是逼近上限」，这句话强调的是？",
+    "explanation": "这句业界共识强调特征工程（数据质量与特征构造）的重要性——好的特征工程常比换更复杂的算法提升更大。模型算法只是在给定数据/特征下逼近最优解，无法突破特征所携带的信息上限。所以特征工程是拉开性能差距的关键，尤其在表格数据上往往是「调特征 > 调模型」。深度学习减少了手工特征（CNN 自动学图像特征），但表格数据上特征工程仍是核心。",
+    "tags": ["特征工程", "数据质量", "上限"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "特征工程是提升模型性能上限的关键，常比换算法更有效",
+        "isCorrect": true,
+        "description": "尤其在表格数据上，调特征的收益常超过调模型"
+      },
+      {
+        "text": "算法的选择比数据质量更重要",
+        "isCorrect": false,
+        "description": "恰恰相反，数据/特征决定上限，算法只是逼近上限"
+      },
+      {
+        "text": "只要数据量大，任何算法都能达到最优",
+        "isCorrect": false,
+        "description": "数据量大不一定特征好，特征工程仍是关键"
+      },
+      {
+        "text": "深度学习完全不需要特征工程",
+        "isCorrect": false,
+        "description": "深度学习减少手工特征但表格数据上特征工程仍关键"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：以下哪种模型在做特征缩放（标准化）后性能基本不变？",
+    "explanation": "树模型（随机森林/GBDT）基于特征阈值分裂（如「特征x > 3.5」），比较的是单个特征内取值的相对大小，与特征间量纲无关，所以缩放对其性能基本无影响。而 KNN、SVM、SGD、神经网络基于距离或梯度，大量纲特征会淹没小量纲特征，必须缩放。线性模型（逻辑回归）虽不强制，但缩放后收敛更快、正则化更公平。这是树模型的一大工程优势——预处理流程更简单。",
+    "tags": ["特征缩放", "标准化", "树模型", "算法依赖"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "随机森林（基于阈值分裂，与量纲无关）",
+        "isCorrect": true,
+        "description": "树模型无需缩放，是它的工程优势"
+      },
+      {
+        "text": "K 近邻（KNN）",
+        "isCorrect": false,
+        "description": "KNN 基于距离计算，大量纲会淹没小量纲，必须缩放"
+      },
+      {
+        "text": "支持向量机（SVM）",
+        "isCorrect": false,
+        "description": "SVM 核函数基于距离，对量纲敏感，必须缩放"
+      },
+      {
+        "text": "多层感知机（MLP 神经网络）",
+        "isCorrect": false,
+        "description": "神经网络梯度对量纲敏感，必须缩放"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：以下哪种缩放器对异常值（outlier）最鲁棒？",
+    "explanation": "RobustScaler 用中位数和四分位距（IQR）做标准化，这两个统计量本身对异常值鲁棒（中位数不受极端值影响，IQR 只用 25%-75% 的数据）。StandardScaler 用均值和标准差，受异常值影响大；MinMaxScaler 用最大最小值，对异常值极敏感（异常值会压缩正常数据到极小范围）。MaxAbsScaler 用最大绝对值，同样受异常值影响。所以数据有异常值时首选 RobustScaler。",
+    "tags": ["RobustScaler", "异常值", "StandardScaler", "MinMaxScaler"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "RobustScaler（用中位数和四分位距）",
+        "isCorrect": true,
+        "description": "中位数和 IQR 本身抗异常值，是异常值场景的首选"
+      },
+      {
+        "text": "StandardScaler（用均值和标准差）",
+        "isCorrect": false,
+        "description": "均值标准差受异常值影响大，不鲁棒"
+      },
+      {
+        "text": "MinMaxScaler（用最大最小值）",
+        "isCorrect": false,
+        "description": "最大最小值直接被异常值决定，最不鲁棒"
+      },
+      {
+        "text": "MaxAbsScaler（用最大绝对值）",
+        "isCorrect": false,
+        "description": "最大绝对值受异常值影响，不鲁棒"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：以下做法会导致「数据泄漏（Data Leakage）」的是？",
+    "explanation": "数据泄漏是测试集信息以隐蔽方式进入训练导致评估虚高。最经典的就是先在全量数据上 fit 缩放器/编码器再划分——此时缩放器的均值方差已包含测试集分布，模型间接「偷看」了测试集。正确做法：先划分训练/测试集，只在 X_train 上 fit，再用相同参数 transform 到 X_test；或在 CV 中用 Pipeline 包裹让这些步骤在折内进行。TargetEncoder 的 fit().transform() 也是泄漏陷阱。",
+    "tags": ["数据泄漏", "标准化", "fit_transform", "Pipeline"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "先在全量数据上 fit StandardScaler，再划分训练/测试集",
+        "isCorrect": true,
+        "description": "缩放器吸收了测试集分布，评估会虚高"
+      },
+      {
+        "text": "先划分训练/测试集，只在 X_train 上 fit",
+        "isCorrect": false,
+        "description": "这是正确做法，无泄漏"
+      },
+      {
+        "text": "用 Pipeline 包裹缩放器和模型",
+        "isCorrect": false,
+        "description": "Pipeline 自动在 CV 折内 fit，是防泄漏的标准解法"
+      },
+      {
+        "text": "划分前打乱数据顺序",
+        "isCorrect": false,
+        "description": "打乱是必要的（防有序数据偏置），不会泄漏"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：高基数类别特征（如用户ID、商品ID）为何不宜用 OneHotEncoder？",
+    "explanation": "高基数类别（如 10 万个用户ID）用 OneHot 会产生 10 万维稀疏矩阵——维度爆炸导致内存占用大、训练慢，且树模型在高维稀疏上效果差（每次分裂只能用少数特征，信息被稀释）。正确做法是用 TargetEncoder/CatBoostEncoder 等监督编码（把类别替换为目标均值），或 HashingEncoder（哈希到固定维度）。OneHot 适合低基数（<10 类）场景。LightGBM/CatBoost 原生支持类别特征更优。",
+    "tags": ["类别编码", "OneHotEncoder", "高基数", "维度爆炸"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "维度爆炸（产生上万维稀疏矩阵），训练慢且树模型效果差",
+        "isCorrect": true,
+        "description": "高基数应改用 TargetEncoder/CatBoostEncoder/HashingEncoder"
+      },
+      {
+        "text": "OneHotEncoder 不支持类别特征",
+        "isCorrect": false,
+        "description": "OneHotEncoder 正是为类别特征设计的，问题是维度爆炸"
+      },
+      {
+        "text": "OneHot 编码会让模型准确率下降",
+        "isCorrect": false,
+        "description": "准确率问题不是核心，核心是维度爆炸的工程问题"
+      },
+      {
+        "text": "OneHot 编码计算速度太慢",
+        "isCorrect": false,
+        "description": "OneHot 本身很快，问题是输出维度爆炸"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：sklearn 的 TargetEncoder 为何推荐用 fit_transform 而非 fit().transform()？",
+    "explanation": "sklearn 1.3+ 的 TargetEncoder 用 fit_transform 时会做交叉拟合（cross-fitting）防泄漏——把数据分 k 折，每折用其余 k-1 折的目标均值编码，避免「用样本自己的标签编码自己」。而 fit(X,y).transform(X) 不做交叉拟合，直接用全量目标均值编码训练集，会产生严重泄漏（评估虚高）。这是 TargetEncoder 最关键的细节。所以必须用 fit_transform，且通常放在 Pipeline 中由 CV 自动管理。",
+    "tags": ["TargetEncoder", "数据泄漏", "交叉拟合", "fit_transform"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fit_transform 用交叉拟合（cross-fitting）防 target 泄漏",
+        "isCorrect": true,
+        "description": "fit().transform() 不做交叉拟合，会用样本自己的标签编码自己"
+      },
+      {
+        "text": "fit_transform 计算速度更快",
+        "isCorrect": false,
+        "description": "fit_transform 因交叉拟合反而稍慢，目的是防泄漏不是加速"
+      },
+      {
+        "text": "fit().transform() 会报错",
+        "isCorrect": false,
+        "description": "不会报错，但结果有泄漏，这是隐蔽陷阱"
+      },
+      {
+        "text": "两者结果完全相同",
+        "isCorrect": false,
+        "description": "恰恰相反，两者结果不同，fit_transform 才是防泄漏的正确用法"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：对右偏严重的正数特征（如收入），最适合的变换是？",
+    "explanation": "右偏分布（长尾在右，如收入、计数）常用对数变换压平——np.log1p（log(x+1)，处理含 0 的数据）是最直接的。PowerTransformer(method='box-cox') 也能自动找最优变换参数（仅适用正数），method='yeo-johnson' 是支持 0 和负数的推广版本。变换后分布更接近正态，让线性模型和神经网络学得更稳。QuantileTransformer 可强制映射到正态但对极端值鲁棒。StandardScaler 只缩放不改变偏度，不能消偏态。",
+    "tags": ["数值变换", "对数变换", "偏态", "PowerTransformer"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "np.log1p（对数变换）或 PowerTransformer(method='box-cox')",
+        "isCorrect": true,
+        "description": "对数压平右尾，Box-Cox 自动选最优 λ"
+      },
+      {
+        "text": "StandardScaler（标准化）",
+        "isCorrect": false,
+        "description": "标准化只缩放（均值0标准差1），不改变偏度"
+      },
+      {
+        "text": "MinMaxScaler（归一化到 [0,1]）",
+        "isCorrect": false,
+        "description": "归一化压缩范围但偏态形状不变"
+      },
+      {
+        "text": "OneHotEncoder（独热编码）",
+        "isCorrect": false,
+        "description": "OneHot 是类别编码，不适用于连续数值变换"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：PowerTransformer 的 Box-Cox 方法相比 Yeo-Johnson 的限制是？",
+    "explanation": "Box-Cox 变换只适用于严格正数（x > 0），遇到 0 或负数会报错。Yeo-Johnson 是 Box-Cox 的推广，支持 0 和负数，是更通用的选择。两者都是参数化单调变换，目标是让数据更接近正态（稳定方差、减小偏度），通过最大似然估计最优变换参数 λ。PowerTransformer 默认 standardize=True，变换后再标准化到均值0标准差1。所以数据含 0 或负数时必须用 yeo-johnson。",
+    "tags": ["PowerTransformer", "Box-Cox", "Yeo-Johnson", "数值变换"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Box-Cox 只适用于严格正数，Yeo-Johnson 支持 0 和负数",
+        "isCorrect": true,
+        "description": "Yeo-Johnson 是 Box-Cox 的推广，更通用"
+      },
+      {
+        "text": "Box-Cox 比 Yeo-Johnson 准确率高",
+        "isCorrect": false,
+        "description": "两者精度相近，区别在于对负数的支持"
+      },
+      {
+        "text": "Box-Cox 计算速度更快",
+        "isCorrect": false,
+        "description": "两者都用最大似然估计 λ，速度相近"
+      },
+      {
+        "text": "Yeo-Johnson 只适用于负数",
+        "isCorrect": false,
+        "description": "Yeo-Johnson 正数、0、负数都支持，是 Box-Cox 的推广"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：对「城市」这类无序类别特征误用 OrdinalEncoder 会怎样？",
+    "explanation": "OrdinalEncoder 把类别编为 0/1/2...（如 北京=0、上海=1、广州=2），这暗示了「北京<上海<广州」的虚假数值序关系。城市本无序，这种虚假关系会严重误导线性模型（模型会学到「广州的数值更大」这种无意义规律）。树模型尚可容忍（基于阈值分裂，能学到非线性），但线性模型会严重出错。无序类别应 OneHot；有序类别（如 低/中/高）才用 OrdinalEncoder 并显式指定顺序。",
+    "tags": ["OrdinalEncoder", "类别编码", "有序类别", "虚假序关系"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引入虚假的数值序关系（北京<上海<广州），误导线性模型",
+        "isCorrect": true,
+        "description": "无序类别应 OneHot，有序类别才用 OrdinalEncoder"
+      },
+      {
+        "text": "完全无法编码，报错",
+        "isCorrect": false,
+        "description": "OrdinalEncoder 能编码任何类别，问题是引入虚假序"
+      },
+      {
+        "text": "维度爆炸",
+        "isCorrect": false,
+        "description": "OrdinalEncoder 输出 1 维，不会维度爆炸（这是 OneHot 的问题）"
+      },
+      {
+        "text": "没有任何影响",
+        "isCorrect": false,
+        "description": "对线性模型影响严重，会学到无意义的数值序规律"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：小时特征（0-23）直接作为数值喂给线性模型的主要问题是？",
+    "explanation": "小时作为数值时，23 点和 0 点在时间上相邻（只差1小时），但作为数值距离最远（差23）。线性模型会误以为「23点很高、0点很低」，无法捕捉周期性。正确做法是用周期编码：sin(2π·h/24) 和 cos(2π·h/24) 两个特征，让相邻时刻在二维空间也相邻。feature-engine 的 CyclicalFeatures 自动做这件事。这对月份、星期、角度等所有周期性特征都适用。树模型尚能学非线性，但对线性模型周期编码至关重要。",
+    "tags": ["时间特征", "周期编码", "sin/cos", "CyclicalFeatures"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "23点和0点时间相邻但数值距离最远，无法捕捉周期性",
+        "isCorrect": true,
+        "description": "应用 sin/cos 周期编码让相邻时刻空间也相邻"
+      },
+      {
+        "text": "小时不是数值无法处理",
+        "isCorrect": false,
+        "description": "小时是数值，问题在周期性而非数值性"
+      },
+      {
+        "text": "小时特征维度太高",
+        "isCorrect": false,
+        "description": "小时只是 1 维，维度不高"
+      },
+      {
+        "text": "小时特征有缺失值",
+        "isCorrect": false,
+        "description": "缺失值是另一问题，与周期性无关"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：数值缺失值填补时，为何 median（中位数）通常优于 mean（均值）？",
+    "explanation": "median（中位数）对异常值鲁棒——它取排序后的中间值，不受极端值影响。mean（均值）受异常值严重拉偏（一个极大值会把均值拉高很多）。所以数值填补首选 median，尤其在数据有异常值或偏态时。mean 适合数据分布均匀、无明显异常的场景。most_frequent 用于类别填补，constant 用于显式标记缺失。KNNImputer/IterativeImputer 更准但更慢，大数据集慎用。",
+    "tags": ["缺失值", "SimpleImputer", "median", "mean", "异常值"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "median 对异常值鲁棒，mean 受异常值严重拉偏",
+        "isCorrect": true,
+        "description": "数值填补首选 median，尤其数据有异常值或偏态时"
+      },
+      {
+        "text": "median 计算速度更快",
+        "isCorrect": false,
+        "description": "median 需排序，比 mean（求和除以n）略慢，选 median 是为鲁棒性"
+      },
+      {
+        "text": "median 不会改变数据分布",
+        "isCorrect": false,
+        "description": "填补都会影响分布，median 的优势是抗异常值"
+      },
+      {
+        "text": "mean 完全不能用",
+        "isCorrect": false,
+        "description": "mean 在数据均匀无异常时也可用，只是 median 更通用"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：特征选择三大类方法中，RFE（递归特征消除）属于哪一类？",
+    "explanation": "特征选择分三类：Filter（过滤法，用统计检验不依赖模型，如 SelectKBest）、Wrapper（包装法，用模型反复评估不同子集，如 RFE/R FECV/SequentialFeatureSelector）、Embedded（嵌入法，特征选择嵌入训练中，如 SelectFromModel 配合 L1 正则或树重要性）。RFE 递归地用模型 feature_importances_ 或 coef_ 剔除最不重要的特征，需多次训练模型评估，属 Wrapper（包装法）。它最准但最慢，需模型暴露 coef_ 或 importances_。",
+    "tags": ["特征选择", "RFE", "Wrapper", "包装法"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Wrapper（包装法），用模型反复评估不同特征子集",
+        "isCorrect": true,
+        "description": "RFE 递归剔除最不重要的特征，需多次训练模型"
+      },
+      {
+        "text": "Filter（过滤法），用统计检验打分",
+        "isCorrect": false,
+        "description": "Filter 是 SelectKBest 等，不依赖模型反复训练"
+      },
+      {
+        "text": "Embedded（嵌入法），训练时自动选择",
+        "isCorrect": false,
+        "description": "Embedded 是 SelectFromModel 配合 L1/树重要性"
+      },
+      {
+        "text": "不属于这三类",
+        "isCorrect": false,
+        "description": "RFE 是典型的 Wrapper 方法"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：SelectKBest 用于文本分类（词袋特征）时，打分函数应避免使用？",
+    "explanation": "chi2（卡方检验）要求特征非负——因为它的计算基于观测频数与期望频数之差，负值会破坏统计意义。文本词袋特征（词频）是非负的，可用 chi2。但若特征被 StandardScaler 标准化（变负数）后就不能用 chi2，应改用 f_classif 或 mutual_info_classif。f_classif 估线性依赖，mutual_info_classif 估任意依赖（非参数，需更多样本）。混淆点是「chi2 适用于词频」但「不适用于标准化后的特征」。",
+    "tags": ["SelectKBest", "chi2", "f_classif", "文本分类", "非负"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "若特征被标准化后含负值，应避免 chi2（要求非负）",
+        "isCorrect": true,
+        "description": "chi2 基于频数差，负值破坏统计意义，改用 f_classif/mutual_info"
+      },
+      {
+        "text": "应避免 f_classif，因为它只支持回归",
+        "isCorrect": false,
+        "description": "f_classif 是分类用的（f_regression 才是回归）"
+      },
+      {
+        "text": "应避免 mutual_info_classif，因为它要求线性关系",
+        "isCorrect": false,
+        "description": "mutual_info 捕获任意依赖（非线性），不要求线性"
+      },
+      {
+        "text": "所有打分函数都不能用于文本特征",
+        "isCorrect": false,
+        "description": "chi2/f_classif/mutual_info 都可用于文本，注意 chi2 的非负要求"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：SelectFromModel 配合 L1 正则化做特征选择的原理是？",
+    "explanation": "L1 正则化（如 Lasso、LogisticRegression(penalty='l1')）的几何特性使解落在坐标轴上，部分系数精确归零——归零的特征即被自动剔除。SelectFromModel 训练完 L1 模型后，剔除系数为 0 的特征。这是 Embedded（嵌入法）特征选择，特征选择嵌入在模型训练中。L2 正则只让系数变小但不归零，无法做特征选择。树模型用 feature_importances_ 也可配合 SelectFromModel，按重要性阈值剔除。",
+    "tags": ["SelectFromModel", "L1正则", "Lasso", "稀疏解", "Embedded"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "L1 正则产生稀疏解，部分系数归零即剔除对应特征",
+        "isCorrect": true,
+        "description": "L1 的几何特性使解落在坐标轴上，自动特征选择"
+      },
+      {
+        "text": "L1 正则让所有系数平滑变小",
+        "isCorrect": false,
+        "description": "这是 L2（Ridge）的特点，L1 是产生稀疏（部分归零）"
+      },
+      {
+        "text": "L1 正则随机丢弃特征",
+        "isCorrect": false,
+        "description": "L1 不是随机，是基于优化目标自动选择"
+      },
+      {
+        "text": "L1 正则增加特征数量",
+        "isCorrect": false,
+        "description": "L1 是减少特征（剔除归零的），不是增加"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：feature-engine 库相比 scikit-learn preprocessing 的核心优势是？",
+    "explanation": "feature-engine 的核心优势是按列名（variables 参数）精确指定处理的列，且输出仍是 DataFrame（保留列名和可读性），与 sklearn Pipeline 完全兼容。而 sklearn 的转换器默认按所有列操作、输出 ndarray（列名丢失），虽可用 set_config(transform_output='pandas') 恢复但不如 feature-engine 自然。feature-engine 还提供更细的功能（如 RareLabelEncoder 合并稀有类、Winsorizer 截断异常值、CyclicalFeatures 周期编码），是表格数据特征工程的专用工具。",
+    "tags": ["feature-engine", "按列名操作", "DataFrame", "sklearn"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按列名精确操作且输出保留 DataFrame（列名）",
+        "isCorrect": true,
+        "description": "可读性强、与 sklearn Pipeline 兼容，是表格数据专用工具"
+      },
+      {
+        "text": "训练速度比 sklearn 快 10 倍",
+        "isCorrect": false,
+        "description": "feature-engine 底层基于 pandas/numpy，速度与 sklearn 相近"
+      },
+      {
+        "text": "不依赖 scikit-learn，完全独立",
+        "isCorrect": false,
+        "description": "feature-engine 与 sklearn 紧密集成，依赖 sklearn API"
+      },
+      {
+        "text": "只支持数值特征不支持类别特征",
+        "isCorrect": false,
+        "description": "feature-engine 恰恰擅长类别编码，支持各类特征"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：HashingEncoder（哈希编码）相比 OneHotEncoder 的独特优势是？",
+    "explanation": "HashingEncoder 用哈希函数把类别映射到固定维度（如 n_components=64），不维护类别映射表。独特优势：①固定维度，不管多少类别都输出 64 维（OneHot 维度=类别数）；②无需维护映射表，适合在线学习/新类别不断出现的场景；③省内存。代价是哈希冲突（不同类别映射到同一桶）会损失信息，且编码不可逆（无法从哈希值反推类别）。所以适合超高基数或流式场景，低基数用 OneHot 更清晰。",
+    "tags": ["HashingEncoder", "哈希编码", "在线学习", "固定维度"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "固定维度无需维护映射表，适合在线学习/新类别不断出现",
+        "isCorrect": true,
+        "description": "代价是哈希冲突损失信息、编码不可逆"
+      },
+      {
+        "text": "完全消除哈希冲突，信息无损",
+        "isCorrect": false,
+        "description": "哈希冲突是 HashingEncoder 的固有代价，无法消除"
+      },
+      {
+        "text": "准确率显著高于 OneHot",
+        "isCorrect": false,
+        "description": "因哈希冲突，准确率通常略低于 OneHot（同维度下）"
+      },
+      {
+        "text": "维度随类别数线性增长",
+        "isCorrect": false,
+        "description": "HashingEncoder 维度固定（n_components），不随类别数增长"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：高缺失率（如 >30%）的特征列，相比直接填补更推荐的做法是？",
+    "explanation": "高缺失率（>30%）的特征，填补值本身就失真（如用 median 填 30% 的缺失，相当于 30% 的值是同一个数，信息量极低）。推荐做法：①加缺失指示列（AddMissingIndicator，保留「是否缺失」这一信号，因为缺失本身可能是预测信息，如用户不填收入可能暗示低收入）；②再决定填补（用缺失指示+填补双重表达）或直接删除该列（若填补后信息量太低）。低缺失率直接填补即可。",
+    "tags": ["缺失值", "高缺失率", "AddMissingIndicator", "缺失指示"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "加缺失指示列（AddMissingIndicator）保留「是否缺失」的信号",
+        "isCorrect": true,
+        "description": "缺失本身可能是预测信息，高缺失率填补会失真"
+      },
+      {
+        "text": "强制用 mean 填补所有缺失",
+        "isCorrect": false,
+        "description": "高缺失率 mean 填补会让大量样本同值，信息量极低"
+      },
+      {
+        "text": "丢弃所有含缺失的行",
+        "isCorrect": false,
+        "description": "会丢失大量数据（30% 缺失会丢很多行），不划算"
+      },
+      {
+        "text": "用 0 填补所有缺失",
+        "isCorrect": false,
+        "description": "0 可能不是合理值，且未保留缺失信号"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：PolynomialFeatures(degree=2, interaction_only=True) 与 interaction_only=False 的区别是？",
+    "explanation": "PolynomialFeatures 生成交互与多项式特征。interaction_only=True 只生成交互项（x1·x2），不生成幂项（x1²、x2²）；interaction_only=False（默认）两者都生成（x1, x2, x1², x1·x2, x2²）。只需特征间交互不要单特征多项式时用 interaction_only=True（如已标准化后不关心单特征非线性）。自动生成的交互项易维度爆炸（degree=3 几十维变几千维），需配合特征选择。业务手工构造的交互（如 价格×销量=收入）往往更强且有解释性。",
+    "tags": ["PolynomialFeatures", "特征交叉", "interaction_only", "幂项"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "True 只生成交互项（x1·x2），False 还生成幂项（x1²、x2²）",
+        "isCorrect": true,
+        "description": "只需交互不要多项式时用 interaction_only=True"
+      },
+      {
+        "text": "True 生成幂项，False 生成交互项",
+        "isCorrect": false,
+        "description": "正好说反了，True 是只交互"
+      },
+      {
+        "text": "两者完全相同",
+        "isCorrect": false,
+        "description": "区别明显，True 少了幂项"
+      },
+      {
+        "text": "True 只用于回归，False 只用于分类",
+        "isCorrect": false,
+        "description": "两者都可用于回归和分类，与任务类型无关"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：TF-IDF 相比纯词频（CountVectorizer）的主要改进是？",
+    "explanation": "TF-IDF（词频 × 逆文档频率）相比纯词频的改进是：抑制在多数文档中都出现的高频虚词（如「的」「是」「the」），这些词 IDF 低，权重被压低；突出在少数文档中出现的特征词（IDF 高）。这让特征更有区分度。ngram_range=(1,2) 同时捕获单字和二字组（如「not good」），对情感分析重要。min_df 过滤稀有词。深度学习用 word2vec/BERT 做语义向量化，但 TF-IDF 在简单文本分类仍有效。",
+    "tags": ["文本特征", "TF-IDF", "CountVectorizer", "逆文档频率"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "抑制高频虚词（IDF 低），突出少数文档的特征词（IDF 高）",
+        "isCorrect": true,
+        "description": "词频 × 逆文档频率，让特征更有区分度"
+      },
+      {
+        "text": "计算速度比词频快",
+        "isCorrect": false,
+        "description": "TF-IDF 多算 IDF，略慢于纯词频"
+      },
+      {
+        "text": "完全替代了深度学习方法",
+        "isCorrect": false,
+        "description": "BERT 等深度方法在复杂语义任务上远超 TF-IDF"
+      },
+      {
+        "text": "只支持英文不支持中文",
+        "isCorrect": false,
+        "description": "TF-IDF 支持任何语言（需先分词），与语言无关"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：GridSearchCV 调参时，特征选择步骤（如 SelectKBest）为何必须包进 Pipeline？",
+    "explanation": "GridSearchCV 内部做交叉验证，若特征选择在 Pipeline 外先全量做，则每折 CV 的验证集信息已泄漏进选择过程（选出的特征沾了验证集信息），评估虚高。用 Pipeline 包裹后，GridSearchCV 会在每折训练集上重新做特征选择，确保验证集严格隔离——这是防数据泄漏的标准工程实践。同理，缩放、编码、填补、PCA 等所有学习参数的步骤都必须在 Pipeline 内。",
+    "tags": ["GridSearchCV", "Pipeline", "特征选择", "数据泄漏"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "确保特征选择在每折 CV 内重新做，防验证集泄漏",
+        "isCorrect": true,
+        "description": "Pipeline 让所有预处理步骤在折内进行，严格隔离验证集"
+      },
+      {
+        "text": "提升模型准确率",
+        "isCorrect": false,
+        "description": "Pipeline 不直接提准确率，主要保证评估正确"
+      },
+      {
+        "text": "减少特征数量",
+        "isCorrect": false,
+        "description": "Pipeline 不改变特征数，是流程管理工具"
+      },
+      {
+        "text": "加速网格搜索",
+        "isCorrect": false,
+        "description": "Pipeline 增加少量开销，不为加速"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：KBinsDiscretizer 的 strategy='quantile' 相比 'uniform' 的优势是？",
+    "explanation": "KBinsDiscretizer 分箱策略：'uniform'（等宽）按值域等分，简单但对偏态/异常值敏感（异常值会让多数数据挤在一两个箱）；'quantile'（等频）按分位数分，每箱样本数相等，抗异常值且分布均匀；'kmeans' 用聚类找自然分界，最智能但最慢。所以数据有偏态或异常值时选 'quantile' 更稳健。分箱让线性模型也能拟合非线性关系（每箱 OneHot 后是分段常数）。",
+    "tags": ["KBinsDiscretizer", "分箱", "quantile", "uniform", "等频"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "等频分箱每箱样本数相等，抗异常值和偏态",
+        "isCorrect": true,
+        "description": "uniform 等宽受异常值影响大，quantile 更稳健"
+      },
+      {
+        "text": "计算速度更快",
+        "isCorrect": false,
+        "description": "quantile 需排序算分位数，比 uniform 略慢"
+      },
+      {
+        "text": "分箱数量更少",
+        "isCorrect": false,
+        "description": "分箱数量由 n_bins 决定，与 strategy 无关"
+      },
+      {
+        "text": "完全消除异常值",
+        "isCorrect": false,
+        "description": "分箱不能消除异常值，只是让其对建模影响更均匀"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：业务知识手工构造的交叉特征（如「价格×销量=收入」）相比 PolynomialFeatures 自动生成的，主要优势是？",
+    "explanation": "业务手工构造的交叉特征（如 价格×销量=收入、点击数/曝光数=CTR、最近7天均值/最近30天均值=短期趋势比）有明确业务含义，可解释性强，且只生成少量高价值特征。PolynomialFeatures 自动生成所有组合，易维度爆炸（degree=3 几十维变几千维），且多数交互项无业务意义是噪声，需配合特征选择筛选。所以实战中业务手工特征往往更强，自动生成交互适合特征自动探索阶段。",
+    "tags": ["特征交叉", "PolynomialFeatures", "业务知识", "可解释性"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "有明确业务含义、可解释性强，只生成少量高价值特征",
+        "isCorrect": true,
+        "description": "PolynomialFeatures 自动生成易维度爆炸且多为噪声"
+      },
+      {
+        "text": "计算速度更快",
+        "isCorrect": false,
+        "description": "手工构造需领域知识投入，不是速度优势"
+      },
+      {
+        "text": "完全避免过拟合",
+        "isCorrect": false,
+        "description": "任何特征都可能过拟合，手工特征也需验证"
+      },
+      {
+        "text": "无需领域知识即可构造",
+        "isCorrect": false,
+        "description": "恰恰相反，手工构造强依赖领域知识"
+      }
+    ]
+  },
+  {
+    "stem": "特征工程：sklearn 的 IterativeImputer 相比 SimpleImputer 的定位是？",
+    "explanation": "IterativeImputer（需 from sklearn.experimental enable_iterative_imputer 启用）把每个含缺失的特征当目标，用其他特征建模预测缺失值（类似 MICE，多重插补），是更准确但更慢的填补方法。SimpleImputer 用统计量（mean/median/most_frequent/constant）简单填补，快但粗糙。KNNImputer 用近邻填补，介于两者之间。所以 IterativeImputer 适合特征间相关性强、对填补精度要求高的中小数据集，大数据集（>10万）慎用（每特征建模开销大）。",
+    "tags": ["IterativeImputer", "SimpleImputer", "缺失值", "MICE"],
+    "categories": [
+      ["技术方向", "特征工程"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "用其他特征建模预测缺失值（类似 MICE），更准但更慢",
+        "isCorrect": true,
+        "description": "适合特征相关性强、要求高精度的中小数据集"
+      },
+      {
+        "text": "用全局均值填补，比 SimpleImputer 更简单",
+        "isCorrect": false,
+        "description": "IterativeImputer 是建模预测，比 SimpleImputer 复杂得多"
+      },
+      {
+        "text": "只支持类别特征不支持数值",
+        "isCorrect": false,
+        "description": "IterativeImputer 主要用于数值特征建模预测"
+      },
+      {
+        "text": "是 SimpleImputer 的别名，两者完全相同",
+        "isCorrect": false,
+        "description": "两者机制完全不同，IterativeImputer 是建模填补"
+      }
+    ]
+  }
+]

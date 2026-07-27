@@ -1,0 +1,684 @@
+[
+  {
+    "stem": "RNN：循环神经网络（RNN）通过什么机制在时间步之间传递信息？",
+    "explanation": "RNN 的核心是隐藏状态（hidden state）h_t：在每个时间步，网络接收当前输入 x_t 与上一时刻的隐藏状态 h_{t-1}，计算出新的 h_t，既作为该步的输出表示，也作为「记忆」传给下一步。公式为 h_t = tanh(W_h·h_{t-1} + W_x·x_t + b)。关键特性是权重共享——每个时间步用完全相同的 W_h, W_x, b，这是「循环」的本质，也是参数高效的原因。这使得 RNN 能处理任意长度的序列。",
+    "tags": ["RNN", "隐藏状态", "权重共享", "时间步"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "隐藏状态 h_t 在时间步间传递，每个时间步共享同一组权重",
+        "isCorrect": true,
+        "description": "h_t = tanh(W_h·h_{t-1} + W_x·x_t + b)"
+      },
+      {
+        "text": "卷积核在序列上滑动",
+        "isCorrect": false,
+        "description": "那是 CNN 的机制"
+      },
+      {
+        "text": "注意力权重跨时间步复用",
+        "isCorrect": false,
+        "description": "那是 Transformer 的机制"
+      },
+      {
+        "text": "池化层聚合历史信息",
+        "isCorrect": false,
+        "description": "RNN 无池化"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：为什么处理序列数据要用 RNN 而非 MLP？",
+    "explanation": "把整句话喂给 MLP 有三个问题：①长度固定——MLP 输入维度固定，但句子长短不一，截断或补零都丢信息；②位置无关——打乱词序 MLP 给同样结果，但「狗咬人」和「人咬狗」语义完全不同；③参数不共享——第 1 个词和第 100 个词用不同权重，无法学到「语法规则在每个位置都适用」。RNN 用权重共享 + 时序展开同时解决这三点：处理任意长度、保留顺序、跨位置共享语法知识。",
+    "tags": ["RNN", "MLP", "序列", "权重共享"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "RNN 处理变长输入、保留词序、跨位置共享权重；MLP 三者都做不到",
+        "isCorrect": true,
+        "description": "权重共享 + 时序展开是关键"
+      },
+      {
+        "text": "MLP 不能处理任何输入",
+        "isCorrect": false,
+        "description": "MLP 能处理固定维向量"
+      },
+      {
+        "text": "RNN 比 MLP 计算更快",
+        "isCorrect": false,
+        "description": "RNN 串行反而更慢"
+      },
+      {
+        "text": "MLP 没有 GPU 加速",
+        "isCorrect": false,
+        "description": "两者都能 GPU 加速"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：朴素 RNN 的两个致命梯度问题是什么？",
+    "explanation": "朴素 RNN 用 BPTT（沿时间反向传播）训练，梯度需连乘 T 个雅可比矩阵。当连乘因子绝对值 <1 时，梯度指数级衰减到 0，浅层（早期时间步）参数几乎不更新——这是梯度消失，导致 RNN 无法学习远距离依赖。当连乘因子 >1 时，梯度指数级增长到 NaN——这是梯度爆炸，训练直接崩溃。cs224n 经验：朴素 RNN 实际只能学到约 20 步以内的依赖。梯度爆炸可用裁剪缓解，梯度消失需换用 LSTM/GRU。",
+    "tags": ["梯度消失", "梯度爆炸", "朴素RNN", "BPTT"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "梯度消失（连乘 <1 长距离归零）和梯度爆炸（连乘 >1 发散为 NaN）",
+        "isCorrect": true,
+        "description": "BPTT 连乘导致的两个极端"
+      },
+      {
+        "text": "过拟合和欠拟合",
+        "isCorrect": false,
+        "description": "那是通用机器学习问题"
+      },
+      {
+        "text": "局部最优和鞍点",
+        "isCorrect": false,
+        "description": "那是优化曲面问题"
+      },
+      {
+        "text": "数据泄漏和标签噪声",
+        "isCorrect": false,
+        "description": "那是数据问题"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：PyTorch 中 nn.RNN 默认的输入维度顺序是什么？如何改成 batch 优先？",
+    "explanation": "PyTorch 的 nn.RNN/LSTM/GRU 默认输入维度是 [seq_len, batch, input_size]（时间步在前），与多数直觉相反。设置构造参数 batch_first=True 可改成 [batch, seq_len, input_size]（batch 在前），后续处理更顺手。常见错误是维度搞反——要么直接报维度不匹配，要么静默算错结果。建议新项目统一设 batch_first=True，与 DataLoader 输出对齐。",
+    "tags": ["PyTorch", "batch_first", "维度顺序", "RNN"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认 [seq_len, batch, input_size]；设 batch_first=True 改成 batch 在前",
+        "isCorrect": true,
+        "description": "建议新项目统一用 batch_first=True"
+      },
+      {
+        "text": "默认 [batch, seq_len, input_size]，无需设置",
+        "isCorrect": false,
+        "description": "默认是 seq 在前"
+      },
+      {
+        "text": "默认 [input_size, batch, seq_len]",
+        "isCorrect": false,
+        "description": "特征维不会在第一"
+      },
+      {
+        "text": "无法改变维度顺序",
+        "isCorrect": false,
+        "description": "batch_first 参数可控制"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：LSTM 解决梯度消失的核心机制是什么？",
+    "explanation": "LSTM 的核心是细胞状态（cell state）C_t——一条沿时间步线性流动的「传送带」。它的更新是加法形式：C_t = f_t ⊙ C_{t-1} + i_t ⊙ C̃_t。关键在于加法更新的梯度近似为 1（∂C_t/∂C_{t-1} 含 f_t 项，遗忘门 f_t 常接近 1），使得梯度可以沿传送带长距离回流而不衰减。这与朴素 RNN 的乘法更新 h_t = tanh(W·h_{t-1}+...) 形成对比，后者梯度会被 tanh 导数和 W 连乘压缩。这是 LSTM 能学长距离依赖的数学根基。",
+    "tags": ["LSTM", "细胞状态", "梯度消失", "加法更新"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "细胞状态加法更新（C_t = f_t⊙C_{t-1} + i_t⊙C̃_t），梯度近似为 1 可长距离流动",
+        "isCorrect": true,
+        "description": "传送带机制是 LSTM 的核心"
+      },
+      {
+        "text": "用了更大的学习率",
+        "isCorrect": false,
+        "description": "学习率与梯度消失无关"
+      },
+      {
+        "text": "用了 ReLU 激活",
+        "isCorrect": false,
+        "description": "LSTM 用 sigmoid 和 tanh"
+      },
+      {
+        "text": "减少了层数",
+        "isCorrect": false,
+        "description": "层数与梯度消失机制无关"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：LSTM 的三道门分别是什么？各起什么作用？",
+    "explanation": "LSTM 有三道 sigmoid 门控制细胞状态：①遗忘门（forget gate）f_t=σ(W_f·[h_{t-1},x_t])，输出 [0,1]，决定细胞状态每个维度保留多少旧信息（0 全弃，1 全留）；②输入门（input gate）i_t=σ(W_i·[...])，决定每个维度写入多少新候选信息 C̃_t=tanh(...)；③输出门（output gate）o_t=σ(W_o·[...])，决定细胞状态有多少输出到隐藏状态 h_t=o_t⊙tanh(C_t)。三者协同让 LSTM 像有擦写控制的笔记本，远比朴素 RNN 的「全部覆盖式更新」适合长序列。",
+    "tags": ["LSTM", "遗忘门", "输入门", "输出门"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "遗忘门（保留旧信息）、输入门（写入新信息）、输出门（读出多少）",
+        "isCorrect": true,
+        "description": "三 sigmoid 门协同控制细胞状态"
+      },
+      {
+        "text": "前向门、后向门、双向门",
+        "isCorrect": false,
+        "description": "那是双向 RNN 的概念"
+      },
+      {
+        "text": "注意力门、归一化门、Dropout 门",
+        "isCorrect": false,
+        "description": "这些不是 LSTM 的门"
+      },
+      {
+        "text": "编码门、解码门、生成门",
+        "isCorrect": false,
+        "description": "这是 Seq2Seq 的概念"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：GRU 相比 LSTM 做了哪些简化？参数量有何变化？",
+    "explanation": "GRU（Cho et al. 2014）把 LSTM 的三门简化为两门：①把遗忘门和输入门合并为单一「更新门」z_t，直接用 (1-z_t) 和 z_t 控制新旧状态比例（互补）；②去掉独立细胞状态，隐藏状态 h_t 兼任传送带；③新增「重置门」r_t 控制计算候选隐藏态时用多少旧记忆。由于少一个门和一个状态，GRU 参数比 LSTM 少约 25%，训练更快，多数任务效果与 LSTM 相当。cs224n 建议新项目优先试 GRU。",
+    "tags": ["GRU", "LSTM", "简化", "参数量"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "三门合并为两门（更新门+重置门），合并细胞状态与隐藏状态，参数少约 25%",
+        "isCorrect": true,
+        "description": "GRU 更轻量，效果通常相当"
+      },
+      {
+        "text": "GRU 比 LSTM 多一个门",
+        "isCorrect": false,
+        "description": "正相反，GRU 少一个门"
+      },
+      {
+        "text": "GRU 参数量是 LSTM 的两倍",
+        "isCorrect": false,
+        "description": "GRU 参数更少"
+      },
+      {
+        "text": "GRU 完全等价于 LSTM",
+        "isCorrect": false,
+        "description": "结构有差异"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：训练 RNN/LSTM 时为什么必须做梯度裁剪（gradient clipping）？",
+    "explanation": "即便 LSTM/GRU 缓解了梯度消失，仍可能发生梯度爆炸——长序列下 BPTT 连乘仍可能让梯度指数增长，权重被打飞、loss 突然变 NaN。梯度裁剪在反向后、更新前把梯度向量的 L2 范数截断到上限 max_norm（常用 5.0）：若总范数超过上限，按比例缩放整个梯度。PyTorch 用 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0) 一行实现。这是 RNN/LSTM 训练的必备操作，几乎所有 cs224n 实战都会用。",
+    "tags": ["梯度裁剪", "梯度爆炸", "clip_grad_norm", "训练技巧"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "防止梯度爆炸，把梯度 L2 范数截断到上限，避免权重被打飞成 NaN",
+        "isCorrect": true,
+        "description": "clip_grad_norm_(params, 5.0) 是标配"
+      },
+      {
+        "text": "加速训练收敛",
+        "isCorrect": false,
+        "description": "裁剪是为稳定，非加速"
+      },
+      {
+        "text": "减少参数量",
+        "isCorrect": false,
+        "description": "裁剪不改参数数量"
+      },
+      {
+        "text": "替代权重初始化",
+        "isCorrect": false,
+        "description": "两者是不同技术"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：双向 RNN（BiRNN）的原理是什么？它有什么使用限制？",
+    "explanation": "单向 RNN 的 h_t 只看到 [x_1,...,x_t]（左侧上下文），但语言理解常需右侧上下文（如「我喜欢吃___」要填「苹果」得看后面）。双向 RNN 同时跑正向与逆向两个 RNN，把两者的隐藏态拼接：output_t = [h_forward_t, h_backward_t]。核心限制是必须拿到完整序列才能跑——不能用于实时流式任务（在线语音识别、实时翻译）。它主要用于离线理解任务（NER、文本分类、句法分析）。生成任务（解码器、语言模型）也不能用，因为生成时未来词还未产生。",
+    "tags": ["双向RNN", "BiLSTM", "上下文", "流式限制"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "正反向各跑一遍拼接隐藏态；需完整序列，不能实时流式，不能用于生成",
+        "isCorrect": true,
+        "description": "适合离线理解任务"
+      },
+      {
+        "text": "双向 RNN 可以实时流式处理",
+        "isCorrect": false,
+        "description": "反向需未来信息"
+      },
+      {
+        "text": "双向 RNN 只能用于生成任务",
+        "isCorrect": false,
+        "description": "生成任务不能用双向"
+      },
+      {
+        "text": "双向 RNN 与单向参数量相同",
+        "isCorrect": false,
+        "description": "双向多一倍参数"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：基础 Seq2Seq 模型的「固定长度上下文向量瓶颈」指的是什么？",
+    "explanation": "基础 Seq2Seq（Sutskever et al. 2014）用编码器 LSTM 读完整个输入序列，把最终隐藏状态作为「上下文向量 c」传给解码器。致命瓶颈在于：无论输入序列多长，都被压缩成固定维度的单一向量 c。输入越长，信息损失越严重——长句翻译时解码器无法访问编码器中间步的隐藏态，只能依赖被过度压缩的 c，导致长输入翻译崩盘。这正是 Bahdanau Attention 诞生的动因：让解码器每步动态访问编码器所有隐藏态。",
+    "tags": ["Seq2Seq", "上下文向量", "瓶颈", "注意力"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "整个输入序列被压成固定维度单一向量，长输入信息丢失严重",
+        "isCorrect": true,
+        "description": "这是 Attention 诞生的动因"
+      },
+      {
+        "text": "解码器无法生成变长输出",
+        "isCorrect": false,
+        "description": "解码器可生成变长输出"
+      },
+      {
+        "text": "编码器无法处理变长输入",
+        "isCorrect": false,
+        "description": "RNN 天然支持变长输入"
+      },
+      {
+        "text": "梯度消失导致训练不动",
+        "isCorrect": false,
+        "description": "那是另一类问题"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：Attention 机制（Bahdanau 2014）如何突破 Seq2Seq 的瓶颈？",
+    "explanation": "Bahdanau Attention 让解码器每一步不再依赖固定上下文向量 c，而是动态计算对编码器每个隐藏态 h_i 的关注权重 α_ti = softmax(score(decoder_state, h_i))，加权求和得到该步专属上下文 c_t = Σ α_ti · h_i。这样解码器能「直连」编码器任意位置，无需信息逐步传递，彻底打破长距离瓶颈和单一向量瓶颈。这一思想被 Vaswani 2017 推到极致——干脆完全抛弃 RNN，只用 Attention，即 Transformer。",
+    "tags": ["Attention", "Seq2Seq", "Bahdanau", "动态聚合"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "解码每步对编码器所有隐藏态算权重，加权求和得该步专属上下文，直连任意位置",
+        "isCorrect": true,
+        "description": "Attention 是 Transformer 的雏形"
+      },
+      {
+        "text": "用更大的隐藏维度",
+        "isCorrect": false,
+        "description": "那仍是固定向量瓶颈"
+      },
+      {
+        "text": "堆叠更多 RNN 层",
+        "isCorrect": false,
+        "description": "层数不解决单一向量瓶颈"
+      },
+      {
+        "text": "用更长的训练时间",
+        "isCorrect": false,
+        "description": "瓶颈是结构性的，训练无法解决"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：BPTT（沿时间反向传播）处理超长序列时为什么要做截断（truncated BPTT）？",
+    "explanation": "BPTT 把 RNN 在时间步上展开成深层前馈网络做反向传播。序列越长，展开后的「深度」越深，导致：①显存爆炸——需缓存每个时间步的中间激活；②梯度质量差——连乘链太长，梯度消失/爆炸加剧；③计算慢。截断 BPTT 把长序列按固定步长（如 35）切成段，每段独立反向传播，段间只传递隐藏状态不断梯度。这是 cs224n 语言模型训练的标准做法，权衡了梯度质量、显存和计算成本。",
+    "tags": ["BPTT", "截断", "显存", "长序列"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "避免显存爆炸、梯度连乘链过长质量差、计算慢；按固定步长切段反向",
+        "isCorrect": true,
+        "description": "权衡显存、梯度、速度"
+      },
+      {
+        "text": "提高模型精度",
+        "isCorrect": false,
+        "description": "截断实际略损精度"
+      },
+      {
+        "text": "减少参数量",
+        "isCorrect": false,
+        "description": "截断不改参数量"
+      },
+      {
+        "text": "替代梯度裁剪",
+        "isCorrect": false,
+        "description": "两者是不同技术，常配合用"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：cs224n 经验上朴素 RNN 实际能学习多长距离的依赖？根本原因是什么？",
+    "explanation": "cs224n 经验：朴素 RNN 实际只能学到约 20 步以内的依赖。根本原因是 BPTT 反向时梯度需连乘 T 个雅可比矩阵 ∂h_t/∂h_{t-1}，每个含 tanh 导数（≤1）和权重矩阵 W_h。连乘后梯度指数级衰减到 0（梯度消失），20 步以外的梯度信号几乎为零，浅层参数无法更新，无法学到远距离依赖。要学长距离依赖必须用 LSTM/GRU 的加法细胞状态更新，或转向 Attention 机制。",
+    "tags": ["朴素RNN", "长距离依赖", "梯度消失", "cs224n"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "约 20 步；梯度连乘 tanh 导数(≤1) 与权重，指数衰减致远距离信号归零",
+        "isCorrect": true,
+        "description": "需 LSTM/GRU 或 Attention 突破"
+      },
+      {
+        "text": "无限长，只要训练够久",
+        "isCorrect": false,
+        "description": "梯度消失是结构性的"
+      },
+      {
+        "text": "约 1000 步",
+        "isCorrect": false,
+        "description": "远超实际能力"
+      },
+      {
+        "text": "只有 1 步",
+        "isCorrect": false,
+        "description": "至少能学短期依赖"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：为什么 Transformer 最终取代了 RNN 系列成为 NLP 主力？三个工程动因是？",
+    "explanation": "2017 年 Attention Is All You Need 后 RNN 迅速被 Transformer 取代，三个工程动因：①串行 vs 全并行——RNN 的 h_t 依赖 h_{t-1} 无法在时间步上并行，Transformer 的 Self-Attention 同时算所有位置对，GPU 充分利用，训练快几个数量级；②长距离建模——即便有门控，RNN 信息仍需逐步传递，远距离衰减，Transformer 任意两位置一步 Attention 即交互，距离无衰减；③单一上下文瓶颈——Seq2Seq 把输入压成固定向量，Transformer 每步对全部编码器位置动态加权，无信息瓶颈。",
+    "tags": ["Transformer", "并行", "长距离", "取代"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RNN 串行无法并行 + 长距离仍弱 + 单一上下文瓶颈；Transformer 全部解决",
+        "isCorrect": true,
+        "description": "三大工程动因"
+      },
+      {
+        "text": "RNN 参数太多，Transformer 参数更少",
+        "isCorrect": false,
+        "description": "两者参数量可比"
+      },
+      {
+        "text": "RNN 不能处理文本",
+        "isCorrect": false,
+        "description": "RNN 曾是 NLP 主力"
+      },
+      {
+        "text": "Transformer 不需要数据",
+        "isCorrect": false,
+        "description": "Transformer 需要更多数据"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：LSTM 与 GRU 在新项目中应如何选择？",
+    "explanation": "cs224n 与社区共识：新项目优先试 GRU。理由：①参数比 LSTM 少约 25%，训练更快、显存更省；②结构更简单，调参容易；③多数任务（文本分类、NER、中等长度序列建模）GRU 效果与 LSTM 相当。仅当任务对超长距离依赖极敏感（如长文档摘要、超长序列记忆）且算力充裕时，再对比 LSTM 看是否有提升。但需注意：2017 年后这些任务的主力多已转向 Transformer，GRU/LSTM 多用于轻量或资源受限场景。",
+    "tags": ["LSTM", "GRU", "选型", "cs224n"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "新项目优先 GRU（参数少 25%、快、效果相当）；超长依赖任务再对比 LSTM",
+        "isCorrect": true,
+        "description": "cs224n 建议先试 GRU"
+      },
+      {
+        "text": "新项目必须用 LSTM",
+        "isCorrect": false,
+        "description": "GRU 通常是更轻量的起点"
+      },
+      {
+        "text": "GRU 只用于图像",
+        "isCorrect": false,
+        "description": "GRU 是序列模型"
+      },
+      {
+        "text": "两者完全等价随便选",
+        "isCorrect": false,
+        "description": "GRU 更轻量"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：在什么场景下 RNN 仍然保留、未被 Transformer 取代？",
+    "explanation": "尽管 Transformer 在 NLP 主力任务上取代 RNN，以下场景 RNN 仍保留：①资源受限设备——移动端、嵌入式，模型必须小且串行无妨；②实时流式——在线语音识别、实时翻译，必须增量处理不能等完整序列（Transformer 的全局 Attention 需要完整序列）；③小数据时序预测——传统时间序列（股票、传感器），数据量小，轻量 GRU 仍实用；④教学——RNN 是理解序列建模与门控思想、进而理解 Attention 为何被发明的最佳起点。cs224n 仍以 RNN 作为课程入门。",
+    "tags": ["RNN", "实时流式", "资源受限", "时序预测"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "资源受限设备 + 实时流式 + 小数据时序预测 + 教学",
+        "isCorrect": true,
+        "description": "RNN 在这些场景仍有价值"
+      },
+      {
+        "text": "RNN 已完全被淘汰",
+        "isCorrect": false,
+        "description": "上述场景 RNN 仍实用"
+      },
+      {
+        "text": "RNN 只用于图像分类",
+        "isCorrect": false,
+        "description": "RNN 是序列模型"
+      },
+      {
+        "text": "RNN 适合超大规模预训练",
+        "isCorrect": false,
+        "description": "大规模预训练转向 Transformer"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：为什么双向 RNN 不能用于机器翻译的解码器？",
+    "explanation": "翻译解码器是逐词生成——生成第 t 个词时，第 t+1 及以后的「未来词」尚未生成，根本不存在，双向 RNN 的反向部分需要右侧上下文（即未来词）才能计算，因此解码器无法用双向。双向 RNN 只能用在看得到完整输入的「理解型」任务上：编码器读完整句源语言句子（NER、文本分类、句法分析）。注意编码器倒是可以双向，因为整个源句已知；受限的只是生成侧的解码器。",
+    "tags": ["双向RNN", "解码器", "生成任务", "机器翻译"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "解码器生成时未来词尚未产生，双向 RNN 反向部分需要右侧上下文无法计算",
+        "isCorrect": true,
+        "description": "生成任务只能单向"
+      },
+      {
+        "text": "解码器参数太多",
+        "isCorrect": false,
+        "description": "原因与参数无关"
+      },
+      {
+        "text": "双向 RNN 计算太慢",
+        "isCorrect": false,
+        "description": "速度不是根因"
+      },
+      {
+        "text": "双向 RNN 只能用于图像",
+        "isCorrect": false,
+        "description": "它是序列模型"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：LSTM 的细胞状态更新公式 C_t = f_t ⊙ C_{t-1} + i_t ⊙ C̃_t 中，各项分别代表什么？",
+    "explanation": "细胞状态更新公式 C_t = f_t ⊙ C_{t-1} + i_t ⊙ C̃_t 是 LSTM 的核心。逐项：f_t 是遗忘门（forget gate）的输出 [0,1]，决定保留多少旧细胞状态 C_{t-1}（0 全弃，1 全留）；i_t 是输入门（input gate）输出 [0,1]，决定写入多少新候选信息；C̃_t = tanh(W_C·[h_{t-1},x_t]) 是候选新信息 [-1,1]；⊙ 是逐元素乘。整体语义：遗忘部分旧记忆 + 写入部分新信息，像有擦写控制的传送带。",
+    "tags": ["LSTM", "细胞状态", "遗忘门", "输入门", "公式"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "f_t 遗忘门控保留旧状态、i_t 输入门控写入新候选 C̃_t",
+        "isCorrect": true,
+        "description": "遗忘旧 + 写入新 的加法更新"
+      },
+      {
+        "text": "f_t 是激活函数，i_t 是学习率",
+        "isCorrect": false,
+        "description": "两者都是门控 sigmoid 输出"
+      },
+      {
+        "text": "C̃_t 是损失函数",
+        "isCorrect": false,
+        "description": "C̃_t 是候选新信息"
+      },
+      {
+        "text": "⊙ 是矩阵乘法",
+        "isCorrect": false,
+        "description": "⊙ 是逐元素乘（Hadamard）"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：PyTorch 中 nn.LSTM 与 nn.RNN/nn.GRU 的返回值有什么不同？",
+    "explanation": "nn.RNN 和 nn.GRU 返回二元组 (output, h_n)：output 是每个时间步的隐藏态 [B,T,H]（或 [T,B,H]），h_n 是最后时刻各层隐藏态 [L,B,H]。nn.LSTM 额外返回细胞状态，返回三元组 (output, (h_n, c_n))：c_n 是最后时刻各层细胞状态 [L,B,H]，形状与 h_n 相同。这是因为 LSTM 维护独立的细胞状态 C_t（长记忆传送带），而 RNN/GRU 的隐藏状态 h_t 兼任记忆。使用时需注意解包格式不同，否则会维度报错。",
+    "tags": ["PyTorch", "LSTM", "返回值", "细胞状态"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "LSTM 返回 (output, (h_n, c_n)) 多了细胞状态；RNN/GRU 只返回 (output, h_n)",
+        "isCorrect": true,
+        "description": "LSTM 有独立细胞状态"
+      },
+      {
+        "text": "三者返回值完全相同",
+        "isCorrect": false,
+        "description": "LSTM 多返回 c_n"
+      },
+      {
+        "text": "RNN 比 LSTM 多返回值",
+        "isCorrect": false,
+        "description": "LSTM 返回更多"
+      },
+      {
+        "text": "只有 LSTM 返回 output",
+        "isCorrect": false,
+        "description": "三者都返回 output"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：处理变长序列时为什么要用 pack_padded_sequence？直接补零有什么问题？",
+    "explanation": "NLP batch 中句子长短不一，直接补零（padding）到等长会让 RNN 处理 padding 词。两个问题：①浪费计算——RNN 仍要对 padding 时间步做矩阵乘；②污染状态——padding 词的隐藏态会进入后续计算，稀释真实句子的语义表示。pack_padded_sequence 把 batch 压缩成 packed 格式，RNN 只处理实际词，跳过 padding，输出再用 pad_packed_sequence 还原。这既省算力又保状态纯净，是 cs224n 实战的标准做法。",
+    "tags": ["pack_padded_sequence", "变长序列", "padding", "PyTorch"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "避免处理 padding 词浪费计算且污染隐藏状态；packed 格式跳过 padding",
+        "isCorrect": true,
+        "description": "省算力 + 保状态纯净"
+      },
+      {
+        "text": "加快 GPU 计算 100 倍",
+        "isCorrect": false,
+        "description": "提升有限，非数量级"
+      },
+      {
+        "text": "减少模型参数量",
+        "isCorrect": false,
+        "description": "不改参数量"
+      },
+      {
+        "text": "替代梯度裁剪",
+        "isCorrect": false,
+        "description": "两者无关"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：LSTM 中遗忘门 f_t 的输出范围是多少？当它接近 0 或 1 时分别意味着什么？",
+    "explanation": "遗忘门 f_t = σ(W_f·[h_{t-1}, x_t] + b_f)，sigmoid 输出范围 (0,1)，对细胞状态的每个维度独立取值。当 f_t 接近 0 时，该维度的旧细胞状态 C_{t-1} 被几乎完全遗忘（乘以接近 0 的值），相当于「清空旧记忆」；当 f_t 接近 1 时，旧状态几乎完全保留。LSTM 通过学习遗忘门的权重，自适应决定每个时刻、每个记忆维度该保留还是该遗忘——这是它能精准管理长短期记忆的关键，而非朴素 RNN 的粗暴覆盖式更新。",
+    "tags": ["LSTM", "遗忘门", "sigmoid", "细胞状态"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "(0,1)；接近 0 遗忘旧记忆，接近 1 保留旧记忆（逐维度独立）",
+        "isCorrect": true,
+        "description": "sigmoid 让门控可微且可控"
+      },
+      {
+        "text": "[-1,1]；决定写入方向",
+        "isCorrect": false,
+        "description": "那是 tanh 的范围"
+      },
+      {
+        "text": "{0,1} 二值；硬性开关",
+        "isCorrect": false,
+        "description": "sigmoid 是连续可微的"
+      },
+      {
+        "text": "[0,+∞)；无上界",
+        "isCorrect": false,
+        "description": "sigmoid 有界于 1"
+      }
+    ]
+  },
+  {
+    "stem": "RNN：GRU 的更新公式 h_t = (1-z_t)⊙h_{t-1} + z_t⊙h̃_t 中，更新门 z_t 如何控制新旧状态比例？",
+    "explanation": "GRU 用单一更新门 z_t = σ(W_z·[h_{t-1},x_t]) ∈ (0,1) 同时控制保留旧状态和写入新候选的比例，且两者互补：(1-z_t) 加权旧状态 h_{t-1}，z_t 加权新候选 h̃_t。这相当于把 LSTM 的遗忘门 f 和输入门 i 合并（因 LSTM 中 i 通常 = 1-f）。当 z_t 接近 0 时几乎全保留旧状态（类似残差连接），接近 1 时几乎全用新候选。这种 (1-z) 与 z 的互补设计比 LSTM 的独立 f、i 更简洁，是 GRU 参数更少的原因。",
+    "tags": ["GRU", "更新门", "互补设计", "公式"],
+    "categories": [
+      ["技术方向", "循环神经网络（RNN）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "z_t 和 (1-z_t) 互补：z_t 加权新候选、(1-z_t) 加权旧状态",
+        "isCorrect": true,
+        "description": "单一门控替代 LSTM 的遗忘+输入两门"
+      },
+      {
+        "text": "z_t 只控制新候选，旧状态不受影响",
+        "isCorrect": false,
+        "description": "两者是互补的"
+      },
+      {
+        "text": "z_t 决定学习率大小",
+        "isCorrect": false,
+        "description": "z_t 是门控非学习率"
+      },
+      {
+        "text": "z_t 必须恒等于 0.5",
+        "isCorrect": false,
+        "description": "z_t 是学习到的可变值"
+      }
+    ]
+  }
+]
