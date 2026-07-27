@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "组件分类与设计原则：一个 React 组件 `function Panel({ defaultOpen = false }) { const [open, setOpen] = useState(defaultOpen); ... }` 属于哪种角色？",
+    "explanation": "判定受控/非受控看 state 归属：state 在组件自身 `useState` 持有 = **非受控**；state 完全由父 props 驱动（`value` + `onChange` 模式）= **受控**。本题 Panel 用 `useState(defaultOpen)` 在自身持有 open，父不参与，故为非受控。非受控的特点是配置少、开箱即用，缺点是无法跨组件协调。",
+    "tags": ["受控", "非受控", "state", "角色判定"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "非受控组件（state 在自身 useState，父不参与）",
+        "isCorrect": true,
+        "description": "state 由组件内部 useState 持有 = 非受控"
+      },
+      {
+        "text": "受控组件（state 由父 props 驱动）",
+        "isCorrect": false,
+        "description": "受控要求父通过 value + onChange 完全控制，本题没有这个契约"
+      },
+      {
+        "text": "复合组件（Context 共享状态）",
+        "isCorrect": false,
+        "description": "复合组件需要父挂载多个子组件为属性，本题只是单组件"
+      },
+      {
+        "text": "高阶组件（wrapper 包裹）",
+        "isCorrect": false,
+        "description": "HOC 签名是 `withX(Component) → 新组件`，与本题不符"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：react.dev《Thinking in React》提出的「State 最小化」三条过滤规则中，下列哪一项**不是** state？",
+    "explanation": "State 最小化三条过滤：① 不随时间变化 → 不是 state；② 可从 props 传入 → 不是 state；③ 可从已有 state/props 计算（派生值） → 不是 state，应实时计算（DRY）。三条任一满足即不是 state。原始用户列表来自父 props（满足②），过滤后列表是派生值（满足③），都**不是** state。当前选中项 ID 会随用户操作变化且无法从其他数据计算，才是 state。",
+    "tags": ["state-minimization", "thinking-in-react", "dry"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用户输入的搜索关键词",
+        "isCorrect": false,
+        "description": "随时间变化、无法从 props 或其他 state 计算 → 是 state"
+      },
+      {
+        "text": "当前选中的列表项 ID",
+        "isCorrect": false,
+        "description": "随时间变化、无法从其他数据派生 → 是 state"
+      },
+      {
+        "text": "原始用户列表（来自父组件 props）",
+        "isCorrect": true,
+        "description": "可从 props 传入（规则②），不是 state"
+      },
+      {
+        "text": "表单是否处于编辑模式",
+        "isCorrect": false,
+        "description": "随时间变化、无法派生 → 是 state"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：下列关于「组合优于继承」的官方结论，正确的是？",
+    "explanation": "react.dev 官方《Composition vs Inheritance》明确：Facebook 在上万组件开发中**从未发现需要用继承构建组件层次**。组合 + props + children 能显式安全地定制外观行为，无需类继承链。三个具体落点：① Containment（用 children / 具名 prop 包含未知子节点）② Specialization（组合配置 props 实现特化变体）③ 逻辑复用（提取为 JS 模块 / 自定义 Hook 而非继承基类）。",
+    "tags": ["组合优于继承", "containment", "react-dev"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Facebook 在上万组件开发中从未发现需要继承构建层次",
+        "isCorrect": true,
+        "description": "react.dev《Composition vs Inheritance》官方原话"
+      },
+      {
+        "text": "继承是 React 推荐的逻辑复用首选方式",
+        "isCorrect": false,
+        "description": "完全相反，React 官方明确反对组件继承"
+      },
+      {
+        "text": "复合组件必须基于 extends BaseComponent 实现",
+        "isCorrect": false,
+        "description": "复合组件用组合 + Context，不用 extends"
+      },
+      {
+        "text": "特化变体必须通过继承基类扩展 props 实现",
+        "isCorrect": false,
+        "description": "特化用 `<Button variant='primary' {...props}/>` 组合实现，不继承"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：Vue 中子组件直接修改 props（如 `props.modelValue = 'new'`）违反了什么原则？",
+    "explanation": "Vue 与 React 共同遵循**单向数据流**契约：props 向下、events 向上。子组件**不能直接修改 props**，应通过 `emit` 事件（Vue）或调用父传入的回调（React）请求父组件变更，父自行决定是否更新。直接改 props 会让数据流变得不可追踪——父不知道子何时改了数据，调试困难。",
+    "tags": ["单向数据流", "props", "emit", "vue"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "违反单向数据流（应通过 emit 事件让父决定）",
+        "isCorrect": true,
+        "description": "props 向下、events 向上是 Vue/React 共同契约"
+      },
+      {
+        "text": "违反单一职责原则（SRP）",
+        "isCorrect": false,
+        "description": "SRP 是组件拆分原则，与 props 修改无关"
+      },
+      {
+        "text": "违反开闭原则（OCP）",
+        "isCorrect": false,
+        "description": "OCP 是对扩展开放对修改关闭，与 props 修改无关"
+      },
+      {
+        "text": "违反组合优于继承原则",
+        "isCorrect": false,
+        "description": "组合优于继承是另一回事，与直接改 props 无关"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：Dan Abramov 2015 年提出的 Container/Presentational（智能/木偶）严格分离模式，在当下的现状是？",
+    "explanation": "Dan Abramov **本人**在 Hooks 发布后已声明该严格分离**不再必要**——容器组件「取数据 + 持有状态」的职责被自定义 Hook 接管（如 `useUsers()`），组件本身回归到「描述 UI 应该是什么」。但「关注点分离」的思维模型（视图 vs 逻辑）仍有参考价值，多数场景由 Hook/Composable 以更低结构成本实现同等效果。",
+    "tags": ["container", "presentational", "dan-abramov", "hooks"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Dan Abramov 本人已声明不再必要，Hooks 以更低结构成本替代",
+        "isCorrect": true,
+        "description": "作者本人 2019 年的明确表态"
+      },
+      {
+        "text": "仍然是 React 官方主推荐的强制分类方式",
+        "isCorrect": false,
+        "description": "react.dev 新文档已不再强调此分类"
+      },
+      {
+        "text": "已被 Vue 的 mixin 完全取代",
+        "isCorrect": false,
+        "description": "Vue mixin 也不推荐了，由 Composable 替代"
+      },
+      {
+        "text": "仅在 Class Component 时代适用，函数组件禁用",
+        "isCorrect": false,
+        "description": "函数组件 + Hooks 才是它「不再必要」的原因，不是禁用"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：Vue 中 `<slot>默认值</slot>` 的「后备内容」在什么情况下显示？",
+    "explanation": "Vue 插槽的**后备内容（fallback content）**：父组件未传任何内容给该插槽时，子组件显示 `<slot>` 标签内的默认内容。父一旦传入内容（哪怕空 `<></>`），后备内容就被覆盖。这是 Vue 插槽四件套之一（默认插槽 / 后备内容 / 具名插槽 / 作用域插槽）。",
+    "tags": ["vue", "slot", "后备内容"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "父组件未给该插槽传入任何内容时",
+        "isCorrect": true,
+        "description": "父未传则显示后备内容，父传了则覆盖"
+      },
+      {
+        "text": "父组件传入的内容为空字符串时",
+        "isCorrect": false,
+        "description": "空字符串也算「传了」，后备内容不显示"
+      },
+      {
+        "text": "子组件的 props 缺失时",
+        "isCorrect": false,
+        "description": "后备内容与 props 无关，只与插槽传没传有关"
+      },
+      {
+        "text": "子组件渲染出错时",
+        "isCorrect": false,
+        "description": "渲染出错有 errorCaptured 等机制，不是后备内容"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：根据官方建议，多个组件需要协调（如 Accordion 同时间只展开一个）时，应优先采用哪种角色？",
+    "explanation": "**受控/非受控择优规则**（react.dev）：组件独立运用 → 非受控（配置少、开箱即用）；多个组件需协调（Accordion、Tabs、单选 RadioGroup）→ **受控**（父组件通过 props 完全控制行为，灵活性最高）。Accordion 需要协调多个 Panel 的展开状态，必须由父驱动，故用受控。",
+    "tags": ["受控", "非受控", "accordion", "协调"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "受控组件（父通过 props 完全控制 openIndex）",
+        "isCorrect": true,
+        "description": "协调场景必须父驱动，受控灵活性最高"
+      },
+      {
+        "text": "非受控组件（每个 Panel 各自 useState）",
+        "isCorrect": false,
+        "description": "各自独立无法协调「同时只展开一个」"
+      },
+      {
+        "text": "高阶组件 withAccordion(Panel)",
+        "isCorrect": false,
+        "description": "HOC 是 legacy 不推荐，且不是协调的标准方案"
+      },
+      {
+        "text": "Render Props 注入 toggle 函数",
+        "isCorrect": false,
+        "description": "Render Props 是逻辑复用方式，不直接解决协调"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：HOC 三大约定中「不要改变原始组件」的正确实现方式是？",
+    "explanation": "HOC 约定 ① 来自 legacy.reactjs.org：不要 mutate 原组件原型（如 `WrappedComponent.prototype.componentDidUpdate = ...`），因为函数组件无生命周期会失败、多个 HOC 同时改会互相覆盖、被包裹组件无法独立复用。正确做法是**用组合包裹**：return 一个新组件，内部 `<WrappedComponent {...props}/>` 渲染被包裹组件。",
+    "tags": ["hoc", "组合", "约定"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用组合：return function WithX(props) { return <WrappedComponent {...props} />; }",
+        "isCorrect": true,
+        "description": "组合包裹，不改原组件原型"
+      },
+      {
+        "text": "修改 WrappedComponent.prototype.componentDidUpdate 注入逻辑",
+        "isCorrect": false,
+        "description": "函数组件无生命周期会失败，且多个 HOC 会互相覆盖"
+      },
+      {
+        "text": "用 Object.assign(WrappedComponent, { theme: ... }) 直接挂属性",
+        "isCorrect": false,
+        "description": "mutation 反模式，破坏原组件接口"
+      },
+      {
+        "text": "继承 WrappedComponent 后重写 render 方法",
+        "isCorrect": false,
+        "description": "继承不是 HOC，且 React 不推荐继承"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：下列代码会触发什么问题？\n\nfunction MyComponent() {\n  const Enhanced = withTheme(SomeComponent);\n  return <Enhanced />;\n}",
+    "explanation": "**绝不在 render 中调用 HOC**（legacy.reactjs.org 反模式）：每次 MyComponent 渲染都会调用 `withTheme(SomeComponent)` 创建一个**全新的组件类型**，React 通过引用相等判定 `!==` 上次的 Enhanced，于是**整棵子树卸载重挂**，导致：① 子树 state 全部丢失；② DOM 节点卸载重建；④ 性能严重下降；⑤ ref / 事件监听器失效。正解是在**模块顶层应用一次**：`const Enhanced = withTheme(SomeComponent);` 然后渲染 `<Enhanced/>`。",
+    "tags": ["hoc", "render", "state-丢失", "反模式"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次渲染创建新组件类型 → React 判定 !== → 整树卸载重挂 → state 全部丢失",
+        "isCorrect": true,
+        "description": "render 中调 HOC 是经典反模式，必须模块顶层应用一次"
+      },
+      {
+        "text": "完全没问题，HOC 可以在任意位置调用",
+        "isCorrect": false,
+        "description": "官方明确禁止在 render 中调 HOC"
+      },
+      {
+        "text": "会导致 TypeScript 类型推断失败，但运行时正常",
+        "isCorrect": false,
+        "description": "运行时就会出问题，不只是类型问题"
+      },
+      {
+        "text": "仅会触发额外渲染一次，后续稳定",
+        "isCorrect": false,
+        "description": "每次渲染都会重新创建，永远不会稳定"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：HOC 中需要透传无关 props（约定 ②）时，下列写法正确的是？",
+    "explanation": "HOC 约定 ②：透传所有不相关 props 保持接口一致。正确写法：从 props 中解构出自己注入的字段（如 `extra`），其余用 rest 收集后**透传给被包裹组件**：`const { extra, ...rest } = props; return <WrappedComponent {...rest} injected={...} />;`。反例只传注入字段丢掉 rest → 被包裹组件接口不一致，无法独立复用。",
+    "tags": ["hoc", "props", "透传", "约定"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "const { extra, ...rest } = props; return <WrappedComponent {...rest} injected={...} />;",
+        "isCorrect": true,
+        "description": "解构自身字段，rest 透传保持接口一致"
+      },
+      {
+        "text": "return <WrappedComponent injected={...} />;",
+        "isCorrect": false,
+        "description": "丢掉了 props 中其他字段，被包裹组件拿不到外部传入的 props"
+      },
+      {
+        "text": "return <WrappedComponent props={props} injected={...} />;",
+        "isCorrect": false,
+        "description": "把整个 props 当作单一 prop 传入，违反解构约定"
+      },
+      {
+        "text": "Object.assign(props, { injected: ... }); return <WrappedComponent {...props} />;",
+        "isCorrect": false,
+        "description": "直接 mutate props 对象是反模式"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：自定义 Hook 与 HOC 的核心差异是什么？",
+    "explanation": "**核心差异**：自定义 Hook 共享「状态逻辑」**而非「状态本身」**——每次调用产生**独立的 state**（同一组件多次调用 `useCounter()` 各自独立计数）。HOC 是组件包裹组件，注入的 props 来源隐式、易冲突；Hook 是函数调用，返回值透明、无嵌套层级。此外 Hook 共享逻辑但不共享状态，HOC 也不共享状态但通过 wrapper 注入。",
+    "tags": ["hook", "hoc", "逻辑复用", "状态"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Hook 共享「状态逻辑」非「状态本身」，每次调用产生独立 state",
+        "isCorrect": true,
+        "description": "Hook 是逻辑复用，状态各自独立"
+      },
+      {
+        "text": "Hook 共享同一份 state，所有调用者读到同一值",
+        "isCorrect": false,
+        "description": "Hook 不共享状态本身，否则会混乱"
+      },
+      {
+        "text": "HOC 比 Hook 更现代，是 React 19 主推荐",
+        "isCorrect": false,
+        "description": "完全相反，HOC 是 legacy，Hook 才是主推荐"
+      },
+      {
+        "text": "Hook 必须返回 JSX 元素，HOC 返回函数",
+        "isCorrect": false,
+        "description": "Hook 返回任意值（state/函数/对象），不一定是 JSX"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：React Hooks 的命名规则是？",
+    "explanation": "命名规则（react.dev）：**内部调用了 Hook（useState/useEffect 等）的函数才用 `use` 前缀**，纯函数（未调用任何 Hook）不应加 `use`。原因：ESLint 规则 `react-hooks/rules-of-hooks` 靠 `use` 前缀判定函数是否为 Hook，从而应用「只能在顶层调用」等规则。命名违规会让 linter 失去保护——例如 `useFormatDate` 内部不调用任何 Hook，应改名为 `formatDate`。",
+    "tags": ["hook", "命名", "use-前缀", "eslint"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "内部调用了 Hook 才用 use 前缀，纯函数不应加 use",
+        "isCorrect": true,
+        "description": "linter 靠 use 前缀判定 Hook 函数"
+      },
+      {
+        "text": "任何工具函数都应加 use 前缀以便识别",
+        "isCorrect": false,
+        "description": "纯函数加 use 会误导 linter 与开发者"
+      },
+      {
+        "text": "只有返回 React 元素的函数才用 use 前缀",
+        "isCorrect": false,
+        "description": "Hook 不一定返回 React 元素，可返回任意值"
+      },
+      {
+        "text": "use 前缀仅用于 class 组件的方法",
+        "isCorrect": false,
+        "description": "Hook 不能在 class 组件中使用"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：复合组件（Compound）相比 prop drilling 的核心优势是？",
+    "explanation": "**复合组件优势**：① **隐式共享状态**——子组件通过 Context 自动消费父 Provider 的状态，无需中间层透传；② **声明式 API**——`<Tabs><Tabs.List><Tabs.Tab/></Tabs.List></Tabs>` 接近原生 `<select>` 的语义，可读性强；③ 任意嵌套深度——子组件可被任意中间组件包裹（`<Wrapper><Tab/></Wrapper>`）仍能消费 Context。prop drilling 需要在多层级手动透传同一组 props，维护成本高且易出错。",
+    "tags": ["compound", "prop-drilling", "context", "声明式"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "隐式共享状态 + 声明式 API + 支持任意嵌套深度",
+        "isCorrect": true,
+        "description": "Context 实现的复合组件三大优势"
+      },
+      {
+        "text": "完全替代 Hook，性能更好",
+        "isCorrect": false,
+        "description": "复合组件解决 API 设计问题，不替代 Hook 的逻辑复用"
+      },
+      {
+        "text": "不需要任何状态管理，零成本",
+        "isCorrect": false,
+        "description": "复合组件仍需 Context + Provider 共享状态"
+      },
+      {
+        "text": "只在 Vue 中可用，React 不支持",
+        "isCorrect": false,
+        "description": "React 与 Vue 都支持（Vue 用 provide/inject）"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：实现复合组件时，为什么应该用 Context 而不是 `React.Children.map + cloneElement`？",
+    "explanation": "**关键差异**：`React.Children.map + cloneElement` **仅作用于直接子节点**——子组件一旦被中间组件包裹（如 `<Wrapper><Tab/></Wrapper>`）就**接收不到**注入的 props，且 props 合并可能覆盖已有值。**Context** 通过 Provider 注入，**支持任意嵌套深度**（中间可包 div / 其他组件），且兼容 React 18+ Server Components。这是 patterns.dev 与 react.dev 共同推荐的现代方案。",
+    "tags": ["compound", "context", "children-map", "cloneelement"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Context 支持任意嵌套深度且兼容 Server Components，Children.map 仅作用于直接子节点",
+        "isCorrect": true,
+        "description": "Children.map 的局限性 + Context 的现代化优势"
+      },
+      {
+        "text": "Children.map 性能比 Context 高，应优先选用",
+        "isCorrect": false,
+        "description": "性能不是关键，关键在于嵌套深度与现代化"
+      },
+      {
+        "text": "Context 只能在 Class Component 中使用",
+        "isCorrect": false,
+        "description": "Context 在函数组件中通过 useContext 消费，是现代主流"
+      },
+      {
+        "text": "两者效果完全相同，可任选",
+        "isCorrect": false,
+        "description": "Children.map 在子组件被包裹时会失效，差异明显"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：Vue 作用域插槽 `<slot :item='x' />` + `v-slot='{ item }'` 解决的核心问题是？",
+    "explanation": "**作用域插槽**让子组件把内部数据暴露给父组件，由父决定如何渲染——同时封装逻辑（数据获取）+ 组合视图（行渲染）。核心解决「**父模板表达式只能访问父作用域**」的限制：父模板默认访问不到子组件的内部数据，必须通过作用域插槽暴露。典型场景 FancyList：子组件封装 `fetch` 获取 items，每行的渲染方式由父通过作用域插槽决定。",
+    "tags": ["vue", "作用域插槽", "渲染作用域"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让父组件能访问子组件内部数据，由父决定渲染方式",
+        "isCorrect": true,
+        "description": "突破父模板只能访问父作用域的限制"
+      },
+      {
+        "text": "让子组件能修改父组件的 state",
+        "isCorrect": false,
+        "description": "改父 state 应通过 emit，与作用域插槽无关"
+      },
+      {
+        "text": "替代 Vue 的 props 向下传递",
+        "isCorrect": false,
+        "description": "props 仍然向下，作用域插槽是反向（子向父暴露数据）"
+      },
+      {
+        "text": "完全等价于 React 的 useEffect",
+        "isCorrect": false,
+        "description": "两者毫无关系"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：react.dev 把 `React.Children` API 标注为 Pitfall 的根本原因是？",
+    "explanation": "**根本原因**：`children` 是**不透明数据结构**——你不能假设它是数组、单个元素、字符串还是 null。更严重的是 `React.Children.map` **看不到自定义组件内部渲染结果**：即使 `<Tab/>` 内部渲染 10 个元素，从父的 Children.map 角度看也只算 1 个 Tab 元素。这导致 Children.map + cloneElement 的注入模式在子组件被包裹或内部有复杂渲染时脆弱失效。",
+    "tags": ["react-children", "pitfall", "不透明"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "children 是不透明结构，Children.map 看不到自定义组件内部渲染",
+        "isCorrect": true,
+        "description": "react.dev Pitfall 警告的根本原因"
+      },
+      {
+        "text": "Children API 已被废弃，调用会抛错",
+        "isCorrect": false,
+        "description": "API 未废弃，只是标注 Pitfall 不推荐"
+      },
+      {
+        "text": "Children API 性能极差，会拖慢渲染",
+        "isCorrect": false,
+        "description": "性能不是核心原因，是 API 不透明"
+      },
+      {
+        "text": "Children API 与 Server Components 不兼容",
+        "isCorrect": false,
+        "description": "不兼容是 Children.map + cloneElement 模式的问题，不是 API 本身"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：react.dev 给出 `React.Children` 的三种替代方案是？",
+    "explanation": "**三种替代方案**（react.dev 官方 Pitfall 段落给出）：① **暴露多个具名子组件**——`<Dialog><Dialog.Header/><Dialog.Body/></Dialog>`，每个子组件独立；② **结构化数组 prop**——`<List items={[{...}, {...}]} />`，用数据驱动渲染；③ **render prop**——`<List renderItem={(item, index) => <div>{item.name}</div>} />`，通过函数注入渲染逻辑。这三种都避免了 children 的不透明性问题。",
+    "tags": ["react-children", "替代方案", "render-prop", "具名子组件"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "暴露多个具名子组件 / 结构化数组 prop / render prop",
+        "isCorrect": true,
+        "description": "react.dev 给出的三种替代方案"
+      },
+      {
+        "text": "用 React.cloneElement 注入 / 用 mixin 复用 / 用继承扩展",
+        "isCorrect": false,
+        "description": "cloneElement 正是要替代的反模式；mixin 与继承也不推荐"
+      },
+      {
+        "text": "用 useState 替代 / 用 useEffect 替代 / useContext 替代",
+        "isCorrect": false,
+        "description": "Hooks 是状态/副作用方案，不直接替代 Children API"
+      },
+      {
+        "text": "用 React.memo 包装 / 用 useMemo 缓存 / 用 forwardRef 透传",
+        "isCorrect": false,
+        "description": "这三者是性能/ref 方案，与 Children 替代无关"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：react.dev《Composition vs Inheritance》给出的「组合优于继承」三个具体落点是？",
+    "explanation": "**三个具体落点**：① **Containment（包含未知子节点）**——用 `children` / 具名 prop（如 `left`/`right`）接收任意子节点，父不需要提前知道子节点结构；② **Specialization（特化变体）**——通过组合 + 配置 props 实现特化，如 `PrimaryButton = (props) => <Button variant='primary' {...props}/>`；③ **逻辑复用**——提取为 JS 模块（普通函数）或自定义 Hook，而非继承基类。这三点共同支撑「Facebook 上万组件从未需要继承」的结论。",
+    "tags": ["组合优于继承", "containment", "specialization", "逻辑复用"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Containment（children 包含）/ Specialization（特化变体）/ 逻辑复用（JS 模块或 Hook）",
+        "isCorrect": true,
+        "description": "react.dev 官方三落点"
+      },
+      {
+        "text": "HOC / Render Props / Mixin",
+        "isCorrect": false,
+        "description": "这是三种逻辑复用方式（且 mixin 不推荐），不是组合的三落点"
+      },
+      {
+        "text": "受控 / 非受控 / 复合组件",
+        "isCorrect": false,
+        "description": "这是组件角色分类，不是组合的落点"
+      },
+      {
+        "text": "useState / useEffect / useContext",
+        "isCorrect": false,
+        "description": "这是 React Hooks，与组合落点无关"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：Render Props 模式与 Compound 模式的取舍，下列描述正确的是？",
+    "explanation": "**取舍要点**：Render Props 通过函数 prop 注入渲染逻辑（如 `renderItem={(item, index) => ...}`），**灵活**——可传 index 等上下文、动态选择渲染策略；Compound 提供声明式 API（`<Tabs.List><Tabs.Tab/></Tabs.List>`），**更接近原生 `<select>/<details>`** 语义。两者在现代 React 中均被 Hook 大幅取代，但各有适用场景：列表渲染注入索引 → Render Props；多个相关组件协同（Tabs/Accordion）→ Compound。也可混合使用。",
+    "tags": ["render-props", "compound", "取舍"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Render Props 灵活可注入上下文；Compound 声明式 API 接近原生语义；均被 Hook 大幅取代",
+        "isCorrect": true,
+        "description": "两者的特点、差异与现状"
+      },
+      {
+        "text": "Render Props 已被官方废弃，生产环境禁用",
+        "isCorrect": false,
+        "description": "未被废弃，仅在多数场景被 Hook 取代，仍有适用场景"
+      },
+      {
+        "text": "Compound 模式不能用 Context 实现",
+        "isCorrect": false,
+        "description": "Compound 的现代实现就是 Context"
+      },
+      {
+        "text": "两者完全等价，可任意替换",
+        "isCorrect": false,
+        "description": "API 风格与适用场景有差异，并非完全等价"
+      }
+    ]
+  },
+  {
+    "stem": "组件分类与设计原则：关于 React Context 与 Vue provide/inject 的对应关系，下列说法正确的是？",
+    "explanation": "**对应关系**：两者都是**跨层级数据传递**机制，用于避免 prop drilling（多层手动透传）。React 用 `createContext` + `Context.Provider` + `useContext`；Vue 用 `provide(key, value)` + `inject(key, default)`。**何时该用**：跨多层共享（主题、locale、用户信息），中间层无需感知。**何时不该用**：简单父子优先 props/events——滥用 Context/provide-inject 会**破坏数据流可追踪性**，调试时难以定位数据来源。具体的通信实现细节属「组件通信」章，本章只到契约原则。",
+    "tags": ["context", "provide-inject", "跨层", "边界"],
+    "categories": [
+      ["技术方向", "组件分类与设计原则"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者都是跨层级共享机制，应避免 prop drilling，但简单父子仍优先 props/events",
+        "isCorrect": true,
+        "description": "Context/provide-inject 适用场景与边界"
+      },
+      {
+        "text": "Context 是 React 独有，Vue 没有对应机制",
+        "isCorrect": false,
+        "description": "Vue 的 provide/inject 是直接对应"
+      },
+      {
+        "text": "Context 性能永远优于 props，应尽可能多用",
+        "isCorrect": false,
+        "description": "滥用 Context 会破坏数据流可追踪性，简单父子仍优先 props"
+      },
+      {
+        "text": "provide/inject 只能在 Vue 2 中使用",
+        "isCorrect": false,
+        "description": "Vue 3 仍支持并提供类型安全版本"
+      }
+    ]
+  }
+]

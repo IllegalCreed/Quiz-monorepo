@@ -1,0 +1,682 @@
+[
+  {
+    "stem": "渲染模式选型：CSR / SSR / SSG / ISR 四种模式在 TTFB、FCP、TBT、数据新鲜度四维度上的优劣描述，哪一项准确？",
+    "explanation": "web.dev《Rendering on the Web》给出权威图谱：SSG 在 build 时生成静态 HTML 经 CDN 边缘缓存，TTFB / FCP / TBT 三项核心指标全优且无需服务器计算；SSR 因每次请求需服务端渲染，TTFB 受数据获取与渲染耗时拖累；CSR 的 HTML 是空壳所以 TTFB 极快但必须等 bundle.js 下载执行后才有内容，FCP 慢、TBT 高；ISR 缓存命中接近 SSG 速度、失效首次请求返陈旧版本（秒级延迟，非实时）。",
+    "tags": ["rendering", "csr-ssr-ssg-isr", "performance"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SSG 三项核心指标全优且服务器零成本；SSR 的 TTFB 受数据获取拖累；CSR 的 FCP 慢、TBT 高；ISR 缓存命中接近 SSG 速度",
+        "isCorrect": true,
+        "description": "web.dev 实测结论，静态优先的根本依据"
+      },
+      {
+        "text": "CSR 的 TTFB 最慢、FCP 最快；SSG 的 TBT 比 SSR 还高",
+        "isCorrect": false,
+        "description": "CSR 的 TTFB 实际极快（HTML 是空壳），慢的是 FCP；SSG 无 hydration 长任务，TBT 极低"
+      },
+      {
+        "text": "ISR 的数据新鲜度比 SSR 还高，TTFB 比 SSG 还低",
+        "isCorrect": false,
+        "description": "ISR 缓存命中是陈旧版本，新鲜度低于 SSR；TTFB 与 SSG 同级但不更低"
+      },
+      {
+        "text": "四模式 TTFB 完全一致，差别只在 FCP",
+        "isCorrect": false,
+        "description": "TTFB 差异巨大：SSG CDN 边缘返回毫秒级，SSR 要等数据 + 渲染"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：Static Rendering（静态渲染）与 Prerendering（预渲染）的本质区别是什么？",
+    "explanation": "web.dev 明确区分：Static Rendering 输出完整可用的 HTML，禁用 JS 后大部分功能仍可用；Prerendering 是构建时跑客户端应用捕获初始 HTML 快照，产物仍需 JS 启动才能交互，禁用 JS 基本惰性。两者外观相似但本质不同——禁用 JS 测试法可直接暴露差异。",
+    "tags": ["rendering", "static-vs-prerender", "concept"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "禁用 JS 测试：静态渲染大部分仍可用，预渲染基本惰性",
+        "isCorrect": true,
+        "description": "静态渲染产物完整，预渲染仅是 SPA 的初始 HTML 快照"
+      },
+      {
+        "text": "静态渲染需要服务端运行时，预渲染不需要",
+        "isCorrect": false,
+        "description": "两者都是构建时产物，部署后都无需服务端计算"
+      },
+      {
+        "text": "预渲染的 HTML 比静态渲染更完整",
+        "isCorrect": false,
+        "description": "正好相反：静态渲染产物完整可用，预渲染需 JS 启动才能交互"
+      },
+      {
+        "text": "两者完全等价，只是叫法不同",
+        "isCorrect": false,
+        "description": "web.dev 明确区分，禁用 JS 即可暴露差异"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：ISR 的 stale-while-revalidate 三态工作机制，正确描述是？",
+    "explanation": "ISR 三态：①首次请求返回 build 产物（与 SSG 相同）；②缓存命中（revalidate 窗口内）返回缓存，速度等同 SSG；③失效后首次请求立刻返回陈旧版本（stale）同时后台重建（revalidate），下次请求才拿到新版本——这一态是 SSR 速度 + 用户无感。这种机制让 ISR 兼顾 SSG 速度与接近 SSR 的新鲜度。",
+    "tags": ["rendering", "isr", "stale-while-revalidate"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "首次返 build 产物；缓存命中返 SSG 速度；失效后首次返陈旧版本同时后台重建",
+        "isCorrect": true,
+        "description": "三态分别对应初始、稳定、刷新场景"
+      },
+      {
+        "text": "每次请求都重新生成 HTML，与 SSR 完全相同",
+        "isCorrect": false,
+        "description": "ISR 缓存命中走 CDN 静态返回，不重渲染"
+      },
+      {
+        "text": "缓存失效后立刻给用户返 502 错误等待重建",
+        "isCorrect": false,
+        "description": "ISR 是 stale-while-revalidate，失效首次仍返陈旧版本不报错"
+      },
+      {
+        "text": "ISR 不依赖 build 产物，每次都从空 HTML 开始",
+        "isCorrect": false,
+        "description": "ISR 必须先 build 出静态产物作为基线"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：ISR 的「时间触发 revalidate:N」与「按需触发 on-demand」两种重新验证，何时应优先选按需？",
+    "explanation": "Vercel 官方建议：内容变化几乎总有业务原因（发布、编辑、上架、价格调整）而非定时器驱动。按需验证（revalidatePath / revalidateTag）在业务事件触发时主动调用，既避免陈旧数据又避免无效重建。仅在确实有自然时间窗口（如汇率每小时更新、排行榜每日刷新）时才用 revalidate:N 定时模式。",
+    "tags": ["rendering", "isr", "on-demand"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "内容变更由业务事件触发（发布、上架、编辑）时优先按需验证",
+        "isCorrect": true,
+        "description": "Vercel 推荐，既避免陈旧又避免无效重建"
+      },
+      {
+        "text": "永远优先用 revalidate:N 定时模式，更简单",
+        "isCorrect": false,
+        "description": "定时模式会做无效重建，且业务事件发生后到下个周期仍是陈旧数据"
+      },
+      {
+        "text": "按需验证只能整站失效，不能针对单个路径",
+        "isCorrect": false,
+        "description": "revalidatePath 可针对单一路径，revalidateTag 可按 tag 批量失效"
+      },
+      {
+        "text": "两种方式只能二选一，不能在同一项目混用",
+        "isCorrect": false,
+        "description": "可以混用：默认按需，特殊场景（如排行榜）保留定时"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：React 18 的 renderToPipeableStream / renderToReadableStream 相比遗留的 renderToString，在哪四项能力上有质的飞跃？",
+    "explanation": "renderToString 是同步整体返回，不支持 Suspense 边界流式、不支持流式 HTML chunk、无选择性水合、无背压（backpressure）处理。React 18 的 renderToPipeableStream（Node）/ renderToReadableStream（Web Streams / Edge）四项能力全具备：Suspense 边界流式、HTML chunk 流式发送、配合 hydrateRoot 的选择性水合、pipe 自带的背压处理。这是 React 18 三大 SSR 改进（数据并行 + 代码分割友好 + 选择性水合）的 API 基础。",
+    "tags": ["rendering", "streaming-ssr", "react-18"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Suspense 流式 + 流式 HTML chunk + 选择性水合 + 背压处理",
+        "isCorrect": true,
+        "description": "四项能力都是 renderToString 不支持的"
+      },
+      {
+        "text": "TypeScript 类型推导、Tree Shaking、Code Splitting、Hot Reload",
+        "isCorrect": false,
+        "description": "这些是构建工具能力，与 SSR API 无关"
+      },
+      {
+        "text": "自动代码压缩、CDN 缓存、HTTP/2 推送、Service Worker",
+        "isCorrect": false,
+        "description": "这些是传输层能力，不在 SSR API 范畴"
+      },
+      {
+        "text": "并发请求、自动 memo、虚拟 DOM diff、Suspense for Data Fetching",
+        "isCorrect": false,
+        "description": "自动 memo 与 diff 是 React 渲染机制，并非 renderToPipeableStream 独有"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：React 18 的 Selective Hydration（选择性水合）如何通过用户点击实现「优先级水合」？",
+    "explanation": "Selective Hydration 让多个 Suspense 边界并行水合。当用户点击尚未水合的按钮时，React 在事件的 capture 阶段同步水合该按钮所在的父级 Suspense 边界，同时跳过兄弟组件的水合让出主线程，从而创造「点击立刻响应」的错觉，即使整页还在水合中。这是 React 18 解决传统 SSR「必须水合完所有组件才能交互」痛点的核心机制。",
+    "tags": ["rendering", "selective-hydration", "react-18"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "capture 阶段同步水合父级 Suspense 边界，跳过兄弟组件让出主线程",
+        "isCorrect": true,
+        "description": "优先级水合创造即时响应错觉"
+      },
+      {
+        "text": "把所有组件按字母序排列，依次水合",
+        "isCorrect": false,
+        "description": "字母序与用户实际优先级无关"
+      },
+      {
+        "text": "所有组件同时水合，无优先级之分",
+        "isCorrect": false,
+        "description": "那是传统全量 Rehydration，会阻塞主线程"
+      },
+      {
+        "text": "用户点击后等待所有组件水合完再响应",
+        "isCorrect": false,
+        "description": "正好相反：同步水合被点击的边界以立即响应"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：React Server Components（RSC）与 SSR 的三个根本区别，下列哪项描述准确？",
+    "explanation": "RSC 与 SSR 三个根本区别：①输出形态——SSR 输出 HTML 字符串，RSC 输出 RSC Payload（二进制组件树格式）；②组件代码是否发到浏览器——SSR 的组件代码会发到浏览器（hydration 需要），RSC 的 Server Component 代码不发到浏览器；③是否进 client bundle——SSR 全部进，RSC 的 Server Component 不进（可把 markdown 解析器等重型库挡在 client bundle 之外）。另外 RSC 不需要 hydration（已是服务端结果）、支持 async 组件。",
+    "tags": ["rendering", "rsc", "ssr"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "输出形态（HTML vs RSC Payload）、是否发到浏览器、是否进 client bundle",
+        "isCorrect": true,
+        "description": "三项根本区别决定了 RSC 减少 bundle 与直读后端的能力"
+      },
+      {
+        "text": "运行速度、内存占用、包大小",
+        "isCorrect": false,
+        "description": "这些是性能维度而非根本区别，且 SSR/RSC 在不同场景互有胜负"
+      },
+      {
+        "text": "支持的浏览器版本、TypeScript 兼容性、Node 版本",
+        "isCorrect": false,
+        "description": "运行环境兼容性不是根本区别"
+      },
+      {
+        "text": "RSC 与 SSR 完全等价，只是 Next.js 的营销名词",
+        "isCorrect": false,
+        "description": "两者输出形态、bundle 归属、水合机制都不同"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：React Server Components 能做与不能做，下列哪项属于「不能做」？",
+    "explanation": "RSC 不发到浏览器，没有客户端状态、生命周期、事件、浏览器 API。不能做：useState / useReducer / useEffect / useLayoutEffect（无客户端状态与生命周期）、onClick / onChange / 任何事件处理（无浏览器事件）、window / document / localStorage（无浏览器 API）。能做：async 函数直接 await 数据、直接读 DB / 文件系统 / 内部 API、把 JSX 或 Server Component 作 children 传给 Client Component。",
+    "tags": ["rendering", "rsc", "constraints"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在组件内调用 useState / useEffect / onClick / window.localStorage",
+        "isCorrect": true,
+        "description": "这些都是客户端能力，RSC 不支持，会直接报错"
+      },
+      {
+        "text": "async function Component() 内 await 查询数据库",
+        "isCorrect": false,
+        "description": "RSC 支持 async 组件 + 直接读 DB"
+      },
+      {
+        "text": "导入 markdown 渲染器并把结果 JSX 传给 Client Component",
+        "isCorrect": false,
+        "description": "RSC 可让重型库不进 client bundle"
+      },
+      {
+        "text": "在服务端读文件系统并渲染为 HTML",
+        "isCorrect": false,
+        "description": "RSC 可直接访问后端资源"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：关于 'use client' 边界规则，下列哪种做法是正确的？",
+    "explanation": "'use client' 指令标记 Client Component 模块边界，标记后**该文件及所有 imports** 都进 client bundle。最佳实践是把边界下沉到最小交互组件（如单个 LikeButton、Counter），而非根 Layout——一旦根 Layout 标记 'use client'，所有子树（含大量可静态部分）全部进 client bundle，丧失 RSC 减少 JS 的核心收益。Server Component 作 children 传入 Client Component 时不会进入 client module graph，仍在服务端渲染。",
+    "tags": ["rendering", "rsc", "use-client"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "边界下沉到最小交互叶子组件（如 LikeButton），根 Layout 保持 Server Component",
+        "isCorrect": true,
+        "description": "最小化 client bundle 的关键实践"
+      },
+      {
+        "text": "在根 Layout 加 'use client' 一次性把整站变成 Client Component",
+        "isCorrect": false,
+        "description": "丧失 RSC 收益，退化成 CSR"
+      },
+      {
+        "text": "'use client' 标记后该文件本身进 bundle，但 imports 仍留在服务端",
+        "isCorrect": false,
+        "description": "标记后**该文件及所有 imports** 全部进 client bundle"
+      },
+      {
+        "text": "Server Component 作 children 传给 Client Component 会进入 client bundle",
+        "isCorrect": false,
+        "description": "Server Component 仍在服务端渲染，不进 client module graph"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：Astro Islands 的 client:* 指令矩阵中，client:visible 的核心行为是什么？",
+    "explanation": "Astro 的 client:* 指令控制岛屿何时水合：client:load 立即水合（首屏即需交互）；client:idle 浏览器空闲时水合（非关键交互）；client:visible 进入视口才水合（基于 IntersectionObserver，不视达不下载 JS，适合轮播、评论区等视口外组件）；client:only 仅客户端渲染跳过 SSR（依赖 window/localStorage）；client:media 媒体查询匹配才水合（仅移动或仅桌面）。",
+    "tags": ["rendering", "islands", "astro"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "组件进入视口才水合，不视达不下载 JS",
+        "isCorrect": true,
+        "description": "基于 IntersectionObserver，省 JS 的关键指令"
+      },
+      {
+        "text": "页面加载时立即水合",
+        "isCorrect": false,
+        "description": "这是 client:load 的行为"
+      },
+      {
+        "text": "浏览器空闲时水合",
+        "isCorrect": false,
+        "description": "这是 client:idle 的行为"
+      },
+      {
+        "text": "仅在客户端渲染，跳过 SSR",
+        "isCorrect": false,
+        "description": "这是 client:only 的行为"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：Astro 的 Server Islands（server:defer）与 Client Islands（client:*）角色分工是什么？",
+    "explanation": "Astro 4+ 引入的 Server Islands 用 server:defer 指令把昂贵的**服务端代码**移出主渲染流——占位内容先显示，再异步替换为真实服务端内容（如用户头像、个性化优惠、实时库存）。Client Islands 处理的是**客户端交互性**（轮播、表单、Tab 切换），通过 client:* 指令选择性水合。两者解决不同问题：前者优化服务端慢查询对首屏的阻塞，后者优化客户端 JS payload。",
+    "tags": ["rendering", "server-islands", "astro"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Server Islands 处理动态服务端内容，Client Islands 处理客户端交互性",
+        "isCorrect": true,
+        "description": "前者优化服务端慢查询，后者优化 JS payload"
+      },
+      {
+        "text": "Server Islands 替代 Client Islands，二选一",
+        "isCorrect": false,
+        "description": "两者解决不同维度问题，可并存于同一页"
+      },
+      {
+        "text": "Client Islands 在服务端运行，Server Islands 在客户端运行",
+        "isCorrect": false,
+        "description": "正好相反：Client Islands 是客户端水合，Server Islands 是服务端异步"
+      },
+      {
+        "text": "Server Islands 必须配合 React Server Components 使用",
+        "isCorrect": false,
+        "description": "Server Islands 是 Astro 独立特性，与 RSC 无关"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：web.dev 把「全量 Rehydration」明确为反模式（rarely the best option）的根本原因是什么？",
+    "explanation": "web.dev 明确指出全量 Rehydration「rarely the best option」的两大根本问题：①「一个应用两倍代价」——服务端 HTML 与 bundle.js 双传输，浏览器要下载两次应用；②移动端 UX 灾难——页面看起来加载完实际几分钟不可用，因为 hydration 长任务阻塞主线程，用户点击无响应。这正是 React 18 引入 Streaming SSR + Selective Hydration、Astro 引入 Islands 选择性水合的根本动机。",
+    "tags": ["rendering", "rehydration", "anti-pattern"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "HTML 与 bundle 双传输「一个应用两倍代价」+ 移动端「表面就绪实际几分钟不可用」",
+        "isCorrect": true,
+        "description": "这正是 Streaming SSR 与 Islands 选择性水合要解决的痛点"
+      },
+      {
+        "text": "Rehydration 不支持 SEO，爬虫读不到内容",
+        "isCorrect": false,
+        "description": "SSR + Rehydration 的 HTML 是完整的，SEO 反而好"
+      },
+      {
+        "text": "Rehydration 必须用 Node 22+，部署成本高",
+        "isCorrect": false,
+        "description": "Node 版本与 Rehydration 模式无关"
+      },
+      {
+        "text": "Rehydration 只能用 Vue 不能用 React",
+        "isCorrect": false,
+        "description": "React 同样支持 Rehydration（hydrateRoot）"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：电商产品页若按混合渲染的最佳实践切分，「加入购物车」按钮应选哪种模式？",
+    "explanation": "电商产品页混合渲染按部位切分：①布局、商品描述、图片几乎不变且无个性化 → SSG；②价格、库存、销量分钟级变更但无个性化 → ISR（on-demand revalidatePath）；③「猜你喜欢」推荐因用户而异 → SSR（请求时计算）；④加入购物车按钮需立即响应（用户点击立刻反馈），且状态是本地交互态 → CSR（Client Component，水合后本地管理）。这种切分让性能、新鲜度、成本三角最优。",
+    "tags": ["rendering", "hybrid", "ecommerce"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CSR（Client Component，水合后本地状态）",
+        "isCorrect": true,
+        "description": "加购按钮需立即响应，状态是本地交互态"
+      },
+      {
+        "text": "SSG（构建时静态生成）",
+        "isCorrect": false,
+        "description": "按钮交互态不该 SSG，那是静态内容该选的"
+      },
+      {
+        "text": "SSR（每次请求服务端渲染）",
+        "isCorrect": false,
+        "description": "加购是客户端交互，无需每次请求重渲染"
+      },
+      {
+        "text": "ISR（周期重新验证）",
+        "isCorrect": false,
+        "description": "ISR 适合内容数据，不适合交互按钮"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：跨 Server / Client 边界传递 props 时为何必须可序列化？server-only 包的作用是什么？",
+    "explanation": "Server Component 在服务端执行后要把结果以 RSC Payload 形式传给浏览器，必须能序列化——传函数实例、Class 实例、含函数的 Map 会运行时报错。React Context 不支持 Server Components，必须包在 Client Component 里通过 children 传 Server Component。server-only 包在文件顶部 import 后，若该文件被误导入 Client Component 会在构建期直接报错，用于防止含 API key 的服务端代码泄露到 client bundle。client-only 反之防客户端代码进服务端。",
+    "tags": ["rendering", "rsc", "serialization"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "RSC Payload 必须序列化传输；server-only 在构建期阻止服务端代码误入 client bundle，防 API key 泄露",
+        "isCorrect": true,
+        "description": "可序列化是 RSC 边界硬约束，server-only 是防越界 import 的安全网"
+      },
+      {
+        "text": "props 可序列化仅为提升性能，传函数实例只是警告不报错",
+        "isCorrect": false,
+        "description": "传非可序列化值会运行时报错，不是警告"
+      },
+      {
+        "text": "server-only 是运行时检查，部署后才生效",
+        "isCorrect": false,
+        "description": "server-only 是构建期检查，部署前就能拦住"
+      },
+      {
+        "text": "React Context 可直接穿透 Server Components 边界",
+        "isCorrect": false,
+        "description": "Context 不支持 RSC，必须包在 Client Component 里"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：React 18 的 Streaming SSR（流式服务端渲染）的核心特征是什么？",
+    "explanation": "Streaming SSR 配合 Suspense 边界把 HTML 拆成多个 chunk 流式发送：先发已就绪的外壳（shell），各 Suspense 边界内的内容就绪后再异步插入。这解决了传统 SSR 三大痛点：①必须取完所有数据才能显示 → 各边界独立就绪先发 fallback；②必须加载完所有代码才能水合 → React.lazy 可与 SSR 配合；③必须水合完所有组件才能交互 → Selective Hydration 优先级水合。",
+    "tags": ["rendering", "streaming-ssr", "react-18"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "配合 Suspense 边界把 HTML 拆成 chunk 流式发送，外壳就绪立刻返回",
+        "isCorrect": true,
+        "description": "TTFB 大幅改善，慢数据不再阻塞首屏"
+      },
+      {
+        "text": "在浏览器流式下载 bundle.js 而非一次性下载",
+        "isCorrect": false,
+        "description": "那是 HTTP chunked transfer，与 Streaming SSR 不是一回事"
+      },
+      {
+        "text": "用 WebSocket 推送 HTML 增量给客户端",
+        "isCorrect": false,
+        "description": "Streaming SSR 走的是 HTTP chunked response，不需要 WebSocket"
+      },
+      {
+        "text": "服务端把 JS 流式编译为 HTML",
+        "isCorrect": false,
+        "description": "Streaming SSR 是组件渲染结果的流式发送，不是编译过程"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：web.dev 关于「静态优先」的核心结论是什么？",
+    "explanation": "web.dev《Rendering on the Web》明确指出：SSR + Rehydration 在多数站点并非最佳选项（rarely the best option），静态渲染（SSG）在 TTFB / FCP / TBT 三项核心指标全优且无需服务器计算。推荐默认以 SSG / ISR 为基础，仅在「需要那一刻的数据」（个性化、实时数据）时才引入 SSR。这是「静态优先，按需 SSR」选型原则的根本依据。",
+    "tags": ["rendering", "static-first", "web-dev"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SSG 三项核心指标全优，默认起点；仅在「需要那一刻的数据」时才引入 SSR",
+        "isCorrect": true,
+        "description": "静态优先，按需 SSR"
+      },
+      {
+        "text": "SSR 是所有站点的最佳默认选项",
+        "isCorrect": false,
+        "description": "web.dev 明确 SSR+Rehydration rarely the best option"
+      },
+      {
+        "text": "所有站点都应该用 CSR，因为最简单",
+        "isCorrect": false,
+        "description": "CSR 首屏慢、SEO 差，不适合内容站"
+      },
+      {
+        "text": "必须始终用混合渲染，单一模式都不行",
+        "isCorrect": false,
+        "description": "简单内容站用纯 SSG 就是最优解，不一定非要混合"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：把 SSG 用于百万级 URL 或不可预测 URL 的站点，会暴露什么问题？",
+    "explanation": "SSG 在 build 时为每个 URL 生成独立 HTML 文件。URL 数量爆炸时：①构建时间从分钟到几小时；②产物从 MB 到几十 GB；③CDN 存储成本飙升；④无法处理动态生成的 URL（如用户主页、新上架商品）。这正是 Next.js 引入 ISR 的根本动机——ISR 可扩展到百万级页面，按需生成 + 后台重建，不需要一次性 build 全部。",
+    "tags": ["rendering", "ssg", "anti-pattern"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "构建时间爆炸（几小时）+ 产物几十 GB + 无法处理动态 URL",
+        "isCorrect": true,
+        "description": "应换 ISR，按需生成 + 后台重建"
+      },
+      {
+        "text": "SSG 没有问题，可无限扩展",
+        "isCorrect": false,
+        "description": "构建时间与产物量是硬约束"
+      },
+      {
+        "text": "SSG 会自动降级为 CSR",
+        "isCorrect": false,
+        "description": "SSG 不会自动切换模式，需手动改用 ISR"
+      },
+      {
+        "text": "SSG 不支持 HTTPS",
+        "isCorrect": false,
+        "description": "HTTPS 与渲染模式无关"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：把 ISR 当 SSR 用于高频实时数据（如股票行情、聊天消息），会发生什么？",
+    "explanation": "ISR 的 stale-while-revalidate 机制在缓存命中时返回**陈旧版本**（秒级延迟），即使后台重建也是「下一次请求才拿到新版本」。对于股票行情、聊天这类要求秒级实时的场景，用户看到的永远是「上一刻」的数据，无法接受。实时场景必须用 SSR（每次请求重新渲染）或 SSR + WebSocket / SSE（HTML 走 SSR，更新走推送）。",
+    "tags": ["rendering", "isr", "anti-pattern"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "缓存命中时返回陈旧版本，秒级延迟，实时场景无法接受",
+        "isCorrect": true,
+        "description": "实时场景应换 SSR 或 SSR + WebSocket"
+      },
+      {
+        "text": "ISR 会自动检测实时数据并切到 SSR",
+        "isCorrect": false,
+        "description": "ISR 不会自动切换模式"
+      },
+      {
+        "text": "ISR 性能比 SSR 还差，所以不能用",
+        "isCorrect": false,
+        "description": "ISR 缓存命中性能极佳，问题在于新鲜度而非性能"
+      },
+      {
+        "text": "ISR 不支持任何缓存策略",
+        "isCorrect": false,
+        "description": "ISR 本质就是缓存机制"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：在 Astro 项目中给所有组件都加 client:load 指令，会带来什么后果？",
+    "explanation": "Astro Islands 的核心价值是默认零 JS + 选择性水合——只给真正需要交互的组件加水合。给所有组件都加 client:load 等于让整页全部立即水合，退化成传统 SPA 全量水合，丢失 Islands 的核心收益（按字节计 JS 是最慢的资产）。正确做法是按场景挑指令：首屏交互用 client:load、非关键用 client:idle、视口外用 client:visible（不视达不下载）。",
+    "tags": ["rendering", "islands", "anti-pattern"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "退化成传统 SPA 全量水合，丢失 Islands 选择性水合的核心价值",
+        "isCorrect": true,
+        "description": "JS payload 暴涨，首屏指标恶化"
+      },
+      {
+        "text": "完全没影响，client:load 是默认行为",
+        "isCorrect": false,
+        "description": "Astro 默认是零 JS，client:load 是显式水合指令"
+      },
+      {
+        "text": "会触发构建错误，Astro 不允许全量 client:load",
+        "isCorrect": false,
+        "description": "Astro 允许但强烈反对"
+      },
+      {
+        "text": "会自动切换到 RSC 模式",
+        "isCorrect": false,
+        "description": "Astro 与 RSC 是不同框架范式"
+      }
+    ]
+  },
+  {
+    "stem": "渲染模式选型：下列场景与推荐渲染模式的匹配，哪一项最合理？",
+    "explanation": "选型决策树：①博客 / 文档（内容永不变 + 强 SEO）→ SSG，CDN 边缘缓存零服务器成本；②个性化仪表盘（实时 + 用户相关）→ SSR 或 Streaming SSR，请求时计算；③后台管理系统（内网 + SEO 无关 + 交互密集）→ CSR，服务器零成本；④股票行情（秒级实时 + 强交互）→ SSR + WebSocket / SSE，HTML 走 SSR、更新走推送。所有匹配都遵循「静态优先，按需 SSR，实时走推送」原则。",
+    "tags": ["rendering", "decision-tree", "scenarios"],
+    "categories": [
+      [
+        "技术方向",
+        "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "博客→SSG；个性化仪表盘→SSR；后台管理→CSR；股票行情→SSR + WebSocket",
+        "isCorrect": true,
+        "description": "四类场景按静态优先原则精准匹配"
+      },
+      {
+        "text": "所有场景都→SSR，最通用",
+        "isCorrect": false,
+        "description": "SSR 服务器成本高，博客/后台用 SSR 是浪费"
+      },
+      {
+        "text": "所有场景都→CSR，最简单",
+        "isCorrect": false,
+        "description": "博客 SEO 全废、股票首屏慢"
+      },
+      {
+        "text": "博客→SSR；后台→SSG；股票→CSR；仪表盘→SSG",
+        "isCorrect": false,
+        "description": "完全反了：博客该 SSG、后台该 CSR、股票该 SSR+WS、仪表盘该 SSR"
+      }
+    ]
+  }
+]

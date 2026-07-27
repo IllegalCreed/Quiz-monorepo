@@ -743,24 +743,20 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             name: "设计模式",
             sort: 1,
             children: [
-              { name: "架构模式（MVC / MVVM）", sort: 1 },
-              {
-                name: "创建型（工厂方法 / 抽象工厂 / 单例 / 建造者 / 原型）",
-                sort: 2,
-              },
-              {
-                name: "结构型（适配器 / 桥接 / 组合 / 装饰 / 外观 / 享元 / 代理）",
-                sort: 3,
-              },
-              {
-                name: "行为型（责任链 / 命令 / 迭代器 / 中介者 / 备忘录 / 观察者 / 状态 / 策略 / 模板方法 / 访问者）",
-                sort: 4,
-              },
+              { name: "架构模式（MVC / MVP / MVVM）", sort: 1 },
+              { name: "创建型设计模式", sort: 2 },
+              { name: "结构型设计模式", sort: 3 },
+              { name: "行为型设计模式", sort: 4 },
             ],
           },
           {
-            name: "组件设计（组件分类 / 设计原则 / Storybook / Styleguidist）",
+            name: "组件设计",
             sort: 2,
+            children: [
+              { name: "组件分类与设计原则", sort: 1 },
+              { name: "Storybook", sort: 2 },
+              { name: "Styleguidist", sort: 3 },
+            ],
           },
           {
             // 2026-07-02 选型调研定稿：占位 2 叶 → 7 叶（spec: docs/plans/20260702-frontend-arch-micro-frontend-trilogy.md）。
@@ -783,6 +779,28 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "wujie", sort: 5 },
               { name: "micro-app", sort: 6 },
               { name: "Module Federation", sort: 7 },
+            ],
+          },
+          {
+            // 2026-07-21 选型评估新增：渲染架构 + 状态管理架构（前端架构五层：代码模式→组件→集成→渲染→状态）。
+            // 边界：Next.js/Nuxt 讲框架实现，渲染架构叶讲选型策略；Pinia/Zustand 讲 API，状态架构叶讲架构策略。
+            name: "渲染架构",
+            sort: 4,
+            children: [
+              {
+                name: "渲染模式选型（CSR / SSR / SSG / ISR / Streaming / Islands / RSC）",
+                sort: 1,
+              },
+            ],
+          },
+          {
+            name: "状态管理架构",
+            sort: 5,
+            children: [
+              {
+                name: "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）",
+                sort: 1,
+              },
             ],
           },
         ],

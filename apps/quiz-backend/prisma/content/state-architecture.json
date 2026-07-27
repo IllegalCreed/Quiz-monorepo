@@ -1,0 +1,682 @@
+[
+  {
+    "stem": "状态架构策略：State Colocation（状态就近放置）原则的核心主张是什么？",
+    "explanation": "**State Colocation** 由 Kent C. Dodds 提出，主张把状态放在**离消费它的组件最近的层级**。核心理念是「让东西变快的最佳方式是少做事」——state 放得越靠近消费者，React 重渲染时需要检查的子树越小。它解决的是「位置」维度，与「变更范式」「拆分粒度」等维度无关。",
+    "tags": ["状态架构策略", "入门", "colocate"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把状态放在离消费它的组件最近的层级",
+        "isCorrect": true,
+        "description": "Kent C. Dodds 的原话：让状态靠近消费者"
+      },
+      {
+        "text": "所有状态集中放在应用根节点的 store",
+        "isCorrect": false,
+        "description": "这是反模式——会触发大面积重渲染"
+      },
+      {
+        "text": "状态必须用不可变范式更新",
+        "isCorrect": false,
+        "description": "这是「变更范式」维度，与「位置」无关"
+      },
+      {
+        "text": "状态必须用原子化拆分",
+        "isCorrect": false,
+        "description": "这是「拆分粒度」维度，与「位置」无关"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Kent C. Dodds 为什么说 State Colocation 能让应用更快？",
+    "explanation": "**少做事 = 失效子树小**。React 更新时必须检查所有可能引用该 state 的子组件，state 放得越高（如全局 store），失效子树越大；下移到消费组件附近后，React 只需检查真正引用它的少量组件。这是性能优化的根本思路——不是「跑得更快」，而是「少做事」。",
+    "tags": ["状态架构策略", "中级", "colocate"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "state 越靠近消费组件，React 重渲染需要检查的子树越小",
+        "isCorrect": true,
+        "description": "少做事 = 失效子树小"
+      },
+      {
+        "text": "本地状态比全局 store 的代码执行速度更快",
+        "isCorrect": false,
+        "description": "执行速度相同，差别在失效范围"
+      },
+      {
+        "text": "本地状态不需要内存分配，更省内存",
+        "isCorrect": false,
+        "description": "内存差别可忽略，关键在重渲染范围"
+      },
+      {
+        "text": "本地状态不会触发任何重渲染",
+        "isCorrect": false,
+        "description": "状态变化仍触发重渲染，只是范围小"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Lifting State Up（状态提升）的判断起点是什么？",
+    "explanation": "**Lifting State Up 的判断起点是「这个 state 谁会用」**：只有当前组件用 → 留本地 `useState`；多个组件共享 → 提升到它们的**最近公共祖先**；跨路由 / 跨模块共享 → 提升到全局 store。Redux / React 官方都推荐「从 `useState` 起步」而不是「一开始就上 store」。",
+    "tags": ["状态架构策略", "中级", "lifting state up"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从 useState 起步，看状态被哪些组件使用",
+        "isCorrect": true,
+        "description": "官方推荐的演进起点"
+      },
+      {
+        "text": "直接在应用根挂载一个全局 store",
+        "isCorrect": false,
+        "description": "过早优化、违反 colocate 原则"
+      },
+      {
+        "text": "所有状态都用 Context Provider 包裹",
+        "isCorrect": false,
+        "description": "Context value 变化会让所有 consumer 重渲染"
+      },
+      {
+        "text": "所有状态都从父组件 props 透传",
+        "isCorrect": false,
+        "description": "props drilling 过深是反模式"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Kent C. Dodds 强调 colocate 是什么性质的过程？",
+    "explanation": "colocate 是**持续重构过程而非一次性决定**。每次重构都要反向审视「这个 state 现在还有谁用」，一旦某 state 只剩一个组件使用，就果断下推回本地。「应用能跑 ≠ 位置最优」——状态归属会随应用演进变化，必须定期回顾。",
+    "tags": ["状态架构策略", "中级", "colocate"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "持续重构过程——状态归属随演进变化要定期回顾",
+        "isCorrect": true,
+        "description": "「应用能跑 ≠ 位置最优」"
+      },
+      {
+        "text": "一次性决定——项目开始就定下来不再变",
+        "isCorrect": false,
+        "description": "状态归属会随重构变化"
+      },
+      {
+        "text": "只在性能出问题时才考虑",
+        "isCorrect": false,
+        "description": "应该作为日常重构的一部分"
+      },
+      {
+        "text": "只在新建组件时考虑",
+        "isCorrect": false,
+        "description": "存量代码也要定期回顾"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：以下哪种状态最应该保留在本地（不进全局 store）？",
+    "explanation": "**只被一个组件消费、快速变化的状态**应保留本地。典型如 modal 显隐、表单输入值、tooltip 显隐、鼠标 / 滚动位置等。把它们塞进全局 store 会触发大面积重渲染——Kent C. Dodds 把「快速变化状态进全局」列为 React 性能首要杀手。",
+    "tags": ["状态架构策略", "入门", "本地状态"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "modal 显隐、表单输入值等只被一个组件消费的状态",
+        "isCorrect": true,
+        "description": "本地默认，快速变化状态尤其要本地"
+      },
+      {
+        "text": "跨路由共享的当前登录用户信息",
+        "isCorrect": false,
+        "description": "跨路由共享应进全局"
+      },
+      {
+        "text": "购物车内容（多页面共用）",
+        "isCorrect": false,
+        "description": "跨模块共享应进全局"
+      },
+      {
+        "text": "服务端返回的实体缓存",
+        "isCorrect": false,
+        "description": "应交 RTK Query / TanStack Query"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Redux 三大原则不包括以下哪一项？",
+    "explanation": "Redux 三大原则是：①**Single Source of Truth**（单一数据源，全局 state 在单一 store 对象树）；②**State is Read-Only**（状态只读，唯一变更是 dispatch action）；③**Changes via Pure Functions**（reducer 是纯函数 `(state, action) => newState`）。「状态可被任何组件直接修改」是 Redux 明确反对的——必须走 dispatch → reducer 路径。",
+    "tags": ["状态架构策略", "入门", "redux 原则"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "状态可被任何组件直接修改（mutate）",
+        "isCorrect": true,
+        "description": "这是 Redux 反模式，必须走 dispatch"
+      },
+      {
+        "text": "单一数据源（Single Source of Truth）",
+        "isCorrect": false,
+        "description": "原则之一"
+      },
+      {
+        "text": "状态只读（State is Read-Only）",
+        "isCorrect": false,
+        "description": "原则之二"
+      },
+      {
+        "text": "通过纯函数变更（Changes via Pure Functions）",
+        "isCorrect": false,
+        "description": "原则之三"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Redux 单向数据流的正确五步顺序是？",
+    "explanation": "Redux 单向数据流五步：**State（当前状态）→ View（UI 渲染）→ dispatch(Action)（用户交互触发 action）→ Reducer（纯函数计算新 state）→ New State（新状态进入下一轮）**。这个闭环保证状态变更可预测、可审计、可回放——是 time-travel 调试的理论基础。",
+    "tags": ["状态架构策略", "中级", "单向数据流"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "State → View → dispatch(Action) → Reducer → New State",
+        "isCorrect": true,
+        "description": "单向闭环，状态只能从 reducer 流出"
+      },
+      {
+        "text": "View → Action → State → Reducer → dispatch",
+        "isCorrect": false,
+        "description": "顺序错乱"
+      },
+      {
+        "text": "Reducer → State → View → Action → dispatch",
+        "isCorrect": false,
+        "description": "起点错，reducer 不能主动触发"
+      },
+      {
+        "text": "Action → dispatch → View → Reducer → State",
+        "isCorrect": false,
+        "description": "View 不能直接产 Action，是交互触发"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：响应式范式（MobX / Vue reactive）与不可变范式（Redux / setState）的根本哲学差异是什么？",
+    "explanation": "**响应式 vs 不可变的根本差异**在两件事：①**状态性质**——响应式可变（直接 `state.x = 1`），不可变只读（必须返回新对象）；②**改变检测机制**——响应式靠 Proxy / getter-setter 拦截读写 + `track` / `trigger` 自动依赖追踪，不可变靠**引用相等 `===`**（旧对象 vs 新对象）。前者自动构建依赖树，后者需手动 `useMemo`。",
+    "tags": ["状态架构策略", "中级", "响应式 vs 不可变"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "状态可变 vs 只读；依赖追踪 vs 引用相等",
+        "isCorrect": true,
+        "description": "两个维度的根本差异"
+      },
+      {
+        "text": "用 Proxy vs 用 Object.defineProperty",
+        "isCorrect": false,
+        "description": "这是实现细节，不是哲学差异"
+      },
+      {
+        "text": "用 TypeScript vs 用 JavaScript",
+        "isCorrect": false,
+        "description": "语言选择无关"
+      },
+      {
+        "text": "用 Class vs 用 Function",
+        "isCorrect": false,
+        "description": "实现风格，非哲学差异"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：MobX 三大支柱 + Reactions 不包括以下哪一项？",
+    "explanation": "MobX 三大支柱是：①**Observable State**（可观察状态）；②**Derivation / Computed**（自动派生）；③**Action**（修改动作）。外加 **Reactions**（副作用：autorun / reaction / when）。指导原则是「任何能从 state 派生的东西都应自动派生」。「Dispatcher」是 Redux 的概念，不属于 MobX。",
+    "tags": ["状态架构策略", "中级", "mobx 三大支柱"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Dispatcher（分发器）",
+        "isCorrect": true,
+        "description": "Dispatcher 是 Redux 概念，MobX 没有"
+      },
+      {
+        "text": "Observable State（可观察状态）",
+        "isCorrect": false,
+        "description": "三大支柱之一"
+      },
+      {
+        "text": "Derivation / Computed（自动派生）",
+        "isCorrect": false,
+        "description": "三大支柱之二"
+      },
+      {
+        "text": "Action（修改动作）",
+        "isCorrect": false,
+        "description": "三大支柱之三"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Vue 中对 reactive() 对象直接解构会发生什么？",
+    "explanation": "**reactive() 对象直接解构会丢失响应性**。原因：解构后变量脱离 Proxy 上下文，变成普通值。正确做法是用 **`toRefs()`** 包裹后再解构，得到的是 `ref`，保持响应性。或直接用 `ref()` 定义基本类型状态。",
+    "tags": ["状态架构策略", "中级", "vue 响应式陷阱"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "丢响应性，需用 toRefs 包裹后再解构",
+        "isCorrect": true,
+        "description": "解构后变量脱离 Proxy"
+      },
+      {
+        "text": "完全正常，自动保持响应性",
+        "isCorrect": false,
+        "description": "Vue 2 才有此特性，Vue 3 reactive 解构会丢"
+      },
+      {
+        "text": "会抛出运行时错误",
+        "isCorrect": false,
+        "description": "不报错，只是静默丢响应性"
+      },
+      {
+        "text": "会触发 Vue 警告但功能正常",
+        "isCorrect": false,
+        "description": "无警告，静默失效"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Normalized State（规范化状态）的标准范式是？",
+    "explanation": "**Normalized State 标准范式**：`{ byId: { [id]: item }, allIds: [id...] }`。Redux 官方 [Normalizing State Shape](https://redux.js.org/usage/structuring-reducers/normalizing-state-shape) 文档定义的四规则：①每种类型一张表（slice）；②表里用 ID 做 key 存对象；③引用其他实体时只存 ID；④顺序用 ID 数组表示。",
+    "tags": ["状态架构策略", "中级", "normalized state"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "{ byId: { [id]: item }, allIds: [id...] }",
+        "isCorrect": true,
+        "description": "Redux 官方范式"
+      },
+      {
+        "text": "[{ id, ...item }, { id, ...item }]（扁平数组）",
+        "isCorrect": false,
+        "description": "查找需 O(n)，更新需重建数组"
+      },
+      {
+        "text": "{ items: { ...嵌套 author、comments } }",
+        "isCorrect": false,
+        "description": "嵌套结构是反模式"
+      },
+      {
+        "text": "Map(id → item)",
+        "isCorrect": false,
+        "description": "Map 不可序列化，不符合单一数据源"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：相比嵌套结构，Normalized State 在不可变更新上的核心优势是什么？",
+    "explanation": "**更新复杂度从 O(深度) 降到 O(1)**。嵌套结构更新深层节点需复制整条祖先链（如修改 comment 要重建 post 数组）；normalized 后只需 `byId[id]: newItem` 单点替换。附加好处：①数据不重复（同一 author 只存一份）；②重渲染范围缩小（更新一条评论不再波及所有 Post 组件）。",
+    "tags": ["状态架构策略", "高级", "normalized 优势"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "更新复杂度从 O(深度) 降到 O(1)，只替换单个 byId[id]",
+        "isCorrect": true,
+        "description": "避免复制祖先链"
+      },
+      {
+        "text": "代码行数更少、更易读",
+        "isCorrect": false,
+        "description": "代码量未必少，重点是性能"
+      },
+      {
+        "text": "不需要 TypeScript 类型声明",
+        "isCorrect": false,
+        "description": "类型无关"
+      },
+      {
+        "text": "可以不用 Redux Toolkit",
+        "isCorrect": false,
+        "description": "与库选择无关"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Atomic State（Jotai / Recoil）相比 Normalized（Redux）的根本分歧是？",
+    "explanation": "**根本分歧有三**：①**状态结构**——Atomic 是独立 atoms、无中心 store，Normalized 是中心 store + `byId` 表；②**订阅粒度**——Atomic 天然按 atom 粒度触发重渲染，Normalized 需 `useSelector` + `shallowEqual` 手动控制；③**订阅绑定位置**——atom 依赖图绑在 atom 上（重构组件树不影响），Normalized 绑在组件树拓扑 / Provider 层级（重构组件树会影响连接）。",
+    "tags": ["状态架构策略", "高级", "atomic vs normalized"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "状态结构、订阅粒度、依赖绑定位置三者都不同",
+        "isCorrect": true,
+        "description": "三个根本分歧点"
+      },
+      {
+        "text": "只是 API 名称不同，本质相同",
+        "isCorrect": false,
+        "description": "范式哲学完全不同"
+      },
+      {
+        "text": "Jotai 不支持派生，Redux 支持",
+        "isCorrect": false,
+        "description": "Jotai 有 derived atom，两者都支持派生"
+      },
+      {
+        "text": "Redux 必须配 React，Jotai 可跨框架",
+        "isCorrect": false,
+        "description": "两者都以 React 为主"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Jotai 的 derived atom（派生原子）如何声明依赖？",
+    "explanation": "**Jotai 用 `atom(get => ...)` 声明派生 atom**，回调参数 `get` 用于读取其他 atom，框架自动构建依赖图。例如 `const totalAtom = atom((get) => get(priceAtom) * get(qtyAtom))`。当 `priceAtom` 或 `qtyAtom` 变化时，`totalAtom` 自动重算，订阅 `totalAtom` 的组件自动重渲染——声明式响应式数据流。",
+    "tags": ["状态架构策略", "高级", "derived atom"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "atom(get => get(a) + get(b))，框架自动构建依赖图",
+        "isCorrect": true,
+        "description": "声明式依赖，自动追踪"
+      },
+      {
+        "text": "用 useEffect 手动订阅 + setState 同步",
+        "isCorrect": false,
+        "description": "那是 React 命令式写法"
+      },
+      {
+        "text": "用 createSelector(a, b, (a, b) => a + b)",
+        "isCorrect": false,
+        "description": "这是 Redux reselect 写法"
+      },
+      {
+        "text": "用 @computed 装饰器",
+        "isCorrect": false,
+        "description": "这是 MobX 写法"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Vue v-model 双向绑定的底层机制是什么？",
+    "explanation": "**v-model 是 prop + event 的语法糖**。`<MyInput v-model=\"text\" />` 编译展开为 `<MyInput :modelValue=\"text\" @update:modelValue=\"text = $event\" />`。本质仍是单向数据流——父组件传 prop、子组件 emit event、父组件更新 state。Vue 3.4+ 推出 **`defineModel()` 宏**进一步简化自定义组件的 v-model 封装。",
+    "tags": ["状态架构策略", "中级", "v-model 原理"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "prop modelValue + event update:modelValue 的语法糖",
+        "isCorrect": true,
+        "description": "本质是单向数据流的语法糖"
+      },
+      {
+        "text": "真正的双向数据绑定，子组件直接改父状态",
+        "isCorrect": false,
+        "description": "Vue 不允许子组件直接改父状态"
+      },
+      {
+        "text": "基于 Proxy 的深度拦截",
+        "isCorrect": false,
+        "description": "那是 reactive 的机制"
+      },
+      {
+        "text": "基于 Object.defineProperty 的 getter/setter",
+        "isCorrect": false,
+        "description": "那是 Vue 2 的机制"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：以下哪种场景应避免使用 v-model 双向绑定？",
+    "explanation": "**v-model 适用于简单状态同步**（表单输入、开关）。**避免场景**：①跨层级传递（数据流隐式难追踪）；②复杂校验（需要中间转换）；③撤销 / 重做（需要历史快照）；④多状态联动。这些场景应改用**单向 `props + emit`** 显式可控，调试透明。",
+    "tags": ["状态架构策略", "中级", "v-model 适用"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "复杂校验、撤销/重做、跨层级传递等多状态联动场景",
+        "isCorrect": true,
+        "description": "应改用单向 props + emit"
+      },
+      {
+        "text": "受控表单输入框的 value 同步",
+        "isCorrect": false,
+        "description": "v-model 的典型适用场景"
+      },
+      {
+        "text": "开关组件（toggle）的显隐同步",
+        "isCorrect": false,
+        "description": "v-model 的典型适用场景"
+      },
+      {
+        "text": "简单的搜索框输入",
+        "isCorrect": false,
+        "description": "v-model 的典型适用场景"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Redux reducer 中直接 mutate state（如 state.push(item)）会破坏什么？",
+    "explanation": "**直接 mutate state 会破坏两件事**：①**引用相等检测**——Redux 通过 `===` 判断 state 是否变化，mutate 不改变引用，React 不会重渲染；②**time-travel 调试**——历史快照被污染，无法回放。必须**返回新对象**。Immer `produce` 是「可变书写 + 不可变结果」的桥接层，Redux Toolkit 内置 Immer 让你写 `state.x = 1` 但实际产出新对象。",
+    "tags": ["状态架构策略", "中级", "redux reducer"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "引用相等检测 + time-travel 历史回放",
+        "isCorrect": true,
+        "description": "两个核心破坏点"
+      },
+      {
+        "text": "代码可读性",
+        "isCorrect": false,
+        "description": "可读性是次要问题"
+      },
+      {
+        "text": "TypeScript 类型推断",
+        "isCorrect": false,
+        "description": "类型推断不受影响"
+      },
+      {
+        "text": "bundle 体积",
+        "isCorrect": false,
+        "description": "体积无关"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：Context Provider 放在应用最顶层且 value 包含频繁变化字段，会导致什么问题？",
+    "explanation": "**Context value 任何变化都会让所有 consumer 重渲染**——无论是否关心变化的那部分。把 Provider 放顶层 + value 含频繁变化字段 = 应用反模式：所有 useContext 消费者全部重渲染，性能随应用增长恶化。对策：①**拆 Context**（不同变化频率的字段分 Provider）；②快速变化字段用 store / atom 而非 Context。",
+    "tags": ["状态架构策略", "中级", "context 反模式"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "所有 useContext consumer 全部重渲染，无论是否关心变化字段",
+        "isCorrect": true,
+        "description": "无 shallow compare，整 value 比对"
+      },
+      {
+        "text": "Context 完全失效，无法获取 value",
+        "isCorrect": false,
+        "description": "功能正常，只是性能差"
+      },
+      {
+        "text": "TypeScript 类型检查失败",
+        "isCorrect": false,
+        "description": "类型检查无关"
+      },
+      {
+        "text": "应用启动时报错",
+        "isCorrect": false,
+        "description": "运行时无报错"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：以下哪种场景最适合选用 Redux（不可变 + 单向）而非 MobX（响应式）？",
+    "explanation": "**Redux 适合大型团队协作、需要 time-travel 调试、SSR 状态序列化、高可测试性、可预测变更审计**的场景。Redux 的纯函数 reducer 易测试、状态可序列化为 plain object 利于 SSR、time-travel 调试是核心卖点。MobX 适合中小规模、OOP 风格、快速上手、追求最少样板的场景。",
+    "tags": ["状态架构策略", "高级", "选型决策"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "大型团队 + time-travel 调试 + SSR 序列化 + 高可测试性",
+        "isCorrect": true,
+        "description": "Redux 的核心适用场景"
+      },
+      {
+        "text": "中小规模 + OOP 风格 + 快速上手 + 最少样板",
+        "isCorrect": false,
+        "description": "这是 MobX 的适用场景"
+      },
+      {
+        "text": "深层嵌套兄弟组件共享 + 性能敏感 + 无需 Provider",
+        "isCorrect": false,
+        "description": "这是 Jotai / Recoil 的适用场景"
+      },
+      {
+        "text": "服务端数据获取 + 缓存失效 + 乐观更新",
+        "isCorrect": false,
+        "description": "这是 RTK Query / TanStack Query 的场景"
+      }
+    ]
+  },
+  {
+    "stem": "状态架构策略：2026 年前端状态管理的「三分法」是指什么？",
+    "explanation": "**三分法**取代了过去「所有状态塞进 Redux」的单一范式：①**服务端状态**（API 返回实体）交给 Query 库（RTK Query / TanStack Query / SWR），职责是获取 / 缓存 / 失效 / 乐观更新；②**客户端 UI 状态**（开关、表单草稿、临时交互）用轻量 store / atom（Pinia / Zustand / Jotai）；③**关系型领域实体缓存**用 normalized state 或 Query 缓存。",
+    "tags": ["状态架构策略", "高级", "三分法"],
+    "categories": [
+      [
+        "技术方向",
+        "状态架构策略（本地 vs 全局 / 响应式 vs 不可变 / 原子化 / 规范化）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "服务端状态 Query 库 / 客户端 UI 轻量 store / 实体缓存 normalized",
+        "isCorrect": true,
+        "description": "三类状态各司其职"
+      },
+      {
+        "text": "Redux / MobX / Vuex 三选一",
+        "isCorrect": false,
+        "description": "这是库选型，不是状态分类"
+      },
+      {
+        "text": "本地 / 全局 / 服务端三层",
+        "isCorrect": false,
+        "description": "缺失「实体缓存」维度"
+      },
+      {
+        "text": "useState / useReducer / Context 三件套",
+        "isCorrect": false,
+        "description": "这是 React 内置 API，不是架构策略"
+      }
+    ]
+  }
+]
