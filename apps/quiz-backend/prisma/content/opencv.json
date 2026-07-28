@@ -1,0 +1,684 @@
+[
+  {
+    "stem": "OpenCV：库的核心数据结构与典型通道顺序是？",
+    "explanation": "OpenCV C++ 侧以 cv::Mat 为统一的多维数组容器，Python 侧通过零拷贝互转成 numpy.ndarray。图像默认按 H×W×C 排布、dtype 为 uint8。最易踩坑的是通道顺序——OpenCV 历史沿用 BGR 而非 RGB，因此与 PIL/Matplotlib/PyTorch 互通前必须用 cvtColor(COLOR_BGR2RGB) 转换，否则颜色会整体反转。",
+    "tags": ["opencv", "基础概念", "色彩空间"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "cv::Mat / numpy.ndarray，BGR 顺序",
+        "isCorrect": true,
+        "description": "C++ 用 cv::Mat、Python 用 ndarray，默认 BGR 排布（与 RGB 相反）"
+      },
+      {
+        "text": "Tensor，RGB 顺序",
+        "isCorrect": false,
+        "description": "这是 PyTorch/TensorFlow 的数据载体与色彩约定，不是 OpenCV"
+      },
+      {
+        "text": "IplImage，RGB 顺序",
+        "isCorrect": false,
+        "description": "IplImage 是 legacy C API，OpenCV 5.0 已彻底移除"
+      },
+      {
+        "text": "DataFrame，BGR 顺序",
+        "isCorrect": false,
+        "description": "DataFrame 是表格数据结构，与图像容器无关"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0.0 的发布时间与当前 4.x 维护版是？",
+    "explanation": "OpenCV 5.0.0 于 2026 年 6 月 6 日发布（GitHub Releases），是 2018 年以来首个大版本；与此同时 4.x 分支并行维护，2026 年 7 月 19 日发布 4.14.0。官方明确 4.x 进入仅修 bug 的维护期，新特性只进 5.x；生产环境升级前需先看 4→5 迁移指南。",
+    "tags": ["opencv", "版本", "发布"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "5.0.0（2026-06）/ 4.14.0（2026-07）",
+        "isCorrect": true,
+        "description": "GitHub Releases 确认 5.0.0 为 2026-06，4.14.0 为 2026-07，双分支并行"
+      },
+      {
+        "text": "4.10.0（2024-06）/ 5.0-alpha（2024-12）",
+        "isCorrect": false,
+        "description": "这是更早的版本，5.0.0 正式版已于 2026-06 发布"
+      },
+      {
+        "text": "5.0.0（2024-12）/ 4.13.0（2025-12）",
+        "isCorrect": false,
+        "description": "2024-12 是 5.0.0-alpha 预览版，正式版日期错"
+      },
+      {
+        "text": "6.0.0（2026-07）/ 4.14.0（2026-07）",
+        "isCorrect": false,
+        "description": "尚无 6.0；最新大版本仍是 5.0"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：读取图片并显示的最小代码骨架是？",
+    "explanation": "标准 IO 四件套：cv2.imread 读图（默认 BGR uint8）、cv2.imshow 开窗、cv2.waitKey(0) 阻塞等按键、cv2.destroyAllWindows 关窗。imshow 之后必须配 waitKey，否则窗口可能不刷新或瞬间关闭；脚本退出前 release/destroy 资源是好习惯。",
+    "tags": ["opencv", "图像IO", "imshow"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "imread → imshow → waitKey(0) → destroyAllWindows",
+        "isCorrect": true,
+        "description": "官方 Quickstart 的标准骨架：读、显、等键、关窗"
+      },
+      {
+        "text": "imread → waitKey → imshow → destroyAllWindows",
+        "isCorrect": false,
+        "description": "顺序错：必须先 imshow 再 waitKey，否则窗口内容刷不出来"
+      },
+      {
+        "text": "imshow → imread → waitKey → destroyAllWindows",
+        "isCorrect": false,
+        "description": "imread 必须在 imshow 之前，否则没有图像可显示"
+      },
+      {
+        "text": "imread → destroyAllWindows → imshow → waitKey",
+        "isCorrect": false,
+        "description": "destroyAllWindows 应放最后，否则刚开窗就被关"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：从 BGR 转 RGB 的正确调用是？",
+    "explanation": "色彩空间转换统一走 cv2.cvtColor(src, code)。OpenCV 默认加载的图是 BGR；要喂给 PyTorch、Matplotlib、PIL 等 RGB 习惯的库之前必须 cvtColor(img, cv2.COLOR_BGR2RGB)。HSV/LAB 等转换同理：COLOR_BGR2HSV、COLOR_BGR2LAB。注意 HSV 的 H 在 OpenCV 中范围是 0–179（不是 0–359）。",
+    "tags": ["opencv", "色彩空间", "cvtColor"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "cv2.cvtColor(img, cv2.COLOR_BGR2RGB)",
+        "isCorrect": true,
+        "description": "官方色彩转换入口：src + 转换码 COLOR_BGR2RGB"
+      },
+      {
+        "text": "img.convert('RGB')",
+        "isCorrect": false,
+        "description": "这是 PIL Image 的方法，不是 OpenCV API"
+      },
+      {
+        "text": "cv2.rgb(img)",
+        "isCorrect": false,
+        "description": "不存在 cv2.rgb 函数"
+      },
+      {
+        "text": "cv2.swapChannels(img, 'BGR', 'RGB')",
+        "isCorrect": false,
+        "description": "不存在该 API；通道交换通过 cvtColor 完成"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：imread 想保留 PNG 透明通道应如何调用？",
+    "explanation": "cv2.imread 默认返回 3 通道 BGR，会丢掉 PNG 的 alpha 通道。要保留需传第二个参数 cv2.IMREAD_UNCHANGED（值 -1），这样会返回 4 通道 BGRA。其他常用标志：IMREAD_GRAYSCALE(0) 强制单通道、IMREAD_COLOR(1) 强制 3 通道、IMREAD_REDUCED_COLOR_2 等用于降采样。",
+    "tags": ["opencv", "imread", "图像IO"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "cv2.imread('a.png', cv2.IMREAD_UNCHANGED)",
+        "isCorrect": true,
+        "description": "IMREAD_UNCHANGED(-1) 保留原图全部通道，含 alpha → BGRA"
+      },
+      {
+        "text": "cv2.imread('a.png')（默认）",
+        "isCorrect": false,
+        "description": "默认 IMREAD_COLOR 会丢弃 alpha，返回 3 通道 BGR"
+      },
+      {
+        "text": "cv2.imread('a.png', cv2.IMREAD_GRAYSCALE)",
+        "isCorrect": false,
+        "description": "灰度模式只返回单通道，更不会保留 alpha"
+      },
+      {
+        "text": "cv2.imread('a.png', keep_alpha=True)",
+        "isCorrect": false,
+        "description": "不存在 keep_alpha 参数"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：VideoCapture 同时支持哪两类输入？",
+    "explanation": "cv2.VideoCapture 的构造参数为整数时表示摄像头索引（0=默认摄像头、1=第二个），为字符串时表示视频文件路径或网络流（mp4/avi/rtsp/http-flv 等）。配合 read() 返回 (ret, frame)：ret=False 表示读完或读取失败。使用完必须 cap.release()，否则设备/文件句柄泄漏。",
+    "tags": ["opencv", "视频", "VideoCapture"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "整数（摄像头索引）与字符串（文件/流路径）",
+        "isCorrect": true,
+        "description": "0/1/2 = 摄像头索引；'video.mp4'/'rtsp://…' = 文件或流"
+      },
+      {
+        "text": "仅支持本地视频文件路径",
+        "isCorrect": false,
+        "description": "VideoCapture 同时支持摄像头索引与网络流"
+      },
+      {
+        "text": "仅支持设备序列号（USB ID）",
+        "isCorrect": false,
+        "description": "传整数即摄像头索引，不是 USB 序列号"
+      },
+      {
+        "text": "仅支持 RTSP 流地址",
+        "isCorrect": false,
+        "description": "字符串参数既可以是本地文件也可以是流"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：去除椒盐噪声最有效的滤波器是？",
+    "explanation": "椒盐噪声是孤立的极值像素，高斯/均值这类线性滤波会把噪声「摊开」反而模糊图像；中值滤波（cv2.medianBlur）取邻域中位数，对孤立极值天然免疫，是去椒盐噪声的标准做法。双边滤波保边但慢；Sobel 是边缘算子不是去噪。medianBlur 的核大小必须是正奇数。",
+    "tags": ["opencv", "滤波", "去噪"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "cv2.medianBlur(img, k)",
+        "isCorrect": true,
+        "description": "中值滤波对孤立极值（椒盐）效果碾压线性滤波"
+      },
+      {
+        "text": "cv2.GaussianBlur",
+        "isCorrect": false,
+        "description": "高斯是线性滤波，会把椒盐噪声摊开模糊，效果差"
+      },
+      {
+        "text": "cv2.Sobel",
+        "isCorrect": false,
+        "description": "Sobel 是梯度/边缘算子，不是去噪滤波"
+      },
+      {
+        "text": "cv2.threshold",
+        "isCorrect": false,
+        "description": "阈值是二值化，不是去噪"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：双边滤波（bilateralFilter）相对高斯模糊的核心优势是？",
+    "explanation": "双边滤波同时考虑空间距离与像素值差异两个权重：邻域内像素值接近的（同一边缘）才参与平均，因此能在平滑噪声的同时保留边缘。高斯/均值只看空间距离、必然糊边。代价是计算量大、速度最慢，常用于美颜、卡通化等保边场景。参数 d、sigmaColor、sigmaSpace 共同决定平滑强度。",
+    "tags": ["opencv", "滤波", "bilateral"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "保边去噪（平滑噪声但保留边缘）",
+        "isCorrect": true,
+        "description": "空间+值域双权重，使边缘像素不被「平均掉」"
+      },
+      {
+        "text": "速度比高斯快 10 倍",
+        "isCorrect": false,
+        "description": "恰恰相反，双边计算量最大、速度最慢"
+      },
+      {
+        "text": "自动去除所有噪声",
+        "isCorrect": false,
+        "description": "没有任何滤波能去除「所有」噪声，且双边对椒盐噪声效果一般"
+      },
+      {
+        "text": "可直接输出二值图",
+        "isCorrect": false,
+        "description": "双边是平滑滤波，不产生二值输出"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：cv2.findContours 在 5.x 的返回值是？",
+    "explanation": "OpenCV 4.x 与 5.x 的 findContours 返回二元组 (contours, hierarchy)；3.x 时代返回三元组 (image, contours, hierarchy)。这是从 3→4 升级最常见的破坏性变更之一，5.x 沿用 4.x 行为。contours 是一个 list，每个元素是 (N,1,2) 的 ndarray 表示一个轮廓的顶点；hierarchy 描述轮廓间的父子关系。",
+    "tags": ["opencv", "轮廓", "API变化"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "(contours, hierarchy)",
+        "isCorrect": true,
+        "description": "4.x/5.x 返回二元组，已不再返回 image"
+      },
+      {
+        "text": "(image, contours, hierarchy)",
+        "isCorrect": false,
+        "description": "这是 3.x 的返回值，4.x 起已移除首项 image"
+      },
+      {
+        "text": "仅 contours（list）",
+        "isCorrect": false,
+        "description": "hierarchy 仍在返回值中"
+      },
+      {
+        "text": "(contours, hierarchy, mask)",
+        "isCorrect": false,
+        "description": "不存在第三个 mask 返回值"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 对 DNN 模块 ONNX 算子覆盖的最大改进是？",
+    "explanation": "OpenCV 5.0 引入全新的 DNN 推理引擎（与经典引擎并存，可通过 ENGINE_AUTO 切换），ONNX 算子覆盖率从 4.x 的不足 23% 跃升到 80% 以上。这意味着大量 PyTorch/TF 导出的 ONNX 模型可直接在 OpenCV 内推理，不再强依赖 OpenVINO/TensorRT，端侧部署门槛大幅降低。",
+    "tags": ["opencv", "DNN", "ONNX", "5.0"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ONNX 算子覆盖率从 23% 跃升到 80%+",
+        "isCorrect": true,
+        "description": "新 DNN 引擎使 ONNX 算子覆盖从 4.x 的 23% 提升到 80% 以上"
+      },
+      {
+        "text": "内置了 PyTorch 训练后端",
+        "isCorrect": false,
+        "description": "OpenCV DNN 仅推理，不提供训练能力"
+      },
+      {
+        "text": "移除了对 CUDA 的支持",
+        "isCorrect": false,
+        "description": "5.0 仍支持 CUDA/OpenCL 后端，并未移除"
+      },
+      {
+        "text": "完全废弃了旧引擎只留新引擎",
+        "isCorrect": false,
+        "description": "新旧引擎并存，由 ENGINE_AUTO 自动选择"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 把 Calib3d 模块拆分成了哪几个？",
+    "explanation": "5.0 把原 calib3d 大模块按职责拆为四个：calib（标定核心）、stereo（立体视觉）、geometry（计算几何，含原 imgproc 中的 Delaunay 三角剖分、凸包等）、ptcloud（点云）。Python 侧调用名保持兼容，C++/Java 用户需要调整 include/import 路径。这是 5.0 模块化重构的一部分。",
+    "tags": ["opencv", "calib3d", "5.0", "模块"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "calib / stereo / geometry / ptcloud",
+        "isCorrect": true,
+        "description": "5.0 按 标定/立体/几何/点云 四个职责拆分"
+      },
+      {
+        "text": "calib2d / calib3d / calib4d",
+        "isCorrect": false,
+        "description": "不存在这种命名；拆分是按职责不是按维度"
+      },
+      {
+        "text": "geometry / ptcloud 两个",
+        "isCorrect": false,
+        "description": "共拆出四个模块，不是两个"
+      },
+      {
+        "text": "未拆分，仍是单一 calib3d",
+        "isCorrect": false,
+        "description": "5.0 已明确拆分为四个子模块"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 的最低 C++ 标准与被移除的历史 API 是？",
+    "explanation": "5.0 强制要求 C++17（GCC ≥ 9 / Clang ≥ 8 / MSVC 2019+），并彻底移除 legacy C API——包括 IplImage、CvMat、cvLoadImage、cvCreateImageHeader 等所有 C 风格结构与函数。这标志着 OpenCV 1.x 时代 API 的终结。Python 侧不受影响（cv2.<func>() 调用约定不变），但 C++ 老代码必须迁移到 cv::Mat/cv::imread 等 C++ API。",
+    "tags": ["opencv", "5.0", "C++17", "迁移"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "C++17；移除 legacy C API（IplImage 等）",
+        "isCorrect": true,
+        "description": "5.0 强制 C++17，彻底清除 OpenCV 1.x 时代的 C 结构与函数"
+      },
+      {
+        "text": "C++14；保留全部 C API",
+        "isCorrect": false,
+        "description": "4.x 是 C++11/14，5.0 升到 17 且移除 C API"
+      },
+      {
+        "text": "C++20；移除 Python 绑定",
+        "isCorrect": false,
+        "description": "5.0 是 C++17 不是 20，Python 绑定完整保留"
+      },
+      {
+        "text": "C++11；新增 IplImage 支持",
+        "isCorrect": false,
+        "description": "方向相反：5.0 移除而非新增 legacy C API"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 把 features2d 模块重命名为什么？",
+    "explanation": "5.0 将 features2d 重命名为 features，含义从「二维特征」扩展到包含深度学习-based 的局部特征与特征向量。常用算法 SIFT（cv2.SIFT_create）、ORB、AKAZE、FAST 的 Python 调用名不变，但 C++ 头文件路径与命名空间相应调整。SIFT 专利已于 2020 年过期，OpenCV 4.4 起回到主库无需 contrib。",
+    "tags": ["opencv", "features", "5.0", "SIFT"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "features",
+        "isCorrect": true,
+        "description": "5.0 重命名为 features，含义扩展到深度特征"
+      },
+      {
+        "text": "feature2d",
+        "isCorrect": false,
+        "description": "仅大小写差异，仍带 2d 后缀"
+      },
+      {
+        "text": "keypoints",
+        "isCorrect": false,
+        "description": "不存在 keypoints 模块名"
+      },
+      {
+        "text": "descriptor",
+        "isCorrect": false,
+        "description": "不存在 descriptor 模块名"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：blobFromImage 的作用与输出形状是？",
+    "explanation": "cv2.dnn.blobFromImage 把 HWC 的 ndarray 转成 NCHW 的 4 维 blob，同时完成 resize、减均值、缩放、通道交换（swapRB 把 BGR→RGB）等预处理。这是 DNN 推理前预处理的标准一步——大多数 CV 模型都要求 NCHW 输入。blobFromImages 是批量版本。返回的 blob 可直接喂给 net.setInput。",
+    "tags": ["opencv", "DNN", "blobFromImage"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把 HWC 图像转成 NCHW blob，含 resize/减均值/缩放/换通道",
+        "isCorrect": true,
+        "description": "一步完成 DNN 预处理，输出 4 维 NCHW 张量"
+      },
+      {
+        "text": "把图像转成 PIL Image 对象",
+        "isCorrect": false,
+        "description": "blobFromImage 输出 numpy blob，与 PIL 无关"
+      },
+      {
+        "text": "对图像做高斯模糊",
+        "isCorrect": false,
+        "description": "模糊是 GaussianBlur 的职责，不是 blobFromImage"
+      },
+      {
+        "text": "把 NCHW blob 转回 HWC 图像",
+        "isCorrect": false,
+        "description": "方向相反；它是 HWC→NCHW 的预处理"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：Canny 边缘检测的「双阈值滞后」含义是？",
+    "explanation": "Canny 算法对梯度幅值用两个阈值：高于 high 的像素一定是边缘、低于 low 的像素一定不是、介于两者之间的像素只有在与已确认边缘连通时才被保留为边缘。这种滞后策略比单一阈值更鲁棒，能避免边缘断裂。建议先转灰度、再选 low:high ≈ 1:2 或 1:3 的比例。",
+    "tags": ["opencv", "边缘检测", "Canny"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "高于 high 必是边缘、低于 low 必不是、中间值需与边缘连通才保留",
+        "isCorrect": true,
+        "description": "双阈值滞后策略避免边缘断裂，比单阈值更鲁棒"
+      },
+      {
+        "text": "只用 low 阈值，高于即边缘",
+        "isCorrect": false,
+        "description": "忽略 high 与连通性，是单阈值策略"
+      },
+      {
+        "text": "high 与 low 取相同值",
+        "isCorrect": false,
+        "description": "两阈值相同就退化为单阈值，失去滞后意义"
+      },
+      {
+        "text": "low 与 high 是 RGB 通道索引",
+        "isCorrect": false,
+        "description": "二者是梯度阈值，与色彩通道无关"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：SIFT 与 ORB 的主要区别是？",
+    "explanation": "SIFT（Scale-Invariant Feature Transform）描述子为 128 维 float，尺度/旋转/光照不变性强、精度高但速度慢；其专利 2020 年过期后回主库 cv2.SIFT_create()。ORB（Oriented FAST + Rotated BRIEF）描述子是 32 维二进制，免费、速度快，适合实时与移动端，但精度略逊。匹配时 SIFT 用 NORM_L2，ORB 用 NORM_HAMMING。",
+    "tags": ["opencv", "特征点", "SIFT", "ORB"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SIFT 128 维 float 精度高慢；ORB 32 维二进制快",
+        "isCorrect": true,
+        "description": "精度/速度/描述子类型三方面都不同，匹配距离度量也不同"
+      },
+      {
+        "text": "SIRT 与 ORB 完全等价",
+        "isCorrect": false,
+        "description": "二者算法、描述子、性能差异显著"
+      },
+      {
+        "text": "ORB 比 SIFT 精度更高速度更慢",
+        "isCorrect": false,
+        "description": "恰恰相反：ORB 更快精度略低"
+      },
+      {
+        "text": "二者都只能检测不能描述",
+        "isCorrect": false,
+        "description": "两者都同时输出关键点 (kp) 与描述子 (des)"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 把 G-API 与 ML 模块的处理是？",
+    "explanation": "5.0 把 Graph API（G-API）与经典机器学习模块（ML，含 SVM/KNN/RTrees/Boost 等）从主库迁移到 opencv_contrib。它们仍在维护、可正常使用，但默认编译的主库不再包含，需要安装 opencv-contrib-python 或自编译时开启对应 cmake 选项。这是 5.0 模块瘦身策略的一部分——主库聚焦核心 CV 与 DNN。",
+    "tags": ["opencv", "G-API", "ML", "5.0", "contrib"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "迁到 opencv_contrib，主库默认不含",
+        "isCorrect": true,
+        "description": "G-API 与 ML 仍在维护，但需要 contrib 包或自编译开启"
+      },
+      {
+        "text": "彻底删除",
+        "isCorrect": false,
+        "description": "未删除，只是迁移到 contrib"
+      },
+      {
+        "text": "合并进 dnn 模块",
+        "isCorrect": false,
+        "description": "三者定位不同，并未合并"
+      },
+      {
+        "text": "保留在主库且默认编译",
+        "isCorrect": false,
+        "description": "5.0 已从主库默认编译中移除二者"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 的协议变更与目的是？",
+    "explanation": "OpenCV 历史协议是 BSD 3-Clause，5.0 通过 Evolution Proposal OE 32 切换为 Apache 2.0。Apache 2.0 比 BSD 更现代：含明确的专利授权条款，对商用更友好，与企业级合规要求更契合，也利于吸引贡献。这一变更与很多大版本升级（如 PyTorch Apache 2.0）趋势一致。",
+    "tags": ["opencv", "5.0", "license", "Apache"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "从 BSD 3-Clause 切换到 Apache 2.0",
+        "isCorrect": true,
+        "description": "OE 32 提案：5.0 切换到含专利授权的 Apache 2.0，更利于商用"
+      },
+      {
+        "text": "从 Apache 2.0 切换到 GPL",
+        "isCorrect": false,
+        "description": "方向相反：5.0 是从 BSD 转 Apache 2.0，且 GPL 会限制商用"
+      },
+      {
+        "text": "改为专有商业协议",
+        "isCorrect": false,
+        "description": "OpenCV 始终是开源协议"
+      },
+      {
+        "text": "保持 BSD 3-Clause 不变",
+        "isCorrect": false,
+        "description": "5.0 已正式切换协议"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：在 DNN 模块中切换到 CUDA 后端的正确写法是？",
+    "explanation": "DNN 模块通过 setPreferableBackend 设后端、setPreferableTarget 设目标设备。CUDA 推理需同时设 DNN_BACKEND_CUDA 与 DNN_TARGET_CUDA（或 DNN_TARGET_CUDA_FP16 用半精度）。这要求 OpenCV 编译时开启了 WITH_CUDA 选项，标准 PyPI wheel 通常不含 CUDA 支持，需自行编译或用 conda 的特殊版本。",
+    "tags": ["opencv", "DNN", "CUDA"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "setPreferableBackend(DNN_BACKEND_CUDA) + setPreferableTarget(DNN_TARGET_CUDA)",
+        "isCorrect": true,
+        "description": "后端与目标必须同时设为 CUDA 系列，且编译时需 WITH_CUDA"
+      },
+      {
+        "text": "只设 DNN_TARGET_CUDA 即可",
+        "isCorrect": false,
+        "description": "后端不切到 CUDA，仅设 target 无效"
+      },
+      {
+        "text": "net.use_cuda = True",
+        "isCorrect": false,
+        "description": "不存在 use_cuda 属性"
+      },
+      {
+        "text": "默认就是 CUDA",
+        "isCorrect": false,
+        "description": "默认后端是 OPENCV、目标 CPU，需显式切换"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：用 cv2.morphologyEx 实现闭运算应传哪个 op？",
+    "explanation": "闭运算（Close）= 先膨胀后腐蚀，作用是填充小白洞、连接断裂区域。对应 cv2.morphologyEx 的 op=MORPH_CLOSE。其他常用：MORPH_OPEN（开运算，去小白点）、MORPH_GRADIENT（梯度=膨胀-腐蚀，提取边缘）、MORPH_TOPHAT（顶帽）、MORPH_BLACKHAT（黑帽）。",
+    "tags": ["opencv", "形态学", "morphologyEx"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cv2.MORPH_CLOSE",
+        "isCorrect": true,
+        "description": "闭运算 = 膨胀 + 腐蚀，填小黑洞"
+      },
+      {
+        "text": "cv2.MORPH_OPEN",
+        "isCorrect": false,
+        "description": "开运算 = 腐蚀 + 膨胀，去小白点，是相反操作"
+      },
+      {
+        "text": "cv2.MORPH_GRADIENT",
+        "isCorrect": false,
+        "description": "梯度 = 膨胀 - 腐蚀，提取边缘"
+      },
+      {
+        "text": "cv2.MORPH_ERODE",
+        "isCorrect": false,
+        "description": "单独腐蚀不是闭运算（闭运算是膨胀+腐蚀的组合）"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：5.0 引入的新 DNN 引擎与经典引擎的关系是？",
+    "explanation": "5.0 在 DNN 模块中引入全新推理引擎（ONNX 优先、覆盖率高），同时保留经典引擎（向后兼容）。开发者可通过 ENGINE_AUTO 让 OpenCV 自动选择，或显式指定。新引擎默认启用，覆盖 80%+ 的 ONNX 算子；对于新引擎尚不支持的旧算子会自动回退到经典引擎，保证兼容性。这种渐进迁移策略降低了升级风险。",
+    "tags": ["opencv", "5.0", "DNN", "引擎"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "并存，由 ENGINE_AUTO 自动选择，新引擎默认启用",
+        "isCorrect": true,
+        "description": "新旧引擎并存，自动回退保证兼容，新引擎覆盖 80%+ ONNX"
+      },
+      {
+        "text": "新引擎完全替代经典引擎",
+        "isCorrect": false,
+        "description": "经典引擎仍保留，未完全替代"
+      },
+      {
+        "text": "经典引擎被删除",
+        "isCorrect": false,
+        "description": "经典引擎仍在，用于不支持算子的回退"
+      },
+      {
+        "text": "二者互斥，必须二选一且不可切换",
+        "isCorrect": false,
+        "description": "可由 ENGINE_AUTO 智能切换，并非互斥"
+      }
+    ]
+  },
+  {
+    "stem": "OpenCV：透视变换（鸟瞰/文档校正）的核心 API 组合是？",
+    "explanation": "透视变换需要 4 对源/目标点：先用 cv2.getPerspectiveTransform(src_4pts, dst_4pts) 得到 3×3 变换矩阵 M，再用 cv2.warpPerspective(img, M, dsize) 应用变换。文档扫描、车牌校正、俯视图（鸟瞰）等场景常用。与之相对的仿射变换只需 3 对点，用 getAffineTransform + warpAffine。",
+    "tags": ["opencv", "几何变换", "透视"],
+    "categories": [
+      ["技术方向", "OpenCV"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "getPerspectiveTransform + warpPerspective（4 点对）",
+        "isCorrect": true,
+        "description": "透视变换需要 4 对源/目标点，得到 3×3 矩阵后 warpPerspective"
+      },
+      {
+        "text": "getAffineTransform + warpAffine（3 点对）",
+        "isCorrect": false,
+        "description": "这是仿射变换，不是透视"
+      },
+      {
+        "text": "getRotationMatrix2D + warpAffine",
+        "isCorrect": false,
+        "description": "这是绕点旋转，无法做透视校正"
+      },
+      {
+        "text": "resize + flip",
+        "isCorrect": false,
+        "description": "缩放与翻转不能做透视投影"
+      }
+    ]
+  }
+]

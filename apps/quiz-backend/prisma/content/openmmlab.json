@@ -1,0 +1,684 @@
+[
+  {
+    "stem": "OpenMMLab：OpenMMLab 2.0 的底座训练引擎是？",
+    "explanation": "OpenMMLab 2.0 架构把训练引擎下沉为独立底座 MMEngine——它统一承载 Runner、Registry、Config、OptimWrapper、Hook、Visualizer 等训练基础设施；MMCV 则负责 CV 基础算子（图像读写、CUDA 算子如 DeformConv/RoIAlign）。各任务算法库（MMDetection/MMPose 等）建在 MMEngine + MMCV 之上。",
+    "tags": ["openmmlab", "mmengine", "架构", "基础概念"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "MMEngine",
+        "isCorrect": true,
+        "description": "OpenMMLab 2.0 的训练引擎底座，承载 Runner/Registry/Config/Hook 等"
+      },
+      {
+        "text": "MMCV",
+        "isCorrect": false,
+        "description": "MMCV 是 CV 基础算子库（imread/CUDA ops），不是训练引擎"
+      },
+      {
+        "text": "MMDetection",
+        "isCorrect": false,
+        "description": "MMDetection 是任务算法库（检测），建在 MMEngine 之上"
+      },
+      {
+        "text": "PyTorch Lightning",
+        "isCorrect": false,
+        "description": "Lightning 是独立的训练框架，OpenMMLab 用自研 MMEngine 而非它"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：MMPreTrain 是由哪两个库合并而来？",
+    "explanation": "MMPreTrain 由原 MMClassification（图像分类）与 MMSelfSup（自监督学习）于 2023 年合并而成，并扩展到图像描述、VQA、视觉定位等多模态推理任务。原 MMClassification 的功能现归属 MMPreTrain，新代码应迁移。",
+    "tags": ["openmmlab", "mmpretrain", "mmclassification", "生态"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "MMClassification + MMSelfSup",
+        "isCorrect": true,
+        "description": "2023 年合并为 MMPreTrain，覆盖分类、自监督及多模态推理"
+      },
+      {
+        "text": "MMDetection + MMSegmentation",
+        "isCorrect": false,
+        "description": "两者是独立的检测与分割算法库，未合并"
+      },
+      {
+        "text": "MMOCR + MMTracking",
+        "isCorrect": false,
+        "description": "OCR 与跟踪库各自独立，与预训练无关"
+      },
+      {
+        "text": "MMRotate + MMDeploy",
+        "isCorrect": false,
+        "description": "旋转检测与部署库，与 MMPreTrain 无合并关系"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Registry 机制解决的核心问题是？",
+    "explanation": "Registry 建立「字符串名字 → 类/函数」的映射，让 config 文件里写 type='ResNet' 就能在运行时找到对应类并实例化。这是 OpenMMLab 把模型架构、数据集、优化器全部序列化进配置文件的基础，也是跨库模块复用的前提。",
+    "tags": ["openmmlab", "registry", "核心机制"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用字符串名字驱动类的实例化，让架构可序列化进配置",
+        "isCorrect": true,
+        "description": "type='Xxx' 即可触发 Registry.build 构造实例"
+      },
+      {
+        "text": "加速 PyTorch 前向计算",
+        "isCorrect": false,
+        "description": "Registry 与计算性能无关，是实例化与解耦机制"
+      },
+      {
+        "text": "压缩模型权重文件体积",
+        "isCorrect": false,
+        "description": "权重压缩是另一回事，Registry 不管存储"
+      },
+      {
+        "text": "替代 Python 的 import 系统",
+        "isCorrect": false,
+        "description": "Registry 依赖 import 触发注册，不是替代关系"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：MMDetection 主要覆盖的任务是？",
+    "explanation": "MMDetection 是 OpenMMLab 的目标检测算法库，支持 2D 目标检测、实例分割、全景分割及半监督检测，含 Faster R-CNN、Mask R-CNN、DETR 与自研实时检测器 RTMDet 等模型；COCO/VOC 是标准数据集。3D 检测由独立的 MMDetection3D 负责。",
+    "tags": ["openmmlab", "mmdetection", "任务"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "目标检测、实例分割、全景分割",
+        "isCorrect": true,
+        "description": "MMDetection 的核心任务范围"
+      },
+      {
+        "text": "语义分割与单目深度估计",
+        "isCorrect": false,
+        "description": "这是 MMSegmentation 的任务"
+      },
+      {
+        "text": "2D/3D 人体姿态估计",
+        "isCorrect": false,
+        "description": "这是 MMPose 的任务"
+      },
+      {
+        "text": "文字检测与识别",
+        "isCorrect": false,
+        "description": "这是 MMOCR 的任务"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：使用 OpenMMLab 算法库推理前通常需要调用的初始化函数是？",
+    "explanation": "Registry 是按需加载的——只有当含 @register_module() 的文件被 import 过，类才进注册表。所以推理/训练脚本第一步常是 register_all_modules()（如 mmdet.utils.register_all_modules），触发该库全部 model/dataset 模块的 import，否则 config 里的 type 会报「not in registry」。",
+    "tags": ["openmmlab", "registry", "推理", "最佳实践"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "register_all_modules()",
+        "isCorrect": true,
+        "description": "触发算法库全部模块 import，确保 config 的 type 可被解析"
+      },
+      {
+        "text": "torch.cuda.init()",
+        "isCorrect": false,
+        "description": "这是 CUDA 初始化，与 OpenMMLab 注册无关"
+      },
+      {
+        "text": "mmcv.use_opencv()",
+        "isCorrect": false,
+        "description": "不存在该函数，OpenCV 由 MMCV 自动依赖"
+      },
+      {
+        "text": "Config.preload()",
+        "isCorrect": false,
+        "description": "Config 没有 preload 方法，注册靠 register_all_modules"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：OpenMMLab 2.0 的 Config 文件采用什么语法？",
+    "explanation": "OpenMMLab 的 config 是纯 Python 文件（*.py），顶层是 Python 变量赋值（如 model = dict(...)），而非 YAML/JSON。这让它能用 Python 的条件、循环、dict 嵌套组装复杂模型，并通过 _base_ 机制实现继承与覆盖，表达力远超 YAML。",
+    "tags": ["openmmlab", "config", "基础概念"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "纯 Python（*.py 文件，顶层是变量赋值）",
+        "isCorrect": true,
+        "description": "OpenMMLab 2.0 官方推荐的 config 形态"
+      },
+      {
+        "text": "YAML（与 Ultralytics 一致）",
+        "isCorrect": false,
+        "description": "Ultralytics 用 YAML，OpenMMLab 用纯 Python"
+      },
+      {
+        "text": "JSON",
+        "isCorrect": false,
+        "description": "JSON 表达力弱，OpenMMLab 不用它做主 config（虽支持加载）"
+      },
+      {
+        "text": "TOML",
+        "isCorrect": false,
+        "description": "OpenMMLab config 不用 TOML"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：安装 MMCV 时若想用预编译包，正确的做法是？",
+    "explanation": "MMCV 含大量 CUDA 算子（DeformConv/RoIAlign），源码编译耗时长且易错。官方提供预编译 wheel，需用 -f 指定匹配 CUDA 与 PyTorch 版本的索引 URL，或用 mim（OpenMIM）自动选对。版本错配是新手第一坑，会报 undefined symbol。",
+    "tags": ["openmmlab", "mmcv", "安装", "最佳实践"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "mim install mmcv 或 pip install mmcv -f {openmmlab 索引 URL}",
+        "isCorrect": true,
+        "description": "官方预编译包通道，按 CUDA/Torch 版本选 wheel"
+      },
+      {
+        "text": "pip install mmcv（不指定索引）",
+        "isCorrect": false,
+        "description": "PyPI 默认包不含 CUDA 算子，会退化或报错"
+      },
+      {
+        "text": "conda install -c openmmlab mmcv",
+        "isCorrect": false,
+        "description": "OpenMMLab 主推 pip/mim，未官方维护 conda 通道"
+      },
+      {
+        "text": "git clone 后 python setup.py install",
+        "isCorrect": false,
+        "description": "源码编译慢且易失败，仅作最后手段"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Registry 的 scope 字段作用是？",
+    "explanation": "scope 是 Registry 的命名域，让不同算法库（mmdet/mmpose/mmpretrain）的同名模块互不冲突，并形成层级查找树：子库注册器声明 parent 指向父库，查找时本节点找不到就上溯父节点。前缀写法 type='mmdet.Xxx' 可显式指定从某 scope 查。",
+    "tags": ["openmmlab", "registry", "scope", "核心机制"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "作为命名域隔离同名模块，并支持层级查找与跨库复用",
+        "isCorrect": true,
+        "description": "scope 是 OpenMMLab 跨库模块共享的关键"
+      },
+      {
+        "text": "限制注册器的最大模块数量",
+        "isCorrect": false,
+        "description": "scope 与数量限制无关"
+      },
+      {
+        "text": "控制注册顺序以影响 build 速度",
+        "isCorrect": false,
+        "description": "scope 不影响 build 性能，是命名与查找机制"
+      },
+      {
+        "text": "等同于 Python 的包路径",
+        "isCorrect": false,
+        "description": "scope 是逻辑命名域，与 import 路径不同概念"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：在 mmdet 的 config 中写 type='mmengine.ResNet' 表示？",
+    "explanation": "前缀写法 type='parent_scope.Xxx' 是 Registry 的显式跨库查找语法——明确要求从父库 mmengine 的注册器查找 ResNet，而不是当前 scope（mmdet）。用于在子库里复用父库注册的通用模块，避免命名歧义。",
+    "tags": ["openmmlab", "registry", "scope", "跨库"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "显式从父库 mmengine 的注册器查找 ResNet",
+        "isCorrect": true,
+        "description": "前缀语法指定查找的具体 scope"
+      },
+      {
+        "text": "导入 mmengine 的源码文件",
+        "isCorrect": false,
+        "description": "type 字符串不触发源码 import，是注册查找"
+      },
+      {
+        "text": "把 ResNet 实例序列化为 mmengine 格式",
+        "isCorrect": false,
+        "description": "与序列化无关，是运行时查找"
+      },
+      {
+        "text": "用 mmengine 的算子重写 ResNet",
+        "isCorrect": false,
+        "description": "不会改写类，只是定位已注册的类"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Config 的 _base_ 继承机制，下列描述正确的是？",
+    "explanation": "_base_ 是 config 继承机制：子 config 声明 _base_ = ['./a.py', './b.py']，父 config 的字段按顺序合并到子 config，子 config 的同名字段覆盖父字段（dict 递归合并）。需要整体替换（而非合并）某字段时，在该字段内加 _delete_=True。列表字段（如 param_scheduler）是整体替换不是合并。",
+    "tags": ["openmmlab", "config", "继承"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "_base_ 声明父 config，子覆盖父，dict 递归合并，列表整体替换",
+        "isCorrect": true,
+        "description": "OpenMMLab config 继承的完整语义"
+      },
+      {
+        "text": "_base_ 只能继承一个父 config",
+        "isCorrect": false,
+        "description": "_base_ 是列表，可继承多个"
+      },
+      {
+        "text": "子 config 必须完全重写父 config 的所有字段",
+        "isCorrect": false,
+        "description": "未覆盖的字段会继承自父 config"
+      },
+      {
+        "text": "列表字段也会逐元素合并",
+        "isCorrect": false,
+        "description": "列表是整体替换，这是常见陷阱"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：想在子 config 中完全替换父 config 的某个 dict 字段（不合并），应使用？",
+    "explanation": "默认情况下子 config 的 dict 字段会与父 config 递归合并。若想完全替换（删除父字段全部内容只保留子定义），需在该字段内加 _delete_=True。例如 model = dict(backbone=dict(_delete_=True, type='MobileNetV3', ...)) 会删除父 backbone 全部字段。",
+    "tags": ["openmmlab", "config", "_delete_", "进阶"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "_delete_=True",
+        "isCorrect": true,
+        "description": "显式声明该字段整体替换而非合并"
+      },
+      {
+        "text": "overwrite=True",
+        "isCorrect": false,
+        "description": "Config 无此参数"
+      },
+      {
+        "text": "replace=True",
+        "isCorrect": false,
+        "description": "Config 无此参数"
+      },
+      {
+        "text": "force=True",
+        "isCorrect": false,
+        "description": "force 是 Registry.register_module 的参数，与 Config 无关"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Runner 训练流程中，Hook 的作用是？",
+    "explanation": "Hook 是 Runner 训练流程的插桩机制，在 before_run/before_train/before_train_epoch/before_train_iter/after_train_iter/after_train_epoch/after_train 等节点插入自定义逻辑。CheckpointHook（存 ckpt）、LoggerHook（记录日志）、ParamSchedulerHook（调 LR）等都是内置 Hook。用户可继承 Hook 自定义钩子。",
+    "tags": ["openmmlab", "runner", "hook", "训练"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "在训练生命周期的各节点插入自定义逻辑（如存 ckpt、记日志、调 LR）",
+        "isCorrect": true,
+        "description": "Hook 是 Runner 流程的扩展点"
+      },
+      {
+        "text": "替代 PyTorch 的 backward 计算",
+        "isCorrect": false,
+        "description": "Hook 不接管梯度，反向传播由 OptimWrapper 触发"
+      },
+      {
+        "text": "管理数据加载的多进程",
+        "isCorrect": false,
+        "description": "数据加载由 DataLoader 负责，与 Hook 无关"
+      },
+      {
+        "text": "编译模型为 TorchScript",
+        "isCorrect": false,
+        "description": "Hook 不负责模型编译"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：OptimWrapper 的 accumulative_counts 参数作用是？",
+    "explanation": "accumulative_counts 实现梯度累积：在 accumulative_counts 个 iteration 内累加梯度，达到阈值后才调用 optimizer.step() 并清零梯度。等效于把 batch_size 放大 accumulative_counts 倍，常用于显存不足时模拟大 batch 训练。",
+    "tags": ["openmmlab", "optimwrapper", "梯度累积", "训练技巧"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "梯度累积 N 步后再更新参数，等效放大 batch_size",
+        "isCorrect": true,
+        "description": "小显存跑大 batch 的常用技巧"
+      },
+      {
+        "text": "限制优化器的最大参数数量",
+        "isCorrect": false,
+        "description": "与参数数量无关"
+      },
+      {
+        "text": "控制学习率衰减的步数",
+        "isCorrect": false,
+        "description": "学习率衰减由 ParamScheduler 负责"
+      },
+      {
+        "text": "设置混合精度的缩放因子",
+        "isCorrect": false,
+        "description": "AMP 缩放由 AmpOptimWrapper 的 scaler 管理，与 accumulative_counts 不同"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：OpenMMLab 2.0 用什么替代了旧版的 step 学习率？",
+    "explanation": "OpenMMLab 2.0 引入 ParamScheduler 体系替代旧版单一 step LR，支持 LinearLR/CosineAnnealingLR/MultiStepLR/CosineRestarts/StepLR 等多种调度器，并可在 param_scheduler 列表中组合多段调度（如先 warmup 再 cosine 衰减），比旧版灵活得多。",
+    "tags": ["openmmlab", "paramscheduler", "学习率", "训练"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ParamScheduler（支持 LinearLR/CosineAnnealingLR/MultiStepLR 等多段组合）",
+        "isCorrect": true,
+        "description": "OpenMMLab 2.0 的学习率调度抽象"
+      },
+      {
+        "text": "torch.optim.lr_scheduler",
+        "isCorrect": false,
+        "description": "OpenMMLab 自研 ParamScheduler，不直接用 PyTorch 原生"
+      },
+      {
+        "text": "HuggingFace get_linear_schedule_with_warmup",
+        "isCorrect": false,
+        "description": "这是 HF Transformers 的工具，非 OpenMMLab 体系"
+      },
+      {
+        "text": "仍用 lr_step 字段配置",
+        "isCorrect": false,
+        "description": "lr_step 是 1.x 旧版写法，2.0 已迁移到 ParamScheduler"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：命令行临时修改 config 字段的正确方式是？",
+    "explanation": "tools/train.py 支持 --cfg-options key=value 参数，用点号分隔嵌套路径（如 --cfg-options model.backbone.depth=101 optimizer.lr=0.01），无需改 config 文件即可临时覆盖。底层调用 Config.merge_from_dict。",
+    "tags": ["openmmlab", "config", "命令行", "技巧"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "--cfg-options model.backbone.depth=101",
+        "isCorrect": true,
+        "description": "点号路径覆盖嵌套字段，等价于 merge_from_dict"
+      },
+      {
+        "text": "--override model.backbone.depth 101",
+        "isCorrect": false,
+        "description": "OpenMMLab 的参数名是 --cfg-options，不是 --override"
+      },
+      {
+        "text": "--set model.backbone.depth=101",
+        "isCorrect": false,
+        "description": "无 --set 参数"
+      },
+      {
+        "text": "直接编辑 config 文件，无命令行覆盖机制",
+        "isCorrect": false,
+        "description": "OpenMMLab 明确提供 --cfg-options"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Visualizer 支持的可视化后端是？",
+    "explanation": "MMEngine 的 Visualizer 支持多种 vis_backends：LocalVisBackend（写本地文件）、TensorboardVisBackend（写 TB 事件文件）、WandbVisBackend（上报 WandB）。可在 vis_backends 列表中同时配置多个后端，数据会同时写到所有目的地。",
+    "tags": ["openmmlab", "visualizer", "可视化"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "本地文件、TensorBoard、WandB（可同时挂多个）",
+        "isCorrect": true,
+        "description": "官方内置的三类 vis_backend"
+      },
+      {
+        "text": "仅 TensorBoard",
+        "isCorrect": false,
+        "description": "还有 Local 与 WandB 两个后端"
+      },
+      {
+        "text": "仅本地文件",
+        "isCorrect": false,
+        "description": "TensorBoard 与 WandB 都支持"
+      },
+      {
+        "text": "仅 MLflow",
+        "isCorrect": false,
+        "description": "MLflow 非官方内置后端"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：自定义模块若不在默认 import 链上，应如何在 config 中声明？",
+    "explanation": "OpenMMLab config 支持顶层 custom_imports 字段：custom_imports = dict(imports=['my_proj.models'], allow_failed_imports=False)，MMEngine 启动时会自动 import 该模块，触发其中的 @register_module() 装饰器，使自定义类进入注册表。allow_failed_imports=False 会在 import 失败时报错。",
+    "tags": ["openmmlab", "config", "custom_imports", "自定义"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在 config 顶层写 custom_imports = dict(imports=['my_proj.models'])",
+        "isCorrect": true,
+        "description": "MMEngine 会自动 import 指定模块以触发注册"
+      },
+      {
+        "text": "把模块文件放到 mmengine 包目录下",
+        "isCorrect": false,
+        "description": "改包内文件升级即丢失，非官方做法"
+      },
+      {
+        "text": "设置环境变量 MMENGINE_MODULES=my_proj.models",
+        "isCorrect": false,
+        "description": "不存在该环境变量"
+      },
+      {
+        "text": "在 config 里写 import my_proj.models",
+        "isCorrect": false,
+        "description": "config 顶层不支持任意 import 语句，要用 custom_imports 字段"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：Registry 默认对同名重复注册的行为是？",
+    "explanation": "默认情况下，Registry 禁止重复注册同名模块——重复注册会抛错，避免无意覆盖。确实需要覆盖（如魔改某个内置类）时，用 @REGISTRY.register_module(force=True) 显式声明强制覆盖。",
+    "tags": ["openmmlab", "registry", "force", "进阶"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "默认报错，需 force=True 才允许覆盖",
+        "isCorrect": true,
+        "description": "register_module(force=True) 显式覆盖同名"
+      },
+      {
+        "text": "默认静默覆盖后注册的",
+        "isCorrect": false,
+        "description": "恰好相反，默认禁止覆盖以保护已注册项"
+      },
+      {
+        "text": "默认保留先注册的，忽略后者",
+        "isCorrect": false,
+        "description": "不是静默忽略，而是抛错"
+      },
+      {
+        "text": "默认按 scope 自动重命名",
+        "isCorrect": false,
+        "description": "不会自动重命名，直接报错"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：配置文件里写 _scope_='mmpretrain' 的作用是？",
+    "explanation": "在 config 的某个 dict 块内写 _scope_='mmpretrain'，会临时把该块（及其子块）的 Registry 查找 scope 切换到 mmpretrain。用于在主 scope 是 mmdet 的 config 里，借用兄弟库 mmpretrain 注册的模块，避免逐个 type 写前缀。",
+    "tags": ["openmmlab", "registry", "_scope_", "跨库", "进阶"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "临时切换该 config 块的 Registry 查找 scope 到 mmpretrain",
+        "isCorrect": true,
+        "description": "块级 scope 切换，便于复用兄弟库模块"
+      },
+      {
+        "text": "把训练日志写到 mmpretrain 目录",
+        "isCorrect": false,
+        "description": "_scope_ 与日志目录无关"
+      },
+      {
+        "text": "安装 mmpretrain 包",
+        "isCorrect": false,
+        "description": "包安装靠 pip/mim，与 config 字段无关"
+      },
+      {
+        "text": "声明该 config 由 mmpretrain 维护",
+        "isCorrect": false,
+        "description": "这是元信息用途，但 _scope_ 的实际作用是查找切换"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：多卡分布式训练的标准启动命令是？",
+    "explanation": "OpenMMLab 提供 tools/dist_train.sh 脚本封装 torch.distributed.launch，用法为 ./tools/dist_train.sh config.py N（N 为 GPU 数）。Runner 内部已封装 init_dist 与 DistributedDataParallel，config 里 batch_size 是单卡值（总 batch = batch_size × N）。Slurm 集群用 tools/slurm_train.sh。",
+    "tags": ["openmmlab", "分布式", "训练", "命令"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "./tools/dist_train.sh config.py 8",
+        "isCorrect": true,
+        "description": "官方封装的 torchrun/launch 脚本，N=GPU 数"
+      },
+      {
+        "text": "python -m torch.nn.DataParallel tools/train.py config.py",
+        "isCorrect": false,
+        "description": "DataParallel 不是推荐方式，OpenMMLab 用 DDP"
+      },
+      {
+        "text": "mpirun -np 8 python tools/train.py config.py",
+        "isCorrect": false,
+        "description": "OpenMMLab 默认用 NCCL 后端（torchrun），非 MPI"
+      },
+      {
+        "text": "CUDA_VISIBLE_DEVICES=0-7 python tools/train.py config.py --distributed",
+        "isCorrect": false,
+        "description": "tools/train.py 无 --distributed 参数，靠 dist_train.sh 启动"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：关于 OpenMMLab 与 Ultralytics 的定位差异，下列哪项准确？",
+    "explanation": "OpenMMLab 定位是多任务视觉算法体系（检测/分割/姿态/OCR/3D/跟踪/生成式全覆盖），强调可组合性与跨库复用，配置用纯 Python，学习曲线陡；Ultralytics 聚焦 YOLO 系列，强调「装完即用」（yolo train 一行），配置用 YAML，上手极快但任务广度有限。两者互补而非互斥。",
+    "tags": ["openmmlab", "ultralytics", "对比", "选型"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "OpenMMLab 多任务广配置纯 Python 曲线陡；Ultralytics 聚焦 YOLO 配置 YAML 上手快",
+        "isCorrect": true,
+        "description": "两者在任务广度、配置形态、上手曲线上的核心差异"
+      },
+      {
+        "text": "OpenMMLab 是 Ultralytics 的子集",
+        "isCorrect": false,
+        "description": "方向说反，OpenMMLab 任务覆盖更广"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "定位与设计哲学明显不同"
+      },
+      {
+        "text": "Ultralytics 性能远超 OpenMMLab",
+        "isCorrect": false,
+        "description": "性能因任务而异，不能笼统比较"
+      }
+    ]
+  },
+  {
+    "stem": "OpenMMLab：MMPose 支持的 pose estimation 范式是？",
+    "explanation": "MMPose 同时支持 top-down（先检测人框再逐人估关键点）与 bottom-up（先估全部关键点再聚类到人）两种 2D 多人姿态估计范式，覆盖 2D/3D 人体姿态、133 点 whole-body、人脸、手部、动物姿态，以及 3D mesh recovery。RTMPose/RTMW3D 是其自研实时模型。",
+    "tags": ["openmmlab", "mmpose", "姿态估计"],
+    "categories": [
+      ["技术方向", "OpenMMLab"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "top-down 与 bottom-up 两种范式都支持",
+        "isCorrect": true,
+        "description": "MMPose 覆盖两大主流 2D 多人姿态范式"
+      },
+      {
+        "text": "仅支持 top-down",
+        "isCorrect": false,
+        "description": "bottom-up（如 HigherHRNet）也在支持列表"
+      },
+      {
+        "text": "仅支持 bottom-up",
+        "isCorrect": false,
+        "description": "top-down（如 RTMPose）是主力范式之一"
+      },
+      {
+        "text": "仅支持单人的 3D mesh",
+        "isCorrect": false,
+        "description": "2D 多人也是核心能力"
+      }
+    ]
+  }
+]

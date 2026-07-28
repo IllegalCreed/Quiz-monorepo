@@ -1,0 +1,653 @@
+[
+  {
+    "stem": "Albumentations：Albumentations 的核心定位是？",
+    "explanation": "Albumentations 是计算机视觉数据增强库，核心定位是「快速、广覆盖、多目标同步增强」。它用 Compose 串接变换管线、OneOf 随机选变换、内置 50+ 种空间与像素变换，并能在一条管线里同时变换图像、掩码、边界框、关键点。当前活跃主线包名为 AlbumentationsX（pip install albumentationsx），原 albumentations 包归档仍可用。",
+    "tags": ["albumentations", "定位", "基础概念"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "快速、广覆盖、多目标同步的视觉数据增强库",
+        "isCorrect": true,
+        "description": "Compose/OneOf + 50+ 变换 + image/mask/bbox/keypoint 同步"
+      },
+      {
+        "text": "目标检测算法库",
+        "isCorrect": false,
+        "description": "Albumentations 是数据增强库，不做检测算法"
+      },
+      {
+        "text": "PyTorch 训练框架",
+        "isCorrect": false,
+        "description": "它不是训练框架，是增强库"
+      },
+      {
+        "text": "图像分类模型库",
+        "isCorrect": false,
+        "description": "模型库是 timm/torchvision 的定位，Albumentations 是增强"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：构建增强管线（顺序串接多个变换）的核心类是？",
+    "explanation": "A.Compose 是构建增强管线的主类：把变换列表按声明顺序串接，前一个的输出是后一个的输入。例如 A.Compose([A.HorizontalFlip(p=0.5), A.Rotate(limit=30, p=0.5)]) 先翻转再旋转。Compose 还接受 bbox_params 与 keypoint_params 配置多目标增强。",
+    "tags": ["albumentations", "compose", "API", "基础概念"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "A.Compose([...])",
+        "isCorrect": true,
+        "description": "Compose 顺序串接变换列表"
+      },
+      {
+        "text": "A.Pipeline([...])",
+        "isCorrect": false,
+        "description": "类名是 Compose 不是 Pipeline"
+      },
+      {
+        "text": "A.Sequential([...])",
+        "isCorrect": false,
+        "description": "Sequential 存在但不是主入口，主入口是 Compose"
+      },
+      {
+        "text": "A.Transform([...])",
+        "isCorrect": false,
+        "description": "Transform 是单个变换的基类，不是容器"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：调用 transform(image=img) 后如何获取增强后的图像？",
+    "explanation": "Albumentations 的 transform() 返回的是字典（如 {'image': augmented_array, 'mask': ...}），不是直接返回数组。必须用 result['image'] 取出增强后的图像。这是与 torchvision.transforms（callable 流式返回 tensor）的重要区别，也是新手最易踩的坑。",
+    "tags": ["albumentations", "返回值", "陷阱", "API"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "从返回字典的 'image' 键取：result['image']",
+        "isCorrect": true,
+        "description": "transform 返回 dict，必须按键取值"
+      },
+      {
+        "text": "直接用返回值（它就是数组）",
+        "isCorrect": false,
+        "description": "返回的是 dict 不是数组"
+      },
+      {
+        "text": "result.image（点号属性）",
+        "isCorrect": false,
+        "description": "返回的是 dict 不是对象，要用 ['image'] 键"
+      },
+      {
+        "text": "transform.image",
+        "isCorrect": false,
+        "description": "结果不是 transform 的属性"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：从组内随机选一种变换执行的类是？",
+    "explanation": "A.OneOf([...]) 从传入的变换列表中随机均匀选一种执行，适合「同类增强择一」策略（如三种模糊选其一）。它整体接受 p 参数控制触发概率。另有 SomeOf(n, [...]) 随机选 n 种、OneOrOther 二选一。",
+    "tags": ["albumentations", "oneof", "API"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "A.OneOf([...])",
+        "isCorrect": true,
+        "description": "从组内随机选一种变换执行"
+      },
+      {
+        "text": "A.RandomChoice([...])",
+        "isCorrect": false,
+        "description": "类名是 OneOf 不是 RandomChoice"
+      },
+      {
+        "text": "A.Compose([...])",
+        "isCorrect": false,
+        "description": "Compose 是顺序执行全部，不是选一种"
+      },
+      {
+        "text": "A.Select([...])",
+        "isCorrect": false,
+        "description": "不存在 A.Select 类"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：控制某个变换触发概率的参数是？",
+    "explanation": "每个变换（含 Compose 与 OneOf）都接受 p 参数（0–1），控制该变换被触发的概率。如 A.HorizontalFlip(p=0.5) 一半概率翻转，p=1 必定执行，p=0 永不执行。p 是数据增强多样性的核心来源。",
+    "tags": ["albumentations", "p", "概率", "API"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "p（如 p=0.5 表示 50% 概率触发）",
+        "isCorrect": true,
+        "description": "所有变换与容器都支持的概率参数"
+      },
+      {
+        "text": "probability",
+        "isCorrect": false,
+        "description": "参数名是 p 不是 probability"
+      },
+      {
+        "text": "prob",
+        "isCorrect": false,
+        "description": "参数名是 p 不是 prob"
+      },
+      {
+        "text": "rate",
+        "isCorrect": false,
+        "description": "参数名是 p 不是 rate"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：安装新主线包（AlbumentationsX）的命令是？",
+    "explanation": "Albumentations 的新活跃主线包名为 AlbumentationsX，安装命令是 pip install albumentationsx。原 albumentations 包（2.0.x）归档但仍可用，pip install albumentations 也能装。两个包的 import 名都是 albumentations，迁移成本低。",
+    "tags": ["albumentations", "安装", "版本"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "pip install albumentationsx",
+        "isCorrect": true,
+        "description": "新主线包 AlbumentationsX 的安装命令"
+      },
+      {
+        "text": "pip install albumentations-x",
+        "isCorrect": false,
+        "description": "包名是 albumentationsx（无连字符）"
+      },
+      {
+        "text": "conda install -c conda-forge albumentationsx",
+        "isCorrect": false,
+        "description": "官方主推 pip，conda 渠道非首选"
+      },
+      {
+        "text": "pip install albumentations-pro",
+        "isCorrect": false,
+        "description": "不存在 albumentations-pro 包"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：关于 Albumentations 相对 torchvision.transforms 的核心优势，下列哪项准确？",
+    "explanation": "Albumentations 的核心优势是多目标同步增强：一条 Compose 管线同时变换 image/mask/bboxes/keypoints，几何变换自动保持一致。torchvision.transforms 主要面向单张图像，多目标需手动同步坐标。此外 Albumentations 变换种类更多（50+）、性能主打快（OpenCV 底层）。",
+    "tags": ["albumentations", "torchvision", "对比", "多目标"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一条管线同时同步变换 image/mask/bboxes/keypoints",
+        "isCorrect": true,
+        "description": "多目标同步是 Albumentations 的杀手锏"
+      },
+      {
+        "text": "只支持图像分类任务",
+        "isCorrect": false,
+        "description": "它支持分割/检测/姿态等多任务"
+      },
+      {
+        "text": "完全取代 torchvision.transforms",
+        "isCorrect": false,
+        "description": "两者并存，定位不同"
+      },
+      {
+        "text": "只做模型推理不做增强",
+        "isCorrect": false,
+        "description": "Albumentations 正是做增强的库"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：分割任务中让图像与掩码同步增强的正确写法是？",
+    "explanation": "分割任务同时传 image 与 mask 给 transform：transform(image=image, mask=mask)，Albumentations 自动让翻转/旋转/裁剪等几何变换在图像与掩码上完全一致。结果字典里 result['image'] 与 result['mask'] 即增强后的两者。",
+    "tags": ["albumentations", "分割", "mask", "多目标"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "transform(image=image, mask=mask)，从 result['image'] 与 result['mask'] 取",
+        "isCorrect": true,
+        "description": "同时传 image 与 mask，几何变换自动同步"
+      },
+      {
+        "text": "分别 transform(image) 与 transform(mask)",
+        "isCorrect": false,
+        "description": "分别增强会导致图像与掩码不再对应（如翻转不一致）"
+      },
+      {
+        "text": "把 mask 拼到 image 通道里一起增强",
+        "isCorrect": false,
+        "description": "非官方做法，且颜色变换会破坏 mask"
+      },
+      {
+        "text": "mask 不能用 Albumentations 增强",
+        "isCorrect": false,
+        "description": "mask 正是 Albumentations 的核心目标之一"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：声明 bbox 坐标格式的参数类是？",
+    "explanation": "A.BboxParams 用于声明边界框的坐标格式与标签字段，传给 Compose 的 bbox_params 参数。必填 format 指定坐标约定（pascal_voc/coco/yolo/albumentations），label_fields 指定标签来自哪个传入字段（与 bbox 坐标分开传）。",
+    "tags": ["albumentations", "bboxparams", "检测", "API"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "A.BboxParams(format='pascal_voc', label_fields=['labels'])",
+        "isCorrect": true,
+        "description": "声明 bbox 格式与标签字段的参数类"
+      },
+      {
+        "text": "A.BboxFormat(...)",
+        "isCorrect": false,
+        "description": "类名是 BboxParams 不是 BboxFormat"
+      },
+      {
+        "text": "A.BoxParams(...)",
+        "isCorrect": false,
+        "description": "类名是 BboxParams 不是 BoxParams"
+      },
+      {
+        "text": "A.DetectionParams(...)",
+        "isCorrect": false,
+        "description": "不存在 DetectionParams 类"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：BboxParams 的 format='coco' 表示坐标格式是？",
+    "explanation": "coco 格式用 [x_min, y_min, width, height] 表示边界框，单位是绝对像素。其他格式：pascal_voc 是 [x_min, y_min, x_max, y_max]（绝对像素）、yolo 是 [x_center, y_center, width, height]（归一化 [0,1]）、albumentations 是 [x_min, y_min, x_max, y_max]（归一化 [0,1]）。",
+    "tags": ["albumentations", "bbox", "coco", "格式"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[x_min, y_min, width, height]，绝对像素",
+        "isCorrect": true,
+        "description": "COCO 数据集的标准框格式"
+      },
+      {
+        "text": "[x_min, y_min, x_max, y_max]，绝对像素",
+        "isCorrect": false,
+        "description": "这是 pascal_voc 格式"
+      },
+      {
+        "text": "[x_center, y_center, width, height]，归一化",
+        "isCorrect": false,
+        "description": "这是 yolo 格式"
+      },
+      {
+        "text": "[x_min, y_min, x_max, y_max]，归一化",
+        "isCorrect": false,
+        "description": "这是 albumentations 格式"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：yolo 格式的 bbox 坐标单位是？",
+    "explanation": "yolo 格式用 [x_center, y_center, width, height] 表示框，所有坐标归一化到 [0,1]（除以图像宽高）。这与 pascal_voc/coco（绝对像素）不同，是 YOLO 训练格式的要求。声明 format='yolo' 时 Albumentations 内部按归一化处理变换。",
+    "tags": ["albumentations", "bbox", "yolo", "格式"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "归一化到 [0,1]（除以图像宽高）",
+        "isCorrect": true,
+        "description": "yolo 格式用归一化坐标"
+      },
+      {
+        "text": "绝对像素",
+        "isCorrect": false,
+        "description": "绝对像素是 pascal_voc/coco 的单位"
+      },
+      {
+        "text": "百分比（0–100）",
+        "isCorrect": false,
+        "description": "yolo 是 [0,1] 归一化，不是百分比"
+      },
+      {
+        "text": "弧度",
+        "isCorrect": false,
+        "description": "与角度无关"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：KeypointParams 的 format='xya' 表示关键点坐标格式是？",
+    "explanation": "xya 格式表示关键点为 [x, y, angle]——坐标加上角度，常用于带朝向的关键点（如车辆朝向）。其他格式：xy 是 [x,y]、xys 是 [x,y,scale]、xyas 是 [x,y,angle,scale]、xysa 是 [x,y,scale,angle]。angle 单位默认是度（angle_in_degrees=True）。",
+    "tags": ["albumentations", "keypoint", "format", "姿态"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[x, y, angle]",
+        "isCorrect": true,
+        "description": "坐标 + 角度的关键点格式"
+      },
+      {
+        "text": "[x, y, scale]",
+        "isCorrect": false,
+        "description": "这是 xys 格式"
+      },
+      {
+        "text": "[x, y]",
+        "isCorrect": false,
+        "description": "这是 xy 格式"
+      },
+      {
+        "text": "[x, y, angle, scale]",
+        "isCorrect": false,
+        "description": "这是 xyas 格式"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：BboxParams 的 min_visibility 参数作用是？",
+    "explanation": "min_visibility 过滤变换后可见比例低于此值的框：裁剪或旋转后部分出界的框，若剩余面积占原框比例 < min_visibility，则被丢弃。避免无效残框污染训练。类似地 min_area 过滤面积过小的框。两者是检测任务常用的清洗参数。",
+    "tags": ["albumentations", "bboxparams", "min_visibility", "检测", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "过滤变换后可见比例过低的框（裁剪出界的残框）",
+        "isCorrect": true,
+        "description": "丢弃变换后剩余太少的框，避免无效标注"
+      },
+      {
+        "text": "控制框的最小透明度",
+        "isCorrect": false,
+        "description": "与透明度无关，是面积可见比"
+      },
+      {
+        "text": "限制框的最大数量",
+        "isCorrect": false,
+        "description": "min_visibility 不管数量，过滤的是面积比"
+      },
+      {
+        "text": "设置框的颜色可见度",
+        "isCorrect": false,
+        "description": "与颜色无关"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：自定义一个只影响图像（不影响 mask/bbox/keypoint）的变换，应继承哪个基类？",
+    "explanation": "A.ImageOnlyTransform 是只影响图像的变换基类，只需实现 apply(self, img, **params) 方法返回变换后的图像。适用于颜色抖动、模糊等纯像素变换。若变换需要同步影响 mask/bbox/keypoint（如几何变换），应继承 A.DualTransform 并实现 apply_to_* 系列方法。",
+    "tags": ["albumentations", "imageonlytransform", "自定义", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "A.ImageOnlyTransform",
+        "isCorrect": true,
+        "description": "只改图像的变换基类，实现 apply 即可"
+      },
+      {
+        "text": "A.DualTransform",
+        "isCorrect": false,
+        "description": "DualTransform 是多目标变换基类（影响 mask/bbox/keypoint）"
+      },
+      {
+        "text": "A.BasicTransform",
+        "isCorrect": false,
+        "description": "BasicTransform 是最基础父类，ImageOnlyTransform 才是图像专用"
+      },
+      {
+        "text": "A.ImageTransform",
+        "isCorrect": false,
+        "description": "类名是 ImageOnlyTransform 不是 ImageTransform"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：自定义几何变换（需同步影响 mask/bbox/keypoint），应继承哪个基类？",
+    "explanation": "A.DualTransform 是影响多目标的变换基类，需分别实现 apply（图像）、apply_to_mask（掩码）、apply_to_bbox（边界框）、apply_to_keypoint（关键点）方法，保证几何变换在所有目标上一致。如自定义缩放，图像与坐标都要按比例变换。",
+    "tags": ["albumentations", "dualtransform", "自定义", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "A.DualTransform（需实现 apply + apply_to_mask + apply_to_bbox + apply_to_keypoint）",
+        "isCorrect": true,
+        "description": "多目标变换基类，保证几何变换同步"
+      },
+      {
+        "text": "A.ImageOnlyTransform",
+        "isCorrect": false,
+        "description": "ImageOnlyTransform 只改图像，坐标不会同步"
+      },
+      {
+        "text": "A.Compose",
+        "isCorrect": false,
+        "description": "Compose 是容器不是变换基类"
+      },
+      {
+        "text": "A.GeometricTransform",
+        "isCorrect": false,
+        "description": "不存在该类名，几何变换用 DualTransform"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：关于 Compose 的 seed 与 strict 参数，下列说法正确的是？",
+    "explanation": "Compose 传 seed= 与 strict=True 可固定随机种子复现结果（同一图像每次得到相同增强），仅用于调试可视化。训练管线里不应固定 seed——数据增强的目的正是每次产生不同结果，固定会削弱多样性。",
+    "tags": ["albumentations", "seed", "复现", "陷阱", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "seed + strict=True 可复现（仅调试用），训练别固定",
+        "isCorrect": true,
+        "description": "固定 seed 削弱增强意义，仅调试场景用"
+      },
+      {
+        "text": "训练时必须固定 seed 保证可复现",
+        "isCorrect": false,
+        "description": "恰恰相反，训练固定 seed 会失去增强意义"
+      },
+      {
+        "text": "Compose 不支持固定 seed",
+        "isCorrect": false,
+        "description": "支持，通过 seed 与 strict 参数"
+      },
+      {
+        "text": "strict 参数控制变换严格顺序",
+        "isCorrect": false,
+        "description": "strict 是复现相关参数，不是顺序控制"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：BboxParams 的 label_fields 参数作用是？",
+    "explanation": "label_fields 声明标签数据来自哪个传入字段——bbox 坐标与标签分开传：bboxes=[[x1,y1,...],...] 是坐标，labels=['cat','dog',...] 是标签，label_fields=['labels'] 告诉 Albumentations 标签在 'labels' 字段。这样变换时坐标随几何同步，标签原样保留并在结果字典里返回。",
+    "tags": ["albumentations", "bboxparams", "label_fields", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "声明标签来自哪个传入字段（标签与 bbox 坐标分开传）",
+        "isCorrect": true,
+        "description": "让 Albumentations 知道标签字段名以便同步返回"
+      },
+      {
+        "text": "限制标签的最大数量",
+        "isCorrect": false,
+        "description": "与数量无关，是字段名声明"
+      },
+      {
+        "text": "指定标签的数值类型",
+        "isCorrect": false,
+        "description": "label_fields 不管类型，只声明字段名"
+      },
+      {
+        "text": "自动生成标签",
+        "isCorrect": false,
+        "description": "标签由用户提供，不是自动生成"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：提升性能的推荐做法是？",
+    "explanation": "Albumentations 官方性能调优建议：① cv2.setNumThreads(0) 关闭 OpenCV 全局线程避免与 DataLoader 多 worker 冲突；② DataLoader 用 num_workers > 0 让增强并行；③ Compose 传 num_threads（部分变换受益）；④ 用 cv2.imread（通常比 PIL 快）读图。这些手段组合能显著提升吞吐。",
+    "tags": ["albumentations", "性能", "调优", "进阶"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "cv2.setNumThreads(0) + DataLoader num_workers > 0",
+        "isCorrect": true,
+        "description": "关闭 OpenCV 线程 + 多 worker 并行增强"
+      },
+      {
+        "text": "固定 seed 减少随机开销",
+        "isCorrect": false,
+        "description": "固定 seed 削弱增强意义，与性能无关"
+      },
+      {
+        "text": "把所有变换都设 p=0",
+        "isCorrect": false,
+        "description": "p=0 等于禁用增强，不是性能优化"
+      },
+      {
+        "text": "用 PIL 替代 OpenCV 读图",
+        "isCorrect": false,
+        "description": "通常 cv2.imread 比 PIL 快"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：关于 Albumentations 与 imgaug 的对比，下列哪项准确？",
+    "explanation": "Albumentations 与 imgaug 都是快速图像增强库，性能相当或 Albumentations 更优。关键差异：imgaug 维护已停滞，Albumentations 活跃（AlbumentationsX 主线）；Albumentations 的 bbox/keypoint/mask 多目标 API 更现代完善，文档与示例更丰富。新项目应选 Albumentations。",
+    "tags": ["albumentations", "imgaug", "对比", "选型"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "两者性能相当，但 Albumentations 维护活跃、多目标 API 更现代",
+        "isCorrect": true,
+        "description": "新项目首选 Albumentations 的核心理由"
+      },
+      {
+        "text": "imgaug 性能远超 Albumentations",
+        "isCorrect": false,
+        "description": "性能相当，无此差距"
+      },
+      {
+        "text": "Albumentations 不支持 bbox/keypoint",
+        "isCorrect": false,
+        "description": "恰恰相反，多目标是它的强项"
+      },
+      {
+        "text": "imgaug 是 Albumentations 的替代品",
+        "isCorrect": false,
+        "description": "方向说反，Albumentations 是更新的选择"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：CoarseDropout 与旧版 Cutout 的关系是？",
+    "explanation": "CoarseDropout 是 Cutout 的增强替代：在图像上随机遮挡若干矩形块（可设 max_holes/max_height/max_width）。Cutout 是较早期的单一矩形遮挡变换，功能较简单，CoarseDropout 提供更灵活的多块遮挡，官方推荐新代码用 CoarseDropout。两者都属于丢弃/遮挡类增强。",
+    "tags": ["albumentations", "coarsedropout", "cutout", "变换"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CoarseDropout 是 Cutout 的增强替代，支持多块灵活遮挡",
+        "isCorrect": true,
+        "description": "新代码推荐用 CoarseDropout 替代 Cutout"
+      },
+      {
+        "text": "两者完全相同，只是名字不同",
+        "isCorrect": false,
+        "description": "CoarseDropout 功能更灵活（多块）"
+      },
+      {
+        "text": "Cutout 是 CoarseDropout 的新版",
+        "isCorrect": false,
+        "description": "方向说反，CoarseDropout 才是新版"
+      },
+      {
+        "text": "两者互不相关",
+        "isCorrect": false,
+        "description": "CoarseDropout 明确是 Cutout 的演进"
+      }
+    ]
+  },
+  {
+    "stem": "Albumentations：Albumentations 与 AlbumentationsX 的关系是？",
+    "explanation": "AlbumentationsX 是 Albumentations 的新活跃主线包（pip install albumentationsx），持续更新新变换与性能优化。原 albumentations 包（2.0.x）归档但仍可用。两者的 import 名都是 albumentations（import albumentations as A），迁移成本低，新项目应装 AlbumentationsX。",
+    "tags": ["albumentations", "albumentationsx", "版本", "包"],
+    "categories": [
+      ["技术方向", "Albumentations"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "AlbumentationsX 是新主线包，原 albumentations 归档仍可用，import 名相同",
+        "isCorrect": true,
+        "description": "X 是活跃主线，两者 import 名都是 albumentations"
+      },
+      {
+        "text": "两者是完全独立的竞品库",
+        "isCorrect": false,
+        "description": "X 是 albumentations 的延续主线，不是竞品"
+      },
+      {
+        "text": "AlbumentationsX 只支持 3D 数据",
+        "isCorrect": false,
+        "description": "X 主战场仍是 2D，与原包一致"
+      },
+      {
+        "text": "AlbumentationsX 是商业付费版",
+        "isCorrect": false,
+        "description": "两者都是开源 MIT 许可"
+      }
+    ]
+  }
+]

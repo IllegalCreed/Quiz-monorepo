@@ -1,0 +1,653 @@
+[
+  {
+    "stem": "timm：timm（PyTorch Image Models）的维护方与定位是？",
+    "explanation": "timm 由 Ross Wightman 个人发起并主力维护，现托管于 HuggingFace 组织（github.com/huggingface/pytorch-image-models）。它是独立的第三方 PyTorch 视觉模型库，不是 PyTorch 官方项目，定位是「SOTA 图像模型的一站式集合」，收录 700+ 预训练权重，与 torchvision.models 并行存在。",
+    "tags": ["timm", "维护方", "基础概念"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Ross Wightman 维护、HuggingFace 托管的第三方库，非 PyTorch 官方",
+        "isCorrect": true,
+        "description": "独立维护，定位 SOTA 图像模型集合"
+      },
+      {
+        "text": "PyTorch 官方维护，与 torchvision 同源",
+        "isCorrect": false,
+        "description": "timm 不属于 PyTorch 官方，与 torchvision.models 并行"
+      },
+      {
+        "text": "OpenMMLab 团队的子项目",
+        "isCorrect": false,
+        "description": "timm 与 OpenMMLab 无隶属关系"
+      },
+      {
+        "text": "Google TensorFlow 团队维护",
+        "isCorrect": false,
+        "description": "timm 是 PyTorch 生态，与 TF 无关"
+      }
+    ]
+  },
+  {
+    "stem": "timm：加载预训练模型的标准入口是？",
+    "explanation": "timm 用 timm.create_model('模型名', pretrained=True) 一行加载任意架构与权重，返回 PyTorch nn.Module。pretrained=True 触发权重下载。所有模型族（ResNet/ViT/ConvNeXt 等）走同一接口，参数跨架构统一。",
+    "tags": ["timm", "create_model", "API", "基础概念"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "timm.create_model('resnet50', pretrained=True)",
+        "isCorrect": true,
+        "description": "统一工厂函数，pretrained 下载权重"
+      },
+      {
+        "text": "timm.load('resnet50')",
+        "isCorrect": false,
+        "description": "不存在 timm.load 函数"
+      },
+      {
+        "text": "torchvision.models.resnet50(pretrained=True)",
+        "isCorrect": false,
+        "description": "这是 torchvision 的接口，非 timm"
+      },
+      {
+        "text": "timm.hub.load('resnet50')",
+        "isCorrect": false,
+        "description": "timm 不走 hub.load，主接口是 create_model"
+      }
+    ]
+  },
+  {
+    "stem": "timm：加载模型后用于推理前必须执行的一步是？",
+    "explanation": "create_model 默认返回训练模式（train mode），此时 Dropout 生效、BatchNorm 用 batch 统计。推理前必须调 .eval() 切到推理模式，否则 BN 行为异常、Dropout 丢弃激活，结果不稳定。这是官方文档反复强调的铁律。",
+    "tags": ["timm", "推理", "eval", "陷阱"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "model.eval()",
+        "isCorrect": true,
+        "description": "切换到推理模式，BN/Dropout 行为才正确"
+      },
+      {
+        "text": "model.train()",
+        "isCorrect": false,
+        "description": "train 是训练模式，恰好相反"
+      },
+      {
+        "text": "model.freeze()",
+        "isCorrect": false,
+        "description": "PyTorch 标准 nn.Module 无 freeze 方法"
+      },
+      {
+        "text": "torch.no_grad(model)",
+        "isCorrect": false,
+        "description": "no_grad 是上下文管理器，用法是 with torch.no_grad():，且与 eval 是两件事"
+      }
+    ]
+  },
+  {
+    "stem": "timm：列出所有带预训练权重的模型，正确写法是？",
+    "explanation": "timm.list_models(pretrained=True) 只返回有预训练权重可用的模型名；timm.list_models() 返回全部模型（含无权重）。支持通配符过滤，如 timm.list_models('*resne*t*') 模糊匹配 ResNet 系列。",
+    "tags": ["timm", "list_models", "API"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "timm.list_models(pretrained=True)",
+        "isCorrect": true,
+        "description": "pretrained=True 过滤出有权重的模型"
+      },
+      {
+        "text": "timm.list_models(weights=True)",
+        "isCorrect": false,
+        "description": "参数名是 pretrained 不是 weights"
+      },
+      {
+        "text": "timm.pretrained_models()",
+        "isCorrect": false,
+        "description": "不存在该函数"
+      },
+      {
+        "text": "timm.models.all()",
+        "isCorrect": false,
+        "description": "不存在该 API"
+      }
+    ]
+  },
+  {
+    "stem": "timm：把预训练模型适配到 10 类自定义数据集做微调，正确做法是？",
+    "explanation": "传 num_classes=10，timm 会自动把最后一层分类器替换为新的 Linear(原特征维度, 10)，旧分类头权重丢弃，其余层继承 ImageNet 预训练权重。之后写标准 PyTorch 训练循环微调即可。",
+    "tags": ["timm", "微调", "num_classes", "训练"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "timm.create_model('xxx', pretrained=True, num_classes=10)",
+        "isCorrect": true,
+        "description": "num_classes 触发自动替换分类头"
+      },
+      {
+        "text": "先 create_model 再手动 model.fc = nn.Linear(2048, 10)",
+        "isCorrect": false,
+        "description": "手动改可行但繁琐，timm 已内置 num_classes 参数自动处理"
+      },
+      {
+        "text": "只能用 ImageNet 1000 类，不能改",
+        "isCorrect": false,
+        "description": "num_classes 专为自定义类别设计"
+      },
+      {
+        "text": "传 classes=10 参数",
+        "isCorrect": false,
+        "description": "参数名是 num_classes 不是 classes"
+      }
+    ]
+  },
+  {
+    "stem": "timm：截至 2026 年 7 月的当前稳定版是？",
+    "explanation": "GitHub huggingface/pytorch-image-models Releases 显示，当前稳定版为 1.0.28（2026-07-11 发布）。1.0.x 系列自 2024 年起为 HuggingFace 托管的主线，API 趋稳；0.4.x 是 rwightman 时代早期版本。",
+    "tags": ["timm", "版本"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "1.0.28",
+        "isCorrect": true,
+        "description": "2026-07-11 发布于 GitHub Releases，当前稳定版"
+      },
+      {
+        "text": "0.4.12",
+        "isCorrect": false,
+        "description": "0.4.x 是 2020-2021 早期版本，早已过时"
+      },
+      {
+        "text": "2.0.0",
+        "isCorrect": false,
+        "description": "timm 尚未发布 2.x 大版本"
+      },
+      {
+        "text": "1.5.0",
+        "isCorrect": false,
+        "description": "未发布该版本"
+      }
+    ]
+  },
+  {
+    "stem": "timm：timm 收录的预训练权重大致数量是？",
+    "explanation": "timm 官方文档明确收录 700+ 个预训练权重（>700 pretrained models），覆盖 ResNet、EfficientNet、Vision Transformer、ConvNeXt、DeiT、Swin、MobileNet 等几乎所有主流架构及变体。模型数量比 torchvision.models（约 50 个）多一个数量级。",
+    "tags": ["timm", "模型数量", "生态"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "700+ 个预训练权重",
+        "isCorrect": true,
+        "description": "官方文档明确的 >700 pretrained models"
+      },
+      {
+        "text": "约 50 个",
+        "isCorrect": false,
+        "description": "这是 torchvision.models 的量级，timm 多一个数量级"
+      },
+      {
+        "text": "10 个以内",
+        "isCorrect": false,
+        "description": "远不止，timm 是 SOTA 模型大集合"
+      },
+      {
+        "text": "5000+ 个",
+        "isCorrect": false,
+        "description": "数量级偏高，官方说 >700"
+      }
+    ]
+  },
+  {
+    "stem": "timm：model.forward_features(x) 的作用是？",
+    "explanation": "forward_features 执行模型主干的前向，返回倒数第二层特征（未经过全局池化与分类头），即「未池化的最后隐藏态」。常用于检索、度量学习，或把特征再喂回 forward_head 做分类。所有 timm 模型都有此方法，接口一致。",
+    "tags": ["timm", "forward_features", "特征提取", "API"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回未过分类头与全局池化的主干特征",
+        "isCorrect": true,
+        "description": "bypass head classifier 与 global pooling"
+      },
+      {
+        "text": "返回分类 logits（与 model(x) 完全相同）",
+        "isCorrect": false,
+        "description": "model(x) 才返回分类 logits，forward_features 跳过头"
+      },
+      {
+        "text": "返回模型参数量",
+        "isCorrect": false,
+        "description": "参数量用 sum(p.numel()) 统计，不是 forward_features"
+      },
+      {
+        "text": "返回预处理后的输入张量",
+        "isCorrect": false,
+        "description": "forward_features 是模型前向，与预处理无关"
+      }
+    ]
+  },
+  {
+    "stem": "timm：要把 ResNet 改造成多尺度特征金字塔（用于检测/分割），正确做法是？",
+    "explanation": "create_model 加 features_only=True 会剥离分类头与池化，把网络改造成多尺度特征提取器，输出多个 stride 的特征图（默认最多 5 层到 stride 32）。out_indices 指定输出哪些层，feature_info 查每层通道数与下采样倍数。这是检测/分割社区重度依赖的接口。",
+    "tags": ["timm", "features_only", "特征提取", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "timm.create_model('resnet50', features_only=True)",
+        "isCorrect": true,
+        "description": "输出多尺度特征图，配合 out_indices 选层"
+      },
+      {
+        "text": "timm.create_model('resnet50', backbone_only=True)",
+        "isCorrect": false,
+        "description": "参数名是 features_only 不是 backbone_only"
+      },
+      {
+        "text": "手动删除 model.fc 与 model.global_pool",
+        "isCorrect": false,
+        "description": "手动改繁琐且易错，timm 已内置 features_only"
+      },
+      {
+        "text": "传 num_classes=0 即可",
+        "isCorrect": false,
+        "description": "num_classes=0 只去分类头保留池化，输出单尺度特征向量，不是多尺度金字塔"
+      }
+    ]
+  },
+  {
+    "stem": "timm：如何正确生成与某预训练模型匹配的图像预处理 transforms？",
+    "explanation": "每个模型的 input_size/mean/std/crop_pct/interpolation 不同，套通用 ImageNet 归一化会出错。正确做法是用 timm.data.resolve_data_config(model.pretrained_cfg) 解析该模型专属的预处理参数，再用 timm.data.create_transform(**cfg) 生成 transforms。",
+    "tags": ["timm", "预处理", "resolve_data_config", "pretrained_cfg"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "timm.data.resolve_data_config(model.pretrained_cfg) + create_transform(**cfg)",
+        "isCorrect": true,
+        "description": "从模型元数据自动解析正确预处理参数"
+      },
+      {
+        "text": "固定用 mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]",
+        "isCorrect": false,
+        "description": "通用 ImageNet 归一化不适用所有模型（有的用 bicubic、crop_pct=0.9）"
+      },
+      {
+        "text": "model.get_transform()",
+        "isCorrect": false,
+        "description": "timm 模型无 get_transform 方法"
+      },
+      {
+        "text": "torchvision.transforms.Compose([Resize, ToTensor])",
+        "isCorrect": false,
+        "description": "手动拼会遗漏归一化参数，应用 resolve_data_config"
+      }
+    ]
+  },
+  {
+    "stem": "timm：pretrained_cfg 字典的作用是？",
+    "explanation": "pretrained_cfg 是每个预训练模型的元数据字典，记录 url（权重下载地址）、num_classes、input_size、crop_pct（裁剪比例）、interpolation（插值方式）、mean/std（归一化）、first_conv（首层名，权重迁移用）、classifier（分类头名）等。推理预处理与权重迁移都依赖它。",
+    "tags": ["timm", "pretrained_cfg", "元数据"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "记录模型的预处理参数、权重 url、首层与分类头名等元数据",
+        "isCorrect": true,
+        "description": "pretrained_cfg 是推理与权重迁移的依据"
+      },
+      {
+        "text": "存储模型的全部权重张量",
+        "isCorrect": false,
+        "description": "权重存在 url 指向的文件，cfg 只存元数据"
+      },
+      {
+        "text": "记录模型的训练超参数（lr/batch_size）",
+        "isCorrect": false,
+        "description": "训练超参不进 pretrained_cfg"
+      },
+      {
+        "text": "记录作者的 GitHub 信息",
+        "isCorrect": false,
+        "description": "与作者信息无关"
+      }
+    ]
+  },
+  {
+    "stem": "timm：create_model 中 features_only=True 时，如何查询各输出层的通道数与下采样倍数？",
+    "explanation": "features_only 模型带 feature_info 属性，封装了各输出层的信息。m.feature_info.channels() 返回通道数列表，m.feature_info.reduction() 返回下采样倍数列表。这样下游 head（如 FPN）不必硬编码通道数，能自适应任意 backbone。",
+    "tags": ["timm", "features_only", "feature_info", "API"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "model.feature_info.channels() 与 model.feature_info.reduction()",
+        "isCorrect": true,
+        "description": "feature_info 提供通道数与下采样倍数查询"
+      },
+      {
+        "text": "model.out_channels 与 model.strides",
+        "isCorrect": false,
+        "description": "timm 无这两个属性"
+      },
+      {
+        "text": "硬编码查 README 表格",
+        "isCorrect": false,
+        "description": "不同模型通道数不同，应动态查询而非硬编码"
+      },
+      {
+        "text": "model.feature_info.shapes()",
+        "isCorrect": false,
+        "description": "feature_info 无 shapes 方法，形状依赖输入尺寸"
+      }
+    ]
+  },
+  {
+    "stem": "timm：create_model 中 num_classes=0 的效果是？",
+    "explanation": "num_classes=0 会去掉分类头，但保留全局池化——模型输出变成已池化的特征向量（[N, C]），常用于图像检索、度量学习、作为下游任务的固定特征提取器。若想去掉分类头又不池化（保留 spatial 特征图），用 global_pool='' 配合 num_classes=0。",
+    "tags": ["timm", "num_classes", "特征提取", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "去掉分类头但保留池化，输出 [N, C] 特征向量",
+        "isCorrect": true,
+        "description": "常用于检索/度量学习的固定特征"
+      },
+      {
+        "text": "模型变成 0 类输出（无意义）",
+        "isCorrect": false,
+        "description": "num_classes=0 是去掉分类头而非输出 0 类"
+      },
+      {
+        "text": "报错，num_classes 必须 > 0",
+        "isCorrect": false,
+        "description": "timm 明确支持 num_classes=0 表示无分类头"
+      },
+      {
+        "text": "等同于 features_only=True",
+        "isCorrect": false,
+        "description": "features_only 输出多尺度，num_classes=0 输出单尺度池化特征"
+      }
+    ]
+  },
+  {
+    "stem": "timm：forward_intermediates() 相比 features_only 的优势是？",
+    "explanation": "forward_intermediates 提供更灵活的中间层提取：可取任意指定 block/stage 的输出（不只层级特征），支持 ViT 这种非层级结构的每个 transformer block，并能返回 class/distill prefix token。配合 prune_intermediate_layers 可裁掉不需要的尾部层省显存。features_only 主要面向层级 CNN 的多尺度金字塔。",
+    "tags": ["timm", "forward_intermediates", "特征提取", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "可取任意中间层（含 ViT 每个 block），并支持裁剪尾部层省显存",
+        "isCorrect": true,
+        "description": "比 features_only 更灵活，适配非层级模型"
+      },
+      {
+        "text": "推理速度比 features_only 快十倍",
+        "isCorrect": false,
+        "description": "两者性能相当，区别在灵活性而非速度"
+      },
+      {
+        "text": "完全替代 features_only，后者已废弃",
+        "isCorrect": false,
+        "description": "两者并存，features_only 仍是多尺度金字塔的首选"
+      },
+      {
+        "text": "只支持 ResNet，不支持 ViT",
+        "isCorrect": false,
+        "description": "恰恰相反，forward_intermediates 尤其适合 ViT 的 block 结构"
+      }
+    ]
+  },
+  {
+    "stem": "timm：create_model 的 global_pool=''（空字符串）表示？",
+    "explanation": "global_pool 控制全局池化方式：'avg'/'max'/'avgmax'/'catavgmax' 分别用不同池化；空字符串 '' 表示不做全局池化，模型输出保留 spatial 维度（如 [N, C, H, W]）。配合 num_classes=0 可得到 forward_features 等价的未池化特征。",
+    "tags": ["timm", "global_pool", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不做全局池化，输出保留 spatial 维度",
+        "isCorrect": true,
+        "description": "空串表示禁用池化，返回 spatial 特征图"
+      },
+      {
+        "text": "使用默认的平均池化",
+        "isCorrect": false,
+        "description": "默认是 'avg'，空串明确禁用池化"
+      },
+      {
+        "text": "报错，global_pool 必须是有效池化名",
+        "isCorrect": false,
+        "description": "空串是合法值，表示无池化"
+      },
+      {
+        "text": "等同于 global_pool=None",
+        "isCorrect": false,
+        "description": "None 通常回退默认，空串才明确禁用"
+      }
+    ]
+  },
+  {
+    "stem": "timm：加载自训或第三方权重文件的正确参数是？",
+    "explanation": "checkpoint_path 参数加载本地或第三方权重文件，timm 会处理 key 前缀匹配。它与 pretrained 语义独立：pretrained 下载官方 ImageNet 权重，checkpoint_path 加载自定义权重。也可手动 load_state_dict(strict=False) 容忍 key 不完全匹配。",
+    "tags": ["timm", "checkpoint_path", "权重迁移", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "timm.create_model('xxx', checkpoint_path='my_weights.pth')",
+        "isCorrect": true,
+        "description": "官方提供的自训权重加载参数"
+      },
+      {
+        "text": "timm.create_model('xxx', weights='my_weights.pth')",
+        "isCorrect": false,
+        "description": "参数名是 checkpoint_path 不是 weights"
+      },
+      {
+        "text": "timm.load_weights(model, 'my_weights.pth')",
+        "isCorrect": false,
+        "description": "不存在该函数，加载走 create_model 的 checkpoint_path"
+      },
+      {
+        "text": "timm.create_model('xxx', pretrained='my_weights.pth')",
+        "isCorrect": false,
+        "description": "pretrained 是 bool，不接受文件路径"
+      }
+    ]
+  },
+  {
+    "stem": "timm：把自研架构注册进 timm（被 create_model 与 list_models 发现）的装饰器是？",
+    "explanation": "timm.models.register_model 装饰器把自定义模型工厂函数注册进 timm 的模型注册表，之后即可用 timm.create_model('my_model') 加载、list_models() 列出。注册的函数应接受 pretrained 与 **kwargs，返回 nn.Module。",
+    "tags": ["timm", "register_model", "自定义", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "@timm.models.register_model",
+        "isCorrect": true,
+        "description": "装饰模型工厂函数即可被 timm 体系发现"
+      },
+      {
+        "text": "@torch.jit.script",
+        "isCorrect": false,
+        "description": "这是 TorchScript 编译装饰器，与 timm 注册无关"
+      },
+      {
+        "text": "@timm.export",
+        "isCorrect": false,
+        "description": "timm 无 export 装饰器"
+      },
+      {
+        "text": "无需注册，直接 import 即可",
+        "isCorrect": false,
+        "description": "不注册则 create_model 与 list_models 找不到"
+      }
+    ]
+  },
+  {
+    "stem": "timm：timm 自带的训练栈不包括下列哪项？",
+    "explanation": "timm 自带完整的图像分类训练栈：timm.data（数据集/transforms/Mixup）、timm.loss（LabelSmoothingCrossEntropy/SoftTargetCrossEntropy/JsdCrossEntropy）、timm.optim（create_optimizer_v2/Lamb/Lion/Lookahead）、timm.utils（accuracy/ModelEmaV2/CheckpointSaver）与 train.py 脚本。但不提供分布式训练框架（如 DeepSpeed/FSDP 集成），多卡训练靠 PyTorch 原生 DDP。",
+    "tags": ["timm", "训练栈", "生态"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "与 DeepSpeed 集成的大模型分布式训练框架",
+        "isCorrect": true,
+        "description": "timm 不内置分布式训练框架，靠 PyTorch DDP"
+      },
+      {
+        "text": "LabelSmoothingCrossEntropy 损失",
+        "isCorrect": false,
+        "description": "timm.loss.LabelSmoothingCrossEntropy 是内置损失"
+      },
+      {
+        "text": "Mixup/CutMix 数据增强",
+        "isCorrect": false,
+        "description": "timm.data 内置 Mixup 实现"
+      },
+      {
+        "text": "Lamb/Lion 优化器",
+        "isCorrect": false,
+        "description": "timm.optim 提供这些优化器"
+      }
+    ]
+  },
+  {
+    "stem": "timm：关于 timm 与 torchvision.models 的对比，下列哪项准确？",
+    "explanation": "timm 收录 700+ 预训练权重、跟进论文最快、训练栈完整（loss/optim/augment）、特征提取 API 完善（features_only/forward_intermediates）；torchvision.models 约 50 个模型、更新慢、无训练栈、特征提取需手动改 forward。两者并行存在，timm 是严肃训练与最新架构的首选。",
+    "tags": ["timm", "torchvision", "对比", "选型"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "timm 模型多、跟进快、训练栈全；torchvision 模型少、更新慢、无训练栈",
+        "isCorrect": true,
+        "description": "两者在模型数量、跟进速度、训练栈上的核心差异"
+      },
+      {
+        "text": "timm 是 torchvision 的子集",
+        "isCorrect": false,
+        "description": "方向说反，timm 模型远多于 torchvision"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "模型数量与训练栈差异明显"
+      },
+      {
+        "text": "torchvision 已废弃，应统一用 timm",
+        "isCorrect": false,
+        "description": "torchvision 仍活跃维护，简单场景够用"
+      }
+    ]
+  },
+  {
+    "stem": "timm：output_stride 参数的作用是？",
+    "explanation": "output_stride 控制特征图的最大下采样倍数，通过把后段卷积改为膨胀卷积（dilated convolution）实现，常用于分割任务保持较高特征分辨率。非所有模型支持，ResNet 系列支持 8/16/32，ViT 等非层级结构通常只支持默认 stride。features_only 与分类模式都可用。",
+    "tags": ["timm", "output_stride", "进阶", "分割"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用膨胀卷积控制最大下采样倍数（部分网络支持 8/16/32）",
+        "isCorrect": true,
+        "description": "分割任务常用以保留高分辨率特征"
+      },
+      {
+        "text": "限制输入图像的最大尺寸",
+        "isCorrect": false,
+        "description": "input_size 才管输入尺寸，output_stride 管特征下采样"
+      },
+      {
+        "text": "控制优化器的步数",
+        "isCorrect": false,
+        "description": "与优化器无关，是网络结构参数"
+      },
+      {
+        "text": "所有模型都支持任意 output_stride 值",
+        "isCorrect": false,
+        "description": "仅部分模型支持，ViT 等通常只支持默认 stride"
+      }
+    ]
+  },
+  {
+    "stem": "timm：ViT 类模型 forward_features 的输出形状特点是？",
+    "explanation": "ViT 等 transformer 模型的 forward_features 返回的是 token 序列（含 class token），形状为 [N, 1+H*W, C]（patch16_224 时 1+196=197 个 token），首列是 class token。后续若要 spatial 特征图需剥离首列并 reshape 为 [N, C, H, W]。这与 CNN 的 [N, C, H, W] 输出形态不同，是常见陷阱。",
+    "tags": ["timm", "vit", "forward_features", "陷阱", "进阶"],
+    "categories": [
+      ["技术方向", "timm"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回 token 序列 [N, 1+H*W, C]，首列是 class token，需剥离再 reshape",
+        "isCorrect": true,
+        "description": "ViT 的序列输出形态，与 CNN 的 spatial 特征图不同"
+      },
+      {
+        "text": "返回 [N, C, H, W] 的标准 spatial 特征图",
+        "isCorrect": false,
+        "description": "这是 CNN 的形态，ViT 是序列"
+      },
+      {
+        "text": "返回 [N, C] 的池化特征向量",
+        "isCorrect": false,
+        "description": "forward_features 不过池化，序列形态保留"
+      },
+      {
+        "text": "返回 [N, num_classes] 的分类 logits",
+        "isCorrect": false,
+        "description": "那是 forward_head 或 model(x) 的输出，不是 forward_features"
+      }
+    ]
+  }
+]
