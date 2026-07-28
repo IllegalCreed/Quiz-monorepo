@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "scikit-learn：所有估计器（分类器/回归器/变换器）统一的 API 契约是？",
+    "explanation": "sklearn 的设计核心是接口一致性：所有估计器都继承 BaseEstimator，遵循同一契约——构造时传超参 Estimator(param=...)，训练用 fit(X, y)，预测用 predict(X)，变换器用 transform(X)，评分用 score(X, y)，参数读写用 get_params()/set_params()。这种同构使得任意模型都能装进 Pipeline 并接受 GridSearch。",
+    "tags": ["scikit-learn", "Estimator API", "基础概念"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "构造传超参 + fit/predict/transform/score + get_params/set_params",
+        "isCorrect": true,
+        "description": "官方 BaseEstimator + 各 Mixin 提供的统一契约"
+      },
+      {
+        "text": "compile + run + session.run",
+        "isCorrect": false,
+        "description": "这是 TensorFlow 1.x 静态图 Session 风格，与 sklearn 无关"
+      },
+      {
+        "text": "forward + backward + step",
+        "isCorrect": false,
+        "description": "这是 PyTorch 训练循环风格，sklearn 不暴露反向传播"
+      },
+      {
+        "text": "train + eval + save_model",
+        "isCorrect": false,
+        "description": "这是 XGBoost/lightgbm CLI 风格，不是 sklearn 的方法名"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：估计器学习到的属性（如系数、类别列表）的命名约定是？",
+    "explanation": "sklearn 约定：学习到的（fit 之后才出现的）属性用下划线结尾，如 .coef_、.intercept_、.classes_、.feature_names_in_。区别于构造时传入的超参（无下划线），便于区分「学到的」与「配置的」。",
+    "tags": ["scikit-learn", "命名约定"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "以下划线结尾，如 .coef_、.classes_",
+        "isCorrect": true,
+        "description": "官方文档明确：fit 后属性以 _ 结尾"
+      },
+      {
+        "text": "以单下划线开头，如 ._coef",
+        "isCorrect": false,
+        "description": "Python 的「私有」约定是前缀下划线，与 sklearn 的学习属性无关"
+      },
+      {
+        "text": "全大写，如 COEF、CLASSES",
+        "isCorrect": false,
+        "description": "sklearn 不使用全大写命名学习属性"
+      },
+      {
+        "text": "与构造参数同名，如 .coef",
+        "isCorrect": false,
+        "description": "构造参数无下划线，学习属性有，二者刻意区分"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：fit_transform(X) 与先 fit(X) 再 transform(X) 的关系是？",
+    "explanation": "TransformerMixin 提供的 fit_transform 默认等价于 self.fit(X).transform(X)。但部分变换器（如 PCA、TruncatedSVD）重写了 fit_transform 做融合优化，比分开调用更快。所以工程上一律直接用 fit_transform。",
+    "tags": ["scikit-learn", "变换器", "fit_transform"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "默认等价于 fit(X) 再 transform(X)，部分实现有融合优化更快",
+        "isCorrect": true,
+        "description": "TransformerMixin 默认行为 + 个别子类优化"
+      },
+      {
+        "text": "完全不同，fit_transform 会额外做归一化",
+        "isCorrect": false,
+        "description": "fit_transform 不会引入 fit/transform 之外的额外步骤"
+      },
+      {
+        "text": "fit_transform 只能用于训练，transform 只能用于预测",
+        "isCorrect": false,
+        "description": "二者作用对象都是特征变换，与训练/预测阶段无强绑定"
+      },
+      {
+        "text": "fit_transform 已废弃，应分开调用",
+        "isCorrect": false,
+        "description": "fit_transform 仍是推荐用法"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：Pipeline 的 fit 方法在内部如何级联各步骤？",
+    "explanation": "Pipeline.fit 对除最后一步外的每一步调用 fit_transform（学参数并变换），把变换后的输出喂给下一步；最后一步（最终估计器）只调用 fit。predict 则是对前面所有步 transform、最后一步 predict。这样保证预处理与建模的统计量不泄漏。",
+    "tags": ["scikit-learn", "Pipeline"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前 N-1 步 fit_transform 串联，最后一步 fit",
+        "isCorrect": true,
+        "description": "官方文档对 Pipeline.fit 的描述"
+      },
+      {
+        "text": "所有步骤都先 fit 再统一 transform",
+        "isCorrect": false,
+        "description": "中间步需 fit_transform 才能把数据传下去"
+      },
+      {
+        "text": "所有步骤都只调 fit，predict 时才 transform",
+        "isCorrect": false,
+        "description": "训练时中间步必须 transform 才能给下游喂数据"
+      },
+      {
+        "text": "每步并行 fit，最后拼接",
+        "isCorrect": false,
+        "description": "Pipeline 是串联，并行拼接是 FeatureUnion 的语义"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：使用 Pipeline 做交叉验证的核心价值是？",
+    "explanation": "把预处理（如 StandardScaler 的均值方差）装进 Pipeline 后，cross_val_score 会在每折里独立地 fit_transform 预处理——验证集的统计量绝不参与训练的标准化，从而避免数据泄漏。若预处理在 Pipeline 外用全量 fit，验证集信息会泄漏进训练。",
+    "tags": ["scikit-learn", "Pipeline", "数据泄漏", "交叉验证"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "防数据泄漏：每折内独立 fit 预处理，验证集不参与训练统计量",
+        "isCorrect": true,
+        "description": "Pipeline 在 CV 中的核心价值"
+      },
+      {
+        "text": "让训练速度更快",
+        "isCorrect": false,
+        "description": "Pipeline 不保证更快，有时反而有封装开销"
+      },
+      {
+        "text": "自动选择最佳模型",
+        "isCorrect": false,
+        "description": "选模型是 GridSearchCV 的职责，不是 Pipeline"
+      },
+      {
+        "text": "减少代码行数以提升可读性",
+        "isCorrect": false,
+        "description": "可读性是附带好处，核心价值是防泄漏"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：在 GridSearchCV 中跨 Pipeline 层寻址某步骤的参数，正确语法是？",
+    "explanation": "sklearn 用双下划线 __ 逐层展开嵌套结构的参数寻址。如 Pipeline([('svc', SVC())]) 中调 SVC 的 C，参数名写 'svc__C'；嵌套 ColumnTransformer→子 Pipeline 时则是 'prep__num__scaler__with_mean'，每个 __ 下钻一层。",
+    "tags": ["scikit-learn", "GridSearchCV", "参数寻址"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用双下划线逐层展开，如 'svc__C'、'prep__num__scaler__with_mean'",
+        "isCorrect": true,
+        "description": "官方跨层寻址语法"
+      },
+      {
+        "text": "用点号，如 'svc.C'",
+        "isCorrect": false,
+        "description": "点号不是 sklearn 的参数寻址分隔符"
+      },
+      {
+        "text": "用斜杠，如 'svc/C'",
+        "isCorrect": false,
+        "description": "斜杠不是 sklearn 语法"
+      },
+      {
+        "text": "无法跨层寻址，必须拆开 Pipeline",
+        "isCorrect": false,
+        "description": "__ 语法正是为此设计"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：ColumnTransformer 的核心用途是？",
+    "explanation": "ColumnTransformer 对同一份数据的不同列分派不同变换器（数值列标准化、类别列独热、文本列 TF-IDF），各变换器并行处理后把输出横向拼接。它能在防数据泄漏的前提下处理异构列（与 Pipeline 配合 CV 时每折独立 fit）。",
+    "tags": ["scikit-learn", "ColumnTransformer", "预处理"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对不同列分派不同变换器并横向拼接，处理异构数据",
+        "isCorrect": true,
+        "description": "ColumnTransformer 的定义"
+      },
+      {
+        "text": "把多个模型并行训练后投票",
+        "isCorrect": false,
+        "description": "那是 VotingClassifier 的职责"
+      },
+      {
+        "text": "对样本做聚类分箱",
+        "isCorrect": false,
+        "description": "那是 cluster 模块或 KBinsDiscretizer"
+      },
+      {
+        "text": "把高维特征降维",
+        "isCorrect": false,
+        "description": "降维是 PCA/decomposition 模块"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：ColumnTransformer 中 OneHotEncoder 与 CountVectorizer 的列选择有何不同？",
+    "explanation": "OneHotEncoder 接收 2D 输入（传列名列表如 ['city']）；CountVectorizer/TfidfVectorizer 接收 1D 字符串序列（传单列名字符串如 'title'）。混用时的列选择写法必须区分 2D 列表与 1D 字符串，这是高频踩坑点。",
+    "tags": ["scikit-learn", "ColumnTransformer", "1D/2D"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "OneHotEncoder 吃 2D（传列名列表），CountVectorizer 吃 1D（传列名字符串）",
+        "isCorrect": true,
+        "description": "向量化器是 1D、其他变换器是 2D 的核心区别"
+      },
+      {
+        "text": "两者都接收 2D 列名列表",
+        "isCorrect": false,
+        "description": "CountVectorizer 需要一整串文本而非单元格矩阵"
+      },
+      {
+        "text": "两者都接收 1D 列名字符串",
+        "isCorrect": false,
+        "description": "OneHotEncoder 期望每列一个特征，需 2D"
+      },
+      {
+        "text": "ColumnTransformer 不支持文本向量化器",
+        "isCorrect": false,
+        "description": "支持，只需传 1D 列名"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：ColumnTransformer 对未在 transformers 中列出的列默认如何处理？",
+    "explanation": "remainder 参数控制未列出列：默认 'drop'（丢弃）；'passthrough' 原样保留进输出；也可传一个 estimator（如 SimpleImputer）处理剩余列。生产中常显式设 'passthrough' 以保留原始标识列。",
+    "tags": ["scikit-learn", "ColumnTransformer", "remainder"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认 'drop' 丢弃，可设 'passthrough' 原样保留",
+        "isCorrect": true,
+        "description": "remainder 参数的取值"
+      },
+      {
+        "text": "默认 'passthrough' 保留",
+        "isCorrect": false,
+        "description": "默认是 drop，不是 passthrough"
+      },
+      {
+        "text": "默认报错要求列出所有列",
+        "isCorrect": false,
+        "description": "不会报错，未列出的默认被丢弃"
+      },
+      {
+        "text": "默认对所有剩余列独热编码",
+        "isCorrect": false,
+        "description": "默认行为是丢弃，不会自动编码"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：FeatureUnion 与 Pipeline 的根本区别是？",
+    "explanation": "Pipeline 是纵向串联——上一步输出作为下一步输入（数据流过）；FeatureUnion 是并行——多个变换器各自对全量数据 fit，然后把输出横向拼接（特征变宽）。FeatureUnion 不检查特征是否重复，去重是用户责任。",
+    "tags": ["scikit-learn", "FeatureUnion", "Pipeline"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Pipeline 纵向串联数据流，FeatureUnion 并行横向拼接特征",
+        "isCorrect": true,
+        "description": "二者拓扑差异"
+      },
+      {
+        "text": "Pipeline 用于预测，FeatureUnion 用于聚类",
+        "isCorrect": false,
+        "description": "两者都是变换器组合，与任务类型无关"
+      },
+      {
+        "text": "FeatureUnion 会自动去重特征",
+        "isCorrect": false,
+        "description": "官方明确 FeatureUnion 不去重，用户负责"
+      },
+      {
+        "text": "FeatureUnion 已被 Pipeline 取代",
+        "isCorrect": false,
+        "description": "两者并存，用途互补"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：HistGradientBoostingClassifier 相比原版 GradientBoostingClassifier 的核心优势是？",
+    "explanation": "HistGradientBoosting 受 LightGBM 启发，把连续特征分桶成整数直方图，向量化分裂查找并支持 OpenMP 多线程。结果是大样本上训练比原版快约一个数量级，且原生支持缺失值（NaN）与类别特征（categorical_features=），无需预填充或独热编码。",
+    "tags": ["scikit-learn", "HistGradientBoosting", "ensemble"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直方图加速约 10×、原生支持缺失值与类别特征",
+        "isCorrect": true,
+        "description": "HistGB 的两大卖点"
+      },
+      {
+        "text": "自动做特征选择，无需预处理",
+        "isCorrect": false,
+        "description": "HistGB 不做特征选择，只是容忍缺失与类别"
+      },
+      {
+        "text": "原生支持 GPU 训练",
+        "isCorrect": false,
+        "description": "sklearn 本体无 GPU，HistGB 也是 CPU（OpenMP）"
+      },
+      {
+        "text": "完全等价于 LightGBM 的实现",
+        "isCorrect": false,
+        "description": "受 LightGBM 启发但不是同一实现，工程细节有差异"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：HistGradientBoostingClassifier 处理缺失值的正确方式是？",
+    "explanation": "HistGradientBoosting 原生支持 NaN——训练时为每个分裂点学习「缺失样本应走左还是右」的方向（基于增益最大化），无需在 fit 前做 SimpleImputer 填充。这与原版 GradientBoosting（不接受 NaN）形成对比。",
+    "tags": ["scikit-learn", "HistGradientBoosting", "缺失值"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "原生支持，训练时自动学缺失样本的分支方向，无需预填充",
+        "isCorrect": true,
+        "description": "HistGB 的原生 NaN 处理"
+      },
+      {
+        "text": "必须先用 SimpleImputer 填充再训练",
+        "isCorrect": false,
+        "description": "原版 GradientBoosting 才需要，HistGB 不需要"
+      },
+      {
+        "text": "自动丢弃含缺失的样本",
+        "isCorrect": false,
+        "description": "HistGB 不会丢弃，而是学分支方向"
+      },
+      {
+        "text": "把缺失当作类别特征处理",
+        "isCorrect": false,
+        "description": "缺失与类别是两个独立机制"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：HistGradientBoostingClassifier 指定类别特征的参数是？",
+    "explanation": "通过 categorical_features= 参数指定哪些列是类别（传列索引列表如 [0, 3] 或布尔掩码或列名）。指定后 HistGB 会做最优类别分裂而非独热编码，对高基数类别列（如邮编）效果优于 OneHot。",
+    "tags": ["scikit-learn", "HistGradientBoosting", "类别特征"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "categorical_features（传列索引/掩码/列名）",
+        "isCorrect": true,
+        "description": "HistGB 的原生类别特征支持入口"
+      },
+      {
+        "text": "one_hot_encode=True",
+        "isCorrect": false,
+        "description": "HistGB 不做独热，而是最优类别分裂"
+      },
+      {
+        "text": "categories=",
+        "isCorrect": false,
+        "description": "这是 OneHotEncoder 的参数，不是 HistGB 的"
+      },
+      {
+        "text": "必须先用 OneHotEncoder 预处理",
+        "isCorrect": false,
+        "description": "HistGB 设计目的之一正是免去独热"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：CalibratedClassifierCV 的 method='sigmoid' 对应哪种校准技术？",
+    "explanation": "method='sigmoid' 是 Platt scaling——用一个 Logistic 回归把分类器的原始分数映射为概率 p=1/(1+exp(A·f+B))。它保序单调（不损 ROC-AUC），适合小样本和欠自信模型。method='isotonic' 是保序回归（非参，需 >1000 样本），'temperature' 是温度缩放（多分类）。",
+    "tags": ["scikit-learn", "校准", "Platt"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Platt scaling（Logistic 回归映射分数→概率）",
+        "isCorrect": true,
+        "description": "sigmoid 方法的原理"
+      },
+      {
+        "text": "保序回归（isotonic regression）",
+        "isCorrect": false,
+        "description": "对应 method='isotonic'"
+      },
+      {
+        "text": "温度缩放（temperature scaling）",
+        "isCorrect": false,
+        "description": "对应 method='temperature'"
+      },
+      {
+        "text": "分箱平均（binning）",
+        "isCorrect": false,
+        "description": "分箱是 calibration_curve 的诊断手段，不是校准方法"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：CalibratedClassifierCV 的 method='isotonic' 在什么情况下不推荐？",
+    "explanation": "保序回归是非参数方法，自由度高，样本少时易过拟合。官方建议 isotonic 至少需要约 1000 样本才稳。小样本应优先用 'sigmoid'（Platt）。isotonic 还可能在预测概率中引入并列值，轻微影响 AUC。",
+    "tags": ["scikit-learn", "校准", "isotonic"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "样本量小（< 约 1000）时易过拟合",
+        "isCorrect": true,
+        "description": "官方对 isotonic 的样本量建议"
+      },
+      {
+        "text": "多分类任务",
+        "isCorrect": false,
+        "description": "多分类才该考虑 'temperature'，isotonic 也能用于多分类（每类一条曲线）"
+      },
+      {
+        "text": "模型已经欠自信",
+        "isCorrect": false,
+        "description": "欠自信正是 isotonic 的典型适用场景"
+      },
+      {
+        "text": "数据有缺失值",
+        "isCorrect": false,
+        "description": "缺失值与校准方法选择无关"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：HalvingGridSearchCV 的「successive halving」核心思想是？",
+    "explanation": "successive halving 像锦标赛：第一轮用少量资源（默认样本数 min_resources）评估所有候选参数；每轮把资源乘 factor、把存活候选除 factor，淘汰低分者。坏参数在小数据上就被淘汰，省下大样本评估开销，比 GridSearchCV 快得多。factor 越大淘汰越狠。",
+    "tags": ["scikit-learn", "HalvingGridSearchCV", "超参搜索"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "锦标赛式：少量资源评全部，每轮淘汰差的、给存活者加资源",
+        "isCorrect": true,
+        "description": "successive halving 算法"
+      },
+      {
+        "text": "从分布采样固定数量候选再穷举",
+        "isCorrect": false,
+        "description": "这是 RandomizedSearchCV"
+      },
+      {
+        "text": "用贝叶斯优化指导下一组参数",
+        "isCorrect": false,
+        "description": "这是 scikit-optimize 的 BayesSearchCV"
+      },
+      {
+        "text": "用全部数据训练所有候选然后取最优",
+        "isCorrect": false,
+        "description": "这是普通 GridSearchCV"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：使用 HalvingGridSearchCV 前必须做的操作是？",
+    "explanation": "HalvingGridSearchCV 与 HalvingRandomizedSearchCV 仍是实验性 API，可能无弃用周期变更。使用前必须显式导入开关：from sklearn.experimental import enable_halving_search_cv（顺序上要早于从 model_selection 导入），否则 NameError。",
+    "tags": ["scikit-learn", "HalvingGridSearchCV", "experimental"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "from sklearn.experimental import enable_halving_search_cv",
+        "isCorrect": true,
+        "description": "实验性功能的标准开启方式"
+      },
+      {
+        "text": "pip install scikit-learn-experimental",
+        "isCorrect": false,
+        "description": "不存在这个包，开关在主包内"
+      },
+      {
+        "text": "设置环境变量 SKLEARN_EXPERIMENTAL=1",
+        "isCorrect": false,
+        "description": "不是环境变量，是显式 import"
+      },
+      {
+        "text": "无需任何特殊操作，直接 import 即可",
+        "isCorrect": false,
+        "description": "不开启开关会报找不到该类"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：GridSearchCV 的参数寻址 'svc__C' 中 svc 指的是？",
+    "explanation": "'svc__C' 中 svc 是 Pipeline 里该步骤的名字（在 Pipeline([('svc', SVC())]) 中由用户命名，或 make_pipeline 时取类名小写）。双下划线后跟的是该步骤估计器的构造参数。GridSearchCV 据此把候选值下发给对应步骤。",
+    "tags": ["scikit-learn", "GridSearchCV", "参数寻址"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Pipeline 中该步骤的名字（用户命名或 make_pipeline 自动生成）",
+        "isCorrect": true,
+        "description": "__ 前缀对应 step 名"
+      },
+      {
+        "text": "SVC 类的简写",
+        "isCorrect": false,
+        "description": "是 step 名，恰好常等于类名小写，但本质是 step 名"
+      },
+      {
+        "text": "模块名 sklearn.svc",
+        "isCorrect": false,
+        "description": "模块名不影响参数寻址"
+      },
+      {
+        "text": "一个全局变量名",
+        "isCorrect": false,
+        "description": "与变量无关"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：GridSearchCV 完成搜索后，best_estimator_ 是否已在全部训练数据上重训？",
+    "explanation": "GridSearchCV 默认 refit=True：搜索完成后用最佳参数在全集（X, y）上重训一个估计器存入 best_estimator_。这让用户可直接拿 best_estimator_ 做最终预测，无需手动重训。若设 refit=False 则只有 best_params_ 与 best_score_，没有重训的估计器。",
+    "tags": ["scikit-learn", "GridSearchCV", "refit"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "是，refit=True（默认）会用最佳参数在全训练集重训",
+        "isCorrect": true,
+        "description": "默认行为，存为 best_estimator_"
+      },
+      {
+        "text": "否，best_estimator_ 只是 CV 里最优折的模型",
+        "isCorrect": false,
+        "description": "refit=True 会重训，不是复用某折"
+      },
+      {
+        "text": "仅当 cv<5 时才重训",
+        "isCorrect": false,
+        "description": "重训与 cv 折数无关，由 refit 控制"
+      },
+      {
+        "text": "需手动调 best_estimator_.fit(X, y)",
+        "isCorrect": false,
+        "description": "refit=True 已自动完成"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：保存训练好的 Pipeline 到磁盘的推荐方式是？",
+    "explanation": "官方推荐用 joblib.dump 序列化整个 Pipeline（含预处理与模型）。joblib 对含大 NumPy 数组的对象比 pickle 更高效。加载用 joblib.load。注意：序列化结果绑定具体 sklearn/Python 版本，跨大版本不保证兼容，生产应锁定版本。",
+    "tags": ["scikit-learn", "持久化", "joblib"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "joblib.dump(model, 'model.joblib')",
+        "isCorrect": true,
+        "description": "官方推荐，对 NumPy 数组高效"
+      },
+      {
+        "text": "model.save('model.h5')",
+        "isCorrect": false,
+        "description": "这是 Keras/TensorFlow 风格，sklearn 没有 .save 方法"
+      },
+      {
+        "text": "export_to_onnx(model)",
+        "isCorrect": false,
+        "description": "这是部署转换路径，不是 sklearn 持久化的官方方式"
+      },
+      {
+        "text": "直接复制内存对象到磁盘",
+        "isCorrect": false,
+        "description": "内存对象不能直接落盘，需序列化"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：关于跨大版本（如 1.8→1.9）加载旧 joblib 模型，正确说法是？",
+    "explanation": "sklearn 不保证跨大版本的 pickle/joblib 兼容性——内部类结构、参数默认值可能变化，旧模型加载可能失败或行为偏移。生产部署应锁定训练与推理使用相同的 scikit-learn 版本（在 requirements 里固定版本号）。",
+    "tags": ["scikit-learn", "持久化", "版本兼容"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不保证兼容，生产应锁定相同的 sklearn 版本",
+        "isCorrect": true,
+        "description": "官方对 pickle 兼容性的立场"
+      },
+      {
+        "text": "完全向后兼容，可直接加载",
+        "isCorrect": false,
+        "description": "官方明确不保证跨大版本兼容"
+      },
+      {
+        "text": "只要 Python 版本相同就兼容",
+        "isCorrect": false,
+        "description": "Python 相同但 sklearn 大版本不同仍可能不兼容"
+      },
+      {
+        "text": "会自动迁移旧模型结构",
+        "isCorrect": false,
+        "description": "sklearn 不提供自动迁移"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：自定义变换器要融入 Pipeline，正确的继承组合是？",
+    "explanation": "自定义变换器继承 BaseEstimator（获得 get_params/set_params/clone，使其能被 GridSearch 寻址）+ TransformerMixin（获得默认 fit_transform）。__init__ 只原样存储超参（不做校验），校验放 fit；实现 fit（返回 self）与 transform。这样就能像内置变换器一样用。",
+    "tags": ["scikit-learn", "自定义估计器", "BaseEstimator"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "BaseEstimator + TransformerMixin，实现 fit 与 transform",
+        "isCorrect": true,
+        "description": "变换器的标准继承组合"
+      },
+      {
+        "text": "只继承 object，实现 fit/transform 即可",
+        "isCorrect": false,
+        "description": "缺 BaseEstimator 则无 get_params，无法进 GridSearch"
+      },
+      {
+        "text": "继承 ClassifierMixin + TransformerMixin",
+        "isCorrect": false,
+        "description": "分类器与变换器是互斥 Mixin，混用语义错乱"
+      },
+      {
+        "text": "必须继承 Pipeline 类",
+        "isCorrect": false,
+        "description": "自定义变换器是 Pipeline 的「步骤」，不是 Pipeline 本身"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：截至 2026 年 7 月，scikit-learn 的稳定版本是？",
+    "explanation": "根据 scikit-learn.org 官网 news 区，截至 2026 年 7 月，当前稳定版为 1.9.0（2026 年 6 月发布），开发版为 1.10。1.9.0 之前依次是 1.8.0（2025-12）、1.7.x（2025 年中）。",
+    "tags": ["scikit-learn", "版本"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "1.9.0（2026 年 6 月）",
+        "isCorrect": true,
+        "description": "官网 news 区确认的当前 stable"
+      },
+      {
+        "text": "1.7.2（2025 年 9 月）",
+        "isCorrect": false,
+        "description": "1.7.2 是更早的版本"
+      },
+      {
+        "text": "2.0.0",
+        "isCorrect": false,
+        "description": "sklearn 尚未发布 2.0"
+      },
+      {
+        "text": "0.24.2",
+        "isCorrect": false,
+        "description": "0.x 是 1.0 之前的旧版"
+      }
+    ]
+  },
+  {
+    "stem": "scikit-learn：RandomizedSearchCV 相比 GridSearchCV 的适用场景是？",
+    "explanation": "GridSearchCV 穷举 param_grid 的笛卡尔积，适合小离散空间。RandomizedSearchCV 从 param_distributions（可用 scipy 的 loguniform/uniform 等连续分布）采样 n_iter 组，适合大空间或连续超参（如学习率、正则系数），在相同预算下更可能找到好的组合。",
+    "tags": ["scikit-learn", "RandomizedSearchCV", "超参搜索"],
+    "categories": [
+      ["技术方向", "scikit-learn"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "大空间或连续超参，从分布采样 n_iter 组",
+        "isCorrect": true,
+        "description": "RandomizedSearchCV 的定位"
+      },
+      {
+        "text": "必须穷举所有候选",
+        "isCorrect": false,
+        "description": "穷举是 GridSearchCV"
+      },
+      {
+        "text": "只支持离散值",
+        "isCorrect": false,
+        "description": "RandomizedSearchCV 正是为连续分布设计"
+      },
+      {
+        "text": "比 GridSearch 更慢但更准",
+        "isCorrect": false,
+        "description": "采样通常更快，精度取决于 n_iter 与运气"
+      }
+    ]
+  }
+]

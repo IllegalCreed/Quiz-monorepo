@@ -1179,10 +1179,93 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         ],
       },
 
-      // ----- 17. 大语言模型与生成式 AI -----
+      // ----- 17. AI 基础 -----
+      // 2026-07-28 AI 章扩容：机器学习/深度学习的算法与架构概念叶（讲原理），与
+      // 「AI 框架与库」（讲工具 API）、「大语言模型与生成式 AI」（讲应用）形成认知递进。
+      {
+        name: "AI 基础",
+        sort: 17,
+        children: [
+          {
+            name: "机器学习基础",
+            sort: 1,
+            children: [
+              { name: "监督学习", sort: 1 },
+              { name: "无监督学习", sort: 2 },
+              { name: "强化学习", sort: 3 },
+              { name: "AutoML", sort: 4 },
+              { name: "集成学习与树模型", sort: 5 },
+              { name: "特征工程", sort: 6 },
+            ],
+          },
+          {
+            name: "深度学习基础",
+            sort: 2,
+            children: [
+              { name: "神经网络", sort: 1 },
+              { name: "卷积神经网络（CNN）", sort: 2 },
+              { name: "循环神经网络（RNN）", sort: 3 },
+              { name: "Transformer", sort: 4 },
+              { name: "生成对抗网络（GAN）", sort: 5 },
+              { name: "扩散模型", sort: 6 },
+            ],
+          },
+        ],
+      },
+
+      // ----- 18. AI 框架与库 -----
+      // 2026-07-28 AI 章扩容：训练/推理侧的具体工具库。与「AI 基础」（概念）互补：
+      // 基础章讲为什么，本章讲怎么用（API/工程实践）。
+      {
+        name: "AI 框架与库",
+        sort: 18,
+        children: [
+          {
+            name: "通用机器学习框架",
+            sort: 1,
+            children: [
+              { name: "PyTorch 基础", sort: 1 },
+              { name: "PyTorch 分布式训练", sort: 2 },
+              { name: "TensorFlow", sort: 3 },
+              { name: "Keras", sort: 4 },
+              { name: "scikit-learn", sort: 5 },
+              { name: "JAX", sort: 6 },
+              { name: "PaddlePaddle", sort: 7 },
+              { name: "MindSpore", sort: 8 },
+              { name: "ONNX", sort: 9 },
+            ],
+          },
+          {
+            name: "计算机视觉",
+            sort: 2,
+            children: [
+              { name: "OpenCV", sort: 1 },
+              { name: "Ultralytics YOLO", sort: 2 },
+              { name: "MediaPipe", sort: 3 },
+              { name: "OpenMMLab", sort: 4 },
+              { name: "timm", sort: 5 },
+              { name: "Albumentations", sort: 6 },
+            ],
+          },
+          {
+            name: "自然语言处理",
+            sort: 3,
+            children: [
+              { name: "Hugging Face Transformers", sort: 1 },
+              { name: "Hugging Face PEFT 与 TRL", sort: 2 },
+              { name: "Hugging Face Datasets 与 Tokenizers", sort: 3 },
+              { name: "spaCy", sort: 4 },
+              { name: "NLTK", sort: 5 },
+              { name: "Gensim", sort: 6 },
+            ],
+          },
+        ],
+      },
+
+      // ----- 19. 大语言模型与生成式 AI -----
       {
         name: "大语言模型与生成式 AI",
-        sort: 17,
+        sort: 19,
         children: [
           {
             name: "模型",
@@ -1196,6 +1279,8 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "DeepSeek", sort: 6 },
               { name: "Qwen", sort: 7 },
               { name: "MiniMax", sort: 8 },
+              { name: "Kimi", sort: 9 },
+              { name: "Llama", sort: 10 },
             ],
           },
           {
@@ -1230,7 +1315,11 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
           {
             name: "编排工具",
             sort: 4,
-            children: [{ name: "Dify", sort: 1 }],
+            children: [
+              { name: "Dify", sort: 1 },
+              { name: "n8n", sort: 2 },
+              { name: "ComfyUI", sort: 3 },
+            ],
           },
           {
             name: "其他工具",
@@ -1240,6 +1329,15 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
               { name: "LangChain", sort: 2 },
               { name: "OpenRouter", sort: 3 },
               { name: "NotebookLM", sort: 4 },
+              // 2026-07-28 AI 章调研扩容：下列为 RAG 流程的存储/编码组件、LLM 应用 SDK、
+              // 安全合规与检索增强等新物种，与 RAG（流程）同级互为兄弟叶。
+              { name: "向量数据库", sort: 5 },
+              { name: "嵌入模型", sort: 6 },
+              { name: "AI 网关", sort: 7 },
+              { name: "Vercel AI SDK", sort: 8 },
+              { name: "AI 内容审核", sort: 9 },
+              { name: "AI 搜索 API", sort: 10 },
+              { name: "Perplexity API", sort: 11 },
             ],
           },
           {
@@ -1248,22 +1346,21 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
             children: [
               { name: "基础提示设计", sort: 1 },
               { name: "高级提示技巧", sort: 2 },
+              // 2026-07-28 提示词工程扩容：从「内容设计」延伸到「工程化管理」。
+              // 基础/高级讲怎么写好提示词；下列两叶讲版本/评测/监控/红队。
+              { name: "LLM 可观测与评测", sort: 3 },
+              { name: "LLM 测试与红队", sort: 4 },
             ],
           },
           {
             name: "MCP",
             sort: 7,
             children: [
-              { name: "Brave Search", sort: 1 },
-              { name: "GitHub MCP", sort: 2 },
-              { name: "Context7 MCP", sort: 3 },
-              { name: "Playwright MCP", sort: 4 },
-              { name: "Chrome DevTools MCP", sort: 5 },
-              { name: "Figma MCP", sort: 6 },
-              { name: "Blender MCP", sort: 7 },
-              { name: "Notion MCP", sort: 8 },
-              { name: "Sentry MCP", sort: 9 },
-              { name: "Supabase MCP", sort: 10 },
+              {
+                name: "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）",
+                sort: 1,
+              },
+              { name: "常用 MCP Server 集成", sort: 2 },
             ],
           },
           {
@@ -1464,10 +1561,86 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         ],
       },
 
-      // ----- 18. 软技能 -----
+      // ----- 20. AI 开发工具与平台 -----
+      // 2026-07-28 AI 章扩容：模型生命周期工具链（开发→训练→推理→服务化），是基础设施/
+      // 平台层，区别于「大语言模型与生成式 AI」的应用/编排层（Dify/n8n/Agent 等）。
+      {
+        name: "AI 开发工具与平台",
+        sort: 20,
+        children: [
+          {
+            name: "开发环境与社区平台",
+            sort: 1,
+            children: [
+              { name: "Jupyter Notebook", sort: 1 },
+              { name: "Google Colab", sort: 2 },
+              { name: "Hugging Face 平台", sort: 3 },
+            ],
+          },
+          {
+            name: "训练平台与实验追踪",
+            sort: 2,
+            children: [
+              { name: "AWS SageMaker", sort: 1 },
+              { name: "MLflow", sort: 2 },
+              { name: "Weights & Biases", sort: 3 },
+              { name: "DVC", sort: 4 },
+            ],
+          },
+          {
+            name: "LLM 推理引擎",
+            sort: 3,
+            children: [
+              { name: "vLLM", sort: 1 },
+              { name: "Ollama", sort: 2 },
+            ],
+          },
+          {
+            name: "模型服务化与托管",
+            sort: 4,
+            children: [
+              { name: "FastAPI 模型服务化", sort: 1 },
+              { name: "Gradio", sort: 2 },
+              { name: "NVIDIA Triton", sort: 3 },
+              { name: "BentoML", sort: 4 },
+              { name: "Serverless GPU 平台", sort: 5 },
+            ],
+          },
+        ],
+      },
+
+      // ----- 21. AI 在全栈中的应用 -----
+      // 2026-07-28 AI 章扩容：AI 落地全栈的具体场景型技术叶。区别于上层应用编排
+      // （第 19 章的 Agent/RAG），本章聚焦"AI 用在前/后端/研发流程某环节"的实打实技术。
+      {
+        name: "AI 在全栈中的应用",
+        sort: 21,
+        children: [
+          {
+            name: "前端智能",
+            sort: 1,
+            children: [{ name: "Web Speech API", sort: 1 }],
+          },
+          {
+            name: "后端智能",
+            sort: 2,
+            children: [{ name: "推荐系统", sort: 1 }],
+          },
+          {
+            name: "自动化与优化",
+            sort: 3,
+            children: [
+              { name: "代码生成（Copilot-like）", sort: 1 },
+              { name: "AI 测试用例生成", sort: 2 },
+            ],
+          },
+        ],
+      },
+
+      // ----- 22. 软技能 -----
       {
         name: "软技能",
-        sort: 18,
+        sort: 22,
         children: [
           { name: "软件工程（敏捷开发 / Scrum）", sort: 1 },
           {

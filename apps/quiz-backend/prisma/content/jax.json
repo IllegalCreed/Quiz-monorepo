@@ -1,0 +1,653 @@
+[
+  {
+    "stem": "JAX：框架的核心设计哲学是哪一套可组合的「函数变换」？",
+    "explanation": "JAX 定位为「面向加速器的数组计算与程序变换系统」，核心是四大可组合变换：jax.jit（XLA 编译）、jax.grad（自动微分）、jax.vmap（自动向量化批处理）、jax.pmap（多设备并行）。它们可任意嵌套（如 jit(vmap(grad(f)))），这是 JAX 区别于 PyTorch 的根本特性。",
+    "tags": ["JAX", "核心概念", "转换"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "jit（编译）+ grad（微分）+ vmap（批处理）+ pmap（并行）",
+        "isCorrect": true,
+        "description": "JAX 四大可组合函数变换"
+      },
+      {
+        "text": "Session + Placeholder + GraphDef + Saver",
+        "isCorrect": false,
+        "description": "这是 TensorFlow 1.x 静态图概念"
+      },
+      {
+        "text": "Tensor + autograd + nn.Module + DataLoader",
+        "isCorrect": false,
+        "description": "这是 PyTorch 的核心组件"
+      },
+      {
+        "text": "Pipeline + ColumnTransformer + GridSearch + Joblib",
+        "isCorrect": false,
+        "description": "这是 scikit-learn 的工具集"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：关于数组的不可变性，以下写法正确的是？",
+    "explanation": "JAX 数组不可变，x[0] = 1 会抛 TypeError。正确做法是用 x.at[0].set(1)，它返回一个新数组（原数组不变）。.at 还支持 add/multiply/min/max/get/apply 等更新操作。这是 JAX 函数式纯函数模型的基石——同一输入总产生同一输出。",
+    "tags": ["JAX", "不可变数组", "at"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "x = x.at[0].set(1)，返回新数组",
+        "isCorrect": true,
+        "description": "官方推荐的不变更新方式"
+      },
+      {
+        "text": "x[0] = 1 直接原地修改",
+        "isCorrect": false,
+        "description": "JAX 数组不可变，会抛 TypeError"
+      },
+      {
+        "text": "jnp.inplace_set(x, 0, 1)",
+        "isCorrect": false,
+        "description": "不存在这个函数"
+      },
+      {
+        "text": "x.copy(); x[0]=1",
+        "isCorrect": false,
+        "description": "即便 copy，JAX 数组也不支持原地索引赋值"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：为什么要求被 jit/grad/vmap 包裹的函数是「纯函数」？",
+    "explanation": "JAX 通过追踪函数计算图做 XLA 编译与自动微分，前提是函数无副作用——同一输入永远产生同一输出。若函数读改全局变量或做 IO，追踪结果会失真。因此随机数必须显式传 PRNG key、数组必须不可变，这些都是为保证纯函数性。",
+    "tags": ["JAX", "纯函数", "设计"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "保证可追踪、可编译、可并行与可复现——同输入同输出",
+        "isCorrect": true,
+        "description": "纯函数是 JAX 转换成立的前提"
+      },
+      {
+        "text": "为了运行得更快",
+        "isCorrect": false,
+        "description": "纯函数是为了正确性，速度是 XLA 带来的"
+      },
+      {
+        "text": "Python 语言强制要求",
+        "isCorrect": false,
+        "description": "Python 不强制纯函数，是 JAX 的约束"
+      },
+      {
+        "text": "为了兼容 NumPy API",
+        "isCorrect": false,
+        "description": "API 兼容与纯函数约束无关"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：随机数生成必须显式传递 PRNG key 的原因是？",
+    "explanation": "JAX 把随机状态（key）作为显式参数传递，不在全局藏状态。这样同一 key 永远产生同一序列（完全可复现），且并行时各线程/设备拿不同 subkey 互不干扰。用完 key 要 jax.random.split 派生新 key，原 key 不重复用。",
+    "tags": ["JAX", "PRNG", "随机数"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "保证可复现与可并行，状态不藏全局",
+        "isCorrect": true,
+        "description": "显式 PRNG 的两大动机"
+      },
+      {
+        "text": "比 NumPy 的全局随机状态更快",
+        "isCorrect": false,
+        "description": "显式传递不是为了速度，是为了正确性"
+      },
+      {
+        "text": "因为 JAX 不支持随机数",
+        "isCorrect": false,
+        "description": "JAX 完全支持随机数，只是要传 key"
+      },
+      {
+        "text": "TPU 硬件的强制要求",
+        "isCorrect": false,
+        "description": "CPU/GPU 同样要求，与硬件无关"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：求一个标量函数的三阶导数，正确写法是？",
+    "explanation": "jax.grad 嵌套即可求任意阶导数：jax.grad(jax.grad(jax.grad(f))) 得三阶导。这得益于 JAX 转换的可组合性。注意 jax.grad 只对标量输出函数直接适用；向量输出要用 jacfwd/jacrev。",
+    "tags": ["JAX", "grad", "高阶导"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "jax.grad(jax.grad(jax.grad(f)))",
+        "isCorrect": true,
+        "description": "嵌套三次即三阶导"
+      },
+      {
+        "text": "jax.grad(f, order=3)",
+        "isCorrect": false,
+        "description": "jax.grad 没有 order 参数"
+      },
+      {
+        "text": "jax.grad3(f)",
+        "isCorrect": false,
+        "description": "不存在 jax.grad3 这个 API"
+      },
+      {
+        "text": "jax.hessian(f) 再求导",
+        "isCorrect": false,
+        "description": "hessian 只给二阶，三阶需继续嵌套 grad"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：jax.grad 只能直接对哪种输出的函数求梯度？",
+    "explanation": "jax.grad 专用于标量输出函数（如 loss）。向量输出函数要用 jax.jacfwd（前向模式雅可比，输出维多时高效）或 jax.jacrev（反向模式，输入维多时高效）；或对向量函数套一层 sum 再 grad。",
+    "tags": ["JAX", "grad", "标量"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "标量输出函数（如 loss）",
+        "isCorrect": true,
+        "description": "jax.grad 的设计用途"
+      },
+      {
+        "text": "任意维输出函数",
+        "isCorrect": false,
+        "description": "向量输出需 jacfwd/jacrev"
+      },
+      {
+        "text": "只有 1 维输入的函数",
+        "isCorrect": false,
+        "description": "输入维度无限制，限制在输出"
+      },
+      {
+        "text": "只有可微控制流包裹的函数",
+        "isCorrect": false,
+        "description": "控制流可微是另一特性，与输出维度无关"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：jax.vmap 的核心作用是？",
+    "explanation": "jax.vmap 把「处理单个样本」的函数自动批量化，避免手写 batch 维。它通过 in_axes 指定每个输入沿哪个轴做批处理（None 表示广播不批处理），把循环下推到算子层（如把矩阵-向量乘变成矩阵-矩阵乘），比手动 for 循环高效得多。",
+    "tags": ["JAX", "vmap", "批处理"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动批量化，避免手写 batch 维，循环下推到算子层",
+        "isCorrect": true,
+        "description": "vmap 的语义"
+      },
+      {
+        "text": "把函数编译成 XLA 内核",
+        "isCorrect": false,
+        "description": "这是 jit 的职责"
+      },
+      {
+        "text": "跨多个 GPU 并行",
+        "isCorrect": false,
+        "description": "这是 pmap 的职责"
+      },
+      {
+        "text": "求函数的梯度",
+        "isCorrect": false,
+        "description": "这是 grad 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：jax.pmap 与 jax.vmap 的根本区别是？",
+    "explanation": "vmap 在单个设备上做批处理（沿轴向量化）；pmap 把函数复制到多个设备（GPU/TPU core）上做 SPMD 并行，要求第 0 维恰好等于设备数。pmap 通常配合 jax.lax.pmean 跨设备平均梯度（数据并行训练标准模式）。",
+    "tags": ["JAX", "pmap", "vmap", "并行"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "pmap 跨多设备并行，vmap 单设备批处理",
+        "isCorrect": true,
+        "description": "二者的拓扑差异"
+      },
+      {
+        "text": "pmap 比 vmap 更快",
+        "isCorrect": false,
+        "description": "二者用途不同，不是速度对比"
+      },
+      {
+        "text": "pmap 用于推理，vmap 用于训练",
+        "isCorrect": false,
+        "description": "两者训练推理都能用"
+      },
+      {
+        "text": "pmap 已被 vmap 取代",
+        "isCorrect": false,
+        "description": "两者并存，用途互补"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：数据并行训练中跨设备同步梯度的原语是？",
+    "explanation": "jax.lax.pmean(grads, axis_name) 在 pmap 的并行轴上做跨设备平均，这是数据并行的关键——每个设备算自己 batch 的梯度后，pmean 同步成全局平均梯度，保证所有设备参数同步。axis_name 在 pmap 装饰器里声明。",
+    "tags": ["JAX", "pmean", "数据并行"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "jax.lax.pmean(grads, axis_name)",
+        "isCorrect": true,
+        "description": "pmap 并行轴上的集体规约"
+      },
+      {
+        "text": "jax.numpy.mean(grads)",
+        "isCorrect": false,
+        "description": "这是单设备均值，不做跨设备通信"
+      },
+      {
+        "text": "optax.pmean(grads)",
+        "isCorrect": false,
+        "description": "pmean 在 jax.lax，不在 optax"
+      },
+      {
+        "text": "torch.distributed.all_reduce",
+        "isCorrect": false,
+        "description": "这是 PyTorch 的 API"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：XLA 编译对被 jit 的函数中的 Python 控制流有什么限制？",
+    "explanation": "jit 追踪函数时会特化基于值的 Python 控制流——if 的分支选择、for 的循环次数在追踪期被固化，值变化时要重编译。要做值相关（动态）且可微的控制流，需用 jax.lax.scan（可微循环）、jax.lax.cond（可微 if）、jax.lax.while_loop（不可微）等原语。",
+    "tags": ["JAX", "jit", "控制流"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "基于值的控制流会被特化，动态控制流要用 lax.scan/cond 等原语",
+        "isCorrect": true,
+        "description": "jit 对控制流的约束"
+      },
+      {
+        "text": "完全支持任意 Python 控制流且不重编译",
+        "isCorrect": false,
+        "description": "Python 控制流会被特化，需重编译"
+      },
+      {
+        "text": "禁止任何循环，必须全向量化",
+        "isCorrect": false,
+        "description": "可用 lax.scan 等可微循环"
+      },
+      {
+        "text": "只支持 for 不支持 if",
+        "isCorrect": false,
+        "description": "两者都受限，都要用 lax 原语"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：在 jit 编译的函数内打印中间值的正确方式是？",
+    "explanation": "普通 print 在 jit 下只在追踪期执行一次（编译后的内核不跑 Python print）。要在运行时打印，用 jax.debug.print('x={}', x)，它会编译进内核，按实际运行值输出。或临时用 jax.disable_jit() 关编译调试。",
+    "tags": ["JAX", "jit", "调试"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "jax.debug.print('x={}', x)",
+        "isCorrect": true,
+        "description": "可在编译内核内运行时打印"
+      },
+      {
+        "text": "print(x)",
+        "isCorrect": false,
+        "description": "jit 下只在追踪期跑一次，不是运行值"
+      },
+      {
+        "text": "logging.info(x)",
+        "isCorrect": false,
+        "description": "与 print 同样只在追踪期生效"
+      },
+      {
+        "text": "jnp.display(x)",
+        "isCorrect": false,
+        "description": "不存在这个 API"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：测量一段 jit 计算的真实耗时，为什么必须调用 block_until_ready？",
+    "explanation": "JAX 默认异步调度：CPU 把计算派发到加速器后立即返回，结果要等需要时才阻塞取回。若不 block，测的是 dispatch 时间而非真实计算时间。正确做法是 y = f(x); y.block_until_ready() 后再读时钟。",
+    "tags": ["JAX", "异步调度", "性能"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JAX 默认异步派发，不阻塞测的是 dispatch 时间而非真实计算",
+        "isCorrect": true,
+        "description": "异步调度对计时的影响"
+      },
+      {
+        "text": "block_until_ready 会清空缓存让结果更准",
+        "isCorrect": false,
+        "description": "与缓存无关，是等计算完成"
+      },
+      {
+        "text": "不调用 block 会报错",
+        "isCorrect": false,
+        "description": "不会报错，只是测时不准"
+      },
+      {
+        "text": "只有 GPU 才需要",
+        "isCorrect": false,
+        "description": "CPU 也有异步调度，都需阻塞"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：关于嵌套变换 jit(vmap(grad(f))) 的说法正确的是？",
+    "explanation": "JAX 四大变换可任意嵌套——jit(vmap(grad(f))) 一行即可得到「编译后的、批处理的、可微的」函数。这种正交性与可组合性是 JAX 区别于 PyTorch 的核心表达力：PyTorch 没有这种级别的变换组合（autograd 能与 vmap 结合但 jit/vmap/pmap 独立性弱）。",
+    "tags": ["JAX", "可组合性", "转换"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "合法，四大变换可任意嵌套，这是 JAX 的核心表达力",
+        "isCorrect": true,
+        "description": "可组合性是 JAX 的招牌"
+      },
+      {
+        "text": "非法，grad 不能与 vmap 嵌套",
+        "isCorrect": false,
+        "description": "两者可以任意嵌套"
+      },
+      {
+        "text": "只能嵌套两层",
+        "isCorrect": false,
+        "description": "嵌套层数无限制"
+      },
+      {
+        "text": "嵌套顺序不影响结果",
+        "isCorrect": false,
+        "description": "顺序影响语义（如 vmap(grad) vs grad(vmap)）"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：Pytree 在 JAX 中的作用是？",
+    "explanation": "Pytree 把嵌套的 dict/list/tuple（参数字典、优化器状态等）视为统一结构——叶子是数组、内部是容器。jax.tree_util.tree_map 能对整棵树逐叶子映射，使所有变换（grad、vmap、jit）透明穿透复杂参数结构。Optax 的梯度变换、Flax 的参数管理都建立在 pytree 之上。",
+    "tags": ["JAX", "Pytree"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "统一处理嵌套 dict/list 参数结构，让变换透明穿透",
+        "isCorrect": true,
+        "description": "pytree 的核心作用"
+      },
+      {
+        "text": "一种决策树算法",
+        "isCorrect": false,
+        "description": "与机器学习的决策树无关"
+      },
+      {
+        "text": "GPU 内存分配树",
+        "isCorrect": false,
+        "description": "不是内存管理结构"
+      },
+      {
+        "text": "XLA 的编译中间表示",
+        "isCorrect": false,
+        "description": "中间表示是 jaxpr"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：Optax 把优化器设计成「梯度变换链」的好处是？",
+    "explanation": "Optax 用 optax.chain(optax.clip_by_global_norm(1.0), optax.scale_by_adam(), optax.scale(-lr)) 把优化器拆成可组合的梯度变换（裁剪、动量、缩放等），可自由替换任意一环。这种模块化比 PyTorch torch.optim 整体式优化器灵活得多。",
+    "tags": ["JAX", "Optax", "优化器"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "模块化可组合，裁剪/动量/调度等环节可自由替换",
+        "isCorrect": true,
+        "description": "chain 设计的核心价值"
+      },
+      {
+        "text": "比 torch.optim 更快",
+        "isCorrect": false,
+        "description": "速度不是主要目的，灵活性才是"
+      },
+      {
+        "text": "因为 JAX 不支持 Adam",
+        "isCorrect": false,
+        "description": "optax.adam 就是预设的 Adam"
+      },
+      {
+        "text": "为了兼容 NumPy",
+        "isCorrect": false,
+        "description": "与 NumPy 兼容无关"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：Flax 新版 NNX API 与旧版 Linen API 的主要区别是？",
+    "explanation": "旧 Linen 是纯函数式：model 是不可变 graphdef+params，前向用 model.apply(params, x)，更新要显式返回新状态。新 NNX 提供引用语义——model 是可变对象（像 PyTorch），optimizer.update(grads) 直接改 model，更接近 OOP 体验。两者底层都编译成同样的 XLA 代码，NNX 是官方新主推。",
+    "tags": ["JAX", "Flax", "NNX", "Linen"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "NNX 提供引用语义（可变对象），Linen 是纯函数式（不可变）",
+        "isCorrect": true,
+        "description": "两种 API 的语义差异"
+      },
+      {
+        "text": "NNX 不支持 jit，Linen 支持",
+        "isCorrect": false,
+        "description": "两者都编译成 XLA，都支持 jit"
+      },
+      {
+        "text": "Linen 已被弃用不能用了",
+        "isCorrect": false,
+        "description": "官方明确 Linen 近期不弃用"
+      },
+      {
+        "text": "NNX 只能用于推理",
+        "isCorrect": false,
+        "description": "NNX 训练推理都能用"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：截至 2026 年 7 月，JAX 的稳定版本与 Python 最低要求是？",
+    "explanation": "根据 JAX PyPI 页面，截至 2026 年 7 月稳定版为 0.11.0（2026-07-16 发布），要求 Python ≥ 3.12（支持 3.12/3.13/3.14，含 free-threading 3 稳定版）。注意 JAX 版本号仍是 0.x，主版本尚未到 1.0。",
+    "tags": ["JAX", "版本", "Python"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "0.11.0，Python ≥ 3.12",
+        "isCorrect": true,
+        "description": "PyPI 确认的当前版本与要求"
+      },
+      {
+        "text": "1.0.0，Python ≥ 3.9",
+        "isCorrect": false,
+        "description": "JAX 尚未发布 1.0"
+      },
+      {
+        "text": "0.4.28，Python ≥ 3.10",
+        "isCorrect": false,
+        "description": "0.4.x 是更早的版本号段"
+      },
+      {
+        "text": "2.0.0，Python ≥ 3.11",
+        "isCorrect": false,
+        "description": "JAX 没有 2.x 版本"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：在 Windows 上原生使用 NVIDIA GPU 的支持情况是？",
+    "explanation": "官方安装页明确：Windows x86_64 原生仅支持 CPU，NVIDIA GPU 需走 WSL2（实验性）。Linux x86_64 才有完整的 NVIDIA GPU/TPU/AMD GPU 支持。这是 JAX 相对 PyTorch（原生支持 Windows CUDA）的一个短板。",
+    "tags": ["JAX", "平台", "Windows", "GPU"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原生仅 CPU，GPU 需 WSL2（实验性）",
+        "isCorrect": true,
+        "description": "官方平台矩阵"
+      },
+      {
+        "text": "完全支持原生 Windows CUDA",
+        "isCorrect": false,
+        "description": "这是 PyTorch 的能力，JAX 不支持"
+      },
+      {
+        "text": "Windows 上完全不能用",
+        "isCorrect": false,
+        "description": "CPU 版可用，只是 GPU 受限"
+      },
+      {
+        "text": "只支持 Windows 上的 AMD GPU",
+        "isCorrect": false,
+        "description": "Windows 上任何 GPU 都不原生支持"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：jax.numpy 默认的浮点精度与 NumPy 的区别是？",
+    "explanation": "jax.numpy 默认 float32，而 NumPy 默认 float64。这是为兼容 GPU/TPU（历史上对 float64 支持有限或较慢）。若需要 float64（如某些科学计算），要显式 jax.config.update('jax_enable_x64', True) 开启，否则会被静默降为 float32。",
+    "tags": ["JAX", "dtype", "精度"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JAX 默认 float32，NumPy 默认 float64",
+        "isCorrect": true,
+        "description": "两者的默认精度差异"
+      },
+      {
+        "text": "都是 float64",
+        "isCorrect": false,
+        "description": "JAX 默认是 float32"
+      },
+      {
+        "text": "都是 float32",
+        "isCorrect": false,
+        "description": "NumPy 默认 float64"
+      },
+      {
+        "text": "JAX 默认 float16",
+        "isCorrect": false,
+        "description": "默认是 float32，不是 float16"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：jax.checkpoint（旧名 remat）的作用是？",
+    "explanation": "jax.checkpoint（曾用名 jax.remat）用「重算换显存」——前向时不保存中间激活，反向时重新计算它们。对深网络/大模型训练能显著降低峰值显存，代价是额外的重算时间。这是 JAX 大模型训练的常用技巧。",
+    "tags": ["JAX", "checkpoint", "remat", "显存"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用重算换显存，反向时重算前向激活",
+        "isCorrect": true,
+        "description": "梯度检查点的原理"
+      },
+      {
+        "text": "保存检查点到磁盘",
+        "isCorrect": false,
+        "description": "持久化检查点是 Orbax 的职责，不是 jax.checkpoint"
+      },
+      {
+        "text": "加速前向计算",
+        "isCorrect": false,
+        "description": "它增加重算开销，不加速前向"
+      },
+      {
+        "text": "替代 jit 做编译",
+        "isCorrect": false,
+        "description": "与编译无关"
+      }
+    ]
+  },
+  {
+    "stem": "JAX：JAX 文档的当前官方地址是？",
+    "explanation": "JAX 文档已从 jax.readthedocs.io 迁移到 docs.jax.dev（旧地址会 301 跳转）。GitHub 仓库也从 google/jax 迁移到 jax-ml/jax。截至 2026 年 7 月，docs.jax.dev 是权威文档地址。",
+    "tags": ["JAX", "文档", "地址"],
+    "categories": [
+      ["技术方向", "JAX"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "docs.jax.dev",
+        "isCorrect": true,
+        "description": "迁移后的官方文档地址"
+      },
+      {
+        "text": "jax.readthedocs.io（已废弃）",
+        "isCorrect": false,
+        "description": "旧地址，已 301 跳转到 docs.jax.dev"
+      },
+      {
+        "text": "jax.google.com",
+        "isCorrect": false,
+        "description": "不存在这个域名"
+      },
+      {
+        "text": "tensorflow.org/jax",
+        "isCorrect": false,
+        "description": "JAX 与 TF 文档已分离"
+      }
+    ]
+  }
+]

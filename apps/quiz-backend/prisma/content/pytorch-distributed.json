@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "PyTorch 分布式训练：PyTorch 分布式训练采用的基本编程模型与进程-GPU 对应关系是？",
+    "explanation": "PyTorch 分布式训练采用 SPMD（单程序多数据）模型：同一份脚本在 N 个进程中各执行一份，靠 RANK/LOCAL_RANK/WORLD_SIZE 区分身份。GPU 训练遵循一进程一卡——GPU 设备不能跨 DDP 进程共享，每个进程通过 LOCAL_RANK 绑定自己的 GPU。",
+    "tags": ["pytorch", "分布式", "SPMD"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "SPMD：一进程一卡，同脚本多进程执行",
+        "isCorrect": true,
+        "description": "官方 DDP 教程明确推荐的模型"
+      },
+      {
+        "text": "单进程多线程，多卡共享一个进程",
+        "isCorrect": false,
+        "description": "这是 DataParallel 的模式，受 GIL 限制且更慢"
+      },
+      {
+        "text": "每块 GPU 起多个进程轮流使用",
+        "isCorrect": false,
+        "description": "GPU 不能跨 DDP 进程共享，一进程一卡"
+      },
+      {
+        "text": "主进程算梯度，工作进程只取数据",
+        "isCorrect": false,
+        "description": "这是参数服务器式架构，不是 PyTorch 的集合通信模式"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：GPU 训练与 CPU 训练分别应选择的通信后端是？",
+    "explanation": "GPU 训练首选 NCCL 后端（NVIDIA 集合通信库，性能最优）；CPU 训练用 Gloo。Windows 平台 torch.distributed 仅支持 Gloo。2.x 推荐用 torch.distributed.get_default_backend_for_device(acc) 自动选择。",
+    "tags": ["pytorch", "分布式", "后端"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "GPU 用 NCCL，CPU 用 Gloo",
+        "isCorrect": true,
+        "description": "官方文档的后端选型建议"
+      },
+      {
+        "text": "GPU 用 Gloo，CPU 用 NCCL",
+        "isCorrect": false,
+        "description": "恰好说反；NCCL 面向 NVIDIA GPU"
+      },
+      {
+        "text": "统一用 MPI，性能最好",
+        "isCorrect": false,
+        "description": "MPI 需额外安装且不是 GPU 训练推荐路径"
+      },
+      {
+        "text": "统一用 Gloo，兼容所有设备",
+        "isCorrect": false,
+        "description": "Gloo 的 CUDA 集合支持有限，GPU 训练性能远不如 NCCL"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：单机 4 卡启动 DDP 训练脚本的标准命令是？",
+    "explanation": "标准启动器是 torchrun：`torchrun --nproc-per-node=4 train.py`。torchrun 自动注入 RANK/LOCAL_RANK/WORLD_SIZE/MASTER_ADDR/MASTER_PORT 环境变量；2.12 起单机默认使用 OS 分配的空闲端口，不再需要手动避开 29500 端口冲突。直接 python train.py 会因缺少环境变量而失败。",
+    "tags": ["pytorch", "torchrun", "启动"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "torchrun --nproc-per-node=4 train.py",
+        "isCorrect": true,
+        "description": "官方推荐启动方式，环境变量自动注入"
+      },
+      {
+        "text": "python train.py --gpus=4",
+        "isCorrect": false,
+        "description": "缺少 RANK/WORLD_SIZE 等环境变量，init_process_group 会失败"
+      },
+      {
+        "text": "python -m torch.distributed.launch --gpus 4 train.py",
+        "isCorrect": false,
+        "description": "旧 launch 模块已被 torchrun 取代"
+      },
+      {
+        "text": "mpirun -np 4 python train.py",
+        "isCorrect": false,
+        "description": "MPI 不是 PyTorch 推荐启动路径，环境变量约定不匹配"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：RANK、LOCAL_RANK、WORLD_SIZE 三个量的含义分别是？",
+    "explanation": "RANK 是全局进程号（0 到 world_size-1）；LOCAL_RANK 是节点内进程号，决定本进程绑定哪块 GPU；WORLD_SIZE 是作业总进程数。torchrun 将它们以环境变量注入，脚本内用 dist.get_rank() / dist.get_world_size() 读取。注意 RANK 跨弹性重启不稳定，禁止硬编码。",
+    "tags": ["pytorch", "分布式", "rank"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "全局进程号 / 节点内进程号 / 总进程数",
+        "isCorrect": true,
+        "description": "elastic run 文档的标准定义"
+      },
+      {
+        "text": "节点号 / 全局进程号 / 节点数",
+        "isCorrect": false,
+        "description": "RANK 是进程级而非节点级编号"
+      },
+      {
+        "text": "GPU 编号 / 进程号 / GPU 总数",
+        "isCorrect": false,
+        "description": "RANK 是进程身份，不直接等于 GPU 编号（LOCAL_RANK 才对应本地 GPU）"
+      },
+      {
+        "text": "线程号 / 进程号 / 线程总数",
+        "isCorrect": false,
+        "description": "分布式训练是进程模型，不是线程模型"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 训练中 DistributedSampler 的作用是？",
+    "explanation": "DistributedSampler 把数据集按 num_replicas=world_size、rank=rank 切成互不重叠的切片，保证每个 rank 每个 epoch 看到不同的 1/N 数据。训练集需 shuffle=True，且每个 epoch 开头必须调用 sampler.set_epoch(epoch)，否则各 epoch 打乱顺序固定不变。",
+    "tags": ["pytorch", "DDP", "数据"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把数据集切成各 rank 不重叠的切片",
+        "isCorrect": true,
+        "description": "DDP 数据并行的标准配件"
+      },
+      {
+        "text": "把所有数据广播到每个 rank",
+        "isCorrect": false,
+        "description": "广播全量数据等于没有数据并行"
+      },
+      {
+        "text": "在各 rank 间做样本去重",
+        "isCorrect": false,
+        "description": "它按索引切片，不做内容去重"
+      },
+      {
+        "text": "加速 DataLoader 的多进程预取",
+        "isCorrect": false,
+        "description": "预取加速是 num_workers 的职责，与 sampler 无关"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 包裹模型的标准写法（单机单卡一进程）是？",
+    "explanation": "标准写法：model.to(local_rank) 后用 DistributedDataParallel(model, device_ids=[local_rank]) 包裹。一进程一卡必须传 device_ids 指向本进程唯一的 GPU；多 GPU 模型并行场景反而不传 device_ids。构造时 DDP 会从 rank 0 广播初始参数，保证各副本起点一致。",
+    "tags": ["pytorch", "DDP", "API"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "DDP(model, device_ids=[local_rank])",
+        "isCorrect": true,
+        "description": "官方教程的基本用法"
+      },
+      {
+        "text": "DDP(model, device_ids=[0, 1, 2, 3])",
+        "isCorrect": false,
+        "description": "一个 DDP 进程只能操作一块 GPU，不能列多卡"
+      },
+      {
+        "text": "nn.DataParallel(model, device_ids=[0, 1])",
+        "isCorrect": false,
+        "description": "DataParallel 是单进程多线程的旧方案，官方不推荐"
+      },
+      {
+        "text": "DDP(model.forward(), device=local_rank)",
+        "isCorrect": false,
+        "description": "DDP 包裹的是模块本身，不是 forward 的返回张量"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 的梯度同步发生在什么时候、如何做到不拖慢训练？",
+    "explanation": "DDP 为每个参数注册 autograd hook，反向传播中梯度凑满一桶（bucket_cap_mb 默认 25MB）即异步发起 all-reduce，通信与反向计算重叠；backward() 返回时 param.grad 已是全组规约结果。因此训练循环与单机版完全一致，无需显式调用通信 API。",
+    "tags": ["pytorch", "DDP", "梯度同步"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "backward 内分桶 all-reduce，与反向计算重叠",
+        "isCorrect": true,
+        "description": "DDP 的核心性能机制"
+      },
+      {
+        "text": "optimizer.step() 时一次性同步全部梯度",
+        "isCorrect": false,
+        "description": "同步在 backward 内已完成，step 只负责更新"
+      },
+      {
+        "text": "每个 epoch 结束统一同步一次",
+        "isCorrect": false,
+        "description": "每个 step 的 backward 都会同步，否则梯度过期"
+      },
+      {
+        "text": "forward 时同步梯度，backward 纯计算",
+        "isCorrect": false,
+        "description": "梯度只在反向产生，forward 阶段没有梯度可同步"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 训练中保存 checkpoint 的正确做法是？",
+    "explanation": "各 rank 参数始终一致（构造时广播 + 梯度同步），因此只需在 rank == 0 时保存，且应保存 model.module.state_dict() 去掉 DDP 壳。加载时所有进程都要加载，并用 map_location 把张量映射到各自设备，配合 dist.barrier() 保证保存完成后再加载。",
+    "tags": ["pytorch", "DDP", "checkpoint"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "rank 0 保存 model.module.state_dict()，加载时各进程配 map_location",
+        "isCorrect": true,
+        "description": "官方教程的 checkpoint 范例"
+      },
+      {
+        "text": "每个 rank 各自保存完整模型防止丢失",
+        "isCorrect": false,
+        "description": "各 rank 参数一致，重复保存纯浪费 IO"
+      },
+      {
+        "text": "直接 torch.save(ddp_model.state_dict()) 即可，无位置讲究",
+        "isCorrect": false,
+        "description": "key 会带 module. 前缀，且多进程同时写会互相覆盖"
+      },
+      {
+        "text": "只能在最后一个 rank 保存",
+        "isCorrect": false,
+        "description": "保存 rank 无特殊要求，约定 rank 0 即可"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 训练多个 epoch 时忘记 sampler.set_epoch(epoch) 会导致什么？",
+    "explanation": "DistributedSampler 的 shuffle 依赖 set_epoch(epoch) 作为随机种子的一部分；不调用则每个 epoch 各 rank 的样本顺序完全相同，打乱名存实亡，长期训练可能影响收敛质量。这是 DDP 最常见的静默错误之一——不报错，但训练行为错误。",
+    "tags": ["pytorch", "DDP", "陷阱"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每个 epoch 打乱顺序固定不变，shuffle 失效",
+        "isCorrect": true,
+        "description": "官方文档要求每 epoch 调用 set_epoch 的原因"
+      },
+      {
+        "text": "各 rank 吃到重复数据并报错",
+        "isCorrect": false,
+        "description": "切片逻辑不依赖 set_epoch，不会重复也不报错"
+      },
+      {
+        "text": "梯度同步直接挂死",
+        "isCorrect": false,
+        "description": "与集合通信无关，不会挂死"
+      },
+      {
+        "text": "进程组需要重新初始化",
+        "isCorrect": false,
+        "description": "纯采样器行为，与进程组无关"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DDP 做梯度累积时，中间 micro-batch 跳过梯度同步的正确写法是？",
+    "explanation": "用 with model.no_sync(): 上下文包裹中间 micro-batch 的 forward+backward，DDP 会跳过这些步的 all-reduce；最后一个 micro-batch 在正常上下文中执行，完成一次同步后再 optimizer.step()。FSDP2 的等价物是 set_requires_gradient_sync(False/True)。",
+    "tags": ["pytorch", "DDP", "梯度累积"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "中间步 with model.no_sync(): 跳过同步，末步正常同步",
+        "isCorrect": true,
+        "description": "官方推荐的梯度累积姿势，省 (accum-1) 次通信"
+      },
+      {
+        "text": "中间步调用 dist.barrier() 占位",
+        "isCorrect": false,
+        "description": "barrier 是额外同步点，只会让训练更慢"
+      },
+      {
+        "text": "中间步把 loss.backward() 换成 loss.forward()",
+        "isCorrect": false,
+        "description": "不反向就没有梯度，累积无从谈起"
+      },
+      {
+        "text": "直接每步都同步，效果完全等价",
+        "isCorrect": false,
+        "description": "数值等价但每步白付 all-reduce 通信开销"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：相比 DDP，FSDP2（fully_shard）额外分片了哪些状态？",
+    "explanation": "DDP 每卡全量复制模型；FSDP2 把参数、梯度、优化器状态三者都按 dim-0 分片到各数据并行 rank：前向时 all-gather 出全量参数、用完释放；反向后 reduce-scatter 梯度；优化器建在 DTensor 参数上天然分片。AdamW 下显存占用随 N 增大显著下降，这是单卡装不下大模型时的标准解法。",
+    "tags": ["pytorch", "FSDP2", "分片"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "参数 + 梯度 + 优化器状态全部按 dim-0 分片",
+        "isCorrect": true,
+        "description": "FSDP 的全分片定义"
+      },
+      {
+        "text": "只分片激活值",
+        "isCorrect": false,
+        "description": "激活分片是激活检查点/序列并行的范畴，不是 FSDP 的定义"
+      },
+      {
+        "text": "只分片优化器状态",
+        "isCorrect": false,
+        "description": "那只是 ZeRO-1，FSDP 是三样全分"
+      },
+      {
+        "text": "只分片数据集",
+        "isCorrect": false,
+        "description": "数据切片 DistributedSampler 就在做，与 FSDP 无关"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：FSDP2 要求 bottom-up 应用 fully_shard（先每层再根模块）的根本原因是？",
+    "explanation": "每次 fully_shard(module) 调用创建一个通信组，组内参数一次 all-gather / reduce-scatter；FSDP2 没有 DDP 那样的 bucket_cap_mb，通信边界完全由模块结构决定。bottom-up 按层应用让下一层的 all-gather 能在独立 CUDA stream 上与当前层计算重叠；只包根模块则全模型一个组，前向开头一次巨型 all-gather、反向结束一次巨型 reduce-scatter，零重叠，几乎永远是错法。",
+    "tags": ["pytorch", "FSDP2", "通信重叠"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每次调用即一个通信组，分层应用才能实现通信与计算重叠",
+        "isCorrect": true,
+        "description": "FSDP2 文档的核心机制"
+      },
+      {
+        "text": "根模块不认识子模块参数，必须逐层注册",
+        "isCorrect": false,
+        "description": "fully_shard 递归收集参数，与「认识」无关"
+      },
+      {
+        "text": "bottom-up 可以跳过初始化广播",
+        "isCorrect": false,
+        "description": "应用顺序与初始化广播无因果关系"
+      },
+      {
+        "text": "只是代码风格约定，对性能无影响",
+        "isCorrect": false,
+        "description": "官方明确警告只包根模块几乎永远是错法"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DTensor redistribute 布局转换与集合通信的对应关系，正确的是？",
+    "explanation": "官方文档给出的映射：Shard→Replicate 触发 all_gather；Shard(a)→Shard(b) 触发 all_to_all；Replicate→Shard 只是本地 chunk（无通信）；Partial→Replicate 触发 all_reduce；Partial→Shard 触发 reduce_scatter。redistribute 可微，反向公式由 DTensor 自动处理。",
+    "tags": ["pytorch", "DTensor", "集合通信"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Shard→Replicate 是 all_gather，Partial→Shard 是 reduce_scatter",
+        "isCorrect": true,
+        "description": "文档中的标准映射表"
+      },
+      {
+        "text": "Shard→Replicate 是 broadcast，Partial→Replicate 是 reduce",
+        "isCorrect": false,
+        "description": "broadcast/reduce 是单源/单汇语义，不符合全组对称的布局转换"
+      },
+      {
+        "text": "所有转换都是 all_reduce",
+        "isCorrect": false,
+        "description": "不同转换对应不同原语，通信量差异巨大"
+      },
+      {
+        "text": "Replicate→Shard 需要 all_gather",
+        "isCorrect": false,
+        "description": "复制到分片只需本地 chunk，零通信"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：对普通 torch.Tensor 与 DTensor 混合做运算会发生什么？",
+    "explanation": "DTensor 要求算子的所有张量参数都是 DTensor——混用会直接报错「got mixed torch.Tensor and DTensor」，因为框架无法判断普通 Tensor 在各 rank 是否一致（复制还是分片语义有歧义）。修法：各 rank 数据一致就用 DTensor.from_local(t, mesh, [Replicate()]) 显式包装成复制布局再运算。",
+    "tags": ["pytorch", "DTensor", "陷阱"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "直接报错，需用 from_local 显式声明布局",
+        "isCorrect": true,
+        "description": "文档明确的错误信息与修法"
+      },
+      {
+        "text": "自动把普通 Tensor 当分片处理",
+        "isCorrect": false,
+        "description": "框架拒绝猜测布局语义，不做隐式假设"
+      },
+      {
+        "text": "自动广播普通 Tensor 到所有 rank",
+        "isCorrect": false,
+        "description": "隐式复制由 implicit_replication 上下文显式开启才生效，且有静默错误风险"
+      },
+      {
+        "text": "静默在 rank 0 上计算并同步结果",
+        "isCorrect": false,
+        "description": "不存在这种隐式行为"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：TP（张量并行）中 ColwiseParallel 与 RowwiseParallel 为什么总是成对出现？",
+    "explanation": "ColwiseParallel 把权重按列（输出维）切分，输出默认在最后一维分片；RowwiseParallel 按行（输入维）切分，恰好消费最后一维分片的输入，输出经一次 all-reduce 变回复制。配对使用（如 MLP 的 w1+w2、Attention 的 wq/wk/wv+wo）让中间激活始终保持分片，每层只付一次 all-reduce。注意 parallelize_module 只接受 1D DeviceMesh（mesh[\"tp\"]）。",
+    "tags": ["pytorch", "TP", "张量并行"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Colwise 输出恰是 Rowwise 输入，中间零通信、层末一次 all-reduce",
+        "isCorrect": true,
+        "description": "Transformer MLP/Attention 的标准 TP 配方"
+      },
+      {
+        "text": "两者互为备份，防单点故障",
+        "isCorrect": false,
+        "description": "TP 是切分计算，与容错无关"
+      },
+      {
+        "text": "Colwise 负责前向，Rowwise 负责反向",
+        "isCorrect": false,
+        "description": "两者都同时参与前向与反向"
+      },
+      {
+        "text": "框架强制要求成对，单用会报错",
+        "isCorrect": false,
+        "description": "单用合法，但会多出不必要的布局转换通信"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：torch.distributed.pipelining（PP）对输入形状的硬约束是？",
+    "explanation": "PipelineStage 需要预先知道各段的输入输出形状来分配通信缓冲，因此形状必须静态——运行期形状与预期不符会抛 PipeliningShapeError。与混合精度或其他并行组合时，还要保证传给 PipelineStage 的 output_args 形状与 dtype 反映组合后的真实值。",
+    "tags": ["pytorch", "PP", "流水并行"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "形状必须静态，运行期变化抛 PipeliningShapeError",
+        "isCorrect": true,
+        "description": "pipelining 文档的明确约束"
+      },
+      {
+        "text": "形状可任意变化，框架自动重分配缓冲",
+        "isCorrect": false,
+        "description": "缓冲按静态形状预分配，不支持动态变化"
+      },
+      {
+        "text": "只要求 batch 维固定，其余随意",
+        "isCorrect": false,
+        "description": "所有维度都参与缓冲分配，均需静态"
+      },
+      {
+        "text": "形状由第一个 micro-batch 决定后可变一次",
+        "isCorrect": false,
+        "description": "无此机制，变化即报错"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：2.12 起 torchrun 单机训练在端口行为上的变化是？",
+    "explanation": "2.12 起 torchrun --nproc-per-node=N script.py（未指定 --master-port/--standalone 的多实例场景除外）默认经 c10d rendezvous 使用 OS 分配的空闲端口，取代旧的固定 29500，彻底消除同机多作业「Address already in use」冲突。多机训练、显式 --master-port 与 --standalone 行为不变。",
+    "tags": ["pytorch", "torchrun", "版本"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "默认改用 OS 分配的空闲端口，告别 29500 冲突",
+        "isCorrect": true,
+        "description": "2.12 Release Notes 的 TorchElastic 变更"
+      },
+      {
+        "text": "默认端口改为 29400",
+        "isCorrect": false,
+        "description": "29400 是多机 rdzv-endpoint 的默认端口，不是单机 rendezvous 端口"
+      },
+      {
+        "text": "必须手动指定 --master-port 才能启动",
+        "isCorrect": false,
+        "description": "恰恰相反，2.12 起不指定也能自动找空闲端口"
+      },
+      {
+        "text": "取消 rendezvous，改用文件锁",
+        "isCorrect": false,
+        "description": "rendezvous 机制保留，只是端口分配策略变化"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：2.11 起使用 DeviceMesh 的一个关键前置条件是？",
+    "explanation": "2.11 起 DeviceMesh 内置进程组注册表（_pg_registry），使 torch.compile 能追踪 get_group()；副作用是创建 DeviceMesh 时进程组必须已存在——即必须先 dist.init_process_group(...) 再 init_device_mesh(...)，否则 compile 期 PG 查找会失败。",
+    "tags": ["pytorch", "DeviceMesh", "版本"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先 init_process_group 再创建 DeviceMesh",
+        "isCorrect": true,
+        "description": "2.11 的后向不兼容变更"
+      },
+      {
+        "text": "先创建 DeviceMesh 再 init_process_group",
+        "isCorrect": false,
+        "description": "顺序恰好相反，mesh 创建时就要解析 PG"
+      },
+      {
+        "text": "必须先 pip install torchcomms",
+        "isCorrect": false,
+        "description": "torchcomms 是 2.13 的新后端，与 mesh 前置条件无关"
+      },
+      {
+        "text": "必须先启用 torch.compile",
+        "isCorrect": false,
+        "description": "compile 是受益者而非前置条件"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：HSDP（混合分片数据并行）在 FSDP2 中如何表达、解决什么问题？",
+    "explanation": "FSDP2 中给 fully_shard 传 2D DeviceMesh 即得 HSDP：参数按 (Replicate(), Shard(0)) 放置——跨第一维（如节点间）复制、沿第二维（如节点内）分片。相比纯 FSDP 全组 all-gather，HSDP 把分片通信限制在节点内高速互联，跨节点只做梯度 all-reduce，显著降低跨机通信量。",
+    "tags": ["pytorch", "FSDP2", "HSDP"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "2D mesh：节点内分片、跨节点复制，降低跨机通信",
+        "isCorrect": true,
+        "description": "fully_shard 文档对 2D mesh 语义的定义"
+      },
+      {
+        "text": "把一半参数分片一半复制，随机选择",
+        "isCorrect": false,
+        "description": "HSDP 由 mesh 拓扑决定，不是随机混合"
+      },
+      {
+        "text": "在 CPU 与 GPU 间混合放置参数",
+        "isCorrect": false,
+        "description": "那是 CPUOffloadPolicy 的职责"
+      },
+      {
+        "text": "DDP 与 TP 的自动切换器",
+        "isCorrect": false,
+        "description": "HSDP 是数据并行家族内部策略，与张量并行无关"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：2.13 引入的 torchcomms 的定位与启用方式是？",
+    "explanation": "torchcomms 是 PyTorch Distributed 的新一代通信后端（experimental），主打大集群训练的容错（优雅超时、部分组恢复）、可扩展性与可调试性（结构化日志），仓库在 meta-pytorch/torchcomms。2.12 起可 pip install torchcomms 并设 TORCH_DISTRIBUTED_USE_TORCHCOMMS=1 试用，官方计划让它成为默认通信路径。",
+    "tags": ["pytorch", "torchcomms", "版本"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "新通信后端，pip install torchcomms + TORCH_DISTRIBUTED_USE_TORCHCOMMS=1",
+        "isCorrect": true,
+        "description": "2.12/2.13 官方公告的试用方式"
+      },
+      {
+        "text": "新的模型并行 API，替代 DTensor",
+        "isCorrect": false,
+        "description": "torchcomms 是通信层，不替代张量抽象"
+      },
+      {
+        "text": "NCCL 的 Python 封装，改个名字而已",
+        "isCorrect": false,
+        "description": "它提供高层 collectives API 与多个后端，不只是改名"
+      },
+      {
+        "text": "2.13 起强制默认启用且不可关闭",
+        "isCorrect": false,
+        "description": "2.13 中仍是 experimental 新件，经环境变量 opt-in"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：2.13 中 FSDP2 的 set_separate_reduce_scatter_group(True) 解决了什么瓶颈？",
+    "explanation": "此前 FSDP2 的 all-gather 与 reduce-scatter 虽走不同 CUDA stream，但共用同一进程组（一个 NCCL communicator），集合通信在网线上被串行化。2.13 的 set_separate_reduce_scatter_group(True)（opt-in 实验特性）为 reduce-scatter 创建独立进程组，反向时 reduce-scatter 与预取的 all-gather 可真正并发，提升分布式训练吞吐。",
+    "tags": ["pytorch", "FSDP2", "通信重叠"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "同一 communicator 串行化 RS 与 AG，独立进程组实现真并发",
+        "isCorrect": true,
+        "description": "2.13 Release Notes 的 FSDP2 亮点"
+      },
+      {
+        "text": "解决 reduce-scatter 的数值精度问题",
+        "isCorrect": false,
+        "description": "这是通信调度优化，与精度无关"
+      },
+      {
+        "text": "让 reduce-scatter 在 CPU 上执行省显存",
+        "isCorrect": false,
+        "description": "进程组分离不改变设备放置"
+      },
+      {
+        "text": "替代 MixedPrecisionPolicy 的梯度降精度",
+        "isCorrect": false,
+        "description": "与混合精度是正交特性"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：FSDP2 中为什么禁止直接调用 model.forward(input)，替代方案是？",
+    "explanation": "FSDP2 靠 pre-forward 钩子触发参数 all-gather，而钩子挂在 __call__ 路径上——直接调 model.forward(input) 会绕过钩子，拿到的是分片参数直接计算的错误结果。正确做法是永远 model(input)；自定义前向方法（如 generate）则用 register_fsdp_forward_method(model, \"generate\") 注册，让钩子生效。",
+    "tags": ["pytorch", "FSDP2", "契约"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "绕过 all-gather 钩子；用 model(x) 或 register_fsdp_forward_method 注册自定义方法",
+        "isCorrect": true,
+        "description": "FSDP2 文档的用户契约"
+      },
+      {
+        "text": "forward 是私有方法会被删除",
+        "isCorrect": false,
+        "description": "forward 仍是公开方法，只是不经钩子"
+      },
+      {
+        "text": "会直接报 SyntaxError",
+        "isCorrect": false,
+        "description": "不报错而是静默算出错误结果，更危险"
+      },
+      {
+        "text": "只影响 eval 模式，训练不受影响",
+        "isCorrect": false,
+        "description": "训练与推理都依赖 pre-forward all-gather"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：DTensor.from_local 反向传播的梯度布局默认映射规则（2.11 起）是？",
+    "explanation": "2.11 起 from_local/to_local 的反向梯度布局默认映射为：Shard→Shard、Replicate→Replicate、Partial→Replicate。此前 Partial 前向布局会在反向保留 Partial 梯度，与 from_local 组合可能产生错误梯度；现在默认规约到 Replicate，语义更清晰。需要完全控制时可显式传 grad_placements。",
+    "tags": ["pytorch", "DTensor", "版本"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Shard→Shard、Replicate→Replicate、Partial→Replicate",
+        "isCorrect": true,
+        "description": "2.11 的后向不兼容修正，避免错误梯度"
+      },
+      {
+        "text": "全部映射为 Replicate",
+        "isCorrect": false,
+        "description": "Shard 布局梯度保持 Shard，只有 Partial 被规约"
+      },
+      {
+        "text": "全部保持前向布局不变",
+        "isCorrect": false,
+        "description": "这正是 2.11 修复前的行为，会产生错误梯度"
+      },
+      {
+        "text": "Partial→Shard 以节省显存",
+        "isCorrect": false,
+        "description": "默认选 Replicate 求语义清晰，省显存需显式 grad_placements"
+      }
+    ]
+  },
+  {
+    "stem": "PyTorch 分布式训练：设计「TP × FSDP2 × PP」3D 并行拓扑时，维度放置的通行原则是？",
+    "explanation": "通信密度决定放置：TP 的 all-reduce 每层都发生、通信最密，必须放节点内 NVLink 域（如 8 卡）；FSDP2/DP 的 all-gather/reduce-scatter 量次之，跨节点走 IB；PP 只传段间激活、通信量最小，最适合跨慢链路。TorchTitan 的 Llama 3D 并行即按此原则组合，官方推荐作为参考实现。",
+    "tags": ["pytorch", "3D并行", "最佳实践"],
+    "categories": [
+      ["技术方向", "PyTorch 分布式训练"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "TP 节点内、FSDP2 跨节点、PP 跨最慢链路",
+        "isCorrect": true,
+        "description": "通信密度与链路带宽匹配的通行做法"
+      },
+      {
+        "text": "PP 必须节点内，TP 跨节点",
+        "isCorrect": false,
+        "description": "恰好说反——TP 通信最密最需要 NVLink"
+      },
+      {
+        "text": "三者都放节点内，跨节点只用 DDP",
+        "isCorrect": false,
+        "description": "单节点装不下超大模型，3D 并行的意义正在跨节点扩展"
+      },
+      {
+        "text": "随机放置，DeviceMesh 会自动优化",
+        "isCorrect": false,
+        "description": "网格拓扑由用户显式指定，框架不做自动放置"
+      }
+    ]
+  }
+]
