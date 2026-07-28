@@ -1,0 +1,777 @@
+[
+  {
+    "stem": "Datasets：Hugging Face Datasets 的底层存储格式（实现零拷贝与超内存加载）是？",
+    "explanation": "Datasets 底层用 Apache Arrow 列式内存格式，数据落盘为 .arrow 文件，访问时用内存映射（mmap）按需读页，因此 ds[i] 是零拷贝、数据集可远大于内存而 RAM 占用恒定。这是 Datasets 区别于 pandas（受限于内存）的核心优势。",
+    "tags": ["datasets", "arrow", "内存映射", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Apache Arrow（内存映射，零拷贝、可超内存）",
+        "isCorrect": true,
+        "description": "mmap 按需读页"
+      },
+      {
+        "text": "JSON 文件",
+        "isCorrect": false,
+        "description": "JSON 是加载来源之一，不是底层存储"
+      },
+      {
+        "text": "CSV",
+        "isCorrect": false,
+        "description": "CSV 是加载来源，不是底层 Arrow 格式"
+      },
+      {
+        "text": "SQLite 数据库",
+        "isCorrect": false,
+        "description": "不是数据库，是 Arrow 内存映射"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：从 Hub 加载标准数据集（如 IMDB）的核心函数是？",
+    "explanation": "load_dataset(repo_id) 是核心加载入口：从 Hub 数据集仓库、本地文件（csv/json/parquet/txt）等多种来源加载数据，返回 Dataset（单 split）或 DatasetDict（多 split）。首次加载会转成 Arrow 缓存到 ~/.cache/huggingface，后续秒级加载。",
+    "tags": ["datasets", "load_dataset", "API", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "load_dataset(\"namespace/dataset\")",
+        "isCorrect": true,
+        "description": "支持 Hub/本地多种来源"
+      },
+      {
+        "text": "read_dataset()",
+        "isCorrect": false,
+        "description": "函数名是 load_dataset 不是 read_dataset"
+      },
+      {
+        "text": "import_dataset()",
+        "isCorrect": false,
+        "description": "函数名是 load_dataset"
+      },
+      {
+        "text": "open_dataset()",
+        "isCorrect": false,
+        "description": "函数名是 load_dataset"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：Hugging Face Tokenizers 库用什么语言实现以保证速度？",
+    "explanation": "Tokenizers 用 Rust 实现核心分词逻辑，官方宣称在服务器 CPU 上不到 20 秒即可 tokenize 1GB 文本。Python 只是绑定层。这种 Rust 后端 + Python 前端的设计兼顾了性能与易用性，也是 Transformers AutoTokenizer 的快速后端。",
+    "tags": ["tokenizers", "rust", "性能", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Rust（<20s tokenize 1GB 文本）",
+        "isCorrect": true,
+        "description": "Rust 后端保证速度"
+      },
+      {
+        "text": "纯 Python",
+        "isCorrect": false,
+        "description": "纯 Python 不会这么快，是 Rust 实现"
+      },
+      {
+        "text": "C++",
+        "isCorrect": false,
+        "description": "是 Rust 不是 C++"
+      },
+      {
+        "text": "Java",
+        "isCorrect": false,
+        "description": "是 Rust 不是 Java"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：BERT 系列模型使用的子词分词算法是？",
+    "explanation": "WordPiece 是 BERT、DistilBERT 等模型使用的算法：贪心地构建最长 token，遇到不在词表的词则用 ## 前缀表示续接子词（如 playing → play + ##ing）。它从字符出发逐步构建更长 token，与 BPE（合并最高频对）思路不同。",
+    "tags": ["tokenizers", "wordpiece", "bert", "算法"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "WordPiece（用 ## 前缀表续接子词）",
+        "isCorrect": true,
+        "description": "BERT 系列的算法"
+      },
+      {
+        "text": "BPE",
+        "isCorrect": false,
+        "description": "BPE 用于 GPT/LLaMA，不是 BERT"
+      },
+      {
+        "text": "Unigram",
+        "isCorrect": false,
+        "description": "Unigram 用于 T5/SentencePiece，不是 BERT"
+      },
+      {
+        "text": "WordLevel",
+        "isCorrect": false,
+        "description": "WordLevel 是纯词表，OOV 多，非 BERT 用"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：GPT-2/LLaMA 系列模型使用的子词分词算法是？",
+    "explanation": "BPE（Byte-Pair Encoding）是 GPT-2/3/4、LLaMA、Qwen、Mistral 等使用的算法：从字符开始，迭代合并语料中最高频的相邻字节对，构建词表。常配合 ByteLevel PreTokenizer（把所有字节映射到可见字符，实现无 OOV）。",
+    "tags": ["tokenizers", "bpe", "gpt", "llama", "算法"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "BPE（Byte-Pair Encoding，合并最高频字节对）",
+        "isCorrect": true,
+        "description": "GPT/LLaMA 系列的算法"
+      },
+      {
+        "text": "WordPiece",
+        "isCorrect": false,
+        "description": "WordPiece 是 BERT 系列"
+      },
+      {
+        "text": "Unigram",
+        "isCorrect": false,
+        "description": "Unigram 是 T5/SentencePiece"
+      },
+      {
+        "text": "WordLevel",
+        "isCorrect": false,
+        "description": "WordLevel 不做子词合并"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：T5、ALBERT 等配合 SentencePiece 使用的子词算法是？",
+    "explanation": "Unigram 是 T5、mT5、ALBERT 等（配合 SentencePiece）使用的算法：不按规则顺序合并，而是寻找使整个句子概率最大的子词集合（概率式、非确定性）。一个词可有多种分法，选概率最高的。常配 Metaspace PreTokenizer（用 ▁ 表词首）。",
+    "tags": ["tokenizers", "unigram", "t5", "sentencepiece", "算法"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Unigram（概率最大化子词集，非确定性）",
+        "isCorrect": true,
+        "description": "T5/SentencePiece 的算法"
+      },
+      {
+        "text": "WordPiece",
+        "isCorrect": false,
+        "description": "WordPiece 是 BERT 系列"
+      },
+      {
+        "text": "BPE",
+        "isCorrect": false,
+        "description": "BPE 是 GPT/LLaMA 系列"
+      },
+      {
+        "text": "WordLevel",
+        "isCorrect": false,
+        "description": "WordLevel 不做子词"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：对数据集每条（或每批）应用预处理函数的方法是？",
+    "explanation": "dataset.map(fn) 对每条应用函数返回新 Dataset。配 batched=True 时 fn 接收「列→值列表」的字典、批量处理（快得多），配 num_proc=N 多进程并行。注意 map 返回新对象，不原地修改，需 ds = ds.map(...) 接收。",
+    "tags": ["datasets", "map", "API", "预处理"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "dataset.map(fn, batched=True, num_proc=N)",
+        "isCorrect": true,
+        "description": "批量+多进程预处理"
+      },
+      {
+        "text": "dataset.apply(fn)",
+        "isCorrect": false,
+        "description": "方法名是 map 不是 apply"
+      },
+      {
+        "text": "dataset.transform(fn)",
+        "isCorrect": false,
+        "description": "方法名是 map（with_transform 是即时变换）"
+      },
+      {
+        "text": "dataset.process(fn)",
+        "isCorrect": false,
+        "description": "方法名是 map"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：按条件保留满足条件的行的方法是？",
+    "explanation": "dataset.filter(fn) 保留 fn 返回 True 的行。可配 with_indices=True 让 fn 同时接收下标（如 lambda ex, idx: idx % 2 == 0 取偶数行）。与 select（按下标取行）不同，filter 按条件。",
+    "tags": ["datasets", "filter", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "dataset.filter(lambda ex: 条件)",
+        "isCorrect": true,
+        "description": "按条件保留行"
+      },
+      {
+        "text": "dataset.where(条件)",
+        "isCorrect": false,
+        "description": "方法名是 filter 不是 where"
+      },
+      {
+        "text": "dataset.keep(条件)",
+        "isCorrect": false,
+        "description": "方法名是 filter"
+      },
+      {
+        "text": "dataset.query(条件)",
+        "isCorrect": false,
+        "description": "方法名是 filter（pandas 才用 query）"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：从零训练一个 BPE 词表，需要搭配哪个 Trainer？",
+    "explanation": "每种 Model 对应一个 Trainer：BPE 用 BpeTrainer、WordPiece 用 WordPieceTrainer、Unigram 用 UnigramTrainer。训练时 tokenizer.train(files, trainer)，trainer 设 vocab_size、special_tokens 等参数。",
+    "tags": ["tokenizers", "trainer", "bpe", "训练"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "BpeTrainer",
+        "isCorrect": true,
+        "description": "BPE 对应的 Trainer"
+      },
+      {
+        "text": "WordPieceTrainer",
+        "isCorrect": false,
+        "description": "那是 WordPiece 的 Trainer"
+      },
+      {
+        "text": "UnigramTrainer",
+        "isCorrect": false,
+        "description": "那是 Unigram 的 Trainer"
+      },
+      {
+        "text": "Trainer（通用）",
+        "isCorrect": false,
+        "description": "没有通用 Trainer，按算法分 BpeTrainer 等"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：把已训练好的 tokenizer 加载复用的方法是？",
+    "explanation": "Tokenizer.from_pretrained(id) 从 Hub 或本地加载已训练的 tokenizer（tokenizer.json）。也可用 save(path) 保存后再 from_file(path) 加载。from_pretrained 是最常用的复用入口。",
+    "tags": ["tokenizers", "from_pretrained", "加载", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "Tokenizer.from_pretrained(id)",
+        "isCorrect": true,
+        "description": "从 Hub/本地加载已训练 tokenizer"
+      },
+      {
+        "text": "Tokenizer.load(id)",
+        "isCorrect": false,
+        "description": "方法名是 from_pretrained 不是 load"
+      },
+      {
+        "text": "Tokenizer.read(id)",
+        "isCorrect": false,
+        "description": "方法名是 from_pretrained"
+      },
+      {
+        "text": "Tokenizer.import(id)",
+        "isCorrect": false,
+        "description": "方法名是 from_pretrained"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：处理超大数据集（不必整体下载）的流式加载参数是？",
+    "explanation": "load_dataset(..., streaming=True) 返回 IterableDataset，逐条产出而不整体下载，适合 TB 级（如 C4）或在线数据。代价是：无法随机访问 ds[i]、无 len()、shuffle 是近似的（用 buffer），且训练时 Trainer 必须设 max_steps。",
+    "tags": ["datasets", "streaming", "iterabledataset", "超大数据"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "streaming=True（返回 IterableDataset）",
+        "isCorrect": true,
+        "description": "流式逐条产出"
+      },
+      {
+        "text": "lazy=True",
+        "isCorrect": false,
+        "description": "参数名是 streaming 不是 lazy"
+      },
+      {
+        "text": "incremental=True",
+        "isCorrect": false,
+        "description": "参数名是 streaming"
+      },
+      {
+        "text": "online=True",
+        "isCorrect": false,
+        "description": "参数名是 streaming"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：streaming 模式返回的 IterableDataset 相比普通 Dataset 的关键限制是？",
+    "explanation": "IterableDataset 是流式迭代器，无法随机访问 ds[i]、无法 len() 取长度、shuffle 只能用 buffer 近似（非全局洗牌）。因此训练时因无法推算总步数，Trainer 必须显式设 max_steps。优点是可处理超内存/在线数据。",
+    "tags": ["datasets", "streaming", "iterabledataset", "限制"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无法随机访问、无 len()、shuffle 近似",
+        "isCorrect": true,
+        "description": "流式的固有代价"
+      },
+      {
+        "text": "速度比普通 Dataset 慢十倍",
+        "isCorrect": false,
+        "description": "流式不一定慢，主要限制是访问方式"
+      },
+      {
+        "text": "不支持 map/filter",
+        "isCorrect": false,
+        "description": "IterableDataset 也支持 map/filter，只是返回 IterableDataset"
+      },
+      {
+        "text": "只能处理小数据集",
+        "isCorrect": false,
+        "description": "恰恰相反，专为超大数据设计"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：dataset.shuffle(seed) 后访问变慢，恢复速度的方法是？",
+    "explanation": "shuffle 产生 indices mapping（重排索引），访问时需多一步索引转换且非顺序读，速度可降约 10x。调 flatten_indices() 会按新顺序把数据重写到磁盘，消除 indices mapping、恢复顺序读速度。代价是占额外磁盘空间。",
+    "tags": ["datasets", "shuffle", "flatten_indices", "性能"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "dataset.flatten_indices() 重写磁盘消除 mapping",
+        "isCorrect": true,
+        "description": "恢复顺序读速度"
+      },
+      {
+        "text": "dataset.cache()",
+        "isCorrect": false,
+        "description": "没有 cache 方法，是 flatten_indices"
+      },
+      {
+        "text": "dataset.compact()",
+        "isCorrect": false,
+        "description": "没有 compact 方法"
+      },
+      {
+        "text": "dataset.reset()",
+        "isCorrect": false,
+        "description": "没有 reset，是 flatten_indices"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：用 map 在多 GPU 上并行预处理数据的正确配置是？",
+    "explanation": "map 跨 GPU 并行需 with_rank=True（让 fn 知道自己在哪张卡）+ num_proc=num_gpus + 用 set_start_method(\"spawn\")（CUDA 不能在 fork 的子进程里重新初始化）。不 spawn 会报 Cannot re-initialize CUDA in forked subprocess。",
+    "tags": ["datasets", "map", "gpu", "with_rank", "并行"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "with_rank=True + num_proc=num_gpus + set_start_method(\"spawn\")",
+        "isCorrect": true,
+        "description": "GPU 多进程并行"
+      },
+      {
+        "text": "只用 num_proc=num_gpus 即可",
+        "isCorrect": false,
+        "description": "还需 with_rank 和 spawn，否则 CUDA fork 报错"
+      },
+      {
+        "text": "with_rank=True 但用默认 fork",
+        "isCorrect": false,
+        "description": "GPU 必须 spawn，fork 会报 CUDA 错"
+      },
+      {
+        "text": "GPU 并行用 num_workers 不用 num_proc",
+        "isCorrect": false,
+        "description": "map 的参数是 num_proc"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：把处理好的数据集上传到 Hub 分享的方法是？",
+    "explanation": "dataset.push_to_hub(\"user/dataset\") 把数据集以 Parquet 格式上传到 Hub，之后任何人可用 load_dataset(\"user/dataset\") 一行加载。可配 num_proc=N 多进程加速上传。注意：save_to_disk 存本地 Arrow，push_to_hub 存 Hub Parquet。",
+    "tags": ["datasets", "push_to_hub", "分享", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "dataset.push_to_hub(\"user/dataset\")",
+        "isCorrect": true,
+        "description": "上传 Hub（Parquet）"
+      },
+      {
+        "text": "dataset.upload(\"user/dataset\")",
+        "isCorrect": false,
+        "description": "方法名是 push_to_hub 不是 upload"
+      },
+      {
+        "text": "dataset.save_to_hub(...)",
+        "isCorrect": false,
+        "description": "方法名是 push_to_hub"
+      },
+      {
+        "text": "dataset.publish(...)",
+        "isCorrect": false,
+        "description": "方法名是 push_to_hub"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：save_to_disk 与 push_to_hub 的存储格式区别？",
+    "explanation": "save_to_disk 存本地 Arrow 格式（uncompressed，重载快、适合本地缓存），push_to_hub 存 Hub Parquet 格式（压缩、适合分享/长期存储/下载）。二者用途不同：本地频繁重载用 save_to_disk，跨机器分享用 push_to_hub。",
+    "tags": ["datasets", "save_to_disk", "push_to_hub", "格式"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "save_to_disk=Arrow（uncompressed），push_to_hub=Parquet（压缩）",
+        "isCorrect": true,
+        "description": "格式与用途不同"
+      },
+      {
+        "text": "两者都是 Parquet",
+        "isCorrect": false,
+        "description": "save_to_disk 是 Arrow"
+      },
+      {
+        "text": "两者都是 Arrow",
+        "isCorrect": false,
+        "description": "push_to_hub 是 Parquet"
+      },
+      {
+        "text": "两者都是 CSV",
+        "isCorrect": false,
+        "description": "都不是 CSV"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：Tokenizer 流水线的五大组件及顺序是？",
+    "explanation": "完整流水线顺序：① Normalizer（可选，归一化）→ ② PreTokenizer（预切分）→ ③ Model（必填，核心算法转 ids）→ ④ PostProcessor（插特殊 token）→ ⑤ Decoder（ids→可读文本）。其中 Model 是唯一必填组件，其余按需配置。",
+    "tags": ["tokenizers", "组件", "流水线", "架构"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Normalizer → PreTokenizer → Model → PostProcessor → Decoder",
+        "isCorrect": true,
+        "description": "五大组件顺序"
+      },
+      {
+        "text": "Model → Normalizer → Decoder → PreTokenizer → PostProcessor",
+        "isCorrect": false,
+        "description": "顺序错乱"
+      },
+      {
+        "text": "只有 Model 一个组件",
+        "isCorrect": false,
+        "description": "Model 必填，但通常还有其他组件配合"
+      },
+      {
+        "text": "PreTokenizer 和 Model 可互换",
+        "isCorrect": false,
+        "description": "PreTokenizer 必须在 Model 之前"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：Tokenizer 五大组件中哪个是唯一必填的？",
+    "explanation": "Model 是唯一必填组件（BPE/WordPiece/Unigram/WordLevel 之一），它才是真正把 token 转 ids 的核心算法。Normalizer 可选、PreTokenizer/PostProcessor/Decoder 按需配置。一个最小 Tokenizer 只需指定 Model。",
+    "tags": ["tokenizers", "model", "组件", "必填"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Model（核心算法，唯一必填）",
+        "isCorrect": true,
+        "description": "BPE/WordPiece/Unigram 之一"
+      },
+      {
+        "text": "Normalizer",
+        "isCorrect": false,
+        "description": "Normalizer 是可选的"
+      },
+      {
+        "text": "PostProcessor",
+        "isCorrect": false,
+        "description": "PostProcessor 按需，非必填"
+      },
+      {
+        "text": "Decoder",
+        "isCorrect": false,
+        "description": "Decoder 按需，非必填"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：给分词器加上 [CLS]...[SEP] 等特殊 token 的组件是？",
+    "explanation": "PostProcessor 负责在分词后插入特殊 token。常用 TemplateProcessing，用模板字符串（如 \"[CLS] $A [SEP]\"）定义单/双序列结构，并声明 special_tokens 的 token→id 映射与 type_id。BertProcessing/RobertaProcessing 是其预设变体。",
+    "tags": ["tokenizers", "postprocessor", "特殊token", "templateprocessing"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PostProcessor（如 TemplateProcessing）",
+        "isCorrect": true,
+        "description": "模板化插特殊 token"
+      },
+      {
+        "text": "Normalizer",
+        "isCorrect": false,
+        "description": "Normalizer 做归一化，不插 token"
+      },
+      {
+        "text": "PreTokenizer",
+        "isCorrect": false,
+        "description": "PreTokenizer 预切分，不插特殊 token"
+      },
+      {
+        "text": "Model",
+        "isCorrect": false,
+        "description": "Model 算 ids，插特殊 token 是 PostProcessor 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：load_dataset 不指定 data_files 直接加载 C4（约 13TB）会发生什么？",
+    "explanation": "不指定 data_files/split/data_dir 限定范围时，load_dataset 会尝试下载该数据集的全部文件。对 C4 这种约 13TB 的数据集，会耗尽磁盘与时间。应使用 data_files/data_dir 限定子集，或用 streaming=True 流式按需读取。",
+    "tags": ["datasets", "load_dataset", "陷阱", "超大数据"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "会下载全部文件（约 13TB），应限定范围或 streaming",
+        "isCorrect": true,
+        "description": "大数据集必须限定"
+      },
+      {
+        "text": "自动只下载一小部分",
+        "isCorrect": false,
+        "description": "默认会全量，不会自动取子集"
+      },
+      {
+        "text": "报错拒绝下载",
+        "isCorrect": false,
+        "description": "不会报错，会尝试全量下载"
+      },
+      {
+        "text": "只下载元数据",
+        "isCorrect": false,
+        "description": "会下载实际数据文件"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：Tokenizers 库与 Transformers AutoTokenizer 的关系是？",
+    "explanation": "Transformers 的 AutoTokenizer 是 Tokenizers 的「高层封装」：from_pretrained 从模型 repo 加载已配好的 tokenizer.json（Tokenizers 格式），并附带模型特定的特殊 token、chat template 等。从零训练 tokenizer 用 tokenizers 库拼组件，再经 PreTrainedTokenizerFast 包装接入 Transformers。Tokenizers 是 AutoTokenizer 的快速后端。",
+    "tags": ["tokenizers", "transformers", "autotokenizer", "关系", "架构"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "AutoTokenizer 封装 Tokenizers（从零训练用 tokenizers，复用用 AutoTokenizer）",
+        "isCorrect": true,
+        "description": "封装关系"
+      },
+      {
+        "text": "两者完全独立无关联",
+        "isCorrect": false,
+        "description": "AutoTokenizer 内部用 tokenizers 作快速后端"
+      },
+      {
+        "text": "AutoTokenizer 是 tokenizers 的子集",
+        "isCorrect": false,
+        "description": "AutoTokenizer 是更上层的封装，不是子集"
+      },
+      {
+        "text": "tokenizers 已被 AutoTokenizer 取代弃用",
+        "isCorrect": false,
+        "description": "tokenizers 仍是底层实现，未弃用"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：map/filter/select 返回新对象而非原地修改的设计原因与影响是？",
+    "explanation": "Datasets 基于 Arrow 内存映射，采用不可变（immutable）设计：map/filter/select 返回新 Dataset 而非原地改，这是函数式风格且利于缓存与并行。影响是必须接收返回值（ds = ds.map(...)），否则改动不生效——这是新手最易踩的坑。with_format/with_transform 则是即时变换不复制数据。",
+    "tags": ["datasets", "map", "不可变", "设计", "陷阱"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "不可变设计，返回新对象，必须接收返回值",
+        "isCorrect": true,
+        "description": "Arrow + 函数式风格"
+      },
+      {
+        "text": "为了节省内存而原地修改",
+        "isCorrect": false,
+        "description": "恰恰相反，返回新对象不原地改"
+      },
+      {
+        "text": "只有 map 不可变，filter 可原地",
+        "isCorrect": false,
+        "description": "map/filter/select 都返回新对象"
+      },
+      {
+        "text": "这是 bug 应当修复",
+        "isCorrect": false,
+        "description": "这是有意的设计，利于缓存与并行"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：ByteLevel PreTokenizer（GPT 系列用）相比普通 Whitespace 的核心优势是？",
+    "explanation": "ByteLevel 把所有字节映射到一组可见 Unicode 字符（256 个基本字符），因此只需 256 个初始字符即可表示任意文本（含中文、emoji、所有 Unicode），**理论上无需 unk token（无 OOV）**。GPT-2 起采用，代价是非 ASCII 字符编码后不可读（如 Ġ 表空格）。相比 Whitespace 还解决了「词内含空格」的边界问题。",
+    "tags": ["tokenizers", "bytelevel", "pretokenizer", "无oov", "gpt"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "映射全部字节，256 字符即覆盖所有 Unicode，理论上无 OOV",
+        "isCorrect": true,
+        "description": "ByteLevel 的核心优势"
+      },
+      {
+        "text": "分词速度比 Whitespace 快十倍",
+        "isCorrect": false,
+        "description": "速度不是主要优势，是无 OOV"
+      },
+      {
+        "text": "支持更大的词表",
+        "isCorrect": false,
+        "description": "词表大小独立配置，ByteLevel 反而可省初始字符"
+      },
+      {
+        "text": "自动转小写",
+        "isCorrect": false,
+        "description": "ByteLevel 不做大小写转换"
+      }
+    ]
+  },
+  {
+    "stem": "Tokenizers：Tokenizers 库的「对齐追踪（alignment tracking）」能力指什么？",
+    "explanation": "对齐追踪指即使经过 Normalizer/PreTokenizer 的破坏性变换（如 lowercase、去重音、字节映射），仍能从生成的每个 token 精确还原到原文的字符区间（Encoding.offsets）。这对 NER、问答、高亮、归因解释等需要 token↔原文映射的任务至关重要，是 Tokenizers 区别于简单分词器的特色。",
+    "tags": ["tokenizers", "对齐追踪", "alignment", "offsets", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "即使破坏性归一化后，仍能映射 token 回原文字符区间",
+        "isCorrect": true,
+        "description": "Encoding.offsets"
+      },
+      {
+        "text": "同时支持多语言分词",
+        "isCorrect": false,
+        "description": "多语言是算法能力，不是对齐追踪"
+      },
+      {
+        "text": "训练与推理结果一致（可复现）",
+        "isCorrect": false,
+        "description": "复现是另一回事，不是对齐"
+      },
+      {
+        "text": "token ids 全局唯一不重复",
+        "isCorrect": false,
+        "description": "与 id 唯一性无关，是 token↔原文映射"
+      }
+    ]
+  },
+  {
+    "stem": "Datasets：map 的 batched=True 模式如何实现「一对多」拆分（行数增加）？",
+    "explanation": "batched=True 时 fn 接收「列→值列表」的字典，返回的字典里某列的列表长度可大于输入批次大小——此时 map 会把这一批「展开」成更多行，新 Dataset 行数增加。典型用途：把长文本切成多个固定长度块、数据增强（一条生成多条）。配合 remove_columns 删旧列。",
+    "tags": ["datasets", "map", "batched", "一对多", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face Datasets 与 Tokenizers"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fn 返回的列表长度大于输入批次，map 自动展开成更多行",
+        "isCorrect": true,
+        "description": "行数会增加"
+      },
+      {
+        "text": "batched 模式只支持一对一，不能增加行数",
+        "isCorrect": false,
+        "description": "恰好相反，可一对多拆分"
+      },
+      {
+        "text": "需额外设 expand=True 才能拆分",
+        "isCorrect": false,
+        "description": "无此参数，返回长列表即自动展开"
+      },
+      {
+        "text": "拆分会丢失部分数据",
+        "isCorrect": false,
+        "description": "不丢失，是按返回列表展开"
+      }
+    ]
+  }
+]

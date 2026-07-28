@@ -1,0 +1,777 @@
+[
+  {
+    "stem": "PEFT：PEFT（Parameter-Efficient Fine-Tuning）的核心思想是？",
+    "explanation": "PEFT 冻结预训练模型的全部权重，只在每一层注入少量可训练参数（adapter/适配器），把可训练参数从数十亿降到几百万（最多降约 10000 倍），单卡即可微调 7B–65B 级模型，且性能接近全量微调。代表方法有 LoRA、QLoRA、AdaLoRA、Prefix/Prompt Tuning 等。",
+    "tags": ["peft", "定位", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "冻结基模，只训少量注入的 adapter 参数",
+        "isCorrect": true,
+        "description": "可训练参数降 1–4 个数量级"
+      },
+      {
+        "text": "把模型权重全部重新训练",
+        "isCorrect": false,
+        "description": "那是全量微调（full fine-tuning），非 PEFT"
+      },
+      {
+        "text": "只做推理不做训练",
+        "isCorrect": false,
+        "description": "PEFT 是训练方法，不是推理"
+      },
+      {
+        "text": "用更小的预训练模型替代大模型",
+        "isCorrect": false,
+        "description": "PEFT 仍用原大模型，只训附加参数"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：LoRA 的「低秩」指的是什么？",
+    "explanation": "LoRA（Low-Rank Adaptation）冻结原始权重 W，在旁路注入低秩更新 ΔW = B·A（A 是 r×d、B 是 d×r，rank r 远小于 d）。前向变成 W·x + (lora_alpha/r)·B·A·x，只训 A、B 两个小矩阵，参数量从 d×d 降到 2×r×d。",
+    "tags": ["peft", "lora", "原理", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用两个小矩阵 B·A 近似权重更新（rank r 远小于 d）",
+        "isCorrect": true,
+        "description": "低秩分解 ΔW"
+      },
+      {
+        "text": "把权重矩阵的精度降低（量化）",
+        "isCorrect": false,
+        "description": "那是量化（quantization），不是 LoRA 的低秩"
+      },
+      {
+        "text": "减少神经网络的层数",
+        "isCorrect": false,
+        "description": "LoRA 不改层数，只加旁路更新"
+      },
+      {
+        "text": "降低学习率以小步训练",
+        "isCorrect": false,
+        "description": "与学习率无关"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：把基模包装成可训练 PEFT 模型的函数是？",
+    "explanation": "get_peft_model(model, peft_config) 接收基模与配置（如 LoraConfig），冻结基模全部权重并按配置注入可训练 adapter，返回包装后的 PeftModel。之后通常调 model.print_trainable_parameters() 确认只训了零点几。",
+    "tags": ["peft", "get_peft_model", "API", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "get_peft_model(model, peft_config)",
+        "isCorrect": true,
+        "description": "冻结基模 + 注入 adapter"
+      },
+      {
+        "text": "peft_model(model)",
+        "isCorrect": false,
+        "description": "函数名是 get_peft_model，需传 config"
+      },
+      {
+        "text": "model.to_peft(config)",
+        "isCorrect": false,
+        "description": "不是 model 的方法，是模块级函数"
+      },
+      {
+        "text": "Trainer(peft_config)",
+        "isCorrect": false,
+        "description": "Trainer 不做 PEFT 包装，那是 get_peft_model 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：SFTTrainer 中的 SFT 是什么的缩写？",
+    "explanation": "SFT = Supervised Fine-Tuning（监督微调），用 prompt-completion 或纯文本的指令数据，监督地训练模型遵循指令、学会对话。是后训练流水线的第一步，之后才进入偏好对齐（DPO/RLHF/GRPO）。",
+    "tags": ["trl", "sft", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Supervised Fine-Tuning（监督微调）",
+        "isCorrect": true,
+        "description": "后训练第一阶段"
+      },
+      {
+        "text": "Self Fine-Tuning（自微调）",
+        "isCorrect": false,
+        "description": "SFT 是 Supervised 不是 Self"
+      },
+      {
+        "text": "Stable Fine-Tuning（稳定微调）",
+        "isCorrect": false,
+        "description": "不是这个缩写"
+      },
+      {
+        "text": "Sparse Fine-Tuning（稀疏微调）",
+        "isCorrect": false,
+        "description": "稀疏微调是另一概念，SFT 是监督"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：RLHF 的全称是？",
+    "explanation": "RLHF = Reinforcement Learning from Human Feedback（基于人类反馈的强化学习），是经典的大模型对齐方法：先用偏好数据训练奖励模型，再用 PPO 等强化学习算法让策略模型最大化奖励。TRL 的 PPOTrainer 实现这一流程。",
+    "tags": ["trl", "rlhf", "ppo", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Reinforcement Learning from Human Feedback",
+        "isCorrect": true,
+        "description": "基于人类反馈的强化学习"
+      },
+      {
+        "text": "Recurrent Learning for Hidden Features",
+        "isCorrect": false,
+        "description": "与 RNN 无关"
+      },
+      {
+        "text": "Robust Language HF Training",
+        "isCorrect": false,
+        "description": "这不是 RLHF 的含义"
+      },
+      {
+        "text": "Rank Loss HF",
+        "isCorrect": false,
+        "description": "RLHF 是强化学习对齐，不是 rank loss"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：LoRA 微调后，查看「只训了零点几参数」的方法是？",
+    "explanation": "peft_model.print_trainable_parameters() 打印可训练参数数量、总参数数量与占比，是确认 PEFT 生效（基模已冻结、只训 adapter）的标配检查。典型输出如「trainable params: 294,912 || all params: 496,038,400 || trainable%: 0.0594」。",
+    "tags": ["peft", "print_trainable_parameters", "API", "基础概念"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "model.print_trainable_parameters()",
+        "isCorrect": true,
+        "description": "打印可训练/总参数与占比"
+      },
+      {
+        "text": "model.count_params()",
+        "isCorrect": false,
+        "description": "count_params 只算总参数，不算可训练占比"
+      },
+      {
+        "text": "torch.numel(model)",
+        "isCorrect": false,
+        "description": "这是张量元素总数，不是 PEFT 的统计方法"
+      },
+      {
+        "text": "model.summary()",
+        "isCorrect": false,
+        "description": "PEFT 的标配方法是 print_trainable_parameters"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：LoRA 配置 LoraConfig 中参数 r 的含义是？",
+    "explanation": "r 是 LoRA 的秩（rank），决定低秩更新矩阵 B·A 的中间维度。r 越大表达力越强但可训练参数越多；常用 8/16/32/64。任务越复杂、与基模差异越大，r 越大；简单任务 r=8 即可。",
+    "tags": ["peft", "lora", "r", "参数"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "低秩矩阵的秩（rank），越大表达力越强",
+        "isCorrect": true,
+        "description": "权衡表达力与参数量"
+      },
+      {
+        "text": "学习率",
+        "isCorrect": false,
+        "description": "学习率是 learning_rate，不是 r"
+      },
+      {
+        "text": "随机种子",
+        "isCorrect": false,
+        "description": "种子是 seed，不是 r"
+      },
+      {
+        "text": "训练轮数",
+        "isCorrect": false,
+        "description": "轮数是 num_train_epochs，不是 r"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：LoRA 的有效缩放系数如何计算？",
+    "explanation": "LoRA adapter 输出乘以 lora_alpha/r（rank-stabilized LoRA 时用 lora_alpha/sqrt(r)）。因此 lora_alpha 常设为 r 的 1-2 倍，使有效缩落在 1-2 之间。alpha 远小于 r 会让 adapter 几乎不起作用。",
+    "tags": ["peft", "lora", "lora_alpha", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "lora_alpha / r（rank-stabilized 时用 alpha/sqrt(r)）",
+        "isCorrect": true,
+        "description": "有效缩放系数"
+      },
+      {
+        "text": "r / lora_alpha",
+        "isCorrect": false,
+        "description": "方向反了，是 alpha/r"
+      },
+      {
+        "text": "lora_alpha × r",
+        "isCorrect": false,
+        "description": "是除法不是乘法"
+      },
+      {
+        "text": "固定为 1（不缩放）",
+        "isCorrect": false,
+        "description": "默认就按 alpha/r 缩放"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：QLoRA 相比普通 LoRA 的关键区别是？",
+    "explanation": "QLoRA = 4-bit 量化加载基模（用 BitsAndBytesConfig nf4）+ 在所有线性层注入 LoRA。基模占显存约为 fp16 的 1/4，让 7B/13B/65B 模型能在单卡/少量卡上微调。标准做法是 LoraConfig(target_modules=\"all-linear\")。",
+    "tags": ["peft", "qlora", "量化", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "基模用 4-bit nf4 量化加载 + LoRA 注入所有线性层",
+        "isCorrect": true,
+        "description": "省显存的核心"
+      },
+      {
+        "text": "把 LoRA 的 r 调到更大",
+        "isCorrect": false,
+        "description": "QLoRA 的关键是量化基模，不是调大 r"
+      },
+      {
+        "text": "用更少的 LoRA 层",
+        "isCorrect": false,
+        "description": "QLoRA 反而注入所有线性层（all-linear）"
+      },
+      {
+        "text": "只训练 bias 参数",
+        "isCorrect": false,
+        "description": "QLoRA 训的是 LoRA adapter，不是 bias"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：DPOTrainer 需要哪种格式的数据？",
+    "explanation": "DPO 用 preference（偏好对）数据：每条含 prompt + chosen（偏好回答）+ rejected（不偏好回答）。DPO 直接优化二者对数似然差，无需显式奖励模型与在线采样。常用数据集如 ultrafeedback_binarized。",
+    "tags": ["trl", "dpo", "数据格式"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "preference：{prompt, chosen, rejected}",
+        "isCorrect": true,
+        "description": "偏好对数据"
+      },
+      {
+        "text": "纯文本 text",
+        "isCorrect": false,
+        "description": "那是 SFT 的 language modeling 格式"
+      },
+      {
+        "text": "prompt-completion",
+        "isCorrect": false,
+        "description": "那是 SFT 的 prompt-completion 格式，DPO 需要好坏对"
+      },
+      {
+        "text": "prompt + reward 分数",
+        "isCorrect": false,
+        "description": "那是 PPO/GRPO 的格式，DPO 用偏好对"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：QLoRA 的 4-bit 量化数据类型 nf4 是什么？",
+    "explanation": "nf4 = NormalFloat4，是为「正态分布的神经网络权重」专门设计的 4-bit 数据类型，量化分位点按正态分布放置，因此比普通 fp4/int4 量化更准。在 BitsAndBytesConfig 里设 bnb_4bit_quant_type=\"nf4\" 启用。配合 bnb_4bit_compute_dtype（如 bfloat16）做反量化计算。",
+    "tags": ["peft", "qlora", "nf4", "量化"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "为正态分布权重设计的 4-bit 数据类型（比 fp4 更准）",
+        "isCorrect": true,
+        "description": "nf4 = NormalFloat4"
+      },
+      {
+        "text": "4 位浮点的通用格式",
+        "isCorrect": false,
+        "description": "那是 fp4，nf4 是正态分布优化的分位点"
+      },
+      {
+        "text": "4 字节的归一化浮点",
+        "isCorrect": false,
+        "description": "nf4 是 4-bit（半字节）不是 4 字节"
+      },
+      {
+        "text": "神经网络的第 4 层",
+        "isCorrect": false,
+        "description": "nf4 是数据类型，不是层"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：量化模型训练前必须调用的准备函数是？",
+    "explanation": "prepare_model_for_kbit_training(model) 为 k-bit（4bit/8bit）量化模型做训练准备：启用梯度检查点、确保输入嵌入参与梯度、冻结合适层等。不调用会导致反传报错或梯度异常。这是 QLoRA 训练的标准步骤。",
+    "tags": ["peft", "qlora", "prepare_model_for_kbit_training", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "prepare_model_for_kbit_training(model)",
+        "isCorrect": true,
+        "description": "量化模型训练前必备"
+      },
+      {
+        "text": "model.train()",
+        "isCorrect": false,
+        "description": "train() 切训练模式，但不够，需 kbit 专用准备"
+      },
+      {
+        "text": "model.enable_gradient()",
+        "isCorrect": false,
+        "description": "不存在该方法，是 prepare_model_for_kbit_training"
+      },
+      {
+        "text": "torch.compile(model)",
+        "isCorrect": false,
+        "description": "编译与 kbit 训练准备是两回事"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：把训练好的 LoRA adapter 合并进基模以去除推理开销的方法是？",
+    "explanation": "merge_and_unload() 把 adapter 权重融入基模权重，返回普通模型（不再是 PeftModel），推理时无额外计算开销。合并后保存的模型可直接用，不再需要 adapter。注意合并后不再是 PEFT 模型，无法再按 adapter 方式训练。",
+    "tags": ["peft", "merge_and_unload", "推理", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "model.merge_and_unload()",
+        "isCorrect": true,
+        "description": "合并 adapter 到基模"
+      },
+      {
+        "text": "model.save_pretrained()",
+        "isCorrect": false,
+        "description": "save 只存 adapter，不合并"
+      },
+      {
+        "text": "model.fold()",
+        "isCorrect": false,
+        "description": "不存在 fold 方法"
+      },
+      {
+        "text": "torch.merge(model)",
+        "isCorrect": false,
+        "description": "不是 torch 的函数，是 PeftModel 的方法"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：Prompt Tuning 与 LoRA 的根本区别是？",
+    "explanation": "Prompt Tuning 只在输入端添加可训练的软提示向量（不改模型任何权重），参数最省（大模型上仅几 MB），适合 10B+ 超大模型。LoRA 则在每层权重旁路注入低秩矩阵，改的是权重更新。两者都属于 PEFT，但注入位置与可训参数量级不同。",
+    "tags": ["peft", "prompt-tuning", "lora", "对比"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Prompt Tuning 只改输入软提示，LoRA 改权重旁路更新",
+        "isCorrect": true,
+        "description": "注入位置不同"
+      },
+      {
+        "text": "Prompt Tuning 比 LoRA 参数多",
+        "isCorrect": false,
+        "description": "相反，Prompt Tuning 参数更少"
+      },
+      {
+        "text": "二者完全相同",
+        "isCorrect": false,
+        "description": "原理与注入位置都不同"
+      },
+      {
+        "text": "LoRA 改输入，Prompt Tuning 改权重",
+        "isCorrect": false,
+        "description": "说反了"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：DPO 相比 PPO（经典 RLHF）的主要优势是？",
+    "explanation": "DPO 把「奖励模型 + 强化学习」两步化为一个分类损失：直接用偏好对（chosen/rejected）数据训练，无需显式训练奖励模型、无需在线采样、无需价值模型，因此更稳定、更易实现、计算更轻。代价是需要偏好对数据，且离线（非在线交互）。",
+    "tags": ["trl", "dpo", "ppo", "对比"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无需奖励模型与在线采样，更稳定易实现",
+        "isCorrect": true,
+        "description": "DPO 的核心优势"
+      },
+      {
+        "text": "训练速度更快数倍",
+        "isCorrect": false,
+        "description": "主要优势是简化流程与稳定性，不是单纯速度"
+      },
+      {
+        "text": "支持更大的模型",
+        "isCorrect": false,
+        "description": "二者都能配 QLoRA，模型规模不是主要区别"
+      },
+      {
+        "text": "不需要任何偏好数据",
+        "isCorrect": false,
+        "description": "DPO 正需要 preference 对（chosen/rejected）"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：DPOConfig 中 beta 参数的作用是？",
+    "explanation": "beta 控制 policy 偏离参考模型（reference model）的强度：beta 越大越保守（贴近 ref），默认 0.1。它出现在 DPO 损失的 log-ratio 项中。对 IPO 损失而言 beta 是正则参数 τ。",
+    "tags": ["trl", "dpo", "beta", "参数"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "控制偏离参考模型的强度（默认 0.1）",
+        "isCorrect": true,
+        "description": "越大越保守"
+      },
+      {
+        "text": "学习率",
+        "isCorrect": false,
+        "description": "学习率是 learning_rate，不是 beta"
+      },
+      {
+        "text": "batch 大小",
+        "isCorrect": false,
+        "description": "batch 是 per_device_train_batch_size"
+      },
+      {
+        "text": "温度参数",
+        "isCorrect": false,
+        "description": "DPO 的 beta 是 KL 强度，不是生成温度"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：GRPO 相比 PPO 在架构上的关键区别是？",
+    "explanation": "GRPO（Group Relative Policy Optimization）取消了 PPO 中的 critic/价值模型，通过对同一 prompt 生成一组（G 个）completion，用组内 (reward - 均值)/标准差 计算相对优势，从而省去价值网络的显存与算力。是 DeepSeek-R1 等推理模型的核心训练方法。",
+    "tags": ["trl", "grpo", "ppo", "对比"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "无 critic/价值模型，用组内相对优势",
+        "isCorrect": true,
+        "description": "省去价值网络"
+      },
+      {
+        "text": "不需要任何奖励信号",
+        "isCorrect": false,
+        "description": "GRPO 仍需奖励函数/奖励信号，只是不要价值模型"
+      },
+      {
+        "text": "不需要参考模型",
+        "isCorrect": false,
+        "description": "GRPO 仍用参考模型（与 PPO 一样需要）"
+      },
+      {
+        "text": "完全离线不采样",
+        "isCorrect": false,
+        "description": "GRPO 是在线方法（组生成），需采样"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：GRPOTrainer 的 reward_funcs 参数接收什么？",
+    "explanation": "reward_funcs 可接收普通 Python 函数（返回 list[float]）、async 异步函数、或外部奖励模型/工具。函数签名形如 func(completions, **额外列)，数据集中除 prompt 外的列（如 ground_truth）会自动作为 kwargs 传入，便于核对答案。",
+    "tags": ["trl", "grpo", "reward_funcs", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "普通函数 / async 函数 / 外部模型（返回 list[float]）",
+        "isCorrect": true,
+        "description": "灵活的奖励来源"
+      },
+      {
+        "text": "只能是字符串模型名",
+        "isCorrect": false,
+        "description": "也支持 Python 函数与 async"
+      },
+      {
+        "text": "只返回单个 float",
+        "isCorrect": false,
+        "description": "必须返回与 completions 等长的 list"
+      },
+      {
+        "text": "必须是在线 API",
+        "isCorrect": false,
+        "description": "本地 Python 函数即可"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：SFTConfig 的默认学习率与原生 TrainingArguments 的区别？",
+    "explanation": "SFTConfig 继承 TrainingArguments 但改了几个默认：learning_rate 默认 2e-5（TrainingArguments 是 5e-5）、logging_steps 默认 10（原 500）、bf16 默认 True（原 False）、gradient_checkpointing 默认 True（原 False）。这些是针对 SFT 场景的合理默认。",
+    "tags": ["trl", "sft", "sftconfig", "默认值", "对比"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "SFTConfig 默认 2e-5（TrainingArguments 是 5e-5）",
+        "isCorrect": true,
+        "description": "TRL 改了 SFT 的默认 lr"
+      },
+      {
+        "text": "两者默认都是 5e-5",
+        "isCorrect": false,
+        "description": "SFTConfig 改成了 2e-5"
+      },
+      {
+        "text": "SFTConfig 默认 1e-3",
+        "isCorrect": false,
+        "description": "太大，不是默认"
+      },
+      {
+        "text": "SFTConfig 默认 1e-6",
+        "isCorrect": false,
+        "description": "那是 DPOConfig 的默认，不是 SFT"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：保存 LoRA adapter 时 save_pretrained 写出哪些文件？",
+    "explanation": "PEFT 模型的 save_pretrained 只保存 adapter（不保存基模），生成 adapter_config.json（LoRA 配置）+ adapter_model.safetensors（adapter 权重），通常仅几 MB 到几百 MB。加载时用 PeftModel.from_pretrained(base, adapter_path) 重新挂到基模。",
+    "tags": ["peft", "save_pretrained", "adapter", "API"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "adapter_config.json + adapter_model.safetensors（不含基模）",
+        "isCorrect": true,
+        "description": "只存 adapter"
+      },
+      {
+        "text": "完整的基模权重",
+        "isCorrect": false,
+        "description": "save_pretrained 不存基模，只存 adapter"
+      },
+      {
+        "text": "只有 config 没有权重",
+        "isCorrect": false,
+        "description": "同时存配置与权重"
+      },
+      {
+        "text": "一个 pickle 文件",
+        "isCorrect": false,
+        "description": "是 safetensors，不是 pickle"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：所有 TRL 训练器与 transformers.Trainer 的关系是？",
+    "explanation": "所有 TRL 训练器（SFTTrainer/DPOTrainer/GRPOTrainer 等）都是 transformers.Trainer 的子类，继承其全部属性与方法（train/evaluate/push_to_hub/save_model 等），在其基础上增加了各对齐方法特有的数据预处理、损失计算与指标。",
+    "tags": ["trl", "trainer", "继承", "架构"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "都是 transformers.Trainer 的子类",
+        "isCorrect": true,
+        "description": "继承全部方法"
+      },
+      {
+        "text": "完全独立重新实现",
+        "isCorrect": false,
+        "description": "是基于 Trainer 的子类，不是独立实现"
+      },
+      {
+        "text": "只共享部分工具函数",
+        "isCorrect": false,
+        "description": "是子类继承，不是工具共享"
+      },
+      {
+        "text": "互相继承（SFT←DPO←GRPO）",
+        "isCorrect": false,
+        "description": "都直接继承 Trainer，不是链式继承"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：用 LoRA 微调时学习率应比全量微调如何调整？",
+    "explanation": "PEFT 训练 adapter 时，可训练参数少、更新集中，学习率通常要比全量微调高一个数量级：SFT 约 1e-4、DPO 约 1e-5（而全量 SFT 常用 2e-5、全量 DPO 更小）。学习率过低会导致 adapter 训不动。这是 PEFT 与全量微调的关键超参差异。",
+    "tags": ["peft", "学习率", "lora", "调参"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "高一个数量级（SFT≈1e-4，DPO≈1e-5）",
+        "isCorrect": true,
+        "description": "PEFT 用更大学习率"
+      },
+      {
+        "text": "低一个数量级",
+        "isCorrect": false,
+        "description": "相反，PEFT 要更大学习率"
+      },
+      {
+        "text": "与全量微调相同",
+        "isCorrect": false,
+        "description": "PEFT 通常需要更大的学习率"
+      },
+      {
+        "text": "固定为 5e-5 不调",
+        "isCorrect": false,
+        "description": "那是 TrainingArguments 默认，不适配 PEFT"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：DPO 的 loss_type=\"sigmoid\" 背后的 Bradley-Terry 模型是什么？",
+    "explanation": "DPO 默认 sigmoid 损失基于 Bradley-Terry 模型：把「chosen 比 rejected 更好」建模为二元分类，用 logsigmoid(β·(log-ratio差)) 拟合逻辑回归。即把偏好对的对数似然差（相对参考模型）经 β 缩放后过 sigmoid。其他 loss_type（ipo/hinge/sigmoid_norm 等）是对该目标的不同变体。",
+    "tags": ["trl", "dpo", "loss_type", "bradley-terry", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把「chosen 更好」建模为二元分类（logsigmoid 拟合）",
+        "isCorrect": true,
+        "description": "Bradley-Terry 偏好模型"
+      },
+      {
+        "text": "回归预测具体分数",
+        "isCorrect": false,
+        "description": "是分类（好坏）不是回归"
+      },
+      {
+        "text": "多分类 softmax",
+        "isCorrect": false,
+        "description": "是二元偏好分类，不是多分类"
+      },
+      {
+        "text": "强化学习的 reward 最大化",
+        "isCorrect": false,
+        "description": "DPO 是离线分类损失，不是 RL"
+      }
+    ]
+  },
+  {
+    "stem": "TRL：现代大模型后训练的典型四阶段流水线是？",
+    "explanation": "现代大模型训练典型为：①预训练（学语言/世界知识，用纯文本）→ ②SFT（学会遵循指令，prompt-completion）→ ③奖励建模（学人类偏好打分，preference 对）→ ④对齐（用 PPO/DPO/GRPO 让模型符合偏好/学会推理）。TRL 覆盖②③④，预训练①通常用 Transformers Trainer。",
+    "tags": ["trl", "后训练", "流水线", "架构"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "预训练 → SFT → 奖励建模 → 对齐（PPO/DPO/GRPO）",
+        "isCorrect": true,
+        "description": "完整后训练流水线"
+      },
+      {
+        "text": "SFT → DPO → GRPO → 蒸馏",
+        "isCorrect": false,
+        "description": "顺序与阶段不准确，缺预训练与奖励建模"
+      },
+      {
+        "text": "预训练 → 量化 → 推理 → 部署",
+        "isCorrect": false,
+        "description": "那是部署流程，不是训练流水线"
+      },
+      {
+        "text": "数据清洗 → 标注 → 训练 → 评估",
+        "isCorrect": false,
+        "description": "过于笼统，非大模型后训练特有阶段"
+      }
+    ]
+  },
+  {
+    "stem": "PEFT：AdaLoRA 相比标准 LoRA 的改进是？",
+    "explanation": "AdaLoRA（Adaptive LoRA）在训练过程中按各权重矩阵的「重要性」自适应地分配秩预算：重要的层给更高秩、不重要的削减，从而在固定参数预算下获得更好效果。它仍属于 LoRA 家族（旁路低秩更新），但秩是动态调整的，而非像标准 LoRA 那样全局固定 r。",
+    "tags": ["peft", "adalora", "lora", "原理"],
+    "categories": [
+      ["技术方向", "Hugging Face PEFT 与 TRL"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "按权重矩阵重要性自适应分配秩（动态秩）",
+        "isCorrect": true,
+        "description": "AdaLoRA 的核心改进"
+      },
+      {
+        "text": "把秩固定到更大值",
+        "isCorrect": false,
+        "description": "AdaLoRA 是动态分配，不是固定更大"
+      },
+      {
+        "text": "改用量化降显存",
+        "isCorrect": false,
+        "description": "那是 QLoRA，不是 AdaLoRA"
+      },
+      {
+        "text": "只在输入层加 adapter",
+        "isCorrect": false,
+        "description": "AdaLoRA 仍注入各层，核心是动态秩"
+      }
+    ]
+  }
+]
