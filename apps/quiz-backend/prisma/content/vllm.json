@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "vLLM：vLLM 的核心定位是什么？",
+    "explanation": "vLLM 是伯克利 Sky Computing Lab 开源的**高吞吐 LLM 推理与服务引擎**，专为大模型部署设计。核心创新是 **PagedAttention**（分页式 KV Cache 管理，显存利用率 ~96%）+ **Continuous Batching**（动态批处理）。它不是训练框架、不是 RAG 框架，也不是通用 ML serving 平台。",
+    "tags": ["vLLM", "入门", "定位"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "高吞吐、低延迟的 LLM 推理与服务引擎，以 PagedAttention 为核心",
+        "isCorrect": true,
+        "description": "vLLM 的核心定位"
+      },
+      {
+        "text": "大模型训练框架，类似 DeepSpeed",
+        "isCorrect": false,
+        "description": "vLLM 是推理引擎，不做训练"
+      },
+      {
+        "text": "RAG 应用开发框架",
+        "isCorrect": false,
+        "description": "RAG 框架是 LangChain/LlamaIndex"
+      },
+      {
+        "text": "通用 ML serving 平台，类似 BentoML",
+        "isCorrect": false,
+        "description": "vLLM 专注 LLM 推理"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM 默认的服务监听端口是？",
+    "explanation": "vLLM `vllm serve` 默认监听 `http://localhost:8000`（可用 `--host` 和 `--port` 覆盖）。注意这与 Ollama（11434）、Gradio（7860）等不同。OpenAI 兼容端点在 `/v1/chat/completions` 等路径下。",
+    "tags": ["vLLM", "入门", "服务化"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "8000",
+        "isCorrect": true,
+        "description": "vLLM 默认端口"
+      },
+      {
+        "text": "11434",
+        "isCorrect": false,
+        "description": "这是 Ollama 的默认端口"
+      },
+      {
+        "text": "7860",
+        "isCorrect": false,
+        "description": "这是 Gradio 的默认端口"
+      },
+      {
+        "text": "8080",
+        "isCorrect": false,
+        "description": "vLLM 不用 8080"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：起一个 OpenAI 兼容服务最简命令是？",
+    "explanation": "`vllm serve <model>` 一行起 OpenAI 兼容服务，自动暴露 `/v1/chat/completions` / `/v1/completions` / `/v1/embeddings` / `/v1/models` 等端点。用 `curl`、OpenAI SDK、LangChain 改 `base_url` 即可直接调用。无需自己写 FastAPI 包装。",
+    "tags": ["vLLM", "入门", "服务化"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "vllm serve Qwen/Qwen2.5-1.5B-Instruct",
+        "isCorrect": true,
+        "description": "vllm serve + 模型名，一行起 OpenAI 兼容服务"
+      },
+      {
+        "text": "vllm run Qwen/Qwen2.5-1.5B-Instruct",
+        "isCorrect": false,
+        "description": "没有 vllm run 子命令"
+      },
+      {
+        "text": "python -m vllm.server Qwen/...",
+        "isCorrect": false,
+        "description": "vLLM 用 vllm serve CLI，不是 python -m"
+      },
+      {
+        "text": "docker run vllm Qwen/...",
+        "isCorrect": false,
+        "description": "Docker 也要用 vllm/vllm-openai 镜像并传 --model"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：离线批量推理用哪两个核心类？",
+    "explanation": "vLLM 离线 Python API 是 `from vllm import LLM, SamplingParams`。`LLM` 加载模型，`SamplingParams` 配置采样参数（temperature/top_p/max_tokens 等）。`llm.generate()` 做文本补全式生成，`llm.chat()` 自动套 chat template。",
+    "tags": ["vLLM", "入门", "Python API"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "LLM 和 SamplingParams",
+        "isCorrect": true,
+        "description": "from vllm import LLM, SamplingParams"
+      },
+      {
+        "text": "Engine 和 GenerateConfig",
+        "isCorrect": false,
+        "description": "类名不对"
+      },
+      {
+        "text": "Model 和 Tokenizer",
+        "isCorrect": false,
+        "description": "这是 HF transformers 的概念"
+      },
+      {
+        "text": "Server 和 Client",
+        "isCorrect": false,
+        "description": "不是 vLLM Python API"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM 与 HuggingFace transformers.generate 相比最大的吞吐优势来自？",
+    "explanation": "vLLM 单卡吞吐比 HF `generate` 高 2-24 倍，根本来自 **PagedAttention**（显存利用率从 ~20-40% 提升到 ~96%）+ **Continuous Batching**（每步动态增删请求，GPU 不空转）。PagedAttention 让同卡能装下更多并发请求的 KV Cache，continuous batching 让 GPU 几乎不闲。",
+    "tags": ["vLLM", "入门", "原理"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "PagedAttention（分页 KV Cache）+ Continuous Batching（动态批）",
+        "isCorrect": true,
+        "description": "两大核心优化叠加"
+      },
+      {
+        "text": "用了更快的 CUDA 内核",
+        "isCorrect": false,
+        "description": "内核只是次要因素"
+      },
+      {
+        "text": "模型权重做了 4bit 量化",
+        "isCorrect": false,
+        "description": "量化是可选项，不是默认优势来源"
+      },
+      {
+        "text": "用 C++ 重写了模型",
+        "isCorrect": false,
+        "description": "vLLM 是 Python + CUDA/PyTorch"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM 推荐的安装方式（NVIDIA）是？",
+    "explanation": "vLLM 官方推荐用 `uv` 安装：`uv pip install vllm --torch-backend=auto`。`--torch-backend=auto` 让 uv 自动识别机器 CUDA 版本并匹配 PyTorch wheel，避免手动指定 `+cu121` 后缀。备选可直接 `pip install vllm`。Docker 用 `vllm/vllm-openai` 官方镜像。",
+    "tags": ["vLLM", "入门", "安装"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "uv pip install vllm --torch-backend=auto",
+        "isCorrect": true,
+        "description": "官方推荐，自动匹配 CUDA 后端"
+      },
+      {
+        "text": "conda install vllm",
+        "isCorrect": false,
+        "description": "官方未推荐 conda 渠道"
+      },
+      {
+        "text": "apt install vllm",
+        "isCorrect": false,
+        "description": "系统包管理器没有 vllm"
+      },
+      {
+        "text": "源码 git clone 后 make",
+        "isCorrect": false,
+        "description": "源码安装是开发用，非推荐路径"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM 流式输出用哪种协议？",
+    "explanation": "vLLM 流式完全兼容 OpenAI 的 **SSE（Server-Sent Events）格式**：请求带 stream=true，响应是 `data: {chunk}\\n\\n` 流，最后 `data: [DONE]`。客户端用 OpenAI SDK `stream=True` 或直接解析 SSE。这与 FastAPI 的 `StreamingResponse`、Anthropic 的 stream 同思路。",
+    "tags": ["vLLM", "初级", "流式"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "SSE（Server-Sent Events），OpenAI 风格 data: {chunk}",
+        "isCorrect": true,
+        "description": "兼容 OpenAI streaming 协议"
+      },
+      {
+        "text": "WebSocket 双向流",
+        "isCorrect": false,
+        "description": "vLLM 不用 WebSocket"
+      },
+      {
+        "text": "gRPC 流",
+        "isCorrect": false,
+        "description": "gRPC 是 Triton 的风格"
+      },
+      {
+        "text": "HTTP/2 长连接 raw bytes",
+        "isCorrect": false,
+        "description": "vLLM 用标准 SSE"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：调大 `--gpu-memory-utilization`（如从 0.9 到 0.95）的效果是？",
+    "explanation": "`--gpu-memory-utilization` 控制 vLLM 占用 GPU 显存的比例（默认 0.9，留 10% 给系统/其他）。调大让 vLLM 用更多显存装 KV Cache → 能容纳更多并发请求 → 吞吐提升；但留给其他进程的显存变少，且可能 OOM。生产环境通常设 0.9-0.95，避免与其他服务抢显存。",
+    "tags": ["vLLM", "初级", "调优"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "KV Cache 空间更大，可并发更多请求，吞吐提升",
+        "isCorrect": true,
+        "description": "更多显存给 KV Cache"
+      },
+      {
+        "text": "模型权重变小",
+        "isCorrect": false,
+        "description": "权重大小不变"
+      },
+      {
+        "text": "推理精度提升",
+        "isCorrect": false,
+        "description": "与精度无关"
+      },
+      {
+        "text": "首字延迟（TTFT）必然降低",
+        "isCorrect": false,
+        "description": "并发多了反而可能升高 TTFT"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：开 `--enable-prefix-caching` 解决什么问题？",
+    "explanation": "Prefix Caching 让多个请求**共享相同 prompt 前缀**（如 system prompt、few-shot 示例）的 KV Cache，基于 PagedAttention 的 Copy-on-Write：相同 block 只读共享，分叉后才复制。RAG/Agent 场景常把 TTFT 砍掉一半以上。注意它依赖 PagedAttention 的分块结构。",
+    "tags": ["vLLM", "初级", "调优"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "多个请求共享相同 prompt 前缀的 KV Cache，降低 TTFT",
+        "isCorrect": true,
+        "description": "RAG/Agent 场景显著加速"
+      },
+      {
+        "text": "压缩模型权重",
+        "isCorrect": false,
+        "description": "与权重量化无关"
+      },
+      {
+        "text": "提高生成精度",
+        "isCorrect": false,
+        "description": "纯性能优化，不影响精度"
+      },
+      {
+        "text": "减少输出 token 数",
+        "isCorrect": false,
+        "description": "不影响输出长度"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：Tensor Parallelism（张量并行）的原理是？",
+    "explanation": "TP 把每一层的权重矩阵**按维度切开**分到多卡，每卡算一部分，用 NCCL all-reduce 同步。`--tensor-parallel-size N` 用 N 卡。通信开销大（每层都 all-reduce），适合 NVLink/IB 高带宽互连；TP 数必须能整除模型头数。适合单机多卡。",
+    "tags": ["vLLM", "中级", "并行"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把每层权重矩阵按维度切到多卡，每层 all-reduce 同步",
+        "isCorrect": true,
+        "description": "张量并行核心机制"
+      },
+      {
+        "text": "把模型按层切到多卡，只在层边界传 hidden state",
+        "isCorrect": false,
+        "description": "这是 Pipeline Parallelism"
+      },
+      {
+        "text": "每卡跑完整模型的不同请求",
+        "isCorrect": false,
+        "description": "这是 Data Parallel"
+      },
+      {
+        "text": "用 CPU 卸载部分权重",
+        "isCorrect": false,
+        "description": "这是 offload，不是 TP"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：Pipeline Parallelism（流水线并行）相比 Tensor Parallelism 的优势是？",
+    "explanation": "PP 把模型**按层切段**，每段一张卡，请求像流水线穿过。通信量小（只在层段边界传 hidden state），适合跨节点（互连带宽低）部署；缺点是引入流水线气泡，吞吐略低于纯 TP。常组合使用 `--tensor-parallel-size 4 --pipeline-parallel-size 2`。",
+    "tags": ["vLLM", "中级", "并行"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "通信量小，适合跨节点（低带宽互连）部署",
+        "isCorrect": true,
+        "description": "PP 的核心优势"
+      },
+      {
+        "text": "吞吐量高于纯 TP",
+        "isCorrect": false,
+        "description": "PP 有气泡，吞吐通常低于纯 TP"
+      },
+      {
+        "text": "延迟低于纯 TP",
+        "isCorrect": false,
+        "description": "PP 串行穿层，延迟更高"
+      },
+      {
+        "text": "不需要 NCCL",
+        "isCorrect": false,
+        "description": "PP 仍需通信库"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：PagedAttention 借鉴了操作系统的什么机制？",
+    "explanation": "PagedAttention 借鉴**虚拟内存分页**：把请求的逻辑 KV Cache 切成固定大小 block（默认每 block 16 个 token 的 KV），维护 block table（类似页表）映射逻辑 block → 物理 block，物理 block 在显存按需离散分配、可共享、请求结束归还。彻底消除内部/外部碎片，显存利用率达 ~96%。",
+    "tags": ["vLLM", "中级", "原理"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "虚拟内存分页（paging）+ 页表 + Copy-on-Write",
+        "isCorrect": true,
+        "description": "OS 分页机制的直接类比"
+      },
+      {
+        "text": "CPU 缓存 LRU",
+        "isCorrect": false,
+        "description": "LRU 是缓存淘汰，不是 KV 管理"
+      },
+      {
+        "text": "磁盘文件系统 inode",
+        "isCorrect": false,
+        "description": "文件系统机制，不相关"
+      },
+      {
+        "text": "网络 TCP 拥塞控制",
+        "isCorrect": false,
+        "description": "网络层机制"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：Continuous Batching 相比静态批处理的优势是？",
+    "explanation": "Continuous Batching 在**每个 iteration（每生成一个 token）**都重新决定 batch 成员：完成的请求立即剔除释放 KV Cache，等待队列的新请求立即加入。彻底解决静态批处理「短请求陪着长请求占显存空转」的问题，GPU 几乎不空转，吞吐提升 2-10 倍。",
+    "tags": ["vLLM", "中级", "原理"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每步动态增删请求，GPU 几乎不空转，吞吐提升 2-10 倍",
+        "isCorrect": true,
+        "description": "动态批的核心收益"
+      },
+      {
+        "text": "batch 大小固定，减少调度开销",
+        "isCorrect": false,
+        "description": "恰恰相反，batch 是动态的"
+      },
+      {
+        "text": "降低单请求延迟",
+        "isCorrect": false,
+        "description": "主要提升吞吐而非单请求延迟"
+      },
+      {
+        "text": "提升生成精度",
+        "isCorrect": false,
+        "description": "批处理与精度无关"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：H100 上推荐的量化方案是？",
+    "explanation": "Hopper 架构（H100/H200/Ada L40S）硬件原生支持 **FP8**（E4M3/E5M2），vLLM 在这些卡上用 `--quantization fp8` 既能砍一半显存又能近乎翻倍吞吐，且精度损失可忽略。生产首选。A100/A10 无 FP8 单元，应用 AWQ；社区已量化的 GPTQ 模型也直接可用。",
+    "tags": ["vLLM", "中级", "量化"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "FP8（--quantization fp8）",
+        "isCorrect": true,
+        "description": "H100 硬件原生支持，显存减半吞吐翻倍"
+      },
+      {
+        "text": "INT4 GPTQ",
+        "isCorrect": false,
+        "description": "GPTQ 可用但非 H100 最优"
+      },
+      {
+        "text": "INT8 CPU 量化",
+        "isCorrect": false,
+        "description": "H100 不用 CPU 量化"
+      },
+      {
+        "text": "不量化，纯 FP16",
+        "isCorrect": false,
+        "description": "浪费了 H100 的 FP8 能力"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：Speculative Decoding（推测解码）的工作原理是？",
+    "explanation": "用一个**小而快的 draft model**（或 n-gram）猜测接下来 K 个 token，再用大模型一次性验证——猜对的 token 直接接受，猜错的回退。在「接受率高」场景（结构化输出、代码生成）能砍 30-70% 延迟。`--speculative-model` 指定 draft，`--num-speculative-tokens` 设 K。高温度随机生成接受率低，收益小甚至为负。",
+    "tags": ["vLLM", "中级", "高级特性"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "小模型先猜 K 个 token，大模型批量验证，猜对直接接受",
+        "isCorrect": true,
+        "description": "推测解码核心机制"
+      },
+      {
+        "text": "把大模型蒸馏成小模型部署",
+        "isCorrect": false,
+        "description": "蒸馏是训练阶段的事"
+      },
+      {
+        "text": "用多个大模型投票生成",
+        "isCorrect": false,
+        "description": "这是 ensemble，不是 speculative"
+      },
+      {
+        "text": "降低 temperature 提升确定性",
+        "isCorrect": false,
+        "description": "采样策略，不是推测解码"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：Chunked Prefill 解决什么问题？",
+    "explanation": "传统 vLLM 把 prefill（处理 prompt）与 decode（生成）分开：prefill 一旦开始霸占 GPU，正在 decode 的请求被卡住。Chunked Prefill（`--enable-chunked-prefill`）把长 prompt 的 prefill **切成小块**，与 decode 交错调度，让 prefill 长请求不再阻塞 decode 短请求的 TTFT。对长 prompt（RAG/长文档问答）效果显著。",
+    "tags": ["vLLM", "中级", "调优"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把长 prompt 的 prefill 切块与 decode 交错，降低短请求 TTFT",
+        "isCorrect": true,
+        "description": "Chunked Prefill 的作用"
+      },
+      {
+        "text": "压缩模型权重",
+        "isCorrect": false,
+        "description": "与权重量化无关"
+      },
+      {
+        "text": "减少生成 token 数",
+        "isCorrect": false,
+        "description": "不影响生成长度"
+      },
+      {
+        "text": "提升生成精度",
+        "isCorrect": false,
+        "description": "纯调度优化"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：监控 KV Cache 是否满了看哪个 Prometheus 指标？",
+    "explanation": "`vllm:gpu_cache_usage_perc`（Gauge）反映 KV Cache 占用率，接近 1 说明 KV Cache 满了，该加显存或限流（调小 `--max-num-seqs`）。`vllm:num_requests_waiting` 反映等待队列堆积。TTFT 看 `vllm:time_to_first_token_seconds`。生产建议 Grafana 监控这几个指标。",
+    "tags": ["vLLM", "中级", "运维"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "vllm:gpu_cache_usage_perc（KV Cache 占用率）",
+        "isCorrect": true,
+        "description": "接近 1 说明 KV Cache 满"
+      },
+      {
+        "text": "vllm:num_requests_running",
+        "isCorrect": false,
+        "description": "这是运行中请求数，不直接反映 KV 满"
+      },
+      {
+        "text": "vllm:e2e_request_latency_seconds",
+        "isCorrect": false,
+        "description": "端到端延迟，非容量指标"
+      },
+      {
+        "text": "vllm:request_prompt_tokens",
+        "isCorrect": false,
+        "description": "prompt token 数分布"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：以下哪个场景 vLLM 不是最佳选择？",
+    "explanation": "vLLM 主要面向数据中心 GPU（A100/H100/L40S/A10）。**消费级 GPU + 纯 CPU 推理**场景下，vLLM 支持弱、门槛高，Ollama 或 llama.cpp 更合适（量化好、跨平台、内存友好）。其余三项（高吞吐服务、多卡并行、OpenAI 兼容）都是 vLLM 的强项。",
+    "tags": ["vLLM", "中级", "选型"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "8GB 显存的笔记本本地跑 70B 模型",
+        "isCorrect": true,
+        "description": "vLLM 在消费级/CPU 支持弱，选 Ollama"
+      },
+      {
+        "text": "A100 集群高并发 LLM 服务",
+        "isCorrect": false,
+        "description": "vLLM 的主场"
+      },
+      {
+        "text": "4 卡张量并行跑 Llama-3-70B",
+        "isCorrect": false,
+        "description": "vLLM TP 成熟"
+      },
+      {
+        "text": "对接现有 OpenAI SDK 的私有部署",
+        "isCorrect": false,
+        "description": "vLLM 原生 OpenAI 兼容"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：监控「首字延迟 TTFT」看哪个指标？",
+    "explanation": "`vllm:time_to_first_token_seconds`（Histogram）直接反映首字延迟 TTFT，是用户体验关键指标。每 token 生成时间看 `vllm:time_per_output_token_seconds`；端到端延迟看 `vllm:e2e_request_latency_seconds`。TTFT 高通常因 prefill 慢或队列拥堵，开 chunked prefill 和 prefix caching 可降。",
+    "tags": ["vLLM", "中级", "运维"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "vllm:time_to_first_token_seconds",
+        "isCorrect": true,
+        "description": "TTFT 专用指标"
+      },
+      {
+        "text": "vllm:time_per_output_token_seconds",
+        "isCorrect": false,
+        "description": "这是每 token 生成时间（非首字）"
+      },
+      {
+        "text": "vllm:e2e_request_latency_seconds",
+        "isCorrect": false,
+        "description": "这是端到端总延迟"
+      },
+      {
+        "text": "vllm:num_requests_running",
+        "isCorrect": false,
+        "description": "运行中请求数"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：8 卡部署 405B 大模型的推荐并行配置是？",
+    "explanation": "405B FP16 需 ~810GB，8 卡 H100（80GB×8=640GB）装不下，需量化（FP8 ~405GB 可装）+ 多卡切分。推荐 `--tensor-parallel-size 4 --pipeline-parallel-size 2`（4 卡 TP 单段 + 2 段 PP）或纯 `--tensor-parallel-size 8`（若 NVLink 充足）。具体按硬件拓扑（`nvidia-smi topo -m`）调。",
+    "tags": ["vLLM", "高级", "并行"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "--tensor-parallel-size 4 --pipeline-parallel-size 2",
+        "isCorrect": true,
+        "description": "TP×PP 组合，平衡通信与吞吐"
+      },
+      {
+        "text": "--tensor-parallel-size 1（单卡跑）",
+        "isCorrect": false,
+        "description": "405B 单卡装不下"
+      },
+      {
+        "text": "不开任何并行，靠 swap",
+        "isCorrect": false,
+        "description": "swap 慢得不可用"
+      },
+      {
+        "text": "只用 Data Parallel",
+        "isCorrect": false,
+        "description": "DP 需每副本装下完整模型，405B 单副本装不下"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：PagedAttention 的 KV block 默认大小（block_size）是？",
+    "explanation": "vLLM 默认 `--block-size 16`，即每个 block 容纳 16 个 token 的 KV。可选 8/16/32。block 小 → 内存碎片更少但 block table 更大；block 大 → 调度开销小但内部碎片略增。16 是吞吐与碎片的平衡点，通常不调。",
+    "tags": ["vLLM", "高级", "原理"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "16 个 token",
+        "isCorrect": true,
+        "description": "默认 block_size=16"
+      },
+      {
+        "text": "1 个 token",
+        "isCorrect": false,
+        "description": "太小，block table 巨大"
+      },
+      {
+        "text": "256 个 token",
+        "isCorrect": false,
+        "description": "太大，碎片严重"
+      },
+      {
+        "text": "整个序列",
+        "isCorrect": false,
+        "description": "那就退化成连续分配了"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM serve 部署时为什么不应套 gunicorn 多 worker？",
+    "explanation": "vLLM serve 内部已基于 uvicorn + async 引擎处理并发，每个进程独占 GPU 资源加载一份模型。套 gunicorn 多 worker 会导致**多份模型副本抢同一 GPU 显存**，OOM 或互相挤兑。多副本扩展应改用 **Data Parallel**（每副本一个引擎实例 + 前置 L7 负载均衡如 Nginx/Envoy），而非同机多 worker。",
+    "tags": ["vLLM", "高级", "部署"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "vLLM 已内置 async 引擎；多 worker 会多份模型副本抢显存，应用 Data Parallel + LB",
+        "isCorrect": true,
+        "description": "正确扩展方式"
+      },
+      {
+        "text": "gunicorn 与 uvicorn 不兼容",
+        "isCorrect": false,
+        "description": "兼容，但场景不对"
+      },
+      {
+        "text": "vLLM 不支持 Python 多进程",
+        "isCorrect": false,
+        "description": "支持，但不是这样用"
+      },
+      {
+        "text": "gunicorn 会让响应变慢",
+        "isCorrect": false,
+        "description": "性能不是主因"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：vLLM 0.8+ 引入的 v1 引擎相比 v0 的主要改进是？",
+    "explanation": "vLLM 0.8（2025.02）发布的 **v1 引擎**重写了调度器与执行路径：统一 prefix caching 与非 prefix 路径、优化调度器降低开销、更激进的 continuous batching 合并、更好的多模态支持。v1 性能相比 v0 在多数场景有显著提升，且简化了代码路径。后续版本 v1 成为默认。",
+    "tags": ["vLLM", "高级", "版本"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "重写调度器与执行路径，统一 prefix caching，性能显著提升",
+        "isCorrect": true,
+        "description": "v1 引擎的核心改进"
+      },
+      {
+        "text": "改用 C++ 重写整个框架",
+        "isCorrect": false,
+        "description": "v1 仍是 Python + CUDA"
+      },
+      {
+        "text": "放弃 PagedAttention",
+        "isCorrect": false,
+        "description": "PagedAttention 仍是核心"
+      },
+      {
+        "text": "只支持 NVIDIA，移除其他硬件",
+        "isCorrect": false,
+        "description": "硬件支持在扩展而非收缩"
+      }
+    ]
+  },
+  {
+    "stem": "vLLM：用 `VLLM_USE_MODELSCOPE=true` 解决什么问题？",
+    "explanation": "vLLM 默认从 HuggingFace Hub 下载模型，国内访问慢且常超时。设置 `VLLM_USE_MODELSCOPE=true` 让 vLLM 改从 **ModelScope（魔搭社区）**下载，国内带宽充足、稳定。适合国内部署 Qwen/GLM/ChatGLM/百川等国产模型。",
+    "tags": ["vLLM", "高级", "部署"],
+    "categories": [
+      ["技术方向", "vLLM"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "从 ModelScope 而非 HuggingFace 下载模型，解决国内网络问题",
+        "isCorrect": true,
+        "description": "切换下载源"
+      },
+      {
+        "text": "启用模型量化",
+        "isCorrect": false,
+        "description": "量化用 --quantization"
+      },
+      {
+        "text": "开启多卡并行",
+        "isCorrect": false,
+        "description": "多卡用 --tensor-parallel-size"
+      },
+      {
+        "text": "禁用 CUDA",
+        "isCorrect": false,
+        "description": "与后端无关"
+      }
+    ]
+  }
+]

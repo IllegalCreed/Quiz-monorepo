@@ -1,0 +1,653 @@
+[
+  {
+    "stem": "FastAPI 模型服务化：模型应该在哪里加载？",
+    "explanation": "模型必须在**应用启动时加载一次**并常驻内存/显存供所有请求复用——不能每请求 load（每次几十秒，QPS 塌陷）。正确做法是用 **lifespan** async context manager 在启动时加载，关闭时释放。旧 `@app.on_event(\"startup\")` 已废弃。这是模型服务化与通用 web 服务的根本区别。",
+    "tags": ["FastAPI 模型服务化", "入门", "lifespan"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "用 lifespan 在启动时加载一次，常驻内存供所有请求复用",
+        "isCorrect": true,
+        "description": "正确的模型加载模式"
+      },
+      {
+        "text": "每个请求里加载，避免常驻占内存",
+        "isCorrect": false,
+        "description": "每请求 load 几十秒，无法接受"
+      },
+      {
+        "text": "用 Celery 后台任务异步加载",
+        "isCorrect": false,
+        "description": "不在请求路径，无法直接服务"
+      },
+      {
+        "text": "首次请求时懒加载",
+        "isCorrect": false,
+        "description": "首请求会超时，且并发首请求会重复加载"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：lifespan 的正确写法是？",
+    "explanation": "lifespan 是用 `@asynccontextmanager` 装饰的 async 函数，`yield` 之前是启动逻辑（加载模型），之后是关闭逻辑（释放）。传给 `FastAPI(lifespan=lifespan)`。旧的 `@app.on_event` 已废弃，且与 lifespan 互斥（设了 lifespan，on_event 不触发）。",
+    "tags": ["FastAPI 模型服务化", "入门", "lifespan"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "@asynccontextmanager 装饰的 async 函数，yield 前启动、yield 后关闭",
+        "isCorrect": true,
+        "description": "标准 lifespan 模式"
+      },
+      {
+        "text": "@app.on_event(\"startup\") 装饰器",
+        "isCorrect": false,
+        "description": "已废弃"
+      },
+      {
+        "text": "在 __init__ 里加载",
+        "isCorrect": false,
+        "description": "FastAPI app 无此生命周期"
+      },
+      {
+        "text": "用 threading.Thread 后台加载",
+        "isCorrect": false,
+        "description": "非标准方式"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：CPU/GPU 密集推理端点应该用？",
+    "explanation": "**核心原则：CPU/GPU 密集推理绝不能用 async def**（会阻塞事件循环，全服务卡死）。应声明为普通 `def`——FastAPI 见到 `def` 会自动丢进外部 threadpool 执行并 await，事件循环不被阻塞。或用 `async def` + `run_in_threadpool` 显式包。",
+    "tags": ["FastAPI 模型服务化", "入门", "async"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "普通 def，FastAPI 自动丢进 threadpool 执行",
+        "isCorrect": true,
+        "description": "CPU 密集用 def"
+      },
+      {
+        "text": "async def 直接调 model()",
+        "isCorrect": false,
+        "description": "阻塞事件循环，服务卡死"
+      },
+      {
+        "text": "async def + await model()",
+        "isCorrect": false,
+        "description": "model() 非 async，无法 await"
+      },
+      {
+        "text": "asyncio.run_in_executor 包裹",
+        "isCorrect": false,
+        "description": "可行但 FastAPI 有专用 run_in_threadpool"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：生产部署用哪个命令？",
+    "explanation": "生产用 **gunicorn + uvicorn workers**：`gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app`。gunicorn 管理多 worker 进程（每 worker 一份模型），uvicorn worker 处理 async。-w 是 worker 数。纯 uvicorn --workers 4 也行但 gunicorn 进程管理更成熟（graceful restart 等）。",
+    "tags": ["FastAPI 模型服务化", "入门", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app",
+        "isCorrect": true,
+        "description": "标准生产部署"
+      },
+      {
+        "text": "python main.py",
+        "isCorrect": false,
+        "description": "开发用，无多进程管理"
+      },
+      {
+        "text": "flask run",
+        "isCorrect": false,
+        "description": "这是 Flask 命令"
+      },
+      {
+        "text": "django runserver",
+        "isCorrect": false,
+        "description": "这是 Django 命令"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：SSE 流式输出用哪个类？",
+    "explanation": "**StreamingResponse** + async generator 实现 SSE。media_type 设为 `text/event-stream`，每个 yield 是 `data: <内容>\\n\\n`（SSE 标准格式，与 OpenAI/vLLM/Ollama 一致）。关键要在循环里 `await anyio.sleep(0)` 让事件循环处理客户端取消。JSONResponse/FileResponse 都不支持流式。",
+    "tags": ["FastAPI 模型服务化", "入门", "流式"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "StreamingResponse，media_type=\"text/event-stream\"",
+        "isCorrect": true,
+        "description": "SSE 流式响应"
+      },
+      {
+        "text": "JSONResponse",
+        "isCorrect": false,
+        "description": "一次性 JSON，不流式"
+      },
+      {
+        "text": "FileResponse",
+        "isCorrect": false,
+        "description": "文件下载，非 SSE"
+      },
+      {
+        "text": "WebSocketResponse",
+        "isCorrect": false,
+        "description": "WebSocket 是双向，SSE 是单向"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：在 async def 端点里调 CPU 密集推理，应怎样？",
+    "explanation": "若端点里既有 async I/O（如 await 查 DB）又有 CPU 推理，应**显式用 run_in_threadpool 包住 CPU 部分**：`result = await run_in_threadpool(model, features)`。来自 `fastapi.concurrency`，封装 anyio，把同步阻塞函数丢线程池。直接 `model()` 会阻塞事件循环。",
+    "tags": ["FastAPI 模型服务化", "初级", "async"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "await run_in_threadpool(model, features)",
+        "isCorrect": true,
+        "description": "显式丢线程池"
+      },
+      {
+        "text": "直接 model(features)",
+        "isCorrect": false,
+        "description": "阻塞事件循环"
+      },
+      {
+        "text": "await model(features)",
+        "isCorrect": false,
+        "description": "model 非 async，无法 await"
+      },
+      {
+        "text": "asyncio.sleep(0) 后再调",
+        "isCorrect": false,
+        "description": "sleep 不解决阻塞"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：run_in_threadpool 从哪里导入？",
+    "explanation": "`from fastapi.concurrency import run_in_threadpool`。它封装 anyio.to_thread.run_sync，把同步阻塞函数丢到外部 threadpool（默认 40 线程）执行，返回可 await 的结果。不要用 asyncio.run_in_executor（需手动传 executor，且与 anyio threadpool 重复）。",
+    "tags": ["FastAPI 模型服务化", "初级", "async"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "from fastapi.concurrency import run_in_threadpool",
+        "isCorrect": true,
+        "description": "FastAPI 专用导入"
+      },
+      {
+        "text": "from starlette import run_in_threadpool",
+        "isCorrect": false,
+        "description": "路径不对"
+      },
+      {
+        "text": "from anyio import threadpool",
+        "isCorrect": false,
+        "description": "anyio API 不同"
+      },
+      {
+        "text": "from fastapi import threadpool",
+        "isCorrect": false,
+        "description": "不在顶层"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：批量推理端点相比单样本端点的优势？",
+    "explanation": "单样本 forward 有固定开销（kernel launch、内存搬运）。批量端点接收 `list[Input]` 一次 forward，**摊薄固定开销**，吞吐提升数倍。注意要限上限（如 `len(items) <= 64`）防 OOM。这是「客户端攒批」，不是服务端 dynamic batching。",
+    "tags": ["FastAPI 模型服务化", "初级", "批量"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "一次 forward 摊薄固定开销，吞吐提升数倍",
+        "isCorrect": true,
+        "description": "批量的核心收益"
+      },
+      {
+        "text": "降低单样本精度损失",
+        "isCorrect": false,
+        "description": "与精度无关"
+      },
+      {
+        "text": "减少代码行数",
+        "isCorrect": false,
+        "description": "代码量未必更少"
+      },
+      {
+        "text": "自动启用 GPU",
+        "isCorrect": false,
+        "description": "与 GPU 无关"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：liveness 与 readiness 健康检查的区别？",
+    "explanation": "**liveness**（/health）：进程活着就 200，用于判断是否重启容器。**readiness**（/ready）：模型加载完才 200，用于判断是否接流量。模型加载需几十秒，K8s 用 readinessProbe=/ready 控制滚动更新时新 pod 接流量时机，避免加载期间请求失败。livenessProbe=/health 不应在加载慢时误重启。",
+    "tags": ["FastAPI 模型服务化", "初级", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "liveness 判断进程存活；readiness 判断模型加载完可接流量",
+        "isCorrect": true,
+        "description": "两者职责不同"
+      },
+      {
+        "text": "完全等价",
+        "isCorrect": false,
+        "description": "职责不同"
+      },
+      {
+        "text": "liveness 接流量，readiness 重启",
+        "isCorrect": false,
+        "description": "说反了"
+      },
+      {
+        "text": "只有 liveness 就够",
+        "isCorrect": false,
+        "description": "模型服务两者都需要"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：以下哪种是 async def 里直接调 model() 的后果？",
+    "explanation": "在 `async def` 里直接调 CPU 密集 `model()` 会**阻塞整个事件循环**——这一个调用占住主线程，所有其他请求（含健康检查）全部卡住，服务相当于单线程串行，QPS 塌陷。这是新手最常犯的错。正确做法：改普通 def（自动丢线程池）或用 run_in_threadpool。",
+    "tags": ["FastAPI 模型服务化", "中级", "async"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "阻塞事件循环，所有请求串行，服务卡死",
+        "isCorrect": true,
+        "description": "async 陷阱后果"
+      },
+      {
+        "text": "自动丢线程池，正常工作",
+        "isCorrect": false,
+        "description": "async def 不会自动丢线程池"
+      },
+      {
+        "text": "报语法错误",
+        "isCorrect": false,
+        "description": "语法没错，运行时才出问题"
+      },
+      {
+        "text": "提升吞吐",
+        "isCorrect": false,
+        "description": "恰恰相反"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：GPU 模型多 worker 部署的显存问题？",
+    "explanation": "每个 gunicorn worker 是**独立进程**，各自加载一份模型到显存——4 worker 跑 7B 模型（14GB）要 56GB 显存。GPU 大模型生产建议：worker 数 ≤ GPU 数，或改用 vLLM/Triton（单进程多 GPU，支持 continuous batching），FastAPI 仅作业务前置。`--preload` 让 fork 后 COW 共享内存，但 GPU 显存不共享（独立 CUDA context）。",
+    "tags": ["FastAPI 模型服务化", "中级", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每 worker 独占一份显存，4 worker 跑 7B 要 56GB，worker 数应 ≤ GPU 数",
+        "isCorrect": true,
+        "description": "显存翻倍问题"
+      },
+      {
+        "text": "所有 worker 共享一份显存",
+        "isCorrect": false,
+        "description": "GPU 显存进程间不共享"
+      },
+      {
+        "text": "显存自动合并",
+        "isCorrect": false,
+        "description": "无此机制"
+      },
+      {
+        "text": "用 --preload 后显存共享",
+        "isCorrect": false,
+        "description": "GPU 显存不共享"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：SSE 流式输出中 await anyio.sleep(0) 的作用？",
+    "explanation": "async 任务**只有遇到 await 才能被取消**。若生成器里没有 await，客户端断开后生成器仍可能继续跑（浪费算力，LLM 继续生成 token）。`await anyio.sleep(0)` 让出控制权给事件循环，使其能处理客户端取消、抛 CancelledError 让生成器退出。这是 FastAPI 文档明确强调的点。",
+    "tags": ["FastAPI 模型服务化", "中级", "流式"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让事件循环有机会处理客户端取消，避免生成器空转",
+        "isCorrect": true,
+        "description": "取消处理关键"
+      },
+      {
+        "text": "降低生成速度省 CPU",
+        "isCorrect": false,
+        "description": "非主目的"
+      },
+      {
+        "text": "防止内存泄漏",
+        "isCorrect": false,
+        "description": "与内存无关"
+      },
+      {
+        "text": "提升 token 质量",
+        "isCorrect": false,
+        "description": "与生成质量无关"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：服务端 dynamic batching（攒批）相比客户端攒批？",
+    "explanation": "客户端攒批要求客户端把多请求合成一个 batch。**服务端 dynamic batching** 让客户端照常发单请求，服务在短窗口（如 50ms）内攒到 N 个请求合成 batch——Triton/Dynamo 内建。FastAPI 自写复杂（超时/错误传播/背压 tricky），生产建议用 Triton，或后端用 vLLM（自带 continuous batching），FastAPI 仅作业务前置。",
+    "tags": ["FastAPI 模型服务化", "中级", "批量"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "服务端在时间窗口内自动攒多请求成 batch，客户端无感",
+        "isCorrect": true,
+        "description": "dynamic batching 核心"
+      },
+      {
+        "text": "客户端必须自己攒批",
+        "isCorrect": false,
+        "description": "那是客户端攒批"
+      },
+      {
+        "text": "只能用 sync 模式",
+        "isCorrect": false,
+        "description": "与同步异步无关"
+      },
+      {
+        "text": "FastAPI 内建支持",
+        "isCorrect": false,
+        "description": "FastAPI 无内建，需自写或用 Triton"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：模型预热（warmup）的作用？",
+    "explanation": "首次 forward 通常比后续慢——CUDA kernel 首次编译、缓存未命中、cuDNN autotune。lifespan 里加载完模型后跑一次 dummy forward 预热，让首请求用户不必等到「额外编译延迟」。对 torch.compile / TensorRT 等需要编译的模型尤其重要。",
+    "tags": ["FastAPI 模型服务化", "中级", "调优"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "启动时跑 dummy forward，避免首请求慢（kernel 编译/缓存未命中）",
+        "isCorrect": true,
+        "description": "预热收益"
+      },
+      {
+        "text": "提升模型精度",
+        "isCorrect": false,
+        "description": "纯性能优化"
+      },
+      {
+        "text": "减小模型体积",
+        "isCorrect": false,
+        "description": "与体积无关"
+      },
+      {
+        "text": "释放显存",
+        "isCorrect": false,
+        "description": "预热反而占显存"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：以下哪个性能优化能提升响应序列化速度？",
+    "explanation": "**ORJSONResponse**（pip install orjson）替代默认 JSONResponse，序列化快 2-5x。其他优化：`--loop uvloop`（比 asyncio 默认 loop 快 2-4x）、`--http httptools`（比 h11 快）。这些都是 Linux/macOS 上的 C 扩展。",
+    "tags": ["FastAPI 模型服务化", "中级", "调优"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "ORJSONResponse（orjson C 扩展，快 2-5x）",
+        "isCorrect": true,
+        "description": "序列化优化"
+      },
+      {
+        "text": "增加 worker 数",
+        "isCorrect": false,
+        "description": "提升并发，不提升单请求序列化"
+      },
+      {
+        "text": "用 sync def",
+        "isCorrect": false,
+        "description": "与序列化无关"
+      },
+      {
+        "text": "关闭访问日志",
+        "isCorrect": false,
+        "description": "减少 I/O，不提升序列化"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：何时该从 FastAPI 自写切到 Triton/vLLM？",
+    "explanation": "FastAPI 自写适合中小规模。出现以下情况应切专用推理服务：(1) QPS 高到单机扛不住 → Triton/Ray Serve 多副本；(2) 需要 dynamic batching → Triton 内建；(3) 纯 LLM 高并发 → vLLM（PagedAttention 碾压）；(4) 多模型多版本路由 → Triton/KServe；(5) 极致 GPU 利用率 → TensorRT-LLM。FastAPI 仍可作业务前置（鉴权/限流/路由）。",
+    "tags": ["FastAPI 模型服务化", "中级", "选型"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "QPS 单机扛不住 / 需要 dynamic batching / 纯 LLM 高并发",
+        "isCorrect": true,
+        "description": "切专用服务的信号"
+      },
+      {
+        "text": "任何时候都该用 FastAPI",
+        "isCorrect": false,
+        "description": "高并发场景 FastAPI 不够"
+      },
+      {
+        "text": "只有 CPU 模型才用 FastAPI",
+        "isCorrect": false,
+        "description": "GPU 中小规模也能用"
+      },
+      {
+        "text": "FastAPI 性能优于 Triton",
+        "isCorrect": false,
+        "description": "高并发下 Triton 更强"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：StreamingResponse 已开始流式输出后中途异常，如何通知客户端？",
+    "explanation": "StreamingResponse 一旦发了 200 状态码 + 部分 body，**中途异常无法用 HTTP 状态码回传**（状态码已发）。需用 SSE 的 **event 类型**：`yield f\"event: error\\\\ndata: {json.dumps({'error': str(e)})}\\\\n\\n\"`。客户端解析 SSE 时监听 event: error 分支。不能改状态码、不能抛 HTTPException（已过响应头阶段）。",
+    "tags": ["FastAPI 模型服务化", "高级", "流式"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用 SSE event: error 类型，data 带错误信息",
+        "isCorrect": true,
+        "description": "SSE 错误协议"
+      },
+      {
+        "text": "改 HTTP 状态码为 500",
+        "isCorrect": false,
+        "description": "状态码已发，无法改"
+      },
+      {
+        "text": "抛 HTTPException",
+        "isCorrect": false,
+        "description": "已过响应头阶段，无效"
+      },
+      {
+        "text": "中断连接不通知",
+        "isCorrect": false,
+        "description": "客户端无法区分断网与错误"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：gunicorn 的 --preload 选项对 CPU 模型的收益？",
+    "explanation": "`--preload` 让 gunicorn 在 fork worker 前先加载应用（含模型），子进程 **copy-on-write 共享内存**——CPU 模型多 worker 时省内存（N worker 共享 1 份模型权重，写时才复制）。但 **GPU 显存不共享**（每进程独立 CUDA context），GPU 模型用 --preload 反而拖慢启动且显存照常翻倍。",
+    "tags": ["FastAPI 模型服务化", "高级", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "fork 后 COW 共享内存，CPU 模型多 worker 省内存；GPU 模型显存不共享慎用",
+        "isCorrect": true,
+        "description": "--preload 的双面性"
+      },
+      {
+        "text": "让启动更快",
+        "isCorrect": false,
+        "description": "fork 前加载反而让 master 启动慢"
+      },
+      {
+        "text": "提升推理速度",
+        "isCorrect": false,
+        "description": "与推理速度无关"
+      },
+      {
+        "text": "自动启用 GPU",
+        "isCorrect": false,
+        "description": "与 GPU 无关"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：哪些推理库会释放 GIL，单 worker 多线程能并发？",
+    "explanation": "C/C++ 后端的库在推理时释放 GIL：**onnxruntime、PyTorch（C++ 后端）、vLLM、TensorRT**。这些库在 `def` 端点里多请求（threadpool 多线程）能真正并发。**纯 Python 推理**（如手写 numpy 循环、部分 sklearn）受 GIL 约束，多线程无效，必须靠多 worker（多进程）。",
+    "tags": ["FastAPI 模型服务化", "高级", "并发"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "onnxruntime / PyTorch（C++ 后端）/ vLLM 释放 GIL",
+        "isCorrect": true,
+        "description": "C 后端库释放 GIL"
+      },
+      {
+        "text": "所有库都释放 GIL",
+        "isCorrect": false,
+        "description": "纯 Python 库不释放"
+      },
+      {
+        "text": "只有 onnxruntime 释放",
+        "isCorrect": false,
+        "description": "PyTorch 也释放"
+      },
+      {
+        "text": "没有库释放 GIL",
+        "isCorrect": false,
+        "description": "C 后端库都释放"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：torch.cuda.set_per_process_memory_fraction 的作用？",
+    "explanation": "该函数限制**单进程最多占用 GPU 显存的比例**（如 0.4 = 40%）。多 worker 部署 GPU 模型时用它防止单 worker 吃满显存导致其他 worker OOM。配合 `CUDA_VISIBLE_DEVICES` 给不同 worker 分配不同 GPU。是 GPU 模型多 worker 共存的关键资源隔离手段。",
+    "tags": ["FastAPI 模型服务化", "高级", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "限制单进程 GPU 显存占用比例，防多 worker OOM",
+        "isCorrect": true,
+        "description": "显存隔离"
+      },
+      {
+        "text": "提升推理速度",
+        "isCorrect": false,
+        "description": "限显存不提速"
+      },
+      {
+        "text": "压缩模型权重",
+        "isCorrect": false,
+        "description": "与权重量化无关"
+      },
+      {
+        "text": "释放 GIL",
+        "isCorrect": false,
+        "description": "与 GIL 无关"
+      }
+    ]
+  },
+  {
+    "stem": "FastAPI 模型服务化：serverless GPU 部署模型服务的冷启动问题？",
+    "explanation": "模型加载需几十秒到分钟，serverless GPU（Modal/Replicate/BentoCloud/Lambda GPU）冷启动慢。应对：(1) **预热实例**保持至少一个常驻避免冷启动；(2) 模型放镜像层/分布式存储避免每次下载；(3) **CRIU snapshot restore** 恢复加载好的进程内存快照；(4) readiness gate 控制接流量时机。FastAPI 本身不改，平台提供这些机制。",
+    "tags": ["FastAPI 模型服务化", "高级", "部署"],
+    "categories": [
+      ["技术方向", "FastAPI 模型服务化"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "预热常驻实例 + 镜像层缓存模型 + CRIU 快照恢复 + readiness gate",
+        "isCorrect": true,
+        "description": "冷启动应对组合"
+      },
+      {
+        "text": "冷启动无法优化",
+        "isCorrect": false,
+        "description": "有多种手段"
+      },
+      {
+        "text": "减小模型权重即可",
+        "isCorrect": false,
+        "description": "权重小加载仍慢"
+      },
+      {
+        "text": "用更多 CPU 核",
+        "isCorrect": false,
+        "description": "瓶颈是 I/O 与 CUDA 初始化"
+      }
+    ]
+  }
+]

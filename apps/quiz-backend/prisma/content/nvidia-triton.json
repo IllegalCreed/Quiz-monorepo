@@ -1,0 +1,680 @@
+[
+  {
+    "stem": "NVIDIA Triton：Triton Inference Server 的核心定位是什么？",
+    "explanation": "Triton 是 NVIDIA 开源的多框架推理服务器（Inference Server），在 CPU/GPU 上托管来自 TensorRT、PyTorch、TensorFlow、ONNX Runtime、Python 等后端的模型，通过 HTTP/REST 与 gRPC 对外提供推理服务。它不是训练框架、也不是模型压缩工具。",
+    "tags": ["Triton", "定位", "推理服务器"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "多框架推理服务器，托管 TensorRT/PyTorch/TF/ONNX 等模型并提供 HTTP/gRPC 服务",
+        "isCorrect": true,
+        "description": "官方定义：multi-framework inference serving"
+      },
+      {
+        "text": "深度学习训练框架，与 PyTorch 同类",
+        "isCorrect": false,
+        "description": "Triton 不做训练，只做推理 serving"
+      },
+      {
+        "text": "模型压缩 / 量化工具",
+        "isCorrect": false,
+        "description": "压缩工具是 TensorRT / TensorRT-LLM，Triton 是 hosting 层"
+      },
+      {
+        "text": "GPU 监控面板",
+        "isCorrect": false,
+        "description": "监控由 DCGM 等承担，Triton 仅暴露 Prometheus metrics"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：启动容器后默认的三个端口分别对应什么？",
+    "explanation": "Triton 默认暴露三个端口：8000=HTTP/REST、8001=gRPC、8002=Prometheus Metrics。生产中通常把 gRPC 留给客户端高频调用，HTTP 留给调试与控制面，metrics 接 Prometheus/Grafana。",
+    "tags": ["Triton", "端口", "协议"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "8000=HTTP/REST、8001=gRPC、8002=Prometheus Metrics",
+        "isCorrect": true,
+        "description": "官方默认三端口"
+      },
+      {
+        "text": "8000=gRPC、8001=HTTP/REST、8002=Metrics",
+        "isCorrect": false,
+        "description": "HTTP 与 gRPC 端口对调，错误"
+      },
+      {
+        "text": "8000=Metrics、8001=gRPC、8002=HTTP/REST",
+        "isCorrect": false,
+        "description": "顺序完全错位"
+      },
+      {
+        "text": "8000=TensorBoard、8001=gRPC、8002=HTTP/REST",
+        "isCorrect": false,
+        "description": "TensorBoard 与 Triton 无关"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：Dynamic Batching 默认在什么条件下启用？",
+    "explanation": "当模型的 max_batch_size > 1 且未配置其他调度器时，Triton 会自动启用 dynamic batching 调度器。max_batch_size = 0 表示模型不支持 batch。",
+    "tags": ["Triton", "Dynamic Batching", "max_batch_size"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "max_batch_size > 1 时自动启用",
+        "isCorrect": true,
+        "description": "官方默认行为"
+      },
+      {
+        "text": "任何模型默认启用，与 max_batch_size 无关",
+        "isCorrect": false,
+        "description": "max_batch_size=0 时不支持 batch"
+      },
+      {
+        "text": "需要显式在 backend 字段写 dynamic_batching 才启用",
+        "isCorrect": false,
+        "description": "backend 字段是后端类型，不是调度器开关"
+      },
+      {
+        "text": "仅在 TensorRT 后端启用，其它后端不支持",
+        "isCorrect": false,
+        "description": "所有支持 batch 的后端都可用"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：config.pbtxt 中 backend 和 platform 字段的关系是什么？",
+    "explanation": "两者都指定执行环境：backend 是底层软件实现（如 tensorrt_plan、python），platform 是历史用法，作用相同。新代码推荐用 backend；backend 文档列出每种后端的有效值。",
+    "tags": ["Triton", "config.pbtxt", "backend"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "两者作用相同，新代码推荐用 backend",
+        "isCorrect": true,
+        "description": "platform 是历史命名，二者等价"
+      },
+      {
+        "text": "platform 指 GPU 型号，backend 指框架",
+        "isCorrect": false,
+        "description": "两者都指执行实现"
+      },
+      {
+        "text": "必须同时填写 backend 和 platform",
+        "isCorrect": false,
+        "description": "二选一即可"
+      },
+      {
+        "text": "backend 是协议，platform 是后端",
+        "isCorrect": false,
+        "description": "协议由端口决定（HTTP/gRPC）"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：Triton 默认的模型加载策略是什么？",
+    "explanation": "默认 --model-control-mode=poll，每 15 秒（--repository-poll-secs）扫描一次模型仓库，自动发现新增模型 / 版本变化并加载，无需重启服务。explicit 模式则需要通过 REST API 显式 load/unload。",
+    "tags": ["Triton", "model-control-mode", "热更新"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "poll 模式，默认每 15 秒扫描仓库自动发现新模型",
+        "isCorrect": true,
+        "description": "默认策略，无需重启"
+      },
+      {
+        "text": "explicit 模式，必须手动 load",
+        "isCorrect": false,
+        "description": "explicit 是可选模式，不是默认"
+      },
+      {
+        "text": "none 模式，启动后不再加载任何模型",
+        "isCorrect": false,
+        "description": "none 模式只读初始加载，但不扫描"
+      },
+      {
+        "text": "重启服务才生效",
+        "isCorrect": false,
+        "description": "这正是 poll 模式要解决的问题"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：以下哪个是当前最新主线对应的 NGC 容器版本（截至 2026 年）？",
+    "explanation": "GitHub 仓库 v2.70.x 对应 NGC 26.06 容器。Triton 的版本号与 NGC 容器 YY.MM 命名对应，24.08 引入了 gRPC 流式错误码，23.10 引入 Python gRPC 客户端取消 inflight 请求能力。",
+    "tags": ["Triton", "版本", "NGC"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "26.06-py3",
+        "isCorrect": true,
+        "description": "v2.70.x 对应的 NGC 镜像"
+      },
+      {
+        "text": "21.10-py3",
+        "isCorrect": false,
+        "description": "2021 年的旧版本"
+      },
+      {
+        "text": "19.05-py3",
+        "isCorrect": false,
+        "description": "远古版本，已不支持现代后端"
+      },
+      { "text": "30.01-py3", "isCorrect": false, "description": "臆造版本号" }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：preferred_batch_size 字段的作用是什么？",
+    "explanation": "preferred_batch_size 是一组优先凑到的 batch 尺寸，如 [4, 8] 意味着队列到达 4 就跑，否则优先等到 8。配合 max_queue_delay_microseconds 兜底，避免无限等待凑满。",
+    "tags": ["Triton", "Dynamic Batching", "调优"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "指定调度器优先凑到的 batch 尺寸列表",
+        "isCorrect": true,
+        "description": "如 [4, 8] 表示优先凑 4 或 8"
+      },
+      {
+        "text": "强制每次推理必须达到的 batch 大小",
+        "isCorrect": false,
+        "description": "没有强制含义，凑不满也走 max_queue_delay 兜底"
+      },
+      {
+        "text": "限制客户端单次请求的最大 batch",
+        "isCorrect": false,
+        "description": "那是 max_batch_size 的职责"
+      },
+      {
+        "text": "GPU 显存上限",
+        "isCorrect": false,
+        "description": "显存由 --cuda-memory-pool-byte-size 控制"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：max_queue_delay_microseconds 设为 0 意味着什么？",
+    "explanation": "max_queue_delay_microseconds=0 表示请求到来后立即执行，不做任何队列等待。这本质上是关闭了「等待凑大 batch」的行为，单请求 latency 最低但吞吐也最低。",
+    "tags": ["Triton", "Dynamic Batching", "延迟"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "请求到达后立即执行，不等待凑 batch",
+        "isCorrect": true,
+        "description": "0 = 关闭队列等待"
+      },
+      {
+        "text": "队列等待时间无上限",
+        "isCorrect": false,
+        "description": "0 不是无上限，而是不等待"
+      },
+      {
+        "text": "禁用整个 dynamic batching",
+        "isCorrect": false,
+        "description": "禁用是删 dynamic_batching 块或 max_batch_size=0"
+      },
+      {
+        "text": "只接受 batch size 为 0 的请求",
+        "isCorrect": false,
+        "description": "batch 0 没有意义"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：preserve_ordering=true 会带来什么影响？",
+    "explanation": "preserve_ordering=true 要求响应顺序与请求到达顺序严格一致，开启后吞吐下降——必须等慢请求完成才能返回快请求的结果。适合需要可重现顺序的场景（如审计 / 流式系统）。",
+    "tags": ["Triton", "Dynamic Batching", "preserve_ordering"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "吞吐下降，但响应顺序与请求到达顺序一致",
+        "isCorrect": true,
+        "description": "顺序优先，牺牲并发效率"
+      },
+      {
+        "text": "吞吐提升，延迟下降",
+        "isCorrect": false,
+        "description": "完全相反，会牺牲吞吐"
+      },
+      {
+        "text": "禁用 batch 合并",
+        "isCorrect": false,
+        "description": "preserve_ordering 不影响 batch 合并逻辑"
+      },
+      {
+        "text": "只对 gRPC 有效，HTTP 无关",
+        "isCorrect": false,
+        "description": "两种协议都受影响"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：instance_group 字段中 kind: KIND_GPU 控制什么？",
+    "explanation": "instance_group 控制模型的执行实例。count 指定实例数，kind 指定硬件类型（KIND_GPU 或 KIND_CPU），gpus 指定 GPU ID 列表。多个实例通过 CUDA streams 在同一 GPU 上交错执行，提升 SM 利用率。",
+    "tags": ["Triton", "Concurrent Model Execution", "instance_group"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "实例在 GPU 上执行（kind 字段值）",
+        "isCorrect": true,
+        "description": "KIND_GPU 与 KIND_CPU 是两种 kind"
+      },
+      {
+        "text": "GPU 数量",
+        "isCorrect": false,
+        "description": "GPU 数量由 gpus 字段或集群决定"
+      },
+      {
+        "text": "GPU 型号",
+        "isCorrect": false,
+        "description": "GPU 型号由硬件决定"
+      },
+      {
+        "text": "推理精度",
+        "isCorrect": false,
+        "description": "精度在 TensorRT plan 或 backend 配置里"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：哪种情况最需要调大 instance_group.count？",
+    "explanation": "当 GPU 利用率没满而延迟高时，通常是单实例吞吐瓶颈，增加 instance count 让多个执行流通过 CUDA streams 交错，能显著提升 GPU 利用率与吞吐。若 GPU 已 100% 满载，加 count 反而抢资源。",
+    "tags": ["Triton", "Concurrent Model Execution", "调优"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "GPU 利用率没满但延迟高",
+        "isCorrect": true,
+        "description": "单实例瓶颈典型特征"
+      },
+      {
+        "text": "GPU 已 100% 满载",
+        "isCorrect": false,
+        "description": "此时加实例只会抢资源，无效"
+      },
+      {
+        "text": "显存不足",
+        "isCorrect": false,
+        "description": "显存不足应该减小 batch 或换小模型"
+      },
+      {
+        "text": "客户端并发数很低",
+        "isCorrect": false,
+        "description": "并发低时单实例足够，加 count 无意义"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：把 PyTorch 模型通过 TensorRT 加速的标准链路是什么？",
+    "explanation": "标准链路：PyTorch → 导出 ONNX → 用 trtexec 编译成 plan（指定 --fp16/--int8 与 min/opt/max shapes）→ 放进 Triton 仓库的 1/model.plan，config.pbtxt 的 backend 设为 tensorrt。trtexec 不接受 .pt 直接输入。",
+    "tags": ["Triton", "TensorRT", "加速"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PyTorch → ONNX → trtexec 编译 plan → 放仓库设 backend=tensorrt",
+        "isCorrect": true,
+        "description": "标准 4 步链路"
+      },
+      {
+        "text": "PyTorch → 直接放仓库，backend=tensorrt",
+        "isCorrect": false,
+        "description": "Triton 的 TensorRT 后端只吃 plan，不吃 .pt"
+      },
+      {
+        "text": "ONNX → 直接放仓库，backend=tensorrt",
+        "isCorrect": false,
+        "description": "缺 trtexec 编译步骤"
+      },
+      {
+        "text": "TensorFlow → SavedModel → trtexec",
+        "isCorrect": false,
+        "description": "TF 也需先到 ONNX 或 TF-TRT 路径"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：FP16 与 INT8 精度相比 FP32，速度与精度损失的典型表现是什么？",
+    "explanation": "FP16 相对 FP32 速度约 2x，精度损失极小，是通用首选；INT8 速度约 3–4x，但精度损失中等，需要校准数据集（calibration），适合有 representative 数据的场景。",
+    "tags": ["Triton", "TensorRT", "精度"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "FP16 约 2x 速度 / 极小损失；INT8 约 3-4x 速度 / 中等损失需校准",
+        "isCorrect": true,
+        "description": "典型加速比"
+      },
+      {
+        "text": "FP16 与 INT8 速度相同，只是精度不同",
+        "isCorrect": false,
+        "description": "INT8 明显更快"
+      },
+      {
+        "text": "FP16 无加速，只有 INT8 有",
+        "isCorrect": false,
+        "description": "FP16 通常有 2x 加速"
+      },
+      {
+        "text": "INT8 不需要校准即可使用",
+        "isCorrect": false,
+        "description": "INT8 必须有 calibration 数据"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：Ensemble 模型（ensemble_scheduling）的主要价值是什么？",
+    "explanation": "Ensemble 把多个模型（如预处理 → 推理 → 后处理）串成一条流水线，客户端一次 infer 调用就能完成全链路。中间 tensor 不出进程，端到端延迟比手工串联降低 30%+，避免多次网络往返与序列化。",
+    "tags": ["Triton", "Ensemble", "流水线"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把多模型串成进程内流水线，一次调用完成全链路",
+        "isCorrect": true,
+        "description": "中间 tensor 不出进程"
+      },
+      {
+        "text": "并行运行多个模型提升吞吐",
+        "isCorrect": false,
+        "description": "并行是 instance_group 的事，ensemble 是串行流水线"
+      },
+      {
+        "text": "减少 GPU 显存占用",
+        "isCorrect": false,
+        "description": "ensemble 不直接影响显存"
+      },
+      {
+        "text": "提供模型 A/B 测试能力",
+        "isCorrect": false,
+        "description": "A/B 通常由 KServe 等上层做"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：model_warmup 字段解决什么问题？",
+    "explanation": "model_warmup 在模型标记 READY 之前先灌入合成请求，提前触发 lazy 初始化（如 cuDNN 算法选择、kernel 编译），避免首个真实请求走冷路径导致延迟尖刺。Triton 在 warmup 完成前不会把模型标记为 READY。",
+    "tags": ["Triton", "model_warmup", "冷启动"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "预热模型，避免首请求冷路径延迟尖刺",
+        "isCorrect": true,
+        "description": "触发 lazy 初始化"
+      },
+      {
+        "text": "提升模型精度",
+        "isCorrect": false,
+        "description": "warmup 不影响精度"
+      },
+      {
+        "text": "节省显存",
+        "isCorrect": false,
+        "description": "warmup 反而会预分配显存"
+      },
+      {
+        "text": "加速客户端连接",
+        "isCorrect": false,
+        "description": "客户端连接是协议层的事"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：以下哪种是 Triton 推荐的「凑满 batch 与延迟兜底」组合配置？",
+    "explanation": "推荐组合：preferred_batch_size=[batch1, batch2] 设为吞吐曲线拐点附近的值；max_queue_delay_microseconds 设为约 1–2 倍 SLA（例如 50ms SLA 设 50000μs），既优先凑满又不会让请求等太久。preserve_ordering 默认 false 以保吞吐。",
+    "tags": ["Triton", "Dynamic Batching", "调优"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "preferred_batch_size=[拐点值] + max_queue_delay_microseconds=1-2 倍 SLA + preserve_ordering=false",
+        "isCorrect": true,
+        "description": "生产推荐组合"
+      },
+      {
+        "text": "preferred_batch_size=[1] + max_queue_delay_microseconds=0",
+        "isCorrect": false,
+        "description": "这是单请求模式，浪费 batching 能力"
+      },
+      {
+        "text": "preferred_batch_size=[极大值] + max_queue_delay_microseconds=极大值",
+        "isCorrect": false,
+        "description": "会让请求无限等待，延迟爆炸"
+      },
+      {
+        "text": "删除 dynamic_batching 块",
+        "isCorrect": false,
+        "description": "等于关掉 batching"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：序列模型（sequence_batching）相比 dynamic_batching 的核心区别是什么？",
+    "explanation": "sequence_batching 把同一会话（session）的连续请求粘连到同一执行实例，保证状态连续性（如对话历史、视频帧的 hidden state），适合 RNN / 流式 / 对话场景。dynamic_batching 不关心请求来源，按时间窗聚合。",
+    "tags": ["Triton", "sequence_batching", "调度器"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "把同会话请求粘连到同一实例，保证状态连续性",
+        "isCorrect": true,
+        "description": "为有状态模型设计"
+      },
+      {
+        "text": "比 dynamic_batching 更快",
+        "isCorrect": false,
+        "description": "两者目标不同，不直接比速度"
+      },
+      {
+        "text": "只支持 CPU 后端",
+        "isCorrect": false,
+        "description": "GPU 后端同样支持"
+      },
+      {
+        "text": "替代 Ensemble 流水线",
+        "isCorrect": false,
+        "description": "Sequence 是会话粘连，不是流水线"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：以下关于 Model Analyzer 的描述哪个正确？",
+    "explanation": "Model Analyzer 自动遍历 batch size / instance count 等配置组合，对每组跑 perf_analyzer 并采集显存、吞吐、延迟，输出对比表与最优配置。它替代了手工 trial-and-error 调参，是 Triton 性能调优的关键工具。",
+    "tags": ["Triton", "Model Analyzer", "调优"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "自动遍历配置组合并输出对比表与最优配置",
+        "isCorrect": true,
+        "description": "替代手工 trial-and-error"
+      },
+      {
+        "text": "只压测单个固定配置",
+        "isCorrect": false,
+        "description": "那是 perf_analyzer，Model Analyzer 做组合遍历"
+      },
+      {
+        "text": "导出 ONNX 模型",
+        "isCorrect": false,
+        "description": "导出是 PyTorch / TF 的事"
+      },
+      {
+        "text": "监控 GPU 温度",
+        "isCorrect": false,
+        "description": "监控由 DCGM 负责"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：rate_limiter 的核心价值是什么？",
+    "explanation": "rate_limiter 通过 resources / priority 跨模型实例公平调度，避免某个热门大模型独占 GPU 让其他冷门小模型饿死。priority 作为权重值，控制不同模型 / 实例之间的执行优先级。",
+    "tags": ["Triton", "rate_limiter", "调度"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "跨模型实例公平调度，避免热门模型饿死其他模型",
+        "isCorrect": true,
+        "description": "多模型共享 GPU 时关键"
+      },
+      {
+        "text": "限制客户端 QPS",
+        "isCorrect": false,
+        "description": "那是 API gateway 的职责"
+      },
+      {
+        "text": "降低单次推理延迟",
+        "isCorrect": false,
+        "description": "rate_limiter 主要保证公平性，不一定降延迟"
+      },
+      {
+        "text": "替代 dynamic_batching",
+        "isCorrect": false,
+        "description": "两者协作而非替代"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：CUDA shared memory 在客户端的使用场景是什么？",
+    "explanation": "当传输大 tensor（如高分辨率图像 / 长 embedding）时，走网络 + 序列化开销显著。客户端注册一块 CUDA 共享内存区后，输入直接写入该区域，Triton 零拷贝读取，端到端延迟大幅降低。适合本地 / 同机部署的高吞吐场景。",
+    "tags": ["Triton", "shared memory", "优化"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "大 tensor 零拷贝传输，降低端到端延迟",
+        "isCorrect": true,
+        "description": "适合本地 / 同机高吞吐"
+      },
+      {
+        "text": "跨网络加速传输",
+        "isCorrect": false,
+        "description": "共享内存只在同机有效，不能跨网络"
+      },
+      {
+        "text": "提升模型精度",
+        "isCorrect": false,
+        "description": "与精度无关"
+      },
+      {
+        "text": "节省 GPU 显存",
+        "isCorrect": false,
+        "description": "共享内存本身也占显存"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：strict-readiness=true 时，某个模型加载失败会导致什么？",
+    "explanation": "strict-readiness=true（默认）下，任意模型加载失败或未 READY 都会让整个 server 的 /v2/health/ready 返回 false，负载均衡器不会把流量打过来。配合 --exit-on-error=true 时甚至会直接退出进程。这是为了保证「服务 ready 即所有模型就绪」的强一致性。",
+    "tags": ["Triton", "strict-readiness", "运维"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "整个 server 的 READY 健康检查返回 false",
+        "isCorrect": true,
+        "description": "强一致性保证"
+      },
+      {
+        "text": "其他模型照常服务，仅失败模型不可用",
+        "isCorrect": false,
+        "description": "那是 strict-readiness=false 的行为"
+      },
+      {
+        "text": "服务崩溃重启",
+        "isCorrect": false,
+        "description": "崩溃需要 --exit-on-error=true 配合"
+      },
+      {
+        "text": "客户端连接被拒绝",
+        "isCorrect": false,
+        "description": "端口仍开放，只是 health/ready 返回 false"
+      }
+    ]
+  },
+  {
+    "stem": "NVIDIA Triton：KServe 把 Triton 作为 InferenceService 后端时，模型如何交付？",
+    "explanation": "KServe 通过 storageUri 字段指定模型仓库位置（如 gs://、s3:// 或本地 PVC），Triton 容器挂载后自动发现；runtimeVersion 指定 NGC 镜像版本（如 26.06-py3）。KServe 负责注入负载均衡、自动扩缩容与 Canary 发布，Triton 仅做单 pod 推理。",
+    "tags": ["Triton", "KServe", "部署"],
+    "categories": [
+      ["技术方向", "NVIDIA Triton"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "storageUri 指定模型仓库 + runtimeVersion 指定 NGC 镜像版本",
+        "isCorrect": true,
+        "description": "KServe 标准字段"
+      },
+      {
+        "text": "把权重直接 base64 写进 CRD yaml",
+        "isCorrect": false,
+        "description": "不实际，大模型无法这么做"
+      },
+      {
+        "text": "需要手工 kubectl cp 拷进 pod",
+        "isCorrect": false,
+        "description": "storageUri 自动挂载"
+      },
+      {
+        "text": "用 TensorBoard 上传",
+        "isCorrect": false,
+        "description": "TensorBoard 与模型交付无关"
+      }
+    ]
+  }
+]
