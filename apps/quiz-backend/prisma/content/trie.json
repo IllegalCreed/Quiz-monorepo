@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "前缀树：下列关于 Trie（字典树）数据结构的描述，正确的是？",
+    "explanation": "Trie 是一棵多叉树，每条边代表一个字符，从根到任一节点的路径对应一个字符串前缀。它专门为「字符串集合上的前缀查询」而生——插入、查找、前缀搜索都是 O(L)（L=单词长度），且共享公共前缀的单词在树上共用前缀路径。根节点不存字符（字符记在边/子节点映射的 key 里）。\n\n- 「多叉树，每条边代表一个字符，从根到节点的路径即一个前缀」正确。\n- 「二叉树，每个节点存一个完整单词」错误：Trie 是多叉树（非二叉），节点不存整词而是按字符逐层展开。\n- 「每个节点存一个字符并用哈希函数定位子节点」错误：子节点是按字符直接映射（Map 或数组下标），不经过哈希函数。\n- 「只能存定长字符串」错误：Trie 天然支持变长字符串，不同单词长度可以不同。",
+    "tags": ["前缀树", "入门", "概念", "多叉树"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "一棵多叉树，每条边代表一个字符，从根到任一节点的路径对应一个字符串前缀",
+        "isCorrect": true,
+        "description": "正确。这正是 Trie 的定义，多叉树 + 字符边 + 路径即前缀。"
+      },
+      {
+        "text": "一棵二叉树，每个节点存一个完整单词，左右子树按字典序划分",
+        "isCorrect": false,
+        "description": "错误。Trie 是多叉树（非二叉），节点不存整词，而是按字符逐层展开。"
+      },
+      {
+        "text": "每个节点存一个字符，并用哈希函数定位其子节点的位置",
+        "isCorrect": false,
+        "description": "错误。子节点按字符直接映射（Map 的 key 或数组下标），不经过哈希函数定位。"
+      },
+      {
+        "text": "一种只能存储定长字符串的线性数据结构",
+        "isCorrect": false,
+        "description": "错误。Trie 是树形（非线性）结构，且天然支持变长字符串。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：Trie 的「公共前缀压缩」特性，带来的核心收益是？",
+    "explanation": "共享前缀的单词（如 apple/apply 共用 appl）在 Trie 里共用前缀路径，只在末尾分叉。这带来两个收益：①省内存——公共前缀只存一份；②天然支持前缀查询——startsWith(prefix) 走到前缀节点后，该节点的整个子树就是所有以该前缀开头的单词，O(L) 定位。反过来，公共前缀越少 Trie 越费空间。\n\n- 「省内存且能高效做前缀查询」正确。\n- 「让所有操作复杂度降到 O(1)」错误：是 O(L)，与单词长度有关，不是 O(1)。\n- 「保证 Trie 一定比哈希表省空间」错误：公共前缀少时 Trie 反而比哈希表费空间。\n- 「让 Trie 支持随机访问第 i 个单词」错误：Trie 不支持下标随机访问，那是数组的特性。",
+    "tags": ["前缀树", "入门", "公共前缀", "空间换时间"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "共享前缀的单词共用前缀路径，既省内存又能 O(L) 定位到前缀子树",
+        "isCorrect": true,
+        "description": "正确。公共前缀压缩同时带来省内存和前缀查询能力。"
+      },
+      {
+        "text": "让所有单词的插入和查找复杂度都降到 O(1)",
+        "isCorrect": false,
+        "description": "错误。复杂度是 O(L)（L=单词长度），不是 O(1)。"
+      },
+      {
+        "text": "保证 Trie 的空间占用一定比哈希表小",
+        "isCorrect": false,
+        "description": "错误。公共前缀少时 Trie 每字符一节点，反而比哈希表费空间。"
+      },
+      {
+        "text": "让 Trie 支持像数组一样按下标随机访问第 i 个单词",
+        "isCorrect": false,
+        "description": "错误。Trie 不支持下标随机访问，需要沿路径遍历。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：Trie 节点结构中 `isEnd` 标志字段的作用是？",
+    "explanation": "Trie 节点含 children 子节点映射 + isEnd 布尔标志。isEnd 标记「从根到此节点的路径构成一个完整单词」——区分「前缀中转点」与「完整单词结尾」。例如插入了 apple，app 节点存在但 isEnd=false（只是 apple 的前缀中转点）；只有单独再插入 app 才把 app 节点的 isEnd 置 true。search 必须查到 isEnd=true 才算命中整词。\n\n- 「标记从根到此节点的路径是否构成一个完整单词」正确。\n- 「标记该节点是否有子节点」错误：有没有子节点看 children 是否为空，不是 isEnd。\n- 「记录该节点的深度」错误：深度由路径长度决定，不存 isEnd 里。\n- 「记录该单词的词频」错误：词频是额外的 count 字段，不是 isEnd。isEnd 只是布尔。",
+    "tags": ["前缀树", "入门", "节点结构", "isEnd"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "标记从根到该节点的路径是否构成一个完整单词，区分前缀中转点与单词结尾",
+        "isCorrect": true,
+        "description": "正确。isEnd 区分「前缀」与「完整单词」，是 search 正确性的关键。"
+      },
+      {
+        "text": "标记该节点是否拥有子节点",
+        "isCorrect": false,
+        "description": "错误。有无子节点看 children 是否为空，不是 isEnd 的职责。"
+      },
+      {
+        "text": "记录该节点在树中的深度（即对应前缀的长度）",
+        "isCorrect": false,
+        "description": "错误。深度由路径长度隐式决定，不需要 isEnd 记录。"
+      },
+      {
+        "text": "记录该单词在词表中的出现频率（词频）",
+        "isCorrect": false,
+        "description": "错误。词频是额外的 count/weight 字段；isEnd 只是布尔标志。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：向 Trie 插入单词 apple 后再调用 search(\"app\")，正确返回值及原因是？",
+    "explanation": "插入了 apple 后，Trie 里 a→p→p→l→e 路径上，app 节点存在但 isEnd=false（只是 apple 的前缀中转点，没单独插入过 app 这个单词）。search(\"app\") 走 a→p→p 三步到达 app 节点，但必须检查 isEnd——此时 isEnd=false，应返回 false（app 不是已插入的完整单词）。若漏查 isEnd 就会误返回 true，这是最高频坑。\n\n- 「返回 false，因为 app 节点的 isEnd 为 false」正确。\n- 「返回 true，因为路径 a-p-p 存在」错误：路径存在不等于 app 是完整单词，要查 isEnd。\n- 「返回 true，因为 app 是 apple 的前缀」错误：search 查的是完整单词，不是前缀，前缀存在不代表整词存在。\n- 「抛出异常，因为 app 不是完整单词」错误：search 对不存在的单词返回 false，不抛异常。",
+    "tags": ["前缀树", "入门", "search", "isEnd"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "返回 false，因为 app 节点存在但其 isEnd 为 false（没单独插入过 app）",
+        "isCorrect": true,
+        "description": "正确。search 必须检查 isEnd，app 只是 apple 的前缀中转点，不是完整单词。"
+      },
+      {
+        "text": "返回 true，因为路径 a→p→p 在树中存在",
+        "isCorrect": false,
+        "description": "错误。路径存在不代表是完整单词，search 必须查 isEnd。"
+      },
+      {
+        "text": "返回 true，因为 app 是 apple 的前缀，前缀存在即视为查找成功",
+        "isCorrect": false,
+        "description": "错误。search 查的是完整单词，不是前缀；前缀查询是 startsWith 的职责。"
+      },
+      {
+        "text": "抛出异常，因为 app 不是一个完整单词",
+        "isCorrect": false,
+        "description": "错误。search 对不存在的单词返回 false，不会抛异常。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：Trie 的 insert / search / startsWith 操作，平均时间复杂度是？",
+    "explanation": "Trie 的三大操作都是「沿字符路径走 L 步，每步 O(1) 查 children」，所以都是 O(L)，其中 L = 单词长度。关键在于复杂度与词表规模 n 无关——词表 1 万还是 1 亿，查 apple 都是走 5 步。这是 Trie 对比 BST（O(L log n)，每字符比较要 log n）的核心优势；哈希表查找虽也 O(L) 但无前缀查询能力。\n\n- 「O(L)，L = 单词长度，与词表规模 n 无关」正确。\n- 「O(n)，n = 词表中单词总数」错误：是 O(L)，与 n 无关，这正是 Trie 的卖点。\n- 「O(log n)，类似二分查找」错误：Trie 不是二叉搜索树，不按 n 做 log n 折半。\n- 「O(1)，常数时间」错误：要沿单词逐字符走，是 O(L) 不是 O(1)。",
+    "tags": ["前缀树", "中级", "复杂度"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "O(L)，其中 L 是单词长度，且与词表规模 n 无关",
+        "isCorrect": true,
+        "description": "正确。沿字符路径走 L 步每步 O(1)，与 n 无关是 Trie 的核心优势。"
+      },
+      {
+        "text": "O(n)，其中 n 是词表中单词总数",
+        "isCorrect": false,
+        "description": "错误。复杂度是 O(L)，与词表规模 n 无关，而非 O(n)。"
+      },
+      {
+        "text": "O(log n)，类似平衡二叉树的二分查找",
+        "isCorrect": false,
+        "description": "错误。Trie 不是 BST，不按 n 做 log n 查找。"
+      },
+      {
+        "text": "O(1)，常数时间完成",
+        "isCorrect": false,
+        "description": "错误。要逐字符遍历，至少 O(L)，不是 O(1)。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：关于 search(word) 与 startsWith(prefix) 的区别，下列说法正确的是？",
+    "explanation": "两者代码几乎一样——都是逐字符沿 children 向下走，任一步字符不存在就返回 false。唯一差别在走完路径后的返回：search 返回 node.isEnd（必须是完整单词），startsWith 返回 true（前缀本身不必是完整单词）。漏查 isEnd 会让 search 误判（把前缀当单词）；startsWith 误加 isEnd 检查会让它对「只作为前缀存在」的情况误返回 false。\n\n- 「唯一差别是走完路径后 search 检查 isEnd，startsWith 不检查」正确。\n- 「search 走的路径更长」错误：两者都走「单词/前缀的长度」步，路径逻辑相同。\n- 「startsWith 需要遍历整个子树」错误：startsWith 本身只判断前缀是否存在 O(L)；列出所有词才需 DFS 子树。\n- 「两者完全等价」错误：结尾返回值不同，语义不同（完整单词 vs 前缀）。",
+    "tags": ["前缀树", "中级", "search", "startsWith"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "两者逐字符走的逻辑完全一样，唯一差别是走完后 search 检查 isEnd、startsWith 不检查",
+        "isCorrect": true,
+        "description": "正确。代码几乎相同，仅结尾返回 node.isEnd vs true 之差。"
+      },
+      {
+        "text": "search 需要走完整单词路径，startsWith 只走一半，所以 search 更慢",
+        "isCorrect": false,
+        "description": "错误。两者都走「输入字符串的长度」步，路径长度由输入决定。"
+      },
+      {
+        "text": "startsWith 需要遍历整个前缀子树才能返回，所以是 O(n)",
+        "isCorrect": false,
+        "description": "错误。startsWith 只判断前缀是否存在 O(L)；列出所有词才需 DFS 子树。"
+      },
+      {
+        "text": "两者完全等价，可以互相替换",
+        "isCorrect": false,
+        "description": "错误。结尾语义不同（完整单词 vs 前缀），不可替换。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：向 Trie 中插入单词的核心步骤，下列描述正确的是？",
+    "explanation": "insert 从根开始，逐字符沿 children 向下走：某字符不存在就建新子节点挂上，已存在就复用。循环结束（走完最后一个字符）后，把当前节点的 isEnd 置 true。根节点不存字符（第一个字符查的是 root.children）。重复插入同一单词幂等——路径已存在只复用，isEnd 再置一次仍是 true。\n\n- 「从根开始逐字符走，不存在就建节点，走完后末尾节点置 isEnd=true」正确。\n- 「先查询单词是否存在，不存在再插入」错误：insert 直接建/复用，不需先查；查询是 search 的职责。\n- 「每个字符都新建一个节点」错误：已存在的字符要复用，否则破坏前缀共享。\n- 「把整个单词存在根节点的 children 里」错误：单词是逐字符展开成路径，不整词存根。",
+    "tags": ["前缀树", "中级", "insert", "实现"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "从根开始逐字符沿 children 走，字符不存在就建子节点，走完后把末尾节点的 isEnd 置 true",
+        "isCorrect": true,
+        "description": "正确。这正是 insert 的标准流程，根不存字符，已存在复用。"
+      },
+      {
+        "text": "先用 search 查询单词是否存在，不存在时再从根逐字符插入",
+        "isCorrect": false,
+        "description": "错误。insert 直接建/复用节点，不需要先 search 查询。"
+      },
+      {
+        "text": "为单词的每个字符都新建一个节点，不检查是否已存在",
+        "isCorrect": false,
+        "description": "错误。已存在的字符要复用，全新建会破坏前缀共享。"
+      },
+      {
+        "text": "把整个单词作为一个整体存入根节点的 children 映射",
+        "isCorrect": false,
+        "description": "错误。Trie 是逐字符展开成路径，不是整词存根。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：Trie 的 `children` 字段用 Map 和用定长数组 Array[26] 相比，下列说法正确的是？",
+    "explanation": "Map 版适配任意字符集（Unicode、中文），内存随用随分配，但哈希常数大、缓存不友好。Array[26] 版适配纯小写字母表（a-z），用 ch.charCodeAt(0)-97 算下标，O(1) 直接定位、缓存连续友好，是竞速题首选，但只适合小字符集且 26 个槽大量空置时比 Map 更费空间。大字符集（如全 ASCII 256、Unicode）用数组会爆内存。\n\n- 「Array[26] 用 O(1) 下标访问更快，但只适合小字符集如纯小写字母」正确。\n- 「Array[26] 适配所有 Unicode 字符」错误：256/Unicode 用数组会爆内存，Array[26] 只覆盖 a-z。\n- 「Map 版一定比 Array 版快」错误：反过来，Array 下标访问比 Map 哈希常数小更快。\n- 「两者性能与空间完全相同」错误：访问方式与空间占用都不同。",
+    "tags": ["前缀树", "中级", "节点结构", "实现选型"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Array[26] 用下标 O(1) 定位、缓存友好更快，但只适合小字符集（如纯小写字母 a-z）",
+        "isCorrect": true,
+        "description": "正确。Array 版快但限字符集，Map 版通用但常数大。"
+      },
+      {
+        "text": "Array[26] 能适配任意 Unicode 字符集，包括中文",
+        "isCorrect": false,
+        "description": "错误。大字符集用数组会爆内存，Array[26] 只覆盖 a-z。"
+      },
+      {
+        "text": "Map 版一定比 Array 版访问速度更快",
+        "isCorrect": false,
+        "description": "错误。反过来——Array 下标 O(1) 比 Map 哈希常数更小更快。"
+      },
+      {
+        "text": "两者在访问性能和空间占用上完全相同",
+        "isCorrect": false,
+        "description": "错误。访问方式（下标 vs 哈希）与空间占用（固定槽 vs 随用随分配）都不同。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：用 Array[26] 版节点存储纯小写字母单词时，字符 c 对应的子节点下标计算方式是？",
+    "explanation": "Array[26] 版约定 children 数组的 26 个槽对应 a-z，下标 0 对应 a。字符 c 的下标 = c.charCodeAt(0) - 'a'.charCodeAt(0) = c.charCodeAt(0) - 97（'a' 的 ASCII 是 97）。例如 'a'→0、'b'→1、'z'→25。若忘了 -97 直接用 ASCII 当下标会越界（'z' 是 122，远超 25）。这种实现假设了纯小写，遇到大写/数字/中文会越界，需先转小写或改用 Map。\n\n- 「c.charCodeAt(0) - 97」正确。\n- 「c.charCodeAt(0)」错误：直接用 ASCII 会越界，'z'=122 超出 25。\n- 「c.charCodeAt(0) - 65」错误：65 是 'A'，用于大写转下标；小写要用 97。\n- 「c 本身（把字符当数字）」错误：JS 里字符不能直接当数字下标，要转 ASCII。",
+    "tags": ["前缀树", "中级", "Array26", "实现细节"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "c.charCodeAt(0) - 97（即减去 'a' 的 ASCII 码，'a'→0、'z'→25）",
+        "isCorrect": true,
+        "description": "正确。把 a-z 映射到 0-25 的标准转换。"
+      },
+      {
+        "text": "c.charCodeAt(0)（直接用字符的 ASCII 码当数组下标）",
+        "isCorrect": false,
+        "description": "错误。'z' 的 ASCII 是 122，远超数组长度 25，会越界。"
+      },
+      {
+        "text": "c.charCodeAt(0) - 65（减去 'A' 的 ASCII 码）",
+        "isCorrect": false,
+        "description": "错误。65 是大写 'A'；纯小写应用 97（'a'）。"
+      },
+      {
+        "text": "直接用字符 c 作为下标（JS 会自动转换）",
+        "isCorrect": false,
+        "description": "错误。JS 字符不能直接做数字下标，必须先转 ASCII。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：关于 Trie 与哈希表在「字符串查询」上的对比，下列说法正确的是？",
+    "explanation": "这是 Trie 的核心卖点对比。哈希表只能精确查找整词（O(L) 一次哈希），无法高效回答前缀查询「以 app 开头的单词有哪些」——只能遍历全部词 O(n·L)。Trie 的 startsWith 是 O(L) 定位前缀子树，子树即所有以该前缀开头的单词；且 Trie 按字符 DFS 天然得到字典序，哈希表要额外排序。但纯精确查找整词，哈希表更快更省。所以「要前缀/字典序 → Trie；只要精确查整词 → 哈希表」。\n\n- 「前缀查询是 Trie 独有优势，哈希表无法高效支持」正确。\n- 「哈希表也能 O(L) 做前缀查询」错误：哈希表按整词做键，前缀查询要遍历全部 O(n·L)。\n- 「两者精确查找整词复杂度都是 O(L)」这是对的，但选项说的不是这点。重看选项。\n- 「Trie 精确查找比哈希表更快」错误：精确查找整词哈希表一次哈希更快，Trie 多次指针跳转。",
+    "tags": ["前缀树", "中级", "对比", "哈希表", "前缀查询"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前缀查询是 Trie 的独有优势，哈希表按整词做键无法高效支持前缀查询",
+        "isCorrect": true,
+        "description": "正确。哈希表前缀查询要遍历全部 O(n·L)，Trie 的 startsWith 是 O(L)。"
+      },
+      {
+        "text": "哈希表也能像 Trie 一样在 O(L) 时间内完成前缀查询",
+        "isCorrect": false,
+        "description": "错误。哈希表按整词做键，前缀查询无法用一次哈希完成，要遍历全部。"
+      },
+      {
+        "text": "Trie 的精确查找整词比哈希表更快",
+        "isCorrect": false,
+        "description": "错误。纯精确查找整词，哈希表一次哈希更快，Trie 多次指针跳转反而慢。"
+      },
+      {
+        "text": "哈希表天然支持字典序遍历，Trie 反而不支持",
+        "isCorrect": false,
+        "description": "错误。反过来——Trie 按字符 DFS 天然字典序，哈希表无序要额外排序。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：搜索框「输入 app 自动补全 apple/application/apply」这一场景，用 Trie 实现的核心思路是？",
+    "explanation": "自动补全是 Trie 的经典战场。思路：①建索引时把历史搜索词/词典建进 Trie，单词末尾节点存 weight（热度/词频）；②用户敲 app 时 startsWith('app') 走到 app 节点（O(L) 定位前缀子树）；③从该节点 DFS 收集子树里所有 isEnd=true 的单词及 weight；④按 weight 降序取 top-K 返回。工程上为提速常在每个节点预存当前子树的 top-K 列表，查询时 O(L) 直接读。\n\n- 「startsWith 定位前缀子树，DFS 收集 isEnd 单词，按词频排序」正确。\n- 「用哈希表精确查找 app 整词」错误：补全要的是「以 app 开头的所有词」，不是精确查 app。\n- 「把所有单词排序后二分查找」错误：排序+二分能查前缀但维护成本高，不如 Trie 的子树定位自然。\n- 「遍历整个词表逐个匹配前缀」错误：O(n·L) 太慢，实时输入场景不可接受。",
+    "tags": ["前缀树", "中级", "应用", "自动补全"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "startsWith 定位到前缀子树，DFS 收集子树中 isEnd=true 的单词，按热度排序取 top-K",
+        "isCorrect": true,
+        "description": "正确。这正是自动补全的标准 Trie 实现，节点常存 weight/topK 提速。"
+      },
+      {
+        "text": "用哈希表精确查找用户输入的 app 这个整词",
+        "isCorrect": false,
+        "description": "错误。补全要的是「以 app 开头的所有词」，不是精确查 app 整词。"
+      },
+      {
+        "text": "把所有单词预先排序，每次用二分查找定位前缀",
+        "isCorrect": false,
+        "description": "错误。排序+二分虽可行但维护成本高，不如 Trie 子树定位自然高效。"
+      },
+      {
+        "text": "每次都遍历整个词表，逐个判断是否以 app 开头",
+        "isCorrect": false,
+        "description": "错误。O(n·L) 全表扫描太慢，实时输入场景无法接受。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：用 Trie 做「词频统计」时，节点结构相对基础版需要增加什么？",
+    "explanation": "词频统计场景下，节点在基础版（children + isEnd）之上多存一个 count 字段。insert 时走到单词末尾节点把 count++。这样「某单词出现次数」=查到末尾节点读 count（O(L)）；「某前缀下所有词的总次数」=定位到前缀节点后对该子树所有 isEnd 节点的 count 求和（O(L+M)）。相比哈希表「整词做键」，Trie 还顺带能回答前缀汇总统计。\n\n- 「增加 count 字段，insert 时末尾节点 count++」正确。\n- 「增加 depth 字段记录深度」错误：词频与深度无关，count 才是。\n- 「增加 next 指针做链表」错误：那是链表/AC自动机的 fail 指针，与词频无关。\n- 「不需要任何额外字段」错误：基础版 isEnd 只是布尔，要存频次必须加 count。",
+    "tags": ["前缀树", "中级", "应用", "词频统计"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "增加一个 count 字段，insert 时走到单词末尾节点把 count 加 1",
+        "isCorrect": true,
+        "description": "正确。count 记录单词词频，可查整词频率与前缀汇总。"
+      },
+      {
+        "text": "增加一个 depth 字段记录节点深度",
+        "isCorrect": false,
+        "description": "错误。词频与深度无关，depth 不记录出现次数。"
+      },
+      {
+        "text": "增加一个 next 指针把节点串成链表",
+        "isCorrect": false,
+        "description": "错误。链表指针与词频统计无关（那是 AC 自动机的 fail 指针用途）。"
+      },
+      {
+        "text": "不需要任何额外字段，isEnd 本身就能统计词频",
+        "isCorrect": false,
+        "description": "错误。isEnd 只是布尔，无法记录次数，必须加 count。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：在「IP 路由最长前缀匹配」场景中，Trie 是如何发挥作用的？",
+    "explanation": "路由器按目的 IP 在路由表找最长匹配网段（如 10.1.2.3 命中 10.1.2.0/24 而非 10.0.0.0/8）。用「位 Trie」实现：把网段前缀按二进制位（0/1）展开成 Trie，每个网段末尾节点置 isEnd 存路由信息。查表时目的 IP 按位沿 Trie 走，能走多深走多深，沿途记住最后一次遇到 isEnd=true 的节点（即最长匹配）。所有前缀在 Trie 里按前缀包含关系排列，最后命中的恰好是最长前缀。\n\n- 「位 Trie，按 IP 二进制位展开，走到底记沿途最后一次 isEnd 命中」正确。\n- 「按整词哈希精确匹配」错误：要的是最长前缀匹配，不是精确等值。\n- 「只匹配第一个命中的前缀」错误：要最长，不是第一个（最短）。\n- 「用普通字符 Trie 按点分十进制建」错误：应按二进制位建位 Trie，前缀包含关系才对。",
+    "tags": ["前缀树", "高级", "应用", "IP路由", "最长前缀匹配"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "用位 Trie 按 IP 二进制位展开，目的 IP 沿 Trie 走，记住沿途最后一次 isEnd 命中的节点",
+        "isCorrect": true,
+        "description": "正确。位 Trie 天然表达前缀包含关系，最后命中即最长匹配。"
+      },
+      {
+        "text": "把整个 IP 地址作为字符串哈希，精确匹配路由表中的某一条",
+        "isCorrect": false,
+        "description": "错误。要的是最长前缀匹配（多个前缀可能都匹配），不是精确等值匹配。"
+      },
+      {
+        "text": "只匹配第一个 isEnd 命中的前缀就返回",
+        "isCorrect": false,
+        "description": "错误。要最长匹配，应记住最后一次命中而非第一次（最短）。"
+      },
+      {
+        "text": "用普通字符 Trie，把点分十进制 IP 按字符逐位建树",
+        "isCorrect": false,
+        "description": "错误。应按二进制位建位 Trie，前缀包含关系才正确。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：从 Trie 中删除一个单词时，下列做法正确的是？",
+    "explanation": "delete 是 Trie 里最易写错的操作。直接摘节点会破坏共享前缀的其他单词（删 apple 时若把 appl 节点摘了，apply 也丢了）。正确做法是从叶子向根递归判断：先走到目标单词末尾，置 isEnd=false（逻辑删除最安全）；若要物理删除，一个节点只有同时满足「自己不是别的单词结尾（isEnd=false）」且「没有其他子节点（children 空）」时才能被父节点摘除，逐层向上判断。删前最好先 search 确认单词存在。\n\n- 「从叶子向根递归，只有 isEnd=false 且 children 空的节点才能摘除」正确。\n- 「直接把末尾节点从父节点摘除」错误：会破坏共享该前缀的其他单词。\n- 「只把根节点的 children 清空」错误：会删掉整棵树所有单词。\n- 「无法删除，只能重建整棵树」错误：递归 delete 可正确删除单个单词。",
+    "tags": ["前缀树", "高级", "delete", "递归"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "从叶子向根递归判断，只有「isEnd=false 且 children 为空」的节点才能被父节点摘除",
+        "isCorrect": true,
+        "description": "正确。递归向上避免破坏共享前缀的其他单词。"
+      },
+      {
+        "text": "直接把单词末尾节点从其父节点的 children 中删除",
+        "isCorrect": false,
+        "description": "错误。末尾节点可能还是共享前缀的分叉点，直接摘会破坏其他单词。"
+      },
+      {
+        "text": "把根节点的 children 整个清空即可",
+        "isCorrect": false,
+        "description": "错误。清空根的 children 会删掉整棵树的所有单词。"
+      },
+      {
+        "text": "Trie 不支持删除操作，只能重建整棵树",
+        "isCorrect": false,
+        "description": "错误。递归 delete 可正确删除单个单词，无需重建。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：为什么 Trie 的删除操作比插入和查找复杂得多？",
+    "explanation": "插入/查找是「沿路径向下」的线性过程 O(L)；删除要「考虑共享」。Trie 的核心是公共前缀压缩——多个单词共用前缀路径。删一个单词时，末尾节点及其祖先可能同时是其他单词的前缀/结尾/分叉点：若节点还有其他子节点（是分叉点）或 isEnd=true（是别的单词结尾），就不能物理删除，只能把 isEnd 置 false（逻辑删除）。这种「逐层向上、根据子节点和 isEnd 状态决定是否摘除」的递归判断让 delete 复杂。\n\n- 「因为节点可能被多个单词共享，要逐层判断能否安全删除」正确。\n- 「因为删除要重新计算哈希」错误：Trie 不用哈希定位子节点。\n- 「因为删除需要平衡整棵树」错误：Trie 不是平衡树，删除不涉及再平衡。\n- 「因为删除要把单词反转」错误：删除与反转无关。",
+    "tags": ["前缀树", "高级", "delete", "公共前缀"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "因为公共前缀被多个单词共享，删一个单词时要逐层判断节点是否还被其他单词使用",
+        "isCorrect": true,
+        "description": "正确。共享前缀让「能否安全摘除节点」需要递归判断。"
+      },
+      {
+        "text": "因为删除操作需要重新计算所有节点的哈希值",
+        "isCorrect": false,
+        "description": "错误。Trie 的 children 按字符直接映射，不依赖哈希。"
+      },
+      {
+        "text": "因为删除后需要像平衡树一样对整棵 Trie 做再平衡",
+        "isCorrect": false,
+        "description": "错误。Trie 不是平衡树，删除不涉及再平衡操作。"
+      },
+      {
+        "text": "因为删除时需要把待删单词反转后再处理",
+        "isCorrect": false,
+        "description": "错误。删除是沿原路径处理，与反转无关。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：关于「压缩 Trie / Radix Tree（基数树）」，下列说法正确的是？",
+    "explanation": "压缩 Trie（Radix Tree / Patricia Trie）针对普通 Trie「单链路径费节点」的痛点——只有一个子节点的连续中转点冗余。它把这种单链路径压缩成「一个节点存多字符的边」，节点数大幅减少，省内存、缓存更友好。代价是插入/删除要在边上做分裂与合并，实现更复杂。Linux 内核 radix tree（页缓存索引）、Go 的 httprouter、Nginx 的 location 路由都用它。\n\n- 「把单链路径压成多字符节点，省内存，代价是边要分裂合并」正确。\n- 「压缩 Trie 增加节点数」错误：反了，压缩正是为了减少节点数。\n- 「压缩后无法做前缀查询」错误：仍支持前缀查询，只是边带多字符。\n- 「只用于学术不用于工程」错误：httprouter/Nginx/内核都在用。",
+    "tags": ["前缀树", "高级", "压缩Trie", "RadixTree"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "把单链路径压缩成多字符节点以减少节点数，代价是插入/删除要在边上分裂合并",
+        "isCorrect": true,
+        "description": "正确。压缩 Trie 省内存且缓存友好，工程上 httprouter/Nginx/内核都用。"
+      },
+      {
+        "text": "压缩 Trie 通过增加更多中转节点来提升查询速度",
+        "isCorrect": false,
+        "description": "错误。压缩的目的正是减少（而非增加）中转节点。"
+      },
+      {
+        "text": "压缩后 Trie 就完全失去了前缀查询能力",
+        "isCorrect": false,
+        "description": "错误。仍支持前缀查询，只是边带多字符，定位时按段匹配。"
+      },
+      {
+        "text": "压缩 Trie 只用于学术研究，没有实际工程应用",
+        "isCorrect": false,
+        "description": "错误。httprouter、Nginx 路由、Linux 内核 radix tree 都是工程应用。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：关于 AC 自动机与 Trie 的关系，下列描述正确的是？",
+    "explanation": "AC 自动机（Aho-Corasick）解决「在一段文本中一次性匹配多个模式串」的问题。朴素做法是每个模式串跑一遍 KMP（O(模式数×文本长)）。AC 自动机把它降到 O(文本长+匹配总数)，其底座正是 Trie：①把所有模式串建进 Trie；②在 Trie 节点上加 fail 指针（类似 KMP 的 next 数组，指向当前匹配失败时回退到的最长真后缀节点），用 BFS 构建；③扫描文本时沿 Trie 走，失败沿 fail 跳，途中遇 isEnd 即命中。所以「Trie 是 AC 自动机的骨架」。\n\n- 「AC 自动机以 Trie 为底座，在其节点上加 fail 指针实现多模式匹配」正确。\n- 「AC 自动机用哈希表存模式串」错误：底座是 Trie 不是哈希表。\n- 「AC 自动机与 Trie 无关」错误：Trie 是它的骨架。\n- 「AC 自动机只能匹配单个模式串」错误：它的价值正是多模式串一次扫描。",
+    "tags": ["前缀树", "专家", "AC自动机", "多模式匹配"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "专家"]
+    ],
+    "options": [
+      {
+        "text": "AC 自动机以 Trie 为底座，在 Trie 节点上加 fail 指针实现一次扫描匹配多个模式串",
+        "isCorrect": true,
+        "description": "正确。Trie 是 AC 自动机的骨架，fail 指针建立在 Trie 节点之上。"
+      },
+      {
+        "text": "AC 自动机完全用哈希表存储所有模式串，不依赖 Trie",
+        "isCorrect": false,
+        "description": "错误。AC 自动机的底座正是 Trie，不是哈希表。"
+      },
+      {
+        "text": "AC 自动机与 Trie 没有任何关系，是两种独立算法",
+        "isCorrect": false,
+        "description": "错误。Trie 是 AC 自动机的核心骨架，关系密切。"
+      },
+      {
+        "text": "AC 自动机只能匹配单个模式串，无法处理多模式",
+        "isCorrect": false,
+        "description": "错误。AC 自动机的价值正是「一次扫描匹配多个模式串」。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：下列哪个场景最适合用 Trie 来解决？",
+    "explanation": "Trie 的核心能力是「前缀查询 + 字典序 + 公共前缀共享」。最适合的场景必须用到这些能力：①要按前缀检索（自动补全、列出某前缀所有词）；②要字典序遍历；③最长前缀匹配（IP 路由）；④多模式串匹配（AC 自动机）。反过来，纯精确查找整词（哈希表更优）、随机按下标访问（数组更优）、维护滑动窗口最大值（单调队列）都不适合 Trie。\n\n- 「统计词典中以 app 开头的所有单词」正确（前缀查询是 Trie 独门绝技）。\n- 「精确查找某个完整单词是否存在」错误：哈希表更快更省。\n- 「按下标随机访问字符串集合」错误：数组/动态数组才支持 O(1) 下标访问。\n- 「维护滑动窗口的最大值」错误：单调队列的场景，与 Trie 无关。",
+    "tags": ["前缀树", "中级", "选型", "应用"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "统计词典中所有以 app 开头的单词，并按字典序输出",
+        "isCorrect": true,
+        "description": "正确。前缀查询 + 字典序遍历是 Trie 的独门绝技。"
+      },
+      {
+        "text": "精确查找某个完整单词是否存在于词表中",
+        "isCorrect": false,
+        "description": "错误。纯精确查整词，哈希表更快更省，不必用 Trie。"
+      },
+      {
+        "text": "按下标随机访问字符串集合中的第 i 个单词",
+        "isCorrect": false,
+        "description": "错误。Trie 不支持下标随机访问，那是数组的能力。"
+      },
+      {
+        "text": "维护一个滑动窗口内的最大值并支持实时更新",
+        "isCorrect": false,
+        "description": "错误。这是单调队列的场景，与 Trie 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：下列哪个场景不适合用 Trie（哈希表或其他结构更优）？",
+    "explanation": "Trie 在「字符集大且公共前缀少」时空间会爆炸——每字符一节点，公共前缀少则节点数接近总字符数，比直接存字符串数组更费。典型是全 Unicode 用户 ID 去重：字符集极大、ID 之间几乎无公共前缀，Trie 会极费内存且查询不比哈希表快。此时哈希表（O(L) 一次哈希、空间 O(n)）远优于 Trie。这是「何时别用 Trie」的核心判据。\n\n- 「全 Unicode 用户 ID 的去重」正确（字符集大+前缀分散=空间爆炸）。\n- 「搜索引擎搜索框自动补全」错误：正是 Trie 经典战场。\n- 「IP 路由表的最长前缀匹配」错误：位 Trie 的核心应用。\n- 「敏感词库的多模式匹配」错误：AC 自动机（基于 Trie）的战场。",
+    "tags": ["前缀树", "中级", "选型", "空间"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对全 Unicode 字符集的用户 ID（前缀几乎不共享）做去重",
+        "isCorrect": true,
+        "description": "正确。字符集大+前缀分散，Trie 空间爆炸，哈希表更优。"
+      },
+      {
+        "text": "搜索引擎的搜索框自动补全（英文单词，公共前缀多）",
+        "isCorrect": false,
+        "description": "错误。这正是 Trie 的经典战场，适合用 Trie。"
+      },
+      {
+        "text": "路由器 IP 路由表的最长前缀匹配",
+        "isCorrect": false,
+        "description": "错误。位 Trie 是最长前缀匹配的核心方案，适合用 Trie。"
+      },
+      {
+        "text": "敏感词过滤系统中的多模式串匹配",
+        "isCorrect": false,
+        "description": "错误。AC 自动机（基于 Trie）是多模式匹配的标准方案，适合用 Trie。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：关于 Trie 相比二叉搜索树（BST）在字符串存储上的优势，下列说法正确的是？",
+    "explanation": "Trie 与 BST 都能存字符串集合，但复杂度不同。BST 按整词比较，每次比较是 O(L) 的字符串比较，树高 O(log n)，所以查找是 O(L log n)。Trie 按字符逐层展开，每字符 O(1) 定位子节点，查找是 O(L)——与词表规模 n 无关。此外 BST 要靠中序遍历才有字典序且仍需整词比较；Trie 按字符 DFS 天然字典序无需比较。所以存字符串集合时 Trie 在「查询复杂度」和「字典序」上都优于 BST。\n\n- 「Trie 查找 O(L)，BST 是 O(L log n)，Trie 与词表规模无关」正确。\n- 「BST 查找是 O(L)，与 Trie 相同」错误：BST 是 O(L log n)，每词比较+树高 log n。\n- 「BST 天然字典序优于 Trie」错误：两者都能字典序，但 Trie 按字符 DFS 无需整词比较。\n- 「Trie 和 BST 复杂度与选型完全相同」错误：Trie 在字符串场景普遍更优。",
+    "tags": ["前缀树", "中级", "对比", "二叉搜索树"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Trie 查找是 O(L)，BST 是 O(L log n)，Trie 的复杂度与词表规模 n 无关",
+        "isCorrect": true,
+        "description": "正确。Trie 按字符展开 O(L)；BST 按整词比较 + 树高，是 O(L log n)。"
+      },
+      {
+        "text": "BST 的查找复杂度也是 O(L)，与 Trie 完全相同",
+        "isCorrect": false,
+        "description": "错误。BST 每次比较是 O(L) 整词比较、树高 log n，总 O(L log n)。"
+      },
+      {
+        "text": "BST 天然支持字典序而 Trie 不支持",
+        "isCorrect": false,
+        "description": "错误。Trie 按字符 DFS 天然字典序且无需整词比较，BST 反而要整词比较。"
+      },
+      {
+        "text": "Trie 和 BST 在字符串场景下性能与选型完全相同",
+        "isCorrect": false,
+        "description": "错误。Trie 在字符串查询复杂度与前缀能力上都优于 BST。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：对 Trie 调用 startsWith(\"app\")，已知仅插入过 apple，返回值及原因是？",
+    "explanation": "startsWith 是前缀搜索——只要树中存在 app 这条路径就返回 true，不检查末尾节点的 isEnd。插入了 apple 后，a→p→p→l→e 路径存在，其中 a→p→p 这条前缀路径当然也存在。所以 startsWith(\"app\") 走到 app 节点（路径完整）即返回 true，尽管 app 节点的 isEnd=false（app 不是完整单词，只是 apple 的前缀中转点）。这与 search(\"app\") 返回 false 形成对比，差别就在 isEnd。\n\n- 「返回 true，因为 a→p→p 路径存在，startsWith 不检查 isEnd」正确。\n- 「返回 false，因为 app 不是完整单词」错误：startsWith 不要求前缀是完整单词。\n- 「返回 true，因为 app 是 apple 的子串」错误：返回 true 对，但原因错——是基于路径存在不是「子串」。\n- 「抛出异常」错误：startsWith 对不存在的前缀返回 false，不抛异常。",
+    "tags": ["前缀树", "初级", "startsWith", "前缀搜索"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "返回 true，因为 a→p→p 路径在树中存在，且 startsWith 不检查 isEnd",
+        "isCorrect": true,
+        "description": "正确。前缀路径存在即返回 true，与 app 是否为完整单词无关。"
+      },
+      {
+        "text": "返回 false，因为 app 不是完整单词（isEnd=false）",
+        "isCorrect": false,
+        "description": "错误。startsWith 不检查 isEnd，前缀存在就返回 true。"
+      },
+      {
+        "text": "返回 true，因为 app 是 apple 的子串",
+        "isCorrect": false,
+        "description": "错误（原因错）。返回 true 对，但依据是「前缀路径存在」而非「子串关系」。"
+      },
+      {
+        "text": "抛出异常，因为 app 没有被单独插入",
+        "isCorrect": false,
+        "description": "错误。startsWith 对不存在的前缀返回 false，不会抛异常。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：下列关于 Trie 根节点的描述，正确的是？",
+    "explanation": "Trie 的根节点是空起点，不存任何字符——字符记在「边」上（实现里记在子节点映射 children 的 key 里）。第一个字符查询的是 root.children（如插入 apple，第一个字符 a 查的是 root.children.get('a')）。从根出发的每条边代表单词的第一个字符。这种设计让「从根到某节点的路径」恰好对应一个前缀，根本身对应「空前缀」。\n\n- 「根节点不存字符，是空起点，第一个字符查 root.children」正确。\n- 「根节点存第一个字符」错误：字符在边上，根不存。\n- 「根节点的 isEnd 一定为 true」错误：根对应空前缀，通常不是完整单词，isEnd 多为 false。\n- 「每个单词都有独立的根节点」错误：所有单词共享同一个根。",
+    "tags": ["前缀树", "初级", "根节点", "结构"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "根节点不存任何字符，是空起点，第一个字符查询的是 root.children",
+        "isCorrect": true,
+        "description": "正确。字符记在边上，根是空起点，对应「空前缀」。"
+      },
+      {
+        "text": "根节点存储每个单词的第一个字符",
+        "isCorrect": false,
+        "description": "错误。字符记在边/子节点映射的 key 上，根节点本身不存字符。"
+      },
+      {
+        "text": "根节点的 isEnd 标志一定为 true",
+        "isCorrect": false,
+        "description": "错误。根对应空前缀，通常不是完整单词，isEnd 多为 false。"
+      },
+      {
+        "text": "每个单词都从各自独立的根节点开始",
+        "isCorrect": false,
+        "description": "错误。所有单词共享同一个根节点，这正是公共前缀共享的前提。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：下列关于 Trie 空间复杂度的说法，正确的是？",
+    "explanation": "Trie 的空间复杂度是 O(节点数)，节点数最多等于「所有单词的总字符数」（公共前缀为零的极端情况），公共前缀越多则节点数越少（共享路径）。所以「公共前缀多则省、公共前缀少则费」——这是 Trie 与压缩 Trie（Radix Tree，把单链压缩）的取舍根源。注意区分「节点数」与「字符数」：空间按节点数算，公共前缀让节点数远小于总字符数。\n\n- 「O(节点数)，公共前缀多则省、少则费」正确。\n- 「O(单词数 n)，与单词长度无关」错误：与字符数/节点数有关，不是仅 n。\n- 「永远 O(n)」错误：公共前缀少时节点数接近总字符数，可能远大于 n。\n- 「固定 O(26)」错误：那是单个节点 children[26] 的固定槽位，整棵树空间不是 O(26)。",
+    "tags": ["前缀树", "中级", "空间复杂度", "公共前缀"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "O(节点数)，最多等于所有单词总字符数；公共前缀多则节点数少、省空间",
+        "isCorrect": true,
+        "description": "正确。空间按节点数算，公共前缀压缩让节点数远小于总字符数。"
+      },
+      {
+        "text": "O(n)，n 是单词数，与单词长度完全无关",
+        "isCorrect": false,
+        "description": "错误。节点数与字符数相关，公共前缀少时可能远大于 n。"
+      },
+      {
+        "text": "永远是 O(n)，无论单词多长或公共前缀多少",
+        "isCorrect": false,
+        "description": "错误。公共前缀少时节点数接近总字符数，可能远大于 n。"
+      },
+      {
+        "text": "固定为 O(26)，因为每个节点最多 26 个子节点",
+        "isCorrect": false,
+        "description": "错误。O(26) 是单个节点 children[26] 的槽位数，整棵树空间是 O(节点数)。"
+      }
+    ]
+  },
+  {
+    "stem": "前缀树：Trie「字典序遍历」得到有序单词列表，为什么能做到无需比较排序？",
+    "explanation": "对 Trie 的 children 按字符顺序（a<z）做深度优先遍历（DFS），沿途收集 isEnd=true 的路径，天然得到字典序排列的单词列表，且无需两两比较排序——O(总字符数) 即可输出全部有序单词。原因是 Trie 把「字符顺序」编码进了树的分支结构：每层按字符排列，DFS 先小后大正好对应字典序。哈希表无序要额外 O(n·L·log n) 排序，BST 要 O(n·L) 中序（仍含整词比较），Trie 最自然。\n\n- 「children 按字符顺序 DFS，路径天然字典序，O(总字符数）无需比较排序」正确。\n- 「靠预先对单词排序再插入」错误：插入无需预排序，遍历的有序性来自树结构。\n- 「每次输出做一次排序」错误：正是免去了排序，DFS 直接有序。\n- 「只能在 Array[26] 版实现」错误：Map 版只要遍历时按 key 排序同样有序。",
+    "tags": ["前缀树", "高级", "字典序", "遍历"],
+    "categories": [
+      ["技术方向", "前缀树（Trie）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "对 children 按字符顺序做 DFS，沿路径收集 isEnd 单词，天然字典序且 O(总字符数)",
+        "isCorrect": true,
+        "description": "正确。字符顺序编码进树结构，DFS 先小后大即字典序，无需比较排序。"
+      },
+      {
+        "text": "因为插入单词前先对它们做了一次排序",
+        "isCorrect": false,
+        "description": "错误。插入无需预排序，遍历有序性来自树结构本身。"
+      },
+      {
+        "text": "因为每次输出单词列表时都重新跑一次 O(n log n) 排序",
+        "isCorrect": false,
+        "description": "错误。Trie 的优势正是免去排序，DFS 直接有序。"
+      },
+      {
+        "text": "只有用 Array[26] 版才能做到字典序遍历",
+        "isCorrect": false,
+        "description": "错误。Map 版遍历时按 key 字符序同样得到字典序，不限于 Array 版。"
+      }
+    ]
+  }
+]
