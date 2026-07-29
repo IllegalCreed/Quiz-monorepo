@@ -1637,7 +1637,121 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
         ],
       },
 
-      // ----- 22. 软技能 -----
+      // ----- 22. 数据结构和算法 -----
+      // 2026-07-29 调研定稿：35 占位叶 → 26 叶。全量增量（0 题基线，无迁移坑）。
+      // 对齐可视化网站 10 大 category，概念族组织（避免单算法碎化）
+      // 刷题平台(LeetCode等)删除→归软技能·技术社区；新增字符串/数论/高级数据结构
+      {
+        name: "数据结构和算法",
+        sort: 22,
+        children: [
+          {
+            name: "数据结构",
+            sort: 1,
+            children: [
+              {
+                name: "基本数据结构",
+                sort: 1,
+                children: [
+                  { name: "数组", sort: 1 },
+                  { name: "链表", sort: 2 },
+                  { name: "栈", sort: 3 },
+                  { name: "队列", sort: 4 },
+                  { name: "哈希表", sort: 5 },
+                ],
+              },
+              {
+                name: "高级数据结构",
+                sort: 2,
+                children: [
+                  { name: "二叉树与二叉搜索树", sort: 1 },
+                  { name: "堆", sort: 2 },
+                  { name: "图的表示", sort: 3 },
+                  { name: "前缀树（Trie）", sort: 4 },
+                  { name: "并查集", sort: 5 },
+                  { name: "线段树与树状数组", sort: 6 },
+                  { name: "工程实用结构（LRU / 跳表 / 布隆过滤器）", sort: 7 },
+                ],
+              },
+            ],
+          },
+          {
+            name: "算法",
+            sort: 2,
+            children: [
+              {
+                name: "排序",
+                sort: 1,
+                children: [
+                  { name: "简单排序（冒泡 / 选择 / 插入）", sort: 1 },
+                  { name: "快速排序", sort: 2 },
+                  { name: "归并排序", sort: 3 },
+                  { name: "堆排序", sort: 4 },
+                  { name: "希尔排序", sort: 5 },
+                  { name: "非比较排序（计数 / 桶 / 基数）", sort: 6 },
+                ],
+              },
+              {
+                name: "搜索",
+                sort: 2,
+                children: [
+                  { name: "线性查找与二分查找", sort: 1 },
+                  {
+                    name: "二分查找变体（旋转数组 / 二分答案 / 三分）",
+                    sort: 2,
+                  },
+                ],
+              },
+              {
+                name: "图算法",
+                sort: 3,
+                children: [
+                  { name: "图遍历（DFS / BFS）", sort: 1 },
+                  { name: "最短路径算法", sort: 2 },
+                  { name: "最小生成树算法", sort: 3 },
+                  { name: "拓扑排序", sort: 4 },
+                ],
+              },
+              {
+                name: "高级算法",
+                sort: 4,
+                children: [
+                  { name: "动态规划基础", sort: 1 },
+                  { name: "序列与区间动态规划", sort: 2 },
+                  { name: "进阶动态规划", sort: 3 },
+                  { name: "贪心算法", sort: 4 },
+                  { name: "分治算法", sort: 5 },
+                  { name: "回溯算法", sort: 6 },
+                ],
+              },
+              {
+                name: "字符串算法",
+                sort: 5,
+                children: [
+                  {
+                    name: "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）",
+                    sort: 1,
+                  },
+                  { name: "回文与 Z 函数（Manacher / Z）", sort: 2 },
+                ],
+              },
+              {
+                name: "数学与数论",
+                sort: 6,
+                children: [
+                  { name: "GCD 与扩展欧几里得", sort: 1 },
+                  { name: "素数筛（埃氏筛 / 线性筛）", sort: 2 },
+                  { name: "快速幂与模运算", sort: 3 },
+                  { name: "欧拉函数与组合数", sort: 4 },
+                  { name: "位运算", sort: 5 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      // ----- 23. 软技能 -----
       // 2026-07-29 调研定稿：7 合并叶 → 16 独立叶。全量增量（0 题基线，无迁移坑）。
       // 软件工程：价值观伞(Agile) + 正交实现(Scrum/Kanban) + 哲学(Lean/OKR) 分层
       // 技术社区/代码仓库：具名平台各成叶（符合 L13 重构原则）
@@ -1645,7 +1759,7 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       // 即时通讯：新增飞书/钉钉（国内事实标准）
       {
         name: "软技能",
-        sort: 22,
+        sort: 23,
         children: [
           {
             name: "软件工程",
