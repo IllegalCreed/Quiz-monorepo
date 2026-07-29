@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "Qwen：在阿里通义千问家族中，Qwen3-235B-A22B 命名中的「235B」与「A22B」分别代表什么？",
+    "explanation": "Qwen3-235B-A22B 是 Qwen3 的开源 MoE 旗舰，命名规则为「Qwen3-{总参}B-A{激活}B」：235B 代表总参数 2350 亿（94 层 / 128 专家），A22B 代表 MoE 实际激活参数 220 亿（128 个专家中激活 8 个）。MoE 的核心优势是「总参撑大模型容量、激活小省推理成本」。",
+    "tags": ["qwen", "模型矩阵", "moe", "命名"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "235B = 总参数 2350 亿；A22B = MoE 激活参数 220 亿（128 专家激活 8 个）",
+        "isCorrect": true,
+        "description": "总参撑容量、激活省成本，是 MoE 命名规则"
+      },
+      {
+        "text": "235B = 训练用 token 数；A22B = 上下文长度 22000",
+        "isCorrect": false,
+        "description": "上下文是 128K，与命名中 B（Billion 参数）无关"
+      },
+      {
+        "text": "235B = 输入 token 单价；A22B = 输出 token 单价",
+        "isCorrect": false,
+        "description": "B 是 Billion（十亿）参数单位，不是价格"
+      },
+      {
+        "text": "235B = 235 亿；A22B = 22 亿（两者数字直接除以 10）",
+        "isCorrect": false,
+        "description": "B = Billion = 10 亿，235B = 2350 亿"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：思考模式（thinking）的两种切换机制分别是什么？",
+    "explanation": "Qwen3 思考模式有两种切换：(1) 全局参数开关 `enable_thinking`（bool，放 extra_body），同时配合 `thinking_budget` 精控思维链 token 上限；(2) 在 prompt 中加 `/think` 或 `/no_think` 实现逐轮软切换，适合「同一会话混合简单 / 复杂任务」场景。",
+    "tags": ["qwen", "思考模式", "enable_thinking", "软切换"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "enable_thinking 参数总开关 + prompt 里加 /think 或 /no_think 逐轮软切换",
+        "isCorrect": true,
+        "description": "前者全局开关（extra_body），后者逐轮软指令"
+      },
+      {
+        "text": "model 参数选 thinking 子模型 + temperature=0 强制开启",
+        "isCorrect": false,
+        "description": "temperature=0 会卡死，官方明确禁止"
+      },
+      {
+        "text": "在 HTTP header 里加 X-Thinking: on / off",
+        "isCorrect": false,
+        "description": "思考开关是请求体参数，不在 header"
+      },
+      {
+        "text": "在 system prompt 里反复强调「请仔细思考」",
+        "isCorrect": false,
+        "description": "那是 prompt engineering，不是 Qwen3 内置思考模式"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：API 响应中 reasoning_content 与 content 字段的区别是什么？",
+    "explanation": "Qwen3 thinking 子模型的响应分两个字段：`reasoning_content` 是思维链推理过程（thinking 子模型才有），`content` 是最终回答。解析时务必区分，否则思维链混入主答案会污染业务逻辑、JSON 解析、工具调用参数提取。",
+    "tags": ["qwen", "reasoning_content", "响应字段", "思考模式"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "reasoning_content = 思维链推理过程；content = 最终回答",
+        "isCorrect": true,
+        "description": "两字段语义不同，下游解析必须分别处理"
+      },
+      {
+        "text": "reasoning_content = 输入 prompt；content = 输出",
+        "isCorrect": false,
+        "description": "输入在 messages 里，不在 reasoning_content"
+      },
+      {
+        "text": "两个字段是同一个内容的两种格式（markdown / 纯文本）",
+        "isCorrect": false,
+        "description": "完全不同字段，前者是思维链、后者是回答"
+      },
+      {
+        "text": "reasoning_content 是错误信息；content 是正常输出",
+        "isCorrect": false,
+        "description": "错误信息在 error 字段，与 reasoning 无关"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：thinking_budget 与 max_tokens / max_completion_tokens 三者的作用域差异是什么？",
+    "explanation": "三者作用域不同：`thinking_budget` 仅限思维链（reasoning_content）token 数；`max_tokens` 仅限回答（content）长度，且即将被官方废弃；`max_completion_tokens` 含「思维链 + 回答」总长度，是思考模型推荐使用的长度限制参数。",
+    "tags": ["qwen", "thinking_budget", "max_completion_tokens", "长度限制"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "thinking_budget 限思维链；max_tokens 仅限回答（即将废弃）；max_completion_tokens 含两者总长",
+        "isCorrect": true,
+        "description": "三者作用域不同，思考模型必须用 max_completion_tokens"
+      },
+      {
+        "text": "三者等价，都是限制输出总长度",
+        "isCorrect": false,
+        "description": "作用域完全不同，混淆会导致 token 超额"
+      },
+      {
+        "text": "thinking_budget 限输入；max_tokens / max_completion_tokens 限输出",
+        "isCorrect": false,
+        "description": "thinking_budget 限的是思维链（输出），不是输入"
+      },
+      {
+        "text": "max_tokens 限总长；max_completion_tokens 仅限回答",
+        "isCorrect": false,
+        "description": "正好说反了"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：官方推荐的思考模式生成参数组合是什么？",
+    "explanation": "Qwen3 官方推荐的思考模式采样参数：temperature=0.6 / top_p=0.95 / top_k=20（实测该组合思维链质量最稳）。非思考模式用默认 temperature=0.7。严禁贪婪解码 temperature=0，会导致思维链重复、卡死、性能塌陷。",
+    "tags": ["qwen", "采样参数", "思考模式", "temperature"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "temperature=0.6 / top_p=0.95 / top_k=20",
+        "isCorrect": true,
+        "description": "官方实测该组合思维链质量最稳"
+      },
+      {
+        "text": "temperature=0 / top_p=0.1 / top_k=1（贪婪解码）",
+        "isCorrect": false,
+        "description": "思考模式严禁 temperature=0，会卡死"
+      },
+      {
+        "text": "temperature=1.5 / top_p=0.5 / top_k=100（高随机）",
+        "isCorrect": false,
+        "description": "随机度过高，思维链会发散失焦"
+      },
+      {
+        "text": "思考模式无需设置采样参数，用默认即可",
+        "isCorrect": false,
+        "description": "默认非思考模式的 0.7 不适用思考模式"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：用 Python OpenAI SDK 调用百炼时，enable_thinking 等非标准参数应放在哪里？",
+    "explanation": "OpenAI SDK 调用百炼时，`enable_thinking` / `thinking_budget` / `top_k` / `enable_search` 等非 OpenAI 标准参数必须放入 `extra_body`——放顶层会被 SDK 拒绝或静默忽略。HTTP / curl 调用时才直接放请求体顶层。这是 Qwen3 API 最易踩的坑之一。",
+    "tags": ["qwen", "extra_body", "openai sdk", "api 调用"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Python SDK 放 extra_body；curl 放请求体顶层",
+        "isCorrect": true,
+        "description": "SDK 受 OpenAI 标准参数 schema 限制，非标参数走 extra_body"
+      },
+      {
+        "text": "两种调用都放请求体顶层",
+        "isCorrect": false,
+        "description": "SDK 调用放顶层会被拒绝或静默忽略"
+      },
+      {
+        "text": "两种调用都放 HTTP header",
+        "isCorrect": false,
+        "description": "请求参数在 body，不在 header"
+      },
+      {
+        "text": "Python SDK 放 client 构造函数的 default_headers",
+        "isCorrect": false,
+        "description": "default_headers 是 HTTP header，不是请求体参数"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：Qwen3 开源系列的协议是什么？与 Qwen3-Max / Qwen3.7-Max 闭源旗舰的区别是？",
+    "explanation": "Qwen3 全系列开源模型（含 Dense 6 款 + MoE 235B-A22B + Qwen3-Coder-480B）均采用 Apache 2.0 协议，可自由下载权重、商用与二次微调。Qwen3-Max / Qwen3.7-Max / Plus / Flash 是闭源旗舰，仅通过阿里云百炼 API 调用，无权重下载。两者完全不同，常被混淆。",
+    "tags": ["qwen", "apache-2.0", "开源协议", "闭源旗舰"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "开源系列 Apache 2.0 可下载商用；Max / 3.7-Max 闭源仅 API 调用",
+        "isCorrect": true,
+        "description": "两者协议完全不同，常被混淆"
+      },
+      {
+        "text": "所有 Qwen3 模型都是闭源，仅能百炼 API 调用",
+        "isCorrect": false,
+        "description": "开源系列权重在 HuggingFace 可下载"
+      },
+      {
+        "text": "开源系列是 GPL，商用需付费授权",
+        "isCorrect": false,
+        "description": "Apache 2.0 是宽松协议，无需付费"
+      },
+      {
+        "text": "Qwen3-235B-A22B 是研究专用，禁止商用",
+        "isCorrect": false,
+        "description": "Apache 2.0 明确允许商用与微调"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：阿里云百炼平台的四种 API 接入方式及其定位分别是什么？",
+    "explanation": "百炼提供四种接入方式：(1) OpenAI 兼容-Chat（compatible-mode/v1/chat/completions）——迁移成本最低，默认首选；(2) OpenAI 兼容-Responses——内置联网搜索 + 代码解释器（Docker 沙箱）；(3) Anthropic 兼容-Messages——直接复用 Anthropic SDK；(4) DashScope 原生——全参数集（result_format 等百炼专属字段）。",
+    "tags": ["qwen", "百炼", "api 端点", "openai 兼容"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "OpenAI 兼容-Chat（默认首选）/ Responses（内置联网+沙箱）/ Anthropic 兼容 / DashScope 原生（全参数）",
+        "isCorrect": true,
+        "description": "四端点定位不同，默认走 OpenAI 兼容-Chat"
+      },
+      {
+        "text": "只有 DashScope 原生一种，必须装专用 SDK",
+        "isCorrect": false,
+        "description": "默认首选 OpenAI 兼容，可直接用 openai 包"
+      },
+      {
+        "text": "REST / GraphQL / gRPC / WebSocket 四种协议",
+        "isCorrect": false,
+        "description": "百炼接口不按协议分类，按兼容的 SDK 生态分"
+      },
+      {
+        "text": "HTTP / TCP / UDP / FTP 四种传输",
+        "isCorrect": false,
+        "description": "传输层与 API 接入方式无关"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：Qwen3 原生支持的语言数量与覆盖范围是？",
+    "explanation": "Qwen3 原生支持 119 种语言与方言，覆盖九大语系：印欧（英 / 西 / 葡 / 法 / 德 / 俄 / 印地 / 波斯）、汉藏（中 / 缅 / 藏）、闪含（阿 / 希伯来）、南岛（印尼 / 马）、达罗毗荼（泰米尔 / 泰卢固）、突厥（土 / 维 / 哈）、壮侗（泰 / 老）、乌拉尔（芬 / 匈）、南亚（越 / 高棉）。",
+    "tags": ["qwen", "多语言", "119 语言"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "119 种语言与方言，覆盖九大语系",
+        "isCorrect": true,
+        "description": "Qwen3 预训练覆盖范围业界最广之一"
+      },
+      {
+        "text": "仅支持中文和英文 2 种",
+        "isCorrect": false,
+        "description": "Qwen3 多语言是其差异化标签之一"
+      },
+      {
+        "text": "约 30 种主流语言（联合国官方语言）",
+        "isCorrect": false,
+        "description": "远超 30 种，含大量低资源语言"
+      },
+      {
+        "text": "1000+ 种（覆盖全球所有语言）",
+        "isCorrect": false,
+        "description": "数字夸大，实际 119 种"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：Qwen-Agent 框架的三层核心抽象分别是什么？",
+    "explanation": "Qwen-Agent 框架三层抽象：(1) LLM 层 BaseChatModel——对接各模型后端（DashScope / OpenAI 兼容 / 本地 vLLM）；(2) 工具层 BaseTool + @register_tool 装饰器——自定义工具的统一接口；(3) Agent 层 Assistant / FnCallAgent / ReActChat——编排工具调用与多步推理。框架内置 nous 模板（适配 Qwen3）+ tool call parser。",
+    "tags": ["qwen", "qwen-agent", "框架", "agent"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "LLM 层 BaseChatModel / 工具层 BaseTool + @register_tool / Agent 层 Assistant + FnCallAgent + ReActChat",
+        "isCorrect": true,
+        "description": "三层抽象清晰分层，Agent 场景优先用框架"
+      },
+      {
+        "text": "Router / Controller / View（MVC 模式）",
+        "isCorrect": false,
+        "description": "MVC 是 Web 框架分层，与 LLM Agent 无关"
+      },
+      {
+        "text": "Model / Prompt / Trainer（训练三件套）",
+        "isCorrect": false,
+        "description": "Qwen-Agent 是 Agent 推理框架，不是训练框架"
+      },
+      {
+        "text": "Tokenizer / Embedding / Decoder（Transformer 三件套）",
+        "isCorrect": false,
+        "description": "那是模型内部结构，不是 Agent 框架抽象"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：Qwen3-Coder-480B-A35B-Instruct 的上下文能力是怎样的？",
+    "explanation": "Qwen3-Coder-480B-A35B-Instruct 原生支持 256K tokens 上下文，通过 YaRN（长上下文外推技术）可扩展至 1M tokens，专为仓库级代码分析设计。预训练含 7.5T tokens（其中 70% 是代码），SWE-bench 开源 SOTA。",
+    "tags": ["qwen", "qwen3-coder", "yaRN", "长上下文"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "原生 256K tokens，YaRN 外推扩展至 1M tokens",
+        "isCorrect": true,
+        "description": "YaRN 是长上下文外推技术，把训练长度外推到更长"
+      },
+      {
+        "text": "仅 8K tokens（与传统模型相同）",
+        "isCorrect": false,
+        "description": "Coder 模型专为长代码设计，远超 8K"
+      },
+      {
+        "text": "原生 1M tokens（无需任何扩展）",
+        "isCorrect": false,
+        "description": "原生是 256K，1M 需 YaRN 外推"
+      },
+      {
+        "text": "128K tokens（与 Qwen3-235B-A22B 相同）",
+        "isCorrect": false,
+        "description": "Coder 模型原生更长（256K），不是 128K"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：Dense 小模型 / 大模型 / Coder 模型的上下文长度梯度是怎样的？",
+    "explanation": "Qwen3 上下文长度按模型规模梯度：(1) Dense 小模型 0.6B / 1.7B / 4B 为 32K；(2) Dense 中大模型 8B / 14B / 32B 与 MoE 30B-A3B / 235B-A22B 为 128K；(3) 编程旗舰 Qwen3-Coder 为 256K（YaRN 可扩展至 1M）。规模越大上下文越长，但成本也越高。",
+    "tags": ["qwen", "上下文长度", "模型矩阵"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "0.6B/1.7B/4B = 32K；8B/14B/32B/30B-A3B/235B-A22B = 128K；Coder = 256K~1M",
+        "isCorrect": true,
+        "description": "按规模梯度递增，Coder 最长"
+      },
+      {
+        "text": "所有模型统一 128K 上下文",
+        "isCorrect": false,
+        "description": "小模型仅 32K，Coder 是 256K~1M"
+      },
+      {
+        "text": "小模型最长（4B = 1M），大模型最短（235B = 8K）",
+        "isCorrect": false,
+        "description": "梯度正好相反，大模型上下文更长"
+      },
+      {
+        "text": "所有模型都支持无限上下文",
+        "isCorrect": false,
+        "description": "所有 LLM 上下文都有上限"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：百炼 API 的鉴权方式是什么？为何禁止硬编码 API Key？",
+    "explanation": "百炼 API 鉴权用 HTTP `Authorization: Bearer $DASHSCOPE_API_KEY`。禁止硬编码的原因：(1) 密钥泄露风险——代码进 git / 截图 / 日志都会暴露；(2) 多环境切换困难——dev / staging / prod 各自需要不同 Key；(3) 旋转失效——硬编码后改 Key 需改代码重启。官方推荐用环境变量 `DASHSCOPE_API_KEY` 注入。",
+    "tags": ["qwen", "鉴权", "api key", "安全"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Authorization: Bearer $DASHSCOPE_API_KEY；环境变量注入防泄露",
+        "isCorrect": true,
+        "description": "Bearer Token + 环境变量是行业标准"
+      },
+      {
+        "text": "Basic Auth（用户名 + 密码 base64 编码）",
+        "isCorrect": false,
+        "description": "百炼用 Bearer Token，不是 Basic Auth"
+      },
+      {
+        "text": "AK/SK 签名（类似 AWS SigV4）",
+        "isCorrect": false,
+        "description": "百炼兼容端点是 Bearer Token，不是签名机制"
+      },
+      {
+        "text": "无需鉴权，公开 API",
+        "isCorrect": false,
+        "description": "百炼按 token 计费，必须鉴权"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：以下哪种情况应该「关闭」思考模式（enable_thinking=false）？",
+    "explanation": "思考模式适合复杂数学 / 逻辑推理 / 代码生成 / 多步规划。简单任务开思考纯属浪费 token 与延迟：(1) 简单 QA（「Qwen 是哪家公司的」）；(2) 闲聊（「你好」）；(3) 格式转换（翻译、JSON 重排、markdown 转换）；(4) 简单分类。可通过 enable_thinking=false 或 /no_think 关闭。",
+    "tags": ["qwen", "思考模式", "成本控制"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "简单 QA、闲聊、格式转换、简单分类等低复杂度任务",
+        "isCorrect": true,
+        "description": "这类任务开思考纯属浪费 token 与延迟"
+      },
+      {
+        "text": "证明 √2 是无理数",
+        "isCorrect": false,
+        "description": "复杂数学推理，必须开思考"
+      },
+      {
+        "text": "仓库级代码重构方案设计",
+        "isCorrect": false,
+        "description": "复杂代码生成，开思考质量更好"
+      },
+      {
+        "text": "多步骤业务流程编排",
+        "isCorrect": false,
+        "description": "多步规划是思考模式的强项"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：百炼 Function Calling 的工具命名限制是怎样的？",
+    "explanation": "百炼 Function Calling 工具名限制严格：仅允许字母（a-z, A-Z）、数字（0-9）、下划线（_）、短划线（-）；长度 ≤ 64 token。中文、空格、点号、其他特殊字符都会被百炼拒绝。例如 `get_weather` 合法，`获取天气` / `get.weather` / `get weather` 都会被拒。",
+    "tags": ["qwen", "function calling", "工具命名"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅允许字母 / 数字 / 下划线 / 短划线，长度 ≤ 64 token",
+        "isCorrect": true,
+        "description": "中文名 / 点号 / 空格都会被拒"
+      },
+      {
+        "text": "允许任意 Unicode 字符，包括中文和 emoji",
+        "isCorrect": false,
+        "description": "中文工具名会被百炼拒绝"
+      },
+      {
+        "text": "仅允许小写字母，不允许数字",
+        "isCorrect": false,
+        "description": "数字是允许的"
+      },
+      {
+        "text": "无任何限制，长度也不限",
+        "isCorrect": false,
+        "description": "有严格字符集与长度限制"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：把 Qwen3 思考模型接入 vLLM 时，以下哪个参数「不应」加？",
+    "explanation": "Qwen-Agent 官方明确：QwQ-32B 与 Qwen3 系列思考模型接入 vLLM 时**不应**加 `--enable-auto-tool-choice` 参数。Qwen-Agent 框架自行解析工具输出（基于 nous 模板），加该参数会与框架解析逻辑冲突，导致工具调用解析异常。",
+    "tags": ["qwen", "vllm", "部署", "工具调用"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "--enable-auto-tool-choice（不应加，框架自行解析工具输出）",
+        "isCorrect": true,
+        "description": "Qwen-Agent 官方明确该参数不适用于 Qwen3 系列"
+      },
+      {
+        "text": "--host 0.0.0.0（监听地址，正常）",
+        "isCorrect": false,
+        "description": "网络监听参数，与工具调用无关"
+      },
+      {
+        "text": "--port 8000（端口，正常）",
+        "isCorrect": false,
+        "description": "端口配置，与工具调用无关"
+      },
+      {
+        "text": "--tensor-parallel-size 4（张量并行，正常）",
+        "isCorrect": false,
+        "description": "多卡并行配置，与工具调用无关"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：百炼 API 的 base_url 在国内站与国际站的区别是？",
+    "explanation": "百炼平台国内站与国际站双轨运行：国内站 base_url 为 `https://dashscope.aliyuncs.com/compatible-mode/v1`；国际站为 `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`。两站 API Key 不通用，模型 ID 也有差异（如 `qwen3-coder-480b-a35b-instruct` 国际专用）。海外业务用国际站，国内合规用国内站。",
+    "tags": ["qwen", "base_url", "国内国际站"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "国内 dashscope.aliyuncs.com；国际 dashscope-intl.aliyuncs.com（Key 不通用）",
+        "isCorrect": true,
+        "description": "两站独立运行，Key 与部分模型 ID 不同"
+      },
+      {
+        "text": "全球统一一个域名 dashscope.aliyun.com",
+        "isCorrect": false,
+        "description": "国内外业务分两套基础设施"
+      },
+      {
+        "text": "国内用 IP 直连，国际用域名",
+        "isCorrect": false,
+        "description": "都用域名，不是 IP 直连"
+      },
+      {
+        "text": "国内站是闭源，国际站是开源",
+        "isCorrect": false,
+        "description": "开源 / 闭源与站点无关，按模型系列分"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：多轮对话中如何保留历史思维链（reasoning_content）作为上下文？",
+    "explanation": "Qwen3 思考模型多轮对话默认会丢掉历史 `reasoning_content`，导致每轮从零思考，影响推理连贯性。开启 `preserve_thinking=true`（放 extra_body）后，历史思维链会作为上下文保留，模型能基于上轮推理继续思考。涉及多步推理的对话场景必开。",
+    "tags": ["qwen", "preserve_thinking", "多轮对话"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "preserve_thinking=true（放 extra_body）",
+        "isCorrect": true,
+        "description": "保留历史思维链作为多轮上下文"
+      },
+      {
+        "text": "把 reasoning_content 手动拼回 messages 数组",
+        "isCorrect": false,
+        "description": "手动拼回不规范，应用 preserve_thinking 参数"
+      },
+      {
+        "text": "关闭思考模式即可自动保留",
+        "isCorrect": false,
+        "description": "关闭后根本没有 reasoning_content 可保留"
+      },
+      {
+        "text": "改用 max_completion_tokens 限制长度",
+        "isCorrect": false,
+        "description": "长度限制与上下文保留是两个不同概念"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：超长文档（>128K）场景应如何选型？",
+    "explanation": "超长文档场景二选一：(1) 仓库级代码分析用 Qwen3-Coder 的 YaRN 1M 扩展——原生支持，代码理解深度好；(2) 通用长文用 Qwen-Agent 的 RAG 方案——向量检索 + 切片，成本远低于原生超长上下文，多个基准超越原生长上下文模型。原则：代码用 Coder、长文用 RAG。",
+    "tags": ["qwen", "长上下文", "rag", "qwen3-coder"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "仓库级代码用 Qwen3-Coder YaRN 1M；通用长文用 Qwen-Agent RAG",
+        "isCorrect": true,
+        "description": "代码用原生、长文用 RAG 是官方推荐"
+      },
+      {
+        "text": "所有超长文档都用 Qwen3-Coder 原生 1M",
+        "isCorrect": false,
+        "description": "通用长文用 RAG 性价比远高于原生 1M"
+      },
+      {
+        "text": "所有超长文档都用 Qwen-Agent RAG",
+        "isCorrect": false,
+        "description": "仓库级代码用 Coder 原生深度更好"
+      },
+      {
+        "text": "直接截断到 128K 即可",
+        "isCorrect": false,
+        "description": "截断会丢失关键信息，不可取"
+      }
+    ]
+  },
+  {
+    "stem": "Qwen：流式输出（stream=true）为何应作为默认？",
+    "explanation": "流式输出应作为默认：(1) 提升阅读体验——边推理边显示，用户等待感降低；(2) 显著降低长输出 / 思考场景的网关超时风险——同步等待可能触发百炼网关 60s 超时；(3) 配合 `stream_options.include_usage=true` 在末包拿到 token 用量。思考模式长输出场景必须用流式。",
+    "tags": ["qwen", "流式输出", "stream"],
+    "categories": [
+      ["技术方向", "Qwen"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "提升阅读体验 + 降低网关超时风险 + 末包拿 token 用量",
+        "isCorrect": true,
+        "description": "三大优势叠加，思考模式必开"
+      },
+      {
+        "text": "流式只用于调试，生产应用同步",
+        "isCorrect": false,
+        "description": "生产恰恰相反，流式是默认"
+      },
+      {
+        "text": "流式会显著增加 token 消耗",
+        "isCorrect": false,
+        "description": "token 消耗与同步相同，只是分包返回"
+      },
+      {
+        "text": "流式无法获取 token 用量",
+        "isCorrect": false,
+        "description": "stream_options.include_usage=true 末包返回用量"
+      }
+    ]
+  }
+]

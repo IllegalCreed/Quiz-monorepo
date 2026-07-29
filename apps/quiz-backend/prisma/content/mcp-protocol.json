@@ -1,0 +1,852 @@
+[
+  {
+    "stem": "MCP 协议基础：Anthropic 2024-11 发布的 MCP，最准确的定位是？",
+    "explanation": "MCP（Model Context Protocol）是 Anthropic 于 2024 年 11 月发布的**开放协议**，官方定位为「**AI 应用的 USB-C 接口**」——把大模型与外部上下文之间的连接方式标准化为公开规范，任何按协议实现的 client 与 server 都能互通。它不是某个框架、不是某模型的 function calling 实现，也不是某个特定客户端的内部协议。",
+    "tags": ["mcp", "定位", "anthropic", "开放协议"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "AI 应用的 USB-C 开放协议，标准化模型与外部上下文的连接",
+        "isCorrect": true,
+        "description": "官方类比 USB-C，定义「上下文如何交换」的开放标准"
+      },
+      {
+        "text": "Anthropic 自家 Claude 模型的专用 function calling 实现",
+        "isCorrect": false,
+        "description": "MCP 是协议层标准，跨模型 / 跨厂商，不是某模型的 function calling"
+      },
+      {
+        "text": "一种基于 REST 的 Web 服务框架",
+        "isCorrect": false,
+        "description": "MCP 基于 JSON-RPC 2.0，不是 REST 框架"
+      },
+      {
+        "text": "LangChain 生态的子模块",
+        "isCorrect": false,
+        "description": "MCP 独立于任何框架，与 LangChain 是不同层面的东西"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：协议的消息编码基底是？",
+    "explanation": "MCP 协议的消息基底是 **JSON-RPC 2.0** + **UTF-8 编码**。请求带 id，通知无 id 无响应，响应 / 错误各有固定格式。所有 transport（stdio / Streamable HTTP）传输的都是同一套 JSON-RPC 消息。",
+    "tags": ["mcp", "json-rpc", "编码"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "JSON-RPC 2.0 + UTF-8",
+        "isCorrect": true,
+        "description": "请求带 id、通知无 id 无响应、响应 / 错误固定格式"
+      },
+      {
+        "text": "gRPC + Protobuf",
+        "isCorrect": false,
+        "description": "MCP 不用 gRPC / Protobuf，是文本协议"
+      },
+      {
+        "text": "HTTP REST + JSON",
+        "isCorrect": false,
+        "description": "REST 是资源导向，MCP 是 RPC 模型"
+      },
+      {
+        "text": "WebSocket + MessagePack",
+        "isCorrect": false,
+        "description": "MCP 不强制 WebSocket，Streamable HTTP 走 SSE 流"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：协议定义的「三层参与者」是？",
+    "explanation": "MCP 定义三类参与者：**Host**（协调多个 client 的 AI 应用，如 Claude Desktop / VS Code）、**Client**（与单个 server 维持一条专属连接；1 Host 可有 N Client 对应 N Server）、**Server**（提供上下文的程序，可本地可远程）。",
+    "tags": ["mcp", "参与者", "host", "client", "server"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Host / Client / Server",
+        "isCorrect": true,
+        "description": "Host 协调多 client；Client 与单个 server 1 对 1；Server 提供上下文"
+      },
+      {
+        "text": "Producer / Consumer / Broker",
+        "isCorrect": false,
+        "description": "这是消息队列的角色划分"
+      },
+      {
+        "text": "Frontend / Backend / Database",
+        "isCorrect": false,
+        "description": "这是 Web 应用的三层架构"
+      },
+      {
+        "text": "Server / Gateway / Client",
+        "isCorrect": false,
+        "description": "MCP 没有 Gateway 概念"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：1 个 Host 同时连 5 个 Server 时，内部需要创建几个 Client？",
+    "explanation": "MCP 规范：**Client 与 Server 是 1 对 1 专属连接**。1 个 Host 同时连 5 个 Server，会在内部为每个 Server 创建独立的 Client 实例（共 5 个 Client），彼此隔离，互不影响。",
+    "tags": ["mcp", "拓扑", "client", "多路复用"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "5 个（每个 Server 一个独立 Client）",
+        "isCorrect": true,
+        "description": "Client 与 Server 1 对 1，Host 内部为每个 server 创建独立连接"
+      },
+      {
+        "text": "1 个（单 Client 多路复用）",
+        "isCorrect": false,
+        "description": "MCP 不做 Client 端多路复用，每条连接独立"
+      },
+      {
+        "text": "2 个（一个 stdio 一个 HTTP）",
+        "isCorrect": false,
+        "description": "数量取决于 server 数，不取决于 transport 类型"
+      },
+      {
+        "text": "0 个（Host 直接连 Server）",
+        "isCorrect": false,
+        "description": "Host 通过 Client 与 Server 通信，不能跳过 Client"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：协议的「双层架构」指的是？",
+    "explanation": "MCP 双层架构：**Data 层**（JSON-RPC + 生命周期 + 原语 + 通知，跨 transport 复用）+ **Transport 层**（通信机制与鉴权：stdio / Streamable HTTP）。两层解耦——同一份 server 代码可挂到多个 transport。",
+    "tags": ["mcp", "架构", "data", "transport"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Data 层（JSON-RPC 消息 + 原语）+ Transport 层（stdio / HTTP）",
+        "isCorrect": true,
+        "description": "消息原语与通信机制解耦，跨 transport 复用"
+      },
+      {
+        "text": "Frontend 层 + Backend 层",
+        "isCorrect": false,
+        "description": "这是 Web 应用分层，不是 MCP 的协议分层"
+      },
+      {
+        "text": "Application 层 + Kernel 层",
+        "isCorrect": false,
+        "description": "这是操作系统分层"
+      },
+      {
+        "text": "Client 层 + Server 层",
+        "isCorrect": false,
+        "description": "这是角色而非架构层；Data/Transport 才是协议双layer"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：生命周期的正确阶段顺序是？",
+    "explanation": "MCP 生命周期三阶段：**Initialization**（client 发 `initialize` 含 protocolVersion + capabilities + clientInfo，server 回选定版本 + capabilities）→ **Operation**（client 发 `notifications/initialized` 后正式操作）→ **Shutdown**（无专用消息，靠 transport 关闭）。其中 shutdown **没有专用 JSON-RPC 消息**——stdio 靠 close stdin → SIGTERM → SIGKILL；HTTP 用 DELETE 会话。",
+    "tags": ["mcp", "生命周期", "initialize", "shutdown"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "initialize → notifications/initialized → operation → shutdown（靠 transport 关闭）",
+        "isCorrect": true,
+        "description": "shutdown 无专用消息，靠 transport 机制（stdin 关 / HTTP DELETE）"
+      },
+      {
+        "text": "connect → auth → request → disconnect（专用 disconnect 消息）",
+        "isCorrect": false,
+        "description": "MCP 没有 disconnect 消息，shutdown 靠 transport 关闭"
+      },
+      {
+        "text": "handshake → query → response → close（专用 close 消息）",
+        "isCorrect": false,
+        "description": "这是数据库连接的典型流程，不是 MCP"
+      },
+      {
+        "text": "open → exchange → close（专用 close 消息）",
+        "isCorrect": false,
+        "description": "没有 close 消息；shutdown 是 transport 层行为"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：版本协商的对错判断规则是？",
+    "explanation": "MCP 版本协商：**Client 发其支持的最新版；Server 若支持则回同版，否则回 Server 自己的最新版；Client 不支持则断开连接**。HTTP 请求须带 `MCP-Protocol-Version` 头标识当前版本。",
+    "tags": ["mcp", "版本协商", "protocol-version"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Client 发最新版，Server 同版回同版，否则回 Server 最新版，Client 不支持则断开",
+        "isCorrect": true,
+        "description": "双向降级，谁也不强行升对方"
+      },
+      {
+        "text": "Server 强制对齐到 Client 发的版本",
+        "isCorrect": false,
+        "description": "Server 不一定支持 Client 版本，不能强制"
+      },
+      {
+        "text": "双方都用各自最新版，互不协商",
+        "isCorrect": false,
+        "description": "无协商会导致协议不兼容"
+      },
+      {
+        "text": "固定使用 2024-11-05 版本，不升级",
+        "isCorrect": false,
+        "description": "版本会演进，2025-11-25 是当前最新版"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：stdio transport 下，server 向 stdout 写日志会怎样？",
+    "explanation": "stdio transport 下，**stdout 是 JSON-RPC 消息通道**——任何非协议字节（`console.log` / `print` / `System.out.println` / `fmt.Println` / `puts`）都会破坏消息解析、让整个 server 失联。日志必须写 stderr：TS 用 `console.error`、Python 用 `print(file=sys.stderr)`、Java 用 `System.err.println`。",
+    "tags": ["mcp", "stdio", "stdout", "日志", "踩坑"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "破坏 JSON-RPC 流，整个 server 失联",
+        "isCorrect": true,
+        "description": "stdout 是协议通道，非协议字节 = 协议破坏"
+      },
+      {
+        "text": "正常输出，不影响协议",
+        "isCorrect": false,
+        "description": "stdout 是消息通道，绝对不能写非协议内容"
+      },
+      {
+        "text": "只是日志变多，client 自动过滤",
+        "isCorrect": false,
+        "description": "client 不会过滤，会被当 JSON 解析失败"
+      },
+      {
+        "text": "触发 server 重启",
+        "isCorrect": false,
+        "description": "不会重启，会失联"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：stdio transport 下消息换行的规则是？",
+    "explanation": "stdio transport 下，stdin/stdout 传 **newline-delimited JSON**——**每条消息一行，消息内部不得包含嵌入换行**。换行符 `\n` 作为消息分隔符，因此消息体内的字符串值若有换行必须转义为 `\n` 字符序列（而非真实换行字节）。",
+    "tags": ["mcp", "stdio", "newline-delimited", "换行"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "每条消息一行，消息内部不得包含嵌入换行",
+        "isCorrect": true,
+        "description": "换行作为消息分隔符；JSON 序列化会自动转义字符串内换行"
+      },
+      {
+        "text": "消息可跨多行，靠 JSON 解析结束",
+        "isCorrect": false,
+        "description": "stdio 靠换行分帧，不能跨行"
+      },
+      {
+        "text": "消息必须以分号结尾",
+        "isCorrect": false,
+        "description": "分号不是 JSON-RPC 分帧字符"
+      },
+      {
+        "text": "消息长度固定 4KB 一帧",
+        "isCorrect": false,
+        "description": "MCP 没有固定帧长度概念"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：2025-03-26 起取代旧 HTTP+SSE 的新 transport 是？",
+    "explanation": "**Streamable HTTP** transport（2025-03-26 引入）取代了 2024-11-05 的旧 HTTP+SSE transport（双端点 GET-SSE + POST）。新方案：单一 MCP endpoint（如 `/mcp`）支持 POST+GET；`Accept` 须含 `application/json` 与 `text/event-stream`；用 `Mcp-Session-Id` 头标识会话；SSE event id + `Last-Event-ID` 头实现断线续传；HTTP DELETE 终止会话。旧 HTTP+SSE 已标记 `deprecated`。",
+    "tags": ["mcp", "transport", "streamable-http", "sse"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Streamable HTTP（单一 endpoint + SSE 流 + 会话头）",
+        "isCorrect": true,
+        "description": "2025-03-26 引入，取代双端点 HTTP+SSE"
+      },
+      {
+        "text": "WebSocket（全双工长连接）",
+        "isCorrect": false,
+        "description": "MCP 规范未采用 WebSocket"
+      },
+      {
+        "text": "gRPC（双向流）",
+        "isCorrect": false,
+        "description": "MCP 不用 gRPC"
+      },
+      {
+        "text": "GraphQL Subscription",
+        "isCorrect": false,
+        "description": "MCP 不用 GraphQL"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Streamable HTTP server 想要断线续传，依赖的请求头是？",
+    "explanation": "Streamable HTTP 支持**断线续传（resumability）**：server 在 SSE 流里发 `event id`；client 断线重连时通过 `Last-Event-ID` 头带回最后收到的事件 id，server 据此从断点继续推送。会话标识则用 `Mcp-Session-Id` 头。",
+    "tags": ["mcp", "streamable-http", "sse", "断线续传", "last-event-id"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Last-Event-ID",
+        "isCorrect": true,
+        "description": "SSE 标准 header，client 重连时带回最后收到的事件 id"
+      },
+      {
+        "text": "If-Modified-Since",
+        "isCorrect": false,
+        "description": "那是 HTTP 缓存验证头"
+      },
+      {
+        "text": "If-None-Match / ETag",
+        "isCorrect": false,
+        "description": "那是 HTTP 条件请求头"
+      },
+      {
+        "text": "Retry-After",
+        "isCorrect": false,
+        "description": "那是 429/503 重试间隔提示"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Server 端三类原语按「控制方」划分，正确对应是？",
+    "explanation": "Server 三原语按「谁来决定触发」划分：**Resources** = 应用控制（application-driven，由 Host UI 显式选择/搜索/自动注入）；**Tools** = 模型控制（model-controlled，LLM 根据上下文自动发现与调用，需 human-in-the-loop）；**Prompts** = 用户控制（user-controlled，用户显式触发如 slash command）。",
+    "tags": ["mcp", "原语", "resources", "tools", "prompts"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Resources=应用控制 / Tools=模型控制 / Prompts=用户控制",
+        "isCorrect": true,
+        "description": "按 application-driven / model-controlled / user-controlled 划分"
+      },
+      {
+        "text": "Resources=模型控制 / Tools=用户控制 / Prompts=应用控制",
+        "isCorrect": false,
+        "description": "调换了控制方"
+      },
+      {
+        "text": "Resources=用户控制 / Tools=应用控制 / Prompts=模型控制",
+        "isCorrect": false,
+        "description": "调换了控制方"
+      },
+      {
+        "text": "三者都是模型自动控制",
+        "isCorrect": false,
+        "description": "区分点正在于控制方不同"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Tools 原语中工具名（name）的命名规则是？",
+    "explanation": "MCP 工具名规则：**1–128 字符；只能含 `A–Z` `a–z` `0–9` `_` `-` `.` `/`；大小写敏感；server 内必须唯一**。不符合规则的名称会被 client 拒绝。",
+    "tags": ["mcp", "tools", "命名规则"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "1–128 字符；A–Z a–z 0–9 _ - . /；大小写敏感；server 内唯一",
+        "isCorrect": true,
+        "description": "不含空格 / 不含中文 / 不含其他符号"
+      },
+      {
+        "text": "任意字符，长度无限制",
+        "isCorrect": false,
+        "description": "MCP 对字符集与长度有明确限制"
+      },
+      {
+        "text": "仅小写字母 + 数字，最长 32 字符",
+        "isCorrect": false,
+        "description": "过于严格，且大小写敏感而非仅小写"
+      },
+      {
+        "text": "支持任意 Unicode，全局唯一",
+        "isCorrect": false,
+        "description": "字符集受限且唯一性是 server 范围，非全局"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：工具的 inputSchema 字段应该写成什么？",
+    "explanation": "MCP Tool 的 `inputSchema` **必须是一个合法 JSON Schema object**（默认方言 JSON Schema 2020-12）。**不能写成 null 或省略**。无参工具应写 `{type:‘object’, additionalProperties:false}` 表示不接受任何参数。声明 `outputSchema` 后须在结果里同时填 `structuredContent`。",
+    "tags": ["mcp", "tools", "input-schema", "json-schema"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "必填的合法 JSON Schema object（无参写 {type:object, additionalProperties:false}）",
+        "isCorrect": true,
+        "description": "不能 null 不能省略；JSON Schema 2020-12 默认方言"
+      },
+      {
+        "text": "可省略，client 默认接受任意参数",
+        "isCorrect": false,
+        "description": "inputSchema 必填"
+      },
+      {
+        "text": "写 null 表示无参",
+        "isCorrect": false,
+        "description": "null 非法，必须用 object 表示无参"
+      },
+      {
+        "text": "写字符串描述参数列表",
+        "isCorrect": false,
+        "description": "inputSchema 是结构化 JSON Schema，不是字符串"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：工具执行错误（如入参校验失败）应该用什么方式返回？",
+    "explanation": "MCP 规范明确：**工具的业务/执行错误**（入参校验失败、API 限流、值越界）应用 `CallToolResult.isError:true` + 文本反馈返回，让 **LLM 自我纠正**后重试；**协议错误**（请求结构本身有问题）才用 JSON-RPC error（`-32xxx`）。把业务错误当 JSON-RPC error 返回是反模式——LLM 拿不到可纠正的文本反馈，失去重试机会。",
+    "tags": ["mcp", "tools", "错误处理", "iserror"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "CallToolResult 的 isError:true + 文本反馈",
+        "isCorrect": true,
+        "description": "LLM 读到文本后可调整参数重试"
+      },
+      {
+        "text": "JSON-RPC error -32603 Internal error",
+        "isCorrect": false,
+        "description": "这是协议错误码，业务错误不该用"
+      },
+      {
+        "text": "HTTP 500 状态码",
+        "isCorrect": false,
+        "description": "MCP 不用 HTTP 状态码表达业务错误"
+      },
+      {
+        "text": "直接抛未捕获异常让 transport 处理",
+        "isCorrect": false,
+        "description": "未捕获异常会让连接异常关闭"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Tool annotations（如 readOnlyHint）的信任级别是？",
+    "explanation": "MCP 规范明确：**Tool annotations 视为不可信**（untrusted）——除非来自可信 server。`readOnlyHint` / `destructiveHint` / `idempotentHint` / `openWorldHint` 都是 server 自报的描述性元数据，**不能据此做自动批准或安全决策**——必须由用户或 host 策略做最终判断。",
+    "tags": ["mcp", "tools", "annotations", "安全", "信任"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "视为不可信，不能据此做自动批准",
+        "isCorrect": true,
+        "description": "server 自报元数据，需用户/host 策略最终决策"
+      },
+      {
+        "text": "完全可信，可直接据此自动批准",
+        "isCorrect": false,
+        "description": "annotations 是 self-reported，不可信"
+      },
+      {
+        "text": "只有 readOnlyHint 可信",
+        "isCorrect": false,
+        "description": "所有 hint 一视同仁，都不可信"
+      },
+      {
+        "text": "由 client 验签后才不可信",
+        "isCorrect": false,
+        "description": "annotations 没有签名词汇"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Sampling 原语的核心用途是？",
+    "explanation": "**Sampling** 是 **Client 端原语**：server 反向请求 client（实际是 Host）帮它调用 LLM——用于 server 在执行工具过程中需要嵌套的 LLM 推理（如让 LLM 总结、提取、生成）。方法 `sampling/createMessage`，参数含 `messages` + `modelPreferences`（hints + costPriority/speedPriority/intelligencePriority 三维 0–1）。**强制 human-in-the-loop**——无审查会构成提示注入 / 数据外泄风险。",
+    "tags": ["mcp", "sampling", "client", "llm"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Server 反向请求 Client 调用 LLM 完成嵌套生成",
+        "isCorrect": true,
+        "description": "典型应用：工具执行中需要 LLM 推理"
+      },
+      {
+        "text": "Client 向 Server 请求采样统计数据",
+        "isCorrect": false,
+        "description": "与采样统计无关，是 LLM 调用"
+      },
+      {
+        "text": "Server 主动给 Client 推送日志",
+        "isCorrect": false,
+        "description": "那是 Logging 通知（notifications/message）"
+      },
+      {
+        "text": "Server 列出可被采样的资源",
+        "isCorrect": false,
+        "description": "那是 resources/list"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：跨 provider 选模型应该用哪种方式？",
+    "explanation": "跨 provider 选模型应使用 `modelPreferences`：含 `hints`（模型名子串如 ‘claude’ ‘sonnet’，client 做最终映射）+ 三维优先级 `costPriority` / `speedPriority` / `intelligencePriority`（各 0–1）。**不要硬编码模型名**——不同 provider 接的模型不同，硬编码会导致选不到模型。",
+    "tags": ["mcp", "sampling", "model-preferences", "选模型"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "modelPreferences（hints + cost/speed/intelligence 三维优先级）",
+        "isCorrect": true,
+        "description": "建议性偏好，client 做最终映射"
+      },
+      {
+        "text": "硬编码具体模型名如 claude-sonnet-4",
+        "isCorrect": false,
+        "description": "client 用别的 provider 就选不到"
+      },
+      {
+        "text": "固定选价格最低的模型",
+        "isCorrect": false,
+        "description": "不考虑速度/能力会导致任务失败"
+      },
+      {
+        "text": "由 server 自己决定不传任何偏好",
+        "isCorrect": false,
+        "description": "无偏好则 client 无法权衡"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：未协商 sampling 能力就调用 sampling/createMessage 会怎样？",
+    "explanation": "未在 `initialize` 中声明对应 capability 就调用对应原语（sampling / roots / elicitation / tools 等），对端会返回 **`-32601 Method not found`**——能力协商是硬前提。常见 JSON-RPC 错误码还有：`-32602 Invalid params`（参数错误）、`-32603 Internal error`（内部异常）、`-32002 Resource not found`（资源 / 工具不存在）。",
+    "tags": ["mcp", "错误码", "能力协商", "-32601"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "返回 -32601 Method not found",
+        "isCorrect": true,
+        "description": "能力协商是硬前提，未声明就调用必报此错"
+      },
+      {
+        "text": "返回 200 OK 并空结果",
+        "isCorrect": false,
+        "description": "未协商能力不会成功"
+      },
+      {
+        "text": "返回 -32602 Invalid params",
+        "isCorrect": false,
+        "description": "那是参数错误，不是能力未协商"
+      },
+      {
+        "text": "返回 -32603 Internal error",
+        "isCorrect": false,
+        "description": "那是 server 内部异常"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：以下哪个错误码表示「资源 / 工具不存在」？",
+    "explanation": "MCP 在 JSON-RPC 保留的 `-32000 ~ -32099` server error 段内自定义了几个常见错误码：`-32002 Resource not found` 表示请求的资源 / 工具 / 提示不存在；`-32003` 兜底未知实体；`-32001` 部分 SDK 用作请求失败。`-32601` / `-32602` / `-32603` 是 JSON-RPC 标准错误码。",
+    "tags": ["mcp", "错误码", "-32002", "resource-not-found"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "-32002 Resource not found",
+        "isCorrect": true,
+        "description": "在 server error 段（-32000 起）自定义"
+      },
+      {
+        "text": "-32601 Method not found",
+        "isCorrect": false,
+        "description": "那是「方法不存在或能力未协商」"
+      },
+      {
+        "text": "-32602 Invalid params",
+        "isCorrect": false,
+        "description": "那是「参数错误」"
+      },
+      {
+        "text": "-32700 Parse error",
+        "isCorrect": false,
+        "description": "那是「JSON 解析失败」"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：以下哪个属于 Tier 1 官方 SDK？",
+    "explanation": "MCP 官方 SDK 按 Tier 分级维护：**Tier 1（完整维护）= TypeScript（`@modelcontextprotocol/sdk`，`McpServer.registerTool` + `StdioServerTransport` + `server.connect()`） / Python（`mcp` 包，`FastMCP` + `@mcp.tool()` + `mcp.run(transport=‘stdio’)`） / C# / Go**。Tier 2 = Java / Spring AI / Rust（rmcp）。Tier 3 = Swift / Ruby / PHP / Kotlin 等。",
+    "tags": ["mcp", "sdk", "tier", "typescript", "python"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "TypeScript（@modelcontextprotocol/sdk）",
+        "isCorrect": true,
+        "description": "Tier 1，与 Python / C# / Go 同级"
+      },
+      {
+        "text": "Ruby（社区维护）",
+        "isCorrect": false,
+        "description": "Ruby 在 Tier 3"
+      },
+      {
+        "text": "PHP（Laravel 集成）",
+        "isCorrect": false,
+        "description": "PHP 在 Tier 3"
+      },
+      {
+        "text": "Kotlin（Android 用）",
+        "isCorrect": false,
+        "description": "Kotlin 在 Tier 3"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Streamable HTTP server 防御 DNS rebinding 攻击的三件套是？",
+    "explanation": "Streamable HTTP server 防 DNS rebinding 三件套：**①本地绑 `127.0.0.1`，不要绑 `0.0.0.0`；②校验 `Origin` 头，拒绝跨域；③实现 OAuth / OIDC 鉴权**。远程网站可借 DNS 重绑定绕过同源策略与本机本地 server 交互——三件套缺一都可能被读取数据或调用工具。",
+    "tags": ["mcp", "streamable-http", "dns-rebinding", "安全", "origin"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "绑 127.0.0.1 + 校验 Origin 头 + 实现 OAuth 鉴权",
+        "isCorrect": true,
+        "description": "三层防护缺一不可"
+      },
+      {
+        "text": "绑 0.0.0.0 + 关闭 CORS + 用 IP 白名单",
+        "isCorrect": false,
+        "description": "0.0.0.0 反而扩大攻击面"
+      },
+      {
+        "text": "用 HTTPS + 启用 HSTS + 禁用 cookies",
+        "isCorrect": false,
+        "description": "未针对 DNS rebinding"
+      },
+      {
+        "text": "限速 + 加 Captcha + 用 CDN",
+        "isCorrect": false,
+        "description": "未针对 DNS rebinding 根因"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：以下哪个 transport 已在 2025-03-26 标记为 deprecated？",
+    "explanation": "**旧 HTTP+SSE transport**（2024-11-05 首发，双端点 GET-SSE + POST）在 2025-03-26 引入 **Streamable HTTP** 后被取代并标记 `deprecated`（仍可向后兼容）。stdio 没有废弃，仍是本地 server 的首选。Streamable HTTP 是新规范，并非废弃。",
+    "tags": ["mcp", "transport", "deprecated", "http-sse"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2024-11-05 的旧 HTTP+SSE transport（双端点）",
+        "isCorrect": true,
+        "description": "被 Streamable HTTP 取代，仍向后兼容"
+      },
+      {
+        "text": "stdio transport",
+        "isCorrect": false,
+        "description": "stdio 仍是本地首选，未废弃"
+      },
+      {
+        "text": "Streamable HTTP",
+        "isCorrect": false,
+        "description": "这是新规范，并非废弃"
+      },
+      {
+        "text": "WebSocket transport",
+        "isCorrect": false,
+        "description": "MCP 规范未采用 WebSocket"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：以下哪个 Client 端原语用于「向用户请求输入或确认」？",
+    "explanation": "**Elicitation**（2025-11-25 增强规范）是 Client 端原语，让 server 向用户请求输入或确认——方法 `elicitation/create`，支持两种模式：`form`（结构化表单，含单选 / 多选 / 带 title 枚举）和 `url`（打开外部链接让用户操作）。用于工具执行中需要澄清问题时（如「要保留哪些字段？」）。Roots 是文件系统边界；Sampling 是反向调 LLM；Logging 是日志推送。",
+    "tags": ["mcp", "elicitation", "client", "用户输入"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Elicitation（elicitation/create，form / url 两种模式）",
+        "isCorrect": true,
+        "description": "2025-11-25 规范的重要增强"
+      },
+      {
+        "text": "Roots",
+        "isCorrect": false,
+        "description": "Roots 是文件系统边界，不向用户提问"
+      },
+      {
+        "text": "Sampling",
+        "isCorrect": false,
+        "description": "Sampling 是反向调 LLM 生成"
+      },
+      {
+        "text": "Logging",
+        "isCorrect": false,
+        "description": "Logging 是 server → client 单向日志推送"
+      }
+    ]
+  },
+  {
+    "stem": "MCP 协议基础：Claude Desktop 配置文件中 mcpServers 的 args 应该用什么路径？",
+    "explanation": "`claude_desktop_config.json` 的 `mcpServers.{name}.args` **必须用绝对路径**——Claude Desktop 以子进程方式拉起 server，工作目录不一定是配置所在目录，相对路径会导致 server 找不到脚本而启动失败。`command` 字段则是可执行文件名（如 `node` / `python`）。",
+    "tags": ["mcp", "claude-desktop", "配置", "绝对路径"],
+    "categories": [
+      [
+        "技术方向",
+        "MCP 协议基础（Transport / Resource / Tool / Prompt / Sampling）"
+      ],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "绝对路径（如 /Users/you/server.js）",
+        "isCorrect": true,
+        "description": "Claude Desktop 子进程的工作目录不固定"
+      },
+      {
+        "text": "相对路径（如 ./server.js）",
+        "isCorrect": false,
+        "description": "工作目录不一定是配置目录，会找不到"
+      },
+      {
+        "text": "只填脚本名（如 server.js）",
+        "isCorrect": false,
+        "description": "无路径前缀，依赖 PATH，不可靠"
+      },
+      {
+        "text": "URL 形式（如 file://server.js）",
+        "isCorrect": false,
+        "description": "args 不接受 URL"
+      }
+    ]
+  }
+]

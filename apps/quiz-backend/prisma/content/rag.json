@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "RAG：四阶段流程的离线阶段是什么？",
+    "explanation": "RAG 四阶段为 Ingestion（离线 Chunking+Embedding+入向量库）、Retrieval（在线检索 top-k）、Augmentation（拼 CONTEXT prompt）、Generation（LLM 扎根生成）。Ingestion 是离线阶段产物是向量库，Retrieval/Augmentation/Generation 都是在线阶段。",
+    "tags": ["rag", "四阶段", "ingestion"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Ingestion（Chunking + Embedding + 入向量库）",
+        "isCorrect": true,
+        "description": "离线一次性投入，产物是可检索的向量库"
+      },
+      {
+        "text": "Retrieval（查询向量化+检索）",
+        "isCorrect": false,
+        "description": "Retrieval 是在线阶段，每次查询都跑"
+      },
+      {
+        "text": "Augmentation（拼增强 prompt）",
+        "isCorrect": false,
+        "description": "Augmentation 是在线阶段，拼 prompt 喂 LLM"
+      },
+      {
+        "text": "Generation（LLM 扎根生成答案）",
+        "isCorrect": false,
+        "description": "Generation 是在线阶段，LLM 基于 CONTEXT 作答"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：OpenAI text-embedding-3-small 与 text-embedding-3-large 的维度差异？",
+    "explanation": "OpenAI text-embedding-3-small 默认 1536 维，text-embedding-3-large 默认 3072 维，max input 都是 8192 token。large 性能更强但存储贵，可通过 MRL dimensions 参数降到 256/512/1024 维后性能仍胜旧 ada-002。",
+    "tags": ["rag", "embedding", "openai"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "small 1536 维 / large 3072 维",
+        "isCorrect": true,
+        "description": "且两者 max input 都是 8192 token"
+      },
+      {
+        "text": "small 768 维 / large 1536 维",
+        "isCorrect": false,
+        "description": "这是旧 BGE 系列的维度，不是 OpenAI"
+      },
+      {
+        "text": "small 1024 维 / large 2048 维",
+        "isCorrect": false,
+        "description": "BGE-M3 是 1024 维，但 OpenAI 3 系列不是"
+      },
+      {
+        "text": "两者都是 1536 维",
+        "isCorrect": false,
+        "description": "ada-002 是 1536 维，但 3-large 不是"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：MRL 降维（Matryoshka Representation Learning）的核心原理是？",
+    "explanation": "MRL 让向量在训练时就支持「嵌套」结构——前 N 维就是一个有效向量。text-embedding-3-large 默认 3072 维，用 dimensions=1024 参数可直接生成 1024 维向量，性能仍胜 ada-002 的 1536 维，存储降一半以上。不应事后手动截断（破坏分布），应直接用 dimensions 参数（内部已做 MRL 训练）。",
+    "tags": ["rag", "embedding", "mrl"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "训练时让前 N 维就是有效向量，可直接生成指定维度",
+        "isCorrect": true,
+        "description": "用 dimensions 参数（内部已做 MRL 训练），不要事后手动截断"
+      },
+      {
+        "text": "训练后用 PCA 主成分分析降维",
+        "isCorrect": false,
+        "description": "PCA 是事后降维，不保留训练分布"
+      },
+      {
+        "text": "把多个向量平均池化成一个",
+        "isCorrect": false,
+        "description": "那是 Sentence Embedding 的池化，不是 MRL"
+      },
+      {
+        "text": "用更小的 Embedding 模型重新嵌入",
+        "isCorrect": false,
+        "description": "那不是降维，是换模型（且必须重建索引）"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：为何 OpenAI 归一化向量可用点积代替余弦？",
+    "explanation": "余弦相似度 = dot(a,b) / (|a| × |b|)。OpenAI 输出向量已经过 L2 归一化（|a|=|b|=1），分母为 1，余弦等价于点积——dot product 计算更快，是工业部署首选。但若手动截断向量降维不归一化，则点积与余弦不等价。",
+    "tags": ["rag", "距离度量", "归一化"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "向量已 L2 归一化，模长为 1，余弦公式分母为 1",
+        "isCorrect": true,
+        "description": "dot(a,b) / (|a|·|b|)，归一化后分母为 1，等价于点积"
+      },
+      {
+        "text": "OpenAI 用了不同的距离公式",
+        "isCorrect": false,
+        "description": "距离公式是数学定义，与厂商无关"
+      },
+      {
+        "text": "点积与余弦本来就完全等价",
+        "isCorrect": false,
+        "description": "仅归一化向量才等价，未归一化时不等价"
+      },
+      {
+        "text": "OpenAI 模型没用余弦",
+        "isCorrect": false,
+        "description": "默认就是余弦，只是归一化后点积等价"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：向量距离度量中 cosine 与 dot product 的本质差别是？",
+    "explanation": "cosine = a·b/(|a|·|b|)，关心方向夹角忽略模长；dot product = a·b，未归一化时同时受方向与模长影响。OpenAI/BGE 向量已归一化则两者等价；MRL 截断或未归一化嵌入需重新 L2 归一化才能用点积代替余弦。",
+    "tags": ["rag", "距离度量", "cosine"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "cosine 关心方向忽略模长，dot product 受模长影响",
+        "isCorrect": true,
+        "description": "归一化向量两者等价，未归一化时点积混入模长"
+      },
+      {
+        "text": "cosine 适合图像，dot product 适合文本",
+        "isCorrect": false,
+        "description": "适用性看数据分布，不是媒介"
+      },
+      {
+        "text": "cosine 比 dot product 更精确",
+        "isCorrect": false,
+        "description": "精度无差别，归一化向量下两者数值一致"
+      },
+      {
+        "text": "dot product 比 cosine 计算更慢",
+        "isCorrect": false,
+        "description": "点积少一次除法（归一化后），实际更快"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：Pinecone / Weaviate / Chroma / pgvector 的部署形态差别？",
+    "explanation": "Pinecone 是托管 SaaS（serverless/pod-based），Weaviate 是自托管（云或私有部署），Chroma 是开源轻量适合原型，pgvector 是 PostgreSQL 扩展复用已有 PG 生态。生产规模化的成本/运维/合规差异主要由此决定。",
+    "tags": ["rag", "向量库", "选型"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Pinecone 托管 / Weaviate 自托管 / Chroma 轻量 / pgvector PG 扩展",
+        "isCorrect": true,
+        "description": "四种部署形态各异，按运维成本与现有生态选"
+      },
+      {
+        "text": "四者都是托管 SaaS",
+        "isCorrect": false,
+        "description": "只有 Pinecone 是托管 SaaS"
+      },
+      {
+        "text": "四者都是自托管",
+        "isCorrect": false,
+        "description": "Pinecone 不开源不可自托管"
+      },
+      {
+        "text": "都是 PostgreSQL 扩展",
+        "isCorrect": false,
+        "description": "只有 pgvector 是 PG 扩展"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：pgvector HNSW 三参数 ef_construction / m / ef_search 的作用？",
+    "explanation": "pgvector HNSW 三参：m（每层最大连接数，默认 16）影响召回率与内存；ef_construction（构建候选列表，默认 64）影响索引质量与建库时间；ef_search（查询候选列表，默认 40）影响召回率与查询延迟，可用 SET LOCAL 单事务调。",
+    "tags": ["rag", "pgvector", "hnsw"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "m 连接数 / ef_construction 构建候选 / ef_search 查询候选",
+        "isCorrect": true,
+        "description": "三者分工：图结构 / 建库质量 / 查询召回"
+      },
+      {
+        "text": "三者都是聚类中心数",
+        "isCorrect": false,
+        "description": "那是 IVFFlat 的 lists 参数"
+      },
+      {
+        "text": "m 是向量维度 / ef_construction 是 top_k / ef_search 是 chunk 大小",
+        "isCorrect": false,
+        "description": "完全无关，混淆了概念"
+      },
+      {
+        "text": "三者都只影响查询不影响建库",
+        "isCorrect": false,
+        "description": "m 与 ef_construction 主要影响建库"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：pgvector IVFFlat 的 lists 参数如何按数据量选择？",
+    "explanation": "IVFFlat 的 lists：≤1M 行用 rows/1000，>1M 行用 sqrt(rows)。probes 默认 1，建议设为 sqrt(lists)。整体召回与性能 HNSW 优于 IVFFlat，新项目首选 HNSW，IVFFlat 仅在内存吃紧时考虑。",
+    "tags": ["rag", "pgvector", "ivfflat"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "≤1M 行用 rows/1000，>1M 行用 sqrt(rows)",
+        "isCorrect": true,
+        "description": "官方推荐公式，probes 建议 sqrt(lists)"
+      },
+      {
+        "text": "统一用 rows/1000",
+        "isCorrect": false,
+        "description": ">1M 行时 lists 会过大，应用 sqrt(rows)"
+      },
+      {
+        "text": "统一用 sqrt(rows)",
+        "isCorrect": false,
+        "description": "≤1M 行时 lists 会过小"
+      },
+      {
+        "text": "固定 1000",
+        "isCorrect": false,
+        "description": "不分数据量的固定值不是官方推荐"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：通用文本的 Chunk 策略首选是？",
+    "explanation": "通用文本首选 RecursiveCharacterTextSplitter（递归字符切分），按段落→行→空格→字符递归切，保留语义边界。固定字符切分易破坏语义单元，SemanticChunker 适合语义敏感场景但成本高，结构化数据用 MarkdownHeaderTextSplitter 或代码语法树。",
+    "tags": ["rag", "chunk", "splitter"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "RecursiveCharacterTextSplitter",
+        "isCorrect": true,
+        "description": "LangChain 通用文本推荐起点，递归保留语义边界"
+      },
+      {
+        "text": "CharacterTextSplitter（固定字符）",
+        "isCorrect": false,
+        "description": "硬切易破坏语义，仅作入门理解"
+      },
+      {
+        "text": "SemanticChunker（语义切分）",
+        "isCorrect": false,
+        "description": "成本高，适合语义敏感场景，非通用首选"
+      },
+      {
+        "text": "MarkdownHeaderTextSplitter",
+        "isCorrect": false,
+        "description": "仅适合 Markdown 结构化数据"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：RecursiveCharacterTextSplitter 的默认 separators 顺序为何是 [\\n\\n, \\n, ' ', '']？",
+    "explanation": "递归逻辑按语义边界优先级：\\n\\n（段落）最大语义单元 → 段落太大降级到 \\n（行）→ 行太大降级到空格（英文词级）→ 最后空字符串（字符兜底）。先在最大语义边界切，越切越细，保证优先在自然边界断开。",
+    "tags": ["rag", "chunk", "separators"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "按段落→行→空格→字符的语义边界优先级递归切",
+        "isCorrect": true,
+        "description": "先在最大语义边界切，越切越细"
+      },
+      {
+        "text": "随机顺序，与语义无关",
+        "isCorrect": false,
+        "description": "顺序是精心设计的，按语义优先级"
+      },
+      {
+        "text": "按字符数倒序",
+        "isCorrect": false,
+        "description": "并非按字符长度，而是按结构层级"
+      },
+      {
+        "text": "按 ASCII 码顺序",
+        "isCorrect": false,
+        "description": "与 ASCII 码无关"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：为何要设 chunk_overlap？",
+    "explanation": "相邻 chunk 重叠一段字符（典型 50-200）保留跨块上下文，避免关键信息被切到两半导致检索召回了也语义残缺。过大会冗余浪费 token，过小会丢上下文。chunk_size 通常 500-1500 字符（100-300 token），且单 chunk token 不超过 Embedding max input（8192）。",
+    "tags": ["rag", "chunk", "overlap"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "保留跨块上下文，避免关键信息被切到两半",
+        "isCorrect": true,
+        "description": "典型 50-200 字符，太小丢上下文、太大冗余"
+      },
+      {
+        "text": "提升单 chunk 的字符数上限",
+        "isCorrect": false,
+        "description": "overlap 不影响单 chunk 上限，由 chunk_size 决定"
+      },
+      {
+        "text": "降低 Embedding 维度",
+        "isCorrect": false,
+        "description": "overlap 与向量维度无关"
+      },
+      {
+        "text": "加速向量检索",
+        "isCorrect": false,
+        "description": "overlap 影响召回质量，不影响检索速度"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：Hybrid Search（dense + sparse）解决什么问题？",
+    "explanation": "纯 dense 检索遇到产品名/缩写/代码标识符/专有术语/版本号会丢召回——这些 token 在向量空间里和通用词挤在一起。sparse vector（BM25/SPLADE）匹配词法精确性，互补融合后既理解语义又抓住关键词，是生产 RAG 的最低门槛。",
+    "tags": ["rag", "hybrid", "sparse"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "纯 dense 检索对产品名/缩写/术语召回率低",
+        "isCorrect": true,
+        "description": "sparse vector 抓词法精确性，与 dense 互补"
+      },
+      {
+        "text": "降低 Embedding 维度",
+        "isCorrect": false,
+        "description": "Hybrid 与维度无关"
+      },
+      {
+        "text": "完全替代 Embedding 模型",
+        "isCorrect": false,
+        "description": "sparse 是补充而非替代，dense 仍需 Embedding"
+      },
+      {
+        "text": "提升单次查询速度",
+        "isCorrect": false,
+        "description": "Hybrid 多一路 sparse 检索，速度反而稍慢"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：sparse vector（BM25/SPLADE）特别擅长什么查询？",
+    "explanation": "sparse vector 擅长匹配精确词法——产品名（GPT-4、K8s）、缩写、代码标识符（getUserById、useState）、专有术语（HNSW、BM25）、版本号（v0.8.0）。BM25 基于词频+IDF，SPLADE 神经网络稀疏化可学到同义词扩展，BGE-M3 sparse 与 dense 同源对齐。",
+    "tags": ["rag", "sparse", "bm25"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "产品名/缩写/代码标识符/专有术语/版本号",
+        "isCorrect": true,
+        "description": "这些 token 在 dense 空间里和通用词挤一起，sparse 精确匹配"
+      },
+      {
+        "text": "语义相似但用词不同的查询",
+        "isCorrect": false,
+        "description": "那是 dense vector 的强项"
+      },
+      {
+        "text": "情感分析与情绪识别",
+        "isCorrect": false,
+        "description": "情感分析依赖语义，是 dense 强项"
+      },
+      {
+        "text": "图像内容相似度",
+        "isCorrect": false,
+        "description": "图像相似度用视觉 Embedding，与 sparse 无关"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：Reranker 两阶段架构为何是 bi-encoder 召回 + cross-encoder 精排？",
+    "explanation": "bi-encoder 把 query 与 doc 独立编码成向量，相似度计算 O(1) 快但语义细节压平，适合从百万文档粗召 top-k；cross-encoder 把 query+doc 拼一起联合编码+cross-attention，保留全部 token 交互信息精度高但 O(N) 慢且贵，仅对 top-k 精排。两者结合既快又准。",
+    "tags": ["rag", "reranker", "cross-encoder"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "bi-encoder 独立编码快但精度低，cross-encoder 联合编码慢但准",
+        "isCorrect": true,
+        "description": "粗召用快模型，精排用准模型，性能与成本平衡"
+      },
+      {
+        "text": "两个 cross-encoder 串联",
+        "isCorrect": false,
+        "description": "cross-encoder 太慢无法做百万级召回"
+      },
+      {
+        "text": "两个 bi-encoder 并联",
+        "isCorrect": false,
+        "description": "纯 bi-encoder 精度有限，没有精排环节"
+      },
+      {
+        "text": "只用 cross-encoder 即可",
+        "isCorrect": false,
+        "description": "cross-encoder O(N) 太慢，无法直接扫百万文档"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：cross-encoder 为何比 bi-encoder 精度更高？",
+    "explanation": "bi-encoder 把 query 与 doc 分别压成单一向量，语义细节被压平，相似度只能算两个向量的夹角；cross-encoder 把 query 与 doc 拼一起联合编码，每个 token 都能 cross-attention 到对方 token，保留全部交互信息——精度天然更高，代价是每对 (query, doc) 都要一次模型推理，无法预计算。",
+    "tags": ["rag", "reranker", "cross-attention"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "query+doc 联合编码+cross-attention，保留全部 token 交互",
+        "isCorrect": true,
+        "description": "bi-encoder 独立编码压平语义，cross-encoder 保留交互"
+      },
+      {
+        "text": "用了更大的模型参数",
+        "isCorrect": false,
+        "description": "参数量与编码方式无关，bge-reranker 反而比 BGE-M3 小"
+      },
+      {
+        "text": "训练数据更多",
+        "isCorrect": false,
+        "description": "训练数据量不决定编码架构差异"
+      },
+      {
+        "text": "用了更长的 max input",
+        "isCorrect": false,
+        "description": "max input 与精度无直接关系"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：HyDE（Hypothetical Document Embeddings）的核心思想是？",
+    "explanation": "HyDE（Gao 2022）核心：query 与 document 在嵌入空间分布不一致（语义鸿沟——query 是问句，document 是陈述句）。先让 LLM 生成一个假设答案文档（陈述句），再对该假设文档做嵌入，在 document-only 嵌入空间检索——规避了 query-doc 语义鸿沟，零样本场景效果显著。",
+    "tags": ["rag", "hyde", "query-transformation"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "先让 LLM 生成假设答案文档，再嵌入假设文档去检索",
+        "isCorrect": true,
+        "description": "假设文档是陈述句，与真实文档分布更近，规避语义鸿沟"
+      },
+      {
+        "text": "把所有文档预先摘要成一句话",
+        "isCorrect": false,
+        "description": "那是 summary index，不是 HyDE"
+      },
+      {
+        "text": "用假设向量代替 query 向量，但不调用 LLM",
+        "isCorrect": false,
+        "description": "HyDE 必须调 LLM 生成假设文档"
+      },
+      {
+        "text": "把 query 与 doc 拼一起联合编码",
+        "isCorrect": false,
+        "description": "那是 cross-encoder reranker，不是 HyDE"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：HyDE 最适合什么场景？",
+    "explanation": "HyDE 在零样本场景效果显著（论文：WebQuestions 上 zero-shot 接近有监督方法），适合 query 与 doc 表达形式差异大的场景（用户问句 vs 文档陈述句）。局限是每查询多一次 LLM 调用增加延迟——简单查询且检索已够好时不必上 HyDE。",
+    "tags": ["rag", "hyde", "适用场景"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "零样本场景、query 与 doc 表达差异大的检索",
+        "isCorrect": true,
+        "description": "假设文档缩小 query-doc 语义鸿沟"
+      },
+      {
+        "text": "查询量极大、要求最低延迟",
+        "isCorrect": false,
+        "description": "HyDE 多一次 LLM 调用，延迟成本不低"
+      },
+      {
+        "text": "已有大规模标注训练集",
+        "isCorrect": false,
+        "description": "有监督场景直接训检索器更准"
+      },
+      {
+        "text": "完全不调用 LLM 的离线批量检索",
+        "isCorrect": false,
+        "description": "HyDE 必须调 LLM 生成假设文档"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：LangChain 与 LlamaIndex 的组件对应关系？",
+    "explanation": "对应关系：Document Loaders ↔ Data Connectors（拿原文）、Text Splitters ↔ NodeParser/SentenceSplitter（切块）、Vector Stores ↔ Index（VectorStoreIndex 等，存储与检索）、Retrievers ↔ Retrievers（检索）。LlamaIndex 多了 Query Engine（index.as_query_engine 检索+生成一体化）和 Response Synthesizer（compact/tree_summarize/refine）两个 LangChain 无直接对应的组件。",
+    "tags": ["rag", "langchain", "llamaindex"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Document Loaders ↔ Data Connectors，Vector Stores ↔ Index",
+        "isCorrect": true,
+        "description": "LlamaIndex 还多了 Query Engine / Response Synthesizer"
+      },
+      {
+        "text": "两者完全等价，只是名字不同",
+        "isCorrect": false,
+        "description": "LlamaIndex 多两个独有组件，并不完全等价"
+      },
+      {
+        "text": "LangChain 没有 Retriever 概念",
+        "isCorrect": false,
+        "description": "LangChain 有 Retrievers，与 LlamaIndex 对应"
+      },
+      {
+        "text": "LlamaIndex 没有 Embedding 模型",
+        "isCorrect": false,
+        "description": "LlamaIndex 也有 Embeddings 抽象"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：相比 Fine-tuning，RAG 的本质优势是？",
+    "explanation": "RAG 注入事实/知识，文档改了即时生效无需重训；Fine-tuning 改变模型风格/语气/输出格式/任务能力，但训练成本高且时效性仍差。RAG 还能引用来源、数据私密可控、生产成本低——是动态知识库问答的首选。但 RAG 不能扩展模型能力（新语言、新推理范式），这是 Fine-tuning 的领域。",
+    "tags": ["rag", "fine-tuning", "对比"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "知识动态可更新、来源可引用、数据私密可控",
+        "isCorrect": true,
+        "description": "改文档即时生效，无需重训模型"
+      },
+      {
+        "text": "RAG 让模型学会新语言",
+        "isCorrect": false,
+        "description": "新语言是 Fine-tuning/训练的领域，RAG 不行"
+      },
+      {
+        "text": "RAG 改变模型输出格式与风格",
+        "isCorrect": false,
+        "description": "风格/格式是 Fine-tuning 的领域"
+      },
+      {
+        "text": "RAG 完全取代 Fine-tuning",
+        "isCorrect": false,
+        "description": "两者解决不同问题，互补非互斥"
+      }
+    ]
+  },
+  {
+    "stem": "RAG：为何生产规模化应选 RAG 而非 Long Context？",
+    "explanation": "Long Context 把所有知识塞 prompt——按 token 计费，生产规模 20–24x RAG 成本；且文档越多越易「中间迷失」（lost in the middle）。RAG 只把 top-k 相关 chunk 喂 LLM，token 预算可控、来源可追溯、生产成本低一个数量级。复杂推理任务可两者组合：长上下文按需调用 + RAG 提供事实。",
+    "tags": ["rag", "long-context", "成本"],
+    "categories": [
+      ["技术方向", "RAG"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "RAG 生产成本低一个数量级（20–24x），且 token 预算可控",
+        "isCorrect": true,
+        "description": "Long Context 全塞 prompt 按量计费，规模化成本爆炸"
+      },
+      {
+        "text": "Long Context 检索更准",
+        "isCorrect": false,
+        "description": "Long Context 不检索，长文档易「中间迷失」"
+      },
+      {
+        "text": "RAG 可以让模型学会新推理范式",
+        "isCorrect": false,
+        "description": "RAG 只注入事实，能力扩展仍需训练"
+      },
+      {
+        "text": "Long Context 来源可追溯",
+        "isCorrect": false,
+        "description": "长上下文塞一堆文档，来源反而难追溯"
+      }
+    ]
+  }
+]

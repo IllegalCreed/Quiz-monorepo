@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "常用 MCP Server 集成：MCP 协议当前最新版本是哪一个？",
+    "explanation": "MCP 协议规范版本演进：2024-11-05（HTTP+SSE 旧传输）→ 2025-03-26（引入 Streamable HTTP 取代 SSE）→ 2025-06-18 → **2025-11-25（当前最新版）**。旧 HTTP+SSE 端点仅作向后兼容保留，客户端探测时先 POST InitializeRequest，返回 400/404/405 再降级走老 SSE。",
+    "tags": ["mcp", "协议版本", "2025-11-25"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "2025-11-25",
+        "isCorrect": true,
+        "description": "当前最新版，Streamable HTTP 主线"
+      },
+      {
+        "text": "2024-11-05",
+        "isCorrect": false,
+        "description": "初始公开版，定义 HTTP+SSE 旧传输"
+      },
+      {
+        "text": "2025-03-26",
+        "isCorrect": false,
+        "description": "引入 Streamable HTTP 取代 SSE，但不是最新"
+      },
+      {
+        "text": "2025-06-18",
+        "isCorrect": false,
+        "description": "中间稳定版，已被 2025-11-25 取代"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：stdio 与 Streamable HTTP 两种传输的核心差异是什么？",
+    "explanation": "**stdio**：client 把 server 当子进程启动，server 从 stdin 读 JSON-RPC、向 stdout 写、消息以换行分隔且不能含嵌入换行；**Streamable HTTP**：server 暴露单一 endpoint（如 https://example.com/mcp），同时支持 POST（发请求）与 GET（开 SSE 流），初始化时下发 MCP-Session-Id 头。",
+    "tags": ["mcp", "传输", "stdio", "streamable-http"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "stdio 走子进程的 stdin/stdout；Streamable HTTP 走单一 endpoint 的 POST + GET（SSE 流）",
+        "isCorrect": true,
+        "description": "前者进程级无协议 auth，后者 OAuth / Bearer Token"
+      },
+      {
+        "text": "stdio 走 TCP 长连接；Streamable HTTP 走 WebSocket",
+        "isCorrect": false,
+        "description": "MCP 协议未定义 TCP 与 WebSocket 传输"
+      },
+      {
+        "text": "stdio 是远程传输；Streamable HTTP 是本地传输",
+        "isCorrect": false,
+        "description": "正相反：stdio 是本地子进程，HTTP 是远程端点"
+      },
+      {
+        "text": "两者本质相同，只是端口不同",
+        "isCorrect": false,
+        "description": "完全不同：进程模型、消息通道、认证机制都不同"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：claude_desktop_config.json 配置中 Windows 平台为何需要用 cmd /c 包裹 npx 命令？",
+    "explanation": "Windows 平台下，Claude Desktop 直接调用 `npx` 会找不到可执行文件（路径解析差异），必须用 `cmd /c npx ...` 让 cmd 子壳正确解析 npx 指向的 `.cmd` 批处理脚本。而 `uvx`（Python 包统一可执行入口）无此问题，可直接调用。",
+    "tags": ["mcp", "windows", "配置", "npx"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Windows 下 npx 实际是 .cmd 批处理脚本，需 cmd 壳正确解析；uvx 无此问题",
+        "isCorrect": true,
+        "description": "Node 在 Windows 的可执行包装是 .cmd / .bat，spawn 找不到"
+      },
+      {
+        "text": "npx 必须以管理员权限运行，cmd /c 自动提权",
+        "isCorrect": false,
+        "description": "cmd /c 不提权，仅做壳解析"
+      },
+      {
+        "text": "Windows 不支持 npx，必须改用 cmd",
+        "isCorrect": false,
+        "description": "Windows 完全支持 npx，只是路径解析需壳包裹"
+      },
+      {
+        "text": "cmd /c 是为了启用 UTF-8 编码",
+        "isCorrect": false,
+        "description": "编码与 cmd /c 无关，是路径解析问题"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Filesystem MCP 通过哪个 ToolAnnotations 字段防止路径逃逸？",
+    "explanation": "Filesystem MCP 所有工具的 **openWorldHint=false**，声明工具不与「外部世界」交互——这是防路径逃逸的核心机制。即使用户在 prompt 里写「读 `/etc/passwd`」，server 也只能在 client 授权的 allowlist 目录内操作。其他 hint（readOnlyHint / destructiveHint / idempotentHint）只声明副作用，不约束路径。",
+    "tags": ["mcp", "filesystem", "openWorldHint", "安全"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "openWorldHint=false",
+        "isCorrect": true,
+        "description": "声明工具不与外部世界交互，限制在授权目录内"
+      },
+      {
+        "text": "readOnlyHint=true",
+        "isCorrect": false,
+        "description": "只声明无副作用，不约束路径范围"
+      },
+      {
+        "text": "destructiveHint=false",
+        "isCorrect": false,
+        "description": "只声明无破坏性，不约束路径范围"
+      },
+      {
+        "text": "idempotentHint=true",
+        "isCorrect": false,
+        "description": "只声明幂等性，不约束路径范围"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Filesystem MCP 的「允许目录」有哪两套机制？",
+    "explanation": "**CLI 参数**：在 args 末尾传入路径（静态，需重启 server 才能改）；**Roots 协议**：client 在运行时通过 `roots/list_changed` 通知动态替换允许目录（无需重启）。Roots 是 MCP 协议运行时授权的官方机制，比 CLI 参数灵活。",
+    "tags": ["mcp", "filesystem", "roots", "允许目录"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "CLI 参数（静态，需重启）与 Roots 协议（运行时 roots/list_changed 动态替换）",
+        "isCorrect": true,
+        "description": "Roots 协议是 MCP 运行时授权的官方机制"
+      },
+      {
+        "text": "环境变量与配置文件",
+        "isCorrect": false,
+        "description": "两者本质都是静态配置，不是协议机制"
+      },
+      {
+        "text": "OAuth scope 与 JWT token",
+        "isCorrect": false,
+        "description": "Filesystem 是 stdio 本地工具，不走 OAuth"
+      },
+      {
+        "text": "sudoers 文件与 chmod 权限",
+        "isCorrect": false,
+        "description": "那是 OS 层权限，不是 MCP 协议层机制"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：GitHub MCP 远程端点的两种认证方式优先级如何？",
+    "explanation": "GitHub MCP 远程端点 `https://api.githubcopilot.com/mcp/` 支持两种认证：**OAuth 浏览器流**（首次需浏览器交互）与 **Authorization: Bearer PAT**（Personal Access Token）。当 env `GITHUB_PERSONAL_ACCESS_TOKEN` 存在时，**PAT 优先于 OAuth**——这避免了无浏览器环境（CI / 服务器）下的 OAuth 卡死。",
+    "tags": ["mcp", "github", "认证", "pat", "oauth"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "PAT 优先于 OAuth（PAT 存在时跳过浏览器流）",
+        "isCorrect": true,
+        "description": "便于 CI / 无浏览器环境接入"
+      },
+      {
+        "text": "OAuth 优先于 PAT",
+        "isCorrect": false,
+        "description": "OAuth 需浏览器交互，无浏览器环境会卡死"
+      },
+      {
+        "text": "两者并行，每个请求带两种凭据",
+        "isCorrect": false,
+        "description": "HTTP 请求只带一种 Authorization 头"
+      },
+      {
+        "text": "随机选择一种",
+        "isCorrect": false,
+        "description": "无确定性逻辑会导致行为不可预测"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Context7 MCP 的两步工作流是什么？",
+    "explanation": "Context7 典型两步工作流：①**resolve-library-id**——传 `query` + 可选 `libraryName`，返回 `/org/project` 形式的 `libraryId`；②**query-docs**——传 `libraryId` + `query`，返回匹配文档片段。这种两步设计避免一次性加载全部文档，按需取片段省 token。",
+    "tags": ["mcp", "context7", "工作流", "文档"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "先 resolve-library-id 拿 /org/project 形式 libraryId，再 query-docs 取文档片段",
+        "isCorrect": true,
+        "description": "按需取片段，避免一次加载全部"
+      },
+      {
+        "text": "先 authenticate 登录，再 fetch-all 拉全部文档",
+        "isCorrect": false,
+        "description": "Context7 用 API Key 不需登录；也从不一次拉全部"
+      },
+      {
+        "text": "先 list-categories 列分类，再 search 全文检索",
+        "isCorrect": false,
+        "description": "Context7 工具集没有 list-categories"
+      },
+      {
+        "text": "单步 query 直接问问题",
+        "isCorrect": false,
+        "description": "缺 libraryId 则 query-docs 无法定位文档源"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Context7 的 CONTEXT7_API_KEY 是否必填？",
+    "explanation": "**可选**——不带 CONTEXT7_API_KEY 也能用，只是 rate limit 低、容易被限速；带上 API Key 提速率上限。这种「免费可用 + 付费提速」是 Upstash 类服务的常见商业模式。",
+    "tags": ["mcp", "context7", "api-key", "rate-limit"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "可选，不带也能用，只是 rate limit 低",
+        "isCorrect": true,
+        "description": "带上 API Key 仅提升速率上限"
+      },
+      {
+        "text": "必填，不带完全无法调用",
+        "isCorrect": false,
+        "description": "Context7 提供免费层，可无 key 调用"
+      },
+      {
+        "text": "仅在商业项目使用时必填",
+        "isCorrect": false,
+        "description": "无此区分，是否带 key 与项目类型无关"
+      },
+      {
+        "text": "仅 stdio 传输需要，HTTP 不需要",
+        "isCorrect": false,
+        "description": "两种传输都可选，与传输方式无关"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Playwright MCP 默认走哪种交互方式？",
+    "explanation": "Playwright MCP 默认走 **accessibility tree**——`browser_snapshot` 输出页面的 a11y 树（带 uid），模型按 uid 调用 `browser_click` 等操作，比截图更准、token 更省。坐标模式（基于像素点击）需 `--caps=vision` 显式开启，且截图本身不能用于操作。",
+    "tags": ["mcp", "playwright", "accessibility-tree", "vision"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "accessibility tree（browser_snapshot 优于截图）",
+        "isCorrect": true,
+        "description": "按 uid 操作，token 省、准"
+      },
+      {
+        "text": "默认坐标点击（像素位置）",
+        "isCorrect": false,
+        "description": "坐标模式需 --caps=vision 显式开启"
+      },
+      {
+        "text": "默认截图识别",
+        "isCorrect": false,
+        "description": "截图本身不能用于操作，需 vision 模式"
+      },
+      {
+        "text": "默认通过 CSS selector",
+        "isCorrect": false,
+        "description": "Playwright MCP 不依赖手写 selector"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Chrome DevTools MCP 相对 Playwright MCP 的核心差异化价值是什么？",
+    "explanation": "**Chrome DevTools MCP**（Google，52 工具）是 Chrome 专用，核心价值在 **performance trace + Lighthouse + heap snapshot + CrUX 真实用户数据**——这些是 Playwright MCP 没有的。Playwright MCP（Microsoft）则是跨浏览器（chromium / firefox / webkit / msedge）通用自动化、强 accessibility tree。性能 / 内存调试场景才选 Chrome DevTools，通用自动化优先 Playwright。",
+    "tags": ["mcp", "chrome-devtools", "playwright", "对比"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Chrome 专用的 performance trace + Lighthouse + heap snapshot + CrUX 真实用户数据",
+        "isCorrect": true,
+        "description": "性能与内存调试场景的核心能力"
+      },
+      {
+        "text": "跨浏览器支持（chromium / firefox / webkit）",
+        "isCorrect": false,
+        "description": "这是 Playwright MCP 的优势，Chrome DevTools 仅 Chrome"
+      },
+      {
+        "text": "更强的 accessibility tree",
+        "isCorrect": false,
+        "description": "两者都有 snapshot，但 Playwright 默认走 a11y tree 更强"
+      },
+      {
+        "text": "更低的内存占用",
+        "isCorrect": false,
+        "description": "Chrome DevTools 因 52 工具体积更大，内存并非优势"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Brave Search MCP 的 brave_local_search 在非 Pro 计划下行为如何？",
+    "explanation": "Brave Search MCP 的 `brave_local_search` 工具自动位置过滤，**Pro 计划才有完整能力，否则回退到 web search**。即免费 / 基础层调用 local search 时，实际拿到的是 web search 的结果，丢失 POI 维度。完整 local 能力（带坐标 / 营业时间 / 评分）需 Pro 计划。",
+    "tags": ["mcp", "brave-search", "本地搜索", "pro"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "回退到 brave_web_search，丢失 POI 维度",
+        "isCorrect": true,
+        "description": "免费层无完整 local 数据，自动降级"
+      },
+      {
+        "text": "报错退出，要求升级",
+        "isCorrect": false,
+        "description": "Brave 不强制升级，而是降级响应"
+      },
+      {
+        "text": "返回空结果集",
+        "isCorrect": false,
+        "description": "降级而非空集，仍返回 web 结果"
+      },
+      {
+        "text": "返回限速 429 错误",
+        "isCorrect": false,
+        "description": "限速是另一回事，与 Pro 计划无关"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Notion MCP v2.0 把 database-centric 工具换成了什么抽象？",
+    "explanation": "Notion MCP v2.0.0 把 database-centric 工具迁移到 **data source 抽象**——新增 `query-data-source` / `create-a-data-source` / `move-page`，旧的 `post-database-query` 等已删除。同时迁移到 Notion API 2025-09-03 版，新增 token 友好的 `retrieve-page-markdown` / `update-page-markdown`（`replace_content` / `update_content`）。照搬老教程会踩坑。",
+    "tags": ["mcp", "notion", "v2.0", "data-source"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "data source 抽象（query-data-source / create-a-data-source / move-page）",
+        "isCorrect": true,
+        "description": "v2.0 的核心架构变化"
+      },
+      {
+        "text": "GraphQL 接口",
+        "isCorrect": false,
+        "description": "Notion API 是 REST，不是 GraphQL"
+      },
+      {
+        "text": "纯 markdown 文件",
+        "isCorrect": false,
+        "description": "虽有 markdown 工具，但底层仍是 data source 抽象"
+      },
+      {
+        "text": "保持 database-centric，只是改名",
+        "isCorrect": false,
+        "description": "架构本质变化，非简单改名"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Notion MCP 远程端点 mcp.notion.com 的认证机制是什么？",
+    "explanation": "Notion MCP 远程端点 `mcp.notion.com` 走 **OAuth + Dynamic Client Registration（DCR）**——客户端无需手动在 Notion 后台建 OAuth app，运行时动态注册即可。这是 OAuth 2.0 RFC 7591 的机制，Notion 官方推荐用远程 server（本地 stdio server 仅维护模式）。",
+    "tags": ["mcp", "notion", "oauth", "dynamic-client-registration"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "OAuth + Dynamic Client Registration（无需手动建 OAuth app）",
+        "isCorrect": true,
+        "description": "RFC 7591 机制，运行时动态注册"
+      },
+      {
+        "text": "Basic Auth 用户名密码",
+        "isCorrect": false,
+        "description": "Notion 不支持 Basic Auth"
+      },
+      {
+        "text": "硬编码 API Key",
+        "isCorrect": false,
+        "description": "本地 stdio 才用 NOTION_TOKEN，远程走 OAuth"
+      },
+      {
+        "text": "无需认证，公开访问",
+        "isCorrect": false,
+        "description": "Notion 工作区数据必然需认证"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：MCP 官方安全规范明令禁止的 Token Passthrough 反模式是什么？",
+    "explanation": "**Token Passthrough** 指 MCP server 把 client 传来的 token **不校验 audience 直接转发给下游第三方 API**——规范明令禁止。这种反模式会绕过限流 / 审计 / 信任边界：上游不知道实际调用方是谁，下游也不知道 token 真正发给谁。正确做法是只接受明确发给本 server 的 token（校验 audience）。",
+    "tags": ["mcp", "安全", "token-passthrough", "反模式"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "server 把 client token 不校验 audience 直接转发给下游 API",
+        "isCorrect": true,
+        "description": "绕过限流 / 审计 / 信任边界"
+      },
+      {
+        "text": "server 把 token 缓存到内存加速下次请求",
+        "isCorrect": false,
+        "description": "缓存是性能优化，与 passthrough 不同"
+      },
+      {
+        "text": "client 把 server 的 token 透传给最终用户",
+        "isCorrect": false,
+        "description": "方向反了，passthrough 是 server→下游"
+      },
+      {
+        "text": "token 在请求间共享，避免重复认证",
+        "isCorrect": false,
+        "description": "这是 session 复用，与 passthrough 不同"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：远程 MCP server 三件套防御 DNS rebinding 的正确做法是什么？",
+    "explanation": "远程 / 本地 HTTP MCP server 防 DNS rebinding 的三件套：①**强制 OAuth / 认证**（无认证不能调用）；②**校验 Origin 头**（无效 Origin 返回 403）；③**只绑 127.0.0.1，不绑 0.0.0.0**（避免被外部网络访问）。否则恶意网页可借 DNS rebinding 把自家域名解析到 127.0.0.1 直调本地 server。",
+    "tags": ["mcp", "安全", "dns-rebinding", "远程"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "强制 OAuth + 校验 Origin 头 + 只绑 127.0.0.1",
+        "isCorrect": true,
+        "description": "三件套缺一不可"
+      },
+      {
+        "text": "关闭认证 + 绑 0.0.0.0 + 加 CORS",
+        "isCorrect": false,
+        "description": "绑 0.0.0.0 是 DNS rebinding 入口"
+      },
+      {
+        "text": "只开 HTTPS 即可",
+        "isCorrect": false,
+        "description": "HTTPS 防 MITM 不防 DNS rebinding"
+      },
+      {
+        "text": "用强密码 + 改默认端口",
+        "isCorrect": false,
+        "description": "改端口是 security through obscurity，无效"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：本地 stdio MCP server 与 MCP client 的权限关系是什么？",
+    "explanation": "MCP 官方明确「**stdio 不是安全边界**」——本地 stdio server 与 MCP client **同权限运行**：client 能读的文件 server 也能读，client 能写的 server 也能写。恶意或被注入的 server 等同任意代码执行（RCE）。因此敏感 / 破坏性操作必须保留 human-in-the-loop，不能完全交给 server。",
+    "tags": ["mcp", "安全", "stdio", "权限"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同权限运行（client 能做的 server 都能做，等同 RCE）",
+        "isCorrect": true,
+        "description": "stdio 不是安全边界"
+      },
+      {
+        "text": "server 比 client 权限低，沙箱隔离",
+        "isCorrect": false,
+        "description": "stdio 无协议级沙箱，靠 OS 用户权限"
+      },
+      {
+        "text": "server 比 client 权限高，可访问系统资源",
+        "isCorrect": false,
+        "description": "权限与启动 client 的用户一致，无提升"
+      },
+      {
+        "text": "权限由 MCP 协议规定，固定只读",
+        "isCorrect": false,
+        "description": "协议不规定权限，由 OS 进程权限决定"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：MCP Inspector 的用途与启动命令是什么？",
+    "explanation": "**MCP Inspector** 是官方调试工具，启动命令 `npx @modelcontextprotocol/inspector`，在浏览器 UI 里交互式调试任意 MCP server 的工具 / 资源 / 提示，支持 stdio 与 Streamable HTTP（旧 SSE）两种传输。可直连某个 server：`npx @modelcontextprotocol/inspector npx -y @modelcontextprotocol/server-filesystem /tmp`，能避免 80% 的配置类问题（Windows 漏 cmd /c、路径错、token 错等）。",
+    "tags": ["mcp", "inspector", "调试", "npx"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "npx @modelcontextprotocol/inspector，浏览器 UI 调试 stdio / HTTP 两种传输的 server",
+        "isCorrect": true,
+        "description": "官方调试工具，交互式发起 JSON-RPC 调用"
+      },
+      {
+        "text": "npm install -g mcp-inspector，命令行日志查看",
+        "isCorrect": false,
+        "description": "Inspector 是 npx 即用，且是浏览器 UI 非纯命令行"
+      },
+      {
+        "text": "Docker 镜像，需 docker compose up",
+        "isCorrect": false,
+        "description": "Inspector 不需 Docker，npx 直跑"
+      },
+      {
+        "text": "VS Code 插件，需在 IDE 内安装",
+        "isCorrect": false,
+        "description": "Inspector 独立于 IDE，浏览器 UI"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：关于 mcp.so / glama.ai / Smithery 等社区目录站，下列说法正确的是？",
+    "explanation": "mcp.so / glama.ai（glama.ai/mcp）/ Smithery / MCPFind **均为社区维护的目录站，非官方审核**——上面的 server 配置可能藏恶意 startup command（如 `curl` 外传 `~/.ssh`、`sudo rm -rf`）。必须逐条核对 `command` / `args` 来源与包名，验证发布者信誉，绝不能直接复制粘贴启动。官方 Registry 在 modelcontextprotocol.io 体系内。",
+    "tags": ["mcp", "目录站", "安全", "社区"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "均为社区维护、非官方审核，配置可能藏恶意 startup command，必须逐条核对",
+        "isCorrect": true,
+        "description": "目录站 ≠ 官方审核"
+      },
+      {
+        "text": "都是 Anthropic 官方审核，可放心复制粘贴",
+        "isCorrect": false,
+        "description": "Anthropic 不审核这些社区站"
+      },
+      {
+        "text": "官方 Registry 的镜像，安全等同官方源",
+        "isCorrect": false,
+        "description": "官方 Registry 在 modelcontextprotocol.io，与目录站独立"
+      },
+      {
+        "text": "仅 Smithery 是社区维护，其他都是官方",
+        "isCorrect": false,
+        "description": "四个站都是社区维护"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Blender MCP 的安全风险与正确使用方式是什么？",
+    "explanation": "Blender 官方明确「**MCP server 会无 guard 执行 LLM 生成的代码，可能删除或外传你的数据**」——社区 ahujasid/blender-mcp 同理。正确做法是**在隔离环境运行**（容器 / 临时用户 / 限制文件系统权限 / 无网环境），不能直接挂到生产机器或主用户环境。",
+    "tags": ["mcp", "blender", "安全", "隔离"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "无 guard 执行 LLM 代码，可能删 / 外传数据，必须在隔离环境运行",
+        "isCorrect": true,
+        "description": "容器 / 临时用户 / 限制文件系统权限"
+      },
+      {
+        "text": "完全安全，可直接挂生产机器",
+        "isCorrect": false,
+        "description": "Blender 官方明说不安全"
+      },
+      {
+        "text": "仅在 Windows 上有风险，macOS 安全",
+        "isCorrect": false,
+        "description": "风险与 OS 无关"
+      },
+      {
+        "text": "只要不联网就安全",
+        "isCorrect": false,
+        "description": "无网降低外传风险，但删数据仍可能"
+      }
+    ]
+  },
+  {
+    "stem": "常用 MCP Server 集成：Playwright MCP 的 browser_run_code_unsafe / browser_evaluate 工具为何被标为 RCE 等价？",
+    "explanation": "**browser_run_code_unsafe / browser_evaluate** 让模型在浏览器页面上下文执行任意 JS 代码——等同 **RCE（Remote Code Execution）**。浏览器自动化类 server 不是安全边界：`--allow-unrestricted-file-access`、网络 allowlist 都可被绕过，secrets 屏蔽只是便利非安全特性。必须保留 human-in-the-loop 确认每次危险调用。",
+    "tags": ["mcp", "playwright", "rce", "browser-evaluate"],
+    "categories": [
+      ["技术方向", "常用 MCP Server 集成"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "在浏览器页面上下文执行任意 JS 代码，等同任意代码执行",
+        "isCorrect": true,
+        "description": "可绕过文件 / 网络 allowlist，secrets 屏蔽非安全特性"
+      },
+      {
+        "text": "只是命名吓人，实际安全",
+        "isCorrect": false,
+        "description": "_unsafe 后缀是有意警示"
+      },
+      {
+        "text": "仅在 Linux 有风险",
+        "isCorrect": false,
+        "description": "跨平台风险一致"
+      },
+      {
+        "text": "只要不访问 file:// 就安全",
+        "isCorrect": false,
+        "description": "JS 上下文内仍可发起 fetch / WebRTC 等外联"
+      }
+    ]
+  }
+]

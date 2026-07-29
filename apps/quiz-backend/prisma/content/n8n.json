@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "n8n：本质定位是什么？",
+    "explanation": "n8n 是开源的工作流自动化平台（fair-code / Sustainable Use License），节点式可视化编排 + 70+ 基于 LangChain.js 的 AI 节点。它核心做的是「把 AI 嵌进既有 SaaS / DB / 通知链路的业务流程自动化」，而非单纯的 LLM 应用构建器或 AI Agent SDK。",
+    "tags": ["n8n", "定位", "fair-code"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "开源工作流自动化平台，节点式编排 + 70+ LangChain.js AI 节点",
+        "isCorrect": true,
+        "description": "fair-code / Sustainable Use License，AI 是后加能力"
+      },
+      {
+        "text": "一个闭源的 SaaS 集成器，类似 Zapier",
+        "isCorrect": false,
+        "description": "Zapier 才是闭源 SaaS；n8n 开源可自托管"
+      },
+      {
+        "text": "一个 LLM 应用构建器，类似 Dify / Flowise",
+        "isCorrect": false,
+        "description": "Dify / Flowise 才是 LLM 应用构建器；n8n 是自动化平台"
+      },
+      {
+        "text": "一个 AI Agent SDK，类似 LangChain",
+        "isCorrect": false,
+        "description": "LangChain 才是 AI Agent SDK；n8n AI 节点族底层用 LangChain.js"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：AI Agent 节点与 Basic LLM Chain 节点的本质差异是什么？",
+    "explanation": "AI Agent 是决策型 root 节点，用 LLM 自主决定调用哪个工具 + 参数 + 何时停，**循环执行**，必接 Chat Model，可选 Memory / Tools / Vector Store；Basic LLM Chain 是预定义序列链，固定 LLM 调用顺序、单次执行，**架构性不支持 Memory 和 Tools**，每次请求独立。需要动态决策 / 多工具 / 多轮对话用 Agent，固定『提示词 → 响应』用 Chain。",
+    "tags": ["n8n", "ai-agent", "llm-chain", "选型"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Agent 决策型循环执行支持 Memory/Tools；Chain 预定义序列不支持",
+        "isCorrect": true,
+        "description": "Agent 必接 Chat Model；Chain 接 Memory/Tools 也不生效"
+      },
+      {
+        "text": "Agent 只能单轮调用，Chain 才支持循环",
+        "isCorrect": false,
+        "description": "反了——Agent 才是循环执行型"
+      },
+      {
+        "text": "两者都支持 Memory，区别仅在工具数量",
+        "isCorrect": false,
+        "description": "Chain 架构性不支持 Memory 与 Tools"
+      },
+      {
+        "text": "两者只是命名不同，能力完全等价",
+        "isCorrect": false,
+        "description": "二者抽象层次完全不同"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：Basic LLM Chain 节点接上 Memory 子节点会发生什么？",
+    "explanation": "Chain 节点在 n8n 设计上**架构性不支持持久 Memory、不支持 Tools**——接了 Memory 子节点也不生效，反而误导维护者。需要对话记忆 / 工具调用能力必须切到 AI Agent 节点。这是 n8n 官方『how-memory-works.md』明确的限制。",
+    "tags": ["n8n", "chain", "memory", "限制"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "不生效，Memory 仅 Agent 节点能用，Chain 是架构性不支持",
+        "isCorrect": true,
+        "description": "需要对话记忆必须换 AI Agent"
+      },
+      {
+        "text": "完全正常工作，Chain 与 Agent 共享 Memory 实现",
+        "isCorrect": false,
+        "description": "Chain 不支持 Memory 是架构限制"
+      },
+      {
+        "text": "需要手动配置才能启用",
+        "isCorrect": false,
+        "description": "配置无法突破架构限制"
+      },
+      {
+        "text": "只在 production 执行模式下生效",
+        "isCorrect": false,
+        "description": "执行模式不影响节点架构限制"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：生产场景的对话型 AI Agent 应选哪种 Memory 子节点？",
+    "explanation": "Window Buffer Memory 仅适合开发 / 原型（会话级滚动窗口、跨实例丢数据）；生产需要跨会话持久化与并发安全，应选 **Postgres Chat Memory**（与元数据库复用 Postgres，最常用）或 **Redis Chat Memory**（高吞吐低延迟）、**Zep**（长期记忆 + 用户画像）。Motorhead 用于 Metal 平台、Xata 兼向量化。",
+    "tags": ["n8n", "memory", "选型", "生产"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Postgres Chat Memory（跨会话持久化、与元数据库复用）",
+        "isCorrect": true,
+        "description": "生产推荐，跨实例不丢数据"
+      },
+      {
+        "text": "Window Buffer Memory（默认）",
+        "isCorrect": false,
+        "description": "仅适合开发 / 原型，跨实例丢数据"
+      },
+      {
+        "text": "In-Memory Vector Store",
+        "isCorrect": false,
+        "description": "这是 Vector Store 不是 Memory；重启丢数据"
+      },
+      {
+        "text": "Basic LLM Chain 内置 Memory",
+        "isCorrect": false,
+        "description": "Chain 不支持 Memory"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：把已稳定的子流程封装给 Agent 调用，应该用哪种 Tool 子节点？",
+    "explanation": "**Call n8n Workflow Tool** 是核心复用模式——把任意已稳定的 n8n 工作流当工具暴露给 Agent 调用，避免把所有逻辑塞进一个 Agent，提升复用性与可测试性。HTTP Request Tool 是调外部 API 的兜底，Custom Code Tool 是自定义代码，Wikipedia / SerpAPI 是查百科 / 搜索的特定工具。",
+    "tags": ["n8n", "tools", "复用", "call-workflow"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Call n8n Workflow Tool（把任意 n8n 工作流当工具暴露）",
+        "isCorrect": true,
+        "description": "最大复用模式，子流程封装为工具"
+      },
+      {
+        "text": "HTTP Request Tool",
+        "isCorrect": false,
+        "description": "万能兜底调外部 API，不是封装子流程"
+      },
+      {
+        "text": "Custom Code Tool",
+        "isCorrect": false,
+        "description": "自定义 JS / Python 代码，不是复用工作流"
+      },
+      {
+        "text": "Wikipedia Tool",
+        "isCorrect": false,
+        "description": "特定用途工具，查维基百科"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：$fromAI() 函数的核心作用是什么？",
+    "explanation": "$fromAI(description, type) 是 Tool Calling 的关键函数——让 Agent 在运行时根据用户输入**动态生成工具参数**，而非写死静态入参。静态参数无法处理多变的自然语言输入；$fromAI 让 LLM 基于用户输入 + 工具 description 决定参数值，是 Agent 真正『理解』用户输入的关键。",
+    "tags": ["n8n", "fromai", "tool-calling", "动态参数"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "让 Agent 在运行时根据用户输入动态生成工具参数",
+        "isCorrect": true,
+        "description": "静态参数无法处理多变自然语言输入"
+      },
+      {
+        "text": "把 AI 节点的输出转为 JSON",
+        "isCorrect": false,
+        "description": "那是 Structured Output 的功能"
+      },
+      {
+        "text": "从 LLM 提取 embedding 向量",
+        "isCorrect": false,
+        "description": "embedding 由 Embeddings 子节点生成"
+      },
+      {
+        "text": "在 Chat Trigger 内注入系统消息",
+        "isCorrect": false,
+        "description": "系统消息通过 System Message 配置"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：标准 RAG 管道的五步顺序是什么？",
+    "explanation": "标准 RAG 五步是：**Document Loaders（拉数据）→ Text Splitters（分块）→ Embeddings（向量化）→ Vector Store（存储）→ Retriever（检索相似上下文喂回 LLM）**。顺序错了（如先 embedding 再分块）会导致向量与文档结构错位；漏掉 Splitters 直接 embed 整篇文档会撞上下文窗口、精度也差。",
+    "tags": ["n8n", "rag", "vector-store"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Load → Split → Embed → Store → Retrieve",
+        "isCorrect": true,
+        "description": "拉数据 → 分块 → 向量化 → 存储 → 检索"
+      },
+      {
+        "text": "Store → Embed → Split → Retrieve → Load",
+        "isCorrect": false,
+        "description": "顺序完全错乱"
+      },
+      {
+        "text": "Embed → Load → Split → Retrieve → Store",
+        "isCorrect": false,
+        "description": "embedding 必须在 split 之后"
+      },
+      {
+        "text": "Retrieve → Store → Embed → Split → Load",
+        "isCorrect": false,
+        "description": "逆向了，无法工作"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：Embeddings 子节点的能力边界是什么？",
+    "explanation": "n8n 内置 Embeddings 子节点**仅支持文本**向量化，**不支持图像 / 音频 embedding**。多模态 RAG 需要外接（HTTP Request 调外部 embedding 服务，或用 Custom Code Tool 调外部 SDK），或直接在 Vector Store 节点对接支持多模态的外部服务。这是 n8n AI 节点族的明确能力边界之一。",
+    "tags": ["n8n", "embeddings", "能力边界", "多模态"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅支持文本，不支持图像 / 音频 embedding",
+        "isCorrect": true,
+        "description": "多模态 RAG 需外接"
+      },
+      {
+        "text": "支持所有模态（文本、图像、音频、视频）",
+        "isCorrect": false,
+        "description": "官方明确仅文本"
+      },
+      {
+        "text": "支持文本和图像，不支持音频",
+        "isCorrect": false,
+        "description": "图像也不支持"
+      },
+      {
+        "text": "仅支持英文文本，不支持中文",
+        "isCorrect": false,
+        "description": "支持多语言文本，由所选 embedding 模型决定"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：MCP Client 与 MCP Trigger 节点的作用是什么？",
+    "explanation": "MCP（Model Context Protocol）是 2024-2025 涌现的『LLM 工具 / 资源标准化协议』。**MCP Client** 让 n8n 在运行时调用外部 MCP 服务器的工具 / 资源（把外部工具接入 Agent）；**MCP Trigger** 反过来让 n8n 工作流本身作为 MCP 服务器，接收外部 MCP 客户端（如 IDE / 其他 Agent）的请求。",
+    "tags": ["n8n", "mcp", "集成"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Client 调用外部 MCP 工具；Trigger 让 n8n 作为 MCP 服务器被调用",
+        "isCorrect": true,
+        "description": "双向集成，与外部 Agent / IDE 共享工具与资源"
+      },
+      {
+        "text": "Client 是数据库客户端，Trigger 是定时器",
+        "isCorrect": false,
+        "description": "完全错认 MCP 含义"
+      },
+      {
+        "text": "两者只是同一个节点的两种模式",
+        "isCorrect": false,
+        "description": "虽都涉及 MCP 但角色完全不同"
+      },
+      {
+        "text": "MCP 是 n8n 私有协议，仅 n8n 内部用",
+        "isCorrect": false,
+        "description": "MCP 是 Anthropic 主导的开放协议"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：AI 工作流『改 prompt 必须跑 Evaluation』的根本原因是什么？",
+    "explanation": "AI 输出有随机性，凭肉眼『看起来对』会掩盖回归——同一段 prompt 在不同输入下可能有时好、有时崩。Evaluation 节点 + Evaluation Trigger 跑测试集（why test → run quick evaluations → use metrics），用 accuracy / latency / token cost / faithfulness 等指标量化质量，才能可靠判断改动是改进还是退化。",
+    "tags": ["n8n", "evaluation", "测试", "工程化"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "AI 输出随机，凭肉眼会掩盖回归；必须用指标量化质量",
+        "isCorrect": true,
+        "description": "改 prompt 不跑 Evaluation 是 AI 工程化的反模式"
+      },
+      {
+        "text": "Evaluation 只是性能基准，与 prompt 无关",
+        "isCorrect": false,
+        "description": "Evaluation 评估的就是 AI 输出质量"
+      },
+      {
+        "text": "Evaluation 必须每次都跑全量历史数据",
+        "isCorrect": false,
+        "description": "quick evaluations 即小批量快速评估，全量可选"
+      },
+      {
+        "text": "Evaluation 节点已废弃，官方不再推荐",
+        "isCorrect": false,
+        "description": "Evaluation 是 2024-2026 主推能力"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：Cloud 与 Self-hosted 的核心区别是什么？",
+    "explanation": "Cloud 托管、自动升级、零运维，但环境变量 / 数据库结构 / 自定义安全 / scaling 受限；Self-hosted（Docker / npm / Compose / K8s）完全控制版本 / 升级 / 环境变量 / 安全 / 扩缩容 / 数据库结构。深度定制（数据库结构、自定义安全配置、特殊 scaling）必须走 Self-hosted，Cloud 仅适合不想运维 / 小规模。",
+    "tags": ["n8n", "部署", "cloud", "self-hosted"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Cloud 托管低运维但定制受限；Self-hosted 完全控制但需自己运维",
+        "isCorrect": true,
+        "description": "运维 vs 控制度是核心权衡"
+      },
+      {
+        "text": "Cloud 是闭源 SaaS，Self-hosted 才是开源",
+        "isCorrect": false,
+        "description": "两者都基于同一开源代码；Cloud 是托管服务"
+      },
+      {
+        "text": "Cloud 不支持 AI 节点，必须自托管才能用",
+        "isCorrect": false,
+        "description": "Cloud 全部 AI 节点都可用"
+      },
+      {
+        "text": "Self-hosted 仅企业版可用，社区版无",
+        "isCorrect": false,
+        "description": "社区版可自托管，是 n8n 主线形态"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：生产自托管官方推荐哪种方式？为什么 npm 不推荐？",
+    "explanation": "官方与社区在推 **Docker 优先**，社区讨论 sunset npm-native。npm 长期支撑生产自托管要求手动管依赖、易漂移、有 sunset 风险；生产请用 **Docker + 独立 Postgres**（隔离依赖、易升级、易和数据库容器组合、可对接 AI Starter Kit 一键起向量库）。",
+    "tags": ["n8n", "部署", "docker", "npm"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Docker + 独立 Postgres；npm 可能 sunset 且依赖易漂移",
+        "isCorrect": true,
+        "description": "社区共识：生产 Docker 优先"
+      },
+      {
+        "text": "npm 全局安装最适合生产",
+        "isCorrect": false,
+        "description": "npm 仅适合原型"
+      },
+      {
+        "text": "直接用 Cloud 即可，无需自托管",
+        "isCorrect": false,
+        "description": "深度定制 / 高合规仍需 Self-hosted"
+      },
+      {
+        "text": "K8s 是唯一生产方案，Docker 不行",
+        "isCorrect": false,
+        "description": "K8s 适合大规模，Docker Compose 也是生产方案"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：N8N_ENCRYPTION_KEY 环境变量的作用是什么？",
+    "explanation": "N8N_ENCRYPTION_KEY 是 n8n **凭据（Credential）AES-256 加密的密钥**——所有节点对接外部服务的认证信息（API Key、OAuth Token、DB 密码等）都用此密钥加密存储。生产**必须自定**，否则默认值或容器重启后凭据解密失败 / 被破解，是 Self-hosted 部署的关键安全配置。",
+    "tags": ["n8n", "环境变量", "安全", "encryption-key"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "凭据 AES-256 加密密钥，生产必须自定以防破解",
+        "isCorrect": true,
+        "description": "默认值不安全；容器重启解密失败"
+      },
+      {
+        "text": "Webhook URL 的根路径",
+        "isCorrect": false,
+        "description": "那是 WEBHOOK_URL 的作用"
+      },
+      {
+        "text": "AI Agent 的 LLM API Key",
+        "isCorrect": false,
+        "description": "API Key 是凭据，由 ENCRYPTION_KEY 加密存储"
+      },
+      {
+        "text": "数据库连接字符串",
+        "isCorrect": false,
+        "description": "那是 DB_POSTGRESDB_* 系列变量"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：与 Dify 的核心边界是什么？",
+    "explanation": "Dify 强在『LLM 应用 / RAG 应用快速搭』，**自动化弱**；n8n 强在『深度自动化引擎 + 1000+ 非 AI 集成』，**AI 是后加能力**。要把 LLM 嵌进既有 SaaS / DB / 通知链路（业务流程自动化）用 n8n；要做纯 AI 问答应用 / RAG 知识库应用用 Dify。两者定位错位而非替代关系。",
+    "tags": ["n8n", "dify", "对比", "边界"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Dify 强在 LLM 应用 / RAG；n8n 强在深度自动化 + 1000+ 非 AI 集成",
+        "isCorrect": true,
+        "description": "定位错位，不是替代关系"
+      },
+      {
+        "text": "n8n 是 Dify 的子集，Dify 更全面",
+        "isCorrect": false,
+        "description": "两者侧重点完全不同"
+      },
+      {
+        "text": "Dify 是 n8n 的子集，n8n 更全面",
+        "isCorrect": false,
+        "description": "自动化与 LLM 应用编排是两件事"
+      },
+      {
+        "text": "两者完全等价，可互相替换",
+        "isCorrect": false,
+        "description": "实际选型看具体场景"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：与 Zapier / Make 相比的核心优势是什么？",
+    "explanation": "Zapier 闭源 SaaS、集成最多、最易上手、**规模化最贵**；Make 视觉逻辑强、价格中档；**n8n 开源可自托管、便宜、灵活，AI 节点更深，Code 节点对开发者更友好、可深度扩展**。生产 / 大规模 / 高合规 / 内网部署场景 n8n 性价比与控制力远胜 Zapier / Make。",
+    "tags": ["n8n", "zapier", "make", "对比"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "开源可自托管、便宜、灵活、AI 节点更深",
+        "isCorrect": true,
+        "description": "Code 节点 + 自托管对开发者最友好"
+      },
+      {
+        "text": "集成数量比 Zapier 多",
+        "isCorrect": false,
+        "description": "Zapier 集成数量更多，但 n8n 可用 HTTP Request / Code 兜底"
+      },
+      {
+        "text": "完全免费，无任何商业版本",
+        "isCorrect": false,
+        "description": "n8n 有 Cloud / Enterprise 商业版本"
+      },
+      {
+        "text": "视觉化比 Make 更精美",
+        "isCorrect": false,
+        "description": "Make 视觉逻辑更强是公认优势"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：Guardrails 节点解决的核心问题是什么？",
+    "explanation": "Guardrails 节点为 AI 输入 / 输出加**结构化校验与过滤**，防 prompt 注入（用户输入恶意指令）与不可控输出（LLM 生成违规 / 越权内容）。尤其 Tool 不加 Guardrails 直接暴露给用户时，HTTP Request Tool 可被诱导拉内网资源（SSRF）、Custom Code Tool 可执行危险代码——必须用 Guardrails + 限定工具入参范围。",
+    "tags": ["n8n", "guardrails", "安全", "prompt-injection"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "防 prompt 注入与不可控输出，限定工具入参范围",
+        "isCorrect": true,
+        "description": "Tool 直接暴露尤其需要 Guardrails"
+      },
+      {
+        "text": "提升 LLM 推理精度，类似 Rerank",
+        "isCorrect": false,
+        "description": "Rerank 是检索重排；Guardrails 是治理"
+      },
+      {
+        "text": "加密凭据，防泄露",
+        "isCorrect": false,
+        "description": "加密凭据是 N8N_ENCRYPTION_KEY 的事"
+      },
+      {
+        "text": "替代 Evaluation 节点做测试",
+        "isCorrect": false,
+        "description": "Guardrails 是运行时治理，Evaluation 是测试评估"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：Human-in-the-loop 与 Human Fallback 的兜底场景是什么？",
+    "explanation": "Agent 不可避免会出错，关键步骤必须有兜底：**human-in-the-loop-for-tools** 在工具执行前暂停等人审批（如发邮件、转账、删数据等高价值操作）；**set-a-human-fallback** 在低置信度时（Agent 不确定 / 工具失败 / 用户情绪）转人工接管，避免错误放大。生产 AI 工作流的标准兜底模式。",
+    "tags": ["n8n", "human-in-the-loop", "fallback", "兜底"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "HITL 在工具执行前暂停等人审；Human Fallback 低置信度转人工",
+        "isCorrect": true,
+        "description": "高价值操作必接 HITL，关键对话必接 Fallback"
+      },
+      {
+        "text": "两者都是错误处理，与 AI 无关",
+        "isCorrect": false,
+        "description": "专为 AI 工作流设计"
+      },
+      {
+        "text": "Human Fallback 用于性能降级，HITL 用于审计日志",
+        "isCorrect": false,
+        "description": "两者都是兜底机制，非日志 / 降级"
+      },
+      {
+        "text": "HITL 已被 Guardrails 替代",
+        "isCorrect": false,
+        "description": "Guardrails 是过滤；HITL 是审批，互补不替代"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：AI Workflow Builder 与 AI Assistant 的作用是什么？",
+    "explanation": "**AI Workflow Builder** 通过自然语言生成 / 修改 n8n 工作流（如『帮我建一个每周一抓 GitHub PR 发到 Slack 的工作流』）；**AI Assistant Preview** 在 Code 节点提供编码帮助（生成 JS / Python 代码）。两者都是 2024-2026 的产品功能，降低 n8n 上手与开发门槛。",
+    "tags": ["n8n", "ai-workflow-builder", "ai-assistant"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Builder 自然语言生成工作流；Assistant 为代码节点提供编码帮助",
+        "isCorrect": true,
+        "description": "降低上手与开发门槛"
+      },
+      {
+        "text": "两者都是 LLM 模型供应商",
+        "isCorrect": false,
+        "description": "它们是产品功能，不是模型"
+      },
+      {
+        "text": "Builder 替代了 AI Agent 节点",
+        "isCorrect": false,
+        "description": "Builder 生成工作流，Agent 是工作流中的节点"
+      },
+      {
+        "text": "Assistant 只能调试错误，不能生成代码",
+        "isCorrect": false,
+        "description": "Assistant 可生成 / 修改代码"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：把全部私有数据塞 prompt 上下文的问题是什么？",
+    "explanation": "把全部私有数据塞 prompt 上下文有三个问题：①上下文窗口有限，塞不下；②token 成本爆炸（每条请求都重复付费）；③长上下文还会触发模型**注意力衰减**（lost in the middle），关键信息反而被忽略。应走 RAG——只把相关片段检索后喂给 LLM，既准又省。",
+    "tags": ["n8n", "rag", "反模式", "上下文"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "窗口有限、token 成本爆炸、长上下文触发注意力衰减",
+        "isCorrect": true,
+        "description": "应走 RAG 只取相关片段"
+      },
+      {
+        "text": "完全没有问题，是推荐做法",
+        "isCorrect": false,
+        "description": "是明确反模式"
+      },
+      {
+        "text": "只是 token 贵，准确度更好",
+        "isCorrect": false,
+        "description": "长上下文会注意力衰减，准确度反而下降"
+      },
+      {
+        "text": "只在多模态场景有问题，纯文本无影响",
+        "isCorrect": false,
+        "description": "纯文本同样有上下文与注意力问题"
+      }
+    ]
+  },
+  {
+    "stem": "n8n：fair-code / Sustainable Use License 的许可边界是什么？",
+    "explanation": "n8n 采用 fair-code 的 **Sustainable Use License**——**自由内部使用**（个人、企业内部业务流程自动化均可），但**与 n8n 竞争的商业产品 / 托管服务有限制**（如做一个竞品 SaaS 用 n8n 做底层会受限）。商用前必须看 LICENSE 文件，与 Apache 2.0 / MIT 等宽松许可不同。",
+    "tags": ["n8n", "license", "fair-code", "边界"],
+    "categories": [
+      ["技术方向", "n8n"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "自由内部使用；与 n8n 竞争的商业产品 / 托管有限制",
+        "isCorrect": true,
+        "description": "商用前必须看 LICENSE"
+      },
+      {
+        "text": "完全等同 Apache 2.0，无任何限制",
+        "isCorrect": false,
+        "description": "Sustainable Use License 比 Apache 2.0 严格"
+      },
+      {
+        "text": "仅个人非商用免费，企业必须买 License",
+        "isCorrect": false,
+        "description": "企业内部使用也自由"
+      },
+      {
+        "text": "完全闭源，所有使用都需要付费",
+        "isCorrect": false,
+        "description": "源码开源，可自托管"
+      }
+    ]
+  }
+]

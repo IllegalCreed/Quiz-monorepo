@@ -1,0 +1,751 @@
+[
+  {
+    "stem": "基础提示设计：OpenAI 官方推荐的总入口策略（提示范式升级链）是什么？",
+    "explanation": "OpenAI 把「先 Zero-shot 直接下指令 → 效果不足加 Few-shot（3–5 个示例）→ 仍不行才 fine-tuning」定为提示工程的总入口策略。原因是示例是迁移任务格式最稳的杠杆，但要先确认任务本身是否能用预训练知识直接解决，避免无谓消耗上下文与训练成本。",
+    "tags": ["basic-prompt-design", "提示范式", "zero-shot", "few-shot"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Zero-shot → Few-shot（3–5 个）→ fine-tune",
+        "isCorrect": true,
+        "description": "OpenAI 官方总入口策略：先零样本、再加示例、最后才微调"
+      },
+      {
+        "text": "Few-shot → Zero-shot → fine-tune",
+        "isCorrect": false,
+        "description": "顺序反了，应先尝试 Zero-shot 再加示例"
+      },
+      {
+        "text": "fine-tune → Few-shot → Zero-shot",
+        "isCorrect": false,
+        "description": "顺序完全颠倒，fine-tune 是最后手段"
+      },
+      {
+        "text": "直接 fine-tune，跳过 Zero/Few-shot",
+        "isCorrect": false,
+        "description": "fine-tune 成本高，应作为最后手段"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic 推荐的 Few-shot 示例数量是多少？",
+    "explanation": "Anthropic 推荐 Few-shot 用 3–5 个示例——少了不够、多了过拟合。要求示例多样、覆盖边界（最长 / 最短 / 反例）、格式一致、不重复，避免堆几十个相似示例导致模型学到表面模式（如统一的开头词）。OpenAI 类似建议 few but diverse。",
+    "tags": ["basic-prompt-design", "few-shot", "anthropic"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "3–5 个多样、覆盖边界的示例",
+        "isCorrect": true,
+        "description": "Anthropic 官方推荐范围，强调多样性"
+      },
+      {
+        "text": "1 个完美示例即可",
+        "isCorrect": false,
+        "description": "1 个是 One-shot，覆盖不足"
+      },
+      {
+        "text": "20–30 个相似示例",
+        "isCorrect": false,
+        "description": "过载 Few-shot 会过拟合到表面模式"
+      },
+      {
+        "text": "越多越好，无上限",
+        "isCorrect": false,
+        "description": "堆示例反而降低效果"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：OpenAI 当前推荐承载「高阶指令」的消息角色是哪个？",
+    "explanation": "OpenAI 当前推荐用 role: developer 承载高阶指令（角色 / tone / 全局规则 / Few-shot 示例），取代 legacy 的 system 角色（旧 API 仍兼容）。Responses API 还可用 instructions 参数。消息角色权威层级递减：developer > user > assistant——把规则抬到 developer 层能提高模型遵守度。",
+    "tags": ["basic-prompt-design", "消息角色", "developer", "openai"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "developer（取代 legacy system）",
+        "isCorrect": true,
+        "description": "OpenAI 当前推荐，权威层级最高"
+      },
+      {
+        "text": "system（当前主推）",
+        "isCorrect": false,
+        "description": "system 已是 legacy，仅向后兼容"
+      },
+      {
+        "text": "user",
+        "isCorrect": false,
+        "description": "user 是用户输入层，权威低于 developer"
+      },
+      {
+        "text": "assistant",
+        "isCorrect": false,
+        "description": "assistant 是模型回复层，权威最低"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：消息角色的权威层级递减顺序是？",
+    "explanation": "两家厂商消息角色都遵循权威层级递减：developer（Anthropic 称 system）> user > assistant。把全局规则、角色设定、Few-shot 示例抬到最高层（developer / system）能显著提高模型遵守度；用户输入放 user；模型回复放 assistant。",
+    "tags": ["basic-prompt-design", "消息角色", "权威层级"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "developer (system) > user > assistant",
+        "isCorrect": true,
+        "description": "权威层级递减，规则应放最高层"
+      },
+      {
+        "text": "user > developer > assistant",
+        "isCorrect": false,
+        "description": "user 层级低于 developer"
+      },
+      {
+        "text": "assistant > user > developer",
+        "isCorrect": false,
+        "description": "顺序完全颠倒"
+      },
+      {
+        "text": "三者权威相同",
+        "isCorrect": false,
+        "description": "权威层级存在显著差异"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Chain-of-Thought 的 Zero-shot 触发短语是什么？",
+    "explanation": "Zero-shot CoT 的经典触发短语是「Let's think step by step」——在 prompt 末尾追加这句话即可让模型输出分步推理过程。这是最早被发现的 CoT 触发方式，所有模型通用。另有 Few-shot CoT（示例带推理）和 Extended Thinking（API 参数化 thinking）两种形态。",
+    "tags": ["basic-prompt-design", "cot", "zero-shot"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Let's think step by step",
+        "isCorrect": true,
+        "description": "经典 Zero-shot CoT 触发短语"
+      },
+      {
+        "text": "Just give me the answer",
+        "isCorrect": false,
+        "description": "这是反 CoT 的指令，会让模型跳过推理"
+      },
+      {
+        "text": "Be careful",
+        "isCorrect": false,
+        "description": "提示词不触发结构化推理"
+      },
+      {
+        "text": "Output JSON only",
+        "isCorrect": false,
+        "description": "这是 JSON Mode 风格指令，与 CoT 无关"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Chain-of-Thought 的三种实现形态是？",
+    "explanation": "CoT 三种形态：① Zero-shot CoT 触发短语（Let's think step by step）；② Few-shot CoT 示例中带推理过程；③ 模型内建 reasoning + Anthropic Extended Thinking（或 OpenAI 推理模型 o-series）。前两种是「在 prompt 里手动触发」，第三种是「API 参数化触发」。",
+    "tags": ["basic-prompt-design", "cot", "extended-thinking"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Zero-shot CoT 短语 / Few-shot CoT 示例带推理 / Extended Thinking",
+        "isCorrect": true,
+        "description": "前两种手动触发，第三种 API 参数化"
+      },
+      {
+        "text": "Zero-shot CoT / Prompt Caching / Function Calling",
+        "isCorrect": false,
+        "description": "Caching 和 Function Calling 不是 CoT 形态"
+      },
+      {
+        "text": "System Prompt / User Prompt / Assistant Prompt",
+        "isCorrect": false,
+        "description": "那是消息角色，不是 CoT"
+      },
+      {
+        "text": "JSON Mode / Structured Outputs / Function Calling",
+        "isCorrect": false,
+        "description": "那是结构化输出三层，不是 CoT"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic 推荐用什么标签包裹 Few-shot 示例？",
+    "explanation": "Anthropic 推荐 Few-shot 示例用 <example> / <examples> 标签包裹，让模型明确「这是例子，不是新指令」。配合 <instructions>、<context>、<documents>、<document index=\"n\">、<quotes> 等标签划定逻辑边界，可显著降低「指令 vs 上下文」的混淆。",
+    "tags": ["basic-prompt-design", "xml", "anthropic", "few-shot"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "<example> / <examples>",
+        "isCorrect": true,
+        "description": "Anthropic 推荐的示例包裹标签"
+      },
+      {
+        "text": "<code> / <pre>",
+        "isCorrect": false,
+        "description": "那是 HTML 代码块标签"
+      },
+      {
+        "text": "<prompt> / <response>",
+        "isCorrect": false,
+        "description": "Anthropic 未推荐这种标签"
+      },
+      {
+        "text": "<input> / <output>",
+        "isCorrect": false,
+        "description": "input/output 是 HTML 表单标签，Anthropic 推荐 <example>"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic 实测推荐的四段式结构顺序是？",
+    "explanation": "四段式结构：Identity（角色 / 目标）→ Instructions（规则 / 禁令）→ Examples（示例）→ Context（数据）。OpenAI 与 Anthropic 都推荐这种布局。Anthropic 配合 XML 标签（<identity> / <instructions> / <examples> / <context>）划定边界，可显著降低「指令 vs 上下文」混淆。",
+    "tags": ["basic-prompt-design", "结构", "xml"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Identity → Instructions → Examples → Context",
+        "isCorrect": true,
+        "description": "两家厂商通用的四段式布局"
+      },
+      {
+        "text": "Context → Examples → Instructions → Identity",
+        "isCorrect": false,
+        "description": "顺序颠倒，数据置尾违反长文档布局原则"
+      },
+      {
+        "text": "Examples → Identity → Context → Instructions",
+        "isCorrect": false,
+        "description": "顺序错乱"
+      },
+      {
+        "text": "Instructions → Context → Identity → Examples",
+        "isCorrect": false,
+        "description": "顺序错乱"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：长文档（20K+ token）任务中，Anthropic 实测的提问应放在哪里？",
+    "explanation": "Anthropic 实测：长文档任务应「数据置顶 + 提问置尾」——把数据放提示顶部、问题和示例放底部，可提升质量最高 30%。配合让模型先 <quotes> 引用相关片段再作答，能聚焦关键内容减少幻觉。把问题埋在长文档中间是最常见的反模式。",
+    "tags": ["basic-prompt-design", "长上下文", "anthropic"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "末尾（数据置顶 + 提问置尾，可提升 ~30%）",
+        "isCorrect": true,
+        "description": "Anthropic 官方实测结论"
+      },
+      {
+        "text": "开头（提问置顶 + 数据置尾）",
+        "isCorrect": false,
+        "description": "顺序反了，会降低质量"
+      },
+      {
+        "text": "文档正中间",
+        "isCorrect": false,
+        "description": "中间是最差位置，模型容易忽略"
+      },
+      {
+        "text": "随意位置，不影响效果",
+        "isCorrect": false,
+        "description": "位置对效果影响显著（最高 30%）"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Structured Outputs 必须设置的关键参数是？",
+    "explanation": "Structured Outputs 的关键字段是 strict: true——必填项。开启后 schema 校验下沉到解码层，可靠性接近 100%，省掉重试与 parse 兜底。同时强制 schema 子集限制：additionalProperties:false、所有 key 入 required、≤100 属性、首 8192 输出 token 内生效。",
+    "tags": ["basic-prompt-design", "structured-outputs", "openai"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "strict: true",
+        "isCorrect": true,
+        "description": "必填项，开启 schema 严格校验"
+      },
+      {
+        "text": "strict: false",
+        "isCorrect": false,
+        "description": "false 不开启严格校验，等同普通 JSON Mode"
+      },
+      {
+        "text": "cache_control: ephemeral",
+        "isCorrect": false,
+        "description": "那是 Prompt Caching 参数"
+      },
+      {
+        "text": "tool_choice: auto",
+        "isCorrect": false,
+        "description": "那是 Function Calling 参数"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Structured Outputs 的属性数上限是多少？",
+    "explanation": "Structured Outputs 硬限制：≤100 个属性。其他限制包括 additionalProperties:false（所有对象强制）、所有 key 必须入 required 数组、首 8192 输出 token 内生效、支持 $ref 递归（如树形结构）、JSON 关键字需转义加下划线（如 class → class_）。",
+    "tags": ["basic-prompt-design", "structured-outputs"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "100 个",
+        "isCorrect": true,
+        "description": "官方硬限制"
+      },
+      {
+        "text": "10 个",
+        "isCorrect": false,
+        "description": "数量太少"
+      },
+      {
+        "text": "1000 个",
+        "isCorrect": false,
+        "description": "数量太多"
+      },
+      {
+        "text": "无上限",
+        "isCorrect": false,
+        "description": "存在 100 属性硬限制"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：JSON Mode 与 Structured Outputs 的关键区别是？",
+    "explanation": "JSON Mode（response_format:{type:json_object}）只保证响应是合法 JSON，不保证 schema；Structured Outputs（response_format:{type:json_schema, strict:true}）保证响应严格符合 json_schema 定义的 schema（可靠性 ~100%）。新项目应直接用 Structured Outputs，JSON Mode 仅作向后兼容保留。",
+    "tags": ["basic-prompt-design", "json-mode", "structured-outputs"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前者仅保证合法 JSON，后者保证 schema 严格校验",
+        "isCorrect": true,
+        "description": "核心区别：schema 校验"
+      },
+      {
+        "text": "前者支持 schema 校验，后者仅保证合法 JSON",
+        "isCorrect": false,
+        "description": "顺序反了"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "能力层级差异显著"
+      },
+      {
+        "text": "前者比后者更强",
+        "isCorrect": false,
+        "description": "Structured Outputs 是 JSON Mode 的升级版"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Function Calling 的 tool_choice 参数有哪四种值？",
+    "explanation": "tool_choice 四种值：① auto（默认，模型自主决定是否调用）；② required（强制必须调用某个工具）；③ none（禁止调用任何工具）；④ 指定 function（强制调用某个具体函数，写法 {type:function, function:{name:xxx}}）。配合 parallel_tool_calls 控制单轮是否并行多函数调用。",
+    "tags": ["basic-prompt-design", "function-calling", "tool-choice"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "auto / required / none / 指定 function",
+        "isCorrect": true,
+        "description": "官方四种取值"
+      },
+      {
+        "text": "true / false / null / undefined",
+        "isCorrect": false,
+        "description": "不是布尔开关，是策略枚举"
+      },
+      {
+        "text": "always / never / sometimes / maybe",
+        "isCorrect": false,
+        "description": "这是非官方说法"
+      },
+      {
+        "text": "low / medium / high / extreme",
+        "isCorrect": false,
+        "description": "那是 Anthropic output_config.effort 的值"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Function Calling 中 strict: true 内部走的是什么机制？",
+    "explanation": "Function Calling 中工具参数的 strict: true 内部走 Structured Outputs——把参数 schema 校验下沉到解码层，可靠性接近 100%。所以工具的 parameters 字段同样受 additionalProperties:false、所有 key 入 required、≤100 属性等硬限制。",
+    "tags": ["basic-prompt-design", "function-calling", "structured-outputs"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Structured Outputs（schema 校验下沉）",
+        "isCorrect": true,
+        "description": "strict:true 内部走 Structured Outputs"
+      },
+      {
+        "text": "JSON Mode（仅合法 JSON）",
+        "isCorrect": false,
+        "description": "JSON Mode 不保证 schema"
+      },
+      {
+        "text": "Prompt Caching",
+        "isCorrect": false,
+        "description": "Caching 是另一回事"
+      },
+      {
+        "text": "Extended Thinking",
+        "isCorrect": false,
+        "description": "Thinking 与工具参数校验无关"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Function Calling 中工具 description 应写什么内容？",
+    "explanation": "Function Calling 中工具 description 应写「何时用」——模型靠这个判断是否选择该工具。配合 parameters 用 enum 让「非法状态不可表达」、开 strict:true。初始暴露工具不超过 ~20 个，多了用 tool_search（gpt-5.4+）延迟检索——OpenAI 官方给出此经验阈值。",
+    "tags": ["basic-prompt-design", "function-calling", "description"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "「何时用」（触发条件）",
+        "isCorrect": true,
+        "description": "模型靠 description 判断是否调用"
+      },
+      {
+        "text": "「是什么」（功能定义）",
+        "isCorrect": false,
+        "description": "只写是什么不足以指导模型选择"
+      },
+      {
+        "text": "工具版本号",
+        "isCorrect": false,
+        "description": "版本信息应在 name 或单独字段"
+      },
+      {
+        "text": "作者署名",
+        "isCorrect": false,
+        "description": "与工具选择无关"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic Extended Thinking 在 4.7+ 模型上设 budget_tokens 会怎样？",
+    "explanation": "Anthropic Extended Thinking 旧版参数 thinking:{type:enabled, budget_tokens:N} 在 4.6 deprecated、4.7+ 直接返回 400 错误。新方案是 thinking:{type:adaptive} + output_config:{effort:low|medium|high}。budget_tokens 最小 1024、必须小于 max_tokens——但 4.7+ 已不可用，必须迁移。",
+    "tags": [
+      "basic-prompt-design",
+      "anthropic",
+      "extended-thinking",
+      "budget-tokens"
+    ],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "直接返回 400 错误",
+        "isCorrect": true,
+        "description": "4.7+ 完全不支持，必须迁移到 adaptive"
+      },
+      {
+        "text": "正常工作，无影响",
+        "isCorrect": false,
+        "description": "4.6 deprecated，4.7+ 报错"
+      },
+      {
+        "text": "自动降级为 adaptive",
+        "isCorrect": false,
+        "description": "不会自动迁移，需手动改"
+      },
+      {
+        "text": "只是 warning，仍可用",
+        "isCorrect": false,
+        "description": "4.6 是 warning，4.7+ 是 400"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic 当前推荐的 thinking 参数写法是？",
+    "explanation": "Anthropic 当前推荐：thinking:{type:adaptive} + output_config:{effort:low|medium|high}。effort 三档：low（轻量思考，省 token）/ medium（默认，平衡）/ high（深度推理，质量最高）。这是 4.7+ 模型的正解，取代 deprecated 的 budget_tokens。",
+    "tags": ["basic-prompt-design", "anthropic", "adaptive-thinking"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "thinking:{type:adaptive} + output_config:{effort}",
+        "isCorrect": true,
+        "description": "4.7+ 模型的正解"
+      },
+      {
+        "text": "thinking:{type:enabled, budget_tokens:4096}",
+        "isCorrect": false,
+        "description": "4.6 deprecated、4.7+ 报 400"
+      },
+      {
+        "text": "response_format:{type:json_schema}",
+        "isCorrect": false,
+        "description": "那是 Structured Outputs 参数"
+      },
+      {
+        "text": "tool_choice:required",
+        "isCorrect": false,
+        "description": "那是 Function Calling 参数"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic Prompt Caching 的默认 TTL 是多少？",
+    "explanation": "Anthropic Prompt Caching 默认 TTL 是 5min，可选 1h（beta，写法 ttl:1h）。计费：Cache 读 0.1× 基础价（5min 和 1h 都一样）、Cache 写 5min 收 1.25×、写 1h 收 2×。断点上限 4 个，最低可缓存 token 512–4096（因模型而异）。多轮场景省 80–92% 输入费用。",
+    "tags": ["basic-prompt-design", "prompt-caching", "anthropic", "ttl"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "5min（默认）",
+        "isCorrect": true,
+        "description": "官方默认 TTL"
+      },
+      {
+        "text": "1min",
+        "isCorrect": false,
+        "description": "无此选项"
+      },
+      {
+        "text": "1h（默认）",
+        "isCorrect": false,
+        "description": "1h 是 beta，需显式指定"
+      },
+      {
+        "text": "24h",
+        "isCorrect": false,
+        "description": "无此选项"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic Prompt Caching 的 Cache 读计费折扣是多少？",
+    "explanation": "Prompt Caching 计费（相对基础输入价）：Cache 读 0.1×（5min 和 1h 都一样，最省钱）、Cache 写 5min 收 1.25×、Cache 写 1h 收 2×。多轮对话 / 批处理场景命中缓存可省 80–92% 输入费用。通过 usage 字段 cache_read_input_tokens 追踪命中量。",
+    "tags": ["basic-prompt-design", "prompt-caching", "计费"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "0.1× 基础价（5min 和 1h 一致）",
+        "isCorrect": true,
+        "description": "Cache 读折扣最优惠"
+      },
+      {
+        "text": "1.0×（无折扣）",
+        "isCorrect": false,
+        "description": "读有 0.1× 折扣"
+      },
+      {
+        "text": "1.25×（加价）",
+        "isCorrect": false,
+        "description": "这是 Cache 写 5min 的折扣"
+      },
+      {
+        "text": "2×（双倍）",
+        "isCorrect": false,
+        "description": "这是 Cache 写 1h 的折扣"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：Anthropic Prompt Caching 的断点（cache_control）上限是多少？",
+    "explanation": "Anthropic Prompt Caching 的 cache_control 断点上限是 4 个。开发者需合理切分稳定段（system / tool 定义 / 长文档）与变化段（user 消息），把稳定段置顶并打 cache_control 断点。低于最低可缓存 token（512–4096，因模型而异）不缓存。",
+    "tags": ["basic-prompt-design", "prompt-caching", "断点"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "4 个",
+        "isCorrect": true,
+        "description": "官方断点上限"
+      },
+      {
+        "text": "1 个",
+        "isCorrect": false,
+        "description": "数量太少，无法分层切分"
+      },
+      {
+        "text": "10 个",
+        "isCorrect": false,
+        "description": "超过官方上限"
+      },
+      {
+        "text": "无上限",
+        "isCorrect": false,
+        "description": "存在 4 个的硬限制"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：OpenAI Saved Prompts（v1/prompts）何时完全关停？",
+    "explanation": "OpenAI Saved Prompts（v1/prompts 可复用对象）2026-06-03 起弃用、2026-11-30 完全关停，且无法走 code review。OpenAI 主张用代码内 prompt builder 模块（类型化函数参数 + schema 注入动态值）替代——过 code review、走 CI/CD、配合 feature flag 灰度、可 diff 与回滚。",
+    "tags": ["basic-prompt-design", "openai", "saved-prompts", "弃用"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "2026-11-30",
+        "isCorrect": true,
+        "description": "官方完全关停日期"
+      },
+      {
+        "text": "2026-06-03",
+        "isCorrect": false,
+        "description": "这是「开始弃用」日期，仍在运行"
+      },
+      {
+        "text": "2025-12-31",
+        "isCorrect": false,
+        "description": "日期错误"
+      },
+      {
+        "text": "永远不会关停",
+        "isCorrect": false,
+        "description": "已明确弃用并有关停日期"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：1 token 大约等于多少英文字符？",
+    "explanation": "Token 计量：1 token ≈ 4 字符 / 0.75 英文词；中文每字约 1–2 token（中文 token 化效率低于英文）。上下文窗口从 ~100K（GPT-4o）到 200K（Claude）到 1M（GPT-4.1）不等。token 经济直接影响计费——稳定前缀打 cache、简单任务关 thinking 是常用省钱手段。",
+    "tags": ["basic-prompt-design", "token", "计费"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "约 4 个字符（≈ 0.75 英文词）",
+        "isCorrect": true,
+        "description": "官方近似值"
+      },
+      {
+        "text": "约 1 个字符",
+        "isCorrect": false,
+        "description": "数量太少"
+      },
+      {
+        "text": "约 10 个字符",
+        "isCorrect": false,
+        "description": "数量太多"
+      },
+      {
+        "text": "约 8 个字符（1 个完整单词）",
+        "isCorrect": false,
+        "description": "1 token < 1 个英文词"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：以下哪项是 Anthropic 明确指出的提示反模式？",
+    "explanation": "Anthropic 明确的提示反模式包括：① 否定式约束（Do not / NEVER）——模型对「不要做什么」服从度低，应改为正向描述或解释原因；② 靠自然语言强制 JSON schema——总会有响应违反约束，应改用 Structured Outputs；③ 过载 Few-shot——会过拟合到表面模式；④ 在 Opus 4.5 上用 think 字眼——会触发非预期行为。",
+    "tags": ["basic-prompt-design", "反模式", "anthropic"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "用 Do not / NEVER 否定式约束",
+        "isCorrect": true,
+        "description": "应改为正向描述或解释原因"
+      },
+      {
+        "text": "用 XML 标签划分逻辑边界",
+        "isCorrect": false,
+        "description": "这是官方推荐做法"
+      },
+      {
+        "text": "用 <example> 包裹 Few-shot 示例",
+        "isCorrect": false,
+        "description": "这是官方推荐做法"
+      },
+      {
+        "text": "数据置顶 + 提问置尾",
+        "isCorrect": false,
+        "description": "这是官方推荐的长文档布局"
+      }
+    ]
+  },
+  {
+    "stem": "基础提示设计：以下哪项不属于「基础提示设计」主题的范围？",
+    "explanation": "基础提示设计主题边界 = 与 LLM 交互的「提示侧」基础设计。不覆盖：① 模型训练 / 微调侧（SFT / RLHF / DPO）；② 高级 Agent 编排（ReAct / Reflexion / Multi-Agent，属 Agent 设计章）；③ RAG 检索实现（向量库 / embedding，属 RAG 章）；④ 多模态提示（属多模态章）；⑤ 厂商 SDK 非提示 API（流式 / 批处理 / 计费账户）。",
+    "tags": ["basic-prompt-design", "边界", "rag"],
+    "categories": [
+      ["技术方向", "基础提示设计"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "RAG 检索实现（向量库 / embedding）",
+        "isCorrect": true,
+        "description": "属 RAG 章，本主题只把 RAG 当「相关上下文」策略提及"
+      },
+      {
+        "text": "Zero-shot / Few-shot 提示范式",
+        "isCorrect": false,
+        "description": "核心范围"
+      },
+      {
+        "text": "消息角色与 System Prompt",
+        "isCorrect": false,
+        "description": "核心范围"
+      },
+      {
+        "text": "Structured Outputs / Function Calling",
+        "isCorrect": false,
+        "description": "核心范围"
+      }
+    ]
+  }
+]

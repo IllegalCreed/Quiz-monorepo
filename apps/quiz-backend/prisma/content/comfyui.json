@@ -1,0 +1,622 @@
+[
+  {
+    "stem": "ComfyUI：在 AI 生成工具谱系中的本质定位是什么？",
+    "explanation": "ComfyUI 是 comfyanonymous 维护的开源（GPL-3.0）**节点式 AI 生成工作流编排工具**，核心由「可视化节点图 + 异步队列 + 智能内存管理」三部分构成。一个工作流由若干节点（CheckpointLoader / CLIPTextEncode / KSampler / VAEDecode 等）通过类型强约束的连线拼接成 DAG，支持图像 / 视频 / 音频 / 3D 多模态。",
+    "tags": ["comfyui", "定位", "节点图"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "节点式（graph）AI 生成工作流编排工具，节点 + 连线拼 DAG",
+        "isCorrect": true,
+        "description": "ComfyUI = 可视化节点图 + 异步队列 + 智能内存管理"
+      },
+      {
+        "text": "一个 Python 生成模型代码库（像 Diffusers）",
+        "isCorrect": false,
+        "description": "Diffusers 是代码库；ComfyUI 是可视化工具，底层可用 Diffusers"
+      },
+      {
+        "text": "Gradio 表单式 WebUI（像 AUTOMATIC1111）",
+        "isCorrect": false,
+        "description": "A1111 是表单 UI；ComfyUI 是节点图，对复杂管线更强"
+      },
+      {
+        "text": "只跑 Stable Diffusion 的本地推理引擎",
+        "isCorrect": false,
+        "description": "支持图像 / 视频 / 音频 / 3D 全模态，不止 SD"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：最小 txt2img 工作流的正确节点顺序是？",
+    "explanation": "ComfyUI 最小 txt2img 工作流为 **CheckpointLoaderSimple（输出 MODEL/CLIP/VAE）→ CLIPTextEncode×2（正/负 prompt）→ EmptyLatentImage（生成空 LATENT）→ KSampler（denoise=1.0 去噪采样）→ VAEDecode（LATENT→IMAGE）→ SaveImage**。img2img 把 EmptyLatentImage 换成 LoadImage→VAEEncode，denoise 降到 0.3-0.7。",
+    "tags": ["comfyui", "工作流", "txt2img"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "CheckpointLoaderSimple → CLIPTextEncode → EmptyLatentImage → KSampler → VAEDecode → SaveImage",
+        "isCorrect": true,
+        "description": "标准最小 txt2img 链：加载 → 编码 → 空白潜变量 → 采样 → 解码 → 保存"
+      },
+      {
+        "text": "LoadImage → KSampler → VAEDecode → SaveImage",
+        "isCorrect": false,
+        "description": "缺 Checkpoint 加载与 CLIP 编码，KSampler 无 model / conditioning"
+      },
+      {
+        "text": "CheckpointLoader → VAEDecode → KSampler → CLIPTextEncode → SaveImage",
+        "isCorrect": false,
+        "description": "顺序错乱：VAEDecode 在 LATENT 之前无意义"
+      },
+      {
+        "text": "EmptyLatentImage → CLIPTextEncode → CheckpointLoader → VAEDecode → KSampler",
+        "isCorrect": false,
+        "description": "Checkpoint 必须最先加载，否则后续节点无 MODEL/CLIP/VAE"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：CheckpointLoaderSimple 节点一次性输出哪三件套？",
+    "explanation": "CheckpointLoaderSimple 加载 `.safetensors` / `.ckpt` 权重后**一次性输出 MODEL（UNet/DiT 扩散模型本体）、CLIP（文本编码器）、VAE（潜变量↔像素解码器）**三件套。高级用法可拆成独立的 UNETLoader + CLIPLoader + VAELoader。",
+    "tags": ["comfyui", "节点", "checkpoint"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "MODEL / CLIP / VAE",
+        "isCorrect": true,
+        "description": "扩散模型本体 + 文本编码器 + 潜变量解码器，是文生图入口三件套"
+      },
+      {
+        "text": "MODEL / IMAGE / LATENT",
+        "isCorrect": false,
+        "description": "IMAGE / LATENT 是其他节点产物，不由 Checkpoint 输出"
+      },
+      {
+        "text": "CONDITIONING / CLIP / VAE",
+        "isCorrect": false,
+        "description": "CONDITIONING 是 CLIPTextEncode 的输出，不是 Checkpoint"
+      },
+      {
+        "text": "MODEL / SAMPLER / SCHEDULER",
+        "isCorrect": false,
+        "description": "sampler / scheduler 是 KSampler 的参数选项，非张量输出"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：CLIPTextEncode 节点的核心作用是？",
+    "explanation": "CLIPTextEncode 把提示词文本通过 CLIP 编码为 **CONDITIONING（条件向量）**。一个工作流里通常放两个 CLIPTextEncode：一个写正向 prompt（接 KSampler.positive），一个写负向 prompt（接 KSampler.negative）。支持多行文本 / 加权 `(word:1.2)` / 动态提示词。",
+    "tags": ["comfyui", "节点", "clip"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "把文本提示词编码为 CONDITIONING（条件向量）",
+        "isCorrect": true,
+        "description": "正/负 prompt 各一个 CLIPTextEncode，分别接 KSampler 的 positive / negative"
+      },
+      {
+        "text": "加载 CLIP 模型权重",
+        "isCorrect": false,
+        "description": "加载 CLIP 是 CLIPLoader / CheckpointLoader 的职责"
+      },
+      {
+        "text": "解码 LATENT 成 IMAGE",
+        "isCorrect": false,
+        "description": "那是 VAEDecode 的职责"
+      },
+      {
+        "text": "保存生成的图像",
+        "isCorrect": false,
+        "description": "那是 SaveImage 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：EmptyLatentImage 节点的用途与典型场景？",
+    "explanation": "EmptyLatentImage 生成**空白潜变量张量**用于 txt2img 起点，参数有 width / height / batch_size。img2img 时不能用 EmptyLatentImage，而要用 LoadImage → VAEEncode 把已有图像编码进潜空间。宽高通常需为 8 的倍数，SDXL 时代推荐 1024×1024。",
+    "tags": ["comfyui", "节点", "latent"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "生成空白潜变量，作为 txt2img 的起点",
+        "isCorrect": true,
+        "description": "文生图入口；img2img 用 LoadImage → VAEEncode 替代"
+      },
+      {
+        "text": "加载预生成的图像到画布",
+        "isCorrect": false,
+        "description": "加载图像是 LoadImage 的职责"
+      },
+      {
+        "text": "解码 LATENT 为可保存的 IMAGE",
+        "isCorrect": false,
+        "description": "那是 VAEDecode 的职责"
+      },
+      {
+        "text": "保存最终输出图像",
+        "isCorrect": false,
+        "description": "那是 SaveImage 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：KSampler 节点的 cfg 参数（Classifier-Free Guidance）社区甜点区间是？",
+    "explanation": "cfg 控制「贴 prompt 程度」：**6-8 是大多数模型的甜点**。1-4 偏创意但偏离 prompt；10-15 开始失真；**>15 是反模式**（色彩失真、伪影、过饱和）。贴合度不够应靠改写 prompt 或加 LoRA，而非盲目加 cfg。",
+    "tags": ["comfyui", "ksampler", "cfg"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "6-8",
+        "isCorrect": true,
+        "description": "社区共识甜点，平衡 prompt 遵循度与质量"
+      },
+      {
+        "text": "1-3",
+        "isCorrect": false,
+        "description": "过底，创意过强且严重偏离 prompt"
+      },
+      {
+        "text": "15-20",
+        "isCorrect": false,
+        "description": "反模式：会色彩失真、伪影、过饱和"
+      },
+      {
+        "text": "30-50",
+        "isCorrect": false,
+        "description": "远超合理范围，输出会崩坏"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：denoise 参数对 txt2img / img2img 的本质区别是什么？",
+    "explanation": "denoise 决定保留多少原图信息：**1.0 = 完全重画（txt2img）；<1.0 = 部分保留原图（img2img / refine）**。img2img 经典区是 0.3-0.7；用 denoise=1.0 跑 img2img = 完全抛弃原图重画，是反模式。",
+    "tags": ["comfyui", "ksampler", "denoise"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "denoise=1.0 是 txt2img（全重生），<1.0 是 img2img（部分保留原图）",
+        "isCorrect": true,
+        "description": "denoise 是 txt2img / img2img 的本质分水岭"
+      },
+      {
+        "text": "denoise 越大图像越清晰，应固定用 1.0",
+        "isCorrect": false,
+        "description": "img2img 必须 <1.0，否则等于抛弃原图重画"
+      },
+      {
+        "text": "denoise 控制输出图像分辨率",
+        "isCorrect": false,
+        "description": "分辨率是 EmptyLatentImage 的 width/height 控制"
+      },
+      {
+        "text": "denoise 控制采样步数",
+        "isCorrect": false,
+        "description": "步数是 steps 参数，与 denoise 无关"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：seed 与 control_after_generate 的关系？",
+    "explanation": "seed 决定噪声起点，**同 seed 同参数必出同图**。control_after_generate 控制跑完后怎么改 seed：`fixed`（不变，完全复现）/ `random`（每次随机，最大变化）/ `increment`（+1，轻微变化）/ `decrement`（-1）。开发期 fixed 便于复现；批量出图用 random 或 increment。",
+    "tags": ["comfyui", "ksampler", "seed"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "seed 决定噪声起点；control_after_generate=fixed + 固定 seed = 完全复现",
+        "isCorrect": true,
+        "description": "同 seed 同参数必出同图，是可复现工作流的基础"
+      },
+      {
+        "text": "seed 决定采样步数",
+        "isCorrect": false,
+        "description": "步数是 steps 参数"
+      },
+      {
+        "text": "control_after_generate 只能取 fixed / random",
+        "isCorrect": false,
+        "description": "还有 increment / decrement 两种"
+      },
+      {
+        "text": "seed 是文本提示词的 hash",
+        "isCorrect": false,
+        "description": "seed 是噪声随机种子，与 prompt 无关"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：社区默认的 KSampler 采样器 + 调度器组合是？",
+    "explanation": "SDXL 时代社区默认组合是 **dpmpp_2m + karras**——dpmpp_2m 高质量高效率，karras 调度比 normal 普遍更锐利。euler 快稳适合调试；euler_ancestral 富变化适合艺术性；dpmpp_sde 细节丰富但慢，适合最终出图。",
+    "tags": ["comfyui", "采样器", "调度器"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "dpmpp_2m + karras",
+        "isCorrect": true,
+        "description": "SDXL 时代社区默认组合，高质量高效率且普遍更锐利"
+      },
+      {
+        "text": "euler + normal",
+        "isCorrect": false,
+        "description": "快稳但质量一般，多用于调试"
+      },
+      {
+        "text": "ddim + simple",
+        "isCorrect": false,
+        "description": "老牌稳定但效率低，非社区默认"
+      },
+      {
+        "text": "euler_ancestral + exponential",
+        "isCorrect": false,
+        "description": "变化感强但收敛不稳，不适合作为通用默认"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：scheduler 调度器选 karras 相比 normal 的优势？",
+    "explanation": "karras 调度的噪声曲线**后段更细**，普遍比 normal（线性）更锐利，是社区推荐。exponential 适合少步数；simple 极简稳定；sgm_uniform 是 SD3 / Flux 等 SGM 模型专用。",
+    "tags": ["comfyui", "调度器", "karras"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "后段更细，普遍比 normal 更锐利",
+        "isCorrect": true,
+        "description": "社区推荐，是 SDXL 时代默认调度器"
+      },
+      {
+        "text": "速度比 normal 快 10 倍",
+        "isCorrect": false,
+        "description": "调度器只改噪声曲线，对速度影响很小"
+      },
+      {
+        "text": "可省去 cfg 参数",
+        "isCorrect": false,
+        "description": "scheduler 与 cfg 无关，两者都要设"
+      },
+      {
+        "text": "支持任意分辨率",
+        "isCorrect": false,
+        "description": "分辨率由 EmptyLatentImage 控制，与 scheduler 无关"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：VAEDecode 与 VAEEncode 的数据流向？",
+    "explanation": "**VAEDecode** 把 LATENT 解码为 IMAGE（KSampler 输出 → 可保存图）；**VAEEncode** 把 IMAGE 编码为 LATENT（img2img 起点）。VAE 来源不影响 KSampler，可来自 CheckpointLoader 也可来自独立 VAELoader。",
+    "tags": ["comfyui", "vae", "数据流"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "VAEDecode：LATENT → IMAGE；VAEEncode：IMAGE → LATENT",
+        "isCorrect": true,
+        "description": "前者是 txt2img 末端，后者是 img2img 起点"
+      },
+      {
+        "text": "VAEDecode：IMAGE → LATENT；VAEEncode：LATENT → IMAGE",
+        "isCorrect": false,
+        "description": "方向反了"
+      },
+      {
+        "text": "两者都是 IMAGE → LATENT",
+        "isCorrect": false,
+        "description": "VAEDecode 是 LATENT → IMAGE"
+      },
+      {
+        "text": "两者都直接生成像素图像",
+        "isCorrect": false,
+        "description": "VAEEncode 是把图像编码进潜空间，不生成图像"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：原生支持的模型族覆盖范围？",
+    "explanation": "ComfyUI 不是只跑 Stable Diffusion——**图像**（SD1.x / SD2.x / SDXL / SD3 / SD3.5 / Flux / Flux 2 / Pixart / HunyuanDiT / Qwen Image 等）、**视频**（Stable Video Diffusion / Mochi / LTX-Video / Hunyuan Video / Wan 2.1+2.2）、**音频**（Stable Audio / ACE Step）、**3D**（Hunyuan3D 2.0）都已原生支持。",
+    "tags": ["comfyui", "模型族", "多模态"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "图像 / 视频 / 音频 / 3D 全模态原生支持",
+        "isCorrect": true,
+        "description": "不止 SD；SVD/Mochi/LTX/Hunyuan/Wan 视频也支持"
+      },
+      {
+        "text": "仅支持 Stable Diffusion 系列",
+        "isCorrect": false,
+        "description": "SD / SDXL / SD3 / Flux / Pixart 等都支持"
+      },
+      {
+        "text": "仅支持图像生成",
+        "isCorrect": false,
+        "description": "视频 / 音频 / 3D 也已原生支持"
+      },
+      {
+        "text": "仅支持 Flux 和 SDXL",
+        "isCorrect": false,
+        "description": "支持的模型族远不止这两个"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：程序化集成的 API 三件套是？",
+    "explanation": "ComfyUI 程序化集成模式：**POST /prompt 提交工作流入队**（响应 prompt_id + 队列位置 number）→ **GET /ws WebSocket 实时收进度**（status / execution_start / executing / progress / executed 等事件）→ **GET /history/{prompt_id} 取最终产物**。client_id 必须在 /prompt 与 /ws 间保持一致。",
+    "tags": ["comfyui", "api", "集成"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "POST /prompt（提交）+ GET /ws（实时进度）+ GET /history/{prompt_id}（取产物）",
+        "isCorrect": true,
+        "description": "三件套是官方推荐的程序化集成模式"
+      },
+      {
+        "text": "POST /generate + GET /status + GET /download",
+        "isCorrect": false,
+        "description": "这些端点不存在"
+      },
+      {
+        "text": "GET /prompt + POST /ws + DELETE /history",
+        "isCorrect": false,
+        "description": "方法（GET/POST）反了；/ws 是 WebSocket 不是 POST"
+      },
+      {
+        "text": "REST 单次请求 /generate 同步等待返回",
+        "isCorrect": false,
+        "description": "ComfyUI 是异步队列，必须 /ws + /history 配合"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：为什么 /prompt 与 /ws 的 client_id 必须保持一致？",
+    "explanation": "/ws 与 /prompt 通过 **client_id 绑定会话**——/ws 收事件时按 client_id 过滤。不传或乱传会导致：**收不到本客户端的进度**（事件被滤掉）/ **收到别的客户端的事件**（共享了 client_id）/ **/history 关联错**。",
+    "tags": ["comfyui", "api", "client_id"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "/ws 按 client_id 过滤事件，不一致会收不到本客户端进度甚至收到别人事件",
+        "isCorrect": true,
+        "description": "client_id 是 /prompt 与 /ws 之间的会话绑定键"
+      },
+      {
+        "text": "client_id 决定模型选择",
+        "isCorrect": false,
+        "description": "模型由 workflow 里的 CheckpointLoader 决定"
+      },
+      {
+        "text": "client_id 决定 KSampler 的 seed",
+        "isCorrect": false,
+        "description": "seed 是 KSampler 参数，与 client_id 无关"
+      },
+      {
+        "text": "client_id 是 Comfy Cloud 的账号 ID",
+        "isCorrect": false,
+        "description": "client_id 是任意字符串，用于会话区分，与账号无关"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：/object_info 端点的核心用途？",
+    "explanation": "/object_info 与 /object_info/{node_class} 返回**所有节点的输入 / 输出 / 参数定义**。**程序化构建 workflow（动态拼接节点图）必须依赖它**，否则会写出参数名错误或类型不匹配的 prompt JSON。GET /object_info 是 ComfyUI 自身 UI 加载节点列表的同一来源。",
+    "tags": ["comfyui", "api", "object_info"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "返回所有节点的输入 / 输出 / 参数定义，是程序化构建 workflow 的基础",
+        "isCorrect": true,
+        "description": "动态拼接 prompt JSON 前必读它"
+      },
+      {
+        "text": "返回生成的图像二进制",
+        "isCorrect": false,
+        "description": "取图像是 GET /view?filename=..."
+      },
+      {
+        "text": "返回当前队列状态",
+        "isCorrect": false,
+        "description": "队列状态是 GET /queue"
+      },
+      {
+        "text": "返回模型权重信息",
+        "isCorrect": false,
+        "description": "模型信息不是 /object_info 的职责"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：/interrupt、/queue、/free 三个管理端点的作用？",
+    "explanation": "**POST /interrupt** 中断当前正在执行的节点（不退队列）；**POST /queue** 清队列（body `{delete: [\"all\"|\"queue\"|\"history\"]}`）；**POST /free** 卸载模型 + 释放显存（body `{unload_models: true, free_memory: true}`）。",
+    "tags": ["comfyui", "api", "管理"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "/interrupt 中断当前节点；/queue 清队列；/free 释放显存",
+        "isCorrect": true,
+        "description": "分别对应运行控制、队列管理、内存释放"
+      },
+      {
+        "text": "三者都是查询类 GET 端点",
+        "isCorrect": false,
+        "description": "三者都是 POST 操作类端点"
+      },
+      {
+        "text": "/free 删除已生成的图像文件",
+        "isCorrect": false,
+        "description": "/free 只释放显存与模型，不删文件"
+      },
+      {
+        "text": "/queue 只能查看不能清空",
+        "isCorrect": false,
+        "description": "POST /queue 可清队列"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：ComfyUI-Manager 的核心能力是什么？",
+    "explanation": "Manager（已收录官方文档）在 `custom_nodes/` 之上提供**全生命周期治理**：节点装 / 更新 / 禁用 / 删 / 模型下载 / **Snapshot 保存与恢复**（记录所有 custom_nodes 版本组合，整体回滚）/ **缺失节点自动检测安装**（拖入 workflow JSON 时自动识别）。比直接 git clone 多了版本治理能力。",
+    "tags": ["comfyui", "manager", "custom_nodes"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "custom_nodes 全生命周期 + Snapshot 版本治理 + 缺失节点自动检测安装",
+        "isCorrect": true,
+        "description": "Manager 是消费端 UI，让节点管理可视化"
+      },
+      {
+        "text": "替代 ComfyUI 主程序",
+        "isCorrect": false,
+        "description": "Manager 是 custom_nodes 之一，不替代主程序"
+      },
+      {
+        "text": "提供付费云端 GPU 算力",
+        "isCorrect": false,
+        "description": "那是 Comfy Cloud 的职责"
+      },
+      {
+        "text": "只是一个模型下载器",
+        "isCorrect": false,
+        "description": "模型下载只是 Manager 能力之一"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：ComfyUI Registry（registry.comfy.org）的核心机制？",
+    "explanation": "Registry 是 Manager 的数据源，**publisher（开发者身份，必填）+ pyproject.toml（写 publisher 标识，必填）+ SemVer 语义化版本 + 版本不可变（必须发新版才能改）+ 可 deprecate + 自动安全扫描**（检测 pip wheel / 系统调用等恶意行为，**非 100% 拦截**）。",
+    "tags": ["comfyui", "registry", "发布"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "publisher + pyproject.toml + SemVer + 版本不可变 + 自动安全扫描",
+        "isCorrect": true,
+        "description": "Registry 让自定义节点有全局唯一名 + 版本治理 + 安全扫描"
+      },
+      {
+        "text": "任意 npm 包名 + 自动同步 GitHub",
+        "isCorrect": false,
+        "description": "Registry 是 Python 生态，走 publisher + pyproject.toml"
+      },
+      {
+        "text": "无需身份注册，直接 git push",
+        "isCorrect": false,
+        "description": "必须注册 publisher 身份"
+      },
+      {
+        "text": "已发布版本可随意覆盖修改",
+        "isCorrect": false,
+        "description": "版本不可变是 Registry 的核心保证"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：智能内存管理的最低显存要求与机制？",
+    "explanation": "ComfyUI 默认开启 **Smart memory management**——自动在 GPU / CPU 间 offload 模型，**最低 1GB VRAM 也能跑 SDXL / Flux 等大模型**。CPU-only 模式用 `--cpu`。**别频繁手动 reload 大模型**，会打断其调度策略反而更慢。",
+    "tags": ["comfyui", "内存管理", "vram"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "最低 1GB VRAM，自动 GPU/CPU offload，无需手动 reload",
+        "isCorrect": true,
+        "description": "Smart memory management 是 ComfyUI 关键特性"
+      },
+      {
+        "text": "必须 16GB 以上 VRAM 才能跑 SDXL",
+        "isCorrect": false,
+        "description": "1GB 也能跑，靠自动 offload"
+      },
+      {
+        "text": "必须手动 reload 模型才能省显存",
+        "isCorrect": false,
+        "description": "频繁 reload 反而打断调度策略，更慢"
+      },
+      {
+        "text": "无 GPU 完全无法运行",
+        "isCorrect": false,
+        "description": "`--cpu` 可纯 CPU 跑"
+      }
+    ]
+  },
+  {
+    "stem": "ComfyUI：工作流复现的正式存档方式？",
+    "explanation": "工作流可保存为 JSON（API 格式与 UI 格式两份），也可嵌入 PNG/WebP/FLAC 元数据（拖回画布即恢复节点图）。正式生产应 **JSON + PNG 双存**——PNG 元数据跨平台压缩 / 二次编辑易丢，单存 PNG 不够。Manager Snapshot 可保存所有 custom_nodes 的版本组合。",
+    "tags": ["comfyui", "复现", "工作流"],
+    "categories": [
+      ["技术方向", "ComfyUI"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "JSON 存档 + PNG/WebP/FLAC 元数据嵌入（双存最稳）",
+        "isCorrect": true,
+        "description": "PNG 元数据易丢，正式生产必须 JSON 双存"
+      },
+      {
+        "text": "仅靠 PNG 元数据即可",
+        "isCorrect": false,
+        "description": "PNG 元数据跨平台压缩 / 二次编辑易丢，单存不够"
+      },
+      {
+        "text": "工作流不可复现，每次都要重画",
+        "isCorrect": false,
+        "description": "ComfyUI 的可复现性是核心特性"
+      },
+      {
+        "text": "复现要靠手动截图节点图",
+        "isCorrect": false,
+        "description": "截图无法恢复节点图，必须 JSON / PNG 元数据"
+      }
+    ]
+  }
+]

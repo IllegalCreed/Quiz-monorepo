@@ -1,0 +1,628 @@
+[
+  {
+    "stem": "高级提示技巧：ReAct 范式中 Thought / Action / Observation 三段式的核心作用是什么？",
+    "explanation": "ReAct（Reasoning + Acting）让 LLM 在「Thought N: 推理 → Action N: 如 Search[关键词]/Lookup[术语] → Observation N: 环境反馈」之间交错循环到 Finish[答案]。固定三段式有两个工程价值：①让模型沿循环节奏推进（thought 决定方向，action 收集信息）②让工程层能可靠截取 Action 与 Observation（结构化输出便于解析器拆分）。",
+    "tags": ["react", "三段式", "thought-action-observation"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "让模型在内部推理和外部行动之间交错循环，把环境反馈作为下一步推理输入",
+        "isCorrect": true,
+        "description": "ReAct = Reasoning + Acting，固定三段式让工程层能可靠解析"
+      },
+      {
+        "text": "把所有推理压缩到一次 LLM 调用中，降低延迟",
+        "isCorrect": false,
+        "description": "ReAct 是多轮循环，反而增加调用次数"
+      },
+      {
+        "text": "用强化学习训练模型而非提示工程",
+        "isCorrect": false,
+        "description": "ReAct 是提示范式，不涉及训练"
+      },
+      {
+        "text": "用更长的上下文窗口替代外部工具调用",
+        "isCorrect": false,
+        "description": "ReAct 恰恰依赖外部工具（Search/Lookup）补足信息"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：ReAct 论文（Yao et al., 2022）关于「纯 CoT / 纯 ReAct / ReAct+CoT 混合」的实证结论是什么？",
+    "explanation": "ReAct 论文实证：纯 CoT 易幻觉（无外部信息纠正）、纯 ReAct 因结构约束降低推理灵活性且过度依赖检索结果质量，**ReAct + CoT 混合最优**——检索充足时用 ReAct，检索不足时回退到内部 CoT 推理。这是论文的核心建议。",
+    "tags": ["react", "cot", "混合策略", "论文实证"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "纯 CoT 易幻觉、纯 ReAct 过度依赖检索、ReAct+CoT 混合最优",
+        "isCorrect": true,
+        "description": "论文的核心结论：混合策略胜过任何单一范式"
+      },
+      {
+        "text": "纯 ReAct 总是最优，应替代 CoT",
+        "isCorrect": false,
+        "description": "论文实证纯 ReAct 结构约束会降低推理灵活性"
+      },
+      {
+        "text": "纯 CoT 总是最优，ReAct 是工程噱头",
+        "isCorrect": false,
+        "description": "纯 CoT 在 HotpotQA 等多跳任务上易幻觉"
+      },
+      {
+        "text": "三种方案效果相当，按习惯选即可",
+        "isCorrect": false,
+        "description": "论文明确给出混合策略最优的实证结论"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：ReAct 模板中 Action 字段的典型合法形式包括哪些？",
+    "explanation": "ReAct 论文 few-shot exemplar 中典型的 Action 形式是 `Search[关键词]`（外部检索）、`Lookup[术语]`（在已检索内容中查找段落）、`Finish[答案]`（终止并输出最终答案）。这些方括号封装的 Action 由工程层解析后路由到对应工具。",
+    "tags": ["react", "action", "search", "finish"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Search[关键词]、Lookup[术语]、Finish[答案]",
+        "isCorrect": true,
+        "description": "论文中的标准三件套：检索 / 查找 / 终止"
+      },
+      {
+        "text": "Train[模型]、Predict[标签]、Eval[指标]",
+        "isCorrect": false,
+        "description": "那是机器学习流水线动作，与 ReAct 无关"
+      },
+      {
+        "text": "Read[文件]、Write[文件]、Delete[文件]",
+        "isCorrect": false,
+        "description": "文件系统操作不是 ReAct 的标准 Action"
+      },
+      {
+        "text": "Begin[…]、End[…]、Stop[…]",
+        "isCorrect": false,
+        "description": "ReAct 用 Finish[答案] 终止，不是 End/Stop"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Self-Consistency（自洽性）的本质是什么？",
+    "explanation": "Self-Consistency 是**纯解码阶段策略**——不改变 prompt 模板、不需要额外训练，仅在 CoT 基础上加三步：①temperature 0.5-0.7 采样 N 条路径 ②各自生成最终答案 ③多数投票聚合。它不是新提示模板，也不是新训练方法，而是替代贪婪解码的解码策略。",
+    "tags": ["self-consistency", "解码策略", "本质"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "解码阶段策略：多路径采样 + 多数投票，不改变 prompt 也不需要训练",
+        "isCorrect": true,
+        "description": "本质是替代贪婪解码的解码策略"
+      },
+      {
+        "text": "一种新的提示模板，需重写 system prompt",
+        "isCorrect": false,
+        "description": "Self-Consistency 不改变 prompt 模板"
+      },
+      {
+        "text": "需要微调 LLM 才能使用",
+        "isCorrect": false,
+        "description": "Self-Consistency 不需要额外训练"
+      },
+      {
+        "text": "用强化学习训练一个奖励模型",
+        "isCorrect": false,
+        "description": "那是 RLHF，与 Self-Consistency 无关"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Self-Consistency 的三步流程正确顺序是什么？",
+    "explanation": "Self-Consistency 三步：①多样化采样（对同一 CoT prompt 用较高 temperature 采样 N 条不同推理路径）②生成答案（每条路径独立推出最终答案）③多数投票聚合（对所有最终答案做 majority vote，得票最多者为输出）。",
+    "tags": ["self-consistency", "三步流程", "采样", "投票"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "多样化采样 → 生成答案 → 多数投票",
+        "isCorrect": true,
+        "description": "采样 → 推答案 → 投票聚合"
+      },
+      {
+        "text": "生成答案 → 多样化采样 → 多数投票",
+        "isCorrect": false,
+        "description": "顺序颠倒：必须先采样多条路径才能投票"
+      },
+      {
+        "text": "多数投票 → 多样化采样 → 生成答案",
+        "isCorrect": false,
+        "description": "投票应在最后一步"
+      },
+      {
+        "text": "生成答案 → 多数投票 → 多样化采样",
+        "isCorrect": false,
+        "description": "采样必须是第一步"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Wang et al., 2022 论文中 Self-Consistency 在 GSM8K（小学数学）任务上的提升幅度是？",
+    "explanation": "Self-Consistency 论文关键数据：GSM8K（小学数学）从 CoT 基线 17.7% 提升到 35.6%，**提升 +17.9%**；SVAMP +11.0%；AQuA +12.2%；StrategyQA +6.4%；ARC-c +3.9%。GSM8K 是提升幅度最大的任务，验证了「多路径收敛到同一正确答案」的直觉。",
+    "tags": ["self-consistency", "gsm8k", "性能数据"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "+17.9%（从 17.7% 提升到 35.6%）",
+        "isCorrect": true,
+        "description": "GSM8K 是 Self-Consistency 提升幅度最大的任务"
+      },
+      {
+        "text": "+1.9%",
+        "isCorrect": false,
+        "description": "数字记错，实际提升 17.9 个百分点"
+      },
+      {
+        "text": "+50%",
+        "isCorrect": false,
+        "description": "夸大实际效果"
+      },
+      {
+        "text": "无提升，反而下降",
+        "isCorrect": false,
+        "description": "Self-Consistency 在算术任务上明确有效"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：下列哪种任务不适合用 Self-Consistency？",
+    "explanation": "Self-Consistency 仅适用于「答案可离散、可验证」的任务（算术 / 多选 / 常识 / 符号推理）。**开放生成**（创意写作、摘要、对话）没有单一正确答案可投票，多数投票无意义；且若多数 CoT 路径都错（任务超出模型能力），自洽性反而**放大错误**（强化错误共识）。",
+    "tags": ["self-consistency", "适用边界", "开放生成", "反模式"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "创意写作（无单一正确答案可投票）",
+        "isCorrect": true,
+        "description": "开放生成不适用；多数路径错时反而放大错误"
+      },
+      {
+        "text": "GSM8K 小学数学题",
+        "isCorrect": false,
+        "description": "算术任务正是 Self-Consistency 的最佳适用场景"
+      },
+      {
+        "text": "ARC 多选题",
+        "isCorrect": false,
+        "description": "多选题答案离散可投票，适用"
+      },
+      {
+        "text": "Last-letter-concat 符号推理",
+        "isCorrect": false,
+        "description": "符号推理是论文验证的有效场景"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Tree of Thoughts（ToT）的四要素是什么？",
+    "explanation": "ToT 四要素：①**Thought 分解**（把问题切成 k 个中间思考单元，如 24 点分 3 步等式）②**Thought 生成**（每步采样/提议 b=5 候选，即 beam width）③**状态评估器**（LM 自评 sure/maybe/impossible 三类或 0-1 value 分，每候选采样 3 次提鲁棒性）④**搜索算法**（BFS 保留 b 个最优逐层展开 / DFS 深入+回溯）。",
+    "tags": ["tot", "四要素", "thought", "评估器", "搜索"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Thought 分解、Thought 生成、状态评估器、搜索算法",
+        "isCorrect": true,
+        "description": "论文定义的标准四要素"
+      },
+      {
+        "text": "Embedding、Retriever、Generator、Reranker",
+        "isCorrect": false,
+        "description": "那是 RAG 的四件套，与 ToT 无关"
+      },
+      {
+        "text": "Actor、Critic、Reward、Policy",
+        "isCorrect": false,
+        "description": "那是强化学习组件"
+      },
+      {
+        "text": "Encoder、Decoder、Attention、LayerNorm",
+        "isCorrect": false,
+        "description": "那是 Transformer 架构组件"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：ToT 论文在 Game of 24 任务上 CoT 与 ToT 的成功率对比是？",
+    "explanation": "ToT 论文标志性数据：**Game of 24**（4 张牌算 24 点）任务上，CoT 仅 **4%**，ToT (BFS) 达 **74%**，提升 70 个百分点。差距的核心来源是 ToT 的「评估 + 回溯」让模型能识别哪条分支不可能（如 7-3=4 后无法凑到 24）并放弃，而 CoT 一步错步步错。",
+    "tags": ["tot", "game-of-24", "性能数据", "cot-对比"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "CoT 4% vs ToT 74%",
+        "isCorrect": true,
+        "description": "ToT 标志性数据：评估 + 回溯带来 70 个百分点提升"
+      },
+      {
+        "text": "CoT 74% vs ToT 4%",
+        "isCorrect": false,
+        "description": "数字方向反了，ToT 才是 74%"
+      },
+      {
+        "text": "CoT 50% vs ToT 50%",
+        "isCorrect": false,
+        "description": "两者效果相差悬殊"
+      },
+      {
+        "text": "CoT 95% vs ToT 95%",
+        "isCorrect": false,
+        "description": "CoT 在该任务上表现极差（4%）"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：ToT 中 BFS 与 DFS 搜索算法的适用场景如何区分？",
+    "explanation": "BFS（广度优先）每层保留 b 个最优候选逐层展开，适合**状态空间可枚举、需广度筛选**的任务（24 点、填字）；DFS（深度优先）深入到叶节点后回溯，适合**需深度探索、可回溯**的任务（创意写作）。论文实证 Game of 24 用 BFS，Creative Writing 用 DFS。",
+    "tags": ["tot", "bfs", "dfs", "搜索算法", "适用场景"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "BFS 适合状态可枚举（24 点/填字）；DFS 适合深度探索可回溯（创意写作）",
+        "isCorrect": true,
+        "description": "按任务状态空间结构选择搜索策略"
+      },
+      {
+        "text": "BFS 适合所有任务，DFS 已被淘汰",
+        "isCorrect": false,
+        "description": "DFS 在创意写作等任务上仍是首选"
+      },
+      {
+        "text": "DFS 适合所有任务，BFS 已被淘汰",
+        "isCorrect": false,
+        "description": "24 点等可枚举任务 BFS 更优"
+      },
+      {
+        "text": "两者完全等价，随便选",
+        "isCorrect": false,
+        "description": "论文明确给出不同任务的适用性差异"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Prompt Chaining 的三大收益是什么？",
+    "explanation": "Prompt Chaining 三大收益：①**透明度**（可追踪每一步输入输出，定位错误环节）②**可控性**（针对薄弱环节单独调优，仅重写节点 2 的 prompt 不动其他）③**可调试性**（每个节点可独立测试、独立监控、独立回放）。这些收益让它比单 prompt 巨型化更可靠。",
+    "tags": ["prompt-chaining", "三大收益", "透明度", "可控性", "可调试性"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "透明度、可控性、可调试性",
+        "isCorrect": true,
+        "description": "工程化流水线的核心收益"
+      },
+      {
+        "text": "速度、内存、GPU 利用率",
+        "isCorrect": false,
+        "description": "那是系统性能指标，与 Chaining 工程收益无关"
+      },
+      {
+        "text": "准确率、召回率、F1 分数",
+        "isCorrect": false,
+        "description": "那是模型评测指标"
+      },
+      {
+        "text": "并行度、吞吐量、延迟",
+        "isCorrect": false,
+        "description": "Chaining 串行反而增加延迟"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Prompt Chaining 中应把「数据变换」（去引用编号、截断、格式校验）交给谁？",
+    "explanation": "Prompt Chaining 关键实践：在链节点间插入**确定性清洗步骤**，把数据变换交给**代码**而非 LLM。原因是 LLM 不擅长稳定执行机械变换（输出有随机性，难以稳定匹配格式），代码层处理更可靠且可测试。",
+    "tags": ["prompt-chaining", "数据变换", "代码", "llm-局限"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "代码（确定性清洗步骤），LLM 不擅长稳定机械变换",
+        "isCorrect": true,
+        "description": "代码层处理可靠且可测试，LLM 输出有随机性"
+      },
+      {
+        "text": "LLM，因为它更灵活",
+        "isCorrect": false,
+        "description": "灵活但不可靠，机械变换交给 LLM 易出错"
+      },
+      {
+        "text": "用户手动处理",
+        "isCorrect": false,
+        "description": "人工处理不可扩展"
+      },
+      {
+        "text": "数据库触发器",
+        "isCorrect": false,
+        "description": "数据库层处理不了文本变换"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Directional Stimulus Prompting（DSP）的核心机制是什么？",
+    "explanation": "DSP 用一个小型可调 **Policy LM**（如 T5）为每个输入实例生成方向性 hint（如摘要应包含的关键词），拼接进**冻结 LLM**（如 ChatGPT）的 prompt。核心价值：把「怎么提示」本身参数化，绕开 LLM 微调的成本 / 权限 / 版本漂移问题。",
+    "tags": ["dsp", "policy-lm", "hint", "黑盒引导"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "小 Policy LM 生成 hint，拼进冻结 LLM 的 prompt",
+        "isCorrect": true,
+        "description": "把「怎么提示」参数化，不动 LLM 参数"
+      },
+      {
+        "text": "直接微调 LLM 的全部参数",
+        "isCorrect": false,
+        "description": "DSP 恰恰避免微调 LLM"
+      },
+      {
+        "text": "用强化学习训练 LLM 本身",
+        "isCorrect": false,
+        "description": "RL 训练的是 Policy LM，不是 LLM"
+      },
+      {
+        "text": "用更长的 system prompt 替代 hint",
+        "isCorrect": false,
+        "description": "DSP 是参数化生成 hint，不是堆 prompt 长度"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：DSP 在 MultiWOZ 任务型对话上的标志性成果是？",
+    "explanation": "DSP 论文标志性数据：在 MultiWOZ（任务型对话）数据集上，仅用 **80 条对话** 训练 Policy LM（T5），即让 ChatGPT 的对话成功率提升 **+41.4%**。这是少样本场景下的高性价比方案，证明 DSP 不需要大量标注数据即可显著提升黑盒 LLM 表现。",
+    "tags": ["dsp", "multiwoz", "少样本", "性能数据"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "仅 80 条对话训练让 ChatGPT +41.4%",
+        "isCorrect": true,
+        "description": "少样本场景下的高性价比方案"
+      },
+      {
+        "text": "需要 100 万条对话才能生效",
+        "isCorrect": false,
+        "description": "DSP 是少样本方案，不需要海量数据"
+      },
+      {
+        "text": "仅提升 0.1%，效果微弱",
+        "isCorrect": false,
+        "description": "+41.4% 是显著提升"
+      },
+      {
+        "text": "需要完全重新训练 ChatGPT",
+        "isCorrect": false,
+        "description": "DSP 不动 LLM 参数"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：OWASP LLM01:2025 中 Prompt Injection 的官方两分类是什么？",
+    "explanation": "OWASP LLM01:2025 定义两分类：①**Direct Prompt Injection（直接注入）**：用户直接在对话里注入指令，含 Payload Splitting / Adversarial Suffix / 多语言混淆 / Code Injection（CVE-2024-5184）②**Indirect Prompt Injection（间接注入）**：外部网页/文件/RAG 检索内容/多模态图片中藏指令，被 LLM 误信为可信上下文。",
+    "tags": ["prompt-injection", "owasp", "两分类", "direct", "indirect"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "Direct（用户直接注入）和 Indirect（外部内容注入，如 RAG 投毒）",
+        "isCorrect": true,
+        "description": "OWASP 官方两分类"
+      },
+      {
+        "text": "Active 和 Passive",
+        "isCorrect": false,
+        "description": "那是网络安全攻击分类，非 OWASP LLM 分类"
+      },
+      {
+        "text": "Internal 和 External",
+        "isCorrect": false,
+        "description": "非 OWASP 官方术语"
+      },
+      {
+        "text": "White-box 和 Black-box",
+        "isCorrect": false,
+        "description": "那是模型访问模式分类"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：Jailbreaking（越狱）与 Prompt Injection 的关系是什么？",
+    "explanation": "Jailbreaking（越狱）是 Prompt Injection 的**子集**——注入的一种特殊形式，目标是让模型完全无视安全协议（输出违禁内容、绕过 RLHF 对齐）。并非所有注入都是越狱：有些注入只是操纵输出格式或窃取信息，不一定涉及安全协议绕过。两者常被混用但概念不等价。",
+    "tags": ["prompt-injection", "jailbreaking", "子集关系", "概念辨析"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "越狱是 Prompt Injection 的子集（目标是绕过安全协议）",
+        "isCorrect": true,
+        "description": "MITRE ATLAS 中 AML.T0054（越狱）是注入的特殊形式"
+      },
+      {
+        "text": "两者完全等价",
+        "isCorrect": false,
+        "description": "越狱目标更窄（绕过安全），注入范围更广"
+      },
+      {
+        "text": "越狱包含 Prompt Injection",
+        "isCorrect": false,
+        "description": "方向反了：注入是父类，越狱是子类"
+      },
+      {
+        "text": "两者毫无关系",
+        "isCorrect": false,
+        "description": "越狱明确属于注入的一种"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：OWASP 关于 Prompt Injection 防御的根本立场是什么？",
+    "explanation": "OWASP 明确：「生成式 AI 的随机性本质决定了**没有 fool-proof 方法**」——RAG 与微调都不能完全缓解注入，单一软约束（如 system prompt）极易被 Payload Splitting / 对抗后缀绕过。必须**纵深防御**（多层叠加）并**假设模型会被攻破**（兜底机制）。",
+    "tags": [
+      "prompt-injection",
+      "owasp",
+      "根本立场",
+      "纵深防御",
+      "no-foolproof"
+    ],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "没有 fool-proof 方法，必须纵深防御并假设模型会被攻破",
+        "isCorrect": true,
+        "description": "OWASP 根本立场：多层叠加 + 兜底机制"
+      },
+      {
+        "text": "只要 RAG 就完全缓解注入",
+        "isCorrect": false,
+        "description": "OWASP 明确 RAG 不能完全缓解（反而引入间接注入）"
+      },
+      {
+        "text": "只要微调就完全缓解注入",
+        "isCorrect": false,
+        "description": "OWASP 明确微调不能完全缓解"
+      },
+      {
+        "text": "只要 system prompt 写得好就万无一失",
+        "isCorrect": false,
+        "description": "单一软约束极易被绕过"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：下列哪种是「Indirect Prompt Injection（间接注入）」的典型场景？",
+    "explanation": "间接注入的典型场景是外部内容中藏指令被 LLM 误信为可信上下文：①RAG 检索源被投毒（攻击者在网页/文档里植入「忽略之前指令」）②网页隐藏文本（爬虫抓取的页面含不可见 prompt）③多模态图片藏指令（图片中藏 prompt 被视觉模型读取）。用户没有直接注入，但 LLM 在处理外部内容时被操纵。",
+    "tags": ["prompt-injection", "indirect", "rag-poisoning", "多模态"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "RAG 检索源被投毒，攻击者在网页/文档里植入恶意指令",
+        "isCorrect": true,
+        "description": "间接注入的标志性场景：外部内容藏指令"
+      },
+      {
+        "text": "用户在对话框直接输入「忽略之前指令」",
+        "isCorrect": false,
+        "description": "这是 Direct Injection（直接注入）"
+      },
+      {
+        "text": "用户用对抗后缀绕过模型安全协议",
+        "isCorrect": false,
+        "description": "这是 Direct Injection 的 Adversarial Suffix 子类"
+      },
+      {
+        "text": "模型自己产生幻觉输出错误内容",
+        "isCorrect": false,
+        "description": "幻觉不是注入，注入必须有外部恶意指令"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：OWASP LLM01:2025 推荐的七项缓解策略中，「RAG Triad」指的是什么？",
+    "explanation": "RAG Triad 是 OWASP 缓解策略「输入输出过滤」中的核心校验机制，包含三个维度：①**Context Relevance**（检索上下文相关性：检索的内容是否切题）②**Groundedness**（回答是否基于检索内容：有无 hallucination）③**Answer Relevance**（回答是否切题：是否回答了用户问题）。三者共同识别 RAG 系统中的注入与幻觉。",
+    "tags": ["prompt-injection", "rag-triad", "owasp", "过滤"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "Context Relevance、Groundedness、Answer Relevance",
+        "isCorrect": true,
+        "description": "RAG 三元组：相关性、扎根性、切题性"
+      },
+      {
+        "text": "Precision、Recall、F1",
+        "isCorrect": false,
+        "description": "那是分类模型指标"
+      },
+      {
+        "text": "Confidentiality、Integrity、Availability",
+        "isCorrect": false,
+        "description": "那是 CIA 三要素（信息安全经典模型）"
+      },
+      {
+        "text": "Encrypt、Decrypt、Hash",
+        "isCorrect": false,
+        "description": "那是密码学操作"
+      }
+    ]
+  },
+  {
+    "stem": "高级提示技巧：关于「输出格式校验通过 = 没被注入」这个判断，正确认识是什么？",
+    "explanation": "这是常见反模式。**对抗后缀、载荷分割**等攻击可让模型在**格式合法**的前提下输出被操纵内容（如 JSON schema 完全合规，但内容是被窃取的 system prompt 或被注入的恶意链接）。格式校验只是**必要条件**而非充分条件，需配合语义过滤、RAG Triad、人在回路等纵深防御。",
+    "tags": ["prompt-injection", "格式校验", "对抗后缀", "反模式"],
+    "categories": [
+      ["技术方向", "高级提示技巧"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "错误。对抗后缀可让模型在格式合法前提下输出被操纵内容，格式校验只是必要条件",
+        "isCorrect": true,
+        "description": "格式合法 ≠ 内容可信，必须配合语义过滤"
+      },
+      {
+        "text": "正确。只要 JSON schema 校验通过就一定没被注入",
+        "isCorrect": false,
+        "description": "对抗后缀可绕过格式校验"
+      },
+      {
+        "text": "正确。格式校验是 OWASP 推荐的唯一手段",
+        "isCorrect": false,
+        "description": "OWASP 推荐七项纵深防御，格式校验只是其一"
+      },
+      {
+        "text": "正确。LLM 输出格式合规即代表语义可信",
+        "isCorrect": false,
+        "description": "格式合规与语义可信是两回事"
+      }
+    ]
+  }
+]
