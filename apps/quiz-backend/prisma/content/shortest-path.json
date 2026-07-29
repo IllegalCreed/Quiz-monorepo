@@ -1,0 +1,746 @@
+[
+  {
+    "stem": "最短路径：单源最短路（SSSP）与全源最短路（APSP）的区别，下列说法正确的是？",
+    "explanation": "最短路径按「求几个点对」分两类：单源最短路（SSSP）求某源点 s 到其他所有点的最短路（一次求 V−1 条路径），典型算法 Dijkstra/Bellman-Ford/SPFA；全源最短路（APSP）求任意两点间的最短路（一次求 V×(V−1) 条），典型算法 Floyd-Warshall。全源可以「跑 V 次单源算法」实现，但不一定是最佳（稀疏大图 V 次 Dijkstra 优于 Floyd，稠密小图 Floyd 更优）。\n\n- 「单源一次求一个源到所有点，全源一次求所有点对」正确。\n- 「单源一次只求到某一个终点的路径」错误：单源是到所有点，到单一终点叫单点对最短路（可用 A*）。\n- 「全源只能用 Floyd」错误：也能跑 V 次 Dijkstra/BF，Floyd 只在稠密小图时最优。\n- 「两者算法完全通用没有区别」错误：单源和全源有各自的主力算法，选型不同。",
+    "tags": ["最短路径算法", "入门", "单源", "全源", "对比"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "单源求一个源点到其他所有点的最短路，全源求任意两点间的最短路",
+        "isCorrect": true,
+        "description": "正确。SSSP 一次求 V−1 条路径（Dijkstra/BF），APSP 一次求所有点对（Floyd）。"
+      },
+      {
+        "text": "单源最短路一次只求源点到某一个指定终点的路径",
+        "isCorrect": false,
+        "description": "错误。单源是到所有点；只到一个终点叫单点对最短路（可用 A* 等）。"
+      },
+      {
+        "text": "全源最短路只能用 Floyd-Warshall 一种算法求解",
+        "isCorrect": false,
+        "description": "错误。全源也可跑 V 次 Dijkstra/BF；Floyd 只在稠密小图时最优，稀疏大图 V 次 Dijkstra 更快。"
+      },
+      {
+        "text": "单源和全源只是叫法不同，用的算法完全一样",
+        "isCorrect": false,
+        "description": "错误。两者问题规模和主力算法都不同（单源 Dijkstra、全源 Floyd），选型有差异。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：所有最短路算法的共同核心操作是？",
+    "explanation": "所有最短路算法（Dijkstra、Bellman-Ford、SPFA、Floyd）的内核都是松弛（relax）操作：if (d[u]+w < d[v]) then d[v]=d[u]+w，即「发现一条更短的路径就更新」。d[] 维护「目前已知的最短距离」，初始 d[s]=0 其余 +∞。四种算法的差异仅在于松弛哪些边、松弛几轮、按什么顺序松弛——Dijkstra 贪心选最近点松弛其出边，BF 暴力松弛所有边 V−1 轮，SPFA 用队列只松弛活跃点，Floyd 用 DP 以中转点松弛所有点对。\n\n- 「松弛操作：发现更短路径就更新 d[v]」正确。\n- 「深度优先搜索」错误：DFS 不是最短路的核心，且 DFS 不保证最短。\n- 「拓扑排序」错误：拓扑排序用于 DAG 的最短路（按拓扑序松弛），不是通用最短路的核心。\n- 「并查集合并」错误：并查集用于连通性/最小生成树（Kruskal），与最短路松弛无关。",
+    "tags": ["最短路径算法", "入门", "松弛操作", "核心"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "松弛（relax）：若 d[u]+w < d[v] 则更新 d[v] = d[u]+w",
+        "isCorrect": true,
+        "description": "正确。松弛是所有最短路算法的共同内核，四种算法只是松弛策略与次数不同。"
+      },
+      {
+        "text": "深度优先搜索（DFS）遍历所有路径取最短",
+        "isCorrect": false,
+        "description": "错误。DFS 不是最短路的核心操作，且暴力 DFS 求最短路是指数级，不实用。"
+      },
+      {
+        "text": "拓扑排序后按顺序处理顶点",
+        "isCorrect": false,
+        "description": "错误。拓扑排序仅用于 DAG 的最短路，不是通用最短路算法的核心。"
+      },
+      {
+        "text": "用并查集合并连通分量",
+        "isCorrect": false,
+        "description": "错误。并查集用于连通性与最小生成树（Kruskal），与最短路的松弛操作无关。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Dijkstra 算法要求图满足什么前提条件？",
+    "explanation": "Dijkstra 算法的贪心前提是「边权非负」。它每次取出 d[] 最小的未确定顶点一次性确定，这依赖「已确定点的最短路不会被后来的边推翻」——只有非负权才保证这一点。若存在负权边，后面可能经负边发现更短路径，而该点已 visited 锁死，导致算错。所以 Dijkstra 只适用于非负权图（导航、路由等场景天然非负）。有负权必须用 Bellman-Ford/SPFA。\n\n- 「所有边权非负」正确。\n- 「图必须是有向无环图（DAG）」错误：Dijkstra 适用于任意非负权图（含环），DAG 是更宽松条件。\n- 「图必须是树（无环连通）」错误：Dijkstra 处理一般图，不要求是树。\n- 「边权必须各不相同」错误：边权相等也行，不要求互异。",
+    "tags": ["最短路径算法", "初级", "Dijkstra", "非负权", "前提"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "所有边的权值非负（w ≥ 0）",
+        "isCorrect": true,
+        "description": "正确。Dijkstra 的贪心策略（一次性确定 d 最小点）只在非负权下成立。"
+      },
+      {
+        "text": "图必须是有向无环图（DAG）",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 适用于含环的一般非负权图，DAG 是更宽松的条件（DAG 还能用拓扑序 DP）。"
+      },
+      {
+        "text": "图必须是树（无环连通图）",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 能处理任意非负权图，包括带环的图，不限于树结构。"
+      },
+      {
+        "text": "所有边的权值必须互不相同",
+        "isCorrect": false,
+        "description": "错误。边权相等完全没问题，Dijkstra 不要求权值互异。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：堆优化的 Dijkstra 算法时间复杂度是？",
+    "explanation": "堆优化 Dijkstra：每个顶点入堆出堆各 O(logV)，V 个顶点共 O(VlogV)；每条边至多触发一次松弛（入堆）O(logV)，E 条边共 O(ElogV)。总时间 O((V+E)logV)。用邻接表存图空间 O(V+E)。朴素（数组版）Dijkstra 每轮线性找最小 O(V)，共 V 轮，加松弛 O(E)，总 O(V²)，适合稠密图（E≈V² 时堆优化反而更慢）。\n\n- 「O((V+E)logV)」正确。\n- 「O(V×E)」错误：那是 Bellman-Ford。\n- 「O(V³)」错误：那是 Floyd 全源。\n- 「O(V+E)」错误：最短路至少要处理所有边，但堆操作有 logV 因子，不可能是线性。",
+    "tags": ["最短路径算法", "初级", "Dijkstra", "堆优化", "复杂度"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "O((V+E)logV)",
+        "isCorrect": true,
+        "description": "正确。每条边松弛一次 O(E)，每次入堆出堆 O(logV)，共 O((V+E)logV)。"
+      },
+      {
+        "text": "O(V×E)",
+        "isCorrect": false,
+        "description": "错误。O(VE) 是 Bellman-Ford 的复杂度，Dijkstra 用堆优化比它快。"
+      },
+      {
+        "text": "O(V³)",
+        "isCorrect": false,
+        "description": "错误。O(V³) 是 Floyd 全源最短路的复杂度，Dijkstra 是单源的。"
+      },
+      {
+        "text": "O(V+E)",
+        "isCorrect": false,
+        "description": "错误。虽然要遍历所有边，但堆的入堆出堆有 O(logV) 因子，不可能是线性。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Dijkstra 算法在存在负权边时会算出错误结果，根本原因是？",
+    "explanation": "Dijkstra 的贪心策略是「每次取 d[] 最小的未确定点一次性确定，不再更新」。这个「一次性确定」依赖一个假设：后面不会再发现更短的到该点的路径——只在非负权下成立。若有负权边，后面可能经一条负边发现到该已确定点的更短路径，但该点已被 visited 标记锁死，Dijkstra 不会更新它，导致结果偏大（错误）。根因是「贪心假设被负权打破」，不是堆或实现问题。\n\n- 「贪心假设被负权打破：已确定的点后面可能经负边发现更短路，但已锁死不再更新」正确。\n- 「小顶堆不能正确排序负数」错误：堆能正确排序任意实数，与负数无关。\n- 「负权边会导致死循环」错误：负权边不导致死循环（Dijkstra 仍会终止），是结果错误。\n- 「邻接表不能存负权」错误：邻接表能存任意权值，存储与算法正确性无关。",
+    "tags": ["最短路径算法", "中级", "Dijkstra", "负权", "贪心"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "贪心假设被打破：已确定点后面可能经负边发现更短路，但 visited 锁死不再更新",
+        "isCorrect": true,
+        "description": "正确。负权让「先确定的最优」失效，Dijkstra 已锁死的点无法被更优路径更新。"
+      },
+      {
+        "text": "小顶堆无法正确对负数排序，导致取出的点不是最小",
+        "isCorrect": false,
+        "description": "错误。堆能正确排序任意实数（含负数），根因是贪心的「一次性确定」假设，不是堆的问题。"
+      },
+      {
+        "text": "负权边会导致算法陷入死循环无法终止",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 遇负权仍会终止（每点只确定一次），问题是结果错误，不是死循环。"
+      },
+      {
+        "text": "邻接表数据结构不支持存储负权边",
+        "isCorrect": false,
+        "description": "错误。邻接表能存任意权值，存储结构与算法正确性无关，根因是贪心策略失效。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Bellman-Ford 算法为什么需要松弛所有边 V−1 轮？",
+    "explanation": "Bellman-Ford 松弛 V−1 轮的依据是：任意简单最短路（不含环的路径）最多 V−1 条边。第 i 轮松弛后，d[] 至少收敛到「所有边数 ≤ i 的最短路」——第 1 轮得到「1 条边的最短路」，第 2 轮得到「≤2 条边」，…… 第 V−1 轮得到「≤V−1 条边」即所有简单最短路。所以 V−1 轮后必然收敛。它不假设非负权，因此能处理负权。若第 V 轮仍能松弛，说明存在边数 ≥ V 的「更短路」，即有环（简单路径最多 V−1 边，多出的边必成环，且能变小意味着负环）。\n\n- 「简单最短路最多 V−1 条边，V−1 轮后必然收敛」正确。\n- 「V−1 是边数 E」错误：V−1 是顶点数减一，与边数无关。\n- 「为了把复杂度优化到 O(V²)」错误：BF 是 O(VE)，轮数固定 V−1，与优化无关。\n- 「每轮只松弛一条边，共 V−1 条」错误：每轮松弛所有 E 条边，不是一条。",
+    "tags": ["最短路径算法", "中级", "Bellman-Ford", "松弛", "V-1轮"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "因为任意简单最短路最多 V−1 条边，V−1 轮松弛后必然收敛到真实最短路",
+        "isCorrect": true,
+        "description": "正确。第 i 轮收敛到「≤i 条边」的最短路，V−1 轮覆盖所有简单路径。"
+      },
+      {
+        "text": "因为 V−1 等于图的边数 E",
+        "isCorrect": false,
+        "description": "错误。V−1 是顶点数减一，与边数 E 无关；边数 E 可能远大于 V−1。"
+      },
+      {
+        "text": "为了把时间复杂度优化到 O(V²)",
+        "isCorrect": false,
+        "description": "错误。BF 复杂度是 O(VE)，V−1 轮是正确性要求，不是为优化到 O(V²)。"
+      },
+      {
+        "text": "每轮只松弛一条边，所以需要 V−1 轮处理 V−1 条边",
+        "isCorrect": false,
+        "description": "错误。每轮松弛所有 E 条边（不是一条），共 V−1 轮，总 O(VE)。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Bellman-Ford 算法的时间复杂度是？",
+    "explanation": "Bellman-Ford 每轮松弛所有 E 条边，共 V−1 轮，总时间 O((V−1)×E) = O(VE)。空间 O(V+E)（存 d[] 和边集）。它能处理负权边、能判负环（第 V 轮仍能松弛则负环），代价是比 Dijkstra 慢。优化：若某轮无任何松弛可提前退出（best case O(E)）。它与 Dijkstra（O((V+E)logV)）、Floyd（O(V³)）的复杂度量级不同。\n\n- 「O(VE)」正确。\n- 「O((V+E)logV)」错误：那是堆优化 Dijkstra。\n- 「O(V²)」错误：那是朴素 Dijkstra 或稠密图。\n- 「O(V+E)」错误：BF 要 V−1 轮松弛所有边，不可能线性。",
+    "tags": ["最短路径算法", "初级", "Bellman-Ford", "复杂度"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "O(V×E)",
+        "isCorrect": true,
+        "description": "正确。V−1 轮 × 每轮松弛所有 E 条边 = O(VE)。"
+      },
+      {
+        "text": "O((V+E)logV)",
+        "isCorrect": false,
+        "description": "错误。这是堆优化 Dijkstra 的复杂度，BF 不用堆、暴力松弛所有边。"
+      },
+      {
+        "text": "O(V²)",
+        "isCorrect": false,
+        "description": "错误。这是朴素 Dijkstra（邻接矩阵）的复杂度，BF 依赖边数 E，是 O(VE)。"
+      },
+      {
+        "text": "O(V+E)",
+        "isCorrect": false,
+        "description": "错误。BF 要重复 V−1 轮松弛所有边，不可能是线性 O(V+E)。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：用 Bellman-Ford 判断图中是否存在（从源点可达的）负权环，依据是？",
+    "explanation": "Bellman-Ford 跑完 V−1 轮后，简单最短路（最多 V−1 条边）应已收敛。再做「第 V 轮」松弛：若仍能松弛某条边（d[u]+w<d[v]），说明存在「边数 ≥ V 的更短路」——而简单路径最多 V−1 条边，多出来的边必成环，且能继续变小意味着环权为负。所以「第 V 轮仍能松弛」即存在从源点可达的负权环，此时最短路无定义（−∞）。注意：判的是「源点可达」的负环，不可达的负环不影响源点最短路。\n\n- 「第 V 轮（多松弛一轮）仍能松弛某条边，则存在负环」正确。\n- 「跑 V+1 轮看是否收敛」错误：BF 收敛最多需 V−1 轮，第 V 轮是判环，不是「多跑求收敛」。\n- 「看 d[] 是否有负值」错误：d[] 有负值正常（最短路可能为负，如负权边），与负环无关。\n- 「看是否提前退出」错误：提前退出（某轮无松弛）说明无负环已收敛，但这是「无环」的信号，不是判环依据。",
+    "tags": ["最短路径算法", "中级", "Bellman-Ford", "负环", "判环"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "跑完 V−1 轮后，第 V 轮松弛若仍能更新某条边，则存在可达的负权环",
+        "isCorrect": true,
+        "description": "正确。简单路径最多 V−1 边，第 V 轮还能松弛说明有边数更多的更短路，即负环。"
+      },
+      {
+        "text": "跑 V+1 轮，看第 V+1 轮是否还在松弛",
+        "isCorrect": false,
+        "description": "错误。收敛最多需 V−1 轮，第 V 轮即可判环，不需要跑到 V+1 轮。"
+      },
+      {
+        "text": "看最终的 d[] 数组中是否存在负值",
+        "isCorrect": false,
+        "description": "错误。最短路本身可能为负（有负权边时），d[] 有负值正常，不代表有负环。"
+      },
+      {
+        "text": "看算法是否在某轮提前退出（无松弛）",
+        "isCorrect": false,
+        "description": "错误。提前退出说明已收敛、无负环；但这是「无环」信号，判负环的依据是第 V 轮能否松弛。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：SPFA（队列优化的 Bellman-Ford）的核心优化思想是？",
+    "explanation": "Bellman-Ford 每轮松弛所有 E 条边，但很多边的起点 u 的 d[u] 本轮没变，松弛它毫无意义（结果不变）。SPFA 观察到：只有「d[] 刚被松弛成功（变小）」的点的出边才可能继续松弛别人。于是用一个队列只把这些「活跃」点入队，每次出队松弛其出边，新更新的点再入队。这样平均每条边只被松弛常数次，平均 O(E)，但最坏仍 O(VE)（有专门卡 SPFA 的构造数据）。\n\n- 「只松弛 d[] 刚变小的点的出边（用队列维护活跃点）」正确。\n- 「用堆代替队列取最小」错误：那是 Dijkstra 的做法，SPFA 用普通队列不取最小。\n- 「只松弛一部分边跳过其他」错误：SPFA 仍会松弛活跃点的所有出边，不是跳过。\n- 「减少松弛轮数到 logV」错误：SPFA 没有固定轮数，靠队列驱动直到空。",
+    "tags": ["最短路径算法", "中级", "SPFA", "队列优化", "Bellman-Ford"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "只有 d[] 刚被松弛变小的点的出边才可能松弛别人，用队列只处理这些活跃点",
+        "isCorrect": true,
+        "description": "正确。SPFA 用队列维护「d 刚变小」的点，避免无效松弛，平均 O(E)。"
+      },
+      {
+        "text": "用小顶堆代替队列，每次取出 d 最小的点优先处理",
+        "isCorrect": false,
+        "description": "错误。用堆取最小是 Dijkstra 的做法；SPFA 用普通队列（FIFO），不取最小。"
+      },
+      {
+        "text": "每次只松弛图中的一部分边，跳过权值大的边",
+        "isCorrect": false,
+        "description": "错误。SPFA 会松弛活跃点的所有出边，不按权值跳过，优化在于「只处理活跃点」。"
+      },
+      {
+        "text": "把松弛轮数从 V−1 减少到 logV 轮",
+        "isCorrect": false,
+        "description": "错误。SPFA 没有固定轮数概念，靠队列驱动直到队空，与 logV 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：关于 SPFA 算法的时间复杂度，下列说法正确的是？",
+    "explanation": "SPFA 是 Bellman-Ford 的队列优化，平均情况下每条边只被松弛常数次，平均时间约 O(E)，实测常比 BF 快很多。但最坏情况下仍为 O(VE)——存在专门卡 SPFA 的构造数据（如网格图、菊花图、链状图叠加），会让某些点反复入队、每条边被松弛 V 次。所以竞赛中 SPFA 慎用：非负权用 Dijkstra 更稳，必须判负环或处理负权时才考虑 SPFA（且要预期可能被卡）。\n\n- 「平均 O(E)，最坏 O(VE)」正确。\n- 「始终是 O(E)」错误：最坏是 O(VE)，会被构造数据卡。\n- 「始终是 O(VE)，和 BF 一样」错误：平均比 BF 快（约 O(E)），只是最坏相同。\n- 「是 O((V+E)logV)」错误：那是 Dijkstra 堆优化，SPFA 不用堆。",
+    "tags": ["最短路径算法", "中级", "SPFA", "复杂度", "最坏情况"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "平均约 O(E)，但最坏情况仍为 O(VE)，存在专门卡 SPFA 的构造数据",
+        "isCorrect": true,
+        "description": "正确。SPFA 平均快但最坏 O(VE)，竞赛有专门构造数据卡它，需慎用。"
+      },
+      {
+        "text": "始终是 O(E)，比 Dijkstra 还快，可以无脑用",
+        "isCorrect": false,
+        "description": "错误。最坏是 O(VE)，会被构造数据卡，不能无脑用；非负权 Dijkstra 更稳。"
+      },
+      {
+        "text": "始终是 O(VE)，和原始 Bellman-Ford 完全一样没有优化",
+        "isCorrect": false,
+        "description": "错误。平均比 BF 快（约 O(E)），只是最坏情况相同，并非完全一样。"
+      },
+      {
+        "text": "是 O((V+E)logV)，和堆优化 Dijkstra 相同",
+        "isCorrect": false,
+        "description": "错误。SPFA 用普通队列不用堆，平均 O(E) 最坏 O(VE)，与 Dijkstra 的 logV 复杂度不同。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Floyd-Warshall 算法用于求解什么问题？",
+    "explanation": "Floyd-Warshall 是「全源最短路」（APSP）算法——一次运行求出图中任意两点 i→j 之间的最短路径。它用三重循环 DP：外层枚举中转点 k，内层枚举所有点对 (i,j)，dp[i][j]=min(dp[i][j], dp[i][k]+dp[k][j])，即「i→j 的最短路要么不经过 k，要么经过 k（i→k→j）」。复杂度 O(V³) 时间 O(V²) 空间，与图密度无关，适合 V 较小（≤几百）的稠密图或要求传递闭包的场景。单源最短路用 Dijkstra/BF。\n\n- 「全源最短路（任意两点间）」正确。\n- 「单源最短路」错误：单源用 Dijkstra/BF/SPFA，Floyd 是全源。\n- 「最小生成树」错误：MST 用 Kruskal/Prim，与 Floyd 无关。\n- 「网络最大流」错误：最大流用 Ford-Fulkerson/Dinic，不是 Floyd。",
+    "tags": ["最短路径算法", "初级", "Floyd-Warshall", "全源", "DP"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "全源最短路：一次求出任意两点之间的最短路径",
+        "isCorrect": true,
+        "description": "正确。Floyd 用三重循环 DP 求所有点对的最短路，O(V³)。"
+      },
+      {
+        "text": "单源最短路：求一个源点到其他所有点的最短路径",
+        "isCorrect": false,
+        "description": "错误。单源用 Dijkstra/BF/SPFA；Floyd 是全源（所有点对）。"
+      },
+      {
+        "text": "最小生成树：求连接所有顶点的权值最小的树",
+        "isCorrect": false,
+        "description": "错误。最小生成树用 Kruskal/Prim，Floyd 与生成树无关。"
+      },
+      {
+        "text": "网络最大流：求源点到汇点的最大流量",
+        "isCorrect": false,
+        "description": "错误。最大流用 Ford-Fulkerson/Dinic 等算法，不是 Floyd。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Floyd-Warshall 的状态转移方程 dp[i][j]=min(dp[i][j], dp[i][k]+dp[k][j]) 中，k 代表什么？",
+    "explanation": "Floyd 的 DP 思路是逐步放宽「允许的中转点集合」。k 是「当前允许作为中转点的顶点」——外层循环 k 从 1 到 V，表示「现在允许用前 k 个点做中转」。状态 dp[k][i][j] 表示「只允许用前 k 个点做中转时 i→j 的最短路」，转移：要么不走 k（用 dp[k-1][i][j]），要么走 k（拆成 i→k→j，即 dp[k-1][i][k]+dp[k-1][k][j]）。因此 k 必须在最外层循环（它是 DP 的阶段）。当 k 遍历完所有点，dp[V][i][j] 即真实最短路。\n\n- 「k 是当前允许作为中转点的顶点（DP 的阶段）」正确。\n- 「k 是起点」错误：起点是 i。\n- 「k 是终点」错误：终点是 j。\n- 「k 是边权」错误：边权是 w，k 是顶点编号。",
+    "tags": ["最短路径算法", "中级", "Floyd-Warshall", "中转点", "DP"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "k 是当前允许作为中转点的顶点，外层循环依次允许更多中转点（DP 的阶段）",
+        "isCorrect": true,
+        "description": "正确。k 是中转点，逐步引入，故必须在最外层循环。"
+      },
+      {
+        "text": "k 是路径的起点",
+        "isCorrect": false,
+        "description": "错误。起点是 i，k 是中转点（i→k→j 的中间点）。"
+      },
+      {
+        "text": "k 是路径的终点",
+        "isCorrect": false,
+        "description": "错误。终点是 j，k 是中转点。"
+      },
+      {
+        "text": "k 是边的权值",
+        "isCorrect": false,
+        "description": "错误。边权是 w，k 是顶点编号（中转点）。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Floyd-Warshall 算法的时间复杂度和空间复杂度分别是？",
+    "explanation": "Floyd 三重循环（k、i、j 各从 1 到 V），时间 O(V³)；用邻接矩阵存 dp[i][j]，空间 O(V²)。它与图密度（边数 E）无关，只依赖顶点数 V，因此适合 V 较小的稠密图——V=500 时约 1.25×10⁸ 次运算可接受，V=1000 时 10⁹ 次吃力，V>2000 基本超时。它能处理负权边（不能有可达负环），可通过跑完检查 dp[i][i]<0 判负环。空间可从 O(V³)（三维 dp[k][i][j]）降维到 O(V²)（原地更新 dp[i][j]）。\n\n- 「时间 O(V³)，空间 O(V²)」正确。\n- 「时间 O(VE)，空间 O(V)」错误：那是 Bellman-Ford。\n- 「时间 O(V²)，空间 O(V²)」错误：Floyd 是三重循环 O(V³)。\n- 「时间 O(V³)，空间 O(V³)」错误：空间可降维到 O(V²)（不用存所有 k 层）。",
+    "tags": ["最短路径算法", "初级", "Floyd-Warshall", "复杂度", "空间"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "时间 O(V³)，空间 O(V²)",
+        "isCorrect": true,
+        "description": "正确。三重循环 O(V³)，邻接矩阵 dp 可原地降维到 O(V²)。"
+      },
+      {
+        "text": "时间 O(VE)，空间 O(V)",
+        "isCorrect": false,
+        "description": "错误。O(VE) 是 Bellman-Ford；Floyd 是三重循环 O(V³)，与 E 无关。"
+      },
+      {
+        "text": "时间 O(V²)，空间 O(V²)",
+        "isCorrect": false,
+        "description": "错误。Floyd 是三重循环（k,i,j），时间是 O(V³) 不是 O(V²)。"
+      },
+      {
+        "text": "时间 O(V³)，空间 O(V³)",
+        "isCorrect": false,
+        "description": "错误。空间可降维：因 dp[k][i][k]=dp[k-1][i][k]，原地更新只需 O(V²)，不必 O(V³)。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Floyd-Warshall 的三重循环中，中转点 k 为什么必须放在最外层？",
+    "explanation": "Floyd 的 DP 是按「允许的中转点集合」分阶段：dp[k][i][j] 表示「只允许用前 k 个点做中转」时的最短路，从 dp[k-1] 转移到 dp[k]。k 是阶段变量，必须最外层，保证计算 dp[k] 时 dp[k-1]（只用前 k−1 个点）已全部就绪。若把 k 放在内层，会在「同一个 k 阶段未完成时」就用到了本阶段刚更新、尚未稳定的值，导致用到「允许更多中转点」的错误数据，结果错乱。简单说：k 在外层保证「按阶段递推」，是 DP 正确性的要求。\n\n- 「k 是 DP 的阶段变量，放外层保证按阶段递推（dp[k-1] 完成才算 dp[k]）」正确。\n- 「为了减少循环次数」错误：循环次数固定 V³，与顺序无关，是正确性问题。\n- 「为了缓存友好」错误：缓存友好不是主因，正确性才是。\n- 「顺序无所谓，i/j/k 任意」错误：顺序错会算错（用错阶段的数据）。",
+    "tags": ["最短路径算法", "中级", "Floyd-Warshall", "循环顺序", "DP"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "k 是 DP 的阶段变量，放最外层才能保证计算 dp[k] 时 dp[k-1]（前 k−1 个中转点）已全部就绪",
+        "isCorrect": true,
+        "description": "正确。k 在外层保证按阶段递推，否则会用错阶段的未稳定值，结果错误。"
+      },
+      {
+        "text": "为了减少总的循环执行次数",
+        "isCorrect": false,
+        "description": "错误。三重循环次数固定 V³，与顺序无关；k 在外层是为正确性，非减少次数。"
+      },
+      {
+        "text": "为了让内存访问更缓存友好",
+        "isCorrect": false,
+        "description": "错误。缓存友好性不是主因；核心是 DP 阶段正确性，顺序错了结果会错。"
+      },
+      {
+        "text": "顺序无所谓，i、j、k 三层循环任意排列都正确",
+        "isCorrect": false,
+        "description": "错误。k 必须最外层，否则会用到同阶段未稳定的值，得到错误结果。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：在带负权边的图中求单源最短路，应优先选用哪个算法？",
+    "explanation": "有负权边时，Dijkstra 的贪心假设失效（会算错），必须用 Bellman-Ford 或 SPFA。两者都能处理负权、能判负环。Bellman-Ford 是 O(VE) 的稳妥保底算法；SPFA 是其队列优化，平均 O(E) 但最坏 O(VE) 易被构造数据卡。Dijkstra 只能用于非负权；Floyd 虽然能处理负权（无负环），但它是全源 O(V³)，求单源用它代价过高，不优先。\n\n- 「Bellman-Ford（或 SPFA）」正确。\n- 「Dijkstra」错误：Dijkstra 遇负权算错，不能用。\n- 「Floyd-Warshall」错误：Floyd 能处理负权但求单源代价过高（O(V³)），不优先。\n- 「Prim 最小生成树算法」错误：Prim 求 MST，不是最短路。",
+    "tags": ["最短路径算法", "中级", "选型", "负权", "Bellman-Ford"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Bellman-Ford（或队列优化的 SPFA）",
+        "isCorrect": true,
+        "description": "正确。两者都能处理负权边、能判负环，是负权单源最短路的首选。"
+      },
+      {
+        "text": "Dijkstra（堆优化）",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 遇负权边会因贪心假设失效而算错，必须换 BF/SPFA。"
+      },
+      {
+        "text": "Floyd-Warshall",
+        "isCorrect": false,
+        "description": "错误。Floyd 虽能处理负权，但求单源用它代价过高（O(V³)），应选 BF/SPFA。"
+      },
+      {
+        "text": "Prim 最小生成树算法",
+        "isCorrect": false,
+        "description": "错误。Prim 求的是最小生成树，不是最短路，与负权最短路无关。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：在顶点数 V 很大（如 V>10⁴）的稀疏图上求全源最短路，下列哪种方法最合适？",
+    "explanation": "全源最短路有两个选择：Floyd（O(V³)）或「跑 V 次单源算法」。V 很大时 Floyd 必超时（V=10⁴ 时 V³=10¹²），不可行。稀疏图（E≈V）下，跑 V 次堆优化 Dijkstra 每次 O((V+E)logV)≈O(VlogV)，总计 O(V²logV)，远优于 Floyd。注意：这要求非负权（Dijkstra 限制）；若有负权，跑 V 次 BF 是 O(V²E)，代价高。所以大稀疏图、非负权、求全源 → V 次 Dijkstra。\n\n- 「跑 V 次堆优化 Dijkstra」正确。\n- 「Floyd-Warshall」错误：V³ 在 V 大时超时。\n- 「跑 V 次 Bellman-Ford」错误：负权才需要，且 O(V²E) 太慢；非负权用 Dijkstra。\n- 「SPFA」错误：SPFA 是单源算法，且求全源要跑 V 次，最坏 O(V²E)，不如 Dijkstra。",
+    "tags": ["最短路径算法", "中级", "选型", "全源", "稀疏图"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "对每个顶点跑一次堆优化的 Dijkstra，总计 O(V(V+E)logV)",
+        "isCorrect": true,
+        "description": "正确。大稀疏图 Floyd 必超时，V 次 Dijkstra 总计 O(V²logV) 更优。"
+      },
+      {
+        "text": "Floyd-Warshall，一次三重循环搞定",
+        "isCorrect": false,
+        "description": "错误。Floyd 是 O(V³)，V>10⁴ 时 V³=10¹² 必超时，不能用于大图。"
+      },
+      {
+        "text": "跑 V 次 Bellman-Ford",
+        "isCorrect": false,
+        "description": "错误。BF 求全源是 O(V²E)，比 V 次 Dijkstra 慢；非负权应用 Dijkstra。"
+      },
+      {
+        "text": "用 SPFA 跑一次",
+        "isCorrect": false,
+        "description": "错误。SPFA 是单源算法；求全源要跑 V 次，且最坏 O(VE)，不如 V 次 Dijkstra。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：下列哪个场景最适合用 Floyd-Warshall 而非 Dijkstra？",
+    "explanation": "Floyd 的优势是「一次求全源」且实现简单（三重循环），适合：①顶点数 V 很小（≤几百）；②图稠密（E≈V²）；③需要任意两点间最短路的多次查询；④求传递闭包（可达性）。典型如「求所有城市两两之间距离」的小规模稠密图。反之，单源、稀疏大图、V 很大时 Dijkstra 更优。Floyd 的硬伤是 O(V³)，V 大必超时。\n\n- 「V=100 的稠密图，要求任意两点间最短路」正确。\n- 「V=10⁵ 的稀疏图求单源最短路」错误：应 Dijkstra，Floyd 必超时。\n- 「V=10⁴ 的图求单源」错误：Floyd O(V³) 超时，且单源不必用全源算法。\n- 「无权图求单源最短路」错误：无权图单源用 BFS O(V+E) 即可，无需 Floyd。",
+    "tags": ["最短路径算法", "中级", "选型", "Floyd-Warshall", "稠密图"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "顶点数 V=100 的稠密图，需要查询任意两点间的最短路径",
+        "isCorrect": true,
+        "description": "正确。V 小、稠密、全源查询是 Floyd 的最佳场景，一次 O(V³) 搞定所有点对。"
+      },
+      {
+        "text": "V=10⁵ 的稀疏图，求一个源点到其他点的最短路",
+        "isCorrect": false,
+        "description": "错误。这是 Dijkstra 的场景（O((V+E)logV)），Floyd 的 O(V³) 在 V=10⁵ 时必超时。"
+      },
+      {
+        "text": "V=10⁴ 的图，只需求某一个源点的单源最短路",
+        "isCorrect": false,
+        "description": "错误。单源且 V 大应用 Dijkstra；Floyd 的 O(V³) 在 V=10⁴ 时超时，且单源不必用全源算法。"
+      },
+      {
+        "text": "无权图（所有边权为 1）求单源最短路",
+        "isCorrect": false,
+        "description": "错误。无权图单源最短路用 BFS 即可 O(V+E)，比 Floyd 简单且快得多。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：若图中存在从源点可达的负权环，关于最短路下列说法正确的是？",
+    "explanation": "负权环是「权值和为负的环」。若它从源点可达，则可以绕这个环无限多次，每绕一圈路径总权值减小（变负更多），于是「最短路」可以趋于 −∞，没有有限的最短路径——此时最短路无定义。算法（Bellman-Ford/SPFA）应能检测并报告负环。注意：必须是「源点可达」的负环才影响该源点的最短路；不可达的负环不影响。Dijkstra/Floyd 不能在求路时优雅处理负环（Dijkstra 遇负权就错，Floyd 跑完看 dp[i][i]<0 才知道）。\n\n- 「最短路无定义（可趋于 −∞），算法应检测并报告负环」正确。\n- 「最短路是绕环一次的路径」错误：绕一次不是最短，可无限绕变小。\n- 「最短路为 0」错误：与环权无关，负环让路径趋于 −∞。\n- 「负环不影响最短路」错误：可达负环让最短路无定义。",
+    "tags": ["最短路径算法", "中级", "负权环", "判环", "无定义"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "最短路无定义（路径长度可趋于 −∞），算法应能检测并报告存在负权环",
+        "isCorrect": true,
+        "description": "正确。可达负权环可无限绕圈变小，最短路趋于 −∞ 无定义，需判环报错。"
+      },
+      {
+        "text": "最短路是绕负权环恰好一圈的路径",
+        "isCorrect": false,
+        "description": "错误。绕一圈不是最短——可绕无限多圈让长度持续变小，故无有限最短路。"
+      },
+      {
+        "text": "最短路长度为 0（环的影响被抵消）",
+        "isCorrect": false,
+        "description": "错误。负权环让路径长度趋于 −∞，不是抵消为 0。"
+      },
+      {
+        "text": "负权环对最短路没有任何影响，照常计算即可",
+        "isCorrect": false,
+        "description": "错误。可达的负权环让最短路无定义，必须能检测，否则结果错误（给出有限值实为 −∞）。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：Dijkstra 和 Bellman-Ford 都能求单源最短路，它们的关键区别是？",
+    "explanation": "Dijkstra 和 Bellman-Ford 的关键区别在「权限制」与「复杂度」：①Dijkstra 要求非负权（贪心假设），Bellman-Ford 可处理负权边；②复杂度 Dijkstra 堆优化 O((V+E)logV) 更快，Bellman-Ford O(VE) 较慢；③Bellman-Ford 能判负环（第 V 轮），Dijkstra 不能。此外 Dijkstra 贪心（取最近点一次性确定），Bellman-Ford 暴力（松弛所有边 V−1 轮）。选型：非负权优先 Dijkstra（快），有负权或要判负环用 Bellman-Ford。\n\n- 「Dijkstra 限非负权且更快 O((V+E)logV)，BF 可负权可判负环但较慢 O(VE)」正确。\n- 「两者都能处理负权」错误：Dijkstra 不能处理负权。\n- 「Dijkstra 更慢」错误：Dijkstra 更快。\n- 「两者复杂度相同」错误：Dijkstra O((V+E)logV)，BF O(VE)，不同。",
+    "tags": ["最短路径算法", "中级", "Dijkstra", "Bellman-Ford", "对比"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Dijkstra 限非负权且更快 O((V+E)logV)，Bellman-Ford 可处理负权、能判负环但较慢 O(VE)",
+        "isCorrect": true,
+        "description": "正确。权限制、复杂度、判负环能力是两者三大区别。"
+      },
+      {
+        "text": "两者都能正确处理带负权边的图",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 遇负权会算错，只有 Bellman-Ford/SPFA 能处理负权。"
+      },
+      {
+        "text": "Dijkstra 比 Bellman-Ford 更慢",
+        "isCorrect": false,
+        "description": "错误。Dijkstra（堆优化 O((V+E)logV)）比 Bellman-Ford（O(VE)）更快。"
+      },
+      {
+        "text": "两者时间复杂度完全相同",
+        "isCorrect": false,
+        "description": "错误。Dijkstra 是 O((V+E)logV)，Bellman-Ford 是 O(VE)，复杂度不同。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：松弛操作 if (d[u]+w < d[v]) d[v]=d[u]+w 的正确性，依赖最短路的哪个性质？",
+    "explanation": "松弛的正确性依赖最短路径的「最优子结构」：最短路径的子路径也是最短路径。即若 s→v 的最短路经过 u，则其中 s→u 这一段也必定是 s→u 的最短路（否则可用更短的 s→u 替换，得到更短的 s→v，矛盾）。因此，只要不断松弛（发现更短就更新），d[] 最终会收敛到真实最短路——因为真实最短路上的每条边都满足 d[u]+w=d[v]（不会再被松弛）。所有最短路算法都是基于这一性质，用不同策略保证松弛充分。\n\n- 「最优子结构：最短路的子路径也是最短路」正确。\n- 「三角不等式」错误：三角不等式是松弛的判断式本身，不是其依赖的性质。\n- 「贪心选择性质」错误：贪心是 Dijkstra 的策略，松弛是更基础的操作，不依赖贪心。\n- 「无后效性」错误：无后效性是 DP 的性质，松弛的正确性根源是最优子结构。",
+    "tags": ["最短路径算法", "中级", "松弛操作", "最优子结构"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "最优子结构：最短路径的子路径也是最短路径",
+        "isCorrect": true,
+        "description": "正确。正因如此，不断松弛会让 d[] 收敛到真实最短路（每条最路边都 d[u]+w=d[v]）。"
+      },
+      {
+        "text": "三角不等式",
+        "isCorrect": false,
+        "description": "错误。三角不等式 d[u]+w≥d[v] 是松弛的「判断式」本身（是否需更新），不是其依赖的性质。"
+      },
+      {
+        "text": "贪心选择性质",
+        "isCorrect": false,
+        "description": "错误。贪心是 Dijkstra 的策略；松弛是更基础的操作，其正确性源于最优子结构，与贪心无关。"
+      },
+      {
+        "text": "动态规划的无后效性",
+        "isCorrect": false,
+        "description": "错误。无后效性是 DP 的性质（Floyd 用到）；松弛的正确性根源是最优子结构，非无后效性。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：用 Dijkstra 求最短路后，如何还原从源点 s 到某终点 t 的具体路径？",
+    "explanation": "还原路径需在松弛时额外维护一个前驱数组 prev[]：当 relax(u,v,w) 成功（d[u]+w<d[v]）时，记录 prev[v]=u（即「到 v 的更短路径是从 u 来的」）。算法结束后，从终点 t 沿 prev[] 回溯：t → prev[t] → prev[prev[t]] → ... → s，再反转即得 s→t 的路径。Floyd 类似，用 nxt[i][j] 记录「i→j 最短路的第一跳」。只存 d[] 无法还原路径，必须同步记录前驱。\n\n- 「松弛时记录 prev[v]=u，结束后从 t 沿 prev[] 回溯到 s 再反转」正确。\n- 「d[] 数组直接给出路径」错误：d[] 只存距离，不存路径。\n- 「BFS 顺序输出」错误：BFS 顺序与最短路路径无关。\n- 「无法还原，只能重新跑」错误：维护 prev[] 即可还原，不必重跑。",
+    "tags": ["最短路径算法", "中级", "Dijkstra", "路径还原", "前驱"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "松弛时记录前驱 prev[v]=u，结束后从 t 沿 prev[] 回溯到 s，反转即得路径",
+        "isCorrect": true,
+        "description": "正确。prev[] 记录每点的「上一跳」，回溯+反转即还原最短路径。"
+      },
+      {
+        "text": "直接读取 d[] 数组，d[t] 就是从 s 到 t 的路径",
+        "isCorrect": false,
+        "description": "错误。d[] 只存最短距离（数值），不包含路径上的顶点序列，无法直接得路径。"
+      },
+      {
+        "text": "按顶点的 BFS 访问顺序输出即为最短路径",
+        "isCorrect": false,
+        "description": "错误。BFS 访问顺序不等于最短路径，必须靠 prev[] 回溯。"
+      },
+      {
+        "text": "无法还原路径，只能重新运行算法并记录中间状态",
+        "isCorrect": false,
+        "description": "错误。只需在原算法中多维护一个 prev[] 数组，无需重新运行。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：关于 Dijkstra 算法堆优化实现中 visited[]（已确定）标记的作用，下列说法正确的是？",
+    "explanation": "堆优化 Dijkstra 中，同一顶点可能因多次被松弛而以不同 d[] 值多次入堆（每次发现更短路就 push 一次）。当某顶点 u 第一次出堆时（此时 d[u] 最小），它被标记 visited 并一次性确定。后续该顶点的「旧版本」（更大的 d[]）出堆时，通过 if (visited[u]) continue 跳过，避免重复处理。这不仅节省时间，也防止用旧的大 d[] 值去松弛邻居导致错误。所以 visited 判断是正确性与效率的双重保障。\n\n- 「同一顶点可能多版本入堆，visited 跳过旧版本，保证只处理最小那次」正确。\n- 「防止顶点被松弛多次」错误：顶点可被松弛多次（每次更短路），visited 只管出堆处理。\n- 「标记顶点是否入过堆」错误：那是 inHeap，visited 是「是否已确定最短路」。\n- 「只为了节省空间」错误：主因是正确性（用最小 d 处理）与效率，不是空间。",
+    "tags": ["最短路径算法", "中级", "Dijkstra", "堆优化", "visited", "实现"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "同一顶点可能以多个 d 值入堆，visited 标记使其只处理第一次（最小值）出堆，跳过旧版本",
+        "isCorrect": true,
+        "description": "正确。visited 避免重复处理旧的大 d 值，是正确性（用最小值松弛）与效率的保障。"
+      },
+      {
+        "text": "为了防止某个顶点被松弛超过一次",
+        "isCorrect": false,
+        "description": "错误。顶点可被松弛多次（每次发现更短路都更新），visited 只控制「出堆后是否处理」，不限制松弛次数。"
+      },
+      {
+        "text": "用来标记顶点是否曾经入过堆",
+        "isCorrect": false,
+        "description": "错误。标记「是否入过堆」的是另一个状态（inHeap）；visited 标记的是「是否已确定最短路」。"
+      },
+      {
+        "text": "仅仅为了节省内存空间，不影响正确性",
+        "isCorrect": false,
+        "description": "错误。visited 既影响正确性（用最小 d 处理）又提升效率，不是仅为省空间。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：关于 Bellman-Ford 算法中「提前退出」优化（某轮无任何松弛则结束），下列说法正确的是？",
+    "explanation": "Bellman-Ford 标准是 V−1 轮，但可优化：若某一轮遍历所有边后没有任何一次松弛成功（updated=false），说明 d[] 已收敛到真实最短路，后续轮数不会再改变，可立即退出。best case（如源点直接可达所有点且无更优路径）只需 1 轮即收敛，O(E)。这不会改变最坏复杂度 O(VE)，但平均能显著减少轮数。该优化不影响正确性（已收敛则继续松弛也无效），是常用的工程优化。SPFA 本质就是把这种「只处理活跃点」做到极致。\n\n- 「某轮无松弛说明已收敛，可提前退出，best case O(E)」正确。\n- 「会破坏正确性」错误：已收敛再松弛也不会变，提前退出仍正确。\n- 「保证最坏也是 O(E)」错误：最坏仍 O(VE)，优化只改善平均。\n- 「只在负环图有用」错误：恰恰相反，负环图会一直松弛无法提前退出；优化在无负环、收敛快的图最有用。",
+    "tags": ["最短路径算法", "中级", "Bellman-Ford", "提前退出", "优化"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "某轮若无任何松弛成功，说明 d[] 已收敛，可提前退出，最好情况 O(E)",
+        "isCorrect": true,
+        "description": "正确。已收敛后再松弛也无变化，提前退出不影响正确性，best case 一轮 O(E)。"
+      },
+      {
+        "text": "提前退出会破坏算法正确性，不能使用",
+        "isCorrect": false,
+        "description": "错误。已收敛（无松弛）时 d[] 不再改变，提前退出结果仍正确，是安全的优化。"
+      },
+      {
+        "text": "保证最坏情况复杂度也降到 O(E)",
+        "isCorrect": false,
+        "description": "错误。最坏情况（如链状图）仍需 V−1 轮，复杂度仍是 O(VE)，优化只改善平均。"
+      },
+      {
+        "text": "只在存在负权环的图里才有用",
+        "isCorrect": false,
+        "description": "错误。恰恰相反：负环图会持续松弛无法提前退出；该优化在无负环、收敛快的图最有用。"
+      }
+    ]
+  },
+  {
+    "stem": "最短路径：下列关于四个最短路算法的描述，哪一项是不准确的？",
+    "explanation": "逐项核查：①Dijkstra 限非负权，O((V+E)logV) 堆优化 —— 准确；②Bellman-Ford 可负权、可判负环、O(VE) —— 准确；③Floyd 全源 O(V³)、能处理负权（但不能有可达负环，否则最短路无定义） —— 注意 Floyd 能处理「负权边」，只是图不能含「负权环」，所以「不能处理负权」是不准确的（它能处理负边）；④SPFA 是 BF 队列优化，平均 O(E) 最坏 O(VE) —— 准确。所以「Floyd 不能处理负权」不准确，它能处理负权边，只是不能有负环。\n\n- 「Floyd-Warshall 不能处理任何负权」不准确（它能处理负权边，只是不能有负环）。\n- 「Dijkstra 要求非负权」准确。\n- 「Bellman-Ford 能判负环」准确。\n- 「SPFA 平均 O(E)」准确。",
+    "tags": ["最短路径算法", "中级", "Floyd-Warshall", "负权", "综合"],
+    "categories": [
+      ["技术方向", "最短路径算法"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Floyd-Warshall 完全不能处理任何负权边",
+        "isCorrect": true,
+        "description": "正确（本题选「不准确」项）。Floyd 能处理负权边，只是图不能含可达负权环（否则最短路无定义）。"
+      },
+      {
+        "text": "Dijkstra 要求图中所有边权非负",
+        "isCorrect": false,
+        "description": "错误（这是准确的说法）。Dijkstra 的贪心确实只在非负权下成立。"
+      },
+      {
+        "text": "Bellman-Ford 能在求最短路的同时检测负权环",
+        "isCorrect": false,
+        "description": "错误（这是准确的说法）。BF 跑完 V−1 轮后第 V 轮仍能松弛即可判负环。"
+      },
+      {
+        "text": "SPFA 是 Bellman-Ford 的队列优化，平均时间约 O(E)",
+        "isCorrect": false,
+        "description": "错误（这是准确的说法）。SPFA 用队列只处理活跃点，平均 O(E) 最坏 O(VE)。"
+      }
+    ]
+  }
+]

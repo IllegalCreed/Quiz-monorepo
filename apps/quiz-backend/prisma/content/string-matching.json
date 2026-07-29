@@ -1,0 +1,777 @@
+[
+  {
+    "stem": "字符串匹配：下列关于字符串匹配问题的描述，正确的是？",
+    "explanation": "字符串匹配问题：给定主串 s（长 n）和模式串 p（长 m，m ≤ n），找出 p 在 s 中所有出现位置的起始下标 i，即所有满足 s[i..i+m-1] === p 的 i。它输出的是匹配的起点下标而非内容本身。这是文本编辑器查找、grep、生物序列比对、入侵检测的核心原语。\n\n- 「在主串 s 中找出模式串 p 所有出现位置的起点下标」正确。\n- 「输出所有匹配的子串内容」错误：输出的是匹配的起始位置下标，不是子串本身。\n- 「只判断 p 是否在 s 中出现，不关心位置」错误：那是「包含判定」的弱化版，匹配问题通常要求返回所有出现位置。\n- 「m 必须 ≤ n，否则无解」虽方向对但不是「问题描述」的核心，且问题描述本身没要求陈述该约束；最准确的是第一个。",
+    "tags": ["字符串匹配", "入门", "问题定义"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "给定主串 s 和模式串 p，找出 p 在 s 中所有出现位置的起始下标",
+        "isCorrect": true,
+        "description": "正确。这正是字符串匹配问题的标准定义，输出匹配起点下标。"
+      },
+      {
+        "text": "输出主串中所有与模式串相等的子串内容",
+        "isCorrect": false,
+        "description": "错误。匹配问题输出的是匹配的起始位置下标，不是子串内容本身。"
+      },
+      {
+        "text": "只判断模式串是否在主串中出现，不关心出现位置",
+        "isCorrect": false,
+        "description": "错误。那是「包含判定」的弱化版本，匹配问题通常要求返回所有出现位置。"
+      },
+      {
+        "text": "找出主串与模式串的最长公共子串",
+        "isCorrect": false,
+        "description": "错误。最长公共子串是另一类问题（DP/后缀数组），不是精确匹配。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：朴素（双循环）匹配算法的最坏时间复杂度是？",
+    "explanation": "朴素法对每个起点 i = 0..n-m，逐字符比对 s[i+k] 与 p[k]，最坏情况下每个起点都比到第 m 个字符才失配，比较次数约为 (n-m+1)·m，即 O(n·m)。退化场景：主串 s = \"aaaa...aab\"、模式 p = \"aaa...ab\"，每个起点都对到末位才发现不匹配，主串指针反复回退。\n\n- 「O(n·m)」正确。\n- 「O(n+m)」错误：那是 KMP 等优化算法的最坏复杂度，朴素法最坏是 O(n·m)。\n- 「O(n log m)」错误：字符串匹配不存在这个典型复杂度档。\n- 「O(m²)」错误：忽略了主串长度 n 的维度，朴素法与 n、m 都相关。",
+    "tags": ["字符串匹配", "入门", "朴素法", "复杂度"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "O(n·m)",
+        "isCorrect": true,
+        "description": "正确。最坏每个起点都比到第 m 个字符，比较次数 (n-m+1)·m。"
+      },
+      {
+        "text": "O(n+m)",
+        "isCorrect": false,
+        "description": "错误。这是 KMP 等优化算法的最坏复杂度，朴素法最坏会到 O(n·m)。"
+      },
+      {
+        "text": "O(n log m)",
+        "isCorrect": false,
+        "description": "错误。字符串匹配没有这个典型复杂度档。"
+      },
+      {
+        "text": "O(m²)",
+        "isCorrect": false,
+        "description": "错误。忽略了主串长度 n，朴素法比较次数与 n、m 都线性相关。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：下列哪种主串与模式串组合会让朴素法最严重地退化到 O(nm)？",
+    "explanation": "朴素法退化的根源是「失配后主串指针回退、已匹配信息被丢弃」。当主串和模式串有大量重复前缀、只在末尾不同时，每个起点都能匹配很长一段才在末位失配，导致接近 n·m 次比较。典型：主串 \"aaaa...aab\"、模式 \"aaa...ab\"——每个起点都对到模式最后一个 b 才发现 s 里是 a，于是 i++ 几乎从头重比。\n\n- 「主串 aaaa...aab，模式 aaa...ab」正确：每个起点比到末位才失配，经典 O(nm) 退化。\n- 「主串 abcdef，模式 xyz」错误：第 1 个字符就失配，每个起点 O(1)，接近 O(n)，很快。\n- 「主串随机英文，模式 a」错误：m=1，单字符匹配是 O(n)，不退化。\n- 「主串全 a，模式全 a」错误：虽然每起点都命中，但匹配成功时 j 单调走到 m，不回退，总比较 O(n)，不算退化（退化指失配回退）。",
+    "tags": ["字符串匹配", "入门", "朴素法", "退化"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "主串 = \"aaaa...aab\"，模式 = \"aaa...ab\"",
+        "isCorrect": true,
+        "description": "正确。重复前缀 + 末尾失配，每个起点比到末位才失败，经典 O(nm) 退化。"
+      },
+      {
+        "text": "主串 = \"abcdef\"，模式 = \"xyz\"",
+        "isCorrect": false,
+        "description": "错误。第 1 个字符就失配，每个起点 O(1)，总 O(n)，不退化。"
+      },
+      {
+        "text": "主串 = 全随机英文字母，模式 = \"a\"",
+        "isCorrect": false,
+        "description": "错误。m=1 单字符匹配是 O(n)，不存在回退退化。"
+      },
+      {
+        "text": "主串 = \"aaaa...a\"，模式 = \"aaaa...a\"（全 a 命中）",
+        "isCorrect": false,
+        "description": "错误。匹配成功时 j 单调走到 m 不回退，总比较 O(n)，失配回退才算退化。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：朴素法最坏退化为 O(nm) 的根本症结是？",
+    "explanation": "朴素法失配时，已经比对过的 j 个字符（s[i..i+j-1] === p[0..j-1]）是已知信息，但朴素法直接 i++ 把它们全扔了，重新从 p[0] 比对——主串指针回退到 i+1 重新比对。所有进阶算法的本质都是在「利用这些已匹配信息，避免主串回溯或跳跃前进」。\n\n- 「失配后丢弃了已匹配的字符信息，导致主串指针回退重比」正确。\n- 「没有用哈希」错误：用不用哈希是方法选择，不是朴素法的症结。\n- 「从左到右比对」错误：比对方向不是症结（BM 从右到左也是优化算法）。\n- 「使用了双循环」错误：双循环是表象，症结是回退重比导致重复工作。",
+    "tags": ["字符串匹配", "入门", "朴素法", "症结"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "入门"]
+    ],
+    "options": [
+      {
+        "text": "失配后丢弃了已匹配的字符信息，导致主串指针回退重新比对",
+        "isCorrect": true,
+        "description": "正确。症结是丢弃已匹配信息、主串回退；进阶算法都在复用这些信息。"
+      },
+      {
+        "text": "没有对模式串计算哈希值",
+        "isCorrect": false,
+        "description": "错误。用不用哈希是方法选择，不是朴素法 O(nm) 的根本症结。"
+      },
+      {
+        "text": "从左到右逐字符比对的方向不对",
+        "isCorrect": false,
+        "description": "错误。比对方向不是症结；BM 从右到左照样是优化算法。"
+      },
+      {
+        "text": "使用了嵌套的双循环结构",
+        "isCorrect": false,
+        "description": "错误。双循环是表象，真正症结是回退重比造成大量重复比较。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：KMP 算法的最坏时间复杂度（含预处理）是？",
+    "explanation": "KMP 预处理 next 数组 O(m)，匹配阶段主串指针 i 始终单调递增绝不回退，j 的回跳总次数受 i 增加约束（≤ n），故匹配阶段 O(n)。合计 O(n+m)。这是 KMP 相对朴素法（最坏 O(nm)）的核心优势——严格线性、无最坏退化。\n\n- 「O(n+m)」正确。\n- 「O(n·m)」错误：那是朴素法最坏，KMP 已优化掉。\n- 「O(n²)」错误：KMP 与 m 无关地坏不到 n²。\n- 「O(m²)」错误：next 构造虽是「自匹配」但线性 O(m)，不是 m²。",
+    "tags": ["字符串匹配", "KMP", "复杂度"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "O(n+m)",
+        "isCorrect": true,
+        "description": "正确。预处理 next O(m) + 匹配 O(n)，严格线性无最坏退化。"
+      },
+      {
+        "text": "O(n·m)",
+        "isCorrect": false,
+        "description": "错误。这是朴素法最坏复杂度，KMP 已优化到 O(n+m)。"
+      },
+      {
+        "text": "O(n²)",
+        "isCorrect": false,
+        "description": "错误。KMP 主串指针单调递增，不会到 n²。"
+      },
+      {
+        "text": "O(m²)",
+        "isCorrect": false,
+        "description": "错误。next 构造虽是「模式串自匹配」但本身是线性 O(m)。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：KMP 算法最核心的特性是？",
+    "explanation": "KMP 的精髓是「主串指针 i 绝不回退」。失配时模式串指针 j 回跳到 next[j]（复用已匹配前缀），但主串 i 原地不动。这使得 KMP 特别适合流式数据（主串不可回退、一次扫描）。next 数组预处理是 O(m)，匹配是 O(n)。\n\n- 「主串指针在整个匹配过程中绝不回退」正确。\n- 「不需要任何预处理」错误：KMP 必须 O(m) 预处理 next 数组。\n- 「模式串指针 j 始终单调递增」错误：j 会回跳到 next[j]，非单调；单调的是主串 i。\n- 「空间复杂度 O(1)」错误：需要 O(m) 存 next 数组。",
+    "tags": ["字符串匹配", "KMP", "核心特性"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "主串指针在整个匹配过程中绝不回退，只移动模式串指针",
+        "isCorrect": true,
+        "description": "正确。失配时 j=next[j]，i 原地不动，是 KMP 严格线性的根本。"
+      },
+      {
+        "text": "不需要对模式串做任何预处理",
+        "isCorrect": false,
+        "description": "错误。KMP 必须先 O(m) 预处理出 next 数组。"
+      },
+      {
+        "text": "模式串指针 j 始终单调递增",
+        "isCorrect": false,
+        "description": "错误。j 失配时回跳到 next[j]，非单调；单调的是主串指针 i。"
+      },
+      {
+        "text": "空间复杂度为 O(1)",
+        "isCorrect": false,
+        "description": "错误。KMP 需要 O(m) 额外空间存储 next 数组。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：KMP 中 next[j] 的准确定义是？",
+    "explanation": "next[j] = 模式串前缀 p[0..j-1] 的「真前缀」与「真后缀」中最长的公共串的长度。「真」表示不能取整个 p[0..j-1] 本身（否则永远等于自身无意义）。它也常被称作最长公共前后缀长度（LPS）或失败函数（failure function）。失配在 p[j] 时，j 跳到 next[j] 即可复用这 next[j] 个已匹配字符。\n\n- 「p[0..j-1] 的真前缀与真后缀中最长的公共串长度」正确。\n- 「p[0..j-1] 的最长回文子串长度」错误：回文与前后缀无关。\n- 「p 中字符的出现次数」错误：与字符频率无关。\n- 「s 与 p 在位置 j 的最长公共前缀」错误：next 只依赖模式串 p 自身，与主串 s 无关。",
+    "tags": ["字符串匹配", "KMP", "next数组", "定义"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "模式串前缀 p[0..j-1] 的真前缀与真后缀中最长的公共串长度",
+        "isCorrect": true,
+        "description": "正确。即最长公共前后缀长度（LPS），「真」表示不含整个串本身。"
+      },
+      {
+        "text": "模式串前缀 p[0..j-1] 的最长回文子串长度",
+        "isCorrect": false,
+        "description": "错误。回文与前后缀是两个无关的概念，next 与回文无关。"
+      },
+      {
+        "text": "模式串 p 中各字符的出现次数",
+        "isCorrect": false,
+        "description": "错误。next 与字符频率无关，是关于前后缀结构的信息。"
+      },
+      {
+        "text": "主串 s 与模式串 p 在位置 j 的最长公共前缀长度",
+        "isCorrect": false,
+        "description": "错误。next 只依赖模式串 p 自身结构，与主串 s 无关。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：模式串 p = \"abcabd\"，其 next 数组（约定 next[j] 对应前缀 p[0..j-1]）是？",
+    "explanation": "逐位求 p[0..j-1] 的最长公共前后缀长度：\n- j=0：空前缀，next[0]=0\n- j=1：\"a\"，真前后缀为空，next[1]=0\n- j=2：\"ab\"，前缀{a}后缀{b}无公共，next[2]=0\n- j=3：\"abc\"，无公共，next[3]=0\n- j=4：\"abca\"，前缀{a,ab,abc}后缀{a,ca,bca}，最长公共\"a\"，next[4]=1\n- j=5：\"abcab\"，前缀含{a,ab}后缀含{b,ab}，最长公共\"ab\"，next[5]=2\n- j=6：\"abcabd\"，后缀含 d，无公共前后缀，next[6]=0\n故 next = [0,0,0,0,1,2,0]。\n\n- 「[0,0,0,0,1,2,0]」正确。\n- 其余选项要么漏了 j=6 的 0，要么前后缀算错。",
+    "tags": ["字符串匹配", "KMP", "next数组", "计算"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "[0, 0, 0, 0, 1, 2, 0]",
+        "isCorrect": true,
+        "description": "正确。逐位求最长公共前后缀长度，abca→1(a)、abcab→2(ab)、abcabd→0。"
+      },
+      {
+        "text": "[0, 0, 0, 0, 1, 2]",
+        "isCorrect": false,
+        "description": "错误。漏了 j=6（对应整个 \"abcabd\"，含 d 无公共前后缀，应为 0）。"
+      },
+      {
+        "text": "[0, 0, 0, 1, 1, 2, 0]",
+        "isCorrect": false,
+        "description": "错误。j=4 对应 \"abca\" 的 LPS 是 \"a\" 长 1，但 j=3 对应 \"abc\" 应为 0 不是 1。"
+      },
+      {
+        "text": "[0, 1, 1, 1, 2, 3, 0]",
+        "isCorrect": false,
+        "description": "错误。把「真前后缀」误解为「重复字符数」，逐位都算错了。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：模式串 p = \"abcab\"，next[5]（即整个串的最长公共前后缀长度）是？",
+    "explanation": "p = \"abcab\"，求其真前缀与真后缀的最长公共串。真前缀集合：{a, ab, abc, abca}；真后缀集合：{b, ab, cab, bcab}。两者交集：{ab}。最长公共前后缀是 \"ab\"，长度 2。故 next[5] = 2。注意「真」前缀不能是整个 \"abcab\" 本身。\n\n- 「2（前后缀都是 \"ab\"）」正确。\n- 「5（整个串）」错误：「真」前/后缀不能是整个串本身。\n- 「0」错误：\"ab\" 既是前缀又是后缀。\n- 「1」错误：最长是 \"ab\" 长 2，不是 \"a\"（\"a\" 不是后缀）。",
+    "tags": ["字符串匹配", "KMP", "next数组", "计算"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "2（前缀 ab 与后缀 ab 相等）",
+        "isCorrect": true,
+        "description": "正确。\"abcab\" 的真前缀{a,ab,abc,abca}与真后缀{b,ab,cab,bcab}最长公共是 ab。"
+      },
+      {
+        "text": "5（整个串 abcab 本身）",
+        "isCorrect": false,
+        "description": "错误。「真」前/后缀的定义排除了整个串本身，不能算 5。"
+      },
+      {
+        "text": "0（无公共前后缀）",
+        "isCorrect": false,
+        "description": "错误。\"ab\" 同时是前缀和后缀，存在长度 2 的公共前后缀。"
+      },
+      {
+        "text": "1（前缀 a）",
+        "isCorrect": false,
+        "description": "错误。\"a\" 是前缀但不是后缀（后缀以 b 结尾），最长公共是 ab 长 2。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：next 数组的「真前缀/真后缀」中「真」的含义是？",
+    "explanation": "「真前缀」/「真后缀」的「真」（proper）表示不能取整个串本身。因为「整个串」既是它自己的前缀又是后缀，若允许它则 next[j] 永远等于 j-1（或串长），没有任何信息量。排除整个串后，next 才能反映「失配后能复用多少已匹配前缀」这一有用信息。所以 next[0]=0（空前缀）、单字符 next=0（无真前后缀）。\n\n- 「不能取整个串本身」正确。\n- 「必须是真值（非空字符）」错误：「真」与字符非空无关，是「proper」之意。\n- 「前后缀不能重叠」错误：前后缀可以重叠（如 \"aaa\" 的真前缀 aa 与真后缀 aa 重叠）。\n- 「必须长度为 1」错误：真前后缀长度可任意，只要不等于整个串长。",
+    "tags": ["字符串匹配", "KMP", "next数组", "定义"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "前缀和后缀都不能取整个串本身",
+        "isCorrect": true,
+        "description": "正确。「真」=proper，排除整个串，否则 next 恒等于串长无信息量。"
+      },
+      {
+        "text": "前缀和后缀必须是非空的真值字符",
+        "isCorrect": false,
+        "description": "错误。「真」是 proper（排除整体）之意，与字符是否为空无关。"
+      },
+      {
+        "text": "前缀和后缀不能在原串中重叠",
+        "isCorrect": false,
+        "description": "错误。前后缀可以重叠，如 \"aaa\" 的真前后缀 aa 是重叠的。"
+      },
+      {
+        "text": "前缀和后缀的长度必须为 1",
+        "isCorrect": false,
+        "description": "错误。真前后缀长度任意，只要不等于整个串的长度。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：构造 next 数组时，若 p[i] !== p[len] 且 len > 0，应如何处理？",
+    "explanation": "next 构造中，p[i] !== p[len] 表示当前字符无法延续长度为 len 的最长公共前后缀。此时不能直接置 0（可能存在更短的公共前后缀能续上），而应回退：len = next[len]，即跳到「之前 LPS 的 LPS」再试能否续上，i 保持不动进入下一轮循环。这正是「模式串跟自己做 KMP」的失配跳转，与匹配阶段的 j=next[j] 完全同构。\n\n- 「len = next[len]，i 不动，进入下一轮比较」正确。\n- 「len-- 线性递减」错误：必须沿 next 链跳转，线性递减会丢解（跳过头）。\n- 「next[++i]=0」错误：那是 len===0 时的处理，len>0 时还可能续上更短的 LPS。\n- 「i++ 跳过该字符」错误：i 不能盲目前进，len>0 时有更短候选可试。",
+    "tags": ["字符串匹配", "KMP", "next数组", "构造"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "len = next[len]，i 保持不动，进入下一轮比较",
+        "isCorrect": true,
+        "description": "正确。沿 next 链回退到更短的 LPS 再试，这正是模式串自匹配的失配跳转。"
+      },
+      {
+        "text": "len-- 线性递减 1，重新比较",
+        "isCorrect": false,
+        "description": "错误。必须沿 next 链跳转（len=next[len]），线性递减会跳过有效候选丢解。"
+      },
+      {
+        "text": "next[++i] = 0，i 前进",
+        "isCorrect": false,
+        "description": "错误。那是 len===0 时的处理；len>0 时可能存在更短 LPS 能续上，不能直接置 0。"
+      },
+      {
+        "text": "i++ 跳过当前字符，len 不变",
+        "isCorrect": false,
+        "description": "错误。len>0 时应回退 len 试更短候选，盲目 i 前进会漏算。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：KMP 匹配阶段在 p[j] 与 s[i] 失配且 j > 0 时，下一步应？",
+    "explanation": "失配且 j>0：模式串指针 j 回跳到 next[j]（复用 p[0..j-1] 的最长公共前后缀），主串指针 i 原地不动，下一轮比较 s[i] 与 p[next[j]]。只有当 j===0 仍失配时，主串指针才 i++ 前进（因为模式串已无可回退）。命中（j===m）时记录起点 i-m，再 j=next[j] 续找下一个匹配。\n\n- 「j = next[j]，i 不变」正确。\n- 「i++，j 不变」错误：那是 j===0 时的处理。\n- 「i 和 j 都回退」错误：主串 i 永不回退，这是 KMP 核心。\n- 「i 回退到 i-j+1，j 归零」错误：那是朴素法的回退，KMP 绝不如此。",
+    "tags": ["字符串匹配", "KMP", "匹配过程"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "j = next[j]，i 保持不变，下一轮比较 s[i] 与 p[next[j]]",
+        "isCorrect": true,
+        "description": "正确。失配时模式串右移，主串 i 原地不动，从 p[next[j]] 续比。"
+      },
+      {
+        "text": "i++，j 保持不变",
+        "isCorrect": false,
+        "description": "错误。那是 j===0 仍失配时的处理；j>0 时应 j=next[j] 而非动 i。"
+      },
+      {
+        "text": "i 和 j 同时回退",
+        "isCorrect": false,
+        "description": "错误。KMP 主串指针 i 永不回退，这是它严格线性的根本。"
+      },
+      {
+        "text": "i 回退到 i-j+1，j 归零重新比对",
+        "isCorrect": false,
+        "description": "错误。这是朴素法的回退做法，KMP 绝不回退主串指针。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：为什么 KMP 的 next 要取「最长」公共前后缀而非任意一个？",
+    "explanation": "取「最长」是为了不漏掉可能的匹配。设最长公共前后缀长度为 len，则所有更短的公共前后缀长度 len' < len 对应的更小右移位置，都已包含在「先跳到 len、若再失配还能沿 next[len] 继续往更短跳」的链路里。若一开始就跳到最短，会漏掉「跳到最长刚好能匹配」的那些位置。而「前后缀」保证对齐后已匹配字符不丢，「最长」保证不漏候选。\n\n- 「保证不漏可能的右移匹配位置」正确。\n- 「节省 next 数组空间」错误：数组长度与取最长无关。\n- 「让比较次数最少」错误：取最长不直接减少比较次数，是为了正确性（不漏）。\n- 「避免哈希冲突」错误：KMP 不用哈希，与冲突无关。",
+    "tags": ["字符串匹配", "KMP", "next数组", "原理"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "高级"]
+    ],
+    "options": [
+      {
+        "text": "保证不漏掉任何可能的右移匹配位置（更短的已包含在失配回跳链路中）",
+        "isCorrect": true,
+        "description": "正确。最长保证不漏；更短候选可通过 next 链回退覆盖，故取最长即可。"
+      },
+      {
+        "text": "为了节省 next 数组的存储空间",
+        "isCorrect": false,
+        "description": "错误。next 数组长度恒为 m+1，与是否取最长无关。"
+      },
+      {
+        "text": "为了让匹配阶段的字符比较次数最少",
+        "isCorrect": false,
+        "description": "错误。取最长是为正确性（不漏解），不直接等价于比较次数最少。"
+      },
+      {
+        "text": "为了避免哈希冲突",
+        "isCorrect": false,
+        "description": "错误。KMP 不使用哈希，与哈希冲突无关。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Rabin-Karp 算法的核心思想是？",
+    "explanation": "RK 不直接比字符串相等（O(m)），而是先把长度为 m 的窗口映射成整数哈希，比哈希值是否相等——哈希不等则字符串必不等，可 O(1) 判否。关键在于用滚动哈希让窗口滑动一步是 O(1)（减去左端字符贡献、乘 base、加右端字符）。哈希相等时再逐字符二次校验防冲突。平均 O(n+m)。\n\n- 「用滚动哈希比窗口哈希值是否相等，哈希相等再逐字符校验」正确。\n- 「用 next 数组避免回溯」错误：那是 KMP。\n- 「从后向前比对」错误：那是 Boyer-Moore。\n- 「构建后缀自动机」错误：那是后缀自动机/AC 自动机等高级结构，非 RK。",
+    "tags": ["字符串匹配", "Rabin-Karp", "核心思想"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "用滚动哈希计算窗口哈希值并比较，哈希相等再逐字符校验",
+        "isCorrect": true,
+        "description": "正确。RK 比哈希值判否，相等时二次校验防冲突，窗口滑动 O(1)。"
+      },
+      {
+        "text": "用 next 数组避免主串回溯",
+        "isCorrect": false,
+        "description": "错误。那是 KMP 的思想，RK 不构造 next 数组。"
+      },
+      {
+        "text": "从模式串右端开始从后向前比对",
+        "isCorrect": false,
+        "description": "错误。那是 Boyer-Moore 的比对方向，RK 是哈希视角。"
+      },
+      {
+        "text": "构建后缀自动机支持多模式匹配",
+        "isCorrect": false,
+        "description": "错误。那是 AC 自动机/后缀自动机等高级结构，非 RK 的做法。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Rabin-Karp 滚动哈希从窗口 [l, l+m-1] 滑到 [l+1, l+m] 时，正确的增量更新公式（基数 base、模 mod、窗口长 m）是？",
+    "explanation": "滚动哈希把窗口看成 base 进制数：hash_old = (s[l]·base^(m-1) + s[l+1]·base^(m-2) + ... + s[l+m-1]) mod mod。滑到下一窗口：先减去最左字符 s[l] 的贡献（s[l]·base^(m-1)），再整体乘 base（让剩余字符权值升一位），最后加上新进来的最右字符 s[l+m]。即 hash_new = ((hash_old - s[l]·base^(m-1))·base + s[l+m]) mod mod。注意减法后可能为负，需 +mod 再取模。\n\n- 「((hash_old - s[l]·base^(m-1))·base + s[l+m]) mod mod」正确。\n- 「hash_old·base + s[l+m]」错误：漏了减去左端字符贡献，窗口会无限增长。\n- 「hash_old - s[l] + s[l+m]」错误：漏了乘 base 升权，且未处理 base^(m-1) 系数。\n- 「(hash_old·base^(m-1) + s[l+m]) mod mod」错误：幂次和加减逻辑全错。",
+    "tags": ["字符串匹配", "Rabin-Karp", "滚动哈希", "公式"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "((hash_old - s[l]·base^(m-1))·base + s[l+m]) mod mod",
+        "isCorrect": true,
+        "description": "正确。减左端贡献、整体乘 base 升权、加右端字符；减法后 +mod 消负。"
+      },
+      {
+        "text": "hash_old·base + s[l+m] mod mod",
+        "isCorrect": false,
+        "description": "错误。漏了减去最左字符 s[l]·base^(m-1) 的贡献，窗口会无限增长。"
+      },
+      {
+        "text": "hash_old - s[l] + s[l+m] mod mod",
+        "isCorrect": false,
+        "description": "错误。漏了整体乘 base 升权，也未处理左端字符的 base^(m-1) 系数。"
+      },
+      {
+        "text": "(hash_old·base^(m-1) + s[l+m]) mod mod",
+        "isCorrect": false,
+        "description": "错误。幂次、加减逻辑全错，不是滚动哈希的正确更新方式。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Rabin-Karp 在哈希值相等后仍需逐字符二次校验，原因是？",
+    "explanation": "哈希函数从大空间（长 m 字符串）映射到小空间（[0, mod) 整数），必然存在冲突——两个不同字符串哈希值相等。若仅凭哈希相等就判定匹配，会产生假阳性（误报命中）。因此必须逐字符比对 s[i..i+m-1] === p 二次确认。这也是 RK 最坏 O(n·m) 的来源：恶意构造的冲突输入让每个窗口都要二次校验。缓解：选大 mod、双哈希、随机化 base。\n\n- 「哈希存在冲突，不同字符串可能哈希相等，需校验防假阳性」正确。\n- 「滚动哈希计算有数值误差」错误：整数取模无浮点误差。\n- 「加速匹配」错误：二次校验是增加工作，非加速。\n- 「mod 太大导致溢出」错误：校验的原因是冲突，与溢出无关（且大 mod 反而减少冲突）。",
+    "tags": ["字符串匹配", "Rabin-Karp", "哈希冲突"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "哈希存在冲突，不同字符串可能哈希值相等，须校验防假阳性命中",
+        "isCorrect": true,
+        "description": "正确。哈希多对一必然冲突，逐字符校验是 RK 正确性的必要保障。"
+      },
+      {
+        "text": "滚动哈希的数值计算存在浮点误差",
+        "isCorrect": false,
+        "description": "错误。滚动哈希是整数取模运算，不存在浮点误差。"
+      },
+      {
+        "text": "为了加速后续的匹配过程",
+        "isCorrect": false,
+        "description": "错误。二次校验是额外工作，会增加成本而非加速。"
+      },
+      {
+        "text": "因为模数 mod 取得太大导致溢出",
+        "isCorrect": false,
+        "description": "错误。校验的原因是哈希冲突，与溢出无关；大 mod 反而降低冲突率。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Rabin-Karp 相对 KMP/Boyer-Moore 的独特优势是？",
+    "explanation": "RK 的杀手锏是天然支持多模式同时匹配：把所有模式串 p1,p2,... 的哈希值放进一个哈希集合，主串每个窗口算一次哈希查集合——一次扫描同时匹配所有模式，匹配阶段仍 O(n)（加每个命中模式的二次校验）。KMP/BM 本质是单模式，多模式需 AC 自动机等更复杂结构。RK 还适合「找等长子串」类问题（如最长重复子串的二分+RK）。\n\n- 「天然支持一次扫描同时匹配多个模式串」正确。\n- 「最坏严格 O(n+m)」错误：RK 最坏 O(n·m)（冲突），严格线性是 KMP。\n- 「不需要模运算」错误：RK 正是用模运算控制哈希值范围。\n- 「实现比 KMP 更难」错误：RK 思想比 KMP 的 next 数组简单。",
+    "tags": ["字符串匹配", "Rabin-Karp", "多模式", "对比"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "天然支持多模式同时匹配（多个模式哈希入集合，主串一次扫描比对）",
+        "isCorrect": true,
+        "description": "正确。RK 的哈希集合法一次扫描匹配多模式，是 KMP/BM 做不到的。"
+      },
+      {
+        "text": "最坏情况严格 O(n+m) 无退化",
+        "isCorrect": false,
+        "description": "错误。RK 最坏 O(n·m)（哈希冲突）；严格线性无退化是 KMP 的特性。"
+      },
+      {
+        "text": "完全不需要模运算，实现更简单",
+        "isCorrect": false,
+        "description": "错误。RK 正是用模运算控制哈希值范围防溢出，核心就在模运算。"
+      },
+      {
+        "text": "next 数组构造比 KMP 更直观",
+        "isCorrect": false,
+        "description": "错误。RK 根本不构造 next 数组；且其思想本身比 next 更简单。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Rabin-Karp 的最坏时间复杂度及成因是？",
+    "explanation": "RK 最坏 O(n·m)，成因是哈希冲突被恶意构造：攻击者精心设计输入让主串每个窗口的哈希值都等于模式哈希值，于是每个窗口都触发逐字符二次校验（每次 O(m)），总共约 (n-m+1)·m 次比较。缓解手段：选很大的模数 mod、用双哈希（两组独立 base/mod 同时相等才算命中）、随机化 base 使攻击者无法预测。\n\n- 「O(n·m)，因恶意冲突让每窗都二次校验」正确。\n- 「O(n+m)，RK 总是线性」错误：平均 O(n+m) 但最坏会退化。\n- 「O(n·m)，因 next 构造慢」错误：RK 不构造 next。\n- 「O(m²)，因哈希计算慢」错误：单次哈希滚动是 O(1)，最坏退化源于冲突校验而非哈希计算。",
+    "tags": ["字符串匹配", "Rabin-Karp", "复杂度", "最坏"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "O(n·m)，恶意构造哈希冲突使每个窗口都触发逐字符二次校验",
+        "isCorrect": true,
+        "description": "正确。冲突让每窗都校验 O(m)，共约 (n-m+1)·m 次，缓解用大 mod/双哈希。"
+      },
+      {
+        "text": "O(n+m)，RK 总是严格线性",
+        "isCorrect": false,
+        "description": "错误。RK 平均 O(n+m)，但最坏因冲突会退化到 O(n·m)。"
+      },
+      {
+        "text": "O(n·m)，因为 next 数组构造耗时",
+        "isCorrect": false,
+        "description": "错误。RK 不构造 next 数组，退化源于哈希冲突而非预处理。"
+      },
+      {
+        "text": "O(m²)，因为单次哈希计算耗时",
+        "isCorrect": false,
+        "description": "错误。滚动哈希单次更新 O(1)；最坏退化源于冲突二次校验，不是哈希计算。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Boyer-Moore 算法最显著的比对特征是？",
+    "explanation": "BM 从模式串右端 p[m-1] 开始往左比对（先比最右字符）。一旦右侧字符失配，就获得了「主串里那个不匹配字符」的信息，可直接把模式串大幅右移，跳过大量注定失败的对齐位置。这是 BM 常能做到亚线性（实际比较次数 < n）、工程实测最快的原因。\n\n- 「从模式串右端向左逐字符比对」正确。\n- 「从左端向右比对」错误：那是朴素法/KMP 的方向。\n- 「用哈希比窗口相等」错误：那是 Rabin-Karp。\n- 「并行比对所有窗口」错误：BM 仍是单次对齐比对，只是方向从右起。",
+    "tags": ["字符串匹配", "Boyer-Moore", "比对方向"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "初级"]
+    ],
+    "options": [
+      {
+        "text": "从模式串右端 p[m-1] 开始向左逐字符比对",
+        "isCorrect": true,
+        "description": "正确。从右向左比，失配即获坏字符信息，可大幅右移，常亚线性。"
+      },
+      {
+        "text": "从模式串左端 p[0] 开始向右逐字符比对",
+        "isCorrect": false,
+        "description": "错误。那是朴素法/KMP 的从左到右方向，BM 是反向。"
+      },
+      {
+        "text": "用滚动哈希比对每个窗口是否相等",
+        "isCorrect": false,
+        "description": "错误。那是 Rabin-Karp 的做法，BM 是字符级比对。"
+      },
+      {
+        "text": "并行比对主串中所有可能的窗口",
+        "isCorrect": false,
+        "description": "错误。BM 仍是单个对齐位置逐字符比，只是方向从右端起。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Boyer-Moore 的两条核心跳跃规则是？",
+    "explanation": "BM 靠两条规则决定失配后右移多少：①坏字符规则——失配字符 bad=s[i+j] 若在 p 失配位置左侧出现（最右位置 k<j），右移 j-k 让 p[k] 对齐；若不在 p 中则右移 j+1 整段跳过。②好后缀规则——已匹配后缀 p[j+1..m-1]，若 p 别处再现该后缀（或 p 的前缀等于其子串），据此右移。每次取两规则较大者保证最坏 O(n+m)。\n\n- 「坏字符规则 + 好后缀规则」正确。\n- 「next 数组 + 滚动哈希」错误：这是混淆了 KMP 和 RK。\n- 「坏字符 + 前缀函数」错误：前缀函数是 KMP 的 next，非 BM。\n- 「最长公共前后缀 + 双哈希」错误：混淆了多个算法的术语。",
+    "tags": ["字符串匹配", "Boyer-Moore", "跳跃规则"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "坏字符规则（按失配字符在模式中最右位置右移）+ 好后缀规则（按已匹配后缀再现位置右移）",
+        "isCorrect": true,
+        "description": "正确。两规则取较大者右移，是 BM 实际最快与最坏 O(n+m) 的保证。"
+      },
+      {
+        "text": "next 数组 + 滚动哈希",
+        "isCorrect": false,
+        "description": "错误。这混淆了 KMP（next）和 Rabin-Karp（哈希），非 BM 的规则。"
+      },
+      {
+        "text": "坏字符规则 + 前缀函数",
+        "isCorrect": false,
+        "description": "错误。前缀函数（部分匹配表）是 KMP 的概念，BM 用的是好后缀规则。"
+      },
+      {
+        "text": "最长公共前后缀 + 双哈希校验",
+        "isCorrect": false,
+        "description": "错误。这是把 KMP 的 LPS 与 RK 的双哈希混在一起，非 BM 规则。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：Boyer-Moore 坏字符规则中，若失配字符 bad 在模式串 p 中根本不出现，应如何右移？",
+    "explanation": "坏字符 bad=s[i+j] 在 p 中不出现，意味着这个字符根本不可能参与以当前位置对齐的任何匹配——无论 p 怎么对齐，只要 bad 落在 p 范围内就注定失配。因此可把 p 整段跳过 bad：右移 j+1（让 p 的左端越过 bad 字符）。若 bad 在 p 失配位置左侧最右出现于 k<j，则右移 j-k；预处理 badChar[字符]=最右位置（不存在记 -1）。\n\n- 「右移 j+1，让模式串整段跳过坏字符」正确。\n- 「右移 1 个位置」错误：太保守，bad 不在 p 中应整段跳过。\n- 「不动，直接报失配结束」错误：应继续搜索后续位置。\n- 「回退主串指针」错误：BM 主串扫描方向上仍是跳跃前进，不回退。",
+    "tags": ["字符串匹配", "Boyer-Moore", "坏字符规则"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "右移 j+1，让模式串整段跳过坏字符所在位置",
+        "isCorrect": true,
+        "description": "正确。bad 不在 p 中，它不可能参与任何匹配，整段跳过最划算。"
+      },
+      {
+        "text": "右移 1 个位置，逐位试探",
+        "isCorrect": false,
+        "description": "错误。太保守；bad 不在 p 中应整段跳过，而非逐位挪动。"
+      },
+      {
+        "text": "保持当前位置不动，直接报告匹配失败并结束",
+        "isCorrect": false,
+        "description": "错误。应右移继续搜索后续位置，而非直接结束整个搜索。"
+      },
+      {
+        "text": "回退主串指针重新比对",
+        "isCorrect": false,
+        "description": "错误。BM 主串方向上是跳跃前进，不回退指针。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：关于 KMP、Rabin-Karp、Boyer-Moore 三者复杂度的对比，下列正确的是？",
+    "explanation": "三者复杂度：KMP 预处理 O(m) + 匹配 O(n)，严格最坏 O(n+m)、主串不回退；Rabin-Karp 平均 O(n+m) 但最坏 O(n·m)（哈希冲突）；Boyer-Moore 最坏 O(n+m)（需好后缀规则保证，只坏字符会退化），实际常亚线性、工程最快。三者都不存在「最坏 O(n²)」。\n\n- 「KMP 最坏 O(n+m)，RK 最坏 O(n·m)，BM 实际常亚线性」正确。\n- 「三者最坏都是 O(n·m)」错误：KMP 严格 O(n+m)。\n- 「KMP 最坏 O(n²)」错误：KMP 主串单调，到不了 n²。\n- 「BM 最坏 O(n²)」错误：双规则取大保证最坏 O(n+m)。",
+    "tags": ["字符串匹配", "对比", "复杂度"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "KMP 最坏 O(n+m)，Rabin-Karp 最坏 O(n·m)，Boyer-Moore 实际常亚线性",
+        "isCorrect": true,
+        "description": "正确。KMP 严格线性、RK 冲突退化、BM 双规则取大且实测最快。"
+      },
+      {
+        "text": "三者最坏都是 O(n·m)",
+        "isCorrect": false,
+        "description": "错误。KMP 最坏严格 O(n+m)，不会退化到 O(n·m)。"
+      },
+      {
+        "text": "KMP 最坏 O(n²)，RK 最坏 O(n·m)",
+        "isCorrect": false,
+        "description": "错误。KMP 主串指针单调递增，最坏到不了 O(n²)。"
+      },
+      {
+        "text": "Boyer-Moore 最坏 O(n²)",
+        "isCorrect": false,
+        "description": "错误。BM 的坏字符+好后缀取大保证最坏 O(n+m)，非 n²。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：需要同时匹配大量模式串（如敏感词过滤）时，下列哪种算法最合适？",
+    "explanation": "多模式同时匹配是 Rabin-Karp 的强项：把所有模式串的哈希值放入哈希集合，主串每个窗口算一次哈希查集合，一次扫描 O(n) 即可同时匹配所有模式（加每个命中模式的二次校验）。KMP/BM 本质是单模式；大规模多模式的高效解是 AC 自动机（Aho-Corasick，Trie+失败指针），但 RK 是其中思想最简单的多模式方案。\n\n- 「Rabin-Karp，多模式哈希入集合一次扫描」正确（题干限定 KMP/RK/BM 三选一场景）。\n- 「朴素法，逐个模式串匹配」错误：模式多时总开销 O(模式数·n·m)，最差。\n- 「KMP，为每个模式串各跑一遍」错误：可行但 O(模式数·(n+m))，不如 RK 一次扫描。\n- 「Boyer-Moore 单模式逐个跑」错误：同上，且 BM 多模式无集合化优势。",
+    "tags": ["字符串匹配", "多模式", "应用", "选型"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Rabin-Karp，把所有模式哈希值放入集合，主串一次扫描比对",
+        "isCorrect": true,
+        "description": "正确。RK 的哈希集合法天然支持多模式一次扫描，是三者中多模式最优。"
+      },
+      {
+        "text": "朴素法，对每个模式串分别在主串里逐字符匹配",
+        "isCorrect": false,
+        "description": "错误。模式多时总开销 O(模式数·n·m)，最差选择。"
+      },
+      {
+        "text": "KMP，为每个模式串各构造 next 并各跑一遍",
+        "isCorrect": false,
+        "description": "错误。可行但 O(模式数·(n+m))，不如 RK 集合化的一次扫描高效。"
+      },
+      {
+        "text": "Boyer-Moore，对每个模式串分别从后向前匹配",
+        "isCorrect": false,
+        "description": "错误。BM 是单模式算法，多模式无集合化优势，逐个跑开销大。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：在主流文本编辑器、grep 等实际工程的「单模式查找」场景，最常采用的算法家族是？",
+    "explanation": "工程实测最快的是 Boyer-Moore 家族，尤其简化变体 Boyer-Moore-Horspool（只保留坏字符规则、统一用窗口最右字符位移）。它在字母表较大（英文/Unicode）时坏字符跳跃收益巨大，实际比较次数常远小于 n（亚线性），且实现简单、常数小，故被 grep、各类编辑器查找广泛采用。KMP 严格线性但常数不占优；RK 多模式见长但单模式不如 BM；朴素法仅小模式可用。\n\n- 「Boyer-Moore 及其 Horspool 变体」正确。\n- 「朴素双循环」错误：工程规模下最坏 O(nm) 不可接受。\n- 「Rabin-Karp」错误：RK 强在多模式，单模式实测不如 BM。\n- 「KMP」错误：KMP 严格线性但常数不占优，工程单模式不如 BM 快。",
+    "tags": ["字符串匹配", "应用", "Boyer-Moore", "选型"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "Boyer-Moore 及其简化变体 Boyer-Moore-Horspool",
+        "isCorrect": true,
+        "description": "正确。BM/Horspool 实测亚线性最快、实现简常数小，被 grep/编辑器广泛采用。"
+      },
+      {
+        "text": "朴素双循环逐字符比对",
+        "isCorrect": false,
+        "description": "错误。工程规模下最坏 O(n·m) 不可接受，仅小模式可用。"
+      },
+      {
+        "text": "Rabin-Karp 滚动哈希",
+        "isCorrect": false,
+        "description": "错误。RK 优势在多模式，单模式实测不如 BM 快。"
+      },
+      {
+        "text": "KMP 算法",
+        "isCorrect": false,
+        "description": "错误。KMP 严格线性但常数因子不占优，工程单模式查找不如 BM 实测快。"
+      }
+    ]
+  },
+  {
+    "stem": "字符串匹配：下列关于字符串匹配算法选型的说法，正确的是？",
+    "explanation": "选型原则：要求严格线性、无最坏退化、主串不可回退（如流式数据一次扫描）→ KMP；多模式同时匹配或问题本身是哈希视角（如最长重复子串的二分+RK）→ Rabin-Karp；工程追求实测最快、字母表大 → Boyer-Moore/Horspool。三者无绝对优劣，按场景权衡。KMP 的难点全在 next 数组（最长公共前后缀的构造）。\n\n- 「严格线性且主串不可回退选 KMP，多模式选 RK，实测最快选 BM」正确。\n- 「所有场景都首选 KMP」错误：多模式 RK 更优，工程实测 BM 更快。\n- 「RK 是唯一支持多模式的算法」错误：AC 自动机等也支持多模式。\n- 「BM 因复杂度最差被淘汰」错误：BM 实测最快，广泛用于工程。",
+    "tags": ["字符串匹配", "选型", "对比"],
+    "categories": [
+      ["技术方向", "字符串匹配（KMP / Rabin-Karp / Boyer-Moore）"],
+      ["难度", "中级"]
+    ],
+    "options": [
+      {
+        "text": "严格线性且主串不可回退选 KMP，多模式选 Rabin-Karp，实测最快选 Boyer-Moore",
+        "isCorrect": true,
+        "description": "正确。三者按场景权衡：KMP 最稳、RK 多模式、BM 实测最快。"
+      },
+      {
+        "text": "所有场景都首选 KMP，因为它最经典",
+        "isCorrect": false,
+        "description": "错误。多模式 RK 更优，工程实测 BM 更快，KMP 并非所有场景最优。"
+      },
+      {
+        "text": "Rabin-Karp 是唯一支持多模式匹配的算法",
+        "isCorrect": false,
+        "description": "错误。AC 自动机、后缀自动机等也支持多模式，RK 非唯一。"
+      },
+      {
+        "text": "Boyer-Moore 因实现复杂、复杂度最差已被工业淘汰",
+        "isCorrect": false,
+        "description": "错误。BM 实测最快，Horspool 变体实现简，广泛用于 grep/编辑器。"
+      }
+    ]
+  }
+]
