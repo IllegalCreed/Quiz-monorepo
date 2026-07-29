@@ -1638,28 +1638,60 @@ export const CONTENT_CATEGORY_GROUPS: CategoryGroupDef[] = [
       },
 
       // ----- 22. 软技能 -----
+      // 2026-07-29 调研定稿：7 合并叶 → 16 独立叶。全量增量（0 题基线，无迁移坑）。
+      // 软件工程：价值观伞(Agile) + 正交实现(Scrum/Kanban) + 哲学(Lean/OKR) 分层
+      // 技术社区/代码仓库：具名平台各成叶（符合 L13 重构原则）
+      // 项目管理工具：移除 BitBucket（归代码仓库），新增 Linear（2026 主流）
+      // 即时通讯：新增飞书/钉钉（国内事实标准）
       {
         name: "软技能",
         sort: 22,
         children: [
-          { name: "软件工程（敏捷开发 / Scrum）", sort: 1 },
+          {
+            name: "软件工程",
+            sort: 1,
+            children: [
+              { name: "敏捷开发", sort: 1 },
+              { name: "Scrum", sort: 2 },
+              { name: "看板方法（Kanban）", sort: 3 },
+              { name: "精益开发与目标管理", sort: 4 },
+            ],
+          },
           {
             name: "开源分享",
             sort: 2,
             children: [
               {
-                name: "技术社区（Medium / dev.to / stackoverflow / 掘金 / 简书）",
+                name: "技术社区",
                 sort: 1,
+                children: [
+                  { name: "Medium", sort: 1 },
+                  { name: "dev.to", sort: 2 },
+                  { name: "Stack Overflow", sort: 3 },
+                  { name: "掘金", sort: 4 },
+                  { name: "简书", sort: 5 },
+                ],
               },
-              { name: "代码仓库（Github / GitLab / Gitee）", sort: 2 },
+              {
+                name: "代码仓库",
+                sort: 2,
+                children: [
+                  { name: "GitHub", sort: 1 },
+                  { name: "GitLab", sort: 2 },
+                  { name: "Gitee", sort: 3 },
+                ],
+              },
             ],
           },
           {
             name: "团队协作",
             sort: 3,
             children: [
-              { name: "团队协作工具（Jira / Trello / BitBucket）", sort: 1 },
-              { name: "远程协作工具（Slack / Discord）", sort: 2 },
+              { name: "项目管理工具（Jira / Trello / Linear）", sort: 1 },
+              {
+                name: "即时通讯与协作工具（Slack / Discord / 飞书 / 钉钉）",
+                sort: 2,
+              },
               { name: "沟通技巧", sort: 3 },
               { name: "技术写作", sort: 4 },
             ],
