@@ -6,6 +6,7 @@ import AuthDialog from "@/components/AuthDialog.vue";
 import UserDropdown from "@/components/UserDropdown.vue";
 import HistoryDrawer from "@/components/HistoryDrawer.vue";
 import CategorySelector from "@/components/CategorySelector.vue";
+import AnalyticsConsent from "@/components/AnalyticsConsent.vue";
 import { useAuthDialog } from "@/composables/useAuthDialog";
 import { useSse } from "@/composables/useSse";
 import { useUserStore } from "@/stores/useUserStore";
@@ -18,7 +19,7 @@ const router = useRouter();
 // ── SSE 连接管理 ──────────────────────────────────────
 onMounted(() => {
   connect();
-  sendHeartbeat(router.currentRoute.value.fullPath);
+  sendHeartbeat(router.currentRoute.value.path);
 });
 
 onUnmounted(() => {
@@ -27,7 +28,7 @@ onUnmounted(() => {
 
 // 路由变更时上报当前页面
 router.afterEach((to) => {
-  sendHeartbeat(to.fullPath);
+  sendHeartbeat(to.path);
 });
 </script>
 
@@ -64,16 +65,20 @@ router.afterEach((to) => {
     </main>
 
     <footer class="app-footer">
-      <span>&copy; 2026 Quiz by </span>
+      <span>&copy; 2026 IllegalCreed Quiz</span>
+      <a href="/" class="footer-link">答题</a>
+      <a href="/privacy" class="footer-link">隐私政策</a>
       <a
-        href="http://illegalscreed.cn/zh/"
+        href="https://illegalscreed.cn/zh/"
         target="_blank"
         rel="noopener noreferrer"
         class="footer-link"
       >
-        illegal
+        IllegalCreed
       </a>
     </footer>
+
+    <AnalyticsConsent />
   </div>
 </template>
 
@@ -92,7 +97,7 @@ main {
 }
 
 .app-footer {
-  @apply py-3 text-center;
+  @apply flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-3 text-center;
   color: var(--quiz-ui-muted);
 }
 

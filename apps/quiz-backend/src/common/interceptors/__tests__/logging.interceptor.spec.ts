@@ -284,6 +284,23 @@ describe("LoggingInterceptor", () => {
       });
     });
 
+    it("用户答题不应复制到通用操作日志", (done) => {
+      const context = createMockContext({
+        method: "POST",
+        originalUrl: "/api/answers",
+        body: { questionId: 7, selectedOption: 3 },
+        user: undefined,
+      });
+      const handler = createMockHandler({ correct: false, correctOptionId: 2 });
+
+      interceptor.intercept(context, handler).subscribe({
+        next: () => {
+          expect(mockSystemLogsService.create).not.toHaveBeenCalled();
+          done();
+        },
+      });
+    });
+
     it("测试端点路径应被跳过", (done) => {
       // Arrange
       const context = createMockContext({
@@ -485,11 +502,11 @@ describe("LoggingInterceptor", () => {
     it("非 admin 路径且 role=user 应推导为 USER 类型", (done) => {
       // Arrange
       const context = createMockContext({
-        method: "POST",
-        originalUrl: "/api/answers",
+        method: "PUT",
+        originalUrl: "/api/user/preferences",
         user: { sub: 10, username: "testuser", role: "user" },
       });
-      const handler = createMockHandler({ correct: true });
+      const handler = createMockHandler({ categoryIds: [1, 2] });
 
       // Act
       interceptor.intercept(context, handler).subscribe({
@@ -505,11 +522,11 @@ describe("LoggingInterceptor", () => {
     it("无用户信息时 actorId 和 actorName 应为 undefined", (done) => {
       // Arrange
       const context = createMockContext({
-        method: "POST",
-        originalUrl: "/api/answers",
+        method: "PUT",
+        originalUrl: "/api/user/preferences",
         user: undefined,
       });
-      const handler = createMockHandler({ correct: true });
+      const handler = createMockHandler({ categoryIds: [1, 2] });
 
       // Act
       interceptor.intercept(context, handler).subscribe({

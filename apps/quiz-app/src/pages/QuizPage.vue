@@ -1,7 +1,7 @@
 <template>
   <div class="quiz-page">
     <!-- 第一行：标题 -->
-    <h1 class="page-title">Quiz</h1>
+    <h1 class="page-title">IllegalCreed Quiz</h1>
 
     <!-- 第二行：主内容区（卡片 + 按钮） -->
     <div class="quiz-content">

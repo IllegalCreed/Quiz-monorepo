@@ -10,6 +10,7 @@ import { setOn401Handler } from "./utils/request";
 import { useUserStore } from "./stores/useUserStore";
 import { useAuthDialog } from "./composables/useAuthDialog";
 import { useCategories } from "./composables/useCategories";
+import { installQuizAnalytics } from "./analytics/installAnalytics";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -31,3 +32,12 @@ setOn401Handler(() => {
 void userStore.fetchUserInfo();
 
 app.mount("#app");
+
+// ── 可选访问统计：未明确允许时不加载任何供应商脚本 ──
+installQuizAnalytics({
+  enabled: import.meta.env.PROD,
+  window,
+  document,
+  navigator,
+  router,
+});

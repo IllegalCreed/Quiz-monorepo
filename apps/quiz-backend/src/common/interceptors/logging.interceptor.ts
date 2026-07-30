@@ -25,6 +25,7 @@ const SKIP_PATH_PREFIXES = [
   "/api/test",
   "/api/ws",
   "/api/clients", // 客户端心跳和 SSE 连接，高频低价值，跳过日志
+  "/api/answers", // 答题内容由专用历史模型按登录状态处理，不复制进通用日志
   "/admin/auth/login",
   "/api/user/auth/login",
   "/api/user/auth/register",
