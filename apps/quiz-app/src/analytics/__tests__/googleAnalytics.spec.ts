@@ -106,6 +106,25 @@ describe("最小化 Google Analytics 页面浏览", () => {
     expect(dataLayerEvents()[0]?.[1]).toBe("page_view");
   });
 
+  it("失败的 Google 标签会移除并在再次同意时安全重试，当前页不重复入队", () => {
+    const harness = createHarness();
+    harness.grant();
+
+    const failedScript = document.querySelector(
+      "script[data-ga4-measurement-id]",
+    ) as HTMLScriptElement;
+    failedScript.onerror?.(new Event("error"));
+
+    expect(document.querySelector("script[data-ga4-measurement-id]")).toBeNull();
+
+    harness.grant();
+
+    const retryScript = document.querySelector("script[data-ga4-measurement-id]");
+    expect(retryScript).not.toBe(failedScript);
+    expect(document.querySelectorAll("script[data-ga4-measurement-id]")).toHaveLength(1);
+    expect(dataLayerEvents()).toHaveLength(1);
+  });
+
   it("页面位置丢弃分类、自由 query 和 hash，只保留合法 UTM", () => {
     const path =
       "/?category=javascript&utm_source=GitHub&utm_medium=Community&utm_campaign=Quiz-Launch&utm_content=Home&answer=秘密#question";
@@ -147,5 +166,19 @@ describe("最小化 Google Analytics 页面浏览", () => {
       anonymize_ip: true,
       send_page_view: false,
     });
+  });
+
+  it("内建 gtag 使用官方 arguments 命令形态", () => {
+    createHarness({ consent: "granted" });
+
+    const commands = (
+      window as unknown as {
+        dataLayer?: Array<ArrayLike<unknown>>;
+      }
+    ).dataLayer;
+
+    expect(commands).toBeDefined();
+    expect(Array.isArray(commands?.[0])).toBe(false);
+    expect(Array.from(commands?.[1] ?? []).slice(0, 2)).toEqual(["config", "G-TEST12345"]);
   });
 });

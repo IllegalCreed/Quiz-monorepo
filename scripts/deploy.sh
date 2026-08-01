@@ -111,8 +111,8 @@ rm -rf prisma.new && mkdir prisma.new && tar xzf /tmp/qb-prisma.tgz -C prisma.ne
 rm -rf prisma.old && mv prisma prisma.old && mv prisma.new prisma
 # 3) 依赖 + 迁移 + 生成 client + 重启（&& 串联）
 pnpm install 2>&1 | tail -3 \
-  && npx dotenv -e .env.production -e .env.production.local -- npx prisma migrate deploy 2>&1 | tail -3 \
-  && npx dotenv -e .env.production -e .env.production.local -- npx prisma generate 2>&1 | tail -2 \
+  && pnpm exec dotenv -e .env.production -e .env.production.local -- pnpm exec prisma migrate deploy 2>&1 | tail -3 \
+  && pnpm exec dotenv -e .env.production -e .env.production.local -- pnpm exec prisma generate 2>&1 | tail -2 \
   && pm2 restart quiz-backend --update-env
 # 4) 等待后端就绪（NestJS 启动 + 连 RDS 约 ~50s 才绑 10020），轮询最多 90s
 PM2_PID=$(pm2 pid quiz-backend 2>/dev/null | tr -d '[:space:]')
